@@ -3,7 +3,7 @@
 Gombok `QTest.mouseClick`-kel, a középpontjukra kattintva:
 - `viewerEditMovieButton` a nézőben, mozgófilm-projektfájlos képen;
 - `facesEditToggleButton` a nézőben (az arc-szerkesztő kapcsoló);
-- `hiddenPasswordClear` a jelszó-párbeszédben, a Rejtett mappák
+- `collectionPasswordRemoveButton` a jelszó-párbeszédben, a Rejtett mappák
   helyi menüjén át érve el;
 - `dedupCancelButton` a duplikátum-kezelőben, futó keresés közben.
 
@@ -254,6 +254,9 @@ class TestJelszoTorlesGomb:
         controller.rescan()
         assert _varj(qt_app, lambda: controller.waitForBackgroundWorkers(0.05))
         controller.toggleFolderHidden(str(lib / "titkos"))
+        ajanlat = _gyerek(window, "hiddenPasswordOfferDialog")
+        assert _varj(qt_app, lambda: ajanlat.property("visible") is True)
+        _kattints(qt_app, window, _gyerek(window, "hiddenPasswordOfferNoButton"))
         controller.setShowHidden(True)
         assert _varj(
             qt_app, lambda: _vizualis_elem(window, _REJTETT_FEJLEC) is not None
@@ -279,11 +282,13 @@ class TestJelszoTorlesGomb:
         )
         _menupont(qt_app, window, "collectionMenuPassword")
 
-        assert _varj(qt_app, lambda: _latszik(window, "hiddenPasswordDialog")), (
+        assert _varj(qt_app, lambda: _latszik(window, "collectionPasswordDialog")), (
             "a jelszó-párbeszéd nem nyílt meg"
         )
-        parbeszed = _gyerek(window, "hiddenPasswordDialog")
-        torlo = _gyerek(window, "hiddenPasswordClear")
+        parbeszed = _gyerek(window, "collectionPasswordDialog")
+        jelenlegi = _gyerek(parbeszed, "collectionPasswordCurrent")
+        jelenlegi.setProperty("text", "titok")
+        torlo = _gyerek(parbeszed, "collectionPasswordRemoveButton")
         ablak = torlo.window()
         assert torlo.property("visible") is True, (
             "beállított jelszó mellett nem látszik a törlés gomb"
@@ -294,7 +299,7 @@ class TestJelszoTorlesGomb:
         assert _varj(qt_app, lambda: controller.hiddenPasswordSet is False), (
             "a törlés gomb valódi kattintásra nem törölte a jelszót"
         )
-        assert _varj(qt_app, lambda: not _latszik(window, "hiddenPasswordDialog")), (
+        assert _varj(qt_app, lambda: not _latszik(window, "collectionPasswordDialog")), (
             "a törlés után a jelszó-párbeszéd nyitva maradt"
         )
         _zar(qt_app, parbeszed)

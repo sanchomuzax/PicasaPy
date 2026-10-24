@@ -11,7 +11,7 @@ Amit ez a fájl rögzít:
    gyűjtemény-menü, benne a jelszó-tétel ÉL;
 2. a tételre KATTINTVA a jelszó-párbeszéd „megadás" módban nyílik;
 3. a beépített csomópontot átnevezni és eltávolítani nem lehet (szürke);
-4. felhasználói gyűjteményen a tétel továbbra is helyfoglaló (#424).
+4. felhasználói gyűjteményen ugyanez a tétel aktív (#5704).
 
 ⚠️ A menütételre KATTINTUNK, nem a jelet emitáljuk: a néma bekötés
 (elgépelt jelnév, rossz `enabled`) csak így derül ki.
@@ -66,6 +66,9 @@ def _rejtett_mappaval(qml_app, qt_app):
     controller.rescan()
     _var(qt_app, lambda: controller.waitForBackgroundWorkers(0.05))
     controller.toggleFolderHidden(str(lib / "titkos"))
+    ajanlat = _elem(window, "hiddenPasswordOfferDialog")
+    if _var(qt_app, lambda: ajanlat is not None and ajanlat.property("visible")):
+        _kattint(qt_app, window, _elem(window, "hiddenPasswordOfferNoButton"))
     controller.setShowHidden(True)
     assert _var(qt_app, lambda: _vizualis_elem(window, REJTETT_FEJLEC) is not None), (
         "a Rejtett mappák fejléce nem jelent meg"
@@ -96,19 +99,19 @@ def test_a_tetelre_KATTINTVA_a_megadas_parbeszed_nyilik(qml_app, qt_app):
     _kattint(qt_app, window, tetel)
 
     def _parbeszed():
-        p = _elem(window, "hiddenPasswordDialog")
+        p = _elem(window, "collectionPasswordDialog")
         return p if p is not None and p.property("visible") else None
 
     assert _var(qt_app, lambda: _parbeszed() is not None), (
         "a tételre kattintva nem nyílt meg a jelszó-párbeszéd"
     )
-    ellenorzo = _elem(_parbeszed(), "hiddenPasswordVerify")
+    ellenorzo = _elem(_parbeszed(), "collectionPasswordVerify")
     assert ellenorzo.property("visible") is True, (
         "a párbeszéd nem „megadás” módban nyílt (nincs megerősítő mező)"
     )
 
 
-def test_felhasznaloi_gyujtemenyen_a_tetel_szurke_marad(qml_app, qt_app):
+def test_felhasznaloi_gyujtemenyen_a_tetel_aktiv(qml_app, qt_app):
     window, _controller, _engine = qml_app
     pane = _elem(window, "folderPane")
     assert isinstance(pane, QQuickItem)
@@ -116,7 +119,6 @@ def test_felhasznaloi_gyujtemenyen_a_tetel_szurke_marad(qml_app, qt_app):
         pane, "openCollectionContextMenu", Q_ARG("QVariant", "Nyaralás")
     )
     qt_app.processEvents()
-    assert _elem(window, "collectionMenuPassword").property("enabled") is False
+    assert _elem(window, "collectionMenuPassword").property("enabled") is True
     for nev in ("collectionMenuRename", "collectionMenuRemove"):
         assert _elem(window, nev).property("enabled") is True
-

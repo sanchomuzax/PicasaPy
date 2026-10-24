@@ -128,6 +128,25 @@ def _extract_with_lupdate(tmp_path: Path) -> ET.Element:
     return ET.parse(scratch_ts).getroot()
 
 
+def _qt_text(element: ET.Element | None) -> str:
+    """Qt TS szöveg, a CR/LF-et kódoló `<byte>` elemekkel együtt."""
+    if element is None:
+        return ""
+    parts = [element.text or ""]
+    for child in element:
+        if child.tag == "byte":
+            value = child.get("value", "")
+            try:
+                codepoint = int(value[1:], 16) if value.startswith("x") else int(value)
+                parts.append(chr(codepoint))
+            except (TypeError, ValueError):
+                parts.append("")
+        else:
+            parts.append(_qt_text(child))
+        parts.append(child.tail or "")
+    return "".join(parts)
+
+
 def _shipped_translation(root: ET.Element, context: str, source: str) -> str | None:
     """A betelepített `.ts`-ből a (context, source) BEFEJEZETT fordítása,
     vagy None, ha nincs ilyen / nincs befejezve."""
@@ -135,7 +154,7 @@ def _shipped_translation(root: ET.Element, context: str, source: str) -> str | N
         if (ctx.find("name").text or "") != context:
             continue
         for msg in ctx.findall("message"):
-            if msg.find("source").text != source:
+            if _qt_text(msg.find("source")) != source:
                 continue
             translation = msg.find("translation")
             if translation is None or translation.get("type") in (
@@ -146,8 +165,8 @@ def _shipped_translation(root: ET.Element, context: str, source: str) -> str | N
             # numerus (plural) alak: legalább egy numerusform legyen kitöltve
             if msg.get("numerus") == "yes":
                 forms = translation.findall("numerusform")
-                return forms[0].text if forms and forms[0].text else None
-            return translation.text
+                return _qt_text(forms[0]) if forms and _qt_text(forms[0]) else None
+            return _qt_text(translation)
     return None
 
 
@@ -178,7 +197,7 @@ class TestI18nCompleteness:
                     # nem ez a teszt tárgya — ld. CONTRIBUTING.md)
                     continue
 
-                source = msg.find("source").text
+                source = _qt_text(msg.find("source"))
                 key = (context, source)
 
                 real_context = _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS.get(key)
