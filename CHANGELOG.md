@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.202] - 2026-10-24
+
+- A kötegelt átnevezés Example előnézete a Picasa rögzített dátum-, felbontás- és .jpg-mintáját mutatja. (#5702).
+
 ## [0.9.201] - 2026-10-24
 
 - A Film készítése megjegyzi a diaidőt és az átmenet választását, a diaidő új alapértéke 4 másodperc, 1-300 másodperc között állítható. (#5675).
