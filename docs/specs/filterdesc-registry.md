@@ -87,7 +87,7 @@ alapállapot), `zero` (minden paraméter 0), `defaults` (a `default` értékek).
 
 | attribútum | jelentés — **PicasaPy-relevancia** |
 |---|---|
-| `fullres="1"` | csak **teljes felbontáson** helyes (nem skálázható előnézeten) — a gyorsnézetet külön kell kezelni |
+| `fullres="1"` | csak **teljes felbontáson** helyes (nem skálázható előnézeten) - a gyors nézetet külön kell kezelni |
 | `slow="1"` | drága művelet → külön szálon, jelzéssel |
 | `resize="1"` | **megváltoztatja a kép méretét** (keret, matt, Polaroid, Cinemascope) — a downstream geometria (vágás, arcok) ezt figyelembe kell vegye |
 | `rotate="1"` | forgatható irány-paramétere van (`dir_tint`) |

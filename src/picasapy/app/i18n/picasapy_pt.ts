@@ -450,6 +450,19 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracom
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <source>Normal</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
+            <translation>Normal</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <source>Optimized</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Otimizado</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Printer Setup</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
@@ -1887,6 +1900,12 @@ picasapy-origin-key: options:options/uploadcontactphotos.title</extracomment>
     <context>
         <name>WebExportDialog</name>
         <message>
+            <source>Publish via FTP...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
+            <translation>Publicar através de FTP...</translation>
+        </message>
+        <message>
             <source>Export as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Exportar como página HTML...</translation>
@@ -1998,6 +2017,93 @@ picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.ti
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
             <translation>Fechar</translation>
         </message>
+        <message>
+            <source>FTP account:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Conta FTP:</translation>
+        </message>
+        <message>
+            <source>Manage...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Gerir...</translation>
+        </message>
+        <message>
+            <source>Publish</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
+            <translation>a publicar...</translation>
+        </message>
+        <message>
+            <source>Published %1 file(s) to %2.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 ficheiro(s) publicado(s) em %2.</translation>
+        </message>
+        <message>
+            <source>Manage FTP Accounts</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Gerir contas FTP</translation>
+        </message>
+        <message>
+            <source>Account name:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nome da conta:</translation>
+        </message>
+        <message>
+            <source>FTP server:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Servidor FTP:</translation>
+        </message>
+        <message>
+            <source>Username:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
+            <translation>Nome de utilizador:</translation>
+        </message>
+        <message>
+            <source>Password:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
+            <translation>Palavra-passe:</translation>
+        </message>
+        <message>
+            <source>Remote folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pasta remota:</translation>
+        </message>
+        <message>
+            <source>Leave blank to keep the saved password.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Deixe em branco para manter a palavra-passe guardada.</translation>
+        </message>
+        <message>
+            <source>The account could not be deleted.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Não foi possível eliminar a conta.</translation>
+        </message>
+        <message>
+            <source>New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: buzzupload_text:Label(buzzupload/newalbum2);upload_text:Label(upload/newalbum2)</extracomment>
+            <translation>Novo</translation>
+        </message>
+        <message>
+            <source>Delete</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Delete</extracomment>
+            <translation>Eliminar</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
+            <translation>Cancelar</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
+            <translation>Guardar</translation>
+        </message>
     </context>
     <context>
         <name>WebExportController</name>
@@ -2025,6 +2131,76 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <source>Unknown web export template: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Modelo de exportação para a web desconhecido: %1</translation>
+        </message>
+        <message>
+            <source>Choose an FTP account first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Escolha primeiro uma conta FTP.</translation>
+        </message>
+        <message>
+            <source>The saved FTP password is unavailable.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A palavra-passe FTP guardada não está disponível.</translation>
+        </message>
+        <message>
+            <source>The system key store is unavailable.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>O repositório de chaves do sistema não está disponível.</translation>
+        </message>
+        <message>
+            <source>FTP publication failed: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Falha ao publicar por FTP: %1</translation>
+        </message>
+        <message>
+            <source>The account name, server, and user name are required.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>O nome da conta, o servidor e o nome de utilizador são obrigatórios.</translation>
+        </message>
+        <message>
+            <source>FTP account fields cannot contain line breaks.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Os campos da conta FTP não podem conter quebras de linha.</translation>
+        </message>
+        <message>
+            <source>The server address is invalid.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>O endereço do servidor é inválido.</translation>
+        </message>
+        <message>
+            <source>A password is required for a new account.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>É necessária uma palavra-passe para uma nova conta.</translation>
+        </message>
+        <message>
+            <source>The saved FTP password is missing.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Falta a palavra-passe FTP guardada.</translation>
+        </message>
+        <message>
+            <source>The selected FTP account was not found.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A conta FTP selecionada não foi encontrada.</translation>
+        </message>
+        <message>
+            <source>The local web export folder was not found.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A pasta local de exportação Web não foi encontrada.</translation>
+        </message>
+        <message>
+            <source>The web export cannot contain symbolic links.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A exportação Web não pode conter ligações simbólicas.</translation>
+        </message>
+        <message>
+            <source>A web export contains an unsafe file name.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Uma exportação Web contém um nome de ficheiro não seguro.</translation>
+        </message>
+        <message>
+            <source>The FTP root folder path is invalid.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>O caminho da pasta raiz FTP é inválido.</translation>
         </message>
     </context>
     <context>
@@ -9283,6 +9459,90 @@ picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/
             <translation>R&amp;egressar à fototeca</translation>
         </message>
         <message>
+            <source>Edit in PicasaPy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
+            <translation>Editar no PicasaPy</translation>
+        </message>
+        <message>
+            <source>Launch PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Iniciar o PicasaPy</translation>
+        </message>
+        <message>
+            <source>Zoom In</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Zoom</extracomment>
+            <translation>Zoom</translation>
+        </message>
+        <message>
+            <source>Zoom Out</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Reduzir</translation>
+        </message>
+        <message>
+            <source>Play Slideshow</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Reproduzir apresentação</translation>
+        </message>
+        <message>
+            <source>Previous Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/previousbutton)</extracomment>
+            <translation>Fotografia anterior</translation>
+        </message>
+        <message>
+            <source>Next Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/nextbutton)</extracomment>
+            <translation>Fotografia seguinte</translation>
+        </message>
+        <message>
+            <source>Rotate counter-clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateleft)</extracomment>
+            <translation>Rodar para a esquerda</translation>
+        </message>
+        <message>
+            <source>Rotate clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateright)</extracomment>
+            <translation>Rodar no sentido dos ponteiros do relógio</translation>
+        </message>
+        <message>
+            <source>Star</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Estrela</translation>
+        </message>
+        <message>
+            <source>Zoom to 1:1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zoom 1:1</translation>
+        </message>
+        <message>
+            <source>Add/Remove Star</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/startoggle)</extracomment>
+            <translation>Adicionar/remover estrela</translation>
+        </message>
+        <message>
+            <source>Click to see more options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(outputlayout/morebutton)</extracomment>
+            <translation>Clique para ver mais opções</translation>
+        </message>
+        <message>
+            <source>More Options</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mais opções</translation>
+        </message>
+        <message>
+            <source>Quick Upload</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD</extracomment>
+            <translation>Carregamento rápido</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="306" />
             <source>Play</source>
             <extracomment>picasapy-origin: picasa
@@ -9997,6 +10257,12 @@ picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNTTOP10</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuTools::ID_WRITE_XMP_FACES</extracomment>
             <translation>Escrever dados de caras em XMP...</translation>
+        </message>
+        <message>
+            <source>Publish via FTP...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
+            <translation>Publicar através de FTP...</translation>
         </message>
         <message>
             <source>Show &amp;tag as album...</source>
@@ -13386,22 +13652,22 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEW_THUMBNAILS;stringres:eMenuView
     <context>
         <name>TagContextMenu</name>
         <message>
-            <source>Add this tag to entire selection</source>
+            <source>Remove this tag</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Tags::ID_APPLYTHISTAGTOSELECTION</extracomment>
-            <translation>Adicionar esta etiqueta a toda a selecção</translation>
+picasapy-origin-key: stringres:Tags::ID_REMOVETHISTAG</extracomment>
+            <translation>Remover esta etiqueta</translation>
         </message>
         <message>
-            <source>Find Items Tagged This Way</source>
+            <source>Search for items with this tag</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Tags::ID_FINDALLPICTURESWITHTHISTAG</extracomment>
             <translation>Procurar itens com esta etiqueta</translation>
         </message>
         <message>
-            <source>Remove Tag</source>
+            <source>Add this tag to entire selection</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Tags::ID_REMOVETHISTAG</extracomment>
-            <translation>Remover esta etiqueta</translation>
+picasapy-origin-key: stringres:Tags::ID_APPLYTHISTAGTOSELECTION</extracomment>
+            <translation>Adicionar esta etiqueta a toda a selecção</translation>
         </message>
     </context>
     <context>

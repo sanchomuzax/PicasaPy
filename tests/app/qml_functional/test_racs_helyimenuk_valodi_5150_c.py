@@ -388,7 +388,7 @@ class TestCimkeMenu:
         kattints(window, qt_app, gyerek(window, "tagMenuFindTagged"))
 
         assert varj(qt_app, lambda: controller.searchQuery == "kirandulas"), (
-            "a Find Items Tagged This Way kattintás nem a címkére keresett"
+            "a Search for items with this tag kattintás nem a címkére keresett"
         )
 
     def test_a_cimke_eltavolitasa_valodi_kattintassal_leveszi_a_cimket(
@@ -403,7 +403,7 @@ class TestCimkeMenu:
         kattints(window, qt_app, gyerek(window, "tagMenuRemove"))
 
         assert varj(qt_app, lambda: "kirandulas" not in controller.keywordsOfRows([0])), (
-            "a Remove Tag kattintás nem vette le a címkét a kijelölésről"
+            "a Remove this tag kattintás nem vette le a címkét a kijelölésről"
         )
 
 

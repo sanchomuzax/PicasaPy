@@ -1,28 +1,28 @@
-"""Teljes képernyős Időrend bemutató (#5377), Qt/QML-híd.
+"""Teljes képernyős Időrend bemutató (#5770), Qt/QML-híd.
 
-Az eredeti képlánc és az `A` tömb dátumjelentése még nyitott (#5401). A
-felvétel szerint látható mappakártyákat ezért a helyi index mappánkénti
-csoportosításából építi. A kártya dátuma a mappa legrégebbi ismert képdátuma;
-a csúszka a képek tényleges dátumtartományát mutatja. A képek mappán belüli
-sorrendje az index stabil névsorrendje.
-
-#2486: a fájlidő itt is a BEFAGYASZTOTT, első látáskori érték
-(`PhotoRecord.sort_mtime_ns`), nem az élő `mtime`. Enélkül ugyanaz az
-EXIF nélküli kép MÁS korszakba került volna az Időrendben, mint amilyen
-dátummal a rácsban és a mappa fejlécében szerepel - a két nézet
-ugyanarról a képről mondott volna mást. A döntés lapja:
-`docs/decisions/befagyasztott-fajlido.md`.
+A mappa- és albumkártyák az indexelt, látható fotókból épülnek. A kártya
+hónap/év felirata és időrendi helye az indexelt felvételi dátumot használja;
+hiányzó dátumnál nem helyettesíti fájlidővel. A qshow `A` tömbjének valódi
+jelentése nyitott (#5401), ezért a QML `sliderPosition` értéke normalizált
+dátumtartomány, nem az eredeti tömb rekonstruálása. A teljes képkockánkénti
+mozgás és rétegrajzolás szintén nyitott; a mért görbe- és transzformációs
+képleteket a `timeline_motion` szolgáltatja.
 """
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
 
-from picasapy.index import PhotoRecord, all_photos, open_index
-from picasapy.timeline import record_date
+from picasapy.index import (
+    PhotoRecord,
+    album_photos,
+    albums_in_index,
+    all_photos,
+    open_index,
+)
 
 from .models import PhotoGridModel, _has_edits, _thumb_url
 from ..timeline_motion import (
@@ -38,9 +38,7 @@ from ..timeline_motion import (
 
 
 class TimelineController(QObject):
-    """A teljes könyvtár mappakártyáit és mozgásképleteit szolgáltatja a QML-nek.
-
-    """
+    """A mappa- és albumkártyákat, illetve a mozgásképleteket adja a QML-nek."""
 
     collectionsChanged = Signal()
 
@@ -52,12 +50,12 @@ class TimelineController(QObject):
         self._db_path = db_path
         self._provider = provider
         self._collections: list[dict] = []
-        self._collection_records_by_folder: dict[str, tuple[PhotoRecord, ...]] = {}
+        self._collection_records_by_id: dict[str, tuple[PhotoRecord, ...]] = {}
         self._collection_slideshow_model: PhotoGridModel | None = None
 
     @Property("QVariantList", notify=collectionsChanged)
     def collections(self) -> list:
-        """A teljes könyvtár mappakártyái, legrégebbi képdátum szerint."""
+        """A teljes könyvtár gyűjteménykártyái, legrégebbi dátum szerint."""
         return self._collections
 
     @Slot(float, result="QVariantMap")
@@ -138,11 +136,14 @@ class TimelineController(QObject):
         )
 
     @Slot(str, result=QObject)
-    def slideshowModel(self, folder_path: str) -> QObject:
-        """Az Időrend-kártya saját mappájára szűrt diavetítésmodellt adja."""
+    def slideshowModel(self, collection_id: str) -> QObject:
+        """Az Időrend-kártya mappa- vagy albumsaját diavetítésmodellje."""
         if self._collection_slideshow_model is None:
             self._collection_slideshow_model = PhotoGridModel(self)
-        records = self._collection_records_by_folder.get(folder_path, ())
+        records = self._collection_records_by_id.get(collection_id)
+        if records is None:
+            # A korábbi hívó közvetlenül mappaútvonalat adott meg.
+            records = self._collection_records_by_id.get(f"folder:{collection_id}", ())
         self._collection_slideshow_model.set_photos(records)
         return self._collection_slideshow_model
 
@@ -161,28 +162,36 @@ class TimelineController(QObject):
         """
         with open_index(self._db_path) as conn:
             records = tuple(r for r in all_photos(conn) if not r.hidden)
+            albums = tuple(
+                (
+                    album,
+                    tuple(
+                        r for r in album_photos(conn, album.token) if not r.hidden
+                    ),
+                )
+                for album in albums_in_index(conn)
+            )
         # a bélyegkép-provider regisztere a TELJES könyvtárral bővül -
         # ez szuperhalmaza bármely szűkebb (mappa/keresés) nézetnek, tehát
         # a főrács regisztrációját sosem szűkíti (nem veszít kulcsot)
         self._provider.register_photos(records)
         locale = QLocale()
-        self._collections = self._collections_to_qml(records, locale)
+        self._collections = self._collections_to_qml(records, locale, albums)
         self.collectionsChanged.emit()
 
-    def _collections_to_qml(self, records: tuple, locale: QLocale) -> list[dict]:
+    def _collections_to_qml(
+        self, records: tuple, locale: QLocale, albums: tuple = ()
+    ) -> list[dict]:
         grouped: dict[str, list[PhotoRecord]] = {}
         for record in records:
             grouped.setdefault(record.folder_path, []).append(record)
-        self._collection_records_by_folder = {
-            folder_path: tuple(photos)
-            for folder_path, photos in grouped.items()
-        }
+        self._collection_records_by_id = {}
 
         prepared = []
         all_dates = [
             photo_date
             for record in records
-            if (photo_date := record_date(record)) is not None
+            if (photo_date := self._exif_date(record)) is not None
         ]
         first_date = min(all_dates) if all_dates else None
         last_date = max(all_dates) if all_dates else None
@@ -190,22 +199,35 @@ class TimelineController(QObject):
         last_label = self._date_label(last_date, locale)
 
         for folder_path, photos in grouped.items():
-            dates = [
-                photo_date
-                for photo in photos
-                if (photo_date := record_date(photo)) is not None
-            ]
-            # A kártya egyetlen dátuma a csoport legkorábbi képdátuma.
-            # A Picasa saját A-tömbjének szemantikája a #5401-ben nyitott.
-            card_date = min(dates) if dates else None
-            prepared.append((card_date, folder_path, photos))
+            self._append_collection(
+                prepared,
+                collection_id=f"folder:{folder_path}",
+                kind="folder",
+                name=Path(folder_path).name or folder_path,
+                folder_path=folder_path,
+                album_token="",
+                photos=tuple(photos),
+            )
+
+        for album, photos in albums:
+            if not photos:
+                continue
+            self._append_collection(
+                prepared,
+                collection_id=f"album:{album.token}",
+                kind="album",
+                name=album.name or album.token,
+                folder_path="",
+                album_token=album.token,
+                photos=photos,
+            )
 
         prepared.sort(
             key=lambda item: (
-                item[0] is None,
-                item[0] or date.max,
-                Path(item[1]).name.casefold(),
-                item[1].casefold(),
+                item["date"] is None,
+                item["date"] or date.max,
+                item["name"].casefold(),
+                item["collectionId"].casefold(),
             )
         )
         first_ordinal = first_date.toordinal() if first_date else None
@@ -216,7 +238,10 @@ class TimelineController(QObject):
         )
 
         result = []
-        for card_date, folder_path, photos in prepared:
+        for collection in prepared:
+            card_date = collection["date"]
+            collection_id = collection["collectionId"]
+            photos = collection["records"]
             if card_date is None:
                 slider_position = 1.0 if first_ordinal is not None else 0.0
             elif first_ordinal is None or date_span <= 0:
@@ -227,8 +252,12 @@ class TimelineController(QObject):
                 ) / date_span
             result.append(
                 {
-                    "name": Path(folder_path).name or folder_path,
-                    "folderPath": folder_path,
+                    "collectionId": collection_id,
+                    "kind": collection["kind"],
+                    "name": collection["name"],
+                    "folderPath": collection["folderPath"],
+                    "albumToken": collection["albumToken"],
+                    "firstPhotoPath": self._photo_path(photos[0]),
                     "dateLabel": self._date_label(card_date, locale),
                     "dateValue": card_date.toordinal() if card_date else None,
                     "firstDateLabel": first_label,
@@ -243,7 +272,50 @@ class TimelineController(QObject):
                     ],
                 }
             )
+            self._collection_records_by_id[collection_id] = photos
         return result
+
+    def _append_collection(
+        self,
+        prepared: list[dict],
+        *,
+        collection_id: str,
+        kind: str,
+        name: str,
+        folder_path: str,
+        album_token: str,
+        photos: tuple[PhotoRecord, ...],
+    ) -> None:
+        dates = [
+            photo_date
+            for photo in photos
+            if (photo_date := self._exif_date(photo)) is not None
+        ]
+        prepared.append(
+            {
+                "collectionId": collection_id,
+                "kind": kind,
+                "name": name,
+                "folderPath": folder_path,
+                "albumToken": album_token,
+                "date": min(dates) if dates else None,
+                "records": photos,
+            }
+        )
+
+    @staticmethod
+    def _exif_date(record: PhotoRecord) -> date | None:
+        """Csak az indexelt felvételi dátumot használja; fájlidőre nem esik vissza."""
+        if not record.taken_at:
+            return None
+        try:
+            return datetime.fromisoformat(record.taken_at).date()
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _photo_path(photo: PhotoRecord) -> str:
+        return str(Path(photo.folder_path) / photo.name)
 
     @staticmethod
     def _date_label(value, locale: QLocale) -> str:

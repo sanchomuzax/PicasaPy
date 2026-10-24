@@ -450,6 +450,19 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracom
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <source>Normal</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
+            <translation>ปกติ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <source>Optimized</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ปรับให้เหมาะสม</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Printer Setup</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
@@ -1887,6 +1900,12 @@ picasapy-origin-key: options:options/uploadcontactphotos.title</extracomment>
     <context>
         <name>WebExportDialog</name>
         <message>
+            <source>Publish via FTP...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
+            <translation>เผยแพร่ผ่านทาง FTP...</translation>
+        </message>
+        <message>
             <source>Export as HTML Page...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>ส่งออกเป็นหน้า HTML...</translation>
@@ -1998,6 +2017,93 @@ picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.ti
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
             <translation>ปิด</translation>
         </message>
+        <message>
+            <source>FTP account:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>บัญชี FTP:</translation>
+        </message>
+        <message>
+            <source>Manage...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>จัดการ...</translation>
+        </message>
+        <message>
+            <source>Publish</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
+            <translation>กำลังเผยแพร่...</translation>
+        </message>
+        <message>
+            <source>Published %1 file(s) to %2.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เผยแพร่ไฟล์ %1 ไฟล์ไปยัง %2 แล้ว</translation>
+        </message>
+        <message>
+            <source>Manage FTP Accounts</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>จัดการบัญชี FTP</translation>
+        </message>
+        <message>
+            <source>Account name:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ชื่อบัญชี:</translation>
+        </message>
+        <message>
+            <source>FTP server:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เซิร์ฟเวอร์ FTP:</translation>
+        </message>
+        <message>
+            <source>Username:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
+            <translation>ชื่อผู้ใช้งาน:</translation>
+        </message>
+        <message>
+            <source>Password:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
+            <translation>รหัสผ่าน:</translation>
+        </message>
+        <message>
+            <source>Remote folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>โฟลเดอร์ระยะไกล:</translation>
+        </message>
+        <message>
+            <source>Leave blank to keep the saved password.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เว้นว่างไว้เพื่อเก็บรหัสผ่านที่บันทึกไว้</translation>
+        </message>
+        <message>
+            <source>The account could not be deleted.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไม่สามารถลบบัญชีได้</translation>
+        </message>
+        <message>
+            <source>New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: buzzupload_text:Label(buzzupload/newalbum2);upload_text:Label(upload/newalbum2)</extracomment>
+            <translation>ใหม่</translation>
+        </message>
+        <message>
+            <source>Delete</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Delete</extracomment>
+            <translation>ลบ</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
+            <translation>ยกเลิก</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
+            <translation>บันทึก</translation>
+        </message>
     </context>
     <context>
         <name>WebExportController</name>
@@ -2025,6 +2131,76 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <source>Unknown web export template: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>ไม่รู้จักแม่แบบส่งออกเว็บ: %1</translation>
+        </message>
+        <message>
+            <source>Choose an FTP account first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>โปรดเลือกบัญชี FTP ก่อน</translation>
+        </message>
+        <message>
+            <source>The saved FTP password is unavailable.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไม่สามารถใช้รหัสผ่าน FTP ที่บันทึกไว้ได้</translation>
+        </message>
+        <message>
+            <source>The system key store is unavailable.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไม่สามารถใช้ที่เก็บคีย์ของระบบได้</translation>
+        </message>
+        <message>
+            <source>FTP publication failed: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>การเผยแพร่ FTP ล้มเหลว: %1</translation>
+        </message>
+        <message>
+            <source>The account name, server, and user name are required.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ต้องระบุชื่อบัญชี เซิร์ฟเวอร์ และชื่อผู้ใช้</translation>
+        </message>
+        <message>
+            <source>FTP account fields cannot contain line breaks.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ช่องข้อมูลบัญชี FTP ต้องไม่มีการขึ้นบรรทัดใหม่</translation>
+        </message>
+        <message>
+            <source>The server address is invalid.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ที่อยู่เซิร์ฟเวอร์ไม่ถูกต้อง</translation>
+        </message>
+        <message>
+            <source>A password is required for a new account.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ต้องระบุรหัสผ่านสำหรับบัญชีใหม่</translation>
+        </message>
+        <message>
+            <source>The saved FTP password is missing.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไม่พบรหัสผ่าน FTP ที่บันทึกไว้</translation>
+        </message>
+        <message>
+            <source>The selected FTP account was not found.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไม่พบบัญชี FTP ที่เลือก</translation>
+        </message>
+        <message>
+            <source>The local web export folder was not found.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไม่พบโฟลเดอร์ส่งออกเว็บในเครื่อง</translation>
+        </message>
+        <message>
+            <source>The web export cannot contain symbolic links.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>การส่งออกเว็บต้องไม่มี symbolic link</translation>
+        </message>
+        <message>
+            <source>A web export contains an unsafe file name.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>การส่งออกเว็บมีชื่อไฟล์ที่ไม่ปลอดภัย</translation>
+        </message>
+        <message>
+            <source>The FTP root folder path is invalid.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เส้นทางโฟลเดอร์ราก FTP ไม่ถูกต้อง</translation>
         </message>
     </context>
     <context>
@@ -9283,6 +9459,90 @@ picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/
             <translation>กลับไปยังไลบรารี</translation>
         </message>
         <message>
+            <source>Edit in PicasaPy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
+            <translation>แก้ไขใน PicasaPy</translation>
+        </message>
+        <message>
+            <source>Launch PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เปิด PicasaPy</translation>
+        </message>
+        <message>
+            <source>Zoom In</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Zoom</extracomment>
+            <translation>ซูม</translation>
+        </message>
+        <message>
+            <source>Zoom Out</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ซูมออก</translation>
+        </message>
+        <message>
+            <source>Play Slideshow</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เล่นสไลด์โชว์</translation>
+        </message>
+        <message>
+            <source>Previous Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/previousbutton)</extracomment>
+            <translation>รูปภาพก่อนหน้า</translation>
+        </message>
+        <message>
+            <source>Next Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/nextbutton)</extracomment>
+            <translation>รูปภาพถัดไป</translation>
+        </message>
+        <message>
+            <source>Rotate counter-clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateleft)</extracomment>
+            <translation>หมุนทวนเข็มนาฬิกา</translation>
+        </message>
+        <message>
+            <source>Rotate clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateright)</extracomment>
+            <translation>หมุนตามเข็มนาฬิกา</translation>
+        </message>
+        <message>
+            <source>Star</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ติดดาว</translation>
+        </message>
+        <message>
+            <source>Zoom to 1:1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ซูมเป็น 1:1</translation>
+        </message>
+        <message>
+            <source>Add/Remove Star</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/startoggle)</extracomment>
+            <translation>ติดดาว/ถอดดาว</translation>
+        </message>
+        <message>
+            <source>Click to see more options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(outputlayout/morebutton)</extracomment>
+            <translation>คลิกเพื่อดูตัวเลือกเพิ่มเติม</translation>
+        </message>
+        <message>
+            <source>More Options</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ตัวเลือกเพิ่มเติม</translation>
+        </message>
+        <message>
+            <source>Quick Upload</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD</extracomment>
+            <translation>อัปโหลดอย่างรวดเร็ว</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="306" />
             <source>Play</source>
             <extracomment>picasapy-origin: picasa
@@ -9997,6 +10257,12 @@ picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNTTOP10</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuTools::ID_WRITE_XMP_FACES</extracomment>
             <translation>เขียนภาพใบหน้าใน XMP...</translation>
+        </message>
+        <message>
+            <source>Publish via FTP...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
+            <translation>เผยแพร่ผ่านทาง FTP...</translation>
         </message>
         <message>
             <source>Show &amp;tag as album...</source>
@@ -13386,22 +13652,22 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEW_THUMBNAILS;stringres:eMenuView
     <context>
         <name>TagContextMenu</name>
         <message>
-            <source>Add this tag to entire selection</source>
+            <source>Remove this tag</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Tags::ID_APPLYTHISTAGTOSELECTION</extracomment>
-            <translation>เพิ่มแท็กนี้กับรายการที่เลือกทั้งหมด</translation>
+picasapy-origin-key: stringres:Tags::ID_REMOVETHISTAG</extracomment>
+            <translation>ลบแท็กนี้</translation>
         </message>
         <message>
-            <source>Find Items Tagged This Way</source>
+            <source>Search for items with this tag</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Tags::ID_FINDALLPICTURESWITHTHISTAG</extracomment>
             <translation>ค้นหารายการต่างๆ ด้วยแท็กนี้</translation>
         </message>
         <message>
-            <source>Remove Tag</source>
+            <source>Add this tag to entire selection</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Tags::ID_REMOVETHISTAG</extracomment>
-            <translation>ลบแท็กนี้</translation>
+picasapy-origin-key: stringres:Tags::ID_APPLYTHISTAGTOSELECTION</extracomment>
+            <translation>เพิ่มแท็กนี้กับรายการที่เลือกทั้งหมด</translation>
         </message>
     </context>
     <context>
