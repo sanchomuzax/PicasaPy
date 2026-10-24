@@ -428,8 +428,10 @@ Jegy: **#1830**.
 
 A `searchoptions/similarthumb` (a 2. szakasz elemlistája) mögötti
 hasonlóság-keresésnek **saját, tartós adatbázisa** van. Ez a szakasz a
-tárolását és az előállítás láncát írja le. ⚠️ **A 380 bájt BELSŐ
-elrendezése NINCS megfejtve** — ld. a szakasz végét.
+tárolását és az előállítás láncát írja le. Az itt következő #447-es
+kutatási állapotot a #5742 (2026-10-24) lentebb pontosítja: a három
+jellemző helper-szintű képlete megfejtve; a dekóder előtti színút és három
+kitöltetlen rekordbájt továbbra is nyitott.
 
 ### Mit CSINÁL — a lánc
 
@@ -437,10 +439,10 @@ elrendezése NINCS megfejtve** — ld. a szakasz végét.
 |---|---|---|
 | indítás | `0x007e95f0` (2569 b) | az egyetlen hívó |
 | frissítő | `0x007ead60` (2888 b) | `CSimSearch::updating`; folyamatjelző: „Updating similarity database (will be fast next time)" |
-| átméretezés | `0x00a3f490` → `Preferences\ResampleFilter2` | a képet **előbb átméretezi**; a nagy átméretező (`0x00a42c20`, 1543 b) **4×** fut |
-| jellemző-kinyerés | `0x007ea650` (1802 b) | **4×** hívva; bemenete egy kép-leíró: `+4` sorköz (×4 ⇒ 32 bites képpont), `+8` szélesség, `+0xc` magasság |
-| kvantálás | `0x007eb8e4`–`0x007eb900` | **RGB565** (ld. lentebb) |
-| normalizálás | `0x007ebd90` (442 b) | **216 lebegőpontos** elemen fut végig, futó **maximumot** keres |
+| átméretezés | `0x00a3f490` → `Preferences\ResampleFilter2` | célméretek: 56×56, 32×32, 16×16 és 8×8; alapértelmezett szűrő: 6 (Lanczos-4) |
+| jellemző-kinyerés | `0x007ea650` (1802 b) | négy méretenként két skalár; `+4` sorköz (×4 ⇒ 32 bites képpont), `+8` szélesség, `+0xc` magasság |
+| kvantálás | `0x007eb8c0` | a 8×8-as kép 64 pixelét RGB565-re írja a rekord `+0x002` mezőjébe |
+| hisztogram-normalizálás | `0x007ebd90` (446 b; `ret 4` a `0x007ebf4e` címen) | 216 floatból 216 bájtot ír a rekord `+0x082` mezőjébe |
 | tárolás | `0x007eb685` → `0x006b75f0` | `CBlockFile::Write` (a keret: `pmp-database.md` 8.2) |
 | visszaolvasás | `0x007eb22c` → `0x006b6a50` | `CBlockFile::Read` |
 
@@ -511,8 +513,8 @@ A normalizáló (`0x007ebd90`) hurka:
 | `0x007ebe6f` | `add ecx, 0x18` — a lépés 24 bájt = 6 × `float` |
 
 ⇒ **36 × 6 = 216 `float` = 864 bájt** a memóriában, szemben a tárolt
-**380** bájttal. A tárolt alak tehát **tömörített vagy kvantált** — ez a
-lépés NINCS megfejtve.
+**380** bájttal. A 216 float normalizálója a `+0x082` mezőbe 216 bájtot
+ír; a kvantálás pontos képlete a #5742 alábbi szakaszában áll.
 
 ### A találatok helye
 
@@ -521,20 +523,15 @@ lépés NINCS megfejtve.
 | eredmény-album | `0x004ad4e0` | „Similarity Search Results" / `CAlbumState::SimSearchResults` |
 | felületi elem | `0x005d8280`, `0x005d8810` | `searchoptions/similarthumb` |
 
-### Ami NYITVA marad (örökölt)
+### Az akkori nyitott állapot (#447, 2026-09-03; #5742 feloldotta)
 
-**A 380 bájt belső elrendezése.** Amit tudunk: a memóriabeli alak 216
-`float`, a tárolt 380 bájt, a bemenet RGB565-re kvantált képpontokból
-számolt, `double`-ben halmozott statisztika. Amit **NEM** tudunk: a
-tömörítés módja és a mezőhatárok.
-
-⛔ **Mintafájl NINCS a repóban** (`research/testdata/**/db3/` alatt nincs
-hasonlóság-adatbázis) — a tulajdonos sosem futtatta a funkciót. A
-megfejtés útja tehát kizárólag a `0x007ea650` (1802 b) teljes
-diszasszemblálása.
+Akkor még **NEM** volt ismert, hogyan lesz a 216 memóriabeli `float`
+értékből a 380 bájtos rekord. A #5742 alábbi szakasza azonosította a
+RGB565 bélyegképet, a 216 bájtos normalizált hisztogramot és a nyolc
+skalárt. A rekord három további bájtjának jelentése továbbra is nyitott.
 
 *Bizonyítottsági fok: a **tárolás, a méret, a kvantálás és a lánc
-megerősített** (címenként kiolvasva); a **vektor jelentése NINCS MEG**.*
+megerősített** (címenként kiolvasva); a **vektor jelentése akkor NINCS MEG (a státuszt a #5742 alábbi szakasza felülírja)**.*
 
 ### Melléklelet: a `makemoviecache.db` blobja ezen a hívási helyen 4 bájt
 
@@ -696,22 +693,16 @@ a **446.** bájtnál áll (`0x007ebf4e`). Aki a törzset az indexbeli méretre
 vágja, **levágja a függvény végét** — épp azt a részt, ahol a skálatényező
 kiszámolása történik.
 
-### Ami NYITVA marad
+### Akkor nyitva maradt (#447, 2026-09-03; #5742 feloldotta)
 
-A `+0x082 …+0x15B` (218 bájt). Amit tudunk: ez a normalizálónak átadott
-`edi` mutató célterülete, és a memóriabeli 216 elemű `float`-vektor
-(`esp+0x3E0`) mérete **216** — a 218 bájttal **kettő** az eltérés. Ez
-egybevágó volna „216 érték egy-egy bájton + 2 bájt" felosztással, de ezt
-**NEM mértem ki**, tehát nem állítom.
+A `+0x082`–`+0x15B` 218 bájtos tartományának felosztása akkor még nem
+volt ismert. Az `edi` célmutató és a memóriabeli 216 elemű `float`-vektor
+mérete ismert volt, de a „216 bájt + 2 bájt” felosztást nem mértük ki.
+A #5742 azonosította a `+0x082`–`+0x159` 216 normalizált bájtot; a három
+maradék bájt jelentése továbbra is nyitott.
 
-⛔ Mintafájl továbbra sincs. A következő lépés: megkeresni, melyik lépés ír
-a `+0x082`-től induló területre (az `edi`-t továbbadó hívási láncot követve).
-
-*Bizonyítottsági fok: a **8×8 RGB565 bélyegkép és a rekord kezdete
-megerősített** (bájtszinten kiolvasva, a veremkeret a `ret 4`-ekkel
-igazolva); a **218 bájt tartalma NINCS MEG**, a „216 bájt + 2" felosztás
-pedig **feltevés, nem mérés**.*
-
+*Történeti bizonyítottsági fok (2026-09-03): a 218 bájt tartalma akkor
+NINCS MEG volt; a #5742 a 216 bájtot feloldotta.*
 ## ⭐ A 216 BÁJTOS vektor — a rekord közepe megfejtve (#447, 2026-09-03)
 
 Az előző kör a rekord `+0x082`-től induló 218 bájtját nyitva hagyta, és
@@ -749,19 +740,18 @@ hívónál (`0x007eb5b8`) pontosan a rekord **`+0x082`**-je.
 | `0x00cf3a00` | **255,0** (`float`) | a vágott érték |
 | `0x007ebf1e` | `or eax, 0xC00` | a kerekítés **csonkításra** állítva |
 
-### ⛔ Ami NINCS MEG: az elemenkénti átalakítás
+### ⛔ Akkor nyitott volt: az elemenkénti átalakítás (#5742 feloldotta)
 
 A `0x0049fe60` (29 b) csak burkoló: `fld [ebp+8]` → `call 0x00c0b310`
 (20 b) → az pedig `call 0x00c14398`. Ez a lánc egy **CRT-matematikai
-függvényhez** vezet, amelyet **nem azonosítottam**. Amíg nincs megnevezve,
-a bájtérték képlete `NINCS MEG` — a szorzás, a vágás és a csonkítás
-viszont megerősített.
+függvényhez** vezetett; a bájtérték képlete akkor `NINCS MEG` volt. A
+#5742 alábbi új szakasza az átalakítást és a skalárképleteket is rögzíti.
 
 ### A rekord MAI állása — 380-ból 377 elszámolva
 
 ```
 +0x000        uint8 = 1        ; jelzőbájt (0x007eb5a3)
-+0x001        1 bájt           ; ISMERETLEN — egyik lépés sem írja
++0x001        1 bájt           ; a tartalma és írója is NINCS MEG (#5742)
 +0x002 …+0x081  64 × uint16    ; 8×8 RGB565 bélyegkép
 +0x082 …+0x159  216 × uint8    ; a normalizált vektor, csonkítva, 255-re vágva
 +0x15A …+0x15B  2 bájt         ; ISMERETLEN
@@ -781,7 +771,164 @@ Ez ugyanaz a hiba, mint a 66. körben (a rövid `fld` kódolás kimaradása).
 TELJES törzset, és a kapott szövegben keress a regiszter nevére. Ha a
 törzs hosszabb, mint amennyit a dekódoló egy hívásban ad, **darabold**.
 
-*Bizonyítottsági fok: a **216 bájtos írás, a vágás, a csonkítás és a
-nulla-védelem megerősített** (címenként kiolvasva); az **elemenkénti
-átalakító függvény NINCS MEG**; a `+0x001`, `+0x15A`, `+0x15B`
-(összesen 3 bájt) továbbra is ismeretlen.*
+*Történeti bizonyítottsági fok (2026-09-03): a `+0x082` normalizálás és az
+átalakítás képlete akkor nyitott volt. A #5742 ezt feloldotta; a `+0x001`,
+`+0x15A`, `+0x15B` bájtok továbbra is NINCS MEG.*
+
+## ⭐ #5742 — a három hasonlósági-jellemző előállítása (#5742, 2026-10-24)
+
+Ez a szakasz a #447 korábbi „NINCS MEG” megállapításait felülírja a három
+jellemző helper-szintű előállítására. A rekord `+0x001`, `+0x15A` és `+0x15B` bájtjának
+jelentése továbbra sincs megállapítva.
+
+### Rekordíró és átméretezett bemenetek
+
+A `CSimSearch` frissítője `0x007ead60`; közvetlen hívása a
+`0x007e95f0` függvényből, a `0x007e9a3a` címen van. A writer a `0x17c`
+(380) méretet a `0x007eb652` és `0x007eb659` címeken adja meg, majd
+`0x007eb661`-nél másol. A mezőírók: a 8×8 kvantáló `0x007eb8c0`, a
+hisztogram-normalizáló `0x007ebd90`, a nyolc skalárt előállító
+`0x007ea650` négy hívása. A teljes `.text`-pásztázás `paszta.py`-val
+egy közvetlen `call 0x007ead60`-at talált, a hívás helye `0x007e9a3a`.
+Az eltérés-alapú találatlista sok veremeltolás-egyezést is ad, ezért
+abból nem következtettem más mezőíró hiányára; az alábbi írásokat a
+célmutató- és híváslánc követésével azonosítottam.
+
+A frissítő a 56×56, 32×32, 16×16 és 8×8 célméretű képleírókat készíti
+el (`0x007eb431`, `0x007eb472`, `0x007eb4b3`, `0x007eb4f4`). A
+`0x00a3f490` a `Preferences\ResampleFilter2` értékét olvassa; a bináris
+alapértéke 6 (`0x00a3f51c`), és a 6-os ág a `0x00a3feed` címen a Lanczos-4
+szűrőt választja. A `0x00a42c20` nagy kicsinyítéskor 2×2-es box
+előfelezést is végez (`0x00a43230`), mielőtt a kiválasztott szűrővel
+befejezi az átméretezést. A beállítás felhasználói értéke felülírhatja a
+6-os alapértéket.
+
+**Színtér-határ:** a három jellemző függvénye három bájtos csatornákat
+olvas; a kvantáló szerint `+0`=B, `+1`=G, `+2`=R, az alfát nem olvassa.
+Ezekben a függvényekben nincs ICC-, gamma-, HSV- vagy YUV-átalakítás.
+Ez csak a bemenő képleíró csatornáinak kezelését bizonyítja; hogy a
+dekóder a leíró elkészítése előtt alkalmaz-e ICC/gamma-konverziót, nyitott.
+
+### 1. A `+0x002` mező: 64 RGB565 képpont
+
+A `0x007eb8c0` a 8×8-as leíró 64 képpontját alakítja át, és a rekord
+`+0x002` címétől ír. Bemeneti byte-sorrend: B,G,R,(alpha); az alpha
+kimarad. Minden csatorna alsó bitjeit egyszerű eltolás dobja el, kerekítés
+nincs:
+
+```text
+pixel = ((R >> 3) << 11) | ((G >> 2) << 5) | (B >> 3)
+```
+
+A képpontok sorfolytonosan kerülnek a 64 darab 16 bites helyre. A
+rekordot visszaolvasó `0x007ebb1b`–`0x007ebb3d` kód külön bontja ki az
+5/6/5 bites R/G/B mezőket; ez a writer kvantálásától független
+fogyasztói út.
+
+### 2. A `+0x082` mező: 6×6×6 színhisztogram és bájtos normalizálás
+
+A `0x007ec210` a 56×56-as leíró mind a 3136 pixelét feldolgozza.
+Csatornánkénti súlyozásból 216 darab float32 binszámláló készül. A
+lapos index a leíró byte-sorrendjében:
+
+```text
+t_k = 5 * C_k
+i_k = t_k >> 8
+f_k = t_k & 255
+a_k = 256 - f_k
+j = 36 * i_2 + 6 * i_1 + i_0
+```
+
+ahol `C_0`=B, `C_1`=G, `C_2`=R, `i_k` a 0…4 alsó bin, `f_k` a
+maradék. A `0x007ec280` rutin egy pixelből az alábbi súlyokat írja
+(`A=a_2`, `B=a_1`, `C=a_0`, `u=f_2`, `v=f_1`, `w=f_0`):
+
+| célbin | hozzáadott súly |
+|---|---|
+| `j` | `A*B*C` |
+| `j+1` | `A*B*w` |
+| `j+6` | `A*v*C` |
+| `j+7` | `A*v*w` |
+| `j+36` | előbb `u*B*C`, majd külön hozzáadásként `u*v*C` |
+| `j+37` | előbb `u*B*w`, majd külön hozzáadásként `u*v*w` |
+
+A felső `i_2` ág nem léptet `+36`-ról `+42`-re, illetve `+37`-ről
+`+43`-ra: a két-két súly ugyanabba a két binbe adódik össze. Nincs
+`256^3`-mal történő osztás. A két külön hozzáadást a bináris két
+utasítássorozatban végzi; bitpontos utánzáshoz a sorrend számít.
+
+A `0x007ebd90` a maximumot keresi. Ha `max <= 0.001`, a skálázáshoz
+`0.001`-et használ (`0x00cf3db0`, double összehasonlítás; `0x00c7999c`,
+float pótlóérték). Egyébként `scale = float32(255.99 / sqrt(max))`
+(`0x00cf42f8` a double 255.99 konstans). Minden kimeneti byte:
+
+```text
+out[i] = clamp(0, 255, trunc(sqrt(hist[i]) * scale))
+```
+
+A négyzetgyök CRT-útja `0x00c0b32d` (`fsqrt`), a konverzió `0x00c29990`;
+a kerekítési mód csonkítás (`0x007ebf1e`). A 216 bájt a rekord
+`+0x082`–`+0x159` tartományába kerül. A függvény tényleges vége a
+`0x007ebf4e` címen levő `ret 4`; ez 446 bájt, nem az index 442 bájtos
+mérete.
+
+### 3. A `+0x15c` mező: négy felbontás vízszintes és függőleges éle
+
+A `0x007ea650` minden leíróhoz egy X és egy Y floatot ír vissza. A writer
+az eredményeket a `0x007eb5db` (`+0x15c`), `0x007eb5e8` (`+0x160`),
+`0x007eb5f5` (`+0x164`), `0x007eb602` (`+0x168`), `0x007eb60f` (`+0x16c`),
+`0x007eb61c` (`+0x170`), `0x007eb629` (`+0x174`) és `0x007eb633`
+(`+0x178`) címeken tárolja. A `W×H` leíró és három csatornája esetén a
+belső második különbség négyzete:
+
+```text
+dx(x,y,c) = 2*C(x,y,c) - C(x-1,y,c) - C(x+1,y,c)
+dy(x,y,c) = 2*C(x,y,c) - C(x,y-1,c) - C(x,y+1,c)
+Sx = sum(dx(x,y,c)^2), x=1..W-2, y=0..H-1, c=0..2
+Sy = sum(dy(x,y,c)^2), x=0..W-1, y=1..H-2, c=0..2
+X = sqrt(Sx / ((W-2) * H * 786432))
+Y = sqrt(Sy / (W * (H-2) * 786432))
+```
+
+A 786432 double konstans a `0x00cf4300` címen van (`3 * 512^2`). A
+függvény a kiszámolt értékeket 32 bites floatként adja át. A rekord
+sorrendje:
+
+| rekordeltolás | leíró | érték |
+|---|---:|---|
+| `+0x15c`, `+0x160` | 56×56 | X, Y |
+| `+0x164`, `+0x168` | 32×32 | X, Y |
+| `+0x16c`, `+0x170` | 16×16 | X, Y |
+| `+0x174`, `+0x178` | 8×8 | X, Y |
+
+### Független ellenőrzés és cáfoló próba
+
+A statikus út a `0x007ead60` teljes írófüggvényétől követte a leírókat,
+az íróhívásokat, a mezőcímeket és a képletek utasításait. A második út
+az eredeti EXE közvetlen helper-hívása volt QEMU-ban, kézzel épített
+kép-leírókkal (`hb.py`); az alábbi értékek pontos mérések.
+
+| QEMU-mérőadat | mért eredmény |
+|---|---|
+| 1×1 pixel, `(C0,C1,C2,alpha)=(100,120,140,255)`, `0x007ec210` nyers hisztogram | nem nulla: `(85,137088)`, `(86,2787456)`, `(91,71808)`, `(92,1460096)`, `(121,577536)`, `(122,11743232)`; összeg `16777216 = 256^3` |
+| ugyanaz a hisztogram a `0x007ebd90` normalizálása után | nem nulla: `(85,27)`, `(86,124)`, `(91,20)`, `(92,90)`, `(121,56)`, `(122,255)` |
+| 5×5 pixel, `C0=x²`, `C1=y²`, `C2=x²+y²`, alpha=255, `0x007ea650` | `Sx=Sy=120`; X=Y=`0.0031894398853182793` |
+
+A cáfoló próba a kézenfekvő teljes 8-szomszédos trilineáris hisztogram
+volt: abból a mérőpixelnél a `j+42` és `j+43` binnek is nemnullának
+kellett volna lennie. A bináris felső ágak azonban a `j+36`/`j+37`
+címeket írják újra, és QEMU-ban pontosan hat bin volt nemnulla. A
+mért binsúlyok összege `256^3`; így a mérési adat maga is konzisztens a
+hat célbines súlyozással. A cáfoló ellenőrzése ugyanazon eredeti
+helper futtatásával történt, nem a statikus kódból számoltuk vissza.
+
+A két út a helper-szintű képleteknél egyezik. Ezért azok
+**megerősítettek**; a teljes dekóder→feature színút **feltételes**, mert
+a forrásleíró előtti profilkezelés nincs lezárva. A QEMU-mérések
+szintetikus leírókat használtak, tehát nem igazolják a teljes Picasa
+betöltési út viselkedését. A `+0x001`, `+0x15A`, `+0x15B` bájtok
+tartalma és írója ebben a körben **NINCS MEG**.
+
+**Nyitott — színút:** `Ghidra-kör kell: 0x006b67c0 — a forrásleíró létrehozása előtt melyik dekóder-/profilút fut, és módosítja-e a három színcsatornát ICC- vagy gamma-konverzió? [blokkoló]` A már létező Ghidra-kimenetek a `0x006b67c0` hívását/xrefjét mutatják, a függvény törzsét és a decoder/profile műveleteket nem.
+
+**Nyitott — három bájt:** kövesd az `0x007ead60` rekordpufferének inicializálását a `0x007eb5d9` 95 dwordos másolásáig, majd ellenőrizd a `+0x001`, `+0x15A`, `+0x15B` fogyasztóit; a jelenlegi writer- és fogyasztónyomok nem állapítják meg ezek értékét vagy jelentését.
