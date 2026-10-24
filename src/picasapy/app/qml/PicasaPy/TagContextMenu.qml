@@ -25,18 +25,18 @@ PicasaMenu {
     signal removeRequested()
 
     MenuItem {
-        objectName: "tagMenuAddToSelection"
-        text: qsTr("Add this tag to entire selection")
-        onTriggered: menu.addToSelectionRequested()
+        objectName: "tagMenuRemove"
+        text: qsTr("Remove this tag")
+        onTriggered: menu.removeRequested()
     }
     MenuItem {
         objectName: "tagMenuFindTagged"
-        text: qsTr("Find Items Tagged This Way")
+        text: qsTr("Search for items with this tag")
         onTriggered: menu.findTaggedRequested()
     }
     MenuItem {
-        objectName: "tagMenuRemove"
-        text: qsTr("Remove Tag")
-        onTriggered: menu.removeRequested()
+        objectName: "tagMenuAddToSelection"
+        text: qsTr("Add this tag to entire selection")
+        onTriggered: menu.addToSelectionRequested()
     }
 }

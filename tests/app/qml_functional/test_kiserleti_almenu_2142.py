@@ -63,14 +63,12 @@ class TestADuplikatumKereso:
         )
 
     def test_a_KERESES_ELOTT_all_a_legelso_szallitott_tetel(self):
-        """#4635: az eredetiben a 2. hely a Publish via FTP (tiltva) után van.
-        Nálunk az FTP nincs, ezért a duplikátum-kereső a legelső tétel — és a
-        mért sorrendben a Keresés… előtt áll."""
+        """#4635/#5713: az FTP az eredeti első tétele, utána jön a duplikátumkereső."""
         blokk = _kiserleti_blokk()
         nevek = re.findall(r'objectName: "(menuTools\w+)"', blokk)
-        assert nevek and nevek[0] == "menuToolsDedup", (
-            f"a Kísérleti almenü sorrendje {nevek} — a duplikátum-kereső "
-            f"az első szállított tétel kellene legyen"
+        assert nevek[1:3] == ["menuToolsPublishFtp", "menuToolsDedup"], (
+            f"a Kísérleti almenü sorrendje {nevek} — az FTP-közzététel az "
+            f"első, a duplikátum-kereső a második szállított tétel"
         )
         assert blokk.index('objectName: "menuToolsDedup"') < blokk.index(
             'title: qsTr("Search for...")'

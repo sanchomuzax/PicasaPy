@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 25
+SCHEMA_VERSION = 26
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -74,6 +74,20 @@ CREATE TABLE IF NOT EXISTS photo_hashes (
     size INTEGER NOT NULL,
     dhash INTEGER,
     originfast INTEGER
+);
+"""
+
+# #5744 — a Picasa-mintájú 8×8 RGB565, 216 bájtos hisztogram és nyolc
+# float jellemző. A külön cache megtartja a korábbi dHash-oszlopot; mindkét
+# cache a fájlazonosságra kulcsol, az új mezők pedig újraszámolhatók.
+_PHOTO_SIMILARITY_DDL = """
+CREATE TABLE IF NOT EXISTS photo_similarity (
+    path TEXT PRIMARY KEY,
+    mtime_ns INTEGER NOT NULL,
+    size INTEGER NOT NULL,
+    rgb565 BLOB NOT NULL,
+    histogram BLOB NOT NULL,
+    edges BLOB NOT NULL
 );
 """
 
@@ -468,6 +482,8 @@ CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
 
 {_PHOTO_HASHES_DDL}
 
+{_PHOTO_SIMILARITY_DDL}
+
 {_ALBUMS_DDL}
 
 {_FACE_DDL}
@@ -652,4 +668,7 @@ DELETE FROM folder_scan_state WHERE path IN (
     # #5180: arcforrás-jelölő. A régi arcok detektorkimenetek, az új db3
     # régiók pedig a saját embedding nélküli forrásuk szerint kerülnek be.
     24: _FACE_SOURCE_DDL,
+    # #5744: az eredeti Picasa három hasonlósági jellemzőjének üres cache-e.
+    # A meglévő dHash-sorok és -oszlop érintetlenek maradnak.
+    25: _PHOTO_SIMILARITY_DDL,
 }

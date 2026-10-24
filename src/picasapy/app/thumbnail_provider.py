@@ -372,7 +372,9 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
           * `-1`-től lefelé: Import forrásból előnézet
             (`import_source_controller._preview_photo_record`);
           * `-1_000_000`-tól lefelé: duplikátum-kereső találatok
-            (`dedup_controller.DEDUP_THUMB_ID_BASE`, #298).
+            (`dedup_controller.DEDUP_THUMB_ID_BASE`, #298);
+          * `-8_000_000_000_000_000` körül: parancssoros gyorsnézegető
+            (#5762; a kiszámítható QML-számábrázolási tartományban).
         Új hívó ide vegyen fel magának új sávot."""
         extra = {str(photo.id): photo for photo in photos}
         with self._registry_lock:

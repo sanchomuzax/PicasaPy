@@ -30,7 +30,7 @@ Window {
     property var previousOffset: [0.0, 0.0]
 
     signal closed()
-    signal slideshowRequested(string folderPath)
+    signal slideshowRequested(string collectionId)
 
     function collectionAt(index) {
         if (!collectionsModel || index < 0 || index >= collectionsModel.length)
@@ -90,8 +90,22 @@ Window {
 
     function startCurrentSlideshow() {
         var collection = show.collectionAt(currentIndex)
-        if (collection && collection.folderPath)
-            show.slideshowRequested(collection.folderPath)
+        if (collection) {
+            var collectionId = collection.collectionId || collection.folderPath
+            if (collectionId)
+                show.slideshowRequested(collectionId)
+        }
+    }
+
+    function resetForOpen() {
+        animating = false
+        draggingSlider = false
+        pendingSliderIndex = -1
+        currentIndex = collectionsModel && collectionsModel.length > 0 ? 0 : -1
+        previousIndex = currentIndex
+        transitionProgress = 1
+        currentOffset = [0.0, 0.0]
+        previousOffset = [0.0, 0.0]
     }
 
     function updateSliderFromX(x) {
@@ -169,11 +183,7 @@ Window {
     onVisibleChanged: {
         if (visible) {
             visibility = Window.FullScreen
-            if (collectionsModel && collectionsModel.length > 0 && currentIndex < 0) {
-                currentIndex = 0
-                previousIndex = 0
-                transitionProgress = 1
-            }
+            resetForOpen()
             show.requestActivate()
             keyboardTarget.forceActiveFocus()
         } else {
