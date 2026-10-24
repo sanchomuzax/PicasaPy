@@ -754,7 +754,7 @@ a mi döntésünk**, mint korábban gondoltuk
 
 ⛔ **NYITOTT: MELYIK fájl bájtjait rögzíti az `originhash` a mentés pillanatában** — a lemezre most kiírt (szerkesztett) képét, vagy a szerkesztés előtti eredetiét? A kulcsnév („origin") és az `origloc`-párja az utóbbit sugallja, de **nincs bizonyítva**; a 60-as mintában 44 sor nem egyezett a MAI fájllal, és ezt sem az mtime, sem szerkesztési kulcs (`filters=`/`redo=`/`crop=`) jelenléte nem magyarázta. **Amíg ez nyitva van, a mi `originhash`-írásunk nem javítható** (ma SHA-256-ot ír a `redo=` láncra — se a hossz, se a bemenet nem stimmel). Ez a kérdés önálló jegyet érdemel: eldöntéséhez egy KONTROLLÁLT minta kell (ismert, szerkesztés előtti eredeti + a Picasával mentett kimenet együtt).
 
-### [picasa-ini-format.md](picasa-ini-format.md) — 1 BLOKKOLT tétel (a `[encoding]` fejléc, #2452; a `text=` stílusblokk MIND A KILENC mezője 2026-09-05-én LEZÁRULT)
+### [picasa-ini-format.md](picasa-ini-format.md) - 1 BLOKKOLT tétel (a `[encoding]` fejléc, #2452) · 1 nyitott mérési/olvasóoldali kérdés (#5806; a `text=` stílusblokk mind a kilenc mezője 2026-09-05-én lezárult)
 
 ⭐ **2026-09-07 (#791) — az öt sűrű, „nem kezelt" kulcs round-tripje MÉRVE, és egy MEGKERÜLŐ ÍRÓ leleplezve.** A leltár öt kulcsot emelt ki (`IIDLIST_<fiók>_lh` 6 045 · `originhash` 1 787 · `P2category` 615 · `category` 179 · `geotag` 84). **Mérve mind a 859 valós fájlon:** a `parse_document`→`serialize` kör **0 eltérés**, és egy közbeiktatott írás után a **8 710 célkulcs-példányból 0 elveszett, 0 elváltozott** ⇒ az `ini/` kapun át a megőrzés hibátlan. ⛔ **DE egy hívó megkerülte a kaput:** a kollázs/film projekt-megjelölése (`app/collage_output.py`, `write_album_ini`) soralapon írt vissza, és a #1088 óta ez a VALÓDI Picasa-mappa. Három MÉRT kár egyetlen íráson: **11/11 CRLF→LF** (⇒ a fájl minden sora megváltozott), **U+FFFD-rontás** a régi, nem UTF-8 fájlok ékezetes feliratain (visszafordíthatatlan), és **második `[Picasa]` szekció** BOM-os fájlnál; `OSError`-ág esetén a teljes tartalom elveszett volna. Javítva: a megjelölés is az `ini/` API-n megy, a #1097 helyben-írását a `save_document(..., in_place=True)` viszi tovább. ⭐ **A `geotag` ticket-pontja ELAVULT volt:** a #30 óta olvassuk (`index.geotagged_photos`, `photos.geotag_ini`) ÉS a Helyek-panelnek átadjuk (`app/geo_controller.py`) — nem volt teendő. ⭐ **Az `originhash` MEGFEJTVE ugyanebben a körben:** **nem egy digest, hanem KETTŐ** — `fmt16(originfast) + fmt16(originslow)`, 16 + 16 kisbetűs hexa jegy. Ezért bukott korábban mind a nyolc egy-digestes jelölt (#1481 „0/32"). Bizonyíték: a **szétszedő** `0x00414b40` (`cmp eax,0x20`, majd 16+16 külön `sscanf "%I64x"`-szel), az **összerakó** `0x00414c50` (`%016I64x` ×2, `0xc80ce4`), a kiírás `0x007d5e74` (`0xcb9254`), és a két hasher `0xa4d210` (fej+farok, #1481) / `0xa4ce40` (teljes fájl, #1482); a felosztás irányát három független jel adja (`0x0070e594` `xor edi,edi`, `0x005b0b0e` `push 0;push 0`, `0x004386b6`). **Mérve: 60 elérhető valódi fájlból 16 bitpontos egyezés, RÉSZLEGES egyezés 0** — ez utóbbi a döntő kontroll. Negatívum: az `"originhash"` sztring a binárisban **egyszer** fordul elő, csak a kiírás hivatkozik rá ⇒ a Picasa név szerint nem olvassa vissza. ⛔ ~~**NYITVA:** *melyik* fájl bájtjait rögzíti a mentéskor (a mai képét vagy az eredetiét).~~ **LEZÁRVA (2026-09-09, #2790):** az **ELSŐ MEGISMERÉSKORI** bájtokat rögzíti; a mentés nem frissíti (`picasa-tartalomkulcs.md`, utolsó szakasz). ⛔ A mi `edit/save.py`-ünk **SHA-256-ot (64 karakter)** ír a `redo=` láncra — se a hossz, se a bemenet nem stimmel; a csere a nyitott kérdés miatt **külön jegy**, nem ezé a köré. A részletek: [`picasa-tartalomkulcs.md`](picasa-tartalomkulcs.md).
 
@@ -855,6 +855,13 @@ kulcsa az INI FÁJL saját dátuma" szakasza.
 
 A megmaradt szál (miért nem jelenik meg mégsem a `filters=`) **nem a
 kiváltás** kérdése — a szigorú beolvasás ága, **#685**.
+
+⛔ **NYITOTT (#5806):** a #5396 `62465` / `27964` / `33706` / `61475`
+értékeit nem lehet a jelenlegi nyers felvételekből újraszámolni, és nincs
+bizonyítva, hogy a sima `backuphash` részt vesz-e az `Originals` /
+`.picasaoriginals` visszaállítási kiválasztásában; a pontos értékekhez
+hash-hívás idejét naplózó Picasa-futás és nyers ini-/képfájl-pár, a
+visszaállítási kapcsolathoz pedig a `0x0046d7d0` dekompilálása kell.
 
 ### [szerkeszto-felso-sav.md](szerkeszto-felso-sav.md) — ✅ nincs nyitott kérdés (a blokkolt tétel 2026-09-05-én lezárult)
 
