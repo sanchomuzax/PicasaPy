@@ -1,21 +1,20 @@
-"""Tömeges átnevezés (#4879): VALÓDI kattintással és gépeléssel.
+"""Tömeges átnevezés (#4879/#5702): VALÓDI kattintással és gépeléssel.
 
-Három pont, a `rename.fen` szerint:
-- a Dátum jelölő a felvétel dátumát ÉS idejét teszi a névbe (élő példasor);
-- a névmezőbe tiltott fájlnév-karakter nem gépelhető be;
-- a két jelölő állása a következő megnyitásig megmarad.
+A Date és Image resolution jelölő a `rename.fen` rögzített mintáit mutatja,
+a kiválasztott kép dátuma és mérete nem befolyásolja az Example sort. A
+névmező szűri a tiltott karaktereket, és a két jelölő állása megmarad a
+következő megnyitásig.
 
 A jelölőkre és a mezőre `QTest` egéresemény/billentyű megy (a közvetlen
-`setProperty` kikerülné a validatort és a kattintás-útvonalat); a mért
-példasor a névképző azonos bemenetével számolt várható értéket kapja.
+`setProperty` kikerülné a validatort és a kattintás-útvonalat).
 """
 
 import dataclasses
 
-from PySide6.QtCore import Q_ARG, QLocale, QMetaObject, QObject, QPoint, QPointF, Qt
+import pytest
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
 
-from picasapy.fileops.rename import format_taken_at
 from support.qml_halasztott import epitsd_fel_ha_fileops
 
 
@@ -62,12 +61,16 @@ def _type(window, field, text):
 
 
 class TestRenameManyDateAndFlags:
-    def test_date_checkbox_adds_date_and_time_to_live_example(self, qml_app, qt_app):
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
+    def test_checkboxes_show_fixed_samples_after_real_clicks(
+        self, qml_app, qt_app, tmp_path, height_delta
+    ):
         window, controller, _lib, _engine = qml_app
-        # a fixture-képeknek nincs EXIF-dátumuk: az első sor kap egyet
+        window.setHeight(window.height() + height_delta)
+        # A kijelölt fájl valós adatai térjenek el a Picasa rögzített mintáitól.
         photos = controller.photos.photos
         controller.photos.set_photos(
-            (dataclasses.replace(photos[0], taken_at="2004-08-01T14:30:45"),)
+            (dataclasses.replace(photos[0], taken_at="2023-12-17T17:08:09"),)
             + photos[1:]
         )
         dialog = _open(window, qt_app)
@@ -75,12 +78,23 @@ class TestRenameManyDateAndFlags:
             _type(window, _child(window, "renameManyField"), "nyaralas")
             _click(window, _child(window, "renameManyDateCheck"))
             assert _child(window, "renameManyDateCheck").property("checked") is True
-            expected_stamp = format_taken_at("2004-08-01T14:30:45", QLocale.system())
             sample = _child(window, "renameManySampleLabel").property("text")
-            assert sample == f"Example: nyaralas {expected_stamp}.jpg"
-            # a dátum ÉS az idő is benne van (nem csak az ISO-nap), tiltott jel nélkül
-            assert "30" in expected_stamp and "45" in expected_stamp
-            assert not set(expected_stamp) & set('\\/:*?"<>|')
+            assert sample == "Example: nyaralas 08-01-2004 2-30-45 PM.jpg"
+
+            _click(window, _child(window, "renameManySizeCheck"))
+            sample = _child(window, "renameManySampleLabel").property("text")
+            assert sample == (
+                "Example: nyaralas 08-01-2004 2-30-45 PM 640x480.jpg"
+            )
+
+            _click(window, _child(window, "renameManyDateCheck"))
+            sample = _child(window, "renameManySampleLabel").property("text")
+            assert sample == "Example: nyaralas 640x480.jpg"
+
+            if height_delta == 0:
+                screenshot = window.grabWindow()
+                assert not screenshot.isNull(), "üres lett a párbeszéd képe"
+                assert screenshot.save(str(tmp_path / "rename-preview-5702.png"))
         finally:
             _close(dialog, qt_app)
 

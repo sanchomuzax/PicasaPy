@@ -56,15 +56,18 @@ helyi menük és a más fájlokba került tételek így kimaradtak belőle.)
 
 ⚠️ **A 2026-08-25-i 150/189 (79%) ELAVULT** — a `eMenuView` névtér azóta
 teljes lett (#1434, #1595, #1766 köre). Az alábbi 3.1–3.3 csoportosítás a
-RÉGI, 39 tételes mérésből származik; a tételek besorolása (hatókörön kívül
-/ érdemi) továbbra is érvényes, csak a darabszámok mozdultak.
+RÉGI, 39 tételes mérésből származik; a besorolások történeti állapotot
+mutatnak. A #5709 a Közzététel FTP-n tételt a hatókörön kívüli állapotból érdemi
+hiánnyá sorolja át.
 
-**Az érdemi hiányra mind van nyitott jegy** (2026-09-02-án ellenőrizve):
+**A 2026-09-02-i érdemi hiányra mind van nyitott jegy**:
 #1398 · #1399 · #1401 · #1402 · #1403 · #1404 · #1405 · #1406 · #1408.
+Az FTP-közzététel későbbi, érdemi hiányként igazolt tétel; fejlesztői
+jegytörzse a #5709 jelentésében szerepel.
 
 ## 3. A HIÁNYZÓ 39 tétel, három csoportban
 
-### 3.1 Hatókörön kívül — halott online szolgáltatás vagy más platform (14)
+### 3.1 Hatókörön kívül: halott online szolgáltatás vagy más platform (13)
 
 | parancs | felirat | miért |
 |---|---|---|
@@ -73,7 +76,6 @@ RÉGI, 39 tételes mérésből származik; a tételek besorolása (hatókörön 
 | `ID_TOOLS_COLLAB` | Feltöltés közös szerkesztésű webalbumba | ua. |
 | `ID_TOOLS_DOWNLOAD_FACES` | Névcímkék letöltése a Picasa Webalbumokból | ua. |
 | `ID_TOOLS_YOUTUBE` | Feltöltés a YouTube webhelyre | külső szolgáltatás |
-| `ID_FTPWEB` | Közzététel FTP-n keresztül… | elavult közzétételi mód |
 | `ID_PICTURE_GEOTAG` | Geocímkézés a Google Earth programmal… | a Google Earth-integráció megszűnt |
 | `ID_VIEW_EARTH` | Megtekintés a Google Earth programban… | ua. |
 | `ID_IPHOTOIMPORT` | Importálás az iPhoto alkalmazásból… | Apple-ág, tulajdonosi döntés (2026-08-21) |
@@ -82,7 +84,7 @@ RÉGI, 39 tételes mérésből származik; a tételek besorolása (hatókörön 
 | `ID_VIEW_RDESK` | Távoli asztal | platform-specifikus megjelenítés |
 | *(+ 2 további Mac-változat)* | | |
 
-### 3.2 ÉRDEMI hiány — feltárandó (18)
+### 3.2 ÉRDEMI hiány: feltárandó (19)
 
 Ezek valódi, megépíthető funkciók, és a binárisból feltárhatók:
 
@@ -98,6 +100,7 @@ Ezek valódi, megépíthető funkciók, és a binárisból feltárhatók:
 | 11 | `ID_PICTURE_GEOUNTAG` | Geocímkék törlése | a `geotag` ini-kulcshoz |
 | 12 | `ID_VIEW_FOLDERS` | Egyszerű mappanézet | a lapos mappanézet |
 | 13–18 | `ID_VIEW_16` · `ID_VIEW_NORMAL` · `ID_VIEW_LCD` · `ID_VIEW_LINEAR` · `ID_VIEW_OV` · `ID_VIEW_PROJECTOR` | 16 bites (szemcsézett) · 24 bites · LCD fehérpont · Lineáris gamma (2.2) · Túlcsordult képpontok megjelenítése · Projektor mód | **megjelenítési/gamma-módok** — egy összefüggő készlet |
+| 19 | `ID_FTPWEB` | Közzététel FTP-n keresztül… | a #5709 bináris-vizsgálata élő parancsutat, FTP-fiókkezelést és tényleges feltöltést igazolt; PicasaPy-ban hiányzik |
 
 ### 3.3 Almenü-hiány (1)
 

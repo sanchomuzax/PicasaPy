@@ -171,6 +171,11 @@ def tukrozes_mutacio(document, nev: str, flags: int):
 # megnyitásig megmarad.
 RENAME_USE_DATE_KEY = "RenameUseDate"
 RENAME_USE_SIZE_KEY = "RenameUseSize"
+# A `rename.fen` Example sora a rögzített Picasa-mintákat fűzi az alapnévhez;
+# ezek szándékosan függetlenek a kijelölt fájl metaadataitól (#5702).
+RENAME_SAMPLE_DATE = " 08-01-2004 2-30-45 PM"
+RENAME_SAMPLE_SIZE = " 640x480"
+RENAME_SAMPLE_EXTENSION = ".jpg"
 
 
 class PhotoOpsMixin(BackgroundWorkerMixin):
@@ -387,7 +392,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-photowrite")
 
-    def _run_photo_writes(self, jobs, after=None) -> None:
+    def _run_photo_writes(self, jobs, after=None, on_error=None) -> None:
         """Több kép írása SOROSAN, EGYETLEN háttérszálon (#2915).
 
         Képenként külön szálat indítani versenyhelyzet: a kijelölés képei
@@ -399,7 +404,8 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
         `jobs`: `(photo_id, perform)` párok; a `perform()` a teljes lassú
         munka, ugyanúgy, mint a `_run_photo_write`-nál. Az `after` utómunka
-        a GUI-szálon, a KÖTEG végén fut le egyszer.
+        a GUI-szálon, a KÖTEG végén fut le egyszer. Az `on_error` lezáró
+        visszahívás bármilyen workerhiba esetén lefut.
         """
         self._ensure_photo_ops_wired()
         jobs = tuple(jobs)
@@ -420,6 +426,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                         )
             except _WRITE_ERRORS as error:
                 self.photoOpFailed.emit(str(error))
+                if on_error is not None:
+                    on_error()
+            except BaseException:
+                if on_error is not None:
+                    on_error()
+                raise
 
         self._start_background(worker, name="picasapy-photowrite-koteg")
 
@@ -750,9 +762,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     def renamePreview(
         self, rows, base_name: str, include_date: bool, include_size: bool
     ) -> str:
-        """A `rename.fen` élő előnézete: a kijelölés ELSŐ fájljának végleges
-        neve, ha most elfogadnák a dialógust (sorszám nélkül — ő az első a
-        sorban). Tiszta lekérdezés, nem ír semmit."""
+        """A kijelölés első képének tényleges célneve, sorszám nélkül.
+
+        A dialógus elfogadásakor ez tartja életben a meglévő átnevezési út
+        célútvonalát; a látható, rögzített `Example` mintát a
+        `renameSamplePreview` állítja elő.
+        """
         photos = self._rows_to_photos(rows)
         if not photos or not (base_name or "").strip():
             return ""
@@ -766,6 +781,25 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         return preview_name(
             base_name.strip(), item,
             include_date=include_date, include_size=include_size, sequence=0,
+        )
+
+    @Slot(list, str, bool, bool, result=str)
+    def renameSamplePreview(
+        self, rows, base_name: str, include_date: bool, include_size: bool
+    ) -> str:
+        """A `rename.fen` Example sora a Picasa rögzített mintáival.
+
+        Csak azt ellenőrzi, hogy van-e kijelölés; dátumot, felbontást és
+        kiterjesztést nem olvas a fájlokból.
+        """
+        base_name = (base_name or "").strip()
+        if not rows or not base_name:
+            return ""
+        date_sample = RENAME_SAMPLE_DATE if include_date else ""
+        size_sample = RENAME_SAMPLE_SIZE if include_size else ""
+        return (
+            f"{base_name}{date_sample}{size_sample}"
+            f"{RENAME_SAMPLE_EXTENSION}"
         )
 
     @Slot(list, str, bool, bool)
