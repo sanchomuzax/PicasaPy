@@ -4,6 +4,66 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-24
+
+**Időrend és diavetítés**
+
+- A **Nézet ▸ Időrend** (Ctrl+5) már működik: teljes képernyős, animált
+  bemutató, amelyben a mappáid kártyaként, dátum szerint követik
+  egymást. Csúszkával és a nyilakkal lépsz köztük, a Szóköz a mappa
+  diavetítését indítja. Lásd [Nézegetés](features/nezegetes.md).
+- A diavetítés sávján, 16 vagy 32 bites színmélységű képernyőn, az
+  átmenet-választó helyén az **Időrend** gomb áll, ahogy az eredetiben.
+- A vetített kép legfelső, keskeny sávjára kattintva szünetel vagy
+  folytatódik a vetítés.
+
+**Nyomtatás**
+
+- A **Nyomatméret** lista az eredeti Picasa összes méretét kínálja, az
+  eredeti sorrendben, a hüvelykes és a centiméteres méreteket együtt. A
+  **CD-borító mérete** szürke. Lásd [Nyomtatás](features/nyomtatas.md).
+- A párbeszéd első megnyitáskor **Lapkitöltés (vágással)** illesztéssel
+  indul, és átváltáskor az előnézet is rögtön frissül.
+- Ha minden kép gyenge minőségű, a **Gyenge minőségű képek
+  eltávolítása** előbb rákérdez, mert ezzel a nyomtatás is elmarad.
+- Az **Útlevélkép** nyomtatása megtartja a beállított példányszámot.
+  Lásd [Útlevélkép](features/utlevelkep.md).
+
+**Mozgófilm**
+
+- A **Dia időtartama** alapból 4 másodperc, 1 és 300 másodperc között
+  állítható, és a program megjegyzi; a választott képváltási stílust is.
+  Lásd [Mozgófilm](features/mozgofilm.md).
+- Célfájl nélkül a film az eredeti Picasa alapnevét kapja a felület
+  nyelvén (magyarul `diavetites_jellegu_film`), és a következő film az
+  előző nevét és mappáját.
+- Az **Újraszámolás** mindig megerősítést kér, akkor is, ha nincs
+  szöveges dia.
+- Az arcokból készülő filmnél a beállítások külön **Opciók** fülre
+  kerültek. Lásd [Emberek](features/emberek.md).
+
+**Szerkesztés és címkék**
+
+- Az effektek színválasztója mellett **pipetta** van: a képre kattintva
+  a kattintott képpont színe lesz az effekt színe. Lásd
+  [Szerkesztő](features/szerkeszto.md).
+- Ha a Gyorscímkéknél ki van kapcsolva a legutóbbiak fenntartása, a
+  gyorscímkézés nem kerül a legutóbbiak közé.
+
+**Fájlok és dátumok**
+
+- A **Fájlok átnevezése** ablak **Példa** sora az eredeti Picasa
+  rögzített mintáját mutatja. Lásd [Fájlműveletek](features/fajlmuveletek.md).
+- A dátummódosító ablak címe egy képnél **Fotó dátumának módosítása**,
+  több képnél az elemszámmal együtt, és mentés közben jelzi, hogy dolgozik.
+  Lásd [A könyvtár](features/konyvtar.md).
+
+**Windowson**
+
+- A **Print Screen** gomb képernyőképet ment a `Képernyőfelvételek`
+  mappába. Linuxon ez nem működik. Lásd
+  [Billentyűparancsok](features/billentyuk.md).
+
 ## 2026-10-23
 
 **Diavetítés**

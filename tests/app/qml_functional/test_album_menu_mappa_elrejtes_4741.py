@@ -114,6 +114,21 @@ def test_album_es_szemelynezetben_a_mapparejtes_menupontok_nem_mukodnek(
         assert _varj(qt_app, lambda: controller.isFolderHidden(mappa) is True), (
             "mappanézetben az Elrejtés kattintás nem rejtette el a kijelölt mappát"
         )
+        if eltolás == _ABLAKMAGASSAG_ELTOLASOK[0]:
+            # #5704: az új jelszóajánlat modális; egyszer elutasítjuk és
+            # elmentjük az opt-outot, hogy a teszt folytathassa a menüjárást.
+            ajanlat = _objektum(window, "hiddenPasswordOfferDialog")
+            assert _varj(
+                qt_app, lambda ajanlat=ajanlat: ajanlat.property("visible") is True
+            )
+            _kattints(
+                qt_app,
+                _objektum(window, "hiddenPasswordOfferRememberCheck"),
+            )
+            _kattints(
+                qt_app,
+                _objektum(window, "hiddenPasswordOfferNoButton"),
+            )
 
         _menu_bar, _menu, _fejlec, show = _nyisd_meg_menu_tetelt(
             qt_app, window, "menuFolderShow"

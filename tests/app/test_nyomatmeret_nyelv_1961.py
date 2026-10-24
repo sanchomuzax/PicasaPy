@@ -19,7 +19,6 @@ from PySide6.QtCore import QLocale, QSettings
 import picasapy.printing.dpi as dpi
 from picasapy.app.language_controller import LANGUAGE_KEY
 from picasapy.app.print_controller import PrintController
-from picasapy.printing.dpi import HUVELYK_KESZLET, METRIKUS_KESZLET
 
 
 def _vezerlo(tmp_path, nyelv: str | None, monkeypatch, meresi_rendszer):
@@ -44,25 +43,28 @@ def _vezerlo(tmp_path, nyelv: str | None, monkeypatch, meresi_rendszer):
 
 class TestATeruletiMereshezIgazodoKeszlet:
     @pytest.mark.parametrize(
-        "nyelv,meresi_rendszer,vart",
+        "nyelv,meresi_rendszer",
         [
             (
                 "en",
                 QLocale.MeasurementSystem.MetricSystem,
-                METRIKUS_KESZLET,
             ),
             (
                 "hu",
                 QLocale.MeasurementSystem.ImperialUSSystem,
-                HUVELYK_KESZLET,
             ),
         ],
     )
-    def test_a_feluleti_nyelvtol_fuggetlenul_a_meresi_rendszer_dont(
-        self, tmp_path, monkeypatch, nyelv, meresi_rendszer, vart
+    def test_a_teljes_katalogus_fuggetlen_a_feluleti_es_teruleti_nyelvtol(
+        self, tmp_path, monkeypatch, nyelv, meresi_rendszer
     ):
         ctl = _vezerlo(tmp_path, nyelv, monkeypatch, meresi_rendszer)
-        assert ctl.printSizes() == [m.name for m in vart]
+        assert ctl.printSizes() == [
+            "M3X4", "M3_5X5", "M4X5", "M4X6", "M5X7", "M8X10",
+            "M5X8CM", "M9X13CM", "M10X15CM", "M13X18CM", "M15X20CM",
+            "M20X25CM", "TARCA", "CDSIZE", "PASSPORT", "CONTACT",
+            "TELJES_OLDAL",
+        ]
 
     @pytest.mark.parametrize(
         "nyelv,meresi_rendszer,vart",
@@ -155,30 +157,27 @@ class TestATaroltMeret:
         assert ctl.printSize() == "TELJES_OLDAL"
 
     @pytest.mark.parametrize(
-        "nyelv,meresi_rendszer,idegen,vart",
+        "nyelv,meresi_rendszer,idegen",
         [
             (
                 "en",
                 QLocale.MeasurementSystem.MetricSystem,
                 "M8X10",
-                "TELJES_OLDAL",
             ),
             (
                 "hu",
                 QLocale.MeasurementSystem.ImperialUSSystem,
                 "M20X25CM",
-                "TELJES_OLDAL",
             ),
         ],
     )
-    def test_a_MASIK_keszlet_erteket_nem_adja_vissza(
-        self, tmp_path, monkeypatch, nyelv, meresi_rendszer, idegen, vart
+    def test_a_masik_teruleti_katalogusbol_valasztott_meret_megmarad(
+        self, tmp_path, monkeypatch, nyelv, meresi_rendszer, idegen
     ):
-        """A foga: területváltás után a régi méret bent maradna, és a
-        párbeszéd olyan tételt mutatna, ami nincs a listájában."""
+        """A teljes `ytPrintSizes` katalógus minden területen elérhető."""
         ctl = _vezerlo(tmp_path, nyelv, monkeypatch, meresi_rendszer)
         ctl._settings.setValue("print/lastSize", idegen)
-        assert ctl.printSize() == vart
+        assert ctl.printSize() == idegen
 
     def test_a_sajat_keszletbeli_ertek_MEGMARAD(self, tmp_path, monkeypatch):
         """Az esés ne mossa el a valódi választást."""
@@ -191,7 +190,7 @@ class TestATaroltMeret:
         ctl.setPrintSize("M13X18CM")
         assert ctl.printSize() == "M13X18CM"
 
-    def test_a_masik_keszlet_erteket_NEM_tarolja_el(self, tmp_path, monkeypatch):
+    def test_a_masik_teruleti_meretet_is_elmenti(self, tmp_path, monkeypatch):
         ctl = _vezerlo(
             tmp_path,
             "hu",
@@ -200,7 +199,7 @@ class TestATaroltMeret:
         )
         ctl.setPrintSize("M13X18CM")
         ctl.setPrintSize("M8X10")
-        assert ctl.printSize() == "M13X18CM"
+        assert ctl.printSize() == "M8X10"
 
 
 class TestAFeliratokAQMLben:
@@ -255,14 +254,11 @@ class TestAFeliratokAQMLben:
             "M13X18CM": "13 x 18 cm",
             "M15X20CM": "15 x 20 cm",
             "M20X25CM": "20 x 25 cm",
+            "CDSIZE": "CD Cover Size",
             "TELJES_OLDAL": "FullPage",
-            # `ytPrintSizes::ePassport` — csak az Útlevélkép állítja be (#1401)
+            # Az útlevélkép saját belépési útja az azonosítót is használja.
             "PASSPORT": "Passport",
-            # #3712: az Indexképek a méretlista tétele, nem külön kapcsoló —
-            # a `CONTACT` a QML-only azonosító (nincs `NyomatMeret` tagja).
-            # #3712-review: a felirat a HIVATALOS `ytPrintSizes::eContact`
-            # szöveg ("Contact Sheet", stringres 3491) — nem saját kisbetűs
-            # fogalmazás.
+            # A felirat eredeti; az indexkép-elrendezés külön út.
             "CONTACT": "Contact Sheet",
         }
         assert self._felirat_terkep() == vart

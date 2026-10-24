@@ -7,20 +7,15 @@ from __future__ import annotations
 
 from PySide6.QtCore import QObject
 
+from tests.app.qml_functional._helyfoglalo_minta import helyfoglalo_tetelek
 
-def _placeholder_items(window):
-    return [
-        item
-        for item in window.findChildren(QObject)
-        if bool(item.property("placeholder"))
-    ]
 
 
 class TestPlaceholderMenuItemek:
     """A `PicasaMenuItem`-mel jelölt helyfoglaló tételek."""
 
     def test_placeholder_pont_lathato(self, qml_app):
-        window, _controller, _engine = qml_app
+        window, _controller, engine = qml_app
         # ⚠️ #1616: a `menuFileNewAlbum` KIKERÜLT ebből a listából — az
         # „Új album…" azóta ÉLŐ menüpont (`Ctrl+N`-nel együtt). Ez a teszt
         # a JELÖLÉST méri, nem konkrét tételeket; ha egy példa bekötést kap,
@@ -29,7 +24,7 @@ class TestPlaceholderMenuItemek:
         # (a képek fájljait teszi a vágólapra, Ctrl+X-szel együtt).
         # Ugyanaz a menet, mint a #1616-nál: példát cserélünk, nem
         # jelölést teszünk vissza egy működő tételre.
-        placeholders = _placeholder_items(window)
+        placeholders = helyfoglalo_tetelek(window, engine)
         assert placeholders, "eltűntek a helyfoglalónak jelölt menütételek"
         for item in placeholders:
             assert item.property("placeholder") is True
@@ -42,8 +37,8 @@ class TestPlaceholderMenuItemek:
             assert dot is not None, item.objectName() or item.property("text")
 
     def test_placeholder_felirat_halvanyabb(self, qml_app):
-        window, _controller, _engine = qml_app
-        placeholders = _placeholder_items(window)
+        window, _controller, engine = qml_app
+        placeholders = helyfoglalo_tetelek(window, engine)
         assert placeholders, "eltűntek a helyfoglalónak jelölt menütételek"
         item = placeholders[0]
         content = item.property("contentItem")

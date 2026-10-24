@@ -2028,6 +2028,66 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         </message>
     </context>
     <context>
+        <name>CollectionPasswordDialog</name>
+        <message>
+            <source>Password Entry</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryTitle</extracomment>
+            <translation>비밀번호 입력</translation>
+        </message>
+        <message>
+            <source>Please enter a password to open this collection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryPrompt</extracomment>
+            <translation>이 컬렉션을 열려면 비밀번호를 입력하세요.</translation>
+        </message>
+        <message>
+            <source>Please enter a password to use for this collection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassEntryOpenPrompt</extracomment>
+            <translation>이 앨범의 비밀번호를 입력하세요.</translation>
+        </message>
+        <message>
+            <source>Please verify your password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassVerifyPrompt</extracomment>
+            <translation>비밀번호를 확인하세요.</translation>
+        </message>
+        <message>
+            <source>The passwords did not match.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::PassVerifyWrong</extracomment>
+            <translation>비밀번호가 일치하지 않습니다.</translation>
+        </message>
+        <message>
+            <source>Please provide a valid password</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>유효한 비밀번호를 입력하세요</translation>
+        </message>
+        <message>
+            <source>Stronger protection (Picasa cannot open it)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>더 강력한 보호 (Picasa에서 열 수 없음)</translation>
+        </message>
+        <message>
+            <source>&amp;Add/Change a password...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Collection::ID_COL_PASSWORD</extracomment>
+            <translation>비밀번호 추가/변경(&amp;A)...</translation>
+        </message>
+        <message>
+            <source>Remove the password</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>비밀번호 제거</translation>
+        </message>
+        <message>
+            <source>Open</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::openbutton</extracomment>
+            <translation>열기</translation>
+        </message>
+    </context>
+    <context>
         <name>FolderContextMenu</name>
         <message>
             <source>Move to Collection...</source>
@@ -8492,6 +8552,32 @@ It will change the next time PicasaPy is opened.</source>
 picasapy-origin-key: tooltips:Label(panelroot/makemovietab)</extracomment>
             <translation>동영상 만들기</translation>
         </message>
+        <message>
+            <source>Add Password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_TITLE</extracomment>
+            <translation>비밀번호 추가</translation>
+        </message>
+        <message>
+            <source>The "Hidden Folders" collection is not currently password protected.
+Would you like to add a password now?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_PROMPT_HIDDEN_PWD_MESSAGE</extracomment>
+            <translation>현재 "숨겨진 폴더"는 비밀번호로 보호되고 있지 않습니다.
+비밀번호를 설정하시겠습니까?</translation>
+        </message>
+        <message>
+            <source>Don't Add Password</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ThumbUI::HiddenPassword::NoButton</extracomment>
+            <translation>비밀번호 추가 안함</translation>
+        </message>
+        <message>
+            <source>Do not ask me again.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
+            <translation>앞으로 다시 묻지 않습니다.</translation>
+        </message>
     </context>
     <context>
         <name>MainToolbar</name>
@@ -9063,6 +9149,20 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:LinuxNomovie</extracomment>
             <translation>이 기능은 Linux에서 지원되지 않습니다.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Capturing frame...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog1</extracomment>
+            <translation>프레임 캡처 중...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Saving to Captured Videos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
+            <translation>캡처된 동영상에 저장</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />

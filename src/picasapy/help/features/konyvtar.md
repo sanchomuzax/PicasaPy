@@ -502,7 +502,8 @@ konfigurálása…** menüpont (lásd [Beállítások](beallitasok.md)).
 
 Ha egy képnek rossz a dátuma — például a gép órája rosszul volt beállítva
 —, javíthatod. Jelöld ki a képeket, majd **Eszközök ▸ Dátum és idő
-beállítása…**. A **Dátum módosítása – N fotó** ablakban látod az első
+beállítása…**. A **Fotó dátumának módosítása - N elem.** ablakban
+(egyetlen képnél csak **Fotó dátumának módosítása**) látod az első
 kép bélyegképét és a **Jelenlegi fotódátum**át, megadhatod az **Új
 fotódátum**ot (a dátumra kattintva naptár nyílik) és az **Új fotó
 időpontja**t. Két mód közül választasz:
@@ -513,7 +514,9 @@ időpontja**t. Két mód közül választasz:
 - **Minden fotó dátumának és idejének beállítása ugyanarra** — mindegyik
   kép ugyanazt a dátumot és időt kapja.
 
-Az **OK** menti a változtatást, ahogy az eredeti Picasa is: az új
+Az **OK** menti a változtatást. Amíg a képek dátuma íródik, egy kis
+**Fotók dátumának beállítása** ablak forgó jelzéssel mutatja, hogy a
+munka folyik; ha kész, magától eltűnik. Ahogy az eredeti Picasa is, az új
 felvételi dátumot **beleírja a képfájl EXIF-adataiba**. A fájl lemezen
 látható időbélyegeihez (például a módosítás idejéhez) **nem nyúl**: azok
 ugyanazok maradnak, mint előtte. A `.picasa.ini` fájlhoz sem nyúl. Ezután
