@@ -160,6 +160,7 @@ def _build_qml_app(
     from picasapy.app.folder_tree_controller import FolderTreeController
     from picasapy.app.import_source_controller import ImportSourceController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
+    from picasapy.app.color_palette import ColorPaletteProvider
     from picasapy.app.timeline_controller import TimelineController
     from picasapy.thumbs import ThumbnailCache
     from PySide6.QtCore import QSettings
@@ -257,6 +258,11 @@ def _build_qml_app(
     # tehát az őrök eddig megengedőbbek voltak a valóságnál.
     app_module._install_ui_font(qt_app)
     engine = QQmlApplicationEngine()
+    color_palette_provider = ColorPaletteProvider()
+    engine.addImageProvider("colorpalette", color_palette_provider)
+    engine.rootContext().setContextProperty(
+        "colorPalette", color_palette_provider
+    )
     # ⚠️ #1457: a QML-motor SZINKRON szolgáltatót kap. A termékkód
     # aszinkron marad; itt a pool-szálak és a válasz-objektumok csak a
     # #999-es összeomlás-osztályt hoznák be, haszon nélkül — ezek a

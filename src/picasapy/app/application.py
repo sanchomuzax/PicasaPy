@@ -65,6 +65,7 @@ from picasapy.scanner import (
 )
 from picasapy.thumbs import ThumbnailCache
 from picasapy.version import version_string
+from .color_palette import ColorPaletteProvider
 from .folder_cover_provider import FolderCoverProvider, borito_belyegkepe
 from .data_location import read_data_root, read_pending_root
 from . import display_photo_provider
@@ -1638,6 +1639,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     timeline.mark("a többi vezérlő létrehozása")
     engine = QQmlApplicationEngine()
 
+    color_palette_provider = ColorPaletteProvider()
+    engine.addImageProvider("colorpalette", color_palette_provider)
+    engine.rootContext().setContextProperty("colorPalette", color_palette_provider)
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)
     # #1640: a diavetítés teljes felbontású képe — a megjelenítési móddal
