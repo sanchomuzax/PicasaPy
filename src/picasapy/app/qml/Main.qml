@@ -2298,7 +2298,8 @@ ApplicationWindow {
         hasSavedBackup: controller
             ? (controller.savedBackupRevision,
                controller.hasSavedBackup(window.photoActionRows())) : false
-        // #4332: a dátummódosítás kizárólag az indexben tárolt felülírást írja.
+        // #4332: siker esetén a dátummódosítás az EXIF DateTimeOriginal
+        // mezőt írja; ha az EXIF-írás nem lehetséges, indexfelülírásra esik vissza.
         onAdjustTimestampRequested:
             createDialogs.ensure().openTimestamp(window.photoActionRows())
         onSaveRequested: saveDialogs.ensure().openSave(window.photoActionRows())

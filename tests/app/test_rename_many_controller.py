@@ -1,6 +1,8 @@
-"""AppController (PhotoOpsMixin): tömeges átnevezés (#366) —
-`renamePreview` (tiszta lekérdezés) és `renamePhotosMany` (a tényleges
-átnevezés, háttérszálon + resync)."""
+"""AppController (PhotoOpsMixin): tömeges átnevezés (#366) — a tényleges
+`renamePreview` célnevétől különálló, rögzített `renameSamplePreview` minta,
+és a háttérszálon + resync végzett `renamePhotosMany`."""
+
+import dataclasses
 
 import pytest
 from PySide6.QtCore import QLocale
@@ -84,9 +86,34 @@ class TestRenamePreview:
     def test_date_and_size_suffix(self, controller):
         rows = _rows_by_name(controller, "a.jpg", "b.jpg")
         preview = controller.renamePreview(rows, "nyaralas", True, True)
-        # dátum ÉS idő (nem csak az ISO-nap), majd a felbontás
         assert preview == f"nyaralas {_stamp(controller, 'a.jpg')} 800x600.jpg"
-        assert len(_stamp(controller, "a.jpg")) > len("2025-05-01")
+
+    def test_fixed_sample_ignores_selected_file_metadata(self, controller):
+        # rontás-kontroll: picasapy.app.photo_ops_controller.RENAME_SAMPLE_DATE = "" → 1 failed
+        photos = controller.photos.photos
+        controller.photos.set_photos((
+            dataclasses.replace(
+                photos[0],
+                name="a.webp",
+                taken_at="2031-11-12T13:14:15",
+                width=4032,
+                height=3024,
+            ),
+        ) + photos[1:])
+
+        rows = [0]
+        assert controller.renameSamplePreview(rows, "  nyaralas  ", False, False) == (
+            "nyaralas.jpg"
+        )
+        assert controller.renameSamplePreview(rows, "nyaralas", True, False) == (
+            "nyaralas 08-01-2004 2-30-45 PM.jpg"
+        )
+        assert controller.renameSamplePreview(rows, "nyaralas", False, True) == (
+            "nyaralas 640x480.jpg"
+        )
+        assert controller.renameSamplePreview(rows, "nyaralas", True, True) == (
+            "nyaralas 08-01-2004 2-30-45 PM 640x480.jpg"
+        )
 
     def test_flags_default_off_and_persist(self, controller):
         assert controller.renameUseDate() is False

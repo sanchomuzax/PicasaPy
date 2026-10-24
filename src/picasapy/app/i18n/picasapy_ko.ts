@@ -17976,10 +17976,31 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
             <translation>일</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="20" />
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="23" />
             <source>Adjust Photo Date - %1 items</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>사진 날짜 조정 - 항목 %1개</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="24" />
+            <source>Adjust Photo Date</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: offsettime:offsettime/window1.title</extracomment>
+            <translation>사진 날짜 조정</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="99" />
+            <source>Setting photo dates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AdjustTimeThread::SettingDates</extracomment>
+            <translation>사진 날짜 설정 중</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="115" />
+            <source>Setting image time</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AdjustTime:Progress</extracomment>
+            <translation>이미지 시간 설정 중</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="101" />
