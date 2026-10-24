@@ -120,13 +120,28 @@ ApplicationWindow {
             s[selectedIndexes[k]] = true
         selectedSet = s
     }
-    property bool viewerOpen: false
+    readonly property bool quickViewerLaunch:
+        controller ? controller.quickViewActive === true : false
+    property bool viewerOpen: quickViewerLaunch
     // #4656: a néző saját megjelenítési módot kap, bezáráskor visszaáll az
     // előző ablakállapot. A valódi megnyitás külön belépőn fut át, így a
     // közvetlen állapotbeállítások (például a QML-próbapadban) nem váltanak módot.
     property int visibilityBeforeViewer: Window.Windowed
     property bool viewerVisibilityManaged: false
     onViewerOpenChanged: {
+        // A gyorsnézet a könyvtár beolvasása előtt indul. Bezáráskor
+        // takarítsuk el az ideiglenes listát, és csak ekkor kérjük a rendes
+        // könyvtár betöltését.
+        if (!window.viewerOpen && window.quickViewerLaunch) {
+            controller.returnToLibraryFromQuickView()
+            Qt.callLater(function() {
+                initialScanDialog.openIfNeeded()
+                collageDraftDialog.openIfNeeded()
+                if (typeof discoveryController !== "undefined"
+                        && discoveryController)
+                    discoveryController.discoverAtStartup()
+            })
+        }
         if (!window.viewerOpen && window.viewerVisibilityManaged) {
             window.visibility = window.visibilityBeforeViewer
             window.viewerVisibilityManaged = false
@@ -217,6 +232,22 @@ ApplicationWindow {
             window.viewerOpen = true
         }
         photoViewer.show(row)
+    }
+
+    // A közvetlen fájlargumentumos indulás ugyanazt a viewer-ablakmódot
+    // használja, mint a Photo Viewer beállítása. Külön függvényben van, hogy
+    // a rendes Component.onCompleted út és a QML-funkcióteszt is ezt hívja.
+    function startQuickViewer() {
+        if (!window.quickViewerLaunch) return
+        window.visibilityBeforeViewer = window.visibility
+        var fullscreenStartup = controller
+            && controller.viewerFullscreenStartup !== undefined
+            ? controller.viewerFullscreenStartup : true
+        window.visibility = fullscreenStartup
+            ? Window.FullScreen : Window.Windowed
+        window.viewerVisibilityManaged = true
+        window.viewerOpen = true
+        photoViewer.show(0)
     }
 
     function nezdEsSzerkeszd() {
@@ -2044,7 +2075,8 @@ ApplicationWindow {
         searchOptionsOpen: toolbar.searchOptionsOpen
         //: #2987: a vetítés alatt a menüsáv is eltűnik — enélkül a
         //: contentItem nem kapja meg a teljes ablakot.
-        visible: !window.slideshowRunning && !window.timelineOpen
+        visible: !window.quickViewerLaunch
+                 && !window.slideshowRunning && !window.timelineOpen
         // #1619: a rács `Ctrl+Delete`-je is ezen a példányon át ágazik el
         id: picasaMenuBar
         //: #671: a Fájl ▸ Kilépés a KÖZÖS úton fut — ott dől el, kérdez-e
@@ -2967,6 +2999,10 @@ ApplicationWindow {
         if (controller) controller.setThumbCellSize(window.thumbSize)
         //: #3070: a megjelenítési mód kezdőállapota a felület színein
         window.frissitsdAMegjelenitesiPalettat()
+        if (window.quickViewerLaunch) {
+            window.startQuickViewer()
+            return
+        }
         initialScanDialog.openIfNeeded()
         // #1051: ha az előző munkamenet piszkozatot hagyott, most kell
         // felajánlani — enélkül a lemezen ragad, ahogy a tulajdonosé is
@@ -2984,6 +3020,7 @@ ApplicationWindow {
     // Eszköztár: Importálás | (szűrők középen) | kereső jobbra
     header: MainToolbar {
         id: toolbar
+        objectName: "mainToolbar"
         // #741/4: a nézőben (és így a szerkesztőben) NINCS alkalmazás-szintű
         // eszköztár. A binárisban a szerkesztő felső 40 képpontos sávjában
         // egyetlen elem van, az `editpanel/albumview` („Vissza a
@@ -3216,6 +3253,14 @@ ApplicationWindow {
             controller.showPerson(name)
         }
         onPlayRequested: window.startSlideshow(currentIndex)
+        onStarRequested: function(row) {
+            if (controller) controller.toggleStar(row)
+        }
+        onRotateRequested: function(row, delta) {
+            if (!controller) return
+            if (delta < 0) controller.rotateLeft(row)
+            else controller.rotateRight(row)
+        }
         // #1002: a néző csak JELEZ — a panel feltöltése és a lapváltás
         // a gazdáé, ugyanúgy, ahogy a `CollagePanel` jelzéseinél.
         onEditCollageRequested: function(path) {
@@ -3227,7 +3272,10 @@ ApplicationWindow {
             window.openSavedMovie(path)
         }
         onClosed: {
+            var quickViewWasActive = controller
+                && controller.quickViewActive === true
             window.viewerOpen = false
+            if (quickViewWasActive) return
             window.selectedIndex = currentIndex   // a rács kövesse a nézőt
             window.selectedIndexes = [currentIndex]
             // a szerkesztések (filters=) azonnal látsszanak a rácson —
@@ -4677,7 +4725,7 @@ ApplicationWindow {
         // gyereke (`thumbui/bottombevel_base` + `outputlayout.tre`), tehát a
         // projekt-lapon a panellel együtt tűnik el — a felszabaduló sávot a
         // vászon kapja meg.
-        visible: window.libraryFrameVisible
+        visible: window.libraryFrameVisible && !window.quickViewerLaunch
         appWindow: window
         onPhotosDroppedOnTray: function(rows) {
             if (controller && rows && rows.length > 0)
