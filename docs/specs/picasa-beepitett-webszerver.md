@@ -17,25 +17,67 @@ a `0x004c0000`–`0x004cf000` tartományban él.
 
 | beállítás (`Preferences\…`) | mit tesz | cím |
 |---|---|---|
-| `AllowRemoteWeb` | ha **nincs** bekapcsolva, a kiszolgáló **csak localhostot** szolgál ki: `„Not allowed, this server supports localhost only."` | `0x004cbc60` |
-| `LANShareAlbums` | mely albumok látszanak a hálózaton | `0x004ca0c0`, `0x004ca5a0`, `0x004c3ce0` |
-| `LANPassword` | a HTTP Basic jelszó; a **felhasználónév fixen `picasaserver`** | `0x004cce10` |
-| `DAVSupport` | a WebDAV-igék (`OPTIONS`, `PROPFIND`) engedélyezése | `0x004cbc60` |
+| `AllowRemoteWeb` | a párbeszéd megosztáskapcsolója és portértéke: `0` = csak helyi elérés, `-1` = hálózati megosztás automatikus porttal, pozitív szám = hálózati megosztás egyedi porttal | `0x007e55c0`, `0x007e5730`, `0x007e58d0`, `0x004cbc60`, `0x00a5b490` |
+| `LANShareAlbums` | `0` = csak a felhasználó által megadott albumok; `1` = az összes létrehozott album és a külön megadott mappák | `0x007e55c0`, `0x007e5730`, `0x004ca0c0`, `0x004ca5a0`, `0x004c3ce0` |
+| `LANPassword` | nem üres értéknél HTTP Basic-jelszó; a **felhasználónév fixen `picasaserver`** | `0x004cce10`, `0x007e55c0`, `0x007e5730` |
+| `DAVSupport` | a WebDAV-igék (`OPTIONS`, `PROPFIND`) engedélyezése; hiányzó kulcsnál a kéréskezelő `0`-t használ | `0x004cbc60` |
 | `EnableTester` | a `/tester` hibakereső terület engedélyezése (`POST /tester` is ide tartozik) | `0x004cbc60`, `0x004cc300` |
 | `UIProfiling` (bitmaszk, `0x1`) | a `/uidebug` lap rajzolási időmérése; a lap ki is írja: `„Enable UIProfiling=0x1 (pref) for UI profile."` | `0x004c8270`, `0x009dd800` |
 
-**Hitelesítés:** hiányzó vagy rossz jelszónál `Unauthorized` +
-`WWW-Authenticate: Basic realm="Picasa"` és a `„Please provide a valid
-password"` törzs (`0x004cbc60`).
+### A „Network sharing options” párbeszéd (PE `RT_DIALOG` #300)
+
+A #470 a kapcsolódó jegy száma, nem a párbeszéd PE-erőforrás-azonosítója: a
+`Picasa3.exe` erőforrásfájában a párbeszéd azonosítója **300**, címe
+„Network sharing options”. A bevezető szöveg szerint más, hálózaton futó
+Picasa-telepítések kapcsolatba léphetnek ezzel a géppel, és a felhasználónak
+kell megadnia, mely albumok érhetők el.
+
+| Vezérlő | Erőforrás-azonosító | Tárolás / működés |
+|---|---:|---|
+| Jelölőnégyzet: Enable Picasa Sharing | `1014` | `AllowRemoteWeb`; kikapcsolva `0`, bekapcsolva alap porttal `-1` |
+| Jelölőnégyzet: Enable Network Backup and Sync with this password: | `1269` | A jelölőállapot a `LANPassword` nem üres voltából következik |
+| Jelszómező | `1155` | `LANPassword`; üres értéknél a kéréskezelő kihagyja a jelszó-összehasonlítást |
+| Rádiógomb: Share only what I say | `1267` | `LANShareAlbums=0`; megosztás bekapcsolásakor ez az alapértelmezett mód |
+| Rádiógomb: Share all the albums I've created, and any folders I specify | `1268` | `LANShareAlbums=1` |
+| Jelölőnégyzet: Use a custom port: | `1265` | Bekapcsolva az alatta levő pozitív szám kerül az `AllowRemoteWeb` kulcsba |
+| Portmező | `1264` | Alapból üres; a párbeszéd egész számként olvassa; `0` vagy negatív érték nem lesz egyedi port |
+| Gomb: Open in Web Browser | `3` | Műveletgomb, nem beállításkulcs |
+| Gomb: OK / Cancel | `1` / `2` | Mentés / elvetés |
+
+Az erőforrásban még szerepel a „Default Permissions” csoport, benne a „For
+anybody on my network (with no password):” felirattal, valamint a „Technical
+details” csoport. A jelszó alapértéke üres (`0x00c7f979` üres sztring); a
+`LANShareAlbums` alapértéke `0`. A párbeszéd beolvasója (`0x007e55c0`) az
+`AllowRemoteWeb` hiányakor `0`-t használ, ezért a megosztás alapból ki van
+kapcsolva; bekapcsolás után az automatikus port az alapértelmezés, az
+`LANShareAlbums=0` pedig a „Share only what I say” módot jelöli. A kéréskezelő
+`AllowRemoteWeb`-olvasásának hiányzó kulcsra adott fallbackje `1`, de a
+szerverindító `0`-t használ és a helyi címen hagyja a figyelőt; a két kódelérési
+út eltérő fallbackje nem jelent külső hálózati elérést. A `DAVSupport` nem
+külön vezérlője ennek a párbeszédnek.
+
+**Hitelesítés:** nem üres `LANPassword` esetén a hiányzó vagy rossz jelszó
+`Unauthorized` választ ad `WWW-Authenticate: Basic realm="Picasa"` fejléccel
+és a `„Please provide a valid password"` törzzsel (`0x004cbc60`). Az üres
+jelszó a kéréskezelőben kihagyja az összehasonlítást (`0x004cce10`). A
+felhasználónév `picasaserver`; a megfigyelt URL-sablonok `http://`-t
+használnak, a Basic hitelesítés önmagában nem titkosítja a jelszót.
 
 **Két terület (realm):** `/public` és `/tester` (`0x004cc300`). Az URL-alak
 mindenütt `http://localhost:<port>/<terület>/…` (`0x004cd010`, `0x0073bd40`,
 `0x00533de0`).
 
-> **A port NINCS MÉRVE.** A címsablonokban `%d` áll, és a `ws2_32` hívások a
-> binárisban **ordinál szerint** importálódnak, ezért az index nem adja meg a
-> `bind` helyét. Amit tudunk: a **WebDAV-ág a 80-as portot igényli** — ha
-> foglalt, a Picasa a `CThumbUI::DAVFail` üzenetet adja:
+> **Nincs rögzített alapport; van egyedi portmező.** Az automatikus hálózati
+> megosztás az `AllowRemoteWeb=-1` értéket menti; a `0x00a5b490` ezt
+> `0` porttá alakítja, és a `0x00a5b180` `bind(0)`-ja a Windowstól kér
+> szabad efemer portot. Pozitív `AllowRemoteWeb` esetén ugyanez az érték a
+> port; a beállító ág a hálózati címmezőt `0.0.0.0`-ra állítja. A `0` érték
+> a helyi-only ágat hagyja meg. Ha egy pozitív port foglalt, a `0x00a5b180`
+> nullázza és automatikus porttal próbálkozik újra. A `ws2_32` hívások
+> ordinál szerint importálódnak, ezért az index önmagában nem azonosította a
+> `bind`-et; az utasításszintű olvasás és a párbeszéd kódja együtt oldotta fel.
+> A WebDAV-hoz kapcsolódó 80-as portütközésről a Picasa a `CThumbUI::DAVFail`
+> üzenetet adja:
 > *„This computer has another service running on port 80. Sorry, but this
 > feature won't work."* (`0x005cb990`), és a megosztás Windowsból
 > **`\\localhost\picasa`** alakban érhető el (ugyanott).
@@ -172,20 +214,28 @@ megerősítő kérdés.
 
 ## 6. Bizonyítottsági fok és ami NINCS MEG
 
-**Megerősített:** a beállítás-kulcsok és a hozzájuk tartozó viselkedés, a
-végpontlista, a WebDAV-válaszok elemei, a hirdetési rekord mezői, a
-`text/plain` mezőlisták, a `picasa://` séma műveletei — mind kiolvasott
-sztringek a megnevezett függvényekben.
+**Megerősített:** a dialog vezérlői és tárolási kulcsai, a `AllowRemoteWeb`
+0 / -1 / pozitív portértékének útja a beállítástól a socketig, a
+`LANShareAlbums` két rádiógombjának magas szintű tartalmi jelentése, a
+hitelesítés, a végpontlista, a WebDAV-válaszok elemei, a hirdetési rekord
+mezői, a `text/plain` mezőlisták és a `picasa://` séma műveletei. A párbeszéd
+és a szerverindítás külön kódelérési útja egymástól függetlenül igazolja a
+port beállítását.
 
 **NINCS MEG:**
 
-- **a hallgatózó port száma** (a sablonokban `%d`; a `ws2_32` ordinál szerint
-  importálódik, ezért az index nem adja meg a `bind` helyét). A 80-as port
-  csak a **WebDAV**-ághoz kötött, mérve (`0x005cb990`).
-  **HATÓKÖRÖN KÍVÜL** — a PicasaPy nem épít hallgatózó kiszolgálót
-  (ld. **#2023**), így a szám semmilyen döntést nem befolyásol.
+- a „Share only what I say” albumlistájának rekord-szintű feltétele: a
+  `0x004ca0c0`, `0x004ca5a0` és `0x004c3ce0` olvassa a `LANShareAlbums`
+  értékét, de a `[rekord+0x3c]`, `0x004bd920` és `0x004aca00` pontos
+  album-engedélyezési jelentése Ghidra-dekompilációt igényel. A módok
+  felirata és a kulcsérték-hozzárendelés ettől függetlenül olvasható.
+- az egyedi port mező felső határa és érvénytelen beviteli értékeinek teljes
+  felhasználói visszajelzése; a beolvasó pozitív egész értéket használ, a
+  socket pedig 16 bites portmezőt kap.
 - **az egyes végpontok pontos válasz-sémája** a fenti kettőn túl. Ugyanezért
   hatókörön kívül.
+
+`Ghidra-kör kell: 0x004ca5a0 - a LANShareAlbums=0 és =1 mellett mely albumrekordok engedélyezettek, és mit jelentenek a [rekord+0x3c], 0x004bd920 és 0x004aca00 feltételei?`
 
 ## 7. Mit visz ebből a PicasaPy
 
