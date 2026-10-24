@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.210] - 2026-10-24
+
+- A Nyomtatás párbeszédben választható a Normál és Optimalizált mód (#5684).
+
 ## [0.9.209] - 2026-10-24
 
 - A Címkék panel helyi menüje az eredeti sorrendben kínálja a címke eltávolítását, keresését és kijelöléshez adását. (#5755).
