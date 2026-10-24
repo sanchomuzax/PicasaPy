@@ -34,10 +34,12 @@ készül — azt látod, amit a nézőben is.
 A megnyíló nyomtatási párbeszéd három dologban tér el a szokásostól:
 
 - a **Nyomatméret** mezőben **Útlevél** áll: 2 × 2 hüvelykes, azaz
-  körülbelül 5 × 5 cm-es nyomat. Ez a méret **nincs benne** a kész
-  méretek listájában — csak ez a parancs állítja be;
+  körülbelül 5 × 5 cm-es nyomat. Az **Útlevél** a nyomatméretek
+  listájában is ott van, de ha ott választod, a program a képet nem
+  vágja arcra: arcra vágott képet csak ez a parancs ad;
 - az **Illesztés a laphoz** **Lapkitöltés (vágással)**;
-- a **Példány képenként** egy.
+- a **Példány képenként** annyi marad, amennyit a párbeszédben épp
+  beállítottál; új nyomtatásnál ez egy.
 
 Egy lapra annyi útlevélkép kerül, amennyi elfér — a nyomatok rácsba
 rendeződnek, ahogy a többi méretnél is.

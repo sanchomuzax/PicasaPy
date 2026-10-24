@@ -158,10 +158,9 @@ Item {
         }
     }
 
-    // #366: tömeges átnevezés — `rename.fen` teljes paritás (alapnév +
-    // dátum-/felbontás-utótag jelölőnégyzetek + élő "Example:" előnézet,
-    // a kijelölés ELSŐ fájlján). A sorszámozás (`név`, `név-1`, `név-2`…)
-    // az elfogadáskor a backendben (`controller.renamePhotosMany`) történik.
+    // #366: tömeges átnevezés — alapnév + dátum-/felbontás-jelölők. A
+    // `rename.fen` Example sora rögzített mintákat mutat (#5702); az elfogadás
+    // továbbra is a tényleges fájladatokból képzi a célnevet.
     Dialog {
         id: renameManyDialog
         objectName: "renameManyDialog"
@@ -192,11 +191,11 @@ Item {
             open()
             renameManyField.forceActiveFocus()
         }
-        // élő előnézet: a kijelölés első fájljának végleges neve, ahogy a
-        // rename.fen "Example:" felirata is csak az elsőt mutatja
+        // A `rename.fen` Example sora a név és a jelölők alapján frissül,
+        // de a dátum-/méretminta és a .jpg kiterjesztés rögzített (#5702).
         function updatePreview() {
             renameManyDialog.previewText = (controller && rows.length > 0)
-                ? controller.renamePreview(
+                ? controller.renameSamplePreview(
                       rows, renameManyField.text,
                       includeDateCheck.checked, includeSizeCheck.checked)
                 : ""
@@ -211,7 +210,10 @@ Item {
             var base = renameManyField.text.trim()
             if (base.length > 0 && controller) {
                 if (rows.length === 1 && appWindow)
-                    appWindow.prepareRenameSelection(rows[0], previewText)
+                    appWindow.prepareRenameSelection(rows[0],
+                        controller.renamePreview(
+                            rows, base, includeDateCheck.checked,
+                            includeSizeCheck.checked))
                 controller.renamePhotosMany(
                     rows, base, includeDateCheck.checked, includeSizeCheck.checked)
             }

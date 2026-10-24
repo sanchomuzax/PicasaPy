@@ -9092,6 +9092,20 @@ picasapy-origin-key: stringres:LinuxNomovie</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Capturing frame...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog1</extracomment>
+            <translation>Se capturează cadrul...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <source>Saving to Captured Videos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
+            <translation>Se salvează în Videoclipuri capturate</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
             <source>Saved %1 to Captured Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>S-a salvat %1 în albumul Videoclipuri capturate</translation>
@@ -17989,10 +18003,31 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
             <translation>Dum</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="20" />
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="23" />
             <source>Adjust Photo Date - %1 items</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ajustaţi data fotografiei — %1 elemente</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="24" />
+            <source>Adjust Photo Date</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: offsettime:offsettime/window1.title</extracomment>
+            <translation>Reglaţi data fotografiei</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="99" />
+            <source>Setting photo dates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AdjustTimeThread::SettingDates</extracomment>
+            <translation>Se setează datele pentru fotografii</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="115" />
+            <source>Setting image time</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AdjustTime:Progress</extracomment>
+            <translation>Se setează ora fotografiei</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/AdjustTimestampDialog.qml" line="101" />
