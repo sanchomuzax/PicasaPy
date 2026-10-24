@@ -812,3 +812,38 @@ ellenőrzés ugyanazt a lépést jelöli. A job-229/230 konkrét láncok ΔE-jé
 pixelenkénti felbontása viszont nyitott, mert a `k02`/`k03` forrás- és
 közbenső képei nincsenek meg a helyi mérőcsomagban. Ez nem módosítja a két
 eltérő natív lépés azonosítását.
+
+## Futás közbeni összevetés (#5396, 1. kör)
+
+Hatókör: a job-231 tálca-csillag és forgatás, valamint a job-242 Tags panelen
+felvett JPEG-címke. Az eredeti oldali képernyőképek és `.picasa.ini`-kimenetek
+megmaradtak. A PicasaPy-futásmérést ebben a menetben nem lehetett elindítani:
+`systemd-run --user --scope` a helyi user buszhoz „Operation not permitted”
+hibával tért vissza. Ezért a „Nálunk” oszlop kódút, nem új futásmérés; az
+alább hivatkozott QML-teszt nem futott le ebben a körben.
+
+| Művelet | Eredeti | Nálunk | Eltérés | Bizonyíték |
+|---|---|---|---|---|
+| Csillag be, a 4. képen | A képernyőn a kijelölt képen sárga csillagjel látszik; a bal oldali „Starred Photos” darabszáma `1`. Az ini-sor: `[_03c62d34-6e84-4b2c-aa2b-e25c54f24d08.jpg]` / `star=yes`. | Kódút: `toggleStar` a `star=yes` értéket adja a fájlnév-szekcióhoz; a tényleges PicasaPy-kimenet ebben a körben nincs megmérve. | A rögzített végállapot és a kódút azonos `star=yes` értéket ír elő; futás közbeni PicasaPy-egyezés nincs igazolva. | `mérés: .bt/job-231/kepernyo__08.png`, `.bt/job-231/picasa.ini:1-2`; `src/picasapy/app/photo_ops_controller.py:492-522`; író: `src/picasapy/ini/io.py:273-337`. |
+| Csillag be, majd ki a 7. képen | A `kepernyo__12.png` állapotban a csillag be van kapcsolva; a `kepernyo__14.png` állapotban ki. A végső ini-szekció `[_026e89d3-687c-4dda-ba6b-4f0856ada9ec.jpg]` üres, `star=` sor nincs. | Kódút: ugyanaz a kapcsoló előbb `star=yes`-t ír, majd eltávolítja a kulcsot az üres szekció megőrzésével; a tényleges futás nincs megmérve. | A végső tárolási alak egyezik a rögzített üres szekcióval; a köztes és végső PicasaPy-képernyő nincs felvéve. | `mérés: .bt/job-231/kepernyo__12.png`, `kepernyo__14.png`, `picasa.ini:3`; `src/picasapy/app/photo_ops_controller.py:492-518`; a várt kattintásos út: `tests/app/qml_functional/test_talca_csillag_forgatas_paritas_5396.py:166-245` (nem futott). |
+| Forgatás jobbra, az 5. képen | A `kepernyo__18.png` képen a kijelölt kép elfordult. Az ini-sorok: `[_4d33a83b-d0bd-43dd-89a3-a5c1fc190aa4.jpg]`, `rotate=rotate(1)`, `backuphash=62465`. | Kódút: a jobbra forgatás `rotate=rotate(1)`-et ír. A kódban nincs `backuphash`-író; a tényleges ini-kimenet nincs megmérve. | A post-state-ben az eredetinél szerepel a `backuphash`, a PicasaPy forgatási útja nem állítja elő. A job előtti ini hiányában nem bizonyítható, hogy ezt az értéket ez a kattintás hozta-e létre; a hash-eltérés ezért feltételes. | `mérés: .bt/job-231/kepernyo__18.png`, `picasa.ini:4-6`; `src/picasapy/app/photo_ops_controller.py:1714-1767`; `src/picasapy/ini/legacy_crop.py:119-138`; a `backuphash` íráskori, OLE-dátumból képzett alakja: [`picasa-ini-format.md`](picasa-ini-format.md) § „A `backuphash`”, bináris `0x00454770` → `0x0098b6e0` → `0x0098b550`. |
+| Forgatás balra, a 6. képen | A `kepernyo__22.png` képen a kijelölt kép elfordult. Az ini-sorok: `[_6fead84b-daf0-45ba-8d0b-cae6e47862d1.jpg]`, `rotate=rotate(3)`, `backuphash=27964`. | Kódút: a balra forgatás `rotate=rotate(3)`-at ír. A kódban nincs `backuphash`-író; a tényleges ini-kimenet nincs megmérve. | A post-state-ben az eredetinél szerepel a `backuphash`, a PicasaPy forgatási útja nem állítja elő. A job előtti ini hiányában a létrejötte ennél a műveletnél sem bizonyítható. | `mérés: .bt/job-231/kepernyo__22.png`, `picasa.ini:7-9`; `src/picasapy/app/photo_ops_controller.py:1718-1767`; `src/picasapy/ini/legacy_crop.py:119-138`; bináris forrás és jelentés: [`picasa-ini-format.md`](picasa-ini-format.md) § „A `backuphash`”. |
+| `proba` címke hozzáadása JPEG-hez | A `kepernyo__12.png` Tags paneljén a `proba` az `AI image` fölött látszik, a Quick Tags első gombja `proba`, az állapotsor `155 KB`-ot mutat. A rögzített ini-szakasz: `[_4d33a83b-d0bd-43dd-89a3-a5c1fc190aa4.jpg]` / `backuphash=33706`; `keywords=` nincs. | Kódút: a `TagsPanel` → `addTagToRows` → `addKeywordToRows` JPEG-nél az IPTC Keywords `(2:25)` íróját hívja; csak sikertelen IPTC-írásnál tesz `keywords=` sort az ini-be. A kód nem ír `backuphash`-t. Runtime-mérés nincs. | Az eredeti végállapotban `backuphash` van, a mai sikeres JPEG-írási kódút nem állít ilyet elő. A job előtti ini hiányzik, a JPEG nincs a kiadásban, ezért az ini-sor eredete és az eredeti IPTC-mező bájtjai nem ellenőrizhetők. | `mérés: .bt/job-242/kepernyo__12.png`, `picasa.ini:1-2`, `.bt/5396-megfigyelesek.md:1`; `src/picasapy/app/qml/Main.qml:4043-4077`; `src/picasapy/app/keywords_controller.py:177-231`; `src/picasapy/metadata/iptc_writer.py:48-58`; a JPEG hiányzik a `.bt/job-242` kimenetéből. |
+
+**További PicasaPy-fájlhatások, amelyekre nincs párosított eredeti mérés.** A
+csillag- és forgatásírás `update_document(..., backup=True)` útja meglévő ini
+mellett `.picasa.ini.bak` másolatot készít; a fotófájl módosítási idejét csak a
+`PICASAPY_TOUCH_PHOTO_MTIME=1` kapcsolóval érinti, alapállapotban nem. Sikeres
+JPEG-IPTC íráskor a kulcsszóíró magát a JPEG-et módosítja, és nem ír `keywords=`
+sort az ini-be; ini-fallback csak sikertelen IPTC-íráskor történik. A jobok
+kimenetjegyzéke nem tartalmaz teljes mappaképet vagy JPEG-et, ezért az eredeti
+`.bak`- és fájl-időbélyeg-mellékhatások, illetve a JPEG bájtszintű változása
+`NINCS MEG`.
+
+**Nyitva marad.** A két Colab-job előtti `.picasa.ini` nincs a csomagban, ezért a
+`backuphash` sorok művelethez rendelése nem bizonyított. A job-242 JPEG-je sem
+került kiadásra: az eredeti IPTC `Keywords (2:25)` mezőjének pontos értéke és
+bájtkülönbsége `NINCS MEG`. PicasaPy-oldalon sem készült új futásmérés; a
+`test_talca_csillag_forgatas_paritas_5396.py` valódi kattintásos próbája a
+forgatási/ini-értékeket ellenőrzi, de a jelen futtatókörnyezet a szükséges
+memóriakorlátos user systemd scope-ot nem engedte elindítani.
