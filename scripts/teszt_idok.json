@@ -1358,6 +1358,7 @@
  "tests/index/test_album_collage_1168.py": 1.03,
  "tests/index/test_album_index.py": 1.86,
  "tests/index/test_album_sort_4599.py": 0.73,
+ "tests/index/test_album_sort_5718.py": 0.49,
  "tests/index/test_arcdetektalas_lefutott_2519.py": 1.96,
  "tests/index/test_arcos_kepek_szuro_1830.py": 0.72,
  "tests/index/test_befagyasztott_fajlido_2486.py": 5.98,
