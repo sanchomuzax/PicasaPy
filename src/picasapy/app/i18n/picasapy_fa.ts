@@ -13386,22 +13386,22 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEW_THUMBNAILS;stringres:eMenuView
     <context>
         <name>TagContextMenu</name>
         <message>
-            <source>Add this tag to entire selection</source>
+            <source>Remove this tag</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Tags::ID_APPLYTHISTAGTOSELECTION</extracomment>
-            <translation>افزودن این نشان به کل انتخاب</translation>
+picasapy-origin-key: stringres:Tags::ID_REMOVETHISTAG</extracomment>
+            <translation>حذف این نشان</translation>
         </message>
         <message>
-            <source>Find Items Tagged This Way</source>
+            <source>Search for items with this tag</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Tags::ID_FINDALLPICTURESWITHTHISTAG</extracomment>
             <translation>جستجوی موارد دارای این نشان</translation>
         </message>
         <message>
-            <source>Remove Tag</source>
+            <source>Add this tag to entire selection</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Tags::ID_REMOVETHISTAG</extracomment>
-            <translation>حذف این نشان</translation>
+picasapy-origin-key: stringres:Tags::ID_APPLYTHISTAGTOSELECTION</extracomment>
+            <translation>افزودن این نشان به کل انتخاب</translation>
         </message>
     </context>
     <context>

@@ -13385,22 +13385,22 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEW_THUMBNAILS;stringres:eMenuView
     <context>
         <name>TagContextMenu</name>
         <message>
+            <source>Remove this tag</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Tags::ID_REMOVETHISTAG</extracomment>
+            <translation>Remove this tag</translation>
+        </message>
+        <message>
+            <source>Search for items with this tag</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Tags::ID_FINDALLPICTURESWITHTHISTAG</extracomment>
+            <translation>Search for items with this tag</translation>
+        </message>
+        <message>
             <source>Add this tag to entire selection</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Tags::ID_APPLYTHISTAGTOSELECTION</extracomment>
             <translation>Add this tag to entire selection</translation>
-        </message>
-        <message>
-            <source>Find Items Tagged This Way</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Tags::ID_FINDALLPICTURESWITHTHISTAG</extracomment>
-            <translation>Find Items Tagged This Way</translation>
-        </message>
-        <message>
-            <source>Remove Tag</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Tags::ID_REMOVETHISTAG</extracomment>
-            <translation>Remove Tag</translation>
         </message>
     </context>
     <context>
