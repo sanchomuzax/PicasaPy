@@ -4043,7 +4043,7 @@ ApplicationWindow {
             window.addTagToRows(window.selectedRows(), keyword)
         }
         onFindTaggedRequested: function(keyword) {
-            if (controller) controller.search(keyword)
+            if (controller) toolbar.keresesSzoveggel(keyword)
         }
     }
 

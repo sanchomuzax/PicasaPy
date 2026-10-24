@@ -316,6 +316,37 @@ class PrintController(QObject):
     def setPrintProxyPreview(self, enabled: bool) -> None:  # noqa: N802
         self._settings.setValue("printing/proxyPreview", bool(enabled))
 
+    @Slot(result=bool)
+    def printerOptimized(self) -> bool:  # noqa: N802
+        """A párbeszéd eredeti optimalizált módját olvassa vissza.
+
+        A nyers pár külön kulcsot kap a PicasaPy saját `printerQuality`
+        2/3-as előnézet-felbontási beállításától. Az eredeti állapotvizsgáló
+        szerint az Optimalizált mód feltétele: `PrinterQuality != 1001` és
+        `PrinterUseTiles != 0`.
+        """
+        try:
+            quality = int(self._settings.value("printing/jobPrinterQuality", 2))
+        except (TypeError, ValueError):
+            quality = 2
+        try:
+            use_tiles = int(
+                self._settings.value("printing/jobPrinterUseTiles", 0)
+            )
+        except (TypeError, ValueError):
+            use_tiles = 0
+        return quality != 1001 and use_tiles != 0
+
+    @Slot(bool)
+    def setPrinterOptimized(self, optimized: bool) -> None:  # noqa: N802
+        """Az eredeti Picasa nyers `PrinterQuality`/`PrinterUseTiles` párját menti."""
+        self._settings.setValue(
+            "printing/jobPrinterQuality", 1 if optimized else 2
+        )
+        self._settings.setValue(
+            "printing/jobPrinterUseTiles", 1 if optimized else 0
+        )
+
     @Slot(result=int)
     def printerQuality(self) -> int:  # noqa: N802
         """Az eredeti `PrinterQuality` módja: 2 = kompatibilis, 3 = kiváló."""
