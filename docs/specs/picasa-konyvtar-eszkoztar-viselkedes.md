@@ -48,36 +48,56 @@ felület minden `thumbui/<név>` kattintását ide vezeti; innen ágazik el az
 
 ## 2. `newalbum` — Új album
 
-- **Kezelő:** `0x005eb810` (245 bájt).
-- **Mit csinál** (⚠️ a 302. kör három ponton HELYESBÍTETTE ezt a listát —
-  a levezetés a 6. szakaszban):
-  1. Felépít egy `"Labels"` sztringet (`0x00c7ec5c` a literál, a `mov eax,6`
-     a **hossza**, nem index), és ezzel kérdezi le a `[doc+0x2bc]`
-     kategória-nyilvántartást (`0x00452a30`) — a Picasában az albumok
-     belső neve „label".
-  2. A `0x0055cf70` **konstruktor** felépít egy album-leírót, és a nevét a
-     `IDS_DEFAULT_ALBUM_NAME` **szöveg-erőforrásból** tölti
-     (`0x0055cfb2 push 0x8a` = 138-as azonosító, `0x0055cfbf call
-     0x009ae710`) ⇒ a jelölt név **„Untitled" / „Névtelen"**.
-  3. **Próbál** azonnal létrehozni egy albumot (`call 0x006dc030(doc, leíró,
-     1, 0)` → `bool`). **Ha ez SIKERTELEN** (`al == 0`,
-     `0x005eb87e je 0x5eb8e7`): a függvény **azonnal a takarításra ugrik és
-     `0`-t ad vissza** — se jelző, se párbeszéd, se nézetfrissítés.
-  4. **Ha SIKERES:** `0x0055d120(leíró, 0, 0, 0)`. Ha ez album-objektumot
-     ad, a kezelő azzal tér vissza — kész. **Csak ha `0`-t ad**, akkor
-     állítja be a `+0x166` jelzőt és hívja a `0x0065b840(doc, 0, 0, 1)`-et,
-     majd a „Labels"-index alapján ír a `[doc+0xeb0]+0x30c` mezőbe.
-- **Emberi nyelven:** a gomb egy **„Névtelen" nevű albumot hoz létre
-  azonnal, párbeszéd nélkül** — és a binárisban ezen az úton **nincs
-  névbekérő ablak**. A `0x0065b840` nem párbeszéd, hanem a könyvtárnézet
-  frissítése (a `searchcontainer/*` elemeket kezeli), a `+0x166` pedig nem
-  „album készül" jelző, hanem egy **általános újrarajzolás-jelző**.
-- **Menüegyenérték:** **IGEN** — a `0x005cb990` menü-parancstáblában
-  (a korábbi körben már feltárt View/Album parancs-diszpécser) van olyan
-  ág, ami ugyanide, a `"thumbui/newalbum"` néven szimulált kattintáson
-  (`call 0x009cd8a0(name)`) keresztül újra a fenti kezelőt hívja —
-  vagyis a `Fájl → Új album` menüpont **ugyanazt** csinálja, mint a gomb.
-- **Engedélyezés:** a `.tre`-ben nincs feltétel — a gomb mindig aktív.
+- **Kezelő:** `0x005eb810` (245 bájt); a `0x005d9cc0` név-diszpécser a
+  `thumbui/newalbum` műveletnél hívja.
+- **A párbeszéd útja:** a `0x0055cf70` leíró-konstruktor a `+0x08` mezőt
+  `-1`-re állítja (`0x0055cf78`), a nevet pedig az
+  `IDS_DEFAULT_ALBUM_NAME` szöveg-erőforrásból tölti (`0x8a` = 138;
+  `0x0055cfbf` → `0x009ae710`) - a felvételen ez „Untitled”. A kezelő
+  ezután meghívja a `0x006dc030(doc, leíró, 1, 0)` rutint
+  (`0x005eb877`). A `+0x08 == -1` ág felépíti a `CEditAlbum` párbeszédet
+  (`0x006db4e0`, konfigurálás `0x008496c0`) és megjeleníti; a jóváhagyás
+  igaz, a Mégse hamis eredménnyel tér vissza. Ezen az argumentum-úton a
+  címe **„Album Properties”** (ld. a menüviselkedés-lap #4534-es
+  kiegészítését). A mezők elrendezése megegyezik a
+  `Picasa3/runtime/album.fen` fájléval; a binárisbeli közvetlen fájlnév-
+  hivatkozás nincs meg.
+- **Mi történik utána:** csak a párbeszéd sikeres visszatérése után hívja
+  a `0x0055d120` rutint (`0x005eb888`). A `0x005eb810` nem kap át kijelölt
+  fényképlista-paramétert. A job-250 felvétel külön, futásidejű mérése
+  szerint a jóváhagyott album a felvétel tesztalbuma 0 taggal néven jelenik meg, a
+  kijelölt kép tagsága nélkül.
+- **Menüút:** a `Fájl → Új album…` parancsazonosítója `0x9d67`
+  (menürekord `0x00d6d960`; Ctrl+N, ld. `picasa-menu-leltar.md`). A
+  `0x005cb990` kapcsolótáblája a parancsot a `0x005cc5bb` ágra oldja fel;
+  az ág a `thumbui/newalbum` műveletet a `0x009cd8a0` diszpécsernek adja.
+  Ez a gombéval egyező műveletkulcs. A `0x009cd8a0` utáni virtuális
+  visszahívás célját a helyi statikus xref nem köti bizonyíthatóan a
+  `0x005d9cc0` név-diszpécserhez; a menüpont és a handler közti utolsó
+  dinamikus lépés ezért feltételes.
+- **Helyi menük és külön út:** az eredeti kép-indexkép helyi menüjében
+  „Hozzáadás az albumhoz” van, „Új album” tétel nincs
+  (`ui-audit-context-menus.md` 2.). Az Albumok bal panel
+  `newalbumprompt` sora viszont külön fogd-és-vidd út: `lb_drop` →
+  `0x005e39a0` → `0x005ea770` → `0x006dc030`; siker után a ledobott
+  elemeket a `0x005ea420` dolgozza fel. Ez nem a `thumbui/newalbum`
+  gomb/menü műveletkulcsa (részletek a 7. szakaszban). A `0x005cb990`
+  második kapcsolótáblájában a `0xa03f` parancság (index `0x11`, selector
+  byte `0x05` a `0x5cdff1` címen) a `0x5cdf10` sloton át a `0x5cd7a7`
+  ágra jut, amely közvetlenül hívja a `0x005eb810`-et. Ennek a parancsnak
+  a binárisbeli UI-címkéje nincs azonosítva; helyi menühöz rendelni nem
+  bizonyított.
+- **Tárolás:** a job-250 mérése szerint a művelet után a
+  `.picasa.ini` nem változott. A binárisban a `0x0055d120` →
+  `0x004ada80` albumállapot-út követhető, de ebből nem azonosítható
+  bizonyítottan a tartós fájl vagy adatbázis/tábla. Az üres album
+  futásidejű megjelenése nem bizonyítja, hogy újraindítás után is megmarad.
+- **Engedélyezés:** a `thumbui/newalbum` `.tre`-bejegyzésén nincs feltétel.
+
+> **Helyesbítés a #2911 olvasatához:** a `0x005eb810` nem párbeszéd
+> nélkül hoz létre „Untitled” albumot. A párbeszédet a `0x006dc030` nyitja;
+> a `0x004ada80` az utána következő albumállapot-út része, nem a
+> párbeszédnyitó.
 
 ## 3. `flatview` / `folderview` — a nézetváltó pár
 
@@ -338,16 +358,17 @@ menüsáv-építő rekordjaiból.*
 | gomb | eredeti viselkedés | nálunk (`app/qml/PicasaPy/`) | teendő |
 |---|---|---|---|
 | **Import** | esemény → Acquire panelre vált, számlálót növel | `toolbarImportButton` LÉTEZIK (`MainToolbar.qml:49`) | ellenőrizni, hogy a kattintás valóban az import/acquire folyamatot indítja-e — funkcionális teszttel |
-| **Új album** | gyors, dialógus nélküli létrehozás → csak sikertelenség esetén névbekérő; **menüegyenérték is van** | **nincs önálló fejléc-gomb** — csak `Fájl → Új album` menü (`PicasaMenuBar.qml:154`, `objectName: "menuFileNewAlbum"`) és a bal hasáb „Új album" drag&drop súgója (`AlbumsSection.qml`) | pótolni a fejléc-gombot (#853-ban már felvéve méretre); a mögötte lévő **gyors-létrehozás ág** ma nincs meg — nálunk minden „Új album" út egyenesen a névbekérő dialógust nyitja |
+| **Új album** | eszköztár: `thumbui/newalbum` → `0x005eb810`; File/Ctrl+N (`0x9d67`): ugyanazt a műveletkulcsot küldi ki, a végső visszahívás célja statikusan nyitott; párbeszéd, alapnév „Untitled”, a felvételen 0 tag | van fejlécgomb, File menü/ Ctrl+N és kép-helyi menü; mind a `FileOpsDialogs.openNewAlbum(rows)` → `createAlbum(name, rows)` úton megy, a kijelölt képek tagságával; üres kijelölésnél nincs létrehozás | a toolbar és File/Ctrl+N út nyisson tulajdonságok párbeszédet és készítsen üres albumdefiníciót; a PicasaPy kép-helyi menü kijelölt képekből készítő útját különítsük el; eredeti tárolási cél nyitott |
 | **Nézetváltó pár** (flatview/folderview) | kölcsönösen kizáró rádiógomb-pár, `SimplifiedHierarchy` preferenciát ír, menüegyenértéke is van (a `folderview` oldalán egy **MEGFEJTVE** `prenotify` jelzés, ld. 3. pont) | **az ADATRÉTEG megvan** (`FolderHierarchyController`, `treeViewMode` property, `FolderHierarchyView.qml` — #702-ből), de **nincs UI-vezérlő, ami átkapcsolná**: a `Main.qml:978` `treeViewMode: false`-ra van **beégetve**, sehol nem íródik felül | pótolni a két fejléc-gombot (#853 méret-táblája szerint), bekötni a meglévő `treeViewMode`-ra |
 | **Nézet-beállítások (▾)** | lenyíló menü: Mind/My Computer, Figyelt mappák, Saját képek, Saját dokumentumok, Asztal — gyökér-hatókör váltás | **nincs** semmilyen formában | pótolni: gomb + lenyíló menü öt tétellel; a pontos feliratok forrása még hiányzik (ld. „Ami nyitva marad") |
 | **Webkamera** | szingleton előnézet-ablak, hardver-kapuzott, `capturemoviepanelpopup` panel | **nincs**, és a #466/#853 szerint **szándékosan kihagyva** | nincs teendő — a döntés érvényben marad |
 
 ## Kész, ha
 
-- [ ] a fejlécben megjelenik az **Új album** gomb (29 × 22, x 124 —
-      ld. #853), és ugyanazt a `createAlbum`-utat hívja, mint a meglévő
-      menüpont
+- [ ] a fejléc **Új album** gombja és a `Fájl → Új album…` / Ctrl+N
+      út nyissa meg az eredeti „Album Properties” párbeszédét, és készítsen
+      üres albumot; a PicasaPy mostani kijelöléses `createAlbum` útja ezt
+      nem teljesíti
 - [ ] megjelenik a **flatview/folderview** gombpár (2 × 30 × 22, x 160 és
       190), és a meglévő `pane.treeViewMode` property-t kapcsolja —
       NEM új állapotot vezet be
@@ -364,9 +385,15 @@ menüsáv-építő rekordjaiból.*
 
 ## Bizonyítottsági fok
 
-- **Import, Új album, nézetváltó pár mechanizmusa, webkamera
-  kattintás-mechanika:** *megerősített* — teljes függvénytest olvasva,
-  konkrét sztring- és mező-hivatkozásokkal.
+- **Import, nézetváltó pár mechanizmusa, webkamera kattintás-mechanika:**
+  *megerősített* - teljes függvénytest olvasva, konkrét sztring- és
+  mező-hivatkozásokkal.
+- **Új album eszköztárútja:** *megerősített* - a
+  `0x005d9cc0` → `0x005eb810` → `0x006dc030` bináris út és a job-250
+  futásidejű felvétel egyezik: a tulajdonságok párbeszéd OK-ja után 0 tagú
+  album jelenik meg. A File menü azonos műveletkulcsot küld ki, de a
+  `0x009cd8a0` utáni virtuális callback célja *feltételes*; az album
+  tartós tárolója nyitott.
 - **`folderviewpopup` menütartalma:** *megerősített* — a 4/b a
   parancsazonosítókat, a 4/c a **teljes pipa-térképet** (minden tétel
   pipa-forrása a dokumentum-mezőkből) a `0x005e2000` kezelő
@@ -515,6 +542,72 @@ elnevezése téves volt.
   hogy a `0x006dc030` elutasítja-e a duplikátumot, **nincs kimérve**.
 - A `[doc+0xeb0]+0x30c`-be írt „Labels”-index szerepe (kijelölés? görgetés?)
   nincs megnevezve.
+- A `0x005eb810` → `0x0055d120` → `0x004ada80` út tartós írója és a
+  mögöttes fájl/adatbázis-tábla **nincs meg**. A job-250 mérésben
+  `.picasa.ini`-változás nem volt. A `0x004ada80` → `0x00443c00` →
+  `0x00445b80` láncban látszik `P2category`-ág a `0x0045c0a0` felé,
+  de hogy ez a gomb útján tartós fájlírás-e, nincs bizonyítva; a
+  fájlhozzáférési és mentési ágakat kell tovább követni.
+
+### 6.7 #5808 - Eszköztár, Fájl menü és Album Properties
+
+**A. Eszköztár:** a `thumbui.tre` a `thumbui/newalbum_icon` ikont a
+`thumbui/newalbum` művelethez rendeli, a tooltip „Create a new album”. A
+`0x005d9cc0` név-diszpécser ezt a műveletet a `0x005eb810` handlerre küldi.
+Ez a handler a `0x0055cf70` által előtöltött „Untitled” leírót adja a
+`0x006dc030`-nak. A `+0x08 == -1` érték az új leíróban a `CEditAlbum`
+ablakágat választja; a rutin megnyitja az „Album Properties” párbeszédet.
+Az elrendezés megfelel a `Picasa3/runtime/album.fen` mezőinek. A közvetlen
+`0x006dc030` → `album.fen` fájlnév-kötés nincs bizonyítva.
+
+**B. Fájl menü / Ctrl+N:** a `picasa-menu-leltar.md` rekordja a
+`0x00d6d960` menüadaton `0x9d67` parancsazonosítót és `&New Album...`
+feliratot rögzít, Ctrl+N gyorsbillentyűvel. A `0x005cb990` parancs-
+diszpécser a `0x9d67` parancsot a `0x005cc5bb` ágra oldja; ez a
+`thumbui/newalbum` nevet küldi a `0x009cd8a0` művelet-diszpécsernek. Ezzel
+a File menü az A útjával azonos műveletkulcsot küld ki. A
+`0x009cd8a0` utáni virtuális callback célját a helyi statikus xref nem
+köti bizonyíthatóan a `0x005d9cc0`-hoz, ezért a teljes menü→handler hop
+**feltételes**. A menürekord és a kapcsolótábla címe/byte-ja külön-külön
+visszaolvasva: `0x9d67` → selector `0x19` → `0x005cc5bb`. A Ctrl+N
+billentyűút külön is a `thumbui/newalbum` műveletet küldi ki a
+`0x005e60d0` kezelő `0x005e6462` ágán (ld. `picasa-gyorsbillentyuk.md`
+10.1).
+
+**C. Kép-helyi menü és Albumok sáv:** az eredeti indexkép-helyi menüben
+„Hozzáadás az albumhoz” szerepel, „Új album” nincs. Az Albumok bal panel
+`newalbumprompt` sora drag-and-drop belépő, nem a gomb vagy a File menü
+álneve; a sikeres ág a ledobott elemek feldolgozásához a `0x005ea420`
+rutinba jut. A PicasaPy saját kép-helyi menüjének „New Album...” eleme
+viszont létezik, és jelenleg ugyanazt a `FileOpsDialogs.openNewAlbum(rows)`
+→ `createAlbum(name, rows)` útvonalat használja, mint a saját eszköztár
+és File menü. A `0x005cb990` második kapcsolótáblájában a `0xa03f`
+parancs a selector byte (`0x5cdff1` = `0x05`) és a `0x5cdf10` slot révén
+a `0x5cd7a7` ágba jut, ahol közvetlenül meghívja a `0x005eb810`-et; a
+vizsgált menüleltárban nincs hozzá UI-címke rendelve, ezért nem
+azonosítható helyi menüként.
+
+**Job-250 összevetés:** a mért eszköztár-kattintásnál a „Name: Untitled”
+mező kijelölt, és látszanak Date, Music/Browse, Place taken, Description,
+OK/Cancel mezők. OK után a felvétel tesztalbuma 0 taggal jelenik meg; a kijelölt kép
+kimarad, `.picasa.ini`-írás nincs. Ez egyezik a bináris vezérlési sorrenddel:
+a párbeszédnyitó hívás előtt nincs kép-lista argumentum, a
+`0x0055d120` csak a jóváhagyás után fut.
+
+**Tárolási határ:** a `0x0055d120` albumállapot-útja elér a
+`0x004ada80` `CAlbumState::newalbum` rutinig; ez önmagában nem bizonyítja,
+hogy az album melyik adatbázisfájlba vagy táblába íródik. A job-250 mérés
+csak a `.picasa.ini` változatlanságát támasztja alá. A tartós tárolási cél
+nyitott kérdés.
+
+**Cáfoló kör:** a „nincs párbeszéd” hipotézis cáfolatához ellenőriztem a
+`0x006dc030` másik ágát is. Ha a leíró `+0x08` mezője nem `-1`, a rutin
+közvetlen album-ágra tér (`0x006db730`); a tényleges
+`0x0055cf70` konstruktor viszont `-1`-et ír, ezért a `thumbui/newalbum`
+út nem ezt az ágat választja. A mért job-250 képernyőn ténylegesen megjelenő
+párbeszéd ezt a következtetést a bináristól függetlenül alátámasztja.
+Az ellenőrzés nem magyarázza meg a `0xa03f` ág UI-címkéjét, sem a File menü
+`0x009cd8a0` utáni dinamikus callbackjét; ezek nyitva maradnak.
 
 ## 7. #5121 — A `CAlbumList` újalbum-sora és ejtési útja (2026-10-16)
 
