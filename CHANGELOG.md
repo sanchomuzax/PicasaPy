@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.214] - 2026-10-24
+
+- A Címkék helyi menü tesztje a jobbklikk előtt megvárja, hogy a címkesor megálljon az ablakban (#5797).
+- Az Opciók E-mail füle az eredeti Picasa csoportfeliratait és mozgófilm-választását használja (#5799).
+
 ## [0.9.213] - 2026-10-24
 
 - A Közzététel FTP-n parancs FTP-fiókra tölti fel a webgalériát (#5713).
