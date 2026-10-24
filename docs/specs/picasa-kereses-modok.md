@@ -695,10 +695,10 @@ kiszámolása történik.
 
 ### Akkor nyitva maradt (#447, 2026-09-03; #5742 feloldotta)
 
-A `+0x082`–`+0x15B` 218 bájtos tartományának felosztása akkor még nem
+A `+0x082`-`+0x15B` 218 bájtos tartományának felosztása akkor még nem
 volt ismert. Az `edi` célmutató és a memóriabeli 216 elemű `float`-vektor
 mérete ismert volt, de a „216 bájt + 2 bájt” felosztást nem mértük ki.
-A #5742 azonosította a `+0x082`–`+0x159` 216 normalizált bájtot; a három
+A #5742 azonosította a `+0x082`-`+0x159` 216 normalizált bájtot; a három
 maradék bájt jelentése továbbra is nyitott.
 
 *Történeti bizonyítottsági fok (2026-09-03): a 218 bájt tartalma akkor
@@ -775,7 +775,7 @@ törzs hosszabb, mint amennyit a dekódoló egy hívásban ad, **darabold**.
 átalakítás képlete akkor nyitott volt. A #5742 ezt feloldotta; a `+0x001`,
 `+0x15A`, `+0x15B` bájtok továbbra is NINCS MEG.*
 
-## ⭐ #5742 — a három hasonlósági-jellemző előállítása (#5742, 2026-10-24)
+## ⭐ #5742 - a három hasonlósági-jellemző előállítása (#5742, 2026-10-24)
 
 Ez a szakasz a #447 korábbi „NINCS MEG” megállapításait felülírja a három
 jellemző helper-szintű előállítására. A rekord `+0x001`, `+0x15A` és `+0x15B` bájtjának
@@ -821,7 +821,7 @@ pixel = ((R >> 3) << 11) | ((G >> 2) << 5) | (B >> 3)
 ```
 
 A képpontok sorfolytonosan kerülnek a 64 darab 16 bites helyre. A
-rekordot visszaolvasó `0x007ebb1b`–`0x007ebb3d` kód külön bontja ki az
+rekordot visszaolvasó `0x007ebb1b`-`0x007ebb3d` kód külön bontja ki az
 5/6/5 bites R/G/B mezőket; ez a writer kvantálásától független
 fogyasztói út.
 
@@ -868,7 +868,7 @@ out[i] = clamp(0, 255, trunc(sqrt(hist[i]) * scale))
 
 A négyzetgyök CRT-útja `0x00c0b32d` (`fsqrt`), a konverzió `0x00c29990`;
 a kerekítési mód csonkítás (`0x007ebf1e`). A 216 bájt a rekord
-`+0x082`–`+0x159` tartományába kerül. A függvény tényleges vége a
+`+0x082`-`+0x159` tartományába kerül. A függvény tényleges vége a
 `0x007ebf4e` címen levő `ret 4`; ez 446 bájt, nem az index 442 bájtos
 mérete.
 
@@ -929,6 +929,6 @@ szintetikus leírókat használtak, tehát nem igazolják a teljes Picasa
 betöltési út viselkedését. A `+0x001`, `+0x15A`, `+0x15B` bájtok
 tartalma és írója ebben a körben **NINCS MEG**.
 
-**Nyitott — színút:** `Ghidra-kör kell: 0x006b67c0 — a forrásleíró létrehozása előtt melyik dekóder-/profilút fut, és módosítja-e a három színcsatornát ICC- vagy gamma-konverzió? [blokkoló]` A már létező Ghidra-kimenetek a `0x006b67c0` hívását/xrefjét mutatják, a függvény törzsét és a decoder/profile műveleteket nem.
+**Nyitott - színút:** `Ghidra-kör kell: 0x006b67c0 - a forrásleíró létrehozása előtt melyik dekóder-/profilút fut, és módosítja-e a három színcsatornát ICC- vagy gamma-konverzió? [blokkoló]` A már létező Ghidra-kimenetek a `0x006b67c0` hívását/xrefjét mutatják, a függvény törzsét és a decoder/profile műveleteket nem.
 
-**Nyitott — három bájt:** kövesd az `0x007ead60` rekordpufferének inicializálását a `0x007eb5d9` 95 dwordos másolásáig, majd ellenőrizd a `+0x001`, `+0x15A`, `+0x15B` fogyasztóit; a jelenlegi writer- és fogyasztónyomok nem állapítják meg ezek értékét vagy jelentését.
+**Nyitott - három bájt:** kövesd az `0x007ead60` rekordpufferének inicializálását a `0x007eb5d9` 95 dwordos másolásáig, majd ellenőrizd a `+0x001`, `+0x15A`, `+0x15B` fogyasztóit; a jelenlegi writer- és fogyasztónyomok nem állapítják meg ezek értékét vagy jelentését.
