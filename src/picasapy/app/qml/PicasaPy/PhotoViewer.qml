@@ -3392,12 +3392,8 @@ Rectangle {
                             viewer.kerBezaras()
                         }
                     }
-                    //: #1838: a képkocka-mentés VISSZAJELZÉSE. Az eredeti négy
-                    //: állapotszöveget adott (`CCaptureFrame::captureframeprog1..4`);
-                    //: a dekódolás nálunk annyira gyors, hogy a két köztes
-                    //: („Képkocka rögzítése…", „Mentés a Rögzített videoklipek
-                    //: albumba") felvillanna csak — a VÉGEREDMÉNYT mutatjuk,
-                    //: sikerre és bukásra egyaránt.
+                    //: #5715: a képkocka-mentés négy állapota a vezérlő
+                    //: jelzéseit követi (`CCaptureFrame::captureframeprog1..4`).
                     Text {
                         id: kepkockaJelzes
                         objectName: "videoCaptureNotice"
@@ -3424,6 +3420,13 @@ Rectangle {
                     Connections {
                         target: controller
                         ignoreUnknownSignals: true
+                        function onMovieFrameCapturing() {
+                            kepkockaJelzes.mutasd(qsTr("Capturing frame..."))
+                        }
+                        function onMovieFrameSaving() {
+                            kepkockaJelzes.mutasd(
+                                qsTr("Saving to Captured Videos"))
+                        }
                         //: `CCaptureFrame::captureframeprog3`
                         function onMovieFrameCaptured(path) {
                             kepkockaJelzes.mutasd(
