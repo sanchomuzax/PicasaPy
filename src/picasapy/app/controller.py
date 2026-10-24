@@ -260,6 +260,8 @@ class AppController(
     QObject,
 ):
     statusChanged = Signal()
+    # #5762: közvetlen fájl-listás nézegető és visszatérés a könyvtárhoz.
+    quickViewChanged = Signal()
     # #64: a rács-feed mappa-csoportjai változtak (csak valódi változásnál!)
     feedChanged = Signal()
     # #64: mappa-választás — a rács a feedben ehhez a csoporthoz görget
@@ -309,6 +311,8 @@ class AppController(
         self._ensure_broken_photo_wired()
         self._folders = FolderListModel(self)
         self._photos = PhotoGridModel(self)
+        self._quick_view_active = False
+        self._quick_view_photo_ids: tuple[str, ...] = ()
         self._init_screensaver()
         self._albums: list = []  # #9: a bal hasáb Albumok gyűjteménye
         self._current_folder = ""
@@ -425,6 +429,48 @@ class AppController(
     @Property(QObject, constant=True)
     def photos(self):
         return self._photos
+
+    @Property(bool, notify=quickViewChanged)
+    def quickViewActive(self):  # noqa: N802 — QML-property-stílus
+        return self._quick_view_active
+
+    def begin_quick_view(self, paths) -> bool:
+        """Kizárólag a parancssorban megadott képeket tölti a viewerbe."""
+        if self._quick_view_active:
+            return False
+        from .quick_view import quick_view_records
+
+        try:
+            records = quick_view_records(tuple(str(path) for path in paths or ()))
+        except OSError:
+            return False
+        if not records:
+            return False
+
+        self._quick_view_photo_ids = tuple(str(record.id) for record in records)
+        self._provider.register_additional_photos(records)
+        self._photos.set_linear_navigation(True)
+        self._photos.set_photos(records)
+        self._current_folder = ""
+        self._view_mode = ("quick", "")
+        self._quick_view_active = True
+        self.quickViewChanged.emit()
+        return True
+
+    @Slot()
+    def returnToLibraryFromQuickView(self) -> None:  # noqa: N802 — QML-slot-stílus
+        """Lezárja az ideiglenes listát, majd elindítja a rendes könyvtárat."""
+        if not self._quick_view_active:
+            return
+        self._provider.unregister_additional_photos(self._quick_view_photo_ids)
+        self._quick_view_photo_ids = ()
+        self._photos.set_linear_navigation(False)
+        self._photos.set_photos(())
+        self._current_folder = ""
+        self._view_mode = ("folder", "")
+        self._quick_view_active = False
+        self.quickViewChanged.emit()
+        self.start()
 
     @Property(list, notify=albumsChanged)
     def albums(self):

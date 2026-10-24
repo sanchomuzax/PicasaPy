@@ -723,9 +723,16 @@ def remove_folder_tree(conn: sqlite3.Connection, root: str | Path) -> int:
 #:   „Eltávolítás a Picasából"-val kivett almappa az áthelyezés után némán
 #:   VISSZAJÖNNE — a felhasználó döntése veszne el;
 #: * `photo_hashes` — a #294 dHash-gyorsítótára (FÁJL-útvonalra kulcsolva).
+#: * `photo_similarity` — a #5744 három Picasa-jellemzőjének cache-e.
 #:   Tisztán származtatott adat, de átírás nélkül az egész gyűjtemény
 #:   hash-eit újra kellene számolni, a régi sorok meg szemétként maradnának.
-_PATH_TABLES = ("folders", "folder_scan_state", "removed_folders", "photo_hashes")
+_PATH_TABLES = (
+    "folders",
+    "folder_scan_state",
+    "removed_folders",
+    "photo_hashes",
+    "photo_similarity",
+)
 
 
 def _reszfa_feltetel(root: Path) -> tuple[str, tuple[str, int, str]]:
@@ -788,6 +795,7 @@ def move_folder_tree(
     new_path = Path(new_text)
     _ensure_scan_state(conn)
     _ensure_photo_hashes(conn)
+    _ensure_similarity_features(conn)
     utkozes, params = _reszfa_feltetel(new_path)
     sor = conn.execute(
         f"SELECT 1 FROM folders {utkozes} LIMIT 1", params
@@ -837,6 +845,19 @@ def _ensure_photo_hashes(conn: sqlite3.Connection) -> None:
         " size INTEGER NOT NULL,"
         " dhash INTEGER,"
         " originfast INTEGER)"
+    )
+
+
+def _ensure_similarity_features(conn: sqlite3.Connection) -> None:
+    """Régi, közvetlenül megnyitott indexekhez is létrehozza a jellemző-cache-t."""
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS photo_similarity ("
+        " path TEXT PRIMARY KEY,"
+        " mtime_ns INTEGER NOT NULL,"
+        " size INTEGER NOT NULL,"
+        " rgb565 BLOB NOT NULL,"
+        " histogram BLOB NOT NULL,"
+        " edges BLOB NOT NULL)"
     )
 
 

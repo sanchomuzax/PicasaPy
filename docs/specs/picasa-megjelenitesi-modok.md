@@ -1345,6 +1345,54 @@ legnagyobb eltérés 10 szint. A megvalósítás **a `0x00d32bd0` 256 bájtos
 tábláját** vegye át (az 5.9-ben teljes egészében ki van írva), vagy a
 `p = 0,6945` kitevőt.
 
+### 12.8 A Slingshot parancssori fájlátvétele, műveletsávja és „Launch Picasa” átadása (#5757, 2026-10-24)
+
+**Bizalmi fok: feltételes.** A műveletsávhoz két külön bizonyítékréteg egyezik: a `runtime/slingshot/respack.yt` `.tre`-je és képrétegei, valamint a `PicasaPhotoViewer.exe` esemény-elosztója. Az átadási útvonalat a viewer küldő oldali kódja, a főprogram indexelt `ytWindow`- és `locate`-hivatkozásai támasztják alá. A parancssori fájlút statikus vezérlésmenetből követhető; Windows futásidejű mérés nem készült, ezért a teljes megjelenítési végpont itt feltételes.
+
+#### 12.8.1 A bináris és a parancssori út
+
+A vizsgált x86 bináris a helyi Picasa-telepítés `PicasaPhotoViewer.exe` fájlja (ImageBase `0x00400000`). A WinMain `0x004365b0` címen lekéri a teljes sort a `GetCommandLineW` importon át (`0x0043672b`), UTF-8-ra alakítja a `WideCharToMultiByte` hívással (`0x00436745`; kódlap-argumentum `0xfde9`), majd a viewer saját feldolgozójának adja (`0x004367d5` → `0x0055cad0`). A tokenizer `0x0055bc90` az idézőjelet `0x55bd0c`-nél vizsgálja, majd a záró idézőjelig lép (`0x55bd32`-`0x55bd57`).
+
+A parancssor feldolgozása után a WinMain a tárolt argumentumvektor további elemein végigmegy (`0x00436a68`-`0x00436aac`); minden elemhez meghívja a `0x0043b450` képfeldolgozó útvonalat (`call` címe `0x00436a95`). Így a kép útvonala nem pusztán parancssori kapcsolóként marad meg: a viewer induló képsorának feldolgozásába kerül. A diszasszemblálás itt az átadást igazolja; hogy egy adott Windows-környezetben mely fájlt dekódolta és ténylegesen megjelenítette, külön futásidejű mérés lenne.
+
+#### 12.8.2 A műveletsáv sorrendje és belső parancsai
+
+Az `ss` elrendezés minden vezérlőt az `ss/controlbar_container` alá tesz. A `tre:ss` megjegyzése szerint a gombok a filmcsík fölött jelennek meg; a vizuális sorrend ezért a `respack.yt` rétegek képkockáinak x-koordinátáiból, nem a `.tre` deklarációs sorrendjéből adódik. A koordináták a csomag fejlécéből dekódolt `[x0, y0, x1, y1)` keretek.
+
+| Balról jobbra | Felirat / súgó | Belső parancs (viewer VA) | Képkocka `(x0,y0,x1,y1)` | Esemény-elosztó |
+|---|---|---|---|---|
+| Nagyítás | `Zoom In` | `ss/zoom_plus` (`0x726c40`) | `(253,744,282,763)` | `0x4256f4` → `0x42fad0`, `+1` (`0x425728`) |
+| Kicsinyítés | `Zoom Out` | `ss/zoom_minus` (`0x726c50`) | `(283,744,311,763)` | `0x42574f` → `0x42fad0`, `-1` (`0x425779`) |
+| 1:1 | `Zoom to 1:1` | `ss/actualsize` (`0x726b28`) | `(312,744,340,763)` | `0x42578b`; egység-nagyítás beállítása és képfrissítés (`0x4257ff` → `0x43d1b0`) |
+| Főprogram | gombfelirat `Edit in Picasa`, súgó `Launch Picasa` | `ss/launch_picasa` (`0x726bcc`) | `(351,744,470,763)` | `0x4253d7` → `0x420ca0` (`0x425454`) |
+| Előző | `Previous Photo` | `ss/prev` (`0x726c38`) | `(473,739,502,769)` | `0x4256a1` → `0x4232d0` (`0x4256cd`) |
+| Diavetítés | `Play Slideshow` | `ss/play_slideshow` (`0x726c84`) | `(494,733,533,768)` | `0x425a07` → `0x42c220` / `0x42c930` az állapotág szerint |
+| Következő | `Next Photo` | `ss/next` (`0x726c1c`) | `(523,738,551,768)` | `0x4255da` → `0x4232a0` (`0x425606`) |
+| Kiegészítő gomb | `Quick Upload` | `ss/to_web` | `(555,744,631,763)` | A #5757 nem kérte; a parancs viselkedése nincs feltárva. |
+| Forgatás balra | `Rotate Counter-Clockwise` | `ss/rotate_ccw` (`0x726bec`) | `(639,744,667,763)` | `0x4254df` → `0x42ffb0` (`0x42550f`) |
+| Forgatás jobbra | `Rotate Clockwise` | `ss/rotate_cw` (`0x726bfc`) | `(668,744,696,763)` | `0x425534` → `0x42ffd0` (`0x425564`) |
+| Csillag | `Star` | `ss/star` (`0x726b38`) | `(702,744,730,763)` | `0x425885`; állapot lekérdezése `0x4f96f0`, átállítása `0x43d400` (`0x4258e1`) |
+| További lehetőségek | `More Options` | `ss/more` (`0x726b78`) | `(737,743,771,764)` | `0x425ac7` → `0x4ef1b0` (`0x425b0c`) |
+
+A felhasználói jegy nyolc megnevezett csoportja több fizikai vezérlőt takar: a nagyítás két gomb, az elforgatás két gomb, az előző/következő két gomb. A teljes látható sorban ezen felül a `Quick Upload` gomb is szerepel. A `ss/fullscreen` elem a `.tre`-ben `setvisible 0`; nem része a látható műveletsávnak. A nagyítás és az előző/következő gombjai `setautorepeat 1` tulajdonságot kapnak; a csillag `buttcon 1` és a `star_n`/`star_p` rétegek közti váltás vezérli.
+
+#### 12.8.3 A kép átadása a főprogramnak
+
+A `ss/launch_picasa` ág a kiválasztott képet a néző aktuális indexével kéri le (`0x0042542f`-`0x0042543a`, hívás `0x004220d0`), majd a képútvonalat, a `locate` parancsot (`0x72699c`) és a `0x6c637465` adatértéket adja át a `0x00420ca0` rutinnak (`0x00425449`-`0x00425454`).
+
+A `0x00420ca0` először a `FindWindowA` segítségével keresi a `ytWindow` osztályú, `Picasa2` című ablakot (`0x00420caa`-`0x00420cba`). Meglévő ablaknál előtérbe hozza azt, majd `SendMessageA`-val `0x4a` üzenetet küld. A `COPYDATASTRUCT` `dwData` értéke a hívótól kapott `0x6c637465`, a `cbData` az útvonal bájthossza lezáró nullával, az `lpData` pedig maga az útvonal (`0x00420de0`-`0x00420e10`).
+
+Ha nincs használható célablak, a `0x00420a20` útvonal a `HKEY_CURRENT_USER\\SOFTWARE\\Google\\Picasa\\Picasa2\\Runtime\\AppPath` értéket olvassa (`0x00420a85`-`0x00420ab5`). A viewer az `open` igével indít, a formátumszöveg `/nosplash "%s" "%s"` (`0x7268c0`), és a formatter hívásának argumentumsorrendje `locate`, majd a kép elérési útja (`0x00420d2c`-`0x00420d43`). Ez a `ShellExecuteA` paramétereként kerül tovább (`0x00420d6a`-`0x00420d86`).
+
+Független főprogram-oldali kontrollként a `Picasa3.exe` indexe a `ytWindow` sztringet a `0x00406490` függvényhez, a `locate` parancsszót pedig a `0x0053c020` parancsfeldolgozóhoz köti; utóbbi a `locatereadonly` alakot is tartalmazza. Ez megerősíti az ablakosztály és a parancsnév főprogrambeli jelenlétét, de önmagában nem bizonyítja a `WM_COPYDATA` fogadó ágának teljes vezérlésmenetét.
+
+#### 12.8.4 Nálunk és a megmaradt mérési kérdés
+
+| Eredeti | PicasaPy most | Következmény |
+|---|---|---|
+| A `PicasaPhotoViewer.exe` parancssori képútvonalat dolgoz fel, és egy vagy több képet a viewer képsorába ad. | A #5762 óta az `application.py` külön kezeli a helyi kép- és könyvtárargumentumokat; a fájlok külön gyors nézegető-sorba kerülnek, a könyvtárak pedig megmaradnak a könyvtárnézet gyökereinek. A gyors nézet indulásakor nem indul könyvtárszkennelés. A csomagolt és a futás közben telepített `.desktop` bejegyzés MIME-társításait a `scanner.filetypes.PHOTO_EXTENSIONS` alapján állítjuk elő. A sáv a dokumentált sorrendben adja a nagyítást, 1:1-et, Launch Picasa, előző/diavetítés/következő, feltöltés, forgatás, csillag és More Options vezérlőket; a Quick Upload a PicasaPy-ban kivezetett szolgáltatás, ezért letiltott. | Megvalósítva (#5762). A More Options a meglévő kép helyi menüjét nyitja; a Picasa eredeti menütartalma nincs feltárva, ezért nem módosítja azt. A Windows futásidejű útvonal- és fájltársítás-mérés továbbra is nyitott. |
+
+**Még nyitott:** Windows futásidejű mérés nem készült arra, hogy szóközt tartalmazó útvonal, több fájl, illetve hibás kép hogyan viselkedik ténylegesen. Ezt a viewer Windows alatt történő indításával, külön próbamappában levő egyedi fájlnevekkel és a megjelenő képsor rögzítésével lehet eldönteni. A főprogram `0x4a` üzenetének fogadó ága külön, célzottan visszakövethető a `Picasa3.exe` `ytWindow` eljárásánál; a mostani indexlelet nem negatív bizonyíték erre a kérdésre.
 
 ---
 
