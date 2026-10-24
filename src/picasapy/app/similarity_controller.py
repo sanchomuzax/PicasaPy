@@ -19,11 +19,9 @@ kérdésre felel: „mely képek duplikátumai EGYMÁSNAK?".
 
 ## Amit a MI oldalunk ad hozzá
 
-A motor megvolt: a `dedup/phash.py` dHash-e és a Hamming-távolság ugyanaz
-a matematika, a `photo_hashes` tábla pedig már ma is tárolja a
-kiszámított értékeket (útvonal + mtime + méret kulccsal). A „hasonlósági
-adatbázis" nálunk tehát NEM új tároló — ez a meglévő gyorstár —, és az
-első keresés azért lassabb, mert még nincs benne minden kép.
+A #5744 a dHash/Hamming keresőt a Picasa három jellemzőjére és rangsorára
+cseréli. Az új `photo_similarity` cache útvonal + mtime + méret kulcsú; a
+`photo_hashes.dhash` megmarad a duplikátumkeresés és az átmenet számára.
 
 ⚠️ Az eredeti adatbázisának HELYE ÉS FORMÁTUMA nincs kimérve (a jegy is
 így mondja); a tárolás a mi döntésünk. Amit átvettünk, az a VISELKEDÉS: az
@@ -32,31 +30,29 @@ egyszeri építés, a róla szóló jelzés, és a külön néven megjelenő ere
 
 from __future__ import annotations
 
+import datetime as _datetime
 import logging
 from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
 
-from picasapy.dedup.phash import compute_dhash, hamming_distance
+from picasapy.dedup.similarity import (
+    DEFAULT_RANK_MAX,
+    SimilarityCandidate,
+    decode_similarity_features,
+    rank_similarity_candidates,
+)
 from picasapy.index import open_index
-from picasapy.index.hashes import HashKey, load_dhashes, save_dhashes
+from picasapy.index.hashes import HashKey
+from picasapy.index.photo_date import photo_date
+from picasapy.index.similarity_features import (
+    load_similarity_features,
+    save_similarity_features,
+)
 
 _log = logging.getLogger(__name__)
 
-#: A hasonlóság küszöbe dHash-bitekben (Hamming-távolság).
-#:
-#: ⚠️ SAJÁT DÖNTÉS, nem mért érték: az eredeti küszöbét a bináris nem
-#: árulja el. A `dedup/similar.py` mai, másodpéldányokra hangolt küszöbe
-#: 10; a „hasonló" lazább kérdés, mint a „duplikátum", ezért ennél
-#: bővebbre vesszük. 14 bit a 64-ből ~22% eltérést enged — a gyakorlatban
-#: ez fogja meg az újrakeretezett, kissé más expozíciójú vagy utólag
-#: vágott változatokat, anélkül hogy a teljes könyvtárat visszaadná.
-HASONLOSAG_KUSZOB = 14
-
-#: Hány kiszámított hash után írunk az indexbe. A `dedup_controller`
-#: azonos nevű állandójának mintája: egy hosszú keresés így nem egyetlen,
-#: hatalmas tranzakcióban ír.
-_HASH_FLUSH_SIZE = 200
+_FEATURE_FLUSH_SIZE = 100
 
 
 class SimilarityMixin:
@@ -102,7 +98,7 @@ class SimilarityMixin:
         """„Keress ehhez hasonlót" a rács `row`. képére (`loadsim`).
 
         A munka HÁTTÉRSZÁLON fut: az első keresés végigszámolja a még
-        hiányzó dHash-eket, ami nagy könyvtárnál percekig tarthat. A
+        hiányzó jellemzőket, ami nagy könyvtárnál percekig tarthat. A
         felület a `similarityUpdating`-ból tudja, hogy dolgozunk."""
         self._ensure_similarity_wired()
         photos = self._photos.photos
@@ -110,10 +106,12 @@ class SimilarityMixin:
             return
         minta = photos[int(row)]
         minta_ut = str(Path(minta.folder_path) / minta.name)
+        # A QSettings-példányt ne olvasson egyszerre a GUI- és a háttérszál.
+        rank_max = _rank_max(self._get_settings())
 
         def worker() -> None:
             try:
-                talalatok = self._similar_records(minta_ut)
+                talalatok = self._similar_records(minta_ut, rank_max=rank_max)
             except Exception:  # pragma: no cover — a szál nem halhat némán
                 _log.exception("hasonlóság-keresés: a háttérmunka elbukott")
                 talalatok = ()
@@ -146,12 +144,11 @@ class SimilarityMixin:
         self._similarity_updating = value
         self.similarityUpdatingChanged.emit()
 
-    def _similar_records(self, minta_ut: str):
+    def _similar_records(self, minta_ut: str, *, rank_max: int | None = None):
         """A mintához hasonló fotó-rekordok (a mintát is beleértve).
 
-        A dHash-eket a MEGLÉVŐ `photo_hashes` gyorstárból vesszük; a
-        hiányzókat kiszámoljuk és el is tesszük — ettől lesz „legközelebb
-        gyors"."""
+        A Picasa három jellemzőjét a külön cache-ből vesszük; a hiányzókat
+        kiszámoljuk és el is tesszük — ettől lesz „legközelebb gyors"."""
         from picasapy.index.queries import all_photos
 
         self._ensure_similarity_wired()
@@ -161,7 +158,7 @@ class SimilarityMixin:
             for rekord in rekordok:
                 ut = str(Path(rekord.folder_path) / rekord.name)
                 kulcsok[ut] = (ut, rekord.mtime_ns, rekord.size)
-            tarolt = load_dhashes(conn, list(kulcsok.values()))
+            tarolt = load_similarity_features(conn, list(kulcsok.values()))
 
             hianyzo = [ut for ut, k in kulcsok.items() if k not in tarolt]
             # A jelzés CSAK akkor megy ki, ha tényleg van mit építeni —
@@ -169,37 +166,45 @@ class SimilarityMixin:
             if hianyzo:
                 self._set_similarity_updating(True)
 
-            uj: list[tuple[str, int, int, int]] = []
-            ertekek: dict[str, int] = {
+            uj = []
+            ertekek = {
                 ut: tarolt[k] for ut, k in kulcsok.items() if k in tarolt
             }
             for ut in hianyzo:
-                ertek = compute_dhash(Path(ut))
-                if ertek is None:
+                jellemzok = decode_similarity_features(Path(ut))
+                if jellemzok is None:
                     continue
-                ertekek[ut] = ertek
-                uj.append((*kulcsok[ut], ertek))
-                if len(uj) >= _HASH_FLUSH_SIZE:
-                    save_dhashes(conn, uj)
+                ertekek[ut] = jellemzok
+                uj.append((*kulcsok[ut], jellemzok))
+                if len(uj) >= _FEATURE_FLUSH_SIZE:
+                    save_similarity_features(conn, uj)
                     conn.commit()
                     uj.clear()
             if uj:
-                save_dhashes(conn, uj)
+                save_similarity_features(conn, uj)
                 conn.commit()
 
-            minta_hash = ertekek.get(minta_ut)
-            if minta_hash is None:
+            minta_jellemzok = ertekek.get(minta_ut)
+            if minta_jellemzok is None:
                 return ()
-            hasonlo = {
-                ut
-                for ut, ertek in ertekek.items()
-                if hamming_distance(ertek, minta_hash) <= HASONLOSAG_KUSZOB
-            }
-            return tuple(
-                rekord
+            rekordok_uton = {
+                str(Path(rekord.folder_path) / rekord.name): rekord
                 for rekord in rekordok
-                if str(Path(rekord.folder_path) / rekord.name) in hasonlo
+            }
+            candidates = tuple(
+                SimilarityCandidate(ut, ertekek[ut], _photo_time_value(rekord))
+                for ut, rekord in rekordok_uton.items()
+                if ut in ertekek
             )
+            if rank_max is None:
+                rank_max = _rank_max(self._get_settings())
+            sorrend = rank_similarity_candidates(
+                minta_jellemzok,
+                _photo_time_value(rekordok_uton[minta_ut]),
+                candidates,
+                rank_max,
+            )
+            return tuple(rekordok_uton[ut] for ut in sorrend)
 
     def _on_similarity_ready(self, records, minta_ut: str) -> None:
         """A GUI-szálon: a találatok megjelenítése külön nézetként."""
@@ -210,3 +215,45 @@ class SimilarityMixin:
         # tudja állítani, és a `clearFilter` is kivezet belőle.
         self._view_mode = ("similar", minta_ut)
         self._show_filtered(records, 0.0)
+
+
+def _photo_time_value(record) -> float:
+    """A felvételi dátumot, majd a befagyasztott helyi fájlidőt adja.
+
+    A Picasa a FILETIME-ot helyi SYSTEMTIME-ra, majd double-ordinalra alakítja.
+    A dokumentált rang a különbségek sorrendjét használja, ezért a lineáris
+    másodperc-skála ugyanazt a rangot adja, mint az ordinal napja.
+    """
+    try:
+        value = _datetime.datetime.fromisoformat(photo_date(record))
+        if value.tzinfo is not None:
+            value = value.astimezone().replace(tzinfo=None)
+        return _ordinal_time_value(value)
+    except (OSError, ValueError, OverflowError):
+        try:
+            fallback = _datetime.datetime.fromtimestamp(
+                record.sort_mtime_ns / 1_000_000_000
+            )
+        except (OSError, ValueError, OverflowError):
+            # A romlott indexidejű rekord a használható dátumok mögé kerül.
+            return float(_datetime.datetime.max.toordinal() * 86400)
+        return _ordinal_time_value(fallback)
+
+
+def _ordinal_time_value(value: _datetime.datetime) -> float:
+    """Helyi naptári nap és napszak lineáris, ordinal-kompatibilis skálán."""
+    return float(
+        value.toordinal() * 86400
+        + value.hour * 3600
+        + value.minute * 60
+        + value.second
+        + value.microsecond / 1_000_000
+    )
+
+
+def _rank_max(settings) -> int:
+    """A `Preferences/RankMax` értéke, hiányában az eredeti 1000-es alap."""
+    try:
+        return max(0, int(settings.value("Preferences/RankMax", DEFAULT_RANK_MAX)))
+    except (TypeError, ValueError):
+        return DEFAULT_RANK_MAX

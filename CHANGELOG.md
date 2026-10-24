@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.208] - 2026-10-24
+
+- A hasonlósági keresés a Picasa három képi jellemzője és rangsora alapján rendezi és korlátozza a találatokat (#5744).
+- A helyi tesztfuttató a más PID-névtérből maradt, régi foglalást is felszabadítja (#5779).
+- A szerkesztő #415-ös tesztje a közös, biztonságos lebontást használja (#5782).
+
+## [0.9.207] - 2026-10-24
+
+- A színválasztó az eredeti, kétmódú HSL-palettát, színmintákat és MRU-rekeszeket mutatja; a kollázs az 1-es módot használja (#5730).
+- Az arcmodell-letöltés hálózati hibájának tesztje Windows-on is megvárja a hibaüzenetet (#5764).
+
 ## [0.9.206] - 2026-10-24
 
 - A felhasználói gyűjtemények jelszóval zárolhatók, és a jelszó gyűjteményenként tárolódik (#5704).

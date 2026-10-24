@@ -613,6 +613,13 @@ class TestHalozatNelkul:
             uzenet="a sikertelen letöltés után beragadt a felület",
         )
         assert vezerlo.waitForBackgroundWorkers(15.0)
+        # Windows-on az elutasított kapcsolat azonnali: a „downloading" már
+        # hamis lehet, mielőtt a hibaüzenet a párbeszédbe ér (#5764).
+        _var(
+            qt_app,
+            lambda: str(parbeszed.property("statusText")).strip() != "",
+            uzenet="a hálózati hiba NÉMA maradt",
+        )
 
         uzenet = str(parbeszed.property("statusText"))
         assert uzenet.strip(), "a hálózati hiba NÉMA maradt"

@@ -29,6 +29,7 @@ from PySide6.QtCore import QObject
 from picasapy.index import open_index, sync_tree
 from picasapy.version import version_string
 from support.jpeg_factory import make_jpeg
+from tests.app.qml_functional.conftest import _teardown_qml_app
 
 
 def _build_app(qt_app, tmp_path, photo_size):
@@ -122,8 +123,9 @@ def _build_app(qt_app, tmp_path, photo_size):
     controller.selectFolder(str(lib))
     qt_app.processEvents()
     yield window, controller, engine
-    engine.deleteLater()
-    qt_app.processEvents()
+    # #5782: a közös lebontás megvárja a háttérmunkákat és a DeferredDelete-et,
+    # mielőtt a generátor kerete elengedné a vezérlőket.
+    _teardown_qml_app(engine, qt_app, root_window=window)
 
 
 @pytest.fixture

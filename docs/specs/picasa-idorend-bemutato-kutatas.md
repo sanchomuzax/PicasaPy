@@ -837,3 +837,74 @@ A keresés ellenpéldát is adott az eltolás-alapú azonosításhoz: a teljes `
 **A #5401 „Kész, ha” pontjai.** (1) ⛔ A tokenindex, forráshalmaz, képek, dátumkulcs, sorrend és elemszám nem lett futó qshow-n megmérve. (2) ⛔ Nem készült új képkocka- vagy mozgásmérés. (3) ⛔ A vezérlők, `A`-tömb-jelentés és tényleges autoplay-periódus nem lett futó állapotban megmérve. (4) ⛔ Nem készült Space/Escape előtti-utáni nézet- és képindexfelvétel.
 
 **Nyitott; megszerzésének pontos útja.** A következő méréshez ugyanabban az elérhető Colab-futásban kell: (a) rögzíteni egy előre ismert, eltérő kép- és dátumadatú forráskészletet, valamint azt, hogy mappa, album vagy Picture Tray van kiválasztva; (b) a qshow megnyitásakor és a vezérlők használata után kiolvasni a `qshow+0x50c`, `+0x2f8` kiválasztott `0xf8` rekordját, a `+0x388`/`+0x38c` tömböt és a CThumbDB-token → `CSlice+0x64` → képrekord kapcsolatot; (c) azonos futásban képkockákat és a Space/Escape előtti-utáni nézetet, kollekciót és indexet rögzíteni. Csak ezek az adatok döntik el a 38.2.63-79 nyitott pontjait; újabb, azonos kérdésű statikus eltoláskeresés nem helyettesíti ezt a mérést.
+
+#### 38.2.81 A job-239 qshow-felvétele: látható gyűjtemények, sorrend, felirat és kilépés (#5401, 2026-10-24)
+
+**Hatókör és forrás.** A helyben átadott `.bt/job-239/` teljes képsorát átnéztem a `feladat.md` lépéssorával és mintajegyzékével együtt; új diszasszemblálás vagy `.text`-pásztázás nem történt. A mappában 30 PNG van, míg a `feladat.md` 29 műveletet sorol: a `kepernyo__01.png` az induló képernyő, a `kepernyo__29.png` fekete átmeneti kép Escape után, a `kepernyo__30.png` pedig a két másodperccel későbbi visszatért Picasa-könyvtár. A képernyőfelvétel 1280×1024-es Wine-asztalon készült. A táblázat a képernyőn olvasható adatot és a feladatban megadott fixture-t külön kezeli.
+
+##### §1 A látható katalógus és a Right billentyűvel bejárt sorrend
+
+A Picasa-könyvtár `kepernyo__02.png` képén az `Albums (1)` alatt `Recently Updated (24)`, a `Folders (5)` alatt pedig `PicasaTeszt (24)` és a négy fixture-mappa látszik. A négy mappaszám egyezik a feladat mintájával:
+
+| Fixture-mappa | Fájlok a `feladat.md` szerint | Darab | qshow-felirat a képsorban |
+|---|---|---:|---|
+| `2009_majus` | `2009_majus_01.jpg` | 1 | `2009_majus` / `May 2009` |
+| `2014_november` | `2014_november_01.jpg`, `_02.jpg`, `_03.jpg` | 3 | `2014_november` / `November 2014` |
+| `2019_marcius` | `2019_marcius_01.jpg`-`_07.jpg` | 7 | `2019_marcius` / `March 2019` |
+| `2021_eltero_fajlido` | `2021_eltero_fajlido_01.jpg`, `_02.jpg` | 2 | `2021_eltero_fajlido` / `August 2021` |
+
+A `Ctrl+5` után induló qshow kezdetben a 2009-es csoportot mutatja. Az ismételt `Right` léptetés képernyőn látható sorrendje: `2009_majus` → `2014_november` → `2019_marcius` → `2021_eltero_fajlido` → `PicasaTeszt` → `Recently Updated`. A négy fixture-mappa tehát ebben a futásban időrendben halad; a két 2026. októberi csoport sorrendje `PicasaTeszt`, majd `Recently Updated`. Ez a futásban látott sorrend, nem az upstream rendezőkulcs azonosítása. A qshow kártyájának jobb felső felirata a mappanév és az angol hónap+év; az előző nagyméretű kártyán a mappanév és a kép teljes dátumideje is megjelenik (például `2009_majus` / `2009-05-14 10:00`, majd `2014_november` / `2014-11-02 15:30`, végül `2019_marcius` / `2019-03-08 09:15`).
+
+A 2021-es kontroll különválasztja az EXIF-dátumot a fájlidőtől: mindkét fixture-fájl EXIF-je `2021:08:20`, fájlidejük viszont `2023-01-01 12:00:00`; a qshow felirata `August 2021`. Ez a minta cáfolja, hogy a látott 2021-es címkét kizárólag a fájlidő adja. A belső Picasa-mező ettől még nincs azonosítva: a felirat EXIF-kompatibilis, de nem bizonyítja, hogy a qshow közvetlenül az EXIF-mezőt olvassa.
+
+A négy fixture-mappa mellett a képsorban ténylegesen szerepel a `PicasaTeszt (24)` mappa és a `Recently Updated (24)` album is; ezeket a 13 felsorolt mintafájl nem írja le. Ezért a felvétel a **látható** forráscsoportokat és a fixture-mappák sorrendjét megadja, de nem adja meg az összes csoport qshow-tokenjét, a 24 elemű listák tényleges képeit, illetve az átfedést a gyűjtemények között. A qshow `+0x2f8` rekordjából származó `+0x50c` tokenindex továbbra is a CThumbDB `token` sztring-oszlopát indexeli; a konkrét token és az általa kiválasztott `CSlice+0x64` képrekord-lista nincs meg (38.2.63 §1/a, 38.2.74; `0x008018a0`, `0x004406f0`, `0x004dca40`).
+
+##### §2 Animáció és időzítés: mit igazol a sűrűségében korlátozott képsor
+
+A qshow-képek a kártyalánc tényleges mozgását és a háttér változását mutatják; a billentyűs `Right` után az aktív mappanév és hónapfelirat a következő csoportra vált. A `feladat.md` minden vizsgált lépéshez azonnali, 0,5 másodperces és összesen 2,5 másodperces képernyőképet kér. Az első három mappaváltásnál az azonnali és a +0,5 másodperces képkocka láthatóan eltér, a +0,5 és +2,5 másodperces képkocka viszont az ellenőrzött qshow-területen közel azonos. A negyedik átmenetnél (`2021_eltero_fajlido` → `PicasaTeszt`) a cím a +0,5 másodperces képen vált át; a `Recently Updated`-re lépésnél a háttér is megváltozik. Ez azt igazolja, hogy a bemutató animált, és az adott minta több váltása 2,5 másodpercre már közel állandó képet ad. A képsor nem méri a pontos animációhosszt: a köztes képkockák hiánya miatt nem állítható, hogy a mozgás pontosan 0,5 vagy 2,5 másodpercig tart.
+
+A binárisból már ismert részeredmények változatlanok: a kártyagörbe `0x007fbab0` képlete QEMU-val ellenőrzött (38.2.61); a `0x00802230` véletlen eltolása és a `0x007fff30` transzformációi szintén QEMU-val mértek (38.2.62); a csúszka x→index választása `0x007fdd00`-ban, a pontok kirajzolása pedig a `0x007ffc90` útján dokumentált (38.2.77-78). Ezek a statikus/QEMU-eredmények és a látható mozgás egymással összeférnek, de nem kötik a teljes képkockánkénti képtartalmat a transzformációkhoz, nem adják meg a háttér teljes rajzolási útját, és nem töltik ki az `A` tömb tartalmát.
+
+Az `0x00802060` az eltelt QPC-másodpercet a `Preferences\SlideshowEffectTime` `T` küszöbével hasonlítja össze, majd a léptető utat hívja; a callback címe `0x00803ab0` (38.2.34 §1). A job-239 minden továbblépését kézzel küldött `Right` előzte meg, ezért az automatikus lejátszás tényleges periódusát vagy a futásban aktív `T` értéket ez a képsor **nem méri**.
+
+##### §3 Vezérlők, Home/End és visszatérés
+
+A `Right` billentyű legalább a négy fixture-csoporton végigléptet, majd a két látható októberi csoportot is eléri. A `timelinedot`, `sliderthumb`, `startbutton`, kilépőgomb és listaikon látható, de a feladat nem kattint rájuk és nem húzza a csúszkát; a pontok dátumjelentése és ezek interakciói ezért továbbra is nyitottak. A `Space` nem szerepel a lépéssorban, így a diavetítésbe váltást ez a mérés nem ellenőrzi.
+
+A `Home` és `End` a `Recently Updated` utolsóként látható csoportnál került megnyomásra. A `kepernyo__22.png`-`kepernyo__28.png` képei az ellenőrzött qshow-területen pixelre azonosak: ebben a lépéssorban egyik gomb után sem látható változás. Ez nem bizonyítja, hogy a billentyűágak nincsenek bekötve, mert a futásadat nem rögzíti a qshow fókuszát és az utolsó csoportban az `End` eleve nem szükségszerűen változtat állapotot; a `Home` tényleges hatása külön, fókuszt is rögzítő mérésre vár.
+
+Az `Escape` után a `kepernyo__29.png` fekete átmeneti kép, a `kepernyo__30.png` pedig visszatér a Picasa főablakának `PicasaTeszt` mappanézetére. A belépés előtti `kepernyo__02.png` ugyanezt a mappanézetet mutatja. Így a qshow bezárása és a mappanézethez való visszatérés közvetlenül megfigyelt; a pontosan kijelölt kép és index nincs kiolvasható. A méréssorban Space nem volt, ezért a diavetítésből való visszatérés nem következtethető ebből.
+
+##### §4 Független utak, cáfoló kísérlet és bizonyítottság
+
+**A út - Picasa-katalógus felülete.** A `kepernyo__02.png` főablakának oldalsávja külön mutatja az `Albums (1)`/`Recently Updated (24)` és a `Folders (5)` listát, benne a négy fixture-mappa darabszámával. Ez a qshow-tól külön képernyőréteg azonosítja a látható kategóriák típusát és a négy almappa darabszámát.
+
+**B út - qshow-képsor és fixture-metaadat.** A `kepernyo__05.png`-`kepernyo__24.png` felvételek a kategóriák feliratait és a Right-léptetés sorrendjét adják. A `feladat.md` EXIF/fájlidő táblája ettől külön adja a tesztképek dátumait; a 2021-es címke az EXIF-hónappal egyezik, a 2023-as fájlidővel nem. A két út a négy fixture-mappa nevében, darabszámában és látható év/hónap-sorrendjében egyezik. A bináris út a token→CThumbDB→CSlice-lista mechanizmust és a qshow-lista sorrendtartó átvitelét támasztja alá, de az élő tokenek és konkrét képek hiányában nem azonosítja ugyanazt a fotólistát (38.2.63 §1/a, §4; 38.2.74; `0x008018a0`, `0x004406f0`, `0x004dca40`).
+
+**Cáfoló kísérlet.** Megpróbáltam cáfolni (a) azt, hogy a négy fixture-mappa a teljes megjelenő forráskészlet, és (b) azt, hogy a 2021-es csoportot fájlidő rendezi. Az első ellenpélda a főablakban és qshow-ban egyaránt látható `PicasaTeszt` és `Recently Updated` csoport. A másodikat a két, 2023-as fájlidejű, de 2021. augusztusi EXIF-ű kép és a qshow `August 2021` felirata adja. Mindkét ellenpélda visszakereshető a képernyőn és a mintajegyzékben; a cáfolat ugyanazzal a mércével ellenőrizhető. Az eredmény csak a job-239 ezen Picasa-katalógusára vonatkozik.
+
+**Bizonyítottsági fok: feltételes** a #5401 egészére. A felsorolt feliratok, látható csoportdarabszámok, a Right-sorrend, a 2021-es EXIF/fájlidő-eltérés és az Escape utáni mappanézet mért megfigyelések. A teljes forráshalmaz, a qshow-tokenek, az `A` elemei és dátumjelentése, a kártyákhoz kötött összes képrekord, a teljes képkocka-képlet, a pontos animációs idő, a kattintás/húzás és a Space/diavetítés-visszatérés viszont ebből az egy, nem izolált futásból nem bizonyított.
+
+| Állítás | Forrás |
+|---|---|
+| Négy fixture-mappa neve és darabszáma (1/3/7/2), továbbá a `PicasaTeszt (24)` mappa és `Recently Updated (24)` album láthatósága. | mérés (`job-239/kepernyo__02.png`; `job-239/feladat.md`) |
+| qshow címkék és Right-léptetés sorrendje: 2009 → 2014 → 2019 → 2021 → PicasaTeszt → Recently Updated. | mérés (`job-239/kepernyo__05.png`-`__24.png`) |
+| 2021. augusztusi címke két 2023. január 1-i fájlidő mellett. | mérés (`job-239/feladat.md`; `kepernyo__13.png`-`__17.png`) |
+| A képsor azonnali, +0,5 és +2,5 másodperces mintavételi rendje. | mérés (`job-239/feladat.md`; `kepernyo__07.png`-`__15.png`) |
+| qshow `+0x50c` élő tokenértéke, `+0x388` A-tömb elemei és a tokenekhez tartozó képrekordok. | NINCS MEG (`0x008018a0`, `0x004406f0`, `0x004dca40`) |
+| A `timelinedot` dátumértéke, a kattintás/húzás felhasználói hatása, az aktív autoplay `T` és callback-periódus. | NINCS MEG (`0x007fdd00`, `0x007ffc90`, `0x00802060`, `0x00803ab0`) |
+| Space utáni diavetítés és az abból visszaálló kép/index. | NINCS MEG (`0x00801270`, `0x00803110`, `0x00983270`; a job-239 nem küldött Space-t) |
+| Escape után a Picasa `PicasaTeszt` mappanézetének visszaállása; a képkijelölés/index. | mérés (`job-239/kepernyo__02.png`, `__29.png`, `__30.png`) / NINCS MEG (pontos képkijelölés) |
+
+##### §5 A #5401 „Kész, ha” pontjai és a #5377 átadása
+
+1. ⛔ **Képlánc/forráshalmaz/sorrend/darabszám:** a négy almappa, a darabszámuk, a jobb-billentyűvel látott időrend és két további októberi csoport ismert; a teljes token-, kép- és albumtagság, az upstream dátumkulcs és az `A` tömb konkrét elemei nyitottak.
+2. ⛔ **Mozgás/időzítés/rajzolás:** a képsor megerősíti a mozgó kártyaláncot és részleges stabilizálódást; a teljes képkocka→transzformáció→réteg kapcsolat, a pontos animációhossz és a háttér teljes rajzolási útja nincs meg. A korábbi QEMU-képletek a 38.2.61-62-ben maradnak.
+3. ⛔ **Vezérlők:** a Right és Escape megfigyelt; a látható pontok/csúszka/gombok nincsenek interakcióval mérve; a Home/End próbája nem döntött; Space és automatikus léptetés nincs mérve.
+4. ⛔ **Diavetítés/kilépés/visszatérés:** Escape után a mappanézet visszatérése megfigyelt, de Space nem volt a lépéssorban és az Escape utáni képindex ismeretlen.
+
+| Eredeti | Nálunk (forrásállapot) | Teendő a #5377-ben |
+|---|---|---|
+| A `0x005e8a70` Időrend-belépése qshow-t épít; a job-239-en a Right 2009/05, 2014/11, 2019/03, 2021/08, 2026/10 csoportokat mutatott, a katalógusban pedig külön album és mappacsoportok látszottak. A `0x008018a0` tokenből épít sorrendtartó listát; a token neve és teljes elemsora nyitott. A mozgás rész-képletei: `0x007fbab0`, `0x00802230`, `0x007fff30`; csúszka/pont: `0x007fdd00`, `0x007ffc90`. | A `TimelineController.reload()` a rejtett szűrés után `folder_path` szerint csoportosít, a kártyadátumot a mappa legkorábbi ismert `record_date`-jából veszi, dátum szerint növekvő sorrendbe teszi és kártyánként legfeljebb négy bélyeget ad át (`src/picasapy/app/timeline_controller.py:161-252`). A `TimelineView.qml` Right/Left átmenete 2000 ms, a csúszka felengedése 4000 ms; Space a kiválasztott mappa diavetítés-modelljét kéri, Escape lezárja a nézetet (`TimelineView.qml:85-95,105-109,210-223`). Ez forrásleolvasás, nem e körben futtatott PicasaPy-mérés. | A #5377 teljes, becslésmentes követelménylistája még nem írható át: qshow-token/képlista, dátumtömb, `A`, vezérlőhatások és Space utáni visszatérő kép hiányzik. Ezeket ugyanazon kontrollált eredeti futásból kell kinyerni és képkockákkal összevetni. A mostani felvétel alapján rögzíthető a négy almappa neve/darabszáma, a látható csoportsorrend, hónapfelirat, a `PicasaTeszt`-/`Recently Updated` többlet és az Escape utáni mappanézet. |
+
+**Nyitott; megszerzésének pontos útja.** A meglévő Ghidra-kimenetek elegendők a már leírt statikus utakhoz; új Ghidra-cím nem szükséges. Egy elkülönített eredeti Picasa-futásban rögzíteni kell a forráskatalógust, a qshow `+0x50c` mezőjét, a `+0x2f8` kiválasztott `0xf8` rekordját, a `+0x388`/`+0x38c` tömböt és a CThumbDB-token → `CSlice+0x64` → képrekord egyeztetést; külön futásban Space után és Escape után a nézetet, gyűjteményt és képindexet. A vezérlőgombok/húzás és az autoplay csak az aktív qshow fókusz, dátum- és időmezők egyidejű rögzítésével dönthető el. Új kutatási jegy nem kell: mindez továbbra is a #5401 része.
