@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.212] - 2026-10-24
+
+- Az Időrend bemutató időrendben mutatja a mappákat és albumokat, és a kiválasztott gyűjteményről indít diavetítést (#5770).
+
+## [0.9.211] - 2026-10-24
+
+- A Nyomtatás párbeszédben választható a Normál és Optimalizált mód (#5684).
+- A nyomtatási Normál és Optimalizált mód az eredeti minőségi skála szerint készíti a köztes rasztert (#5760).
+- Képargumentumokkal a PicasaPy közvetlenül a gyors nézegetőben nyitja meg a képeket, és fájltársításokat kínál a támogatott formátumokhoz (#5762).
+
+## [0.9.210] - 2026-10-24
+
+- A Nyomtatás párbeszédben választható a Normál és Optimalizált mód (#5684).
+
 ## [0.9.209] - 2026-10-24
 
 - A Címkék panel helyi menüje az eredeti sorrendben kínálja a címke eltávolítását, keresését és kijelöléshez adását. (#5755).
