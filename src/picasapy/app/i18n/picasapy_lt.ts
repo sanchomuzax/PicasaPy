@@ -2009,12 +2009,12 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         <message>
             <source>FTP account:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP paskyra:</translation>
         </message>
         <message>
             <source>Manage...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tvarkyti...</translation>
         </message>
         <message>
             <source>Publish</source>
@@ -2025,22 +2025,22 @@ picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
         <message>
             <source>Published %1 file(s) to %2.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Į %2 paskelbta %1 failų.</translation>
         </message>
         <message>
             <source>Manage FTP Accounts</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tvarkyti FTP paskyras</translation>
         </message>
         <message>
             <source>Account name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paskyros pavadinimas:</translation>
         </message>
         <message>
             <source>FTP server:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP serveris:</translation>
         </message>
         <message>
             <source>Username:</source>
@@ -2057,17 +2057,17 @@ picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
         <message>
             <source>Remote folder:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nuotolinis aplankas:</translation>
         </message>
         <message>
             <source>Leave blank to keep the saved password.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Palikite tuščią, kad išsaugotumėte įrašytą slaptažodį.</translation>
         </message>
         <message>
             <source>The account could not be deleted.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paskyros nepavyko ištrinti.</translation>
         </message>
         <message>
             <source>New</source>
@@ -2124,72 +2124,72 @@ picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
         <message>
             <source>Choose an FTP account first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pirmiausia pasirinkite FTP paskyrą.</translation>
         </message>
         <message>
             <source>The saved FTP password is unavailable.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Įrašytas FTP slaptažodis nepasiekiamas.</translation>
         </message>
         <message>
             <source>The system key store is unavailable.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sistemos raktų saugykla nepasiekiama.</translation>
         </message>
         <message>
             <source>FTP publication failed: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepavyko paskelbti per FTP: %1</translation>
         </message>
         <message>
             <source>The account name, server, and user name are required.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Būtina nurodyti paskyros pavadinimą, serverį ir naudotojo vardą.</translation>
         </message>
         <message>
             <source>FTP account fields cannot contain line breaks.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP paskyros laukuose negali būti eilučių lūžių.</translation>
         </message>
         <message>
             <source>The server address is invalid.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Serverio adresas netinkamas.</translation>
         </message>
         <message>
             <source>A password is required for a new account.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Naujai paskyrai būtinas slaptažodis.</translation>
         </message>
         <message>
             <source>The saved FTP password is missing.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Trūksta įrašyto FTP slaptažodžio.</translation>
         </message>
         <message>
             <source>The selected FTP account was not found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasirinkta FTP paskyra nerasta.</translation>
         </message>
         <message>
             <source>The local web export folder was not found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vietinis žiniatinklio eksporto aplankas nerastas.</translation>
         </message>
         <message>
             <source>The web export cannot contain symbolic links.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žiniatinklio eksporte negali būti simbolinių nuorodų.</translation>
         </message>
         <message>
             <source>A web export contains an unsafe file name.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Žiniatinklio eksporte yra nesaugus failo pavadinimas.</translation>
         </message>
         <message>
             <source>The FTP root folder path is invalid.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP šakninio aplanko kelias netinkamas.</translation>
         </message>
     </context>
     <context>

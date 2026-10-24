@@ -2009,12 +2009,12 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         <message>
             <source>FTP account:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP účet:</translation>
         </message>
         <message>
             <source>Manage...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spravovať...</translation>
         </message>
         <message>
             <source>Publish</source>
@@ -2025,22 +2025,22 @@ picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
         <message>
             <source>Published %1 file(s) to %2.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Do umiestnenia %2 bolo publikovaných %1 súborov.</translation>
         </message>
         <message>
             <source>Manage FTP Accounts</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spravovať FTP účty</translation>
         </message>
         <message>
             <source>Account name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Názov účtu:</translation>
         </message>
         <message>
             <source>FTP server:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP server:</translation>
         </message>
         <message>
             <source>Username:</source>
@@ -2057,17 +2057,17 @@ picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
         <message>
             <source>Remote folder:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vzdialený priečinok:</translation>
         </message>
         <message>
             <source>Leave blank to keep the saved password.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ak chcete ponechať uložené heslo, nechajte pole prázdne.</translation>
         </message>
         <message>
             <source>The account could not be deleted.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Účet sa nepodarilo odstrániť.</translation>
         </message>
         <message>
             <source>New</source>
@@ -2124,72 +2124,72 @@ picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
         <message>
             <source>Choose an FTP account first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Najprv vyberte FTP účet.</translation>
         </message>
         <message>
             <source>The saved FTP password is unavailable.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Uložené FTP heslo nie je k dispozícii.</translation>
         </message>
         <message>
             <source>The system key store is unavailable.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Systémové úložisko kľúčov nie je k dispozícii.</translation>
         </message>
         <message>
             <source>FTP publication failed: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Publikovanie cez FTP zlyhalo: %1</translation>
         </message>
         <message>
             <source>The account name, server, and user name are required.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vyžaduje sa názov účtu, server a používateľské meno.</translation>
         </message>
         <message>
             <source>FTP account fields cannot contain line breaks.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Polia FTP účtu nesmú obsahovať konce riadkov.</translation>
         </message>
         <message>
             <source>The server address is invalid.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Adresa servera je neplatná.</translation>
         </message>
         <message>
             <source>A password is required for a new account.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pre nový účet je potrebné heslo.</translation>
         </message>
         <message>
             <source>The saved FTP password is missing.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Chýba uložené FTP heslo.</translation>
         </message>
         <message>
             <source>The selected FTP account was not found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vybraný FTP účet sa nenašiel.</translation>
         </message>
         <message>
             <source>The local web export folder was not found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Miestny priečinok webového exportu sa nenašiel.</translation>
         </message>
         <message>
             <source>The web export cannot contain symbolic links.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Webový export nesmie obsahovať symbolické odkazy.</translation>
         </message>
         <message>
             <source>A web export contains an unsafe file name.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Webový export obsahuje nebezpečný názov súboru.</translation>
         </message>
         <message>
             <source>The FTP root folder path is invalid.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Cesta ku koreňovému priečinku FTP je neplatná.</translation>
         </message>
     </context>
     <context>

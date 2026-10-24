@@ -2007,12 +2007,12 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         <message>
             <source>FTP account:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP 帐户：</translation>
         </message>
         <message>
             <source>Manage...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>管理...</translation>
         </message>
         <message>
             <source>Publish</source>
@@ -2023,22 +2023,22 @@ picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
         <message>
             <source>Published %1 file(s) to %2.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>已将 %1 个文件发布到 %2。</translation>
         </message>
         <message>
             <source>Manage FTP Accounts</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>管理 FTP 帐户</translation>
         </message>
         <message>
             <source>Account name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>帐户名称：</translation>
         </message>
         <message>
             <source>FTP server:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP 服务器：</translation>
         </message>
         <message>
             <source>Username:</source>
@@ -2055,17 +2055,17 @@ picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
         <message>
             <source>Remote folder:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>远程文件夹：</translation>
         </message>
         <message>
             <source>Leave blank to keep the saved password.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>留空以保留已保存的密码。</translation>
         </message>
         <message>
             <source>The account could not be deleted.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>无法删除该帐户。</translation>
         </message>
         <message>
             <source>New</source>
@@ -2122,72 +2122,72 @@ picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
         <message>
             <source>Choose an FTP account first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>请先选择一个 FTP 帐户。</translation>
         </message>
         <message>
             <source>The saved FTP password is unavailable.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>已保存的 FTP 密码不可用。</translation>
         </message>
         <message>
             <source>The system key store is unavailable.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>系统密钥库不可用。</translation>
         </message>
         <message>
             <source>FTP publication failed: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP 发布失败：%1</translation>
         </message>
         <message>
             <source>The account name, server, and user name are required.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>必须填写帐户名称、服务器和用户名。</translation>
         </message>
         <message>
             <source>FTP account fields cannot contain line breaks.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP 帐户字段不能包含换行符。</translation>
         </message>
         <message>
             <source>The server address is invalid.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>服务器地址无效。</translation>
         </message>
         <message>
             <source>A password is required for a new account.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>新帐户必须设置密码。</translation>
         </message>
         <message>
             <source>The saved FTP password is missing.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>缺少已保存的 FTP 密码。</translation>
         </message>
         <message>
             <source>The selected FTP account was not found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>找不到所选的 FTP 帐户。</translation>
         </message>
         <message>
             <source>The local web export folder was not found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>找不到本地网页导出文件夹。</translation>
         </message>
         <message>
             <source>The web export cannot contain symbolic links.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>网页导出不能包含符号链接。</translation>
         </message>
         <message>
             <source>A web export contains an unsafe file name.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>网页导出中包含不安全的文件名。</translation>
         </message>
         <message>
             <source>The FTP root folder path is invalid.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP 根文件夹路径无效。</translation>
         </message>
     </context>
     <context>

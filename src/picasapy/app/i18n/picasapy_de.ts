@@ -2148,7 +2148,7 @@ picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
         <message>
             <source>FTP account fields cannot contain line breaks.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP-Kontofelder dürfen keine Zeilenumbrüche enthalten.</translation>
         </message>
         <message>
             <source>The server address is invalid.</source>

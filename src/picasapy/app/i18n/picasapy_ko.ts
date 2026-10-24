@@ -2007,12 +2007,12 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
         <message>
             <source>FTP account:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP 계정:</translation>
         </message>
         <message>
             <source>Manage...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>관리...</translation>
         </message>
         <message>
             <source>Publish</source>
@@ -2023,22 +2023,22 @@ picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
         <message>
             <source>Published %1 file(s) to %2.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1개 파일을 %2에 게시했습니다.</translation>
         </message>
         <message>
             <source>Manage FTP Accounts</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP 계정 관리</translation>
         </message>
         <message>
             <source>Account name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>계정 이름:</translation>
         </message>
         <message>
             <source>FTP server:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP 서버:</translation>
         </message>
         <message>
             <source>Username:</source>
@@ -2055,17 +2055,17 @@ picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
         <message>
             <source>Remote folder:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>원격 폴더:</translation>
         </message>
         <message>
             <source>Leave blank to keep the saved password.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>저장된 암호를 유지하려면 비워 두세요.</translation>
         </message>
         <message>
             <source>The account could not be deleted.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>계정을 삭제할 수 없습니다.</translation>
         </message>
         <message>
             <source>New</source>
@@ -2122,72 +2122,72 @@ picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
         <message>
             <source>Choose an FTP account first.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>먼저 FTP 계정을 선택하세요.</translation>
         </message>
         <message>
             <source>The saved FTP password is unavailable.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>저장된 FTP 암호를 사용할 수 없습니다.</translation>
         </message>
         <message>
             <source>The system key store is unavailable.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>시스템 키 저장소를 사용할 수 없습니다.</translation>
         </message>
         <message>
             <source>FTP publication failed: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP 게시 실패: %1</translation>
         </message>
         <message>
             <source>The account name, server, and user name are required.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>계정 이름, 서버, 사용자 이름이 필요합니다.</translation>
         </message>
         <message>
             <source>FTP account fields cannot contain line breaks.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP 계정 필드에는 줄바꿈을 포함할 수 없습니다.</translation>
         </message>
         <message>
             <source>The server address is invalid.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>서버 주소가 올바르지 않습니다.</translation>
         </message>
         <message>
             <source>A password is required for a new account.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>새 계정에는 암호가 필요합니다.</translation>
         </message>
         <message>
             <source>The saved FTP password is missing.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>저장된 FTP 암호가 없습니다.</translation>
         </message>
         <message>
             <source>The selected FTP account was not found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>선택한 FTP 계정을 찾을 수 없습니다.</translation>
         </message>
         <message>
             <source>The local web export folder was not found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>로컬 웹 내보내기 폴더를 찾을 수 없습니다.</translation>
         </message>
         <message>
             <source>The web export cannot contain symbolic links.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>웹 내보내기에 심볼릭 링크를 포함할 수 없습니다.</translation>
         </message>
         <message>
             <source>A web export contains an unsafe file name.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>웹 내보내기에 안전하지 않은 파일 이름이 있습니다.</translation>
         </message>
         <message>
             <source>The FTP root folder path is invalid.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP 루트 폴더 경로가 올바르지 않습니다.</translation>
         </message>
     </context>
     <context>
