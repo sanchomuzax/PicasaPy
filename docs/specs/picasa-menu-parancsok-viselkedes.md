@@ -5333,15 +5333,17 @@ keresősávból érhető el, hanem **menüből** is. *(A menütétel az
 | másodpéldány-keresés | `dupesearch` (`0x0040bf70`, `0x005cb990`, `0x005d47e0`) | **megvan**: teljes motor (`dedup/`: `phash.py`, `similar.py`, sávos jelöltszűrés) + `DedupDialog.qml` | ezen a jegyen kívül |
 | **hasonlóság-keresés mintaképpel** | `similarthumb`, `loadsim`, `clearsim`; aktív keresőút (`0x005d8810` → `0x007ea000`) | **megvan**: `SimilarityMixin`, egy kiválasztott képből indul; a dHash/Hamming-motor nem az eredeti rekordformátum | a részletes eltéréseket és nyitott kérdéseket lásd a 60.4. szakaszban |
 | indexépítés jelzése | „Updating similarity database (will be fast next time)" (`0x007ead60`) | ugyanaz a felirat a QML-ben; csak hiányzó dHash esetén jelenik meg | **EGYEZIK a felirat**; az eredeti kiváltási feltétel külön ellenőrzendő |
-| eredményfelirat | „Similarity Search Results" / `CAlbumState::SimSearchResults` (`0x004ad4e0`) | ugyanaz a felirat a hasonlósági eredménysávon; belső nézetmódunk különbözik | **EGYEZIK a felirat**; a találatok tagsága és sorrendje nyitott |
+| eredményfelirat | „Similarity Search Results" / `CAlbumState::SimSearchResults` (`0x004ad4e0`) | ugyanaz a felirat a hasonlósági eredménysávon; belső nézetmódunk különbözik | **EGYEZIK a felirat**; a keresőmag rangsora ismert (60.4.1), a tényleges találati tagság és végső sorrend teljes paritása nyitott |
 
 ⚠️ **A `dedup` és a mintaképes hasonlóság-keresés NEM ugyanaz.** A
 duplikátum-csoportosítás azt kérdezi: *„mely képek duplikátumai egymásnak?"*;
 a mintaképes keresés azt: *„mely képek hasonlítanak ERRE?"* A PicasaPy-ban
 mindkettő megvan, de a #5660 összevetése külön algoritmust és adattárolást
 igazol: az eredeti 380 bájtos rekordokat használ, a PicasaPy 64 bites
-dHash-t és Hamming-távolságot. A találatok viselkedési azonossága a nyitott
-eredeti küszöb/rangsor miatt még nincs bizonyítva.
+dHash-t és Hamming-távolságot. A #5736 feltárta az eredeti keresőmag rangját
+és a `RankMax` vágását; a teljes viselkedési azonosság továbbra sincs
+bizonyítva az eltérő előfeldolgozás és az utórendezés mezőjének nyitott
+jelentése miatt.
 
 ### 60.4 #5660: a hasonlóság-keresés teljes útja és a PicasaPy-eltérések (2026-10-23)
 
@@ -5357,60 +5359,100 @@ került a repóba.
 | **Menübelépés:** a vizsgált menüleltárban és a `searchoptions` erőforrásban nem találtunk hasonlóság-kereső menüpontot. Ez nem bizonyítja a hiányát. **NINCS MEG**; megszerzés: a `0x005cb990` menüparancs-kezelő és a menüépítő teljes parancs-hozzárendelésének visszakövetése, valamint a menü-erőforrások cím szerinti ellenőrzése. | A `PicasaMenuBar.qml`-ben nem találtunk külön menüparancsot; a belépés a `Ctrl+F7`. | **Nyitott**; menühiányra nem nyitunk fejlesztési jegyet, amíg az eredeti parancs-hozzárendelés nincs lezárva. |
 | **Keresősáv/párbeszéd:** `searchoptions/similarthumb` hivatkozásai `0x005d8280` és `0x005d8810`; a `tre:searchoptions` kivonatában a `similarrect`, `similarthumb`, `similarclip`, `loadsim` és `clearsim` sora komment. Külön modális hasonlóság-párbeszédet nem azonosítottunk. **NINCS MEG**, hogy van-e másik erőforrásból épített párbeszéd; megszerzés: az összes `.fen`/`.tre` erőforrás cím szerinti átnézése, majd a `0x005d8810` teljes vezérlőhívás-láncának célzott követése. | Nincs külön keresőpárbeszéd: a kijelölésből indul a keresés, a minta és a „Clear Sample” az eredménysávon látható. | A felület elhelyezése eltér. A kívánt termékviselkedést a paritásjegy határozza meg; a párbeszéd kérdése nyitott. |
 | **Nincs minta őr:** a `0x005d8810` ág a `[edi+0xe64] == -1` értéknél kilép (`0x005d8b85`-`0x005d8b95`). | Nincs kijelölésnél a `keressHasonlot()` visszatér; kijelölésnél az első sort használja. | **EGYEZIK** a „kijelölés nélkül nincs keresés” viselkedés. Az eredeti többes kijelölésre vonatkozó szabály nyitott (lásd az első sort). |
-| **Rejtett beállítás: eredményhatár:** a `Preferences\RankMax` értéket a `0x005d90c6` olvassa; hiányában a `0x005d90de` 1000-et ad át. A visszatérő érték és a találatszám összevetése látszik (`0x005d90fa`), de az ebből következő rangsorolás/levágás pontos szemantikája **NINCS MEG**; megszerzés: `0x005d8810` célzott dekompilálása. | A `SimilarityMixin` nem olvas `RankMax`-ot, és nem alkalmaz találatszám-korlátot. | A mező jelenléte eltér, de felhasználói kimeneti eltérés még nem bizonyított; előbb tisztázni kell a bináris ág jelentését. |
+| **Rejtett beállítás: eredményhatár:** a `Preferences\RankMax` értéket a `0x005d90c6` olvassa; hiányában a `0x005d90de` 1000-et ad át. A `0x005d90fa` a rendezett lista hosszát hasonlítja hozzá; ha nagyobb, a vektor méretét `RankMax`-ra állítja (`0x005d9136`–`0x005d9242`), tehát az aktuális sorrend **első N elemét** tartja meg. A végső rendezés kulcsát és a levágást a 60.4.1 bontja ki. | A `SimilarityMixin` nem olvas `RankMax`-ot, és nem alkalmaz találatszám-korlátot. | **ELTÉR:** az eredeti legfeljebb `RankMax` elemet ad vissza (alap 1000); a PicasaPy nem korlátoz. |
 | **Rejtett beállítás: átméretezés:** `Preferences\ResampleFilter2`, alapérték 6 (`0x00a3f507`, `0x00a3f51c`); a hasonlóság-frissítési lánc hivatkozik az értékre. A 6-os mód Lanczos-4-ként szerepel a `filters-decoded.md`-ben. | A dHash a `cv2`-vel redukáltan dekódolt szürke képet 9×8-ra kicsinyíti `INTER_AREA`-val; nem olvassa ezt a Picasa-beállítást. | **ELTÉR** az előfeldolgozás és a kapcsolódó beállítás. Az egyezés céljához a Picasa előfeldolgozásának pontos átültetése szükséges. |
 | **Hasonlósági adatbázis:** a fájlnév `distims.db` a `0x005d8bbe` címen jelenik meg; a tároló `CBlockFile`, a fix rekord 380 bájt (`0x007eb652`-`0x007eb661`; részletek a fenti #447 szakaszban). A teljes fájlút **NINCS MEG**; megszerzés: a `0x005d8810`-ből a fájlnév feloldásának követése és a `CBlockFile` megnyitási paramétereinek dekompilálása. | Az SQLite index `photo_hashes` táblája útvonal/mtime/méret kulcsú 64 bites dHash-t tárol. | **ELTÉR** a belső tárolási formátum. Ennek átültetése csak akkor indokolt, ha a termék célja a Picasa-találatokkal való viselkedési paritás. |
-| **Összehasonlító jellemző és rangsor:** az eredeti 380 bájtos rekord felépítésének egy része ismert, a `0x007e95f0` és `0x007ea000` keresési/szűrési szemantikája, a távolságképlet, küszöb, sorrend és a minta saját találatként való kezelése viszont **NINCS MEG**. Megszerzés: célzott Ghidra-dekompilálás e két függvényről; az elérhető diszasszemblálás után ez a maradék kérdés. | A `SimilarityMixin` dHash-t számol és Hamming-távolságot használ; a saját `HASONLOSAG_KUSZOB = 14` értéke forráskódban rögzített saját döntés. A mintát is visszaadja (önmagától mért távolsága 0), a találatokat az index lekérdezési sorrendjében adja. | **ELTÉR** az ismert algoritmusszinten. A pontos Picasa-küszöb, mintakezelés és sorrend birtokában kell eldönteni a paritásmódosítást; a 14 nem eredeti Picasa-érték. |
+| **Összehasonlító jellemző és rangsor:** a `0x007e95f0` három rekordterületből képez távolságot: `[+0x002..+0x081]` RGB565 8×8 minta, `[+0x082..+0x159]` 216 bájtos vektor, `[+0x15c..+0x17b]` nyolc float (`0x007e9e60`–`0x007e9f8d`). A `0x007ea000` a három távolság külön növekvő rangját összegzi, majd az összeg szerint rendez; a magban **nincs távolságküszöb**. A `0x005d8810` a hasonlósági rangot és a minta–jelölt helyi időérték-eltérésének rangját kombinálja; a disassembly szerint az időrang kétszer kerül az akkumulátorba (`0x005d8fb5`–`0x005d9085`). A `0x0098b650` FILETIME-ból helyi SYSTEMTIME-ot képez, majd az `OLEAUT32.Ordinal_184`-et hívja; az ordinal neve/skálája **NINCS MEG**. A pontozóban nincs forrásazonosító szerinti önkizárás, de hogy a mintarekord benne van-e az adott adatbázisban, futásidejű adat nélkül **NINCS MEG**. Részletek és állításonkénti bizonyítottsági fok: 60.4.1. | A `SimilarityMixin` dHash-t számol és Hamming-távolságot használ; a saját `HASONLOSAG_KUSZOB = 14` értéke forráskódban rögzített saját döntés. A mintát is visszaadja (önmagától mért távolsága 0), a találatokat az index lekérdezési sorrendjében adja. | **ELTÉR:** az eredeti rekordmezőket és rangösszegeket, utórendezést és `RankMax`-ot használ; nálunk Hamming-küszöb és adatbázis-sorrend van. A 14 nem eredeti Picasa-érték. A helyi időérték pontos mértékegységének azonosítása további bizonyítékot igényel. |
 | **Folyamatjelzés:** „Updating similarity database (will be fast next time)”, `CSimSearch::updating` (`0x007ead60`). | Ugyanez a felirat, a háttérszámítás állapotához kötve; csak hiányzó dHash esetén jelenik meg. | **EGYEZIK** a felirat. Az eredeti megjelenítési feltétel és az üres/adathibás képek hatása **NINCS MEG**; megszerzés: `0x007ead60` célzott dekompilálása és a frissítő visszahívásainak követése. |
 | **Kimeneti név:** „Similarity Search Results” és `]sim` albumtoken (`0x004ad4e0`). | Az eredménysáv ugyanazt a „Similarity Search Results” feliratot mutatja; saját `similar` nézetmód. | **EGYEZIK** a látható név; a virtuális album tokenjének és a találati listának a teljes megfeleltetése **NINCS MEG**. Megszerzés: `0x004ad4e0` és a `0x005d8810`-ból eredő albumállapot dekompilálása. |
 
-#### A #5660 által igazolt eltérések fejlesztési jegy-vázlata
+#### 60.4.1 #5736 — a keresőmag képlete, rangja és `RankMax` (2026-10-24)
 
-Az algoritmus és a beállítások jelentése még nyitott, ezért a kutatás nem
-állítja, hogy a jelenlegi PicasaPy-találatok konkrét tesztképeken eltérnek.
-Az alábbi jegytörzs a **bizonyított megvalósítási eltérések** paritási
-feladatát írja le; a nyitott bináris szemantika lezárása a megvalósítás
-előfeltétele.
+**A rekordmezők és a képletek.** A `0x007e95f0` a 380 bájtos rekordban a `+0x002` címtől olvas 64 darab RGB565 szót, a `+0x082` címtől 216 bájtot, valamint a `+0x15c`–`+0x17b` tartomány nyolc floatját. Ha a rekord `+0xb0` bájtja nulla, mindhárom pontszámvektorba a `0x00cf5064` float sentinel (`99999997952.0`) kerül (`0x007e9e48`–`0x007e9e55`, `0x007e9f90`–`0x007e9f96`); a bájt szemantikai jelentése **NINCS MEG**, a jelöltet ez az ág nem távolítja el. A sentinel nem távolságküszöb.
+
+| komponens | binárisból kiolvasott képlet | bizonyíték | bizonyítottsági fok |
+|---|---|---|---|
+| RGB565 | `D_rgb = (1/64) × Σ[p=0..63]((ΔR5)²+(ΔG6)²+(ΔB5)²)`; a szómezők 64, 16 bites RGB565 mintaszót tartalmaznak | `0x007e9f2b` hívja a `0x007ebaf0`-t; csatornakivonás `0x007ebb0f`–`0x007ebd5d`; `0x00cf3fc0` double = `1/64`; QEMU: vörös `15.015625`, zöld `62.015625`, kék `15.015625` | **megerősített** — utasításolvasás + eredeti kód QEMU-mérése |
+| 216 bájtos leíró | `D_216 = (1/216) × Σ[i,j,k=0..5] w(i,j,k) × (Δv_ijk)²`, ahol `w=max(i,j,k)-min(i,j,k)+1` (1..6) | a `0x007ebf90`–`0x007ebfc7` a 6×6×6 súlytáblát a `0x00d6fb38`–`0x00d6fc0f` tartományba írja; a `0x0064df40` maxot, `0x006c1830` min-t ad; `0x00cf42f0` double = `1/216` | **feltételes** — statikus utasítás-/dekompilálás és konstans |
+| nyolc float | `D_8 = Σ[k=0..7](q_k-r_k)²`; nincs négyzetgyök vagy normalizáló osztás | rekord `+0x15c,+0x160,+0x164,+0x168,+0x16c,+0x170,+0x174,+0x178`; kivonások `0x007e9e60`–`0x007e9eb5`, négyzetek/összeg `0x007e9ebb`–`0x007e9f27`; `0x00cf3a60` double = `0` | **feltételes** — statikus utasításolvasás és konstans |
+
+**Rangsor és küszöb.** A `0x007ea000` mindhárom távolságvektorra külön meghívja a `0x00604480` rendezőt (`0x007ea31a`, `0x007ea35e`, `0x007ea3a2`), a jelöltenkénti három rangpozíciót összeadja (`0x007ea4a7`–`0x007ea579`), majd az összeg szerint növekvően rendez (`0x007ea596`). A `0x007ea000` teljes utasításszintű útjában nincs távolsághatárt vizsgáló eldobó ág; minden rekord pontozott vagy a fenti sentinel értéket kapja. **Fok: feltételes** (teljes célfüggvény statikus negatív vizsgálata; nincs teljes keresési futtatás).
+
+**A kezelő végső rangja.** A `0x005d8810` a minta és minden jelölt `+0xf8` objektummezőjéből `0x004edf60`-nel FILETIME-ot állít elő, majd `0x0098b650`-nel konvertálja (`0x005d8ceb`–`0x005d8d0a`, jelöltek: `0x005d8eb3`–`0x005d8edb`). A `0x0098b650` nem nulla FILETIME esetén `FileTimeToSystemTime` → `SystemTimeToTzSpecificLocalTime` → `OLEAUT32.Ordinal_184` útvonalat hív; az ordinal neve és a double pontos időskálája **NINCS MEG**. A kezelő a minta–jelölt érték abszolút különbségét tárolja (`fsub`, `fabs`, `0x005d8edb`–`0x005d8eec`).
+
+A nullázott rangakkumulátorhoz (`_memset`, `0x005d8f9d`) először egyszer hozzáadja a `0x007ea000`-ból kapott hasonlósági lista pozícióját (`0x005d8fb5`–`0x005d8fdc`), majd a `0x00604480`-nal a FILETIME-alapú abszolút eltérés szerint rendezett indexlista pozícióját **kétszer** hozzáadja (`0x005d8ffb`, `0x005d9010`–`0x005d903b`, `0x005d9043`–`0x005d906e`). A végső kulcs így `R = r_sim + 2 × r_time`, és a `0x005d9085` ezt növekvően rendezi. A `0x00604480` növekvő rendezését a QEMU-próba `[3,1,2] → [1,2,0]` eredménye is alátámasztja. **Fok: feltételes** — a súlyozott összetétel közvetlen disassemblyből következik, a teljes kezelőt nem futtattuk QEMU-ban. A helyi időátalakítás ténye megerősített a Ghidra-dekompilálás és a közvetlen hívási út egyezésével; az ordinal szemantikája nyitott.
+
+**`RankMax`.** A `0x005d90c6` olvassa a `Preferences\RankMax` értéket; ha nincs beállítva, a `0x005d90de` 1000-et állít be. A `0x005d90fa` a végső rendezés (`0x005d9085`) után hasonlítja össze a találatszámot az értékkel; `count <= RankMax` esetén nincs vágás, `count > RankMax` esetén a `0x005d9136`–`0x005d9242` az elemszámot csökkenti, a már rendezett vektor első N elemét tartva meg. Ez maximális elemszám, nem távolságküszöb. **Fok: feltételes** — utasításszintű ág és Ghidra-kimenet egyezik, futásidejű `RankMax`-teszt nem készült.
+
+**Mintakép.** A pontozó teljes bemenetén végigiterál, és a `0x007e95f0`/`0x007ea000` útban nincs forrásazonosító szerinti önkizárás; a `0x005d8810` pedig a kapott CBlockFile-adatbázist adja át a keresőnek (`0x005d8cbf`). Ha a forrás rekordja szerepel benne, érvényes (`+0xb0 != 0`) és friss jellemzőket tartalmaz, önmagához képest a három jellemzőtávolság nulla; az időeltérése is nulla. **A tényleges adatbázisbeli tagság NINCS MEG**: a mérőadat-csomagban nem volt futtatható `distims.db`-minta, ezért a saját rekord biztos találatként való visszaadása dinamikusan nem bizonyított. **Fok: feltételes** (statikus önkizárás-hiány + feltételes rekordtagság).
+
+**Független utak és fok.** (A) a bináris közvetlen utasításolvasása, Ghidra-dekompilálása és PE-konstansai; (B) az eredeti célfüggvények QEMU-mérése. Az RGB565-képlet és a `0x00604480` növekvő iránya **megerősített**. A 216 bájtos és nyolcfloat-képlet, a háromrang-összeg, a távolságküszöb hiánya, a kezelő `r_sim + 2 × r_time` súlyozása, a `RankMax` levágása, valamint a mintarekord adatbázisbeli jelenléte nem kapott teljesen független, teljes útú mérési kontrollt; ezek **feltételesek**, illetve a tagság **nyitott**. A 216 bájtos helper közvetlen QEMU-próbája SIGSEGV-vel végződött; az abból származó számértéket nem használom bizonyítékként.
+
+**Cáfoló kísérlet.** A rendezőnél a csökkenő sorrend hipotézisét próbáltam cáfoló bemenettel: `[3,1,2]` csökkenő eredménye `[0,2,1]` volna, a QEMU-mérés viszont `[1,2,0]` lett, tehát a csökkenő hipotézis megbukott. A vörös/zöld/kék egyetlen-bites próbák a másik irányból is ellenőrizték a RGB-képlet `/64` skáláját. A `r_sim + 2 × r_time` teljes kezelőkulcsra nem készült QEMU-teszt; ezt a két egymás utáni, azonos akkumulátorba író disassembly-hurok alapján **feltételesnek** hagyom.
+
+**Bizonyítottsági fok: vegyes.** A RGB565-képlet és a rendező növekvő iránya **megerősített** (utasításolvasás + QEMU); a többi algoritmikus állítás **feltételes** (utasításolvasás/Ghidra és konstansok, teljes futási kontroll nélkül); a mintarekord tényleges adatbázisbeli tagsága és az `Ordinal_184` export/számérték jelentése **nyitott**. Teljes keresési futtatást nem állítok.
+
+#### Fejlesztési jegyjavaslat a #5736 által igazolt eltérésekre
+
+A #5736 a keresőmag képletét, rangösszegét és a `RankMax` vágását
+utasításszinten feltárta, az RGB565-képletet és a rendezési irányt QEMU-val is
+mérte. Ez már bizonyítja a dHash/Hamming-megvalósítástól való szerkezeti
+eltérést. Az `OLEAUT32.Ordinal_184` pontos exportja/skálája, a rekordfrissítés
+paritása és a mintarekord adatbázisbeli jelenléte még nyitott; a fejlesztési
+jegy a megállapítható algoritmikus eltéréseket rögzíti, a hiányzó részekhez
+pedig mérést kér.
 
 **Cím:** A mintaképes hasonlóság-keresés Picasa 3.9-paritása
 
 **Eredeti:** A Picasa 3.9.141.259 `distims.db` adatbázist és 380 bájtos
-rekordot használ (`0x005d8bbe`, `0x007eb652`). Az összehasonlítás pontos
-képlete, sorrendje és a `RankMax` működése még célzott dekompilálást igényel.
+rekordot használ (`0x005d8bbe`, `0x007eb652`). Három jellemző külön rangját
+összegzi; a kezelő végső kulcsa `r_sim + 2 × r_time`, ahol `r_time` a minta és
+a jelölt FILETIME-alapú abszolút időérték-eltérésének rangja. A
+`Preferences\RankMax` a végső rendezés prefixét korlátozza (60.4.1).
 
 **Nálunk:** A mintaképes keresés dHash/Hamming-alapú, saját 14 bites
 küszöbbel; nincs `RankMax` találatkorlát és nem használja az eredeti
 `ResampleFilter2` beállítást.
 
-**Teendő:** A bináris maradék szemantikájának lezárása után a találati
-tagságot, sorrendet, korlátot és előfeldolgozást a Picasa-viselkedéshez
-igazítani, vagy a mért eltérést termékdöntésként rögzíteni; a jelenlegi
-látható „Clear Sample” gombot külön, tudatos PicasaPy-felületi többletként
-megtartani vagy termékdöntéssel módosítani.
+**Teendő:** Paritáscél esetén cseréld le a dHash/Hamming-küszöböt az eredeti
+három jellemző rangösszegére, majd alkalmazd a mért `r_sim + 2 × r_time`
+végső rangot és a `RankMax` prefixkorlátot. Az időskálát és a forrásrekord
+tagságát kontrollált Picasa-futásban mérd meg, mielőtt a mezőt és a saját
+mintatalálatot specifikálod. A látható „Clear Sample” gomb maradjon külön,
+tudatos termékdöntés.
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
 | A `tre:searchoptions` minta- és törlővezérlői kommenteltek, miközben a `Ctrl+F7`/`Ctrl+F8` parancs aktív (`0x005e62e8`, `0x005e631d`). | A gyorsbillentyűk mellett látható „Clear Sample” gomb van az eredménysávon. | A gomb legyen dokumentált, tudatos felületi többlet; a paritásmódosítás ne tüntesse el véletlenül. |
-| `distims.db` és 380 bájtos rekord (`0x005d8bbe`, `0x007eb652`); keresési jellemző/rangsor `0x007e95f0`/`0x007ea000` | `photo_hashes.dhash`, 64 bit, Hamming-küszöb 14 | A nyitott bináris képlet, küszöb, sorrend és `RankMax`-szemantika lezárása után a kereső kimenetét az eredetihez igazítani, vagy a mért eltérést dokumentált termékdöntéssé tenni. |
+| 380 bájtos rekord: RGB565, 216 bájtos leíró, nyolc float (`0x007e95f0`); három komponensrang összege (`0x007ea000`); a kezelő végső rangja `r_sim + 2 × r_time`, utána `RankMax` prefixvágás (`0x005d8810`). | `photo_hashes.dhash`, 64 bit, Hamming-küszöb 14; nincs `RankMax`. | Paritáscél esetén az eredeti rangsort és korlátot bevezetni; az időkulcs exact skáláját azonosítani az `OLEAUT32.Ordinal_184` export helyi feloldásával vagy kontrollált runtime-méréssel, majd rögzített képkészleten összevetni. |
 | `Preferences\ResampleFilter2`, alapérték 6 (`0x00a3f507`, `0x00a3f51c`) | saját redukált dekódolás és `INTER_AREA`; a beállítást nem használja | A Picasa előfeldolgozásával való összehasonlítás alapján paritás esetén átvenni a módot és alapértéket. |
-| `Preferences\RankMax`, alapérték 1000 (`0x005d90c6`, `0x005d90de`); pontos hatás nyitott | nincs ilyen beállítás vagy eredménykorlát | A dekompilált jelentés szerint bevezetni a beállítást és azonos rangsorolt találatkorlátot. |
+| `Preferences\RankMax`, alapérték 1000; a rendezett vektor első N elemét tartja meg (`0x005d90fa`, `0x005d9136`–`0x005d9242`). | nincs ilyen beállítás vagy eredménykorlát | Bevezetni a beállítást és azonos prefixkorlátot. |
 
 **Kész, ha:**
 
-- a `0x007e95f0` és `0x007ea000` dekompilálásával dokumentált a Picasa jellemző,
-  összehasonlítási képlete, sorrendje és `RankMax`-viselkedése;
+- a `0x007e95f0`, `0x007ea000` és `0x005d8810` mért lelete dokumentált, és
+  az `OLEAUT32.Ordinal_184` export neve/skálája ismert vagy kontrollált
+  mérésből rögzített;
 - a PicasaPy ugyanazon rögzített képkészleten azonos mintaképet, találati
   tagságot, sorrendet és találatszámot ad, vagy a termékdöntés név szerint
   rögzíti az elfogadott eltéréseket;
 - a `ResampleFilter2` alapértéke és hatása egyezik a dokumentált eredeti
   viselkedéssel, vagy a tudatos eltérés felhasználói dokumentációba kerül;
+- egy rögzített rang-fixture igazolja a `r_sim + 2 × r_time` sorrendet; például
+  `A=(r_sim 0, r_time 2) → 4`, `B=(r_sim 3, r_time 0) → 3`, ezért B álljon
+  A elé (szintetikus rangteszt, nem Picasa-mérés);
+- `RankMax=2` és három, előre rendezett tesztjelölt esetén pontosan a sorrend
+  első két eleme maradjon meg, távolságküszöb szerinti eldobás nélkül;
+- a mintarekord szereplését kontrollált eredeti futás eredményével egyeztesd,
+  mert a binárisból az önkizáró ág hiánya, nem az adatbázisbeli tagság bizonyult;
 - a meglévő `Ctrl+F7`, `Ctrl+F8`, eredményfelirat és üres kijelölés viselkedés
   nem romlik, és a látható „Clear Sample” többletvezérlő tudatosan megmarad
   vagy egy termékdöntés dokumentálja a változtatását.
 
 #### Bizonyítottság, cáfoló kör és fennmaradó kérdések
 
-**Bizonyítottsági fok: feltételes.** Két külön út megerősíti, hogy a
+**Bizonyítottsági fok: feltételes.** A 60.4.1 a keresőmag képletét, rangsorát
+és `RankMax`-ját külön tárgyalja. Két külön út megerősíti, hogy a
 hasonlóság-keresés nem pusztán kikommentezett rajz: (A) az utasításszintű
 útvonal az aktív `Ctrl+F7` ágat a `0x005d8810` kezelőhöz, onnan a
 `0x007ea000` keresőhöz vezeti; (B) az indexelt string-xref-ek külön a
@@ -5419,8 +5461,10 @@ hasonlóság-keresés nem pusztán kikommentezett rajz: (A) az utasításszintű
 amelyet a keresőkezelő hív. A pontos erőforrás-kivonat megerősíti, hogy a
 felületi sorok közben ki vannak kommentezve. A PicasaPy-oldali billentyű,
 minta, küszöb és eredménysáv külön ellenőrizhető a QML/Python-forrásban. A
-teljes eredményszemantika azonban a keresőfüggvények dekompilálása nélkül nem
-dönthető el.
+keresőmag és a korlát statikus útja a 60.4.1-ben áll. Az
+`OLEAUT32.Ordinal_184` export/skálája, a többes kijelölés és a frissítés
+feltételei még nyitottak; a mintarekord adatbázisbeli jelenléte futásidejű
+kérdés.
 
 **Cáfoló kísérlet:** a „kommentelt vezérlők ⇒ a funkció nem létezik” állítást
 az aktív `Ctrl+F7`-ág és a `0x005d8810` → `0x007ea000` → `0x004ad4e0`
@@ -5431,28 +5475,33 @@ bináris funkció pedig parancsúton aktív**.
 
 **Nyitott:**
 
-- `Ghidra-kör kell: 0x007ea000: a hasonlósági eredmény-lista kiválasztása/rangsorolása: a RankMax hogyan hat, mi a rendezés/maximum, és benne van-e a mintakép? [blokkoló]`
-- `Ghidra-kör kell: 0x007e95f0: a 380 bájtos distims.db rekordok összehasonlító képlete/küszöbe és a kihagyási esetek. [blokkoló]`
-- `Ghidra-kör kell: 0x005d8810: az egyes/multiple kijelölés kezelése, a külön párbeszéd vagy panel megnyitása és a RankMax ág teljes vezérlési útja. [blokkoló]`
-- `Ghidra-kör kell: 0x007ead60: pontosan mikor indul és milyen feltételekkel áll le az adatbázis-frissítés/felirat. [blokkoló]`
+- `Ghidra-kör kell: 0x007ead60 — a meglévő dekompilálás a 380 bájtos rekord blokkos írását mutatja, de nem nevezi meg, melyik előkészítő ág állítja a pontozó által vizsgált rekord+0xb0 bájtot, és mit jelöl ez az állapot.`
+- **NINCS MEG:** az `OLEAUT32.Ordinal_184` export pontos neve és a `0x0098b650` visszatérési double időskálája. Megszerzés: a Picasa által használt OLEAUT32 ordinal-táblája vagy ismert FILETIME-okra végzett kontrollált runtime-mérés.
+- **NINCS MEG:** hogy a kiválasztott forrásrekord az adott futásban szerepel-e a `distims.db` jelöltvektorában. Megszerzés: eredeti programmal, előtte-utána mentett `distims.db`-vel vagy azonos adatokkal feltöltött QEMU-harnessben végzett, mintaképre visszakereső próba.
+- `Ghidra-kör kell: 0x005d8810 — a több kijelölés kezelése és a külön párbeszéd/panel megnyitásának útja. Ez kívül esik a #5736 hatókörén.`
+- `Ghidra-kör kell: 0x007ead60 — pontosan mikor indul és milyen feltételekkel áll le az adatbázis-frissítés/felirat. [blokkoló]`
 - A külön menüparancs vagy modális párbeszéd megléte nincs lezárva; a megszerzési út a fenti táblázatban áll.
 
 ### Nyitott kérdések mérlege (60.)
 
 ```
-Nyitott kérdések: 1 nyílt · 3 lezárva · 3 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
+Nyitott kérdések: 2 nyílt · 4 lezárva · 3 blokkolt · 0 hatókörön kívül · 0 csak-nyitva
 ```
 
 - **LEZÁRVA:** a `searchoptions`-ban deklarált elemek és a kikommentezett
   vezérlők elkülönítése (60.1, #5660); a `distims.db`-hez tartozó
   380-bájtos rekord és a `Similarity Search Results` kimeneti név (60.2,
-  #447/#5660); a `dupesearch` második belépési pontja (60.3).
-- **NYÍLT:** van-e külön menübelépés: a #5660 táblázata megadja a
-  megszerzés útját.
-- **BLOKKOLT:** a keresési képlet/rangsor, a `RankMax` hatása, a kijelölési
-  és felületnyitási ág, valamint a frissítés pontos feltételei. **Mi kell
-  hozzá:** a 60.4-ben megadott célzott Ghidra-körök. A 380 bájtos rekord
-  mérete és részleges szerkezete már ismert; ez nem maga a blokkoló kérdés.
+  #447/#5660); a `dupesearch` második belépési pontja (60.3); a keresőmag
+  képlete, rangösszege, távolságküszöb-hiánya és a `RankMax` prefixvágása
+  (60.4.1, #5736).
+- **NYÍLT:** van-e külön menübelépés (a #5660 táblázata megadja a megszerzés
+  útját), és mit jelöl a rekord `+0xb0` bájtja (`0x007e95f0`).
+- **BLOKKOLT:** az `OLEAUT32.Ordinal_184` export/skála feloldása, a mintarekord
+  tényleges adatbázisbeli tagsága, a többes kijelölési és felületnyitási ág,
+  valamint a frissítés pontos feltételei. **Mi kell hozzá:** helyi ordinaltábla
+  vagy kontrollált időmérés; eredeti futásban mentett `distims.db` vagy
+  megfelelő QEMU-adat; a többi kérdés célzott bináris-út. A keresőképletek,
+  rangösszegek és `RankMax`-vágás a 60.4.1-ben állnak.
 
 *(Záró mondat a 45.1 szerint: ez a csoport a leltárban nem szerepel,
 ezért „hiányzó vezérlő" mérőszáma sincs — a hiányt a fenti tábla mondja
