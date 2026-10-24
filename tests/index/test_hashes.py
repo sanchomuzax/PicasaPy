@@ -11,6 +11,7 @@ from picasapy.index.hashes import load_dhashes, save_dhashes
 
 class TestSchema:
     def test_schema_version_is_current(self):
+        # v26: Picasa-hasonlósági jellemzők cache-e (#5744)
         # v25: Picasából importált arcok forrásjelölője (#5180)
         # v24: személyenként választott indexkép (#4536)
         # v23: albumtagság kézi helye az indexben (#4599)
@@ -22,7 +23,7 @@ class TestSchema:
         # v17: a befagyasztott, első látáskori fájlidő, #2486 —
         # `photos.first_seen_mtime_ns`; v16: a Picasa-gyorskulcs oszlopa,
         # #1494 — `photo_hashes.originfast`, a `dhash` NOT NULL feloldásával)
-        assert SCHEMA_VERSION == 25
+        assert SCHEMA_VERSION == 26
 
     def test_fresh_database_has_photo_hashes_table(self, tmp_path):
         with open_index(tmp_path / "index.db") as conn:
