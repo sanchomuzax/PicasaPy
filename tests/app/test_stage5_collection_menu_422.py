@@ -67,11 +67,11 @@ class TestCollectionContextMenu:
         ]
         assert found == self.EXPECTED
 
-    def test_password_item_is_a_placeholder(self, qml_engine):
-        """A jelszavas gyűjtemény mögött nincs réteg — szürkén látszik."""
+    def test_password_item_is_available(self, qml_engine):
+        """#5704: a felhasználói gyűjtemény jelszava beállítható."""
         menu = _load(qml_engine, "CollectionContextMenu")
         item = menu.findChild(QObject, "collectionMenuPassword")
-        assert item.property("enabled") is False
+        assert item.property("enabled") is True
 
     def test_rename_and_remove_are_not_placeholders(self, qml_engine):
         menu = _load(qml_engine, "CollectionContextMenu")

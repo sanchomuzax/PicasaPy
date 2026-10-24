@@ -31,10 +31,11 @@ megmaradtak (a hívók/tesztek ezekre hivatkoznak), de belül a mixin
 from __future__ import annotations
 
 import logging
+import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QSettings, Signal, Slot
+from PySide6.QtCore import QObject, QSettings, QStandardPaths, Signal, Slot
 
 from picasapy.fileops import has_enough_free_space, required_bytes_for
 from picasapy.index import PhotoRecord
@@ -61,6 +62,13 @@ _log = logging.getLogger(__name__)
 #: a választó INDEXE és a mozgókép-mód (spec 6.1).
 SIZE_SETTINGS_KEY = "webexport/size"
 MOVIE_FULL_SETTINGS_KEY = "webexport/movieFull"
+WEB_EXPORT_TARGET_SETTINGS_KEY = "webexport/targetDir"
+WEB_EXPORT_TEMPLATE_SETTINGS_KEY = "webexport/templateId"
+
+
+def _platform() -> str:
+    """A futó platform — a Windows-alapértelmezés külön is tesztelhető."""
+    return sys.platform
 
 
 class WebExportController(BackgroundWorkerMixin, QObject):
@@ -96,15 +104,19 @@ class WebExportController(BackgroundWorkerMixin, QObject):
 
     @Slot(result="QVariantMap")
     def webExportPrefs(self) -> dict:  # noqa: N802
-        r"""A méretválasztó és a mozgókép-mód megőrzött állása (#4610).
+        r"""A webexport megőrzött beállításai (#4610, #5714).
 
         Az eredeti a `Preferences\WebExportSize` (alap 3 → 640 képpont) és a
         `WebExportMovie` (alap 0 → „Első képkocka") kulcsból indul
-        (`0x007f5310`, `0x007f5355`). Hibás tárolt érték az alapra esik."""
+        (`0x007f5310`, `0x007f5355`); a célmappát és sablont a
+        `WebExportPath`/`WebExportTemplate` tárolja (`0x007f52b0`). A hibás
+        méretérték az alapra esik, hiányzó sablonnál a QML a 0. indexet adja."""
         settings = self._get_settings()
         return {
             "sizeIndex": _size_index(settings.value(SIZE_SETTINGS_KEY)),
             "movieFull": _truthy(settings.value(MOVIE_FULL_SETTINGS_KEY)),
+            "targetDir": str(settings.value(WEB_EXPORT_TARGET_SETTINGS_KEY) or ""),
+            "templateId": str(settings.value(WEB_EXPORT_TEMPLATE_SETTINGS_KEY) or ""),
         }
 
     def exportRunning(self) -> bool:
@@ -145,21 +157,26 @@ class WebExportController(BackgroundWorkerMixin, QObject):
             for info in list_templates()
         ]
 
-    #: #534: az eredeti alapértelmezett kimeneti mappája
-    #: (`CWebExporter::DefaultPath` / `IDS_DEFAULT_WEB_EXPORT_PATH`):
-    #: „Picasa HTML Exports\" — KÖZVETLENÜL a rendszer képmappájában, nem a
-    #: `Picasa/` alatt (ott a Kollázsok és a filmek vannak). A magyar név a
-    #: mi honosított mappaneveink mintáját követi.
+    #: Nem Windows platformon az alapértelmezett célmappa neve (#534).
     HTML_EXPORT_MAPPA = "Picasa HTML exportok"
 
     @Slot(result=str)
     def defaultWebExportTarget(self) -> str:  # noqa: N802
-        """A javasolt célmappa a párbeszéd megnyitásakor (#534).
+        """A javasolt célmappa a párbeszéd megnyitásakor (#534, #5714).
 
-        A képmappát a RENDSZERTŐL kérdezzük (`collage_output.pictures_dir`,
-        #1088) — a `Path.home() / "Pictures"` a tulajdonos gépén rossz
-        helyre mutatott, mert az OneDrive-átirányítást nem követi. A mappát
-        NEM hozzuk létre: azt az export teszi, ha tényleg elindul."""
+        Windowson az eredeti Picasa a `Personal` (Qt:
+        `DocumentsLocation`) mappa alá írja a `Picasa HTML Exports` mappát.
+        Más platformon megmarad a rendszer képmappája és a meglévő
+        honosított mappanév. Egyik útvonalat sem hozzuk létre; azt az export
+        teszi, ha tényleg elindul."""
+        if _platform() == "win32":
+            personal = QStandardPaths.writableLocation(
+                QStandardPaths.StandardLocation.DocumentsLocation
+            )
+            return (
+                str(Path(personal) / "Picasa HTML Exports") if personal else ""
+            )
+
         from .collage_output import pictures_dir
 
         return str(pictures_dir() / self.HTML_EXPORT_MAPPA)
@@ -230,7 +247,7 @@ class WebExportController(BackgroundWorkerMixin, QObject):
             image_size_for_index(_size_index(size_index)),
             WebExportSettings(movie_full=bool(movie_full)),
         )
-        self._remember_choice(size_index, movie_full)
+        self._remember_choice(size_index, movie_full, target, template.id)
         self.webExportStarted.emit()
         # #438/#505: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         # — a busy-bejelentkezés is ITT, a mixinben történik automatikusan
@@ -240,11 +257,15 @@ class WebExportController(BackgroundWorkerMixin, QObject):
             name="picasapy-webexport",
         )
 
-    def _remember_choice(self, size_index: int, movie_full: bool) -> None:
-        """A választás megőrzése (#4610, `0x007f5ffe`/`0x007f6020`)."""
+    def _remember_choice(
+        self, size_index: int, movie_full: bool, target_dir: Path, template_id: str
+    ) -> None:
+        """A webexport választásainak megőrzése (#4610, #5714)."""
         settings = self._get_settings()
         settings.setValue(SIZE_SETTINGS_KEY, _size_index(size_index))
         settings.setValue(MOVIE_FULL_SETTINGS_KEY, bool(movie_full))
+        settings.setValue(WEB_EXPORT_TARGET_SETTINGS_KEY, str(target_dir))
+        settings.setValue(WEB_EXPORT_TEMPLATE_SETTINGS_KEY, template_id)
 
     def _run_export(
         self,

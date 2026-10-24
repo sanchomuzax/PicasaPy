@@ -322,6 +322,12 @@ színárnyalatot választod, a színmezőben annak világosabb, sötétebb vagy
 fakóbb változatát. Amire kattintasz, az azonnal
 érvényesül a képen, és bekerül a legutóbbi színek közé.
 
+A színt **magáról a képről** is kiveheted: a színmező melletti kis
+**pipettagombra** kattints (buboréksúgója: **Színválasztás**), majd a
+képre. A mutató ilyenkor célkereszt. A kattintott képpont színe lesz az
+effekt színe, és ez is bekerül a legutóbbi színek közé. A pipetta egy
+kattintás után magától kikapcsol.
+
 ## Festés ecsettel: hol hasson a Vámpírszem
 
 Csak a **Vámpírszem** festhető; a **Felpörgetés**, a **Képpontnagyítás**,

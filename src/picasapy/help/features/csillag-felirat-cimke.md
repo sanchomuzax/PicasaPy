@@ -136,4 +136,7 @@ A gombok tartalmát a **Gyorscímkék konfigurálása** párbeszédben állítod
 be; ezt a felirat melletti fogaskerék-gomb nyitja meg (buboréksúgója is
 **Gyorscímkék konfigurálása**). Itt bekapcsolhatod, hogy a felső két gombot a program tartsa fenn a
 legutóbb használt címkéknek, és egy gombbal fel is töltheted az üres
-mezőket a gyakran használt címkéiddel.
+mezőket a gyakran használt címkéiddel. Ha a legutóbbiak fenntartása ki
+van kapcsolva, a program a gyorscímkézést nem is jegyzi fel a
+legutóbbiak közé: ha később bekapcsolod, a közben használt címkék nem
+jelennek meg ott.

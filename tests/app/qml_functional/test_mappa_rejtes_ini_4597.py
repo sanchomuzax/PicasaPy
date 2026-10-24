@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from picasapy.ini import load_document, read_folder_category
 
 from tests.app.qml_functional.test_album_menu_mappa_elrejtes_4741 import (
@@ -15,6 +17,14 @@ from tests.app.qml_functional.test_album_menu_mappa_elrejtes_4741 import (
     _nyisd_meg_menu_tetelt,
     _varj,
 )
+
+
+@pytest.fixture(autouse=True)
+def _jelszoajanlat_nelkul(qml_app):
+    """#5704: elrejtés után jelszóajánlat nyílna; ez a teszt az ini-írást méri."""
+    from picasapy.app.confirm_settings import set_confirm_suppressed
+
+    set_confirm_suppressed(qml_app[1]._get_settings(), "DoNotConfirmHiddenPwd", True)
 
 
 def test_menu_kattintas_az_inibe_ir(qml_app, qt_app):

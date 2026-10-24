@@ -497,6 +497,14 @@ A **Létrehozás ▸ Mozgófilm ▸ A kijelölésben lévő arcokból…** a kij
 képekkel nyitja meg a [Filmkészítőt](mozgofilm.md), 1024 × 768-as
 alapmérettel. A parancs csak kijelölt képnél él.
 
+Az arcokból készülő filmnél a Filmkészítő harmadik füle nem a
+**Klipek**, hanem az **Opciók**, ahogy az eredeti Picasában. Ide kerül a
+**Méretek**, a négy jelölő (**Képfeliratok megjelenítése**, **Teljes
+képkockás fotó körbevágása**, **Dátumok megjelenítése**, **Kis
+felbontású arcok eltávolítása**) és a **Diák rendezése:** választó; a
+**Mozgófilm** fülön ezek ilyenkor nincsenek ott. Az alapértékek
+ugyanazok maradnak.
+
 Az arcokból készülő filmben minden klip **az arcra van keretezve**: a
 program az arcot a kocka közepére igazítja, és köré vágja a képet. Ha egy
 képen több megjelölt arc van, mindegyikből külön klip lesz. Az olyan kép,
