@@ -1327,7 +1327,7 @@ indulási út külön-külön olvassa a beállítást; a második, független
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| A Fotónéző beállítása párbeszédben `ViewerFullscreenStartup` jelölőnégyzet; alapértéke `1`, és újraindításkor befolyásolja a Photo Viewer ablakmódját. | A `PhotoViewerSettingsDialog.qml` a színkezelési jelölőnégyzetet tartalmazza; `ViewerFullscreenStartup` vezérlő nincs benne. | A #4333 párbeszédbe kerüljön magyar és angol feliratú jelölőnégyzet. Betöltéskor/mentéskor a `ViewerFullscreenStartup` 4 bájtos logikai értékét kezelje, hiányzó kulcsnál `1`-et használjon; a Photo Viewer indulása igaz értéknél teljes képernyős legyen. |
+| A Fotónéző beállítása párbeszédben `ViewerFullscreenStartup` jelölőnégyzet; alapértéke `1`, és újraindításkor befolyásolja a Photo Viewer ablakmódját. | A `PhotoViewerSettingsDialog.qml` `photoViewerFullscreenStartupCheck` vezérlője a `ViewerStartupMixin` beállítását használja; hiányzó kulcsnál `1` az alapérték. A `Main.qml` a néző következő megnyitásakor ennek megfelelően ablakos vagy teljes képernyős módot állít be. | Megvalósítva (#4432); a `tests/app/qml_functional/test_fotonezo_beallitasok_4333.py` valódi kattintással, 0/1 mentéssel, újranyitással és mindkét ablakmód kimenetével fedi. A #5719-ben a korábban hiányzó lefedettségi sort rögzítettük. |
 
 **Cáfoló kör:** az első magyar erőforrás-keresés csak `SLINGSHOT` nevű
 adatjelöltekre szűrt, ezért hamisan „nincs magyar felirat” eredményt adott.
