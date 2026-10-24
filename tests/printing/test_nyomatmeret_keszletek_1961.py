@@ -78,8 +78,9 @@ class TestACentimeteresAtvaltas:
     def test_a_huvelykertek_a_centimeterbol_jon(self, nev, cm_szel, cm_mag):
         """A foga: elgépelt hüvelyk-érték itt bukik, nem a felhasználónál."""
         tag = NyomatMeret[nev]
-        assert tag.szeles_huvelyk == pytest.approx(cm_szel / 2.54, abs=1e-6)
-        assert tag.magas_huvelyk == pytest.approx(cm_mag / 2.54, abs=1e-6)
+        # A `0x00776f0a` cm-ága a `0x00cf3fe0` 0,3937 értékével szoroz.
+        assert tag.szeles_huvelyk == pytest.approx(cm_szel * 0.3937, abs=1e-10)
+        assert tag.magas_huvelyk == pytest.approx(cm_mag * 0.3937, abs=1e-10)
 
     def test_a_teljes_oldal_A4(self):
         """DÖNTÉS: a „Teljes oldal" nálunk A4 (210 × 297 mm) — a metrikus
