@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.211] - 2026-10-24
+
+- A Nyomtatás párbeszédben választható a Normál és Optimalizált mód (#5684).
+- A nyomtatási Normál és Optimalizált mód az eredeti minőségi skála szerint készíti a köztes rasztert (#5760).
+- Képargumentumokkal a PicasaPy közvetlenül a gyors nézegetőben nyitja meg a képeket, és fájltársításokat kínál a támogatott formátumokhoz (#5762).
+
 ## [0.9.210] - 2026-10-24
 
 - A Nyomtatás párbeszédben választható a Normál és Optimalizált mód (#5684).
