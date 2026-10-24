@@ -77,7 +77,22 @@ class TestJelszoval:
         assert "titok" not in tarolt
         assert tarolt == picasa_lenyomat("titok")
 
-        vezerlo.setHiddenPassword("titok", modern=True)
+        assert vezerlo.changeHiddenPassword("titok", "titok", modern=True)
         tarolt = vezerlo.hiddenPasswordHash
         assert "titok" not in tarolt
         assert tarolt.startswith("picasapy-pbkdf2-sha256$")
+
+    def test_csere_es_torles_regi_jelszo_igazolasa_nelkul_nem_megy(self, vezerlo):
+        vezerlo.setHiddenPassword("régi", modern=False)
+        eredeti = vezerlo.hiddenPasswordHash
+
+        assert vezerlo.changeHiddenPassword("hibás", "új") is False
+        assert vezerlo.clearHiddenPassword("hibás") is False
+        assert vezerlo.hiddenPasswordHash == eredeti
+
+        assert vezerlo.changeHiddenPassword("régi", "új") is True
+        assert vezerlo.verifyHiddenPassword("régi") is False
+        assert vezerlo.verifyHiddenPassword("új") is True
+        assert vezerlo.clearHiddenPassword("régi") is False
+        assert vezerlo.clearHiddenPassword("új") is True
+        assert vezerlo.hiddenPasswordSet is False

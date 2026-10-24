@@ -1,4 +1,4 @@
-# Picasa képernyőkép-rögzítése (#5608, 2026-10-23)
+# Picasa képernyőkép-rögzítése (#5608, 2026-10-24)
 
 Az eredeti Picasa 3 képernyőkép-készítő útja. A rögzítést végző függvény a
 `0x00590f40`; a billentyűt figyelő metódus a `0x00591470`. A `Scrapture`
@@ -48,10 +48,12 @@ beállítás az objektum és a szál létrehozását kapuzza, de a mező kezelé
 beállítás közötti további kapcsolat **NINCS MEG**. A vizsgált út tehát
 háttérszálas, ismételt billentyű-lekérdezés. A `paszta.py` teljes `.text`
 pásztázása a `0x00590f40` címre egyetlen közvetlen hívást talált:
-`0x005914f1`-et, a fenti billentyűfigyelőből. A 2026-10-23-i kapuzott
-újrafutás (`paszta.memoria_kapu()`, alapértelmezett 2048 MiB-os korláttal)
-2 884 879 utasítást dolgozott fel, és ugyanezt az egyetlen közvetlen hívást
-adta. A `Scrapture::vftable`
+`0x005914f1`-et, a fenti billentyűfigyelőből. A 2026-10-23-i és a
+2026-10-24-i kapuzott futás (`paszta.memoria_kapu()`, alapértelmezett
+2048 MiB-os korláttal) egyaránt 2 884 879 utasítást dolgozott fel, és
+ugyanezt az egyetlen közvetlen hívást adta; a 2026-10-24-i futás pozitív
+kontrollja, a `0x005914f1` hívás megtalálása sikerült, a mért csúcsmemória
+86,89 MiB volt. A `Scrapture::vftable`
 (`0x00c91728`) `+0x08` rekesze szintén `0x00591470`-re mutat; a teljes
 szövegszakasz két közvetlen címhivatkozása közül az egyik az állapotkezelő
 `0x0040ca6f`, a másik a konstruktor `0x00590ef5` utasítása.
@@ -75,6 +77,10 @@ meglévő kimenete egy
 külön általános táblakészítőt mutat, kapcsolatát ezzel a fő ciklussal nem
 igazolja. A következő célzott irány a fő ciklus HACCEL-táblájának
 feltöltése és parancsútja, majd ennek összevetése a `Scrapture` objektummal.
+Az eredeti PE erőforrás-táblában nincs `RT_MENU` (típus `4`) vagy
+`RT_ACCELERATOR` (típus `9`); ez a beágyazott erőforrásként tárolt menü és
+accelerator ellen szól, de a futásidőben létrehozott vagy más úton kötött
+menüparancsot nem zárja ki.
 
 | Módosító | A `0x00591470` által átadott cél |
 |---|---|
@@ -170,14 +176,62 @@ ekkora, az `0x00c405e0`-n át a `ShellExecuteA`-t. A globális érték
 platformonkénti jelentése nincs feloldva. Ez a fájlt adja át a shellnek;
 nem bizonyítja, hogy a buborék a mappára navigál.
 
-**Nyitott:** a `0x0057d080` a buborék előtt meghív egy útvonal-kereső
-útvonalat (`0x004f92c0` → `0x004e7d10`); az utóbbi bejárja a gyűjtemény
-adatait, és egy ágán a `0x004e31a0` függvényt is meghívja. Ez a
-diszasszemblálás nem dönti el, hogy a kimeneti BMP ilyenkor azonnal bekerül-e a könyvtári
-indexbe. A `0x0057d080` a `clickview` műveletet is előkészíti, de a kattintási
-viselkedést a `0x0057d1e4`-nél hívott, az objektum vtable-jéből vett
-`+0x68` metódus valósítja meg; ennek célfüggvénye és navigációs célja itt
-**NINCS MEG**.
+<<<<<<< HEAD
+**Nyitott - azonnali indexelés:** a `0x0057d080` a buborék előtt meghív egy
+útvonal-kereső útvonalat (`0x004f92c0` → `0x004e7d10`); az utóbbi bejárja a
+gyűjtemény adatait, és egy ágán a `0x004e31a0` függvényt is meghívja. A
+`2026-10-24-kor-20261024.txt` Ghidra-kimenet szerint a `0x004e31a0` a
+paraméterként kapott objektum `+0x344` mezőjéből olvas vtable-címet, majd
+annak `+0x10` rekeszét hívja (`0x004e323d`, `0x004e3243`, `0x004e324c`). A `0x004e7d10` hívó a
+saját objektumát az argumentumok között átadja (`0x004e7df6`-`0x004e7df7`).
+A dekompilálás és a diszasszemblálás sem azonosítja a futásidejű objektumtípust
+vagy a vtable-rekesz célfüggvényét, ezért nem bizonyítják, hogy a kimeneti BMP
+ekkor bekerül-e a könyvtári indexbe. A teljes szövegszakasz `+0x344`
+eltolású mezőinek külön pásztázása 183 hozzáférést talált, köztük 66 általános
+írásjelöltet sok függvényben; az eltolás önmagában nem azonosítja ezt az
+objektumot vagy a callbacket. **NINCS MEG.** A következő lépés a
+`0x004f92c0` útvonalon átadott `0x004e7d10`-objektum konkrét típusának,
+a `+0x344` mező inicializálójának és a `+0x10` callbacknek a visszafejtése,
+majd a callback indexmódosító hatásának ellenőrzése.
+
+**Nyitott - buborékkattintás:** a `0x0057d080` a `clickview` műveletet is
+előkészíti, de a kattintási viselkedést a `0x0057d1e4`-nél hívott, az objektum
+vtable-jéből vett `+0x68` metódus valósítja meg. A meglévő dekompilálás
+azonosítja a hívást és a `clickview` kulcsot, de nem a konkrét címzettet vagy
+navigációs célt; **NINCS MEG**.
+=======
+### #5752 - Keresés a mentés után és az indirekt callback (2026-10-24; feltételes)
+
+A `0x0057d080` a buborék előtt meghívja a `0x004f92c0` keresési útját;
+ennek dekompilálása a `0x004e7d10` bejárót hívja. A `0x004e7d10` a
+`0x004e62d0` által adott elemeket bejárja, önmagát rekurzívan hívja, és egy
+`0xf4241` visszatérési értéknél meghívja a `0x004e31a0`-t. A
+`0x004e31a0` utasításai a fogadó objektum `+0x344` mezőjéből olvassák a
+callback-objektumot, annak `+0x10` slotjából pedig a függvénymutatót, majd
+`call edx`-szel hívják; a callback `this`-ként a mező címét kapja
+(`lea ecx, [ebp + 0x344]`, `0x004e3246`). A `0x004f92c0` és
+`0x004e7d10` dekompilálása, valamint a célzott diszasszemblálás tehát a
+keresési és callback-hívási útvonalat rögzíti, de a konkrét
+callback-címzettet és annak mellékhatását nem.
+
+A teljes `.text`-pásztázás a `paszta.py`-n át megvizsgálta a `+0x344`
+mező hozzáféréseit és írásait; ugyanazt az eltolást több, egymástól
+független objektum használja, ezért az írásokból nem azonosítható a
+`0x004e31a0` fogadó objektumának inicializálója. Ez **nem** bizonyítja,
+hogy nincs azonnali indexelés. A cáfoló próba a `0x004e31a0` közvetlen
+utasításainak és a hívási láncnak az ellenőrzése volt: közvetlen indexíró
+hívást nem azonosított, de az indirekt callback célja miatt az indexelés
+lehetőségét nem zárja ki.
+
+**Következtetés:** a BMP utáni keresés és callback-hívás bizonyított; hogy a
+BMP-t a callback azonnal indexbe írja-e, **NINCS MEG**. A két ellenőrzési út
+(Ghidra-dekompilált hívási lánc; ettől különálló utasításszintű olvasás és
+`paszta.py`-pásztázás) a callback-hívásig egyezik, de az indexelés
+mellékhatását egyik sem oldja fel. A `0x0057d080` a `clickview` műveletet is
+előkészíti, de a kattintási viselkedést a `0x0057d1e4`-nél hívott, az
+objektum vtable-jéből vett `+0x68` metódus valósítja meg; ennek
+célfüggvénye és navigációs célja itt **NINCS MEG**.
+>>>>>>> origin/main
 
 Az `open` ág `ShellExecuteA`/`ShellExecuteW` feloldását nem szabad a fenti
 buborék-kattintással azonosítani: a két művelet külön útvonal, és a kattintási
@@ -227,14 +281,18 @@ képpontírást is ellenőriztem. Az író `BM` fejlécet, 24 bit/pixelt és 0
 tömörítést állít be, majd három bájtot ír képpontonként; a JPEG-hipotézist
 ez a második, íróoldali bizonyíték cáfolja.
 
-**Cáfoló próba 2: „a Print Screen-hook indítja a rögzítést”:** megkerestem
-a rögzítőfüggvény közvetlen hívásait a teljes `.text`-ben, majd külön
-követtem a `SetWindowsHookExA` hívóját. A közvetlen hívás-pásztázás csak a
-`0x005914f1` billentyűfigyelőből jövő hívást találta; a hook-jelölt
-`0x0097de80`-tól nem vezetett közvetlen hivatkozás a rögzítőhöz. A
-`Scrapture` útja saját maga kérdezi le a billentyűállapotot
-(`0x00591470`). Ez a próba a közvetlen hook-utat nem támasztja alá, de az
-indirekt accelerator-/menü-dispatchot **nem** zárja ki.
+**Cáfoló próba 2: „a Print Screen-hook vagy beágyazott menü-erőforrás
+indítja a rögzítést”:** megkerestem a rögzítőfüggvény közvetlen hívásait a
+teljes `.text`-ben, külön követtem a `SetWindowsHookExA` hívóját, ellenőriztem
+az importokat és az eredeti PE erőforrástípusait. A közvetlen hívás-pásztázás
+csak a `0x005914f1` billentyűfigyelőből jövő hívást találta; a
+`SetWindowsHookExA` hívója (`0x0097de80`) nincs ebben a közvetlen láncban,
+`RegisterHotKey` import nincs, és a PE-ben nincs `RT_MENU`/`RT_ACCELERATOR`
+erőforrástípus. A pozitív kontroll (`0x005914f1`) megtalálása a pásztázásban
+sikerült. A `Scrapture` útja saját maga kérdezi le a billentyűállapotot
+(`0x00591470`). Ez a közvetlen hookot és az erőforrásként tárolt menüt nem
+támasztja alá, de a futásidőben összeállított vagy indirekt
+accelerator-/menü-dispatchot **nem** zárja ki.
 
 **Cáfoló próba 3: „a buborék `+0x68` hívása a `CNotifierPopup` kattintási
 metódusa”:** a `CNotifierPopup::vftable` nyers rekeszét külön ellenőriztem;
@@ -250,11 +308,13 @@ kattintási callbacket; a kattintási cél továbbra is nyitott.
 |---|---|---|
 | Ismételt billentyű-lekérdezés és rejtett `EnableScreenCap` kapcsoló | A `Preferences/EnableScreenCap` alapértéke bekapcsolt; Windows alatt a háttérfigyelő a Print Screen/Print billentyűt kérdezi le. Linuxon és Wayland alatt a globális figyelés kimarad. | A Windowsos futásidejű viselkedés további mérése a 7. szakasz nyitott pontjai szerint |
 | Asztal/Ctrl/Alt célmódok, locale szerinti fájlnév és tömörítetlen BMP a `Picasa\Screen Captures` projektmappába | A Windowsos GDI-forrás a három célmódot használja; a kimenet 24 bites BMP, ütközéskor `-001` alakú sorszámmal. A mappanév honosított, a `.picasa.ini` `P2category=Projects (internal)` értéket kap. | A többmonitoros terjedelem, a kurzor képpontbeli jelenléte és a pontos dátum-idő alak továbbra is futásidejű mérésre vár |
-| Mentés után `Screenshot saved` értesítés a kimeneti útvonallal | A `PicasaNotifier.qml` a sikeresen mentett fájl útvonalával jeleníti meg az értesítést. | Az eredeti értesítés kattintási célja és a fájl azonnali indexelésének időzítése továbbra is nyitott |
+| Mentés után `Screenshot saved` értesítés a kimeneti útvonallal | A `PicasaNotifier.qml` a sikeresen mentett fájl útvonalával jeleníti meg az értesítést; kattintáskor az útvonalból a szülőmappát választja ki (`folderOfPath` → `controller.selectFolder`, `PicasaNotifier.qml:254`-`263`). | Az eredeti értesítés kattintási célja és a fájl azonnali indexelésének időzítése továbbra is nyitott |
 
 ## 7. Bizonyítottság és nyitott irányok
 
-**Összesített fok: feltételes.** A `Preferences\EnableScreenCap` olvasása,
+**Összesített fok: feltételes.** Az alábbi fok az egyes részállításokra
+vonatkozik; a `megerősített` jelöléshez két független bizonyítékút egyezése
+kell. A `Preferences\EnableScreenCap` olvasása,
 `1` alapértéke és nulla értéknél a figyelőszál kihagyása, a billentyűmódok,
 fájlnév-képzés, BMP-kimenet,
 mappalétrehozás, mappabesorolás és buborék binárisból visszakereshető; a
@@ -262,6 +322,17 @@ teljes képernyő többmonitoros terjedelme, a kurzor képpontbeli jelenléte, a
 menü/accelerator út, az azonnali képfájl-indexelés és a buborék kattintási
 célja nyitott. A külön ellenőrzési utak a BMP-író tartalmán, a
 mappabesorolásnál és a buboréknál egyeznek.
+
+| #5608-részpont | Bizonyított válasz | Fok |
+|---|---|---|
+| Indítás: beállítás és billentyűfigyelés | A HKCU `Preferences\EnableScreenCap` alapértéke `1`; a nem nulla ág létrehozza a figyelőt. A háttérszál a Print Screen/Print állapotát kérdezi le (`0x0040bf70`, `0x00591470`, `0x005914f1`). | megerősített |
+| Indítás: lehetséges külön menü-/accelerator-út | A közvetlen kódpásztázás egy rögzítőhívót talált, de a HACCEL-tábla feltöltése/parancsútja nincs feloldva (`0x0097fc30`, `DAT_00d4a4d4`, `0x0097fd18`). | nyitott |
+| Mit rögzít: kiválasztás és GDI-út | Asztal, előtérablak vagy kurzor alatti ablak téglalapját másolja; a virtuális képernyőhöz vágja (`0x00590f40`, `0x009aa990`). | megerősített |
+| Mit tartalmaz a kép | A kurzor képpontbeli jelenléte és a másodlagos monitorok tényleges kimeneti területe csak eredeti Windows-futásidejű méréssel dönthető el. | nyitott |
+| Kimenet | Cím/tartaléknév + locale-dátumidő + `.bmp`, ütközéskor `-001`; 24 bites, tömörítetlen BMP; a célút rekurzívan előkészül (`0x00590f40`, `0x00993650`, `0x009ad2d0`, `0x009a3db0`). | megerősített |
+| Kimenet: pontos locale-dátum-idő szöveg | A `VarBstrFromDate` locale-függő eredményének konkrét alakja eredeti Picasán, cél-locale alatt mérendő (`0x0098c470`). | nyitott |
+| Könyvtárba vétel és felület | A mappa `Projects` kategóriát kap; `Screenshot saved` értesítés jelenik meg (`0x00445a30`, `0x0057d080`); a buborékot független eredeti képernyőkép is igazolja. | megerősített |
+| Képfájl azonnali indexelése és eredeti kattintási cél | A `0x004e31a0` callbackje és a `0x0057d1e4` click-callbackje dinamikus vtable-címzett; a célfüggvényük és mellékhatásuk nincs feloldva. | nyitott |
 
 | Állítás | Forrás |
 |---|---|
@@ -279,14 +350,24 @@ mappabesorolásnál és a buboréknál egyeznek.
 | Kurzor bekerül-e a BMP-be | NINCS MEG; Windows-futásidejű mérés kell |
 | Egyetlen közvetlen hívó a `0x00590f40`-hez; `Scrapture` vtable-kapcsolat | bináris (`paszta.py` teljes `.text` pásztázás; `0x005914f1`, `0x00c91728`, `0x0040ca6f`, `0x00590ef5`) |
 | Névütközés kezdő sorszáma és növelése | bináris (`0x00993a96`, `0x00993b56`, `0x00cd8d64`) |
-| A képfájl azonnali indexelése | NINCS MEG; a meglévő Ghidra-kimenet a `0x004f92c0` → `0x004e7d10` utat és az `0x004e31a0` indirekt vtable-hívását mutatja, de a konkrét callback hatását nem |
+<<<<<<< HEAD
+| A képfájl azonnali indexelése | NINCS MEG; a 2026-10-24-i Ghidra-kimenet és a helyi diszasszemblálás feloldja a `0x004e31a0` `[objektum+0x344]` → vtable `+0x10` indirekt hívását, a `0x004e7d10` hívó átadja az objektumát, de a konkrét osztályt/callbacket és annak indexmódosító hatását nem |
+=======
+| A képfájl azonnali indexelése | NINCS MEG; a `0x004f92c0` → `0x004e7d10` út a `0x004e31a0`-ig vezet; ott a `[fogadó+0x344]` → `[callback+0x10]` indirekt hívás célja nem oldódott fel, ezért az indexírás sem bizonyított |
+>>>>>>> origin/main
 | A buborék kattintási célja | NINCS MEG; a `0x0057d1e4` vtable `+0x68` hívás célfüggvényét kell azonosítani |
 | A `+8` állapotmező írója/életciklusa; menü-/accelerator-parancs vezet-e képernyőképhez | NINCS MEG; a `0x00408b30` tesztje és a `0x00c40328` mutatója feloldott, a `Scrapture` objektum `+8` mezőjének írási és leállítási útját kell követni; az acceleratorhoz a `0x0097fc30` által olvasott `DAT_00d4a4d4` tábla feltöltési és parancsútját kell a `Scrapture` objektummal összekötni |
 | Főablak nélküli ágon a rendszer melyik `ShellExecute` API-t választja | NINCS MEG; a `0x00c33b68` a `0x00d6fc58` alapján választ `ShellExecuteA` (`0x009239a8`) és `ShellExecuteW` (`0x00923998`) között; a globális érték eredetét és platformjelentését kell feloldani |
 
-Ghidra-kör kell: 0x004e31a0: a `0x004f92c0` → `0x004e7d10` keresési út az `param_3 + 0x344 + 0x10` sloton mely konkrét callbacket hívja, és az a friss képfájlt indexbe írja-e vagy csak keres [blokkoló]. A meglévő `0x004e31a0` dekompilált kimenet az indirekt hívást mutatja, a célfüggvényt nem.
+<<<<<<< HEAD
+Ghidra-kör kell: 0x004f92c0: a `0x0057d080` útvonalán átadott `0x004e7d10`-objektum konkrét típusa/előállítója, a `+0x344` mező inicializálója és a `+0x10` callback címzettje; ír-e a callback képfájlt az indexbe? A 2026-10-24-i `0x004e31a0` kimenet csak az indirekt slot-hívást azonosítja, a `0x004e7d10` korábbi dekompilálása pedig a bejárást mutatja, nem a konkrét típust/célfüggvényt [blokkoló].
+Ghidra-kör kell: 0x0057d080: a `0x0057d1e4` vtable `+0x68` hívás konkrét célfüggvénye és a `clickview` művelet kattintási navigációja. A meglévő dekompilált kimenet a slot-hívást és a kulcsot mutatja, a dinamikus címzettet és célt nem [blokkoló].
+Ghidra-kör kell: 0x0097fc30: a `DAT_00d4a4d4` HACCEL-tábla létrehozási/feltöltési útja és parancsazonosítói indíthatják-e a `Scrapture`-t vagy a `0x00590f40`-et? A meglévő dekompilált kimenet csak a `TranslateAcceleratorA` hívást mutatja; a tábla tartalmát és a rögzítőhöz vezető parancsot nem [blokkoló].
+=======
+Ghidra-kör kell: 0x004e31a0: a `0x004e31a0` által olvasott fogadó objektum `+0x344` mezőjének inicializálója és a `+0x10` slot tényleges célja; a cél a friss BMP-t indexbe írja-e vagy más műveletet végez [blokkoló]. A 2026-10-24b kimenet a `0x004f92c0` → `0x004e7d10` hívási láncot mutatja, de nem tartalmazza a mező tulajdonosának inicializálóját vagy a callback-cél feloldását.
 Ghidra-kör kell: 0x0057d080: a `0x0057d1e4` vtable `+0x68` hívás konkrét célfüggvénye és a `clickview` művelet kattintási navigációja [blokkoló]. A meglévő dekompilált kimenet a hívást és a kulcsot mutatja, a célfüggvényt nem.
 Ghidra-kör kell: 0x0097fc30: a `DAT_00d4a4d4` HACCEL-tábla létrehozási/feltöltési útja és parancsazonosítói indíthatják-e a `Scrapture`-t vagy a `0x00590f40`-et [blokkoló]. A meglévő dekompilált kimenet a `TranslateAcceleratorA` hívást mutatja, de a tábla tartalmát és a rögzítőhöz vezető parancsot nem.
+>>>>>>> origin/main
 Ghidra-kör kell: 0x00c33b68: a meglévő `2026-10-23-sor-277-280.txt` kimenet a `ShellExecuteA`/`ShellExecuteW` választást mutatja, de nem azonosítja, mi állítja elő a belépéskor használt `in_CF` feltételt; a `0x00d6fc58` eredetét és a platformfeltételt kell feloldani.
 
 Futásidejű mérés kell: eredeti Windows Picasában a kurzor láthatósága a mentett BMP-n; többmonitoros rendszeren a kimeneti BMP téglalapja; a fájl indexbe kerülésének pillanata és a buborék kattintási célja; továbbá a dátum-idő szövegalakja a cél-locale alatt.

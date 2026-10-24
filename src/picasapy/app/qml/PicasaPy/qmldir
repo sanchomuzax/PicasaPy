@@ -114,6 +114,7 @@ PeopleAlbumContextMenu 1.0 PeopleAlbumContextMenu.qml
 FolderListContextMenu 1.0 FolderListContextMenu.qml
 CollectionContextMenu 1.0 CollectionContextMenu.qml
 CollectionHeader 1.0 CollectionHeader.qml
+CollectionPasswordDialog 1.0 CollectionPasswordDialog.qml
 AlbumsSection 1.0 AlbumsSection.qml
 ProjectsSection 1.0 ProjectsSection.qml
 TagContextMenu 1.0 TagContextMenu.qml
