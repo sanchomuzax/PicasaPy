@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPointF, Qt
 from PySide6.QtQml import QQmlExpression, qmlContext
 
 from conftest import _build_qml_app
@@ -116,9 +116,35 @@ def _tag_text_item(window):
     )
 
 
+def _sor_helye(window):
+    item = _tag_text_item(window)
+    if item is None or not item.isVisible() or item.width() <= 0:
+        return None
+    bal_felso = item.mapToScene(QPointF(0, 0))
+    jobb_also = item.mapToScene(QPointF(item.width(), item.height()))
+    if (
+        bal_felso.x() < 0
+        or bal_felso.y() < 0
+        or jobb_also.x() > window.width()
+        or jobb_also.y() > window.height()
+    ):
+        return None
+    return (round(bal_felso.x()), round(bal_felso.y()))
+
+
 def _open_tag_menu(window, qt_app):
-    assert varj(qt_app, lambda: _tag_text_item(window) is not None), (
-        "a címkesor nem jelent meg a Címkék panelen"
+    # A fiók animáltan nyílik: a sor csak akkor kattintható biztosan, ha
+    # egészben az ablakban van, és két egymás utáni mérésnél nem mozdult.
+    elozo = [None]
+
+    def nyugszik():
+        hely = _sor_helye(window)
+        allo = hely is not None and hely == elozo[0]
+        elozo[0] = hely
+        return allo
+
+    assert varj(qt_app, nyugszik), (
+        "a címkesor nem állt meg egészben az ablakban a Címkék panelen"
     )
     kattints(window, qt_app, _tag_text_item(window), gomb=Qt.MouseButton.RightButton)
     menu = gyerek(window, "tagContextMenu")
