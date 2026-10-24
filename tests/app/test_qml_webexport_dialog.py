@@ -49,7 +49,12 @@ class FakeWebExportController(QObject):
         )
 
     #: #4610: a megőrzött választás (az eredeti `WebExportSize`/`WebExportMovie`)
-    prefs = {"sizeIndex": 3, "movieFull": False}
+    prefs = {
+        "sizeIndex": 3,
+        "movieFull": False,
+        "targetDir": "",
+        "templateId": "",
+    }
 
     @Slot(result="QVariantMap")
     def webExportPrefs(self):
@@ -212,6 +217,7 @@ class TestAzElorekitoltottCelmappa:
         qt_app.processEvents()
 
         assert window.property("targetFolder") == "/tmp/Kepek/Picasa HTML exportok"
+        assert window.property("templateIndex") == 0
 
     def test_a_mar_kivalasztott_mappat_NEM_irja_felul(self, dialog, qt_app):
         window, _fake, _qt_app = dialog
@@ -221,6 +227,22 @@ class TestAzElorekitoltottCelmappa:
         qt_app.processEvents()
 
         assert window.property("targetFolder") == "/sajat/hely"
+
+    def test_a_mentett_celmappa_es_sablon_visszaall(self, dialog, qt_app):
+        window, fake, _qt = dialog
+        fake.prefs = {
+            "sizeIndex": 3,
+            "movieFull": False,
+            "targetDir": "/korabban/valasztott/cel",
+            "templateId": "masik",
+        }
+
+        QMetaObject.invokeMethod(window, "open", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
+
+        assert window.property("targetFolder") == "/korabban/valasztott/cel"
+        assert window.property("templateIndex") == 1
+        assert window.property("templateId") == "masik"
 
 
 class TestASablonElonezete:
