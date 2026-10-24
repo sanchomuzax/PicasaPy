@@ -698,6 +698,7 @@
  "tests/app/qml_functional/test_voros_keret_kattintas_604.py": 4.06,
  "tests/app/qml_functional/test_warning_guard.py": 1.28,
  "tests/app/qml_functional/test_webalbum_meret_valodi_5482.py": 14.21,
+ "tests/app/qml_functional/test_webexport_mentes_5714.py": 2.97,
  "tests/app/qml_functional/test_xmp_arciras_hatarok_4634.py": 2.47,
  "tests/app/qml_functional/test_zoom_navigator_4568.py": 2.87,
  "tests/app/test_aa_memoria_lanc_3014.py": 2.72,
