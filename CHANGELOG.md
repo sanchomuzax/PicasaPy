@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.205] - 2026-10-24
+
+- A HTML-export párbeszéd megjegyzi a célmappát és a sablont; Windowson a Személyes mappából indul (#5714).
+
 ## [0.9.204] - 2026-10-24
 
 - A videóból mentett képkocka új mappáját a Projektek gyűjteménybe sorolja, JPEG-minőségét 85-re állítja, és mentési állapotokat mutat (#5715).
