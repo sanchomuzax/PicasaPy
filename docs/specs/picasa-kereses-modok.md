@@ -919,7 +919,7 @@ volt: abból a mérőpixelnél a `j+42` és `j+43` binnek is nemnullának
 kellett volna lennie. A bináris felső ágak azonban a `j+36`/`j+37`
 címeket írják újra, és QEMU-ban pontosan hat bin volt nemnulla. A
 mért binsúlyok összege `256^3`; így a mérési adat maga is konzisztens a
-hat célbines súlyozással. A cáfoló ellenőrzése ugyanazon eredeti
+hat cél-bin szerinti súlyozással. A cáfoló ellenőrzése ugyanazon eredeti
 helper futtatásával történt, nem a statikus kódból számoltuk vissza.
 
 A két út a helper-szintű képleteknél egyezik. Ezért azok
