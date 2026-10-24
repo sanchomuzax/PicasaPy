@@ -92,3 +92,36 @@ def test_quick_view_megjeleniti_a_kijelolt_fajlsort_es_vezerloit(
 
     assert controller.photos.folderNeighbor(0, 1) == 1
     assert controller.photos.folderNeighbor(1, -1) == 0
+
+
+def test_kiadaskep_a_gyorsnezetrol(qml_app, qt_app, tmp_path):
+    """Kiadáskép mintázatos képpel; csak `PICASAPY_KIADASKEP_MAPPA` mellett fut."""
+    import os
+    from pathlib import Path
+
+    import pytest
+
+    from support.jpeg_factory import make_minta_jpeg
+
+    mappa = os.environ.get("PICASAPY_KIADASKEP_MAPPA")
+    if not mappa:
+        pytest.skip("kiadáskép csak kérésre készül")
+    window, controller, _engine = qml_app
+    kepek = tmp_path / "gyors"
+    kepek.mkdir()
+    utak = []
+    for i in range(3):
+        ut = kepek / f"minta_{i}.jpg"
+        make_minta_jpeg(ut, size=(960, 640), seed=i + 3)
+        utak.append(str(ut))
+    assert controller.begin_quick_view(utak)
+    viewer = window.findChild(QObject, "photoViewer")
+    window.setProperty("viewerOpen", True)
+    viewer.setProperty("currentIndex", 0)
+    assert var_feltetelre(
+        qt_app, lambda: viewer.property("visible") is True, 5.0
+    )
+    for _ in range(30):
+        qt_app.processEvents()
+    cel = Path(mappa) / "kiadaskep_5762.png"
+    assert window.grabWindow().save(str(cel), "PNG")
