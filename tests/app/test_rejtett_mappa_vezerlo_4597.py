@@ -281,8 +281,8 @@ def test_ujrainditas_utan_a_jelszokapu_nem_kerulheto_ki(ctrl):
     assert titkos not in _gyujtemeny_mappai(uj)
     assert proj not in _projekt_mappak(uj)
     assert uj._hidden_folder_paths() >= {titkos, proj}
-    uj.clearHiddenPassword()
-    ctrl.clearHiddenPassword()
+    uj.clearHiddenPassword("titok")
+    ctrl.clearHiddenPassword("titok")
 
 
 def test_feloldas_utan_ugyanaz_a_beallitas_ismet_mutatja(ctrl):
@@ -290,7 +290,7 @@ def test_feloldas_utan_ugyanaz_a_beallitas_ismet_mutatja(ctrl):
     assert uj.unlockHidden("titok") is True
     assert uj.showHidden is True
     assert uj._hidden_folder_paths() == frozenset()
-    uj.clearHiddenPassword()
+    uj.clearHiddenPassword("titok")
 
 
 def _jelzes_szamlalo(ctrl):
@@ -307,7 +307,7 @@ def test_lezaraskor_a_ket_jelzes_kimegy(ctrl):
     lista = _jelzes_szamlalo(ctrl)
     ctrl.lockHidden()
     assert {"gyujtemeny", "projekt"} <= set(lista)
-    ctrl.clearHiddenPassword()
+    ctrl.clearHiddenPassword("titok")
 
 
 def test_setshowhidden_a_ket_jelzest_kuldi(ctrl):

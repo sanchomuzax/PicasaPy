@@ -58,6 +58,7 @@ from picasapy.ini import (
 )
 from picasapy.scanner import PICASA_INI_NAME
 from . import formatting, kor_szuro
+from .confirm_settings import is_confirm_suppressed
 from .contact_names import central_contacts_path
 from .appearance_controller import AppearanceMixin
 from .color_management_controller import ColorManagementMixin
@@ -274,6 +275,9 @@ class AppController(
     # ok: "offline-unhide" | "write-failed-unhide" |
     # "write-failed-hide" | "hidden-move"
     folderHideFailed = Signal(str, str)
+    # #5704: a Mappa elrejtése után a jelszó nélküli Rejtett mappák
+    # gyűjtemény védelmének felajánlása.
+    hiddenPasswordOfferRequested = Signal()
 
     def __init__(
         self,
@@ -1092,6 +1096,16 @@ class AppController(
                 path, central_contacts_path(self._db_path)
             )
         )
+        # #5704: a kérdés csak az elrejtés után jelenik meg. A felfedés és a
+        # Nézet → Rejtett képek kapcsoló nem indítja el ezt az ajánlatot.
+        if (
+            not rejtve
+            and not self.hiddenPasswordSet
+            and not is_confirm_suppressed(
+                self._get_settings(), "DoNotConfirmHiddenPwd"
+            )
+        ):
+            self.hiddenPasswordOfferRequested.emit()
 
     def _rejtett_lathatosag_kozlese(self) -> None:
         """#4887: a tényleges `showHidden` közlése az indexszel — EZ az egy
@@ -1176,8 +1190,8 @@ class AppController(
         self._get_settings().setValue(self._HIDDEN_PWD_KEY, str(hash_value))
         self.lockHidden()
 
-    @Slot(str, bool)
-    def setHiddenPassword(self, password: str, modern: bool = False) -> None:
+    @Slot(str, bool, result=bool)
+    def setHiddenPassword(self, password: str, modern: bool = False) -> bool:
         """Jelszó beállítása a választott alakban.
 
         Args:
@@ -1185,14 +1199,39 @@ class AppController(
             modern: `True`-nál sózott PBKDF2 (a windowsos Picasa nem nyitja),
                 `False`-nál a Picasa-kompatibilis hex MD5.
         """
+        if self.hiddenPasswordSet or not password:
+            return False
         keszit = modern_lenyomat if modern else picasa_lenyomat
         self.setHiddenPasswordHash(keszit(password))
+        return True
 
-    @Slot()
-    def clearHiddenPassword(self) -> None:
-        """A jelszó törlése — a rejtettek innentől kapu nélkül nézhetők."""
+    @Slot(str, result=bool)
+    def verifyHiddenPassword(self, password: str) -> bool:  # noqa: N802
+        """A Rejtett mappák jelszavának ellenőrzése mellékhatás nélkül."""
+        return jelszo_egyezik(self.hiddenPasswordHash, password)
+
+    @Slot(str, str, bool, result=bool)
+    def changeHiddenPassword(  # noqa: N802
+        self,
+        current_password: str,
+        password: str,
+        modern: bool = False,
+    ) -> bool:
+        """A rejtettmappa-jelszó cseréje csak a jelenlegi jelszóval."""
+        if not self.verifyHiddenPassword(current_password) or not password:
+            return False
+        keszit = modern_lenyomat if modern else picasa_lenyomat
+        self.setHiddenPasswordHash(keszit(password))
+        return True
+
+    @Slot(str, result=bool)
+    def clearHiddenPassword(self, current_password: str = "") -> bool:
+        """Jelszó törlése; beállított védelemhez a jelenlegi jelszó kell."""
+        if self.hiddenPasswordSet and not self.verifyHiddenPassword(current_password):
+            return False
         self._get_settings().remove(self._HIDDEN_PWD_KEY)
         self.lockHidden()
+        return True
 
     @Slot(str, result=bool)
     def unlockHidden(self, password: str) -> bool:

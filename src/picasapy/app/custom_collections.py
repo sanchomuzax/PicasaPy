@@ -3,8 +3,9 @@
 létrehozhat, és mappákat sorolhat át bele — az eredeti Picasa mappakezelő-
 viselkedése.
 
-A gyűjteménynevek és a csukott állapot a QSettings-ben maradnak; a mappa-
-hovatartozás elsődleges forrása a `.picasa.ini` `[Picasa] P2category` mezője.
+A gyűjteménynevek, a csukott állapot és a jelszó-lenyomatok a QSettings-ben
+maradnak; a mappa-hovatartozás elsődleges forrása a `.picasa.ini`
+`[Picasa] P2category` mezője.
 A régi QSettings-besorolásokat a controller egyszer átírja az ini-fájlokba.
 Ez a modul tiszta függvényeket ad, I/O nélkül."""
 
@@ -30,6 +31,8 @@ class CustomCollection:
     #: egyetlen kép sem lesz látható". A mappák a gyűjteményben maradnak, a
     #: művelet visszafordítható.
     closed: bool = False
+    #: #5704: a gyűjtemény jelszavának lenyomata, sosem a nyílt jelszó.
+    password_hash: str = ""
 
 
 def parse_custom_collections(raw: str | None) -> tuple[CustomCollection, ...]:
@@ -60,11 +63,15 @@ def parse_custom_collections(raw: str | None) -> tuple[CustomCollection, ...]:
         # sérült érték is NYITOTTAT jelent — egy hibás beállítás-fájl nem
         # rejtheti el némán a felhasználó képeit
         closed = item.get("closed")
+        password_hash = item.get("password_hash")
         result.append(
             CustomCollection(
                 name=name,
                 folders=tuple(f for f in folders if isinstance(f, str)),
                 closed=closed is True,
+                password_hash=(
+                    password_hash if isinstance(password_hash, str) else ""
+                ),
             )
         )
     return tuple(result)
@@ -74,7 +81,12 @@ def serialize_custom_collections(collections: tuple[CustomCollection, ...]) -> s
     """A gyűjtemény-lista JSON-szerializálása a QSettings-be íráshoz."""
     return json.dumps(
         [
-            {"name": c.name, "folders": list(c.folders), "closed": c.closed}
+            {
+                "name": c.name,
+                "folders": list(c.folders),
+                "closed": c.closed,
+                "password_hash": c.password_hash,
+            }
             for c in collections
         ],
         ensure_ascii=False,
@@ -146,8 +158,13 @@ def rename_collection(
     ):
         return collections
     return tuple(
-        # #461: a `closed` állapot az átnevezést is túléli
-        CustomCollection(name=stripped, folders=c.folders, closed=c.closed)
+        # #461/#5704: a zárt és jelszavas állapot az átnevezést is túléli.
+        CustomCollection(
+            name=stripped,
+            folders=c.folders,
+            closed=c.closed,
+            password_hash=c.password_hash,
+        )
         if c.name == old_name
         else c
         for c in collections
@@ -177,6 +194,7 @@ def move_folder_to_collection(
             name=c.name,
             folders=tuple(f for f in c.folders if f != folder_path),
             closed=c.closed,  # #461
+            password_hash=c.password_hash,  # #5704
         )
         for c in collections
     )
@@ -184,7 +202,10 @@ def move_folder_to_collection(
         return without
     return tuple(
         CustomCollection(
-            name=c.name, folders=c.folders + (folder_path,), closed=c.closed
+            name=c.name,
+            folders=c.folders + (folder_path,),
+            closed=c.closed,
+            password_hash=c.password_hash,
         )
         if c.name == target_name and folder_path not in c.folders
         else c
@@ -201,7 +222,12 @@ def set_collection_closed(
     maradnak, csak a tartalmuk nem jelenik meg a rácsban és a keresésben.
     A művelet bármikor visszafordítható. Ismeretlen névnél nincs teendő."""
     return tuple(
-        CustomCollection(name=c.name, folders=c.folders, closed=bool(closed))
+        CustomCollection(
+            name=c.name,
+            folders=c.folders,
+            closed=bool(closed),
+            password_hash=c.password_hash,
+        )
         if c.name == name
         else c
         for c in collections
@@ -237,7 +263,9 @@ def merge_custom_collections(
         if key in result:
             continue
         result[key] = CustomCollection(
-            name=collection.name, closed=collection.closed
+            name=collection.name,
+            closed=collection.closed,
+            password_hash=collection.password_hash,
         )
         order.append(key)
 
@@ -264,6 +292,7 @@ def merge_custom_collections(
             name=result[key].name,
             folders=tuple(sorted(folders_by_collection[key], key=str.casefold)),
             closed=result[key].closed,
+            password_hash=result[key].password_hash,
         )
         for key in order
     )

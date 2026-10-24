@@ -62,7 +62,7 @@ def test_a_picasas_jelszo_lenyomata_atvetelre_kerul_a_fo_szalon(
     assert controller.hiddenPasswordHash == _MD5
     assert szalak == [threading.get_ident()], "az átvétel nem a fő szálon futott"
     assert controller.unlockHidden("password") is True
-    controller.clearHiddenPassword()
+    controller.clearHiddenPassword("password")
 
 
 def test_meglevo_jelszot_az_atvetel_nem_irja_felul(qml_app, qt_app, tmp_path):
@@ -75,7 +75,7 @@ def test_meglevo_jelszot_az_atvetel_nem_irja_felul(qml_app, qt_app, tmp_path):
     )
     _lefuttat(qt_app, vezerlo)
     assert controller.hiddenPasswordHash == sajat
-    controller.clearHiddenPassword()
+    controller.clearHiddenPassword("sajat")
 
 
 def test_jelszo_nelkuli_db3_nem_kuld_jelzest(qt_app, tmp_path):
