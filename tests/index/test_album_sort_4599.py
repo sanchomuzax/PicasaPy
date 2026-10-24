@@ -47,7 +47,9 @@ class TestTermeszetesNev:
         assert natural_name_key("É") != natural_name_key("é")
 
     def test_utf8_bajtok_szerint_rendez_az_ascii_es_az_ekezetes_neveket(self):
-        assert _nev_szerint(["á", "ő", "Z", "a"]) == ["á", "ő", "a", "Z"]
+        assert _nev_szerint(["á", "ő", "Z", "a", "z"]) == [
+            "á", "ő", "a", "Z", "z",
+        ]
 
     def test_a_szamszakasz_32_bites_modulo_utan_hasonlit(self):
         assert _nev_szerint(["x4294967295", "xz", "x4294967296", "x1"]) == [
