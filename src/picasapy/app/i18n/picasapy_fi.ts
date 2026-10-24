@@ -9304,7 +9304,7 @@ picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
         <message>
             <source>Launch Picasa</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Käynnistä Picasa</translation>
         </message>
         <message>
             <source>Zoom In</source>
@@ -9315,12 +9315,12 @@ picasapy-origin-key: stringres:EXIF::Zoom</extracomment>
         <message>
             <source>Zoom Out</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Loitonna</translation>
         </message>
         <message>
             <source>Play Slideshow</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Toista diaesitys</translation>
         </message>
         <message>
             <source>Previous Photo</source>
@@ -9349,12 +9349,12 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/rotateright)</extracomment>
         <message>
             <source>Star</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tähti</translation>
         </message>
         <message>
             <source>Zoom to 1:1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Zoomaa 1:1</translation>
         </message>
         <message>
             <source>Add/Remove Star</source>
@@ -9371,7 +9371,7 @@ picasapy-origin-key: tooltips:Tooltip(outputlayout/morebutton)</extracomment>
         <message>
             <source>More Options</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Lisää asetuksia</translation>
         </message>
         <message>
             <source>Quick Upload</source>
