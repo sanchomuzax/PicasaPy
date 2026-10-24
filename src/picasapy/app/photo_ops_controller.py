@@ -78,6 +78,7 @@ from picasapy.ini import (
     STAR_ALBUM_TOKEN,
     load_existing,
     update_document,
+    with_backuphash,
 )
 from picasapy.ini.album_order import AlbumOrderWriteError, write_album_places
 from picasapy.ini.document import ALBUM_SECTION_PREFIX
@@ -724,13 +725,21 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             if is_jpeg:
                 path = Path(photo.folder_path) / photo.name
                 if write_iptc_caption(path, text):
+                    ini_path = Path(photo.folder_path) / PICASA_INI_NAME
+                    update_document(
+                        ini_path,
+                        lambda document: with_backuphash(document, photo.name),
+                        backup=True,
+                    )
                     return {"caption_file": text or None}
             ini_path = Path(photo.folder_path) / PICASA_INI_NAME
 
             def mutate(document):
                 if text:
-                    return document.with_value(photo.name, "caption", text)
-                return document.with_removed(photo.name, "caption")
+                    document = document.with_value(photo.name, "caption", text)
+                else:
+                    document = document.with_removed(photo.name, "caption")
+                return with_backuphash(document, photo.name)
 
             update_document(ini_path, mutate, backup=True)
             return {"caption_ini": text or None}
@@ -1636,7 +1645,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
         def mutate(document, photo):
             steps = (photo.rotate_steps + delta) % 4
-            return forgatas_mutacio(document, photo.name, steps)
+            return with_backuphash(
+                forgatas_mutacio(document, photo.name, steps), photo.name
+            )
 
         self._apply_batch(valid, mutate)
 
@@ -1761,7 +1772,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             ini_path = Path(photo.folder_path) / PICASA_INI_NAME
 
             def mutate(document):
-                return forgatas_mutacio(document, photo.name, steps)
+                return with_backuphash(
+                    forgatas_mutacio(document, photo.name, steps), photo.name
+                )
 
             update_document(ini_path, mutate, backup=True)
             return {"rotate_steps": steps}
