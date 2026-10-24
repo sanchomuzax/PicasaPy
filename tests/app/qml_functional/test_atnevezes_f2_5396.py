@@ -95,7 +95,13 @@ def test_f2_atnevezes_egyetlen_kepre_megorizza_a_picasa_parbeszedet_es_fajlt(
     )
 
     mezo = _gyerek(window, "renameManyField")
-    assert mezo.property("text") == "", "az új név mezője nem üresen nyílt meg"
+    assert mezo.property("text") == Path(regi_nev).stem, (
+        "egyetlen képhez a mező az aktuális nevet kiterjesztés nélkül mutatja"
+    )
+    assert mezo.property("selectionStart") == 0
+    assert mezo.property("selectionEnd") == len(Path(regi_nev).stem), (
+        "az egyképes átnevezés nem jelölte ki az előtöltött nevet"
+    )
     datum = _gyerek(window, "renameManyDateCheck")
     felbontas = _gyerek(window, "renameManySizeCheck")
     assert datum.property("text") == "Date"
