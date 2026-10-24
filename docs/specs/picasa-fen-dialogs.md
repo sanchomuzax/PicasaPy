@@ -264,6 +264,12 @@ szerepelnek).
 - `labelgroup title="Description (optional):"` → `edit name="caption" height="3li"` (többsoros)
 - `buttongroup`: `button "OK" type="accept" name="ok"`, `button "Cancel" type="cancel"`
 
+**A Windows dátumvezérlő bináris horgonya (#4494, 2026-10-24):** a
+`0x008d8070` rutin `SysDateTimePick32` osztályt példányosít `0x50810000`
+stílussal; a `0x008d9243` ugyanazt az osztálynevet dátumvezérlőként ismeri
+fel. Ez a `date name="date"` mező eredeti natív vezérlőjét azonosítja. A
+`2026-07-17 20 59 22.png` referencia a dátummező legördülő gombját mutatja.
+
 ### 3.3 `confirm.fen` — Általános megerősítő ablak (V1, alapinfrastruktúra)
 
 Ez egy **generikus, sablon jellegű dialógus**, amit a Picasa feltehetően

@@ -153,29 +153,31 @@ crop_suggest.suggest_crops
 Az `editController.setCropAspect` a kiválasztott arányt átadja, tehát a
 javaslatok a **választott képarányban** születnek.
 
-### A HIÁNYZÓ darab: előnézeti bélyegkép a javaslat-gombokon
+### A három javaslat-előnézet - bekötve; a felirat eltér (#448, #4551)
 
-*Forrás: `editpanel.tre:772` (`editpanel/cropsug1`) · `editpanel.tre:776` (`editpanel/cropsug2`) · `editpanel.tre:780` (`editpanel/cropsug3`).*
+*Eredeti: `referencia/tre-eroforrasok/editpanel.tre:772,776,780` (`cropsug1..3`),
+`editpanel.tre:774,778,782` (`cropsug_preview1..3`), és
+`referencia/ui-leltar.csv`: mindhárom javaslatmező felirat- és súgómezője
+üres. A 2026-07-18-i eredeti képernyőkép három képes előnézetet mutat cím
+nélkül.*
 
-A jegy bináris bizonyítéka **három javaslat-gombot ÉS három előnézetet** ad:
+A PicasaPy jelenlegi `EditorCropPanel.qml:307-324` kódja mindhárom
+javaslatgombhoz beállítja a vágatlan kép forrását és a javasolt téglalapot;
+a bélyegkép tehát már látható a gombon. A korábbi „csak feliratot visel”
+megállapítás elavult.
 
-```
-editpanel/cropsug1   editpanel/cropsug2   editpanel/cropsug3
-editpanel/cropsug_preview%d
-```
+**Fennmaradó eltérés:** a mai panel a három előnézet fölött „Suggested crops”
+címet (`EditorCropPanel.qml:290-296`), a gombokon pedig dinamikus
+a stratégiák feliratait jelenít meg (`EditorPanel.qml:475-482`). Ezek nincsenek az
+eredeti `cropsug1..3` mezők feliratában vagy súgójában; az eredeti képernyőn is
+csak az előnézetek látszanak. A „Crop by horizon line” bináris sztring
+(`string_xrefs.csv:13485`) létezik, de ez nem bizonyítja, hogy a három
+előnézet egyikének látható címe lett volna.
 
-> „Három javaslat-gomb, **mindegyikhez saját előnézeti kép**
-> (`cropsug_preview1..3`)."
-
-A mai három gomb **csak feliratot** visel (`PanelButton { label: … }`, a
-`thumbSource` üresen marad), tehát a felhasználó a kattintás előtt **nem
-látja, mit kap**. Ez a #448 utolsó érdemi hiánya.
-
-A megvalósításhoz minden alkatrész adott:
-
-- a `PanelButton` **már tud bélyegképet** (`thumbSource`, #338);
-- van képszolgáltató-precedens ugyanerre a célra:
-  `src/picasapy/app/effect_thumbnails.py` (`image://effectthumb/<id>/<effekt>`).
+**A #4551 címe szerinti állapot:** a mai vezérlők között nincs rögzített
+„Bal felső”, „Fekvő” vagy „Álló” vágásgomb; a három vezérlő a képtől függő
+javaslatokat választja. Szoros eredeti képi paritásnál a „Suggested crops”
+cím és a stratégiák feliratai eltávolítandók; a három előnézet megőrzendő.
 
 ## 4. Lezárt nyitott kérdés: harmadolóvonal
 

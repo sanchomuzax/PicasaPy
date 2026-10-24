@@ -2511,11 +2511,17 @@ első, kinyitva mindkettő külön sorban; ugyanaz a név kétszer → **„Név
 
 | sor | eredeti | nálunk (`app/formatting.py` `exif_entries`, `metadata/reader.py`) |
 |---|---|---|
-| Fájl dátuma | a „Modified Date” (8.) és az „Orientation” (10.) között | **nincs** |
-| CCD szélessége | a „Focal Length in 35mm Film” (14.) és az „Exposure Time” (16.) között | **nincs**; a négy bemenő mezőt (`0xa210`, `0xa20e`, `0xa002`/`0xa003`, Interop `0x1001`/`0x1002`) a reader nem olvassa |
-| Rekesz | az „Exposure Time” és az „F Number” (18.) között | **nincs**; `0x9202`-t a reader nem olvassa |
-| JPEG minőség | az „Embedded Thumbnail” (27.) és a „Keywords” (29.) között | **nincs** |
-| Személycímkék | a „Keywords” és a „GPS Latitude” (31.) között | **nincs** |
+| Fájl dátuma | a „Modified Date” (8.) és az „Orientation” (10.) között | `File Date` a „Modified Date” után, az „Orientation” előtt (`formatting.py:518-521`); fájl és dátumadat kell (`tulajdonsag_sorok.py:27-49`) |
+| CCD szélessége | a „Focal Length in 35mm Film” (14.) és az „Exposure Time” (16.) között | `CCD Width` a két sor között (`formatting.py:529-539`); a négy bemenetből számítja, bármelyik hiányánál nincs sor (`reader.py:343-360`) |
+| Rekesz | az „Exposure Time” és az „F Number” (18.) között | `Aperture` a két sor között (`formatting.py:536-545`); az EXIF `ApertureValue` nyers APEX-értéke, ha olvasható (`reader.py:322`, `formatting.py:541-545`) |
+| JPEG minőség | az „Embedded Thumbnail” (27.) és a „Keywords” (29.) között | `JPEG Quality` e két sor között (`formatting.py:567-579`); JPEG-ből, olvasható minőségi táblával jelenik meg (`jpeg_quality.py:66-85`) |
+| Személycímkék | a „Keywords” és a „GPS Latitude” (31.) között | `People Tags` e két sor között (`formatting.py:572-584`); megnevezett `.picasa.ini` arcokból, ezek hiányában XMP-nevekből, ha legalább egy név van (`tulajdonsag_sorok.py:61-74`) |
+
+A hiányzó adathoz tartozó sor kimarad (`formatting.py:499-501`); a fenti
+megfeleltetés a sorrendet és a feltételes megjelenítést rögzíti, nem azt, hogy
+minden kép mind az öt értéket szolgáltatja. A `JPEG Quality` szándékosan nem
+veszi át az eredeti előjeles olvasásából eredő alacsony-minőségű hiányt; ezt a
+`metadata/jpeg_quality.py:7-9` dokumentálja.
 
 A Fájl dátumához a termékben **már megvan** a pontos megfelelő:
 `app/photo_sort.photo_date(record)` — EXIF felvételi idő, ennek hiányában a

@@ -26,7 +26,7 @@ Az ítélet EGYEZIK, ha a forrás és a jelenlegi megvalósítás egyezik; ELTÉ
 | #3663 | EGYEZIK | Colab EN 33-35; `editpanel.tre`:964-994,1160-1201; `0x00569af0` | A jelenlegi kettős nézet kódjában nincs további eltérés. |
 | #3709 | EGYEZIK | `respack.yt`; `picasa-fo-ablak-elrendezes.md` | A sín 3 képpontot hagy a 127 px-es foglalat két végén; a nagyító keret nélküli. |
 | #3729 | EGYEZIK | `respack.yt`; `scaleslider.tre` | A sín 9 px-es, a fogantyú 16 × 22 px. |
-| #3756 | EGYEZIK | Colab EN 33-35; `ui-audit-editor.md` | A jelvény és a feliratsáv a kijelölt képet követi. |
+| #3756 | NEM DÖNTHETŐ EL STATIKUSAN | Colab EN 33-35; jelenlegi `PhotoViewer.qml` | A jelvény fókuszkövetése igazolt; az eredeti feliratsáv-kép hozzárendelése a felvételeken nem látható. |
 | #3826 | EGYEZIK | bináris `0x008f86c8`, `0x008f86d1`; `filterdesc-registry.md` | A csúszka tartománya és alapértéke a natív paramétert követi. |
 
 ## Tételek
@@ -213,13 +213,13 @@ Az ítélet EGYEZIK, ha a forrás és a jelenlegi megvalósítás egyezik; ELTÉ
 
 ### #3756 - Jelvény és feliratsáv kettős nézetben
 
-**Eredeti:** a Colab EN 33-35 bal és jobb fókuszt is rögzít; a `ui-audit-editor.md` 3/b szakasza kiméri a jelvény helyét és a fókuszváltást.
+**Eredeti:** a Colab EN 33-35 bal és jobb fókuszt is rögzít; a `ui-audit-editor.md` 3/b kiméri, hogy a „Selected” jelvény a fókuszált kép mellett, a margóban áll. Mindhárom képen a feliratsáv üres „Make a caption!” helyőrzőt mutat, ezért ezekből nem olvasható ki, hogy bal fókusznál melyik kép felirata jelenik meg.
 
-**Nálunk:** a `PhotoViewer.qml` a kijelölt sorból olvassa a feliratot; a jelvény a fókuszált kép előnézeti rekeszéhez kötődik.
+**Nálunk:** a `PhotoViewer.qml:4237-4298` a jelvényt a fókuszált képhez helyezi, a `:875-879` bal fókusznál a jelenlegi (`currentIndex`), jobb fókusznál a második képsorát választja; a `:4675-4690` a feliratsávot ugyanezzel a kijelölt sorral köti össze.
 
-**Ítélet:** EGYEZIK a források és kódlogika alapján.
+**Ítélet: NEM DÖNTHETŐ EL STATIKUSAN a teljes állítás.** A jelvényre vonatkozó eredeti állítás és a mai fókuszkövető QML egyezik. A feliratsáv eredeti kép-hozzárendelése nincs látható, külön feliratú képekkel mérve; ebből eltérést sem állítok.
 
-**Teendő:** A jegyet a mostani kódállapottal frissítse. A két fókuszt összevető renderelt teszt nem futott.
+**Teendő:** Colabban olyan két képpel rögzítse az AB nézetet, amelyeknek eltérő, nem üres Picasa-feliratuk van. Bal fókusznál és fókuszváltás után is vegye fel a jelvényt és a feliratsáv szövegét; így dönthető el a jegy második fele.
 
 ### #3826 - Fókuszos FF méretcsúszka
 

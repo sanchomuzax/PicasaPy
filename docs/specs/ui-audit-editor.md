@@ -2283,6 +2283,17 @@ A `respack.yt` tervezővásznán ugyanez a sorrend: filmszalag 431–645, kapcso
 
 *Bizonyítottsági fok: megerősített* (élő mérés + `respack.yt` + `.tre`); a jelvény pontos helyének **képlete** a `0x00569af0`-ban NINCS kiolvasva, a fenti számok az élő mérésé (1280 × 1024, 1024 × 1024-es képek).
 
+**2026-10-24-es kódállapot-helyesbítés (#5186):** a fenti „Nálunk” oszlop
+2026-09-26-i kód-pillanatkép, nem a jelenlegi állapot. A mai
+`PhotoViewer.qml:4237-4298` a jelvényt a fókuszált AB-kép mellé helyezi,
+`Theme.viewerFocusBadgeBg` pedig a mért `#666666` színt adja
+(`Theme.qml:287-292`). A kép kattintására a `fokuszKattintas()` vált oldalt
+(`PhotoViewer.qml:4381-4392`). A feliratsáv a kijelölt sorból olvas
+(`PhotoViewer.qml:4675-4690`; `_kijeloltSort()` bal fókusznál `currentIndex`,
+jobb fókusznál a másik képsor, `:875-879`). Az eredeti EN 33-35 felvételeken
+azonban mindkét képhez „Make a caption!” helyőrző látszik; a feliratsáv
+konkrét fotóhoz rendelését ezek a képek nem bizonyítják.
+
 ### 3/c ⛔ Fókuszváltáskor a nyitott eszköz NEM marad meg félenként — lezárul, kérdéssel (2026-09-27, 371. kör, #3686)
 
 *Forrás: a fókuszváltó `0x0056a160` · az eszköz-lezáró kapu `0x005f8d80` · a lezáró `0x005f90f0` · a módbeállító `0x0057bb50` · `stringres-en-hu.tsv`.*
