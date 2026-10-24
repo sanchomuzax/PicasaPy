@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.212] - 2026-10-24
+
+- Az Időrend bemutató időrendben mutatja a mappákat és albumokat, és a kiválasztott gyűjteményről indít diavetítést (#5770).
+
 ## [0.9.211] - 2026-10-24
 
 - A Nyomtatás párbeszédben választható a Normál és Optimalizált mód (#5684).
