@@ -7,11 +7,9 @@ import QtQuick.Layouts
 // Nyomtatás…` (Ctrl+P) és a képtálca „Nyomtatás" gombja ezt nyitja.
 //
 // ⚠️ Ez NEM a Picasa teljes nyomtatási sablonrendszere (`print.fen` /
-// `reviewprint.fen`, a `ytPrintSizes` mind a 17 mérete, állítható margó).
-// KÉT elrendezést kínál: „képenként egy lap" és — #1590 óta — „indexkép"
-// (több bélyegkép egy lapon). Az eredetiben az indexkép sem külön ablak,
-// hanem NYOMTATÁSI MÉRET (`ytPrintSizes::eContact` = „Indexképek"), ezért
-// itt is elrendezés-választó, nem másik párbeszéd.
+// `reviewprint.fen`, állítható margó). A méretválasztó a #5683 óta az
+// eredeti `ytPrintSizes` katalógust mutatja; az indexkép (`eContact`) külön
+// elrendezési úton marad, a Passport pedig az útlevélkép-parancs forrásával.
 //
 // A nyomtató-választó SAJÁT lista, nem a natív `QPrintDialog`: az app
 // `QGuiApplication`-t használ, a natív párbeszéd viszont `QWidget`-alapú,
@@ -151,7 +149,8 @@ Window {
     onPrinterNameChanged: printWindow.frissitsdAPapiradatot()
     Component.onCompleted: printWindow.frissitsdAPapiradatot()
 
-    property string fitMode: "fit"          // PrintFitMode.FIT / .FILL
+    // #5681: a Picasa első megnyitáskor Crop to Fit módot választott.
+    property string fitMode: "fill"         // PrintFitMode.FIT / .FILL
     property string orientation: "auto"     // PrintOrientation
 
     // #1590: indexkép-elrendezés (több bélyegkép egy lapon). A rács
@@ -181,12 +180,8 @@ Window {
     // `nyisd()` minden megnyitáskor felülírja a vezérlő `printSize()`-
     // ával (#3733: az alapállás Teljes oldal, ld. ott).
     property string printSize: "TELJES_OLDAL"
-    //: #1961: a feliratok a HIVATALOS `ytPrintSizes::` szövegcsaládból
-    //: valók (`stringres` 3478–3494), nem saját fogalmazás. A készletet a
-    //: vezérlő adja a felület nyelve szerint (magyarul a metrikus készlet),
-    //: ezért a felirat nem pozíció, hanem AZONOSÍTÓ szerint jön — a
-    //: korábbi rögzített tömb a metrikus készleten minden tételre rossz
-    //: szöveget adott volna.
+    //: A feliratok a hivatalos `ytPrintSizes::` szövegcsaládból valók;
+    //: minden eredeti azonosítóhoz az eredeti angol cím tartozik.
     //:
     //: ⚠️ A `TELJES_OLDAL` felirata magyarul is „FullPage": az eredeti
     //: szövegtár `eFullPage` sora mindkét nyelven ezt adja. Nem
@@ -206,17 +201,9 @@ Window {
         "M15X20CM": qsTr("15 x 20 cm"),
         "M20X25CM": qsTr("20 x 25 cm"),
         "TELJES_OLDAL": qsTr("FullPage"),
-        //: `ytPrintSizes::ePassport` — csak az Útlevélkép parancs állítja be
-        //: (#1401), a kész méretek listájában nincs
+        "CDSIZE": qsTr("CD Cover Size"),
         "PASSPORT": qsTr("Passport"),
-        //: #3712: az eredetiben az Indexképek (`ytPrintSizes::eContact`) a
-        //: méretlista egyik tétele — nem külön kapcsoló. A `CONTACT` a
-        //: vezérlőtől kapott `printSizeIds`-en KÍVÜLI, csak a QML-nek
-        //: ismert azonosító (a `NyomatMeret`-nek nincs, és nem is lehet
-        //: ilyen tagja — az indexkép nem CELLAMÉRET, ld. #1961).
-        //: #3712-review: a felirat a HIVATALOS szöveg ("Contact Sheet",
-        //: `stringres` 3491) — a korábbi kisbetűs "Contact sheet" saját
-        //: fogalmazás volt.
+        //: Az eredeti címke része a katalógusnak; a nyomtatási út külön van.
         "CONTACT": qsTr("Contact Sheet")
     })
     property var printSizeIds: []
@@ -227,6 +214,14 @@ Window {
     //: A választó modellje: a vezérlőtől kapott azonosítók feliratai.
     //: Ismeretlen azonosítónál MAGA az azonosító látszik — néma üres sor
     //: helyett legyen látható, hogy felirat hiányzik.
+    readonly property var printSizeOptions: printWindow.printSizeIds.map(
+        function (azonosito) {
+            return {
+                id: azonosito,
+                label: printWindow.printSizeLabelById[azonosito] || azonosito,
+                enabled: azonosito !== "CDSIZE"
+            }
+        })
     readonly property var printSizeLabels: printWindow.printSizeIds.map(
         function (azonosito) {
             return printWindow.printSizeLabelById[azonosito] || azonosito
@@ -271,12 +266,19 @@ Window {
         }
     }
 
-    function removeLowQualityReviewPictures() {
+    function isLowQualityReviewPicture(kep) {
+        return Number(kep.qualityCode) === 0
+    }
+
+    // A `kivalaszt` szerinti képek kivétele a felülvizsgálatból: a sor-
+    // indexesek a `rows`-ból mennek ki, a rekordosak (tálca, útlevél) a
+    // vezérlő kizárási listájába.
+    function removeReviewPicturesWhere(kivalaszt) {
         var sorok = []
         var rekordAzonositok = []
         for (var i = 0; i < printWindow.reviewList.length; ++i) {
             var kep = printWindow.reviewList[i]
-            if (Number(kep.qualityCode) !== 0) continue
+            if (!kivalaszt(kep)) continue
             var sor = Number(kep.row)
             if (sor >= 0) sorok.push(sor)
             else rekordAzonositok.push(Number(kep.recordId))
@@ -285,6 +287,36 @@ Window {
             printWindow.printCtl.excludeReviewPictures(rekordAzonositok)
         if (sorok.length > 0) printWindow.removeReviewRows(sorok)
         else printWindow.frissitsdAMinoseget()
+    }
+
+    // #5682 / 0x0085cce0 („Remove Low Quality Pictures"): ha a listában van
+    // legalább egy nem alacsony minőségű kép, nincs kérdés, csak az
+    // alacsonyak törlődnek. Ha MINDEN kép alacsony, az eredeti megerősítést
+    // kéri (removeAllConfirm): az Igen törli az összes képet és megszakítja
+    // a nyomtatást, a Nem nem változtat a listán.
+    function removeLowQualityReviewPictures() {
+        var mindAlacsony = printWindow.reviewList.length > 0
+            && printWindow.reviewList.every(printWindow.isLowQualityReviewPicture)
+        if (mindAlacsony) {
+            removeAllConfirm.open()
+            return
+        }
+        printWindow.removeReviewPicturesWhere(printWindow.isLowQualityReviewPicture)
+    }
+
+    // Az Igen ága (0x0085cce0): minden kép törlése, majd a hívó a
+    // `printpanel/pcancelbutton` műveletet küldi (0x00745726), ami nálunk a
+    // nyomtatási ablak Close gombja: a nyomtatás nem készül el.
+    function removeAllReviewPicturesAndCancel() {
+        printWindow.removeReviewPicturesWhere(function () { return true })
+        printWindow.cancelReview()
+        printWindow.visible = false
+    }
+
+    // A felülvizsgálat Mégse-ága (printReviewCancelButton): visszatér a
+    // méretválasztóhoz, a nyomtatás elmarad.
+    function cancelReview() {
+        printWindow.reviewOpen = false
     }
 
     function acceptReviewAndPrint() {
@@ -393,7 +425,7 @@ Window {
     }
 
     function valasszNyomatmeretet(azonosito) {
-        if (!azonosito || !printWindow.printCtl) return
+        if (!azonosito || azonosito === "CDSIZE" || !printWindow.printCtl) return
         if (azonosito === "CONTACT") {
             printWindow.contactSheet = true
             printWindow.printSize = azonosito
@@ -465,10 +497,8 @@ Window {
         printWindow.contactSheet = !!contactMode
         // #1782: a megjegyzett méret visszatöltése, majd a minőség-mérés
         if (printWindow.printCtl) {
-            // #3712: a `CONTACT` (Indexképek) a méretlista egyik tétele —
-            // a vezérlő `printSizes()`-e csak a valódi `NyomatMeret`-eket
-            // adja (#1961), a QML fűzi hozzá ezt az egyet.
-            printWindow.printSizeIds = printWindow.printCtl.printSizes().concat(["CONTACT"])
+            // #5683: a teljes, eredeti sorrendű `ytPrintSizes` lista.
+            printWindow.printSizeIds = printWindow.printCtl.printSizes()
             printWindow.printSizePresetIds = printWindow.printCtl.printSizePresets()
             printWindow.printSize = printWindow.passport
                 ? "PASSPORT" : printWindow.printCtl.printSize()
@@ -687,26 +717,30 @@ Window {
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
-            //: #3712: EGYETLEN méretlista — az eredeti szerkezet szerint az
-            //: Indexképek (`ytPrintSizes::eContact`) a méretlista egyik
-            //: tétele, nem külön elrendezés-választó. A `printSizeIds`
-            //: ezért a vezérlő méretei UTÁN a QML-only `CONTACT` azonosítót
-            //: is tartalmazza (ld. `nyisd()`).
+            //: Az eredeti azonosítók sorrendje; a Contact Sheet elrendezése
+            //: és a Passport Photo forrása a saját külön útján marad.
             PicasaComboBox {
                 id: printSizeBox
                 objectName: "printSizeBox"
                 Layout.fillWidth: true
-                model: printWindow.printSizeLabels
+                model: printWindow.printSizeOptions
+                textRole: "label"
+                enabledRole: "enabled"
                 currentIndex: printWindow.printSizeIds.indexOf(
                     printWindow.contactSheet ? "CONTACT" : printWindow.printSize)
-                //: #1401: az Útlevél nincs a kész méretek között — ilyenkor
-                //: egyik tétel sincs kijelölve, a mező a méret nevét mutatja
+                //: #1401: az útlevélparancs külön forrásútja megőrzi az
+                //: eredeti Passport azonosítót a teljes méretkatalógusban.
                 displayText: currentIndex < 0
                     ? (printWindow.printSizeLabelById[printWindow.printSize] || "")
                     : currentText
                 onActivated: {
                     var azonosito = printWindow.printSizeIds[currentIndex]
                     if (!azonosito) return
+                    if (azonosito === "CDSIZE") {
+                        printSizeBox.currentIndex = printWindow.printSizeIds.indexOf(
+                            printWindow.printSize)
+                        return
+                    }
                     if (azonosito === "CONTACT") {
                         // #3712: az Indexképek nem CELLAMÉRET — a
                         // `setPrintSize` a #1961 készletén kívüli nevet
@@ -1063,13 +1097,19 @@ Window {
                     objectName: "printFitRadio"
                     text: qsTr("Whole picture")
                     checked: printWindow.fitMode === "fit"
-                    onClicked: printWindow.fitMode = "fit"
+                    onClicked: {
+                        printWindow.fitMode = "fit"
+                        printWindow.frissitsdAzElonezetet()
+                    }
                 }
                 RadioButton {
                     objectName: "printFillRadio"
                     text: qsTr("Fill the page (crop)")
                     checked: printWindow.fitMode === "fill"
-                    onClicked: printWindow.fitMode = "fill"
+                    onClicked: {
+                        printWindow.fitMode = "fill"
+                        printWindow.frissitsdAzElonezetet()
+                    }
                 }
             }
         }
@@ -1327,7 +1367,60 @@ Window {
                 PicasaButton {
                     objectName: "printReviewCancelButton"
                     text: qsTr("Cancel")
-                    onClicked: printWindow.reviewOpen = false
+                    onClicked: printWindow.cancelReview()
+                }
+            }
+        }
+    }
+
+    // #5682 / 0x0085cce0: a „Remove Low Quality Pictures" megerősítése,
+    // ha MINDEN kép alacsony minőségű. Nincs „Ne kérdezze meg újra"
+    // jelölő (ld. CollageDialogs.qml, „Miért nem ConfirmDialog"): a törlés
+    // visszafordíthatatlan, ezért nem nyelhető el némán. Escape-pel vagy a
+    // Nem gombbal semmi nem változik.
+    Dialog {
+        id: removeAllConfirm
+        objectName: "printRemoveAllDialog"
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        closePolicy: Popup.CloseOnEscape
+        // a nyomtatási ablak saját palettája sötét lehet: a háttér a téma
+        // tartalompaneljéé, mint a többi kérdésé
+        background: Rectangle {
+            color: Theme.contentPanel
+            border.width: 1
+            border.color: Theme.chromeBorder
+        }
+
+        ColumnLayout {
+            spacing: 12
+
+            Text {
+                objectName: "printRemoveAllMessage"
+                Layout.preferredWidth: 340
+                text: qsTr("This will remove all of your pictures and cancel printing. Would you like to continue?")
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+                spacing: 8
+
+                PicasaButton {
+                    objectName: "printRemoveAllYesButton"
+                    text: qsTr("Remove and Cancel")
+                    onClicked: {
+                        removeAllConfirm.close()
+                        printWindow.removeAllReviewPicturesAndCancel()
+                    }
+                }
+                PicasaButton {
+                    objectName: "printRemoveAllNoButton"
+                    text: qsTr("Don't Remove")
+                    onClicked: removeAllConfirm.close()
                 }
             }
         }

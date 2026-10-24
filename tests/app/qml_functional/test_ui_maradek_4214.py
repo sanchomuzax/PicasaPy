@@ -453,6 +453,6 @@ def test_film_diaido_es_mertekegyseg_hivatalos_magyarul(qml_app_magyar, qt_app):
     dialog = _item(window, "movieDialog")
     assert _wait_for(qt_app, lambda: dialog.property("visible") is True)
     assert _item(dialog, "movieTabMotion").property("text") == "Mozgófilm"
-    assert _item(dialog, "movieSecondsValueLabel").property("text") == "3.0 mp"
+    assert _item(dialog, "movieSecondsValueLabel").property("text") == "4.0 mp"
     dialog.close()
     assert _wait_for(qt_app, lambda: dialog.property("visible") is False)

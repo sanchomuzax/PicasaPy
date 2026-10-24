@@ -43,10 +43,56 @@ from .collage_output import (
 )
 from .collage_output import write_album_ini as write_album_ini
 
-#: A film alapértelmezett fájlnév-tője — a `CMakeMoviePanel::deffilename`
-#: MAGYAR oszlopa a `stringres` szótárból. Nem fordítjuk újra: a windowsos
-#: Picasa ezt a nevet adja, és a két program egymás mellé ír.
-FILENAME_STEM = "diavetites_jellegu_film"
+#: A film alapértelmezett fájlnév-tője NYELVENKÉNT: a
+#: `CMakeMoviePanel::deffilename` értéke az eredeti Picasa `stringres`
+#: táblájából (a referencia-export `i18n` mappái; az `enUS` a mi `en`
+#: kódunk). EGYSZER kiolvasva, nem kézzel írva. Ld.
+#: `docs/specs/picasa-create-features.md`, „Fájlnév". Nem fordítjuk újra:
+#: a windowsos Picasa ezt a nevet adja, és a két program egymás mellé ír.
+#: Ismeretlen nyelvnél az angol `slideshowmovie` (#5676).
+HONOSITOTT_ALAPNEV: dict[str, str] = {
+    "ar": "slideshowmovie",
+    "bg": "филм със слайдшоу",
+    "ca": "pel·lícula de presentació de diapositives",
+    "cs": "filmsprezentací",
+    "da": "filmdiasshow",
+    "de": "Diashow-Film",
+    "el": "ταινία προβολής διαφανειών",
+    "en": "slideshowmovie",
+    "enUK": "slideshow video",
+    "es": "películadepresentación",
+    "fa": "slideshowmovie",
+    "fi": "diasarjaelokuva",
+    "fil": "slideshowmovie",
+    "fr": "filmdiaporama",
+    "hi": "slideshowmovie",
+    "hr": "film sastavljan od niza slajdova",
+    "hu": "diavetites_jellegu_film",
+    "id": "rangkai slidemovie",
+    "it": "slideshowmovie",
+    "iw": "slideshowmovie",
+    "ja": "スライドショームービー",
+    "ko": "슬라이드쇼동영상",
+    "lt": "Filmo skaidrė",
+    "lv": "slaidrādes filma",
+    "nl": "filmdiavoorstelling",
+    "no": "lysbildefilm",
+    "pl": "film_z_pokazem_slajdów",
+    "pt": "filme em apresentação de diapositivos",
+    "pt-BR": "slideshowmovie",
+    "ro": "slideshowmovie",
+    "ru": "фильм из слайд-шоу",
+    "sk": "filmová_prezentácia",
+    "sl": "film z diapozitivi",
+    "sr": "филм пројекције слајдова",
+    "sv": "bildspelsfilm",
+    "th": "ภาพยนตร์สไลด์โชว์",
+    "tr": "slaytgösterisifilmi",
+    "uk": "слайд-шоу відеофайлу",
+    "vi": "phim trình chiếu",
+    "zh-CN": "slideshowmovie",
+    "zh-TW": "投影播放電影",
+}
 
 #: A kimenet kiterjesztése. Ld. a modul fejlécét — tudatos eltérés.
 OUTPUT_SUFFIX = ".mp4"
@@ -58,8 +104,13 @@ OUTPUT_SUFFIX = ".mp4"
 OUTPUT_DIR_KEY = "movie/outputDir"
 
 
-def safe_stem(title: str | None) -> str:
-    """A címből fájlnév-tő; üres címnél a mért alapnév.
+def honositott_alapnev(nyelv: str | None) -> str:
+    """A film alapneve a megadott nyelven; ismeretlen nyelvnél az angol."""
+    return HONOSITOTT_ALAPNEV.get(nyelv or "", HONOSITOTT_ALAPNEV["en"])
+
+
+def safe_stem(title: str | None, language: str | None = None) -> str:
+    """A címből fájlnév-tő; üres címnél a nyelv honosított alapneve.
 
     Ugyanaz a szabály, mint a kollázsnál: a tiltott karakterek kiesnek, a
     DOS-eszköznevek aláhúzást kapnak, és a tartalékra esés az UTOLSÓ
@@ -68,7 +119,7 @@ def safe_stem(title: str | None) -> str:
     tiszta = _TILTOTT_KARAKTEREK.sub("", str(title or ""))
     tiszta = tiszta.strip().strip(".").strip()
     if not tiszta:
-        return FILENAME_STEM
+        return honositott_alapnev(language)
     if tiszta.split(".")[0].casefold() in _ESZKOZNEVEK:
         return f"{tiszta}_"
     return tiszta
@@ -94,14 +145,17 @@ def output_dir(configured: str | None, language: str | None = None) -> Path:
     )
 
 
-def output_path(folder: Path | str, title: str | None = "") -> Path:
+def output_path(
+    folder: Path | str, title: str | None = "", language: str | None = None
+) -> Path:
     """A célfájl: `<cím>.mp4`, ütközéskor `<cím>1.mp4`, `<cím>2.mp4`…
 
+    Üres címnél a `language` honosított alapneve adja a nevet (#5676).
     Az `%s%lu` formátum SZÓKÖZ NÉLKÜLI — a Picasa így számozott, és a mi
     kimenetünk mellette fog állni ugyanabban a mappában.
     """
     mappa = Path(folder)
-    to = safe_stem(title)
+    to = safe_stem(title, language)
     for sorszam in range(0, 10_000):
         nev = to if sorszam == 0 else f"{to}{sorszam}"
         jelolt = mappa / f"{nev}{OUTPUT_SUFFIX}"
@@ -141,8 +195,9 @@ def tartalek_mappa(cel: Path | str) -> Path:
 
 
 __all__ = [
-    "FILENAME_STEM",
+    "HONOSITOTT_ALAPNEV",
     "OUTPUT_SUFFIX",
+    "honositott_alapnev",
     "output_dir",
     "output_path",
     "safe_stem",

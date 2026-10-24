@@ -56,6 +56,7 @@ scaleslider,parositva,PicasaPy/PicasaSlider.qml,Közös csúszka-komponens
 scratch,nincs-megfeleltetes,,Belső rajzfelület (album-előnézet összeállítása) — nem felhasználói felület
 searchcontainer,parositva,Main.qml;PicasaPy/MainToolbar.qml;PicasaPy/SearchSuggestions.qml,Keresőmező és szűrőgombjai; a javaslatok bekötése a Main.qml-ben él
 searchoptions,parositva,Main.qml;PicasaPy/SearchGroupHeader.qml;PicasaPy/MainToolbar.qml,Keresési eredmény fejléce és a találati sáv
+setup,parositva,PicasaPy/PhotoViewerSettingsDialog.qml,A PicasaPhotoViewer `SETUPTEXT.XML` `setup/ui_option3` beállításának párbeszédablaka
 slideshowctrls,parositva,PicasaPy/SlideshowView.qml,Diavetítés vezérlői
 spacing_slider,parositva,PicasaPy/CollageSettingsTab.qml;PicasaPy/PicasaSlider.qml,A kollázs térközcsúszkája a mért bigslider családot használja (#4214)
 tagpanel,parositva,PicasaPy/TagsPanel.qml,Címke oldalsó panel

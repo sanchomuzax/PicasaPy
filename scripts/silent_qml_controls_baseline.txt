@@ -30,3 +30,4 @@ unbound-signal	src/picasapy/app/qml/PicasaPy/CollageDialogs.qml::formatRejected	
 unbound-signal	src/picasapy/app/qml/PicasaPy/DocumentTabStrip.qml::tabActivated	A fülváltás az activeTabId kötésén át frissíti a tartalmat; a jelet a Main nem fogyasztja.
 unbound-signal	src/picasapy/app/qml/PicasaPy/EditorPanel.qml::cropRequested	Elavult, redundáns jelzés: a cropActive/toolActivated útvonal nyitja az eszközt.
 unbound-signal	src/picasapy/app/qml/PicasaPy/ThumbDelegate.qml::photoDragStarted	Kiegészítő jelzés fogyasztó nélkül; a natív Drag.active indítja a húzást, a húzásteszt ezt ellenőrzi.
+unbound-signal	src/picasapy/app/qml/PicasaPy/HiddenPasswordDialog.qml::torlesKert	A régi önálló párbeszédkomponens törlési jelét a teszt ellenőrzi; a termékútvonal mindkét gyűjteményt a CollectionPasswordDialogban kezeli.

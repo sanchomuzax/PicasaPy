@@ -76,7 +76,7 @@ Item {
         if (masodperc > 0)
             movieSeconds.value = Math.round(masodperc * 10)
         if (burstmodethresh !== undefined && burstmodethresh >= 0)
-            movieBurstSlider.value = Math.sqrt(
+            movieDialog.movieBurstFactor = Math.sqrt(
                 Math.min(86400, burstmodethresh) / 86400)
         movieDialog.open()
     }
@@ -386,8 +386,25 @@ Item {
         property string audioFile: ""
         property bool audioFileFromFolderMusic: false
         property int audioOption: 0
-        property int transitionIndex: 1
+        property int transitionIndex: controller
+                && controller.movieTransition !== undefined
+                && typeof controller.movieTransition === "string"
+            ? Math.max(0, transitionKeys.indexOf(controller.movieTransition)) : 1
         property bool personMovieMode: false
+        property int movieResolutionIndex: 1
+        property bool movieShowCaptionsEnabled:
+            controller && typeof controller.moviePreference === "function"
+                ? controller.moviePreference("captions") : false
+        property bool movieCropToFitEnabled:
+            controller && typeof controller.moviePreference === "function"
+                ? controller.moviePreference("cropfit") : false
+        property bool movieShowDatesEnabled: false
+        property bool movieRemoveLowResFacesEnabled:
+            controller && typeof controller.moviePreference === "function"
+                ? controller.moviePreference("removeLowResFaces") : false
+        property int movieOrdering: 0
+        property real movieLengthFactor: 1
+        property real movieBurstFactor: 0
         property var movieClipIndexes: []
         property var movieClipSources: []
         property int movieInitialPhotoCount: 0
@@ -413,13 +430,13 @@ Item {
         readonly property bool previewTransitionServiceAvailable:
             controller && typeof controller.requestMovieTransitionPreview === "function"
         readonly property real previewAspectRatio: {
-            var size = sizeOptions[movieHeightBox.currentIndex]
+            var size = sizeOptions[movieResolutionIndex]
             return size[0] / size[1]
         }
         readonly property int previewOutputWidth:
-            sizeOptions[movieHeightBox.currentIndex][0]
+            sizeOptions[movieResolutionIndex][0]
         readonly property int previewOutputHeight:
-            sizeOptions[movieHeightBox.currentIndex][1]
+            sizeOptions[movieResolutionIndex][1]
         readonly property int previewItemCount:
             movieClipSources.length + movieSlides.length
         // A spec szerint a `Preferences\makemovie1to1` alapja 1: a valódi méret a
@@ -502,18 +519,18 @@ Item {
                     : controller.movieResolutionIndex
                 if (stored !== undefined) index = stored
             }
-            movieHeightBox.currentIndex = index
+            movieResolutionIndex = index
         }
         readonly property int movieUsedPhotoCount: Math.floor(
-            movieLengthSlider.value * movieLengthSlider.value
+            movieLengthFactor * movieLengthFactor
             * movieInitialPhotoCount)
         readonly property int movieBurstThresholdSeconds: Math.floor(
-            movieBurstSlider.value * movieBurstSlider.value * 86400)
+            movieBurstFactor * movieBurstFactor * 86400)
         readonly property real previewSlideDurationSeconds:
             Math.max(
                 0.5,
                 (movieSeconds && movieSeconds.value !== undefined
-                    ? movieSeconds.value : 30) / 10)
+                    ? movieSeconds.value : 40) / 10)
         readonly property real previewDurationSeconds:
             previewSlideDurationSeconds * previewItemCount
         function formatPreviewTime(seconds) {
@@ -601,9 +618,9 @@ Item {
                 previewTransitionProgress,
                 previewOutputWidth,
                 previewOutputHeight,
-                movieCropToFit.checked,
-                movieShowCaptions.checked,
-                movieShowDates.checked,
+                movieCropToFitEnabled,
+                movieShowCaptionsEnabled,
+                movieShowDatesEnabled,
                 outgoingSlide ? JSON.stringify(outgoingSlide) : "",
                 incomingSlide ? JSON.stringify(incomingSlide) : "",
                 previewActualSizeEnabled,
@@ -632,9 +649,9 @@ Item {
                 nextSlide ? JSON.stringify(nextSlide) : "",
                 previewOutputWidth,
                 previewOutputHeight,
-                movieCropToFit.checked,
-                movieShowCaptions.checked,
-                movieShowDates.checked,
+                movieCropToFitEnabled,
+                movieShowCaptionsEnabled,
+                movieShowDatesEnabled,
                 previewActualSizeEnabled,
                 moviePreviewViewport.width,
                 moviePreviewViewport.height,
@@ -697,7 +714,7 @@ Item {
                 var slideIndex = selected - photoCount
                 if (slideIndex < 0 || slideIndex >= movieSlides.length) return ""
                 name = qsTr("Text Slide")
-                var movieSize = sizeOptions[movieHeightBox.currentIndex]
+                var movieSize = sizeOptions[movieResolutionIndex]
                 width = movieSize[0]
                 height = movieSize[1]
                 position = photoCount + slideIndex + 1
@@ -1055,7 +1072,7 @@ Item {
             startMovieExport()
         }
         function startMovieExport() {
-            var meret = sizeOptions[movieHeightBox.currentIndex]
+            var meret = sizeOptions[movieResolutionIndex]
             var sources = movieClipSources.slice(0)
             if (movieSoloClip.checked && sources.length) {
                 var selected = movieClipList.currentIndex < 0
@@ -1072,12 +1089,11 @@ Item {
                 sources, targetFile, meret[1], movieSeconds.value / 10.0,
                 meret[0], transitionKeys[transitionIndex], movieOverlapSlider.value,
                 audioFile, audioOption, movieSlides, {
-                    ordering: movieSmartOrder.checked ? 0
-                        : movieChronologicalOrder.checked ? 2 : 1,
-                    showcaptions: movieShowCaptions.checked,
-                    showdates: movieShowDates.checked,
-                    cropfit: movieCropToFit.checked,
-                    removelowresfaces: movieRemoveLowResFaces.checked,
+                    ordering: movieOrdering,
+                    showcaptions: movieShowCaptionsEnabled,
+                    showdates: movieShowDatesEnabled,
+                    cropfit: movieCropToFitEnabled,
+                    removelowresfaces: movieRemoveLowResFacesEnabled,
                     faceMovie: movieDialog.personMovieMode,
                     burstmodethresh: movieBurstThresholdSeconds,
                 })
@@ -1137,9 +1153,12 @@ Item {
                 MovieTabButton { objectName: "movieTabMotion"; text: qsTr("Movie") }
                 MovieTabButton { objectName: "movieTabSlide"; text: qsTr("Slide") }
                 MovieTabButton {
-                    objectName: "movieTabClips"
-                    text: qsTr("Clips (%d)").replace(
-                        "%d", String(movieDialog.movieClipSources.length))
+                    objectName: movieDialog.personMovieMode
+                        ? "movieTabOptions" : "movieTabClips"
+                    text: movieDialog.personMovieMode
+                        ? qsTr("Options")
+                        : qsTr("Clips (%d)").replace(
+                            "%d", String(movieDialog.movieClipSources.length))
                 }
             }
             StackLayout {
@@ -1250,7 +1269,15 @@ Item {
                                 qsTr("Pan and Zoom"), qsTr("Pan and Zoom - face"),
                                 qsTr("Time Lapse"), qsTr("Rectangle")]
                             currentIndex: movieDialog.transitionIndex
-                            onCurrentIndexChanged: movieDialog.transitionIndex = currentIndex
+                            onCurrentIndexChanged: {
+                                movieDialog.transitionIndex = currentIndex
+                                if (controller
+                                        && typeof controller.setMovieTransition === "function"
+                                        && currentIndex >= 0
+                                        && currentIndex < movieDialog.transitionKeys.length)
+                                    controller.setMovieTransition(
+                                        movieDialog.transitionKeys[currentIndex])
+                            }
                             onActivated: movieDialog.transitionIndex = currentIndex
                         }
                         RowLayout {
@@ -1267,7 +1294,7 @@ Item {
                                 objectName: "movieSecondsValueLabel"
                                 text: qsTr("%1 Sec").arg(
                                     ((movieSeconds && movieSeconds.value !== undefined
-                                        ? movieSeconds.value : 30) / 10).toFixed(1))
+                                        ? movieSeconds.value : 40) / 10).toFixed(1))
                                 color: Theme.ink
                             }
                             Item { Layout.fillWidth: true }
@@ -1277,7 +1304,15 @@ Item {
                             objectName: "movieSeconds"
                             Layout.preferredWidth: Math.round(parent.width * 0.5)
                             Layout.alignment: Qt.AlignHCenter
-                            from: 10; to: 100; stepSize: 5; value: 30
+                            from: 10; to: 3000; stepSize: 5
+                            value: controller
+                                && controller.movieSlideDuration !== undefined
+                                ? Math.round(controller.movieSlideDuration * 10) : 40
+                            onMoved: {
+                                if (controller
+                                        && typeof controller.setMovieSlideDuration === "function")
+                                    controller.setMovieSlideDuration(value / 10.0)
+                            }
                             grooveThickness: 9
                             grooveInset: 3
                             handleWidth: 16
@@ -1314,7 +1349,7 @@ Item {
                             from: 0; to: Math.max(
                                 0.1,
                                 (movieSeconds && movieSeconds.value !== undefined
-                                    ? movieSeconds.value : 30) / 10 * 0.9)
+                                    ? movieSeconds.value : 40) / 10 * 0.9)
                             value: Math.min(0.5, to); stepSize: 0.1
                             grooveThickness: 9
                             grooveInset: 3
@@ -1324,92 +1359,11 @@ Item {
                             handleOffsetY: 2
                             showTicks: false
                         }
-                        Text {
-                            objectName: "moviesize_label"
-                            text: qsTr("Dimensions")
+                        Loader {
+                            objectName: "movieOptionsInMotion"
                             Layout.fillWidth: true
-                            horizontalAlignment: Text.AlignHCenter
-                            color: Theme.ink
-                        }
-                        PicasaComboBox {
-                            id: movieHeightBox
-                            objectName: "movieHeightBox"
-                            Layout.fillWidth: true
-                            model: ["320x240", "640x480", "800x600",
-                                "1024x768", "1600x1200", "1280x720 (720p)",
-                                "1920x1080 (1080p)"]
-                            currentIndex: movieDialog.defaultSizeIndex
-                            // #4391: a Picasa az arc-film felbontását nem
-                            // menti vissza; csak a normál film írja a saját kulcsát.
-                            onActivated: {
-                                if (!movieDialog.personMovieMode)
-                                    controller.setMovieResolutionIndex(currentIndex)
-                                movieDialog.requestPreviewFrame()
-                            }
-                        }
-                        CheckBox {
-                            id: movieShowCaptions
-                            objectName: "movieShowCaptions"
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 24
-                            topPadding: 0
-                            bottomPadding: 0
-                            text: qsTr("Show Captions")
-                            font.pixelSize: Theme.fontSize - 4
-                            checked: controller && typeof controller.moviePreference === "function"
-                                    ? controller.moviePreference("captions") : false
-                            onToggled: {
-                                if (controller && typeof controller.setMoviePreference === "function")
-                                    controller.setMoviePreference("captions", checked)
-                                movieDialog.requestPreviewFrame()
-                            }
-                        }
-                        CheckBox {
-                            id: movieCropToFit
-                            objectName: "movieCropToFit"
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 24
-                            topPadding: 0
-                            bottomPadding: 0
-                            text: qsTr("Full frame photo crop")
-                            font.pixelSize: Theme.fontSize - 4
-                            checked: controller && typeof controller.moviePreference === "function"
-                                    ? controller.moviePreference("cropfit") : false
-                            onToggled: {
-                                if (controller && typeof controller.setMoviePreference === "function")
-                                    controller.setMoviePreference("cropfit", checked)
-                                movieDialog.requestPreviewFrame()
-                            }
-                        }
-                        CheckBox {
-                            id: movieShowDates
-                            objectName: "movieShowDates"
-                            Layout.fillWidth: true
-                            text: qsTr("Show Dates")
-                            onToggled: movieDialog.requestPreviewFrame()
-                        }
-                        CheckBox {
-                            id: movieRemoveLowResFaces
-                            objectName: "movieRemoveLowResFaces"
-                            Layout.fillWidth: true
-                            text: qsTr("Remove Low Resolution Faces")
-                            checked: controller && typeof controller.moviePreference === "function"
-                                    ? controller.moviePreference("removeLowResFaces") : false
-                            onToggled: if (controller && typeof controller.setMoviePreference === "function")
-                                           controller.setMoviePreference("removeLowResFaces", checked)
-                        }
-                        Flow {
-                            Layout.fillWidth: true
-                            Layout.maximumWidth: moviePages.width
-                            spacing: 8
-                            Text {
-                                objectName: "ordering_header_label"
-                                text: qsTr("Ordering of Slides:")
-                                color: Theme.ink
-                            }
-                            RadioButton { id: movieSmartOrder; objectName: "movieSmartOrder"; text: qsTr("Best Transitions"); checked: true }
-                            RadioButton { objectName: "movieAlbumOrder"; text: qsTr("Album Order") }
-                            RadioButton { id: movieChronologicalOrder; objectName: "movieChronologicalOrder"; text: qsTr("Chronological") }
+                            active: !movieDialog.personMovieMode
+                            sourceComponent: movieOptionsControls
                         }
                         RowLayout {
                             Layout.fillWidth: true
@@ -1664,13 +1618,287 @@ Item {
                         }
                     }
                 }
-                ColumnLayout {
-                    objectName: "movieTabPanelClips"
-                    spacing: 8
+                Item {
+                    objectName: "movieTabPanelThirdPage"
                     Layout.fillWidth: true
                     Layout.minimumWidth: 0
+                    ColumnLayout {
+                        id: movieTabPanelClips
+                        objectName: "movieTabPanelClips"
+                        anchors.fill: parent
+                        spacing: 8
+                        visible: !movieDialog.personMovieMode
+                        Button {
+                            objectName: "movieGetMoreClipsButton"
+                            text: qsTr("Get More...")
+                            Layout.fillWidth: true
+                            ToolTip.text: qsTr("Get more clips from Photo Library")
+                            ToolTip.visible: hovered
+                            ToolTip.delay: Theme.tooltipDelay
+                            onClicked: dialogs.appWindow.openMovieClipCollector()
+                        }
+                        Loader {
+                            Layout.fillWidth: true
+                            active: !movieDialog.personMovieMode
+                            sourceComponent: movieFilterControls
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Button {
+                                objectName: "movieRecomputeButton"
+                                text: qsTr("Recompute")
+                                Layout.fillWidth: true
+                                onClicked: movieDialog.recomputeMovie()
+                            }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Button {
+                                objectName: "movieAddClipsButton"
+                                text: qsTr("Add selected clips")
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 0
+                                ToolTip.text: qsTr("Add the selected clip(s) to the end of the movie")
+                                ToolTip.visible: hovered
+                                ToolTip.delay: Theme.tooltipDelay
+                                onClicked: movieDialog.addSelectedClips()
+                            }
+                            Button {
+                                objectName: "movieDeleteClipButton"
+                                text: qsTr("Remove selected clip")
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 0
+                                ToolTip.text: qsTr("Remove the selected clip(s) from the tray")
+                                ToolTip.visible: hovered
+                                ToolTip.delay: Theme.tooltipDelay
+                                onClicked: movieDialog.deleteSelectedClip()
+                            }
+                        }
+                        CheckBox {
+                            id: movieSoloClip
+                            objectName: "movieSoloClip"
+                            text: qsTr("Play selected clip only")
+                            Layout.fillWidth: true
+                        }
+                        ListView {
+                            id: movieClipList
+                            objectName: "movieClipList"
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            model: movieDialog.movieFilmstripItems
+                            delegate: ItemDelegate {
+                                objectName: "movieClipDelegate" + index
+                                width: movieClipList.width
+                                text: modelData.name
+                                onClicked: movieDialog.selectMovieFilmstripItem(index)
+                            }
+                        }
+                    }
+                    Loader {
+                        objectName: "movieTabPanelOptions"
+                        anchors.fill: parent
+                        active: movieDialog.personMovieMode
+                        sourceComponent: movieFaceOptionsPage
+                    }
+                }
+            }
+            }
+        }
+        Component {
+            id: movieOptionsControls
+            ColumnLayout {
+                width: moviePages.width
+                spacing: 1
+                Text {
+                    objectName: "moviesize_label"
+                    text: qsTr("Dimensions")
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    color: Theme.ink
+                }
+                PicasaComboBox {
+                    id: movieHeightBox
+                    objectName: "movieHeightBox"
+                    Layout.fillWidth: true
+                    model: ["320x240", "640x480", "800x600",
+                        "1024x768", "1600x1200", "1280x720 (720p)",
+                        "1920x1080 (1080p)"]
+                    currentIndex: movieDialog.movieResolutionIndex
+                    onCurrentIndexChanged: movieDialog.movieResolutionIndex = currentIndex
+                    // #4391: a Picasa az arc-film felbontását nem menti vissza;
+                    // csak a normál film írja a saját kulcsát.
+                    onActivated: {
+                        if (!movieDialog.personMovieMode)
+                            controller.setMovieResolutionIndex(currentIndex)
+                        movieDialog.requestPreviewFrame()
+                    }
+                }
+                CheckBox {
+                    id: movieShowCaptions
+                    objectName: "movieShowCaptions"
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 24
+                    topPadding: 0
+                    bottomPadding: 0
+                    text: qsTr("Show Captions")
+                    font.pixelSize: Theme.fontSize - 4
+                    checked: movieDialog.movieShowCaptionsEnabled
+                    onCheckedChanged:
+                        movieDialog.movieShowCaptionsEnabled = checked
+                    onToggled: {
+                        if (controller && typeof controller.setMoviePreference === "function")
+                            controller.setMoviePreference("captions", checked)
+                        movieDialog.requestPreviewFrame()
+                    }
+                }
+                CheckBox {
+                    id: movieCropToFit
+                    objectName: "movieCropToFit"
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 24
+                    topPadding: 0
+                    bottomPadding: 0
+                    text: qsTr("Full frame photo crop")
+                    font.pixelSize: Theme.fontSize - 4
+                    checked: movieDialog.movieCropToFitEnabled
+                    onCheckedChanged:
+                        movieDialog.movieCropToFitEnabled = checked
+                    onToggled: {
+                        if (controller && typeof controller.setMoviePreference === "function")
+                            controller.setMoviePreference("cropfit", checked)
+                        movieDialog.requestPreviewFrame()
+                    }
+                }
+                CheckBox {
+                    id: movieShowDates
+                    objectName: "movieShowDates"
+                    Layout.fillWidth: true
+                    text: qsTr("Show Dates")
+                    checked: movieDialog.movieShowDatesEnabled
+                    onCheckedChanged:
+                        movieDialog.movieShowDatesEnabled = checked
+                    onToggled: {
+                        movieDialog.requestPreviewFrame()
+                    }
+                }
+                CheckBox {
+                    id: movieRemoveLowResFaces
+                    objectName: "movieRemoveLowResFaces"
+                    Layout.fillWidth: true
+                    text: qsTr("Remove Low Resolution Faces")
+                    checked: movieDialog.movieRemoveLowResFacesEnabled
+                    onCheckedChanged:
+                        movieDialog.movieRemoveLowResFacesEnabled = checked
+                    onToggled: {
+                        if (controller && typeof controller.setMoviePreference === "function")
+                            controller.setMoviePreference("removeLowResFaces", checked)
+                    }
+                }
+                Flow {
+                    Layout.fillWidth: true
+                    Layout.maximumWidth: moviePages.width
+                    spacing: 8
+                    Text {
+                        objectName: "ordering_header_label"
+                        text: qsTr("Ordering of Slides:")
+                        color: Theme.ink
+                    }
+                    RadioButton {
+                        id: movieSmartOrder
+                        objectName: "movieSmartOrder"
+                        text: qsTr("Best Transitions")
+                        checked: movieDialog.movieOrdering === 0
+                        onCheckedChanged:
+                            if (checked) movieDialog.movieOrdering = 0
+                        onToggled: if (checked) movieDialog.movieOrdering = 0
+                    }
+                    RadioButton {
+                        objectName: "movieAlbumOrder"
+                        text: qsTr("Album Order")
+                        checked: movieDialog.movieOrdering === 1
+                        onCheckedChanged:
+                            if (checked) movieDialog.movieOrdering = 1
+                        onToggled: if (checked) movieDialog.movieOrdering = 1
+                    }
+                    RadioButton {
+                        id: movieChronologicalOrder
+                        objectName: "movieChronologicalOrder"
+                        text: qsTr("Chronological")
+                        checked: movieDialog.movieOrdering === 2
+                        onCheckedChanged:
+                            if (checked) movieDialog.movieOrdering = 2
+                        onToggled: if (checked) movieDialog.movieOrdering = 2
+                    }
+                }
+            }
+        }
+        Component {
+            id: movieFilterControls
+            ColumnLayout {
+                width: moviePages.width
+                spacing: 8
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        objectName: "lengthslider_label"
+                        text: qsTr("Total Photos")
+                        color: Theme.ink
+                    }
+                    Slider {
+                        id: movieLengthSlider
+                        objectName: "lengthslider/scaleslider"
+                        Layout.fillWidth: true
+                        from: 0; to: 1
+                        value: movieDialog.movieLengthFactor
+                        onValueChanged: movieDialog.movieLengthFactor = value
+                    }
+                    Text {
+                        objectName: "movieLengthCount"
+                        text: String(movieDialog.movieUsedPhotoCount)
+                        color: Theme.textGray
+                    }
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        objectName: "burstslider_label"
+                        text: movieDialog.movieBurstFactor === 0
+                            ? qsTr("Don't filter by time taken")
+                            : qsTr("Remove Photos Taken Within %1")
+                                .arg(movieDialog.movieBurstThresholdSeconds)
+                        color: Theme.ink
+                    }
+                    Slider {
+                        id: movieBurstSlider
+                        objectName: "burstslider/scaleslider"
+                        Layout.fillWidth: true
+                        from: 0; to: 1
+                        value: movieDialog.movieBurstFactor
+                        onValueChanged: movieDialog.movieBurstFactor = value
+                    }
+                }
+            }
+        }
+        Component {
+            id: movieFaceOptionsPage
+            ScrollView {
+                clip: true
+                ScrollBar.vertical: ScrollBar {
+                    objectName: "movieOptionsScrollBar"
+                }
+                ColumnLayout {
+                    width: moviePages.width
+                    spacing: 8
+                    Loader {
+                        Layout.fillWidth: true
+                        sourceComponent: movieOptionsControls
+                    }
+                    Loader {
+                        Layout.fillWidth: true
+                        sourceComponent: movieFilterControls
+                    }
                     Button {
-                        objectName: "movieGetMoreClipsButton"
+                        objectName: "movieOptionsGetMoreClipsButton"
                         text: qsTr("Get More...")
                         Layout.fillWidth: true
                         ToolTip.text: qsTr("Get more clips from Photo Library")
@@ -1678,95 +1906,13 @@ Item {
                         ToolTip.delay: Theme.tooltipDelay
                         onClicked: dialogs.appWindow.openMovieClipCollector()
                     }
-                    RowLayout {
+                    Button {
+                        objectName: "movieOptionsRecomputeButton"
+                        text: qsTr("Recompute")
                         Layout.fillWidth: true
-                        Text {
-                            objectName: "lengthslider_label"
-                            text: qsTr("Total Photos")
-                            color: Theme.ink
-                        }
-                        Slider {
-                            id: movieLengthSlider
-                            objectName: "lengthslider/scaleslider"
-                            Layout.fillWidth: true
-                            from: 0; to: 1; value: 1
-                        }
-                        Text {
-                            objectName: "movieLengthCount"
-                            text: String(movieDialog.movieUsedPhotoCount)
-                            color: Theme.textGray
-                        }
-                    }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Text {
-                            objectName: "burstslider_label"
-                            text: movieBurstSlider.value === 0
-                                  ? qsTr("Don't filter by time taken")
-                                  : qsTr("Remove Photos Taken Within %1")
-                                      .arg(movieDialog.movieBurstThresholdSeconds)
-                            color: Theme.ink
-                        }
-                        Slider {
-                            id: movieBurstSlider
-                            objectName: "burstslider/scaleslider"
-                            Layout.fillWidth: true
-                            from: 0; to: 1; value: 0
-                        }
-                    }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Button {
-                            objectName: "movieRecomputeButton"
-                            text: qsTr("Recompute")
-                            Layout.fillWidth: true
-                            onClicked: movieDialog.recomputeMovie()
-                        }
-                    }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Button {
-                            objectName: "movieAddClipsButton"
-                            text: qsTr("Add selected clips")
-                            Layout.fillWidth: true
-                            Layout.minimumWidth: 0
-                            ToolTip.text: qsTr("Add the selected clip(s) to the end of the movie")
-                            ToolTip.visible: hovered
-                            ToolTip.delay: Theme.tooltipDelay
-                            onClicked: movieDialog.addSelectedClips()
-                        }
-                        Button {
-                            objectName: "movieDeleteClipButton"
-                            text: qsTr("Remove selected clip")
-                            Layout.fillWidth: true
-                            Layout.minimumWidth: 0
-                            ToolTip.text: qsTr("Remove the selected clip(s) from the tray")
-                            ToolTip.visible: hovered
-                            ToolTip.delay: Theme.tooltipDelay
-                            onClicked: movieDialog.deleteSelectedClip()
-                        }
-                    }
-                    CheckBox {
-                        id: movieSoloClip
-                        objectName: "movieSoloClip"
-                        text: qsTr("Play selected clip only")
-                        Layout.fillWidth: true
-                    }
-                    ListView {
-                        id: movieClipList
-                        objectName: "movieClipList"
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        model: movieDialog.movieFilmstripItems
-                        delegate: ItemDelegate {
-                            objectName: "movieClipDelegate" + index
-                            width: movieClipList.width
-                            text: modelData.name
-                            onClicked: movieDialog.selectMovieFilmstripItem(index)
-                        }
+                        onClicked: movieDialog.recomputeMovie()
                     }
                 }
-            }
             }
         }
         RowLayout {
@@ -2235,7 +2381,7 @@ Item {
         interval: Math.max(
             500,
             (movieSeconds && movieSeconds.value !== undefined
-                ? movieSeconds.value : 30) * 100)
+                ? movieSeconds.value : 40) * 100)
         repeat: true
         onRunningChanged: {
             if (!moviePreviewMusicLoader.item) return
@@ -2295,7 +2441,7 @@ Item {
         textColor: movieDialog.textColor
         backgroundColor: movieDialog.backgroundColor
         previewAspectRatio: {
-            var selectedSize = movieDialog.sizeOptions[movieHeightBox.currentIndex]
+            var selectedSize = movieDialog.sizeOptions[movieDialog.movieResolutionIndex]
             return selectedSize[0] / selectedSize[1]
         }
         onSlideAdded: function(slide) { movieDialog.addTextSlide(slide) }

@@ -12,6 +12,10 @@ videoklipek** mappába írt egy **JPEG**-et. A név felépítése kimérve
 3. az alapnév, majd a **`.jpg`** kiterjesztés;
 4. egyediesítés a **`%s-%03lu`** mintával, `0x1000` = **4096**-ig.
 
+Az új célmappa `[Picasa] P2category=Projects (internal)` jelölést kap az
+`ini/` API-n keresztül; létező mappánál az ini érintetlen. A JPEG explicit
+85-ös minőséggel készül (`0x55`).
+
 ⚠️ Ez MÁS minta, mint a kollázsé és a mozgófilmé (`%s%lu` →
 `nev1.jpg`): itt a sorszám **kötőjeles és háromjegyű**, és a
 kiterjesztés leválasztva kerül vissza a végére. Aki az
@@ -34,6 +38,9 @@ import numpy as np
 
 #: A képkocka kiterjesztése — mérve (`0x00c80a50`).
 KEPKOCKA_KITERJESZTES = ".jpg"
+
+#: A videóból mentett JPEG minősége - mérve (`0x00592033`-`0x00592067`).
+KEPKOCKA_JPEG_MINOSEG = 85
 
 #: A natív egyediesítő `0x1000`-ig emeli a számlálót (`0x00993a1a`).
 MAX_SORSZAM = 4096
@@ -90,12 +97,32 @@ def mentsd_a_kepkockat(
     if kep.ndim != 3 or kep.shape[2] != 3:
         raise ValueError(f"RGB (H, W, 3) képkocka kell, ez {kep.shape} alakú.")
     mappa = Path(mappa)
-    mappa.mkdir(parents=True, exist_ok=True)
+    try:
+        mappa.mkdir(parents=True)
+    except FileExistsError:
+        if not mappa.is_dir():
+            raise
+    else:
+        from picasapy.ini import (
+            INI_NAME,
+            PROJECTS_CATEGORY,
+            update_document,
+            with_folder_category,
+        )
+
+        update_document(
+            mappa / INI_NAME,
+            lambda document: with_folder_category(document, PROJECTS_CATEGORY),
+        )
     cel = egyedi_utvonal(mappa, alapnev)
     # ⚠️ #65/#190/#1991: fájlútvonalas `cv2.imwrite` ékezetes néven Windowson
     # NÉMÁN elbukik — és a célmappa neve épp ékezetes („Rögzített
     # videoklipek"). Ezért kódolunk memóriába, és a Path ír.
-    sikeres, puffer = cv2.imencode(KEPKOCKA_KITERJESZTES, kep[..., ::-1])
+    sikeres, puffer = cv2.imencode(
+        KEPKOCKA_KITERJESZTES,
+        kep[..., ::-1],
+        [cv2.IMWRITE_JPEG_QUALITY, KEPKOCKA_JPEG_MINOSEG],
+    )
     if not sikeres:
         raise OSError(f"A képkocka kódolása nem sikerült: {cel}")
     cel.write_bytes(puffer.tobytes())
@@ -104,6 +131,7 @@ def mentsd_a_kepkockat(
 
 __all__ = [
     "KEPKOCKA_KITERJESZTES",
+    "KEPKOCKA_JPEG_MINOSEG",
     "MAX_SORSZAM",
     "TARTALEK_ALAPNEV",
     "egyedi_utvonal",

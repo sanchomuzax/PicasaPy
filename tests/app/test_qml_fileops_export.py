@@ -187,8 +187,7 @@ class TestRenameManyDialog:
         size_check.setProperty("checked", True)
         qt_app.processEvents()
         sample_label = _child(window, "renameManySampleLabel")
-        # a fixture-beli a.jpg felbontása 320x160 (qml_app conftest)
-        assert sample_label.property("text") == "Example: nyaralas 320x160.jpg"
+        assert sample_label.property("text") == "Example: nyaralas 640x480.jpg"
 
     def test_accept_button_says_rename_not_ok(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app

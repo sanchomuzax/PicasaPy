@@ -152,11 +152,19 @@ class TestSugoFejezetlista:
         # a kiinduló fejezet (főoldal) NEM lehet a cél: az első találat épp a főoldal
         idx = next(i for i, t in enumerate(talalatok) if t["fejezet"] != sugo.property("topic"))
         cel = talalatok[idx]["fejezet"]
+
+        def _talalat_sor_felépült():
+            talalat_sor = _fejezetsor(lista, idx)
+            return (
+                talalat_sor is not None
+                and talalat_sor.width() > 0
+                and talalat_sor.height() > 0
+                and talalatok[idx]["cim"] in (_cime(talalat_sor) or "")
+            )
+
+        assert _varj(qt_app, _talalat_sor_felépült), "a találatsor nem kapott méretet és címet"
         sor = _fejezetsor(lista, idx)
         assert sor is not None, "nincs találatsor"
-        assert talalatok[idx]["cim"] in (_cime(sor) or ""), (
-            f"a találatsor címe nem a találaté: {_cime(sor)!r}"
-        )
 
         sugo_ablak = sor.window()
         _aktival(qt_app, sugo_ablak)
@@ -320,11 +328,11 @@ class TestRejtettJelszo:
         menu = _gyerek(window, "collectionContextMenu")
         assert _varj(qt_app, lambda: menu.property("opened") is True)
         _kattint_rejtett(qt_app, window, _gyerek(window, "collectionMenuPassword"))
-        assert _varj(qt_app, lambda: _latszik(window, "hiddenPasswordDialog")), (
+        assert _varj(qt_app, lambda: _latszik(window, "collectionPasswordDialog")), (
             "a jelszó-párbeszéd nem nyílt meg"
         )
-        parbeszed = _gyerek(window, "hiddenPasswordDialog")
-        jelolo = _gyerek(parbeszed, "hiddenPasswordModern")
+        parbeszed = _gyerek(window, "collectionPasswordDialog")
+        jelolo = _gyerek(parbeszed, "collectionPasswordModern")
         assert parbeszed.property("modernRequested") is False
 
         _kattint_rejtett(qt_app, window, jelolo)
