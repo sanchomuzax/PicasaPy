@@ -444,6 +444,60 @@ elrendezése NINCS megfejtve** — ld. a szakasz végét.
 | tárolás | `0x007eb685` → `0x006b75f0` | `CBlockFile::Write` (a keret: `pmp-database.md` 8.2) |
 | visszaolvasás | `0x007eb22c` → `0x006b6a50` | `CBlockFile::Read` |
 
+### #5752 - Színút a hasonlósági leíró előtt (2026-10-24; ICC megerősített, gamma nyitott)
+
+A hasonlósági frissítő (`0x007ead60`, hívási hely `0x007eb322`)
+meghívja a `0x006b67c0`-t; az a `0x009d5e90` dekódernek adja át a
+kimeneti leírót. A `0x009d5e90` → `0x009d5b90` → `0x009d65e0` lánc
+az eredmény leíróhoz való visszatérése előtt fut. A `0x009d65e0` a
+profillistát a `0x00a3f2f0`-nak adja át; ha a profilfeltételek teljesülnek,
+az a `0x00af2d20`-on keresztül transzformációs fogantyút épít és eltárolja.
+A dekóder ezután, ha a fogantyú létrejött, annak `+0x08` függvénymutatóját
+hívja (`0x009d6e02`-`0x009d6e18`); a hívás bemeneti és kimeneti pufferként
+is ugyanazt a `esi` képpuffert kapja. Ez a profiltranszformációs ág a
+forrásleíró visszaadása előtt képpontadatot dolgoz fel, ezért a csatornák
+értéke változhat. A pontos kimeneti csatornaérték **NINCS MEG**: azt a
+bemeneti kép, annak profilja és a létrejött transzformáció határozza meg.
+
+A színkezelő inicializálója (`0x00a3df50`) a
+`Preferences\EnableColorManagement` értékét olvassa és a profilkörnyezet
+`+0x5c` mezőjébe írja (`0x00a3df8a`-`0x00a3dfb5`); a dekóder a globális
+profilkörnyezetet és ezt a mezőt is vizsgálja (`0x009d69c6`-`0x009d69e4`).
+Ezért az ICC-ág feltételes: a transzformáció csak akkor fut, ha a releváns
+profilút összeáll és a fogantyú nem nulla. **Nem állítható, hogy minden
+képnél vagy minden beállítás mellett változnak a csatornák.**
+
+**Két út és cáfoló próba:** A út a hasonlósági frissítő hívási láncától
+követi a dekóder `0x009d6e18` képpuffer-hívásáig; B út a külön
+színkezelő-beállítás (`0x00a3df50`), a profiltranszformáció-építő
+(`0x00a3f2f0` → `0x00af2d20`) és az eltárolt fogantyú használatát olvassa
+ki. A két út a feltételes, forrásleíró előtti ICC-transzformációban egyezik.
+Cáfoló próbában azt ellenőriztem, hogy minden bemenet feltétlenül ezen
+megy-e át: a `0x009d69d5`-`0x009d69d9` profilkapu, a `0x00a3f2f0`
+profilfeltételei és a `0x009d6e07`-`0x009d6e0f` nullaellenőrzései kizárják az
+általános, feltétel nélküli állítást; a feltételes ICC-ágat viszont nem
+cáfolják.
+
+**PNG gamma: NINCS MEG, hogy módosítja-e a hasonlósági út képpontjait.** A
+`0x00b18c30` a PNG `gAMA` chunkot ellenőrzi, gammaértéket tárol
+(`0x00b18d76`-`0x00b18da4`), és gammaállapotot állít be a
+`0x00b143f0`/`0x00b14460` segédeken át. Ebből önmagában nem következik,
+hogy a hasonlósági dekóder PNG-ágának képpont-transzformációja ezt az
+állapotot alkalmazza-e. A konkrét PNG-formátumhívástól a sor-/képpont-
+transzformációig kell követni a `0x009d5b90` által kiválasztott dekóderágat;
+amíg ez nincs összekötve, gamma-konverzióra nincs pozitív vagy negatív
+állítás.
+
+Ghidra-kör kell: 0x009d5b90 - a kiválasztott PNG-formátumág és az általa
+használt képpont-transzformáció a `0x00b18c30`-ból beállított gAMA-állapotot
+alkalmazza-e a hasonlósági leíró előtti képpufferre [blokkoló]. A
+2026-10-21-es kimenet csak `0x009d65e0`-ra mutató hivatkozásokat tartalmazza,
+nem a dekóder törzsét; a 2026-10-24b köteg ezt a címet nem bontotta ki.
+
+*Bizonyítottsági fok: az ICC-transzformáció léte és feltételes képpuffer-
+alkalmazása **megerősített** (a hasonlósági dekóderút és a külön
+profilkezelő-/transzformáció-út egyezik); a PNG gammahatás **nyitott**.*
+
 ### A rekord mérete FIX: 380 bájt
 
 ```
