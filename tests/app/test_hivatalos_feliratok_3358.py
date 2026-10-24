@@ -286,17 +286,24 @@ def test_a_qm_ujraforditva_frissebb_mint_a_ts() -> None:
 #: #3572: a Beállítások ablak fülei. A kulcs (kontextus, forrásszöveg), mert
 #: több felirat („RAW”, „English (US)”, „Log file:”…) másutt más szerepben,
 #: más fordítással is él — a fordítást ezért CSAK az adott fülön mérjük.
-#: Ahol van hivatalos angol (a `stringres` enUK-alakja), a forrásszöveg is az.
+#: #5799 E-mail forrásai a Windows Picasa specifikáció szerinti alakok; az
+#: enUK erőforrás eltérő változatai (pl. „Email programme”, „Full film”).
 BEALLITASOK = {
-    ("OptionsTabEmail", "Full film"): (
+    ("OptionsTabEmail", "E-mail program:"): (
+        "Levelezőprogram:", "options/labelgroup38.title"),
+    ("OptionsTabEmail", "Size for multiple pictures:"): (
+        "Több kép mérete:", "options/labelgroup43.title"),
+    ("OptionsTabEmail", "Size for single pictures:"): (
+        "Egyedülálló képek mérete:", "options/labelgroup48.title"),
+    ("OptionsTabEmail", "Send movies as:"): (
+        "Mozgófilmek küldése másként:", "options/labelgroup53.title"),
+    ("OptionsTabEmail", "Full movie"): (
         "Teljes mozgófilm", "options/radio56.title"),
     ("OptionsTabEmail", "Let me choose each time I send pictures"): (
         "Minden képküldésnél kiválasztom", "options/radio40.title"),
     ("OptionsTabEmail", "Send inline photos and captions (Outlook only)"): (
         "Szövegközi fotók és képfeliratok küldése (csak Outlookban)",
         "options/UseHTMLMailer.title"),
-    ("OptionsTabEmail", "Send videos as:"): (
-        "Mozgófilmek küldése másként:", "options/labelgroup53.title"),
     ("OptionsTabFileTypes", "Display JPEG files and:"): (
         "Megjelenítés: JPEG-fájlok és", "options/label61.title"),
     ("OptionsTabFileTypes", ".bmp"): (
@@ -449,8 +456,10 @@ BEALLITASOK = {
 #: #3572: a lecserélt angol forrásszövegek — a Beállítások füleiről eltűntek
 BEALLITASOK_ELAVULT = {
     "OptionsTabEmail": (
-        "Full movie", "Let me choose each time I send a picture",
-        "Send embedded pictures and captions (Outlook only)", "Send movies as:"),
+        "Mail program:", "Multiple photo size", "Single picture size:",
+        "Send videos as:", "Full film",
+        "Let me choose each time I send a picture",
+        "Send embedded pictures and captions (Outlook only)"),
     "OptionsTabFileTypes": ("In addition to JPEG, also show these file types:",),
     "OptionsTabGeneral": (
         "English", "Detect duplicates on import",

@@ -739,24 +739,24 @@ A tételek **három** csoportba esnek, és csak a harmadik hiba:
 
 ### `PicasaPy/OptionsTabEmail.qml` — 10
 
-- „Mail program:”
-  - *a mérő vakfoltja — az eredetiben is megvan* — A mi magyarunk betűre egyezik a hivatalossal („Levelezőprogram:”).
+- „E-mail program:”
+  - *a mérő vakfoltja - az eredetiben is megvan* - A #5799 és a specifikáció 13.3. szakasza rögzíti az eredeti Windows Picasa-feliratot; a magyar megfelelőt az options/labelgroup38.title azonosítja.
 - „Use this computer's default email program”
   - *a mérő vakfoltja — az eredetiben is megvan* — A mi magyarunk betűre egyezik a hivatalossal.
 - „Let me choose each time I send pictures”
   - ⚠️ *besorolatlan*
 - „Use my Google Account”
   - *a mérő vakfoltja — az eredetiben is megvan* — A mi magyarunk betűre egyezik a hivatalossal („A Google Fiók használata”).
-- „Multiple photo size”
-  - *a mérő vakfoltja — az eredetiben is megvan* — A mi magyarunk a hivatalossal egyezik, csak a záró kettőspont hiányzik („Több kép mérete:”).
-- „Single picture size:”
-  - *a mérő vakfoltja — az eredetiben is megvan* — A mi magyarunk betűre egyezik a hivatalossal („Egyedülálló képek mérete:”).
-- „Send videos as:”
-  - ⚠️ *besorolatlan*
+- „Size for multiple pictures:”
+  - *a mérő vakfoltja - az eredetiben is megvan* - A #5799 és a specifikáció 13.3. szakasza rögzíti az eredeti Windows Picasa-feliratot; a magyar megfelelőt az options/labelgroup43.title azonosítja.
+- „Size for single pictures:”
+  - *a mérő vakfoltja - az eredetiben is megvan* - A #5799 és a specifikáció 13.3. szakasza rögzíti az eredeti Windows Picasa-feliratot; a magyar megfelelőt az options/labelgroup48.title azonosítja.
+- „Send movies as:”
+  - *a mérő vakfoltja - az eredetiben is megvan* - A #5799 és a specifikáció 13.3. szakasza rögzíti az eredeti Windows Picasa-feliratot; a magyar megfelelőt az options/labelgroup53.title azonosítja.
 - „First frame”
   - *a mérő vakfoltja — az eredetiben is megvan* — A mi magyarunk betűre egyezik a hivatalossal („Első képkocka”).
-- „Full film”
-  - ⚠️ *besorolatlan*
+- „Full movie”
+  - *a mérő vakfoltja - az eredetiben is megvan* - A #5799 és a specifikáció 13.3. szakasza rögzíti az eredeti Windows Picasa-feliratot; a magyar megfelelőt az options/radio56.title azonosítja.
 - „Send inline photos and captions (Outlook only)”
   - ⚠️ *besorolatlan*
 

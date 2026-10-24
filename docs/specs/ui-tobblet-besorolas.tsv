@@ -227,9 +227,11 @@ PicasaPy/OptionsDialog.qml	Name Tags	mero-vakfolt	A magyar szövegünk betűre e
 PicasaPy/OptionsDialog.qml	Network	mero-vakfolt	A magyar szövegünk betűre egyezik az options/tab128.title hivatalos magyarjával.	options/tab128.title	
 PicasaPy/OptionsDialog.qml	Printing	mero-vakfolt	A magyar szövegünk betűre egyezik az options/tab106.title hivatalos magyarjával.	options/tab106.title	
 PicasaPy/OptionsTabEmail.qml	First frame	mero-vakfolt	A mi magyarunk betűre egyezik a hivatalossal („Első képkocka”).	options/radio55.title	
-PicasaPy/OptionsTabEmail.qml	Mail program:	mero-vakfolt	A mi magyarunk betűre egyezik a hivatalossal („Levelezőprogram:”).	options/labelgroup38.title	
-PicasaPy/OptionsTabEmail.qml	Multiple photo size	mero-vakfolt	A mi magyarunk a hivatalossal egyezik, csak a záró kettőspont hiányzik („Több kép mérete:”).	options/labelgroup43.title	
-PicasaPy/OptionsTabEmail.qml	Single picture size:	mero-vakfolt	A mi magyarunk betűre egyezik a hivatalossal („Egyedülálló képek mérete:”).	options/labelgroup48.title	
+PicasaPy/OptionsTabEmail.qml	Full movie	mero-vakfolt	A #5799 és a specifikáció 13.3. szakasza rögzíti az eredeti Windows Picasa-feliratot; a magyar megfelelőt az options/radio56.title azonosítja.	options/radio56.title	Full movie
+PicasaPy/OptionsTabEmail.qml	E-mail program:	mero-vakfolt	A #5799 és a specifikáció 13.3. szakasza rögzíti az eredeti Windows Picasa-feliratot; a magyar megfelelőt az options/labelgroup38.title azonosítja.	options/labelgroup38.title	E-mail program:
+PicasaPy/OptionsTabEmail.qml	Send movies as:	mero-vakfolt	A #5799 és a specifikáció 13.3. szakasza rögzíti az eredeti Windows Picasa-feliratot; a magyar megfelelőt az options/labelgroup53.title azonosítja.	options/labelgroup53.title	Send movies as:
+PicasaPy/OptionsTabEmail.qml	Size for multiple pictures:	mero-vakfolt	A #5799 és a specifikáció 13.3. szakasza rögzíti az eredeti Windows Picasa-feliratot; a magyar megfelelőt az options/labelgroup43.title azonosítja.	options/labelgroup43.title	Size for multiple pictures:
+PicasaPy/OptionsTabEmail.qml	Size for single pictures:	mero-vakfolt	A #5799 és a specifikáció 13.3. szakasza rögzíti az eredeti Windows Picasa-feliratot; a magyar megfelelőt az options/labelgroup48.title azonosítja.	options/labelgroup48.title	Size for single pictures:
 PicasaPy/OptionsTabEmail.qml	Use my Google Account	mero-vakfolt	A mi magyarunk betűre egyezik a hivatalossal („A Google Fiók használata”).	options/radio42.title	
 PicasaPy/OptionsTabEmail.qml	Use this computer's default email program	mero-vakfolt	A mi magyarunk betűre egyezik a hivatalossal.	options/defaultmail.title	
 PicasaPy/OptionsTabFileTypes.qml	Display JPEG files and:	mero-vakfolt	A hivatalos options/label61.title feliratot a kimeneti mérő nem kapcsolta a fülhöz; a magyar alak a `referencia/i18n/hu/options.xml` szerint pontos.	options/label61.title	Display JPEG files and:

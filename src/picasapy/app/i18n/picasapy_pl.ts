@@ -1358,7 +1358,7 @@ picasapy-origin-key: options:options/radio40.title</extracomment>
             <translation>Chcę wybierać podczas każdego wysyłania zdjęć</translation>
         </message>
         <message>
-            <source>Multiple photo size</source>
+            <source>Size for multiple pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup43.title</extracomment>
             <translation>Rozmiar dla wielu zdjęć:</translation>
@@ -1369,7 +1369,7 @@ picasapy-origin-key: options:options/labelgroup43.title</extracomment>
             <translation>%1 pikseli</translation>
         </message>
         <message>
-            <source>Single picture size:</source>
+            <source>Size for single pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>Rozmiar dla pojedynczych zdjęć:</translation>
@@ -1385,7 +1385,7 @@ picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>Oryginalny rozmiar</translation>
         </message>
         <message>
-            <source>Send videos as:</source>
+            <source>Send movies as:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup53.title</extracomment>
             <translation>Wyślij filmy jako:</translation>
@@ -1397,9 +1397,9 @@ picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;w
             <translation>Pierwsza klatka</translation>
         </message>
         <message>
-            <source>Full film</source>
+            <source>Full movie</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.title</extracomment>
+picasapy-origin-key: options:options/radio56.title</extracomment>
             <translation>Pełny film</translation>
         </message>
         <message>
@@ -1409,9 +1409,10 @@ picasapy-origin-key: options:options/UseHTMLMailer.title</extracomment>
             <translation>Wyślij wbudowane zdjęcia i podpisy (tylko program Outlook)</translation>
         </message>
         <message>
-            <source>Mail program:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Program pocztowy:</translation>
+            <source>E-mail program:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup38.title</extracomment>
+            <translation>Program poczty e-mail:</translation>
         </message>
         <message>
             <source>Use my Google Account</source>

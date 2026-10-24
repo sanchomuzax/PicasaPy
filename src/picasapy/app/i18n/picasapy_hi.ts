@@ -1356,7 +1356,7 @@ picasapy-origin-key: options:options/radio40.title</extracomment>
             <translation>चित्र भेजते समय प्रत्येक बार मुझे चुनने दें</translation>
         </message>
         <message>
-            <source>Multiple photo size</source>
+            <source>Size for multiple pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup43.title</extracomment>
             <translation>एकाधिक चित्रों के लिए आकार:</translation>
@@ -1367,7 +1367,7 @@ picasapy-origin-key: options:options/labelgroup43.title</extracomment>
             <translation>%1 पिक्सेल</translation>
         </message>
         <message>
-            <source>Single picture size:</source>
+            <source>Size for single pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>एकल चित्रों के लिए आकार:</translation>
@@ -1383,7 +1383,7 @@ picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>मूल आकार</translation>
         </message>
         <message>
-            <source>Send videos as:</source>
+            <source>Send movies as:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup53.title</extracomment>
             <translation>इस रूप में मूवी भेजें:</translation>
@@ -1395,9 +1395,9 @@ picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;w
             <translation>पहला फ्रे़म</translation>
         </message>
         <message>
-            <source>Full film</source>
+            <source>Full movie</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.title</extracomment>
+picasapy-origin-key: options:options/radio56.title</extracomment>
             <translation>पूर्ण मूवी</translation>
         </message>
         <message>
@@ -1407,9 +1407,10 @@ picasapy-origin-key: options:options/UseHTMLMailer.title</extracomment>
             <translation>इनलाइन फ़ोटो और कैप्शन भेजें (केवल Outlook)</translation>
         </message>
         <message>
-            <source>Mail program:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ईमेल प्रोग्राम:</translation>
+            <source>E-mail program:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup38.title</extracomment>
+            <translation>ई-मेल प्रोग्राम:</translation>
         </message>
         <message>
             <source>Use my Google Account</source>
