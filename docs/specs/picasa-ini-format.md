@@ -106,7 +106,7 @@ olvasója viszont **bármennyi tokent elfogad**, és a két mezőt névtelen
 | `geotag` | `33.770556,-84.293055` | GPS — szélesség,hosszúság tizedes fokban; a PicasaPy olvassa ÉS írja (#30). A kép helye: `geotag=` > EXIF GPS-IFD; törléskor csak a kulcs tűnik el, a fájl EXIF-je érintetlen. |
 | `width`,`height` | `5184`, `3456` | képméret cache |
 | `moddate` | `8094e2826277cd01` | módosítási idő (bináris FILETIME jellegű) |
-| `backuphash` | `36003` | **MEGFEJTVE (#643)**: az ÍRÁS IDŐPONTJÁBÓL képzett 16 bites érték, nem tartalom-hash — ld. lent |
+| `backuphash` | `36003` | **A képlet megerősítve (#643, #5806):** helyi időből képzett OLE DATE négy 16 bites szavának XOR-ja; az íróút és a mentési készletenkénti összehasonlítás is ismert - ld. lent |
 | `<készletnév>-backuphash` | `BKTag Saját mentési készlet-backuphash=40037` | **MEGFEJTVE (2026-09-05, #440)**: a mentés-KÉSZLETENKÉNTI bélyeg, ugyanazzal a képlettel — ld. lent |
 | `originhash` | `033f1132c874...` | ✅ **MEGFEJTVE (2026-09-07, #791): KÉT tartalomkulcs szöveges összefűzése** — `fmt16(originfast) + fmt16(originslow)`, 16 + 16 kisbetűs hexa jegy. Nem egy digest, ezért bukott korábban mind a nyolc egy-digestes jelölt. A teljes bizonyíték és a mérés: [`picasa-tartalomkulcs.md`](picasa-tartalomkulcs.md), „Az `originhash` — a két kulcs SZÖVEGES PÁRJA” és „⭐⭐ MEGVAN… 55/60 valós fájlon”. **Nálunk KISZÁMÍTHATÓ (2026-09-08, #2733):** `picasapy.dedup.originhash.origin_hash(útvonal)` — `hex16(originfast) ‖ hex16(originslow)`, mindkét fél `%016I64x` alakban; a szétszedő `originhash_szetszed()`. Mérve **55/60 = 91,7 %** a tulajdonos valós fájljain, és minden eltérés MINDKÉT félen bukik (⇒ a fájl változott, nem a képlet). ⛔ **Írni NEM írjuk — mérve nem mentéskori kulcs (2026-09-09, #2675).** A korpuszban `originhash` és `redo=` **egyetlen szakaszban sem** áll együtt (igen+igen → **0**; igen+nem → 1 787; nem+igen → 34), a társkulcsai pedig a letöltési utat mutatják (`IIDLIST_<név>_lh` 877, `backuphash` 760, `onlinechecksum` 380). Binárisan is: a kiírt rekord `+0x90`-ét az `operator=` másolja, és a rekord-vektor `push_back`-jének egyetlen hívója a *Download from Google Photos* (`FUN_006f9cc0`). ⇒ a mentés nem ír ilyen kulcsot, és a Visszaállítás sem törli; a #2675 eredeti kérdése — a mentett vagy az eredeti fájl bájtjai — ezzel tárgytalan. ⛔ A régebbi „szerkesztési verem integritás-hash” leírás a MI 2026-07-23-i döntésünk (#21) átvétele volt, nem mérés |
 | `IIDLIST_<user>_lh` | `4dfe636c9cf4c302` | webre feltöltött kép 64-bit hex ID; fiókfüggő, ezért a kulcsnév maga is adat. A korpusz **második leggyakoribb** kulcsa (6 045). A kódunk nem értelmezi, de **bájtra megőrzi** (#791) |
@@ -1002,33 +1002,107 @@ Az „Other Pictures" pedig ott van a mai beépített gyűjtemény-nevek listáj
 round-trip elv szerint **változatlanul meg kell őriznie** — importnál pedig a
 `name`/`category` kiolvasható belőle.
 
-### A `backuphash` — MEGFEJTVE (#643, 2026-08-14)
+### A `backuphash` - 16 bites írásiidő-lenyomat (#643, #5806)
 
-Eddig „dekódolatlan, változatlanul visszaírandó" volt. A visszafejtés
-(`0x00454770` → `0x0098b6e0` → `0x0098b550`) megmutatta, hogy **nem a fájl
-tartalmának hash-e**, hanem az **írás időpontjából** képzett érték:
+A `backuphash` **nem képfájl-hash**. A `0x00454770` a kulcs frissítési útján
+az aktuális időből készít 16 bites értéket; a fájl bájtjai, mérete és
+módosítási ideje nem bemenete ennek a számítási ágnak.
 
 ```c
-double d = OLE_DATE(most);          // az aktuális helyi idő OLE Automation DATE-ként
-uint16_t w[4];  memcpy(w, &d, 8);   // a double négy 16 bites szava
-backuphash = w[0] ^ w[1] ^ w[2] ^ w[3];
-sprintf(buf, "%d", backuphash);
+double d = OLE_DATE(localtime(now));  // 0x0098b6e0 -> 0x0098b550
+uint16_t w[4]; memcpy(w, &d, 8);      // x86-on a double négy 16 bites szava
+uint16_t backuphash = w[0] ^ w[1] ^ w[2] ^ w[3];
+sprintf(buf, "%d", backuphash);           // 0x004548d8: "%d"
 ```
 
-Az OLE-dátum a szokásos képlettel készül, `693703` (`0xa96c7`) alapnappal —
-azaz az **1899-12-30 = 0.0** referenciával. Ezt ellenőriztük: a kinyert képlet
-erre a dátumra pontosan `0.0`-t ad.
+**Képlet és forrás.** `0x0098b6e0` a `__time64` (`0x00c0a421`, a
+`GetSystemTimeAsFileTime` importot használja) eredményét `__localtime64`-en
+(`0x00c0abc2`) viszi át, majd a helyi naptári időt adja a `0x0098b550`
+dátumsegédnek; a `tm` mezők másodperc pontosságúak. A segéd a
+nap-számlálóból `0xa96c7`-et von ki
+(**693959**, `0x0098b617`), és a `0xcf3f20` címen lévő **86400.0** másodperc/
+nap konstanssal készíti a nap törtrészét (`0x0098b623`). Az így kapott IEEE-754
+`double` négy 16 bites szavát a `0x004548ba`-`0x004548ce` XOR-olja, majd
+nullával bővítve, előjel nélküli 16 bites értékként írja ki (`0x004548d1`-
+`0x004548dd`). A `0xa96c7` hexadecimális érték **693959**; a korábbi
+`693703` tizedes átírás téves volt. A dátumsegéd 1899-12-30-ra 0.0 OLE DATE-et
+állít elő.
 
-**Miért nem sikerült eddig dekódolni:** mert nincs mit dekódolni a *tartalomból*.
-Ugyanaz a fájl két különböző időpontban írva más `backuphash`-t kap.
+**Mikor írja?** A `0x00454770` ötparaméteres közös ini-kulcsíró a hívó
+ötödik argumentumát vizsgálja (`0x004548a7`). Előbb megpróbálja írni a hívó
+kulcsát a `.picasa.ini`-be (`0x00454846`, általános frissítő: `0x005ab210`);
+ha ennek a hívásnak az eredménye nulla, és az ötödik argumentum nem nulla,
+akkor kiszámítja és megpróbálja beírni a `backuphash`-t (`0x004548b5`-
+`0x0045490e`). Ha a második frissítőhívás eredménye is nulla, az értéket az
+adatbázis-rekordba is átadja (`0x00454917`-`0x0045492a` → `0x006a5a60`).
+Ez a bináris vezérlési feltétel; a nulla visszatérési érték üzleti jelentése
+ebből a függvényből önmagában nincs elnevezve.
 
-**Következmények:**
+| hívóút | kulcs és kapu | bináris hely |
+|---|---|---|
+| elforgatás | `rotate`, ötödik argumentum `1` | `0x0042c980` → `0x00454770` (`0x0042c9ee`-`0x0042c9fc`) |
+| felirat | `caption`, ötödik argumentum `1` | `0x00437cf0` → `0x00454770` (`0x00438780`-`0x0043878a`) |
+| kulcsszó/címke | `keywords`, ötödik argumentum `1` | `0x00455ff0` → `0x00454770` (`0x004564db`-`0x004564e8`) |
+| arcadat ini-írása | a `faces` majd `facedata` frissítőág nulla eredménye után saját hash-írás | `0x00484820`, `0x0048517a`-`0x00485287` |
+| ellenpélda: `textactive` | ötödik argumentum `0`; a közös író kihagyja a hash-ágat | `0x00462500`, `0x0046276a`-`0x00462773` |
 
-- Az érték **előállítható** — a PicasaPy is tud érvényeset írni.
-- Az értéktartomány 0…65535, ami egyezik a megfigyelt `23764` / `36003`
-  mintákkal (szimulációval 2015–2026 közötti időpontokra 16 298…62 695).
-- **Nem ez okozza a #643-as beolvasási hibát** — a Picasa a szakaszunkat
-  akkor sem olvasná be, ha volna benne `backuphash`.
+A közös író további hívói között van a `crop` (`0x0042b370`, `0x0042b820`,
+`0x0042bb50`), a `flipped` (`0x0042d7e0`), több szövegkulcs és a `geotag`
+(`0x00477ff0`); az ötödik argumentum értékét hívónként kell ellenőrizni.
+A kód megállapítja, mikor fut le a **kulcsfrissítő** hash-ága, de a vizsgált
+függvényrészlet nem állapítja meg, hogy ez a képfájl lemezre írásához képest
+előtte vagy utána történik.
+
+Külön íróút a készletenkénti kulcs: a `0x00429cf0` felépíti a
+`<készlet>-backuphash` nevet, elolvassa annak értékét, és csak nulla esetén
+készít új időbélyeget. Ekkor a `0x00429ca0` ugyanazzal a négy szavas XOR-ral
+írja a sima `backuphash`-t, a hívó pedig az értéket a készletkulcsba is írja
+(`0x00429d4d`-`0x00429d9f`). Ez az út a mentési készlet bélyegzéséhez tartozik,
+nem azonos a forgatás/felirat/kulcsszó kulcsfrissítési hívásaival.
+
+**Olvasás és szerep.** A `.picasa.ini`-olvasó `0x00456610` a `backuphash`
+szöveget egészre alakítja és 16 bitre szűkíti (`0x00458542`-`0x004585ad`;
+`0x004599a0`-`0x004599f9` egy másik mezőág). Az imagedata-rekordban a mezőt
+`0x004127c0` regisztrálja. A mentési készlet útja ugyanabból a képszektorból
+olvassa a sima kulcsot és a `BKTag <készletnév>-backuphash` társkulcsot; az
+egyezés jelöli, hogy a kép naprakész abban a készletben, az eltérés vagy
+hiány mentendő képet jelez (`biztonsagi-mentes.md` §9.2; kulcsnév/olvasási
+út: `0x00429cf0`, `0x006a5790`). Ez az érték tehát nem önálló tartalom- vagy
+integritás-hash.
+
+**Nem állapítható meg ebből a bizonyítékból**, hogy a sima `backuphash`
+azonosítja-e az `Originals` / `.picasaoriginals` mappába mentett fájlt, vagy
+hogy része-e a visszaállítási kiválasztásnak. E kapcsolatot nem szabad a
+mentési készlet összehasonlításával azonosítani. A visszaállítási felület útja
+`0x0053b2e0` → `0x0046d7d0`; a helyi diszasszemblálásban a `0x0046d7d0`
+függvénytest nem hivatkozik közvetlenül a `backuphash` literálra, de a
+rekordmező közvetett használatát ez nem zárja ki.
+
+Ghidra-kör kell: `0x0046d7d0` - a FileRevert végrehajtási út olvassa vagy
+összehasonlítja-e a `backuphash` mezőt az `Originals` /
+`.picasaoriginals` példány kiválasztásakor? A meglévő Ghidra-kimenetek ezen a
+címen csak hívás-xrefeket tartalmaznak, a függvény dekompilált törzsét nem.
+
+**A #5396 felvételi számai.** A #5396 első köréről megmaradt jelentés a
+job-231 jobbra forgatásnál `62465`-öt és balra forgatásnál `27964`-et, a
+job-242 címkefelvételnél `33706`-ot rögzít (`paritas-ellenorzes.md`, „Futás
+közbeni összevetés”). A jelentés az eredeti képernyőképeket és ini-kimeneteket
+akkor megmaradtnak mondja, de ezek a nyers tagok most nem találhatók a
+mérőcsomagban vagy a munkafában; a job-249 `61475`-ös sora is csak a jelen
+feladatleírásból ismert. A képlet ezért **nem ellenőrizhető számszerűen** ezekre
+az értékekre: hiányzik mindegyik hash-hívás pontos helyi ideje, a nyers ini és
+a megfelelő eredeti kép-/műveletfelvétel. Az ellenőrzés útja: kontrollált
+Picasa-futtatáskor naplózni a hash-hívás időpontját és helyi időzónáját, és
+együtt megőrizni a hívás előtti/utáni ini-t, valamint a képfájl előtte/utána
+állapotát.
+
+**PicasaPy.** A jelenlegi `src/picasapy/edit/save.py` a `backuphash`-t a nem
+értelmezett, változatlanul megőrzendő kulcsok közé sorolja, és az `rg`-vel
+ellenőrzött forrás-/tesztfa nem mutat értéket előállító írót. Ha a fájlmentő
+írási utunknak az eredeti kulcsfrissítési viselkedést kell követnie, külön fejlesztési
+jegy szükséges; a képlet ismert, de a Picasa hash-hívásának pontos sorrendje a
+kép lemezre írásához képest és a felhasználói műveletek teljes készlete még
+nem.
 
 ### ⭐ A `<készletnév>-backuphash` — a MENTÉS-KÉSZLETENKÉNTI másodpéldány (2026-09-05, #440)
 
