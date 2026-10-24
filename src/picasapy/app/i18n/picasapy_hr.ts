@@ -9322,6 +9322,90 @@ picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/
             <translation>Natrag u biblioteku</translation>
         </message>
         <message>
+            <source>Edit in PicasaPy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
+            <translation>Uređivanje na usluzi PicasaPy</translation>
+        </message>
+        <message>
+            <source>Launch PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pokreni PicasaPy</translation>
+        </message>
+        <message>
+            <source>Zoom In</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Zoom</extracomment>
+            <translation>Zumiranje</translation>
+        </message>
+        <message>
+            <source>Zoom Out</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Smanji</translation>
+        </message>
+        <message>
+            <source>Play Slideshow</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pokreni dijaprojekciju</translation>
+        </message>
+        <message>
+            <source>Previous Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/previousbutton)</extracomment>
+            <translation>Prethodna fotografija</translation>
+        </message>
+        <message>
+            <source>Next Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/nextbutton)</extracomment>
+            <translation>Sljedeća fotografija</translation>
+        </message>
+        <message>
+            <source>Rotate counter-clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateleft)</extracomment>
+            <translation>Zakreni ulijevo</translation>
+        </message>
+        <message>
+            <source>Rotate clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateright)</extracomment>
+            <translation>Zakreni u smjeru kretanja kazaljke</translation>
+        </message>
+        <message>
+            <source>Star</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zvjezdica</translation>
+        </message>
+        <message>
+            <source>Zoom to 1:1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zumiraj na 1:1</translation>
+        </message>
+        <message>
+            <source>Add/Remove Star</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/startoggle)</extracomment>
+            <translation>Dodaj/ukloni zvjezdicu</translation>
+        </message>
+        <message>
+            <source>Click to see more options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(outputlayout/morebutton)</extracomment>
+            <translation>Kliknite da biste vidjeli dodatne opcije</translation>
+        </message>
+        <message>
+            <source>More Options</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Više mogućnosti</translation>
+        </message>
+        <message>
+            <source>Quick Upload</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD</extracomment>
+            <translation>Brzi prijenos</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="306" />
             <source>Play</source>
             <extracomment>picasapy-origin: picasa

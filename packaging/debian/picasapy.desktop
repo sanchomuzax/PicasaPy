@@ -6,4 +6,5 @@ Exec=picasapy %U
 Icon=picasapy
 Terminal=false
 Categories=Graphics;Photography;Viewer;
+MimeType=image/bmp;image/gif;image/jpeg;image/png;image/tiff;image/vnd.adobe.photoshop;image/webp;image/x-tga;
 StartupWMClass=picasapy

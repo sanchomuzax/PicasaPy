@@ -9296,6 +9296,90 @@ picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/
             <translation>Назад към библиотеката</translation>
         </message>
         <message>
+            <source>Edit in PicasaPy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
+            <translation>Редактиране в PicasaPy</translation>
+        </message>
+        <message>
+            <source>Launch PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Стартиране на PicasaPy</translation>
+        </message>
+        <message>
+            <source>Zoom In</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Zoom</extracomment>
+            <translation>Варио</translation>
+        </message>
+        <message>
+            <source>Zoom Out</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Намаляване</translation>
+        </message>
+        <message>
+            <source>Play Slideshow</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Пускане на слайдшоу</translation>
+        </message>
+        <message>
+            <source>Previous Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/previousbutton)</extracomment>
+            <translation>Предишна снимка</translation>
+        </message>
+        <message>
+            <source>Next Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/nextbutton)</extracomment>
+            <translation>Следваща снимка</translation>
+        </message>
+        <message>
+            <source>Rotate counter-clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateleft)</extracomment>
+            <translation>Завъртане наляво</translation>
+        </message>
+        <message>
+            <source>Rotate clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateright)</extracomment>
+            <translation>Завъртане по часовниковата стрелка</translation>
+        </message>
+        <message>
+            <source>Star</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Звезда</translation>
+        </message>
+        <message>
+            <source>Zoom to 1:1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Мащаб 1:1</translation>
+        </message>
+        <message>
+            <source>Add/Remove Star</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/startoggle)</extracomment>
+            <translation>Добавяне/Премахване на звезда</translation>
+        </message>
+        <message>
+            <source>Click to see more options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(outputlayout/morebutton)</extracomment>
+            <translation>Кликнете, за да видите още опции</translation>
+        </message>
+        <message>
+            <source>More Options</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Още опции</translation>
+        </message>
+        <message>
+            <source>Quick Upload</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD</extracomment>
+            <translation>Бързо качване</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="306" />
             <source>Play</source>
             <extracomment>picasapy-origin: picasa

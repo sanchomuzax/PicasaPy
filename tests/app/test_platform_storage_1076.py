@@ -515,7 +515,7 @@ class TestStorageBootstrap:
         run_source = source[source.index("def run(") :]
 
         assert run_source.index("_bootstrap_storage()") < run_source.index(
-            "roots = _resolve_roots(argv)"
+            "roots = _resolve_roots(library_argv)"
         )
 
 

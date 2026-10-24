@@ -543,8 +543,8 @@ A tételek **három** csoportba esnek, és csak a harmadik hiba:
 
 - „Edit the movie presentation”
   - *a mérő vakfoltja — az eredetiben is megvan* — A mi magyarunk betűre egyezik a hivatalossal (editpanel buboréksúgó); az eltérés csak az angolban van.
-- „Start slideshow”
-  - *szükséges segédszöveg* — A kód-komment kifejezetten kimondja (#1857): ehhez a négy gombhoz 'NINCS kimért eredeti felirat — a szöveg SAJÁT... Ez tudatos eltérés.'
+- „Play Slideshow”
+  - *szükséges segédszöveg* - A #5762 spec 12.8.2 ezt az eredeti műveletsáv-feliratot írja elő; a hivatalos i18n-forrásokban nincs hozzá magyar alak, ezért a „Diavetítés lejátszása” saját fordítás.
 - „Show only one picture”
   - *a mérő vakfoltja — az eredetiben is megvan* — A mi magyarunk betűre egyezik a hivatalossal (editpanel buboréksúgó); az eltérés csak az angolban van.
 - „Show two different pictures”
