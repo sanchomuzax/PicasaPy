@@ -17,6 +17,23 @@ from tests.app.qml_functional.test_nyomtatas_egyseges_meretlista_3712 import (
 )
 
 
+def _lathatova(elem, qt_app):
+    """A görgethető panelt úgy állítja, hogy `elem` látszódjon (#5684: a
+    módválasztó sor óta CI-betűmérettel a rádió a látható rész alá kerülhet)."""
+    from PySide6.QtCore import QPointF
+
+    szulo = elem.parentItem()
+    while szulo is not None and szulo.property("contentY") is None:
+        szulo = szulo.parentItem()
+    if szulo is None:
+        return
+    tartalom = szulo.property("contentItem")
+    y = elem.mapToItem(tartalom, QPointF(0, 0)).y()
+    legfeljebb = max(0.0, szulo.property("contentHeight") - szulo.height())
+    szulo.setProperty("contentY", max(0.0, min(y - 8, legfeljebb)))
+    qt_app.processEvents()
+
+
 def _lista(ertek):
     return ertek.toVariant() if hasattr(ertek, "toVariant") else ertek
 
@@ -117,6 +134,7 @@ def test_elso_megnyitas_crop_to_fit_es_az_elonezet_a_valasztast_koveti(
     # A teljes kép továbbra is választható, és a valódi kattintás után az
     # előnézet is ugyanazt az új módot rajzolja.
     fit_radio = _elem(dialog, "printFitRadio")
+    _lathatova(fit_radio, qt_app)
     _kattints_kozepere(dialog, qt_app, fit_radio)
     assert var_feltetelre(qt_app, lambda: dialog.property("fitMode") == "fit"), (
         "a Whole picture rádió nem váltható ki"
@@ -134,6 +152,7 @@ def test_elso_megnyitas_crop_to_fit_es_az_elonezet_a_valasztast_koveti(
     )
 
     fill_radio = _elem(dialog, "printFillRadio")
+    _lathatova(fill_radio, qt_app)
     _kattints_kozepere(dialog, qt_app, fill_radio)
     assert var_feltetelre(qt_app, lambda: dialog.property("fitMode") == "fill"), (
         "a Crop to Fit rádió nem váltható ki"

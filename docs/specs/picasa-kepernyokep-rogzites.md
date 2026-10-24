@@ -176,30 +176,6 @@ ekkora, az `0x00c405e0`-n át a `ShellExecuteA`-t. A globális érték
 platformonkénti jelentése nincs feloldva. Ez a fájlt adja át a shellnek;
 nem bizonyítja, hogy a buborék a mappára navigál.
 
-<<<<<<< HEAD
-**Nyitott - azonnali indexelés:** a `0x0057d080` a buborék előtt meghív egy
-útvonal-kereső útvonalat (`0x004f92c0` → `0x004e7d10`); az utóbbi bejárja a
-gyűjtemény adatait, és egy ágán a `0x004e31a0` függvényt is meghívja. A
-`2026-10-24-kor-20261024.txt` Ghidra-kimenet szerint a `0x004e31a0` a
-paraméterként kapott objektum `+0x344` mezőjéből olvas vtable-címet, majd
-annak `+0x10` rekeszét hívja (`0x004e323d`, `0x004e3243`, `0x004e324c`). A `0x004e7d10` hívó a
-saját objektumát az argumentumok között átadja (`0x004e7df6`-`0x004e7df7`).
-A dekompilálás és a diszasszemblálás sem azonosítja a futásidejű objektumtípust
-vagy a vtable-rekesz célfüggvényét, ezért nem bizonyítják, hogy a kimeneti BMP
-ekkor bekerül-e a könyvtári indexbe. A teljes szövegszakasz `+0x344`
-eltolású mezőinek külön pásztázása 183 hozzáférést talált, köztük 66 általános
-írásjelöltet sok függvényben; az eltolás önmagában nem azonosítja ezt az
-objektumot vagy a callbacket. **NINCS MEG.** A következő lépés a
-`0x004f92c0` útvonalon átadott `0x004e7d10`-objektum konkrét típusának,
-a `+0x344` mező inicializálójának és a `+0x10` callbacknek a visszafejtése,
-majd a callback indexmódosító hatásának ellenőrzése.
-
-**Nyitott - buborékkattintás:** a `0x0057d080` a `clickview` műveletet is
-előkészíti, de a kattintási viselkedést a `0x0057d1e4`-nél hívott, az objektum
-vtable-jéből vett `+0x68` metódus valósítja meg. A meglévő dekompilálás
-azonosítja a hívást és a `clickview` kulcsot, de nem a konkrét címzettet vagy
-navigációs célt; **NINCS MEG**.
-=======
 ### #5752 - Keresés a mentés után és az indirekt callback (2026-10-24; feltételes)
 
 A `0x0057d080` a buborék előtt meghívja a `0x004f92c0` keresési útját;
@@ -231,7 +207,6 @@ mellékhatását egyik sem oldja fel. A `0x0057d080` a `clickview` műveletet is
 előkészíti, de a kattintási viselkedést a `0x0057d1e4`-nél hívott, az
 objektum vtable-jéből vett `+0x68` metódus valósítja meg; ennek
 célfüggvénye és navigációs célja itt **NINCS MEG**.
->>>>>>> origin/main
 
 Az `open` ág `ShellExecuteA`/`ShellExecuteW` feloldását nem szabad a fenti
 buborék-kattintással azonosítani: a két művelet külön útvonal, és a kattintási
@@ -350,24 +325,14 @@ mappabesorolásnál és a buboréknál egyeznek.
 | Kurzor bekerül-e a BMP-be | NINCS MEG; Windows-futásidejű mérés kell |
 | Egyetlen közvetlen hívó a `0x00590f40`-hez; `Scrapture` vtable-kapcsolat | bináris (`paszta.py` teljes `.text` pásztázás; `0x005914f1`, `0x00c91728`, `0x0040ca6f`, `0x00590ef5`) |
 | Névütközés kezdő sorszáma és növelése | bináris (`0x00993a96`, `0x00993b56`, `0x00cd8d64`) |
-<<<<<<< HEAD
-| A képfájl azonnali indexelése | NINCS MEG; a 2026-10-24-i Ghidra-kimenet és a helyi diszasszemblálás feloldja a `0x004e31a0` `[objektum+0x344]` → vtable `+0x10` indirekt hívását, a `0x004e7d10` hívó átadja az objektumát, de a konkrét osztályt/callbacket és annak indexmódosító hatását nem |
-=======
 | A képfájl azonnali indexelése | NINCS MEG; a `0x004f92c0` → `0x004e7d10` út a `0x004e31a0`-ig vezet; ott a `[fogadó+0x344]` → `[callback+0x10]` indirekt hívás célja nem oldódott fel, ezért az indexírás sem bizonyított |
->>>>>>> origin/main
 | A buborék kattintási célja | NINCS MEG; a `0x0057d1e4` vtable `+0x68` hívás célfüggvényét kell azonosítani |
 | A `+8` állapotmező írója/életciklusa; menü-/accelerator-parancs vezet-e képernyőképhez | NINCS MEG; a `0x00408b30` tesztje és a `0x00c40328` mutatója feloldott, a `Scrapture` objektum `+8` mezőjének írási és leállítási útját kell követni; az acceleratorhoz a `0x0097fc30` által olvasott `DAT_00d4a4d4` tábla feltöltési és parancsútját kell a `Scrapture` objektummal összekötni |
 | Főablak nélküli ágon a rendszer melyik `ShellExecute` API-t választja | NINCS MEG; a `0x00c33b68` a `0x00d6fc58` alapján választ `ShellExecuteA` (`0x009239a8`) és `ShellExecuteW` (`0x00923998`) között; a globális érték eredetét és platformjelentését kell feloldani |
 
-<<<<<<< HEAD
-Ghidra-kör kell: 0x004f92c0: a `0x0057d080` útvonalán átadott `0x004e7d10`-objektum konkrét típusa/előállítója, a `+0x344` mező inicializálója és a `+0x10` callback címzettje; ír-e a callback képfájlt az indexbe? A 2026-10-24-i `0x004e31a0` kimenet csak az indirekt slot-hívást azonosítja, a `0x004e7d10` korábbi dekompilálása pedig a bejárást mutatja, nem a konkrét típust/célfüggvényt [blokkoló].
-Ghidra-kör kell: 0x0057d080: a `0x0057d1e4` vtable `+0x68` hívás konkrét célfüggvénye és a `clickview` művelet kattintási navigációja. A meglévő dekompilált kimenet a slot-hívást és a kulcsot mutatja, a dinamikus címzettet és célt nem [blokkoló].
-Ghidra-kör kell: 0x0097fc30: a `DAT_00d4a4d4` HACCEL-tábla létrehozási/feltöltési útja és parancsazonosítói indíthatják-e a `Scrapture`-t vagy a `0x00590f40`-et? A meglévő dekompilált kimenet csak a `TranslateAcceleratorA` hívást mutatja; a tábla tartalmát és a rögzítőhöz vezető parancsot nem [blokkoló].
-=======
 Ghidra-kör kell: 0x004e31a0: a `0x004e31a0` által olvasott fogadó objektum `+0x344` mezőjének inicializálója és a `+0x10` slot tényleges célja; a cél a friss BMP-t indexbe írja-e vagy más műveletet végez [blokkoló]. A 2026-10-24b kimenet a `0x004f92c0` → `0x004e7d10` hívási láncot mutatja, de nem tartalmazza a mező tulajdonosának inicializálóját vagy a callback-cél feloldását.
 Ghidra-kör kell: 0x0057d080: a `0x0057d1e4` vtable `+0x68` hívás konkrét célfüggvénye és a `clickview` művelet kattintási navigációja [blokkoló]. A meglévő dekompilált kimenet a hívást és a kulcsot mutatja, a célfüggvényt nem.
 Ghidra-kör kell: 0x0097fc30: a `DAT_00d4a4d4` HACCEL-tábla létrehozási/feltöltési útja és parancsazonosítói indíthatják-e a `Scrapture`-t vagy a `0x00590f40`-et [blokkoló]. A meglévő dekompilált kimenet a `TranslateAcceleratorA` hívást mutatja, de a tábla tartalmát és a rögzítőhöz vezető parancsot nem.
->>>>>>> origin/main
 Ghidra-kör kell: 0x00c33b68: a meglévő `2026-10-23-sor-277-280.txt` kimenet a `ShellExecuteA`/`ShellExecuteW` választást mutatja, de nem azonosítja, mi állítja elő a belépéskor használt `in_CF` feltételt; a `0x00d6fc58` eredetét és a platformfeltételt kell feloldani.
 
 Futásidejű mérés kell: eredeti Windows Picasában a kurzor láthatósága a mentett BMP-n; többmonitoros rendszeren a kimeneti BMP téglalapja; a fájl indexbe kerülésének pillanata és a buborék kattintási célja; továbbá a dátum-idő szövegalakja a cél-locale alatt.

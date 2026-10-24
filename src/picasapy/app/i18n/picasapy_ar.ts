@@ -450,6 +450,19 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracom
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <source>Normal</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
+            <translation>عادي</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <source>Optimized</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>محسّن</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Printer Setup</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
@@ -13455,22 +13468,22 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEW_THUMBNAILS;stringres:eMenuView
     <context>
         <name>TagContextMenu</name>
         <message>
-            <source>Add this tag to entire selection</source>
+            <source>Remove this tag</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Tags::ID_APPLYTHISTAGTOSELECTION</extracomment>
-            <translation>إضافة هذه العلامة إلى النطاق المحدد بأكمله</translation>
+picasapy-origin-key: stringres:Tags::ID_REMOVETHISTAG</extracomment>
+            <translation>إزالة هذه العلامة</translation>
         </message>
         <message>
-            <source>Find Items Tagged This Way</source>
+            <source>Search for items with this tag</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Tags::ID_FINDALLPICTURESWITHTHISTAG</extracomment>
             <translation>البحث عن عناصر تحمل هذه العلامة</translation>
         </message>
         <message>
-            <source>Remove Tag</source>
+            <source>Add this tag to entire selection</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Tags::ID_REMOVETHISTAG</extracomment>
-            <translation>إزالة هذه العلامة</translation>
+picasapy-origin-key: stringres:Tags::ID_APPLYTHISTAGTOSELECTION</extracomment>
+            <translation>إضافة هذه العلامة إلى النطاق المحدد بأكمله</translation>
         </message>
     </context>
     <context>
