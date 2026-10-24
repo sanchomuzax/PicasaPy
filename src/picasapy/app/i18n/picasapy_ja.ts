@@ -1356,7 +1356,7 @@ picasapy-origin-key: options:options/radio40.title</extracomment>
             <translation>画像の送信時に毎回選択</translation>
         </message>
         <message>
-            <source>Multiple photo size</source>
+            <source>Size for multiple pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup43.title</extracomment>
             <translation>複数画像の場合のサイズ:</translation>
@@ -1367,7 +1367,7 @@ picasapy-origin-key: options:options/labelgroup43.title</extracomment>
             <translation>%1 ピクセル</translation>
         </message>
         <message>
-            <source>Single picture size:</source>
+            <source>Size for single pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>単一画像の場合のサイズ:</translation>
@@ -1383,7 +1383,7 @@ picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>元のサイズ</translation>
         </message>
         <message>
-            <source>Send videos as:</source>
+            <source>Send movies as:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup53.title</extracomment>
             <translation>動画の差出人:</translation>
@@ -1395,9 +1395,9 @@ picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;w
             <translation>最初のフレーム</translation>
         </message>
         <message>
-            <source>Full film</source>
+            <source>Full movie</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.title</extracomment>
+picasapy-origin-key: options:options/radio56.title</extracomment>
             <translation>ムービー全体</translation>
         </message>
         <message>
@@ -1407,9 +1407,10 @@ picasapy-origin-key: options:options/UseHTMLMailer.title</extracomment>
             <translation>写真と説明を埋め込んで送信（Outlook のみ）</translation>
         </message>
         <message>
-            <source>Mail program:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>メールプログラム:</translation>
+            <source>E-mail program:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup38.title</extracomment>
+            <translation>メール プログラム:</translation>
         </message>
         <message>
             <source>Use my Google Account</source>

@@ -1356,10 +1356,10 @@ picasapy-origin-key: options:options/radio40.title</extracomment>
             <translation>Minden képküldésnél kiválasztom</translation>
         </message>
         <message>
-            <source>Multiple photo size</source>
+            <source>Size for multiple pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup43.title</extracomment>
-            <translation>Több kép mérete</translation>
+            <translation>Több kép mérete:</translation>
         </message>
         <message>
             <source>%1 pixels</source>
@@ -1367,7 +1367,7 @@ picasapy-origin-key: options:options/labelgroup43.title</extracomment>
             <translation>%1 képpont</translation>
         </message>
         <message>
-            <source>Single picture size:</source>
+            <source>Size for single pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>Egyedülálló képek mérete:</translation>
@@ -1383,7 +1383,7 @@ picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>Eredeti méret</translation>
         </message>
         <message>
-            <source>Send videos as:</source>
+            <source>Send movies as:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup53.title</extracomment>
             <translation>Mozgófilmek küldése másként:</translation>
@@ -1395,9 +1395,9 @@ picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;w
             <translation>Első képkocka</translation>
         </message>
         <message>
-            <source>Full film</source>
+            <source>Full movie</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.title</extracomment>
+picasapy-origin-key: options:options/radio56.title</extracomment>
             <translation>Teljes mozgófilm</translation>
         </message>
         <message>
@@ -1407,8 +1407,9 @@ picasapy-origin-key: options:options/UseHTMLMailer.title</extracomment>
             <translation>Szövegközi fotók és képfeliratok küldése (csak Outlookban)</translation>
         </message>
         <message>
-            <source>Mail program:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <source>E-mail program:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup38.title</extracomment>
             <translation>Levelezőprogram:</translation>
         </message>
         <message>

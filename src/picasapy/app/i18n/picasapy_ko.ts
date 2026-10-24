@@ -1356,7 +1356,7 @@ picasapy-origin-key: options:options/radio40.title</extracomment>
             <translation>사진을 보낼 때마다 선택</translation>
         </message>
         <message>
-            <source>Multiple photo size</source>
+            <source>Size for multiple pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup43.title</extracomment>
             <translation>여러 사진의 크기:</translation>
@@ -1367,7 +1367,7 @@ picasapy-origin-key: options:options/labelgroup43.title</extracomment>
             <translation>%1 픽셀</translation>
         </message>
         <message>
-            <source>Single picture size:</source>
+            <source>Size for single pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>사진 하나의 크기:</translation>
@@ -1383,7 +1383,7 @@ picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>원본 크기</translation>
         </message>
         <message>
-            <source>Send videos as:</source>
+            <source>Send movies as:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup53.title</extracomment>
             <translation>동영상을 다음 형식으로 보내기:</translation>
@@ -1395,9 +1395,9 @@ picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;w
             <translation>첫 번째 프레임</translation>
         </message>
         <message>
-            <source>Full film</source>
+            <source>Full movie</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.title</extracomment>
+picasapy-origin-key: options:options/radio56.title</extracomment>
             <translation>전체 동영상</translation>
         </message>
         <message>
@@ -1407,9 +1407,10 @@ picasapy-origin-key: options:options/UseHTMLMailer.title</extracomment>
             <translation>인라인 사진 및 설명 보내기(Outlook 전용)</translation>
         </message>
         <message>
-            <source>Mail program:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>메일 프로그램:</translation>
+            <source>E-mail program:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup38.title</extracomment>
+            <translation>이메일 프로그램:</translation>
         </message>
         <message>
             <source>Use my Google Account</source>

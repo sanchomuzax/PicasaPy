@@ -1358,7 +1358,7 @@ picasapy-origin-key: options:options/radio40.title</extracomment>
             <translation>Ponudi mogućnost pri svakom slanju slika</translation>
         </message>
         <message>
-            <source>Multiple photo size</source>
+            <source>Size for multiple pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup43.title</extracomment>
             <translation>Veličina za više slika:</translation>
@@ -1369,7 +1369,7 @@ picasapy-origin-key: options:options/labelgroup43.title</extracomment>
             <translation>%1 piksela</translation>
         </message>
         <message>
-            <source>Single picture size:</source>
+            <source>Size for single pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>Veličina za jednu sliku:</translation>
@@ -1385,7 +1385,7 @@ picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>Izvorna veličina</translation>
         </message>
         <message>
-            <source>Send videos as:</source>
+            <source>Send movies as:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup53.title</extracomment>
             <translation>Pošalji filmove kao:</translation>
@@ -1397,9 +1397,9 @@ picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;w
             <translation>Prvi okvir</translation>
         </message>
         <message>
-            <source>Full film</source>
+            <source>Full movie</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.title</extracomment>
+picasapy-origin-key: options:options/radio56.title</extracomment>
             <translation>Cijeli film</translation>
         </message>
         <message>
@@ -1409,8 +1409,9 @@ picasapy-origin-key: options:options/UseHTMLMailer.title</extracomment>
             <translation>Pošalji ugrađene fotografije i natpise (samo Outlook)</translation>
         </message>
         <message>
-            <source>Mail program:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
+            <source>E-mail program:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup38.title</extracomment>
             <translation>Program za e-poštu:</translation>
         </message>
         <message>

@@ -27,9 +27,9 @@ ColumnLayout {
         spacing: 8
         Text {
             id: mailProgramLabel
-            // #2432: az eredeti felirata „Levelezőprogram:”
+            // #2432/#5799: az eredeti felirata „Levelezőprogram:”
             // (`options/labelgroup38.title`).
-            text: qsTr("Mail program:")
+            text: qsTr("E-mail program:")
             font.pixelSize: Theme.fontSize
             color: Theme.ink
         }
@@ -137,7 +137,7 @@ ColumnLayout {
     RowLayout {
         spacing: 8
         Text {
-            text: qsTr("Multiple photo size")
+            text: qsTr("Size for multiple pictures:")
             font.pixelSize: Theme.fontSize
             color: Theme.ink
         }
@@ -168,7 +168,7 @@ ColumnLayout {
         spacing: 8
         Text {
             id: singlePictureLabel
-            text: qsTr("Single picture size:")
+            text: qsTr("Size for single pictures:")
             font.pixelSize: Theme.fontSize
             color: Theme.ink
         }
@@ -220,7 +220,7 @@ ColumnLayout {
         spacing: 8
         Text {
             id: movieModeLabel
-            text: qsTr("Send videos as:")
+            text: qsTr("Send movies as:")
             font.pixelSize: Theme.fontSize
             color: Theme.ink
         }
@@ -250,7 +250,7 @@ ColumnLayout {
     }
     RadioButton {
         objectName: "optionsMailMovieFullRadio"
-        text: qsTr("Full film")
+        text: qsTr("Full movie")
         ButtonGroup.group: movieGroup
         implicitHeight: 22
         Layout.leftMargin: movieModeLabel.implicitWidth + 8

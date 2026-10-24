@@ -1356,7 +1356,7 @@ picasapy-origin-key: options:options/radio40.title</extracomment>
             <translation>Hãy để tôi chọn mỗi khi tôi gửi ảnh</translation>
         </message>
         <message>
-            <source>Multiple photo size</source>
+            <source>Size for multiple pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup43.title</extracomment>
             <translation>Kích thước dành cho nhiều ảnh:</translation>
@@ -1367,7 +1367,7 @@ picasapy-origin-key: options:options/labelgroup43.title</extracomment>
             <translation>%1 pixel</translation>
         </message>
         <message>
-            <source>Single picture size:</source>
+            <source>Size for single pictures:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>Kích thước dành cho ảnh đơn:</translation>
@@ -1383,7 +1383,7 @@ picasapy-origin-key: options:options/labelgroup48.title</extracomment>
             <translation>Kích thước Ban đầu</translation>
         </message>
         <message>
-            <source>Send videos as:</source>
+            <source>Send movies as:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/labelgroup53.title</extracomment>
             <translation>Gửi phim dưới dạng:</translation>
@@ -1395,9 +1395,9 @@ picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;w
             <translation>Khung đầu tiên</translation>
         </message>
         <message>
-            <source>Full film</source>
+            <source>Full movie</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.title</extracomment>
+picasapy-origin-key: options:options/radio56.title</extracomment>
             <translation>Phim đầy đủ</translation>
         </message>
         <message>
@@ -1407,9 +1407,10 @@ picasapy-origin-key: options:options/UseHTMLMailer.title</extracomment>
             <translation>Gửi ảnh và chú thích nội tuyến (chỉ dùng trong Outlook)</translation>
         </message>
         <message>
-            <source>Mail program:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Chương trình email:</translation>
+            <source>E-mail program:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup38.title</extracomment>
+            <translation>Chương trình E-mail:</translation>
         </message>
         <message>
             <source>Use my Google Account</source>
