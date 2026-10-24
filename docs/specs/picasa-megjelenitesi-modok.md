@@ -1351,9 +1351,9 @@ tábláját** vegye át (az 5.9-ben teljes egészében ki van írva), vagy a
 
 #### 12.8.1 A bináris és a parancssori út
 
-A vizsgált x86 bináris a helyi Picasa-telepítés `PicasaPhotoViewer.exe` fájlja (ImageBase `0x00400000`). A WinMain `0x004365b0` címen lekéri a teljes sort a `GetCommandLineW` importon át (`0x0043672b`), UTF-8-ra alakítja a `WideCharToMultiByte` hívással (`0x00436745`; kódlap-argumentum `0xfde9`), majd a viewer saját feldolgozójának adja (`0x004367d5` → `0x0055cad0`). A tokenizer `0x0055bc90` az idézőjelet `0x55bd0c`-nél vizsgálja, majd a záró idézőjelig lép (`0x55bd32`–`0x55bd57`).
+A vizsgált x86 bináris a helyi Picasa-telepítés `PicasaPhotoViewer.exe` fájlja (ImageBase `0x00400000`). A WinMain `0x004365b0` címen lekéri a teljes sort a `GetCommandLineW` importon át (`0x0043672b`), UTF-8-ra alakítja a `WideCharToMultiByte` hívással (`0x00436745`; kódlap-argumentum `0xfde9`), majd a viewer saját feldolgozójának adja (`0x004367d5` → `0x0055cad0`). A tokenizer `0x0055bc90` az idézőjelet `0x55bd0c`-nél vizsgálja, majd a záró idézőjelig lép (`0x55bd32`-`0x55bd57`).
 
-A parancssor feldolgozása után a WinMain a tárolt argumentumvektor további elemein végigmegy (`0x00436a68`–`0x00436aac`); minden elemhez meghívja a `0x0043b450` képfeldolgozó útvonalat (`call` címe `0x00436a95`). Így a kép útvonala nem pusztán parancssori kapcsolóként marad meg: a viewer induló képsorának feldolgozásába kerül. A diszasszemblálás itt az átadást igazolja; hogy egy adott Windows-környezetben mely fájlt dekódolta és ténylegesen megjelenítette, külön futásidejű mérés lenne.
+A parancssor feldolgozása után a WinMain a tárolt argumentumvektor további elemein végigmegy (`0x00436a68`-`0x00436aac`); minden elemhez meghívja a `0x0043b450` képfeldolgozó útvonalat (`call` címe `0x00436a95`). Így a kép útvonala nem pusztán parancssori kapcsolóként marad meg: a viewer induló képsorának feldolgozásába kerül. A diszasszemblálás itt az átadást igazolja; hogy egy adott Windows-környezetben mely fájlt dekódolta és ténylegesen megjelenítette, külön futásidejű mérés lenne.
 
 #### 12.8.2 A műveletsáv sorrendje és belső parancsai
 
@@ -1362,7 +1362,7 @@ Az `ss` elrendezés minden vezérlőt az `ss/controlbar_container` alá tesz. A 
 | Balról jobbra | Felirat / súgó | Belső parancs (viewer VA) | Képkocka `(x0,y0,x1,y1)` | Esemény-elosztó |
 |---|---|---|---|---|
 | Nagyítás | `Zoom In` | `ss/zoom_plus` (`0x726c40`) | `(253,744,282,763)` | `0x4256f4` → `0x42fad0`, `+1` (`0x425728`) |
-| Kicsinyítés | `Zoom Out` | `ss/zoom_minus` (`0x726c50`) | `(283,744,311,763)` | `0x42574f` → `0x42fad0`, `−1` (`0x425779`) |
+| Kicsinyítés | `Zoom Out` | `ss/zoom_minus` (`0x726c50`) | `(283,744,311,763)` | `0x42574f` → `0x42fad0`, `-1` (`0x425779`) |
 | 1:1 | `Zoom to 1:1` | `ss/actualsize` (`0x726b28`) | `(312,744,340,763)` | `0x42578b`; egység-nagyítás beállítása és képfrissítés (`0x4257ff` → `0x43d1b0`) |
 | Főprogram | gombfelirat `Edit in Picasa`, súgó `Launch Picasa` | `ss/launch_picasa` (`0x726bcc`) | `(351,744,470,763)` | `0x4253d7` → `0x420ca0` (`0x425454`) |
 | Előző | `Previous Photo` | `ss/prev` (`0x726c38`) | `(473,739,502,769)` | `0x4256a1` → `0x4232d0` (`0x4256cd`) |
@@ -1378,11 +1378,11 @@ A felhasználói jegy nyolc megnevezett csoportja több fizikai vezérlőt takar
 
 #### 12.8.3 A kép átadása a főprogramnak
 
-A `ss/launch_picasa` ág a kiválasztott képet a néző aktuális indexével kéri le (`0x0042542f`–`0x0042543a`, hívás `0x004220d0`), majd a képútvonalat, a `locate` parancsot (`0x72699c`) és a `0x6c637465` adatértéket adja át a `0x00420ca0` rutinak (`0x00425449`–`0x00425454`).
+A `ss/launch_picasa` ág a kiválasztott képet a néző aktuális indexével kéri le (`0x0042542f`-`0x0042543a`, hívás `0x004220d0`), majd a képútvonalat, a `locate` parancsot (`0x72699c`) és a `0x6c637465` adatértéket adja át a `0x00420ca0` rutinak (`0x00425449`-`0x00425454`).
 
-A `0x00420ca0` először a `FindWindowA` segítségével keresi a `ytWindow` osztályú, `Picasa2` című ablakot (`0x00420caa`–`0x00420cba`). Meglévő ablaknál előtérbe hozza azt, majd `SendMessageA`-val `0x4a` üzenetet küld. A `COPYDATASTRUCT` `dwData` értéke a hívótól kapott `0x6c637465`, a `cbData` az útvonal bájthossza lezáró nullával, az `lpData` pedig maga az útvonal (`0x00420de0`–`0x00420e10`).
+A `0x00420ca0` először a `FindWindowA` segítségével keresi a `ytWindow` osztályú, `Picasa2` című ablakot (`0x00420caa`-`0x00420cba`). Meglévő ablaknál előtérbe hozza azt, majd `SendMessageA`-val `0x4a` üzenetet küld. A `COPYDATASTRUCT` `dwData` értéke a hívótól kapott `0x6c637465`, a `cbData` az útvonal bájthossza lezáró nullával, az `lpData` pedig maga az útvonal (`0x00420de0`-`0x00420e10`).
 
-Ha nincs használható célablak, a `0x00420a20` útvonal a `HKEY_CURRENT_USER\\SOFTWARE\\Google\\Picasa\\Picasa2\\Runtime\\AppPath` értéket olvassa (`0x00420a85`–`0x00420ab5`). A viewer az `open` igével indít, a formátumszöveg `/nosplash "%s" "%s"` (`0x7268c0`), és a formatter hívásának argumentumsorrendje `locate`, majd a kép elérési útja (`0x00420d2c`–`0x00420d43`). Ez a `ShellExecuteA` paramétereként kerül tovább (`0x00420d6a`–`0x00420d86`).
+Ha nincs használható célablak, a `0x00420a20` útvonal a `HKEY_CURRENT_USER\\SOFTWARE\\Google\\Picasa\\Picasa2\\Runtime\\AppPath` értéket olvassa (`0x00420a85`-`0x00420ab5`). A viewer az `open` igével indít, a formátumszöveg `/nosplash "%s" "%s"` (`0x7268c0`), és a formatter hívásának argumentumsorrendje `locate`, majd a kép elérési útja (`0x00420d2c`-`0x00420d43`). Ez a `ShellExecuteA` paramétereként kerül tovább (`0x00420d6a`-`0x00420d86`).
 
 Független főprogram-oldali kontrollként a `Picasa3.exe` indexe a `ytWindow` sztringet a `0x00406490` függvényhez, a `locate` parancsszót pedig a `0x0053c020` parancsfeldolgozóhoz köti; utóbbi a `locatereadonly` alakot is tartalmazza. Ez megerősíti az ablakosztály és a parancsnév főprogrambeli jelenlétét, de önmagában nem bizonyítja a `WM_COPYDATA` fogadó ágának teljes vezérlésmenetét.
 
