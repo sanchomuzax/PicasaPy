@@ -203,6 +203,43 @@ class TestVideoPanelKattintas:
         )
 
 
+class TestVideoKepkockaAllapotok:
+    def test_a_koztes_es_vegso_allapotok_latszanak(self, qml_app_video, qt_app):
+        window, controller, _engine = qml_app_video
+        viewer = window.findChild(QObject, "photoViewer")
+        _nyisd_meg_a_videot(window, viewer, qt_app)
+        notice = _elem(window, "videoCaptureNotice")
+
+        controller.movieFrameCapturing.emit()
+        _var(
+            qt_app,
+            lambda: str(notice.property("text")) == "Capturing frame...",
+            "a rögzítés állapota megjelenik",
+        )
+
+        controller.movieFrameSaving.emit()
+        _var(
+            qt_app,
+            lambda: str(notice.property("text")) == "Saving to Captured Videos",
+            "a mentés állapota megjelenik",
+        )
+
+        controller.movieFrameCaptured.emit("/tmp/Captured Videos/frame.jpg")
+        _var(
+            qt_app,
+            lambda: str(notice.property("text"))
+            == "Saved frame.jpg to Captured Videos",
+            "a sikerjelzés megmarad",
+        )
+
+        controller.movieFrameCaptureFailed.emit()
+        _var(
+            qt_app,
+            lambda: str(notice.property("text")) == "Failed to capture frame",
+            "a hibajelzés megmarad",
+        )
+
+
 class TestVideoPanelKlipExport:
     @pytest.mark.parametrize("eltolas", _ABLAKMAGASSAG_ELTOLASOK)
     def test_windows_kattintas_a_vagott_szakaszt_exportalja_es_fajlnevet_mutat(

@@ -23,6 +23,24 @@ import pytest
 _I18N = Path(__file__).resolve().parents[2] / "src" / "picasapy" / "app" / "i18n"
 
 
+def _qt_ts_text(element):
+    """A TS-szöveg a Qt `<byte>` CR/LF jelöléseinek feloldásával."""
+    if element is None:
+        return ""
+    parts = [element.text or ""]
+    for child in element:
+        if child.tag == "byte":
+            value = child.get("value", "")
+            try:
+                parts.append(chr(int(value[1:], 16) if value.startswith("x") else int(value)))
+            except (TypeError, ValueError):
+                parts.append("")
+        else:
+            parts.append(_qt_ts_text(child))
+        parts.append(child.tail or "")
+    return "".join(parts)
+
+
 def _kesz_forditasok():
     for context in ET.parse(_I18N / "picasapy_hu.ts").getroot().iter("context"):
         nev = context.findtext("name")
@@ -32,9 +50,15 @@ def _kesz_forditasok():
             forditas = msg.find("translation")
             if forditas is None or forditas.get("type") in ("unfinished", "obsolete", "vanished"):
                 continue
-            if not (forditas.text or ""):
+            szoveg = _qt_ts_text(forditas)
+            if not szoveg:
                 continue
-            yield nev, msg.findtext("source") or "", msg.findtext("comment"), forditas.text
+            yield (
+                nev,
+                _qt_ts_text(msg.find("source")),
+                _qt_ts_text(msg.find("comment")) or None,
+                szoveg,
+            )
 
 
 def test_minden_kesz_forditas_a_qm_bol_is_betoltodik():

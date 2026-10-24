@@ -44,6 +44,10 @@ Dialog {
     // testreszabható.
     property string yesText: qsTr("Yes")
     property string noText: qsTr("No")
+    // #5704: az opt-out a „No” ágon is menthető az eredeti rejtettjelszó-
+    // ajánlatban. Más megerősítők változatlanul csak az „Yes” ágon mentenek.
+    property bool rememberOnDenied: false
+    property string rememberText: qsTr("Do not ask again")
 
     // Igen (accept) — akkor is kibocsátva, ha a dialógus meg sem nyílt,
     // mert a kulcs már el volt nyomva
@@ -91,7 +95,7 @@ Dialog {
         CheckBox {
             id: rememberCheck
             objectName: root.namePrefix + "RememberCheck"
-            text: qsTr("Do not ask again")
+            text: root.rememberText
         }
 
         RowLayout {
@@ -109,6 +113,12 @@ Dialog {
                 objectName: root.namePrefix + "NoButton"
                 text: root.noText
                 onClicked: {
+                    if (root.rememberOnDenied && rememberCheck.checked
+                            && root.decisionKey.length > 0
+                            && typeof confirmSettings !== "undefined"
+                            && confirmSettings) {
+                        confirmSettings.setSuppressed(root.decisionKey, true)
+                    }
                     root.close()
                     root.denied()
                 }
