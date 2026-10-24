@@ -6,8 +6,8 @@ kiválasztasz EGY képet, és a program megmutatja a hozzá hasonlókat. Nálunk
 eddig csak az előbbi volt meg (`dedup/`), ami MÁS kérdésre felel: „mely
 képek duplikátumai egymásnak?".
 
-A motor megvolt (`dedup/phash.py` dHash + Hamming-távolság, `photo_hashes`
-gyorstár); a hiányzó rész a felhasználói kérdés és a beviteli út volt.
+A korábbi motor (`dedup/phash.py` dHash + Hamming-távolság, `photo_hashes`
+gyorstár) a #5744-ben a Picasa három jellemzőjére és rangsorára cserélődik.
 """
 
 from __future__ import annotations
@@ -18,7 +18,6 @@ import picasapy.app
 import pytest
 from PySide6.QtCore import QSettings
 
-from picasapy.app.similarity_controller import HASONLOSAG_KUSZOB
 from support.jpeg_factory import make_jpeg
 from tests.support.py_blokk import fuggveny_torzs
 
@@ -91,17 +90,16 @@ class TestAKereses:
     def test_ismeretlen_mintara_URES(self, controller, tmp_path):
         assert controller._similar_records(str(tmp_path / "nincs.jpg")) == ()
 
-    def test_a_gyorstarba_BEKERULNEK_az_ujjlenyomatok(
+    def test_a_gyorstarba_BEKERULNEK_a_harom_jellemzok(
         self, controller, library, tmp_path
     ):
-        """Ettől lesz »legközelebb gyors«: a második keresés már nem
-        számol újra."""
+        """Ettől lesz »legközelebb gyors«: a három jellemzőt cache-eli."""
         from picasapy.index import open_index
 
         controller._similar_records(str(library / "mappa" / "a.jpg"))
         with open_index(tmp_path / "index.db") as conn:
             darab = conn.execute(
-                "SELECT COUNT(*) FROM photo_hashes"
+                "SELECT COUNT(*) FROM photo_similarity"
             ).fetchone()[0]
         assert darab >= 3
 
@@ -151,17 +149,57 @@ class TestAMinta:
         assert controller.filterActive == aktiv
 
 
-class TestAKuszob:
-    def test_nevvel_all_a_kodban(self):
-        assert isinstance(HASONLOSAG_KUSZOB, int)
+class TestASpecSzerintiRangsor:
+    def test_rogzitett_kepkeszlet_sorrendje(self, controller, tmp_path, monkeypatch):
+        """A mintakép, az azonos másolat és a távolabbi kép sorrendjét
+        a hasonlósági rang és az időrang adja, nem az index sorrendje."""
+        from dataclasses import replace
 
-    def test_a_forras_KIMONDJA_hogy_sajat_dontes(self):
-        """A jegy: a küszöb egy helyen, névvel, és a komment mondja ki,
-        hogy saját döntés."""
-        kezd = _SIM.index("HASONLOSAG_KUSZOB = ")
-        elotte = _SIM[max(0, kezd - 900) : kezd]
-        assert "SAJÁT DÖNTÉS" in elotte
-        assert "nem mért érték" in elotte
+        from picasapy.index import open_index
+        from picasapy.index import queries
+
+        with open_index(tmp_path / "index.db") as conn:
+            rekordok = queries.all_photos(conn)
+        datumok = {
+            "a.jpg": "2024-01-02T00:00:00",
+            "a-masolat.jpg": "2024-01-01T00:00:00",
+            "mas.jpg": "2024-01-04T00:00:00",
+        }
+        rögzített = tuple(
+            replace(rekord, taken_at=datumok[rekord.name])
+            for rekord in rekordok
+        )
+        monkeypatch.setattr(queries, "all_photos", lambda _conn: rögzített)
+
+        találatok = controller._similar_records(
+            str(Path(controller._roots[0]) / "mappa" / "a.jpg")
+        )
+
+        assert [rekord.name for rekord in találatok] == [
+            "a.jpg",
+            "a-masolat.jpg",
+            "mas.jpg",
+        ]
+
+    def test_a_regi_kuszob_es_hamming_motor_nincs_a_keresesben(self):
+        assert "HASONLOSAG_KUSZOB" not in _SIM
+        assert "hamming_distance" not in _SIM
+
+    def test_a_rankmax_alapertelmezese_1000(self):
+        from picasapy.dedup.similarity import DEFAULT_RANK_MAX
+
+        assert DEFAULT_RANK_MAX == 1000
+
+    def test_a_preferences_rankmax_levagja_a_talalatokat(
+        self, controller, library
+    ):
+        controller._get_settings().setValue("Preferences/RankMax", 2)
+
+        találatok = controller._similar_records(
+            str(library / "mappa" / "a.jpg")
+        )
+
+        assert len(találatok) == 2
 
 
 class TestABekotes:
