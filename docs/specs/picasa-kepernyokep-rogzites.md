@@ -170,7 +170,7 @@ ekkora, az `0x00c405e0`-n át a `ShellExecuteA`-t. A globális érték
 platformonkénti jelentése nincs feloldva. Ez a fájlt adja át a shellnek;
 nem bizonyítja, hogy a buborék a mappára navigál.
 
-### #5752 — Keresés a mentés után és az indirekt callback (2026-10-24; feltételes)
+### #5752 - Keresés a mentés után és az indirekt callback (2026-10-24; feltételes)
 
 A `0x0057d080` a buborék előtt meghívja a `0x004f92c0` keresési útját;
 ennek dekompilálása a `0x004e7d10` bejárót hívja. A `0x004e7d10` a
