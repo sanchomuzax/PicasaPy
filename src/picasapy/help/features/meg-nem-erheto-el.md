@@ -15,11 +15,6 @@ fölöslegesen.
 
 ## Még nem készült el
 
-**Nézet**
-
-- Időrend (Ctrl+5) — a nézet még nem készült el, ezért a menüpont és a
-  billentyű is inaktív
-
 (A **Súgó** menü tételei közül a **Súgó - tartalom és tárgymutató** az
 **F1** billentyűvel együtt, valamint a **Billentyűkódok** **működik**:
 az előbbi ezt a súgót nyitja meg — lásd [A beépített súgó](sugo.md) —,
