@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.227] - 2026-10-25
+
+- A szerkesztési lánc és a kötegelt effektek a kép ini-szakaszában a backuphash-t is frissítik (#5854).
+
 ## [0.9.226] - 2026-10-25
 
 - A „Move to New Folder...” párbeszéd most a mappa tulajdonságait kéri, és a kijelölt képeket az új mappába helyezi (#5853).
