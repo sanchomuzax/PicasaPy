@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.218] - 2026-10-25
+
+- A Címkék panel a kijelölt képek címkéit gyakoriság, majd fordított névsor szerint rendezi (#5817).
+
 ## [0.9.217] - 2026-10-25
 
 - Az eszköztár új album gombja az Album Properties párbeszédet nyitja, és üres albumot hoz létre (#5812).
