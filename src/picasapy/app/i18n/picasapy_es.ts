@@ -6606,6 +6606,12 @@ picasapy-origin-key: stringres:CThumbUI::FileSave::message</extracomment>
             <translation>Recuperar</translation>
         </message>
         <message>
+            <source>Revert to original version of file?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
+            <translation>¿Deseas recuperar la versión original del archivo?</translation>
+        </message>
+        <message>
             <source>Revert to original version of these file(s)?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>¿Volver a la versión original de estos archivos?</translation>

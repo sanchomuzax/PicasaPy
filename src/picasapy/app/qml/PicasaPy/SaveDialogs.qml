@@ -246,9 +246,25 @@ Item {
         objectName: "revertConfirmDialog"
         title: qsTr("Revert")
         modal: true
+        focus: true
         anchors.centerIn: parent
+        // #5861: a visszaállítás adatvesztő, ezért a biztonságos ág kapja
+        // a kezdeti fókuszt. A DialogButtonBox nem választ alapgombot a
+        // fókuszkeret nélküli Enterhez, ezért a Cancel a billentyűt is kezeli.
+        property bool focusCancelOnOpen: true
+        readonly property int fileCount: dialogs.pendingRows
+                                         ? dialogs.pendingRows.length : 0
+        onOpened: {
+            if (revertConfirmDialog.focusCancelOnOpen)
+                revertCancelButton.forceActiveFocus()
+        }
         onAccepted: controller.revertRowsToOriginal(dialogs.pendingRows)
         footer: DialogButtonBox {
+            Button {
+                objectName: "revertOkButton"
+                text: qsTr("Revert")
+                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+            }
             Button {
                 objectName: "revertUndoSaveButton"
                 //: `CThumbUI::FileRevert::undosave` — a magyar fordítás a
@@ -262,22 +278,41 @@ Item {
                 }
             }
             Button {
-                objectName: "revertOkButton"
-                text: qsTr("Revert")
-                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
-            }
-            Button {
+                id: revertCancelButton
                 objectName: "revertCancelButton"
                 text: qsTr("Cancel")
                 DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
+                focus: revertConfirmDialog.focusCancelOnOpen
+                Keys.priority: Keys.BeforeItem
+                Keys.onReturnPressed: function(event) {
+                    if (!revertConfirmDialog.focusCancelOnOpen) {
+                        event.accepted = false
+                        return
+                    }
+                    revertConfirmDialog.close()
+                    event.accepted = true
+                }
+                Keys.onEnterPressed: function(event) {
+                    if (!revertConfirmDialog.focusCancelOnOpen) {
+                        event.accepted = false
+                        return
+                    }
+                    revertConfirmDialog.close()
+                    event.accepted = true
+                }
             }
         }
         Column {
             spacing: 6
             Text {
+                objectName: "revertConfirmMessage"
                 width: 380
                 wrapMode: Text.WordWrap
-                text: qsTr("Revert to original version of these file(s)?")
+                text: revertConfirmDialog.fileCount === 1
+                      //: CThumbUI::FileRevert::message1
+                      ? qsTr("Revert to original version of file?")
+                      //: CThumbUI::FileRevert::messageX
+                      : qsTr("Revert to original version of these file(s)?")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
