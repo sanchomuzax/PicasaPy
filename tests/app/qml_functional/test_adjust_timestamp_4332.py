@@ -11,7 +11,7 @@ import pytest
 from PySide6.QtCore import QDateTime, QLocale, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
 
-from support.jpeg_factory import make_jpeg
+from support.jpeg_factory import make_jpeg, make_minta_jpeg
 from tests.app.qml_functional.conftest import _build_qml_app
 from tests.support.varakozas import var_feltetelre
 
@@ -196,9 +196,17 @@ def test_valodi_eszközmenüvel_mindket_mod_az_exifet_irja_es_fajlidot_megoriz(
         lambda: dialog.property("thumbnailLoaded"),
         "a párbeszéd előnézeti bélyegképe betöltődik",
     )
-    assert _elem(window, "adjustTimestampCurrentDate").property("text").endswith(
-        "2020-01-01 12:00:00"
+    assert _elem(window, "adjustTimestampCurrentDate").property("text") == (
+        "Current photo date"
     )
+    assert _elem(window, "adjustTimestampCurrentDateField").property("text") == (
+        "2020-01-01"
+    )
+    assert _elem(window, "adjustTimestampCurrentTimeField").property(
+        "displayText"
+    ) == "12:00:00"
+    assert not _elem(window, "adjustTimestampCurrentDateField").property("enabled")
+    assert not _elem(window, "adjustTimestampCurrentTimeField").property("enabled")
     assert _elem(window, "adjustTimestampNewDate").property("text") == "2020-01-01"
     assert _elem(window, "adjustTimestampTime").property("value") == 12 * 3600
     assert _elem(window, "adjustTimestampRelative").property("checked")
@@ -299,3 +307,88 @@ def test_valodi_eszközmenüvel_mindket_mod_az_exifet_irja_es_fajlidot_megoriz(
         for name, value in vart.items()
         if name in kijelolt_nevek
     }
+
+
+def _egy_fenykep(lib: Path) -> None:
+    kep = lib / "foto.jpg"
+    make_minta_jpeg(kep, size=(320, 240), seed=7)
+    piexif.insert(
+        piexif.dump(
+            {
+                "0th": {piexif.ImageIFD.DateTime: "2020:01:01 12:00:00"},
+                "Exif": {
+                    piexif.ExifIFD.DateTimeOriginal: "2020:01:01 12:00:00"
+                },
+            }
+        ),
+        str(kep),
+    )
+
+
+@pytest.fixture
+def egykepes_timestamp_app(qt_app, tmp_path):
+    yield from _build_qml_app(
+        qt_app,
+        tmp_path,
+        kepeket_keszit=_egy_fenykep,
+        valodi_belyegkep=True,
+    )
+
+
+@pytest.mark.parametrize("ablakmagassag_eltolas", (-5, 0, 5))
+def test_eszközmenüből_a_jelenlegi_dátum_két_olvasható_letiltott_mezőben_látszik(
+    egykepes_timestamp_app, qt_app, ablakmagassag_eltolas
+):
+    window, controller, _engine = egykepes_timestamp_app
+    window.setHeight(window.height() + ablakmagassag_eltolas)
+    assert controller.sortFolderBy(controller.currentFolder, "date")
+    window.setProperty("selectedIndexes", [0])
+    window.setProperty("selectedIndex", 0)
+    window.show()
+    qt_app.processEvents()
+
+    tools_menu = _elem(window, "menuTools")
+    tools_menu.open()
+    _var(qt_app, lambda: tools_menu.property("visible"), "az Eszközök menü")
+    menu_item = _elem(window, "menuToolsAdjustTimestamp")
+    assert menu_item.property("enabled")
+    _kattints(menu_item, qt_app, window)
+
+    dialog = _elem(window, "adjustTimestampDialog")
+    _var(qt_app, lambda: dialog.property("visible"), "a dátummódosító ablak")
+    thumbnail = _elem(window, "adjustTimestampThumbnail")
+    assert thumbnail.property("source").toString().startswith("image://thumbs/")
+    _var(qt_app, lambda: dialog.property("thumbnailLoaded"), "a valódi bélyegkép")
+    thumbnail_ratio = thumbnail.property("paintedWidth") / thumbnail.property(
+        "paintedHeight"
+    )
+    assert thumbnail_ratio == pytest.approx(4 / 3, abs=0.05)
+
+    datum_felirat = _elem(window, "adjustTimestampCurrentDate")
+    datum_mezo = _elem(window, "adjustTimestampCurrentDateField")
+    ido_mezo = _elem(window, "adjustTimestampCurrentTimeField")
+    uj_datum_mezo = _elem(window, "adjustTimestampNewDate")
+    uj_ido_mezo = _elem(window, "adjustTimestampTime")
+
+    assert datum_felirat.property("text") == "Current photo date"
+    assert datum_mezo.property("text") == "2020-01-01"
+    assert datum_mezo.property("text") == uj_datum_mezo.property("text")
+    assert ido_mezo.property("displayText") == "12:00:00"
+    assert ido_mezo.property("displayText") == uj_ido_mezo.property("displayText")
+    assert datum_mezo.property("enabled") is False
+    assert ido_mezo.property("enabled") is False
+    assert ido_mezo.property("editable") is False
+
+    _kattints(datum_mezo, qt_app, window)
+    _kattints(ido_mezo, qt_app, window)
+    QTest.keyClick(window, Qt.Key.Key_9)
+    qt_app.processEvents()
+    assert datum_mezo.property("text") == "2020-01-01"
+    assert ido_mezo.property("displayText") == "12:00:00"
+
+    kepmappa = os.environ.get("PICASAPY_KIADASKEP_MAPPA")
+    if kepmappa and ablakmagassag_eltolas == 0:
+        cel = Path(kepmappa) / "adjust-photo-date-5869.png"
+        kep = window.grabWindow()
+        assert not kep.isNull(), "a párbeszéd képernyőképe üres"
+        assert kep.save(str(cel)), f"nem menthető a kiadáskép: {cel}"

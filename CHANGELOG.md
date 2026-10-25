@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.231] - 2026-10-25
+
+- A fájlátnevező párbeszéd Rename gombja változatlan vagy üres névnél letiltva marad, üres mezőnél pedig eltűnik az Example sor (#5870).
+
+## [0.9.230] - 2026-10-25
+
+- A dátummódosító ablak a jelenlegi fotódátumot külön, letiltott dátum- és időmezőben mutatja (#5869).
+
 ## [0.9.229] - 2026-10-25
 
 - Az Undo Save a szerkesztési lánc mellé a kép `moddate` és `backuphash` kulcsát is visszaírja az ini-be, ahogy az eredeti (#5864).

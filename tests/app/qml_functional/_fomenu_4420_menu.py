@@ -110,6 +110,10 @@ _LETILTOTT_A_TISZTA_MINTABAN = {
         "A Könyvtárnézet csak megnyitott néző mellett aktív; a tiszta minta "
         "könyvtárnézetben indul."
     ),
+    "menuViewEditControls": (
+        "A Show Edit Controls az eredetihez hasonlóan csak szerkesztőnézőben "
+        "aktív (#5878); a tiszta minta könyvtárnézetben indul."
+    ),
     "menuViewAlbumThumbnails": (
         "A könyvtári bélyegkép-kapcsoló fanézetben letiltott; a teszt ezt az "
         "állapotot is meghagyja a menüsorban."
