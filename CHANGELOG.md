@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.228] - 2026-10-25
+
+- A Visszaállítás párbeszéd biztonságos Mégse-fókuszt és az egyképes hivatalos kérdésszöveget használja (#5861).
+
 ## [0.9.227] - 2026-10-25
 
 - A szerkesztési lánc és a kötegelt effektek a kép ini-szakaszában a backuphash-t is frissítik (#5854).
