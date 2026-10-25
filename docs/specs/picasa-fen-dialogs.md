@@ -412,10 +412,16 @@ hamis, és a jelölő minden megnyitás előtt üresre áll. Az Opciók → Gene
 `Delete from disk without confirmation` kapcsoló ezt a döntést
 `setSuppressed("delete", checked)` útján vissza- és bekapcsolja
 (`OptionsTabGeneral.qml`). Így a jegy „hiányzik a jelölő” megállapítása
-elavult; a szöveg nálunk rövidebb, mint az eredeti „always remove” felirat.
-A `ConfirmDialog.qml` nem ad meg explicit alapértelmezett/fókuszgombot; a
-nálunk ténylegesen fókuszált gomb **NINCS MEG** (futásidejű felvétellel kell
-mérni).
+elavult; a felirat és a fókusz javított állapotát a #5827 bejegyzés rögzíti.
+**#5827 (2026-10-25, PicasaPy QML-mérés):** a törlés ág jelölője most az
+eredeti `Don't ask again, always remove` feliratot használja, a hivatalos
+magyar fordítással. Megnyitáskor a Mégse kap fókuszt; az Enter a párbeszédet
+Mégse-ként zárja be, a fájl megmarad, a `Delete Image` gomb valódi kattintása
+pedig törli. A rontás-kontroll a korábbi rövid felirattal és fókusz nélkül
+piros lett; az új, valódi bélyegképes QML-teszt mindhárom ablakmagasságon
+ellenőrzi a kattintási geometriát, a teljes billentyűs folyamatot pedig az
+alapmagasságon. A jelölő mentése és az Opciók → General visszakapcsolója nem
+változott.
 Az eredeti job-252 kép nyers fájlja a helyi mérőadat-archívumban nem volt
 megtalálható; a fenti fókuszállítás a jegyhez mellékelt felvételleíráson
 alapul.
