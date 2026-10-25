@@ -18719,4 +18719,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>1 つ以上のアイテムが読み取り専用であるため、タグを変更できません。</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>アルバムはインデックス済みの写真フォルダにのみ保存できます。</translation>
+        </message>
+    </context>
 </TS>

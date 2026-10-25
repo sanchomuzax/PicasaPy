@@ -18746,4 +18746,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Nie można modyfikować tagów, ponieważ co najmniej jeden element jest w trybie tylko do odczytu.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Album można zapisać tylko w zindeksowanym folderze ze zdjęciami.</translation>
+        </message>
+    </context>
 </TS>

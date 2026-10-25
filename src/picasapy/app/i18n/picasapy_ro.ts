@@ -18746,4 +18746,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Etichetele nu pot fi modificate, deoarece cel puţin un element este doar în citire.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Un album poate fi salvat doar într-un dosar de fotografii indexat.</translation>
+        </message>
+    </context>
 </TS>

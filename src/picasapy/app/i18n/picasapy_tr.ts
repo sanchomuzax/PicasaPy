@@ -18719,4 +18719,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Bir veya daha fazla öğe salt okunur olduğundan etiketler düzenlenemez.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Albüm yalnızca dizine eklenmiş bir fotoğraf klasörüne kaydedilebilir.</translation>
+        </message>
+    </context>
 </TS>

@@ -18719,4 +18719,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Não é possível modificar as etiquetas, porque um ou mais itens são só de leitura.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Um álbum só pode ser guardado numa pasta de fotografias indexada.</translation>
+        </message>
+    </context>
 </TS>

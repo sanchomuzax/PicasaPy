@@ -18719,4 +18719,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>ไม่สามารถแก้ไขแท็กได้เนื่องจากมีรายการที่เป็นแบบอ่านอย่างเดียว</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>สามารถบันทึกอัลบั้มได้เฉพาะในโฟลเดอร์รูปภาพที่จัดทำดัชนีแล้วเท่านั้น</translation>
+        </message>
+    </context>
 </TS>

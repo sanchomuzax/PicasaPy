@@ -18719,4 +18719,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>一或多個項目處於唯讀狀態，因此無法修改標記。</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>相簿只能儲存在已建立索引的相片資料夾中。</translation>
+        </message>
+    </context>
 </TS>

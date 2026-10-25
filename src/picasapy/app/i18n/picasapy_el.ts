@@ -18719,4 +18719,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Δεν είναι δυνατή η τροποποίηση των ετικετών, γιατί ένα ή περισσότερα αντικείμενα είναι μόνο για ανάγνωση.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ένα άλμπουμ μπορεί να αποθηκευτεί μόνο σε ευρετηριασμένο φάκελο φωτογραφιών.</translation>
+        </message>
+    </context>
 </TS>

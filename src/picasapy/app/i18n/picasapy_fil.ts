@@ -18719,4 +18719,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Ang mga tag ay hindi mababago dahil isa o higit pang mga item ay read-only.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Maaari lamang i-save ang album sa isang naka-index na folder ng larawan.</translation>
+        </message>
+    </context>
 </TS>

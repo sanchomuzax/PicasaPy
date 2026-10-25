@@ -18719,4 +18719,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Etiketter kan ikke endres da ett eller flere elementer er skrivebeskyttet.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Et album kan bare lagres i en indeksert bildemappe.</translation>
+        </message>
+    </context>
 </TS>

@@ -18732,4 +18732,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Tags können nicht bearbeitet werden, da ein oder mehr Elemente schreibgeschützt sind.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ein Album kann nur in einem indizierten Fotoordner gespeichert werden.</translation>
+        </message>
+    </context>
 </TS>
