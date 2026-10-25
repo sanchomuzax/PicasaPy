@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.220] - 2026-10-25
+
+- Az eszköztári új album a kiválasztott kép mappájába ment, üres keresésnél pedig hibát jelez (#5835).
+
 ## [0.9.219] - 2026-10-25
 
 - A nyomtatási előbeállítás tesztjének vizuális keresése nem ablak elemen is a saját gyerekfáját járja be (#5823).
