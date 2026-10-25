@@ -1121,7 +1121,7 @@ szerkesztési funkció; a mentés nem használhatja mentésjelzőként.
 
 A #5864 job-265 megfigyelése szerint a mentés az eredeti-mappa ini-jébe a
 `filters` mellett a mentés előtti képfájl `moddate` értékét is elteszi. Ez
-100 ns-os Windows FILETIME az 1601-01-01 UTC epochból, 8 bájtos kis-endián
+100 ns-os Windows FILETIME az 1601-01-01 UTC kezdőponttól, 8 bájtos kis-endián
 sorrendben, 16 kisbetűs hexajegyként. Az Undo Save a meglévő `moddate`-et a
 visszaállított `filters` mellé az aktuális képszakaszba másolja, és frissíti a
 `backuphash`-t. Régi eredeti-mappai ini `moddate` nélkül esetén a visszavonás
