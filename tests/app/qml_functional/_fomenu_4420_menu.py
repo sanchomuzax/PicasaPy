@@ -118,6 +118,14 @@ _LETILTOTT_A_TISZTA_MINTABAN = {
         "A Fájl ▸ Save csak mentetlen szerkesztésnél aktív (#5883); a tiszta "
         "minta képei szerkesztetlenek."
     ),
+    "menuPictureUnhide": (
+        "A Kép ▸ Unhide csak rejtett képet tartalmazó kijelölésnél aktív "
+        "(#5882); a tiszta minta képei láthatók."
+    ),
+    "menuFolderShow": (
+        "A Mappa ▸ Unhide csak rejtett mappánál aktív (#5882); a tiszta minta "
+        "mappája látható."
+    ),
     "menuViewAlbumThumbnails": (
         "A könyvtári bélyegkép-kapcsoló fanézetben letiltott; a teszt ezt az "
         "állapotot is meghagyja a menüsorban."

@@ -7,6 +7,19 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.234] - 2026-10-25
+
+- A letiltott gombok és mezők felirata témához igazodó szürke árnyalatot kap (#5874).
+- A képfelirat mentése Windowson átmeneti ini-zárolásnál is beírja a backuphash-t (#5900).
+
+## [0.9.233] - 2026-10-25
+
+- A Kép és a Mappa menü Unhide tétele csak rejtett kép vagy mappa esetén aktív (#5882).
+
+## [0.9.232] - 2026-10-25
+
+- Könyvtárnézetben a Show Edit Controls szürke és pipa nélküli, a szerkesztőnézetben pedig a bal fiók állapotát követi (#5878).
+
 ## [0.9.231] - 2026-10-25
 
 - A fájlátnevező párbeszéd Rename gombja változatlan vagy üres névnél letiltva marad, üres mezőnél pedig eltűnik az Example sor (#5870).
