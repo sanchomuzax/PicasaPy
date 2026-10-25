@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.225] - 2026-10-25
+
+- A Kép ▸ Reset Faces az arcadatok törlésekor a kép szakaszába `backuphash`-t is ír (#5848).
+
 ## [0.9.224] - 2026-10-25
 
 - A tálca album menüjéből kijelölt képek a képernyővédőbe, a Csillagozott képek közé vagy egy új albumba adhatók (#5846).
