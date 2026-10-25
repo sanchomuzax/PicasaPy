@@ -8093,6 +8093,20 @@ picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(i
         </message>
         <message>
             <location filename="../qml/Main.qml" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>Удалить изменения</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/no.title</extracomment>
+            <translation>Нет</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
             <source>Are you sure you want to add all of the selected album's images?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:addtosaver::warning</extracomment>
