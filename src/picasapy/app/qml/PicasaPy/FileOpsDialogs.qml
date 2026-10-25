@@ -204,10 +204,13 @@ Item {
         anchors.centerIn: parent
         standardButtons: Dialog.Ok | Dialog.Cancel
         property var rows: []
+        property string openedName: ""
         // A Mégse is a saját fordításunkat kapja: a Qt szabványgombja a
         // rendszer nyelvét követné, és vegyes nyelvű lenne a párbeszéd.
         onOpened: {
             standardButton(Dialog.Ok).text = qsTr("Rename")
+            standardButton(Dialog.Ok).enabled = canRename()
+            standardButton(Dialog.Ok).opacity = canRename() ? 1.0 : 0.55
             standardButton(Dialog.Cancel).text = qsTr("Cancel")
         }
         function acceptButtonText() {
@@ -224,6 +227,7 @@ Item {
                 initialName = extensionStart > 0
                     ? fileName.substring(0, extensionStart) : fileName
             }
+            openedName = initialName || ""
             renameManyField.text = initialName || ""
             // #4879: a két jelölő állása megmarad (RenameUseDate/RenameUseSize)
             var useDate = controller ? controller.renameUseDate() : false
@@ -243,6 +247,16 @@ Item {
                       rows, renameManyField.text,
                       includeDateCheck.checked, includeSizeCheck.checked)
                 : ""
+            var renameButton = standardButton(Dialog.Ok)
+            if (renameButton) {
+                renameButton.enabled = canRename()
+                // A stílus a letiltott gombot nem szürkíti, ezért itt halványítjuk.
+                renameButton.opacity = canRename() ? 1.0 : 0.55
+            }
+        }
+        function canRename() {
+            var base = renameManyField.text.trim()
+            return base.length > 0 && base !== openedName.trim()
         }
         property string previewText: ""
         function saveFlags() {
@@ -251,6 +265,7 @@ Item {
                     includeDateCheck.checked, includeSizeCheck.checked)
         }
         onAccepted: {
+            if (!canRename()) return
             var base = renameManyField.text.trim()
             if (base.length > 0 && controller) {
                 if (rows.length === 1 && appWindow)
@@ -291,7 +306,10 @@ Item {
                 validator: RegularExpressionValidator {
                     regularExpression: /^[^\\\/:*?"<>|]*$/
                 }
-                onAccepted: renameManyDialog.accept()
+                onAccepted: {
+                    if (renameManyDialog.canRename())
+                        renameManyDialog.accept()
+                }
                 onTextChanged: renameManyDialog.updatePreview()
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
@@ -330,6 +348,7 @@ Item {
             Text {
                 objectName: "renameManySampleLabel"
                 text: qsTr("Example:") + " " + renameManyDialog.previewText
+                visible: renameManyField.text.trim().length > 0
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
