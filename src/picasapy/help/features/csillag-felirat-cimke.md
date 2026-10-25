@@ -87,7 +87,7 @@ nyitja és zárja is a panelt.
 - A lista sorrendje az eredeti Picasáét követi: elöl az a címke áll,
   amelyik a kijelölésben a **legtöbb képen** szerepel. Az egyformán
   gyakori címkék **fordított névsorban** követik egymást (Z-től A felé).
-- Egy címkére jobbgombbal kattintva három tételt kapsz, ebben a
+- Egy címkére jobb gombbal kattintva három tételt kapsz, ebben a
   sorrendben: **A címke eltávolítása**, **Az ilyen címkével ellátott
   elemek keresése** és **A címke hozzáadása a teljes kijelölt részhez**.
   A keresés a címkét beírja a felső keresőmezőbe, és rögtön a találatokat

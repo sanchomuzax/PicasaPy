@@ -80,7 +80,7 @@ Mappa helyett **képfájlt** is megadhatsz, akár többet is:
 ```
 
 Ilyenkor a program nem a könyvtárat tölti be, hanem a képet rögtön a
-**gyorsnézegetőben** nyitja meg (lásd [Nézegetés](features/nezegetes.md)).
+**egyszerűsített nézőben** nyitja meg (lásd [Nézegetés](features/nezegetes.md)).
 Linuxon a program az első indításkor bejegyzi magát a képtípusok mellé,
 így a fájlkezelő **Megnyitás ezzel** listájában is ott lesz a PicasaPy.
 

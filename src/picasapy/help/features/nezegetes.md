@@ -86,7 +86,7 @@ A képre jobbgombbal kattintva ugyanazok a parancsok érhetők el, mint a
 rácsban: forgatás, mentés, visszaállítás, elrejtés, keresés a lemezen,
 tulajdonságok, törlés a lemezről.
 
-## Gyorsnézegető: kép megnyitása a fájlkezelőből
+## Kép megnyitása a fájlkezelőből
 
 Ha a PicasaPy-t egy **képfájllal** indítod (a fájlkezelő **Megnyitás
 ezzel** parancsával, vagy indításkor a kép nevét megadva, lásd
@@ -101,7 +101,7 @@ rajtuk. A felső sáv a filmszalaggal, valamint az oldalsó panelek
 (Tulajdonságok, Címkék, Helyek, Emberek) ilyenkor nem látszanak. Alul egy saját eszközsáv áll:
 
 - **Nagyítás**, **Kicsinyítés** és **Nagyítás 1:1 méretre**;
-- **Szerkesztés a PicasaPy-ban** - bezárja a gyorsnézegetőt, és
+- **Szerkesztés a PicasaPy-ban** - bezárja ezt a nézőt, és
   elindítja a teljes programot a könyvtáraddal;
 - **Előző fotó**, **Diavetítés lejátszása**, **Következő fotó**;
 - **Forgatás balra**, **Forgatás jobbra** és **Csillag**;
@@ -111,7 +111,7 @@ rajtuk. A felső sáv a filmszalaggal, valamint az oldalsó panelek
 A **Gyors feltöltés** gomb szürke: a Picasa online szolgáltatásai
 megszűntek, ez nem is fog működni.
 
-A gyorsnézegető bezárásakor (például **Esc**-kel) a program a megszokott
+Az egyszerűsített néző bezárásakor (például **Esc**-kel) a program a megszokott
 könyvtárnézettel folytatódik.
 
 ## Két kép egymás mellett

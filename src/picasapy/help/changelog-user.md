@@ -10,7 +10,7 @@ fájljában van.
 
 - Képfájllal indítva (a fájlkezelő **Megnyitás ezzel** parancsával vagy a
   kép nevét megadva) a program a képet rögtön egy egyszerűsített
-  **gyorsnézegetőben** mutatja, saját eszközsávval. A **Szerkesztés a
+  **egyszerűsített nézőben** mutatja, saját eszközsávval. A **Szerkesztés a
   PicasaPy-ban** gomb indítja a teljes programot. Lásd
   [Nézegetés](features/nezegetes.md) és [Első lépések](getting-started.md).
 
