@@ -27,6 +27,7 @@ ColumnLayout {
         spacing: 8
         Text {
             id: mailProgramLabel
+            objectName: "optionsMailProgramLabel"
             // #2432/#5799: az eredeti felirata „Levelezőprogram:”
             // (`options/labelgroup38.title`).
             text: qsTr("E-mail program:")
@@ -220,6 +221,7 @@ ColumnLayout {
         spacing: 8
         Text {
             id: movieModeLabel
+            objectName: "optionsMailMovieModeLabel"
             text: qsTr("Send movies as:")
             font.pixelSize: Theme.fontSize
             color: Theme.ink
@@ -273,25 +275,34 @@ ColumnLayout {
                 root.mailCtl.setMovieFull(true)
     }
 
-    // csak Windows/Outlook alatt volt értelmezve az eredetiben
-    CheckBox {
-        objectName: "optionsMailUseHtmlCheck"
-        text: qsTr("Send inline photos and captions (Outlook only)")
-        implicitHeight: 24
-        enabled: false
-        // #3661: a hivatalos magyar felirat („Szövegközi fotók és
-        // képfeliratok küldése (csak Outlookban)") volt a fül LEGSZÉLESEBB,
-        // nem tördelődő eleme (470 px, a rendelkezésre álló 456 px felett)
-        // — a #3572 mintája szerint tördelődik helyette.
-        Layout.fillWidth: true
-        Layout.preferredWidth: 0
-        contentItem: Text {
-            leftPadding: parent.indicator.width + parent.spacing
-            text: parent.text
-            font: parent.font
-            color: parent.enabled ? Theme.ink : Theme.textGray
-            wrapMode: Text.WordWrap
-            verticalAlignment: Text.AlignVCenter
+    // Csak Windows/Outlook alatt volt értelmezve az eredetiben.
+    RowLayout {
+        spacing: 8
+        Text {
+            objectName: "optionsMailOutputFormatLabel"
+            text: qsTr("Output format:")
+            font.pixelSize: Theme.fontSize
+            color: Theme.ink
+        }
+        CheckBox {
+            objectName: "optionsMailUseHtmlCheck"
+            text: qsTr("Send inline photos and captions (Outlook only)")
+            implicitHeight: 24
+            enabled: false
+            // #3661: a hivatalos magyar felirat („Szövegközi fotók és
+            // képfeliratok küldése (csak Outlookban)") volt a fül LEGSZÉLESEBB,
+            // nem tördelődő eleme (470 px, a rendelkezésre álló 456 px felett)
+            // - a #3572 mintája szerint tördelődik helyette.
+            Layout.fillWidth: true
+            Layout.preferredWidth: 0
+            contentItem: Text {
+                leftPadding: parent.indicator.width + parent.spacing
+                text: parent.text
+                font: parent.font
+                color: parent.enabled ? Theme.ink : Theme.textGray
+                wrapMode: Text.WordWrap
+                verticalAlignment: Text.AlignVCenter
+            }
         }
     }
 

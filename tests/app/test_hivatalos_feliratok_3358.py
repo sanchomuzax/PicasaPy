@@ -297,6 +297,8 @@ BEALLITASOK = {
         "Egyedülálló képek mérete:", "options/labelgroup48.title"),
     ("OptionsTabEmail", "Send movies as:"): (
         "Mozgófilmek küldése másként:", "options/labelgroup53.title"),
+    ("OptionsTabEmail", "Output format:"): (
+        "Kimeneti formátum:", "options/labelgroup57.title"),
     ("OptionsTabEmail", "Full movie"): (
         "Teljes mozgófilm", "options/radio56.title"),
     ("OptionsTabEmail", "Let me choose each time I send pictures"): (
@@ -422,6 +424,15 @@ BEALLITASOK = {
     ("OptionsTabWebAlbums", "Add a watermark for all photo uploads:"): (
         "Vízjel hozzáadása az összes feltöltendő fotóhoz:",
         "options/haswatermark.title"),
+    ("OptionsTabWebAlbums", "JPEG Quality:"): (
+        "JPEG minőség:", "options/labelgroup154.title"),
+    ("OptionsTabWebAlbums", "Syncing:"): (
+        "Szinkronizálás:", "options/labelgroup158.title"),
+    ("OptionsTabWebAlbums", "Watermarks:"): (
+        "Vízjelek:", "options/labelgroup163.title"),
+    ("OptionsTabWebAlbums", "Stamp photos with your name, a web domain, or a copyright notice."):
+        ("A fotókra rábélyegezheti saját nevét, egy internetes domain nevét vagy egy szerzői jogi közleményt.",
+         "export/label44.title"),
     ("OptionsTabWebAlbums", "Don't confirm every sync (use the above settings)"): (
         "Nem kérek megerősítő üzenetet minden szinkronizáláskor "
         "(a fenti beállításokat használom)", "options/confirmsync::disable.title"),
