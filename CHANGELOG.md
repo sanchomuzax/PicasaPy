@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.219] - 2026-10-25
+
+- A nyomtatási előbeállítás tesztjének vizuális keresése nem ablak elemen is a saját gyerekfáját járja be (#5823).
+- A backuphash QML-teszt a háttérírások végét megvárva lép tovább (#5830).
+- A gyors nézet most a kép `.picasa.ini` szerinti csillagállapotát mutatja, és a Csillag gombbal kapcsolható (#5834).
+
 ## [0.9.218] - 2026-10-25
 
 - A Címkék panel a kijelölt képek címkéit gyakoriság, majd fordított névsor szerint rendezi (#5817).
