@@ -78,18 +78,26 @@ ApplicationWindow {
 
     palette {
         window: Theme.canvasBg
-        windowText: Theme.ink
+        active.windowText: Theme.ink
+        inactive.windowText: Theme.ink
         base: Theme.controlBase
         alternateBase: Theme.panelBg
-        text: Theme.ink
+        active.text: Theme.ink
+        inactive.text: Theme.ink
         button: Theme.buttonBg
-        buttonText: Theme.ink
+        active.buttonText: Theme.ink
+        inactive.buttonText: Theme.ink
         highlight: Theme.selectionBlue
         highlightedText: Theme.panelSelectionText
         placeholderText: Theme.placeholderText
         mid: Theme.chromeBorder
         light: Theme.shadeLight
         dark: Theme.shadeDark
+        // #5874: az aktív/inaktív tinták ne írják felül a Qt Controls
+        // disabled csoportját; a Theme token mindkét témában olvasható.
+        disabled.windowText: Theme.textGray
+        disabled.text: Theme.textGray
+        disabled.buttonText: Theme.textGray
     }
 
     // #985: a globális `controller` egy KONTEXTUS-property, a `CollagePanel`
