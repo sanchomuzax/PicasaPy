@@ -997,6 +997,8 @@ ListView {
             // #1823: a fejléc-gombok a KIJELÖLÉS darabszámát írják ki.
             selectedCount: grid.appWindow && grid.appWindow.selectedIndexes
                            ? grid.appWindow.selectedIndexes.length : 0
+            hasPendingEdits: grid.appWindow
+                ? grid.appWindow.kijelolesbenVanMentetlenSzerkesztes : false
             // zöld ▸ (#8): a mappa vetítése az első képétől
             onPlayRequested: grid.slideshowRequested(
                 groupCol.modelData.start)
@@ -1568,6 +1570,8 @@ ListView {
                                 grid.appWindow.personAlbumCanSetThumbnail
                             selectedCount: grid.appWindow.selectedIndexes
                                 ? grid.appWindow.selectedIndexes.length : 0
+                            hasPendingEdits:
+                                grid.appWindow.kijelolesbenVanMentetlenSzerkesztes
                             suggestionCount: grid.appWindow.personSuggestionCount
                             selectedSuggestionCount:
                                 grid.appWindow.personSelectedSuggestionIds.length

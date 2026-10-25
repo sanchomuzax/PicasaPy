@@ -78,18 +78,26 @@ ApplicationWindow {
 
     palette {
         window: Theme.canvasBg
-        windowText: Theme.ink
+        active.windowText: Theme.ink
+        inactive.windowText: Theme.ink
         base: Theme.controlBase
         alternateBase: Theme.panelBg
-        text: Theme.ink
+        active.text: Theme.ink
+        inactive.text: Theme.ink
         button: Theme.buttonBg
-        buttonText: Theme.ink
+        active.buttonText: Theme.ink
+        inactive.buttonText: Theme.ink
         highlight: Theme.selectionBlue
         highlightedText: Theme.panelSelectionText
         placeholderText: Theme.placeholderText
         mid: Theme.chromeBorder
         light: Theme.shadeLight
         dark: Theme.shadeDark
+        // #5874: az aktív/inaktív tinták ne írják felül a Qt Controls
+        // disabled csoportját; a Theme token mindkét témában olvasható.
+        disabled.windowText: Theme.textGray
+        disabled.text: Theme.textGray
+        disabled.buttonText: Theme.textGray
     }
 
     // #985: a globális `controller` egy KONTEXTUS-property, a `CollagePanel`
@@ -698,6 +706,28 @@ ApplicationWindow {
         return Selection.effectiveRows(
             window.selectedIndexes, window.selectedIndex)
     }
+
+    // #5883: a mentés csak akkor írja lemezre a kijelölést, ha valamelyik
+    // kép filters lánca eltér a lemezre mentett állapottól. A modell
+    // `hasEdits` mezője ezt a `.picasa.ini`-ben tárolt láncból adja; a
+    // `photos.revision` a QML-kötést a láncváltás után újraértékelteti.
+    function vanMentetlenSzerkesztes(sorok) {
+        if (!controller || !controller.photos || !sorok) return false
+        for (var i = 0; i < sorok.length; ++i) {
+            var foto = controller.photos.itemAt(Number(sorok[i]))
+            if (foto && foto.hasEdits === true) return true
+        }
+        return false
+    }
+
+    readonly property bool kijelolesbenVanMentetlenSzerkesztes:
+        controller
+        ? (controller.photos.revision,
+           window.vanMentetlenSzerkesztes(window.selectedRows())) : false
+    readonly property bool muveletiCelbanVanMentetlenSzerkesztes:
+        controller
+        ? (controller.photos.revision,
+           window.vanMentetlenSzerkesztes(window.photoActionRows())) : false
 
     // A fotóhoz kötött menük célpontja nézőben a szerkesztett oldal, a
     // könyvtárban pedig a kijelölés. A kijelölés megmarad a néző mögött,
@@ -1585,6 +1615,7 @@ ApplicationWindow {
         id: shortcutSave
         sequence: "Ctrl+S"
         enabled: !window._szovegmezoneVanFokusz
+                 && window.muveletiCelbanVanMentetlenSzerkesztes
         onActivated: saveDialogs.ensure().openSave(window.photoActionRows())
     }
 
@@ -2164,6 +2195,22 @@ ApplicationWindow {
                 ? controller.hasTextOverlayStateInSelection(rows, true) : false
         }
         photoActionsEnabled: window.photoActionRows().length > 0
+        photoHasPendingEdits: window.muveletiCelbanVanMentetlenSzerkesztes
+        // #5882: a fotómodell revíziója frissíti ezt a kötést a hidden
+        // állapot változásakor; a kijelölés a könyvtár és a néző célpontját
+        // egyaránt lefedi.
+        hasHiddenPhotoSelection: {
+            if (!controller || !controller.photos) return false
+            var photos = controller.photos
+            var revision = photos.revision
+            if (revision < 0) return false
+            var rows = window.photoActionRows()
+            for (var i = 0; i < rows.length; ++i) {
+                var photo = photos.itemAt(Number(rows[i]))
+                if (photo && photo.hidden === true) return true
+            }
+            return false
+        }
         libraryPhotoActionsEnabled: !window.viewerOpen
                                     && window.selectedIndexes.length > 0
         //: #1768: a Mappakezelő két belépési pontja szürke, amíg a

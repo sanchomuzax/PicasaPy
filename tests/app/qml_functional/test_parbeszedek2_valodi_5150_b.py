@@ -23,6 +23,7 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlComponent
 
 import picasapy.app.application as app_module
+from tests.support.qt_wait import wait_for_photo_op
 from tests.app.qml_functional._fomenu_4420_menu import _megnyit
 from tests.app.qml_functional._racs_helyimenuk_5150_helpers import (
     kattints,
@@ -377,6 +378,11 @@ class TestMentesMegerosites:
         window, controller, _engine = parbeszed_app
         _elokeszit(window, qt_app, controller)
         kijelol(window, qt_app, [0])
+        wait_for_photo_op(
+            controller,
+            lambda: controller.applyEffectMany([0], "enhance"),
+            qt_app=qt_app,
+        )
         menu_bar = window.property("menuBar")
         _megnyit(menu_bar, qt_app, "&File")
         _menupont_kattintasa(window, qt_app, "menuFileSave")

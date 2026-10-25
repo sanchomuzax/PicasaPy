@@ -234,6 +234,11 @@ MenuBar {
     }
     // van-e fotó-művelet célpontja: a rács kijelölése vagy a néző aktív képe
     property bool photoActionsEnabled: false
+    // #5883: a mentés csak a fotóművelet célpontjának mentetlen
+    // szerkesztési láncával érhető el.
+    property bool photoHasPendingEdits: false
+    // #5882: a Kép ▸ Unhide csak rejtett képet tartalmazó célkijelölésnél él.
+    property bool hasHiddenPhotoSelection: false
     // A könyvtárhoz kötött műveletek ne váljanak aktívvá a szerkesztőnézetben.
     property bool libraryPhotoActionsEnabled: false
     //: A TextInput/TextEdit aktív fókusza esetén a billentyű a mezőé.
@@ -430,6 +435,9 @@ MenuBar {
     //: #3460: a megnyitott mappa — üres, ha nincs (a „Leírás szerkesztése…"
     //: csak mappára vonatkozik)
     property string currentFolder: ""
+    // #5882: a mappa Unhide-állapotát a menü megnyitásakor frissítjük,
+    // mert az adatbázis-lekérdezésnek nincs QML-értesítő jele.
+    property bool folderUnhideEnabled: false
     // #4631: a mappaparancs csak mappanézetben aktív. A controller
     // album- és személynézetben is megőrzi az előző mappát, ezért ezek
     // kizárása a Mappa menütétel és a Ctrl+Enter közös kapuja.
@@ -794,7 +802,7 @@ MenuBar {
         MenuItem {
             objectName: "menuFileSave"
             text: qsTr("&Save") + "\tCtrl+S"
-            enabled: bar.photoActionsEnabled
+            enabled: bar.photoActionsEnabled && bar.photoHasPendingEdits
             onTriggered: bar.saveRequested()
         }
         MenuItem {
@@ -1904,6 +1912,12 @@ MenuBar {
     PicasaMenu {
         id: menuFolder
         title: bar.currentAlbumToken !== "" ? qsTr("&Album") : qsTr("F&older")
+        onAboutToShow: {
+            bar.folderUnhideEnabled = bar.folderLocateEnabled
+                && bar.ctl
+                && bar.ctl.isFolderHidden !== undefined
+                && bar.ctl.isFolderHidden(bar.currentFolder)
+        }
         MenuItem {
             objectName: "menuFolderEditDescription"
             text: bar.currentAlbumToken !== ""
@@ -2038,14 +2052,11 @@ MenuBar {
             onTriggered: bar.setCurrentFolderHidden(true)
         }
         // #4416: a Rejtett mappák gyűjteményében kijelölt mappát hozza
-        // vissza; állapotellenőrzés miatt egy látható mappa nem rejtődik el.
+        // vissza. A #5882 a valódi rejtett állapothoz köti az engedélyezést.
         MenuItem {
             objectName: "menuFolderShow"
-            //: ⚠️ #2921: EZ a MAPPA-menü tétele, és rá NINCS mért hivatalos
-            //: szöveg — a mért `AlbumPhoto::ID_PICTURE_UNHIDE` a KÉP-menüé.
-            //: Ezért marad „Show”, nem igazítjuk „&Unhide”-ra.
-            text: qsTr("Show")
-            enabled: bar.folderLocateEnabled
+            text: qsTr("&Unhide")
+            enabled: bar.folderLocateEnabled && bar.folderUnhideEnabled
             onTriggered: bar.setCurrentFolderHidden(false)
         }
         MenuSeparator {}
@@ -2239,7 +2250,7 @@ MenuBar {
         MenuItem {
             objectName: "menuPictureUnhide"
             text: qsTr("&Unhide")
-            enabled: bar.photoActionsEnabled
+            enabled: bar.photoActionsEnabled && bar.hasHiddenPhotoSelection
             onTriggered: bar.unhideRequested()
         }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
