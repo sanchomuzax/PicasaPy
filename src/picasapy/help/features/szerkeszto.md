@@ -316,10 +316,12 @@ paletta mellett.
 
 A rögzített palettán túl **bármilyen színt** választhatsz: a választó
 színkerék-gombja (buboréksúgója: **Színválasztás**) egy nagyobb
-színválasztót nyit. Ebben felül az öt legutóbbi szín áll, alatta egy
-nagy színmező, legalul pedig a teljes színskála csíkja: a csíkon a
-színárnyalatot választod, a színmezőben annak világosabb, sötétebb vagy
-fakóbb változatát. Amire kattintasz, az azonnal
+színválasztót nyit, az eredeti Picasáéval azonos elrendezésben. Ebben
+felül az öt legutóbbi szín rekesze áll; amíg egy rekesz még üres, egy
+halvány alapszín tölti ki, és nem kattintható. Alatta egy sorban harminc
+kész színminta, legalul pedig egy nagy színmező, amelyben az összes
+árnyalat és világosság megtalálható. A színmezőben kattintva vagy az
+egeret nyomva húzva választasz. Amire kattintasz, az azonnal
 érvényesül a képen, és bekerül a legutóbbi színek közé.
 
 A színt **magáról a képről** is kiveheted: a színmező melletti kis

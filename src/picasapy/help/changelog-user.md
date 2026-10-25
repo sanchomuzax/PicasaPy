@@ -4,6 +4,60 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-25
+
+**Képek megnyitása a fájlkezelőből**
+
+- Képfájllal indítva (a fájlkezelő **Megnyitás ezzel** parancsával vagy a
+  kép nevét megadva) a program a képet rögtön egy egyszerűsített
+  **egyszerűsített nézőben** mutatja, saját eszközsávval. A **Szerkesztés a
+  PicasaPy-ban** gomb indítja a teljes programot. Lásd
+  [Nézegetés](features/nezegetes.md) és [Első lépések](getting-started.md).
+
+**Könyvtár és albumok**
+
+- A saját **gyűjtemények** is jelszóval zárhatók: a fejléc helyi
+  menüjének **Jelszó megadása/módosítása...** tétele már működik. Lásd
+  [A könyvtár](features/konyvtar.md).
+- A **Rejtett mappák** jelszavát ugyanaz az új **Jelszó megadása** ablak
+  kezeli: feloldás a **Megnyitás** gombbal, csere és törlés csak a
+  jelenlegi jelszóval. Egy mappa elrejtése után a program felajánlja,
+  hogy adj meg jelszót.
+- Az eszköztár **+** gombja az **Album tulajdonságai** ablakot nyitja,
+  és **üres** albumot készít, mint az eredeti Picasa.
+- Az **Időrend** az albumokat is kártyaként mutatja, a kártyákon hónap
+  és év áll, és kilépéskor a könyvtárban az utoljára látott mappa vagy
+  album nyílik meg. Lásd [Nézegetés](features/nezegetes.md).
+
+**Címkék és keresés**
+
+- A **Címkék** panel a címkéket gyakoriság, azon belül fordított névsor
+  szerint mutatja, és a címke helyi menüje az eredeti sorrendben
+  kínálja a tételeit. Lásd [Csillagok, feliratok, címkék](features/csillag-felirat-cimke.md).
+- A **Keresés hasonló képekre** az eredeti Picasa módszerével
+  rangsorol, és legfeljebb 1000 találatot ad. Lásd
+  [Keresés és szűrés](features/kereses.md).
+
+**Exportálás és nyomtatás**
+
+- Új: **Eszközök ▸ Kísérleti ▸ Közzététel FTP-n keresztül...** - a
+  weboldal-exportot egy FTP-fiókra tölti fel. Lásd
+  [Exportálás](features/exportalas.md).
+- Az **Exportálás HTML-oldalként** megjegyzi a célmappát és a sablont.
+- A **Nyomtatás** ablakban **Normál** és **Optimalizált** mód
+  választható; az Optimalizált teljes felbontással nyomtat. Lásd
+  [Nyomtatás](features/nyomtatas.md).
+
+**Egyéb**
+
+- A nagy színválasztó (effektek, szöveg, kollázs háttere) az eredeti
+  Picasa elrendezését kapta: öt legutóbbi szín, harminc színminta és egy
+  színmező. Lásd [Szerkesztő](features/szerkeszto.md).
+- Egyetlen kép átnevezésekor a **Fájlok átnevezése** ablak a kép mostani
+  nevével, kijelölve nyílik meg.
+- A videóból mentett képkocka 85-ös JPEG-minőséggel készül, és mentés
+  közben a néző jelzi, épp mit csinál.
+
 ## 2026-10-24
 
 **Időrend és diavetítés**

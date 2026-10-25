@@ -91,7 +91,11 @@ A **Beállítások** fülön:
 A **Háttér beállításai** doboz a **Többszörös exponálás** kivételével
 minden típusnál ott van. Benne:
 
-- **Egyszínű** — színválasztóval,
+- **Egyszínű** - színválasztóval. A szín körére kattintva ugyanaz a
+  nagy színválasztó nyílik meg, mint az effekteknél (öt legutóbbi szín,
+  harminc színminta és a színmező, lásd
+  [Szerkesztő](szerkeszto.md)), csak a színmező árnyalatai kicsit
+  mások. A választott szín ide is bekerül a legutóbbi színek közé.
 - **Kép használata** — a kijelölt képet teszi háttérnek (**A kijelölt
   elemek használata**), vagy a kép helyi menüjének **Beállítás
   háttérként** parancsával.
