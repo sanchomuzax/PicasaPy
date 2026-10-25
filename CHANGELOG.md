@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.238] - 2026-10-25
+
+- Az Általános beállításokban a „Clear cache files” kapcsoló kilépéskor üríti az előnézet-cache-t, ha be van kapcsolva. (#5897).
+
 ## [0.9.237] - 2026-10-25
 
 - A menük pipálható tételein a jelöletlen hely üres, a kijelöltön keret nélküli pipa látszik. (#5885).
