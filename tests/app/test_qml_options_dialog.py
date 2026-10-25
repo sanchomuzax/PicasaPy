@@ -958,9 +958,9 @@ class TestFileTypesTab:
             "optionsFileTypeWebpCheck",
             "optionsFileTypePsdCheck",
             "optionsFileTypeMoviesCheck",
+            "optionsFileTypeQuickTimeCheck",
         ):
             assert _child(window, object_name).property("enabled") is True
-        assert _child(window, "optionsFileTypeQuickTimeCheck").property("enabled") is False
         _kattints(window, qt_app, raw)
 
         assert raw.property("checked") is False

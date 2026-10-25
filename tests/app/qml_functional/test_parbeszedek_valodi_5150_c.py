@@ -15,8 +15,8 @@ Lefedve:
 - Web Albums: a fül egésze tiltott (`enabled: false`), a három jelölő
   (`optionsWebStripedUploadCheck`, `optionsWebKeepJpegQualityCheck`,
   `optionsWebConfirmSyncDisableCheck`) kattintása nem vált.
-- Fájltípusok: a nyolc elérhető jelölő valódi kattintásra vált, és a vezérlő
-  `fileTypeEnabled` állapota is; a QuickTime sor a job-291 szerint szürke.
+- Fájltípusok: a kilenc jelölő (`optionsFileTypeBmpCheck` … `optionsFileTypeQuickTimeCheck`)
+  átvált, és a vezérlő `fileTypeEnabled` állapota is.
 - Nyomtatás: `optionsPrintSizeCombo0` - a gyorsgomb-legördülő valódi kattintással
   új méretet választ, és a nyomtatási beállítás is követi. Az elem ismétlőben
   van, ezért a vizuális fából keressük.
@@ -238,6 +238,7 @@ class TestFajltipusok:
             ("optionsFileTypeWebpCheck", "webp"),
             ("optionsFileTypePsdCheck", "psd"),
             ("optionsFileTypeMoviesCheck", "movies"),
+            ("optionsFileTypeQuickTimeCheck", "quicktime"),
         ],
     )
     def test_a_fajltipus_jelolo_valodi_kattintassal_atvalt_es_a_vezerlo_is(
@@ -257,19 +258,6 @@ class TestFajltipusok:
             f"{nev}: a kattintás nem állította a(z) {csoport} típust"
         )
         assert jelolo.property("checked") is not elotte
-        _zar(qt_app, beallitasok)
-
-    def test_a_quicktime_jelolo_az_eredeti_szerint_szurke(self, parbeszed_app, qt_app):
-        window, controller, _engine = parbeszed_app
-        _elokeszit(window, qt_app, controller)
-        beallitasok = _beallitasok_megnyit(window, qt_app)
-        _fulre_kattint(qt_app, beallitasok, "optionsTabFileTypes", 2)
-        jelolo = _gyerek(beallitasok, "optionsFileTypeQuickTimeCheck")
-
-        assert jelolo.property("enabled") is False
-        assert jelolo.property("checked") is False
-        _klikk_ablakban(qt_app, beallitasok, jelolo)
-        assert jelolo.property("checked") is False
         _zar(qt_app, beallitasok)
 
 
