@@ -4851,6 +4851,16 @@ ApplicationWindow {
         // valódi oka annak, hogy a Beállítások e-mail-módja némának
         // látszott: az egész küldési út néma volt.
         onEmailRequested: window.sendSelectionByEmail()
+        onAddSelectedToScreensaverRequested: window.requestAddToScreensaver()
+        onStarSelectedPhotosRequested: {
+            if (controller)
+                controller.toggleStarMany(window.photoActionRows())
+        }
+        onNewAlbumWithSelectionRequested: {
+            fileOpsDialogs.ensure().openNewAlbumProperties(
+                controller ? controller.currentFolder : "",
+                window.photoActionRows())
+        }
     }
 
     // -- fájlműveletek (#15): kontextusmenü + dialógusok --------------------

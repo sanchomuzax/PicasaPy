@@ -1338,6 +1338,47 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         Visszaadja az új tokent (üres kijelölésnél/hibánál üres stringet)."""
         return self._albumot_keszit(name, self._rows_to_photos(rows))
 
+    @Slot(str, list, str, str, str, bool, str, result=str)
+    def createAlbumWithProperties(
+        self,
+        name: str,
+        rows,
+        date: str,
+        location: str,
+        description: str,
+        use_music: bool,
+        music_file: str,
+    ) -> str:
+        """Album Properties párbeszédből, a kijelölt képek tagságával (#5846).
+
+        A tulajdonságok és a tagság együtt, az érintett fotók mappáinak
+        `.picasa.ini` fájljaiba kerülnek, ugyanazon a kötegelt íróúton, mint
+        a meglévő „Create Album from Selection” művelet.
+        """
+        photos = self._rows_to_photos(rows)
+        if not photos:
+            return ""
+        token = secrets.token_hex(16)
+        clean_name = (name or "").strip() or None
+
+        def mutate(document, photo):
+            document = ensure_album(document, token, clean_name)
+            document = with_album_fields(
+                document,
+                token,
+                name=clean_name,
+                date=date,
+                location=location,
+                description=description,
+                use_music=use_music,
+                music_file=music_file,
+            )
+            return with_album(document, photo.name, token)
+
+        if not self._write_album_batch(photos, mutate):
+            return ""
+        return token
+
     @Slot(str, str, str, str, str, bool, str, result=str)
     def createEmptyAlbum(
         self,

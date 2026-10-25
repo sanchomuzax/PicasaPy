@@ -1496,10 +1496,11 @@ rögzít. Az eredeti gomb engedélyezési feltétele, a tartott/kijelölt képek
 és az albumdarabszám külön-külön hatása **NINCS MEG**.
 
 Nálunk a [TrayBar.qml](../../src/picasapy/app/qml/PicasaPy/TrayBar.qml)
-gombja csak akkor engedélyezett, ha `heldCount > 0` **és** a saját
-albumlista hossza nagyobb nullánál; a menü csak ezeket a saját albumokat
-sorolja. A job-255 állapotában - egy kép, saját album nélkül - emiatt
-hiányzik a gomb, a két különleges cél és a **New Album...** sor.
+gombja most `heldCount > 0` esetén engedélyezett. A saját albumok sorai
+megmaradnak; utánuk a `Screensaver`, `Starred Photos` és `New Album...`
+következik ebben a sorrendben. A #5846 valódi bélyegképekkel futó QML-tesztje
+a három sort, a csillag ini-írását és az új album kijelölt fotóval való
+létrejöttét ellenőrzi.
 
 **Cáfoló kísérlet.** Két csábító következtetést próbáltam megcáfolni.
 (1) A `0x005d3290` hivatkozik a `thumbui/addtobuttcon` sztringre, ezért

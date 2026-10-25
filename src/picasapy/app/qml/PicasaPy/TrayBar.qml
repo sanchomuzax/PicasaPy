@@ -72,6 +72,9 @@ Column {
     // print_controller.py/email_controller.py docstringje).
     signal printRequested()
     signal emailRequested()
+    signal addSelectedToScreensaverRequested()
+    signal starSelectedPhotosRequested()
+    signal newAlbumWithSelectionRequested()
     // #4637: a kimeneti gombsor jobbklikkje a gazda közös gombmenüjét kéri.
     signal configureButtonsContextMenuRequested(var anchorItem, real x, real y)
     // #5008: a rácsból húzott képeket rögzítjük a képtálcán.
@@ -1111,10 +1114,14 @@ Column {
                 // A `!!` a láncolt `&&` esetleges `undefined` eredményét
                 // valódi bool-lá kényszeríti (a `bool`-property-hez az
                 // `undefined` hozzárendelése önmagában is szkripthiba).
-                enabled: !!(trayScratchBack.heldCount > 0
-                         && tray.ctl && tray.ctl.albums
-                         && tray.ctl.albums.length > 0)
-                onClicked: trayAddToMenu.popup()
+                // A kijelölt képek a tálcára is tükröződnek, ezért a
+                // tartott elem továbbra is szükséges; saját album nélkül
+                // viszont a három különleges cél is használható.
+                enabled: !!(trayScratchBack.heldCount > 0 && tray.ctl)
+                // #5846: az eredeti `addtobuttcon` felfelé nyíló menü
+                // (`dropup_icon`): a gomb fölött nyílik, nem az egérnél.
+                onClicked: trayAddToMenu.popup(
+                    trayAddToBtn, 0, -trayAddToMenu.implicitHeight)
                 ToolTip.text: qsTr("Add selected items to an Album")
                 ToolTip.visible: trayAddToBtn.hovered
                 ToolTip.delay: Theme.tooltipDelay
@@ -1138,6 +1145,21 @@ Column {
                     text: modelData.name
                     onTriggered: tray.ctl.addHeldToAlbum(modelData.token)
                 }
+            }
+            MenuItem {
+                objectName: "trayAddToScreensaverItem"
+                text: qsTr("Screensaver", "stringres:CThumbDB::ScreensaverAlbumName")
+                onTriggered: tray.addSelectedToScreensaverRequested()
+            }
+            MenuItem {
+                objectName: "trayAddToStarredPhotosItem"
+                text: qsTr("Starred Photos", "stringres:CThumbDB::starredphotos")
+                onTriggered: tray.starSelectedPhotosRequested()
+            }
+            MenuItem {
+                objectName: "trayAddToNewAlbumItem"
+                text: qsTr("New Album...", "stringres:il_NewAlbumName")
+                onTriggered: tray.newAlbumWithSelectionRequested()
             }
         }
 
