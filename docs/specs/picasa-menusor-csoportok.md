@@ -110,6 +110,63 @@ pontosan az, amit a tulajdonos képernyőmentése mutat.
 `Paste Text`), a `Select &Starred`-nek pedig **nincs gyorsbillentyűje** —
 ezek nem elírások, hanem a mért állapot.
 
+#### A `Copy Text` és `Paste Text` engedélyezése (#5877)
+
+A két parancs frissítését a `CThumbUI` `0x0056e1c0` címen kezdődő
+menüfrissítője végzi; a Szerkesztés-menü ága a kapcsolótábla 1. esete,
+belépési címe `0x0056e742`. Az ág **két UI-állapot szerint eltérő
+feltételrendszert** használ. A disassembly nem nevezi meg a `this` mezők
+szemantikáját, ezért alább a bináris mezőeltolásai szerepelnek.
+
+Jelölések az ágban:
+
+- `P`: a `dword[0x00d67914]` nem nulla, az `editpanel/preview` objektum
+  megtalálható, és az objektum `+0x20c` bájtja nulla
+  (`0x0056e240`–`0x0056e265`).
+- `D`: a `this+0x3094` vagy a `this+0x30a0` értéke nagyobb nullánál
+  (`0x0056e30b`–`0x0056e322`).
+- `F`: a `this+0x34a8` értéke. A `F & 0x4000` bitet a
+  `0x0056e2e8`–`0x0056e2ef`, a `(F & 0x6) != 0` őrfeltételt a
+  `0x0056e2f4`–`0x0056e306` vizsgálja.
+- `T`: van kijelölt elem (`this+0xe64 != -1`), és a
+  `0x006b1e80` segédfüggvény nem üres szöveget olvas ki az első kijelölt
+  elemről (`0x0056e801`–`0x0056e873`, a kijelölési vektor előállítása:
+  `0x0056e9cd`–`0x0056ea0a`). Több kijelölésnél ez az ág az első elem
+  szövegét ellenőrzi.
+- `C`: a `this+0xcc8` szövegpuffer nem üres: a mutató nem null, a
+  `(dword[puffer] & 0xffffff00) != 0`, és a `byte[puffer+4] != 0`
+  (`0x0056e931`–`0x0056e95b`, illetve `0x0056eb40`–`0x0056eb80`).
+- `B`: a `this+0x34a4` értéke nulla.
+
+Az ágak explicit állapotírásainál a kiszámított feltétel igazságakor az
+átadott argumentum `0`, hamisságakor `1`. A binárislelet nem azonosítja
+megbízhatóan a fogadó API mezőjének nevét/polaritását, ezért a táblázat a
+nyers argumentumot rögzíti, nem nevezi önmagában „engedélyezettnek” vagy
+„szürkének”.
+
+| Útvonal | `Copy Text` állapotargumentuma | `Paste Text` állapotargumentuma |
+|---|---|---|
+| `P` igaz, `D` igaz | `1` (`0x0056e7b4`–`0x0056e7e5`) | `1` (`0x0056e7b4`–`0x0056e7e5`) |
+| `P` igaz, `D` hamis | `0`, ha `T && B`; különben `1` (`0x0056e801`–`0x0056e873`) | ha `C` igaz: `0`, ha `B`, különben `1`; ha `C` hamis, ez az ág nem ír állapotot (`0x0056e92b`–`0x0056e95b`) |
+| `P` hamis, `F & 0x4000` nem nulla | `1` (`0x0056e9c0`, `0x0056eba2`–`0x0056ebbe`) | `1` (`0x0056e9c0`, `0x0056eba2`–`0x0056ebbe`) |
+| `P` hamis, `F & 0x4000` nulla | `1`, ha `(F & 0x6) != 0 && T && B`; különben `0` (`0x0056ea45`–`0x0056ea72`) | `1`, ha `(F & 0x6) != 0 && B && C`; különben `0` (`0x0056eb40`–`0x0056eb80`) |
+
+**Mérés (`job-277`, a jegyben közölt lelet):** könyvtárnézetben egy
+felirat nélküli kijelölt képnél mindkét tétel szürke, miközben
+`Copy All Effects` és `Cut`/`Copy` engedélyezett. A leírás nem rögzíti a
+`P`, `D`, `F`, `B` és `C` nyers állapotát, így ebből a mérésből a konkrét
+bináris útvonal és a callback-argumentum polaritása nem ellenőrizhető. A
+`P` igaz, üres vágólapos Paste-Text ág pedig nem ír állapotot, tehát ott a
+korábbi/alapállapot marad érvényben.
+
+**Bizonyítottság: feltételes.** Az UpdateUI ág utasításszintű olvasata
+megadja a fenti nyers feltételeket; a külön parancskezelők (`0x005fecd0`,
+`0x005fefc0`) ettől függetlenül igazolják, hogy a `Copy Text` a kijelölt
+elem szövegét olvassa, a `Paste Text` pedig a `this+0xcc8` puffert használja.
+Ez a job-277 megfigyelésével összhangban van. A callback mezőinek teljes
+UI-szemantikája, az állapotargumentum UI-polaritása és a pozitív ág közvetlen,
+kattintásos mérése nyitott marad.
+
 #### ⛔ Visszavonás/Ismétlés a Szerkesztés menüben NINCS — és nem is lehet
 
 A #1774 köre azt gyanította, hogy a menüépítő **feltételesen** teszi be a
