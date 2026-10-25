@@ -33,18 +33,26 @@ Window {
     //: a célmappa-módok rádiófeliratai olvashatatlanok (mint a #3593-ban).
     palette {
         window: Theme.canvasBg
-        windowText: Theme.ink
+        active.windowText: Theme.ink
+        inactive.windowText: Theme.ink
         base: Theme.controlBase
         alternateBase: Theme.panelBg
-        text: Theme.ink
+        active.text: Theme.ink
+        inactive.text: Theme.ink
         button: Theme.buttonBg
-        buttonText: Theme.ink
+        active.buttonText: Theme.ink
+        inactive.buttonText: Theme.ink
         highlight: Theme.selectionBlue
         highlightedText: Theme.panelSelectionText
         placeholderText: Theme.placeholderText
         mid: Theme.chromeBorder
         light: Theme.shadeLight
         dark: Theme.shadeDark
+        // #5874: ez az önálló ablak saját palettát használ; az aktív/inaktív
+        // tinták nem írják felül a disabled csoportot.
+        disabled.windowText: Theme.textGray
+        disabled.text: Theme.textGray
+        disabled.buttonText: Theme.textGray
     }
 
     // a forrás/cél FolderDialog `selectedFolder.toString()`-ja (file:// URL

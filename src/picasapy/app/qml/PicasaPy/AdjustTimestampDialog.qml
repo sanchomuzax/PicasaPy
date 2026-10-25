@@ -180,7 +180,6 @@ Dialog {
                         Layout.fillWidth: true
                         text: root.currentDateTime.split(" ")[0]
                         enabled: root.jelenlegiDatumSzerkesztheto
-                        opacity: 0.55
                     }
 
                     SpinBox {
@@ -190,7 +189,6 @@ Dialog {
                         stepSize: 60
                         editable: false
                         enabled: root.jelenlegiDatumSzerkesztheto
-                        opacity: 0.55
                         value: root.aktualisIdoMasodpercekben()
                         implicitWidth: 126
                         validator: RegularExpressionValidator {
