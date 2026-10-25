@@ -1138,12 +1138,22 @@ Column {
         PicasaMenu {
             id: trayAddToMenu
             objectName: "trayAddToMenu"
-            Repeater {
+            // #5846, job-259: a sorrend Screensaver, Starred Photos, a saját
+            // albumok, végül New Album..., elválasztó nélkül. A saját
+            // albumok ezért a két különleges sor UTÁN kerülnek a menübe.
+            Instantiator {
                 model: tray.ctl ? tray.ctl.albums : []
                 delegate: MenuItem {
                     required property var modelData
+                    objectName: "trayAddToAlbumItem"
                     text: modelData.name
                     onTriggered: tray.ctl.addHeldToAlbum(modelData.token)
+                }
+                onObjectAdded: function (index, object) {
+                    trayAddToMenu.insertItem(2 + index, object)
+                }
+                onObjectRemoved: function (index, object) {
+                    trayAddToMenu.removeItem(object)
                 }
             }
             MenuItem {

@@ -1496,9 +1496,9 @@ rögzít. Az eredeti gomb engedélyezési feltétele, a tartott/kijelölt képek
 és az albumdarabszám külön-külön hatása **NINCS MEG**.
 
 Nálunk a [TrayBar.qml](../../src/picasapy/app/qml/PicasaPy/TrayBar.qml)
-gombja most `heldCount > 0` esetén engedélyezett. A saját albumok sorai
-megmaradnak; utánuk a `Screensaver`, `Starred Photos` és `New Album...`
-következik ebben a sorrendben. A #5846 valódi bélyegképekkel futó QML-tesztje
+gombja most `heldCount > 0` esetén engedélyezett. A sorrend a job-259
+mérése szerint `Screensaver`, `Starred Photos`, a saját albumok, végül
+`New Album...`, elválasztó nélkül. A #5846 valódi bélyegképekkel futó QML-tesztje
 a három sort, a csillag ini-írását és az új album kijelölt fotóval való
 létrejöttét ellenőrzi.
 

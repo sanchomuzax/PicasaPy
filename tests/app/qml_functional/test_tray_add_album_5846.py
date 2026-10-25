@@ -178,3 +178,60 @@ def test_new_album_az_album_properties_parbeszedbol_a_kijelolt_kepet_is_felveszi
     if hasattr(model, "toVariant"):
         model = model.toVariant()
     assert any(row["token"] == album["token"] and row["count"] == 1 for row in model)
+
+
+_SAJAT_TOKEN = "58465846584658465846584658465846"
+
+
+def _kepek_sajat_albummal(mappa: Path) -> None:
+    _kepeket_keszit(mappa)
+    (mappa / ".picasa.ini").write_text(
+        f"[.album:{_SAJAT_TOKEN}]\n"
+        "name=Untitled\n"
+        f"token={_SAJAT_TOKEN}\n"
+        "[b.jpg]\n"
+        f"albums={_SAJAT_TOKEN}\n",
+        encoding="utf-8",
+    )
+
+
+@pytest.fixture
+def tray_app_sajat_albummal(qt_app, tmp_path, request):
+    yield from _build_qml_app(
+        qt_app,
+        tmp_path,
+        kepeket_keszit=_kepek_sajat_albummal,
+        belyegkep_meret=256,
+        valodi_belyegkep=True,
+        keep_modul=request.module,
+    )
+
+
+def test_sajat_album_a_ket_kulonleges_sor_es_a_new_album_kozott_all(
+    tray_app_sajat_albummal, qt_app
+):
+    """job-259: Screensaver, Starred Photos, Untitled, New Album..."""
+    window, controller, _engine = tray_app_sajat_albummal
+    assert _varj(qt_app, lambda: len(controller.albums) == 1), (
+        "a saját album nem töltődött be"
+    )
+    _kijelol(window, qt_app, controller)
+    menu = _menu_nyitasa(window, qt_app)
+    sajat = _elem(window, "trayAddToAlbumItem", QQuickItem)
+    sorok = [
+        _elem(window, "trayAddToScreensaverItem", QQuickItem),
+        _elem(window, "trayAddToStarredPhotosItem", QQuickItem),
+        sajat,
+        _elem(window, "trayAddToNewAlbumItem", QQuickItem),
+    ]
+    assert [str(sor.property("text")) for sor in sorok] == [
+        "Screensaver",
+        "Starred Photos",
+        "Untitled",
+        "New Album...",
+    ]
+    y = [sor.mapToScene(QPointF(0, 0)).y() for sor in sorok]
+    assert y == sorted(y) and len(set(y)) == 4, (
+        f"a menüsorok felületi sorrendje eltér a job-259-étől: {y}"
+    )
+    assert menu.property("opened") is True
