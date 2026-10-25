@@ -37,6 +37,7 @@ from picasapy.ini import (
     remove_all_face_data,
     reset_all_faces,
     update_document,
+    with_backuphash,
     with_face,
     with_reassigned_face,
     without_face,
@@ -254,10 +255,12 @@ class FacesHelper(QObject):
 
     # Szándékosan NEM `@Slot`: ezt csak a `FaceScanController` hívja Pythonból.
     def removeAllFaces(self, image_path: str) -> bool:  # noqa: N802 — QML-slot-stílus
-        """A fotó összes `faces=` téglalapjának törlése, a névjegyzéké nélkül."""
+        """A fotó arc-téglalapjainak törlése és backuphash írása (#5848)."""
         return self._mutate(
             image_path,
-            lambda document, photo_name, _rect: without_faces(document, photo_name),
+            lambda document, photo_name, _rect: with_backuphash(
+                without_faces(document, photo_name), photo_name
+            ),
         )
 
     def removeAllFaceData(self, image_paths) -> bool:  # noqa: N802 — belső API

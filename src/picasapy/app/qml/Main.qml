@@ -2475,7 +2475,7 @@ ApplicationWindow {
         // #465 3. pont: „Undo All Edits" — megerősítéssel, a kijelölt
         // kép(ek) TELJES szerkesztési lánca törlődik (`clearAllEffectsMany`,
         // ugyanaz a kötegelt undo-verem mint a `applyEffectMany`-nál).
-        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openFor(
+        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openForLibrary(
             window.photoActionRows())
         // #3555: nyelvváltás — a menütétel csak jelez (a `ConfirmDialog` nem
         // fér el a MenuBar gyermekeként), a kérdés és a `setLanguage`-hívás
@@ -2485,9 +2485,8 @@ ApplicationWindow {
         }
     }
 
-    // #465 3. pont: az általános ConfirmDialog mintáját követi (ld.
-    // FileOpsDialogs.qml deleteConfirmDialog) — a döntés-kulcs
-    // "undoAllEdits" a „Do not ask again" jelölő eltárolásához.
+    // #5836: a mért eredeti cím és a két gomb kell, ezért ez nem a közös
+    // pipás/Mégse-vel működő ConfirmDialog-komponens.
     // #1404: a geocímke-törlés MEGERŐSÍTÉSE. Az eredeti `ClearGeoTag::warn`
     // szövegével, szó szerint — nem átfogalmazva.
     //
@@ -2735,23 +2734,38 @@ ApplicationWindow {
         objectName: "undoAllEditsDialogLoader"
         anchors.fill: parent
         sourceComponent: Component {
-            ConfirmDialog {
+            Dialog {
+                id: undoAllEditsConfirmDialog
                 objectName: "undoAllEditsDialog"
-                namePrefix: "undoAllEdits"
-                title: qsTr("Undo All Edits")
+                //: Az eredeti cím: `ytApp::ConfirmTitle`.
+                title: qsTr("Confirm")
+                modal: true
+                focus: true
+                anchors.centerIn: parent ? Overlay.overlay : undefined
                 property var rows: []
+                property string message: ""
                 // #465: az eredeti Picasa KÉT külön szöveget használ egy, illetve
                 // több képre (IDS_CONFIRMREVERT / IDS_CONFIRMREVERT_MULTIPLE) — a
                 // többesszámúban a „MINDEGYIK" nagybetűs. Ha a kijelölésben van
                 // vörösszem-javítás, az eredeti KÜLÖN is figyelmeztet rá
                 // (IDS_CONFIRM_REDEYE_REVERT): az régió-adat, és a törléssel
                 // véglegesen elvész.
+                // Az egyparaméteres openFor szerződését megtartjuk: a néző és
+                // a #3573 régi őre is ezt hívja, a könyvtári menük külön kérik
+                // a mért többes szöveget.
                 function openFor(rowList) {
+                    openWithText(rowList, false)
+                }
+                function openForLibrary(rowList) {
+                    openWithText(rowList, true)
+                }
+                function openWithText(rowList, useMultipleText) {
                     if (rowList.length === 0) return
                     rows = rowList
                     //: `IDS_CONFIRMREVERT` / `IDS_CONFIRMREVERT_MULTIPLE` —
                     //: az eredeti szövege, a záró kérdéssel együtt (#3573)
-                    var text = rowList.length === 1
+                    var singlePicture = rowList.length === 1 && !useMultipleText
+                    var text = singlePicture
                         ? qsTr("This will remove all edits you have made to the"
                                + " current picture.  Do you want to continue?")
                         : qsTr("This will remove all edits you have made to ALL of"
@@ -2768,9 +2782,45 @@ ApplicationWindow {
                                               + "Are you sure you want to remove the"
                                               + " fixes forever?")
                                               .arg(redeyeNames.join(", "))
-                    ask("undoAllEdits", text)
+                    // A job-254 útján a könyvtárnézet egyetlen kijelölése is
+                    // ezt a többes szöveget és minden alkalommal megerősítést kér.
+                    message = text
+                    open()
                 }
-                onConfirmed: controller.clearAllEffectsMany(rows)
+                onAccepted: controller.clearAllEffectsMany(rows)
+
+                ColumnLayout {
+                    spacing: 12
+
+                    Text {
+                        objectName: "undoAllEditsMessageLabel"
+                        Layout.preferredWidth: 320
+                        text: undoAllEditsConfirmDialog.message
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.ink
+                    }
+
+                    RowLayout {
+                        Layout.alignment: Qt.AlignRight
+                        spacing: 8
+
+                        PicasaButton {
+                            objectName: "undoAllEditsYesButton"
+                            //: `IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON`.
+                            text: qsTr("Remove Edits")
+                            accent: Theme.picasaGreen
+                            focus: true
+                            onClicked: undoAllEditsConfirmDialog.accept()
+                        }
+                        PicasaButton {
+                            objectName: "undoAllEditsNoButton"
+                            //: Az eredeti `confirm:confirm/no.title` felirata.
+                            text: qsTr("No")
+                            onClicked: undoAllEditsConfirmDialog.reject()
+                        }
+                    }
+                }
             }
         }
     }
@@ -4851,6 +4901,16 @@ ApplicationWindow {
         // valódi oka annak, hogy a Beállítások e-mail-módja némának
         // látszott: az egész küldési út néma volt.
         onEmailRequested: window.sendSelectionByEmail()
+        onAddSelectedToScreensaverRequested: window.requestAddToScreensaver()
+        onStarSelectedPhotosRequested: {
+            if (controller)
+                controller.toggleStarMany(window.photoActionRows())
+        }
+        onNewAlbumWithSelectionRequested: {
+            fileOpsDialogs.ensure().openNewAlbumProperties(
+                controller ? controller.currentFolder : "",
+                window.photoActionRows())
+        }
     }
 
     // -- fájlműveletek (#15): kontextusmenü + dialógusok --------------------
@@ -4896,7 +4956,8 @@ ApplicationWindow {
             ? controller.hasSavedBackup(window.selectedRows()) : false
         onSaveRequested: saveDialogs.ensure().openSave(window.selectedRows())
         onRevertRequested: saveDialogs.ensure().openRevert(window.selectedRows())
-        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openFor(window.selectedRows())
+        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openForLibrary(
+            window.selectedRows())
         onResetFacesRequested: resetFacesForPaths(window.selectedPaths())
         onHideToggleRequested: window.toggleHiddenSelection()
         onMoveRequested: fileOpsDialogs.ensure().openMove(window.selectedPaths())

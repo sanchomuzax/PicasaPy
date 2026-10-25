@@ -7,6 +7,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.225] - 2026-10-25
+
+- A Kép ▸ Reset Faces az arcadatok törlésekor a kép szakaszába `backuphash`-t is ír (#5848).
+
+## [0.9.224] - 2026-10-25
+
+- A tálca album menüjéből kijelölt képek a képernyővédőbe, a Csillagozott képek közé vagy egy új albumba adhatók (#5846).
+
+## [0.9.223] - 2026-10-25
+
+- A Mentés az eredeti-mappa ini-jében őrzi a szerkesztéseket, az aktuális ini-be pedig backuphash-t ír; az Utolsó mentés visszavonása innen tölti vissza a láncot (#5833).
+
+## [0.9.222] - 2026-10-25
+
+- Az Undo All Edits megerősítője és az ini-ben tárolt szerkesztési lánc visszavonása az eredeti Picasa viselkedését követi (#5836).
+- A backuphash QML-teszt a felirat lépésnél külön ellenőrzi a fájlt és az ini-t, és megvárja a mező fókuszát (#5856).
+
 ## [0.9.221] - 2026-10-25
 
 - A törlés-megerősítő jelölője az eredeti „Don't ask again, always remove” feliratot mutatja, és megnyitáskor a Mégse kapja a fókuszt (#5827).

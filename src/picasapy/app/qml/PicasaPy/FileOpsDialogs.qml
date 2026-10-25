@@ -14,6 +14,10 @@ Item {
 
     // a főablak (kijelölés-ürítés a műveletek után)
     required property var appWindow
+    // #5846: a tálca új album sora ugyanazt a párbeszédet használja, mint
+    // az eszköztár, de jóváhagyáskor a pillanatfelvételnyi kijelölést is
+    // tagságként menti.
+    property var newAlbumPhotoRows: []
 
     function openRename(row) {
         renameDialog.openFor(row)
@@ -65,8 +69,9 @@ Item {
     // #5812: az eszköztár új album gombja az Album Properties párbeszédet
     // nyitja. Jóváhagyáskor a controller az albumdefiníciót az aktuális
     // mappa ini-jébe írja, képtagság létrehozása nélkül.
-    function openNewAlbumProperties(folderPath) {
+    function openNewAlbumProperties(folderPath, rows) {
         var dialog = toolbarAlbumPropertiesDialog
+        dialogs.newAlbumPhotoRows = rows && rows.length > 0 ? rows.slice() : []
         dialog.albumFolderPath = folderPath || ""
         dialog.albumToken = ""
         dialog.albumName = dialog.untitledFolderName
@@ -90,10 +95,18 @@ Item {
         onNewAlbumPropertiesAccepted: function(folderPath, name, isoDate,
                                                 location, description,
                                                 useMusic, musicFile) {
-            if (controller && controller.createEmptyAlbum)
+            if (!controller) return
+            var rows = dialogs.newAlbumPhotoRows
+            dialogs.newAlbumPhotoRows = []
+            if (rows.length > 0 && controller.createAlbumWithProperties) {
+                controller.createAlbumWithProperties(
+                    name, rows, isoDate, location, description,
+                    useMusic, musicFile)
+            } else if (controller.createEmptyAlbum) {
                 controller.createEmptyAlbum(
                     name, folderPath, isoDate, location, description,
                     useMusic, musicFile)
+            }
         }
     }
 
