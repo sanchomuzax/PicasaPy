@@ -1793,6 +1793,17 @@ kell elolvasni, nem a kulcsszót keresni.)* A mi oldalunkon
    `redeye` · `retouch` · `picnik` (`0x5ef6e1`–`0x5ef877`, a `filters=`
    láncból), majd az `editpanel/preview` frissítése.
 
+**Futásidejű mérés (job-254, #5836):** a könyvtárnézet Kép menüjéből,
+EGY kijelölt képpel indítva az eredeti a **többes** szöveget mutatja
+(„This will remove all edits you have made to ALL of the selected
+pictures.  Do you want to continue?”), az ablakcím **„Confirm”**, a
+gombok **„Remove Edits”** (alapértelmezett) és **„No”**, „Do not ask
+again” jelölő nincs. A könyvtárnézetből tehát egy képnél sem a 2. pont
+egyes számú szövege jön; a nézőből indított ágat nem mértük, arra a 2. pont
+statikus olvasata marad érvényes. Jóváhagyás után a kép
+szakaszából a `filters=` törlődik, és `backuphash=` kerül bele (job-254:
+`backuphash=37968`, más kulcs nincs).
+
 *(Megkülönböztetendő a fájlszintű Revert-től: a
 `CThumbUI::FileRevert`-család (`0x0053b2e0`, „Revert to original version
 of file?") az eredeti fájl visszaállítása, az Undo All Edits pedig az ini
