@@ -455,10 +455,9 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
     def clear_cache(self) -> int:
         """A bélyegkép-tár ürítése lemezen ÉS memóriában (#598).
 
-        A memóriabeli rekeszeket is ki KELL üríteni: a lemezes fájl törlése
-        önmagában nem elég, mert a szűrt bélyegképek memo-rekesze és a
-        lánc-gyorstár ugyanazokat a képpontokat adná vissza — a felhasználó
-        pedig nem látná, hogy történt valami."""
+        A memóriabeli rekeszeket és a lánc-gyorstárat is törli. A
+        `disposepreviews` kilépéskori szabályánál is ezt a meglévő utat
+        használjuk (#5897)."""
         freed = self._cache.clear()
         self._memo.clear()
         with self._ops_lock:

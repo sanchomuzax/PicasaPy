@@ -1175,10 +1175,8 @@ class TestFaceDetectionOption:
             # másodpéldány-észlelés ÉLŐ lett (ld.
             # `TestGeneralTabAutoExclude`). Vezérlő NÉLKÜL viszont továbbra
             # is tiltott, ezt ott állítjuk.
-            # #598: az `optionsClearCacheButton` is KIKERÜLT — a
-            # bélyegkép-gyorsítótár kézi ürítése ÉLŐ lett
-            # (`controller.clearThumbnailCache`), az őre a
-            # `test_belyegkep_szint_598.py`.
+            # #5897: a cache-takarítás kapcsolója ÉLŐ, állapot- és
+            # kilépési útját a `test_cache_disposal_5897.py` fedi.
             # #3539: az `optionsSkipRemoveConfirmCheck` KIKERÜLT innen — az
             # albumból eltávolítás megerősítése ÉLŐ lett, ld.
             # `TestGeneralTabLiveRemoveFromAlbumConfirmSuppression`.

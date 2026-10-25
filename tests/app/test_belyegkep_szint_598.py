@@ -127,17 +127,12 @@ class TestAFelulet:
         #: az induló fokozat is, különben a rács a felső szintről indulna
         assert "controller.setThumbCellSize(window.thumbSize)" in _MAIN
 
-    def test_a_gyorsitotar_urito_gomb_ELO(self):
-        kezd = _FUL.index('objectName: "optionsClearCacheButton"')
-        blokk = _FUL[kezd : kezd + 500]
-        assert "enabled: false" not in blokk
-        assert "clearCacheConfirm.ask" in blokk
-
-    def test_az_urites_MEGERŐSITEST_ker(self):
-        """A felirat hármas pontja azt ígéri, hogy kérdez."""
-        assert 'text: qsTr("Clear Cache...")' in _FUL
-        assert "ConfirmDialog {" in _FUL
-        assert "controller.clearThumbnailCache()" in _FUL
+    def test_a_cache_kapcsolo_kilepeskor_uritesre_kotott(self):
+        kezd = _FUL.index('objectName: "optionsClearCacheFilesCheck"')
+        blokk = _FUL[kezd : kezd + 800]
+        assert 'text: qsTr("Clear cache files")' in blokk
+        assert "controller.disposePreviewsOnExit" in blokk
+        assert "controller.setDisposePreviewsOnExit(checked)" in blokk
 
     def test_a_komment_sem_hazudik_a_hianyzo_funkciorol(self):
         """A fájl feje korábban a gyorsítótár-törlés HIÁNYÁT sorolta fel."""

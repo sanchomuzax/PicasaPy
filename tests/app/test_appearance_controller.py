@@ -8,7 +8,11 @@ Picasa-paritás szerint a világos az igazi alapállapot.
 import pytest
 from PySide6.QtCore import QSettings
 
-from picasapy.app.appearance_controller import DARK_THEME_KEY, coerce_dark_flag
+from picasapy.app.appearance_controller import (
+    DARK_THEME_KEY,
+    DISPOSE_PREVIEWS_ON_EXIT_KEY,
+    coerce_dark_flag,
+)
 
 
 class TestCoerceDarkFlag:
@@ -113,6 +117,21 @@ class TestAppearanceMixin:
         assert controller.uiTransitionsEnabled is True
         assert controller.showTooltipsEnabled is True
         assert controller.singleClickExitEnabled is False
+        assert controller.disposePreviewsOnExit is False
+
+    def test_dispose_previews_setting_is_saved_and_restored(
+        self, qt_app, controller
+    ):
+        controller.setDisposePreviewsOnExit(True)
+        assert controller.disposePreviewsOnExit is True
+        assert controller._get_settings().value(DISPOSE_PREVIEWS_ON_EXIT_KEY) == "true"
+        settings_path = controller._get_settings().fileName()
+        controller._get_settings().sync()
+
+        restored = type(controller)(
+            QSettings(settings_path, QSettings.Format.IniFormat)
+        )
+        assert restored.disposePreviewsOnExit is True
 
     def test_general_ui_settings_are_saved_and_restored(
         self, qt_app, controller
