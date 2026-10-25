@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.233] - 2026-10-25
+
+- A Kép és a Mappa menü Unhide tétele csak rejtett kép vagy mappa esetén aktív (#5882).
+
 ## [0.9.232] - 2026-10-25
 
 - Könyvtárnézetben a Show Edit Controls szürke és pipa nélküli, a szerkesztőnézetben pedig a bal fiók állapotát követi (#5878).
