@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.233] - 2026-10-25
+
+- A Kép és a Mappa menü Unhide tétele csak rejtett kép vagy mappa esetén aktív (#5882).
+
+## [0.9.232] - 2026-10-25
+
+- Könyvtárnézetben a Show Edit Controls szürke és pipa nélküli, a szerkesztőnézetben pedig a bal fiók állapotát követi (#5878).
+
+## [0.9.231] - 2026-10-25
+
+- A fájlátnevező párbeszéd Rename gombja változatlan vagy üres névnél letiltva marad, üres mezőnél pedig eltűnik az Example sor (#5870).
+
 ## [0.9.230] - 2026-10-25
 
 - A dátummódosító ablak a jelenlegi fotódátumot külön, letiltott dátum- és időmezőben mutatja (#5869).

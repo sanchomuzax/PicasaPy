@@ -88,7 +88,9 @@ def test_ctrl9_toggles_editor_drawer_and_is_inactive_in_library(
     assert controller.editorControlsVisible is True, (
         "a könyvtárnézeti Ctrl+9 megváltoztatta a szerkesztőfiók állapotát"
     )
-    assert menupipa.property("checked") is True
+    # #5878: a megőrzött fiókállapot csak a szerkesztőnézetben látszik a menüben.
+    assert menupipa.property("enabled") is False
+    assert menupipa.property("checked") is False
     assert keresomezo.property("activeFocus") is True, (
         "a könyvtárnézeti Ctrl+9 elvette a fókuszt a keresőmezőtől"
     )

@@ -234,6 +234,8 @@ MenuBar {
     }
     // van-e fotó-művelet célpontja: a rács kijelölése vagy a néző aktív képe
     property bool photoActionsEnabled: false
+    // #5882: a Kép ▸ Unhide csak rejtett képet tartalmazó célkijelölésnél él.
+    property bool hasHiddenPhotoSelection: false
     // A könyvtárhoz kötött műveletek ne váljanak aktívvá a szerkesztőnézetben.
     property bool libraryPhotoActionsEnabled: false
     //: A TextInput/TextEdit aktív fókusza esetén a billentyű a mezőé.
@@ -430,6 +432,9 @@ MenuBar {
     //: #3460: a megnyitott mappa — üres, ha nincs (a „Leírás szerkesztése…"
     //: csak mappára vonatkozik)
     property string currentFolder: ""
+    // #5882: a mappa Unhide-állapotát a menü megnyitásakor frissítjük,
+    // mert az adatbázis-lekérdezésnek nincs QML-értesítő jele.
+    property bool folderUnhideEnabled: false
     // #4631: a mappaparancs csak mappanézetben aktív. A controller
     // album- és személynézetben is megőrzi az előző mappát, ezért ezek
     // kizárása a Mappa menütétel és a Ctrl+Enter közös kapuja.
@@ -1125,20 +1130,25 @@ MenuBar {
             }
         }
         MenuSeparator {}
-        // #4336: ugyanaz a tartós állapot vezérli, mint a PhotoViewer bal fiókját.
+        // #5878: a Picasa csak a szerkesztőnézetben engedte ezt a tételt;
+        // könyvtárnézetben a tartósan nyitott fiók se mutasson pipát.
+        // #4336: a szerkesztőnézet pipája a PhotoViewer tartós állapotát követi.
         PicasaMenuItem {
             objectName: "menuViewEditControls"
             text: qsTr("Show Edit Controls")
             placeholder: false
             checkable: true
-            checked: (bar.ctl && bar.ctl.editorControlsVisible !== undefined)
-                ? bar.ctl.editorControlsVisible : true
+            enabled: bar.editorActive
+            checked: bar.editorActive
+                && ((bar.ctl && bar.ctl.editorControlsVisible !== undefined)
+                    ? bar.ctl.editorControlsVisible : true)
             onTriggered: {
                 if (bar.ctl && bar.ctl.setEditorControlsVisible !== undefined)
                     bar.ctl.setEditorControlsVisible(!bar.ctl.editorControlsVisible)
                 checked = Qt.binding(function () {
-                    return (bar.ctl && bar.ctl.editorControlsVisible !== undefined)
-                        ? bar.ctl.editorControlsVisible : true
+                    return bar.editorActive
+                        && ((bar.ctl && bar.ctl.editorControlsVisible !== undefined)
+                            ? bar.ctl.editorControlsVisible : true)
                 })
             }
         }
@@ -1895,6 +1905,12 @@ MenuBar {
     PicasaMenu {
         id: menuFolder
         title: bar.currentAlbumToken !== "" ? qsTr("&Album") : qsTr("F&older")
+        onAboutToShow: {
+            bar.folderUnhideEnabled = bar.folderLocateEnabled
+                && bar.ctl
+                && bar.ctl.isFolderHidden !== undefined
+                && bar.ctl.isFolderHidden(bar.currentFolder)
+        }
         MenuItem {
             objectName: "menuFolderEditDescription"
             text: bar.currentAlbumToken !== ""
@@ -2029,14 +2045,11 @@ MenuBar {
             onTriggered: bar.setCurrentFolderHidden(true)
         }
         // #4416: a Rejtett mappák gyűjteményében kijelölt mappát hozza
-        // vissza; állapotellenőrzés miatt egy látható mappa nem rejtődik el.
+        // vissza. A #5882 a valódi rejtett állapothoz köti az engedélyezést.
         MenuItem {
             objectName: "menuFolderShow"
-            //: ⚠️ #2921: EZ a MAPPA-menü tétele, és rá NINCS mért hivatalos
-            //: szöveg — a mért `AlbumPhoto::ID_PICTURE_UNHIDE` a KÉP-menüé.
-            //: Ezért marad „Show”, nem igazítjuk „&Unhide”-ra.
-            text: qsTr("Show")
-            enabled: bar.folderLocateEnabled
+            text: qsTr("&Unhide")
+            enabled: bar.folderLocateEnabled && bar.folderUnhideEnabled
             onTriggered: bar.setCurrentFolderHidden(false)
         }
         MenuSeparator {}
@@ -2230,7 +2243,7 @@ MenuBar {
         MenuItem {
             objectName: "menuPictureUnhide"
             text: qsTr("&Unhide")
-            enabled: bar.photoActionsEnabled
+            enabled: bar.photoActionsEnabled && bar.hasHiddenPhotoSelection
             onTriggered: bar.unhideRequested()
         }
         // #1774 (mérve): a mentések szerint itt csoporthatár van.
