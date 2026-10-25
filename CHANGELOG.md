@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.234] - 2026-10-25
+
+- A letiltott gombok és mezők felirata témához igazodó szürke árnyalatot kap (#5874).
+- A képfelirat mentése Windowson átmeneti ini-zárolásnál is beírja a backuphash-t (#5900).
+
 ## [0.9.233] - 2026-10-25
 
 - A Kép és a Mappa menü Unhide tétele csak rejtett kép vagy mappa esetén aktív (#5882).
