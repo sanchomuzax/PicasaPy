@@ -354,6 +354,82 @@ Fejlesztés: **#3539**.
 sztringekkel). Hogy a három hívó melyik menüműveletnél melyik fajtát adja,
 **nincs** végigkövetve — a fajták jelentése a szövegeikből következik.*
 
+### 3.3.2 Törlési megerősítés: „ne kérdezze”, alapérték és fókusz - `0x005fd670` (#5825, 2026-10-25)
+
+`0x005fd670` (1293 B) a `confirm.fen` párbeszédet építő rutin. A `0x005fdc30`
+választja ki a művelet címét, üzenetét és igen-gombját (lásd §3.3.1); a
+megerősítő sablon és a „ne kérdezze” jelölő ettől külön réteg.
+
+**Kulcs és olvasás:** a rutin `ebp=4` esetén a
+`DoNotConfirmDeleteFromDisk` kulcsot választja (`0x005fd79e-0x005fd7a8`), majd
+`Preferences` névtérrel adja át a `0x00407a20` olvasónak (`0x005fd7cc-0x005fd7e5`).
+A `0x004019b0` alakítja a beolvasott értéket logikai értékké
+(`0x005fd7ee`); igaz értéknél a `0x005fd7f3` ág a párbeszéd létrehozása előtt
+kilép, és a rutin 1-et ad vissza (`0x005fd81b`). Tehát egy már igaz
+`Preferences\DoNotConfirmDeleteFromDisk` érték kihagyja a következő ilyen
+megerősítőt.
+
+A `0x006e0cb0` beállítás-betöltő a kulcsot `0` alapértékkel regisztrálja:
+`push 0` (`0x006e0d0c`), a kulcs neve (`0x006e0d0f`), majd a
+`0x006e0a70` hívása (`0x006e0d14`). A helper az átadott alapértéket az
+aktuálisan olvasott értékkel hasonlítja össze (`0x006e0a9f`). Ez a hiányzó
+beállítás futásidejű alapértékét bizonyítja (`0`/hamis), nem azt, hogy az
+indítási út ezt az értéket el is menti. Az eredeti `options.fen` General →
+Files részében a `Delete from disk without confirmation` jelölő neve
+`DoNotConfirmDeleteFromDisk`; nincs rajta explicit `checked` attribútum.
+
+A sablon jelölőjének neve `remember` (`confirm.fen`); a törlési rutin a
+`0x009baae0`-n át olvassa ezt a nevű vezérlőt. A futásidejű felirat
+„Don't ask again, always remove” UTF-16 karakterlánca `0x00e04642`; a
+`0x005fd849-0x005fd858` út az `IDS_CONFIRM_REMOVE_CHECK_MESSAGE` erőforráson
+keresztül választja ki. **NINCS MEG:** a feltárt utasításfolyam nem azonosít
+olyan külön setter-hívást, amely bizonyítaná, hogy a párbeszédben bepipált
+`remember` érték miként íródik vissza a fenti Preferences-kulcsba. A
+következő párbeszéd kihagyása a tárolt kulcs igaz értékére bizonyított; a
+jegyben leírt „bejelölés → mentés → kihagyás” teljes lánc külön ellenőrzendő.
+
+**Alapértelmezett gomb/fókusz:** a szokásos megerősítő út a párbeszédet a
+`0x009ba4d0`-vel építi, majd `2`-t ír a párbeszéd `+0xd8` mezőjébe
+(`0x005fd8d7`) és meghívja a `0x009bab50`-t. Az online törlési út ugyanezt
+teszi (`0x005fdad2`). A `0x009bab50` a `2` értéket a `buttons` csoport
+`+0x88` mezőjének `1` értékére képezi (`0x009babca-0x009babde`), de a bináris
+önmagában nem nevezi meg a gombot. A `confirm.fen` sorrendje Yes / No / Cancel,
+ablakfókusza `buttons`. A #5825-höz átadott job-252 (`kepernyo__08.png`)
+felvételleírás egyképes törlésnél Cancel fókuszt és Enterre elmaradó törlést
+rögzít; ez az egy mérés köti a bináris választóértéket a Cancel gombhoz.
+Mivel a `0x005fd670` mindkét párbeszédépítő útja ugyanazt a `2` értéket adja,
+nincs külön darabszám-, mappa- vagy albumgomb-választó ág. Az egyképes mérés
+gombnevének átvitele a többi típusra a közös sablon/érték miatt következik,
+azokat a job-252 leírás nem méri külön.
+
+**PicasaPy összevetés:** nálunk a `FileOpsDialogs.qml` `deleteConfirmDialog`
+komponense a közös `ConfirmDialog`-ot használja, amelynek van „Do not ask
+again” jelölője. A lomtáras ágon `ask("delete", …)` ellenőrzi a döntést,
+elnyomott kulcsnál azonnal megerősít; végleges törléshez külön
+`deletePermanently` döntéskulcs van (`ConfirmDialog.qml`). A helyi
+QSettings-kulcs a lomtáras ághoz `confirm/delete/remember`, hiányzó értéke
+hamis, és a jelölő minden megnyitás előtt üresre áll. Az Opciók → General
+`Delete from disk without confirmation` kapcsoló ezt a döntést
+`setSuppressed("delete", checked)` útján vissza- és bekapcsolja
+(`OptionsTabGeneral.qml`). Így a jegy „hiányzik a jelölő” megállapítása
+elavult; a szöveg nálunk rövidebb, mint az eredeti „always remove” felirat.
+A `ConfirmDialog.qml` nem ad meg explicit alapértelmezett/fókuszgombot; a
+nálunk ténylegesen fókuszált gomb **NINCS MEG** (futásidejű felvétellel kell
+mérni).
+Az eredeti job-252 kép nyers fájlja a helyi mérőadat-archívumban nem volt
+megtalálható; a fenti fókuszállítás a jegyhez mellékelt felvételleíráson
+alapul.
+
+*Bizonyítottsági fok: **feltételes**. A Preferences-kulcs, a futásidejű
+hamis alapérték, a truthy olvasás miatti korai visszatérés, a két dialog-ág
+közös választóértéke és a PicasaPy oldali kapcsoló forrásból megerősített.
+A `remember` mező Preferences-be írása, valamint a Cancel-fókusz külön
+képernyős ellenőrzése többes/mappa/album esetben **nincs meg**.*
+
+Ghidra-kör kell: 0x005fd670 - a `remember` jelölő igaz értéke miként íródik
+vissza a `Preferences\DoNotConfirmDeleteFromDisk` kulcsba a
+`0x009baae0`-s olvasás után? [blokkoló]
+
 ### 3.4 `input.fen` — Generikus szöveg-/jelszóbekérő (V1, alapinfrastruktúra)
 
 Minimalista, egysoros bemenetkérő; a `<password>` mező jelenléte arra utal,
