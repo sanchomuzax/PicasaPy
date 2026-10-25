@@ -114,6 +114,10 @@ _LETILTOTT_A_TISZTA_MINTABAN = {
         "A Show Edit Controls az eredetihez hasonlóan csak szerkesztőnézőben "
         "aktív (#5878); a tiszta minta könyvtárnézetben indul."
     ),
+    "menuFileSave": (
+        "A Fájl ▸ Save csak mentetlen szerkesztésnél aktív (#5883); a tiszta "
+        "minta képei szerkesztetlenek."
+    ),
     "menuViewAlbumThumbnails": (
         "A könyvtári bélyegkép-kapcsoló fanézetben letiltott; a teszt ezt az "
         "állapotot is meghagyja a menüsorban."
