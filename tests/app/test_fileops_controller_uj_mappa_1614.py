@@ -9,8 +9,11 @@ kap — a lemezen SEMMI nem történik.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
+from picasapy.ini import load_or_empty, read_folder_date_override, read_folder_music
 from support.jpeg_factory import make_jpeg
 
 
@@ -68,6 +71,38 @@ class TestMoveSelectionToNewFolderSiker:
         cel = forras / "Kettő"
         assert (cel / "a.jpg").exists()
         assert (cel / "b.jpg").exists()
+
+    def test_a_mappatulajdonsagok_a_cel_ini_jebe_kerulnek(
+        self, controller, tmp_path
+    ):
+        forras = tmp_path / "forras"
+        forras.mkdir()
+        photo = forras / "a.jpg"
+        make_jpeg(photo)
+        music = tmp_path / "zene.mp3"
+        music.write_bytes(b"tesztzene")
+
+        controller.moveSelectionToNewFolder(
+            [str(photo)],
+            "Tulajdonsagos",
+            "2026-10-25",
+            "Budapest",
+            "Őszi kirándulás",
+            True,
+            str(music),
+        )
+
+        target = forras / "Tulajdonsagos"
+        assert (target / photo.name).is_file()
+        document = load_or_empty(target / ".picasa.ini")
+        properties = document.section("Picasa")
+        assert read_folder_date_override(document) == "2026-10-25"
+        assert properties is not None
+        assert properties.get("location") == "Budapest"
+        assert properties.get("description") == "Őszi kirándulás"
+        music_enabled, stored_music_file = read_folder_music(document)
+        assert music_enabled is True
+        assert Path(stored_music_file) == music
 
 
 class TestMoveSelectionToNewFolderHibak:
