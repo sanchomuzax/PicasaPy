@@ -18718,7 +18718,7 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
         <message>
             <source>An album must be saved in an indexed photo folder.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>สามารถบันทึกอัลบั้มได้เฉพาะในโฟลเดอร์รูปภาพที่จัดทำดัชนีแล้วเท่านั้น</translation>
         </message>
     </context>
 </TS>
