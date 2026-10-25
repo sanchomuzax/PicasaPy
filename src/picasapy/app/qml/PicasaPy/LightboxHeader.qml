@@ -33,6 +33,9 @@ ColumnLayout {
     //: diavetítés ezért ikon marad, szám nélkül — a jegy „a play is"
     //: mondata a mérésnek mond ellent.
     property int selectedCount: 0
+    // #5883: csak akkor menthetők a kijelöltek, ha valamelyik képen van
+    // mentetlen szerkesztési lánc.
+    property bool hasPendingEdits: false
 
     //: „Szerkesztések mentése lemezre" (`save_edits`) — a kijelölt képek
     //: szerkesztéseit a FÁJLBA írja. A művelet maga a #444 mentés-
@@ -408,7 +411,7 @@ ColumnLayout {
             anchors.verticalCenter: parent.verticalCenter
             height: 22
             text: header.feliratSzammal(qsTr("Save"))
-            enabled: header.selectedCount > 0
+            enabled: header.selectedCount > 0 && header.hasPendingEdits
             Layout.preferredHeight: 22
             ToolTip.text: qsTr("Save edited photos to disk")
             ToolTip.visible: hovered
