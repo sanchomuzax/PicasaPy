@@ -311,6 +311,8 @@ Nyitott, célzott folytatás:
 
 - `Ghidra-kör kell: 0x0065abe0 — a [this+0xea4]/[this+0xea8] állapot és a 0x7176a0 két szűrési módja mely kijelölésnél választja a „whole album” fejlécet? [blokkoló]`
 - `Ghidra-kör kell: 0x004d9aa0 — milyen token- vagy elemtulajdonság miatt ad vissza nem nulla eredményt a 0x0063bed0 → 0x0065b4b0 → 0x0065b590 hozzáadási út, és ez váltja-e ki a részleges hibaüzenetet? [blokkoló]`
+- `Ghidra-kör kell: 0x00437550 - az egyképes ág [this+0x48] objektumának +0x54 virtuális gettere melyik implementációra mutat, és az honnan tölti fel a címkelistát (IPTC, .picasa.ini vagy adatbázis)? [blokkoló]`
+- `Ghidra-kör kell: 0x005c76b0 - a 0x005c7710-nél hívott [this+0xeac] vtable +0xdc callback konkrét osztálya/célja, és ez indítja-e a címke tartós IPTC/INI-írását? A 2026-10-21-idorend-12 dekompilátum csak az indirekt hívást mutatja. [blokkoló]`
 
 *Binárishelyek: `0x0063ae00` (fejléc), `0x0065abe0` (teljesalbum-
 predikátum), `0x0063bb30` (üres/hibás bevitel), `0x0063bed0` (token
@@ -329,6 +331,66 @@ megerősített. A fejléc-, súgó- és részlegeshiba-megjelenítés feltétele
 egyetlen statikus hívásláncból származnak; feltételesek, mert a Picasa
 GUI-ban nem futott kattintásos ellenőrzés. A részleges hiba valamennyi
 konkrét elutasítási oka nyitott.
+
+#### A címkelista sorrendje és adatforrása (#5814, 2026-10-25)
+
+**Listaépítés és sorrend.** A `0x0063ae00` előbb a kijelölt képek címkéiből
+név-számláló párokat állít elő a `0x00437550` hívással, majd a
+`0x004cd0c0` rendezőnek adja át a párokat; a rendező indexvektort készít,
+amely alapján a panel az eredményből építi újra a `this+0x2b8` listát.
+A `0x0063b5a0` soronként a vektor sorrendjét követi, nem rendez újra. A
+rendező összehasonlítója a `0x004bd7b0`: előbb a számlálót veti össze,
+a nagyobb érték kerül előre; egyező számlálónál az ASCII `A`-`Z` betűket
+kisbetűsíti, majd a címkeneveket fordított byte-sorrendben adja ki. Egyetlen
+kijelölt képnél minden címke számlálója `1`, tehát a név szerinti fordított
+sorrend látszik. A `0x004cd2e0` összeolvasó ágai igazolják, hogy mindkét
+kulcsnál a rendezési szempont szerinti nagyobb elem kerül előre.
+
+**Több kijelölt kép.** A `0x00437550` külön ága minden kijelölt kép
+címkelistáját beolvassa, vesszőknél elemekre bontja, címkénként számlálót
+képez (`0x004d9570`, majd `0x004dbaf0`), és ugyanazt a `0x004cd0c0`
+rendezőt használja. Ez a sorrend tehát számláló szerint csökkenő, azon belül
+címkenév szerint fordított; a fejléc „current selection” vagy „whole album”
+választása nem választ külön rendezési ágat. Az egyedi címke melletti
+`[n]` számláló formázását a `0x0063ae00` végzi, ha az érték nagyobb `1`-nél.
+
+**Adatforrás.** A listaépítő a `0x00437550`-ben egy, a címkeadatot szolgáltató
+objektum virtuális getterét hívja (`0x004375ae`-`0x004375cc`, az
+`[this+0x48]` objektum `+0x54` slotja). A bináris út azt mutatja meg, hogy a
+listaépítő ezt a kapott címkelistát használja; nem nevezi meg, hogy a
+getter mögötti adatot eredetileg a kép IPTC-mezője, a `.picasa.ini` vagy
+valamelyik adatbázis tölti-e fel: **NINCS MEG**.
+
+**Összevetés a job-242-vel.** A `paritas-ellenorzes.md` futás-összevetése
+(`## Futás közbeni összevetés (#5396, 1. kör)`, a `proba` címkesor) rögzíti,
+hogy a `kepernyo__12.png` állapotban a
+`proba` az `AI image` fölött van. Ez egyezik az egyedi képnél levezetett
+fordított névsorrenddel (`proba` a `p` betű miatt előzi meg az `AI image`
+`a` betűjét), ezért önmagában nem bizonyítja, hogy az új címke időrendben a
+lista elejére kerül. A job-242 JPEG nincs a helyi mérőcsomagban; az eredeti
+IPTC Keywords mezőjének értékei és sorrendje, így az eredeti író elejére
+vagy végére illesztése **NINCS MEG**. A `0x0063bed0` a címkét a
+`CThumbUI::IKeywordUpdate` `+0x284` interfész `+0x14` metódusához küldi
+(`0x00c906d8` → `0x0065b4b0`), amely a `0x005c76b0` kijelölési/listaépítő útba
+lép; a feltárt lánc nem jut el az IPTC- vagy INI-szerializálóig.
+
+**PicasaPy-összevetés (forráskód, nem futásmérés).** A
+`keywordsOfRows()` a címkék unióját kisbetűsített név szerint növekvőre
+rendezi (`src/picasapy/app/keywords_controller.py:99-109`), és nem őrzi a
+kijelölésbeli gyakoriságot. Az `addKeywordToRows()` a címkét a sor végére
+fűzi (`:150-163`); a JPEG-író a kapott sorrendben adja át az
+IPTC `2:25` értékeket (`src/picasapy/metadata/iptc_writer.py:48-58`,
+`:195-222`), így nálunk az új IPTC érték a keyword-mezők végére kerül.
+Sikertelen JPEG-íráskor az INI-fallback ugyanennek a sorrendnek a
+vesszővel összefűzött alakját írja. Ez a PicasaPy kódútja, nem élő
+fájlmérés.
+
+**Bizonyítottsági fok.** A Picasa listájának számláló- és névsorrendje
+`feltételes`: a teljes szabály az utasításszintű bináris útból következik,
+a job-242 felvétel csak az egyező, kétcímkés egyedi mintát ellenőrzi. A
+fájl/DB eredet és az eredeti IPTC-beillesztés iránya **NINCS MEG**; ezek
+eldöntéséhez a `0x005c7710` indirekt callback feloldása vagy címkézés előtti
+és utáni eredeti JPEG-metaadat szükséges.
 
 ### A gyorscímke-beállító — pontosan TÍZ
 
