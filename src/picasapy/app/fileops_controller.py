@@ -218,14 +218,25 @@ class FileOpsController(QObject):
         self._run_batch("move", move_photos, paths, dest_folder, policy)
 
     @Slot(list, str)
-    def moveSelectionToNewFolder(self, paths: list, name: str) -> None:
+    @Slot(list, str, str, str, str, bool, str)
+    def moveSelectionToNewFolder(
+        self,
+        paths: list,
+        name: str,
+        iso_date: str = "",
+        location: str = "",
+        description: str = "",
+        use_music: bool = False,
+        music_file: str = "",
+    ) -> None:
         """Fájl ▸ Áthelyezés új mappába… (#1614, `ID_FILE_NEWFOLDER`).
 
         A parancs neve félrevezet: NEM mappát hoz létre önmagában, hanem a
         kijelölt képeket helyezi át egy ÚJ mappába, amit a felhasználó
         NEVEZ el — a helyét (a kijelölés ELSŐ elemének jelenlegi mappáját)
-        a program választja, ezért a dialógus csak egy nevet kér, mint az
-        „Új album…" (`FileOpsDialogs.openNewAlbum`; a #2911 ota nevbekeres nelkul).
+        a program választja. A Folder Properties párbeszéd a név mellett
+        dátumot, zenét, helyet és leírást is kér; ezeket az új mappa
+        .picasa.ini-jébe írjuk.
 
         A tényleges mozgatás a MEGLÉVŐ kötegelt úton fut (`_run_batch` →
         `move_photos`), pontosan úgy, mint a „Áthelyezés…" (#457): a
@@ -235,6 +246,9 @@ class FileOpsController(QObject):
         megy (`photoMoved` → `resyncFolder`) — ez a brand-new (még sosem
         indexelt) célmappát is kezeli, ahogy a #1522 másolás-tesztje is
         megméri.
+
+        A mappa tulajdonságait az ini csomag meglévő
+        update_document/mezőíró útján mentjük, a képek mozgatása előtt.
 
         Az új mappa nevét ELLENŐRIZZÜK, mielőtt bármi a lemezre kerülne
         (üres/csak szóköz/Windows-tiltott karakter — #1700 hibaosztálya),
@@ -255,7 +269,25 @@ class FileOpsController(QObject):
         parent = Path(_to_local_path(paths[0]) or paths[0]).parent
         try:
             target = create_folder_for_move(parent, folder_name)
-        except OSError as error:
+
+            def write_folder_properties(document):
+                result = with_folder_date_override(document, iso_date)
+                result = with_folder_music(
+                    result, use_music, to_local_path(music_file)
+                )
+                result = (
+                    result.with_value("Picasa", "location", location)
+                    if location.strip()
+                    else result.with_removed("Picasa", "location")
+                )
+                return (
+                    result.with_value("Picasa", "description", description)
+                    if description.strip()
+                    else result.with_removed("Picasa", "description")
+                )
+
+            update_document(target / PICASA_INI_NAME, write_folder_properties)
+        except _OPERATION_ERRORS as error:
             self.operationFailed.emit("move_to_new_folder", str(error))
             return
         self._run_batch("move", move_photos, paths, str(target), RENAME)
