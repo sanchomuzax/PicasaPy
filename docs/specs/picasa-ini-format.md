@@ -99,7 +99,7 @@ olvasója viszont **bármennyi tokent elfogad**, és a két mezőt névtelen
 | `keywords` | `beer,empanadas` | címkék (JPEG-nél IPTC Keywords-be) |
 | `rotate` | `rotate(1)` | 90°-os forgatás lépések (0–3) |
 | `filters` | ld. lentebb | nem-destruktív szerkesztési lánc |
-| `redo` | `redo=crop64=1,...;` | visszavonási (redo) verem — megőrzendő! |
+| `redo` | `redo=crop64=1,...;` | a `redo` szerkesztési lista kiírt alakja; nem általános mentésjelző (lásd lent, #5829) |
 | `faces` | `rect64(3f84...),8e62...;` | arcok: rect64 + contact_id párok `;`-vel |
 | `albums` | `65d12673f3b51e3f...` | album-tokenek CSV listája |
 | `crop` | `crop=rect64(...)` | (előfordul filters-en kívül is) |
@@ -2760,6 +2760,39 @@ A Picasa a módosítás előtti eredetit külön mappába menti. A korpuszban
 A váltás **2009-ben** történt (az egyetlen átfedő év). Egy ini-t olvasó
 implementációnak **mindkettőt** ismernie kell, ha a „vissza az eredetihez"
 funkciót támogatja. *Bizonyítottsági fok: megerősített* (181 valós mappa).
+
+## A rendes lemezmentés ini-hatása (#5829)
+
+**Hatókör:** a Picasa 3.9 mentés-megerősítője `0x0053a790`-ben a
+`CFileSaveThread` munkaszálat indítja (`0x0053af72`); a munkaszál
+`0x00539020` a `0x00539b0a` helyen hívja a `0x00467ca0` feldolgozót.
+Az alábbi út bináris diszasszemblálásból származik; a job-253 mérés a jegyben
+közölt egy konkrét futás eredménye, a nyers `.ini`-fájlok ehhez a körhöz nem
+érhetők el helyben.
+
+| cél / kérdés | bináris út | eredmény és bizonyítottság |
+|---|---|---|
+| Eredeti képfájl helye | `0x00467ca0` → `0x00462ba0`; a helper először `.picasaoriginals`-útvonaljelöltet készít (`0x00462ccd`), ha a jelölt nem létezik, `Originals`-t próbál (`0x00462d2e`), sikertelenségkor pedig `.picasaoriginals`-ra tér vissza (`0x00462d87`). | Az új mentés alaphelye rejtett `.picasaoriginals/<fájlnév>`; meglévő eredeti esetén az `Originals`-beli példányt is fel tudja oldani. `bináris (0x00462ba0)` |
+| Eredeti-mappai ini | A kiválasztott eredeti út mellé a `0x0046b49b` a `0x00410ff0`-nel ini-kezelőt készít; az alapértelmezett fájlnév `.picasa.ini` (`0x00410ff4`). A korábbi `filters` érték másolása `0x0046b53f`, `filters` kulcs átadása `0x0046b57c`; az ini-kezelőt a `0x0046bb98` és `0x0046d6ac` a `0x00410770`-nel zárja/kiírja. | Az eredeti-mappa ini-jébe a mentés átviszi a korábbi `filters` értéket, és további kép-metaadatokat is kezel (`crop`, `rotate`, `flipped`, `moddate`, `width`, `height`, `text`, `textactive`). A korpusz 52 ilyen ini-jében 172 `filters=` szakasz, de 0 `redo=` és 0 `backuphash=` van. A 172 backup-szakaszból 26 `filters`-e egyezik a szülő azonos nevű képszakaszával, 146-é eltér vagy a szülőből hiányzik; 158 szülőszakaszban van `backuphash`. A konkrét job-253 backup-ini tartalma `NINCS MEG`. `bináris (0x0046b49b-0x0046d6ac)`; `mérés (referencia/ini-korpusz/korpusz.txt)` |
+| Aktuális mappai ini, `filters` és `redo` | A mentési feldolgozó `0x0046d5a7` → `0x004613c0` → `0x00460e20` útja a `filters` és `redo` listát (`0x00460e98`, `0x00460eb0`) a `0x0069f710` szerializálón át a közös `0x00454770` ini-íróhoz küldi; utóbbi a kép rekordjához tartozó `.picasa.ini`-t nyitja (`0x00454846`). | A job-253 felvétel szerint a mentés után a képszakaszban egyik kulcs sincs; ez a konkrét futásban a beégetés utáni eredmény. A bináris út a kiírás helyét és a kulcsokat azonosítja, az üres érték törlési/elhagyási szemantikája önmagában ebből a körből nem bizonyítható. `bináris (0x00460e20, 0x0069f710, 0x00454770)`; `mérés (picasa-colab-jobs job-253, jegyszöveg)` |
+| Aktuális mappai ini, `backuphash` | A `0x00454770` a hívó ötödik argumentuma esetén időbélyegből képzett `backuphash`-t írhat; az író és képlete külön bizonyítva van e lap „A `backuphash`” szakaszában. | Job-253: `backuphash=45837`, más kulcs nincs a képszakaszban. Ez egyezik a közös író útjával, de az egy konkrét `backuphash`-hívás közvetlen hozzárendelése nincs megmérve. `bináris (0x00454770)`; `mérés (picasa-colab-jobs job-253, jegyszöveg)` |
+| A korpusz `redo=` sorai | A `redo` kulcsot a `0x00460e20` adja át a `0x0069f710` → `0x00454770` útvonalnak; a binárisban a `redo` külön kulcsként szerepel (`0x00c814b4`), nem található `redo=` formájú statikus INI-sor. | A korpusz 807 aktuális mappai ini-je közül 23 tartalmaz összesen 34 `redo=` sort (az összes 859 ini-ből 52 a `.picasaoriginals` alatti). Ezek a főmappai ini-kben vannak; egyedi soronkénti kiváltó műveletük, illetve az, hogy melyik konkrét mentési/szerkesztési futás írta őket, `NINCS MEG`. A mentés tehát nem általános `redo=`-létrehozó: a job-253 ellenpélda. `bináris (0x00460e20)`; `mérés (referencia/ini-korpusz/korpusz.txt; job-253)` |
+
+**Értelmezés.** A `filters=` a mentéskor az eredeti-mappai `.picasa.ini`-be
+kerül át; az aktuális mappai ini `filters`/`redo` állapota külön útvonalon
+frissül. A job-253 az aktuális képszakaszból mindkettő hiányát, valamint a
+`backuphash` jelenlétét méri. A mentés után a `.picasaoriginals/.picasa.ini`
+(vagy a kiválasztott régi `Originals/.picasa.ini`) pontos tartalma ebben a
+futásban **nyitott**; az elérhető korpusz csak a fenti csoportos mintát
+támasztja alá, nem a job-253 konkrét fájlját.
+
+**A `redo=` keletkezésének nyitott része:** a `0x0069f777` a belső `redo`
+állapotból kér szerializált szöveget, majd a `0x0069f799` a `redo` kulccsal
+adja át a közös írónak. A szerializáló bemeneti állapota, a nem üres értéket
+előállító felhasználói művelet, valamint a korpusz egyes sorainak konkrét
+eredete **NINCS MEG**. A kiegészítő felvételben a mentés előtt és után is el
+kell menteni az aktuális mappai ini-t, valamint a kiválasztott eredeti mappa
+teljes ini-jét.
 
 ## A `filterdesc` tartományai a VALÓS korpuszon ellenőrizve (2026-08-16)
 
