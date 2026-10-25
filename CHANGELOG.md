@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.223] - 2026-10-25
+
+- A Mentés az eredeti-mappa ini-jében őrzi a szerkesztéseket, az aktuális ini-be pedig backuphash-t ír; az Utolsó mentés visszavonása innen tölti vissza a láncot (#5833).
+
 ## [0.9.222] - 2026-10-25
 
 - Az Undo All Edits megerősítője és az ini-ben tárolt szerkesztési lánc visszavonása az eredeti Picasa viselkedését követi (#5836).
