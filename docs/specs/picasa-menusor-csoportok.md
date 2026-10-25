@@ -122,20 +122,20 @@ Jelölések az ágban:
 
 - `P`: a `dword[0x00d67914]` nem nulla, az `editpanel/preview` objektum
   megtalálható, és az objektum `+0x20c` bájtja nulla
-  (`0x0056e240`–`0x0056e265`).
+  (`0x0056e240`-`0x0056e265`).
 - `D`: a `this+0x3094` vagy a `this+0x30a0` értéke nagyobb nullánál
-  (`0x0056e30b`–`0x0056e322`).
+  (`0x0056e30b`-`0x0056e322`).
 - `F`: a `this+0x34a8` értéke. A `F & 0x4000` bitet a
-  `0x0056e2e8`–`0x0056e2ef`, a `(F & 0x6) != 0` őrfeltételt a
-  `0x0056e2f4`–`0x0056e306` vizsgálja.
+  `0x0056e2e8`-`0x0056e2ef`, a `(F & 0x6) != 0` őrfeltételt a
+  `0x0056e2f4`-`0x0056e306` vizsgálja.
 - `T`: van kijelölt elem (`this+0xe64 != -1`), és a
   `0x006b1e80` segédfüggvény nem üres szöveget olvas ki az első kijelölt
-  elemről (`0x0056e801`–`0x0056e873`, a kijelölési vektor előállítása:
-  `0x0056e9cd`–`0x0056ea0a`). Több kijelölésnél ez az ág az első elem
+  elemről (`0x0056e801`-`0x0056e873`, a kijelölési vektor előállítása:
+  `0x0056e9cd`-`0x0056ea0a`). Több kijelölésnél ez az ág az első elem
   szövegét ellenőrzi.
 - `C`: a `this+0xcc8` szövegpuffer nem üres: a mutató nem null, a
   `(dword[puffer] & 0xffffff00) != 0`, és a `byte[puffer+4] != 0`
-  (`0x0056e931`–`0x0056e95b`, illetve `0x0056eb40`–`0x0056eb80`).
+  (`0x0056e931`-`0x0056e95b`, illetve `0x0056eb40`-`0x0056eb80`).
 - `B`: a `this+0x34a4` értéke nulla.
 
 Az ágak explicit állapotírásainál a kiszámított feltétel igazságakor az
@@ -146,10 +146,10 @@ nyers argumentumot rögzíti, nem nevezi önmagában „engedélyezettnek” vag
 
 | Útvonal | `Copy Text` állapotargumentuma | `Paste Text` állapotargumentuma |
 |---|---|---|
-| `P` igaz, `D` igaz | `1` (`0x0056e7b4`–`0x0056e7e5`) | `1` (`0x0056e7b4`–`0x0056e7e5`) |
-| `P` igaz, `D` hamis | `0`, ha `T && B`; különben `1` (`0x0056e801`–`0x0056e873`) | ha `C` igaz: `0`, ha `B`, különben `1`; ha `C` hamis, ez az ág nem ír állapotot (`0x0056e92b`–`0x0056e95b`) |
-| `P` hamis, `F & 0x4000` nem nulla | `1` (`0x0056e9c0`, `0x0056eba2`–`0x0056ebbe`) | `1` (`0x0056e9c0`, `0x0056eba2`–`0x0056ebbe`) |
-| `P` hamis, `F & 0x4000` nulla | `1`, ha `(F & 0x6) != 0 && T && B`; különben `0` (`0x0056ea45`–`0x0056ea72`) | `1`, ha `(F & 0x6) != 0 && B && C`; különben `0` (`0x0056eb40`–`0x0056eb80`) |
+| `P` igaz, `D` igaz | `1` (`0x0056e7b4`-`0x0056e7e5`) | `1` (`0x0056e7b4`-`0x0056e7e5`) |
+| `P` igaz, `D` hamis | `0`, ha `T && B`; különben `1` (`0x0056e801`-`0x0056e873`) | ha `C` igaz: `0`, ha `B`, különben `1`; ha `C` hamis, ez az ág nem ír állapotot (`0x0056e92b`-`0x0056e95b`) |
+| `P` hamis, `F & 0x4000` nem nulla | `1` (`0x0056e9c0`, `0x0056eba2`-`0x0056ebbe`) | `1` (`0x0056e9c0`, `0x0056eba2`-`0x0056ebbe`) |
+| `P` hamis, `F & 0x4000` nulla | `1`, ha `(F & 0x6) != 0 && T && B`; különben `0` (`0x0056ea45`-`0x0056ea72`) | `1`, ha `(F & 0x6) != 0 && B && C`; különben `0` (`0x0056eb40`-`0x0056eb80`) |
 
 **Mérés (`job-277`, a jegyben közölt lelet):** könyvtárnézetben egy
 felirat nélküli kijelölt képnél mindkét tétel szürke, miközben
