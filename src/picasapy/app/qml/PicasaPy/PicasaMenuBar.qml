@@ -1125,20 +1125,25 @@ MenuBar {
             }
         }
         MenuSeparator {}
-        // #4336: ugyanaz a tartós állapot vezérli, mint a PhotoViewer bal fiókját.
+        // #5878: a Picasa csak a szerkesztőnézetben engedte ezt a tételt;
+        // könyvtárnézetben a tartósan nyitott fiók se mutasson pipát.
+        // #4336: a szerkesztőnézet pipája a PhotoViewer tartós állapotát követi.
         PicasaMenuItem {
             objectName: "menuViewEditControls"
             text: qsTr("Show Edit Controls")
             placeholder: false
             checkable: true
-            checked: (bar.ctl && bar.ctl.editorControlsVisible !== undefined)
-                ? bar.ctl.editorControlsVisible : true
+            enabled: bar.editorActive
+            checked: bar.editorActive
+                && ((bar.ctl && bar.ctl.editorControlsVisible !== undefined)
+                    ? bar.ctl.editorControlsVisible : true)
             onTriggered: {
                 if (bar.ctl && bar.ctl.setEditorControlsVisible !== undefined)
                     bar.ctl.setEditorControlsVisible(!bar.ctl.editorControlsVisible)
                 checked = Qt.binding(function () {
-                    return (bar.ctl && bar.ctl.editorControlsVisible !== undefined)
-                        ? bar.ctl.editorControlsVisible : true
+                    return bar.editorActive
+                        && ((bar.ctl && bar.ctl.editorControlsVisible !== undefined)
+                            ? bar.ctl.editorControlsVisible : true)
                 })
             }
         }
