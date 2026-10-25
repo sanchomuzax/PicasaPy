@@ -89,6 +89,33 @@ class TestQuickTagDefaults:
         assert controller.quickTagButtons == [""] * SZLOTOK
 
 
+def test_keywords_of_rows_frequency_then_reverse_ascii_name_5817():
+    """A címkelista a gyakoriságot és csak ASCII-betűknél hajtást követi."""
+    from types import SimpleNamespace
+
+    from picasapy.app.keywords_controller import KeywordsMixin
+
+    subject = SimpleNamespace(
+        _photos=SimpleNamespace(
+            photos=[
+                SimpleNamespace(
+                    keywords="ALPHA, Zulu, Árvíz, árvíz, common"
+                ),
+                SimpleNamespace(keywords="COMMON, beta"),
+            ]
+        )
+    )
+
+    assert KeywordsMixin.keywordsOfRows(subject, [0, 1]) == [
+        "common",
+        "árvíz",
+        "Árvíz",
+        "Zulu",
+        "beta",
+        "ALPHA",
+    ]
+
+
 class TestSetQuickTagLabel:
     def test_sets_single_slot(self, controller):
         controller.setQuickTagLabel(2, "nyaralás")

@@ -39,6 +39,10 @@ _KEY_QUICK_RESERVE_RECENT = "quickTags/reserveRecentForTop2"
 _KEY_QUICK_AUTOFILL = "quickTags/autoFillFrequent"
 _KEY_QUICK_RECENT = "quickTags/recentKeywords"
 
+_ASCII_CASE_FOLD = str.maketrans(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"
+)
+
 #: #2998: az írhatóság-próba MODULSZINTŰ fogantyúja (a `fileops/trash.py`
 #: `_access`-mintája). A próba valódi fájlt ír és töröl a mappába, ezért a
 #: tesztek ezt cserélik ki — `chmod`-ra épülő próba a windows-lábon némán
@@ -51,6 +55,11 @@ def _split_keywords(raw: str | None) -> tuple[str, ...]:
     if not raw:
         return ()
     return tuple(part.strip() for part in raw.split(",") if part.strip())
+
+
+def _ascii_fold_keyword(keyword: str) -> str:
+    """Az eredeti címke-rendező csak az ASCII A–Z betűket hajtja kisbetűre."""
+    return keyword.translate(_ASCII_CASE_FOLD)
 
 
 def _clean_keyword(text: str) -> str:
@@ -76,7 +85,7 @@ def _as_bool(value, default: bool) -> bool:
 
 
 class KeywordsMixin:
-    """A Címkék-panel (#12) műveletei: unió-lista, hozzáadás, levétel.
+    """A Címkék-panel (#12) műveletei: címkelista, hozzáadás, levétel.
 
     #193: a panel alján a Gyorscímkék szekció (2×4 gomb) is ide tartozik —
     a gombok konfigurációja (8 szlot + két kapcsoló) és a „legutóbb
@@ -98,15 +107,33 @@ class KeywordsMixin:
 
     @Slot(list, result=list)
     def keywordsOfRows(self, rows) -> list:
-        """A kijelölés címkéinek uniója, névsorban — a Címkék-panel listája."""
+        """A kijelölés címkéi gyakoriság, majd fordított névsor szerint."""
         photos = self._photos.photos
-        seen: dict[str, str] = {}  # casefold → első előfordulás (írásmód-őrző)
+        seen: dict[str, tuple[str, int]] = {}
         for row in rows:
             if not 0 <= int(row) < len(photos):
                 continue
+            photo_seen: set[str] = set()
             for keyword in _split_keywords(photos[int(row)].keywords):
-                seen.setdefault(keyword.casefold(), keyword)
-        return sorted(seen.values(), key=str.casefold)
+                folded = _ascii_fold_keyword(keyword)
+                if folded in photo_seen:
+                    continue
+                photo_seen.add(folded)
+                if folded in seen:
+                    first_spelling, count = seen[folded]
+                    seen[folded] = (first_spelling, count + 1)
+                else:
+                    seen[folded] = (keyword, 1)
+
+        rendezett = sorted(
+            seen.values(),
+            key=lambda item: (
+                item[1],
+                _ascii_fold_keyword(item[0]).encode("utf-8", "surrogatepass"),
+            ),
+            reverse=True,
+        )
+        return [keyword for keyword, _count in rendezett]
 
     @Slot(list, result=bool)
     def selectionReadOnly(self, rows) -> bool:
