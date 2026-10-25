@@ -41,6 +41,18 @@ Dialog {
         return ev + "-" + ketjegyu(honap) + "-" + ketjegyu(nap)
     }
 
+    // A „Current photo date” két mezője az eredetiben is letiltott kijelző
+    // (job-268): olvasható, de nem szerkeszthető.
+    readonly property bool jelenlegiDatumSzerkesztheto: false
+
+    function aktualisIdoMasodpercekben() {
+        var reszek = currentDateTime.split(" ")
+        if (reszek.length < 2)
+            return 0
+        var ido = reszek[1].split(":")
+        return Number(ido[0]) * 3600 + Number(ido[1]) * 60 + Number(ido[2])
+    }
+
     function naptarHonapja(delta) {
         var uj = new Date(calendarYear, calendarMonth + delta, 1)
         calendarYear = uj.getFullYear()
@@ -143,7 +155,8 @@ Dialog {
                 Layout.preferredHeight: 96
                 source: root.previewInfo.thumbnailUrl || ""
                 fillMode: Image.PreserveAspectFit
-                asynchronous: true
+                asynchronous: Qt.platform.pluginName !== "offscreen"
+                cache: false
             }
 
             ColumnLayout {
@@ -153,9 +166,53 @@ Dialog {
                 Text {
                     objectName: "adjustTimestampCurrentDate"
                     Layout.fillWidth: true
-                    text: qsTr("Current photo date") + ": " + root.currentDateTime
+                    text: qsTr("Current photo date")
                     color: Theme.ink
                     font.pixelSize: Theme.fontSize
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    Button {
+                        objectName: "adjustTimestampCurrentDateField"
+                        Layout.fillWidth: true
+                        text: root.currentDateTime.split(" ")[0]
+                        enabled: root.jelenlegiDatumSzerkesztheto
+                        opacity: 0.55
+                    }
+
+                    SpinBox {
+                        objectName: "adjustTimestampCurrentTimeField"
+                        from: 0
+                        to: 86399
+                        stepSize: 60
+                        editable: false
+                        enabled: root.jelenlegiDatumSzerkesztheto
+                        opacity: 0.55
+                        value: root.aktualisIdoMasodpercekben()
+                        implicitWidth: 126
+                        validator: RegularExpressionValidator {
+                            regularExpression: /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/
+                        }
+                        textFromValue: function(value, locale) {
+                            var seconds = Number(value)
+                            var hour = Math.floor(seconds / 3600)
+                            var minute = Math.floor((seconds % 3600) / 60)
+                            var second = seconds % 60
+                            return root.ketjegyu(hour) + ":"
+                                + root.ketjegyu(minute) + ":"
+                                + root.ketjegyu(second)
+                        }
+                        valueFromText: function(text, locale) {
+                            var match = /^(\d{2}):(\d{2}):(\d{2})$/.exec(text)
+                            if (!match)
+                                return value
+                            return Number(match[1]) * 3600
+                                + Number(match[2]) * 60 + Number(match[3])
+                        }
+                    }
                 }
 
                 Text {
