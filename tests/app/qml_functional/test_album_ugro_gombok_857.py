@@ -167,11 +167,13 @@ class TestAzISMETLES:
         QMetaObject.invokeMethod(
             gomb, "nyomvaTartasIndul", Qt.ConnectionType.DirectConnection
         )
-        # az első késleltetés + két ismétlés ideje bőven elég
-        _var(
-            qt_app,
-            gomb.property("elsoKesleltetes") + 3 * gomb.property("ismetlesKoz"),
-        )
+        # #5894: a harmadik kiváltásig várunk, nem fix ideig; a lassú
+        # windowsos runneren az időzítő később sül el.
+        hatarido = gomb.property("elsoKesleltetes") + 3 * gomb.property("ismetlesKoz")
+        for _ in range(40):
+            if len(darab) >= 3:
+                break
+            _var(qt_app, max(hatarido // 4, 25))
         QMetaObject.invokeMethod(
             gomb, "nyomvaTartasVege", Qt.ConnectionType.DirectConnection
         )
