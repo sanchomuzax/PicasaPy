@@ -41,6 +41,10 @@ Dialog {
         return ev + "-" + ketjegyu(honap) + "-" + ketjegyu(nap)
     }
 
+    // A „Current photo date” két mezője az eredetiben is letiltott kijelző
+    // (job-268): olvasható, de nem szerkeszthető.
+    readonly property bool jelenlegiDatumSzerkesztheto: false
+
     function aktualisIdoMasodpercekben() {
         var reszek = currentDateTime.split(" ")
         if (reszek.length < 2)
@@ -175,7 +179,7 @@ Dialog {
                         objectName: "adjustTimestampCurrentDateField"
                         Layout.fillWidth: true
                         text: root.currentDateTime.split(" ")[0]
-                        enabled: false
+                        enabled: root.jelenlegiDatumSzerkesztheto
                         opacity: 0.55
                     }
 
@@ -185,7 +189,7 @@ Dialog {
                         to: 86399
                         stepSize: 60
                         editable: false
-                        enabled: false
+                        enabled: root.jelenlegiDatumSzerkesztheto
                         opacity: 0.55
                         value: root.aktualisIdoMasodpercekben()
                         implicitWidth: 126
