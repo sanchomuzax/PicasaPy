@@ -102,6 +102,7 @@ from picasapy.render.flip import (
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
+from .ini_ujraprobalas import update_document_ujraprobalva
 from .appearance_controller import coerce_ui_preference_flag
 from .worker_thread import BackgroundWorkerMixin
 
@@ -749,7 +750,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                 path = Path(photo.folder_path) / photo.name
                 if write_iptc_caption(path, text):
                     ini_path = Path(photo.folder_path) / PICASA_INI_NAME
-                    update_document(
+                    # #5900: az IPTC-írás után Windowson az ini átmenetileg
+                    # zárolt lehet; a backuphash-lépés ezért újrapróbál.
+                    update_document_ujraprobalva(
                         ini_path,
                         lambda document: with_backuphash(document, photo.name),
                         backup=True,
