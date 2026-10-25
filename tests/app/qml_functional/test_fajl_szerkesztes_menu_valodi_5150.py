@@ -31,7 +31,7 @@ from PySide6.QtTest import QSignalSpy
 
 from conftest import _build_qml_app
 from support.jpeg_factory import make_jpeg
-from support.qt_wait import wait_for_signal
+from support.qt_wait import wait_for_photo_op, wait_for_signal
 from support.varakozas import hibaturo_feltetel, var_feltetelre
 from tests.app.qml_functional._felsomenupontok_helpers_4329 import (
     _kattints,
@@ -191,6 +191,11 @@ class TestAtnevezesEsMentes:
     def test_a_mentes_valodi_kattintassal_megerositeset_keri(self, fajl_app, qt_app):
         window, controller, _engine = fajl_app
         _elokeszit(window, qt_app, controller)
+        wait_for_photo_op(
+            controller,
+            lambda: controller.applyEffectMany([0], "enhance"),
+            qt_app=qt_app,
+        )
 
         _fajl_tetelt_kattint(window, qt_app, "menuFileSave")
 

@@ -234,6 +234,9 @@ MenuBar {
     }
     // van-e fotó-művelet célpontja: a rács kijelölése vagy a néző aktív képe
     property bool photoActionsEnabled: false
+    // #5883: a mentés csak a fotóművelet célpontjának mentetlen
+    // szerkesztési láncával érhető el.
+    property bool photoHasPendingEdits: false
     // A könyvtárhoz kötött műveletek ne váljanak aktívvá a szerkesztőnézetben.
     property bool libraryPhotoActionsEnabled: false
     //: A TextInput/TextEdit aktív fókusza esetén a billentyű a mezőé.
@@ -792,7 +795,7 @@ MenuBar {
         MenuItem {
             objectName: "menuFileSave"
             text: qsTr("&Save") + "\tCtrl+S"
-            enabled: bar.photoActionsEnabled
+            enabled: bar.photoActionsEnabled && bar.photoHasPendingEdits
             onTriggered: bar.saveRequested()
         }
         MenuItem {
