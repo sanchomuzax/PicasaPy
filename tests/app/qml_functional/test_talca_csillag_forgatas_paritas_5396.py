@@ -237,7 +237,22 @@ def test_talca_csillag_es_forgatas_az_eredeti_ini_kimenetet_irja(
         )
         for section in document.file_sections()
     ]
-    assert actual == [
+    # A job-231 szerint a forgatás után az eredeti backuphash-t is ír (#5810);
+    # az értéke az írás pillanatától függ, ezért csak a meglétét és alakját mérjük.
+    for nev, kulcsok in actual:
+        hash_ertek = kulcsok.get("backuphash")
+        if nev in ("5.jpg", "6.jpg"):
+            assert hash_ertek is not None and hash_ertek.isdecimal(), (
+                f"[{nev}] forgatás után hiányzik a backuphash: {kulcsok!r}"
+            )
+            assert 0 <= int(hash_ertek) <= 0xFFFF
+        else:
+            assert hash_ertek is None, f"[{nev}] csillagnál nem kell backuphash"
+    kulcsok_hash_nelkul = [
+        (nev, {k: v for k, v in kulcsok.items() if k != "backuphash"})
+        for nev, kulcsok in actual
+    ]
+    assert kulcsok_hash_nelkul == [
         ("4.jpg", {"star": "yes"}),
         ("7.jpg", {}),
         ("5.jpg", {"rotate": "rotate(1)"}),

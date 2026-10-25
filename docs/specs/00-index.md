@@ -19,13 +19,13 @@ kérdés).
 
 ## 🔶 Nyitott kérdések — innen válassz kutatói kört
 
-> ⛔ **2026-09-09 (#2813) — EZ A LISTA KIÜRÜLT, és ez önmagában lelet.**
+> ⛔ **2026-09-09 (#2813) - a lista akkor kiürült, és ez önmagában lelet volt.**
 > A 241–242. kör auditja után (#2810, #2812) mind az **öt** itteni
-> bejegyzés „nincs nyitott kérdés" — vagyis ez a szakasz ma **nem tudja
-> ellátni a feladatát**: nem ad témát egy kutatói körnek.
+> bejegyzés „nincs nyitott kérdés" - vagyis ez a szakasz akkor **nem tudta
+> ellátni a feladatát**: nem adott témát egy kutatói körnek.
 >
-> **A valódi nyitott tételek a spec-lapok SAJÁT 8./9. szakaszaiban élnek**
-> („Nyitott kérdések — és mi döntené el", „Amit NEM vizsgáltam"), nem itt.
+> A nyitott tételek részletei továbbra is a spec-lapok saját szakaszaiban
+> élnek; a kézzel ellenőrzött, kutatható tételeket itt is felsoroljuk.
 > A #2813 így talált témát:
 >
 > ```bash
@@ -36,8 +36,10 @@ kérdés).
 > és csak azután a jelölés maga. A jelölésben álló jegyszám **zárt**
 > állapota a legolcsóbb elavulás-jel (mérő kérve: `picasapy-agent` #69).
 >
-> ⚠️ Amíg ez a szakasz nincs újratöltve, **ne innen válasszon** kutatói kör
-> témát — a fenti parancs a működő forrás.
+> ⭐ **2026-10-25 (#5814):** egy kézzel ellenőrzött nyitott kérdés került a
+> listába; a részleteket a címkepanel spec-lapja tartalmazza.
+
+### [picasa-beviteli-mezok.md](picasa-beviteli-mezok.md) - #5814: melyik tároló tölti fel a címkelistát, és hova illeszti az eredeti a címkét az IPTC Keywords mezőben? A disassemblyből feltételesen levezetett panel-sorrend számláló szerint csökkenő, azon belül címkenév szerint fordított.
 
 
 ### [pmp-database.md](pmp-database.md) — 1 nyitott (örökölt) kérdés: a KÉZI sorrend tárolási helye (15.4, #4591/#4884)
