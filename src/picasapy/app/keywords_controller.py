@@ -11,7 +11,7 @@ from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.fileops import is_folder_writable
 from picasapy.index import all_photos, open_index
-from picasapy.ini import update_document
+from picasapy.ini import update_document, with_backuphash
 from picasapy.metadata import write_iptc_keywords
 from picasapy.scanner import PICASA_INI_NAME
 
@@ -191,11 +191,13 @@ class KeywordsMixin:
             # a mutate-en KÍVÜL, egyszer végezzük el, és csak az ini-be
             # kerülő (kulcs, érték|None) módosításokat gyűjtjük a mutate-nek.
             ini_edits: list[tuple[str, str | None]] = []
+            changed_photos: list[str] = []
             for photo in folder_photos:
                 current = _split_keywords(photo.keywords)
                 updated = transform(current)
                 if updated == current:
                     continue
+                changed_photos.append(photo.name)
                 wrote_iptc = False
                 if photo.name.lower().endswith((".jpg", ".jpeg")):
                     wrote_iptc = write_iptc_keywords(
@@ -205,14 +207,20 @@ class KeywordsMixin:
                     ini_edits.append(
                         (photo.name, ",".join(updated) if updated else None)
                     )
-            if ini_edits:
-                def mutate(document, edits=ini_edits):
+            if changed_photos:
+                def mutate(
+                    document,
+                    edits=ini_edits,
+                    names=changed_photos,
+                ):
                     for name, value in edits:
                         document = (
                             document.with_value(name, "keywords", value)
                             if value is not None
                             else document.with_removed(name, "keywords")
                         )
+                    for name in names:
+                        document = with_backuphash(document, name)
                     return document
 
                 # #2506: az írás bukása NEM lehet néma. Írásvédett mappán a
