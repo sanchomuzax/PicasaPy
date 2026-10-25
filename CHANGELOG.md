@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.216] - 2026-10-25
+
+- A forgatás, a képfelirat és a címkék mentése a Picasa képlete szerint frissíti a kép backuphash értékét (#5810).
+
 ## [0.9.215] - 2026-10-25
 
 - Egyetlen kép átnevezésekor az F2 és a Fájl ▸ Átnevezés a Rename Files párbeszédet nyitja meg, a fájlnév kiterjesztés nélküli részét kijelölve (#5804).
