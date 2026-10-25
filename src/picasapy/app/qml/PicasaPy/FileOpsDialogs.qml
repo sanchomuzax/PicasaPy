@@ -30,9 +30,7 @@ Item {
     }
     // #1614: Fájl ▸ Áthelyezés új mappába… — egyetlen névmezős párbeszéd,
     // mert a pontos alakjára nincs erősebb bizonyíték (ld. a jegy
-    // „Bizonyítottsági fok" szakasza). ⚠️ #2911: a mintaadó `newAlbumDialog`
-    // MEGSZŰNT — az „Új album" azóta csendben, névbekérés nélkül hoz létre
-    // „Névtelen" albumot, az eredeti mért viselkedése szerint.
+    // „Bizonyítottsági fok" szakasza).
     function openMoveToNewFolder(paths) {
         moveToNewFolderDialog.openFor(paths)
     }
@@ -56,25 +54,48 @@ Item {
         dialogs.appWindow.clearSelection()
     }
 
-    //: #2911: az „Új album" CSENDBEN hoz létre egy „Névtelen" albumot —
-    //: az eredetiben ezen az úton NINCS névbekérő (`thumbui/newalbum`,
-    //: kezelő `0x005eb810`: felépíti az album-leírót, a nevét a
-    //: `IDS_DEFAULT_ALBUM_NAME` erőforrásból tölti, létrehozza, és kész;
-    //: se párbeszéd, se számozás, se dátum). Az átnevezés utólag, a
-    //: meglévő albumátnevező úton történik.
-    //:
-    //: ⛔ ÜRES kijelölésnél nem történik semmi: nálunk az album a
-    //: `.picasa.ini`-ben él (`[.album:<token>]`), tehát TAG nélkül nincs
-    //: hova kiírni — az eredetinek adatbázisa volt, ott az üres album is
-    //: létezhetett. Ez a tárolásunk következménye, nem kihagyás.
+    //: #2911: a kép-helyi menü PicasaPy-kiegészítése a kijelölt képekből
+    //: készít albumot, névbekérés nélkül. Az eszköztár külön útja a #5812
+    //: alapján az Album Properties párbeszédet nyitja, és üres albumot ment.
     function openNewAlbum(rows) {
         if (!controller || !rows || rows.length === 0) return
         controller.createAlbum(dialogs.ujAlbumNeve, rows)
     }
 
+    // #5812: az eszköztár új album gombja az Album Properties párbeszédet
+    // nyitja. Jóváhagyáskor a controller az albumdefiníciót az aktuális
+    // mappa ini-jébe írja, képtagság létrehozása nélkül.
+    function openNewAlbumProperties(folderPath) {
+        var dialog = toolbarAlbumPropertiesDialog
+        dialog.albumFolderPath = folderPath || ""
+        dialog.albumToken = ""
+        dialog.albumName = dialog.untitledFolderName
+        dialog.currentDate = ""
+        dialog.albumLocation = ""
+        dialog.currentDescription = ""
+        dialog.currentMusicEnabled = false
+        dialog.currentMusicFile = ""
+        dialog.open()
+    }
+
     //: #2911: a MÉRT alapértelmezett albumnév (`IDS_DEFAULT_ALBUM_NAME`).
     //: Fordításból jön — magyar felületen „Névtelen" —, nem beégetve.
     readonly property string ujAlbumNeve: qsTr("Untitled")
+
+    FolderPropertiesDialog {
+        id: toolbarAlbumPropertiesDialog
+        objectName: "toolbarNewAlbumPropertiesDialog"
+        mode: "album"
+        newAlbumCreation: true
+        onNewAlbumPropertiesAccepted: function(folderPath, name, isoDate,
+                                                location, description,
+                                                useMusic, musicFile) {
+            if (controller && controller.createEmptyAlbum)
+                controller.createEmptyAlbum(
+                    name, folderPath, isoDate, location, description,
+                    useMusic, musicFile)
+        }
+    }
 
     // #1612: a vezérlő VISSZAJELZÉSEI. A hozzájuk tartozó `Connections`
     // SZÁNDÉKOSAN nem itt áll, hanem a `Main.qml`-ben (a #2096 mintája):
