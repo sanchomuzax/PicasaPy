@@ -89,8 +89,8 @@ _NINCS_LATHATO_HATAS = {
         "amit a felület nem jelenít meg."
     ),
     "menuEditCopyText": (
-        "Nincs látható változás: feliratszöveg kerül a vágólapra; "
-        "a mintaképen nincs feliratréteg."
+        "Nincs látható változás: Text eszközös réteg kerül a belső "
+        "vágólapra; a mintaképen nincs ilyen réteg."
     ),
     "menuEditPasteEffects": (
         "Nincs beilleszthető hatáslista: a tiszta profil belső "
@@ -130,7 +130,10 @@ _LETILTOTT_A_TISZTA_MINTABAN = {
         "A mintában nincs beilleszthető fájl a vágólapon."
     ),
     "menuEditPasteText": (
-        "A kijelölt mintaképeken nincs beilleszthető feliratszöveg."
+        "A kijelölt mintaképeken nincs beilleszthető Text eszközös réteg."
+    ),
+    "menuEditCopyText": (
+        "A kijelölt mintaképeken nincs másolható Text eszközös réteg."
     ),
     "menuEditUndoPasteAllEffects": (
         "Nem történt hatáslista-beillesztés, ezért nincs mit visszavonni."

@@ -1,9 +1,10 @@
-"""#1526 — a Szerkesztés menü „Szöveg másolása / beillesztése" a FELIRATRA hat.
+"""#1526 - a képfelirat vágólap-API-ja; a menüút #5877 óta Text-réteget visz.
 
-A jegy hét vágólap-parancsot mért ki két névtérben; a fájl-vágólap
-(`Cut`/`Copy`/`Paste`) és a szövegmező hét tételes helyi menüje már elkészült.
-Ez a szelet a maradék kettő: a `Copy Text` / `Paste Text`, ami az eredetiben
-NEM a fájlra, hanem a **felirat szövegére** hat.
+A fájl-vágólap (`Cut`/`Copy`/`Paste`) és a szövegmező hét tételes helyi
+menüje már elkészült. Az #1526-os controller-API a képfelirat szövegét
+másolja, de a #5877-ben visszaállított eredeti `Copy Text` / `Paste Text`
+menüparancsok ettől külön a Text eszköz `text=` rétegét kezelik. A menüsor
+nem hívja ezeket a felirat-API-kat.
 
 ⚠️ Ez a próba nem a rendszervágólapot méri — fej nélküli környezetben
 (`offscreen`/`minimal`) nincs vágólap-tulajdonos, és a Qt-hívás a CI-n
@@ -163,13 +164,6 @@ class TestASzovegBeillesztese:
         assert controller.pasteCaptionText([sor]) == 0
         assert controller.photos.captionAt(sor) == "Megmaradok"
 
-    def test_a_jelzo_MUTATJA_hogy_van_e_szoveg(self, controller):
-        controller.setCaptionClipboardText("")
-        assert controller.hasCaptionTextClipboard is False
-        controller.setCaptionClipboardText("valami")
-        assert controller.hasCaptionTextClipboard is True
-
-
 class TestAMenuBekotes:
     def test_a_ket_tetel_mar_NEM_helyfoglalo(self):
         for nev in ("menuEditCopyText", "menuEditPasteText"):
@@ -181,16 +175,20 @@ class TestAMenuBekotes:
                 "funkció pedig hazugság (#1526)"
             )
 
-    def test_a_jel_ELJUT_a_vezerlohoz(self):
-        """A #1153 osztálya: a menü jelet ad, de senki nem veszi fel."""
+    def test_a_menutetel_a_szovegreteg_vezerlohoz_kot(self):
         assert "onCopyTextRequested" in _MAIN
         assert "onPasteTextRequested" in _MAIN
-        assert "copyCaptionText(" in _MAIN
-        assert "pasteCaptionText(" in _MAIN
+        assert "copyTextLayer(" in _MAIN
+        assert "pasteTextLayer(" in _MAIN
+        assert "copyCaptionText(" not in _MAIN
+        assert "pasteCaptionText(" not in _MAIN
 
-    def test_a_beillesztes_csak_szoveggel_ELERHETO(self):
+    def test_a_beillesztes_a_szovegreteg_pufferet_figyeli(self):
         kezd = _MENU.index('objectName: "menuEditPasteText"')
-        assert "hasCaptionTextClipboard" in _MENU[kezd : kezd + 400], (
-            "a Szöveg beillesztése üres vágólappal is kattintható — "
-            "hatástalan menütétel"
+        blokk = _MENU[kezd : kezd + 500]
+        assert "hasTextLayerClipboard" in blokk, (
+            "a Paste Text nem a Text-réteg vágólapját figyeli"
+        )
+        assert "hasSelectedTextLayer" in blokk, (
+            "a Text eszközből származó aktuális rétegpuffer nem érhető el"
         )

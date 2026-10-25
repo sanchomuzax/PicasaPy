@@ -544,9 +544,11 @@ MenuBar {
     signal copyFilesRequested()
     //: #1526: a Beillesztés — a gazda tudja, melyik mappa a cél.
     property bool clipboardHasFiles: false
-    //: #1526: van-e SZÖVEG a vágólapon — a „Szöveg beillesztése" ettől él.
-    property bool hasCaptionTextClipboard: false
-    //: #1526: a feliratszöveg vágólap-parancsai (a gazda a kijelölésre hívja)
+    //: #5877: a kijelölés első képén van-e Text eszközös szövegréteg.
+    property bool hasSelectedTextLayer: false
+    //: #5877: van-e beilleszthető Text eszközös réteg a belső pufferben.
+    property bool hasTextLayerClipboard: false
+    //: #5877: a Text eszköz rétegét kezelő parancsok (a gazda a kijelölésre hívja).
     signal copyTextRequested()
     signal pasteTextRequested()
     signal pasteFilesRequested()
@@ -954,21 +956,23 @@ MenuBar {
             onTriggered: bar.pasteAllEffectsRequested()
         }
         MenuSeparator {}
-        // #1526: a feliratszöveg vágólap-műveletei. MÉRVE, hogy ez a KETTŐ
-        // nem a fájlra hat, hanem a FELIRATRA — a fájl-vágólap
-        // (`Cut`/`Copy`/`Paste`) másik készlet, másik névtérben.
+        // #5877: az eredeti Copy/Paste Text a Text eszköz szövegrétegét
+        // kezeli (`text=`), nem a kép feliratát. A fájl-vágólap
+        // (`Cut`/`Copy`/`Paste`) ettől is külön parancskészlet.
         MenuItem {
             objectName: "menuEditCopyText"
             text: qsTr("Copy Text")
-            enabled: bar.photoActionsEnabled
+            enabled: bar.photoActionsEnabled && bar.hasSelectedTextLayer
             onTriggered: bar.copyTextRequested()
         }
         MenuItem {
             objectName: "menuEditPasteText"
             text: qsTr("Paste Text")
-            //: Üres vágólappal a tétel hatástalan volna — a szürke vezérlő
-            //: megmondja, hogy nincs mit beilleszteni.
-            enabled: bar.photoActionsEnabled && bar.hasCaptionTextClipboard
+            //: A Text eszköz a kijelölt réteget is a belső szövegpufferbe
+            //: teszi; külön Copy Text után a puffer a másik kijelölt képre
+            //: is beilleszthető.
+            enabled: bar.photoActionsEnabled
+                     && (bar.hasTextLayerClipboard || bar.hasSelectedTextLayer)
             onTriggered: bar.pasteTextRequested()
         }
         MenuSeparator {}

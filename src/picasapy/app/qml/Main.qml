@@ -1740,24 +1740,21 @@ ApplicationWindow {
     //: hívja. (⚠️ A billentyű-őr a `Shortcut` törzsét egy szintig elemzi,
     //: tehát ott nem lehet ágas kód: ha a logika a `Shortcut`-ba kerül, az
     //: őr NEM LÁTJA meg a kötést, és a menütétel „néma hirdetőnek" látszik.)
-    //: #1526: „Szöveg másolása" — a KIJELÖLÉS első képének felirata a
-    //: vágólapra. Ágazás a `Shortcut`/menü törzsében nincs: a #1616 őre
-    //: egyetlen zárójel-szintet lát, ezért a logika függvényben áll.
-    function masoldAFeliratot() {
+    // #5877: „Copy Text" - a kijelölés első képének Text eszközös rétege.
+    function masoldASzovegreteget() {
         if (!controller) return
         var sorok = window.photoActionRows()
         if (sorok.length === 0) return
-        controller.copyCaptionText(sorok[0])
+        controller.copyTextLayer(sorok)
     }
 
-    //: #1526: „Szöveg beillesztése" — a vágólap szövege MINDEN kijelölt kép
-    //: feliratába. Üres vágólapra a vezérlő nem tesz semmit (a menütétel
-    //: ilyenkor amúgy is szürke).
-    function illesdBeAFeliratot() {
+    // #5877: „Paste Text" - a másolt Text eszközös réteg a kijelölés minden
+    // képére kerül; a kijelölt réteg pufferként is használható.
+    function illeszdBeASzovegreteget() {
         if (!controller) return
         var sorok = window.photoActionRows()
         if (sorok.length === 0) return
-        controller.pasteCaptionText(sorok)
+        controller.pasteTextLayer(sorok)
     }
 
     function beillesztAVagolaprol() {
@@ -2196,17 +2193,17 @@ ApplicationWindow {
         //: indul el, és a sávon üzenetet adunk — némán nem tűnik el.
         clipboardHasFiles: fileOpsController
                            ? fileOpsController.clipboardHasFiles : false
-        //: #1526: a szöveg-vágólap jelzője — a „Szöveg beillesztése"
-        //: tételhez. A vezérlő a Qt vágólapjának `dataChanged`-jére van
-        //: kötve, tehát egy MÁS program írása is eljut ide.
-        hasCaptionTextClipboard: (controller
-                                  && controller.hasCaptionTextClipboard !== undefined)
-                                 ? controller.hasCaptionTextClipboard : false
-        //: #1526: a felirat SZÖVEGE a vágólapra, illetve a vágólapról a
-        //: kijelölt képek feliratába. Egy belépő mindkettőre — a
-        //: `window.selectedRows()` adja a hatókört.
-        onCopyTextRequested: window.masoldAFeliratot()
-        onPasteTextRequested: window.illesdBeAFeliratot()
+        // #5877: a text= réteg állapotát a .picasa.ini-ből olvassa;
+        // a textactive= láthatósága nem változtatja meg a réteg meglétét.
+        hasSelectedTextLayer: (controller
+                               && controller.hasTextLayerInSelection !== undefined)
+                              ? controller.hasTextLayerInSelection(
+                                    window.photoActionRows()) : false
+        hasTextLayerClipboard: (controller
+                                && controller.hasTextLayerClipboard !== undefined)
+                               ? controller.hasTextLayerClipboard : false
+        onCopyTextRequested: window.masoldASzovegreteget()
+        onPasteTextRequested: window.illeszdBeASzovegreteget()
         onPasteFilesRequested: window.beillesztAVagolaprol()
         // #1595: a Mappa menü négy tétele a MEGNYITOTT mappára hat. A
         // párbeszédek és a megerősítések a bal hasábon élnek (ott van a
