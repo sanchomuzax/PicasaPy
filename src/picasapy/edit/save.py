@@ -179,6 +179,7 @@ from picasapy.ini import (
     update_document,
     with_backuphash,
 )
+from picasapy.ini.moddate import moddate_from_timestamp_ns
 from picasapy.ini.names import INI_NAME
 from picasapy.ioutil import write_atomic
 
@@ -226,6 +227,7 @@ ORIGINALS_DIR_NAMES = (LEGACY_ORIGINALS_DIR_NAME, ORIGINALS_DIR_NAME)
 # letöltés provenienciája. Sem nem írjuk, sem nem töröljük.
 _FILTERS_KEY = "filters"
 _REDO_KEY = "redo"
+_MODDATE_KEY = "moddate"
 _EDIT_BOOKKEEPING_KEYS = (_FILTERS_KEY, _REDO_KEY)
 
 _INI_FILENAME = INI_NAME
@@ -342,16 +344,20 @@ def save_edited(
     # ELŐTT történjen: olvasási hiba esetén ne maradjon beégetett, de el nem
     # könyvelt kép.
     current_before = _photo_ini_values(
-        current_ini_path, section, (_FILTERS_KEY, _REDO_KEY, "backuphash")
+        current_ini_path,
+        section,
+        (_FILTERS_KEY, _REDO_KEY, "backuphash", _MODDATE_KEY),
     )
     original_before = _photo_ini_values(
-        original_ini_path, section, (_FILTERS_KEY,)
+        original_ini_path, section, (_FILTERS_KEY, _MODDATE_KEY)
     )
 
     # A (b) lépés ELŐTTI bájtok — ezekre kell visszaállni, ha a (c) elbukik
     # (#297). Első mentésnél ez maga az eredeti (ugyanaz, ami a
     # `.picasaoriginals`-ba kerül), ismételt mentésnél a KORÁBBI mentés
     # renderelt tartalma.
+    original_mtime_ns = image_path.stat().st_mtime_ns
+    moddate_value = moddate_from_timestamp_ns(original_mtime_ns)
     bytes_before_write = image_path.read_bytes()
 
     # (a) Az eredeti megőrzése — KIZÁRÓLAG ha még nincs korábbi mentésből
@@ -391,10 +397,10 @@ def save_edited(
     payload = _encode_image(image_path.suffix, rendered_image, jpeg_quality)
     _kep_irasa(image_path, payload)
 
-    # (c) A lánc az eredeti-mappa ini-jébe kerül, a #5810 szerinti
-    # backuphash pedig az aktuális mappa ini-jébe. Két ini frissítése nem
-    # atomikus, ezért a már sikeres írásokat visszagörgetjük, ha a következő
-    # lépés hibázik.
+    # (c) A lánc és a mentés előtti fájlidő az eredeti-mappa ini-jébe kerül,
+    # a #5810 szerinti backuphash pedig az aktuális mappa ini-jébe. Két ini
+    # frissítése nem atomikus, ezért a már sikeres írásokat visszagörgetjük,
+    # ha a következő lépés hibázik.
     completed_ini_writes: list[tuple[Path, _PhotoIniSnapshot]] = []
     try:
         current_before.written_document = _update_ini_document(
@@ -417,6 +423,8 @@ def save_edited(
                 )
                 if filters_value
                 else document.with_removed(_section_name(image_path), _FILTERS_KEY)
+            ).with_value(
+                _section_name(image_path), _MODDATE_KEY, moddate_value, carried=True
             ),
             rollback_snapshot=original_before,
             section_name=section,
@@ -499,15 +507,18 @@ def undo_save(image_path: str | Path) -> UndoSaveResult:
     original_backup = find_original_backup(image_path)
     original_ini_path = _original_ini_path(image_path, original_backup)
     current_before = _photo_ini_values(
-        current_ini_path, section, (_FILTERS_KEY, _REDO_KEY)
+        current_ini_path, section, (_FILTERS_KEY, _REDO_KEY, "backuphash", _MODDATE_KEY)
     )
     original_before = _photo_ini_values(
-        original_ini_path, section, (_FILTERS_KEY,)
+        original_ini_path, section, (_FILTERS_KEY, _MODDATE_KEY)
     )
     current_section = current_before.document.section(section)
     original_section = original_before.document.section(section)
     original_filters = (
         original_section.get(_FILTERS_KEY) if original_section is not None else None
+    )
+    original_moddate = (
+        original_section.get(_MODDATE_KEY) if original_section is not None else None
     )
     legacy_redo = (
         current_section.get(_REDO_KEY) if current_section is not None else None
@@ -518,16 +529,25 @@ def undo_save(image_path: str | Path) -> UndoSaveResult:
     _kep_irasa(image_path, snapshot.read_bytes())
     completed_ini_writes: list[tuple[Path, _PhotoIniSnapshot]] = []
     try:
+        def restore_current_metadata(document: IniDocument) -> IniDocument:
+            # #643: a `redo=`-ból VISSZAforgatott lánc, átvitt tartalom.
+            updated = (
+                document.with_value(section, _FILTERS_KEY, restored_filters, carried=True)
+                if restored_filters
+                else document.with_removed(section, _FILTERS_KEY)
+            ).with_removed(section, _REDO_KEY)
+            # A régi mentések eredeti ini-jében nincs feltétlenül moddate.
+            # Ilyenkor megőrizzük az aktuális ini esetleges értékét, és nem
+            # találunk ki újat. #2675: az `originhash`-t nem töröljük.
+            if original_moddate is not None:
+                updated = updated.with_value(
+                    section, _MODDATE_KEY, original_moddate, carried=True
+                )
+            return with_backuphash(updated, section)
+
         current_before.written_document = _update_ini_document(
             image_path,
-            lambda doc: (
-                # #643: a `redo=`-ból VISSZAforgatott lánc — átvitt tartalom.
-                doc.with_value(section, _FILTERS_KEY, restored_filters, carried=True)
-                if restored_filters
-                else doc.with_removed(section, _FILTERS_KEY)
-            )
-            # #2675: az `originhash`-t nem törli — nem a mentés írta
-            .with_removed(section, _REDO_KEY),
+            restore_current_metadata,
             rollback_snapshot=current_before,
             section_name=section,
         )
