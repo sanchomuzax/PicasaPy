@@ -250,14 +250,30 @@ def test_valodi_kattintas_utan_forgatas_felirat_es_cimke_hash_ezutan_textactive_
     )
     caption_field = _item(window, "captionField")
     _click(window, qt_app, caption_field)
+    assert _wait(qt_app, lambda: bool(caption_field.property("activeFocus"))), (
+        "a feliratmező a kattintás után nem kapott fókuszt"
+    )
     QTest.keyClick(window, Qt.Key.Key_A, Qt.KeyboardModifier.ControlModifier)
     _key_clicks(window, qt_app, "caption-5810")
+    assert _wait(qt_app, lambda: caption_field.property("text") == "caption-5810"), (
+        f"a feliratmező szövege: {caption_field.property('text')!r}"
+    )
     QTest.keyClick(window, Qt.Key.Key_Return)
+    # #5856: a két feltétel külön lépésben, hogy a windowsos bukás megnevezze
+    # a hiányzó részt; a háttérírásnak ott több idő kell.
     assert _wait(
         qt_app,
-        lambda: read_file_metadata(library / "a.jpg").caption == "caption-5810"
-        and "backuphash" in _section(library, "a.jpg"),
-    ), "a felirat mentése után nem íródott backuphash az ini-be"
+        lambda: read_file_metadata(library / "a.jpg").caption == "caption-5810",
+        20.0,
+    ), (
+        "a felirat nem került a JPEG IPTC-jébe: "
+        f"{read_file_metadata(library / 'a.jpg').caption!r}, "
+        f"ini: {_section(library, 'a.jpg')!r}"
+    )
+    assert _wait(qt_app, lambda: "backuphash" in _section(library, "a.jpg"), 20.0), (
+        "a felirat mentése után nem íródott backuphash az ini-be: "
+        f"{_section(library, 'a.jpg')!r}"
+    )
     after_caption = _section(library, "a.jpg")
     _assert_valid_backuphash(after_caption, "a.jpg")
     assert _without_backuphash(after_caption) == expected_after_rotate
