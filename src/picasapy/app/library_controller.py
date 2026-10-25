@@ -561,7 +561,7 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             self._persist_roots()
 
     def shutdown(self) -> None:
-        """Leállítás: figyelő és időzítő leállítása (kilépéskor hívandó)."""
+        """Leállítás: figyelő, időzítő és kért cache-takarítás (#5897)."""
         if self._rescan_timer is not None:
             self._rescan_timer.stop()
         if getattr(self, "_folder_poll_timer", None) is not None:
@@ -578,6 +578,11 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
             # tovább. A tényt a `LibraryWatcher` naplózza.
             if self._watcher.leallt():
                 self._watcher = None
+        if getattr(self, "disposePreviewsOnExit", False):
+            # A már elfogadott bélyegkép-munkák fejeződjenek be, mielőtt a
+            # közös takarító törli a lemezes és memóriabeli cache-t.
+            self._provider.wait_for_done(10_000)
+            self._provider.clear_cache()
 
     # -- A Mappakezelő OK-jának MENTÉSI ÚTJA (#1334) -------------------------
     #

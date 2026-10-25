@@ -356,7 +356,7 @@ A tételek **három** csoportba esnek, és csak a harmadik hiba:
 - „None of the selected pictures has a location, so no Google Earth file was written.”
   - *szükséges segédszöveg* — Egyik kijelölt képnek sincs helyadata, ezért nem készült Google Earth-fájl állapotüzenet; a Google Earth-export hivatalos szövegei (EarthController::*) között nincs ilyen "nincs helyadat" eset — ez a mi saját visszajelzésünk.
 
-### `PicasaPy/OptionsTabGeneral.qml` — 21
+### `PicasaPy/OptionsTabGeneral.qml` - 18
 
 - „User interface:”
   - ⚠️ *besorolatlan*
@@ -372,14 +372,8 @@ A tételek **három** csoportba esnek, és csak a harmadik hiba:
   - *a mérő vakfoltja — az eredetiben is megvan* — A magyar szövegünk betűre egyezik az options/labelgroup10.title hivatalos magyarjával.
 - „Detect duplicates on import”
   - *valódi eltérés* — SZÁNDÉKOS: a kód kommentje: „a fen teljes szövegkiírása nincs a lapon — a feliratot ezért NEM írjuk át egyetlen idézet alapján”; a hivatalos magyar azóta megvan. Hivatalos magyar: „Másodpéldányok észlelése az importálás során” — nálunk: „Duplikátumok észlelése importáláskor”. (hivatalos: `options/autoexclude.title` „”)
-- „Clear Cache...”
-  - *szükséges segédszöveg* — Az eredeti disposepreviews egy jelölőnégyzet; a kód kommentje szerint ez a gomb annak „megfelelője”, de más vezérlő, más szöveggel.
-- „Empty the thumbnail cache? The thumbnails are ”
-  - *szükséges segédszöveg* — Saját megerősítő kérdés a gyorsítótár-ürítés gombjához; nincs megfelelője a forrásokban.
-- „Empty”
-  - *szükséges segédszöveg* — A fenti saját megerősítő kérdés Igen gombjának felirata.
-- „Keep”
-  - *szükséges segédszöveg* — A fenti saját megerősítő kérdés Nem gombjának felirata.
+- „Clear cache files”
+  - *a mérő vakfoltja - az eredetiben is megvan* - A `disposepreviews` beállítás hivatalos felirata és magyar párja az `options/disposepreviews.title` azonosítón található.
 - „Delete from disk without confirmation”
   - *a mérő vakfoltja — az eredetiben is megvan* — A magyar szövegünk betűre egyezik az options/DoNotConfirmDeleteFromDisk.title hivatalos magyarjával.
 - „Remove from album without confirmation”
