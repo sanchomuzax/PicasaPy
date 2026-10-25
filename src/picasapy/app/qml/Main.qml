@@ -3098,9 +3098,11 @@ ApplicationWindow {
         }
         // #23: az "Import" gomb az Import forrásból ablakot nyitja
         onImportRequested: importSourceDialog.open()
-        // #1421: az eszköztár `newalbum` gombja UGYANOTT köt ki, mint a
-        // Fájl ▸ Új album… és a kép-helyimenü tétele — egy út, egy dialógus.
-        onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())
+        // #5812: az eszköztár új album gombja az Album Properties ablakot
+        // nyitja az aktuális mappához; a Fájl- és kép-helyi menü útja külön él.
+        onNewAlbumRequested:
+            fileOpsDialogs.ensure().openNewAlbumProperties(
+                controller ? controller.currentFolder : "")
         // #1421: az eszköztár `timelinebutton`-ja UGYANAZT a váltást
         // végzi, mint a Nézet ▸ Időrend és a Ctrl+5.
         // #1421: a nézetváltó pár UGYANAZT a vezérlőt hívja, mint a
