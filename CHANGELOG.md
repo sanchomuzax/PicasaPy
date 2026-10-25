@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.235] - 2026-10-25
+
+- A Fájl menü, a mappa fejlécének Save gombja és a Ctrl+S csak mentetlen képszerkesztésnél használható (#5883).
+
 ## [0.9.234] - 2026-10-25
 
 - A letiltott gombok és mezők felirata témához igazodó szürke árnyalatot kap (#5874).
