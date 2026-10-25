@@ -26,6 +26,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Callable, Iterator
+from uuid import uuid4
 
 from picasapy.ioutil import write_atomic
 
@@ -39,6 +40,7 @@ _BOM = b"\xef\xbb\xbf"
 #: #1375 tanulsága szerint MODULSZINTŰ, hogy a teszt EZT cserélhesse — a
 #: `builtins.open` cseréje a folyamat összes fájlmegnyitására hatna.
 _open = open
+_read_bytes = Path.read_bytes
 
 
 @dataclass(slots=True)
@@ -340,6 +342,56 @@ def update_document(
         f"A(z) {target} a betöltés és az ujjlenyomat-ellenőrzés között "
         f"{max_retries + 1} próbálkozás mindegyikében megváltozott."
     )
+
+
+def remove_ini_target_if_content_matches(
+    path: str | Path, expected: IniDocument
+) -> bool:
+    """Törli a megadott ini-célt, ha bájtjai az ellenőrzéskor egyeznek.
+
+    Tranzakciós kompenzációra szolgál, amikor az írás egy korábban hiányzó
+    elsődleges `.picasa.ini`-t hozott létre. Az ellenőrzés előtt atomikusan
+    félreteszi a célfájlt, ezért egy közben újra létrehozott célfájl érintetlen
+    marad. A lock csak a folyamaton belüli írókat szerializálja; egy már
+    megnyitott külső fájlleíróval szemben továbbra sincs OS-szintű garancia.
+    A legacy `Picasa.ini` forrást ez a függvény sosem célozza meg, hacsak a
+    hívó nem adja meg kifejezetten.
+    """
+    target = Path(path)
+    text = expected.serialize()
+    try:
+        payload = text.encode(expected.encoding)
+    except UnicodeEncodeError:
+        # Nem bizonyítható, hogy a lemezen levő bájtok a várt dokumentumot
+        # jelentik; biztonságból ne töröljünk.
+        return False
+    if expected.bom:
+        payload = _BOM + payload
+
+    with _ini_path_lock(target):
+        if not target.is_file():
+            return False
+        quarantine = target.with_name(
+            f".{target.name}.rollback-{uuid4().hex}"
+        )
+        try:
+            os.replace(target, quarantine)
+        except FileNotFoundError:
+            return False
+
+        if _read_bytes(quarantine) == payload:
+            quarantine.unlink()
+            return True
+
+        # A fájl a célról való atomikus leemelés előtt már eltért. Linkkel
+        # tesszük vissza, ami atomikusan hibázik, ha külső író időközben új
+        # célfájlt hozott létre; azt ilyenkor nem írjuk felül.
+        try:
+            os.link(quarantine, target)
+        except FileExistsError:
+            return False
+        quarantine.unlink()
+        return False
 
 
 def _write_backup(target: Path) -> None:

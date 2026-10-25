@@ -16,7 +16,8 @@ sztringjeiből):
 
 **A #484-es rangsor kiemelt pontja:** a mentés **véglegesen eldobja** azt a
 láncelemet, amit nem tudunk renderelni — a beégetett képbe az nem kerül
-bele, a `redo=` viszont felülíródik. Ezért a mentés előtt a hívó a
+bele. A teljes lánc az eredeti-mappa ini-jében megmarad az „Undo Save"
+művelethez. Ezért a mentés előtt a hívó a
 `unrenderableFiltersIn()`-nel megkérdezheti, van-e ilyen, és
 figyelmeztetheti a felhasználót. Ez NEM elméleti kockázat: a „Régi
 effektek" fülön (#571) ma is látszanak olyan nevek, amikhez nincs
@@ -385,8 +386,8 @@ class SaveMixin(BackgroundWorkerMixin):
         """A kijelölésben szereplő, ÁLTALUNK NEM RENDERELHETŐ szűrőnevek.
 
         A mentés beégeti a láncot a fájlba: amit nem tudunk renderelni, az a
-        beégetett képből kimarad, a `redo=` viszont felülíródik — vagyis a
-        beállítás **véglegesen elvész**. A felület ezért a mentés előtt
+        beégetett képből kimarad, de a könyvelési lánc az eredeti-mappa
+        ini-jében megmarad az „Undo Save” művelethez. A felület ezért a mentés előtt
         rákérdezhet (#444/#484).
 
         Ábécésorrendben, ismétlés nélkül; üres lista = nincs miért kérdezni.
@@ -488,8 +489,8 @@ class SaveMixin(BackgroundWorkerMixin):
                     done += 1
                     successful_paths.append(path)
                     # #750: a sikeres mentés ÜRES lánccal jelent a naplónak,
-                    # ami ott a bejegyzés TÖRLÉSÉT jelenti. Ld. a `redo=`
-                    # döntést a `_record_saved_state` docstringjében.
+                    # ami ott a bejegyzés TÖRLÉSÉT jelenti. Ld. a
+                    # `_record_saved_state` docstringjében.
                     naplo.append((str(path), ""))
                 self._saveProgressTick.emit(index + 1, len(records), 1)
             self._record_saved_state(naplo)
@@ -675,7 +676,7 @@ class SaveMixin(BackgroundWorkerMixin):
         A napló azt őrzi, MI milyen `filters=` láncot írtunk ki utoljára, és
         a nézet feltöltésekor riaszt, ha az eltűnt. A mentés viszont MAGA
         veszi el a `filters=`-t: a láncot a pixelekbe égeti, a kulcsot törli,
-        a tartalmát a `redo=`-ba forgatja át (`edit/save.py`). Ha a naplót nem
+        az eredeti-mappa ini-jébe teszi (`edit/save.py`). Ha a naplót nem
         vezetnénk át, a mentés utáni ELSŐ nézetfrissítés minden mentett képre
         azt állítaná, hogy „a szerkesztésed eltűnt" — a felhasználó pedig egy
         kattintással vissza is írhatná a láncot `filters=`-be, ami a már
@@ -699,9 +700,10 @@ class SaveMixin(BackgroundWorkerMixin):
            mentés előtti bájtok a `.picasaoriginals` sorszámozott
            pillanatképében megvannak.
 
-        A `redo=` valódi védelme külön alakú mechanizmust kívánna (saját
-        bejegyzés-fajta, saját visszaírási cél és saját felületi üzenet) —
-        önálló jegyre való, nem erre.
+        A `redo=` az újra-listát jelenti. Régi PicasaPy-mentéseknél még ott
+        maradhat a korábbi mentéslánc, de az új mentéseknél a lánc az
+        eredeti-mappa ini-jébe kerül; a `redo=` újra-lista írása külön
+        szerkesztési funkció.
 
         Az „Utolsó mentés visszavonása" ellenben VISSZAÍRJA a láncot
         `filters=`-be: onnantól megint van mit védeni, ezért ott a
@@ -743,9 +745,9 @@ class SaveMixin(BackgroundWorkerMixin):
                 else:
                     done += 1
                     successful_paths.append(path)
-                    # #750: az „Utolsó mentés visszavonása" a `redo=`-ból
-                    # VISSZAÍRJA a láncot `filters=`-be (`restored_filters`)
-                    # — onnantól megint van mit védeni. A „Visszaállítás"
+                    # #750: az „Utolsó mentés visszavonása" a visszaadott
+                    # láncot `filters=`-be írja (`restored_filters`),
+                    # onnantól megint van mit védeni. A „Visszaállítás"
                     # minden szerkesztés-könyvelést töröl, ott az üres lánc
                     # (a `getattr` alapértéke) törli a bejegyzést.
                     naplo.append((str(path), getattr(result, "restored_filters", "")))
