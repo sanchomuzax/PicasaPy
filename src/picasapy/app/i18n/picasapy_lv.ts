@@ -6615,6 +6615,12 @@ picasapy-origin-key: stringres:CThumbUI::FileSave::message</extracomment>
             <translation>Atjaunot</translation>
         </message>
         <message>
+            <source>Revert to original version of file?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
+            <translation>Vai atjaunot uz faila sākotnējo versiju?</translation>
+        </message>
+        <message>
             <source>Revert to original version of these file(s)?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Vai atjaunot šo failu sākotnējo versiju?</translation>

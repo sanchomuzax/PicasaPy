@@ -7,6 +7,26 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.230] - 2026-10-25
+
+- A dátummódosító ablak a jelenlegi fotódátumot külön, letiltott dátum- és időmezőben mutatja (#5869).
+
+## [0.9.229] - 2026-10-25
+
+- Az Undo Save a szerkesztési lánc mellé a kép `moddate` és `backuphash` kulcsát is visszaírja az ini-be, ahogy az eredeti (#5864).
+
+## [0.9.228] - 2026-10-25
+
+- A Visszaállítás párbeszéd biztonságos Mégse-fókuszt és az egyképes hivatalos kérdésszöveget használja (#5861).
+
+## [0.9.227] - 2026-10-25
+
+- A szerkesztési lánc és a kötegelt effektek a kép ini-szakaszában a backuphash-t is frissítik (#5854).
+
+## [0.9.226] - 2026-10-25
+
+- A „Move to New Folder...” párbeszéd most a mappa tulajdonságait kéri, és a kijelölt képeket az új mappába helyezi (#5853).
+
 ## [0.9.225] - 2026-10-25
 
 - A Kép ▸ Reset Faces az arcadatok törlésekor a kép szakaszába `backuphash`-t is ír (#5848).

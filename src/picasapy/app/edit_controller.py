@@ -41,6 +41,7 @@ from picasapy.ini import (
     load_or_empty,
     parse_faces,
     update_document,
+    with_backuphash,
 )
 from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.ini.redeye import EyeCircle64
@@ -2850,6 +2851,9 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
                 document = document.with_value(
                     self._section_name, "filters", self._session.to_value()
                 )
+            # #5854: a közös író a szerkesztési lánc frissítésekor a kép
+            # szakaszának backuphash-ét is ugyanebben az ini-írásban állítja.
+            document = with_backuphash(document, self._section_name)
             # Picasa-paritás (#73): a vágás a filters= mellett külön
             # crop=rect64(...) kulcsba is kerül — a Picasa 3.x is így ír.
             crop = self.crop()

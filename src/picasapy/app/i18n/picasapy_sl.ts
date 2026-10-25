@@ -6624,6 +6624,12 @@ picasapy-origin-key: stringres:CThumbUI::FileSave::message</extracomment>
             <translation>Povrni v prejšnjo obliko</translation>
         </message>
         <message>
+            <source>Revert to original version of file?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
+            <translation>Ali želite datoteko povrniti v izvirno obliko?</translation>
+        </message>
+        <message>
             <source>Revert to original version of these file(s)?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Želite te datoteke povrniti na izvirno različico?</translation>
