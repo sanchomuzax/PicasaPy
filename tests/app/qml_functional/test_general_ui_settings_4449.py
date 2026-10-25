@@ -111,6 +111,7 @@ def _kapcsold_at(ablak: QObject, qt_app, object_name: str) -> None:
     options = _nyisd_meg_beallitasokat(ablak, qt_app)
     checkbox = _elem(ablak, object_name)
     _kattints(options, qt_app, checkbox)
+    _kattints(options, qt_app, _elem(options, "optionsOkButton"))
     _zar_beallitasokat(ablak, qt_app, options)
 
 
@@ -152,7 +153,10 @@ def test_tooltip_kapcsolo_kattintasra_elrejti_es_visszahozza(
     checkbox = _elem(ablak, "optionsShowTooltipsCheck")
     assert checkbox.property("checked") is True
     _kattints(options, qt_app, checkbox)
-    assert controller.showTooltipsEnabled is False
+    assert controller.showTooltipsEnabled is True
+    assert probe.property("engedelyezett") is True
+    _kattints(options, qt_app, _elem(options, "optionsOkButton"))
+    assert _varj(qt_app, lambda: controller.showTooltipsEnabled is False)
     assert probe.property("engedelyezett") is False
     _zar_beallitasokat(ablak, qt_app, options)
 

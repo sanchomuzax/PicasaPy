@@ -73,7 +73,7 @@ def test_beallitasbol_kattintva_menti_es_importnal_felkinalja(
     eredeti_options_magassag = options.height()
     mezo = _elem(options, "optionsImportDestField")
     tallozo = _elem(options, "optionsImportDestBrowseButton")
-    bezaro = _elem(options, "optionsCloseButton")
+    bezaro = _elem(options, "optionsOkButton")
 
     ui_utolso_sor = _elem(options, "optionsSingleClickExitCheck")
     fajlok_elso_sor = _elem(options, "optionsAutoExcludeCheck")
@@ -179,11 +179,20 @@ def test_beallitasbol_kattintva_menti_es_importnal_felkinalja(
     )
     valaszto.setProperty("visible", False)
     qt_app.processEvents()
+    assert Path(import_vezerlo.defaultDestination) != celu_mappa.resolve(), (
+        "az importcél a Beállítások OK gombja előtt íródott ki"
+    )
+    ok_gomb = _elem(options, "optionsOkButton")
+    _kattint(options, ok_gomb, qt_app)
+    _varj(
+        qt_app,
+        lambda: options.property("visible") is False,
+        "az OK gomb nem fogadta el a Beállításokat",
+    )
     settings.sync()
+    assert Path(import_vezerlo.defaultDestination) == celu_mappa.resolve()
     assert Path(settings.value("import/defaultdestination")) == celu_mappa.resolve()
 
-    QMetaObject.invokeMethod(options, "close", Qt.ConnectionType.DirectConnection)
-    qt_app.processEvents()
     QMetaObject.invokeMethod(menu, "triggered", Qt.ConnectionType.DirectConnection)
     _varj(
         qt_app,

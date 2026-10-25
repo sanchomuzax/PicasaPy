@@ -20,6 +20,7 @@ ColumnLayout {
     objectName: "optionsWebAlbumsTab"
     spacing: 10
     enabled: false
+    property var optionsDraft: null
 
     readonly property var prefs: (typeof controller !== "undefined" && controller)
         ? controller : null
@@ -41,10 +42,23 @@ ColumnLayout {
                     qsTr("Medium: 1024 pixels (for sharing)"),
                     qsTr("Small: 800 pixels (for blogs and webpages)")]
             currentIndex: root.prefs && root.prefs.webUploadSizeIndex !== undefined
-                ? root.prefs.webUploadSizeIndex : 2
-            onActivated: if (root.prefs
-                    && typeof root.prefs.setWebUploadSizeIndex === "function")
-                root.prefs.setWebUploadSizeIndex(currentIndex)
+                ? (root.optionsDraft
+                    ? root.optionsDraft.value("webAlbums.uploadSize",
+                        root.prefs.webUploadSizeIndex)
+                    : root.prefs.webUploadSizeIndex) : 2
+            onActivated: {
+                if (!root.prefs
+                        || typeof root.prefs.setWebUploadSizeIndex !== "function")
+                    return
+                if (root.optionsDraft) {
+                    root.optionsDraft.stage("webAlbums.uploadSize", currentIndex,
+                        function(value) {
+                            root.prefs.setWebUploadSizeIndex(value)
+                        })
+                } else {
+                    root.prefs.setWebUploadSizeIndex(currentIndex)
+                }
+            }
         }
     }
     CheckBox {

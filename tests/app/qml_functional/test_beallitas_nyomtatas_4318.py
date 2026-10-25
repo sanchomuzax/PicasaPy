@@ -70,6 +70,16 @@ def _kattints(ablak, qt_app, elem):
     qt_app.processEvents()
 
 
+def _nyisd_meg_nyomtatasi_fulet(options, qt_app):
+    assert QMetaObject.invokeMethod(options, "open")
+    assert _varj(qt_app, lambda: options.property("visible") is True)
+    _kattints(options, qt_app, _gyerek(options, "optionsTabPrinting"))
+    assert _varj(
+        qt_app,
+        lambda: _gyerek(options, "optionsTabStack").property("currentIndex") == 4,
+    )
+
+
 def _lista(ertek):
     return ertek.toVariant() if hasattr(ertek, "toVariant") else ertek
 
@@ -247,6 +257,10 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
     assert len(meretek) == 16, "a beállítási lista nem a 16 eredeti nyomatméret"
     assert "TELJES_OLDAL" not in meretek, "a Teljes oldal tévesen választható az Opciókban"
     elvart_meretek = ["M3_5X5", "M4X6", "M5X7", "M8X10", "M4X5"]
+    mentett_meretek = [
+        print_ctl._settings.value(f"printing/sizePreset{index + 1}")
+        for index in range(len(elvart_meretek))
+    ]
     for index, nev in enumerate(elvart_meretek):
         combo = _ismetlo_elem(
             options,
@@ -256,32 +270,40 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
             f"optionsPrintSizeCombo{index}",
         )
         _valassz_combo(options, qt_app, combo, meretek.index(nev))
+        assert combo.property("currentIndex") == meretek.index(nev), (
+            f"a(z) {index + 1}. méret piszkozatként sem állt be"
+        )
         assert print_ctl._settings.value(
             f"printing/sizePreset{index + 1}"
-        ) == nev, (
-            f"a(z) {index + 1}. kattintott méret nem mentődött el "
-            f"(currentIndex={combo.property('currentIndex')}, "
-            f"presets={print_ctl.printSizePresets()}, "
-            f"keys={print_ctl._settings.allKeys()})"
-        )
+        ) == mentett_meretek[index], "a nyomtatási méret OK előtt kiíródott"
 
     proxy_png = tmp_path / "proxy-elonezet.png"
     high_quality_png = tmp_path / "jo-minosegu-elonezet.png"
+    proxy_before = print_ctl._settings.value("printing/proxyPreview")
+    resampler_before = print_ctl._settings.value("printing/resamplerQuality")
     assert print_ctl.renderPreviewPage(
         [0, 1], "fit", "auto", 1, 0, str(proxy_png), ""
     ), "a proxy-előnézet nem készült el"
 
     preview_check = _gyerek(options, "optionsPrintHiResPreviewCheck")
     _kattints(options, qt_app, preview_check)
-    assert print_ctl._settings.value("printing/proxyPreview") is False, (
-        "a nagy felbontású előnézet kapcsolója nem kapcsolta ki a proxy-előnézetet"
+    assert print_ctl._settings.value("printing/proxyPreview") == proxy_before, (
+        "a nagy felbontású előnézet OK előtt kiíródott"
     )
 
     sharp = _gyerek(options, "optionsPrintResizeSharpRadio")
     _kattints(options, qt_app, sharp)
-    assert print_ctl._settings.value("printing/resamplerQuality") == 8, (
-        "a Lanczos-8 választás nem jutott el a tárolt nyomtatási beállításhoz"
+    assert print_ctl._settings.value("printing/resamplerQuality") == resampler_before, (
+        "a Lanczos-8 választás OK előtt kiíródott"
     )
+    _kattints(options, qt_app, _gyerek(options, "optionsOkButton"))
+    assert _varj(qt_app, lambda: options.property("visible") is False)
+    assert [
+        print_ctl._settings.value(f"printing/sizePreset{index + 1}")
+        for index in range(len(elvart_meretek))
+    ] == elvart_meretek
+    assert print_ctl._settings.value("printing/proxyPreview") is False
+    assert print_ctl._settings.value("printing/resamplerQuality") == 8
     assert print_ctl.printResamplerQuality() == 8
     assert print_ctl.printOptions()["textSource"] == 0, (
         "a képpont-összehasonlítás próbalapján nem lehet felirat"
@@ -299,8 +321,11 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
     assert _pixelek(proxy_image) != _pixelek(high_quality_image), (
         "a minőségi beállítás mentődött, de az előnézeti kép nem változott"
     )
+    _nyisd_meg_nyomtatasi_fulet(options, qt_app)
     general = _gyerek(options, "optionsPrintResizeGeneralRadio")
     _kattints(options, qt_app, general)
+    assert print_ctl._settings.value("printing/resamplerQuality") == 8
+    _kattints(options, qt_app, _gyerek(options, "optionsOkButton"))
     assert print_ctl._settings.value("printing/resamplerQuality") == 5
     assert print_ctl.printResamplerQuality() == 5
     lanczos3_png = tmp_path / "lanczos3-elonezet.png"
@@ -314,17 +339,20 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
         "a Lanczos-3 és Lanczos-8 beállítás azonos előnézeti képet adott"
     )
 
+    _nyisd_meg_nyomtatasi_fulet(options, qt_app)
     quality_compatible = _gyerek(options, "optionsPrintQualityCompatibleRadio")
     quality_high = _gyerek(options, "optionsPrintQualityHighQualityRadio")
     if quality_compatible.isVisible():
         _kattints(options, qt_app, quality_high)
-        assert print_ctl._settings.value("printing/printerQuality") == 3
+        assert print_ctl.printerQuality() == 2
         _kattints(options, qt_app, quality_compatible)
+        assert print_ctl.printerQuality() == 2
     else:
         assert quality_compatible.property("visible") is False, (
             "a nyomtatóminőség csoport csak Windowson látható a FEN szerint"
         )
         print_ctl.setPrinterQuality(2)
+    _kattints(options, qt_app, _gyerek(options, "optionsOkButton"))
     assert print_ctl._settings.value("printing/printerQuality") == 2
     assert print_ctl.printerQuality() == 2
     assert print_ctl._printer_output_scale() == 0.5
@@ -332,8 +360,11 @@ def test_a_beallitott_meret_kattintassal_elmentodik_es_a_nyomatot_megvaltoztatja
     assert print_ctl.renderPrintPreviewPdf(
         [0, 1], "fit", "auto", str(compatible_pdf)
     )
+    _nyisd_meg_nyomtatasi_fulet(options, qt_app)
     if quality_high.isVisible():
         _kattints(options, qt_app, quality_high)
+        assert print_ctl.printerQuality() == 2
+        _kattints(options, qt_app, _gyerek(options, "optionsOkButton"))
     else:
         print_ctl.setPrinterQuality(3)
     assert print_ctl._settings.value("printing/printerQuality") == 3
@@ -416,8 +447,12 @@ def test_regi_harmas_general_radio_kattintasa_otmenti_az_eredeti_szamot(
     assert print_ctl.printResamplerQuality() == 5
     assert general.property("checked") is True
     _kattints(options, qt_app, general)
+    assert print_ctl._settings.value("printing/resamplerQuality") == 3, (
+        "a General érték OK előtt kiíródott"
+    )
+    _kattints(options, qt_app, _gyerek(options, "optionsOkButton"))
     assert print_ctl._settings.value("printing/resamplerQuality") == 5, (
-        "a régi 3-as General értékű rádióra kattintás nem mentette az eredeti 5-öt"
+        "az OK nem mentette el a régi 3-as General érték utáni eredeti 5-öt"
     )
 
 

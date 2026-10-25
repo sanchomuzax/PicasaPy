@@ -5,17 +5,31 @@ import QtQuick.Layouts
 // #350/#32: "E-Mail" fül (options.fen). A PicasaPy-ban nincs beépített
 // SMTP-kliens ("Email this photo" = a rendszer levelezőjének indítása,
 // ld. `picasapy.mailer`/`email_controller.py`), DE a méret-beállítások és
-// a kliens-választás élőben az `emailController`-hez kötve (#32,
+// a kliens-választás az `emailController`-hez kötve (#32,
 // RÉSZLEGES kör — az integrátor teendője az `emailController`
 // context-property regisztrálása, ld. `email_controller.py` docstringje;
 // amíg az hiányzik, a null-őr miatt a mezők a mentett/alapértékkel
 // jelennek meg, csak írás nem történik).
 //
-// A videóküldési mód élő beállítás (`EmailMovie`); a HTML-jelölő marad
-// tiltott helyőrző, mert az eredetiben csak Windows/Outlook alatt működött.
+// A videóküldési mód működő beállítás (`EmailMovie`); a módosítások az
+// Options OK-ig piszkozatban maradnak. A HTML-jelölő tiltott helyőrző,
+// mert az eredetiben csak Windows/Outlook alatt működött.
 ColumnLayout {
     id: root
     spacing: 3
+    property var optionsDraft: null
+
+    function setting(key, fallback) {
+        return root.optionsDraft
+            ? root.optionsDraft.value(key, fallback) : fallback
+    }
+
+    function stage(key, value, writer) {
+        if (root.optionsDraft)
+            root.optionsDraft.stage(key, value, writer)
+        else
+            writer(value)
+    }
 
     // #305 mintája: a controller átmenetileg null lehet (QML-engine
     // leépítés) — és amíg az integrátor nem regisztrálja, mindig az
@@ -52,9 +66,11 @@ ColumnLayout {
             }
             // #1572: a `!== undefined` a hiányzó tulajdonságra véd.
             checked: (root.mailCtl && root.mailCtl.useDefaultClient !== undefined)
-                ? !root.mailCtl.useDefaultClient : true
+                ? !root.setting("email.useDefaultClient",
+                    root.mailCtl.useDefaultClient) : true
             onToggled: if (root.mailCtl && checked)
-                root.mailCtl.setUseDefaultClient(false)
+                root.stage("email.useDefaultClient", false,
+                    function(value) { root.mailCtl.setUseDefaultClient(value) })
         }
     }
     RadioButton {
@@ -74,9 +90,11 @@ ColumnLayout {
             verticalAlignment: Text.AlignVCenter
         }
         checked: (root.mailCtl && root.mailCtl.useDefaultClient !== undefined)
-            ? root.mailCtl.useDefaultClient : false
+            ? root.setting("email.useDefaultClient",
+                root.mailCtl.useDefaultClient) : false
         onToggled: if (root.mailCtl && checked)
-            root.mailCtl.setUseDefaultClient(true)
+            root.stage("email.useDefaultClient", true,
+                function(value) { root.mailCtl.setUseDefaultClient(value) })
     }
     // #2432: az eredetiben HÁROM gomb van (`options/radio42.title` = „A
     // Google Fiók használata”). A PicasaPy-nak nincs Google-fiók-
@@ -116,8 +134,9 @@ ColumnLayout {
     readonly property var meretFokozatok: [160, 320, 480, 640, 800, 1024, 1200, 1600]
 
     readonly property int meretIndex: {
-        const meret = root.mailCtl && root.mailCtl.emailSize !== undefined
+        const aktualis = root.mailCtl && root.mailCtl.emailSize !== undefined
             ? root.mailCtl.emailSize : 480
+        const meret = root.setting("email.size", aktualis)
         const i = root.meretFokozatok.indexOf(meret)
         // ismeretlen (más Picasa-verzióból örökölt) méretnél a legközelebbi
         // fokozatra állunk — a TÁROLT érték viszont változatlan marad, amíg
@@ -148,7 +167,8 @@ ColumnLayout {
             stepSize: 1
             value: root.meretIndex
             onMoved: if (root.mailCtl)
-                root.mailCtl.setEmailSize(root.meretFokozatok[value])
+                root.stage("email.size", root.meretFokozatok[value],
+                    function(size) { root.mailCtl.setEmailSize(size) })
         }
         Text {
             objectName: "optionsMailSizeValue"
@@ -188,9 +208,11 @@ ColumnLayout {
                 verticalAlignment: Text.AlignVCenter
             }
             checked: (root.mailCtl && root.mailCtl.singlePictureOriginal !== undefined)
-                ? !root.mailCtl.singlePictureOriginal : true
+                ? !root.setting("email.singlePictureOriginal",
+                    root.mailCtl.singlePictureOriginal) : true
             onToggled: if (root.mailCtl && checked)
-                root.mailCtl.setSinglePictureOriginal(false)
+                root.stage("email.singlePictureOriginal", false,
+                    function(value) { root.mailCtl.setSinglePictureOriginal(value) })
         }
     }
     RadioButton {
@@ -210,9 +232,11 @@ ColumnLayout {
             verticalAlignment: Text.AlignVCenter
         }
         checked: (root.mailCtl && root.mailCtl.singlePictureOriginal !== undefined)
-            ? root.mailCtl.singlePictureOriginal : false
+            ? root.setting("email.singlePictureOriginal",
+                root.mailCtl.singlePictureOriginal) : false
         onToggled: if (root.mailCtl && checked)
-            root.mailCtl.setSinglePictureOriginal(true)
+            root.stage("email.singlePictureOriginal", true,
+                function(value) { root.mailCtl.setSinglePictureOriginal(value) })
     }
 
     ButtonGroup { id: movieGroup }
@@ -240,12 +264,13 @@ ColumnLayout {
                 verticalAlignment: Text.AlignVCenter
             }
             checked: (root.mailCtl && root.mailCtl.movieFull !== undefined)
-                ? !root.mailCtl.movieFull : true
+                ? !root.setting("email.movieFull", root.mailCtl.movieFull) : true
             enabled: !!(root.mailCtl && root.mailCtl.movieFull !== undefined
                 && root.mailCtl.setMovieFull !== undefined)
             onToggled: if (root.mailCtl && checked
                 && root.mailCtl.setMovieFull !== undefined)
-                    root.mailCtl.setMovieFull(false)
+                    root.stage("email.movieFull", false,
+                        function(value) { root.mailCtl.setMovieFull(value) })
         }
     }
     RadioButton {
@@ -265,12 +290,13 @@ ColumnLayout {
             verticalAlignment: Text.AlignVCenter
         }
         checked: (root.mailCtl && root.mailCtl.movieFull !== undefined)
-            ? root.mailCtl.movieFull : false
+            ? root.setting("email.movieFull", root.mailCtl.movieFull) : false
         enabled: !!(root.mailCtl && root.mailCtl.movieFull !== undefined
             && root.mailCtl.setMovieFull !== undefined)
         onToggled: if (root.mailCtl && checked
             && root.mailCtl.setMovieFull !== undefined)
-                root.mailCtl.setMovieFull(true)
+                root.stage("email.movieFull", true,
+                    function(value) { root.mailCtl.setMovieFull(value) })
     }
 
     // csak Windows/Outlook alatt volt értelmezve az eredetiben

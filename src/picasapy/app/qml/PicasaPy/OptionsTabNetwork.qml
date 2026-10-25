@@ -10,6 +10,7 @@ import QtQuick.Layouts
 ColumnLayout {
     id: root
     spacing: 10
+    property var optionsDraft: null
 
     readonly property var prefs: (typeof controller !== "undefined" && controller)
         ? controller : null
@@ -67,10 +68,21 @@ ColumnLayout {
                     qsTr("Minimal log information"), qsTr("Detailed log information"),
                     qsTr("Log all network information")]
             currentIndex: root.prefs && root.prefs.networkLogLevel !== undefined
-                ? root.prefs.networkLogLevel : 2
-            onActivated: if (root.prefs
-                    && typeof root.prefs.setNetworkLogLevel === "function")
-                root.prefs.setNetworkLogLevel(currentIndex)
+                ? (root.optionsDraft
+                    ? root.optionsDraft.value("network.logLevel",
+                        root.prefs.networkLogLevel)
+                    : root.prefs.networkLogLevel) : 2
+            onActivated: {
+                if (!root.prefs
+                        || typeof root.prefs.setNetworkLogLevel !== "function")
+                    return
+                if (root.optionsDraft) {
+                    root.optionsDraft.stage("network.logLevel", currentIndex,
+                        function(value) { root.prefs.setNetworkLogLevel(value) })
+                } else {
+                    root.prefs.setNetworkLogLevel(currentIndex)
+                }
+            }
         }
     }
 

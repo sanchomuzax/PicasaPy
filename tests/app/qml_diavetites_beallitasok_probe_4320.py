@@ -81,6 +81,13 @@ def _click(app, window, item) -> None:
     app.processEvents()
 
 
+def _open_options(app, options) -> None:
+    from PySide6.QtCore import QMetaObject
+
+    assert QMetaObject.invokeMethod(options, "open")
+    assert _wait(app, lambda: options.property("visible") is True)
+
+
 def _run(work_dir: Path) -> None:
     from PySide6.QtCore import QObject, QUrl
     from PySide6.QtGui import QGuiApplication
@@ -155,6 +162,8 @@ def _run(work_dir: Path) -> None:
     geometry_measurements = []
     height = options.height()
     for offset in (-5, 0, 5):
+        if options.property("visible") is False:
+            _open_options(app, options)
         options.resize(options.width(), height + offset)
         assert _wait(app, lambda: options.isExposed() and loop.width() > 0)
 
@@ -196,21 +205,38 @@ def _run(work_dir: Path) -> None:
                                       "elteresek": elteresek})
 
         before_loop = bool(loop.property("checked"))
+        saved_loop_before = controller._get_settings().value("view/slideshowLoop")
         _click(app, options, loop)
         loop_value = not before_loop
+        assert bool(loop.property("checked")) is loop_value
+        assert bool(controller.slideshowLoop) is before_loop
+        assert controller._get_settings().value("view/slideshowLoop") == saved_loop_before
+        assert bool(slideshow.property("loop")) is before_loop
+
+        before_music = bool(music.property("checked"))
+        saved_music_before = controller._get_settings().value(
+            "view/slideshowMusicEnabled"
+        )
+        _click(app, options, music)
+        music_value = not before_music
+        assert bool(music.property("checked")) is music_value
+        assert bool(controller.slideshowMusicEnabled) is before_music
+        assert controller._get_settings().value(
+            "view/slideshowMusicEnabled"
+        ) == saved_music_before
+        assert bool(slideshow.property("musicEnabled")) is before_music
+        assert bool(browse.property("enabled")) is music_value
+
+        _click(app, options, _child(options, "optionsOkButton"))
+        assert _wait(app, lambda: options.property("visible") is False)
         assert bool(controller.slideshowLoop) is loop_value
         assert controller._get_settings().value("view/slideshowLoop") is loop_value
         assert bool(slideshow.property("loop")) is loop_value
-
-        before_music = bool(music.property("checked"))
-        _click(app, options, music)
-        music_value = not before_music
         assert bool(controller.slideshowMusicEnabled) is music_value
         assert controller._get_settings().value(
             "view/slideshowMusicEnabled"
         ) is music_value
         assert bool(slideshow.property("musicEnabled")) is music_value
-        assert bool(browse.property("enabled")) is music_value
 
     music_dir = work_dir / "music"
     music_dir.mkdir()
@@ -252,6 +278,7 @@ def _run(work_dir: Path) -> None:
     )
 
     folder_dialog = _child(options, "optionsSlideshowMusicFolderDialog")
+    _open_options(app, options)
     _click(app, options, music)
     assert bool(music.property("checked")) is True
     assert bool(browse.property("enabled")) is True
