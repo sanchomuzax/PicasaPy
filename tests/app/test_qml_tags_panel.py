@@ -165,4 +165,4 @@ class TestTagsPanelInMain:
         window.setProperty("selectedIndex", 0)
         qt_app.processEvents()
         panel = self._panel(window)
-        assert _tags_of(panel) == ["alma", "zebra"]
+        assert _tags_of(panel) == ["zebra", "alma"]

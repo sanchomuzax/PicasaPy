@@ -764,12 +764,12 @@ class TestKeywords:
             path = library / "nyaralas" / name
             assert "közös" in read_file_metadata(path).keywords
 
-    def test_keywords_of_rows_union_sorted(self, controller, library):
+    def test_keywords_of_rows_order_by_frequency(self, controller, library):
         controller.selectFolder(str(library / "nyaralas"))
         controller.addKeywordToRows([0], "zebra")
         controller.addKeywordToRows([1], "alma")
         controller.addKeywordToRows([1], "zebra")
-        assert controller.keywordsOfRows([0, 1]) == ["alma", "zebra"]
+        assert controller.keywordsOfRows([0, 1]) == ["zebra", "alma"]
 
     def test_comma_stripped_from_keyword(self, controller, library):
         # a CSV-tár (ini/index) miatt a vessző nem lehet kulcsszó része
