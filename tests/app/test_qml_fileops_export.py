@@ -240,8 +240,8 @@ class TestRenameManyDialog:
 
 class TestDeleteConfirmDialog:
     """#367: a törlés-megerősítés az általános ConfirmDialog komponensre
-    állítva (confirm.fen paritás) — üzenet, "Do not ask again" jelölő,
-    kulcs-alapú elnyomás."""
+    állítva (confirm.fen paritás) — üzenet, az eredeti "Don't ask again,
+    always remove" jelölő, kulcs-alapú elnyomás."""
 
     def _open_delete(self, window, qt_app, paths):
         dialog = _child(window, "deleteConfirmDialog")

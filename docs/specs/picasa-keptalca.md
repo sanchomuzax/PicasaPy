@@ -1437,3 +1437,84 @@ y 480–509** ⇒ a sáv **424 × 29** a 800 × 534-es vásznon.
   csak az, hogy az Y nő.
 - A `[főablak+0xea0]+0x264` billentett állapot **olvasóját** nem
   azonosítottam; a `+0x264` eltolás ugyanolyan általános.
+
+## 24. A „Hozzáadás albumhoz” menü - részben feltárva (#5838, 2026-10-25)
+
+### 24.1 Menüépítés és ismert sorrend
+
+Az eseménylánc: a `0x005d9cc0` parancs-diszpécser az
+`thumbui/addtobuttcon` eseményt a `0x005fe130` gombkezelőhöz küldi
+(`0x005da88a`); ez nyitáskor a `0x00664130`-at hívja a célmenü
+modelljének felépítésére (`0x005fe2bc`). Tehát a három hivatkozó közül
+`0x005d9cc0` diszpécser, `0x005fe130` kattintáskezelő; a sorépítő a hívott
+`0x00664130`. A `0x005d3290` sztringhivatkozása önmagában nem menüépítés:
+ennek a függvénynek nincs hívása sem a `0x005fe130`-ra, sem a
+`0x00664130`-ra. A `0x004b94a0` a `]album:` és `]facealbum:` tokenű
+albumcélok indexeit állítja elő, majd a `0x004baaa0` rendezőnek adja át.
+A `0x00664130` hozzáfűzi a `New Album...` sort; `--` elválasztó-sort is
+létrehoz, és az input-sor `+8` bájtjának `0x10` bitjét vizsgálja, de a
+bithez tartozó sorcsoport és az elválasztó pontos feltétele nincs megfejtve.
+
+A `0x004abe70` különleges gyűjteményrekord-regisztrációs sorrendje
+`Starred Photos` (`CThumbDB::starredphotos`, `]star`), majd `Screensaver`
+(`CThumbDB::ScreensaverAlbumName`, `]screensaver`). Ez **nem** a látható
+menüsorrend bizonyítéka: a job-255 mérése ennek a fordítottját mutatja.
+
+| Eset | Eredeti menü |
+|---|---|
+| Egy kijelölt kép, saját album nélkül | **Screensaver → Starred Photos → New Album...** - a jegyben közölt `picasa-colab-jobs` job-255, 8. kép mérése. A nyers képkocka nem volt a helyi `meroadat.tar`-ban, ezért itt közvetlenül nem ellenőrizhető. |
+| Saját albumokkal | A `0x004b94a0` albumcél-indexeket ad a sorépítőnek, a `New Album...` a `0x00664130`-ban hozzáfűződik. Az albumok és a két különleges sor egymáshoz viszonyított látható sorrendje **NINCS MEG**. |
+| Elválasztó | A sorépítő `--` sort is létrehoz, és teszteli az input-sor `+8` mezőjének `0x10` bitjét. A pontos sorcsoport és a beszúrás feltétele **NINCS MEG**. |
+
+**Bizonyítottság: feltételes.** A bináris út megmutatja a diszpécsert,
+kattintáskezelőt, dinamikus albumcél-listát és a `New Album...` sor
+hozzáfűzését; a job-255 ettől függetlenül igazolja a saját album nélküli
+látható sorrendet. A mért eset nem igazolja a saját albumos sorrendet vagy
+az elválasztó szabályát.
+
+### 24.2 A célműveletek
+
+| Menüsor | Eredeti viselkedés és bizonyíték |
+|---|---|
+| **Screensaver** | A `0x005d9cc0` `action/screensaver` ága a `0x00531900` kezelőre jut. Ez a kijelölésből fotólistát állít elő; album kijelölésekor külön figyelmeztet a kijelölt album minden képére. A `0x00531a20` a `]screensaver` célhoz adja a listát és a `#db3\saverlist.txt` fájlba írja (`0x004755f0`); ezen az ágon siker után a `0x00531ac0` képernyővédő-telepítő útja is lefut. A nyers job-255/256/257 csomagban nincs Screensaver-hatásmérés, így egy konkrét kép fájlbeli megjelenése **NINCS MEG**. |
+| **Starred Photos** | A különleges album tokenje `]star` (`0x004abe70`); a `thumbui/startoggle` diszpécserág a `0x005e81e0` kezelőhöz jut. A jegyben közölt job-256 mérés szerint a sor egy kijelölt, korábban nem csillagozott képnél `star=yes`-t ír a kép `.picasa.ini`-szakaszába, backuphash nélkül; a bal sávban megjelenik a `Starred Photos (1)`, a bélyegképen pedig a csillag. A már csillagozott kép viselkedését a mérés nem fedi le. A nyers job-adat itt nem volt elérhető. |
+| **New Album...** | A `0x005d9cc0` `thumbui/makealbum` ága a `0x00577c30` → `0x00577ea0` úton ugyanazt a `0x006dc030` Album Properties párbeszédet nyitja, mint az eszköztár `0x005eb810` útja. A job-257 mérés szerint OK után az `Untitled` album a kijelölt képpel együtt jön létre; az ini-ben az album szakasza `[.album:<token>]` (`name`/`token`/`date`), a képszakasz pedig `albums=<token>` mezőt kap. A nyers mérőképek nem voltak a helyi archívumban. A megvalósítás a #5846. |
+
+### 24.3 Gombfeltétel és a PicasaPy-eltérés
+
+A job-255 jegyben közölt képkockáján egy kijelölt képpel és saját album
+nélkül is megnyílik a menü. Ez cáfolja, hogy eredetiben saját album
+jelenléte szükséges a menü megnyitásához, de nem dönti el, hogy az eredeti
+gomb pontosan milyen kijelölési vagy „tartott elem” feltételt vizsgál.
+A `0x005fe130` a megnyitáskor a
+`[this+0x10b0]+0x14` és a `0x004b94a0` kimeneti listájának
+`local_34` mezőjét vizsgálja a menüváltó ágban. Ez nem azonosítja
+önmagában a UI engedélyezési predikátumot. A `.tre`
+`thumbui/addtobuttcon` rekordja `maxrows 0` és
+`customwidth 200` tulajdonságot ad meg, de feltételes engedélyezést nem
+rögzít. Az eredeti gomb engedélyezési feltétele, a tartott/kijelölt képek
+és az albumdarabszám külön-külön hatása **NINCS MEG**.
+
+Nálunk a [TrayBar.qml](../../src/picasapy/app/qml/PicasaPy/TrayBar.qml)
+gombja csak akkor engedélyezett, ha `heldCount > 0` **és** a saját
+albumlista hossza nagyobb nullánál; a menü csak ezeket a saját albumokat
+sorolja. A job-255 állapotában - egy kép, saját album nélkül - emiatt
+hiányzik a gomb, a két különleges cél és a **New Album...** sor.
+
+**Cáfoló kísérlet.** Két csábító következtetést próbáltam megcáfolni.
+(1) A `0x005d3290` hivatkozik a `thumbui/addtobuttcon` sztringre, ezért
+felmerült, hogy ez építi a menüt. A teljes függvény diszasszemblálásában
+nincs hívása sem a `0x005fe130`-nak, sem a `0x00664130`-nak; a
+`0x005d9cc0` → `0x005fe130` → `0x00664130` híváslánc viszont közvetlenül
+látszik. A sztring-xref önmagában tehát fals jelölt. (2) A különleges
+albumok regisztrációs sorrendjéből következtettem volna a menüsorrendre:
+`0x004abe70` Starred Photos-t regisztrál Screensaver előtt, miközben a
+job-255 mért képe Screensaver-t mutat Starred Photos előtt. Ez az
+összevetés elveti a regisztrációs sorrendet mint a látható sorrend
+bizonyítékát; a job-255 nyers képe itt nem volt újramérhető, ezért csak a
+jegyben közölt mérési leírást használom.
+
+**Nyitott, célzott Ghidra-kör:**
+
+- `Ghidra-kör kell: 0x00664130 - a saját albumok és a Screensaver/Starred Photos sorok pontos beszúrási sorrendje, valamint a 0x10 sorjelző bit és az elválasztó feltétele [blokkoló]`
+- `Ghidra-kör kell: 0x005d3290 - az addtobuttcon elem engedélyezési/tiltási predikátuma, különösen a kijelölt/tartott képek és az albumdarabszám szerepe [blokkoló]`

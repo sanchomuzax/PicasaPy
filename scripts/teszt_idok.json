@@ -552,6 +552,7 @@
  "tests/app/qml_functional/test_qml_peldanyositas_or_1720.py": 21.65,
  "tests/app/qml_functional/test_qml_root_window_5252.py": 1.74,
  "tests/app/qml_functional/test_quick_view_qml_5762.py": 6.72,
+ "tests/app/qml_functional/test_quick_view_star_5834.py": 1.8,
  "tests/app/qml_functional/test_racs_belyegkep_elotoltes_4289.py": 10.39,
  "tests/app/qml_functional/test_racs_ctrl_delete_1619.py": 19.91,
  "tests/app/qml_functional/test_racs_gorgetosav_szele_3604.py": 4.98,

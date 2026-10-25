@@ -46,7 +46,7 @@ import threading
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import Property, Qt, Signal, Slot
+from PySide6.QtCore import QCoreApplication, Property, Qt, Signal, Slot
 from PySide6.QtGui import QGuiApplication
 
 from picasapy.export import export_sidecar_for_photo
@@ -1356,10 +1356,16 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         albumot olvas be, ami teljes újraindexelés után is megmarad.
         """
         folder_path = (folder_path or "").strip()
+        folder_error = QCoreApplication.translate(
+            "PhotoOpsMixin",
+            "An album must be saved in an indexed photo folder.",
+        )
         if not folder_path:
+            self.albumWriteFailed.emit(folder_error)
             return ""
         folder = Path(folder_path)
         if not folder.is_dir():
+            self.albumWriteFailed.emit(folder_error)
             return ""
 
         token = secrets.token_hex(16)
@@ -1385,6 +1391,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
                     "SELECT 1 FROM folders WHERE path = ?", (str(folder),)
                 ).fetchone()
                 if indexed is None:
+                    self.albumWriteFailed.emit(folder_error)
                     return ""
                 update_document(ini_path, mutate, backup=True)
                 self._sync_tree(conn, str(folder))
