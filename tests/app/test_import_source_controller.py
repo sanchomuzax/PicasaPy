@@ -2,6 +2,7 @@
 `picasapy.importsource`/`picasapy.fileops.copy_photo` mag fölött — valódi
 ideiglenes forrás- és cél-mappával, mock nélkül (a `test_dedup_controller.py`
 mintája)."""
+# rontás-kontroll: picasapy.app.import_source_controller.with_backuphash = identity → 1 failed
 
 from __future__ import annotations
 
@@ -812,6 +813,11 @@ class TestRotateAndStarBeforeImport:
         text = copied_ini.read_text(encoding="utf-8")
         assert "rotate=rotate(1)" in text
         assert "star=yes" in text
+        copied_photo = load_document(copied_ini).section("a.jpg")
+        assert copied_photo is not None
+        backuphash = copied_photo.get("backuphash")
+        assert backuphash is not None and backuphash.isdecimal()
+        assert 0 <= int(backuphash) <= 0xFFFF
         # a kártyán lévő eredetihez NEM nyúlunk
         assert not (source / ".picasa.ini").exists()
 

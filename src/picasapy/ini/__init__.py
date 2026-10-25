@@ -39,6 +39,7 @@ from .document import (
     SourceFingerprint,
     parse_document,
 )
+from .backuphash import backuphash_for_local_datetime, with_backuphash
 from .faces import (
     UNIDENTIFIED_CONTACT,
     Face,
@@ -120,6 +121,7 @@ __all__ = [
     "MAX_PARAM_COUNTS",
     "Album",
     "BrushStyle",
+    "backuphash_for_local_datetime",
     "Contact",
     "ContactNameResolver",
     "ContactXmlEntry",
@@ -198,6 +200,7 @@ __all__ = [
     "update_document",
     "validate_op_for_write",
     "with_face",
+    "with_backuphash",
     "with_folder_date_override",
     "with_folder_category",
     "with_folder_music",

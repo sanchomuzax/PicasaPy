@@ -81,7 +81,12 @@ from picasapy.index import (
     all_photos,
     open_index,
 )
-from picasapy.ini import has_ini_source, load_or_empty, update_document
+from picasapy.ini import (
+    has_ini_source,
+    load_or_empty,
+    update_document,
+    with_backuphash,
+)
 from picasapy.ini.names import INI_NAME
 from picasapy.scanner import media_kind_of
 
@@ -988,6 +993,7 @@ def _mark_imported_ini(
         result = document
         if rotation:
             result = result.with_value(target.name, "rotate", f"rotate({rotation})")
+            result = with_backuphash(result, target.name)
         if starred:
             result = result.with_value(target.name, "star", "yes")
         return result
