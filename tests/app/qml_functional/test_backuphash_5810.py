@@ -238,6 +238,11 @@ def test_valodi_kattintas_utan_forgatas_felirat_es_cimke_hash_ezutan_textactive_
 
     # Felirat: a feliratmezőbe valódi gépelés és Enter írja a JPEG IPTC-jét;
     # az ini-ben a meglévő kulcsok változatlanok, a backuphash megjelenik.
+    # A forgatás háttérírása a rács-sor frissítésével zárul; addig Windowson a
+    # képfájl foglalt lehet, és a felirat az ini-tartalékútra esne (#5830).
+    assert _wait(qt_app, lambda: controller.photos.rotateAt(row_a) == 1), (
+        "a forgatás háttérírása nem zárult le"
+    )
     update_document(
         library / ".picasa.ini",
         lambda document: document.with_removed("a.jpg", "backuphash"),
@@ -258,6 +263,10 @@ def test_valodi_kattintas_utan_forgatas_felirat_es_cimke_hash_ezutan_textactive_
     assert _without_backuphash(after_caption) == expected_after_rotate
 
     # Címke: valódi beírás és kattintás a Címkék panel hozzáadó gombján.
+    # A felirat háttérírása a rács-sor frissítésével zárul (#5830).
+    assert _wait(qt_app, lambda: controller.photos.captionAt(row_a) == "caption-5810"), (
+        "a felirat háttérírása nem zárult le"
+    )
     update_document(
         library / ".picasa.ini",
         lambda document: document.with_removed("a.jpg", "backuphash"),
