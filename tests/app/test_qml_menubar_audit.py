@@ -71,7 +71,8 @@ HIANYZOTT_TETELEK = [
     ("Display Mode", None),
     # Mappa
     ("Hide", None),
-    ("Show", None),
+    # #5882: a mért mappatétel felirata (job-280).
+    ("Unhide", None),
     # #2364: az EREDETI erőforrás szövege (ID_FILE_PRINTCONTACTSHEET)
     ("Print Contact Sheet...", "Ctrl+Shift+P"),
     ("Export as HTML Page...", None),

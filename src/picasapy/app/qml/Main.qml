@@ -2167,6 +2167,21 @@ ApplicationWindow {
                 ? controller.hasTextOverlayStateInSelection(rows, true) : false
         }
         photoActionsEnabled: window.photoActionRows().length > 0
+        // #5882: a fotómodell revíziója frissíti ezt a kötést a hidden
+        // állapot változásakor; a kijelölés a könyvtár és a néző célpontját
+        // egyaránt lefedi.
+        hasHiddenPhotoSelection: {
+            if (!controller || !controller.photos) return false
+            var photos = controller.photos
+            var revision = photos.revision
+            if (revision < 0) return false
+            var rows = window.photoActionRows()
+            for (var i = 0; i < rows.length; ++i) {
+                var photo = photos.itemAt(Number(rows[i]))
+                if (photo && photo.hidden === true) return true
+            }
+            return false
+        }
         libraryPhotoActionsEnabled: !window.viewerOpen
                                     && window.selectedIndexes.length > 0
         //: #1768: a Mappakezelő két belépési pontja szürke, amíg a
