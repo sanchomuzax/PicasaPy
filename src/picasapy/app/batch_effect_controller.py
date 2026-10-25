@@ -46,7 +46,7 @@ from pathlib import Path
 from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.edit.session import EditSession
-from picasapy.ini import load_or_empty, update_document
+from picasapy.ini import load_or_empty, update_document, with_backuphash
 from picasapy.ini.text_overlay import (
     parse_text,
     parse_text_active,
@@ -403,6 +403,7 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                         prev_crop = section.get("crop") if section else None
                         fresh.append((folder, photo.name, prev, prev_crop))
                         document = _clear_all_effects(document, photo.name)
+                        document = with_backuphash(document, photo.name)
                     entries[:] = fresh
                     return document
 

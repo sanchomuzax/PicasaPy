@@ -1096,13 +1096,34 @@ Picasa-futtatáskor naplózni a hash-hívás időpontját és helyi időzónáj�
 együtt megőrizni a hívás előtti/utáni ini-t, valamint a képfájl előtte/utána
 állapotát.
 
-**PicasaPy.** A jelenlegi `src/picasapy/edit/save.py` a `backuphash`-t a nem
-értelmezett, változatlanul megőrzendő kulcsok közé sorolja, és az `rg`-vel
-ellenőrzött forrás-/tesztfa nem mutat értéket előállító írót. Ha a fájlmentő
-írási utunknak az eredeti kulcsfrissítési viselkedést kell követnie, külön fejlesztési
-jegy szükséges; a képlet ismert, de a Picasa hash-hívásának pontos sorrendje a
-kép lemezre írásához képest és a felhasználói műveletek teljes készlete még
-nem.
+**PicasaPy (#5833).** A rendes lemezmentés az aktuális mappa képszakaszából
+törli a `filters=` és `redo=` kulcsot, és a #5810 képletével frissíti a
+`backuphash`-t. A beégetett láncot a kiválasztott eredeti-mappa
+`.picasa.ini`-jének azonos képnevű szakaszába írja `filters=`-ként. Ezt az
+`src/picasapy/edit/save.py` az `ini` round-trip API-ján keresztül végzi.
+
+### A rendes lemezmentés ini-hatása (#5829, #5833)
+
+Mentés után az aktuális mappa képszakaszában a mentési lánc nem marad
+`filters=`-ként, és mentési jelzőként `redo=` sem íródik. Az aktuális
+szakasz `backuphash`-t kap a fenti #5810 képletével. A beégetett lánc az
+eredeti fájl kiválasztott mappájának (`.picasaoriginals` vagy régi
+`Originals`) `.picasa.ini` fájljába kerül, a kép nevével azonos szakasz
+`filters=` kulcsába. A kulcsokat kizárólag az `ini` csomag író API-ján át
+szabad módosítani.
+
+Az „Utolsó mentés visszavonása” a láncot az eredeti-mappa ini-jéből olvassa
+vissza az aktuális mappa kép-szakaszának `filters=` kulcsába, miközben a
+kép bájtjait a mentés előtti pillanatképből állítja helyre. Korábbi
+PicasaPy-verzió által írt `redo=`-t csak akkor használ, ha az eredeti-mappa
+ini-jében nincs lánc az adott képhez. A `redo=` újra-lista írása külön
+szerkesztési funkció; a mentés nem használhatja mentésjelzőként.
+
+Az eredeti Picasa mentési és ini-írási útját a #5833-as feladatban megadott
+disassembly-címek és job-253 futásidejű felvétel támasztják alá. Ezek a
+nyers mérési tagok ebben a dokumentációs munkafában nem találhatók; a fenti
+leírás a feladatban átadott megfigyelést rögzíti, és nem állít önálló helyi
+Picasa-futásidejű ellenőrzést.
 
 ### ⭐ A `<készletnév>-backuphash` — a MENTÉS-KÉSZLETENKÉNTI másodpéldány (2026-09-05, #440)
 
