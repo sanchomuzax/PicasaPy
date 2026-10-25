@@ -110,10 +110,13 @@ class TestUjHelyreIr:
         save_edited(kep, _png((4, 5, 6)), session)
 
         originals = tmp_path / ORIGINALS_DIR_NAME
-        # A „szent" eredeti a Picasa által is ismert helyen marad…
-        assert sorted(p.name for p in originals.iterdir() if p.is_file()) == [
-            "kep.png"
-        ]
+        # A „szent" eredeti a Picasa által is ismert helyen marad, az ini
+        # pedig a #5833 szerint ugyanitt tárolja a beégetett láncot.
+        assert sorted(
+            p.name for p in originals.iterdir()
+            if p.is_file() and p.suffix == ".png"
+        ) == ["kep.png"]
+        assert (originals / ".picasa.ini").is_file()
         # …a pillanatképek viszont a mi alkönyvtárunkban.
         assert sorted(p.name for p in (originals / SNAPSHOT_DIR_NAME).iterdir()) == [
             "kep.1.png",
