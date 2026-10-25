@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.236] - 2026-10-25
+
+- A Szerkesztés menü Copy Text/Paste Text tételei a Text eszköz szövegrétegét másolják és illesztik; a képfelirat a néző mezőjében, a szokásos szövegmező-műveletekkel kezelhető (#5877).
+
 ## [0.9.235] - 2026-10-25
 
 - A Fájl menü, a mappa fejlécének Save gombja és a Ctrl+S csak mentetlen képszerkesztésnél használható (#5883).
