@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.226] - 2026-10-25
+
+- A „Move to New Folder...” párbeszéd most a mappa tulajdonságait kéri, és a kijelölt képeket az új mappába helyezi (#5853).
+
 ## [0.9.225] - 2026-10-25
 
 - A Kép ▸ Reset Faces az arcadatok törlésekor a kép szakaszába `backuphash`-t is ír (#5848).
