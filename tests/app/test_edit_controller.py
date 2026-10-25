@@ -9,6 +9,8 @@ from picasapy.ini.rect64 import encode_rect64
 from picasapy.app.histogram_helper import EMPTY_HISTOGRAM
 from support.jpeg_factory import make_jpeg
 
+# rontás-kontroll: picasapy.ini.backuphash.backuphash_for_local_datetime = 65536 → 1 failed
+
 _SKIP_READONLY = pytest.mark.skipif(
     sys.platform.startswith("win") or (hasattr(os, "geteuid") and os.geteuid() == 0),
     reason="chmod-alapú read-only szimuláció POSIX-only, és root megkerüli a jogokat",
@@ -159,8 +161,27 @@ class TestToggleTool:
         assert "filters=" not in ini_text
         assert controller.hasSavedRedeye is False  # #2393: átnevezve
 
+    def test_torleskor_a_backuphash_megmarad_a_kep_szakaszaban(
+        self, controller, photo
+    ):
+        ini = photo.parent / ".picasa.ini"
+        ini.write_text(
+            "[IMG_0001.jpg]\nfilters=redeye=1;\n", encoding="utf-8"
+        )
+        controller.beginEdit("1", str(photo))
 
-    def test_preserves_unrelated_keys(self, controller, photo):
+        controller.toggleTool("redeye")
+
+        szakasz = ini.read_text(encoding="utf-8").splitlines()
+        assert "filters=" not in szakasz
+        hash_sor = next(
+            (sor for sor in szakasz if sor.startswith("backuphash=")), None
+        )
+        assert hash_sor is not None, "a filters= törlése nem írt backuphash-t"
+        ertek = hash_sor.partition("=")[2]
+        assert ertek.isdecimal() and 0 <= int(ertek) <= 0xFFFF
+
+    def test_preserves_other_keys_es_frissiti_a_backuphash_t(self, controller, photo):
         ini = photo.parent / ".picasa.ini"
         ini.write_text(
             "[IMG_0001.jpg]\nbackuphash=1234\nstar=yes\n", encoding="utf-8"
@@ -168,9 +189,15 @@ class TestToggleTool:
         controller.beginEdit("1", str(photo))
         controller.toggleTool("autolight")
         ini_text = ini.read_text(encoding="utf-8")
-        assert "backuphash=1234" in ini_text
         assert "star=yes" in ini_text
         assert "filters=autolight=1;" in ini_text
+        hash_sor = next(
+            (sor for sor in ini_text.splitlines() if sor.startswith("backuphash=")),
+            None,
+        )
+        assert hash_sor is not None
+        ertek = hash_sor.partition("=")[2]
+        assert ertek.isdecimal() and 0 <= int(ertek) <= 0xFFFF
 
     def test_bumps_revision(self, controller, photo):
         controller.beginEdit("1", str(photo))
