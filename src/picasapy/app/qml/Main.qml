@@ -707,6 +707,28 @@ ApplicationWindow {
             window.selectedIndexes, window.selectedIndex)
     }
 
+    // #5883: a mentés csak akkor írja lemezre a kijelölést, ha valamelyik
+    // kép filters lánca eltér a lemezre mentett állapottól. A modell
+    // `hasEdits` mezője ezt a `.picasa.ini`-ben tárolt láncból adja; a
+    // `photos.revision` a QML-kötést a láncváltás után újraértékelteti.
+    function vanMentetlenSzerkesztes(sorok) {
+        if (!controller || !controller.photos || !sorok) return false
+        for (var i = 0; i < sorok.length; ++i) {
+            var foto = controller.photos.itemAt(Number(sorok[i]))
+            if (foto && foto.hasEdits === true) return true
+        }
+        return false
+    }
+
+    readonly property bool kijelolesbenVanMentetlenSzerkesztes:
+        controller
+        ? (controller.photos.revision,
+           window.vanMentetlenSzerkesztes(window.selectedRows())) : false
+    readonly property bool muveletiCelbanVanMentetlenSzerkesztes:
+        controller
+        ? (controller.photos.revision,
+           window.vanMentetlenSzerkesztes(window.photoActionRows())) : false
+
     // A fotóhoz kötött menük célpontja nézőben a szerkesztett oldal, a
     // könyvtárban pedig a kijelölés. A kijelölés megmarad a néző mögött,
     // ezért ott nem használható a menü célpontjának.
@@ -1593,6 +1615,7 @@ ApplicationWindow {
         id: shortcutSave
         sequence: "Ctrl+S"
         enabled: !window._szovegmezoneVanFokusz
+                 && window.muveletiCelbanVanMentetlenSzerkesztes
         onActivated: saveDialogs.ensure().openSave(window.photoActionRows())
     }
 
@@ -2175,6 +2198,7 @@ ApplicationWindow {
                 ? controller.hasTextOverlayStateInSelection(rows, true) : false
         }
         photoActionsEnabled: window.photoActionRows().length > 0
+        photoHasPendingEdits: window.muveletiCelbanVanMentetlenSzerkesztes
         // #5882: a fotómodell revíziója frissíti ezt a kötést a hidden
         // állapot változásakor; a kijelölés a könyvtár és a néző célpontját
         // egyaránt lefedi.

@@ -114,6 +114,10 @@ _LETILTOTT_A_TISZTA_MINTABAN = {
         "A Show Edit Controls az eredetihez hasonlóan csak szerkesztőnézőben "
         "aktív (#5878); a tiszta minta könyvtárnézetben indul."
     ),
+    "menuFileSave": (
+        "A Fájl ▸ Save csak mentetlen szerkesztésnél aktív (#5883); a tiszta "
+        "minta képei szerkesztetlenek."
+    ),
     "menuPictureUnhide": (
         "A Kép ▸ Unhide csak rejtett képet tartalmazó kijelölésnél aktív "
         "(#5882); a tiszta minta képei láthatók."

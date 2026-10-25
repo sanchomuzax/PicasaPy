@@ -78,7 +78,12 @@ class TestAKetHianyzoGomb:
 
     def test_a_mentes_gomb_JELET_ad(self, qml_app):
         _, _, engine = qml_app
-        header = _make_header(engine, folderName="Nyaralás", selectedCount=2)
+        header = _make_header(
+            engine,
+            folderName="Nyaralás",
+            selectedCount=2,
+            hasPendingEdits=True,
+        )
         kaptunk = []
         header.saveEditsRequested.connect(lambda: kaptunk.append(1))
         header.findChild(QObject, "headerSaveEditsButton").clicked.emit()
