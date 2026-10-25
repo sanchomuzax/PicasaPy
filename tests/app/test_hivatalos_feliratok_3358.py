@@ -336,6 +336,9 @@ BEALLITASOK = {
     ("OptionsTabGeneral", "Detect duplicates while importing"): (
         "Másodpéldányok észlelése az importálás során",
         "options/autoexclude.title"),
+    ("OptionsTabGeneral", "Clear cache files"): (
+        "Gyorsítótárban lévő fájlok törlése",
+        "options/disposepreviews.title"),
     ("OptionsTabGeneral", "Never check for updates"): (
         "Ne keressen frissítést", "options/item24.title"),
     ("OptionsTabGeneral", "Prompt before downloading updates"): (

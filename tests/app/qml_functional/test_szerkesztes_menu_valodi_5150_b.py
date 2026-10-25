@@ -27,7 +27,7 @@ from conftest import _build_qml_app
 from picasapy.app.fileops_controller import vagolap_fajlok
 from support.qt_wait import wait_for_photo_op
 from tests.app.qml_functional._felsomenupontok_helpers_4329 import _kattints
-from tests.app.qml_functional._fomenu_4420_menu import _megnyit
+from tests.app.qml_functional._fomenu_4420_menu import _megnyit, _menupont
 from tests.app.qml_functional.test_fajl_szerkesztes_menu_valodi_5150 import (
     _KEPEK,
     _elokeszit,
@@ -61,6 +61,14 @@ def _szerkesztes_tetelt_kattint(window, qt_app, nev: str) -> None:
     menu = _megnyit(menu_bar, qt_app, "&Edit")
     assert menu is not None, "a Szerkesztés menü nem nyílt meg"
     _tetel_kattintasa(window, qt_app, nev)
+
+
+def _szerkesztes_tetelt(menu, nev: str):
+    for index in range(int(menu.property("count") or 0)):
+        item = _menupont(menu, index)
+        if item.objectName() == nev:
+            return item
+    raise AssertionError(f"{nev} nem található a Szerkesztés menüben")
 
 
 def _csoportos_szerkesztes_tetelt_kattint(window, qt_app, controller, nev: str) -> None:
@@ -230,7 +238,7 @@ class TestEffektekEsVisszavonas:
 
 
 class TestFeliratEsKijeloles:
-    def test_a_felirat_masolasa_valodi_kattintassal_engedelyezi_a_felirat_beillesztest(
+    def test_a_felirat_nem_engedelyezi_a_szovegreteg_masolasat(
         self, szerk_app, qt_app
     ):
         window, controller, _engine = szerk_app
@@ -238,31 +246,31 @@ class TestFeliratEsKijeloles:
         controller.setCaption(0, _FELIRAT)
         assert _varj(qt_app, lambda: controller.photos.captionAt(0) == _FELIRAT)
 
-        _szerkesztes_tetelt_kattint(window, qt_app, "menuEditCopyText")
+        menu_bar = window.property("menuBar")
+        menu = _megnyit(menu_bar, qt_app, "&Edit")
+        assert (
+            _szerkesztes_tetelt(menu, "menuEditCopyText").property("enabled")
+            is False
+        ), "a képfelirat a Text eszközös réteg másolását engedélyezte"
+        assert (
+            _szerkesztes_tetelt(menu, "menuEditPasteText").property("enabled")
+            is False
+        ), "a képfelirat beilleszthető Text-rétegként jelent meg"
+        assert controller.captionClipboardText() == ""
 
-        assert _varj(
-            qt_app,
-            lambda: _gyerek(window, "menuEditPasteText").property("enabled") is True,
-        ), "a Felirat másolása nem tette elérhetővé a Felirat beillesztését"
-        assert controller.captionClipboardText() == _FELIRAT, (
-            "a Felirat másolása nem a feliratot tette a szöveg-vágólapra"
-        )
-
-    def test_a_felirat_beillesztese_valodi_kattintassal_atmasolja_a_feliratot(
+    def test_a_felirat_vagolapja_nem_engedelyezi_a_szovegreteg_beilleszteset(
         self, szerk_app, qt_app
     ):
         window, controller, _engine = szerk_app
         _elokeszit(window, qt_app, controller)
-        controller.setCaption(0, _FELIRAT)
-        assert _varj(qt_app, lambda: controller.photos.captionAt(0) == _FELIRAT)
-        _szerkesztes_tetelt_kattint(window, qt_app, "menuEditCopyText")
-        _kijelol(window, qt_app, [1])
-
-        _szerkesztes_tetelt_kattint(window, qt_app, "menuEditPasteText")
-
-        assert _varj(qt_app, lambda: controller.photos.captionAt(1) == _FELIRAT), (
-            "a Felirat beillesztése nem írta a feliratot a másik képre"
-        )
+        controller.setCaptionClipboardText(_FELIRAT)
+        menu_bar = window.property("menuBar")
+        menu = _megnyit(menu_bar, qt_app, "&Edit")
+        assert (
+            _szerkesztes_tetelt(menu, "menuEditPasteText").property("enabled")
+            is False
+        ), "a felirat-vágólap a Text eszköz rétegének beillesztését engedélyezte"
+        assert controller.photos.captionAt(0) == ""
 
     def test_a_kijeloles_megfordítása_valodi_kattintassal_a_masik_kepet_jelöli(
         self, szerk_app, qt_app

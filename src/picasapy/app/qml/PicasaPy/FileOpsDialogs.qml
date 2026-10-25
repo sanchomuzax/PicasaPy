@@ -210,7 +210,6 @@ Item {
         onOpened: {
             standardButton(Dialog.Ok).text = qsTr("Rename")
             standardButton(Dialog.Ok).enabled = canRename()
-            standardButton(Dialog.Ok).opacity = canRename() ? 1.0 : 0.55
             standardButton(Dialog.Cancel).text = qsTr("Cancel")
         }
         function acceptButtonText() {
@@ -248,11 +247,8 @@ Item {
                       includeDateCheck.checked, includeSizeCheck.checked)
                 : ""
             var renameButton = standardButton(Dialog.Ok)
-            if (renameButton) {
+            if (renameButton)
                 renameButton.enabled = canRename()
-                // A stílus a letiltott gombot nem szürkíti, ezért itt halványítjuk.
-                renameButton.opacity = canRename() ? 1.0 : 0.55
-            }
         }
         function canRename() {
             var base = renameManyField.text.trim()

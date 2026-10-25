@@ -323,6 +323,9 @@ def test_valodi_kattintas_utan_forgatas_felirat_es_cimke_hash_ezutan_textactive_
     assert _wait(qt_app, lambda: caption_field.property("text") == "caption-5810"), (
         f"a feliratmező szövege: {caption_field.property('text')!r}"
     )
+    # #5900: a háttérírás hibája a `photoOpFailed`-be fut; a bukás írja ki.
+    irasi_hibak: list[str] = []
+    controller.photoOpFailed.connect(irasi_hibak.append)
     QTest.keyClick(window, Qt.Key.Key_Return)
     # #5856: a két feltétel külön lépésben, hogy a windowsos bukás megnevezze
     # a hiányzó részt; a háttérírásnak ott több idő kell.
@@ -337,7 +340,7 @@ def test_valodi_kattintas_utan_forgatas_felirat_es_cimke_hash_ezutan_textactive_
     )
     assert _wait(qt_app, lambda: "backuphash" in _section(library, "a.jpg"), 20.0), (
         "a felirat mentése után nem íródott backuphash az ini-be: "
-        f"{_section(library, 'a.jpg')!r}"
+        f"{_section(library, 'a.jpg')!r}; háttérírási hibák: {irasi_hibak!r}"
     )
     after_caption = _section(library, "a.jpg")
     _assert_valid_backuphash(after_caption, "a.jpg")

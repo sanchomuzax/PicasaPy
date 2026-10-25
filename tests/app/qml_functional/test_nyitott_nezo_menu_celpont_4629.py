@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
 
+from tests.support.qt_wait import wait_for_photo_op
+
 
 def _elem(window, object_name: str):
     elem = window.findChild(QObject, object_name)
@@ -37,6 +39,11 @@ def test_a_fajl_szerkesztes_es_kep_menu_a_nezett_keppel_dolgozik(
     viewer = _elem(window, "photoViewer")
     file_ops = engine.rootContext().contextProperty("fileOpsController")
     file_ops._vagolap_adat = None
+    wait_for_photo_op(
+        controller,
+        lambda: controller.applyEffectMany([1], "enhance"),
+        qt_app=qt_app,
+    )
 
     # A rács másik képet tart kijelölve, hogy a menü célpontja mérhetően
     # eltérjen a kijelöléstől. A három ablakmagasság a felületi kötést is
@@ -65,7 +72,6 @@ def test_a_fajl_szerkesztes_es_kep_menu_a_nezett_keppel_dolgozik(
             "menuEditCut",
             "menuEditCopy",
             "menuEditCopyEffects",
-            "menuEditCopyText",
             "menuPictureViewAndEdit",
             "menuBatchAutoContrast",
             "menuBatchAutoColor",
@@ -78,13 +84,20 @@ def test_a_fajl_szerkesztes_es_kep_menu_a_nezett_keppel_dolgozik(
             "menuBatchRotateLeft",
             "menuPictureUndoAllEdits",
             "menuPictureHide",
-            "menuPictureUnhide",
             "menuPictureResetFaces",
             "menuPictureProperties",
         ):
             assert _elem(window, nev).property("enabled") is True, (
                 f"{nev} szürke nyitott néző mellett"
             )
+        assert _elem(window, "menuPictureUnhide").property("enabled") is False, (
+            "a látható, megnyitott kép mellett a Kép ▸ Unhide szürke"
+        )
+
+        # A tesztképeken nincs Text eszközös réteg; a nyitott néző önmagában
+        # nem engedélyezi a Copy Text/Paste Text rétegműveleteket.
+        assert _elem(window, "menuEditCopyText").property("enabled") is False
+        assert _elem(window, "menuEditPasteText").property("enabled") is False
 
         # A két eredetileg tiltott mappaparancs szerkesztőben maradjon szürke.
         assert _elem(window, "menuFileAddFolder").property("enabled") is False

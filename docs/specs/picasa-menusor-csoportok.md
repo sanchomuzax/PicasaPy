@@ -151,21 +151,42 @@ nyers argumentumot rögzíti, nem nevezi önmagában „engedélyezettnek” vag
 | `P` hamis, `F & 0x4000` nem nulla | `1` (`0x0056e9c0`, `0x0056eba2`-`0x0056ebbe`) | `1` (`0x0056e9c0`, `0x0056eba2`-`0x0056ebbe`) |
 | `P` hamis, `F & 0x4000` nulla | `1`, ha `(F & 0x6) != 0 && T && B`; különben `0` (`0x0056ea45`-`0x0056ea72`) | `1`, ha `(F & 0x6) != 0 && B && C`; különben `0` (`0x0056eb40`-`0x0056eb80`) |
 
-**Mérés (`job-277`, a jegyben közölt lelet):** könyvtárnézetben egy
-felirat nélküli kijelölt képnél mindkét tétel szürke, miközben
-`Copy All Effects` és `Cut`/`Copy` engedélyezett. A leírás nem rögzíti a
-`P`, `D`, `F`, `B` és `C` nyers állapotát, így ebből a mérésből a konkrét
-bináris útvonal és a callback-argumentum polaritása nem ellenőrizhető. A
-`P` igaz, üres vágólapos Paste-Text ág pedig nem ír állapotot, tehát ott a
-korábbi/alapállapot marad érvényben.
+**Futásidejű ellenőrzés:**
 
-**Bizonyítottság: feltételes.** Az UpdateUI ág utasításszintű olvasata
-megadja a fenti nyers feltételeket; a külön parancskezelők (`0x005fecd0`,
-`0x005fefc0`) ettől függetlenül igazolják, hogy a `Copy Text` a kijelölt
-elem szövegét olvassa, a `Paste Text` pedig a `this+0xcc8` puffert használja.
-Ez a job-277 megfigyelésével összhangban van. A callback mezőinek teljes
-UI-szemantikája, az állapotargumentum UI-polaritása és a pozitív ág közvetlen,
-kattintásos mérése nyitott marad.
+- `job-277`: könyvtárnézet, egy kijelölt kép, felirat nélkül - mindkét tétel
+  szürke, miközben a `Copy All Effects` és a fájl-`Cut`/`Copy` engedélyezett.
+- `job-283`: a nézőben beírt képfelirat után mindkét tétel a nézőben és a
+  könyvtárban is szürke marad. A feltétel tehát nem a `.picasa.ini`
+  képfelirata.
+- `job-287`: a Basic Fixes ▸ Text eszközzel létrehozott és alkalmazott
+  rétegnél a nézőben mindkét tétel engedélyezett. A kép ini-szakaszában
+  `text=...` és `textactive=1` áll. Ez a `T` rétegfeltételt és a
+  `this+0xcc8` szövegpuffer szerepét támasztja alá.
+
+**QML-feltétel a mért állapotokra:** a `Copy Text` csak az első kijelölt kép
+értelmezhető, nem üres Text eszközös `text=` rétegénél él. A `Paste Text`
+akkor él, ha a belső szövegpufferben van ilyen réteg; a job-287 szerint a
+Text eszközzel épp létrehozott réteg is ezt a puffert adja, külön Copy Text
+kattintás nélkül. A külön Copy Text után a puffer a kijelölésváltás után is
+megmarad.
+
+**Képfelirat (#1526):** a két menüpont ezentúl nem másol és nem illeszt be
+képfeliratot; a felirat vágólap-controller API-ja megmarad külön
+feliratműveletekhez. A felirat a néző `captionField` mezőjében szerkeszthető,
+és a szokásos fókuszált szövegmező-műveletekkel másolható vagy illeszthető
+be. Nincs igazolt eredeti Szerkesztés-menüútvonal a képfelirat műveleteihez.
+
+**Bizonyítottság: részleges.** Az UpdateUI ág és az állapotargumentumokat
+képző utasítások címei a táblázatban szerepelnek. A futásidejű mérések a
+képfeliratot kizárják, és a Text-réteggel való kapcsolatot igazolják; a
+`P`, `D`, `F` és `B` mezők teljes UI-szemantikája, illetve az összes
+elágazás callback-polaritása továbbra sincs megállapítva.
+
+**Címhelyesbítés:** a korábbi szöveg a `0x005fecd0`/`0x005fefc0` címeket a
+Text parancsokhoz rendelte. Ezek a címek a teljes `filters=` láncot másoló
+és beillesztő kezelőkhöz tartoznak (#1534; lásd
+`docs/decisions/effektus-vagolap-ket-reteg.md`); a Text parancsok bizonyítéka
+itt az UpdateUI-ág, a `0x006b1e80` rétegsegéd és a `this+0xcc8` puffer.
 
 #### ⛔ Visszavonás/Ismétlés a Szerkesztés menüben NINCS — és nem is lehet
 
