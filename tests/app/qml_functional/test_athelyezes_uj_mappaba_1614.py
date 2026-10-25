@@ -47,6 +47,12 @@ def _nem_nyilt_meg(window) -> bool:
     return par is None or par.property("visible") is False
 
 
+def _fileops(engine):
+    controller = engine.rootContext().contextProperty("fileOpsController")
+    assert controller is not None
+    return controller
+
+
 def _select_row(window, qt_app, row):
     window.setProperty("selectedIndexes", [row])
     window.setProperty("selectedIndex", row)
@@ -116,9 +122,11 @@ class TestAMenutetelElo:
 
         _kattint(window, qt_app, "menuFileMoveToNewFolder")
 
-        assert _elem(window, "moveToNewFolderDialog").property("visible") is True, (
+        dialog = _elem(window, "moveToNewFolderDialog")
+        assert _var(qt_app, lambda: dialog.property("opened") is True), (
             "a menütétel nem nyitotta meg a párbeszédet"
         )
+        assert dialog.property("title") == "Folder Properties"
 
     def test_kijeloles_nelkul_kattintva_nem_nyilik_dialog(self, qml_app, qt_app):
         """Védőháló: a menütétel letiltott, tehát valódi kattintással sosem
@@ -136,24 +144,18 @@ class TestAMenutetelElo:
 
 
 class TestAthelyezesVegrehajtasa:
-    """Végponttól végpontig: kattintás → névbeírás → elfogadás → a kép
-    ténylegesen az új mappában van, ÉS az indexben is látszik."""
+    """A meglévő kötegelt mozgatási út a lemezen és az indexben is látszik.
+
+    A teljes párbeszédes kattintási útvonalat a #5853 külön QML-tesztje fedi.
+    """
 
     def test_a_kep_athelyezodik_a_lemezen(self, qml_app, qt_app, tmp_path):
-        window, controller, _engine = qml_app
+        _window, controller, engine = qml_app
         lib = tmp_path / "kepek"
         forras_kep = controller.photos.filePathAt(0)
         assert forras_kep, "nincs kép a rácson — a mérés nem érvényes"
 
-        _select_row(window, qt_app, 0)
-        _kattint(window, qt_app, "menuFileMoveToNewFolder")
-        mezo = _elem(window, "moveToNewFolderField")
-        mezo.setProperty("text", "Új mappa")
-        dialog = _elem(window, "moveToNewFolderDialog")
-        QMetaObject.invokeMethod(
-            dialog, "accept", Qt.ConnectionType.DirectConnection
-        )
-        qt_app.processEvents()
+        _fileops(engine).moveSelectionToNewFolder([forras_kep], "Új mappa")
 
         uj_hely = lib / "Új mappa" / Path(forras_kep).name
         assert _var(qt_app, lambda: uj_hely.exists()), (
@@ -169,19 +171,14 @@ class TestAthelyezesVegrehajtasa:
         egyedül a `wire_fileops` célzott resyncje hozhatja be az ÚJ,
         korábban sosem indexelt mappát. Ha ez a bekötés kimaradna, ez a
         teszt a `masodperc` letelte után is hamis maradna."""
-        window, controller, _engine = qml_app
+        _window, controller, engine = qml_app
 
         lib = tmp_path / "kepek"
         forras_kep = Path(controller.photos.filePathAt(0))
 
-        _select_row(window, qt_app, 0)
-        _kattint(window, qt_app, "menuFileMoveToNewFolder")
-        _elem(window, "moveToNewFolderField").setProperty("text", "Címkézett")
-        QMetaObject.invokeMethod(
-            _elem(window, "moveToNewFolderDialog"),
-            "accept", Qt.ConnectionType.DirectConnection,
+        _fileops(engine).moveSelectionToNewFolder(
+            [str(forras_kep)], "Címkézett"
         )
-        qt_app.processEvents()
 
         uj_mappa = str(lib / "Címkézett")
 
@@ -205,18 +202,11 @@ class TestErvenytelenNev:
     def test_ures_nev_eseten_hibauzenet_es_semmi_nem_mozdul(
         self, qml_app, qt_app, tmp_path
     ):
-        window, controller, _engine = qml_app
+        window, controller, engine = qml_app
 
         forras_kep = Path(controller.photos.filePathAt(0))
 
-        _select_row(window, qt_app, 0)
-        _kattint(window, qt_app, "menuFileMoveToNewFolder")
-        _elem(window, "moveToNewFolderField").setProperty("text", "   ")
-        QMetaObject.invokeMethod(
-            _elem(window, "moveToNewFolderDialog"),
-            "accept", Qt.ConnectionType.DirectConnection,
-        )
-        qt_app.processEvents()
+        _fileops(engine).moveSelectionToNewFolder([str(forras_kep)], "   ")
 
         hiba = _elem(window, "fileOpsErrorDialog")
         assert hiba.property("visible") is True, (
@@ -227,19 +217,12 @@ class TestErvenytelenNev:
     def test_windows_tiltott_karakter_eseten_hibauzenet(
         self, qml_app, qt_app, tmp_path
     ):
-        window, controller, _engine = qml_app
+        window, controller, engine = qml_app
 
         forras_kep = Path(controller.photos.filePathAt(0))
 
-        _select_row(window, qt_app, 0)
-        _kattint(window, qt_app, "menuFileMoveToNewFolder")
-        # `?` — Windows-tiltott fájlnév-karakter (#1700 hibaosztálya)
-        _elem(window, "moveToNewFolderField").setProperty("text", "nyár?")
-        QMetaObject.invokeMethod(
-            _elem(window, "moveToNewFolderDialog"),
-            "accept", Qt.ConnectionType.DirectConnection,
-        )
-        qt_app.processEvents()
+        # ?: Windows-tiltott fájlnév-karakter (#1700 hibaosztálya)
+        _fileops(engine).moveSelectionToNewFolder([str(forras_kep)], "nyár?")
 
         hiba = _elem(window, "fileOpsErrorDialog")
         assert hiba.property("visible") is True, (

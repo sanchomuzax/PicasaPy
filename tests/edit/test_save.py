@@ -64,7 +64,7 @@ def photo(tmp_path):
 
 class TestSaveEditedFirstTime:
     """(a) mentés → eredeti a .picasaoriginals-ban, renderelt a helyén,
-    a redo=/originhash a várt módon frissül."""
+    a filters az eredeti-mappa ini-jébe kerül, a current ini backuphash-t kap."""
 
     def test_original_backed_up(self, photo):
         image_path, original_bytes = photo
@@ -92,9 +92,8 @@ class TestSaveEditedFirstTime:
         assert decoded is not None
         assert tuple(int(c) for c in decoded[0, 0]) == (99, 88, 77)
 
-    def test_ini_redo_written_originhash_nem(self, photo):
-        """#2675: a `redo=` íródik, `originhash` viszont NEM — mérve nem
-        mentéskori kulcs (őr: `test_originhash_nem_mentesi_kulcs_2675.py`)."""
+    def test_ini_filter_atkerul_az_eredeti_mappaba_redo_nem_irodik(self, photo):
+        """#5833: a lánc a backup ini-be kerül; a redo kulcs nem mentésjelző."""
         image_path, _original_bytes = photo
         rendered = _solid_image((1, 2, 3))
         session = EditSession.from_value("enhance=1;crop64=1,3f845bcb59418507;")
@@ -104,11 +103,16 @@ class TestSaveEditedFirstTime:
         document = load_document(image_path.parent / _INI_NAME)
         section = document.section("IMG_0001.png")
         assert section is not None
-        expected_redo = "enhance=1;crop64=1,3f845bcb59418507;"
-        assert section.get("redo") == expected_redo
-        assert result.redo_value == expected_redo
+        expected_filters = "enhance=1;crop64=1,3f845bcb59418507;"
+        original_section = load_document(
+            result.original_backup_path.parent / _INI_NAME
+        ).section("IMG_0001.png")
+        assert original_section is not None
+        assert original_section.get("filters") == expected_filters
+        assert section.get("redo") is None
+        assert result.filters_value == expected_filters
         assert section.get("originhash") is None
-        # filters= törlődik: a lánc már be van égetve a pixelekbe.
+        assert section.get("backuphash") is not None
         assert section.get("filters") is None
 
     def test_returns_save_result(self, photo):
@@ -149,7 +153,7 @@ class TestSaveEditedSecondTime:
         )
         assert tuple(int(c) for c in decoded[0, 0]) == (44, 55, 66)
 
-    def test_second_save_updates_redo_to_new_chain(self, photo):
+    def test_second_save_updates_original_ini_filters_to_new_chain(self, photo):
         image_path, _original_bytes = photo
         save_edited(
             image_path, _solid_image((1, 1, 1)), EditSession.from_value("enhance=1;")
@@ -159,10 +163,12 @@ class TestSaveEditedSecondTime:
             _solid_image((2, 2, 2)),
             EditSession.from_value("enhance=1;autolight=1;"),
         )
-        document = load_document(image_path.parent / _INI_NAME)
+        document = load_document(
+            image_path.parent / ORIGINALS_DIR_NAME / _INI_NAME
+        )
         section = document.section("IMG_0001.png")
-        assert section.get("redo") == "enhance=1;autolight=1;"
-        assert second.redo_value == "enhance=1;autolight=1;"
+        assert section.get("filters") == "enhance=1;autolight=1;"
+        assert second.filters_value == "enhance=1;autolight=1;"
 
 
 class TestRevert:
@@ -194,11 +200,15 @@ class TestRevert:
         assert section.get("filters") is None
         assert section.get("redo") is None
         assert section.get("originhash") is None
-        # A szerkesztéshez nem tartozó mezők (star, backuphash, ismeretlen)
-        # érintetlenek maradnak.
+        # A szerkesztéshez nem tartozó mezők megmaradnak; a backuphash a
+        # mentéskor frissült, az ismeretlen kulcsok round-tripben maradnak.
         assert section.get("star") == "yes"
-        assert section.get("backuphash") == "36003"
+        assert section.get("backuphash") is not None
         assert section.get("unknownfield") == "valami-ismeretlen"
+        original_section = load_document(
+            image_path.parent / ORIGINALS_DIR_NAME / _INI_NAME
+        ).section("IMG_0001.png")
+        assert original_section is None or original_section.get("filters") is None
 
     def test_revert_without_prior_save_raises(self, photo):
         image_path, _original_bytes = photo
@@ -231,7 +241,7 @@ class TestRoundTrip:
         document = load_document(image_path.parent / _INI_NAME)
         section = document.section("IMG_0001.png")
         assert section.get("star") == "yes"
-        assert section.get("backuphash") == "36003"
+        assert section.get("backuphash") is not None
         assert section.get("unknownfield") == "valami-ismeretlen"
 
     def test_other_sections_untouched(self, tmp_path):
@@ -272,8 +282,14 @@ class TestMissingIni:
 
         assert (tmp_path / _INI_NAME).exists()
         document = load_document(tmp_path / _INI_NAME)
-        assert document.section("IMG_0003.png").get("redo") == "enhance=1;"
-        assert result.redo_value == "enhance=1;"
+        current = document.section("IMG_0003.png")
+        assert current.get("redo") is None
+        assert current.get("backuphash") is not None
+        original = load_document(
+            tmp_path / ORIGINALS_DIR_NAME / _INI_NAME
+        ).section("IMG_0003.png")
+        assert original is not None and original.get("filters") == "enhance=1;"
+        assert result.filters_value == "enhance=1;"
 
 
 def _fail_ini_write(monkeypatch, error=None):
@@ -391,7 +407,11 @@ class TestRevertIniFailureRollsBackImage:
 
         assert image_path.read_bytes() == edited_bytes
         section = load_document(image_path.parent / _INI_NAME).section("IMG_0001.png")
-        assert section.get("redo") is not None  # a nyilvántartás változatlan
+        assert section.get("redo") is None
+        original = load_document(
+            image_path.parent / ORIGINALS_DIR_NAME / _INI_NAME
+        ).section("IMG_0001.png")
+        assert original is not None and original.get("filters") == "enhance=1;"
 
 
 class TestNumberedSnapshotsAndUndoSave:
@@ -409,9 +429,10 @@ class TestNumberedSnapshotsAndUndoSave:
     def test_every_save_leaves_a_numbered_snapshot(self, tmp_path):
         """#2512: a pillanatképek a `.picasapy-snapshots` alkönyvtárban.
 
-        A „szent" eredeti helye VÁLTOZATLAN (`.picasaoriginals/<fájlnév>`) —
-        azt a windowsos Picasa is oda írja és onnan olvassa. A mi
-        sorszámozott pillanatképeink viszont külön névtérbe kerültek,
+        A „szent" eredeti helye VÁLTOZATLAN (`.picasaoriginals/<fájlnév>`),
+        mellette a #5833 óta az eredeti-mappa ini-je őrzi a beégetett
+        szerkesztési láncot. A mi sorszámozott pillanatképeink külön
+        névtérbe kerültek,
         különben az `a.2.jpg` nevű példány egy önálló `a.2.jpg` kép
         eredetijétől megkülönböztethetetlen (ADR-010).
         """
@@ -425,8 +446,10 @@ class TestNumberedSnapshotsAndUndoSave:
 
         eredeti_mappa = tmp_path / originals
         assert sorted(
-            p.name for p in eredeti_mappa.iterdir() if p.is_file()
+            p.name for p in eredeti_mappa.iterdir()
+            if p.is_file() and p.suffix == ".png"
         ) == ["kep.png"]
+        assert (eredeti_mappa / ".picasa.ini").is_file()
         assert sorted(
             p.name for p in (eredeti_mappa / snapshots).iterdir()
         ) == ["kep.1.png", "kep.2.png"]
@@ -444,7 +467,7 @@ class TestNumberedSnapshotsAndUndoSave:
 
         # a képpontok visszaálltak…
         assert path.read_bytes() == before
-        # …a szerkesztés viszont MEGMARADT (a redo=-ból vissza a filters=-be)
+        # …a szerkesztés viszont MEGMARADT (az eredeti-mappa ini-jéből a filters=-be)
         document = load_document(tmp_path / _INI_NAME)
         stored = document.section("kep.png")
         assert stored.get("filters") == session.to_value()

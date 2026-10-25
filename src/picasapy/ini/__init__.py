@@ -108,6 +108,7 @@ from .io import (
     load_document,
     load_existing,
     load_or_empty,
+    remove_ini_target_if_content_matches,
     save_document,
     update_document,
 )
@@ -169,6 +170,7 @@ __all__ = [
     "load_document",
     "load_existing",
     "load_or_empty",
+    "remove_ini_target_if_content_matches",
     "has_ini_source",
     "ini_source_path",
     "INI_NAME",
