@@ -60,6 +60,9 @@ Dialog {
     property string folderPath: ""
     property string folderName: ""
     property bool newFolderCreation: false
+    // #5853, job-261: a Move to New Folder párbeszédéből az eredeti
+    // „Automatic date” gombja hiányzik.
+    property bool showAutomaticDate: true
     property var splitPaths: []
     property string folderLocation: ""
     //: IDS_DEFAULT_ALBUM_NAME — a hivatalos alak „Névtelen”.
@@ -444,6 +447,7 @@ Dialog {
                         // az eredeti „Automatic date" gombja: törli a kézi
                         // felülírást, a mappa a legrégebbi képe dátumára áll vissza
                         objectName: "folderPropertiesAutomaticDate"
+                        visible: root.showAutomaticDate
                         text: qsTr("Automatic date")
                         Layout.preferredWidth: 139
                         Layout.preferredHeight: 26

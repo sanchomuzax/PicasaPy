@@ -8093,6 +8093,20 @@ picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(i
         </message>
         <message>
             <location filename="../qml/Main.qml" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>Удалить изменения</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/no.title</extracomment>
+            <translation>Нет</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
             <source>Are you sure you want to add all of the selected album's images?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:addtosaver::warning</extracomment>
@@ -12260,6 +12274,30 @@ picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/morebutton);tooltips
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/startoggle);tooltips:Tooltip(thumbui/startoggle)</extracomment>
             <translation>Добавить/удалить пометку</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Screensaver</source>
+            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
+            <translation>Заставка</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Starred Photos</source>
+            <comment>stringres:CThumbDB::starredphotos</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
+            <translation>Помеченные фотографии</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>New Album...</source>
+            <comment>stringres:il_NewAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_NewAlbumName</extracomment>
+            <translation>Новый альбом...</translation>
         </message>
         <message>
             <source>Click and drag over photos to magnify them</source>

@@ -13,6 +13,7 @@ import pytest
 from support.qt_wait import wait_for_photo_op
 
 from support.jpeg_factory import make_jpeg
+from picasapy.ini import load_document
 
 # rontás-kontroll: picasapy.ini.backuphash.backuphash_for_local_datetime = 65536 → 1 failed
 
@@ -319,10 +320,29 @@ class TestClearAllEffectsMany:
             ),
         )
         text = _ini_text(library)
-        # az egykulcsos [x.jpg] szekció a filters= törlésével teljesen
-        # eltűnik (a `with_removed` az üres szekciót nem tartja meg)
+        # A job-254 szerint a szekció a filters= törlése után a backuphash
+        # miatt megmarad; a korábbi „üres szekció eltűnik” állítás elavult.
         assert "filters=sat=1,-0.2;" not in text
-        assert "[x.jpg]" not in text
+        section = load_document(library / "a" / ".picasa.ini").section("x.jpg")
+        assert section is not None
+        assert section.get("filters") is None
+
+    def test_a_torles_backuphash_kulcsot_hagy_a_kep_szakaszaban(
+        self, controller, library
+    ):
+        _run(
+            controller,
+            lambda: controller.clearAllEffectsMany(
+                _rows_by_name(controller, "x.jpg")
+            ),
+        )
+
+        section = load_document(library / "a" / ".picasa.ini").section("x.jpg")
+        assert section is not None, "a törölt lánc után a képszakasz hiányzik"
+        values = dict(section.items())
+        assert set(values) == {"backuphash"}, values
+        assert values["backuphash"].isdecimal()
+        assert 0 <= int(values["backuphash"]) <= 0xFFFF
 
     def test_torli_a_crop_tukorkulcsot_is(self, controller, library):
         _run(

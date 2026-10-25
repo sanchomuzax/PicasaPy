@@ -11,8 +11,9 @@ mentéskor egyáltalán nem ír `originhash`-t.
 `referencia/ini-korpusz`): 1787 `originhash=` sor áll a korpuszban, és
 **egyetlen egy sem** olyan szakaszban, amelyben `redo=` is van
 (`(originhash, redo) = (igen, igen)` → **0**; `(igen, nem)` → 1787;
-`(nem, igen)` → 34). A `redo=` a mentés kimondott nyoma, tehát a két kulcs
-kizárja egymást. A társkulcsok is a letöltési utat mutatják:
+`(nem, igen)` → 34). A mentési lánc áthelyezése (#5833) nem módosítja ezt az
+`originhash`-szabályt; a jelenlegi mentés már nem ír `redo=`-t. A társkulcsok
+is a letöltési utat mutatják:
 `IIDLIST_<felhasználó>_lh` 877, `backuphash` 760, `onlinechecksum` 380.
 
 **Bináris oldal** (`docs/specs/picasa-tartalomkulcs.md`, 211. kör): a
@@ -36,6 +37,7 @@ mérés került a józan feltevés helyére.
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 import cv2
@@ -44,6 +46,7 @@ import pytest
 
 from picasapy.edit import EditSession, revert, save_edited
 from picasapy.ini import load_document
+from picasapy.ini.backuphash import backuphash_for_local_datetime
 
 _INI_NAME = ".picasa.ini"
 
@@ -94,12 +97,17 @@ class TestAMentesNemIrOriginhasht:
         save_edited(kep_ut, _kep((9, 9, 9)), EditSession.from_value("enhance=1;"))
 
         szakasz = _szakasz(kep_ut)
-        assert szakasz.get("redo") == "enhance=1;", "a mentés nyoma megvan"
+        assert szakasz.get("redo") is None
+        assert szakasz.get("backuphash") is not None
         assert szakasz.get("originhash") is None, (
             "#2675: a mentés `originhash`-t írt — az eredeti Picasa ezt a "
             "kulcsot a web-album letöltéskor írja, mentéskor SOHA "
             "(korpusz: 1787 sorból 0 áll `redo=` mellett)"
         )
+        original = load_document(
+            kep_ut.parent / ".picasaoriginals" / _INI_NAME
+        ).section(kep_ut.name)
+        assert original is not None and original.get("filters") == "enhance=1;"
 
     def test_a_mentes_eredmenye_sem_hordoz_originhasht(self, tmp_path: Path) -> None:
         """A `SaveResult`-nak nincs `originhash` mezője (mint a #1643 után a
@@ -118,7 +126,17 @@ class TestAMentesNemIrOriginhasht:
 
 
 class TestAMeglevoOriginhashTulel:
-    def test_a_mentes_meghagyja(self, letoltott_kep: Path) -> None:
+    def test_a_mentes_meghagyja(self, letoltott_kep: Path, monkeypatch) -> None:
+        import picasapy.ini.backuphash as backuphash_module
+
+        fixed = datetime(2026, 10, 25, 12, 34, 56)
+
+        class FrozenDateTime(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return cls(2026, 10, 25, 12, 34, 56)
+
+        monkeypatch.setattr(backuphash_module, "datetime", FrozenDateTime)
         save_edited(
             letoltott_kep, _kep((9, 9, 9)), EditSession.from_value("enhance=1;")
         )
@@ -128,7 +146,7 @@ class TestAMeglevoOriginhashTulel:
             "a letöltésből örökölt `originhash` nem a miénk — a mentés nem "
             "írhatja át és nem törölheti"
         )
-        assert szakasz.get("backuphash") == "36003"
+        assert szakasz.get("backuphash") == str(backuphash_for_local_datetime(fixed))
 
     def test_a_visszaallitas_sem_torli(self, letoltott_kep: Path) -> None:
         eredmeny = save_edited(
@@ -145,3 +163,7 @@ class TestAMeglevoOriginhashTulel:
             "#2675: a Visszaállítás törölte az `originhash`-t — az a letöltés "
             "provenienciája, nem a szerkesztés könyvelése"
         )
+        original = load_document(
+            letoltott_kep.parent / ".picasaoriginals" / _INI_NAME
+        ).section(letoltott_kep.name)
+        assert original is None or original.get("filters") is None

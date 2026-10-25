@@ -406,6 +406,7 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                         prev_crop = section.get("crop") if section else None
                         fresh.append((folder, photo.name, prev, prev_crop))
                         document = _clear_all_effects(document, photo.name)
+                        document = with_backuphash(document, photo.name)
                     entries[:] = fresh
                     return document
 

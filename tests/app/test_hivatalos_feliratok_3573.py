@@ -38,6 +38,10 @@ TS = QML.parent / "i18n" / "picasapy_hu.ts"
 
 #: felirat → (hivatalos magyar, a `stringres` azonosítója)
 HIVATALOS = {
+    "Confirm": ("Jóváhagyás", "ytApp::ConfirmTitle"),
+    "Remove Edits": (
+        "Szerkesztések eltávolítása", "IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON"),
+    "No": ("Nem", "confirm/no.title"),
     "Want to Cancel?": ("Kilép?", "IBackgroundNotify::canceltitle"),
     "Do you want to cancel this operation?": (
         "Megszakítja ezt a műveletet?", "IBackgroundNotify::cancel"),

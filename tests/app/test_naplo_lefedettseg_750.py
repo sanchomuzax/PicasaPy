@@ -229,10 +229,10 @@ class TestOsszesEffektBeillesztese:
 
 
 class TestLemezreMentes:
-    """`save_controller` — a `redo=` írása (`edit/save.py`).
+    """`save_controller`: a #5833 szerinti eredeti-ini mentés (`edit/save.py`).
 
-    A mentés a láncot a pixelekbe égeti, a `filters=`-t TÖRLI, és a `redo=`-ba
-    forgatja át. A naplónak követnie kell: enélkül a következő
+    A mentés a láncot a pixelekbe égeti, az aktuális ini-ből törli, és az
+    eredeti-mappa ini-jébe teszi. A naplónak követnie kell: enélkül a következő
     nézetfrissítés HAMIS riasztást adna („a szerkesztésed eltűnt"), holott
     mi magunk vittük el.
     """
