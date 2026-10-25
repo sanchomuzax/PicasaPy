@@ -797,7 +797,7 @@ vftáblájának 89. helyét (`0x00c9a568`) hívja, amely a `0x006e3990` mentő
 rutinra mutat. Az 1-es eredmény a 90. helyre (`0x00c9a56c`) jut, amely a
 `0x00b0d990` üres visszatérő rutinra mutat. Következésképp az OK kiírja a
 párbeszéd vezérlőinek értékeit, a Cancel pedig a kiírás előtt elveti azokat.
-Az issue `0x007fad0a`-ra tett „író ág” megnevezése pontatlan: az a
+A jegy `0x007fad0a`-ra tett „író ág” megnevezése pontatlan: az a
 `LoopSlideshow` olvasó ága; az OK hívási útja a fenti `0x008d2720`.
 
 ### 2. Általános (General)
