@@ -26,6 +26,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
 from PySide6.QtTest import QTest
+from PySide6.QtQuick import QQuickItem, QQuickWindow
 
 from conftest import _build_qml_app
 from support.jpeg_factory import make_jpeg
@@ -230,9 +231,14 @@ def _nyomtatas_panel_megnyit(window, qt_app):
 
 def _vizualis_keres(window, nev: str):
     """Az elem a VIZUÁLIS fában: a Repeater-delegátumoknak nincs QObject-szülőjük."""
-    verem = [window.contentItem()]
+    # Ablaknál a tartalomelemtől, más (vizuális) elemnél magától az elemtől
+    # indulunk: egy Item `contentItem` tulajdonsága nem a gyerekfa (#5823).
+    kezdo = window.contentItem() if isinstance(window, QQuickWindow) else window
+    verem = [kezdo]
     while verem:
         elem = verem.pop()
+        if not isinstance(elem, QQuickItem):
+            continue
         if elem.objectName() == nev:
             return elem
         verem.extend(elem.childItems())
