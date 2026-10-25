@@ -18740,4 +18740,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Отметки невозможно изменить, поскольку один или несколько элементов защищены от записи.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Альбом можно сохранить только в проиндексированной папке с фотографиями.</translation>
+        </message>
+    </context>
 </TS>

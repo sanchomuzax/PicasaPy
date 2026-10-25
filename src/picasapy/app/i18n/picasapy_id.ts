@@ -18713,4 +18713,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Tag tidak dapat diubah karena satu atau lebih foto bersifat hanya-baca.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Album hanya dapat disimpan di folder foto yang telah diindeks.</translation>
+        </message>
+    </context>
 </TS>

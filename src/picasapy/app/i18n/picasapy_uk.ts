@@ -18740,4 +18740,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Неможливо редагувати теги, оскільки один або кілька елементів призначені тільки для читання.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Альбом можна зберегти лише в проіндексованій папці з фотографіями.</translation>
+        </message>
+    </context>
 </TS>

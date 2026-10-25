@@ -18782,4 +18782,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>لا يمكن تعديل العلامات لأن هناك عنصرًا واحدًا أو أكثر للقراءة فقط.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>لا يمكن حفظ الألبوم إلا في مجلد صور مفهرس.</translation>
+        </message>
+    </context>
 </TS>

@@ -18740,4 +18740,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Није могуће изменити ознаке зато што је једна или више само за читање.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Албум може да се сачува само у индексираној фасцикли са фотографијама.</translation>
+        </message>
+    </context>
 </TS>

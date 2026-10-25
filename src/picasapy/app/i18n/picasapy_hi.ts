@@ -18713,4 +18713,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>टैग संशोधित नहीं किए जा सकते क्योंकि एक या अधिक आइटम केवल पढ़ने के लिए हैं.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>एल्बम को केवल अनुक्रमित फ़ोटो फ़ोल्डर में ही सहेजा जा सकता है।</translation>
+        </message>
+    </context>
 </TS>
