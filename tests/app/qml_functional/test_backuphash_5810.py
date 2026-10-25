@@ -1,5 +1,5 @@
 """#5810: a Picasa-műveletek backuphash-t írnak a kép ini-szakaszába."""
-# rontás-kontroll: picasapy.ini.backuphash.backuphash_for_local_datetime = 65536 → 3 failed
+# rontás-kontroll: picasapy.ini.backuphash.backuphash_for_local_datetime = 65536 → 6 failed
 
 from __future__ import annotations
 
@@ -189,6 +189,71 @@ def backuphash_app(qml_app, qt_app):
     controller.selectFolder(str(library))
     assert _wait(qt_app, lambda: controller.photos.rowCount() == 2)
     yield window, controller, engine, library
+
+
+@pytest.mark.parametrize("height_delta", _WINDOW_HEIGHT_OFFSETS)
+def test_valodi_kattintas_az_im_feeling_lucky_hash_vissza_a_konyvtarba(
+    backuphash_app, qt_app, height_delta
+):
+    window, controller, _engine, library = backuphash_app
+    base_width = int(window.width())
+    window.setWidth(base_width + 320)
+    assert _wait(qt_app, lambda: int(window.width()) == base_width + 320)
+    base_height = int(window.height())
+    target_height = base_height + height_delta
+    window.setHeight(target_height)
+    assert _wait(qt_app, lambda: int(window.height()) == target_height), (
+        f"az ablak magassága {window.height()}, várt: {target_height}"
+    )
+
+    row_a = _row(controller, "a.jpg")
+    assert _wait(
+        qt_app,
+        lambda: _valodi_belyegkep_kesz(window),
+    ), "a valódi képek bélyegképei nem töltődtek be"
+    # A néző állapotát a teszt nyitja meg, a két felhasználói műveletet
+    # (I'm Feeling Lucky és Vissza a könyvtárba) valódi egéresemény végzi.
+    window.setProperty("selectedIndexes", [row_a])
+    window.setProperty("selectedIndex", row_a)
+    window.setProperty("viewerOpen", True)
+    viewer = _item(window, "photoViewer")
+    viewer.setProperty("currentIndex", row_a)
+    assert _wait(
+        qt_app,
+        lambda: viewer.isVisible() and viewer.property("currentIndex") == row_a,
+    ), "a néző nem nyílt meg az a.jpg képre"
+    assert "backuphash" not in _section(library, "a.jpg")
+    assert not _section(library, "a.jpg").get("filters")
+
+    if not controller.editorControlsVisible:
+        _click(window, qt_app, _item(window, "toggle_left_drawer"))
+        assert _wait(qt_app, lambda: controller.editorControlsVisible)
+    lucky = _item(window, "editToolEnhance")
+    assert _wait(qt_app, lambda: lucky.isVisible() and lucky.property("enabled"))
+    _click(window, qt_app, lucky)
+
+    assert _wait(
+        qt_app,
+        lambda: _section(library, "a.jpg").get("filters") == "enhance=1;"
+        and "backuphash" in _section(library, "a.jpg"),
+    ), "az I'm Feeling Lucky mentése nem írta a filters= lánc mellé a backuphash-t"
+    szerkesztett = _section(library, "a.jpg")
+    _assert_valid_backuphash(szerkesztett, "a.jpg")
+    assert szerkesztett["filters"] == "enhance=1;"
+
+    _click(window, qt_app, _item(window, "viewerBackButton"))
+    assert _wait(qt_app, lambda: window.property("viewerOpen") is False)
+    assert _wait(qt_app, lambda: _valodi_belyegkep_kesz(window))
+    assert _section(library, "a.jpg")["filters"] == "enhance=1;"
+    _assert_valid_backuphash(_section(library, "a.jpg"), "a.jpg")
+
+    screenshot = os.environ.get("PICASAPY_5854_SCREENSHOT")
+    if screenshot and height_delta == 0:
+        output = Path(screenshot)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        image = window.grabWindow()
+        assert not image.isNull(), "a valódi bélyegképes kiadáskép üres"
+        assert image.save(str(output), "PNG"), f"nem menthető a kiadáskép: {output}"
 
 
 @pytest.mark.parametrize("height_delta", _WINDOW_HEIGHT_OFFSETS)

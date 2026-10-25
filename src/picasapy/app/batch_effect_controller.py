@@ -46,7 +46,7 @@ from pathlib import Path
 from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.edit.session import EditSession
-from picasapy.ini import load_or_empty, update_document
+from picasapy.ini import load_or_empty, update_document, with_backuphash
 from picasapy.ini.text_overlay import (
     parse_text,
     parse_text_active,
@@ -136,10 +136,13 @@ def _apply_one(session: EditSession, name: str) -> EditSession:
 
 def _write_filters(document, section_name: str, session: EditSession):
     """A `filters=` kulcs beírása/törlése (a `crop=` tükör-kulcs nélkül —
-    ez a szelet sosem érinti a crop64-et)."""
+    ez a szelet sosem érinti a crop64-et); a kép `backuphash`-ével együtt."""
     if session.is_empty():
-        return document.with_removed(section_name, "filters")
-    return document.with_value(section_name, "filters", session.to_value())
+        document = document.with_removed(section_name, "filters")
+    else:
+        document = document.with_value(section_name, "filters", session.to_value())
+    # #5854: a szűrőlánc és az időbélyeg ugyanazon mappánkénti ini-tranzakció része.
+    return with_backuphash(document, section_name)
 
 
 def _clear_all_effects(document, section_name: str):
@@ -500,6 +503,9 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                             )
                         else:
                             document = document.with_removed(name, "crop")
+                        # A visszaállított lánc ugyanúgy ini-írás, mint az
+                        # alkalmazott effekt: a képszakasz időbélyege frissül.
+                        document = with_backuphash(document, name)
                     return document
 
                 try:

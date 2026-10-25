@@ -14,6 +14,8 @@ from support.qt_wait import wait_for_photo_op
 
 from support.jpeg_factory import make_jpeg
 
+# rontás-kontroll: picasapy.ini.backuphash.backuphash_for_local_datetime = 65536 → 1 failed
+
 
 @pytest.fixture
 def library(tmp_path):
@@ -76,6 +78,29 @@ def _ini_text_b(folder) -> str:
     return (folder / "b" / ".picasa.ini").read_text(encoding="utf-8")
 
 
+def _without_backuphash(text: str) -> list[str]:
+    return [
+        line
+        for line in text.splitlines()
+        if not line.casefold().startswith("backuphash=")
+    ]
+
+
+def _assert_valid_backuphash(text: str, section_name: str) -> None:
+    after_header = text.split(f"[{section_name}]", 1)[1]
+    section = after_header.split("\n[", 1)[0]
+    value = next(
+        (
+            line.partition("=")[2]
+            for line in section.splitlines()
+            if line.startswith("backuphash=")
+        ),
+        None,
+    )
+    assert value is not None, f"[{section_name}] szakaszból hiányzik a backuphash"
+    assert value.isdecimal() and 0 <= int(value) <= 0xFFFF
+
+
 def _run(controller, action) -> None:
     """A kötegelt művelet bevárása a KÖZÖS, hangos segéddel (#475).
 
@@ -132,7 +157,11 @@ class TestApplyEffectMany:
 
         controller.undoBatchEdit()
 
-        assert _ini_text(library) == before_a
+        assert _without_backuphash(_ini_text(library)) == _without_backuphash(
+            before_a
+        )
+        _assert_valid_backuphash(_ini_text(library), "x.jpg")
+        _assert_valid_backuphash(_ini_text_b(library), "z.jpg")
         assert "filters=sepia=1;" not in _ini_text_b(library)
         assert controller.canUndoBatchEdit is False
 
@@ -148,6 +177,22 @@ class TestApplyEffectMany:
         lines = text.splitlines()
         y_index = lines.index("[y.jpg]")
         assert lines[y_index + 1] == "filters=enhance=1;"
+
+    def test_apply_effect_many_uj_kepen_backuphash_t_is_ir(self, controller, library):
+        _run(
+            controller,
+            lambda: controller.applyEffectMany(
+                _rows_by_name(controller, "y.jpg"), "enhance"
+            ),
+        )
+        szakasz = _ini_text(library).split("[y.jpg]", 1)[1].split("[", 1)[0]
+        hash_sor = next(
+            (sor for sor in szakasz.splitlines() if sor.startswith("backuphash=")),
+            None,
+        )
+        assert hash_sor is not None, "az applyEffectMany nem írt backuphash-t"
+        ertek = hash_sor.partition("=")[2]
+        assert ertek.isdecimal() and 0 <= int(ertek) <= 0xFFFF
 
     def test_mappankent_minden_erintett_mappa_iridik(self, controller, library):
         _run(
