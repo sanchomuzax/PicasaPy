@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.237] - 2026-10-25
+
+- A menük pipálható tételein a jelöletlen hely üres, a kijelöltön keret nélküli pipa látszik. (#5885).
+
 ## [0.9.236] - 2026-10-25
 
 - A Szerkesztés menü Copy Text/Paste Text tételei a Text eszköz szövegrétegét másolják és illesztik; a képfelirat a néző mezőjében, a szokásos szövegmező-műveletekkel kezelhető (#5877).
