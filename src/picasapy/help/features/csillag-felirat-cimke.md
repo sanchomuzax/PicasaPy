@@ -83,9 +83,15 @@ nyitja és zárja is a panelt.
   fejléc megmondja, mire vonatkozik: egyetlen kijelölt képnél a kép
   nevét írja (*kép.jpg címkéi:*), több képnél *Címkék az aktuális
   kijelölésben:*, ha pedig a megjelenített album **összes** képe ki van
-  jelölve, *Címkék az aktuális kijelölésben (teljes album):*. Egy címkére
-  jobbgombbal kattintva: **Címke hozzáadása a teljes kijelöléshez**,
-  **Így címkézett elemek keresése**, **Címke eltávolítása**.
+  jelölve, *Címkék az aktuális kijelölésben (teljes album):*.
+- A lista sorrendje az eredeti Picasáét követi: elöl az a címke áll,
+  amelyik a kijelölésben a **legtöbb képen** szerepel. Az egyformán
+  gyakori címkék **fordított névsorban** követik egymást (Z-től A felé).
+- Egy címkére jobbgombbal kattintva három tételt kapsz, ebben a
+  sorrendben: **A címke eltávolítása**, **Az ilyen címkével ellátott
+  elemek keresése** és **A címke hozzáadása a teljes kijelölt részhez**.
+  A keresés a címkét beírja a felső keresőmezőbe, és rögtön a találatokat
+  mutatja; a keresőmezőt törölve visszakapod a teljes nézetet.
 
 ### Sok képre egyszerre
 
@@ -94,7 +100,7 @@ rákérdez: „Meglehetősen nagy számú elemet jelölt ki. Biztosan az összes
 (*N*) elemre alkalmazni szeretné ezt a címkét?" Az **OK** felrakja a
 címkét a kijelölés minden képére, a **Mégse** nem címkéz semmit. A kérdés
 a beíró mezőre, a gyorscímke-gombokra és a címke helyi menüjének
-**Címke hozzáadása a teljes kijelöléshez** tételére egyaránt érvényes. A kijelölést a
+**A címke hozzáadása a teljes kijelölt részhez** tételére egyaránt érvényes. A kijelölést a
 program a kérdés megjelenésekor rögzíti, tehát a döntésedig nem változhat
 a cél.
 

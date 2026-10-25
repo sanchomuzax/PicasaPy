@@ -128,6 +128,15 @@ szerepel.) A
 találati fejléc mutatja, melyik kép a minta; a **Minta törlése** gombbal
 (**Ctrl+F8**) zárod le a keresést.
 
+A program az eredeti Picasa módszerével hasonlít: a képek kicsinyített
+színképét, színeloszlását és éleit veti össze a mintáéval, és a
+könyvtár képeit ez alapján **rangsorolja**. A sorrendben az is számít,
+mennyire közel készült egy kép a mintához **időben**: a mintához időben
+közelebbi felvételek előrébb kerülnek. A találat a rangsor
+első **1000** képe. Az első keresés nagy könyvtárnál lassabb lehet, mert
+a program ekkor számolja ki minden kép jellemzőit; ezeket megjegyzi, így
+a következő keresés gyorsabb.
+
 Ez nem ugyanaz, mint a másodpéldány-keresés — az azonos fájlokat keres,
 lásd [Duplikátumok keresése](duplikatumok.md).
 

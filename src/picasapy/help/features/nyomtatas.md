@@ -82,6 +82,19 @@ képminőségről: **Legkisebb kép: *N* képpont/hüvelyk**, és új sorban vag
 számít kicsinek, ha a választott nyomatméretre kevesebb mint **150
 képpont jut hüvelykenként**.
 
+Ez alatt két választógomb áll: **Normál** és **Optimalizált**. Ez a
+nyomtatás élességét szabja meg:
+
+- **Optimalizált** - a képek **teljes felbontással** mennek a
+  nyomtatóra. Élesebb, de lassabb, és több memóriát kér.
+- **Normál** (ez az alapérték) - a **Beállítások ▸ Nyomtatás** fül
+  **Nyomtató minősége:** sorát követi: **Kompatibilis** esetén fél
+  felbontással, **Magas minőség** esetén teljes felbontással nyomtat
+  (lásd [Beállítások](beallitasok.md)).
+
+A választás megmarad a következő nyomtatásig, és átváltáskor a kis
+előnézet is frissül.
+
 ### Minőségellenőrzés
 
 Ha van kis kép, mellette egy **Ellenőrzés** gomb jelenik meg. Rákattintva

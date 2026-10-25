@@ -19,7 +19,9 @@ nincs kijelölt kép.
 **Fájl ▸ Átnevezés…** (F2), vagy a kép helyi menüjéből.
 
 Egy és több kijelölt képnél is ugyanaz a **Fájlok átnevezése** ablak
-nyílik meg. Írd be az új nevet. Több kép egyszerre is átnevezhető -
+nyílik meg. Egyetlen képnél a névmezőben már ott áll a kép mostani neve
+(kiterjesztés nélkül), kijelölve, így rögtön átírhatod. Írd be az új
+nevet. Több kép egyszerre is átnevezhető -
 ilyenkor a program sorszámozza őket. A **Befoglalás a fájlnévbe:** alatt
 bekapcsolhatod, hogy a névbe kerüljön bele a **Dátum** és a
 **Képfelbontás** is. Alul a **Példa** sor mutatja a név felépítését,

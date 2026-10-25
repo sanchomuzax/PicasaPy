@@ -155,7 +155,9 @@ maradnak.
 - **Előnézetek:** **Magas minőségű előnézetek használata (lassabb)** —
   a nyomtatási előnézet pontosabb, de lassabban készül el.
 - **Nyomtató minősége:** **Kompatibilis (ötven százalékos felbontás)**
-  (alapérték) vagy **Magas minőség (teljes felbontás)**.
+  (alapérték) vagy **Magas minőség (teljes felbontás)**. Ez akkor hat,
+  ha a **Nyomtatás** ablakban a **Normál** mód van kiválasztva; az
+  **Optimalizált** mód mindig teljes felbontással nyomtat.
 - **Nyomtatási mintavételezési minőség:** **Általános (Lanczos-3)**
   (alapérték) vagy **Extra éles (Lanczos-8)** — a képet ezzel az
   átméretező szűrővel kicsinyíti a nyomtatás.

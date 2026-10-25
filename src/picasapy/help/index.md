@@ -36,7 +36,7 @@ szerkesztő fülei ugyanott vannak.
 ## Ki- és bevitel
 
 - [Importálás](features/importalas.md)
-- [Exportálás mappába, HTML-oldal, Google Earth](features/exportalas.md)
+- [Exportálás mappába, HTML-oldal, FTP, Google Earth](features/exportalas.md)
 - [Nyomtatás](features/nyomtatas.md)
 - [Útlevélkép](features/utlevelkep.md)
 - [Küldés e-mailben](features/email.md)
