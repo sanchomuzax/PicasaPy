@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import secrets
 import threading
+from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import Property, Qt, Signal, Slot
@@ -187,7 +188,11 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # más szálból jövő emitet, ahogy a watcherDirty is teszi).
     # #1443: a harmadik elem az utómunka (hívható vagy None) — a GUI-szálon,
     # a sor frissítése UTÁN fut le. A felület a modell változását követi.
-    _photoFieldUpdated = Signal(int, object, object)
+    # A quick-viewer rekord az ütközésmentes, JavaScriptben pontos negatív
+    # azonosítótartományban él, ami meghaladja a C++ `int` 32 bites keretét.
+    # A Qt `qint64` megőrzi az azonosítót a háttérírás és a modellfrissítés
+    # közötti jelzésben is.
+    _photoFieldUpdated = Signal("qint64", object, object)
     #: #3830: a sikertelen írás hiba-utómunkája (hívható) — a GUI-szálon,
     #: a `photoOpFailed` ELŐTT fut le (ugyanabból a szálból küldött, sorba
     #: állított jelzések sorrendje megmarad), így a hibára váró hívó már a
@@ -306,7 +311,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         self._rotate_running: set[int] = set()
         self._rotate_target: dict[int, int] = {}
 
-    @Slot(int, object, object)
+    @Slot("qint64", object, object)
     def _on_photo_field_updated(self, photo_id: int, record, after=None) -> None:
         if record is not None:
             # A provider regiszterét a modell értesítése ELŐTT frissítjük.
@@ -518,8 +523,26 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             update_document(ini_path, mutate, backup=True)
             return {"star": int(new_star)}
 
+        def after() -> None:
+            # A közvetlenül megnyitott gyorsnézeti kép nincs az SQLite
+            # indexben, ezért a `photo_by_id` nem ad új rekordot. Az ini-írás
+            # után a néző élő rekordját is frissíteni kell, különben a következő
+            # kattintás ugyanabból a régi csillagállapotból indulna.
+            row_now = self._photos.row_of_id(photo.id)
+            if row_now >= 0:
+                current = self._photos.photos[row_now]
+                if current.star != new_star:
+                    updated = replace(current, star=new_star)
+                    records = tuple(
+                        updated if existing.id == photo.id else existing
+                        for existing in self._photos.photos
+                    )
+                    self._provider.register_photos(records)
+                    self._photos.update_photo(photo.id, updated)
+            self._refresh_if_star_filtered()
+
         self._run_photo_write(
-            photo.id, perform, after=self._refresh_if_star_filtered
+            photo.id, perform, after=after
         )
 
     # -- Szöveg-vágólap: a FELIRATRA hat, nem a fájlra (#1526) -------------

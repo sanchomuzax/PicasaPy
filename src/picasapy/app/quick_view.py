@@ -10,6 +10,7 @@ from pathlib import Path
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QImageReader
 
+from picasapy.ini import INI_NAME, load_or_empty
 from picasapy.index.queries import PhotoRecord
 from picasapy.scanner.filetypes import PHOTO_EXTENSIONS
 
@@ -101,12 +102,18 @@ def parse_launch_arguments(argv: list[str]) -> LaunchArguments:
 def quick_view_records(photo_paths: tuple[str, ...]) -> tuple[PhotoRecord, ...]:
     """Könnyű, csak a kifejezetten kért fájlokat leíró viewer-rekordok."""
     records = []
+    folder_documents = {}
     for index, raw_path in enumerate(photo_paths):
         path = Path(raw_path)
         stat = path.stat()
         image_size = QImageReader(str(path)).size()
         width = image_size.width() if image_size.isValid() else None
         height = image_size.height() if image_size.isValid() else None
+        if path.parent not in folder_documents:
+            folder_documents[path.parent] = load_or_empty(
+                path.parent / INI_NAME
+            )
+        section = folder_documents[path.parent].section(path.name)
         records.append(
             PhotoRecord(
                 id=QUICK_VIEW_ID_BASE - index - 1,
@@ -115,7 +122,7 @@ def quick_view_records(photo_paths: tuple[str, ...]) -> tuple[PhotoRecord, ...]:
                 kind="photo",
                 size=stat.st_size,
                 mtime_ns=stat.st_mtime_ns,
-                star=False,
+                star=bool(section and section.get("star") == "yes"),
                 caption=None,
                 keywords=None,
                 rotate_steps=0,
