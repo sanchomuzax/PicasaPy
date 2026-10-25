@@ -78,13 +78,15 @@ def test_a_fajl_szerkesztes_es_kep_menu_a_nezett_keppel_dolgozik(
             "menuBatchRotateLeft",
             "menuPictureUndoAllEdits",
             "menuPictureHide",
-            "menuPictureUnhide",
             "menuPictureResetFaces",
             "menuPictureProperties",
         ):
             assert _elem(window, nev).property("enabled") is True, (
                 f"{nev} szürke nyitott néző mellett"
             )
+        assert _elem(window, "menuPictureUnhide").property("enabled") is False, (
+            "a látható, megnyitott kép mellett a Kép ▸ Unhide szürke"
+        )
 
         # A két eredetileg tiltott mappaparancs szerkesztőben maradjon szürke.
         assert _elem(window, "menuFileAddFolder").property("enabled") is False
