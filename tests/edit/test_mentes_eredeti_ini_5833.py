@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -392,3 +393,60 @@ def test_undo_save_restores_latest_chain_after_multiple_saves(tmp_path):
     assert image_path.read_bytes() == first_saved_bytes
     assert current_ini is not None and current_ini.get("filters") == second_chain
     assert original_ini is None or original_ini.get("filters") is None
+
+
+def test_undo_save_visszaallitja_a_moddate_et_es_frissiti_a_backuphash_t(
+    tmp_path, monkeypatch
+):
+    import picasapy.ini.backuphash as backuphash_module
+
+    monkeypatch.setattr(backuphash_module, "datetime", _FrozenDateTime)
+    image_path, _before = _new_photo(tmp_path)
+    mtime_ns = 1_792_923_189_017_039_200
+    os.utime(image_path, ns=(mtime_ns, mtime_ns))
+
+    save_edited(image_path, _image((70, 80, 90)), EditSession.from_value(_FILTERS))
+    original_ini = load_document(
+        tmp_path / ".picasaoriginals" / ".picasa.ini"
+    ).section(_FILENAME)
+    assert original_ini is not None
+    assert original_ini.get("moddate") == "1842276f6964dd01"
+
+    # Az Undo Save is írja a kulcsot, nem csak a korábbi Mentés értékét őrzi.
+    update_document(
+        tmp_path / ".picasa.ini",
+        lambda document: document.with_removed(_FILENAME, "backuphash"),
+        backup=False,
+    )
+    undo_save(image_path)
+
+    current = load_document(tmp_path / ".picasa.ini").section(_FILENAME)
+    assert current is not None
+    assert current.get("filters") == _FILTERS
+    assert current.get("moddate") == "1842276f6964dd01"
+    assert current.get("backuphash") == str(backuphash_for_local_datetime(_NOW))
+
+
+def test_regi_eredeti_ini_moddate_hianyaban_az_undo_nem_ir_moddate_et(tmp_path):
+    image_path = tmp_path / _FILENAME
+    image_path.write_bytes(_png(_image((70, 80, 90))))
+    originals = tmp_path / ".picasaoriginals"
+    originals.mkdir()
+    (originals / _FILENAME).write_bytes(_png(_image((10, 20, 30))))
+    (originals / ".picasa.ini").write_text(
+        f"[{_FILENAME}]\nfilters={_FILTERS}\n", encoding="utf-8"
+    )
+    snapshots = originals / ".picasapy-snapshots"
+    snapshots.mkdir()
+    (snapshots / "IMG_0001.1.png").write_bytes(_png(_image((10, 20, 30))))
+    (tmp_path / ".picasa.ini").write_text(
+        f"[{_FILENAME}]\n", encoding="utf-8"
+    )
+
+    undo_save(image_path)
+
+    current = load_document(tmp_path / ".picasa.ini").section(_FILENAME)
+    assert current is not None
+    assert current.get("filters") == _FILTERS
+    assert current.get("moddate") is None
+    assert (current.get("backuphash") or "").isdecimal()
