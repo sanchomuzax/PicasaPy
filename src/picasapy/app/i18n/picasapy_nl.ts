@@ -18713,4 +18713,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Tags kunnen niet worden aangepast omdat een of meer items alleen-lezen zijn.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Een album kan alleen worden opgeslagen in een geïndexeerde fotomap.</translation>
+        </message>
+    </context>
 </TS>

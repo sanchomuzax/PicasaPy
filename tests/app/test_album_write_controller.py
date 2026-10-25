@@ -244,6 +244,34 @@ class TestCreateAlbum:
 
 
 class TestCreateEmptyAlbum:
+    def test_missing_folder_emits_album_write_failure(self, controller):
+        from PySide6.QtTest import QSignalSpy
+
+        failures = QSignalSpy(controller.albumWriteFailed)
+        token = controller.createEmptyAlbum(
+            "Mappa nélkül", "", "", "", "", False, ""
+        )
+
+        assert token == ""
+        assert failures.count() == 1
+        assert failures.at(0)[0]
+
+    def test_unindexed_folder_emits_album_write_failure(
+        self, controller, tmp_path
+    ):
+        from PySide6.QtTest import QSignalSpy
+
+        unindexed = tmp_path / "unindexed"
+        unindexed.mkdir()
+        failures = QSignalSpy(controller.albumWriteFailed)
+        token = controller.createEmptyAlbum(
+            "Index nélkül", str(unindexed), "", "", "", False, ""
+        )
+
+        assert token == ""
+        assert failures.count() == 1
+        assert failures.at(0)[0]
+
     def test_writes_empty_definition_to_folder_ini_and_survives_reindex(
         self, controller, library, tmp_path
     ):

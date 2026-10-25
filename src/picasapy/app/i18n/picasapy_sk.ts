@@ -18740,4 +18740,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Značky nie je možné zmeniť, pretože niektoré položky sú určené len na čítanie.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Album je možné uložiť iba do indexovaného priečinka s fotkami.</translation>
+        </message>
+    </context>
 </TS>

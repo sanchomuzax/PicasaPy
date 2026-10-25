@@ -18739,4 +18739,12 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>A címkéket nem lehet módosítani, mert egy vagy több elem írásvédett.</translation>
         </message>
     </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Albumot csak indexelt képmappába lehet menteni.</translation>
+        </message>
+    </context>
 </TS>

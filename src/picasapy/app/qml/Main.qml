@@ -737,6 +737,29 @@ ApplicationWindow {
         return paths
     }
 
+    // #5835: mappa nélküli nézetben a kijelölt vagy fókuszban levő kép
+    // mappája az üres album tárolási helye. Sima mappanézetben a #5812
+    // szerinti aktuális mappa marad az elsődleges cél.
+    function newAlbumFolderPath() {
+        if (!controller) return ""
+        if (controller.viewModeName === "folder" && controller.currentFolder)
+            return controller.currentFolder
+
+        var photoPath = ""
+        var paths = window.photoActionPaths()
+        if (paths.length > 0) {
+            photoPath = paths[0]
+        } else {
+            var row = window.photoActionIndex()
+            if (row >= 0 && controller.photos)
+                photoPath = controller.photos.filePathAt(row)
+        }
+        var separator = Math.max(
+            photoPath.lastIndexOf("/"), photoPath.lastIndexOf("\\")
+        )
+        return separator > 0 ? photoPath.substring(0, separator) : ""
+    }
+
     function addPhotosToScreensaver(paths) {
         var added = controller ? controller.addScreensaverPhotos(paths) : 0
         errorBanner.notice = true
@@ -3098,11 +3121,12 @@ ApplicationWindow {
         }
         // #23: az "Import" gomb az Import forrásból ablakot nyitja
         onImportRequested: importSourceDialog.open()
-        // #5812: az eszköztár új album gombja az Album Properties ablakot
-        // nyitja az aktuális mappához; a Fájl- és kép-helyi menü útja külön él.
+        // #5812: az eszköztár az Album Properties ablakot nyitja.
+        // #5835: mappa nélküli nézetben a kijelölt vagy fókuszban levő kép
+        // mappáját adja át; a többi albumút külön él.
         onNewAlbumRequested:
             fileOpsDialogs.ensure().openNewAlbumProperties(
-                controller ? controller.currentFolder : "")
+                window.newAlbumFolderPath())
         // #1421: az eszköztár `timelinebutton`-ja UGYANAZT a váltást
         // végzi, mint a Nézet ▸ Időrend és a Ctrl+5.
         // #1421: a nézetváltó pár UGYANAZT a vezérlőt hívja, mint a
