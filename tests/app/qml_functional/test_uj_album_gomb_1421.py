@@ -4,13 +4,14 @@
 
 A jegy szerint a felső eszköztár hét hiányzó gombja **hiányzó FUNKCIÓ**.
 Mérve a mai kódon: **négynél ez már nem áll** — a funkció megvan, csak az
-eszköztárról hiányzik. Az `newalbum` ezek egyike: a „Fájl ▸ Új album…"
-párbeszéd és a `createAlbum()` vezérlő régóta él.
+eszköztárról hiányzik. Az `newalbum` ezek egyike; a #5812 óta a gomb az
+Album Properties párbeszédet nyitja, és a Fájl/kép-helyi menü útjától
+elkülönítve készít üres albumot.
 
 A bináris szerint a menütétel maga is a `thumbui/newalbum` **kattintást
-szimulálja** (eszköztár-viselkedés spec, 2. szakasz) — vagyis a gomb és a
-menüpont az eredetiben is UGYANAZ az út. Nálunk is: mindkettő a
-`fileOpsDialogs.openNewAlbum()`-ot hívja.
+szimulálja** (eszköztár-viselkedés spec, 2. szakasz). Nálunk a Fájl menü
+és a kép-helyi menü továbbra is a kijelöléses `openNewAlbum()` utat járja;
+az eszköztár a #5812 tulajdonságpárbeszédét nyitja.
 
 ## ⚠️ Amit a rejtés jelent
 
@@ -67,14 +68,18 @@ class TestAGombLETEZIK:
         )
 
 
-class TestUGYANAZ_az_ut:
-    def test_a_gomb_es_a_menu_ugyanoda_vezet(self):
-        """A bináris szerint a menütétel a gomb kattintását szimulálja —
-        nálunk is egy dialógus, egy út."""
+class TestKulonEszkozlistasUt:
+    def test_a_toolbar_es_a_fajl_menu_kulon_utvonalat_hasznal(self):
+        """A toolbar üres albumot készít; a Fájl menü kijelöléses út marad."""
         fo = _MAIN.read_text(encoding="utf-8")
-        assert fo.count("onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum") >= 2, (
-            "a menü és az eszköztár nem ugyanahhoz a párbeszédhez köt"
-        )
+        toolbar_route = fo.split("// #5812:", 1)[1].split("// #1421:", 1)[0]
+        assert "openNewAlbumProperties(" in toolbar_route
+        assert "openNewAlbum(window.selectedRows())" not in toolbar_route
+        assert "onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(" in fo
+        assert (
+            "onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())"
+            in fo
+        ), "a Fájl menü kijelöléses útja megváltozott"
 
 
 class TestAszukAblak:
@@ -126,5 +131,3 @@ class TestIdorendGomb:
             encoding="utf-8"
         )
         assert 'objectName: "menuViewTimeline"' in menu
-
-

@@ -1315,6 +1315,62 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         Visszaadja az új tokent (üres kijelölésnél/hibánál üres stringet)."""
         return self._albumot_keszit(name, self._rows_to_photos(rows))
 
+    @Slot(str, str, str, str, str, bool, str, result=str)
+    def createEmptyAlbum(
+        self,
+        name: str,
+        folder_path: str,
+        date: str,
+        location: str,
+        description: str,
+        use_music: bool,
+        music_file: str,
+    ) -> str:
+        """Üres albumot ment az aktuális mappa ini-jébe (#5812).
+
+        Az album tulajdonságait a párbeszéd OK-ja után írjuk ki. A kijelölt
+        képek `albums=` mezői nem változnak; az index a definícióból 0 tagú
+        albumot olvas be, ami teljes újraindexelés után is megmarad.
+        """
+        folder_path = (folder_path or "").strip()
+        if not folder_path:
+            return ""
+        folder = Path(folder_path)
+        if not folder.is_dir():
+            return ""
+
+        token = secrets.token_hex(16)
+        clean_name = (name or "").strip() or None
+        ini_path = folder / PICASA_INI_NAME
+
+        def mutate(document):
+            document = ensure_album(document, token, clean_name)
+            return with_album_fields(
+                document,
+                token,
+                name=clean_name,
+                date=date,
+                location=location,
+                description=description,
+                use_music=use_music,
+                music_file=music_file,
+            )
+
+        try:
+            with open_index(self._db_path) as conn:
+                indexed = conn.execute(
+                    "SELECT 1 FROM folders WHERE path = ?", (str(folder),)
+                ).fetchone()
+                if indexed is None:
+                    return ""
+                update_document(ini_path, mutate, backup=True)
+                self._sync_tree(conn, str(folder))
+                self._load_albums(conn)
+        except _WRITE_ERRORS as error:
+            self.albumWriteFailed.emit(str(error))
+            return ""
+        return token
+
     def _albumot_keszit(self, name: str, photos) -> str:
         """Album készítése MEGADOTT fotókból (a `createAlbum` magja, #1406).
 

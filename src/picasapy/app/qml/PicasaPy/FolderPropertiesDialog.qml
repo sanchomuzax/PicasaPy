@@ -47,6 +47,9 @@ Dialog {
 
     //: a szerkesztett album azonosítója (album módban)
     property string albumToken: ""
+    // #5812: az új üres album célmappája. Mentésig nincs ini-írás.
+    property string albumFolderPath: ""
+    property bool newAlbumCreation: false
     property string albumLocation: ""
     property bool currentMusicEnabled: false
     property string currentMusicFile: ""
@@ -169,6 +172,10 @@ Dialog {
     //: album definícióját minden érintett mappa ini-jébe.
     signal albumPropertiesAccepted(string token, string name, string isoDate,
                                    string location, string description)
+    signal newAlbumPropertiesAccepted(string folderPath, string name,
+                                      string isoDate, string location,
+                                      string description, bool useMusic,
+                                      string musicFile)
     signal folderMusicAccepted(string folderPath, bool useMusic, string musicFile)
     signal splitFolderAccepted(var paths, string name, string isoDate,
                                string location, string description,
@@ -190,6 +197,13 @@ Dialog {
     onAccepted: {
         if (!root._dateValid) return
         if (root.albumMode) {
+            if (root.newAlbumCreation) {
+                root.newAlbumPropertiesAccepted(
+                    root.albumFolderPath, nameField.text, root._datumIso(),
+                    locationField.text, descriptionField.text,
+                    musicCheck.checked, musicPathField.text)
+                return
+            }
             root.albumPropertiesAccepted(
                 root.albumToken, nameField.text, root._datumIso(),
                 locationField.text, descriptionField.text)
