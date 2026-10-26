@@ -213,13 +213,22 @@ Az ítélet EGYEZIK, ha a forrás és a jelenlegi megvalósítás egyezik; ELTÉ
 
 ### #3756 - Jelvény és feliratsáv kettős nézetben
 
-**Eredeti:** a Colab EN 33-35 bal és jobb fókuszt is rögzít; a `ui-audit-editor.md` 3/b kiméri, hogy a „Selected” jelvény a fókuszált kép mellett, a margóban áll. Mindhárom képen a feliratsáv üres „Make a caption!” helyőrzőt mutat, ezért ezekből nem olvasható ki, hogy bal fókusznál melyik kép felirata jelenik meg.
+**Eredeti:** a Colab EN 33-35 felvételei (job #58) bal és jobb fókuszt is rögzítenek; a `ui-audit-editor.md` 3/b kiméri, hogy a „Selected” jelvény a fókuszált kép mellett, a margóban áll. Mindhárom képen a feliratsáv üres „Make a caption!” helyőrzőt mutat, ezért a kép-hozzárendelést nem bizonyítják.
 
-**Nálunk:** a `PhotoViewer.qml:4237-4298` a jelvényt a fókuszált képhez helyezi, a `:875-879` bal fókusznál a jelenlegi (`currentIndex`), jobb fókusznál a második képsorát választja; a `:4675-4690` a feliratsávot ugyanezzel a kijelölt sorral köti össze.
+**Bináris út:** az index `editpanel/previewclip`, `editpanel/previewclip2` és `editpanel/selection_label` sztring-xrefjei a `0x00569720` (967 bájt) és `0x00569af0` (1434 bájt) rutinokat jelölik; az utóbbi hívói `0x00569720`, `0x0056a160` és `0x0056a680`. Ez a fókuszjelvény útja. Az `editpanel/caption` erőforrás külön megjelenik a `0x00566a70` (2908 bájt) és `0x005f8ac0` (310 bájt) rutinokban; `0x005683a0` a `CaptionState` és a `previewclip2` sztringet is használja, és meghívja `0x00566a70`-et. A xref-lánc azonosítja a kezelőterületet, de nem mondja meg, hogy bal vagy jobb fókusznál melyik fotó feliratát olvassa. A korábbi Ghidra-fájlokban ezekhez csak hívóhelylista van, a függvények dekompilált kódja nincs meg.
 
-**Ítélet: NEM DÖNTHETŐ EL STATIKUSAN a teljes állítás.** A jelvényre vonatkozó eredeti állítás és a mai fókuszkövető QML egyezik. A feliratsáv eredeti kép-hozzárendelése nincs látható, külön feliratú képekkel mérve; ebből eltérést sem állítok.
+**Nálunk:** a `PhotoViewer.qml:882-886` bal fókusznál a `currentIndex`, jobb fókusznál a másik sort választja; a feliratsáv a `:4813-4846` sorokban ezt a sort olvassa és írja. A jelvény aktuális elhelyező útja a `:4237-4298` tartományban van.
 
-**Teendő:** Colabban olyan két képpel rögzítse az AB nézetet, amelyeknek eltérő, nem üres Picasa-feliratuk van. Bal fókusznál és fókuszváltás után is vegye fel a jelvényt és a feliratsáv szövegét; így dönthető el a jegy második fele.
+**Ítélet: NYITOTT.** A fókuszjelvény eredeti útja és a mai feliratkötés külön-külön azonosított. Az eredeti felirat-hozzárendelés futás közbeni képe nincs meg, ezért a két megvalósítás egyezése vagy eltérése nem állítható.
+
+**Teendő:** két eltérő, nem üres Picasa-feliratú képpel készítsen Colab `ui_capture` felvételt bal, majd jobb fókusznál; ugyanezt rögzítse PicasaPy-ban valódi kattintásokkal, majd egymás mellé tett képkockával hasonlítsa össze a feliratsávot. A függvényadatút lezárásához Ghidra-dekompiláció kell `0x00566a70` és `0x005f8ac0` címekre. A jelen munkamenetben nincs Colab/PicasaPy felület, ezért mérési eredmény és job-szám **NINCS MEG**.
+
+**Kész, ha (#5975):**
+
+- ✅ A fókuszjelvény bináris rutinjai és a feliratvezérlő xref-útja azonosított.
+- ⛔ Eredeti, két eltérő nem üres feliratú kép Colab-felvétele: **NINCS MEG**.
+- ⛔ PicasaPy valódi kattintásos párja: **NINCS MEG**.
+- ⛔ Képkocka-összevetés és egyező/eltérő ítélet: **NINCS MEG**.
 
 ### #3826 - Fókuszos FF méretcsúszka
 

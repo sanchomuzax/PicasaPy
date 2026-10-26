@@ -433,25 +433,22 @@ után, majd a mai feltételt a felvételhez igazítsuk.
 
 ### #4544 - Retusfolt szélének olvadása
 
-**Eredeti:** az `editpanel.tre` az eredeti retusáló eszközt azonosítja, de
-az algoritmust és a szél átmenetét leíró bináris/spec bizonyíték, illetve
-azonos mintájú eredeti kimenet NINCS MEG. A mérőadat-archívumban sincs ehhez
-a jegyhez címkézett retus-kimenet. Döntő mérés: Colabban ugyanazt a forrásképet
-és ugyanazt a vonást használni, a Picasa előtte-utána képét és kimeneti fájlját
-elmenteni.
+**Eredeti bináris út:** az `editpanel.tre:958-963` az `editpanel/retouchoverlay`-hez köti a `Handler retoucher`-t, a `thumbui/circlecursor`, `brushslider/scaleslider`, `editpanel/refining_label` és `editpanel/preview` elemekkel. A bináris index `RetoucherHandler::vftable` bejegyzése a `0x0060a980` (2509 bájt) kezelőrutinra, `RetoucherHandlerCreator::vftable` a `0x0060ce10` (757 bájt) létrehozórutinra mutat; a célfüggvény a `retouchcheckpoint` sztringet is használja (`0x0060aa3e`). A `RetouchEdit::vftable` (`0x00ca83c4`) tagjai között szerepel `0x00847880` (802 bájt), `0x00848030` (2517 bájt) és `0x00848a10` (2544 bájt). Ez azonosítja a kezelő és a retus-szerkesztési réteg útját, de a virtuális hívások mögötti képpontművelet és annak szélátmenete nem olvasható ki az eddigi diszasszemblálásból. A `retouch=1;` token nem ír le foltkoordinátát (`filters-decoded.md`, „A `redeye` és a `retouch` sosem hordoz régiót”).
 
-**Nálunk:** `render/retouch.py` irányított Poisson-gyógyítást használ.
+Az archívum taglistájában `#4544`, `retouch`, `retus` vagy `ui_capture` nevű mérés nincs; az eredeti előtte-utána kimenet **NINCS MEG**. A Ghidra-kimenetek keresése a kezelőnél és a `RetouchEdit` rutinoknál csak hívóhelylistát talált, teljes dekompilációt nem.
 
-**Ítélet: NEM DÖNTHETŐ EL.** Az eredeti pixelszintű szélhatás nincs megmérve,
-így sem egyezést, sem eltérést nem állítok.
+**Nálunk:** a `PhotoViewer.qml:3971-4068` a fókuszált képen két kattintással rögzíti a cél- és forráspontot; az `edit_controller.py:1724-1762` létrehozza és véglegesíti a patch-et. A `render/retouch.py` kör alakú folton irányított Poisson-gyógyítást végez. Ez a mai forrás működését írja le, nem bizonyít eredeti egyezést.
 
-**Teendő:** Retusfolt-szél egyezést csak azonos bemeneten rögzített eredeti
-és PicasaPy-kimenet pixel-összevetése után lehet megállapítani.
+**Ítélet: NYITOTT.** Az eredeti UI-kezelő és a retus-szerkesztési metódusok útvonala megvan; az eredeti képkimenet és a folthatár viselkedése nincs megmérve. Sem egyezést, sem eltérést nem állítok.
 
-**Kész, ha:**
+**Teendő:** ugyanazon ismert kép, azonos ecsetméret és ecsetvonás mellett készítsen eredeti Colab-felvételt, mentett kimenetet és valódi kattintásos PicasaPy-párt. A két kimenet képpontkülönbségét mérje; a pixelút értelmezéséhez Ghidra-dekompiláció kell `0x0060a980`, `0x00848030` és `0x00848a10` címekre.
 
-- ⛔ A mért eredeti széleffekt hiányzik.
-- ⛔ Referencia-kimenetes összehasonlítás és eltérésmérés hiányzik.
+**Kész, ha (#5975):**
+
+- ⛔ Binárisból az egér-esemény és a képpontművelet közti teljes adatút: virtuális hívások miatt **NYITOTT**.
+- ⛔ Eredeti Colab-retusfelvétel és mentett kimenet: **NINCS MEG**.
+- ⛔ PicasaPy valódi kattintásos párja és mentett kimenete: **NINCS MEG**.
+- ⛔ Kimeneti pixelkülönbség, folthatár-ítélet: **NINCS MEG**.
 
 ### #4550 - Egyéni méretarány példa és törlés
 
