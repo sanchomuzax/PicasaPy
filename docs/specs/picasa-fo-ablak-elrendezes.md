@@ -797,7 +797,7 @@ A táblák oszlopai: **eredeti** (felirat, kulcs, alapérték), **nálunk** (QML
 | `Show tooltips` | `ShowTooltips` (`0x00ca9a08`) | 1 (`0x006e0ced`) | `optionsShowTooltipsCheck` | `view/showTooltips` | igaz | EGYEZIK |
 | `Single-click to exit Edit View` | `SingleClickExit` (`0x00c8e614`) | 0 (`0x006e0cfa`) | `optionsSingleClickExitCheck` | `view/singleClickExit` | hamis | ELTÉR (felirat: `Single click to exit the editing view`) |
 | `Detect duplicates while importing` | `autoexclude` (`0x00c8875c`) | 1 (`0x006e0d31`) | `optionsAutoExcludeCheck` | `import/autoexclude` | hamis | ELTÉR (alapérték; felirat: `Detect duplicates on import`) |
-| `Clear cache files` | `disposepreviews` (`0x00c95630`) | 0 (`0x006e0d07`) | `optionsClearCacheButton` (gomb, megerősítéssel) | nincs (művelet) | - | ELTÉR (kapcsoló helyett gomb; felirat: `Clear Cache...`) |
+| `Clear cache files` | `disposepreviews` (`0x00c95630`) | 0 (`0x006e0d07`) | `optionsClearCacheFilesCheck` | `view/disposePreviewsOnExit` | hamis | EGYEZIK (felirat, kapcsoló, alapérték; az eredeti ürítés pontos időpontja nincs igazolva, PicasaPy kilépéskor ürít #5897) |
 | `Delete from disk without confirmation` | `DoNotConfirmDeleteFromDisk` (`0x00c98f48`) | 0 (`0x006e0d14`) | `optionsSkipDeleteConfirmCheck` | megerősítési döntés: `delete` | hamis | EGYEZIK |
 | `Remove from album without confirmation` | `DoNotConfirmRemoveFromAlbum` (`0x00c98f64`) | 0 (`0x006e0d24`) | `optionsSkipRemoveConfirmCheck` | megerősítési döntés: `removeFromAlbum` | hamis | EGYEZIK |
 | `Send anonymous usage stats to Google` | `ReportStats` (`0x00c80118`), nincs a regisztrálóban | `-1` hiányzó értéknél (`0x006e1327`); a jelölőnégyzet hamis/üres (`0x006e1340-0x006e13dc`), az „nincs tárolva” jelző külön megmarad (`0x006e1354`) | `optionsUsageStatsCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; felirat: `Send anonymous usage statistics`) |
@@ -818,6 +818,7 @@ A táblák oszlopai: **eredeti** (felirat, kulcs, alapérték), **nálunk** (QML
 | 2. tétel: `Original size` | `EmailSinglePicture` | 1 = 2. tétel; alapértékként nincs kiválasztva (`0x006e16cb-0x006e16f3`) | `optionsMailSingleOriginalRadio` | `mail/singlePictureOriginal` | hamis (`email_controller.py`) | ELTÉR (a kulcs nálunk külön logikai beállítás) |
 | `Send movies as:`, 1. tétel: `First frame` | `EmailMovie` (`0x00ca9b2c`), a vezérlőérték 0/1 | alapérték 0: 1. tétel; 1 = `Full movie` (`0x006e16d3-0x006e16f3`, ellenőrző olvasás: `0x0073f3b5`) | `optionsMailMovieFirstFrameRadio` | `mail/movieFull` | hamis (`email_controller.py`) | EGYEZIK |
 | 2. tétel: `Full movie` | `EmailMovie` | 1 = 2. tétel; alapértékként nincs kiválasztva (`0x006e16d3-0x006e16f3`) | `optionsMailMovieFullRadio` | `mail/movieFull` | hamis (`email_controller.py`) | EGYEZIK |
+| `Output format:` csoportcím | `labelgroup57` | - | `optionsMailOutputFormatLabel` (a HTML-jelölő előtt) | nincs | - | EGYEZIK (a sorcím megjelenik) |
 | `Send inline photos and captions (Outlook only)` (Windows) | `UseHTMLMailer` (`0x00ca9b38`), nincs a regisztrálóban | NYITVA | `optionsMailUseHtmlCheck` (letiltva) | nincs | - | HIÁNYZIK (letiltott; csak Windows/Outlook) |
 
 ### 4. Fájltípusok
@@ -878,13 +879,16 @@ Az egész fül **letiltott** (`enabled: false` az `OptionsTabWebAlbums.qml` gyö
 | `Default upload size:` (popup, 5 tétel: `Original size (slowest upload)`, `Best for web sharing (2048px)`, `Recommended: 1600 pixels ...`, `Medium: 1024 pixels (for sharing)`, `Small: 800 pixels ...`) | `PWADefaultSize` (`0x00ca9c80`) | **1600** (`0x006e0d84`, a `0x006e0b20`-ban; az érték a `0x006e0d7a`-n) | `optionsWebUploadSizeCombo` (letiltva, 4 tétel: `800px`, `1024px`, `1600px`, `Original size`) | nincs | 800px (0. tétel) | HIÁNYZIK (letiltott; a 2048-as tétel hiányzik, az alapérték 1600 és 800px eltér) |
 | `When syncing large files, upload previews first` | `PWAStriped` (`0x00ca9c60`) | 0 (`0x006e0dda`) | `optionsWebStripedUploadCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; az alapérték egyezik) |
 | `Preserve original image quality (uses more storage)` | `PWAUseHiQualityJPEG` (`0x00ca9c6c`) | 0 (`0x006e0de7`) | `optionsWebKeepJpegQualityCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; az alapérték egyezik) |
+| `JPEG Quality:` csoportcím | `labelgroup154` | - | `optionsWebJpegQualityLabel` | nincs | - | EGYEZIK (a sorcím megjelenik) |
+| `Syncing:` csoportcím | `labelgroup158` | - | `optionsWebSyncingLabel` | nincs | - | EGYEZIK (a sorcím a két szinkronjelölő előtt jelenik meg) |
 | `Sync starred photos only` | `PWAStarred` (`0x00ca9c44`) | 0 (`0x006e0db7`) | `optionsWebStarredOnlyCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; az alapérték egyezik) |
 | `Don't confirm every sync (use the above settings)` | `confirmsync::disable` (`0x00c96d24`), nincs a regisztrálóban | NYITVA | `optionsWebConfirmSyncDisableCheck` (letiltva) | nincs | - | HIÁNYZIK (letiltott) |
 | `Include with photo uploads` (`Name Tags:` csoport) | `enablefruploads` (vezérlőnév, `0x00ca9abc`), `FREnableUploads` (`0x00c802bc`) | 1 (`0x006e0ecf`) | `optionsWebUploadNameTagsCheck` (letiltva) | nincs | hamis | HIÁNYZIK (letiltott; az alapérték is eltér: 1 és hamis) |
 | `Add a watermark for all photo uploads:` | `haswatermark` (`0x00ca9de4`), nincs a regisztrálóban | NYITVA | `optionsWebWatermarkCheck` (letiltva) | nincs | - | HIÁNYZIK (letiltott) |
-| vízjel szövegmező (a sablonban: `Stamp photos with your name, a web domain, or a copyright notice.`) | `PWAWatermark` (`0x00ca9df4`), nincs a regisztrálóban | NYITVA | `optionsWebWatermarkTextField` (letiltva) | nincs | - | HIÁNYZIK (letiltott; a súgószöveg is hiányzik) |
+| `Watermarks:` csoportcím | `labelgroup163` | - | `optionsWebWatermarksLabel` | nincs | - | EGYEZIK (a sorcím megjelenik) |
+| vízjel szövegmező (a sablonban: `Stamp photos with your name, a web domain, or a copyright notice.`) | `PWAWatermark` (`0x00ca9df4`), nincs a regisztrálóban | NYITVA | `optionsWebWatermarkTextField` (letiltva) | nincs | - | HIÁNYZIK (letiltott; a súgószöveg megjelenik) |
 
-A `JPEG Quality:`, `Syncing:` és `Watermarks:` csoportcímek is hiányoznak.
+A három csoportcím és a vízjelmező súgószövege a #5899-ben bekerült a QML-be; a Web Albums fül továbbra is letiltott.
 
 ### 9. Névcímkék (Name Tags)
 

@@ -72,7 +72,6 @@ def test_a_fajl_szerkesztes_es_kep_menu_a_nezett_keppel_dolgozik(
             "menuEditCut",
             "menuEditCopy",
             "menuEditCopyEffects",
-            "menuEditCopyText",
             "menuPictureViewAndEdit",
             "menuBatchAutoContrast",
             "menuBatchAutoColor",
@@ -94,6 +93,11 @@ def test_a_fajl_szerkesztes_es_kep_menu_a_nezett_keppel_dolgozik(
         assert _elem(window, "menuPictureUnhide").property("enabled") is False, (
             "a látható, megnyitott kép mellett a Kép ▸ Unhide szürke"
         )
+
+        # A tesztképeken nincs Text eszközös réteg; a nyitott néző önmagában
+        # nem engedélyezi a Copy Text/Paste Text rétegműveleteket.
+        assert _elem(window, "menuEditCopyText").property("enabled") is False
+        assert _elem(window, "menuEditPasteText").property("enabled") is False
 
         # A két eredetileg tiltott mappaparancs szerkesztőben maradjon szürke.
         assert _elem(window, "menuFileAddFolder").property("enabled") is False

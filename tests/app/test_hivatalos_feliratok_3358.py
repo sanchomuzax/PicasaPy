@@ -297,6 +297,8 @@ BEALLITASOK = {
         "Egyedülálló képek mérete:", "options/labelgroup48.title"),
     ("OptionsTabEmail", "Send movies as:"): (
         "Mozgófilmek küldése másként:", "options/labelgroup53.title"),
+    ("OptionsTabEmail", "Output format:"): (
+        "Kimeneti formátum:", "options/labelgroup57.title"),
     ("OptionsTabEmail", "Full movie"): (
         "Teljes mozgófilm", "options/radio56.title"),
     ("OptionsTabEmail", "Let me choose each time I send pictures"): (
@@ -306,26 +308,26 @@ BEALLITASOK = {
         "options/UseHTMLMailer.title"),
     ("OptionsTabFileTypes", "Display JPEG files and:"): (
         "Megjelenítés: JPEG-fájlok és", "options/label61.title"),
-    ("OptionsTabFileTypes", ".bmp"): (
-        ".bmp", "options/SupportBMP.title"),
-    ("OptionsTabFileTypes", ".gif"): (
-        ".gif", "options/SupportGIF.title"),
-    ("OptionsTabFileTypes", ".png"): (
-        ".png", "options/SupportPNG.title"),
-    ("OptionsTabFileTypes", ".tga"): (
-        ".tga", "options/SupportTGA.title"),
-    ("OptionsTabFileTypes", ".tif, .tiff"): (
-        ".tif, .tiff", "options/SupportTIF.title"),
-    ("OptionsTabFileTypes", ".webp"): (
-        ".webp", "options/SupportWEBP.title"),
-    ("OptionsTabFileTypes", ".psd (Photoshop)"): (
+    ("OptionsTabFileTypes", ".BMP"): (
+        ".BMP", "options/SupportBMP.title"),
+    ("OptionsTabFileTypes", ".GIF"): (
+        ".GIF", "options/SupportGIF.title"),
+    ("OptionsTabFileTypes", ".PNG"): (
+        ".PNG", "options/SupportPNG.title"),
+    ("OptionsTabFileTypes", ".TGA"): (
+        ".TGA", "options/SupportTGA.title"),
+    ("OptionsTabFileTypes", ".TIF, .TIFF"): (
+        ".TIF, .TIFF", "options/SupportTIF.title"),
+    ("OptionsTabFileTypes", ".WEBP"): (
+        ".WEBP", "options/SupportWEBP.title"),
+    ("OptionsTabFileTypes", ".PSD (Photoshop)"): (
         ".PSD (Photoshop)", "options/SupportPSD.title"),
     ("OptionsTabFileTypes", "RAW formats"): (
         "RAW formátumok", "options/SupportRAW.title"),
     ("OptionsTabFileTypes", "Supported Formats"): (
         "Támogatott formátumok", "options/link93.title"),
-    ("OptionsTabFileTypes", "Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)"):
-        ("Mozgófilmek (.mov, .mpg, .m4v, .3gp, .avi, ...)",
+    ("OptionsTabFileTypes", "Movies (.AVI, .MPG, .ASF, .WMV)"):
+        ("Mozgófilmek (.AVI, .MPG, .ASF, .WMV)",
          "options/SupportMovies.title"),
     ("OptionsTabFileTypes", "Quicktime Movies (.MOV)"): (
         "Quicktime-filmek (.MOV)", "options/SupportQuicktime.title"),
@@ -336,6 +338,9 @@ BEALLITASOK = {
     ("OptionsTabGeneral", "Detect duplicates while importing"): (
         "Másodpéldányok észlelése az importálás során",
         "options/autoexclude.title"),
+    ("OptionsTabGeneral", "Clear cache files"): (
+        "Gyorsítótárban lévő fájlok törlése",
+        "options/disposepreviews.title"),
     ("OptionsTabGeneral", "Never check for updates"): (
         "Ne keressen frissítést", "options/item24.title"),
     ("OptionsTabGeneral", "Prompt before downloading updates"): (
@@ -422,6 +427,15 @@ BEALLITASOK = {
     ("OptionsTabWebAlbums", "Add a watermark for all photo uploads:"): (
         "Vízjel hozzáadása az összes feltöltendő fotóhoz:",
         "options/haswatermark.title"),
+    ("OptionsTabWebAlbums", "JPEG Quality:"): (
+        "JPEG minőség:", "options/labelgroup154.title"),
+    ("OptionsTabWebAlbums", "Syncing:"): (
+        "Szinkronizálás:", "options/labelgroup158.title"),
+    ("OptionsTabWebAlbums", "Watermarks:"): (
+        "Vízjelek:", "options/labelgroup163.title"),
+    ("OptionsTabWebAlbums", "Stamp photos with your name, a web domain, or a copyright notice."):
+        ("A fotókra rábélyegezheti saját nevét, egy internetes domain nevét vagy egy szerzői jogi közleményt.",
+         "export/label44.title"),
     ("OptionsTabWebAlbums", "Don't confirm every sync (use the above settings)"): (
         "Nem kérek megerősítő üzenetet minden szinkronizáláskor "
         "(a fenti beállításokat használom)", "options/confirmsync::disable.title"),

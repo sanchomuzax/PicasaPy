@@ -685,6 +685,18 @@ class TestKeywords:
     Picasa-szabály: JPEG-nél az IPTC Keywords (2:25) a tár, más
     formátumnál a .picasa.ini `keywords=` CSV kulcsa."""
 
+    @pytest.fixture
+    def png_engedve(self, tmp_path):
+        """#5898: a PNG az eredeti szerint alapból ki van kapcsolva.
+
+        A vezérlő induláskor rögzíti a fájltípusokat, ezért a beállítás a
+        `controller` fixture ELŐTT, annak elszigetelt fájljába kell."""
+        from PySide6.QtCore import QSettings
+
+        settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+        settings.setValue("library/fileTypes/png", True)
+        settings.sync()
+
     def _png_row(self, controller, library):
         from picasapy.index import open_index, sync_tree
 
@@ -737,7 +749,7 @@ class TestKeywords:
         assert read_file_metadata(photo_path).keywords == ("nyár",)
         assert controller.photos.photos[1].keywords == "nyár"
 
-    def test_add_keyword_png_written_to_ini(self, controller, library):
+    def test_add_keyword_png_written_to_ini(self, png_engedve, controller, library):
         row = self._png_row(controller, library)
         controller.addKeywordToRows([row], "kék")
         ini_text = (library / "nyaralas" / ".picasa.ini").read_text(
@@ -746,7 +758,7 @@ class TestKeywords:
         assert "[kep.png]" in ini_text
         assert "keywords=kék" in ini_text.split("[kep.png]")[1]
 
-    def test_remove_last_keyword_png_removes_ini_key(self, controller, library):
+    def test_remove_last_keyword_png_removes_ini_key(self, png_engedve, controller, library):
         row = self._png_row(controller, library)
         controller.addKeywordToRows([row], "kék")
         controller.removeKeywordFromRows([row], "kék")
@@ -1178,7 +1190,7 @@ class TestLiveWatch:
         monkeypatch.setattr(
             lc,
             "sync_folder",
-            lambda conn, root, folder, exclude=(), should_stop=None: calls.append(
+            lambda conn, root, folder, exclude=(), should_stop=None, **_kwargs: calls.append(
                 (root, folder)
             ),
         )
@@ -1223,7 +1235,7 @@ class TestLiveWatch:
 
         import picasapy.app.library_controller as lc
 
-        def boom(conn, root, folder, exclude=(), should_stop=None):
+        def boom(conn, root, folder, exclude=(), should_stop=None, **_kwargs):
             raise sqlite3.OperationalError("database is locked")
 
         monkeypatch.setattr(lc, "sync_folder", boom)
@@ -1843,7 +1855,7 @@ class TestBusyAndBackgroundResync:
         on_main = []
         original = library_controller_module.sync_folder
 
-        def recording(conn, root, folder, exclude=(), should_stop=None):
+        def recording(conn, root, folder, exclude=(), should_stop=None, **_kwargs):
             on_main.append(
                 _threading.current_thread() is _threading.main_thread()
             )
@@ -1867,7 +1879,7 @@ class TestBusyAndBackgroundResync:
         started = _threading.Event()
         release = _threading.Event()
 
-        def slow(conn, root, folder, exclude=(), should_stop=None):
+        def slow(conn, root, folder, exclude=(), should_stop=None, **_kwargs):
             started.set()
             release.wait(5)
 
@@ -1903,14 +1915,14 @@ class TestBusyAndBackgroundResync:
         original_sync_tree = controller_module.sync_tree
         engedd_tovabb = threading.Event()
 
-        def slow_sync_tree(conn, folder, progress=None):
+        def slow_sync_tree(conn, folder, progress=None, **kwargs):
             # a felső korlát csak azért van, hogy egy elrontott teszt se
             # akaszthassa meg örökre a készletet
             engedd_tovabb.wait(30.0)
             if progress is None:
-                original_sync_tree(conn, folder)
+                original_sync_tree(conn, folder, **kwargs)
             else:
-                original_sync_tree(conn, folder, progress=progress)
+                original_sync_tree(conn, folder, progress=progress, **kwargs)
 
         monkeypatch.setattr(controller_module, "sync_tree", slow_sync_tree)
 
