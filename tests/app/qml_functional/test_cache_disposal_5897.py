@@ -108,14 +108,15 @@ def test_general_kapcsolo_valodi_kattintassal_mentodik_es_kilepeskor_urit(
 
     _kattints_ablakban(qt_app, dialog, checkbox)
     assert checkbox.property("checked") is True
+
+    # #5906: a módosítás az OK-ra mentődik
+    ok_button = _gyerek(dialog, "optionsOkButton")
+    _kattints_ablakban(qt_app, dialog, ok_button)
+    assert _varj(qt_app, lambda: dialog.property("visible") is False), (
+        "az Opciók OK gombja nem zárta be a párbeszédet"
+    )
     assert controller.disposePreviewsOnExit is True
     controller._get_settings().sync()
-
-    close_button = _gyerek(dialog, "optionsCloseButton")
-    _kattints_ablakban(qt_app, dialog, close_button)
-    assert _varj(qt_app, lambda: dialog.property("visible") is False), (
-        "az Opciók bezáró gombja nem zárta be a párbeszédet"
-    )
 
     dialog = _beallitasok_megnyit(
         window, qt_app, window.property("menuBar")

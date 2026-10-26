@@ -339,9 +339,8 @@ class TestAlbumbolEltavolitasUjMegerosites:
             "a jelölőnégyzet kattintás után nem lett bepipálva"
         )
 
-        QMetaObject.invokeMethod(
-            options_ablak, "close", Qt.ConnectionType.DirectConnection
-        )
+        # #5906: a beállítás az OK-ra mentődik
+        _katt(options_ablak, _gyerek(window, "optionsOkButton"))
         qt_app.processEvents()
 
         confirm_settings = engine.rootContext().contextProperty("confirmSettings")
