@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.251] - 2026-10-26
+
+- A fotónéző főállapotairól képernyőképek készíthetők és képpontra összevethetők (#5952).
+
 ## [0.9.250] - 2026-10-26
 
 - A Filtered B&W színmezője az eredetihez igazodva #545454-ről indul (#5949).
