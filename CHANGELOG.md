@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.247] - 2026-10-26
+
+- A Vágás panel javaslatai cím és stratégiacímke nélkül jelennek meg. (#5935).
+
 ## [0.9.246] - 2026-10-26
 
 - Az Útlevélkép több arcot tartalmazó képnél is az eredeti „Can't find any faces" hibaszöveget mutatja, ahogy az eredeti (#5930).
