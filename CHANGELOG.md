@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.254] - 2026-10-26
+
+- A gyorscímke-sáv két legutóbbi címkét tart meg, az ismételt használat pedig megőrzi a sorrendet. (#5980).
+
 ## [0.9.253] - 2026-10-26
 
 - A fotónéző képernyőkép-mérője Windowson is lefut, a magyar kimenete nem okoz hibát (#5971).
