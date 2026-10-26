@@ -179,3 +179,24 @@ def test_compare_returns_zero_for_pixel_identical_pngs(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stdout + result.stderr
     assert "0 eltérő képpont" in result.stdout
+
+
+def test_compare_cp1252_kimenettel_sem_hasal_el(tmp_path: Path) -> None:
+    """#5971: Windowson a konzol cp1252; az ékezetes kimenet nem bukhat el rajta."""
+    before = tmp_path / "elotte"
+    after = tmp_path / "utana"
+    before.mkdir()
+    after.mkdir()
+    pixels = {(2, 1): QColor("#123456")}
+    _png(before / "filmcsik.png", pixels)
+    _png(after / "filmcsik.png", pixels)
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "cp1252"
+
+    result = _run(
+        "compare", "--before", str(before), "--after", str(after),
+        "--diff-dir", str(tmp_path / "kulonbseg"), env=env,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "0 eltérő képpont" in result.stdout

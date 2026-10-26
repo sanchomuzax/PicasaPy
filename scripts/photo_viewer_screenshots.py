@@ -448,7 +448,17 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _utf8_kimenet() -> None:
+    """Windowson a konzol cp1252: az ékezetes kimenet nélküle elhasal (#5971)."""
+    for folyam in (sys.stdout, sys.stderr):
+        try:
+            folyam.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError, ValueError):
+            pass
+
+
 def main(argv: list[str] | None = None) -> int:
+    _utf8_kimenet()
     args = _parser().parse_args(argv)
     try:
         if args.command == "capture":
