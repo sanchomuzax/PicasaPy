@@ -85,8 +85,12 @@ Az **Eszközök ▸ Beállítások… ▸ E-mail** fülön:
   képkocka** megy mellékletként (egy állókép), vagy a **Teljes
   mozgófilm**. A választás megmarad.
 
-Az Outlookos beágyazott képek kapcsolója (**Szövegközi fotók és
-képfeliratok küldése (csak Outlookban)**) szürke — ez még nem működik.
+A **Kimeneti formátum:** sorban álló, Outlookos beágyazott képekhez
+való kapcsoló (**Szövegközi fotók és képfeliratok küldése (csak
+Outlookban)**) szürke: ez még nem működik.
+
+A fül beállításai az ablak **OK** gombjával mentődnek; a **Mégse**
+elveti őket (lásd [Beállítások](beallitasok.md)).
 
 ## Ha nem indul el a küldés
 

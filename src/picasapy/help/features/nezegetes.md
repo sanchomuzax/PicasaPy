@@ -104,7 +104,9 @@ rajtuk. A felső sáv a filmszalaggal, valamint az oldalsó panelek
 - **Szerkesztés a PicasaPy-ban** - bezárja ezt a nézőt, és
   elindítja a teljes programot a könyvtáraddal;
 - **Előző fotó**, **Diavetítés lejátszása**, **Következő fotó**;
-- **Forgatás balra**, **Forgatás jobbra** és **Csillag**;
+- **Forgatás balra**, **Forgatás jobbra** és **Csillag**: a csillagos
+  kép a nézőben is csillaggal látszik, és a **Csillag** gomb leveszi
+  róla, a csillag nélküliről pedig felteszi;
 - a **Kattintson ide a további opciókért** gomb a kép helyi menüjét
   nyitja meg.
 

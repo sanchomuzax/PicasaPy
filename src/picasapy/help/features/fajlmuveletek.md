@@ -31,8 +31,10 @@ ugyanaz a minta, nem a kijelölt kép saját adata; a kész nevekbe viszont
 a képek valódi dátuma és felbontása kerül. A kiterjesztést nem kell
 beírnod, a fájl megtartja a sajátját.
 
-A névmezőben az **Enter** elfogadja az új nevet (ugyanaz, mint az
-**Átnevezés** gomb), a **Mégse** és az **Esc** megszakítja az
+Az **Átnevezés** gomb szürke, amíg a névmező üres, vagy amíg a benne
+álló név megegyezik azzal, amivel az ablak megnyílt; ilyenkor az
+**Enter** sem csinál semmit. A névmezőben az **Enter** elfogadja az új
+nevet (ugyanaz, mint az **Átnevezés** gomb), a **Mégse** és az **Esc** megszakítja az
 átnevezést. Egyetlen kép átnevezése után a kép **kijelölve marad**, így
 rögtön folytathatod vele a munkát.
 
@@ -57,11 +59,15 @@ frissül, tehát azt látod, ami a lemezen van.
 ## Áthelyezés
 
 - **Fájl ▸ Áthelyezés új mappába…** — a kijelölt képek új mappába
-  kerülnek.
+  kerülnek. A parancs a **Mappa tulajdonságai** ablakot nyitja, ahogy az
+  eredeti Picasa: a név mezőben **Névtelen** áll, a dátum a mai nap, és
+  itt adhatod meg a helyszínt, a leírást és a zenét is. Az **OK** után
+  készül el a mappa, és kerülnek bele a képek; a **Mégse** semmit nem
+  változtat. Ha a név üres, tiltott jelet tartalmaz, vagy már van ilyen
+  nevű mappa, a program szól, és nem mozgat semmit.
 - A képeket **húzással** is átteheted egy másik mappára a bal hasábon.
 
-A menüparancsnál a program megerősítést kér, és kiírja, hova viszi őket.
-Haladásjelző mutatja, hányadik fájlnál tart.
+Áthelyezés közben haladásjelző mutatja, hányadik fájlnál tart.
 
 ### Húzással
 
@@ -140,8 +146,12 @@ szövege attól függ, **hova** kerül a fájl:
   művelet nem vonható vissza.)" A gomb ekkor **Fájl törlése**, illetve
   **Fájlok törlése**.
 
-A megerősítést a **Beállítások ▸ Általános** lapon ki lehet kapcsolni
-(„Törlés a lemezről megerősítés nélkül").
+Megnyitáskor a **Mégse** gomb kapja a fókuszt, így egy véletlen **Enter**
+nem töröl semmit. Az ablak alján a **Ne kérdezzen újból, mindig
+távolítsa el** jelölővel kapcsolhatod ki, hogy a program legközelebb is
+rákérdezzen. Ugyanezt a **Beállítások ▸ Általános** lapon is
+megteheted („Törlés a lemezről megerősítés nélkül"), és ott vissza is
+kapcsolhatod.
 
 ## Keresés a lemezen
 
