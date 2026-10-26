@@ -609,20 +609,29 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     @Property(str, notify=gpuRevisionChanged)
     def gpuPrefixSource(self) -> str:
-        """A finetune2 ELŐTTI köztes kép URL-je (#22), vagy üres string, ha
-        nincs aktív szerkesztés vagy a jelenlegi lánc nem GPU-alkalmas
-        (`EditSession.gpu_finetune_prefix()` — ld. ott a feltételt). A
-        `GpuPointFilterPreview.qml` ezt tölti be `sourceItem`-ként; a hívó
-        (QML) ÜRES string esetén nem is jeleníti meg a GPU-réteget."""
-        if not self._photo_id or self._session.gpu_finetune_prefix() is None:
+        """A finetune2 ELŐTTI köztes kép URL-je (#22), ha az el is érhető.
+
+        Üres stringet ad, amíg nincs aktív, GPU-alkalmas lánc, illetve amíg a
+        provider cache-ében nincs meg mindkét GPU-kép. Így a Qt nem kér le
+        null képet egy még folyamatban lévő előnézet-render közben.
+        """
+        if (
+            not self._photo_id
+            or self._session.gpu_finetune_prefix() is None
+            or not self._provider.gpu_preview_ready(self._kulcs)
+        ):
             return ""
         return f"image://editpreview/{self._kulcs}?gpuprefix=1&rev={self._gpu_revision}"
 
     @Property(str, notify=gpuRevisionChanged)
     def gpuLutSource(self) -> str:
         """A jelenlegi finetune2-LUT 256×1 képének URL-je (#22) — ugyanaz az
-        eligibilitási feltétel, mint `gpuPrefixSource`-nál."""
-        if not self._photo_id or self._session.gpu_finetune_prefix() is None:
+        elérhetőségi feltétel, mint `gpuPrefixSource`-nál."""
+        if (
+            not self._photo_id
+            or self._session.gpu_finetune_prefix() is None
+            or not self._provider.gpu_preview_ready(self._kulcs)
+        ):
             return ""
         return f"image://editpreview/{self._kulcs}?gpulut=1&rev={self._gpu_revision}"
 
