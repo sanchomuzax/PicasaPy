@@ -167,15 +167,45 @@ class TestQuickTagButtonsReserveRecent:
         assert buttons[0] == "második"  # legfrissebb elöl
         assert buttons[1] == "első"
 
-    def test_reusing_a_tag_moves_it_to_front_without_duplicate_slot(
+    @pytest.mark.parametrize(
+        ("recent", "keyword"),
+        [
+            (["második", "első"], "ELSŐ"),
+            (["első", "második"], "MÁSODIK"),
+        ],
+    )
+    def test_reusing_either_recent_tag_keeps_its_order(
+        self, controller, recent, keyword
+    ):
+        controller._get_settings().setValue("quickTags/recentKeywords", recent)
+
+        controller.addKeywordToRows([0], keyword)
+
+        assert controller._quick_tag_recent() == recent
+
+    def test_new_tag_keeps_only_two_recents_and_does_not_move_manual_slots(
         self, controller
     ):
-        controller.addKeywordToRows([0], "első")
-        controller.addKeywordToRows([1], "második")
-        controller.addKeywordToRows([2], "első")  # újra használva
-        buttons = controller.quickTagButtons
-        assert buttons[0] == "első"
-        assert buttons[1] == "második"
+        controller._get_settings().setValue(
+            "quickTags/recentKeywords", ["régi első", "régi második"]
+        )
+        for slot in range(SZLOTOK):
+            controller.setQuickTagLabel(slot, f"kézi {slot}")
+
+        controller.addKeywordToRows([0], "új címke")
+
+        assert controller._quick_tag_recent() == ["új címke", "régi első"]
+        assert controller.quickTagConfigLabels == [
+            f"kézi {slot}" for slot in range(SZLOTOK)
+        ]
+
+    def test_repeating_recent_trims_legacy_tail_without_reordering(self, controller):
+        recent = ["újabb", "régebbi", *(f"régi {i}" for i in range(6))]
+        controller._get_settings().setValue("quickTags/recentKeywords", recent)
+
+        controller.addKeywordToRows([0], "régebbi")
+
+        assert controller._quick_tag_recent() == ["újabb", "régebbi"]
 
     def test_configured_labels_ignored_on_top_two_when_reserved(self, controller):
         controller.setQuickTagLabel(0, "kézzel írt")
