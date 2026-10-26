@@ -1766,7 +1766,7 @@ forgatás nélkül), oldaleltolás `±4·i`, függőleges `5i…9i`. A vászon a
 (mérve: ~5 képpontos alfa-lefutás 37 valódi borítón), **alfája 153**
 (`0.6 × 255`, `0x00a6e32e`). Megdőlt: „a legrégebbi képből készül".
 
-### [picasa-native-filter-registry.md](picasa-native-filter-registry.md) - #5944: az `ansel`, `tint`, `dir_tint`, `radtint` színkerekének megnyitásakor a `colorpickerpanel` a hívó effektmezőjét, az MRU `mru_0` értékét vagy konstansot jelöl-e ki először? A `+0x2ec`-es adatkapcsolat tisztázásához célzott Ghidra-kör kell (`0x0050d740`, `0x00654610`, `0x00655620`).
+### [picasa-native-filter-registry.md](picasa-native-filter-registry.md) - #5944: a `0x00654610` a `ColorPickerPanel+0x2ec` opcionális kapcsolatból kéri le a popup aktuális színét, a `0x00655620` pedig színargumentum nélkül nyitja meg a panelt. Nyitott maradt, hogy a négy régi colorwheel eseményútja ehhez a kapcsolathoz ténylegesen a saját színmezőjét köti-e; célzott Ghidra-kör kell `0x0050d740`-re.
 
 ### Nincs nyitott kérdés
 
