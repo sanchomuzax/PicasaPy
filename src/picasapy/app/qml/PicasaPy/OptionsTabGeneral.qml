@@ -5,8 +5,7 @@ import QtQuick.Layouts
 
 // #350: a Beállítások-dialógus "General" ("Általános") füle — az
 // `options.fen` widget-fája szerint (docs/specs/picasa-fen-dialogs.md
-// 3.11. szak.). Ez az egyetlen fül, amelyen TÉNYLEGESEN élő, a PicasaPy-ban
-// már működő beállítás ül:
+// 3.11. szak.). A működő beállítások az OK-ig piszkozatban maradnak:
 //
 //   - Nyelv (`language`) — a #333-as nyelvválasztás (controller.language/
 //     setLanguage/availableLanguages), eddig csak az Eszközök menüből
@@ -16,15 +15,15 @@ import QtQuick.Layouts
 //     context property), ugyanaz a tár, mint a FileOpsDialogs törlés-
 //     megerősítésénél.
 //
-//   - "Másodpéldányok észlelése importáláskor" — a #2893 óta ÉLŐ: ugyanaz
-//     az `import/autoexclude` kulcs, amit az importáló párbeszéd
-//     "Exclude Duplicates" jelölője ír (importSourceController).
+//   - "Másodpéldányok észlelése importáláskor", a #2893 óta működő
+//     `import/autoexclude` kulcs, amit az importáló párbeszéd
+//     "Exclude Duplicates" jelölője is használ (importSourceController).
 //
 //   - "Clear cache files" - a `disposepreviews` beállítás megfelelője;
 //     bekapcsolva a bélyegkép-cache az alkalmazás kilépésekor ürül.
 //
 //   - Felületi átmenetek és buboréksúgók — a #4449 óta QSettings-ben
-//     tárolt, futás közben is ható kapcsolók.
+//     tárolt kapcsolók.
 //
 //   - Alapértelmezett importcélmappa — a #4450 óta mentett beállítás, az
 //     importáló párbeszéd ezt ajánlja fel.
@@ -36,6 +35,19 @@ import QtQuick.Layouts
 ColumnLayout {
     id: root
     spacing: 0
+    property var optionsDraft: null
+
+    function setting(key, fallback) {
+        return root.optionsDraft
+            ? root.optionsDraft.value(key, fallback) : fallback
+    }
+
+    function stage(key, value, writer) {
+        if (root.optionsDraft)
+            root.optionsDraft.stage(key, value, writer)
+        else
+            writer(value)
+    }
 
     // ---- Kezelőfelület (labelgroup4) ------------------------------------
     RowLayout {
@@ -65,11 +77,13 @@ ColumnLayout {
                      && controller.setUITransitionsEnabled !== undefined
             checked: typeof controller !== "undefined" && controller !== null
                      && controller.uiTransitionsEnabled !== undefined
-                     ? controller.uiTransitionsEnabled : true
+                     ? root.setting("general.transitions", controller.uiTransitionsEnabled)
+                     : true
             onToggled: {
                 if (typeof controller !== "undefined" && controller
                         && controller.setUITransitionsEnabled !== undefined)
-                    controller.setUITransitionsEnabled(checked)
+                    root.stage("general.transitions", checked,
+                        function(value) { controller.setUITransitionsEnabled(value) })
             }
         }
     }
@@ -86,11 +100,13 @@ ColumnLayout {
                      && controller.setShowTooltipsEnabled !== undefined
             checked: typeof controller !== "undefined" && controller !== null
                      && controller.showTooltipsEnabled !== undefined
-                     ? controller.showTooltipsEnabled : true
+                     ? root.setting("general.tooltips", controller.showTooltipsEnabled)
+                     : true
             onToggled: {
                 if (typeof controller !== "undefined" && controller
                         && controller.setShowTooltipsEnabled !== undefined)
-                    controller.setShowTooltipsEnabled(checked)
+                    root.stage("general.tooltips", checked,
+                        function(value) { controller.setShowTooltipsEnabled(value) })
             }
         }
     }
@@ -107,11 +123,13 @@ ColumnLayout {
                      && controller.setSingleClickExitEnabled !== undefined
             checked: typeof controller !== "undefined" && controller !== null
                      && controller.singleClickExitEnabled !== undefined
-                     ? controller.singleClickExitEnabled : false
+                     ? root.setting("general.singleClickExit", controller.singleClickExitEnabled)
+                     : false
             onToggled: {
                 if (typeof controller !== "undefined" && controller
                         && controller.setSingleClickExitEnabled !== undefined)
-                    controller.setSingleClickExitEnabled(checked)
+                    root.stage("general.singleClickExit", checked,
+                        function(value) { controller.setSingleClickExitEnabled(value) })
             }
         }
     }
@@ -134,7 +152,7 @@ ColumnLayout {
             verticalAlignment: Text.AlignVCenter
         }
 
-        // ÉLŐ (#2893): az importáláskori másodpéldány-észlelés. UGYANAZT az
+        // Működő (#2893): az importáláskori másodpéldány-észlelés. UGYANAZT az
         // `import/autoexclude` kulcsot írja, amit az importáló párbeszéd
         // „Exclude Duplicates" jelölője (`importSourceController`,
         // `AUTOEXCLUDE_SETTINGS_KEY`) - két külön állapot tilos: amit itt
@@ -159,11 +177,13 @@ ColumnLayout {
             checked: (typeof importSourceController !== "undefined"
                       && importSourceController
                       && importSourceController.autoExclude !== undefined)
-                         ? importSourceController.autoExclude : false
+                         ? root.setting("general.autoExclude", importSourceController.autoExclude)
+                         : false
             onToggled: {
                 if (typeof importSourceController !== "undefined"
                     && importSourceController)
-                    importSourceController.setAutoExclude(checked)
+                    root.stage("general.autoExclude", checked,
+                        function(value) { importSourceController.setAutoExclude(value) })
             }
         }
     }
@@ -189,7 +209,7 @@ ColumnLayout {
         }
     }
 
-    // ÉLŐ: a törlés-megerősítés elnyomása — ugyanaz a confirmSettings
+    // A törlés-megerősítés elnyomása, ugyanaz a confirmSettings
     // "delete" kulcs, amit a FileOpsDialogs ConfirmDialog-ja ír (#367)
     RowLayout {
         Layout.fillWidth: true
@@ -201,10 +221,12 @@ ColumnLayout {
             text: qsTr("Delete from disk without confirmation")
             Layout.fillWidth: true
             checked: typeof confirmSettings !== "undefined" && confirmSettings
-                     ? confirmSettings.isSuppressed("delete") : false
+                     ? root.setting("general.skipDeleteConfirm",
+                         confirmSettings.isSuppressed("delete")) : false
             onToggled: {
                 if (typeof confirmSettings !== "undefined" && confirmSettings)
-                    confirmSettings.setSuppressed("delete", checked)
+                    root.stage("general.skipDeleteConfirm", checked,
+                        function(value) { confirmSettings.setSuppressed("delete", value) })
             }
         }
     }
@@ -220,10 +242,12 @@ ColumnLayout {
             text: qsTr("Remove from album without confirmation")
             Layout.fillWidth: true
             checked: typeof confirmSettings !== "undefined" && confirmSettings
-                     ? confirmSettings.isSuppressed("removeFromAlbum") : false
+                     ? root.setting("general.skipRemoveConfirm",
+                         confirmSettings.isSuppressed("removeFromAlbum")) : false
             onToggled: {
                 if (typeof confirmSettings !== "undefined" && confirmSettings)
-                    confirmSettings.setSuppressed("removeFromAlbum", checked)
+                    root.stage("general.skipRemoveConfirm", checked,
+                        function(value) { confirmSettings.setSuppressed("removeFromAlbum", value) })
             }
         }
     }
@@ -346,7 +370,7 @@ ColumnLayout {
         }
     }
 
-    // ÉLŐ: nyelvválasztás — a specben az automatikus frissítés után áll, és
+    // Nyelvválasztás, a specben az automatikus frissítés után áll, és
     // ugyanazt a pendingLanguage értéket használja, mint az Eszközök → Nyelv
     // menü (#333). A választás megerősítése miatt csak az újraindításkor él.
     RowLayout {
@@ -379,8 +403,8 @@ ColumnLayout {
                 return controller ? controller.ownLanguageName(code) : code
             })
             function syncToPending() {
-                var idx = codes.indexOf(
-                    controller ? controller.pendingLanguage : "en")
+                var idx = codes.indexOf(root.setting("general.language",
+                    controller ? controller.pendingLanguage : "en"))
                 currentIndex = idx >= 0 ? idx : 0
             }
             Component.onCompleted: syncToPending()
@@ -393,7 +417,8 @@ ColumnLayout {
             onActivated: function (index) {
                 if (!controller) return
                 var code = languageCombo.codes[index]
-                if (code === controller.pendingLanguage) return
+                if (code === root.setting("general.language",
+                        controller.pendingLanguage)) return
                 languageConfirm.candidateCode = code
                 languageConfirm.ask("", qsTr("Change the language PicasaPy uses?\n\nIt will change the next time PicasaPy is opened."))
             }
@@ -403,7 +428,13 @@ ColumnLayout {
         id: languageConfirm
         namePrefix: "optionsLanguageConfirm"
         property string candidateCode: ""
-        onConfirmed: if (controller) controller.setLanguage(candidateCode)
+        onConfirmed: {
+            if (controller) {
+                root.stage("general.language", candidateCode,
+                    function(value) { controller.setLanguage(value) })
+                languageCombo.syncToPending()
+            }
+        }
         onDenied: languageCombo.syncToPending()
         onCanceled: languageCombo.syncToPending()
     }
@@ -439,7 +470,8 @@ ColumnLayout {
             Layout.rightMargin: 8
             readOnly: true
             text: importDestRow.enabled
-                  ? importSourceController.defaultDestination : ""
+                  ? root.setting("general.importDestination",
+                      importSourceController.defaultDestination) : ""
             // #422: jobbklikk-menü (Picasa `Address`)
             TextFieldContextArea {}
         }
@@ -463,7 +495,11 @@ ColumnLayout {
             ? importSourceController.defaultDestinationUrl
             : Qt.resolvedUrl(".")
         onAccepted: if (importDestRow.enabled)
-            importSourceController.setDefaultDestination(selectedFolder.toString())
+            root.stage("general.importDestination",
+                fileOpsController.toLocalPath(selectedFolder.toString()),
+                function(value) {
+                    importSourceController.setDefaultDestination(value)
+                })
     }
 
     component CompactCheckBox: CheckBox {

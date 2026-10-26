@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 from PySide6.QtCore import (
+    QMetaObject,
     Property,
     QObject,
     QPoint,
@@ -393,12 +394,12 @@ class TestDialogWindow:
         qt_app.processEvents()
         assert window.property("visible") is True
 
-    def test_close_button_hides_the_window(self, dialog, qt_app):
+    def test_cancel_button_hides_the_window(self, dialog, qt_app):
         window, *_ = dialog
         window.setProperty("visible", True)
         qt_app.processEvents()
-        close_button = _child(window, "optionsCloseButton")
-        close_button.clicked.emit()
+        cancel_button = _child(window, "optionsCancelButton")
+        cancel_button.clicked.emit()
         qt_app.processEvents()
         assert window.property("visible") is False
 
@@ -428,6 +429,12 @@ class TestTabStructure:
 
 def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
     return var_feltetelre(qt_app, feltetel, masodperc)
+
+
+def _elfogad(window, qt_app) -> None:
+    """Az OK feldolgozza a fülek piszkozatát, majd bezárja az ablakot."""
+    assert QMetaObject.invokeMethod(window, "acceptOptions")
+    qt_app.processEvents()
 
 
 def _kattints(window, qt_app, elem) -> None:
@@ -585,6 +592,8 @@ class TestGeneralTabLiveLanguage:
         window, fake_controller, _cs, _qt = dialog
         _nyelvet_valaszt(window, qt_app, "Magyar")
         _valaszol(window, qt_app, igen=True)
+        assert fake_controller.set_language_calls == []
+        _elfogad(window, qt_app)
         assert fake_controller.set_language_calls == ["hu"]
         assert _child(window, "optionsLanguageCombo").property("currentIndex") == 2
 
@@ -641,6 +650,8 @@ class TestGeneralTabLiveDeleteConfirmSuppression:
         checkbox.setProperty("checked", True)
         checkbox.toggled.emit()
         qt_app.processEvents()
+        assert fake_confirm_settings.isSuppressed("delete") is False
+        _elfogad(window, qt_app)
         assert fake_confirm_settings.isSuppressed("delete") is True
 
 
@@ -682,6 +693,8 @@ class TestGeneralTabLiveRemoveFromAlbumConfirmSuppression:
         checkbox.setProperty("checked", True)
         checkbox.toggled.emit()
         qt_app.processEvents()
+        assert fake_confirm_settings.isSuppressed("removeFromAlbum") is False
+        _elfogad(window, qt_app)
         assert fake_confirm_settings.isSuppressed("removeFromAlbum") is True
 
 
@@ -964,6 +977,8 @@ class TestFileTypesTab:
         _kattints(window, qt_app, raw)
 
         assert raw.property("checked") is False
+        assert controller.fileTypeEnabled("raw") is True
+        _elfogad(window, qt_app)
         assert controller.fileTypeEnabled("raw") is False
         controller._filetype_settings.sync()
         reopened_settings = QSettings(
@@ -1018,6 +1033,9 @@ class TestFaceDetectionOption:
 
         _kattints(window, qt_app, checkbox)
 
+        assert face_controller.calls == []
+        assert face_controller.enabled is True
+        _elfogad(window, qt_app)
         assert face_controller.calls == [False]
         assert face_controller.enabled is False
 
@@ -1143,29 +1161,36 @@ class TestFaceDetectionOption:
                 ), f"{mark.objectName()}: nem rajzolódott ki a beosztás"
 
         _kattints(window, qt_app, suggestions)
-        assert controller.setting_calls[-1] == ("suggestions", False)
-        assert controller.suggestions_enabled is False
+        assert controller.setting_calls == []
+        assert controller.suggestions_enabled is True
+        assert suggestions.property("checked") is False
         assert suggestion_slider.property("enabled") is False
         assert cluster_slider.property("enabled") is False
 
         _kattints(window, qt_app, suggestions)
-        assert controller.setting_calls[-1] == ("suggestions", True)
+        assert controller.setting_calls == []
+        assert controller.suggestions_enabled is True
         assert suggestion_slider.property("enabled") is True
         assert cluster_slider.property("enabled") is True
 
         _csuszkara_kattint(window, qt_app, suggestion_slider, 90)
-        assert controller.setting_calls[-1] == ("suggestionThreshold", 90)
-        assert controller.suggestion_threshold == 90
+        assert controller.setting_calls == []
+        assert controller.suggestion_threshold == 85
         _csuszkahuzas(window, qt_app, suggestion_slider, 95)
-        assert _var(qt_app, lambda: controller.suggestion_threshold == 95)
+        assert controller.suggestion_threshold == 85
         assert suggestion_value.property("text") == "95"
 
         _csuszkara_kattint(window, qt_app, cluster_slider, 75)
-        assert controller.setting_calls[-1] == ("clusterThreshold", 75)
-        assert controller.cluster_threshold == 75
+        assert controller.setting_calls == []
+        assert controller.cluster_threshold == 85
 
         _kattints(window, qt_app, persist)
-        assert controller.setting_calls[-1] == ("persistFaceToFile", False)
+        assert controller.setting_calls == []
+        assert controller.persist_face_to_file is True
+        _elfogad(window, qt_app)
+        assert controller.suggestions_enabled is True
+        assert controller.suggestion_threshold == 95
+        assert controller.cluster_threshold == 75
         assert controller.persist_face_to_file is False
 
     @pytest.mark.parametrize(
@@ -1218,19 +1243,23 @@ class TestFaceDetectionOption:
         assert kilepes.property("checked") is False
 
         _kattints(window, qt_app, atmenetek)
-        assert controller.uiTransitionsEnabled is False
+        assert controller.uiTransitionsEnabled is True
         assert atmenetek.property("checked") is False
 
         _kattints(window, qt_app, tippek)
-        assert controller.showTooltipsEnabled is False
+        assert controller.showTooltipsEnabled is True
         assert tippek.property("checked") is False
 
         _kattints(window, qt_app, kilepes)
-        assert controller.singleClickExitEnabled is True
+        assert controller.singleClickExitEnabled is False
         assert kilepes.property("checked") is True
         _kattints(window, qt_app, kilepes)
         assert controller.singleClickExitEnabled is False
         assert kilepes.property("checked") is False
+        _elfogad(window, qt_app)
+        assert controller.uiTransitionsEnabled is False
+        assert controller.showTooltipsEnabled is False
+        assert controller.singleClickExitEnabled is False
 
 
 class TestEmailTabLiveSettings:
@@ -1316,7 +1345,7 @@ class TestEmailTabLiveSettings:
         assert full.property("enabled") is True
         stack = _child(window, "optionsTabStack")
         html = _child(window, "optionsMailUseHtmlCheck")
-        close = _child(window, "optionsCloseButton")
+        close = _child(window, "optionsOkButton")
 
         def _bottom(item):
             return item.mapToScene(QPointF(0, item.height())).y()
@@ -1349,7 +1378,8 @@ class TestEmailTabLiveSettings:
             qt_app.processEvents()
             assert full.property("checked") is True
             assert first.property("checked") is False
-            assert email.set_movie_calls[-1] is True
+            assert email.set_movie_calls == []
+            assert email.movieFull is False
 
             pont = first.mapToScene(
                 QPointF(first.width() / 2, first.height() / 2)
@@ -1363,8 +1393,11 @@ class TestEmailTabLiveSettings:
             qt_app.processEvents()
             assert first.property("checked") is True
             assert full.property("checked") is False
-            assert email.set_movie_calls[-1] is False
+            assert email.set_movie_calls == []
+            assert email.movieFull is False
 
+        _elfogad(window, qt_app)
+        assert email.set_movie_calls == [False]
         window.deleteLater()
         engine.deleteLater()
         qt_app.processEvents()
@@ -1504,6 +1537,8 @@ class TestEmailTabLiveSettings:
         slider.setProperty("value", 3)
         slider.moved.emit()
         qt_app.processEvents()
+        assert fake_email_controller.set_size_calls == []
+        _elfogad(window, qt_app)
         assert fake_email_controller.set_size_calls == [640]
         window.deleteLater()
         engine.deleteLater()
@@ -1519,6 +1554,8 @@ class TestEmailTabLiveSettings:
         gomb.setProperty("checked", True)
         gomb.toggled.emit()
         qt_app.processEvents()
+        assert fake_email_controller.set_single_calls == []
+        _elfogad(window, qt_app)
         assert fake_email_controller.set_single_calls == [True]
         window.deleteLater()
         engine.deleteLater()
@@ -1534,6 +1571,8 @@ class TestEmailTabLiveSettings:
         choose_radio.setProperty("checked", True)
         choose_radio.toggled.emit()
         qt_app.processEvents()
+        assert fake_email_controller.set_use_default_calls == []
+        _elfogad(window, qt_app)
         assert fake_email_controller.set_use_default_calls == [False]
         window.deleteLater()
         engine.deleteLater()
@@ -1641,9 +1680,10 @@ class TestGeneralTabAutoExclude:
             pipa.setProperty("checked", True)
             pipa.toggled.emit()
             qt_app.processEvents()
+            assert fake_import_source_controller.set_calls == []
+            _elfogad(window, qt_app)
             assert fake_import_source_controller.set_calls == [True], (
-                "a Beállítások jelölője nem az importáló állapotára írt — "
-                "két külön állapot lenne belőle (#2893)"
+                "az OK nem írta az importálóval közös állapotot (#2893)"
             )
         finally:
             window.deleteLater()

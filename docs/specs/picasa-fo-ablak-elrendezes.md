@@ -789,6 +789,17 @@ adatmásolási viselkedése.*
 
 A táblák oszlopai: **eredeti** (felirat, kulcs, alapérték), **nálunk** (QML-elem, kulcs, alapérték), **állapot**. A zárójelben álló címek a kulcs sztringjének címei (`0x00…`), illetve az alapérték regisztrálásának utasítás-címei (`0x006e…`).
 
+**Az OK és a Cancel bináris viselkedése (#5906).** A `runtime/options.fen`
+259-260. sora az `accept` típusú OK, majd a `cancel` típusú Cancel gombot
+regisztrálja. A `0x008e2de0` a két típust rendre 0 és 1 párbeszéd-eredményre
+fordítja; a `0x008d2720` eredménykezelő 0-nál a `COptionsDialog`
+vftáblájának 89. helyét (`0x00c9a568`) hívja, amely a `0x006e3990` mentő
+rutinra mutat. Az 1-es eredmény a 90. helyre (`0x00c9a56c`) jut, amely a
+`0x00b0d990` üres visszatérő rutinra mutat. Következésképp az OK kiírja a
+párbeszéd vezérlőinek értékeit, a Cancel pedig a kiírás előtt elveti azokat.
+A jegy `0x007fad0a`-ra tett „író ág” megnevezése pontatlan: az a
+`LoopSlideshow` olvasó ága; az OK hívási útja a fenti `0x008d2720`.
+
 ### 2. Általános (General)
 
 | eredeti felirat | eredeti kulcs | eredeti alapérték | nálunk: elem | nálunk: kulcs | nálunk: alapérték | állapot |

@@ -205,8 +205,15 @@ class TestBeallitasokDiasor:
 
         _nev_kattintasa(window, qt_app, "optionsSlideshowLoopCheck")
 
+        assert _elem(window, "optionsSlideshowLoopCheck").property("checked") is (
+            not elotte
+        ), "a kattintás nem váltotta át a jelölőt"
+        assert bool(controller.slideshowLoop) is elotte, (
+            "a ciklus beállításának az OK-ig piszkozatban kell maradnia"
+        )
+        _nev_kattintasa(window, qt_app, "optionsOkButton")
         assert varj(qt_app, lambda: bool(controller.slideshowLoop) is (not elotte)), (
-            "a ciklus jelölőnégyzet kattintása nem váltotta a beállítást"
+            "az OK nem mentette a ciklus beállítását"
         )
 
     def test_a_zene_jelolo_kikapcsolja_a_mappavalasztast(self, kep_app, qt_app):
@@ -222,11 +229,16 @@ class TestBeallitasokDiasor:
 
         _nev_kattintasa(window, qt_app, "optionsSlideshowPlayMusicCheck")
 
-        assert varj(qt_app, lambda: controller.slideshowMusicEnabled is False), (
-            "a zenét játszó jelölő kattintása nem kapcsolta ki a zenét"
+        assert _elem(window, "optionsSlideshowPlayMusicCheck").property("checked") is False
+        assert controller.slideshowMusicEnabled is True, (
+            "a zene beállításának az OK-ig piszkozatban kell maradnia"
         )
         assert varj(qt_app, lambda: gomb.property("enabled") is False), (
             "a zene kikapcsolása után a tallózás gomb még engedélyezett"
+        )
+        _nev_kattintasa(window, qt_app, "optionsOkButton")
+        assert varj(qt_app, lambda: controller.slideshowMusicEnabled is False), (
+            "az OK nem mentette a zene beállítását"
         )
 
     def test_a_zene_mappa_mezo_csak_olvashato(self, kep_app, qt_app):

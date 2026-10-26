@@ -10,19 +10,32 @@ import QtQuick.Layouts
 ColumnLayout {
     id: root
     spacing: 0
+    property var optionsDraft: null
     readonly property real referenceLeftInset: width * (242.0 / 744.0)
     readonly property var filetypeController:
         typeof controller !== "undefined" ? controller : null
 
     function fileTypeEnabled(group, defaultValue) {
-        return root.filetypeController
-            ? root.filetypeController.fileTypeEnabled(group)
-            : defaultValue
+        var actual = root.filetypeController
+            ? root.filetypeController.fileTypeEnabled(group) : defaultValue
+        return root.optionsDraft
+            ? root.optionsDraft.value("filetypes." + group, actual) : actual
     }
 
     function setFileTypeEnabled(group, checked) {
-        if (root.filetypeController)
+        if (!root.filetypeController)
+            return
+        if (root.optionsDraft) {
+            root.optionsDraft.stage(
+                "filetypes." + group,
+                checked,
+                function(value) {
+                    root.filetypeController.setFileTypeEnabled(group, value)
+                }
+            )
+        } else {
             root.filetypeController.setFileTypeEnabled(group, checked)
+        }
     }
 
     Text {
