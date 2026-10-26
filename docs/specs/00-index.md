@@ -1766,7 +1766,7 @@ forgatás nélkül), oldaleltolás `±4·i`, függőleges `5i…9i`. A vászon a
 (mérve: ~5 képpontos alfa-lefutás 37 valódi borítón), **alfája 153**
 (`0.6 × 255`, `0x00a6e32e`). Megdőlt: „a legrégebbi képből készül".
 
-### [picasa-native-filter-registry.md](picasa-native-filter-registry.md) - #5944: a `0x00654610` a `ColorPickerPanel+0x2ec` opcionális kapcsolatból kéri le a popup aktuális színét, a `0x00655620` pedig színargumentum nélkül nyitja meg a panelt. Nyitott maradt, hogy a négy régi colorwheel eseményútja ehhez a kapcsolathoz ténylegesen a saját színmezőjét köti-e; célzott Ghidra-kör kell `0x0050d740`-re.
+### [picasa-native-filter-registry.md](picasa-native-filter-registry.md) - #5944: a `0x008f6910 → 0x008fc1a0 → 0x0050d740` út az új generic colorwheel-filter alapértékét `#ffffff`-re állítja, és az aktív `+0x50` mezőt rajzolja ki; a `0x0050cf90` régi `desat` panelút, nem a Picasa 3.9 `ansel` útja. A Colab-minta Tint `#80cfff` aktív láncértékének pontos betöltője nyitott: `Ghidra-kör kell: 0x008fb120` az eredeti `filters=` betöltési ág forrásának követésére. A popup belső mintájának opcionális `ColorPickerPanel+0x2ec` getterhez kötése külön nyitott kérdés; a meglévő `0x0050d740` dekompilálás ezt nem követi.
 
 ### Nincs nyitott kérdés
 
