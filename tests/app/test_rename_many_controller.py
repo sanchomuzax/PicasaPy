@@ -141,11 +141,11 @@ class TestRenamePhotosMany:
             lambda: controller.renamePhotosMany(rows, "nyaralas", False, False),
         )
         assert (library / "nyaralas.jpg").exists()
-        assert (library / "nyaralas-1.jpg").exists()
+        assert (library / "nyaralas-001.jpg").exists()
         assert not (library / "a.jpg").exists()
         assert not (library / "b.jpg").exists()
         names = {p.name for p in controller.photos.photos}
-        assert names == {"nyaralas.jpg", "nyaralas-1.jpg", "c.jpg"}
+        assert names == {"nyaralas.jpg", "nyaralas-001.jpg", "c.jpg"}
 
     def test_ini_sections_follow_the_rename(self, controller, library):
         rows = _rows_by_name(controller, "a.jpg", "b.jpg")
@@ -157,7 +157,7 @@ class TestRenamePhotosMany:
 
         document = load_document(library / ".picasa.ini")
         assert document.section("nyaralas.jpg").get("star") == "yes"
-        assert document.section("nyaralas-1.jpg").get("caption") == "nyar"
+        assert document.section("nyaralas-001.jpg").get("caption") == "nyar"
 
     def test_date_and_size_suffix_end_to_end(self, controller, library):
         stamp_a = _stamp(controller, "a.jpg")
@@ -168,11 +168,13 @@ class TestRenamePhotosMany:
             lambda: controller.renamePhotosMany(rows, "nyar", True, True),
         )
         assert (library / f"nyar {stamp_a} 800x600.jpg").exists()
-        assert (library / f"nyar {stamp_b} 1024x768-1.jpg").exists()
+        assert (library / f"nyar {stamp_b} 1024x768.jpg").exists()
 
-    def test_collision_reports_failure_without_renaming(self, controller, library):
-        # az "a.jpg" célneve ("b.jpg", sorszám nélkül) ütközik a köteg
-        # MÁSIK tagjának ("b.jpg") jelenlegi nevével — semmi sem nevezhető át
+    def test_occupied_batch_target_uses_suffix_and_keeps_the_occupant(
+        self, controller, library
+    ):
+        # az első fájl célneve "b.jpg" lenne, de ezt a köteg másik eleme
+        # jelenleg foglalja, ezért a feloldás a következő szabad nevet adja.
         rows = _rows_by_name(controller, "a.jpg", "b.jpg")
         failures = []
         controller.syncFailed.connect(lambda msg: failures.append(msg))
@@ -180,8 +182,9 @@ class TestRenamePhotosMany:
             controller,
             lambda: controller.renamePhotosMany(rows, "b", False, False),
         )
-        assert failures  # emberi hibaüzenet érkezett
-        assert (library / "a.jpg").exists()
+        assert not failures
+        assert (library / "b-001.jpg").exists()
+        assert not (library / "a.jpg").exists()
         assert (library / "b.jpg").exists()
 
     def test_runtime_failure_reports_and_refreshes_partial_renames(
@@ -210,15 +213,15 @@ class TestRenamePhotosMany:
 
         assert failures
         assert "trip.jpg" in failures[-1]
-        assert "trip-1.jpg" in failures[-1]
+        assert "trip-001.jpg" in failures[-1]
         assert "c.jpg" in failures[-1]
         assert (library / "trip.jpg").exists()
-        assert (library / "trip-1.jpg").exists()
+        assert (library / "trip-001.jpg").exists()
         assert not (library / "a.jpg").exists()
         assert not (library / "b.jpg").exists()
         assert (library / "c.jpg").exists()
         assert {photo.name for photo in controller.photos.photos} == {
-            "trip.jpg", "trip-1.jpg", "c.jpg",
+            "trip.jpg", "trip-001.jpg", "c.jpg",
         }
 
     def test_empty_base_name_is_a_no_op(self, controller, library):
