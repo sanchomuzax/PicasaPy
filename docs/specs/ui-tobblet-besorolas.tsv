@@ -239,13 +239,10 @@ PicasaPy/OptionsTabFileTypes.qml	RAW formats	mero-vakfolt	A hivatalos options/Su
 PicasaPy/OptionsTabFileTypes.qml	Supported Formats	mero-vakfolt	A hivatalos options/link93.title feliratot a kimeneti mérő nem kapcsolta a fülhöz; a magyar alak a `referencia/i18n/hu/options.xml` szerint pontos.	options/link93.title	Supported Formats
 PicasaPy/OptionsTabGeneral.qml	Automatic updates:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/labelgroup20.title hivatalos magyarjával.	options/labelgroup20.title	
 PicasaPy/OptionsTabGeneral.qml	Browse...	mero-vakfolt	A magyar szövegünk egyezik az options/importdest.title hivatalos magyarjával (csak …/... különbség).	options/importdest.title	
-PicasaPy/OptionsTabGeneral.qml	Clear Cache...	segedszoveg	Az eredeti disposepreviews egy jelölőnégyzet; a kód kommentje szerint ez a gomb annak „megfelelője”, de más vezérlő, más szöveggel.		
+PicasaPy/OptionsTabGeneral.qml	Clear cache files	mero-vakfolt	A `disposepreviews` beállítás hivatalos angol felirata; a magyar párja az options/disposepreviews.title.	options/disposepreviews.title	Clear cache files
 PicasaPy/OptionsTabGeneral.qml	Delete from disk without confirmation	mero-vakfolt	A magyar szövegünk betűre egyezik az options/DoNotConfirmDeleteFromDisk.title hivatalos magyarjával.	options/DoNotConfirmDeleteFromDisk.title	
-PicasaPy/OptionsTabGeneral.qml	Empty	segedszoveg	A fenti saját megerősítő kérdés Igen gombjának felirata.		
-PicasaPy/OptionsTabGeneral.qml	Empty the thumbnail cache? The thumbnails are 	segedszoveg	Saját megerősítő kérdés a gyorsítótár-ürítés gombjához; nincs megfelelője a forrásokban.		
 PicasaPy/OptionsTabGeneral.qml	Files:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/labelgroup10.title hivatalos magyarjával.	options/labelgroup10.title	
 PicasaPy/OptionsTabGeneral.qml	Import destination folder:	segedszoveg	A fájlválasztó címe (FolderDialog.title). A címke (Save imported pictures in:) a #5473 óta az eredeti forrásszöveget és fordítást használja; ez a cím a régi forrás maradt, és nincs hozzá igazolt eredeti szöveg.		
-PicasaPy/OptionsTabGeneral.qml	Keep	segedszoveg	A fenti saját megerősítő kérdés Nem gombjának felirata.		
 PicasaPy/OptionsTabGeneral.qml	Language:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/labelgroup25.title hivatalos magyarjával.	options/labelgroup25.title	
 PicasaPy/OptionsTabGeneral.qml	Remove from album without confirmation	mero-vakfolt	A magyar szövegünk betűre egyezik az options/DoNotConfirmRemoveFromAlbum.title hivatalos magyarjával.	options/DoNotConfirmRemoveFromAlbum.title	
 PicasaPy/OptionsTabGeneral.qml	Show tooltips	mero-vakfolt	A magyar szövegünk betűre egyezik az options/ShowTooltips.title egyik hivatalos magyar változatával.	options/ShowTooltips.title	
@@ -369,7 +366,6 @@ PicasaPy/WebExportDialog.qml	Browse...	segedszoveg	'Tallozas...' gomb - natív O
 PicasaPy/WebExportDialog.qml	Choose target folder...	segedszoveg	Celmappa-valaszto dialogus utasitasa; nincs talalhato eredeti megfelelo.		
 PicasaPy/WebExportDialog.qml	Page title:	segedszoveg	Weboldal-export beallitasainak mezofelirata (oldalcim); nincs talalhato eredeti megfelelo a korpuszban (a CWebExporter/WebExport csoport nem tartalmaz ilyen beallitas-feliratokat).		
 PicasaPy/WebExportDialog.qml	PicasaPy is generating the web page.	segedszoveg	Allapotjelzo folyamatban levo exportnal; a CWebExporter csoport uzenetei masrol szolnak (masolas/hiba/torles), erre a konkret allapotra nincs talalhato eredeti megfelelo.		
-PicasaPy/WebExportDialog.qml	Save to:	segedszoveg	Mentesi cel mezofelirata; nincs talalhato eredeti megfelelo.		
 StartupRelocateWindow.qml	Moving the database	segedszoveg	Az adatbázis áthelyezése az eredetiben is megvan (Eszközök ▸ Adatbázis helyének kiválasztása…), az induláskori folyamatjelző szövegének nincs eredeti párja.		
 StartupRelocateWindow.qml	Photo index…	segedszoveg	Az adatbázis-áthelyezés (eredeti funkció) folyamatjelzőjének lépése; eredeti szövege nincs.		
 StartupRelocateWindow.qml	PicasaPy is moving the database.	segedszoveg	Az adatbázis-áthelyezés (eredeti funkció) induláskori folyamatjelzője; eredeti szövege nincs.		

@@ -103,10 +103,15 @@ class TestAltalanosFul:
 
         _klikk_ablakban(qt_app, beallitasok, jelolo)
 
-        assert _varj(qt_app, lambda: tar.isSuppressed("delete") is not elotte), (
-            "a törlés-megerősítés jelölője nem írta a tárba az állapotot"
+        assert tar.isSuppressed("delete") is elotte, (
+            "a változásnak az OK-ig piszkozatban kell maradnia"
         )
-        _zar(qt_app, beallitasok)
+        _klikk_ablakban(
+            qt_app, beallitasok, _gyerek(beallitasok, "optionsOkButton")
+        )
+        assert _varj(qt_app, lambda: tar.isSuppressed("delete") is not elotte), (
+            "az OK nem mentette a törlés-megerősítés jelölőjét"
+        )
 
     def test_a_duplikatumok_jelolo_valodi_kattintassal_az_importalot_allitja(
         self, parbeszed_app, qt_app
@@ -119,18 +124,25 @@ class TestAltalanosFul:
 
         _klikk_ablakban(qt_app, beallitasok, _gyerek(beallitasok, "optionsAutoExcludeCheck"))
 
-        assert _varj(qt_app, lambda: bool(importer.property("autoExclude")) is not elotte), (
-            "a Duplikátumok felismerése jelölő nem állította az importálót"
+        assert bool(importer.property("autoExclude")) is elotte, (
+            "a Duplikátumok módosítása az OK-ig piszkozatban marad"
         )
-        _zar(qt_app, beallitasok)
+        _klikk_ablakban(
+            qt_app, beallitasok, _gyerek(beallitasok, "optionsOkButton")
+        )
+        assert _varj(
+            qt_app, lambda: bool(importer.property("autoExclude")) is not elotte
+        ), "az OK nem mentette a Duplikátumok jelölőjét az importálóba"
 
     def test_a_duplikatumok_jelolo_valodi_kattintassal_menti_az_erteket(
         self, parbeszed_app, qt_app
     ):
-        """#5473: a valódi kattintás a Duplikátumok jelölőn a közös
-        `import/autoexclude` kulcsot is átírja, és a lemezre kerül. A kiindulást
-        a teszt maga állítja be: a beállítás-tár a teszt-munkamenetben közös,
-        tehát a korábbi tesztek maradékára nem szabad hagyatkozni."""
+        """#5473/#5906: a közös kulcs az OK-ra kerül a beállítás-tárba.
+
+        A kiindulást a teszt maga állítja be: a beállítás-tár a
+        teszt-munkamenetben közös, ezért korábbi tesztek maradékára nem
+        hagyatkozunk. A kattintás még nem ír; az OK után ellenőrizzük a lemezt.
+        """
         window, controller, engine = parbeszed_app
         _elokeszit(window, qt_app, controller)
         importer = engine.rootContext().contextProperty("importSourceController")
@@ -146,6 +158,13 @@ class TestAltalanosFul:
         assert _varj(qt_app, lambda: jelolo.property("checked") is False), (
             "a kattintás nem kapcsolta ki a Duplikátumok jelölőt"
         )
+        assert bool(importer.property("autoExclude")) is True, (
+            "a Duplikátumok változása az OK-ig piszkozatban marad"
+        )
+        _klikk_ablakban(
+            qt_app, beallitasok, _gyerek(beallitasok, "optionsOkButton")
+        )
+        assert _varj(qt_app, lambda: bool(importer.property("autoExclude")) is False)
         # a sync kiírja az importáló tárát a lemezre; az új példány már onnan olvas
         importer._get_settings().sync()
         assert QSettings("PicasaPy", "PicasaPy").value("import/autoexclude") == "false", (
@@ -254,11 +273,16 @@ class TestFajltipusok:
 
         _klikk_ablakban(qt_app, beallitasok, jelolo)
 
-        assert _varj(qt_app, lambda: bool(controller.fileTypeEnabled(csoport)) is not elotte), (
-            f"{nev}: a kattintás nem állította a(z) {csoport} típust"
+        assert bool(controller.fileTypeEnabled(csoport)) is elotte, (
+            f"{nev}: a {csoport} módosítása az OK-ig piszkozatban marad"
         )
         assert jelolo.property("checked") is not elotte
-        _zar(qt_app, beallitasok)
+        _klikk_ablakban(
+            qt_app, beallitasok, _gyerek(beallitasok, "optionsOkButton")
+        )
+        assert _varj(
+            qt_app, lambda: bool(controller.fileTypeEnabled(csoport)) is not elotte
+        ), f"{nev}: az OK nem mentette a(z) {csoport} típust"
 
 
 class TestNyomtatasFul:
@@ -280,10 +304,15 @@ class TestNyomtatasFul:
         assert _varj(qt_app, lambda: legordulo.property("currentIndex") == kovetkezo), (
             "a gyorsgomb-legördülő valódi kattintása nem váltott tételt"
         )
-        assert _varj(qt_app, lambda: nyomtatas.printSizePresets()[0] != elotte_meret), (
-            "az új gyorsgomb-méret nem jutott el a nyomtatási beállításig"
+        assert nyomtatas.printSizePresets()[0] == elotte_meret, (
+            "a nyomtatási méret módosítása az OK-ig piszkozatban marad"
         )
-        _zar(qt_app, beallitasok)
+        _klikk_ablakban(
+            qt_app, beallitasok, _gyerek(beallitasok, "optionsOkButton")
+        )
+        assert _varj(
+            qt_app, lambda: nyomtatas.printSizePresets()[0] != elotte_meret
+        ), "az OK nem mentette a nyomtatási méretet"
 
 
 def _export_megnyit(window, qt_app):

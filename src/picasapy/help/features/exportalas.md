@@ -54,13 +54,13 @@ helyi menüjéből.
 
 Beállítható:
 
-- **Oldal címe**,
-- **Mentés ide** (**Tallózás…**) - első alkalommal előre kitöltve a
+- **Weboldal címe:**,
+- **Mappa:** (**Tallózás…**) - első alkalommal előre kitöltve a
   képmappádon belüli **Picasa HTML exportok** mappával (Windowson a
   Dokumentumok mappádon belüli **Picasa HTML Exports** mappával). Ez csak
-  javaslat: a mappát a program csak a **Létrehozás** gombra kattintva
+  javaslat: a mappát a program csak az **Exportálás** gombra kattintva
   hozza létre, és bármikor átírhatod.
-- **Sablon** — a kész oldal kinézete, kis előnézeti rajzzal,
+- a **sablonlista**: a kész oldal kinézete (lásd lentebb),
 - **Képek exportálása innen:** — a nagy képek mérete: **Eredeti méret**,
   **1024 képpont (nagy képernyőkhöz)**, **800 képpont (nagyméretű
   weboldalakhoz)**, **640 képpont (weboldalakhoz)** — ez az alapérték —
@@ -75,22 +75,33 @@ Beállítható:
 A méretet, a mozgófilm-módot, a **célmappát** és a **sablont** a program
 megjegyzi a következő exportálásig.
 
-A **Létrehozás** gomb után a program megírja, hány fájlt írt és hova.
+Az **Exportálás** gomb után a program megírja, hány fájlt írt és hova. A
+**Mégse** bezárja az ablakot.
 
 ### A hét sablon
 
-Hat galéria-sablon van: három háttérszín, mindegyik kétféle csempével.
+Az ablak középső részén, a „Kattintson a sablonok nevére a minta
+megjelenítéséhez." kezdetű sor alatt egy lista áll a hét sablonnal, az
+eredeti Picasa sorrendjében és nevén. Egy névre kattintva a lista alatt
+megjelenik a sablon rövid leírása, jobbra pedig egy kis előnézeti rajz.
+A kijelölt sablon szerint készül az oldal.
 
-| sablon | háttér | csempe |
+| a lista sora | háttér | csempe |
 |---|---|---|
-| Fehér | fehér | sima |
-| Fehér keret | fehér | passzpartus keret |
-| Szürke | szürke | sima |
-| Szürke keret | szürke | passzpartus keret |
-| Fekete | fekete | sima |
-| Fekete keret | fekete | passzpartus keret |
+| 1. sablon, 2 oldalas, szürke háttér | szürke | sima |
+| 2. sablon, 2 oldalas, fekete háttér | fekete | sima |
+| 3. sablon, 2 oldalas, fehér háttér | fehér | sima |
+| 4. sablon, 1 oldalas, szürke háttér | szürke | keretes |
+| 5. sablon, 1 oldalas, fekete háttér | fekete | keretes |
+| 6. sablon, 1 oldalas, fehér háttér | fehér | keretes |
+| XML-kód | - | - |
 
-A hetedik, az **XML (gépi)**, nem weboldal: egyetlen `album.xml` fájlt ír
+A leírások az eredeti Picasa szövegei. A PicasaPy mind a hat
+galéria-sablonnál ugyanolyan felépítésű oldalt készít: indexképes
+kezdőoldalt, ahonnan a képekre kattintva a nagy kép nyílik meg. A hat
+sablon a háttérszínben és a csempék kinézetében különbözik.
+
+Az utolsó, az **XML-kód**, nem weboldal: egyetlen `album.xml` fájlt ír
 az album és a képek adataival. Akkor jó, ha az adatokat egy másik program
 dolgozza fel; böngészőben nem lesz belőle galéria.
 
@@ -109,7 +120,7 @@ fejlécében megadott név; ha nincs ilyen, az almappa neve. Ha egy saját
 sablon almappája ugyanazt a nevet viseli, mint egy gyári sablon, a gyári
 marad meg, a saját nem jelenik meg.
 
-Az ablak a tartalmához igazodik, ezért a **Létrehozás** gomb alapméretben is
+Az ablak a tartalmához igazodik, ezért az **Exportálás** gomb alapméretben is
 látszik.
 
 ## Közzététel FTP-n
@@ -118,9 +129,11 @@ Az **Eszközök ▸ Kísérleti ▸ Közzététel FTP-n keresztül...** paranccs
 weboldalt nem a gépedre mented, hanem egy FTP-kiszolgálóra, például a
 tárhelyedre töltöd fel. Ugyanaz az ablak nyílik meg, mint az
 **Exportálás HTML-oldalként…** parancsnál, a címe **Közzététel FTP-n
-keresztül...**. A **Mentés ide** sor helyén az **FTP-fiók:** választó
-áll, mellette a **Kezelés…** gombbal; az **Oldal címe**, a **Sablon**, a
-képméret és a mozgófilm-mód ugyanaz, mint fent.
+keresztül...**. A **Mappa:** sor helyén az **FTP-fiók:** választó
+áll, mellette a **Kezelés…** gombbal. A cím sora itt **Oldal címe:**, a
+sablont pedig nem lista, hanem egy **Sablon:** legördülő választja ki
+(alatta a kis előnézettel és a leírással). A képméret és a mozgófilm-mód
+ugyanaz, mint fent.
 
 ### FTP-fiók felvétele
 

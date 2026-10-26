@@ -20,6 +20,7 @@ from tests.app.qml_functional.test_menu_talca_egyeb_valodi_5135_b import (
     _elokeszit,
     _gyerek,
     _keszits_konyvtarat,
+    _klikk_ablakban,
     _valassz_legordulobol,
     _varj,
     _zar,
@@ -85,19 +86,30 @@ class TestMeretLegordulo:
         assert legordulo.property("currentIndex") == 2, "a legördülőn nem az 1600 áll"
         _zar(qt_app, beallitasok)
 
-    def test_valodi_kattintassal_valasztott_meret_megmarad(self, webalbum_app, qt_app):
+    @pytest.mark.parametrize("magassag_eltolas", [-5, 0, 5])
+    def test_valodi_kattintassal_valasztott_meret_megmarad(
+        self, webalbum_app, qt_app, magassag_eltolas
+    ):
         window, controller, _engine = webalbum_app
         _elokeszit(window, qt_app, controller)
         beallitasok = _webalbum_ful(window, qt_app)
+        celmagassag = beallitasok.height() + magassag_eltolas
+        beallitasok.setHeight(celmagassag)
+        assert _varj(qt_app, lambda: beallitasok.height() == celmagassag)
         _engedelyez_a_teszt_peldanyan(beallitasok)
         legordulo = _gyerek(beallitasok, "optionsWebUploadSizeCombo")
 
         _valassz_legordulobol(qt_app, beallitasok, legordulo, "Best for web sharing (2048px)")
 
-        assert _varj(qt_app, lambda: controller.webUploadSizeIndex == 1), (
-            "a legördülő tétele nem mentette a feltöltési méretet"
+        assert controller.webUploadSizeIndex == 2, (
+            "a legördülő módosítása az OK előtt kiírta a feltöltési méretet"
         )
-        _zar(qt_app, beallitasok)
+        assert _varj(qt_app, lambda: legordulo.property("currentIndex") == 1), (
+            "az új méret nem maradt látható a párbeszédben az OK előtt"
+        )
+        _klikk_ablakban(qt_app, beallitasok, _gyerek(beallitasok, "optionsOkButton"))
+        assert _varj(qt_app, lambda: beallitasok.property("visible") is False)
+        assert controller.webUploadSizeIndex == 1, "az OK nem mentette a feltöltési méretet"
 
         beallitasok = _webalbum_ful(window, qt_app)
         _engedelyez_a_teszt_peldanyan(beallitasok)

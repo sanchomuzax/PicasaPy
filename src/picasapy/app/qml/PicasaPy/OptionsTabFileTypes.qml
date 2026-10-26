@@ -10,19 +10,32 @@ import QtQuick.Layouts
 ColumnLayout {
     id: root
     spacing: 0
+    property var optionsDraft: null
     readonly property real referenceLeftInset: width * (242.0 / 744.0)
     readonly property var filetypeController:
         typeof controller !== "undefined" ? controller : null
 
     function fileTypeEnabled(group, defaultValue) {
-        return root.filetypeController
-            ? root.filetypeController.fileTypeEnabled(group)
-            : defaultValue
+        var actual = root.filetypeController
+            ? root.filetypeController.fileTypeEnabled(group) : defaultValue
+        return root.optionsDraft
+            ? root.optionsDraft.value("filetypes." + group, actual) : actual
     }
 
     function setFileTypeEnabled(group, checked) {
-        if (root.filetypeController)
+        if (!root.filetypeController)
+            return
+        if (root.optionsDraft) {
+            root.optionsDraft.stage(
+                "filetypes." + group,
+                checked,
+                function(value) {
+                    root.filetypeController.setFileTypeEnabled(group, value)
+                }
+            )
+        } else {
             root.filetypeController.setFileTypeEnabled(group, checked)
+        }
     }
 
     Text {
@@ -39,7 +52,7 @@ ColumnLayout {
 
     CheckBox {
         objectName: "optionsFileTypeBmpCheck"
-        text: qsTr(".bmp")
+        text: qsTr(".BMP")
         checked: root.fileTypeEnabled("bmp", true)
         onToggled: root.setFileTypeEnabled("bmp", checked)
         padding: 0
@@ -57,8 +70,8 @@ ColumnLayout {
     }
     CheckBox {
         objectName: "optionsFileTypeGifCheck"
-        text: qsTr(".gif")
-        checked: root.fileTypeEnabled("gif", true)
+        text: qsTr(".GIF")
+        checked: root.fileTypeEnabled("gif", false)
         onToggled: root.setFileTypeEnabled("gif", checked)
         padding: 0
         leftPadding: 0
@@ -75,8 +88,8 @@ ColumnLayout {
     }
     CheckBox {
         objectName: "optionsFileTypePngCheck"
-        text: qsTr(".png")
-        checked: root.fileTypeEnabled("png", true)
+        text: qsTr(".PNG")
+        checked: root.fileTypeEnabled("png", false)
         onToggled: root.setFileTypeEnabled("png", checked)
         padding: 0
         leftPadding: 0
@@ -93,8 +106,8 @@ ColumnLayout {
     }
     CheckBox {
         objectName: "optionsFileTypeTgaCheck"
-        text: qsTr(".tga")
-        checked: root.fileTypeEnabled("tga", true)
+        text: qsTr(".TGA")
+        checked: root.fileTypeEnabled("tga", false)
         onToggled: root.setFileTypeEnabled("tga", checked)
         padding: 0
         leftPadding: 0
@@ -111,7 +124,7 @@ ColumnLayout {
     }
     CheckBox {
         objectName: "optionsFileTypeTiffCheck"
-        text: qsTr(".tif, .tiff")
+        text: qsTr(".TIF, .TIFF")
         checked: root.fileTypeEnabled("tiff", true)
         onToggled: root.setFileTypeEnabled("tiff", checked)
         padding: 0
@@ -129,7 +142,7 @@ ColumnLayout {
     }
     CheckBox {
         objectName: "optionsFileTypeWebpCheck"
-        text: qsTr(".webp")
+        text: qsTr(".WEBP")
         checked: root.fileTypeEnabled("webp", true)
         onToggled: root.setFileTypeEnabled("webp", checked)
         padding: 0
@@ -147,7 +160,7 @@ ColumnLayout {
     }
     CheckBox {
         objectName: "optionsFileTypePsdCheck"
-        text: qsTr(".psd (Photoshop)")
+        text: qsTr(".PSD (Photoshop)")
         checked: root.fileTypeEnabled("psd", true)
         onToggled: root.setFileTypeEnabled("psd", checked)
         padding: 0
@@ -221,7 +234,7 @@ ColumnLayout {
     }
     CheckBox {
         objectName: "optionsFileTypeMoviesCheck"
-        text: qsTr("Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)")
+        text: qsTr("Movies (.AVI, .MPG, .ASF, .WMV)")
         checked: root.fileTypeEnabled("movies", true)
         onToggled: root.setFileTypeEnabled("movies", checked)
         padding: 0

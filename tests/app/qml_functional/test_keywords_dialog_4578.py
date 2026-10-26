@@ -71,6 +71,8 @@ def test_cimkek_parbeszed_kattintassal_megjelenit_es_ini_be_ir(
 ):
     window, controller, _engine = qml_app_szines_belyegkep
     library = Path(controller._roots[0])
+    # #5898: a PNG az eredeti szerint alapból ki van kapcsolva
+    controller.setFileTypeEnabled("png", True)
     png = Path(library) / "c.png"
     image = QImage(96, 64, QImage.Format.Format_RGB32)
     image.fill(QColor("#477da5"))

@@ -7,6 +7,7 @@ import QtQuick.Layouts
 // A névcímke-beállítások a FaceScanController meglévő motorjához kötődnek.
 ColumnLayout {
     id: root
+    property var optionsDraft: null
     Layout.fillWidth: true
     Layout.fillHeight: true
     Layout.preferredWidth: parent ? parent.width : implicitWidth
@@ -14,6 +15,18 @@ ColumnLayout {
     spacing: 0
     readonly property var faceCtl:
         typeof faceScanController !== "undefined" ? faceScanController : null
+
+    function setting(key, fallback) {
+        return root.optionsDraft
+            ? root.optionsDraft.value(key, fallback) : fallback
+    }
+
+    function stage(key, value, writer) {
+        if (root.optionsDraft)
+            root.optionsDraft.stage(key, value, writer)
+        else
+            writer(value)
+    }
 
     ColumnLayout {
         id: controls
@@ -31,11 +44,14 @@ ColumnLayout {
             Layout.preferredHeight: 22
             text: qsTr("Enable face detection")
             enabled: !!root.faceCtl
-            checked: root.faceCtl ? root.faceCtl.automaticDetectionEnabled() : true
-            onToggled: {
-                if (root.faceCtl)
-                    root.faceCtl.setAutomaticDetectionEnabled(checked)
-            }
+            checked: root.faceCtl
+                ? root.setting("nameTags.autoDetection",
+                    root.faceCtl.automaticDetectionEnabled()) : true
+            onToggled: if (root.faceCtl)
+                root.stage("nameTags.autoDetection", checked,
+                    function(value) {
+                        root.faceCtl.setAutomaticDetectionEnabled(value)
+                    })
         }
         CheckBox {
             id: suggestionsCheck
@@ -44,9 +60,14 @@ ColumnLayout {
             Layout.preferredHeight: 22
             text: qsTr("Enable suggestions:")
             enabled: !!root.faceCtl
-            checked: root.faceCtl ? root.faceCtl.suggestionsEnabled() : true
+            checked: root.faceCtl
+                ? root.setting("nameTags.suggestions",
+                    root.faceCtl.suggestionsEnabled()) : true
             onToggled: if (root.faceCtl)
-                root.faceCtl.setSuggestionsEnabled(checked)
+                root.stage("nameTags.suggestions", checked,
+                    function(value) {
+                        root.faceCtl.setSuggestionsEnabled(value)
+                    })
         }
 
         // Az options.fen külön behúzott, 20em széles, tízosztású
@@ -92,9 +113,14 @@ ColumnLayout {
                     stepSize: 5
                     snapMode: Slider.SnapAlways
                     showTicks: false
-                    value: root.faceCtl ? root.faceCtl.suggestionThreshold() : 85
+                    value: root.faceCtl
+                        ? root.setting("nameTags.suggestionThreshold",
+                            root.faceCtl.suggestionThreshold()) : 85
                     onMoved: if (root.faceCtl)
-                        root.faceCtl.setSuggestionThreshold(value)
+                        root.stage("nameTags.suggestionThreshold", value,
+                            function(step) {
+                                root.faceCtl.setSuggestionThreshold(step)
+                            })
                 }
                 Item {
                     id: suggestionTicks
@@ -171,9 +197,14 @@ ColumnLayout {
                     stepSize: 5
                     snapMode: Slider.SnapAlways
                     showTicks: false
-                    value: root.faceCtl ? root.faceCtl.clusterThreshold() : 85
+                    value: root.faceCtl
+                        ? root.setting("nameTags.clusterThreshold",
+                            root.faceCtl.clusterThreshold()) : 85
                     onMoved: if (root.faceCtl)
-                        root.faceCtl.setClusterThreshold(value)
+                        root.stage("nameTags.clusterThreshold", value,
+                            function(step) {
+                                root.faceCtl.setClusterThreshold(step)
+                            })
                 }
                 Item {
                     id: clusterTicks
@@ -219,9 +250,14 @@ ColumnLayout {
             Layout.preferredHeight: 22
             text: qsTr("Store name tags in photo")
             enabled: !!root.faceCtl
-            checked: root.faceCtl ? root.faceCtl.persistFaceToFile() : true
+            checked: root.faceCtl
+                ? root.setting("nameTags.persistToFile",
+                    root.faceCtl.persistFaceToFile()) : true
             onToggled: if (root.faceCtl)
-                root.faceCtl.setPersistFaceToFile(checked)
+                root.stage("nameTags.persistToFile", checked,
+                    function(value) {
+                        root.faceCtl.setPersistFaceToFile(value)
+                    })
         }
         CheckBox {
             objectName: "optionsFaceUploadContactPhotosCheck"

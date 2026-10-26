@@ -10,6 +10,11 @@ akarod égetni a változtatásokat — mert máshol nyitod meg, vagy elküldöd
 **Fájl ▸ Mentés** (Ctrl+S) a kijelölt képeket a szerkesztésekkel együtt
 kiírja a lemezre.
 
+A parancs csak akkor használható, ha a kijelölt képen van **még el nem
+mentett szerkesztés**, ahogy az eredeti Picasában. Különben a menütétel
+és a képek fölötti fejléc **Mentés** gombja szürke, és a Ctrl+S sem
+csinál semmit.
+
 A program **biztonsági másolatot készít** a fájlokról, és ezt a
 megerősítő ablakban ki is írja. A másolat az eredeti mappában marad, egy
 külön almappában, így később még visszaléphetsz.
@@ -57,9 +62,11 @@ Ez a mentéskor készült biztonsági másolatot használja, ezért csak akkor
 kapcsolható be, ha van ilyen másolat. Mentés után a
 tétel azonnal használható, nem kell hozzá a kijelölést megváltoztatni.
 
-A program rákérdez: „Visszaállítja ezeket a fájlokat az eredeti
-változatra? Ez a művelet nem vonható vissza, és az összes módosítás
-elvész."
+A program rákérdez. Egyetlen képnél a kérdés: „Visszatér a fájl eredeti
+változatához?", több képnél: „Visszaállítja ezeket a fájlokat az eredeti
+változatra?". A két gomb **Visszaállítás** és **Mégse**. Megnyitáskor a
+**Mégse** kapja a fókuszt, így egy véletlen **Enter** nem állít vissza
+semmit.
 
 Visszaállítás közben ugyanaz a lebegő folyamatjelző látszik, mint
 mentéskor (ott „Fájl mentése: …%" áll), itt **Fájlok visszaállítása**
@@ -75,7 +82,11 @@ egyszerűen az eredeti képet mutatja.
 szerkesztések listáját törli. A fájl érintetlen marad; a kép egyszerűen
 újra úgy néz ki, mint eredetileg.
 
-A program rákérdez, és külön figyelmeztet, ha a képen
+A program rákérdez egy **Jóváhagyás** című ablakban: „Ezzel a művelettel
+eltávolít minden módosítást, amelyet az ÖSSZES kijelölt képre
+alkalmazott. Folytatja?" (a nézőben, egyetlen képnél az aktuális képről
+szól a kérdés). A két gomb **Szerkesztések eltávolítása** és **Nem**.
+Külön figyelmeztet, ha a képen
 **vörösszem-javítás** van: azt az **Újra** paranccsal sem lehet
 visszahozni. A figyelmeztetés **megnevezi a képet** (több képnél
 mindegyiket, vesszővel).

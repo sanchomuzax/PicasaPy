@@ -142,7 +142,7 @@ class TestAtfedoIrok:
         zar = threading.Lock()
         engedely = threading.Event()
 
-        def lassu_sync(conn, root, folder, exclude=(), should_stop=None):
+        def lassu_sync(conn, root, folder, exclude=(), should_stop=None, **_kwargs):
             nonlocal egyidejuleg, csucs
             with zar:
                 egyidejuleg += 1
@@ -312,7 +312,7 @@ class TestLemaradasBehozasa:
         engedely = threading.Event()
         eredeti = lc.sync_folder
 
-        def figyelt_sync(conn, root, folder, exclude=(), should_stop=None):
+        def figyelt_sync(conn, root, folder, exclude=(), should_stop=None, **_kwargs):
             szinkronizalt.append(folder)
             if not elso_bent.is_set():
                 elso_bent.set()

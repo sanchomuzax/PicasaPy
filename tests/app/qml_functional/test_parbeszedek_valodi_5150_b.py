@@ -12,7 +12,7 @@ Lefedve:
   következő indulásra szóló költözést; a teszt ezt nem engedi.
 - `OptionsDialog`: a fülsor öt fülének (`optionsTabGeneral`, `optionsTabEmail`,
   `optionsTabNetwork`, `optionsTabWebAlbums`, `optionsTabNameTags`), a
-  `optionsCloseButton`-nek és a fülsor két nyilának (`optionsTabScrollLeftButton`,
+  `optionsCancelButton`-nek és a fülsor két nyilának (`optionsTabScrollLeftButton`,
   `optionsTabScrollRightButton`) a kattintása.
 - `OptionsTabEmail`: `optionsMailChooseRadio`, `optionsMailDefaultRadio`,
   `optionsMailSingleSameRadio`, `optionsMailSingleOriginalRadio`; a tiltott
@@ -227,7 +227,7 @@ class TestBeallitasok:
         _elokeszit(window, qt_app, controller)
         beallitasok = _beallitasok_megnyit(window, qt_app)
 
-        _klikk_ablakban(qt_app, beallitasok, _gyerek(beallitasok, "optionsCloseButton"))
+        _klikk_ablakban(qt_app, beallitasok, _gyerek(beallitasok, "optionsCancelButton"))
 
         assert _varj(qt_app, lambda: beallitasok.property("visible") is False), (
             "a Bezárás kattintás nem rejtette el a beállításokat"
@@ -271,6 +271,18 @@ def _email_fulon(window, qt_app):
     return beallitasok
 
 
+def _options_ok(qt_app, beallitasok) -> None:
+    _klikk_ablakban(qt_app, beallitasok, _gyerek(beallitasok, "optionsOkButton"))
+    assert _varj(qt_app, lambda: beallitasok.property("visible") is False)
+
+
+def _options_cancel(qt_app, beallitasok) -> None:
+    _klikk_ablakban(
+        qt_app, beallitasok, _gyerek(beallitasok, "optionsCancelButton")
+    )
+    assert _varj(qt_app, lambda: beallitasok.property("visible") is False)
+
+
 class TestEmailFul:
     @pytest.mark.parametrize("magassag_elteres", [-5, 0, 5])
     def test_a_valasztas_radio_valodi_kattintassal_a_sajat_levelezot_kapcsolja(
@@ -305,22 +317,28 @@ class TestEmailFul:
         assert google.property("enabled") is False
 
         _klikk_ablakban(qt_app, beallitasok, _gyerek(beallitasok, "optionsMailDefaultRadio"))
-        assert _varj(qt_app, lambda: levelezo.property("useDefaultClient") is True)
+        assert _varj(qt_app, lambda: _gyerek(beallitasok, "optionsMailDefaultRadio").property("checked") is True)
+        assert levelezo.property("useDefaultClient") is False
+
+        _options_ok(qt_app, beallitasok)
+        assert levelezo.property("useDefaultClient") is True
         assert levelezo._settings.value("mail/useDefaultClient") in (
             True,
             "true",
         )
 
+        beallitasok = _email_fulon(window, qt_app)
+        valasztas = _gyerek(beallitasok, "optionsMailChooseRadio")
         _klikk_ablakban(qt_app, beallitasok, valasztas)
+        assert valasztas.property("checked") is True
+        assert levelezo.property("useDefaultClient") is True
 
-        assert _varj(qt_app, lambda: levelezo.property("useDefaultClient") is False), (
-            "a Választás radio kattintása nem állította át a levelezőt"
-        )
+        _options_ok(qt_app, beallitasok)
+        assert levelezo.property("useDefaultClient") is False
         assert levelezo._settings.value("mail/useDefaultClient") in (
             False,
             "false",
         )
-        _zar(qt_app, beallitasok)
 
     def test_az_alapertelmezett_radio_valodi_kattintassal_visszavalt(self, email_app, qt_app):
         window, controller, engine = email_app
@@ -332,10 +350,9 @@ class TestEmailFul:
 
         _klikk_ablakban(qt_app, beallitasok, _gyerek(beallitasok, "optionsMailDefaultRadio"))
 
-        assert _varj(qt_app, lambda: levelezo.property("useDefaultClient") is True), (
-            "az Alapértelmezett radio kattintása nem állította vissza a levelezőt"
-        )
-        _zar(qt_app, beallitasok)
+        assert levelezo.property("useDefaultClient") is False
+        _options_cancel(qt_app, beallitasok)
+        assert levelezo.property("useDefaultClient") is False
 
     def test_az_eredeti_meret_radio_valodi_kattintassal_az_eredetit_kuldi(self, email_app, qt_app):
         window, controller, engine = email_app
@@ -346,10 +363,9 @@ class TestEmailFul:
 
         _klikk_ablakban(qt_app, beallitasok, _gyerek(beallitasok, "optionsMailSingleOriginalRadio"))
 
-        assert _varj(qt_app, lambda: levelezo.property("singlePictureOriginal") is True), (
-            "az Eredeti méret radio kattintása nem állította át a küldést"
-        )
-        _zar(qt_app, beallitasok)
+        assert levelezo.property("singlePictureOriginal") is False
+        _options_ok(qt_app, beallitasok)
+        assert levelezo.property("singlePictureOriginal") is True
 
     def test_az_egy_kep_meretenek_radio_valodi_kattintassal_visszavalt(self, email_app, qt_app):
         window, controller, engine = email_app
@@ -357,14 +373,18 @@ class TestEmailFul:
         beallitasok = _email_fulon(window, qt_app)
         levelezo = engine.rootContext().contextProperty("emailController")
         _klikk_ablakban(qt_app, beallitasok, _gyerek(beallitasok, "optionsMailSingleOriginalRadio"))
-        assert _varj(qt_app, lambda: levelezo.property("singlePictureOriginal") is True)
+        assert levelezo.property("singlePictureOriginal") is False
+        _options_ok(qt_app, beallitasok)
+        assert levelezo.property("singlePictureOriginal") is True
 
-        _klikk_ablakban(qt_app, beallitasok, _gyerek(beallitasok, "optionsMailSingleSameRadio"))
+        beallitasok = _email_fulon(window, qt_app)
+        same = _gyerek(beallitasok, "optionsMailSingleSameRadio")
+        _klikk_ablakban(qt_app, beallitasok, same)
+        assert same.property("checked") is True
+        assert levelezo.property("singlePictureOriginal") is True
 
-        assert _varj(qt_app, lambda: levelezo.property("singlePictureOriginal") is False), (
-            "a Mint a többi radio kattintása nem állította vissza a küldést"
-        )
-        _zar(qt_app, beallitasok)
+        _options_ok(qt_app, beallitasok)
+        assert levelezo.property("singlePictureOriginal") is False
 
     def test_a_google_fiok_radio_tiltott_a_kattintas_nem_valt(self, email_app, qt_app):
         window, controller, engine = email_app

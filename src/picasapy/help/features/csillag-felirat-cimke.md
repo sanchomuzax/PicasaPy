@@ -48,22 +48,13 @@ A sáv két végén egy-egy kis gomb áll:
 A rácsban a **Nézet ▸ Indexkép felirata ▸ Képfelirat** beállítással
 hozhatod elő az indexképek alá.
 
-### Ugyanaz a felirat több képre
+### Felirat másolása több képre
 
-A **Szerkesztés ▸ Szöveg másolása** a kijelölt kép feliratát a vágólapra
-teszi, a **Szerkesztés ▸ Szöveg beillesztése** pedig a vágólap szövegét
-**minden kijelölt kép** feliratába beírja. Így egy feliratot végig lehet
-vinni egy egész sorozaton.
-
-Üres vágólappal a **Szöveg beillesztése** szürke, tehát nem tudja
-véletlenül letörölni a meglévő feliratokat.
-
-Ha a kijelölt képek közül **bármelyiken már van felirat**, a program
-előbb rákérdez: „Biztosan lecseréli a jelenlegi képfeliratot a vágólap
-tartalmára? (Ez a művelet nem vonható vissza)". A **Csere** gomb
-beírja a vágólap szövegét minden kijelölt kép feliratába, a **Mégse**
-semmit nem változtat. Ha egyik kijelölt képnek sincs még felirata, a
-beillesztés kérdés nélkül lefut.
+A **Szerkesztés ▸ Szöveg másolása** és **Szöveg beillesztése** parancs
+nem a képfeliratot, hanem a **Szöveg** eszközzel a képre írt szöveget
+másolja (lásd [A szerkesztő](szerkeszto.md)), ahogy az eredeti Picasában.
+A képfeliratot menüből ma nem lehet egyszerre több képre átvinni: képenként
+kell beírnod.
 
 A feliratot a PicasaPy a JPEG-fájl IPTC-mezőjébe is beírja, így más
 programok is látják.

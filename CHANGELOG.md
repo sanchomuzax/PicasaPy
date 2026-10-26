@@ -7,6 +7,26 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.242] - 2026-10-26
+
+- A Beállítások OK gombja menti a fülek módosításait, a Cancel elveti őket. (#5906).
+
+## [0.9.241] - 2026-10-26
+
+- A HTML-export párbeszéd a Picasa hét sablonját, leírását és saját előnézeti képét mutatja, a weboldalcím mezőben pedig a mappa nevét tölti be. (#5909).
+
+## [0.9.240] - 2026-10-26
+
+- Az Opciók E-Mail és Web Albums füle megjeleníti az eredeti sorcímeket és a vízjel súgószövegét. (#5899).
+
+## [0.9.239] - 2026-10-26
+
+- Az Options ▸ File Types alapfeliratai és tiszta profilú fájltípus-beállításai az eredeti Picasát követik. (#5898).
+
+## [0.9.238] - 2026-10-25
+
+- Az Általános beállításokban a „Clear cache files” kapcsoló kilépéskor üríti az előnézet-cache-t, ha be van kapcsolva. (#5897).
+
 ## [0.9.237] - 2026-10-25
 
 - A menük pipálható tételein a jelöletlen hely üres, a kijelöltön keret nélküli pipa látszik. (#5885).
