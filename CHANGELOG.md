@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.242] - 2026-10-26
+
+- A Beállítások OK gombja menti a fülek módosításait, a Cancel elveti őket. (#5906).
+
 ## [0.9.241] - 2026-10-26
 
 - A HTML-export párbeszéd a Picasa hét sablonját, leírását és saját előnézeti képét mutatja, a weboldalcím mezőben pedig a mappa nevét tölti be. (#5909).
