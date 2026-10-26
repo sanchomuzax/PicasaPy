@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import functools
 from array import array
 from bisect import bisect_right
 import json
@@ -513,12 +514,16 @@ def _test_files_referencing(root: Path, tests: Iterable[str], path: str) -> set[
         test
         for test in tests
         if any(
-            needle and needle in (root / test).read_text(
-                encoding="utf-8", errors="replace"
-            ).replace("\\", "/")
+            needle and needle in _teszt_szovege(root / test)
             for needle in needles
         )
     }
+
+
+@functools.lru_cache(maxsize=None)
+def _teszt_szovege(fajl: Path) -> str:
+    """A tesztfájl per-jel nélküli szövege; futásonként egyszer olvasva."""
+    return fajl.read_text(encoding="utf-8", errors="replace").replace("\\", "/")
 
 
 def windows_only_tests(
@@ -546,8 +551,22 @@ def _conftest_tesztjei(all_tests: Sequence[str], path: str) -> set[str]:
     return _mappa_tesztjei(all_tests, "" if mappa == "." else mappa)
 
 
-def _szovegfajlok(root: Path) -> Iterable[tuple[str, str]]:
-    """A repó (dokumentáció nélküli) szövegfájljai: relatív útvonal és tartalom."""
+def _szovegfajlok(root: Path) -> tuple[tuple[str, str], ...]:
+    """A repó (dokumentáció nélküli) szövegfájljai: relatív útvonal és tartalom.
+
+    Egy futásban egyszer olvassa be: a passzív fájlok rekurzív feloldása
+    hivatkozásonként újra kérné, és sok általános nevű fájl (pl. `style.css`)
+    mellett a CI-lépés percekig futott.
+    """
+    return _szovegfajlok_gyorsitott(root.resolve())
+
+
+@functools.lru_cache(maxsize=None)
+def _szovegfajlok_gyorsitott(root: Path) -> tuple[tuple[str, str], ...]:
+    return tuple(_szovegfajlok_bejaras(root))
+
+
+def _szovegfajlok_bejaras(root: Path) -> Iterable[tuple[str, str]]:
     for dirpath, dirnames, filenames in os.walk(root):
         mappa = Path(dirpath).relative_to(root).as_posix()
         mappa = "" if mappa == "." else mappa
@@ -604,7 +623,8 @@ def _kodban_hivatkozik(szoveg: str, needles: set[str]) -> bool:
     return False
 
 
-def _hivatkozo_fajlok(root: Path, path: str) -> list[str]:
+@functools.lru_cache(maxsize=None)
+def _hivatkozo_fajlok(root: Path, path: str) -> tuple[str, ...]:
     """A nevét vagy útvonalát futásban említő fájlok (a fájl maga nélkül)."""
     needles = {path, Path(path).name}
     if path.endswith(".py"):
@@ -619,7 +639,7 @@ def _hivatkozo_fajlok(root: Path, path: str) -> list[str]:
         if rel.endswith(".py") and not _kodban_hivatkozik(szoveg, needles):
             continue
         talalt.append(rel)
-    return sorted(talalt)
+    return tuple(sorted(talalt))
 
 
 def _teszt_mappa_dontes(path: str, all_tests: Sequence[str]) -> Selection:
@@ -648,6 +668,25 @@ def _passziv_fajl(
     öröklődik. Hivatkozás nélkül a fájl nem tölthető be, ezért csak a
     teljes készlet ott marad, ahol a kód ismeretlen módon olvashatja.
     """
+    kulcs = (root, path)
+    if kulcs in _PASSZIV_EREDMENY:
+        return _PASSZIV_EREDMENY[kulcs]
+    eredmeny = _passziv_fajl_szamol(root, path, all_tests, kiserult)
+    _PASSZIV_EREDMENY[kulcs] = eredmeny
+    return eredmeny
+
+
+# Az általános nevű fájlok (`style.css`, `header.html`) sok úton is
+# visszaérnek ugyanoda; eredmény nélkül a feloldás exponenciálisan nőtt.
+_PASSZIV_EREDMENY: dict[tuple[Path, str], Selection] = {}
+
+
+def _passziv_fajl_szamol(
+    root: Path,
+    path: str,
+    all_tests: Sequence[str],
+    kiserult: frozenset[str],
+) -> Selection:
     tests = set(_test_files_referencing(root, all_tests, path))
     refs = [rel for rel in _hivatkozo_fajlok(root, path) if rel not in kiserult]
     if refs:
