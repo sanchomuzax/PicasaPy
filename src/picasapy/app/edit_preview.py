@@ -522,6 +522,25 @@ class EditPreviewProvider(QQuickImageProvider):
         with self._lock:
             self._store_gpu_image(self._gpu_lut_images, key, _lut_array_to_qimage(lut))
 
+    def gpu_preview_ready(self, photo_id: str) -> bool:
+        """Van-e mindkét, nem-null kép a GPU-előnézeti kéréshez?
+
+        A QML csak akkor kaphat `gpuprefix`/`gpulut` URL-t, ha a provider már
+        ténylegesen ki tudja szolgálni őket. A teljes `register()` a két
+        képet ugyanazon zár alatt teszi a cache-be, ezért a lekérdezés sem
+        láthat félkész állapotot.
+        """
+        key = str(photo_id)
+        with self._lock:
+            prefix = self._gpu_prefix_images.get(key)
+            lut = self._gpu_lut_images.get(key)
+            return (
+                prefix is not None
+                and not prefix.isNull()
+                and lut is not None
+                and not lut.isNull()
+            )
+
     def unregister(self, photo_id: str) -> None:
         """A fotó eltávolítása (szerkesztés vége).
 

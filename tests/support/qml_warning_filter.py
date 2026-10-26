@@ -1,4 +1,4 @@
-"""A QML-figyelmeztetés-őr osztályozója (a #305-ös őr, a #309-es szűkítéssel).
+"""A QML-figyelmeztetés-őr osztályozója (#305/#309, #5984).
 
 Külön modul, nem a `conftest.py`-ban: a conftest nem importálható a
 tesztekből (nem csomag), a `tests/support/` viszont a `pythonpath` révén
@@ -6,9 +6,9 @@ igen — így az osztályozó önmagában is tesztelhető.
 
 ## Mire hasal el az őr, és mire nem
 
-KIZÁRÓLAG a QML-SZKRIPTHIBÁKRA. Ezek a minták mindig a MI kódunk hibái
-(kötés hivatkozik nem létező tagra, rossz típust rendel értékül), és
-platformfüggetlenek — ilyet sose írjunk ki.
+KIZÁRÓLAG a saját QML-kód platformfüggetlen hibáira: szkripthibákra,
+érvénytelen layout-ankorokra és hiányzó kép-szolgáltatói képekre. A font- és
+platformstílus-figyelmeztetések továbbra is környezeti zajok.
 
 A korábbi, MINDEN Qt-figyelmeztetésre elhasaló változat (#305) a
 windows-latest CI-lábat buktatta olyan környezeti üzenetekre, amiknek semmi
@@ -68,6 +68,16 @@ QML_SCRIPT_ERROR_PATTERNS = (
     "Cannot anchor to an item",
 )
 
+# #5984: futás közben látható, platformfüggetlen QML-hibák. A betűadatbázis
+# („OpenType support missing”) és az OpenCV célválasztási sorai nincsenek itt:
+# ezek nem hibajelzések.
+QML_RUNTIME_ERROR_PATTERNS = (
+    "Detected anchors on an item that is managed by a layout",
+    "anchors for items inside Row",
+    "anchors for items inside Column",
+    "Failed to get image from provider",
+)
+
 # #1599/#1748: a `Binding loop detected` minta SZÁNDÉKOSAN nincs a listában.
 # Felvettük, és a CI azonnal MEGMÉRTE, hogy legalább két további párbeszédünk
 # hurkol (`SaveDialogs.qml:171`, `UnnamedFacesView.qml:283`) — a forrás-söprés
@@ -89,4 +99,7 @@ def is_qml_script_error(message: str) -> bool:
     """
     if any(eredet in message for eredet in IDEGEN_QML_EREDET):
         return False
-    return any(pattern in message for pattern in QML_SCRIPT_ERROR_PATTERNS)
+    return any(
+        pattern in message
+        for pattern in (*QML_SCRIPT_ERROR_PATTERNS, *QML_RUNTIME_ERROR_PATTERNS)
+    )

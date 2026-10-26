@@ -116,9 +116,10 @@ def _email_nincs_valodi_mapi(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def qml_warnings():
-    """#718: figyeli a Qt/QML üzenetkezelőt (qInstallMessageHandler), és a
-    teszt VÉGÉN hibát dob, ha QML-SZKRIPTHIBA jelent meg (pl. „Cannot read
-    property … of null"). Eredetileg csak a `tests/app/qml_functional/`
+    """#718/#5984: figyeli a Qt/QML üzenetkezelőt (qInstallMessageHandler),
+    és a teszt VÉGÉN hibát dob ismert, saját QML-hibaosztályokra (szkript-,
+    layout- és kép-szolgáltatói hibák). Eredetileg csak a
+    `tests/app/qml_functional/`
     alatt futott (#305/#309) — a #718 kiterjeszti a `tests/app/` alatt
     KÖZVETLENÜL élő `test_qml_*.py` fájlokra is, mert ott is QML-t töltő
     tesztek vannak, és őr nélkül a hibák némán a stderr-re mentek.

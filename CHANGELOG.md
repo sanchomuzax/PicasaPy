@@ -7,6 +7,26 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.255] - 2026-10-27
+
+- Fixed QML layout warnings in the tags and face editor, and prevented GPU preview requests until both preview images are ready (#5984).
+
+## [0.9.254] - 2026-10-26
+
+- A gyorscímke-sáv két legutóbbi címkét tart meg, az ismételt használat pedig megőrzi a sorrendet. (#5980).
+
+## [0.9.253] - 2026-10-26
+
+- A fotónéző képernyőkép-mérője Windowson is lefut, a magyar kimenete nem okoz hibát (#5971).
+
+## [0.9.252] - 2026-10-26
+
+- A db3-importáló most már a több tárolórészre bontott wordhash-listákat is beolvassa, és gyorsabban veszi át a sorrendadatokat. (#5964).
+
+## [0.9.251] - 2026-10-26
+
+- A fotónéző főállapotairól képernyőképek készíthetők és képpontra összevethetők (#5952).
+
 ## [0.9.250] - 2026-10-26
 
 - A Filtered B&W színmezője az eredetihez igazodva #545454-ről indul (#5949).
