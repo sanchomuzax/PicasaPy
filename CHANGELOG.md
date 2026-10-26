@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.248] - 2026-10-26
+
+- A csoportos átnevezés foglalt cél esetén -001-től sorszámoz, és megőrzi a kiterjesztés írásmódját. (#5941).
+
 ## [0.9.247] - 2026-10-26
 
 - A Vágás panel javaslatai cím és stratégiacímke nélkül jelennek meg. (#5935).
