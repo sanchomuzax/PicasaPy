@@ -73,6 +73,19 @@ IDEGEN_EREDETU_ZAJ = [
     "ReferenceError: control is not defined",
 ]
 
+# #5984: ezek nem környezeti Qt-zajok, hanem a QML-elrendezés vagy a saját
+# kép-szolgáltatónk hibái; az automatikus qml_warnings őrnek mindet fognia kell.
+FUTASI_QML_HIBAK_5984 = [
+    "file:///…/TagsPanel.qml:169: QML LabelIcon: Detected anchors on an item "
+    "that is managed by a layout. This is undefined behavior; use "
+    "Layout.alignment instead.",
+    "file:///…/FacesOverlay.qml:401: QML TextField: Cannot specify left, right, "
+    "horizontalCenter, fill or centerIn anchors for items inside Row. "
+    "Row will not function.",
+    "file:///…/PhotoViewer.qml:3391: Failed to get image from provider: "
+    "image://editpreview/1?gpuprefix=1&rev=2",
+]
+
 
 @pytest.mark.parametrize("uzenet", IDEGEN_EREDETU_ZAJ)
 def test_a_qt_sajat_qml_je_NEM_buktat(uzenet):
@@ -111,3 +124,19 @@ def test_a_szures_nem_a_fajlnevre_hanem_az_EREDETRE_nez():
     )
     assert is_qml_script_error(sajat) is True
     assert is_qml_script_error(idegen) is False
+
+
+@pytest.mark.parametrize("uzenet", FUTASI_QML_HIBAK_5984)
+def test_5984_a_futasi_qml_hibak_buktatnak(uzenet):
+    assert is_qml_script_error(uzenet)
+
+
+@pytest.mark.parametrize(
+    "uzenet",
+    [
+        "qt.text.font.db: OpenType support missing for script 11",
+        "OpenCV(4.11.0) setPreferableTarget called for CPU backend",
+    ],
+)
+def test_5984_a_nem_hibaknak_jelolt_kornyezeti_sorok_nem_buktatnak(uzenet):
+    assert not is_qml_script_error(uzenet)

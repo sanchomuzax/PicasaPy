@@ -15,7 +15,7 @@ from support.valodi_mappa_or import VEDETT_MAPPAK, pillanatkep, valtozas_szovege
 
 
 def qml_warning_guard():
-    """QML-szkripthiba-őr a teljes függő fixture-életciklus körül."""
+    """Ismert saját QML-hibaosztályokat őriz a teljes fixture-életciklusban."""
     from PySide6.QtCore import QtMsgType, qInstallMessageHandler
 
     messages: list[str] = []
@@ -35,7 +35,7 @@ def qml_warning_guard():
         qInstallMessageHandler(previous)
         if messages:
             pytest.fail(
-                "QML-szkripthiba jelent meg a fixture-életciklusban (#1260):\n"
+                "Ismert QML-hiba jelent meg a fixture-életciklusban (#1260):\n"
                 + "\n".join(messages)
             )
 

@@ -30,9 +30,9 @@ from support import keep_burkok
 
 @pytest.fixture(autouse=True)
 def qml_warnings():
-    """#305: figyeli a Qt/QML üzenetkezelőt (qInstallMessageHandler), és a
-    teszt VÉGÉN — a `qml_app` engine-lebontása UTÁN — hibát dob, ha
-    QML-SZKRIPTHIBA jelent meg (pl. „Cannot read property … of null").
+    """#305/#5984: figyeli a Qt/QML üzenetkezelőt (qInstallMessageHandler),
+    és a teszt VÉGÉN — a `qml_app` engine-lebontása UTÁN — hibát dob az
+    ismert, saját QML-hibaosztályokra (szkript-, layout- és szolgáltatóhiba).
 
     A szűrésről (mire hasal el és mire nem, és miért) ld. a
     `support/qml_warning_filter.py` modul-docstringjét (#309).
