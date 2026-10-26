@@ -200,11 +200,13 @@ ColumnLayout {
                      && controller.setDisposePreviewsOnExit !== undefined
             checked: typeof controller !== "undefined" && controller !== null
                      && controller.disposePreviewsOnExit !== undefined
-                         ? controller.disposePreviewsOnExit : false
+                         ? root.setting("general.disposePreviewsOnExit",
+                             controller.disposePreviewsOnExit) : false
             onToggled: {
                 if (typeof controller !== "undefined" && controller
                     && controller.setDisposePreviewsOnExit !== undefined)
-                    controller.setDisposePreviewsOnExit(checked)
+                    root.stage("general.disposePreviewsOnExit", checked,
+                        function(value) { controller.setDisposePreviewsOnExit(value) })
             }
         }
     }

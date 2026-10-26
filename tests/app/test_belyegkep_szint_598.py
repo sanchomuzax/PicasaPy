@@ -129,10 +129,12 @@ class TestAFelulet:
 
     def test_a_cache_kapcsolo_kilepeskor_uritesre_kotott(self):
         kezd = _FUL.index('objectName: "optionsClearCacheFilesCheck"')
-        blokk = _FUL[kezd : kezd + 800]
+        blokk = _FUL[kezd : kezd + 1200]
         assert 'text: qsTr("Clear cache files")' in blokk
         assert "controller.disposePreviewsOnExit" in blokk
-        assert "controller.setDisposePreviewsOnExit(checked)" in blokk
+        assert 'root.setting("general.disposePreviewsOnExit",' in blokk
+        assert 'root.stage("general.disposePreviewsOnExit", checked,' in blokk
+        assert "function(value) { controller.setDisposePreviewsOnExit(value) }" in blokk
 
     def test_a_komment_sem_hazudik_a_hianyzo_funkciorol(self):
         """A fájl feje korábban a gyorsítótár-törlés HIÁNYÁT sorolta fel."""
