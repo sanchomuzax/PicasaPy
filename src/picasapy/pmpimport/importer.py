@@ -3,9 +3,10 @@
 Az import CSAK OLVAS: a thumbindexből + az `imagedata` táblából fotónkénti
 rekordokat állít elő, a Windows-útvonalakat a PathRemapperrel helyi
 útvonalra írva. A nem leképezhető (remap nélküli) és a törölt/arc-
-bejegyzések kimaradnak. Az index-be írást (mtime-ütközésnél az újabb
-nyer elve, sémabővítés) az integrátor köti be — a sémaverziót csak ő
-oszthatja ki (CONTRIBUTING.md).
+bejegyzések kimaradnak. Ha több db3-sor ugyanarra a helyi útvonalra mutat,
+a legkésőbb módosított rekord nyer. A saját indexbe írást és az esetleges
+sémabővítést az integrátor köti be — a sémaverziót csak ő oszthatja ki
+(CONTRIBUTING.md).
 """
 
 from __future__ import annotations
@@ -121,6 +122,9 @@ def beolvas_db3(db3_dir: Path, remapper: PathRemapper) -> Db3Beolvasas:
 
     A thumbindex fájl-bejegyzésein megy végig (könyvtár-, arc- és törölt
     bejegyzések kihagyva); a remap nélküli útvonalak szintén kimaradnak.
+    Ha több forrásrekord ugyanarra a helyi útvonalra remappelődik, a
+    legnagyobb modified_filetime-ú rekord marad meg; holtversenyben az
+    első thumbindex-sor nyer.
     A row a thumbindex-index — az imagedata-oszlopok 1:1 ehhez
     igazodnak (éles validálás: a leghosszabb oszlop hossza == thumbindex
     bejegyzésszám).
@@ -185,8 +189,15 @@ def beolvas_db3(db3_dir: Path, remapper: PathRemapper) -> Db3Beolvasas:
                 manual_album_places=manual_album_places.get(entry.index, ()),
             )
         )
+    nyertesek: dict[str, PhotoRecord] = {}
+    for record in records:
+        elozo = nyertesek.get(record.local_path)
+        if elozo is None or record.modified_filetime > elozo.modified_filetime:
+            nyertesek[record.local_path] = record
+
     return Db3Beolvasas(
-        rekordok=tuple(records), wordhash_kihagyott=wordhash_kihagyott
+        rekordok=tuple(sorted(nyertesek.values(), key=lambda record: record.row)),
+        wordhash_kihagyott=wordhash_kihagyott,
     )
 
 
