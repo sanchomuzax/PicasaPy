@@ -64,7 +64,7 @@ class PassportPhotoController(BackgroundWorkerMixin, QObject):
 
     #: `CThumbUI::Passport0` — „Nem találhatók arcok"
     passportNoFace = Signal()
-    #: `CThumbUI::Passport1` — „Úgy tűnik, több arc van a képen."
+    #: több arc; a felület az eredeti szerint ezt is `Passport0`-val mondja (#5930)
     passportMultipleFaces = Signal()
     #: a kép nem olvasható (`FAILED_READ`), vagy a kivágás nem írható ki
     #: (`FAILED_WRITE`) — ez NEM arc-hiba, a felület külön mondja ki
