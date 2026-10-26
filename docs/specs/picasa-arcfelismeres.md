@@ -6641,6 +6641,31 @@ Az alábbi címek a helyi, SHA-256 `da370693b59d89e7d48646d9617f5f595e371f8e1828
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (54.3/a: a `0x10103870` küszöb-mezőszemantikája; a `vsi_WeakClassifier` betöltőjével való kapcsolat; a helyi `red.cfg` negatív eredménye; az effektív érték és streamforrás nyitott státusza).
 
+### 54.3/b A `Contacts2`-értéket előállító helper hívási útjai (2026-10-26, helyi diszasszembly)
+
+**Hatókör és forrásazonosítás.** A vizsgált `Picasa3.exe` PE-verziója `3.9.141.259`, SHA-256-a `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`. Az index `functions` táblája adja a diszasszembly méreteit; a teljes függvénytörzsekre célzott `annot_disasm.py` olvasat készült, teljes `.text`-pásztázás nem.
+
+| Állítás | Bizonyíték | Bizonyítottság |
+|---|---|---|
+| A `0x00586e20` helper megkeresi a `Contacts2` szakaszt (`0x00586e52`), a kontakt három mezőjéből `%s;%s;%s` értéket állít elő (`0x00587060`; sztringcím `0x00c91104`), „Persisting contact to INI…” naplót ad (`0x00586fa7`; sztringcím `0x00c910a8`), majd a negyedik argumentumból kapott objektum vtable-jének `+0x8` slotját hívja (`0x005870d2`-`0x005870de`). | bináris (`functions.size=752`; `annot_disasm.py` teljes törzs; pozitív `string_xrefs`) | megerősített a szakasz-/érték-előállításra és a virtuális átadásra; a lemezre írásra nem |
+| A bináris index három közvetlen hívó-xrefet tart nyilván: `0x00484820`, `0x0068ac20`, `0x007d55f0`. A célzott diszasszemblyben a hívások rendre `0x00485118`, `0x0068ac5a`, `0x007d5ca6` címen állnak. | bináris (`xrefs`; `functions.size`: 2740, 86, 2681; célzott Capstone-olvasat) | megerősített a három indexelt közvetlen hívásra |
+| A `0x007d55f0` arc-metaadatot dolgoz fel: az indexelt sztringjei közt szerepel a „Processing face…”, „Writing face string to INI…” és „PersistContactToINI failed…”; a `0x007d5ca6` hívás után `0x007d5cb2` ellenőrzi a visszatérési értéket, hiba esetén `0x007d5cbf` naplóz. A `0x00484820` ugyancsak `.picasa.ini`/`faces`/`FRWriteFaceDataINI` sztringekkel azonosított arc-INI-író útban hívja a helpert. | bináris (`string_xrefs`; Capstone `0x007d5ca6`-`0x007d5cc7`, `0x00485118`) | megerősített a két hívási környezetre |
+| A `0x00586e20` törzsében nem azonosítható közvetlen Win32 fájlíró API-hívás; az adatátadás egy feloldatlan virtuális célra történik. A virtuális cél fájlíró volta és az, hogy az adatot azonnal, később vagy csak a profil mentésekor lemezre írja-e, nem következik a helperből. | bináris (`0x00586e20`, a teljes 752 bájtos törzs; virtuális hívás `0x005870de`) | megerősített az itt vizsgált törzs utasításszintű megfigyelésére; a virtuális cél és az időzítés nyitott |
+
+**Eredeti | Nálunk | Teendő.**
+
+| Eredeti | Nálunk (`0.9.248`, a 54.3-ban hivatkozott forrásolvasat) | Teendő |
+|---|---|---|
+| A kontaktadat `Contacts2`-értékké alakítása több hívási útból elérhető; az arc-feldolgozó és a `faces=` INI-író út is meghívja a segédet. A segéd virtuális callbacket hív, ezért a pontos tartós fájlírási pillanat **NINCS MEG**. | A People Manager központi `contacts.xml` mentése és a mappánkénti `.picasa.ini` frissítése külön PicasaPy-kódút; a forrásrészletek a 54.3 első táblázatában állnak. Ezt a kört nem mértem futásidőben. | J8 kontrollált eredeti Picasa-profil-diff: `contacts.xml`, `backup.xml`, érintett `.picasa.ini` és db3 fájl-hash/időbélyeg/tartalom műveletenként, bezáráskor és újraindítás után. A callback célját csak a vtable-tulajdonos és a `+0x8` slot célfüggvénye alapján nevezd meg; a naplóüzenet önmagában nem bizonyít lemezírást. |
+
+**A két független út.** **A út:** az index `xrefs`- és `string_xrefs`-adata a helper közvetlen hívóit és a `Contacts2`/formátum/arc-feldolgozási szövegeket adja. **B út:** a négy függvény méretére korlátozott Capstone-olvasat megerősíti a helper szakasz- és érték-előállítását, a három közvetlen hívás pontos helyét, valamint a `0x007d55f0` státuszellenőrzését. A két út egyezik abban, hogy a helper kontaktadatot ad át több INI-hez kapcsolódó útból; egyik sem azonosítja a virtuális callback lemezre írásának pillanatát.
+
+**Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy a „Persisting contact to INI” napló önmagában közvetlen fájlírást bizonyít. A helper teljes, indexméret szerinti törzsében az adatátadás `call edx` (`0x005870de`); a közvetlen Win32 fájlíró API-hívás nem azonosítható. Ezért a logszöveg nem bizonyít lemezre írást. A cáfolatot a három hívó külön diszasszemblálásával és az indexelt hívó-/sztring-xrefekkel ellenőriztem. A callback vagy egy meghívott helper közvetett, akár azonnali írása ettől még lehetséges, tehát a műveletenkénti időzítés nyitott marad.
+
+**A #5185 „Kész, ha” pontjaihoz.** A 7. ponton belül ez a kör a `Contacts2`-érték előállításának és hívóinak statikus útját pontosította; a műveleti fájlírás és db3-változás ideje továbbra sincs meg, ezért a J8 feltétel nem teljesült. A 8. ponton nincs új lelet: a detektor effektív küszöbe továbbra is **NINCS MEG**, a 54.3/a megszerzési útja érvényes.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (54.3/b: a `0x00586e20` helper hívói, a virtuális átadás és a tartós írás nyitott határa).
+
 ## 55. #5184, helyi Codex-kutatói kör: a helyi archívum nem dönt N1/N3/N7-ről (2026-10-26)
 
 **Hatókör:** a mérőadat-archívum célzott ellenőrzése és az eddigi bináris-/Colab-leletek összevetése. Az eredeti Picasát ebben a körben nem futtattam; a helyi Wine futtató hiányzik. Az archívumból nem bontottam ki fotókat.
