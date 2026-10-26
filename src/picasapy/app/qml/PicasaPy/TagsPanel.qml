@@ -168,7 +168,7 @@ Rectangle {
                         //: címke ugyanúgy nézett ki, mint egy mappa.
                         LabelIcon {
                             objectName: "tagRowIcon"
-                            anchors.verticalCenter: parent.verticalCenter
+                            Layout.alignment: Qt.AlignVCenter
                         }
                         Text {
                             Layout.fillWidth: true
