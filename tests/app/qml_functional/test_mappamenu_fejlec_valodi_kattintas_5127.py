@@ -22,6 +22,7 @@ from PySide6.QtTest import QTest
 from conftest import _build_qml_app
 from picasapy.ini import parse_document, save_document
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import wait_for_photo_op
 from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 _ABLAK_ELTOLASOK = (-5, 0, 5)
@@ -289,6 +290,12 @@ class TestAlbumfejlecGombok:
         window.setProperty("selectedIndexes", [0])
         window.setProperty("selectedIndex", 0)
         qt_app.processEvents()
+
+        wait_for_photo_op(
+            controller,
+            lambda: controller.applyEffectMany([0], "enhance"),
+            qt_app=qt_app,
+        )
 
         gomb = _vizualis(window, "headerSaveEditsButton")
         assert gomb.property("enabled") is True, "kijelölésnél a mentés gomb tiltott"

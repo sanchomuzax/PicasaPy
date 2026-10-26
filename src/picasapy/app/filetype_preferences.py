@@ -22,9 +22,8 @@ def _bool_value(value, default: bool) -> bool:
 
 def file_type_enabled(settings, group: str) -> bool:
     """A csoport QSettings-értéke; hiányzó/hibás értéknél a scanner alapja."""
-    if group not in DEFAULT_ENABLED_FILETYPES:
-        if group not in FILETYPE_GROUPS:
-            return False
+    if group not in FILETYPE_GROUPS:
+        return False
     key = f"{SETTING_PREFIX}/{group}"
     default = group in DEFAULT_ENABLED_FILETYPES
     value = settings.value(key, default)
@@ -33,7 +32,7 @@ def file_type_enabled(settings, group: str) -> bool:
 
 def set_file_type_enabled(settings, group: str, enabled: bool) -> None:
     """Egy ismert formátumcsoport tárolása QSettings-be."""
-    if group not in DEFAULT_ENABLED_FILETYPES:
+    if group not in FILETYPE_GROUPS:
         return
     settings.setValue(f"{SETTING_PREFIX}/{group}", bool(enabled))
 

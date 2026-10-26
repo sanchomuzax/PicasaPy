@@ -24,10 +24,10 @@ független bizonyítékkal:
 
 A WebP-képek emiatt **némán eltűntek** a beolvasásból.
 
-⚠️ **A formátum-kapcsolók hatóköre NINCS mérve.** A Picasa formátumonként
-kapcsolható (`SupportGIF` és `SupportPNG` alapértéke **0**, a többié 1), a
-mi szűrőnk viszont feltétel nélküli — a tulajdonos katalógusában mégis 125
-PNG van. Hogy a kapcsoló a beolvasást vezérli-e, külön kutatás (#2344).
+⚠️ **Az eredeti Picasa kapcsolóinak szkennerre gyakorolt hatóköre továbbra
+sem mért.** A PicasaPy viszont a `library/fileTypes/<csoport>` QSettings-
+értékeket a szkennerre alkalmazza (#4447); ez a saját alkalmazásunk
+viselkedését írja le, nem az eredeti programét.
 """
 
 from __future__ import annotations
@@ -98,9 +98,11 @@ FILETYPE_GROUP_EXTENSIONS = {
     "quicktime": QUICKTIME_EXTENSIONS,
 }
 FILETYPE_GROUPS = tuple(FILETYPE_GROUP_EXTENSIONS)
-# Az alapállapot megtartja a PicasaPy eddigi, minden felismert formátumot
-# indexelő viselkedését; csak a felhasználói kikapcsolás szűri a könyvtárat.
-DEFAULT_ENABLED_FILETYPES = frozenset(FILETYPE_GROUPS)
+# A Picasa binárisának regisztrált alapértékei szerint GIF, PNG és TGA
+# kikapcsolt (#5898). A QuickTime-sor az eredetiben a telepítéstől függ;
+# nálunk a .MOV lejátszás nem igényel külön telepítést, ezért bekapcsolt.
+# A meglévő QSettings-érték felülírja ezt az induló állapotot.
+DEFAULT_ENABLED_FILETYPES = frozenset(FILETYPE_GROUPS) - {"gif", "png", "tga"}
 JPEG_EXTENSIONS = frozenset({".jpg", ".jpeg", ".jpe"})
 _EXTENSION_FILETYPE_GROUP = {
     extension: group

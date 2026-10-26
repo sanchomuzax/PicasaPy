@@ -139,9 +139,7 @@ def test_mappa_menu_engedeje_megegyezik_a_helyi_menu_feltetelevel(
     assert _ertek(helyi_hide_mappa.property("enabled")) == _ertek(
         helyi_hide.property("enabled")
     )
-    assert _ertek(helyi_show_mappa.property("enabled")) == _ertek(
-        helyi_hide.property("enabled")
-    )
+    assert _ertek(helyi_show_mappa.property("enabled")) is False
 
     controller.selectFolder("")
     helyi_menu.setProperty("folderPath", "")

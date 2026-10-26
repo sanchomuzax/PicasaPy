@@ -61,6 +61,7 @@ from PySide6.QtCore import QSettings
 
 from picasapy.app.application import _ujraindexelt_exportcelok
 from picasapy.app.exported_folders import EXPORTED_FOLDERS_SETTINGS_KEY
+from picasapy.app.filetype_preferences import enabled_filetypes
 from picasapy.index import open_index, sync_folder
 from picasapy.scanner.name_filters import default_name_filters
 from support.jpeg_factory import make_jpeg
@@ -179,17 +180,20 @@ def _konyvtar(alap: Path, cel_szam: int) -> tuple[Path, QSettings, list[Path]]:
         EXPORTED_FOLDERS_SETTINGS_KEY, [str(cel) for cel in celok]
     )
 
+    # #5898: ugyanaz a fájltípus-szűrő, amivel az indulási kör is fut, különben
+    # a scan-pecsét eltér, és a kör mindent újraolvas
+    tipusok = enabled_filetypes(settings)
     db = alap / "index.db"
     with open_index(db) as conn:
         for cel in celok:
-            sync_folder(conn, cel, cel, incremental=True)
+            sync_folder(conn, cel, cel, incremental=True, enabled_filetypes=tipusok)
     for cel in celok:
         _oregits(cel)
     # az öregítés után újra kell rögzíteni a scan-állapotot, különben az
     # eltolt mtime „változásnak" látszana
     with open_index(db) as conn:
         for cel in celok:
-            sync_folder(conn, cel, cel, incremental=True)
+            sync_folder(conn, cel, cel, incremental=True, enabled_filetypes=tipusok)
     return db, settings, celok
 
 

@@ -7,6 +7,35 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.239] - 2026-10-26
+
+- Az Options ▸ File Types alapfeliratai és tiszta profilú fájltípus-beállításai az eredeti Picasát követik. (#5898).
+
+## [0.9.238] - 2026-10-25
+
+- Az Általános beállításokban a „Clear cache files” kapcsoló kilépéskor üríti az előnézet-cache-t, ha be van kapcsolva. (#5897).
+
+## [0.9.237] - 2026-10-25
+
+- A menük pipálható tételein a jelöletlen hely üres, a kijelöltön keret nélküli pipa látszik. (#5885).
+
+## [0.9.236] - 2026-10-25
+
+- A Szerkesztés menü Copy Text/Paste Text tételei a Text eszköz szövegrétegét másolják és illesztik; a képfelirat a néző mezőjében, a szokásos szövegmező-műveletekkel kezelhető (#5877).
+
+## [0.9.235] - 2026-10-25
+
+- A Fájl menü, a mappa fejlécének Save gombja és a Ctrl+S csak mentetlen képszerkesztésnél használható (#5883).
+
+## [0.9.234] - 2026-10-25
+
+- A letiltott gombok és mezők felirata témához igazodó szürke árnyalatot kap (#5874).
+- A képfelirat mentése Windowson átmeneti ini-zárolásnál is beírja a backuphash-t (#5900).
+
+## [0.9.233] - 2026-10-25
+
+- A Kép és a Mappa menü Unhide tétele csak rejtett kép vagy mappa esetén aktív (#5882).
+
 ## [0.9.232] - 2026-10-25
 
 - Könyvtárnézetben a Show Edit Controls szürke és pipa nélküli, a szerkesztőnézetben pedig a bal fiók állapotát követi (#5878).
