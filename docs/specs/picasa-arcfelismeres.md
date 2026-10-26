@@ -6593,6 +6593,33 @@ A `0x10103870` Ghidra-törzse továbbra is a detektor rekordjának `+0x1c` mező
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (54.3: a 7-8. pont aktuális forrás-összevetése, bizonyítottsági fok, cáfoló próba és nyitott megszerzési út).
 
+#### A Red.dll detektor `+0x1c` mezőjelöltjének íróútja (2026-10-26, statikus vizsgálat)
+
+Az alábbi címek a helyi, SHA-256 `da370693b59d89e7d48646d9617f5f595e371f8e1828cb1aa9f12530a17c8233` értékű Red.dll-re vonatkoznak. A DLL forrás-riportja Picasa 3.7-et jelöl; a tiszta Picasa 3.9 futásba betöltött DLL azonossága nincs igazolva.
+
+| Állítás | Forrás | Bizonyítottság |
+|---|---|---|
+| A `0x101033e0` factory a `0x0041a004` ClassId-ágban a `0x10107c00` konstruktort hívja; ez a `vsi_WeakClassifier` konstruktora. | bináris (`0x101033e0`, `0x10103408`-`0x10103417`, `0x101034a3`-`0x101034b1`, `0x10107c00`; Red-index RTTI és `classids.json`) | megerősített: a factory diszasszemblye, a vtable RTTI-neve és a ClassId-térkép egyezik |
+| A konstruktor inicializálója a `0x10107be0` `fldz` utasítását a `0x10107be4` címen az objektum `+0x1c` mezőjébe írja; a `vsi_WeakClassifier` saját induló értéke ezért pontosan `0.0`. | bináris (`0x10107be0`-`0x10107be4`) | feltételes: egyetlen mezőíró utasításút közvetlen olvasata |
+| A `0x10107f20` betöltő a `this+0x1c` címet a `0x1005bb50` helpernek adja; a helper négy bájtot olvas, floatként konvertál és a célra írja. A szerializáló `0x10107d70` ugyanezt a mezőt menti, debug-felirata `threshold =` (`0x101d5800`); a `0x10107ca0` másoló szintén továbbviszi a mezőt. | bináris (`0x10107f20`, `0x10107f87`-`0x10107f8c`, `0x1005bb50`, `0x1005bb68`, `0x1005bba0`, `0x10107d70`, `0x101d5800`, `0x10107ca0`, `0x10107cc8`-`0x10107ccb`; RTTI/vtable) | megerősített a `vsi_WeakClassifier` saját mezőútjára: diszasszembly és RTTI/vtable út egyezik |
+| A `0x10103870` a `vsi_FaceViewDetector` `+0x58` gyűjteményéből vett elem `+0x1c` floatját olvassa, de a fogyasztó törzse nem azonosítja az elem konkrét osztályát. A fenti `vsi_WeakClassifier` mezőjelölttel való objektumazonosság ezért nincs bizonyítva. | bináris (`0x10103870`, Ghidra `2026-10-23-sor-279-281-red.txt`; RTTI `0x101d5150`, `0x101d5898`) | feltételes a gyűjtemény/tagviszonyra; nyitott az elem osztályazonosságára |
+| Az effektív detektáláskor használt float, a betöltő stream fájl-/beállítás-forrása és az, hogy az érték `registry`, ini vagy más modelladat felől érkezik-e. A helyi `red.cfg` nyers adataiban a `0x0041a004` és `0x0041a005` ClassId rekordfejléce nem található. | NINCS MEG; `red.cfg` ellenőrzése: célzott nyers ClassId-keresés | nyitott; a `0.0` csak a konstruktor alapértéke, a stream felülírhatja |
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A helyi DLL `vsi_WeakClassifier` mezőjének pontos alapértéke `0.0`, de betöltéskor streamből olvasható float kerül a `+0x1c` mezőbe. Nem bizonyított, hogy ez a `0x10103870` által ténylegesen használt elem, így az effektív eredeti küszöb **NINCS MEG**. | A PicasaPy saját detektorértékei más kódútból származnak (54.3 táblázata); ezen a statikus körön nem hasonlítottam őket az eredeti streamértékhez. | Célzott Ghidra-dekompilálással kösd össze a FaceViewDetector `+0x4c` betöltött gyűjteményét a `0x10103870` elemével, majd kövesd a nested-object loader streamjét a konkrét modell-/konfigurációs forrásig. A tiszta Picasa 3.9-es futásban a betöltött Red.dll hashét és a streamből beolvasott floatot külön kell igazolni. |
+
+**A két független út és bizonyítottság.** **A út:** a célzott Capstone-olvasat követi a ClassId factory → konstruktor → `+0x1c` default-zero írás, majd stream-loader → négybájtos lebegőpontos olvasás és a párhuzamos szerializáló/másoló útvonalat. **B út:** a Red-index RTTI/vtable és a `classids.json` külön köti a `0x10107c00`, `0x10107f20`, `0x10107d70`, `0x10107ca0` címeket a `vsi_WeakClassifier` osztályhoz, és a `0x0041a004` ClassId-hoz. Az utak egyeznek a jelölt osztály saját `+0x1c` mezőjéről; nem bizonyítják, hogy ez a `0x10103870` által használt rekord. A végső kapcsolat ezért **feltételes**, az effektív eredeti érték és forrás **nyitott**.
+
+**Cáfoló kísérlet.** A „detektorküszöb állandóan `0.0`” hipotézist a `0x10107f20` stream-betöltő cáfolja: a `+0x1c` címre a `0x1005bb50` négy bájtos lebegőpontos értéket ír. Ezt az ellenirányú `0x10107d70` szerializáló, a `threshold =` sztring-xref és a `0x10107ca0` másoló ellenőrzése támasztja alá. A `red.cfg`-ben keresett ClassId-fejlécek hiánya nem bizonyítja, hogy a modell nincs máshol; ezért a fájlforrást nem következtettem ki.
+
+**Nyitott Ghidra-körök** (a meglévő fájlokban nincs külön dekompilált függvénytörzs ezekhez a címekhez; a `0x10063f30` törzs csak meghívja a `0x100685a0`-at):
+
+- `Ghidra-kör kell: 0x10104290 - a FaceViewDetector +0x4c mezőjének betöltésekor milyen konkrét elemtípusú rekordok kerülnek abba a gyűjteménybe, amelyből a 0x10103870 a +0x1c értéket olvassa? [blokkoló]`
+- `Ghidra-kör kell: 0x100685a0 - honnan kap streamet az ebs_ObjectRef objektum-betöltője, hogyan választja ki a 0x0041a004 osztályt, és milyen fájl/config adatút szolgáltatja annak +0x1c floatját? [blokkoló]`
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (54.3: a `vsi_WeakClassifier` `+0x1c` mezőjének inicializálója, a streamből betöltő függvénye és nyitott kapcsolata a detektor rekordjával).
+
 ## 55. #5184, helyi Codex-kutatói kör: a helyi archívum nem dönt N1/N3/N7-ről (2026-10-26)
 
 **Hatókör:** a mérőadat-archívum célzott ellenőrzése és az eddigi bináris-/Colab-leletek összevetése. Az eredeti Picasát ebben a körben nem futtattam; a helyi Wine futtató hiányzik. Az archívumból nem bontottam ki fotókat.
