@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.244] - 2026-10-26
+
+- A Clear cache files jelölő csak az Opciók ablak OK gombjára mentődik, a Mégse elveti a módosítást (#5925).
+
 ## [0.9.243] - 2026-10-26
 
 - A Batch Edit > Sharpen az eredeti szerint `unsharp2=1,0.600000` tagot ír a szűrőláncba (#5913).
