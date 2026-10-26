@@ -792,15 +792,15 @@ class TestFileTypesTab:
                 "optionsFileTypeQuickTimeCheck",
             )
             vart_feliratok = (
-                ".bmp",
-                ".gif",
-                ".png",
-                ".tga",
-                ".tif, .tiff",
-                ".webp",
+                ".BMP",
+                ".GIF",
+                ".PNG",
+                ".TGA",
+                ".TIF, .TIFF",
+                ".WEBP",
                 ".PSD (Photoshop)",
                 "RAW formátumok",
-                "Mozgófilmek (.mov, .mpg, .m4v, .3gp, .avi, ...)",
+                "Mozgófilmek (.AVI, .MPG, .ASF, .WMV)",
                 "Quicktime-filmek (.MOV)",
             )
 
@@ -947,8 +947,8 @@ class TestFileTypesTab:
         raw = _child(window, "optionsFileTypeRawCheck")
         assert raw.property("enabled") is True
         assert raw.property("checked") is True
-        assert controller.fileTypeEnabled("gif") is True
-        assert controller.fileTypeEnabled("png") is True
+        assert controller.fileTypeEnabled("gif") is False
+        assert controller.fileTypeEnabled("png") is False
         for object_name in (
             "optionsFileTypeBmpCheck",
             "optionsFileTypeGifCheck",
