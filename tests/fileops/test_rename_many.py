@@ -125,17 +125,21 @@ class TestPreviewName:
     def test_sequence_zero_has_no_suffix_further_ones_do(self):
         item = RenameItem(path=None)
         assert preview_name("nev", item, sequence=0, ext=".jpg") == "nev.jpg"
-        assert preview_name("nev", item, sequence=1, ext=".jpg") == "nev-1.jpg"
-        assert preview_name("nev", item, sequence=2, ext=".jpg") == "nev-2.jpg"
+        assert preview_name("nev", item, sequence=1, ext=".jpg") == "nev-001.jpg"
+        assert preview_name("nev", item, sequence=2, ext=".jpg") == "nev-002.jpg"
 
 
 class TestTrailingDotOfWholeName:
-    def test_no_extension_strips_trailing_dot_and_space(self):
+    def test_no_extension_does_not_trim_the_name(self):
+        item = RenameItem(path=None)
+        assert preview_name("nev. ", item, sequence=0, ext="") == "nev. "
+
+    def test_no_extension_keeps_a_trailing_dot_in_a_suffix(self):
         item = RenameItem(path=None, date="2004-08-01", width=None, height=None)
         name = preview_name(
             "nev", item, include_date=True, sequence=0, ext="", locale=HU_HU
         )
-        assert name == "nev 2004. 08. 01"
+        assert name == "nev 2004. 08. 01."
 
     def test_with_extension_dot_is_kept(self):
         item = RenameItem(path=None, date="2004-08-01", width=None, height=None)
@@ -156,8 +160,8 @@ class TestRenamePhotosMany:
         results = rename_photos_many(items, "nyaralas")
         assert results == [
             tmp_path / "nyaralas.jpg",
-            tmp_path / "nyaralas-1.jpg",
-            tmp_path / "nyaralas-2.jpg",
+            tmp_path / "nyaralas-001.jpg",
+            tmp_path / "nyaralas-002.jpg",
         ]
         for path in results:
             assert path.exists()
@@ -179,7 +183,7 @@ class TestRenamePhotosMany:
         )
         assert results == [
             tmp_path / "nyar 5-1-2025 800x600.jpg",
-            tmp_path / "nyar 6-2-2025 1024x768-1.jpg",
+            tmp_path / "nyar 6-2-2025 1024x768.jpg",
         ]
 
     def test_ini_sections_follow_each_renamed_file(self, tmp_path):
@@ -197,7 +201,7 @@ class TestRenamePhotosMany:
         assert document.section("a.jpg") is None
         assert document.section("b.jpg") is None
         assert document.section("nyaralas.jpg").get("star") == "yes"
-        assert document.section("nyaralas-1.jpg").get("caption") == "nyar"
+        assert document.section("nyaralas-001.jpg").get("caption") == "nyar"
 
     def test_runtime_failure_reports_partial_progress(self, tmp_path, monkeypatch):
         a, b, c = (tmp_path / f"{name}.jpg" for name in "abc")
@@ -232,28 +236,30 @@ class TestRenamePhotosMany:
 
         error = caught.value
         assert type(error).__name__ == "PartialRenameError"
-        assert error.completed_paths == (tmp_path / "trip.jpg", tmp_path / "trip-1.jpg")
+        assert error.completed_paths == (
+            tmp_path / "trip.jpg", tmp_path / "trip-001.jpg"
+        )
         assert error.renamed_paths == error.completed_paths
         assert error.failed_source == c
-        assert error.failed_target == tmp_path / "trip-2.jpg"
+        assert error.failed_target == tmp_path / "trip-002.jpg"
         assert isinstance(error.cause, PermissionError)
         assert all(path.exists() for path in error.completed_paths)
         assert a.exists() is False
         assert b.exists() is False
         assert c.exists()
         assert (originals / "trip.jpg").read_bytes() == b"a-original"
-        assert (originals / "trip-1.jpg").read_bytes() == b"b-original"
+        assert (originals / "trip-001.jpg").read_bytes() == b"b-original"
         assert (originals / "trip.1.jpg").read_bytes() == b"a-snapshot"
-        assert (originals / "trip-1.1.jpg").read_bytes() == b"b-snapshot"
+        assert (originals / "trip-001.1.jpg").read_bytes() == b"b-snapshot"
         assert (originals / "c.jpg").read_bytes() == b"c-original"
         assert (originals / "c.1.jpg").read_bytes() == b"c-snapshot"
 
         document = load_document(ini)
         assert document.section("trip.jpg").get("caption") == "A"
-        assert document.section("trip-1.jpg").get("caption") == "B"
+        assert document.section("trip-001.jpg").get("caption") == "B"
         assert document.section("c.jpg").get("caption") == "C"
         assert "trip.jpg" in str(error)
-        assert "trip-1.jpg" in str(error)
+        assert "trip-001.jpg" in str(error)
         assert "c.jpg" in str(error)
 
     def test_no_op_when_new_name_equals_current_name(self, tmp_path):
@@ -274,38 +280,83 @@ class TestRenamePhotosMany:
         with pytest.raises(ValueError):
             rename_photos_many([RenameItem(path=photo)], "al/nev")
 
-    def test_duplicate_target_names_raise_without_renaming(self, tmp_path):
-        # két azonos kiterjesztésű fájl, de a dátum/felbontás-utótag
-        # kikapcsolva és mindkettőnek UGYANAZ lenne az 1. tagja → csak akkor
-        # ütközik igazán, ha a hívó szándékosan ugyanazt a sorszámot adná;
-        # itt közvetlenül a belső ütközés-ellenőrzést provokáljuk ugyanolyan
-        # kiterjesztésű, de eltérő mappájú útvonalak összekeverésével — a
-        # normál (egy mappás) híváson a sorszámozás miatt ez nem fordulhat
-        # elő, ezért itt a meglévő fájllal ütköztetünk.
+    def test_occupied_single_file_target_uses_001(self, tmp_path):
         a = tmp_path / "a.jpg"
         existing = tmp_path / "nyaralas.jpg"
         a.write_bytes(b"kep")
         existing.write_bytes(b"mar-van")
-        with pytest.raises(FileExistsError):
-            rename_photos_many([RenameItem(path=a)], "nyaralas")
-        assert a.exists()  # semmi sem történt
+        results = rename_photos_many([RenameItem(path=a)], "nyaralas")
+        assert results == [tmp_path / "nyaralas-001.jpg"]
+        assert results[0].read_bytes() == b"kep"
+        assert existing.read_bytes() == b"mar-van"
 
-    def test_target_collides_with_another_batch_members_current_name(
-        self, tmp_path
-    ):
-        # az 1. fájl célneve ("nyaralas.jpg") megegyezik egy MÁSIK, a
-        # kötegben szereplő fájl JELENLEGI nevével (ami maga máshová
-        # nevezendő át, "nyaralas-1.jpg"-re) — a sorrend-függő, félig
-        # végrehajtott átnevezés elkerülése végett ezt is ütközésként
-        # kezeljük, semmi sem nevezhető át
+    def test_occupied_existing_numeric_suffix_continues(self, tmp_path):
+        source = tmp_path / "source.jpg"
+        occupied = tmp_path / "trip-7.jpg"
+        source.write_bytes(b"kep")
+        occupied.write_bytes(b"mar-van")
+
+        result = rename_photos_many([RenameItem(path=source)], "trip-7")
+
+        assert result == [tmp_path / "trip-008.jpg"]
+        assert result[0].read_bytes() == b"kep"
+        assert occupied.read_bytes() == b"mar-van"
+
+    def test_suffix_is_padded_through_999_and_four_digits_at_1000(self, tmp_path):
+        source = tmp_path / "source.jpg"
+        source.write_bytes(b"kep")
+        for number in range(1000):
+            target_name = "trip.jpg" if number == 0 else f"trip-{number:03d}.jpg"
+            (tmp_path / target_name).write_bytes(b"foglalt")
+
+        result = rename_photos_many([RenameItem(path=source)], "trip")
+
+        assert result == [tmp_path / "trip-1000.jpg"]
+        assert result[0].read_bytes() == b"kep"
+
+    def test_search_ends_after_the_4096th_candidate(self, tmp_path):
+        source = tmp_path / "source.jpg"
+        source.write_bytes(b"kep")
+        for number in range(4096):
+            target_name = "trip.jpg" if number == 0 else f"trip-{number:03d}.jpg"
+            (tmp_path / target_name).write_bytes(b"foglalt")
+
+        with pytest.raises(FileExistsError, match="4096") as caught:
+            rename_photos_many([RenameItem(path=source)], "trip")
+
+        assert "trip-4095.jpg" in str(caught.value)
+        assert source.read_bytes() == b"kep"
+
+    def test_extension_case_is_preserved_on_collision(self, tmp_path):
+        source = tmp_path / "source.JpG"
+        occupied = tmp_path / "trip.JpG"
+        source.write_bytes(b"kep")
+        occupied.write_bytes(b"mar-van")
+
+        result = rename_photos_many([RenameItem(path=source)], "trip")
+
+        assert result == [tmp_path / "trip-001.JpG"]
+
+    def test_extensionless_collision_adds_no_dot(self, tmp_path):
+        source = tmp_path / "source"
+        occupied = tmp_path / "trip"
+        source.write_bytes(b"kep")
+        occupied.write_bytes(b"mar-van")
+
+        result = rename_photos_many([RenameItem(path=source)], "trip")
+
+        assert result == [tmp_path / "trip-001"]
+        assert result[0].read_bytes() == b"kep"
+
+    def test_batch_occupant_forces_suffix_then_own_name_is_noop(self, tmp_path):
         a = tmp_path / "a.jpg"
         other = tmp_path / "nyaralas.jpg"
         a.write_bytes(b"kep")
         other.write_bytes(b"mar-van")
         items = [RenameItem(path=a), RenameItem(path=other)]
-        with pytest.raises(FileExistsError):
-            rename_photos_many(items, "nyaralas")
-        assert a.exists()
+        results = rename_photos_many(items, "nyaralas")
+        assert results == [tmp_path / "nyaralas-001.jpg", other]
+        assert results[0].read_bytes() == b"kep"
         assert other.exists()
 
     def test_extension_preserved_per_file(self, tmp_path):
@@ -317,5 +368,5 @@ class TestRenamePhotosMany:
         results = rename_photos_many(items, "nyaralas")
         assert results == [
             tmp_path / "nyaralas.jpg",
-            tmp_path / "nyaralas-1.mov",
+            tmp_path / "nyaralas.mov",
         ]

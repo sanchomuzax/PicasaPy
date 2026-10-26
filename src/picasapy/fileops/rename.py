@@ -8,9 +8,9 @@ Az ini-írás az útvonalanként szerializált, best-effort konkurenciakezelés�
 ellenőrzés között észlelt Picasa-változás újratöltést vált ki. A sikeres
 ellenőrzés és fájlcsere közti külső írás elveszhet.
 
-#366: `rename_photos_many` a `rename.fen` tömeges módja — alapnév +
-opcionális dátum-/felbontás-utótag, Picasa-mintájú sorszámozás (`név`,
-`név-1`, `név-2`…). Fájlonként az EGYFÁJLOS `rename_photo`-t hívja, így az
+#366/#5941: `rename_photos_many` a `rename.fen` tömeges módja: alapnév +
+opcionális dátum-/felbontás-utótag; csak foglalt cél esetén keres `-001`,
+`-002`… neveket. Fájlonként az EGYFÁJLOS `rename_photo`-t hívja, így az
 ini-átvitel (és annak ütközés-/hibakezelése) ugyanazon az úton megy, mint
 az F2-átnevezésnél — nincs duplikált logika."""
 
@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -166,6 +165,7 @@ class RenameItem:
 _FORBIDDEN_RE = re.compile('[\\\\/:*?"<>|]')
 _TWO_DIGIT_YEAR_RE = re.compile(r"(?<!y)yy(?!y)")
 _MINUTES_RE = re.compile(r"(?<!m)(\W?)(m{1,2})(?!m)")
+_NUMBERED_SUFFIX_RE = re.compile(r"^(.*)-([0-9]+)$")
 # kétirányú szövegjelzők és formázó jelek: a fájlnévbe nem kerülnek
 _BIDI_MARKS = dict.fromkeys(
     map(ord, "\u200e\u200f\u061c\u202a\u202b\u202c\u202d\u202e"
@@ -247,48 +247,57 @@ def preview_name(
 ) -> str:
     """A végleges fájlnév — élő előnézethez és a tényleges átnevezéshez is
     ez számolja ki. `sequence=0` az első fájl (nincs sorszám-utótag), `1`,
-    `2`, … a Picasa-mintájú `név-1`, `név-2`, … folytatás. `ext` hiányában
+    `2`, … a Picasa-mintájú `név-001`, `név-002`, … folytatás. `ext` hiányában
     (élő előnévet-híváskor) `item.path.suffix`-ot használ."""
     stem = _build_stem(
         base_name, item, include_date=include_date, include_size=include_size,
         locale=locale,
     )
     if sequence > 0:
-        stem = f"{stem}-{sequence}"
+        stem = f"{stem}-{sequence:03d}"
     extension = ext if ext is not None else item.path.suffix
-    if not extension:
-        # kiterjesztés nélkül a Windows nem engedi a záró pontot/szóközt
-        stem = stem.rstrip(". ")
     return f"{stem}{extension}"
 
 
-def _check_batch_collisions(items: Sequence[RenameItem], names: Sequence[str]) -> None:
-    """Előellenőrzés a teljes köteg célneveire — MIELŐTT bármelyik fájl
-    átnevezése elindulna: sem egymással, sem a mappa meglévő tartalmával
-    (a saját jelenlegi nevét kivéve) nem ütközhetnek. Szándékosan a köteg
-    tagjainak JELENLEGI nevével való ütközést is elutasítja (nem csak a
-    lemezen lévő, kötegen kívüli fájlokét) — enélkül a végrehajtás
-    sorrendjétől függne, hogy egy köztes állapotban a cél még foglalt-e."""
-    if len(set(names)) != len(names):
-        raise FileExistsError(
-            "A tömeges átnevezés ütköző célneveket eredményezne — "
-            "semmi sem lett átnevezve."
-        )
-    folder_originals: dict[Path, set[str]] = defaultdict(set)
-    for item in items:
-        folder_originals[item.path.parent].add(item.path.name)
+def _available_name(path: Path, stem: str) -> str:
+    """Szabad célnevet ad vissza, a kiterjesztést változatlanul megtartva.
 
-    for item, name in zip(items, names, strict=True):
-        if name == item.path.name:
-            continue  # nincs tényleges változás — nem ütközés önmagával
-        if name in folder_originals[item.path.parent]:
-            raise FileExistsError(
-                f"A(z) {name!r} célnév ütközik egy másik, a kötegben lévő "
-                "fájl jelenlegi nevével — semmi sem lett átnevezve."
-            )
-        target = item.path.parent / name
-        if target.exists():
-            raise FileExistsError(f"A célnév már foglalt: {target}")
+    A sorszám nélküli cél az első jelölt. Csak annak foglaltságakor vizsgálja
+    a `-001`…`-4095` neveket; meglévő `-szám` végződésből a következő számmal
+    folytatja. A korábbi kötegelemek fájljai a lemezen vannak, ezért ezek is
+    foglaltnak számítanak.
+    """
+    path = Path(path)
+    extension = path.suffix
+    target_name = f"{stem}{extension}"
+    target = path.with_name(target_name)
+    if target == path or not _path_is_occupied(target):
+        return target_name
+
+    match = _NUMBERED_SUFFIX_RE.fullmatch(stem)
+    if match:
+        stem_root, previous_number = match.groups()
+        first_number = int(previous_number) + 1
+    else:
+        stem_root = stem
+        first_number = 1
+
+    last_candidate = target_name
+    for number in range(first_number, 4096):
+        last_candidate = f"{stem_root}-{number:03d}{extension}"
+        candidate = path.with_name(last_candidate)
+        if candidate != path and not _path_is_occupied(candidate):
+            return last_candidate
+
+    raise FileExistsError(
+        "A névkeresés kimerítette a 4096 próbálkozásos keretet; "
+        f"utolsó jelölt: {path.with_name(last_candidate)}"
+    )
+
+
+def _path_is_occupied(path: Path) -> bool:
+    """A törött symlink is foglalja a cél útvonalát, bár az `exists()` hamis."""
+    return path.exists() or path.is_symlink()
 
 
 def rename_photos_many(
@@ -300,11 +309,12 @@ def rename_photos_many(
     locale: QLocale | None = None,
 ) -> list[Path]:
     """Tömeges átnevezés a `rename.fen` szerint (#366): a kijelölt fájlok
-    egyetlen alapnevet kapnak (+ opcionális dátum-/felbontás-utótag),
-    Picasa-mintájú sorszámozással (`név`, `név-1`, `név-2`…). A teljes köteg
-    célneveit ELŐRE ellenőrizzük ütközésre; ezek az előellenőrzési hibák még
-    egyetlen fájlt sem mozgatnak. Ezután fájlonként, sorrendben az egyfájlos
-    `rename_photo`-t hívja (ini- és kísérőfájl-átvitel ugyanazon az úton).
+    egyetlen alapnevet kapnak (+ opcionális dátum-/felbontás-utótag).
+    Szabad cél esetén nincs sorszám; foglaltságnál `-001`-től keres, meglévő
+    `-szám` végződésnél pedig a következővel folytatja. A korábbi kötegelemek
+    fájljai a lemezen vannak, ezért foglaltnak számítanak. Ezután fájlonként,
+    sorrendben az egyfájlos `rename_photo`-t hívja (ini- és kísérőfájl-átvitel
+    ugyanazon az úton).
     Futás közbeni hiba esetén a már sikeres átnevezések a helyükön maradnak,
     nincs köteg-szintű visszagörgetés. A `PartialRenameError` strukturáltan
     megadja a sikeres és az elakadt fájlokat; az elakadt fájl állapota ini- vagy
@@ -312,8 +322,7 @@ def rename_photos_many(
 
     Raises:
         ValueError: érvénytelen alapnév.
-        FileExistsError: ütköző célnevek (a kötegen belül vagy a mappa
-            meglévő tartalmával).
+        FileExistsError: ha 4096 céljelölt foglalt.
         PartialRenameError: fájlonkénti végrehajtási hiba; tartalmazza a már
             sikeresen feldolgozott útvonalakat, a hibás forrást és célnevet,
             valamint az eredeti kivételt.
@@ -321,18 +330,25 @@ def rename_photos_many(
     if not items:
         return []
     _validate_name(base_name)
-    names = [
-        preview_name(
-            base_name, item, include_date=include_date, include_size=include_size,
-            sequence=i, locale=locale,
-        )
-        for i, item in enumerate(items)
-    ]
-    _check_batch_collisions(items, names)
-
     results: list[Path] = []
     renamed: list[Path] = []
-    for item, name in zip(items, names, strict=True):
+    for item in items:
+        stem = _build_stem(
+            base_name, item, include_date=include_date,
+            include_size=include_size, locale=locale,
+        )
+        try:
+            name = _available_name(item.path, stem)
+        except Exception as error:
+            if not renamed:
+                raise
+            raise PartialRenameError(
+                completed_paths=results,
+                renamed_paths=renamed,
+                failed_source=item.path,
+                failed_target=item.path.with_name(f"{stem}{item.path.suffix}"),
+                cause=error,
+            ) from error
         if name == item.path.name:
             results.append(item.path)  # no-op: a név ténylegesen nem változik
         else:
