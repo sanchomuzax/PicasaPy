@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.245] - 2026-10-26
+
+- A három keretes HTML-export-sablon most görgethető bélyegkép-indexet és külön nagy képkeretet ad (#5926).
+
 ## [0.9.244] - 2026-10-26
 
 - A Clear cache files jelölő csak az Opciók ablak OK gombjára mentődik, a Mégse elveti a módosítást (#5925).
