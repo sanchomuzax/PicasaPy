@@ -4,6 +4,74 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-26
+
+**Beállítások**
+
+- A **Beállítások** ablak alján **OK** és **Mégse** gomb áll a
+  **Bezárás** helyett: az OK menti a változtatásokat, a Mégse elveti
+  őket. Lásd [Beállítások](features/beallitasok.md).
+- Az **Általános** fülön a **Gyorsítótár ürítése…** gomb helyett a
+  **Gyorsítótárban lévő fájlok törlése** jelölő áll: bekapcsolva a
+  program kilépéskor üríti a bélyegkép-gyorsítótárat.
+- A **Fájltípusok** fülön a feliratok az eredetit követik, és új
+  telepítésnél a **.GIF**, a **.PNG** és a **.TGA** alapból ki van
+  kapcsolva. Ha már átállítottad őket, a választásod marad.
+- Az **E-mail** és a **Webalbumok** fülön megjelentek az eredeti
+  sorcímek.
+
+**Exportálás**
+
+- Az **Exportálás HTML-oldalként** ablak a hét sablont listában mutatja,
+  az eredeti Picasa nevével, leírással és előnézettel. A gomb neve
+  **Exportálás**. Lásd [Exportálás](features/exportalas.md).
+
+**Szerkesztés és mentés**
+
+- A **Szerkesztés ▸ Szöveg másolása** és **Szöveg beillesztése** a
+  **Szöveg** eszközzel képre írt szöveget viszi át más képekre, ahogy az
+  eredeti. A képfelirat másolására már nem ezek valók. Lásd
+  [A szerkesztő](features/szerkeszto.md).
+- A **Fájl ▸ Mentés**, a Ctrl+S és a fejléc **Mentés** gombja csak akkor
+  használható, ha van el nem mentett szerkesztés. Lásd
+  [Mentés, visszaállítás](features/mentes.md).
+- A **Visszaállítás** kérdésénél a **Mégse** kapja a fókuszt, és egy
+  képnél az eredeti kérdés áll. Az **Összes szerkesztés visszavonása**
+  megerősítője az eredeti címét, szövegét és gombjait mutatja.
+
+**Könyvtár és albumok**
+
+- A képtálca album-gombja saját album nélkül is működik: a menüje
+  **Képernyővédő**, **Csillagozott képek**, a saját albumok és **Új
+  album...** sort kínál. Lásd [A könyvtár](features/konyvtar.md).
+- Az eszköztár új album gombja **Időrend**, keresés és album nézetben is
+  albumot készít a kijelölt kép mappájában, vagy szól, ha ez nem
+  lehetséges.
+- A **Kép ▸ Megjelenítés** és a **Mappa ▸ Megjelenítés** csak rejtett
+  elemre használható.
+- A **Nézet ▸ Szerkesztési vezérlők megjelenítése** könyvtárnézetben
+  szürke és pipa nélküli.
+
+**Fájlműveletek**
+
+- A **Fájl ▸ Áthelyezés új mappába…** a **Mappa tulajdonságai** ablakot
+  nyitja, **Névtelen** névvel. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+- A **Fájlok átnevezése** ablak **Átnevezés** gombja szürke, amíg a név
+  üres vagy változatlan.
+- A törlés megerősítőjében a **Mégse** kapja a fókuszt, és a jelölő
+  felirata **Ne kérdezzen újból, mindig távolítsa el**.
+- A **Fotó dátumának módosítása** ablak a jelenlegi dátumot és időt két
+  szürke mezőben mutatja.
+
+**Egyéb**
+
+- Az egyszerűsített nézőben (képfájllal indítva) a csillagos kép
+  csillaggal látszik, és a **Csillag** gomb le is veszi. Lásd
+  [Nézegetés](features/nezegetes.md).
+- A menük pipálható tételei előtt nincs üres négyzet, csak a pipa, és a
+  letiltott gombok, mezők felirata szürke.
+
 ## 2026-10-25
 
 **Képek megnyitása a fájlkezelőből**

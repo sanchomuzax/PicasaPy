@@ -36,7 +36,8 @@ kapjon. A **Nézet ▸ Szerkesztési vezérlők megjelenítése** kapcsoló muta
 teszi (buboréksúgója: *Szerkesztési vezérlők megjelenítése/elrejtése*). A
 kettő ugyanazt az állapotot kapcsolja, és a választás **megmarad** a
 következő indításig. Billentyűvel a **Ctrl+9** teszi ugyanezt, amíg a
-néző nyitva van.
+néző nyitva van. A menütétel csak a megnyitott nézőben használható;
+könyvtárnézetben szürke, és nincs előtte pipa.
 
 ## Szöveg megjelenítése és elrejtése a képen
 
@@ -298,6 +299,24 @@ A beállítások a `.picasa.ini`-be kerülnek — a **betűtípus**, a
 **betűméret**, a **félkövér** állás, a **körvonal vastagsága** és a
 színek is —, tehát a felirat legközelebb is úgy néz ki, ahogy
 beállítottad, és a windowsos Picasa is így látja.
+
+### A képre írt szöveg átvitele más képekre
+
+A **Szöveg** eszközzel írt szöveget egy mozdulattal más képekre is
+átteheted, ugyanazzal a betűvel, színnel és helyen:
+
+1. Jelöld ki a könyvtárban azt a képet, amelyre már írtál szöveget, és
+   válaszd a **Szerkesztés ▸ Szöveg másolása** parancsot.
+2. Jelöld ki a célképeket, és válaszd a **Szerkesztés ▸ Szöveg
+   beillesztése** parancsot.
+
+A beillesztés a kijelölt képek **mindegyikére** ráteszi a szöveget; ha
+valamelyiken már volt ilyen szöveg, azt lecseréli. Videóra nem kerül
+szöveg. A **Szöveg másolása** csak akkor használható, ha a kijelölés
+első képén van a **Szöveg** eszközzel írt szöveg. A **Szöveg
+beillesztése** akkor használható, ha már másoltál szöveget, vagy ha a
+kijelölés első képén van ilyen szöveg: ilyenkor másolás nélkül is azt
+viszi át a kijelölés többi képére.
 
 > Korábban a program minden feliratot félkövérként mentett, a körvonal
 > vastagsága pedig mindig elveszett. Mindkettő megjavult; a régebben

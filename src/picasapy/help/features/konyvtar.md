@@ -15,7 +15,8 @@ szerkesztheted — lásd [Nézegetés](nezegetes.md). Ugyanezt teszi a
 **Kép ▸ Megjelenítés és szerkesztés** is. Mindkettő szürke, amíg nincs
 kijelölt kép. A **Nézet ▸ Szerkesztési vezérlők megjelenítése** kapcsoló
 a néző bal oldali szerkesztőpanelét mutatja vagy rejti — lásd [A
-szerkesztő](szerkeszto.md).
+szerkesztő](szerkeszto.md). Könyvtárnézetben ez a tétel szürke és pipa
+nélküli, ahogy az eredeti Picasában: csak megnyitott nézőben kapcsolható.
 
 ## Mappák
 
@@ -264,11 +265,21 @@ több albumban is szerepelhet.
   is: megnyitja az **Album tulajdonságai** ablakot (a név mezőben
   **Névtelen** áll), és az **OK** után egy **üres** albumot készít, a
   kijelölt képek nélkül. Ezt utólag töltöd fel képekkel, például
-  ráhúzással. A gomb akkor hoz létre albumot, ha a bal hasábon épp egy
-  **mappa** van megnyitva: az album adatai ennek a mappának a
-  `.picasa.ini` fájljába kerülnek.
+  ráhúzással. Az album adatai egy képmappa `.picasa.ini` fájljába
+  kerülnek: ha a bal hasábon egy **mappa** van megnyitva, abba; az
+  **Időrend**, a keresési találatok vagy egy album nézetében pedig a
+  kijelölt (kijelölés nélkül a kiemelt) kép mappájába. Ha ilyen mappa
+  nincs, vagy a mappa nem része a könyvtárnak, a program szól: „Albumot
+  csak indexelt képmappába lehet menteni.", és nem készül album.
 - Meglévő albumhoz a kép helyi menüjének **Hozzáadás az albumhoz**
-  almenüjén át adsz hozzá képet. Ugyanez elérhető a képtálca album-gombjával.
+  almenüjén át adsz hozzá képet. Ugyanez elérhető a képtálca
+  album-gombjával: ez egy fölfelé nyíló menüt nyit, akkor is, ha még
+  nincs saját albumod. A menü sorai: **Képernyővédő** (a kijelölt képeket
+  a képernyővédőhöz adja, lásd [Képernyővédő](kepernyovedo.md)),
+  **Csillagozott képek** (a kijelölt képek csillagát kapcsolja), utána a
+  saját albumaid, végül az **Új album...**, ami az **Album
+  tulajdonságai** ablakot nyitja, és az **OK** után a kijelölt képekkel
+  készít új albumot a megnyitott mappában.
 - Kivenni a **Eltávolítás az albumból** paranccsal tudsz. A program
   rákérdez — az ablak **Elemek eltávolítása**, a gomb **Kép
   eltávolítása** (több képnél **Képek eltávolítása**) —, és a fájlhoz nem
@@ -546,7 +557,9 @@ Ha egy képnek rossz a dátuma — például a gép órája rosszul volt beáll�
 —, javíthatod. Jelöld ki a képeket, majd **Eszközök ▸ Dátum és idő
 beállítása…**. A **Fotó dátumának módosítása - N elem.** ablakban
 (egyetlen képnél csak **Fotó dátumának módosítása**) látod az első
-kép bélyegképét és a **Jelenlegi fotódátum**át, megadhatod az **Új
+kép bélyegképét és a **Jelenlegi fotódátum**át: a dátum és az idő két
+külön, szürke (nem szerkeszthető) mezőben áll, ahogy az eredeti
+Picasában. Megadhatod az **Új
 fotódátum**ot (a dátumra kattintva naptár nyílik) és az **Új fotó
 időpontja**t. Két mód közül választasz:
 
@@ -650,7 +663,8 @@ kijelölésben már rejtett kép is van, azt nem hozza elő.
 A rejtett képek előhozásához kapcsold be a **Nézet ▸ Rejtett képek**
 pontot. Visszahozni a **Kép ▸ Megjelenítés** paranccsal tudod: a
 kijelölt képek közül csak a rejtetteket teszi újra láthatóvá, a már
-látható képeket nem rejti el. A kép helyi menüjében is ott van, ugyanennek
+látható képeket nem rejti el. A tétel csak akkor használható, ha a
+kijelölésben van rejtett kép; különben szürke. A kép helyi menüjében is ott van, ugyanennek
 a tételnek a helyén **Megjelenítés**-re vált.
 
 Egész mappát is elrejthetsz: jelöld ki, majd **Mappa ▸ Elrejtés**, vagy a
@@ -658,7 +672,8 @@ mappa helyi menüjében **Mappa elrejtése**. Album- és személynézetben nincs
 kijelölt mappa, ezért ott a **Mappa ▸ Elrejtés** és a **Mappa ▸
 Megjelenítés** szürke. A mappa eltűnik a bal hasábról;
 a **Nézet ▸ Rejtett képek** bekapcsolásával a **Rejtett mappák** között
-látod viszont. Visszahozni a **Mappa ▸ Megjelenítés** paranccsal tudod, vagy
+látod viszont. Visszahozni a **Mappa ▸ Megjelenítés** paranccsal tudod
+(ez csak rejtett mappán használható, látható mappán szürke), vagy
 a mappa helyi menüjének **Mappa megjelenítése** tételével: ehhez
 előbb kapcsold be a **Nézet ▸ Rejtett képek** pontot, és jelöld ki a mappát a
 **Rejtett mappák** között. A mappa ugyanúgy a
