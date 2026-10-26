@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.250] - 2026-10-26
+
+- A Filtered B&W színmezője az eredetihez igazodva #545454-ről indul (#5949).
+
+## [0.9.249] - 2026-10-26
+
+- Az ismételt db3-import nem hoz létre duplikált adatot, és útvonalütközésnél a később módosított bejegyzést tartja meg. (#5945).
+
 ## [0.9.248] - 2026-10-26
 
 - A csoportos átnevezés foglalt cél esetén -001-től sorszámoz, és megőrzi a kiterjesztés írásmódját. (#5941).
