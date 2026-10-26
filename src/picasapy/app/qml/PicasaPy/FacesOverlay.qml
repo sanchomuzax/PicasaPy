@@ -398,7 +398,7 @@ Item {
         y: (overlay.pendingRect.y + overlay.pendingRect.height) * overlay.height
         z: 10
 
-        Row {
+        Item {
             id: nameRow
             anchors.top: parent.top
             anchors.left: parent.left; anchors.right: parent.right
