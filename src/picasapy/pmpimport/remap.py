@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import PurePosixPath, PureWindowsPath
 
 
@@ -33,6 +34,15 @@ class PathRemapper:
 
     mappings: tuple[tuple[str, str], ...]
 
+    @cached_property
+    def _folded_prefixes(self) -> tuple[tuple[tuple[str, ...], str], ...]:
+        """A változatlan forrás-előtagok komponensei egyszer normalizálva."""
+        prefixes = []
+        for source, target in self.mappings:
+            parts = _to_slashes(source).split("/")
+            prefixes.append((tuple(part.casefold() for part in parts), target))
+        return tuple(prefixes)
+
     @classmethod
     def from_dict(cls, mappings: dict[str, str]) -> PathRemapper:
         ordered = sorted(mappings.items(), key=lambda kv: len(kv[0]), reverse=True)
@@ -47,9 +57,7 @@ class PathRemapper:
         # eredeti (nem foldolt) útvonalon: elcsúsztatná a maradékot
         parts = tuple(_to_slashes(windows_path).split("/"))
         folded_parts = tuple(part.casefold() for part in parts)
-        for source_prefix, target_prefix in self.mappings:
-            prefix_parts = tuple(_to_slashes(source_prefix).split("/"))
-            folded_prefix_parts = tuple(part.casefold() for part in prefix_parts)
+        for folded_prefix_parts, target_prefix in self._folded_prefixes:
             if (
                 len(folded_prefix_parts) <= len(folded_parts)
                 and folded_parts[: len(folded_prefix_parts)] == folded_prefix_parts

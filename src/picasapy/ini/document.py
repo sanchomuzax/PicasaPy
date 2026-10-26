@@ -211,6 +211,60 @@ class IniDocument:
         )
         return replace(self, sections=sections)
 
+    def with_values(
+        self, updates: tuple[tuple[str, str, str], ...]
+    ) -> IniDocument:
+        """Több kulcsot egy szekció-indexeléssel, egy dokumentumcserével ír.
+
+        Kötegelt út az importálóknak: ugyanazt a szekciófeloldást,
+        formázást és láncőrt használja, mint a `with_value`, de nem járja be
+        minden egyes kulcshoz újra a teljes dokumentumot.
+        """
+        if not updates:
+            return self
+
+        sections = list(self.sections)
+        exact_indexes: dict[str, int] = {}
+        folded_indexes: dict[str, int] = {}
+        for index, section in enumerate(sections):
+            exact_indexes.setdefault(section.name, index)
+            folded_indexes.setdefault(section.name.casefold(), index)
+
+        newline = self.newline
+        appended = False
+        for section_name, key, value in updates:
+            target_index = exact_indexes.get(section_name)
+            if target_index is None:
+                target_index = folded_indexes.get(section_name.casefold())
+            target = sections[target_index] if target_index is not None else None
+            guard_chain_write(
+                key,
+                value,
+                target.get(key) if target is not None else None,
+                where=f"[{section_name}]",
+            )
+
+            if target_index is None:
+                if not appended:
+                    sections = list(_with_closed_last_line(tuple(sections), newline))
+                    appended = True
+                target_index = len(sections)
+                section = Section(
+                    header=Line(text=f"[{section_name}]", ending=newline),
+                    name=section_name,
+                    lines=(_make_kv_line(key, value, newline),),
+                )
+                sections.append(section)
+                exact_indexes.setdefault(section_name, target_index)
+                folded_indexes.setdefault(section_name.casefold(), target_index)
+                continue
+
+            sections[target_index] = _section_with_value(
+                target, key, value, newline
+            )
+
+        return replace(self, sections=tuple(sections))
+
     def with_removed(self, section_name: str, key: str) -> IniDocument:
         """Új dokumentum az első egyező kulcs-sor nélkül (kis-nagybetű-tűrő).
 

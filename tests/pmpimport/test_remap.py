@@ -76,3 +76,29 @@ class TestPathRemapper:
         assert remapper.remap("D:\\Fotok\\2024\\kep.jpg") == (
             "C:\\Users\\a\\kepek\\2024\\kep.jpg"
         )
+
+
+def test_mapping_elotagokat_nem_normalizalja_ujra_minden_fenykephoz(monkeypatch):
+    import picasapy.pmpimport.remap as remap_module
+
+    mappings = {
+        r"C:\Users\felhasznalo\Pictures": "/tmp/photos",
+        r"D:\Archivum": "/tmp/archive",
+    }
+    remapper = PathRemapper.from_dict(mappings)
+    eredeti = remap_module._to_slashes
+    hivasok = 0
+
+    def szamolva(path):
+        nonlocal hivasok
+        hivasok += 1
+        return eredeti(path)
+
+    monkeypatch.setattr(remap_module, "_to_slashes", szamolva)
+
+    for index in range(200):
+        assert remapper.remap(
+            rf"C:\Users\felhasznalo\Pictures\mappa-{index}\kep.jpg"
+        ) == f"/tmp/photos/mappa-{index}/kep.jpg"
+
+    assert hivasok == 200 + len(mappings)

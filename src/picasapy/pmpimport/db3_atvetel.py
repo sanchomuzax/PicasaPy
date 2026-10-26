@@ -72,7 +72,7 @@ from picasapy.ini.albums import parse_album_refs
 from picasapy.ini.document import IniDocument
 from picasapy.ini.faces import parse_faces
 from picasapy.ini.io import load_or_empty, update_document
-from picasapy.ini.priority import prioritassal
+from picasapy.ini.priority import prioritas_szoveg
 from picasapy.metadata.gps import format_geotag
 from picasapy.pmpimport.arcatvetel import (
     ISMERETLEN_SZEMELY,
@@ -260,6 +260,7 @@ def mappa_atvetel(
         section.get("priority") is not None for section in eredmeny.file_sections()
     )
     if not van_meglevo_mappasorrend:
+        priority_updates = []
         for rekord in rekordok:
             if rekord.manual_priority is None:
                 continue
@@ -267,8 +268,11 @@ def mappa_atvetel(
             if nev in feldolgozott_nevek:
                 continue
             feldolgozott_nevek.add(nev)
-            eredmeny = prioritassal(eredmeny, nev, rekord.manual_priority)
+            priority_updates.append(
+                (nev, "priority", prioritas_szoveg(rekord.manual_priority))
+            )
             sorrend += 1
+        eredmeny = eredmeny.with_values(tuple(priority_updates))
 
     meglevo_albumok = {
         token

@@ -61,10 +61,15 @@ def prioritassal(
     `float`-ot vár, és így a fájl önmagában elmondja, hogy törtérték is
     lehet benne (a felezőpontos beszúrás épp ilyet termel).
     """
+    return document.with_value(nev, _KULCS, prioritas_szoveg(ertek))
+
+
+def prioritas_szoveg(ertek: float) -> str:
+    """A `priority=` érték írott alakja: mindig tizedes (`3.0`, nem `3`)."""
     szoveg = f"{float(ertek):.6g}"
     if "." not in szoveg and "e" not in szoveg:
         szoveg += ".0"
-    return document.with_value(nev, _KULCS, szoveg)
+    return szoveg
 
 
 def prioritas_nelkul(document: IniDocument, nev: str) -> IniDocument:
