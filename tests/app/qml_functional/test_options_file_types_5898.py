@@ -115,14 +115,14 @@ def test_tiszta_profil_feliratai_alapertekei_es_png_mentese(
 
     png = _gyerek(options, "optionsFileTypePngCheck")
     _klikk_ablakban(qt_app, options, png)
-    assert _varj(qt_app, lambda: bool(controller.fileTypeEnabled("png")))
     assert png.property("checked") is True
 
-    # A File Types értéke azonnal QSettings-be kerül; a fül Close gombja után
-    # ugyanaz a párbeszéd újranyitva a tárolt PNG-értéket olvassa vissza.
-    close_button = _gyerek(options, "optionsCloseButton")
-    _klikk_ablakban(qt_app, options, close_button)
+    # #5906: a File Types értéke az OK-ra kerül QSettings-be; utána ugyanaz
+    # a párbeszéd újranyitva a tárolt PNG-értéket olvassa vissza.
+    ok_button = _gyerek(options, "optionsOkButton")
+    _klikk_ablakban(qt_app, options, ok_button)
     assert _varj(qt_app, lambda: options.property("visible") is False)
+    assert _varj(qt_app, lambda: bool(controller.fileTypeEnabled("png")))
     reopened = _beallitasok_megnyit(window, qt_app)
     _fulre_kattint(qt_app, reopened, "optionsTabFileTypes", 2)
     assert _gyerek(reopened, "optionsFileTypePngCheck").property("checked") is True
