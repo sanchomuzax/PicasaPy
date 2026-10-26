@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.240] - 2026-10-26
+
+- Az Opciók E-Mail és Web Albums füle megjeleníti az eredeti sorcímeket és a vízjel súgószövegét. (#5899).
+
 ## [0.9.239] - 2026-10-26
 
 - Az Options ▸ File Types alapfeliratai és tiszta profilú fájltípus-beállításai az eredeti Picasát követik. (#5898).
