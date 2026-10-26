@@ -4,8 +4,6 @@ Eszközök-menüből nyíló párbeszédek: a Beállítások (Options), a Képer
 a Picasa-adatok importja és az adatbázis áthelyezése.
 
 Lefedve:
-- `optionsClearCacheButton` - a Gyorsítótár ürítése gomb megerősítést kér
-  (a megerősítést nem fogadjuk el, így a gyorsítótár nem ürül);
 - `screensaverSourceCheck0` - a képernyővédő forrás-jelölője: a kattintás
   a vezérlőn át átállítja a kiválasztott forrást (`screensaverSources`);
 - `picasaImportCloseButton` - a Picasa-import párbeszéd Bezárás/OK gombja;
@@ -65,29 +63,13 @@ def _vizualis_keres(window, nev: str):
 
 
 def _beallitasok_megnyit(window, qt_app, menu_bar):
-    """Eszközök ▸ Options… valódi kattintással; visszaadja a párbeszédet."""
+    """Eszközök ▸ Options… valódi kattintással; a #5897 kattintásos próbája használja."""
     _megnyit(menu_bar, qt_app, "&Tools")
     _menupont_kattintasa(window, qt_app, "menuToolsOptions")
     assert _varj(qt_app, lambda: _latszik(window, "optionsDialog")), (
         "az Eszközök ▸ Options… nem nyitotta meg a beállításokat"
     )
     return _gyerek(window, "optionsDialog")
-
-class TestBeallitasokGyorsitotar:
-    def test_gyorsitotar_uritese_valodi_kattintassal_megerositest_ker(
-        self, eszkoz_app, qt_app
-    ):
-        window, controller, _engine = eszkoz_app
-        _elokeszit(window, qt_app, controller)
-        beallitasok = _beallitasok_megnyit(window, qt_app, window.property("menuBar"))
-
-        _kattints(qt_app, _gyerek(window, "optionsClearCacheButton"))
-
-        assert _varj(qt_app, lambda: _latszik(window, "optionsClearCacheConfirm")), (
-            "a Gyorsítótár ürítése gomb nem kért megerősítést"
-        )
-        _zar(qt_app, _gyerek(window, "optionsClearCacheConfirm"))
-        _zar(qt_app, beallitasok)
 
 
 class TestKepernyovedo:

@@ -885,15 +885,6 @@ class AppController(
         self._get_settings().setValue("view/folderSort", mode)
         self._refresh_view()
 
-    @Slot(result=int)
-    def clearThumbnailCache(self) -> int:  # noqa: N802 — QML-stílus
-        """A bélyegkép-gyorsítótár ürítése; a felszabadult bájtok (#598).
-
-        A Beállítások „Gyorsítótár ürítése" gombja hívja — az eredeti
-        `disposepreviews` kapcsolójának megfelelője. Nem adatvesztés: a
-        bélyegképek kérésre újraépülnek."""
-        return int(self._provider.clear_cache())
-
     @Slot(int)
     def setThumbCellSize(self, cella_px: int) -> None:  # noqa: N802 — QML-stílus
         """A rács cellamérete → a bélyegkép-SZINT (#598).

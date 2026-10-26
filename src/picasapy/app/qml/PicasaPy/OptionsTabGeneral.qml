@@ -19,9 +19,8 @@ import QtQuick.Layouts
 //     `import/autoexclude` kulcs, amit az importáló párbeszéd
 //     "Exclude Duplicates" jelölője is használ (importSourceController).
 //
-//   - "Gyorsítótár ürítése…" — a #598 óta ÉLŐ: az eredeti `disposepreviews`
-//     kapcsolójának megfelelője, a bélyegkép-tár lemezes ürítése
-//     (controller.clearThumbnailCache).
+//   - "Clear cache files" - a `disposepreviews` beállítás megfelelője;
+//     bekapcsolva a bélyegkép-cache az alkalmazás kilépésekor ürül.
 //
 //   - Felületi átmenetek és buboréksúgók — a #4449 óta QSettings-ben
 //     tárolt kapcsolók.
@@ -48,18 +47,6 @@ ColumnLayout {
             root.optionsDraft.stage(key, value, writer)
         else
             writer(value)
-    }
-
-    //: #598: a felszabadult hely emberi alakja. Kilobájt alatt bájtban —
-    //: egy „0,0 MB" eredmény azt sugallná, hogy nem történt semmi.
-    function emberiMeret(bajt) {
-        if (bajt < 1024)
-            return qsTr("%1 bytes").arg(bajt)
-        if (bajt < 1024 * 1024)
-            return qsTr("%1 kB").arg(Number(bajt / 1024).toLocaleString(
-                Qt.locale(), "f", 1))
-        return qsTr("%1 MB").arg(Number(bajt / (1024 * 1024)).toLocaleString(
-            Qt.locale(), "f", 1))
     }
 
     // ---- Kezelőfelület (labelgroup4) ------------------------------------
@@ -199,47 +186,26 @@ ColumnLayout {
                         function(value) { importSourceController.setAutoExclude(value) })
             }
         }
-        //: #598: az eredeti `disposepreviews` kapcsolójának megfelelője. A
-        //: #144-es LRU-takarító a MÉRETET tartja karban; ez a gomb a
-        //: felhasználó döntése, ha most akar helyet visszanyerni.
-        //: A hármas pont a feliratban azt ígéri, hogy kérdez — ezért
-        //: megerősítést kér, és utána megmondja, mennyit szabadított fel.
     }
     RowLayout {
         Layout.fillWidth: true
-        spacing: 8
+        spacing: 0
         Item { Layout.minimumWidth: 176; Layout.preferredWidth: 176 }
-        Button {
-            objectName: "optionsClearCacheButton"
-            text: qsTr("Clear Cache...")
-            Layout.preferredHeight: 24
-            Layout.minimumHeight: 24
-            padding: 0
-            onClicked: clearCacheConfirm.ask(
-                "", qsTr("Empty the thumbnail cache? The thumbnails are "
-                         + "rebuilt when needed — no picture is lost."))
-        }
-        Text {
-            id: clearCacheResult
-            objectName: "optionsClearCacheResult"
-            visible: text !== ""
+        CompactCheckBox {
+            objectName: "optionsClearCacheFilesCheck"
+            text: qsTr("Clear cache files")
             Layout.fillWidth: true
-            color: Theme.ink
-            font.pixelSize: Theme.fontSize
-            verticalAlignment: Text.AlignVCenter
-        }
-    }
-    ConfirmDialog {
-        id: clearCacheConfirm
-        objectName: "optionsClearCacheConfirm"
-        namePrefix: "optionsClearCache"
-        yesText: qsTr("Empty")
-        noText: qsTr("Keep")
-        onConfirmed: {
-            var bajt = (typeof controller !== "undefined" && controller)
-                       ? controller.clearThumbnailCache() : 0
-            clearCacheResult.text = qsTr("%1 freed.").arg(
-                root.emberiMeret(bajt))
+            enabled: typeof controller !== "undefined" && controller !== null
+                     && controller.disposePreviewsOnExit !== undefined
+                     && controller.setDisposePreviewsOnExit !== undefined
+            checked: typeof controller !== "undefined" && controller !== null
+                     && controller.disposePreviewsOnExit !== undefined
+                         ? controller.disposePreviewsOnExit : false
+            onToggled: {
+                if (typeof controller !== "undefined" && controller
+                    && controller.setDisposePreviewsOnExit !== undefined)
+                    controller.setDisposePreviewsOnExit(checked)
+            }
         }
     }
 

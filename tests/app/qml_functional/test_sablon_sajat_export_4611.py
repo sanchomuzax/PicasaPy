@@ -1,6 +1,6 @@
 """#4611: a felhasználó saját `.tpl` sablonja a Weboldal-exportálás
-párbeszédben (WebExportDialog.qml) listázódik, kiválasztható és exportál —
-valódi egérkattintással és billentyűvel, −5/0/+5 px ablakmagasságnál."""
+párbeszéd listájában választható ki és exportálható, valódi egérkattintással,
+-5/0/+5 px ablakmagasságnál."""
 
 from __future__ import annotations
 
@@ -90,16 +90,30 @@ class TestSajatSablonExport:
         dialog.show()
         qt_app.processEvents()
 
-        valaszto = _gyerek(dialog, "webExportTemplateBox")
-        nevek = list(valaszto.property("model"))
+        valaszto = _gyerek(dialog, "webExportTemplateList")
+        nevek = dialog.property("templateDisplayNames")
+        if hasattr(nevek, "toVariant"):
+            nevek = nevek.toVariant()
+        nevek = list(nevek)
         assert SABLON_NEV in nevek, f"a saját sablon nincs a listában: {nevek}"
         index = nevek.index(SABLON_NEV)
 
-        _kattint(qt_app, valaszto)
-        for _ in range(index):
-            QTest.keyClick(valaszto.window(), Qt.Key.Key_Down)
-            qt_app.processEvents()
-        QTest.keyClick(valaszto.window(), Qt.Key.Key_Return)
+        sor_magassag = float(valaszto.property("rowHeight"))
+        max_gorgetes = max(
+            0.0,
+            float(valaszto.property("contentHeight"))
+            - float(valaszto.property("height")),
+        )
+        valaszto.setProperty("contentY", min(sor_magassag * index, max_gorgetes))
+        qt_app.processEvents()
+        sor_y = sor_magassag * (index + 0.5) - float(valaszto.property("contentY"))
+        pont = valaszto.mapToScene(QPointF(valaszto.width() / 2, sor_y)).toPoint()
+        QTest.mouseClick(
+            valaszto.window(),
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+            pont,
+        )
         qt_app.processEvents()
         assert dialog.property("templateId") == "sajat"
         # a tartalom a sablonválasztás után változhat: a magasságot ITT,

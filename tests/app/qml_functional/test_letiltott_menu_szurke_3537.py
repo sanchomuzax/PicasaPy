@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QObject
 
+from tests.support.qt_wait import wait_for_photo_op
 from tests.app.qml_functional._helyfoglalo_minta import helyfoglalo_tetelek
 
 
@@ -56,8 +57,8 @@ def test_az_engedelyezett_tetel_nem_szurke(qml_app, qt_app):
 
 
 def test_a_tiltas_feloldasa_visszaadja_a_szint(qml_app, qt_app):
-    """Ugyanaz a tétel: tiltva szürke, a kijelölés után újra élő színű."""
-    window, _controller, engine = qml_app
+    """A mentetlen filters lánc oldja fel a mentés tiltását."""
+    window, controller, engine = qml_app
     window.setProperty("selectedIndexes", [])
     window.setProperty("selectedIndex", -1)
     qt_app.processEvents()
@@ -66,7 +67,11 @@ def test_a_tiltas_feloldasa_visszaadja_a_szint(qml_app, qt_app):
 
     window.setProperty("selectedIndexes", [0])
     window.setProperty("selectedIndex", 0)
-    qt_app.processEvents()
+    wait_for_photo_op(
+        controller,
+        lambda: controller.applyEffectMany([0], "enhance"),
+        qt_app=qt_app,
+    )
 
     assert mentes.property("enabled") is True
     assert _cimkeszin(mentes) != tiltott

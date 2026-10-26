@@ -78,6 +78,7 @@ from picasapy.ini import (
     IniSaveError,
     STAR_ALBUM_TOKEN,
     load_existing,
+    load_or_empty,
     update_document,
     with_backuphash,
 )
@@ -91,6 +92,7 @@ from picasapy.ini.albums import (
     without_album,
     without_album_everywhere,
 )
+from picasapy.ini.text_overlay import parse_text
 from picasapy.index.album_sort import SORT_MODES, new_places, sorted_album
 from picasapy.metadata import write_iptc_caption
 from picasapy.render.flip import (
@@ -200,11 +202,10 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     #: kitakarított állapotot látja.
     _photoWriteAborted = Signal(object)
     photoOpFailed = Signal(str)
-    #: #1526: a SZÖVEG-vágólap tartalma változott — ettől él/szürkül a
-    #: „Szöveg beillesztése" menütétel. A Qt vágólapjának `dataChanged`-jére
-    #: kötjük (`_ensure_caption_clipboard`), tehát egy MÁS program írása is
-    #: eljut a menühöz, nem csak a sajátunk.
-    captionClipboardChanged = Signal()
+    #: #5877: a Text eszköz `text=` rétegének belső vágólapja. A felirat
+    #: szöveg-vágólapja ettől külön marad; a Szerkesztés menü nem a feliratot
+    #: másolja.
+    textLayerClipboardChanged = Signal()
     #: #4628: a kijelölt képek valamelyikének már van felirata, ezért a
     #: vágólapról beillesztés előtt a QML megerősítést kér.
     captionPasteConfirmationRequested = Signal()
@@ -548,10 +549,8 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
     # -- Szöveg-vágólap: a FELIRATRA hat, nem a fájlra (#1526) -------------
     #
-    # MÉRVE: az `eMenuEdit` névtérben a `Copy Text` / `Paste Text` a
-    # feliratszöveg vágólap-műveletei — a fájl-vágólap (`Cut`/`Copy`/`Paste`,
-    # `fileops_controller`) ettől KÜLÖN készlet, két külön névtérben
-    # (`eMenuEdit` és `Address`). A jegy hét parancsából ez a kettő maradt.
+    # #5877: a menü Text eszköz réteget másol; a külön képfelirat-vágólap
+    # Python oldali segédjei ettől elkülönülnek.
     #
     # ⚠️ Fej nélküli környezetben (`offscreen`/`minimal`) NEM nyúlunk a
     # rendszervágólaphoz: nincs mögötte vágólap-tulajdonos, és a Qt-hívás a
@@ -562,35 +561,18 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # feltennénk.
 
     def _ensure_caption_clipboard(self) -> None:
-        """Lusta, egyszeri bekötés a rendszervágólap `dataChanged`-jére.
+        """A külön felirat-segéd tartalék tárát inicializálja fej nélküli futáshoz."""
+        if not hasattr(self, "_caption_clipboard"):
+            self._caption_clipboard = ""
 
-        Enélkül a menütétel csak a MI írásainkról tudna, egy másik program
-        vágólap-írásáról nem — a „Szöveg beillesztése" hazug állapotban
-        ragadna. Fej nélküli környezetben nincs mihez kötni; ott a
-        munkamenet-szintű tár változásait a saját írásunk jelzi."""
-        if getattr(self, "_caption_clipboard_wired", False):
-            return
-        self._caption_clipboard_wired = True
-        self._caption_clipboard = ""
-        from PySide6.QtGui import QGuiApplication
-
-        if QGuiApplication.platformName() in ("offscreen", "minimal"):
-            return
-        vagolap = QGuiApplication.clipboard()
-        if vagolap is not None:
-            vagolap.dataChanged.connect(self.captionClipboardChanged.emit)
-
-    #: ⚠️ SZÁNDÉKOSAN nem `@Slot`: a felület nem a szövegtárral beszél, hanem
-    #: a `copyCaptionText`/`pasteCaptionText` parancsokkal. Egy bekötetlen
-    #: slot néma lánc-szakadás lenne (`scripts/kepesseg_or.py`), ez viszont
-    #: a próbák és a fej nélküli környezet belépője.
+    #: ⚠️ SZÁNDÉKOSAN nem `@Slot`: ez a külön képfelirat-vágólap Python-API-ja;
+    #: a Szerkesztés menü a Text eszköz réteget kezeli (#5877).
     def setCaptionClipboardText(self, text: str) -> None:  # noqa: N802
         """A szöveg-vágólap FELTÖLTÉSE."""
         from PySide6.QtGui import QGuiApplication
 
         self._ensure_caption_clipboard()
         self._caption_clipboard = str(text or "")
-        self.captionClipboardChanged.emit()
         if QGuiApplication.platformName() in ("offscreen", "minimal"):
             return
         vagolap = QGuiApplication.clipboard()
@@ -610,18 +592,10 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         vagolap = QGuiApplication.clipboard()
         return "" if vagolap is None else vagolap.text()
 
-    @Property(bool, notify=captionClipboardChanged)
-    def hasCaptionTextClipboard(self) -> bool:  # noqa: N802
-        """Van-e SZÖVEG a vágólapon — ettől él a „Szöveg beillesztése".
-
-        Szándékosan nem gyorstárazzuk: a vágólapot más program is átírhatja,
-        és a menü megnyitásakor a FRISS állapot kell (a `clipboardHasFiles`
-        mintája)."""
-        return bool(self.captionClipboardText().strip())
-
-    @Slot(int, result=bool)
     def copyCaptionText(self, row: int) -> bool:  # noqa: N802
-        """A kép FELIRATA a vágólapra („Copy Text").
+        """Python oldali segéd a kép feliratának vágólapra másolásához.
+
+        A `Copy Text` menütétel külön a Text eszköz rétegét kezeli (#5877).
 
         `False`, ha nincs mit másolni: érvénytelen sor, vagy a képnek nincs
         felirata. Üres szöveget feltenni annyi lenne, mint kiürítni a
@@ -635,13 +609,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         self.setCaptionClipboardText(felirat)
         return True
 
-    @Slot("QVariantList", result=int)
     def pasteCaptionText(self, rows) -> int:  # noqa: N802
-        """A vágólap szövege a KIJELÖLT képek feliratába („Paste Text").
+        """Python oldali segéd a vágólap feliratként való beillesztéséhez.
 
-        Az eredetiben a parancs a kijelölésre hat, nem egy képre. Visszaadja,
+        Nem a Szerkesztés menü `Paste Text` parancsa (#5877). Visszaadja,
         hány képre indult írás. Ha a kijelölésben van már feliratozott kép,
-        a QML előbb megerősítést kér; az írás csak a `confirmCaptionPaste`
+        a QML megerősítést kér; az írás csak a `confirmCaptionPaste`
         hívásakor indul.
 
         ⚠️ ÜRES vágólapra nem tesz semmit: a meglévő feliratok letörlése néma
@@ -693,6 +666,94 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             after=utomunka,
         )
         return len(kijeloles)
+
+    def _ensure_text_layer_clipboard(self) -> None:
+        if not hasattr(self, "_text_layer_clipboard_value"):
+            self._text_layer_clipboard_value: str | None = None
+
+    @staticmethod
+    def _text_layer_value(photo) -> str | None:
+        """A kép értelmezhető, nem üres Text eszközös `text=` sora."""
+        if photo.kind == "video":
+            return None
+        try:
+            document = load_or_empty(
+                Path(photo.folder_path) / PICASA_INI_NAME
+            )
+        except (OSError, UnicodeError):
+            return None
+        section = document.section(photo.name)
+        raw = section.get("text") if section is not None else None
+        if not raw:
+            return None
+        try:
+            overlay = parse_text(raw)
+        except ValueError:
+            return None
+        if overlay is None or not any(block.content for block in overlay.blocks):
+            return None
+        return raw
+
+    @Slot(list, result=bool)
+    def hasTextLayerInSelection(self, rows) -> bool:  # noqa: N802
+        """A kijelölés első képén van-e nem üres Text eszközös réteg."""
+        photos = self._rows_to_photos(rows or ())
+        return bool(photos and self._text_layer_value(photos[0]) is not None)
+
+    @Property(bool, notify=textLayerClipboardChanged)
+    def hasTextLayerClipboard(self) -> bool:  # noqa: N802
+        """Van-e a Text eszköz rétegpuffere a `Paste Text` számára."""
+        self._ensure_text_layer_clipboard()
+        return self._text_layer_clipboard_value is not None
+
+    @Slot(list, result=bool)
+    def copyTextLayer(self, rows) -> bool:  # noqa: N802
+        """A kijelölés első képének Text eszközös rétegét másolja.
+
+        A `.picasa.ini` `text=` értéke a képhez írt szövegréteg, nem a kép
+        felirata. A felirat-vágólap (#1526) másik adatot kezel.
+        """
+        self._ensure_text_layer_clipboard()
+        photos = self._rows_to_photos(rows or ())
+        if not photos:
+            return False
+        value = self._text_layer_value(photos[0])
+        if value is None:
+            return False
+        self._text_layer_clipboard_value = value
+        self.textLayerClipboardChanged.emit()
+        return True
+
+    @Slot(list)
+    def pasteTextLayer(self, rows) -> None:  # noqa: N802
+        """A Text eszközös réteget a kijelölt képekre írja.
+
+        A Text eszköz által az aktuális képre mentett réteg a Picasa belső
+        szövegpuffere is lehet (#5881, `this+0xcc8`), ezért ha még nem futott
+        le külön Copy Text, a kijelölés első rétege adja a beilleszthető
+        tartalmat. Így a mért job-287 állapotban a Paste Text is elérhető.
+        """
+        self._ensure_text_layer_clipboard()
+        photos = [
+            photo for photo in self._rows_to_photos(rows or ())
+            if photo.kind != "video"
+        ]
+        if not photos:
+            return
+        value = self._text_layer_clipboard_value
+        if value is None:
+            value = self._text_layer_value(photos[0])
+            if value is None:
+                return
+            self._text_layer_clipboard_value = value
+            self.textLayerClipboardChanged.emit()
+
+        def mutate(document, photo):
+            document = document.with_value(photo.name, "text", value)
+            document = document.with_value(photo.name, "textactive", "1")
+            return with_backuphash(document, photo.name)
+
+        self._apply_batch(photos, mutate)
 
     @Slot(result=int)
     def confirmCaptionPaste(self) -> int:  # noqa: N802

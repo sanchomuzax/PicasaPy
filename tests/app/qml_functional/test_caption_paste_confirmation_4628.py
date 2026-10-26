@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
+from PySide6.QtCore import QObject, QPointF, Qt
 from PySide6.QtTest import QTest
 
 from tests.support.qt_wait import wait_for_photo_op
@@ -40,12 +40,11 @@ def _kijelol(window, qt_app, controller, height_delta: int) -> int:
     return sor
 
 
-def _indit_beillesztest(window, qt_app) -> None:
-    assert QMetaObject.invokeMethod(
-        window,
-        "illesdBeAFeliratot",
-        Qt.ConnectionType.DirectConnection,
-    ), "a Szöveg beillesztése kezelő nem hívható"
+def _indit_felirat_beillesztest(controller, sor: int, qt_app) -> None:
+    # A #5877 óta a Paste Text menü a Text eszköz rétegét illeszti. A
+    # képfelirat külön controller-API-ja megmaradt; a megerősítő párbeszédet
+    # ezen a feliratútvonalon ellenőrizzük.
+    controller.pasteCaptionText([sor])
     qt_app.processEvents()
 
 
@@ -56,7 +55,7 @@ class TestFeliratBeillesztesMegerositese:
         wait_for_photo_op(controller, lambda: controller.setCaption(sor, "Régi felirat"))
         controller.setCaptionClipboardText("Új felirat")
 
-        _indit_beillesztest(window, qt_app)
+        _indit_felirat_beillesztest(controller, sor, qt_app)
         dialog = _gyerek(window, "pasteCaptionReplaceDialog")
         assert _varj(qt_app, lambda: dialog.property("opened")), (
             "a meglévő felirat lecserélése előtt nincs megerősítés"
@@ -81,7 +80,7 @@ class TestFeliratBeillesztesMegerositese:
         wait_for_photo_op(controller, lambda: controller.setCaption(sor, "Maradjon"))
         controller.setCaptionClipboardText("Ne kerüljön be")
 
-        _indit_beillesztest(window, qt_app)
+        _indit_felirat_beillesztest(controller, sor, qt_app)
         dialog = _gyerek(window, "pasteCaptionReplaceDialog")
         assert _varj(qt_app, lambda: dialog.property("opened")), (
             "a meglévő felirat lecserélése előtt nincs megerősítés"
@@ -96,7 +95,7 @@ class TestFeliratBeillesztesMegerositese:
         sor = _kijelol(window, qt_app, controller, height_delta=0)
         controller.setCaptionClipboardText("Új felirat")
 
-        _indit_beillesztest(window, qt_app)
+        _indit_felirat_beillesztest(controller, sor, qt_app)
         dialog = _gyerek(window, "pasteCaptionReplaceDialog")
 
         assert not dialog.property("opened"), "üres feliratnál nem kell kérdezni"

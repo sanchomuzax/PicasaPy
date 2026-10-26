@@ -55,6 +55,14 @@ def _kijelol(window, qt_app, sorok) -> None:
     qt_app.processEvents()
 
 
+def _szerkessz(controller, qt_app, sorok) -> None:
+    wait_for_photo_op(
+        controller,
+        lambda: controller.applyEffectMany(sorok, "enhance"),
+        qt_app=qt_app,
+    )
+
+
 def _elsut(window, qt_app, nev: str) -> None:
     """A VALÓDI menütétel aktiválása — előbb megkövetelve, hogy a
     felhasználó egyáltalán rá tudjon kattintani."""
@@ -283,8 +291,9 @@ class TestMegerositesEsNeKerdezd:
     """4–5. „Kész, ha": egyes/többes mondat és a tartós elnyomás."""
 
     def test_EGY_kijelolt_kepnel_az_egyes_szamu_mondat(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
+        window, controller, _engine = qml_app
         _kijelol(window, qt_app, [0])
+        _szerkessz(controller, qt_app, [0])
         _elsut(window, qt_app, "menuFileSave")
 
         szoveg = _elem(window, "saveConfirmBackupNote").property("text")
@@ -293,8 +302,9 @@ class TestMegerositesEsNeKerdezd:
         qt_app.processEvents()
 
     def test_TOBB_kijelolt_kepnel_a_tobbes_szamu_mondat(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
+        window, controller, _engine = qml_app
         _kijelol(window, qt_app, [0, 1])
+        _szerkessz(controller, qt_app, [0, 1])
         _elsut(window, qt_app, "menuFileSave")
 
         szoveg = _elem(window, "saveConfirmBackupNote").property("text")
@@ -303,8 +313,9 @@ class TestMegerositesEsNeKerdezd:
         qt_app.processEvents()
 
     def test_a_kerdes_a_hivatalos_felirat(self, qml_app, qt_app):
-        window, _controller, _engine = qml_app
+        window, controller, _engine = qml_app
         _kijelol(window, qt_app, [0])
+        _szerkessz(controller, qt_app, [0])
         _elsut(window, qt_app, "menuFileSave")
 
         assert (
@@ -319,6 +330,7 @@ class TestMegerositesEsNeKerdezd:
     ):
         window, controller, _engine = qml_app
         _kijelol(window, qt_app, [0])
+        _szerkessz(controller, qt_app, [0])
         _elsut(window, qt_app, "menuFileSave")
         parbeszed = _elem(window, "saveConfirmDialog")
 
@@ -348,6 +360,7 @@ class TestMegerositesEsNeKerdezd:
         # és a következő mentés MÁR NEM nyit párbeszédet
         parbeszed.setProperty("visible", False)
         qt_app.processEvents()
+        _szerkessz(controller, qt_app, [0])
         wait_for_signal(
             controller.saveFinished,
             lambda: _elsut(window, qt_app, "menuFileSave"),
@@ -363,6 +376,7 @@ class TestMegerositesEsNeKerdezd:
         kapcsolhatja ki némán a kérdést."""
         window, controller, _engine = qml_app
         _kijelol(window, qt_app, [0])
+        _szerkessz(controller, qt_app, [0])
         _elsut(window, qt_app, "menuFileSave")
         parbeszed = _elem(window, "saveConfirmDialog")
         jelolo = _elem(window, "saveConfirmRememberCheck")

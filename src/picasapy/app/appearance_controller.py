@@ -23,6 +23,7 @@ DARK_THEME_KEY = "view/darkTheme"
 UI_TRANSITIONS_KEY = "view/uiTransitions"
 SHOW_TOOLTIPS_KEY = "view/showTooltips"
 SINGLE_CLICK_EXIT_KEY = "view/singleClickExit"
+DISPOSE_PREVIEWS_ON_EXIT_KEY = "view/disposePreviewsOnExit"
 # #4570: az eredeti `Preferences/AutoPlayMovies` kapcsolója — megnyitáskor
 # magától lejátssza-e a videót. Alapállapot: igen (a Picasa így működött).
 AUTO_PLAY_MOVIES_KEY = "view/autoPlayMovies"
@@ -76,6 +77,7 @@ class AppearanceMixin(FolderPhotoSortMixin):
     autoPlayMoviesChanged = Signal()
     enableHoverChanged = Signal()
     singleClickExitEnabledChanged = Signal()
+    disposePreviewsOnExitChanged = Signal()
 
     def _init_appearance(self) -> None:
         """Az AppController.__init__ hívja (a mixinek nem definiálnak saját
@@ -93,6 +95,9 @@ class AppearanceMixin(FolderPhotoSortMixin):
         )
         self._single_click_exit_enabled = coerce_ui_preference_flag(
             settings.value(SINGLE_CLICK_EXIT_KEY, False), default=False
+        )
+        self._dispose_previews_on_exit = coerce_ui_preference_flag(
+            settings.value(DISPOSE_PREVIEWS_ON_EXIT_KEY, False), default=False
         )
         self._auto_play_movies = coerce_ui_preference_flag(
             settings.value(AUTO_PLAY_MOVIES_KEY, True), default=True
@@ -236,3 +241,19 @@ class AppearanceMixin(FolderPhotoSortMixin):
             SINGLE_CLICK_EXIT_KEY, "true" if enabled else "false"
         )
         self.singleClickExitEnabledChanged.emit()
+
+    @Property(bool, notify=disposePreviewsOnExitChanged)
+    def disposePreviewsOnExit(self) -> bool:  # noqa: N802 - QML-property
+        """Az Opciók cache-kapcsolója: kilépéskor ürítse-e az előnézeteket."""
+        return self._dispose_previews_on_exit
+
+    @Slot(bool)
+    def setDisposePreviewsOnExit(self, enabled: bool) -> None:  # noqa: N802
+        enabled = bool(enabled)
+        if enabled == self._dispose_previews_on_exit:
+            return
+        self._dispose_previews_on_exit = enabled
+        self._get_settings().setValue(
+            DISPOSE_PREVIEWS_ON_EXIT_KEY, "true" if enabled else "false"
+        )
+        self.disposePreviewsOnExitChanged.emit()

@@ -805,15 +805,15 @@ class TestFileTypesTab:
                 "optionsFileTypeQuickTimeCheck",
             )
             vart_feliratok = (
-                ".bmp",
-                ".gif",
-                ".png",
-                ".tga",
-                ".tif, .tiff",
-                ".webp",
+                ".BMP",
+                ".GIF",
+                ".PNG",
+                ".TGA",
+                ".TIF, .TIFF",
+                ".WEBP",
                 ".PSD (Photoshop)",
                 "RAW formátumok",
-                "Mozgófilmek (.mov, .mpg, .m4v, .3gp, .avi, ...)",
+                "Mozgófilmek (.AVI, .MPG, .ASF, .WMV)",
                 "Quicktime-filmek (.MOV)",
             )
 
@@ -960,8 +960,8 @@ class TestFileTypesTab:
         raw = _child(window, "optionsFileTypeRawCheck")
         assert raw.property("enabled") is True
         assert raw.property("checked") is True
-        assert controller.fileTypeEnabled("gif") is True
-        assert controller.fileTypeEnabled("png") is True
+        assert controller.fileTypeEnabled("gif") is False
+        assert controller.fileTypeEnabled("png") is False
         for object_name in (
             "optionsFileTypeBmpCheck",
             "optionsFileTypeGifCheck",
@@ -1200,10 +1200,8 @@ class TestFaceDetectionOption:
             # másodpéldány-észlelés ÉLŐ lett (ld.
             # `TestGeneralTabAutoExclude`). Vezérlő NÉLKÜL viszont továbbra
             # is tiltott, ezt ott állítjuk.
-            # #598: az `optionsClearCacheButton` is KIKERÜLT — a
-            # bélyegkép-gyorsítótár kézi ürítése ÉLŐ lett
-            # (`controller.clearThumbnailCache`), az őre a
-            # `test_belyegkep_szint_598.py`.
+            # #5897: a cache-takarítás kapcsolója ÉLŐ, állapot- és
+            # kilépési útját a `test_cache_disposal_5897.py` fedi.
             # #3539: az `optionsSkipRemoveConfirmCheck` KIKERÜLT innen — az
             # albumból eltávolítás megerősítése ÉLŐ lett, ld.
             # `TestGeneralTabLiveRemoveFromAlbumConfirmSuppression`.
