@@ -5378,7 +5378,7 @@ A PMP-fájl tényleges olvasása egy további, feltételes lépés: a `0x006a41e
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| `albumcontactids` lekérdezése a `0x00448fb0` személyalbum-út első oszlopolvasásakor indul; a `0x13320004` property PMP-tartalma a rekord állapotától függően töltődik (`0x00495be0`, `0x00499610`, `0x006a41e0`, `0x006a7090`, `0x006a2cd0`). | Az `albumcontactids` oszlopnévnek nincs közvetlen megfelelője a `src/picasapy/` alatt; a PicasaPy saját adatbázis-sémát és általános PMP-importert használ. Ez önmagában nem bizonyít felhasználói viselkedésbeli eltérést. | Nincs igazolt megvalósítási eltérés, ezért nincs kódteendő. |
+| `albumcontactids` lekérdezése a `0x00448fb0` személyalbum-út első oszlopolvasásakor indul; a `0x13320004` property PMP-tartalma a rekord állapotától függően töltődik (`0x00495be0`, `0x00499610`, `0x006a41e0`, `0x006a7090`, `0x006a2cd0`). | Az `albumcontactids` oszlopnévnek nincs közvetlen megfelelője a `src/picasapy/` alatt; a PicasaPy saját adatbázis-sémát és általános PMP-importert használ. Ez önmagában nem bizonyít felhasználói viselkedésbeli eltérést. | Nincs igazolt megvalósítási eltérés, ezért nincs teendő a kódban. |
 
 ### 41.3 `Ignore Person`: a menüparancs kezelője ismert, a `0x1332000x` kulcs nem
 
@@ -6561,3 +6561,34 @@ A `0x10103870` Ghidra-törzse továbbra is a detektor rekordjának `+0x1c` mező
 **Nyitott / megszerzési út:** J2-J6: az előző táblázatban jelölt eredeti UI-lépések; J7: tiszta Picasa 3.9/Colab Red.dll hash, azonos címkézett képkészlet és tényleges bemeneti méret; J8: `contacts.xml`, `.picasa.ini`, db3 fájlállapot minden művelet előtt/után, bezáráskor és újraindítás után. **Ghidra-kör kell: 0x101044f0: kövesd a 0x10103870 által olvasott detektor-rekord +0x1c mező beállítását/betöltését a Red konfigurációs objektumáig; állapítsd meg, hogy a mező ugyanahhoz az adatúthoz vagy ponthoz kapcsolódik-e, mint a vfr_SdkRelator → vqc_Relator::sim eredménye. A meglévő 0x10103870 kimenet csak az összevetést, a 0x10063f30 kimenet pedig az általános ObjectRef-betöltést mutatja, a mezőkapcsolatot nem. [blokkoló]**
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (52.5: a helyi `red.cfg` `vfr_SdkRelator` → `vqc_Relator` objektumkapcsolat feloldása; 54.2 és a 8. pont állapotának pontosítása, a küszöb adatút nyitott kérdése).
+
+## 55. #5184, helyi Codex-kutatói kör: a helyi archívum nem dönt N1/N3/N7-ről (2026-10-26)
+
+**Hatókör:** a mérőadat-archívum célzott ellenőrzése és az eddigi bináris-/Colab-leletek összevetése. Az eredeti Picasát ebben a körben nem futtattam; a helyi Wine futtató hiányzik. Az archívumból nem bontottam ki fotókat.
+
+### 55.1 A célzott archívummérés
+
+A `meroadat.tar` taglistája **944** tagot tartalmaz, köztük **15** `.picasa.ini`-t és **1** PNG-t. Csak ezt a 16 tagot bontottam ki a munkafa `.bt/5184-codex/` almappájába. A 15 INI mindegyikében **0** `faces=`, **0** `[Contacts2]`, **0** `]facealbum:` és **0** `ffffffffffffffff` jelölő van. A PNG **358×121 px**, és a képe a PicasaPy „Exportálás” hibaüzenet-ablaka; nem eredeti Picasa-felvétel. Forrás: mérés (`meroadat.tar` taglista, célzott kibontás, jelölőszámlálás, `file` és képi ellenőrzés). A helyi `wine` parancs nem található.
+
+### 55.2 N1, N3 és N7 - eredmény és következő mérés
+
+| Pont | Eredmény | Bizonyíték / mi döntheti el |
+|---|---|---|
+| N1 - további ismeretlen arc a névvel jelölt fotón | **NYITOTT; eltérés nem bizonyított.** | A `0x0047b020` munkatétel `+0x10` jelzőjének két ága nem köti a jelzőt a fotó névállapotához (53.1); az archívum nem tartalmaz arc-kontrollt. Döntő mérés: ugyanaz a legalább kétarcú eredeti fotó a név hozzárendelése előtt és után, a Név nélküliek listájával és a `faces=` kimenettel. |
+| N3 - eredeti felismerési arány, küszöb és képméret | **NYITOTT; az eredeti értékek NINCSENEK MEG.** | A mi `960 px`/`0,9` beállításunk nem eredeti Picasa-adat. A bináris `0,50` értéke a `FRRecommendIncludeLimit` ajánlási határa (`0x0048aab0`, `0x0048e1f0`), nem igazolt Red-detektorküszöb. A Red `0x100057c0` pontszámmaximumot ír ki, a `0x10001570` státuszt kezel; a 53.2 és 54.2 szerinti effektív küszöb, bemeneti WxH és felismerési arány továbbra sincs meg. Döntő mérés: azonos címkézett képkészlet mindkét programban, a Red-nek átadott tényleges mérettel és képenkénti eredménnyel. |
+| N7 - kijelölési modell | **Részben lezárt:** a Név nélküliek többes kijelölése igazolt; a People Manager Ctrl/Shift-módja **NYITOTT**. | A `job-180` hat arc Ctrl+A kijelölését mutatja; a `job-186` People Manager-képe egy kijelölt személyt mutat, ami nem dönti el a többes kijelölést (53.3). Döntő mérés: két személy után képkocka az első sor kattintásáról, Ctrl+kattintásról és Shift-kattintásról. |
+
+### 55.3 Független utak és cáfoló próba
+
+- **A út - bináris:** a munkasor és a Red.dll meglévő utasítás-/Ghidra-olvasatai a `picasa-arcfelismeres.md` 53-54. szakaszában vannak. A `0x006cde50` kimenete (20.7) nem azonosít konkrét képméret-argumentumot; a helyi Red.dll pontszám/státusz útja nem azonosít 3.9-es effektív küszöböt sem. Ezek az olvasatok a munkajelző ágát és az ajánlási határt rögzítik, de a kérdezett eredeti futásidejű döntést, képméretet és felismerési arányt nem adják meg.
+- **B út - mérőadat:** az archívum taglistája, a 15 INI jelölővizsgálata és az egyetlen PNG képi ellenőrzése nem tartalmaz N1-hez vagy N7-hez eredeti Picasa-állapotot, N3-hoz pedig címkézett eredményeket. A két, egymástól különböző út egyezik abban, hogy N1/N3/N7 viselkedési kérdése helyben továbbra sem dőlt el; ez nem válasz az eredeti program viselkedésére.
+- **Cáfoló próba:** megpróbáltam a `0,50` értéket N3 detektorküszöbeként használni. A `0x0048e1f0` fogyasztási útja a `FRRecommendIncludeLimit` mezőként kezeli, és a `0x100057c0`/`0x10001570` Red-út nem ad végső pontszámküszöböt (53.6). Ez cáfolja a `0,50 = Red-detektorküszöb` értelmezést; a Red effektív küszöbe ettől még nyitott.
+- **Archívum-cáfolat:** az egyetlen PNG-t eredeti Picasa-felvételnek tekintő feltevést a kép tartalma cáfolja: PicasaPy-exporthiba látható rajta. A `358×121 px` fájlméret külön `file`-mérése is eltér az N8 referenciaként dokumentált `631×351 px` People ablaktól (36.3).
+
+### 55.4 A többi kérdés és fejlesztési következmény
+
+Az N4 eredménye változatlanul **nincs alapértelmezett keret vagy név** (`mérés (job-187)`, 36.3). N5: **nincs személyszintű Ignore; a mellőzés arcszintű** (`mérés (job-222..226)`, 37.10-37.11). N6: a „Delete People Album” után eltűnik a `faces=` sor, a `[Contacts2]` megmarad; a PicasaPy javítása a **#5391** (`mérés (job-222/224)`, 37.10). N8: a referencia a **job-186 24. képe**, a People ablak és egy kijelölt „Teszt Elek” sor (`mérés (job-186)`, 36.3). Ezeket ez a kör nem mérte újra.
+
+**Összesített állapot:** N1, N3 és a People Manager N7-része nyitott; a teljes „Kész, ha” lista ezért nem teljes. Eredeti/PicasaPy-eltérés nincs bizonyítva, tehát nincs teendő a kódban és új fejlesztői jegy sem indokolt. Új kutatási jegy nem szükséges; a döntő lépések az eredeti Picasa futásidejű felvételei/mérései a fenti táblában.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 55. szakasz: célzott archívummérés, N1/N3/N7 aktuális állapota és megszerzési út); `docs/specs/00-index.md` (#5184 felvétele a kézzel karbantartott nyitott kérdések listájába).
