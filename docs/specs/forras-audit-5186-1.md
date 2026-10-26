@@ -26,7 +26,7 @@ Az ítélet EGYEZIK, ha a forrás és a jelenlegi megvalósítás egyezik; ELTÉ
 | #3663 | EGYEZIK | Colab EN 33-35; `editpanel.tre`:964-994,1160-1201; `0x00569af0` | A jelenlegi kettős nézet kódjában nincs további eltérés. |
 | #3709 | EGYEZIK | `respack.yt`; `picasa-fo-ablak-elrendezes.md` | A sín 3 képpontot hagy a 127 px-es foglalat két végén; a nagyító keret nélküli. |
 | #3729 | EGYEZIK | `respack.yt`; `scaleslider.tre` | A sín 9 px-es, a fogantyú 16 × 22 px. |
-| #3756 | NEM DÖNTHETŐ EL STATIKUSAN | Colab EN 33-35; jelenlegi `PhotoViewer.qml` | A jelvény fókuszkövetése igazolt; az eredeti feliratsáv-kép hozzárendelése a felvételeken nem látható. |
+| #3756 | NYITOTT | Colab EN 33-35; Picasa 3.7 bináris (`0x00566a70`, `0x00568010`, `0x005f8ac0`, `0x0056a160`, `0x0056a680`); mai `PhotoViewer.qml` | A caption út az `e64` mezőt adja tovább, a fókuszút az `e68`-at is olvassa és továbbítja; egyikből sem bizonyított, hogy bal vagy jobb fókusznál melyik kép felirata jelenik meg. A két eltérő felirattal végzett új futásmérés hiányzik. |
 | #3826 | EGYEZIK | bináris `0x008f86c8`, `0x008f86d1`; `filterdesc-registry.md` | A csúszka tartománya és alapértéke a natív paramétert követi. |
 
 ## Tételek
@@ -215,17 +215,19 @@ Az ítélet EGYEZIK, ha a forrás és a jelenlegi megvalósítás egyezik; ELTÉ
 
 **Eredeti:** a Colab EN 33-35 felvételei (job #58) bal és jobb fókuszt is rögzítenek; a `ui-audit-editor.md` 3/b kiméri, hogy a „Selected” jelvény a fókuszált kép mellett, a margóban áll. Mindhárom képen a feliratsáv üres „Make a caption!” helyőrzőt mutat, ezért a kép-hozzárendelést nem bizonyítják.
 
-**Bináris út:** az index `editpanel/previewclip`, `editpanel/previewclip2` és `editpanel/selection_label` sztring-xrefjei a `0x00569720` (967 bájt) és `0x00569af0` (1434 bájt) rutinokat jelölik; az utóbbi hívói `0x00569720`, `0x0056a160` és `0x0056a680`. Ez a fókuszjelvény útja. Az `editpanel/caption` erőforrás külön megjelenik a `0x00566a70` (2908 bájt) és `0x005f8ac0` (310 bájt) rutinokban; `0x005683a0` a `CaptionState` és a `previewclip2` sztringet is használja, és meghívja `0x00566a70`-et. A xref-lánc azonosítja a kezelőterületet, de nem mondja meg, hogy bal vagy jobb fókusznál melyik fotó feliratát olvassa. A korábbi Ghidra-fájlokban ezekhez csak hívóhelylista van, a függvények dekompilált kódja nincs meg.
+**Eredeti bináris út - a feliratkérés és a fókusz külön mezője (#5975):** az `editpanel/caption` xrefjei a `0x00566a70`, `0x00568010` és `0x005f8ac0` rutinokhoz vezetnek. A Ghidra-kimenet `0x00568010` törzsében a rutin az `[this+0xe64]` értéket adja át a képadat-modell `vtbl+0x4c` hívásának (`0x0056807e`-`0x00568092`), majd a visszakapott szöveget a `0x0067f2a0` hívással adja át a caption vezérlőnek (`0x00568094`-`0x00568099`). A `0x00566a70` másik adatlekérési ágában az `[this+0xe64]` érték a vtable `+0xc` hívásába kerül (`0x00566f8f`-`0x00566f96`), majd a rutin meghívja a `0x005f8ac0`-at; ez utóbbi szintén `e64`-et ad át a caption-gomb vtable `+0x4c` hívásának (`0x005f8b0f`-`0x005f8b23`). Ezek az utak azt mutatják, hogy a caption-kérés az `e64` mezőt használja.
 
-**Nálunk:** a `PhotoViewer.qml:882-886` bal fókusznál a `currentIndex`, jobb fókusznál a másik sort választja; a feliratsáv a `:4813-4846` sorokban ezt a sort olvassa és írja. A jelvény aktuális elhelyező útja a `:4237-4298` tartományban van.
+A fókuszváltó `0x0056a160` a második előnézeti ágat kezeli: az aktív preview-vezérlőt az `[this+0x3280]` mezőben váltja (`0x0056a1ab`-`0x0056a1e2`), és az `[this+0xe68]` értéket beolvassa, majd átadja a `0x00717c50` segédnek (`0x0056a221`-`0x0056a228`). A külön `0x0056a680` rutinban az `editpanel/swap_2up_focus` és `editpanel/swap_2up_layout` erőforrások jelennek meg; a rutin az aktív preview-vezérlőt is beállítja (`0x0056a8c9`), az `e64` értéket a `0x006abd70` frissítőnek adja, majd az `e68`-at az update-objektum `[+0x74]` mezőjébe másolja (`0x0056a958`-`0x0056a972`). Ez a fókuszcsere útján mindkét kulcs felhasználását mutatja, de nem nevezi meg, hogy melyik oldal a bal vagy a jobb. Az `e64 != e68` feltétel a `0x00566a70` rutinban egy kiegészítő ágat nyit a morzsamenühöz (`0x00566ec2`-`0x00566f11`), de a vizsgált függvények teljes adatútja sem kapcsolja a mezők egyikét bal vagy jobb képhez. A már meglévő Colab EN 33-35, job #58 felvételeken a „Make a caption!” helyőrző látszik, tehát azok sem döntik el ezt.
 
-**Ítélet: NYITOTT.** A fókuszjelvény eredeti útja és a mai feliratkötés külön-külön azonosított. Az eredeti felirat-hozzárendelés futás közbeni képe nincs meg, ezért a két megvalósítás egyezése vagy eltérése nem állítható.
+**Nálunk:** a `PhotoViewer.qml:882-886` bal fókusznál a `currentIndex`, jobb fókusznál a másik sort választja; a feliratsáv a `:4831` és `:4844` sorokban ezt a sort olvassa és írja. A jelvény aktuális elhelyező útja a `:4237-4298` tartományban van.
 
-**Teendő:** két eltérő, nem üres Picasa-feliratú képpel készítsen Colab `ui_capture` felvételt bal, majd jobb fókusznál; ugyanezt rögzítse PicasaPy-ban valódi kattintásokkal, majd egymás mellé tett képkockával hasonlítsa össze a feliratsávot. A függvényadatút lezárásához Ghidra-dekompiláció kell `0x00566a70` és `0x005f8ac0` címekre. A jelen munkamenetben nincs Colab/PicasaPy felület, ezért mérési eredmény és job-szám **NINCS MEG**.
+**Ítélet: NYITOTT.** Az eredeti bináris feliratszöveg-kérése az `e64` képkulcshoz kötött; a bal/jobb fókusz és e kulcs közötti hozzárendelés nincs bizonyítva. A mai QML a fókusz szerinti sort használja. Az eredeti felirat-hozzárendelés futásidejű képe nincs meg, ezért egyezés vagy eltérés nem állítható.
+
+**Teendő:** két eltérő, nem üres Picasa-feliratú képpel készítsen új Colab `ui_capture` felvételt bal, majd jobb fókusznál; ugyanezt rögzítse PicasaPy-ban valódi kattintásokkal, majd egymás mellé tett képkockával hasonlítsa össze a feliratsávot. A bináris adatút dekompilációja már elérhető a `picasapy-agent/referencia/ghidra/2026-10-26-5975-kettos-retus.txt` fájlban; a runtime összevetés továbbra is szükséges. A régi job #58 felvételek nem megfelelőek, új mérési job-szám **NINCS MEG**.
 
 **Kész, ha (#5975):**
 
-- ✅ A fókuszjelvény bináris rutinjai és a feliratvezérlő xref-útja azonosított.
+- ✅ A fókuszváltó, a caption-vezérlő és a feliratot kérő bináris rutinok azonosítottak; a getter az `e64` képkulcsot használja (`0x00568010`).
 - ⛔ Eredeti, két eltérő nem üres feliratú kép Colab-felvétele: **NINCS MEG**.
 - ⛔ PicasaPy valódi kattintásos párja: **NINCS MEG**.
 - ⛔ Képkocka-összevetés és egyező/eltérő ítélet: **NINCS MEG**.
