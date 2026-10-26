@@ -132,6 +132,7 @@ OptionsTabPrinting 1.0 OptionsTabPrinting.qml
 OptionsTabNetwork 1.0 OptionsTabNetwork.qml
 OptionsTabWebAlbums 1.0 OptionsTabWebAlbums.qml
 OptionsTabNameTags 1.0 OptionsTabNameTags.qml
+OptionsTabGooglePhotos 1.0 OptionsTabGooglePhotos.qml
 WebExportDialog 1.0 WebExportDialog.qml
 PrintDialog 1.0 PrintDialog.qml
 PrintOptionsPanel 1.0 PrintOptionsPanel.qml
