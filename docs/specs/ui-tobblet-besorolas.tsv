@@ -366,7 +366,6 @@ PicasaPy/WebExportDialog.qml	Browse...	segedszoveg	'Tallozas...' gomb - natív O
 PicasaPy/WebExportDialog.qml	Choose target folder...	segedszoveg	Celmappa-valaszto dialogus utasitasa; nincs talalhato eredeti megfelelo.		
 PicasaPy/WebExportDialog.qml	Page title:	segedszoveg	Weboldal-export beallitasainak mezofelirata (oldalcim); nincs talalhato eredeti megfelelo a korpuszban (a CWebExporter/WebExport csoport nem tartalmaz ilyen beallitas-feliratokat).		
 PicasaPy/WebExportDialog.qml	PicasaPy is generating the web page.	segedszoveg	Allapotjelzo folyamatban levo exportnal; a CWebExporter csoport uzenetei masrol szolnak (masolas/hiba/torles), erre a konkret allapotra nincs talalhato eredeti megfelelo.		
-PicasaPy/WebExportDialog.qml	Save to:	segedszoveg	Mentesi cel mezofelirata; nincs talalhato eredeti megfelelo.		
 StartupRelocateWindow.qml	Moving the database	segedszoveg	Az adatbázis áthelyezése az eredetiben is megvan (Eszközök ▸ Adatbázis helyének kiválasztása…), az induláskori folyamatjelző szövegének nincs eredeti párja.		
 StartupRelocateWindow.qml	Photo index…	segedszoveg	Az adatbázis-áthelyezés (eredeti funkció) folyamatjelzőjének lépése; eredeti szövege nincs.		
 StartupRelocateWindow.qml	PicasaPy is moving the database.	segedszoveg	Az adatbázis-áthelyezés (eredeti funkció) induláskori folyamatjelzője; eredeti szövege nincs.		
