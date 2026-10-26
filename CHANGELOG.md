@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.253] - 2026-10-26
+
+- A fotónéző képernyőkép-mérője Windowson is lefut, a magyar kimenete nem okoz hibát (#5971).
+
 ## [0.9.252] - 2026-10-26
 
 - A db3-importáló most már a több tárolórészre bontott wordhash-listákat is beolvassa, és gyorsabban veszi át a sorrendadatokat. (#5964).
