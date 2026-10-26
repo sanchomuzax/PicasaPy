@@ -187,7 +187,9 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     ),
     # ansel=1,#szín (#717: korábban egyáltalán nem volt katalógus-bejegyzése —
     # a gomb egykattintásos alapértékkel, színválasztó nélkül alkalmazott)
-    "ansel": (_color("color", "Pick Color", "#ffffff"),),
+    # #5949: a natív színmező alapértéke #545454; a descriptor `pixel` presetje
+    # külön #555555 és nem írja felül ezt a katalógusértéket (spec: #5944).
+    "ansel": (_color("color", "Pick Color", "#545454"),),
     # dir_tint=1,x,y,gradiens,árnyék,#szín (#717: a szín korábban hiányzott)
     "dir_tint": (
         _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
