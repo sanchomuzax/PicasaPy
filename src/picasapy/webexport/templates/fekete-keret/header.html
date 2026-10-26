@@ -3,12 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title><%albumName%></title>
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" media="print" href="assets/extra.css">
 </head>
-<body>
-<header class="album-header">
-<h1><%albumName%></h1>
-<%if albumCaption%><p class="album-caption"><%albumCaption%></p><%endif%>
-<p class="album-meta"><%albumDate%> · <%albumItemCount%> kép</p>
-</header>
+<frameset cols="25%,*">
+<frame src="thumbnail-index0.html" name="thumbnail-index">
+<%if !albumItemCount%><frame src="about:blank" name="large-view"><%endif%>
