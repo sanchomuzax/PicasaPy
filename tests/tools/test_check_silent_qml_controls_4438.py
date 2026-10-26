@@ -114,6 +114,37 @@ Item {
     assert _category_findings(root, "unbound-signal") == []
 
 
+def test_a_gyerekkomponens_host_tulajdonsagan_atadott_jelzeskezelo_ervenyes(
+    tmp_path: Path,
+) -> None:
+    root = _repo(
+        tmp_path,
+        qml='''\
+Item {
+    id: viewer
+    signal manualFaceAddCancelRequested()
+    PhotoArea { hostViewer: viewer }
+}
+''',
+    )
+    qml_dir = root / "src" / "picasapy" / "app" / "qml"
+    (qml_dir / "PhotoArea.qml").write_text(
+        """\
+Item {
+    id: photoArea
+    property var hostViewer: null
+    Connections {
+        target: photoArea.hostViewer
+        function onManualFaceAddCancelRequested() { visible = false }
+    }
+}
+""",
+        encoding="utf-8",
+    )
+
+    assert _category_findings(root, "unbound-signal") == []
+
+
 def test_a_signal_on_an_inline_component_is_bound_at_its_use_site(
     tmp_path: Path,
 ) -> None:

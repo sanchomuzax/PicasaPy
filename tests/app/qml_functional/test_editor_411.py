@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtCore import Property, QObject, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
-from tests.support.qml_blokk import blokk_horgonyra
+from tests.support.qml_blokk import blokk_horgony_utan
 
 _KEEPALIVE = []
 
@@ -32,6 +32,10 @@ _QML_SOURCE = (
 _VIEWER_QML_SOURCE = (
     Path(__file__).resolve().parents[3]
     / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "PhotoViewer.qml"
+).read_text(encoding="utf-8")
+_LEFT_DRAWER_QML_SOURCE = (
+    Path(__file__).resolve().parents[3]
+    / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "PhotoViewerLeftDrawer.qml"
 ).read_text(encoding="utf-8")
 
 
@@ -90,7 +94,7 @@ class TestPanelFixedWidth:
         assert panel.property("implicitWidth") == 280
 
     def test_photo_viewer_source_reserves_280_for_the_panel(self):
-        """A PhotoViewer.qml a bal panel-Rectangle-t 280px-re állítja —
+        """A PhotoViewer.qml bal panel-példánya 280px-es —
         forrás-szintű ellenőrzés (a teljes PhotoViewer betöltése a
         `qml_app` fixtúrát igényelné, ld. test_viewer.py mintája)."""
         assert "Layout.preferredWidth: 280" in _VIEWER_QML_SOURCE
@@ -111,13 +115,16 @@ class TestPanelFixedWidth:
         # állításnál a rögzített ablak KÉT irányban is hazudik: kilóghat a
         # SZOMSZÉD fiókba (hamis bukás a helyes 190-re), és a panel
         # növekedésekor kicsúszhat alóla a valódi regresszió.
-        bal_panel_blokk = blokk_horgonyra(
-            _VIEWER_QML_SOURCE, 'objectName: "viewerLeftDrawer"'
+        assert 'objectName: "viewerLeftDrawer"' in _LEFT_DRAWER_QML_SOURCE, (
+            "a bal panel objektumneve kikerült a komponensből"
         )
-        assert "Layout.preferredWidth: 280" in bal_panel_blokk, (
-            "az őr elcsúszott: a bal panel blokkjában a 280 sincs meg"
+        bal_panel_peldany = blokk_horgony_utan(
+            _VIEWER_QML_SOURCE, "PhotoViewerLeftDrawer"
         )
-        assert "Layout.preferredWidth: 190" not in bal_panel_blokk
+        assert "Layout.preferredWidth: 280 + viewer.editorDrawerOffset" in bal_panel_peldany, (
+            "az őr elcsúszott: a bal panel példánya nem a mért 280px-es szélességet kapja"
+        )
+        assert "Layout.preferredWidth: 190" not in bal_panel_peldany
 
 
 class TestCommonFixesTabUsesOwnIcons:

@@ -12,7 +12,7 @@ def test_a_qml_a_rogzites_mentes_es_vegso_allapotokat_osszekoti(qt_app):
     gyoker = Path(__file__).resolve().parents[3]
     qml = (
         gyoker
-        / "src/picasapy/app/qml/PicasaPy/PhotoViewer.qml"
+        / "src/picasapy/app/qml/PicasaPy/PhotoViewerPhotoArea.qml"
     ).read_text(encoding="utf-8")
     controller = (
         gyoker / "src/picasapy/app/frame_capture_controller.py"
