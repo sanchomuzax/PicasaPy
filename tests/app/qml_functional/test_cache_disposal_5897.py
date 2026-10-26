@@ -108,6 +108,9 @@ def test_general_kapcsolo_valodi_kattintassal_mentodik_es_kilepeskor_urit(
 
     _kattints_ablakban(qt_app, dialog, checkbox)
     assert checkbox.property("checked") is True
+    assert controller.disposePreviewsOnExit is False, (
+        "a jelölő kattintásra azonnal módosította a tartós beállítást"
+    )
 
     # #5906: a módosítás az OK-ra mentődik
     ok_button = _gyerek(dialog, "optionsOkButton")
@@ -136,6 +139,38 @@ def test_general_kapcsolo_valodi_kattintassal_mentodik_es_kilepeskor_urit(
     controller.shutdown()
     assert not _cache_fajlok(tmp_path), (
         "a bekapcsolt kapcsoló nem ürítette ki a bélyegkép-cache-t kilépéskor"
+    )
+
+
+@pytest.mark.parametrize("magassag_eltolas", (-5, 0, 5))
+def test_general_kapcsolo_cancel_elveti_a_valtoztatast(
+    cache_app, qt_app, magassag_eltolas
+):
+    window, controller, _engine = cache_app
+    _elokeszit(window, qt_app, controller)
+    kezdeti_magassag = window.height()
+    window.setHeight(kezdeti_magassag + magassag_eltolas)
+    assert _varj(qt_app, lambda: window.height() == kezdeti_magassag + magassag_eltolas)
+    dialog = _beallitasok_megnyit(
+        window, qt_app, window.property("menuBar")
+    )
+    checkbox = _gyerek(dialog, "optionsClearCacheFilesCheck")
+    assert checkbox.property("checked") is False
+    assert controller.disposePreviewsOnExit is False
+
+    _kattints_ablakban(qt_app, dialog, checkbox)
+    assert checkbox.property("checked") is True
+    assert controller.disposePreviewsOnExit is False, (
+        "a jelölő kattintásra azonnal módosította a tartós beállítást"
+    )
+
+    cancel_button = _gyerek(dialog, "optionsCancelButton")
+    _kattints_ablakban(qt_app, dialog, cancel_button)
+    assert _varj(qt_app, lambda: dialog.property("visible") is False), (
+        "az Opciók Mégse gombja nem zárta be a párbeszédet"
+    )
+    assert controller.disposePreviewsOnExit is False, (
+        "a Mégse nem vonta vissza a Clear cache files módosítását"
     )
 
 

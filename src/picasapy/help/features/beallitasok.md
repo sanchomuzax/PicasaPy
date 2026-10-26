@@ -21,10 +21,10 @@ Az ablak alján két gomb áll, ahogy az eredeti Picasában:
 - **Mégse** (vagy az **Esc**, illetve az ablak bezárása) elveti őket:
   minden úgy marad, ahogy az ablak megnyitásakor volt.
 
-A beállítások tehát csak az **OK** után lépnek életbe. Egyetlen
-kivétel az **Általános** fül **Gyorsítótárban lévő fájlok törlése**
-jelölője: ez már a kattintáskor elmentődik, a **Mégse** sem vonja
-vissza. A nyelv az **OK** után sem vált át azonnal, lásd alább.
+A beállítások tehát csak az **OK** után lépnek életbe; a **Mégse** az
+**Általános** fül **Gyorsítótárban lévő fájlok törlése** jelölőjének
+módosítását is elveti. A nyelv az **OK** után sem vált át azonnal, lásd
+alább.
 
 Ha az ablakot **keskenyre** húzod, a nyolc fül nem szorul össze
 olvashatatlanra: a fülsor vízszintesen **görgethetővé** válik, a két
@@ -123,8 +123,9 @@ látszik.
 
 Az **Általános** fülön a **Gyorsítótárban lévő fájlok törlése** jelölő
 azt dönti el, hogy a program **kilépéskor** kitakarítsa-e a lemezen
-tartott bélyegképeket. Alapból ki van kapcsolva. Azonnali ürítés nincs:
-a takarítás mindig a program bezárásakor történik.
+tartott bélyegképeket. Alapból ki van kapcsolva. A módosítás az Opciók
+ablakban piszkozat marad: az **OK** menti, a **Mégse** elveti. Azonnali
+ürítés nincs: a takarítás mindig a program bezárásakor történik.
 
 Egyetlen kép sem vész el: a bélyegképek szükség szerint újra elkészülnek.
 A következő indítás után viszont a mappák lassabban nyílnak meg, amíg a
