@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.246] - 2026-10-26
+
+- Az Útlevélkép több arcot tartalmazó képnél is az eredeti „Can't find any faces" hibaszöveget mutatja, ahogy az eredeti (#5930).
+
 ## [0.9.245] - 2026-10-26
 
 - A három keretes HTML-export-sablon most görgethető bélyegkép-indexet és külön nagy képkeretet ad (#5926).
