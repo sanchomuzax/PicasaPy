@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.255] - 2026-10-27
+
+- Fixed QML layout warnings in the tags and face editor, and prevented GPU preview requests until both preview images are ready (#5984).
+
 ## [0.9.254] - 2026-10-26
 
 - A gyorscímke-sáv két legutóbbi címkét tart meg, az ismételt használat pedig megőrzi a sorrendet. (#5980).
