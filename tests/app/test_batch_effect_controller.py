@@ -142,6 +142,19 @@ class TestApplyEffectMany:
         ][0]
         assert section_line == "filters=sat=1,-0.2;autolight=1;"
 
+    def test_sharpen_az_unsharp2_alaperteket_irja(self, controller, library):
+        _run(
+            controller,
+            lambda: controller.applyEffectMany(
+                _rows_by_name(controller, "x.jpg"), "unsharp"
+            ),
+        )
+        section_line = [
+            line for line in _ini_text(library).splitlines()
+            if line.startswith("filters=")
+        ][0]
+        assert section_line == "filters=sat=1,-0.2;unsharp2=1,0.600000;"
+
     def test_sepia_a_kijelolt_kepekre_kerul_es_egy_lepesben_visszavonhato(
         self, controller, library
     ):
@@ -247,10 +260,12 @@ class TestUndoBatchEdit:
                 _rows_by_name(controller, "x.jpg", "z.jpg"), "unsharp"
             ),
         )
+        assert "unsharp2=1,0.600000;" in _ini_text(library)
+        assert "unsharp2=1,0.600000;" in _ini_text_b(library)
         assert controller.canUndoBatchEdit is True
         controller.undoBatchEdit()
-        assert "unsharp=1;" not in _ini_text(library)
-        assert "unsharp=1;" not in _ini_text_b(library)
+        assert "unsharp2=1,0.600000;" not in _ini_text(library)
+        assert "unsharp2=1,0.600000;" not in _ini_text_b(library)
         # az x.jpg eredeti lánca (sat=1,-0.2;) visszaállt
         section_line = [
             line for line in _ini_text(library).splitlines()

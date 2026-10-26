@@ -124,9 +124,11 @@ def _apply_one(session: EditSession, name: str) -> EditSession:
     A metódus-választás az `EditSession` már meglévő, szűk API-ját követi
     (nem vezet be új réteg-fajtát) — `apply()` az append-only egygombos
     javításokhoz, `toggle()` a redeye-hoz (az egyetlen létező toggle-effekt),
-    `append_effect()` a paraméter nélküli effektekhez (unsharp alap-erőssége
-    megegyezik a puszta `unsharp=1`-gyel, ld. `EditorPanel.qml` #315
-    megjegyzése)."""
+    `append_effect()` a paraméter nélküli effektekhez; a kötegelt `unsharp`
+    név az eredeti Picasa alapértelmezett `unsharp2=1,0.600000` tagjaként
+    kerül a láncba."""
+    if name == "unsharp":
+        return session.append_effect("unsharp2", ("1", "0.600000"))
     if name in _APPLY_NAMES:
         return session.apply(name)
     if name in _TOGGLE_NAMES:
