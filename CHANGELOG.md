@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.241] - 2026-10-26
+
+- A HTML-export párbeszéd a Picasa hét sablonját, leírását és saját előnézeti képét mutatja, a weboldalcím mezőben pedig a mappa nevét tölti be. (#5909).
+
 ## [0.9.240] - 2026-10-26
 
 - Az Opciók E-Mail és Web Albums füle megjeleníti az eredeti sorcímeket és a vízjel súgószövegét. (#5899).
