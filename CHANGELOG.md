@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.239] - 2026-10-26
+
+- Az Options ▸ File Types alapfeliratai és tiszta profilú fájltípus-beállításai az eredeti Picasát követik. (#5898).
+
 ## [0.9.238] - 2026-10-25
 
 - Az Általános beállításokban a „Clear cache files” kapcsoló kilépéskor üríti az előnézet-cache-t, ha be van kapcsolva. (#5897).
