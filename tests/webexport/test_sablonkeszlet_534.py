@@ -99,7 +99,7 @@ class _Olvaso(HTMLParser):
     XML-parszer joggal utasít el. Ami itt mérhető: a nyitó/záró címkék
     egyensúlya és az attribútum-értékek épsége."""
 
-    URES = {"img", "link", "meta", "br", "hr", "input"}
+    URES = {"img", "link", "meta", "br", "hr", "input", "frame"}
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -143,10 +143,13 @@ def test_a_felirat_EPSEGBEN_kerul_az_attributumba(sablon_id, album):
     """A felirat idézőjelet és `&`-t tartalmaz: nyersen kiírva az `alt`
     értéke csonkulna, és a maradék szöveg jelöléssé válna (#2932)."""
     adat, cel, settings = album
-    run_web_export(_TEMPLATES / sablon_id, cel, adat, settings)
-    olvaso = _Olvaso()
-    olvaso.feed((cel / "index.html").read_text(encoding="utf-8"))
-    assert 'Anyu & Apu <a "nyaralás">' in olvaso.ertek("img", "alt")
+    report = run_web_export(_TEMPLATES / sablon_id, cel, adat, settings)
+    altok = []
+    for fajl in report.output_files:
+        olvaso = _Olvaso()
+        olvaso.feed(fajl.read_text(encoding="utf-8"))
+        altok.extend(olvaso.ertek("img", "alt"))
+    assert 'Anyu & Apu <a "nyaralás">' in altok
 
 
 @pytest.mark.parametrize("sablon_id", sorted(set(VART_KESZLET) - {"xml"}))
@@ -156,9 +159,19 @@ def test_a_navigacio_letezo_fajlra_mutat(sablon_id, album):
     adat, cel, settings = album
     report = run_web_export(_TEMPLATES / sablon_id, cel, adat, settings)
     kiadott = {f.name for f in report.output_files}
-    olvaso = _Olvaso()
-    olvaso.feed((cel / "index.html").read_text(encoding="utf-8"))
-    oldal_hivatkozasok = [h for h in olvaso.ertek("a", "href") if h.endswith(".html")]
+    oldal_hivatkozasok = []
+    for fajl in report.output_files:
+        olvaso = _Olvaso()
+        olvaso.feed(fajl.read_text(encoding="utf-8"))
+        for _tag, attrs in olvaso.attributumok:
+            for nev in ("href", "src"):
+                cel_url = attrs.get(nev, "")
+                if not cel_url or cel_url.startswith(("about:", "#")):
+                    continue
+                cel_fajl = cel / cel_url
+                assert cel_fajl.is_file(), (sablon_id, fajl.name, nev, cel_url)
+                if cel_url.endswith(".html"):
+                    oldal_hivatkozasok.append(cel_url)
     assert oldal_hivatkozasok
     assert set(oldal_hivatkozasok) <= kiadott
 
