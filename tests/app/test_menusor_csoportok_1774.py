@@ -473,9 +473,7 @@ class TestAMappanezetAlmenuSORRENDJE:
     """
 
     def _almenu(self) -> str:
-        from pathlib import Path
 
-        import picasapy.app
 
         forras = menu_component_source("PicasaFolderViewMenu.qml")
         kezdet = forras.index('objectName: "menuViewFolderView"')
