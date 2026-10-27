@@ -22,7 +22,8 @@ Egy és több kijelölt képnél is ugyanaz a **Fájlok átnevezése** ablak
 nyílik meg. Egyetlen képnél a névmezőben már ott áll a kép mostani neve
 (kiterjesztés nélkül), kijelölve, így rögtön átírhatod. Írd be az új
 nevet. Több kép egyszerre is átnevezhető -
-ilyenkor a program sorszámozza őket. A **Befoglalás a fájlnévbe:** alatt
+ilyenkor a program csak akkor tesz sorszámot a név végére, ha a név már
+foglalt (lásd lentebb). A **Befoglalás a fájlnévbe:** alatt
 bekapcsolhatod, hogy a névbe kerüljön bele a **Dátum** és a
 **Képfelbontás** is. Alul a **Példa** sor mutatja a név felépítését,
 az eredeti Picasa rögzített mintájával: például `Nyaralás 08-01-2004
@@ -48,9 +49,17 @@ rögtön folytathatod vele a munkát.
 - A két jelölőnégyzet állását a program **megjegyzi**, a következő
   megnyitáskor úgy találod őket, ahogy hagytad.
 
-Az ütközéseket a program **előre** ellenőrzi: ha a kész nevek valamelyike
-már foglalt, vagy kettő megegyezne, egyetlen fájl sem változik. Ha viszont
-a művelet **menet közben** akad el (például az egyik fájl zárolt), a már
+**Sorszám csak foglalt névnél.** A program képenként, sorban halad. Ha
+a kész név szabad, a kép pontosan azt kapja, sorszám nélkül. Ha már van
+ilyen nevű fájl a mappában (akár egy korábban, ugyanebben a menetben
+átnevezett kép), a következő szabad sorszámot teszi a név végére,
+háromjegyűen: `Nyaralás.jpg`, `Nyaralás-001.jpg`, `Nyaralás-002.jpg`.
+Ha a beírt név maga is kötőjeles számra végződik (például `Nyaralás-5`), és ez a
+név foglalt, a keresés a következő számmal folytatódik (`Nyaralás-006`). Ha bekapcsolod a **Dátum**ot,
+és a képek más-más időpontban készültek, a nevek amúgy is különböznek,
+ezért sorszám sem kerül rájuk.
+
+Ha a művelet **menet közben** akad el (például az egyik fájl zárolt), a már
 átnevezett fájlok **a helyükön maradnak**, és a hibaüzenet **megnevezi az
 elkészült fájlokat**, valamint azt, amelyiknél leállt — ennek és a kívánt
 új nevének az állapotát érdemes ellenőrizni. A nézet ilyenkor is
