@@ -30,7 +30,7 @@ _EXISTING_SHORTCUT_EXCEPTIONS = frozenset(
         ("FolderContextMenu", "Unhide Folder"),
         ("FolderContextMenu", "Add Name Tags"),
         ("PassportErrorDialog", "Passport photo"),
-        ("CreateDialogs", "Picture Collage..."),
+        ("CollageCreateDialog", "Picture Collage..."),
         ("ExportDialogs", "Export Picture to Folder..."),
         ("SaveDialogs", "Save As..."),
         ("BatchEditProgressPanel", "Batch Edit"),
