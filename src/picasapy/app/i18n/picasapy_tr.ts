@@ -12419,6 +12419,334 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/instructions)</extr
         </message>
     </context>
     <context>
+        <name>TrayInfoBar</name>
+    </context>
+    <context>
+        <name>TrayScratchPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="578" />
+            <source>Clear Tray</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tablayı Temizle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="558" />
+            <source>Screensaver</source>
+            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
+            <translation>Ekran koruyucu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="563" />
+            <source>Starred Photos</source>
+            <comment>stringres:CThumbDB::starredphotos</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
+            <translation>Yıldızlı Fotoğraflar</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="568" />
+            <source>New Album...</source>
+            <comment>stringres:il_NewAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_NewAlbumName</extracomment>
+            <translation>Yeni Albüm...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="522" />
+            <source>Add selected items to an Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/addtobuttcon)</extracomment>
+            <translation>Seçilen öğeleri bir Albüme ekle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="416" />
+            <source>Selection</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Seçim</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="451" />
+            <source>Hold selected items</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/scratchhold)</extracomment>
+            <translation>Seçilen öğeleri tut</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="478" />
+            <source>Clear items from the selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/scratchclear)</extracomment>
+            <translation>Öğeleri seçimden temizle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="582" />
+            <source>This will clear your entire tray. Are you sure you want to do this?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CLEARTRAY</extracomment>
+            <translation>Bu, tüm tablanızı temizleyecektir. Bunu yapmak istediğinizden emin misiniz?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="598" />
+            <source>Clear Tray</source>
+            <comment>IDS_CLEARTRAY_YES_BUTTON</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CLEARTRAY_YES_BUTTON;stringres:il_ClearFromTrayYesButton</extracomment>
+            <translation>Tablayı Temizle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="611" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>İptal</translation>
+        </message>
+    </context>
+    <context>
+        <name>TrayRightPane</name>
+    </context>
+    <context>
+        <name>TrayTopRow</name>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="530" />
+            <source>Fit Photo inside viewing area</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/fit)</extracomment>
+            <translation>Fotoğrafı görüntüleme alanına sığdır</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="551" />
+            <source>Display Photo at actual size</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
+            <translation>Fotoğrafı gerçek boyutunda görüntüle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="56" />
+            <source>Add/Remove Star</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/startoggle);tooltips:Tooltip(thumbui/startoggle)</extracomment>
+            <translation>Yıldız Ekle/Kaldır</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="430" />
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="434" />
+            <source>Click and drag over photos to magnify them</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/loupehit)</extracomment>
+            <translation>Büyütmek için fotoğrafları tıklayın ve üzerlerinde sürükleyin</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="116" />
+            <source>Rotate counter-clockwise</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Saat yönünün tersine döndür</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="161" />
+            <source>Rotate clockwise</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Saat yönünde döndür</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="245" />
+            <source>People</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kişiler</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="248" />
+            <source>Places</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Yerler</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="251" />
+            <source>Tags</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Etiketler</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="254" />
+            <source>Properties</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Özellikler</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="246" />
+            <source>Show/Hide People Panel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/people_toggle)</extracomment>
+            <translation>Kişiler Panelini Göster/Gizle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="249" />
+            <source>Show/Hide Places Panel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/places_toggle)</extracomment>
+            <translation>Yerler Panelini Göster/Gizle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="252" />
+            <source>Show/Hide Tags Panel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/tags_toggle)</extracomment>
+            <translation>Etiketler Panelini Göster/Gizle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="255" />
+            <source>Show/Hide Properties Panel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/properties_toggle)</extracomment>
+            <translation>Özellikler Panelini Göster/Gizle</translation>
+        </message>
+    </context>
+    <context>
+        <name>TrayActionArea</name>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="56" />
+            <source>Upload photos in the Photo Tray to Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs</extracomment>
+            <translation>Fotoğraf Tepsisi'ndeki fotoğrafları Google Fotoğraflar'a yükleyin</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="133" />
+            <source>Failed to upload %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:QuickUploader::errorMsg</extracomment>
+            <translation>%1 yüklenemedi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="159" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Kapat</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="479" />
+            <source>Movie Maker</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_MakeMovieButton;tooltips:Label(panelroot/makemovietab)</extracomment>
+            <translation>Film Oluşturucu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="496" />
+            <source>Create Movie Presentation</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_movie);headerpaneltext:Tooltip(headerpanel/create_movie)</extracomment>
+            <translation>Film Sunumu Oluştur</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="541" />
+            <source>More...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Daha Fazla...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="563" />
+            <source>Click here for more options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/morebutton);tooltips:Tooltip(outputlayout/morebutton)</extracomment>
+            <translation>Daha fazla seçenek görmek için tıklayın</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="394" />
+            <source>Order Prints (service discontinued)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Baskı Siparişi Ver (hizmet sonlandırıldı)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="426" />
+            <source>Publish to Blogger (service discontinued)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Blogger’da Yayınla (hizmet sonlandırıldı)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="340" />
+            <source>E-Mail</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>E-posta</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="313" />
+            <source>Print</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Yazdır</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="363" />
+            <source>Export</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Dışa Aktar</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="45" />
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="104" />
+            <source>Upload to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google Fotoğraflar'a yükle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="455" />
+            <source>Collage</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kolaj</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="467" />
+            <source>Create a Photo Collage with your selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/collage);tooltips:Tooltip(outputlayout/collage)</extracomment>
+            <translation>Seçtiklerinizle bir Fotoğraf Kolajı oluşturun</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="159" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>İptal</translation>
+        </message>
+    </context>
+    <context>
+        <name>TraySingleActionBar</name>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="86" />
+            <source>Select items to add to your project's clips tray, then press the "Back" button to return to your project</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(thumbui/single_action_message)</extracomment>
+            <translation>Projenizdeki klip tablasına eklemek için öğeleri seçin, ardından projenize geri dönmek için "Geri" düğmesine basın</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="109" />
+            <source>Go back to what you were editing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_return)</extracomment>
+            <translation>Düzenlenen öğeye geri dön</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="108" />
+            <source>Back to Collage</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:collagepanel::back_to_collage</extracomment>
+            <translation>Kolaja geri dön</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="107" />
+            <source>Back to Movie Maker</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::back_to_slideshow</extracomment>
+            <translation>Movie Maker'a geri dön</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="132" />
+            <source>Cancel "Get more"</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_close)</extracomment>
+            <translation>"Daha Fazla Al" işlemini iptal et</translation>
+        </message>
+    </context>
+    <context>
         <name>TrayBar</name>
         <message>
             <source>Network error. Check your connection and try again.</source>
@@ -12495,207 +12823,6 @@ picasapy-origin-key: stringres:QuickUploader::progress</extracomment>
             <translation>Fotoğraflar yükleme için hazırlanıyor</translation>
         </message>
         <message>
-            <source>Upload photos in the Photo Tray to Google Photos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs</extracomment>
-            <translation>Fotoğraf Tepsisi'ndeki fotoğrafları Google Fotoğraflar'a yükleyin</translation>
-        </message>
-        <message>
-            <source>Failed to upload %1</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:QuickUploader::errorMsg</extracomment>
-            <translation>%1 yüklenemedi</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Kapat</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="0" />
-            <source>Movie Maker</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_MakeMovieButton;tooltips:Label(panelroot/makemovietab)</extracomment>
-            <translation>Film Oluşturucu</translation>
-        </message>
-        <message>
-            <source>Create Movie Presentation</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_movie);headerpaneltext:Tooltip(headerpanel/create_movie)</extracomment>
-            <translation>Film Sunumu Oluştur</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Fit Photo inside viewing area</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/fit)</extracomment>
-            <translation>Fotoğrafı görüntüleme alanına sığdır</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Display Photo at actual size</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
-            <translation>Fotoğrafı gerçek boyutunda görüntüle</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>More...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Daha Fazla...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Click here for more options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/morebutton);tooltips:Tooltip(outputlayout/morebutton)</extracomment>
-            <translation>Daha fazla seçenek görmek için tıklayın</translation>
-        </message>
-        <message>
-            <source>Clear Tray</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tablayı Temizle</translation>
-        </message>
-        <message>
-            <source>Add/Remove Star</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/startoggle);tooltips:Tooltip(thumbui/startoggle)</extracomment>
-            <translation>Yıldız Ekle/Kaldır</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Screensaver</source>
-            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
-            <translation>Ekran koruyucu</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Starred Photos</source>
-            <comment>stringres:CThumbDB::starredphotos</comment>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
-            <translation>Yıldızlı Fotoğraflar</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>New Album...</source>
-            <comment>stringres:il_NewAlbumName</comment>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_NewAlbumName</extracomment>
-            <translation>Yeni Albüm...</translation>
-        </message>
-        <message>
-            <source>Click and drag over photos to magnify them</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/loupehit)</extracomment>
-            <translation>Büyütmek için fotoğrafları tıklayın ve üzerlerinde sürükleyin</translation>
-        </message>
-        <message>
-            <source>Select items to add to your project's clips tray, then press the "Back" button to return to your project</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(thumbui/single_action_message)</extracomment>
-            <translation>Projenizdeki klip tablasına eklemek için öğeleri seçin, ardından projenize geri dönmek için "Geri" düğmesine basın</translation>
-        </message>
-        <message>
-            <source>Go back to what you were editing</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_return)</extracomment>
-            <translation>Düzenlenen öğeye geri dön</translation>
-        </message>
-        <message>
-            <source>Back to Collage</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:collagepanel::back_to_collage</extracomment>
-            <translation>Kolaja geri dön</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Back to Movie Maker</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::back_to_slideshow</extracomment>
-            <translation>Movie Maker'a geri dön</translation>
-        </message>
-        <message>
-            <source>Cancel "Get more"</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_close)</extracomment>
-            <translation>"Daha Fazla Al" işlemini iptal et</translation>
-        </message>
-        <message>
-            <source>Rotate counter-clockwise</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Saat yönünün tersine döndür</translation>
-        </message>
-        <message>
-            <source>Rotate clockwise</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Saat yönünde döndür</translation>
-        </message>
-        <message>
-            <source>People</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kişiler</translation>
-        </message>
-        <message>
-            <source>Places</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Yerler</translation>
-        </message>
-        <message>
-            <source>Tags</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Etiketler</translation>
-        </message>
-        <message>
-            <source>Properties</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Özellikler</translation>
-        </message>
-        <message>
-            <source>Show/Hide People Panel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/people_toggle)</extracomment>
-            <translation>Kişiler Panelini Göster/Gizle</translation>
-        </message>
-        <message>
-            <source>Show/Hide Places Panel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/places_toggle)</extracomment>
-            <translation>Yerler Panelini Göster/Gizle</translation>
-        </message>
-        <message>
-            <source>Show/Hide Tags Panel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/tags_toggle)</extracomment>
-            <translation>Etiketler Panelini Göster/Gizle</translation>
-        </message>
-        <message>
-            <source>Show/Hide Properties Panel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/properties_toggle)</extracomment>
-            <translation>Özellikler Panelini Göster/Gizle</translation>
-        </message>
-        <message>
-            <source>Order Prints (service discontinued)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Baskı Siparişi Ver (hizmet sonlandırıldı)</translation>
-        </message>
-        <message>
-            <source>Publish to Blogger (service discontinued)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Blogger’da Yayınla (hizmet sonlandırıldı)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Add selected items to an Album</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/addtobuttcon)</extracomment>
-            <translation>Seçilen öğeleri bir Albüme ekle</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
             <source>Waiting for the collage to be created…</source>
             <extracomment>picasapy-origin: picasa
@@ -12707,84 +12834,6 @@ picasapy-origin-key: stringres:CThumbUI::CreateCollageWait</extracomment>
             <source>Add to</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Şuraya ekle</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="102" />
-            <source>Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Seçim</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="176" />
-            <source>E-Mail</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>E-posta</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="177" />
-            <source>Print</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Yazdır</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="180" />
-            <source>Export</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Dışa Aktar</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="189" />
-            <source>Upload to Google Photos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Google Fotoğraflar'a yükle</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Collage</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kolaj</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Create a Photo Collage with your selection</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/collage);tooltips:Tooltip(outputlayout/collage)</extracomment>
-            <translation>Seçtiklerinizle bir Fotoğraf Kolajı oluşturun</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="232" />
-            <source>Hold selected items</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/scratchhold)</extracomment>
-            <translation>Seçilen öğeleri tut</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="249" />
-            <source>Clear items from the selection</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/scratchclear)</extracomment>
-            <translation>Öğeleri seçimden temizle</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>This will clear your entire tray. Are you sure you want to do this?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CLEARTRAY</extracomment>
-            <translation>Bu, tüm tablanızı temizleyecektir. Bunu yapmak istediğinizden emin misiniz?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Clear Tray</source>
-            <comment>IDS_CLEARTRAY_YES_BUTTON</comment>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CLEARTRAY_YES_BUTTON;stringres:il_ClearFromTrayYesButton</extracomment>
-            <translation>Tablayı Temizle</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>İptal</translation>
         </message>
     </context>
     <context>

@@ -40,7 +40,7 @@ from PySide6.QtCore import QObject
 from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 _QML_MAPPA = Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
-_TALCA = (_QML_MAPPA / "TrayBar.qml").read_text(encoding="utf-8")
+_TALCA_FELSOSOR = (_QML_MAPPA / "TrayTopRow.qml").read_text(encoding="utf-8")
 _NEZO = (_QML_MAPPA / "PhotoViewer.qml").read_text(encoding="utf-8")
 
 #: a hármas: a két szegmensgomb és a csúszka
@@ -205,8 +205,8 @@ class TestAmiVALTOZATLAN:
 class TestAForras:
     def test_a_harmas_a_TALCA_fajlban_el(self):
         for nev in HARMAS:
-            assert f'objectName: "{nev}"' in _TALCA, (
-                f"a(z) {nev} nem a TrayBar.qml-ben van"
+            assert f'objectName: "{nev}"' in _TALCA_FELSOSOR, (
+                f"a(z) {nev} nem a TrayTopRow.qml-ben van"
             )
             assert f'objectName: "{nev}"' not in _NEZO, (
                 f"a(z) {nev} MÉG MINDIG a PhotoViewer.qml-ben van"

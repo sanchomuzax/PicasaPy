@@ -100,8 +100,9 @@ class TestATulcsordulasGomb:
 
         from tests.support.qml_blokk import blokk_horgonyra
 
+        # #6050: a túlcsordulásgomb a tálca műveletkomponensébe került.
         qml = (Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
-               / "TrayBar.qml").read_text(encoding="utf-8")
+               / "TrayActionArea.qml").read_text(encoding="utf-8")
         # ⚠️ #2493: a blokk határa a `{ … }` párosítás, NEM egy karakterszám.
         # A korábbi `qml[kezd:kezd + 900]` alak elbukott a helyes kódon,
         # amint a gomb magyarázó kommentet kapott (ld. `qml_blokk.py`).
@@ -121,9 +122,9 @@ class TestATulcsordulasGomb:
         ts = (Path(app_csomag.__file__).parent / "i18n"
               / "picasapy_hu.ts").read_text(encoding="utf-8")
         blokk = re.search(
-            r"<name>TrayBar</name>(.*?)</context>", ts, re.S
+            r"<name>TrayActionArea</name>(.*?)</context>", ts, re.S
         )
-        assert blokk is not None, "nincs TrayBar kontextus a fordításban"
+        assert blokk is not None, "nincs TrayActionArea kontextus a fordításban"
         szoveg = blokk.group(1)
         for forras, magyar in (
             ("More...", "További lehetőségek..."),
@@ -131,7 +132,7 @@ class TestATulcsordulasGomb:
              "Kattintson ide a további opciókért"),
         ):
             assert f"<source>{forras}</source>" in szoveg, (
-                f"a TrayBar kontextusból hiányzik: {forras}"
+                f"a TrayActionArea kontextusból hiányzik: {forras}"
             )
             assert f"<translation>{magyar}</translation>" in szoveg, (
                 f"hiányzik vagy más a magyar alak: {magyar}"
@@ -264,7 +265,7 @@ class TestAListaEsAGombokEGYUTT:
         import picasapy.app as app_csomag
 
         qml = (Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
-               / "TrayBar.qml").read_text(encoding="utf-8")
+               / "TrayActionArea.qml").read_text(encoding="utf-8")
         kezd = qml.index("readonly property var gombFeliratok:")
         blokk = qml[kezd:qml.index("]", kezd)]
         assert "qsTr(" not in blokk, (

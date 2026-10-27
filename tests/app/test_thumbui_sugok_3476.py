@@ -27,14 +27,15 @@ _QML = _APP / "qml" / "PicasaPy"
 
 #: (fájl, a vezérlő objectName-je, fordítási kontextus, hivatalos angol, hivatalos magyar)
 SUGOK = [
-    ("TrayBar.qml", "trayLoupeButton", "TrayBar",
+    # #6050: a csillag/loupe eszközsor a TrayTopRow komponensbe került.
+    ("TrayTopRow.qml", "trayLoupeButton", "TrayTopRow",
      "Click and drag over photos to magnify them",
      "Ide kattintva és az egérmutatót a fotókra húzva kinagyíthatja a részleteket"),
     ("MainToolbar.qml", "toolbarFolderViewPopupButton", "MainToolbar",
      "View options", "Megjelenítési beállítások"),
     ("PhotoViewer.qml", "viewerBackButton", "PhotoViewer",
      "Return to organized thumbnails", "Vissza a rendezett indexképekhez"),
-    ("TrayBar.qml", "traySingleActionClose", "TrayBar",
+    ("TraySingleActionBar.qml", "traySingleActionClose", "TraySingleActionBar",
      'Cancel "Get more"', 'A "Továbbiak" művelet megszakítása'),
 ]
 
@@ -71,7 +72,7 @@ def test_a_betoltott_qm_a_hivatalos_magyart_adja(forditas, _fajl, _nev, ctx, ang
 
 def test_a_regi_fogalmazas_nem_maradt():
     for fajl, regi in (
-        ("TrayBar.qml", "Loupe — drag over the photos"),
+        ("TrayTopRow.qml", "Loupe — drag over the photos"),
         ("MainToolbar.qml", "Folder view options"),
     ):
         assert regi not in (_QML / fajl).read_text(encoding="utf-8")

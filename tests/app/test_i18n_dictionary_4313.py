@@ -255,6 +255,16 @@ def test_google_photos_messages_have_finished_placeholder_safe_translations():
     assert len(google_photos_sources) == 19
     assert len(tray_sources) == 17
 
+    # #6050: these three messages now belong to the extracted action-area QML
+    # component; the upload progress/error messages remain in TrayBar.
+    tray_context_by_source = {source: "TrayBar" for source in tray_sources}
+    for source in (
+        "Upload photos in the Photo Tray to Google Photos",
+        "Failed to upload %1",
+        "Close",
+    ):
+        tray_context_by_source[source] = "TrayActionArea"
+
     def placeholders(value: str) -> Counter[str]:
         return Counter(re.findall(r"%(?:[1-9]\d*|n)", value))
 
@@ -267,13 +277,13 @@ def test_google_photos_messages_have_finished_placeholder_safe_translations():
             for message in context.findall("message"):
                 source = message.findtext("source") or ""
                 if (name == "OptionsTabGooglePhotos" and source in google_photos_sources) or (
-                    name == "TrayBar" and source in tray_sources
+                    name == tray_context_by_source.get(source)
                 ):
                     messages[(name, source)] = message
 
         expected = {
             *(('OptionsTabGooglePhotos', source) for source in google_photos_sources),
-            *(('TrayBar', source) for source in tray_sources),
+            *((tray_context_by_source[source], source) for source in tray_sources),
         }
         for key in sorted(expected):
             message = messages.get(key)
