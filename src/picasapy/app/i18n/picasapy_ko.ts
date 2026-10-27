@@ -9576,52 +9576,6 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
     <context>
         <name>PhotoViewer</name>
         <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>This feature is not supported for Linux</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:LinuxNomovie</extracomment>
-            <translation>이 기능은 Linux에서 지원되지 않습니다.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Capturing frame...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCaptureFrame::captureframeprog1</extracomment>
-            <translation>프레임 캡처 중...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Saving to Captured Videos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
-            <translation>캡처된 동영상에 저장</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Saved %1 to Captured Videos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1을 캡처 동영상에 저장했습니다</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Saved %1 to Exported Videos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1을 내보낸 동영상에 저장했습니다</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Failed to capture frame</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
-            <translation>프레임을 캡처하지 못햇습니다.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Failed to export clip</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>클립을 내보내지 못했습니다</translation>
-        </message>
-        <message>
             <source>Show only one picture</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(editpanel/only_1up_toggle)</extracomment>
@@ -9684,28 +9638,6 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/toggle_left_drawer)</extracommen
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(editpanel/in_progress_label)</extracomment>
             <translation>진행 중...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Redeye fixes cannot be recovered with redo.
-Are you sure you want to undo?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>적목 수정은 다시 실행으로 복구할 수 없습니다.
-실행 취소하시겠습니까?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Retouch fixes cannot be recovered with redo.
-Are you sure you want to undo?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>수정 사항은 다시 실행으로 복구할 수 없습니다.
-실행 취소하시겠습니까?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>설명이 입력한 텍스트를 대체합니다. (이 작업은 실행 취소할 수 없습니다)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="299" />
@@ -9956,13 +9888,6 @@ picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill
             <translation>실행 취소: 자르기</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="401" />
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="403" />
-            <source>Redo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>다시 실행</translation>
-        </message>
-        <message>
             <source>Redo: Crop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>다시 실행: 자르기</translation>
@@ -9972,12 +9897,6 @@ picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Text(nerdview/nvhead)</extracomment>
             <translation>히스토그램 및 카메라 정보</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="588" />
-            <source>Video playback requires the Qt Multimedia module.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>동영상을 재생하려면 Qt Multimedia 모듈이 필요합니다.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="704" />
@@ -19084,6 +19003,101 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <source>An album must be saved in an indexed photo folder.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>앨범은 색인된 사진 폴더에만 저장할 수 있습니다.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerPhotoArea</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="854" />
+            <source>Capturing frame...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog1</extracomment>
+            <translation>프레임 캡처 중...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="858" />
+            <source>Saving to Captured Videos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
+            <translation>캡처된 동영상에 저장</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="863" />
+            <source>Saved %1 to Captured Videos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1을 캡처 동영상에 저장했습니다</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="873" />
+            <source>Saved %1 to Exported Videos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1을 내보낸 동영상에 저장했습니다</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="868" />
+            <source>Failed to capture frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
+            <translation>프레임을 캡처하지 못햇습니다.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="876" />
+            <source>Failed to export clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>클립을 내보내지 못했습니다</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="885" />
+            <source>Video playback requires the Qt Multimedia module.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>동영상을 재생하려면 Qt Multimedia 모듈이 필요합니다.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerLeftDrawer</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerLeftDrawer.qml" />
+            <source>This feature is not supported for Linux</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:LinuxNomovie</extracomment>
+            <translation>이 기능은 Linux에서 지원되지 않습니다.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerEditorPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="52" />
+            <source>Undo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>실행 취소</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="54" />
+            <source>Redo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>다시 실행</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="122" />
+            <source>Retouch fixes cannot be recovered with redo.
+Are you sure you want to undo?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>수정 사항은 다시 실행으로 복구할 수 없습니다.
+실행 취소하시겠습니까?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="126" />
+            <source>Redeye fixes cannot be recovered with redo.
+Are you sure you want to undo?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>적목 수정은 다시 실행으로 복구할 수 없습니다.
+실행 취소하시겠습니까?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="262" />
+            <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>설명이 입력한 텍스트를 대체합니다. (이 작업은 실행 취소할 수 없습니다)</translation>
         </message>
     </context>
 </TS>

@@ -179,6 +179,13 @@ class TestForras:
             / "src/picasapy/app/qml/PicasaPy/PhotoViewer.qml"
         ).read_text(encoding="utf-8")
 
+    @property
+    def eszkoz_sav(self):
+        return (
+            Path(__file__).resolve().parents[2]
+            / "src/picasapy/app/qml/PicasaPy/PhotoViewerPhotoArea.qml"
+        ).read_text(encoding="utf-8")
+
     def test_a_dontes_csuszkaja_mar_nem_a_bal_panel_alatt_all(self):
         """A csúszka a sávba költözött: a nézőben nem maradhat egy másik,
         `tiltSlider` nevű vezérlő a panel alatt."""
@@ -188,11 +195,11 @@ class TestForras:
         """A sáv `tool`-ja a kiegyenesítést is felveszi — a korábbi
         láthatósági feltétellel együtt (`activeTab === 0`), hogy a sáv ne
         jelenjen meg egy másik fülön."""
-        nezo = self.nezo
+        nezo = self.eszkoz_sav
 
-        assert "editorPanel.tiltActive" in nezo
+        assert "photoArea.hostEditorPanel.tiltActive" in nezo
         assert '? "tilt" : ""' in nezo
-        assert "editorPanel.activeTab === 0) ? \"tilt\"" in nezo
+        assert 'photoArea.hostEditorPanel.activeTab === 0) ? "tilt"' in nezo
 
     def test_a_retusalas_ecsetmerete_a_BAL_panelben_marad(self):
         """`editpanel/brushslider_container: editpanel/retouch_well` —

@@ -304,7 +304,9 @@ class TestJegy4131:
         ),
         "editpanel/modaldialogblur": (
             "megvan",
-            "PicasaPy/PhotoViewer.qml:4390",
+            # #5953: a fenti blokkok kiemelése lerövidítette a gazdafájlt;
+            # a gyökérben maradt elhomályosító réteg a 3585. sorra került.
+            "PicasaPy/PhotoViewer.qml:3585",
         ),
         "editpanel/picnik_fx": ("nem-cel", "ui-audit-editor.md"),
         "editpanel/picnik_fx_label": ("nem-cel", "ui-audit-editor.md"),

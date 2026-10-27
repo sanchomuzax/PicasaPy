@@ -84,8 +84,9 @@ def _also(item) -> float:
 
 
 # ⛳ #2613: a saját zárójel-számláló ELTŰNT innen. A vizsgálat egyetlen
-# helye (`EditorPanel {` a `PhotoViewer.qml`-ben) pontosan a közös mérő
-# `blokk_horgony_utan` esete: a horgony a nyitó kapcsos zárójel ELŐTT áll.
+# helye (`EditorPanel {` a `PhotoViewerEditorPanel.qml` gyökéreleme) pontosan
+# a közös mérő `blokk_horgony_utan` esete: a horgony a nyitó kapcsos zárójel
+# ELŐTT áll.
 # A közös alak két dolgot tud, amit a saját nem tudott: kivágja a
 # kommenteket (egy kikommentelt `anchors.bottom` nem elégítheti ki az őrt)
 # és átugorja az idézőjeles részeket (egy `text: "{"` kötés elcsúsztatta
@@ -145,7 +146,7 @@ class TestNincsBeegetettPanelmagassag:
     """#628 1. pont: a panel az ablakkal együtt nő."""
 
     def test_a_nezoben_nincs_fix_panelmagassag(self):
-        forras = (_QML_DIR / "PicasaPy" / "PhotoViewer.qml").read_text(
+        forras = (_QML_DIR / "PicasaPy" / "PhotoViewerEditorPanel.qml").read_text(
             encoding="utf-8"
         )
         blokk = blokk_horgony_utan(forras, "EditorPanel")
