@@ -19,6 +19,7 @@ from PySide6.QtCore import QSettings
 from picasapy.dedup.fastkey import FEJ_MERET
 from support.jpeg_factory import make_jpeg
 from tests.support.py_blokk import fuggveny_torzs
+from support.menubar_components_6016 import menu_component_source
 
 _DUPE = (
     Path(picasapy.app.__file__).parent / "dupe_search_controller.py"
@@ -26,10 +27,7 @@ _DUPE = (
 _MAIN = (
     Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
 ).read_text(encoding="utf-8")
-_MENU = (
-    Path(picasapy.app.__file__).parent
-    / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
-).read_text(encoding="utf-8")
+_MENU = menu_component_source("PicasaToolsMenu.qml")
 _IMPORT = (
     Path(picasapy.app.__file__).parent / "import_source_controller.py"
 ).read_text(encoding="utf-8")

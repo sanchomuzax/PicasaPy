@@ -37,7 +37,7 @@ from tests.support.qml_blokk import blokk_horgonyra
 from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 _TRAYBAR = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
+    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayTopRow.qml"
 ).read_text(encoding="utf-8")
 
 #: a rács oldali réteg forrása — a lencse alakját és áttűnését ez írja le

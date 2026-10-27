@@ -41,7 +41,7 @@ from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 #: helyét foglalja el (`editpanel/zoomup_icon` 368…392 ≡ `thumbui/loupehit`
 #: 366…391). A #2311 állításai VÁLTOZATLANOK, csak a forrásfájl más.
 _QML = (
-    Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
+    Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "TrayTopRow.qml"
 ).read_text(encoding="utf-8")
 _NEZO = (
     Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "PhotoViewer.qml"

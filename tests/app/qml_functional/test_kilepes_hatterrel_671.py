@@ -19,10 +19,11 @@ from pathlib import Path
 
 import picasapy.app
 import pytest
+from support.menubar_components_6016 import menu_sources
 
 _QML_DIR = Path(picasapy.app.__file__).parent / "qml"
 _MAIN = (_QML_DIR / "Main.qml").read_text(encoding="utf-8")
-_MENU = (_QML_DIR / "PicasaPy" / "PicasaMenuBar.qml").read_text(encoding="utf-8")
+_MENU = menu_sources()
 
 
 class TestAKilepesEgyHelyenDolEl:
@@ -89,11 +90,12 @@ class TestAVezerloOldal:
     def test_a_slot_a_GLOBALIS_nyilvantartast_kerdezi(self):
         """A futó munka lehet a webexport vagy az arc-szkennelés
         vezérlőjében is — a saját mixin csak a magáét látná."""
-        from picasapy.app import controller as controller_modul
+        import inspect
 
-        forras = Path(controller_modul.__file__).read_text(encoding="utf-8")
-        kezd = forras.index("def backgroundWorkRunning")
-        blokk = forras[kezd : kezd + 900]
+        from picasapy.app.controller import AppController
+
+        # a metódus forrása, bármelyik mixinbe került is (#6022)
+        blokk = inspect.getsource(AppController.backgroundWorkRunning)
         assert "running_background_workers" in blokk
 
     def test_ures_nyilvantartasnal_hamis(self, qt_app):

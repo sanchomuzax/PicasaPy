@@ -158,7 +158,7 @@ class TestResetFacesForPhotos:
         import ntpath
         from types import SimpleNamespace
 
-        import picasapy.app.face_scan_controller as controller_module
+        import picasapy.app.face_scan_controller_shared as controller_module
         from picasapy.index import (
             all_photos,
             detected_face_count,
@@ -204,7 +204,7 @@ class TestResetFacesForPhotos:
     def test_reset_clears_index_and_rescans_through_the_background_path(
         self, qt_app, tmp_path, monkeypatch
     ):
-        import picasapy.app.face_scan_controller as controller_module
+        import picasapy.app.face_scan_controller_reset_mixin as controller_module
         from picasapy.index import (
             all_photos,
             clear_faces,
@@ -347,6 +347,7 @@ class TestScanForFaces:
         from threading import Event, Thread
 
         import picasapy.app.face_scan_controller as module
+        import picasapy.app.face_scan_controller_scan_mixin as scan_module
         from picasapy.index import open_index, photos_in_folder, sync_folder, sync_tree
 
         root = tmp_path / "kepek"
@@ -362,7 +363,7 @@ class TestScanForFaces:
             detector=_FakeDetector(),
             embedder=_FakeEmbedder(),
         )
-        open_index_original = module.open_index
+        open_index_original = scan_module.open_index
 
         @contextmanager
         def open_index_short_timeout(path):
@@ -370,7 +371,7 @@ class TestScanForFaces:
                 conn.execute("PRAGMA busy_timeout = 25")
                 yield conn
 
-        monkeypatch.setattr(module, "open_index", open_index_short_timeout)
+        monkeypatch.setattr(scan_module, "open_index", open_index_short_timeout)
         failures = []
         ctl.scanFailed.connect(failures.append)
         detections = 0
@@ -423,6 +424,7 @@ class TestScanForFaces:
 
         import numpy as np
         import picasapy.app.face_scan_controller as module
+        import picasapy.app.face_scan_controller_embedding_mixin as embedding_module
         from picasapy.index import open_index, sync_folder, sync_tree
 
         root = tmp_path / "kepek"
@@ -439,7 +441,7 @@ class TestScanForFaces:
             embedder=_FakeEmbedder(),
         )
         ctl._run_scan(Event())
-        open_index_original = module.open_index
+        open_index_original = embedding_module.open_index
 
         @contextmanager
         def open_index_short_timeout(path):
@@ -447,7 +449,7 @@ class TestScanForFaces:
                 conn.execute("PRAGMA busy_timeout = 25")
                 yield conn
 
-        monkeypatch.setattr(module, "open_index", open_index_short_timeout)
+        monkeypatch.setattr(embedding_module, "open_index", open_index_short_timeout)
         failures = []
         ctl.embeddingFailed.connect(failures.append)
         computations = 0
@@ -757,7 +759,7 @@ class TestNameTagOptions:
         assert settings.values[ctl.CLUSTER_STEP_KEY] == 90
 
     def test_cluster_step_v2_setting_is_used_for_grouping_only(self, qt_app, tmp_path, monkeypatch):
-        import picasapy.app.face_scan_controller as controller_module
+        import picasapy.app.face_scan_controller_embedding_mixin as controller_module
         from picasapy.faces.clustering import cluster_step_to_threshold, step_to_threshold
 
         root = tmp_path / "kepek"
@@ -814,7 +816,7 @@ class TestNameTagOptions:
     def test_embedding_uses_the_saved_suggestion_and_cluster_options(
         self, qt_app, tmp_path, monkeypatch
     ):
-        import picasapy.app.face_scan_controller as controller_module
+        import picasapy.app.face_scan_controller_embedding_mixin as controller_module
         from picasapy.faces.clustering import cluster_step_to_threshold, step_to_threshold
 
         root = tmp_path / "kepek"

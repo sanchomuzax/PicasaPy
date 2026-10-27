@@ -45,7 +45,8 @@ from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 from tests.support.qml_blokk import blokk_horgonyra
 
 _TRAYBAR = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
+    Path(picasapy.app.__file__).parent
+    / "qml" / "PicasaPy" / "TrayScratchPanel.qml"
 )
 
 
@@ -175,7 +176,7 @@ class TestNegyzetesCella:
         assert "nominalAspect" not in forras
 
 
-#: A `TrayBar.qml` tördelés-képletének két konstansa: a bélyegkép PADLÓJA
+#: A `TrayScratchPanel.qml` tördelés-képletének két konstansa: a bélyegkép PADLÓJA
 #: és a sáv osztásköze. A padlón fér a legtöbb kép egy sorba — ennél több
 #: képnél a tördelés KÖTELEZŐ, akármekkora az ablak.
 _PADLO_MAGASSAG = 12
@@ -191,7 +192,7 @@ def _egy_sorba_fero_maximum(window) -> int:
     sorba került, és a próba elbukott — ugyanaz a kód helyben és a PR-on
     zöld volt. Ez nem időzítés, hanem geometria.
 
-    A képlet a `TrayBar.qml`-ével azonos: a sáv szélessége osztva a
+    A képlet a `TrayScratchPanel.qml`-ével azonos: a sáv szélessége osztva a
     PADLÓRA zsugorított bélyegkép osztásközével. Helyben mérve: 392
     képpontos sávon 28 — és a tördelés valóban 20 kép körül indul, tehát
     ez felső korlát, nem becslés."""

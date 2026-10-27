@@ -40,7 +40,7 @@ from support.halasztott_parbeszed import nyisd_meg
 import picasapy.app
 
 _APP_DIR = Path(picasapy.app.__file__).parent
-_MENU_QML = _APP_DIR / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
+_MENU_QML = _APP_DIR / "qml" / "PicasaPy" / "PicasaFileMenu.qml"
 _TS_PATH = _APP_DIR / "i18n" / "picasapy_hu.ts"
 
 

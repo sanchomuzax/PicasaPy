@@ -90,6 +90,44 @@ _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
         "up in the results, but the list fills in on its own as soon as the "
         "preparation finishes.",
     ): "AppController",
+    # #6025: az arcfelismerés-vezérlő témamixinjei `self.tr()`-t hívnak; futásidőben
+    # a kontextus a valódi osztályé (`FaceScanController`), ott van a fordítás.
+    ("FaceScanControllerResetMixin", "Ignored people ({0})"): "FaceScanController",
+    ("FaceScanControllerSettingsMixin", "Face detection is ready, but face grouping is unavailable because PicasaPy could not load the SFace model. Check the application log."): "FaceScanController",
+    ("FaceScanControllerSettingsMixin", "PicasaPy could not reach the download source. Check your internet connection and try again."): "FaceScanController",
+    ("FaceScanControllerSettingsMixin", "PicasaPy downloads the model file from the OpenCV Zoo project ({0} MB in total). Licence: {1} — free to use. The file is saved here: {2}"): "FaceScanController",
+    ("FaceScanControllerSettingsMixin", "PicasaPy verified the downloaded YuNet model, but could not load it. Face search is unavailable; check the application log."): "FaceScanController",
+    ("FaceScanControllerSettingsMixin", "The download could not be started."): "FaceScanController",
+    ("FaceScanControllerSettingsMixin", "The download failed: {0}"): "FaceScanController",
+    ("FaceScanControllerSettingsMixin", "The download was cancelled. Nothing was saved."): "FaceScanController",
+    ("FaceScanControllerSettingsMixin", "The downloaded file was damaged, so PicasaPy threw it away instead of using it — a damaged model would find faces wrongly. Please try again."): "FaceScanController",
+    ('FaceScanControllerSettingsMixin', 'The face recognition model file is missing, so this step cannot run. Press "Download the model" below, and PicasaPy will get it for you. If you would rather do it by hand: copy the file "{0}" into this folder — {1} — or point the {2} environment variable at it, and then restart PicasaPy.'): "FaceScanController",
+    ("FaceScanControllerSettingsMixin", "The face recognition model has been downloaded. You can start the search now."): "FaceScanController",
+    ("FaceScanControllerSettingsMixin", "The model could not be saved to disk: {0}"): "FaceScanController",
+    ("FaceScanControllerSettingsMixin", "The model file is already in place, but PicasaPy could not load it. It may be damaged: delete it from {0} and download it again."): "FaceScanController",
+    ("FaceScanControllerSettingsMixin", "The model file is present, but PicasaPy could not load it. Check the application log."): "FaceScanController",
+    ("FaceScanControllerSettingsMixin", "There was nothing to download."): "FaceScanController",
+    ("FaceScanControllerUnnamedMixin", "All unnamed faces ({0})"): "FaceScanController",
+    ("FaceScanControllerUnnamedMixin", "Group {0} ({1})"): "FaceScanController",
+    ("FaceScanControllerUnnamedMixin", "Not yet grouped ({0})"): "FaceScanController",
+    # #6057: a nyomtatás témamixinjei futásidőben a PrintController
+    # fordítási kontextusát használják.
+    ("PrintControllerPrinterMixin", "landscape"): "PrintController",
+    ("PrintControllerPrinterMixin", "portrait"): "PrintController",
+    ("PrintControllerPrinterMixin", "No printer selected."): "PrintController",
+    ("PrintControllerPrinterMixin", "Unknown printer: %1"): "PrintController",
+    ("PrintControllerOutputMixin", "Invalid output path."): "PrintController",
+    ("PrintControllerOutputMixin", "default printer"): "PrintController",
+    ("PrintControllerOutputMixin", "Unknown printer: %1"): "PrintController",
+    ("PrintControllerOutputMixin", "Unnamed Album"): "PrintController",
+    ("PrintControllerOutputMixin", "Date:"): "PrintController",
+    ("PrintControllerOutputMixin", "No pictures to print."): "PrintController",
+    ("PrintControllerOutputMixin", "The print job could not be started."): "PrintController",
+    (
+        "PrintControllerOutputMixin",
+        "None of the selected pictures could be printed: %1",
+    ): "PrintController",
+    ("PrintControllerOutputMixin", "Invalid print settings: %1"): "PrintController",
 }
 
 
@@ -263,12 +301,15 @@ class TestI18nCompleteness:
             probe_cls = type(
                 "AppController", (QObject, CreateMixin, ExportMixin, CollageMixin), {}
             )
-            probe = probe_cls()
+            # Más célkontextusnál (#6025: FaceScanController) a próba-osztály
+            # neve a cél; a self.tr() csak a konkrét osztály nevét nézi.
+            probes = {"AppController": probe_cls()}
             for (_wrong_context, source), real_context in (
                 _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS.items()
             ):
-                assert real_context == "AppController"  # a jelenlegi egyetlen cél
-                translated = probe.tr(source)
+                if real_context not in probes:
+                    probes[real_context] = type(real_context, (QObject,), {})()
+                translated = probes[real_context].tr(source)
                 assert translated != source, (
                     f"{source!r} angolul jelenik meg — a mixin self.tr() "
                     "nem találta a fordítást"

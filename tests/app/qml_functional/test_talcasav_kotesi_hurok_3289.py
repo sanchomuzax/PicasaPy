@@ -152,7 +152,7 @@ class TestForras:
     def test_a_talcasav_meroje_nem_ir_tulajdonsagot(self):
         forras = (
             Path(app_module.__file__).parent
-            / "qml" / "PicasaPy" / "TrayBar.qml"
+            / "qml" / "PicasaPy" / "TrayInfoBar.qml"
         ).read_text(encoding="utf-8")
 
         assert "advanceWidth" in forras

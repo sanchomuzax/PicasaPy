@@ -72,10 +72,10 @@ HIVATALOS: dict[tuple[str, str], str] = {
     ("SaveProgressPanel", "Saving %1 files %2%"): "%1 fájl mentése %2%",
     # eMenuFile::ID_FILE_SAVEAS / ID_FILE_SAVEACOPY
     # #2152: a felirat mnemonikot kapott az eredeti honosításából
-    ("PicasaMenuBar", "Save &As..."): "Mentés &másként…",
-    ("PicasaMenuBar", "Save a Cop&y"): "&Másolat mentése",
+    ("PicasaFileMenu", "Save &As..."): "Mentés &másként…",
+    ("PicasaFileMenu", "Save a Cop&y"): "&Másolat mentése",
     # eMenuFile::ID_FILE_EXIT
-    ("PicasaMenuBar", "E&xit"): "&Kilépés",
+    ("PicasaFileMenu", "E&xit"): "&Kilépés",
 }
 
 

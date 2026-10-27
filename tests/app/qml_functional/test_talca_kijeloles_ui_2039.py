@@ -170,7 +170,7 @@ class TestAKijelolesLATSZIK:
 
         qml = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
         racs = (qml / "ThumbDelegate.qml").read_text(encoding="utf-8")
-        talca = (qml / "TrayBar.qml").read_text(encoding="utf-8")
+        talca = (qml / "TrayScratchPanel.qml").read_text(encoding="utf-8")
         assert "Theme.thumbSelection" in racs
         assert "Theme.thumbSelection" in talca
 

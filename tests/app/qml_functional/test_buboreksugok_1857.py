@@ -49,10 +49,11 @@ HAT_GOMB = (
 #: ALSÓ ESZKÖZSÁVBA került (mérve: az eredetiben is a könyvtári nagyító és
 #: bélyegkép-csúszka helyén ül), ezért a forrásfájlt gombonként kell
 #: megmondani — a súgó-követelmény maga VÁLTOZATLAN.
-_TALCA = (_QML / "TrayBar.qml").read_text(encoding="utf-8")
+_TALCA_FELSOSOR = (_QML / "TrayTopRow.qml").read_text(encoding="utf-8")
 GOMB_FORRASA = {
-    "zoomFitButton": _TALCA,
-    "zoomActualButton": _TALCA,
+    # #6050: a nagyítógombok a felső sor komponensébe kerültek.
+    "zoomFitButton": _TALCA_FELSOSOR,
+    "zoomActualButton": _TALCA_FELSOSOR,
 }
 
 

@@ -71,7 +71,7 @@ ColumnLayout {
     CheckBox {
         objectName: "optionsFileTypeGifCheck"
         text: qsTr(".GIF")
-        checked: root.fileTypeEnabled("gif", false)
+        checked: root.fileTypeEnabled("gif", true)
         onToggled: root.setFileTypeEnabled("gif", checked)
         padding: 0
         leftPadding: 0
@@ -89,7 +89,7 @@ ColumnLayout {
     CheckBox {
         objectName: "optionsFileTypePngCheck"
         text: qsTr(".PNG")
-        checked: root.fileTypeEnabled("png", false)
+        checked: root.fileTypeEnabled("png", true)
         onToggled: root.setFileTypeEnabled("png", checked)
         padding: 0
         leftPadding: 0
@@ -107,7 +107,7 @@ ColumnLayout {
     CheckBox {
         objectName: "optionsFileTypeTgaCheck"
         text: qsTr(".TGA")
-        checked: root.fileTypeEnabled("tga", false)
+        checked: root.fileTypeEnabled("tga", true)
         onToggled: root.setFileTypeEnabled("tga", checked)
         padding: 0
         leftPadding: 0

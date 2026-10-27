@@ -6829,3 +6829,53 @@ A független újralevezetés helyesbítette a 0x004985e0 elvetését: ez a máso
 **Új kutatási jegyjavaslat:** nincs; a még nyitott pontok ugyanennek a #5184 feladatnak a szükséges eredeti Picasa-felvételei.
 
 **Módosított fájl:** docs/specs/picasa-arcfelismeres.md (56. szakasz: N1 zászlóút-korrekció és cáfolat, N3 helyi Red.dll-ellenőrzés, N7 runtime-nyitottság, pontról pontra a teljesültség).
+
+## 57. #5184, 2026-10-27: az archívum ismételt leltára nem ad N1/N3/N7-kontrollt
+
+**Hatókör.** A mérőarchívum taglistáját, a dokumentum- és INI-tagokat, az egyetlen PNG-t, valamint a korábban feltárt címek Ghidra-kimeneteit ellenőriztem. A JPG/RAW-képeket és a NAS-t nem olvastam; az eredeti Picasát nem futtattam, új Colab-feladatot nem adtam fel.
+
+### 57.1 A mérőarchívum tartalma
+
+| Állítás | Forrás | Eredmény |
+|---|---|---|
+| Az archívum 944 tagja 926 fájlra és 18 könyvtárra oszlik; a fájlok között 15 INI, 5 TXT, 4 CSV, 900 JPG, 1 PNG és 1 RAW van. | mérés (`meroadat.tar` teljes taglistája) | pontos tag- és kiterjesztésszám |
+| A 15 INI-ben `faces=`, `[Contacts2]`, `]facealbum:` és `ffffffffffffffff` előfordulása egyaránt 0. | mérés (a 15 INI célzott kibontása és jelölőszámlálása) | nem található névvel/arcokkal rögzített Picasa-kontroll |
+| Az 5 TXT és 4 CSV egyike sem tartalmaz arc-/személycímkézést; a CSV-k fejlécében effekt, fájl, lánc és csúszka-adatok állnak. | mérés (célzott TXT/CSV-sorvizsgálat) | nem található címkézett felismerési adatkészlet |
+| Az egyetlen PNG mérete 358×121; egy PicasaPy „Exportálás” hibaablakot mutat. | mérés (PNG-fájlméret és képi ellenőrzés) | nem eredeti Picasa-felvétel, ezért N7-re nem kontroll |
+
+**A JPG-kről nem következtetek arctartalomra.** Az archívumban lévő képek nem adnak címkézett, azonos Picasa/PicasaPy futtatásokhoz kötött eredményt; önmagukban nem használhatók N1 vagy N3 döntésére.
+
+### 57.2 N1, N3 és N7 állapota
+
+| Pont | Eredmény | Bizonyíték / hiányzó mérés |
+|---|---|---|
+| N1: a névvel rendelkező képen talál-e az eredeti további ismeretlen arcot | ⛔ Nyitott | A `0x0047b020` munkasor-jelző útja ismert (56.1), de a fotó névállapotához nincs kötve. Az archívum nem ad `faces=` kontrollt. Ugyanazon legalább kétarcú eredeti fotó név előtti és utáni felvétele kell, Név nélküliek-listával és INI-kimenettel. |
+| N3: eredeti arány és Red-küszöb a 960 px / 0,9 YuNet-beállításhoz képest | ⛔ Nyitott | Az archívumban nincs címkézett mérőkészlet. A helyi Red.dll `+0x1c` mezőútja (54.3/c, 54.3/d) nem azonosítja a tiszta Picasa 3.9 tényleges DLL-jét, betöltött floatját, bemeneti WxH-ját vagy azonos címkézett mintán mért arányát. Ezekhez eredeti futás és azonos készletű PicasaPy-mérés kell. |
+| N7: People Manager többes kijelölése | ⛔ Részben nyitott | A korábbi egy személyes People Manager-felvétel nem bizonyít Ctrl/Shift-viselkedést; az archívum egyetlen PNG-je PicasaPy-hibaablak. Két személyes eredeti felvétel kell a sima sor-kattintás, Ctrl+kattintás és Shift+kattintás után. A Név nélküliek `job-180` többes kijelölése ettől külön, lezárt viselkedés. |
+
+**Két független út.** **A út:** a bináris és a már meglévő Ghidra-olvasatok az N1 munkasor-vezérlését, az N3 Red-pontszám/küszöb-mezők különbségét és az N7 aktuális sorindexét írják le; egyik sem rögzíti az eredeti program kérdezett, felhasználói futásidejű kimenetét. **B út:** a mérőarchívum INI-/CSV-/TXT-leltára és az egyetlen PNG közvetlen ellenőrzése nem tartalmazza a hiányzó név előtti/utáni kontrollt, címkézett összehasonlító készletet vagy két személyes kiválasztási sorozatot. Az utak abban egyeznek, hogy a helyi adatokkal egyik kérdezett viselkedés sem dőlt el.
+
+**Cáfoló kísérlet.** Azt próbáltam megcáfolni, hogy az archívum alkalmatlan a nyitott pontok eldöntésére: végigszámoltam minden tagot, kibontottam az összes INI/TXT/CSV dokumentumot és az egyetlen PNG-t is. Az INI-jelölők mind 0-k, a dokumentumokban nincs felismerési címkézés, a PNG pedig PicasaPy hibaablak. Ez a próba nem talált felhasználható kontrollt. A 900 JPG-ről nem állítom, hogy arcmentesek; azt állítom, hogy nincs hozzájuk igazolt eredeti kimenet vagy címkézés.
+
+**Ghidra-nyitott.** A korábbi §53.5 kérés `0x10107d70` címére a helyi Ghidra-tárban továbbra sincs kimenet; a `0x10103870` és a `0x10107f20` kimenete megvan, de külön kezeli a detektori összevetést és a `WeakClassifier` mezőjét. A megmaradt statikus kérdés: `Ghidra-kör kell: 0x10107d70 - állapítsa meg, hogy a FaceViewDetector által bejárt gyűjtemény `+0x1c` mezője valóban a vsi_WeakClassifier modellstreamből betöltött threshold mező-e, a betöltő út és a dinamikus elemtípus követésével.` Ez nem adja meg a futáskor ténylegesen használt értéket vagy a felismerési arányt; a #5184 N3 lezárásához a runtime-mérés ettől függetlenül szükséges. Azonos címre új kérést ebben a körben nem indítottam.
+
+**Következtetés és megvalósítás.** N1, N3 és N7 People Manager-része nyitott; N4, N5, N6 és N8 az előző felvételekkel lezárt (56.4). Eredeti/PicasaPy-eltérés nincs bizonyítva, ezért fejlesztői teendő és új kutatási jegy nem indokolt. A feloldás a fenti három futásidejű felvétel/mérés; ez a session a GitHub-alapú Colab-feladatfeladást nem használta.
+
+**Módosított fájl:** `docs/specs/picasa-arcfelismeres.md` (57. szakasz: a 2026-10-27-i, célzott archívum- és Ghidra-leltár, a három nyitott pont bizonyítékhatára és megszerzési út).
+
+## 58. #5184 N7: a People Manager listája egyszeres kijelölésű (felvétel, 2026-10-27)
+
+**Felvétel:** picasa-colab-jobs job-325 (az előző, job-227 nem mérte a kérdést: az első név utáni Enter az ismeretlen névre nyíló People névjegyablakot hozta fel, és a lépéssor abban ragadt). A javított lépéssor két arcot nevez el (`Teszt Elek`, `Masik Ember`) a New Person, majd OK úton, megnyitja az Eszközök ▸ People Manager ablakot, és a listán sorban: első sor kattintás, második sor Ctrl-kattintás, első sor kattintás, második sor Shift-kattintás.
+
+**Eredmény (33-41. kép):**
+
+| lépés | kijelölt sor |
+|---|---|
+| kattintás a `Masik Ember` sorra | `Masik Ember` |
+| Ctrl-kattintás a `Teszt Elek` sorra | csak `Teszt Elek` (az első kijelölése megszűnik) |
+| kattintás a `Masik Ember` sorra | `Masik Ember` |
+| Shift-kattintás a `Teszt Elek` sorra | csak `Teszt Elek` |
+
+A jobb oldali Name mező mindig az épp kijelölt személy nevét mutatja. **A People Manager listája egyszeres kijelölésű: a Ctrl és a Shift nem bővíti a kijelölést.** (A Név nélküliek nézet csempéinek többes kijelölése ettől független, azt a job-180 igazolja.)
+
+**PicasaPy:** a `PeopleManagerDialog.qml` egyetlen kijelölt kulcsot tart (`selectedKey`), a lista `currentIndex`-szel jelöl; ez egyezik az eredetivel. **N7 lezárva, eltérés nincs.**

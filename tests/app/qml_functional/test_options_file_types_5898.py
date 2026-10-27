@@ -74,9 +74,10 @@ def test_tiszta_profil_feliratai_alapertekei_es_png_mentese(
 
     expected = {
         "optionsFileTypeBmpCheck": (".BMP", True),
-        "optionsFileTypeGifCheck": (".GIF", False),
-        "optionsFileTypePngCheck": (".PNG", False),
-        "optionsFileTypeTgaCheck": (".TGA", False),
+        # #6060: alapból minden típus bekapcsolt, frissítés ne rejtsen el képet.
+        "optionsFileTypeGifCheck": (".GIF", True),
+        "optionsFileTypePngCheck": (".PNG", True),
+        "optionsFileTypeTgaCheck": (".TGA", True),
         "optionsFileTypeTiffCheck": (".TIF, .TIFF", True),
         "optionsFileTypeWebpCheck": (".WEBP", True),
         "optionsFileTypePsdCheck": (".PSD (Photoshop)", True),
@@ -115,17 +116,17 @@ def test_tiszta_profil_feliratai_alapertekei_es_png_mentese(
 
     png = _gyerek(options, "optionsFileTypePngCheck")
     _klikk_ablakban(qt_app, options, png)
-    assert png.property("checked") is True
+    assert png.property("checked") is False
 
     # #5906: a File Types értéke az OK-ra kerül QSettings-be; utána ugyanaz
     # a párbeszéd újranyitva a tárolt PNG-értéket olvassa vissza.
     ok_button = _gyerek(options, "optionsOkButton")
     _klikk_ablakban(qt_app, options, ok_button)
     assert _varj(qt_app, lambda: options.property("visible") is False)
-    assert _varj(qt_app, lambda: bool(controller.fileTypeEnabled("png")))
+    assert _varj(qt_app, lambda: not controller.fileTypeEnabled("png"))
     reopened = _beallitasok_megnyit(window, qt_app)
     _fulre_kattint(qt_app, reopened, "optionsTabFileTypes", 2)
-    assert _gyerek(reopened, "optionsFileTypePngCheck").property("checked") is True
-    assert controller.fileTypeEnabled("png") is True
+    assert _gyerek(reopened, "optionsFileTypePngCheck").property("checked") is False
+    assert controller.fileTypeEnabled("png") is False
 
     _zar(qt_app, reopened)
