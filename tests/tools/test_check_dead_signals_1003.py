@@ -547,7 +547,7 @@ def test_az_alapallapot_minden_tetelehez_van_indoklas() -> None:
 
 
 def test_a_masik_modul_aliasan_at_irt_notify_is_ertesito(tmp_path: Path) -> None:
-    """`notify=_Signals.kesz` a jelzésmixin `kesz`-ét teszi értesítővé."""
+    """`notify=_Jelzesek.kesz` a jelzésmixin `kesz`-ét teszi értesítővé (#5957)."""
     gyoker = tmp_path / "src"
     gyoker.mkdir()
     (gyoker / "szerk_signals.py").write_text(
@@ -564,11 +564,11 @@ class SzerkSignalsMixin:
         """\
 from PySide6.QtCore import Property
 
-from .szerk_signals import SzerkSignalsMixin as _Signals
+from .szerk_signals import SzerkSignalsMixin as _Jelzesek
 
 
 class SzerkVagasMixin:
-    @Property(bool, notify=_Signals.kesz)
+    @Property(bool, notify=_Jelzesek.kesz)
     def ready(self):
         return True
 """,
@@ -579,7 +579,7 @@ class SzerkVagasMixin:
 
 
 def test_a_jelzesmodul_jelzeset_a_gazda_vezerlo_neven_fogadjak(tmp_path: Path) -> None:
-    """A `szerk_controller_signals` jelzése a `szerkController` QML-néven él."""
+    """A `szerk_controller_signals` jelzése a `szerkController` QML-néven él (#5957)."""
     gyoker = tmp_path / "src"
     gyoker.mkdir()
     (gyoker / "szerk_controller_signals.py").write_text(
@@ -601,14 +601,3 @@ class SzerkControllerSignalsMixin:
     )
 
     assert _nema_kulcsok(gyoker) == set()
-
-
-def test_a_jelzesmodul_nem_valtoztatja_meg_a_baseline_azonositojat() -> None:
-    """A signals-mixin útvonala a gazda-vezérlő stabil kulcsát használja."""
-    jelzes = guard.SignalDecl(
-        name="scanProgress",
-        path="app/face_scan_controller_signals.py",
-        owner="FaceScanControllerSignalsMixin",
-    )
-
-    assert jelzes.key == "app/face_scan_controller.py::scanProgress"

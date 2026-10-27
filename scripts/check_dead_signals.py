@@ -90,10 +90,9 @@ _CLASS_DECL = re.compile(r"^[ \t]*class\s+(\w+)", re.M)
 #: ``Property(..., notify=jelzesNev)`` — a property-értesítő jelzések.
 _NOTIFY = re.compile(r"notify\s*=\s*(?:(\w+)\.)?(\w+)")
 
-#: ``from .modul import Osztaly as Alias`` — minősített notify-feloldás.
-_ALIAS_IMPORT = re.compile(
-    r"^from\s+\.(\w+)\s+import\s+(\w+)(?:\s+as\s+(\w+))?", re.M
-)
+#: ``from .modul import Osztaly as Alias`` — a minősített ``notify=Alias.jel``
+#: feloldásához (a jelzések külön mixinmodulban, #5957).
+_ALIAS_IMPORT = re.compile(r"^from\s+\.(\w+)\s+import\s+(\w+)(?:\s+as\s+(\w+))?", re.M)
 
 #: Jelzéskezelő (`onClicked:`) — sosem érték-átadás.
 _JELZESKEZELO = re.compile(r"on[A-Z]")
@@ -145,7 +144,8 @@ class SignalDecl:
         névre kulcsolt lista az egyiket némán elnyelné.
 
         A külön `*_signals.py` modul identitása a gazda-vezérlő fájlja,
-        így a mixinbe költöztetés nem tesz egy már ismert néma jelet új tétellé.
+        így a mixinbe költöztetés nem tesz egy már ismert néma jelet új tétellé
+        (#6025).
         """
         path = Path(self.path)
         if path.stem.endswith("_signals"):
@@ -163,6 +163,7 @@ class SignalDecl:
         module = Path(self.path).stem
         names = {_camel_name(module), module.replace("_controller", "")}
         if module.endswith("_signals"):
+            # külön jelzésmodul: a gazda vezérlő QML-nevén fogadják (#5957)
             names.add(_camel_name(module.removesuffix("_signals")))
         if self.owner:
             names.add(_lower_camel(self.owner))
@@ -227,18 +228,18 @@ def collect_notify_signals(root: Path) -> set[tuple[str, str | None, str]]:
         text = _read_text(path)
         classes = [(match.start(), match.group(1)) for match in _CLASS_DECL.finditer(text)]
         aliases = {
-            (match.group(3) or match.group(2)): (match.group(1), match.group(2))
-            for match in _ALIAS_IMPORT.finditer(text)
+            (m.group(3) or m.group(2)): (m.group(1), m.group(2))
+            for m in _ALIAS_IMPORT.finditer(text)
         }
         folder = Path(relative).parent
         for match in _NOTIFY.finditer(text):
             qualifier, name = match.group(1), match.group(2)
             if qualifier in aliases:
-                module, class_name = aliases[qualifier]
-                found.add(((folder / f"{module}.py").as_posix(), class_name, name))
+                module, cls = aliases[qualifier]
+                found.add(((folder / f"{module}.py").as_posix(), cls, name))
                 continue
             owner = next(
-                (class_name for offset, class_name in reversed(classes) if offset < match.start()),
+                (cname for offset, cname in reversed(classes) if offset < match.start()),
                 None,
             )
             found.add((relative, owner, name))
