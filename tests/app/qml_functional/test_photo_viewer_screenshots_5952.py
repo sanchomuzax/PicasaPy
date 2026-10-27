@@ -107,6 +107,11 @@ def captured_screenshot(
     tmp_path_factory: pytest.TempPathFactory,
 ) -> tuple[Path, int]:
     """Az első capture kimenetét a pixel-összevetés is újrahasznosítja."""
+    if sys.platform == "win32":
+        pytest.skip(
+            "a rögzítés Linuxon, software renderrel készül; Windowson a "
+            "képpont-egyezés nem értelmezhető (#3263, #6058)"
+        )
     root = tmp_path_factory.mktemp("photo-viewer-screenshots")
     height = int(os.environ.get("PICASA_SCREENSHOT_TEST_HEIGHT", "700"))
     assert height in (695, 700, 705)
