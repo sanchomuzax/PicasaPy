@@ -29,18 +29,13 @@ from picasapy.app.folder_cover_provider import (
 from picasapy.index import open_index, photos_in_folder, sync_tree
 from picasapy.thumbs.cache import ThumbnailCache
 from support.jpeg_factory import make_jpeg
+from tests.support.folder_pane_components_6019 import folder_pane_source_text
 
 _READY = 1
 _APPLICATION = (
     Path(__file__).resolve().parents[2]
     / "src" / "picasapy" / "app" / "application.py"
 )
-_FOLDER_PANE = (
-    Path(__file__).resolve().parents[2]
-    / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "FolderPane.qml"
-)
-
-
 @pytest.fixture
 def indexelt(tmp_path: Path):
     mappa = tmp_path / "kepek" / "Nyaralás 2024"
@@ -104,7 +99,7 @@ class TestFotoNelkuliMappaCsendben:
     def test_a_FolderPane_a_jelolonel_a_mappaikont_mutatja(self):
         """A `boritoLatszik` feltétele a szélességet is nézi (#2215) — enélkül
         a jelölő elrejtené a mappaikont."""
-        forras = _FOLDER_PANE.read_text(encoding="utf-8")
+        forras = folder_pane_source_text()
         eleje = forras.index("readonly property bool boritoLatszik:")
         feltetel = forras[eleje:eleje + 300]
         assert "folderRowCoverImage.implicitWidth > 1" in feltetel

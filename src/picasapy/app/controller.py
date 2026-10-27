@@ -11,55 +11,32 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import (
-    Property,
     QCoreApplication,
+    Property,
     QLocale,
     QObject,
-    QUrl,
     QSettings,
     Signal,
     Slot,
 )
-from PySide6.QtGui import QGuiApplication
 
-from picasapy import network_log, web_upload_size
-from picasapy.hidden_password import egyezik as jelszo_egyezik
-from picasapy.hidden_password import modern_lenyomat, picasa_lenyomat
-from picasapy.index.hidden_scope import visible_folder_sql
-from picasapy.index.people import FaceDataCollector
 from picasapy.index import (
-    hidden_folders,
-    set_hidden_folders_visible,
     album_photos,
     albums_in_index,
     all_photos,
     geotagged_photos,
     open_index,
-    photos_with_faces,
     search_photos,
-    is_folder_hidden,
-    set_folder_hidden,
     starred_photos,
-    photos_up_to_age,
     video_photos,
     sync_tree,
 )
-from picasapy.ini import (
-    FOLDERS_ON_DISK_CATEGORY,
-    HIDDEN_FOLDERS_CATEGORY,
-    STAR_ALBUM_TOKEN,
-    load_or_empty,
-    set_folder_hidden_in_ini,
-    update_document,
-)
+from picasapy.ini import set_folder_hidden_in_ini, update_document
 from picasapy.scanner import PICASA_INI_NAME
-from . import formatting, kor_szuro
-from .confirm_settings import is_confirm_suppressed
-from .contact_names import central_contacts_path
+from . import formatting
 from .appearance_controller import AppearanceMixin
 from .color_management_controller import ColorManagementMixin
 from .viewer_startup_controller import ViewerStartupMixin
@@ -88,90 +65,44 @@ from .formatting import to_local_path as _to_local_path  # noqa: F401 — a
 # fileops_controller kompatibilis import-útja (#150 előtt itt élt a függvény)
 from .keywords_controller import KeywordsMixin
 from .library_controller import LibraryMixin
-from .collections import COLLECTIONS, DEFAULT_COLLAPSED, collection_setting_key
 from .models import FolderListModel, PhotoGridModel, folder_order
 from .people_controller import PeopleMixin
 from .project_folders_controller import ProjectFoldersMixin
 from .perf_controller import PerfMonitorMixin
 from .tesztuzem_controller import TesztuzemMixin
-from .photo_ops_controller import _WRITE_ERRORS, PhotoOpsMixin
+from .photo_ops_controller import PhotoOpsMixin, _WRITE_ERRORS
 from .timestamp_controller import TimestampAdjustmentMixin
 from .dupe_search_controller import DupeSearchMixin
 from .mentes_racs_szuro import MentesRacsSzuroMixin
-from . import small_picture_filter
 from .small_picture_filter import (
-    SHOW_ONLY_BIG_IMAGES_KEY,
-    coerce_show_only_big_images,
     is_big_picture,
 )
 from .similarity_controller import SimilarityMixin
 from .search_controller import SearchMixin
 from .screensaver_controller import ScreensaverMixin
-from .slideshow_pan_zoom import qml_pan_zoom_rectangles
 from .side_pane_controller import SidePaneMixin
 from .tray_controller import TrayMixin
-from .search_results import group_by_folder, groups_to_qml
+from .search_results import group_by_folder
 from .thumbnail_provider import ThumbnailProvider
 from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
+from .controller_state_mixin import AppControllerStateMixin
+from .controller_slideshow_mixin import SlideshowSettingsMixin
+from .controller_network_settings_mixin import NetworkSettingsMixin
+from . import controller_folder_view_mixin as _folder_view_mixin
+from .controller_folder_view_mixin import FolderViewMixin
+from .controller_hidden_folders_mixin import HiddenFoldersMixin
+from .controller_navigation_mixin import FolderNavigationMixin
+from .controller_content_info_mixin import ContentInfoMixin
+from .controller_filter_mixin import ViewFilterMixin
+from .controller_signals import AppControllerSignalsMixin
+
+FOLDER_PANE_WIDTH_DEFAULT = _folder_view_mixin.FOLDER_PANE_WIDTH_DEFAULT
+FOLDER_PANE_WIDTH_MAX = _folder_view_mixin.FOLDER_PANE_WIDTH_MAX
+FOLDER_PANE_WIDTH_MIN = _folder_view_mixin.FOLDER_PANE_WIDTH_MIN
 
 _log = logging.getLogger(__name__)
 
-_THUMB_CAPTION_MODES = ("none", "filename", "caption", "tags", "resolution")
-# #4856: az eredeti diavetítés hét átmenete (`picasa-create-features.md` 4.3);
-# a 22 tételes lista a filmkészítőé (`create_controller._MOVIE_TRANSITIONS`).
-_SLIDESHOW_TRANSITIONS = (
-    "cut",
-    "kenburns",
-    "dissolve",
-    "wiperight",
-    "circleout",
-    "pushright",
-    "rect",
-)
 _FILETYPE_SNAPSHOT_UNSET = object()
-
-#: A bal oldali mappapanel szélessége (#322) — a felhasználó húzhatja, az
-#: érték a QSettings-ben él. A határok azt védik ki, hogy egy elrontott
-#: (nulla vagy képernyőnél szélesebb) érték használhatatlan felülettel
-#: indítsa a következő futást.
-# #587: a forrás szerinti alapérték a `HLISTOFFSET2` = **240** px, FIX
-# (a bal panel nem skálázódik az ablakkal, csak a felhasználó húzhatja).
-# A korábbi 230 becslés volt; a `design-guide.md` két helyen 386-ot,
-# illetve 210-et állított — mindkettő téves, a #587 javította.
-FOLDER_PANE_WIDTH_DEFAULT = 240
-
-#: #2329: az eredeti osztósáv legkisebb szélessége UGYANAZ a szám, mint az
-#: alapértelmezés — a hasáb nem húzható 240 alá. Mérve: a kezelő osztálya
-#: `ytSplitterOffsetHandler` (RTTI `0x00d4734c`), a gyártó a `+0x18`
-#: mezőbe **240.0**-t tölt (`0x009da130`, konstans a `0x00cf48b0`-on), az
-#: alsó korlátot a `0x009d9df4`–`0x009d9e0e` érvényesíti.
-FOLDER_PANE_WIDTH_MIN = 240
-
-#: ⚠️ Ez NEM az eredeti felső korlátja, csak biztonsági határ.
-#:
-#: Az eredetié **ablakfüggő**: a főpanel szélessége − 240
-#: (`0x009d9e21`–`0x009d9e50`: `sub`, `fsub`, `fcomp`). Egy ablakméretet
-#: nem ismerő Python-oldali vágás ezt nem tudja kiszámolni, ezért a
-#: TÉNYLEGES korlátot a QML adja (`Main.qml`, `SplitView.maximumWidth`).
-#: Itt csak annyi a dolga, hogy egy elrontott vagy idegen gépről örökölt
-#: beállítás ne tegye használhatatlanná a felületet — a korábbi fix 600
-#: viszont széles ablakon SZŰKEBB volt az eredetinél, ezért emelkedett.
-FOLDER_PANE_WIDTH_MAX = 4000
-
-
-def _clamp_folder_pane_width(width: int) -> int:
-    return max(FOLDER_PANE_WIDTH_MIN, min(FOLDER_PANE_WIDTH_MAX, width))
-
-
-def _mappaban_megnevezett_arc(path: str, central_path=None) -> bool:
-    """Van-e a mappa ini-jében megnevezett arc (#4887) — EGY ini olvasása,
-    hogy a mappa elrejtése ne indítson fölöslegesen teljes Emberek-söprést."""
-    gyujto = FaceDataCollector(central_path)
-    try:
-        gyujto(path, load_or_empty(Path(path) / PICASA_INI_NAME))
-    except (OSError, ValueError):
-        return True  # bizonytalan: inkább frissítsünk
-    return bool(gyujto.rows)
 
 
 class AppController(
@@ -179,6 +110,9 @@ class AppController(
     HelpMixin,
     CustomAspectRatiosMixin,
     ScreensaverMixin,
+    # #4597: a rejtett mappák valódi megvalósítása megelőzi az egyéni és
+    # projektgyűjtemények alapértelmezett, üres hookjait.
+    HiddenFoldersMixin,
     CustomCollectionsMixin,
     # #644: a saját szerkesztések védelme a párhuzamosan futó Picasa
     # felülírása ellen (észlelés + figyelmeztetés + helyreállítás)
@@ -257,29 +191,20 @@ class AppController(
     # 94%-a (ld. `side_pane_controller.py` mérési táblája)
     SidePaneMixin,
     TrayMixin,
+    AppControllerStateMixin,
+    SlideshowSettingsMixin,
+    NetworkSettingsMixin,
+    FolderViewMixin,
+    FolderNavigationMixin,
+    ContentInfoMixin,
+    ViewFilterMixin,
+    AppControllerSignalsMixin,
     QObject,
 ):
-    statusChanged = Signal()
-    # #5762: közvetlen fájl-listás nézegető és visszatérés a könyvtárhoz.
+    # A QML property-értesítő jelek és a Property ugyanabban a fájlban
+    # maradnak, ahogy a némajelzés-őr is párosítja őket.
     quickViewChanged = Signal()
-    # #64: a rács-feed mappa-csoportjai változtak (csak valódi változásnál!)
-    feedChanged = Signal()
-    # #64: mappa-választás — a rács a feedben ehhez a csoporthoz görget
-    folderActivated = Signal(str)
     descriptionsChanged = Signal()
-    # #9: az albumlista változott (szinkron után, a mappalistával együtt)
-    albumsChanged = Signal()
-    # #459/5: a választott mappa jelenleg nem elérhető (levált NAS-mount,
-    # kihúzott lemez). NEM hiba — tájékoztatás: a mappa és a bélyegképei
-    # megmaradnak, csak az eredeti fájlok nem érhetők el most.
-    folderUnavailable = Signal(str)
-    # #4597: a mappa rejtése/megjelenítése nem ment át: (útvonal, ok) —
-    # ok: "offline-unhide" | "write-failed-unhide" |
-    # "write-failed-hide" | "hidden-move"
-    folderHideFailed = Signal(str, str)
-    # #5704: a Mappa elrejtése után a jelszó nélküli Rejtett mappák
-    # gyűjtemény védelmének felajánlása.
-    hiddenPasswordOfferRequested = Signal()
 
     def __init__(
         self,
@@ -434,980 +359,23 @@ class AppController(
     def quickViewActive(self):  # noqa: N802 — QML-property-stílus
         return self._quick_view_active
 
-    def begin_quick_view(self, paths) -> bool:
-        """Kizárólag a parancssorban megadott képeket tölti a viewerbe."""
-        if self._quick_view_active:
-            return False
-        from .quick_view import quick_view_records
-
-        try:
-            records = quick_view_records(tuple(str(path) for path in paths or ()))
-        except OSError:
-            return False
-        if not records:
-            return False
-
-        self._quick_view_photo_ids = tuple(str(record.id) for record in records)
-        self._provider.register_additional_photos(records)
-        self._photos.set_linear_navigation(True)
-        self._photos.set_photos(records)
-        self._current_folder = ""
-        self._view_mode = ("quick", "")
-        self._quick_view_active = True
-        self.quickViewChanged.emit()
-        return True
-
-    @Slot()
-    def returnToLibraryFromQuickView(self) -> None:  # noqa: N802 — QML-slot-stílus
-        """Lezárja az ideiglenes listát, majd elindítja a rendes könyvtárat."""
-        if not self._quick_view_active:
-            return
-        self._provider.unregister_additional_photos(self._quick_view_photo_ids)
-        self._quick_view_photo_ids = ()
-        self._photos.set_linear_navigation(False)
-        self._photos.set_photos(())
-        self._current_folder = ""
-        self._view_mode = ("folder", "")
-        self._quick_view_active = False
-        self.quickViewChanged.emit()
-        self.start()
-
-    @Property(list, notify=albumsChanged)
-    def albums(self):
-        """Albumlista a bal hasábnak (#9): {token, name, count} elemek —
-        LISTA, nem tuple (#232, a QML-ben a tuple nem tömb). A névtelen
-        albumnak is van megjelenítendő neve (a token rövidített alakja),
-        hogy ne maradjon üres sor a hasábon."""
-        return list(self._albums)
-
-    @Property(str, notify=statusChanged)
-    def currentAlbumToken(self):
-        """Az aktív album token-je (#9) — a bal hasáb kijelöléséhez."""
-        mode, param = self._view_mode
-        if mode == "starred_album":
-            return STAR_ALBUM_TOKEN
-        return param if mode == "album" else ""
-
-    @Property(str, notify=statusChanged)
-    def statusText(self):
-        return self._status
-
-    @Property(str, notify=statusChanged)
-    def currentFolder(self):
-        return self._current_folder
-
-    @Property(str, notify=statusChanged)
-    def folderDateText(self):
-        """A mappa-fejléc dátumsora (a legkorábbi felvétel hosszú dátuma)."""
-        return self._folder_date
-
-    @Property(str, notify=statusChanged)
-    def folderDescription(self):
-        """A mappa leírása — Picasa-kompatibilis: `[Picasa]/description`
-        kulcs a mappa `.picasa.ini`-jében."""
-        return self._folder_description
-
-    @Property(bool, notify=statusChanged)
-    def searchActive(self):
-        """Aktív-e a keresés (#7): bal paneli sor + rács-csoportosítás."""
-        return self._view_mode[0] in ("search", "search-folder")
-
-    @Property(str, notify=statusChanged)
-    def searchQuery(self):
-        mode, param = self._view_mode
-        if mode == "search":
-            return param
-        if mode == "search-folder":
-            return param[0]
-        return ""
-
-    @Property(int, notify=statusChanged)
-    def searchResultCount(self):
-        """Az ÖSSZES találat (#7) — mappára szűkítve is, nem a részhalmaz."""
-        return self._search_result_count
-
-    @Property(list, notify=statusChanged)
-    def searchGroups(self):
-        """A jelenleg látszó fotók mappánkénti csoportjai QML-nek (#7)."""
-        return groups_to_qml(self._search_groups)
-
-    @Property(bool, notify=statusChanged)
-    def filterActive(self):
-        return self._filter_active
-
-    @Property(str, notify=statusChanged)
-    def viewModeName(self):
-        """A jelenlegi szűrt nézet neve (`folder` · `starred` · `videos` ·
-        `album` · `search`…).
-
-        #1830: a szűrő-gombok ebből tudják, hogy ŐK vannak-e bekapcsolva.
-        A `filterActive` erre nem elég: az csak azt mondja, hogy szűrünk,
-        azt nem, hogy MIVEL — két szűrő-gomb egyszerre látszana aktívnak."""
-        return self._view_mode[0]
-
-    @Property(bool, notify=statusChanged)
-    def canSaveSearch(self):
-        """Menthető-e a jelenlegi nézet albumként (#1405) — a mag a
-        `PhotoOpsMixin._mentheto_kereses`, a jelzés viszont itt lakik.
-
-        A megerősítés küszöbéhez a felület a MÁR MEGLÉVŐ
-        `searchResultCount`-ot olvassa (#7: az ÖSSZES találat, mappára
-        szűkítve is) — nem építünk mellé másodikat."""
-        return self._mentheto_kereses()
-
-    @Property(str, notify=statusChanged)
-    def filterStatusText(self):
-        """A zöld eredménysáv szövege (Picasa-minta)."""
-        return self._filter_status
-
-    @Property("QVariantList", notify=feedChanged)
-    def feedGroups(self):
-        """A rács-feed mappa-csoportjai (#64): {path, name, start, count,
-        dateText} — a QML ebből rajzol mappa-fejlécet és képfolyamot."""
-        return [dict(group) for group in self._feed_groups]
-
     @Property(int, notify=descriptionsChanged)
     def descriptionRevision(self):
         """Leírás-mentéskor nő — a feed-fejlécek leírás-kötésének triggere."""
         return self._description_revision
 
-    @Property(list, notify=statusChanged)
-    def watchedFolders(self):
-        return list(self._roots)
-
-    @Property(list, notify=statusChanged)
-    def faceExcludedFolders(self):
-        """Az arcfelismerésből kizárt gyökér-mappák (#449) — a
-        `FolderStatePanel.qml` ebből számolja (ős-mappákra is kiterjedő
-        egyezéssel) a jelölőnégyzet állapotát, a `watchedFolders` mintáját
-        követve."""
-        return list(self._face_excluded_roots)
-
     #: #5653: az eredeti `Preferences/BigSlideshow2` kapcsoló: hiányzó
     #: értéknél az eredeti 1-es alapértékkel.
-    @Property(bool, notify=statusChanged)
-    def bigSlideshow2(self):  # noqa: N802 - QML-property-konvenció
-        value = self._get_settings().value("Preferences/BigSlideshow2", 1)
-        if value in (False, "false", "False", "0", 0):
-            return False
-        return True
 
-    #: #5653: a `GetDeviceCaps(BITSPIXEL)` Qt-megfelelője; a vetítő QML-je
-    #: ezt a megnevezett értéket ellenőrzi (16 vagy 32 bit).
-    @Property(int, notify=statusChanged)
-    def slideshowScreenDepth(self):  # noqa: N802 - QML-property-konvenció
-        screen = QGuiApplication.primaryScreen()
-        return screen.depth() if screen is not None else 0
 
-    #: #433: a diavetítés MEGŐRZÖTT beállításai. Az eredeti a `Preferences`
-    #: alá teszi őket (`SlideshowEffectTime`, `captionmode`); nálunk a saját
-    #: beállítás-tárolóba mennek, a `view/…` kulcsok mintájára — a
-    #: registry-kulcsok egy-az-egyben átvétele nem cél (más a platform).
-    @Property(str, notify=statusChanged)
-    def slideshowTransition(self):  # noqa: N802 - QML-property-konvenció
-        """A mentett átmenet. A hét elemen kívüli (régebbi) mentett értéket
-        betöltéskor Dissolve-ra cseréli (#4856)."""
-        mentett = self._get_settings().value("view/slideshowTransition", "dissolve")
-        return mentett if mentett in _SLIDESHOW_TRANSITIONS else "dissolve"
 
-    @Slot(str)
-    def setSlideshowTransition(self, value: str) -> None:  # noqa: N802
-        """A vetítés-átmenet megőrzése (#433).
-
-        Ismeretlen kulcsot NEM tárolunk; a készlet az eredeti diavetítés hét
-        átmenete (`picasa-create-features.md` 4.3, #4856)."""
-        if value not in _SLIDESHOW_TRANSITIONS:
-            return
-        self._get_settings().setValue("view/slideshowTransition", value)
-        self.statusChanged.emit()
-
-    @Slot(int, int, int, int, result="QVariantList")
-    def slideshowPanZoomRectangles(  # noqa: N802 - QML metódusnév
-        self,
-        forras_szelesseg: int,
-        forras_magassag: int,
-        nezet_szelesseg: int,
-        nezet_magassag: int,
-    ) -> list[dict[str, float]]:
-        """A vetítő Pan and Zoom kivágásai, a QML-nek átadható alakban."""
-        if min(
-            forras_szelesseg,
-            forras_magassag,
-            nezet_szelesseg,
-            nezet_magassag,
-        ) <= 0:
-            return []
-        return qml_pan_zoom_rectangles(
-            forras_szelesseg,
-            forras_magassag,
-            nezet_szelesseg,
-            nezet_magassag,
-        )
-
-    @Property(int, notify=statusChanged)
-    def slideshowTransitionMs(self):  # noqa: N802
-        """Az átmenet hossza milliszekundumban (`SlideshowEffectTime`)."""
-        try:
-            value = int(self._get_settings().value("view/slideshowTransitionMs", 700))
-        except (TypeError, ValueError):
-            return 700
-        #: a dia-idő alatt kell maradnia, különben az átmenet sosem fejeződik
-        #: be; a felső korlát a legrövidebb dia-idő (1 s) fele
-        return max(0, min(value, 500))
-
-    #: #2992, #5544: a diaidő alsó/felső korlátja, mérve. Az eredeti `+`/`-`
-    #: gombjai után az érték 1 és 20 közé szorul: az alsó határ
-    #: `0x00802b6d` (`fld1`), a felső `0x00802b7e` (a `0x00cf4974` konstans,
-    #: f32 = 20,0).
-    SLIDESHOW_SECONDS_MIN = 1
-    SLIDESHOW_SECONDS_MAX = 20
-
-    @Property(int, notify=statusChanged)
-    def slideshowSeconds(self):  # noqa: N802 — QML-property-konvenció
-        """Egy dia ideje másodpercben (`SlideshowEffectTime`, alapérték 3).
-
-        Mérve: `0x007facd3` (`mov dword ptr [esp+0x3c], 3`). A sérült vagy
-        tartományon kívüli tárolt érték az alapértékre esik vissza — egy
-        elgépelt beállítás ne fagyassza meg a vetítést egy képen."""
-        try:
-            ertek = int(self._get_settings().value("view/slideshowSeconds", 3))
-        except (TypeError, ValueError):
-            return 3
-        if not (self.SLIDESHOW_SECONDS_MIN <= ertek <= self.SLIDESHOW_SECONDS_MAX):
-            return 3
-        return ertek
-
-    @Slot(int)
-    def setSlideshowSeconds(self, value: int) -> None:  # noqa: N802
-        """A diaidő megőrzése; a tartományon kívüli érték NEM megy be."""
-        try:
-            ertek = int(value)
-        except (TypeError, ValueError):
-            return
-        if not (self.SLIDESHOW_SECONDS_MIN <= ertek <= self.SLIDESHOW_SECONDS_MAX):
-            return
-        self._get_settings().setValue("view/slideshowSeconds", ertek)
-        self.statusChanged.emit()
-
-    @Property(bool, notify=statusChanged)
-    def slideshowLoop(self):  # noqa: N802
-        """A diavetítés ismétlése; az eredeti alapértéke ki."""
-        value = self._get_settings().value("view/slideshowLoop", False)
-        if value in (True, "true", "1"):
-            return True
-        if value in (False, "false", "0"):
-            return False
-        return False
-
-    @Slot(bool)
-    def setSlideshowLoop(self, value: bool) -> None:  # noqa: N802
-        self._get_settings().setValue("view/slideshowLoop", bool(value))
-        self.statusChanged.emit()
-
-    @Property(bool, notify=statusChanged)
-    def slideshowMusicEnabled(self):  # noqa: N802
-        value = self._get_settings().value("view/slideshowMusicEnabled", True)
-        return value in (True, "true", "1")
-
-    @Slot(bool)
-    def setSlideshowMusicEnabled(self, value: bool) -> None:  # noqa: N802
-        self._get_settings().setValue("view/slideshowMusicEnabled", bool(value))
-        self.statusChanged.emit()
-
-    @Property(str, notify=statusChanged)
-    def slideshowMusicFolder(self):  # noqa: N802
-        return str(self._get_settings().value("view/slideshowMusicFolder", "") or "")
-
-    @Property(QUrl, notify=statusChanged)
-    def slideshowMusicFolderUrl(self):  # noqa: N802
-        """A mappaválasztó URL-je a közös útvonal-konverteren keresztül."""
-        return formatting.to_file_url(self.slideshowMusicFolder)
-
-    @Slot(str)
-    def setSlideshowMusicFolder(self, value: str) -> None:  # noqa: N802
-        """Megőrzi a kiválasztott, létező mappát; az üres érték törli."""
-        local_path = formatting.to_local_path(value)
-        if not local_path:
-            self._get_settings().setValue("view/slideshowMusicFolder", "")
-            self.statusChanged.emit()
-            return
-        folder = Path(local_path).expanduser()
-        try:
-            if not folder.is_dir():
-                return
-            local_path = str(folder.resolve())
-        except OSError:
-            return
-        self._get_settings().setValue("view/slideshowMusicFolder", local_path)
-        self.statusChanged.emit()
-
-    @Property(int, notify=statusChanged)
-    def networkLogLevel(self) -> int:  # noqa: N802
-        """A hálózati napló szintje (0-4); az eredeti `LogLevel` kulcs, alapértéke 2."""
-        return network_log.read_level(self._get_settings().value("Preferences/LogLevel"))
-
-    @Slot(int)
-    def setNetworkLogLevel(self, value: int) -> None:  # noqa: N802
-        self._get_settings().setValue(
-            "Preferences/LogLevel", network_log.clamp_level(value)
-        )
-        self._apply_network_log()
-        self.statusChanged.emit()
-
-    @Property(str, constant=True)
-    def networkLogFile(self) -> str:  # noqa: N802
-        """A naplófájl rögzített helye: az adatkönyvtárban, `network.log` néven."""
-        return str(Path(self._db_path).parent / network_log.NAPLO_FAJLNEV)
-
-    def _apply_network_log(self) -> None:
-        """A mentett szintet a futó naplózóra alkalmazza, a naplófájllal együtt."""
-        network_log.configure(self.networkLogLevel, Path(self.networkLogFile))
-
-    @Property(int, notify=statusChanged)
-    def webUploadSizeIndex(self) -> int:  # noqa: N802
-        """A webalbum-feltöltési méret legördülő-indexe (0-4); hiányzó kulcsnál az 1600 (2)."""
-        return web_upload_size.read_index(
-            self._get_settings().value(web_upload_size.KULCS)
-        )
-
-    @Slot(int)
-    def setWebUploadSizeIndex(self, index: int) -> None:  # noqa: N802
-        self._get_settings().setValue(
-            web_upload_size.KULCS, web_upload_size.size_at(index)
-        )
-        self.statusChanged.emit()
-
-    @Property(list, notify=statusChanged)
-    def slideshowMusicTrackUrls(self):  # noqa: N802
-        """Az album-, mappa- vagy közös diavetítési zeneforrás."""
-        mode, token = self._view_mode
-        if mode == "album":
-            tracks = self.albumMusicTrackUrls(token)
-            if tracks:
-                return tracks
-        if self._current_folder and self.folderMusicEnabled(self._current_folder):
-            return self.folderMusicTrackUrls(self._current_folder)
-        folder = Path(self.slideshowMusicFolder).expanduser()
-        try:
-            if not folder.is_dir():
-                return []
-            tracks = sorted(
-                (
-                    path for path in folder.iterdir()
-                    if path.is_file() and path.suffix.casefold() == ".mp3"
-                ),
-                key=lambda path: path.name.casefold(),
-            )
-        except OSError:
-            return []
-        return [formatting.to_file_url(str(path)) for path in tracks]
-
-    @Property(str, notify=statusChanged)
-    def slideshowCaptionMode(self):  # noqa: N802
-        return self._get_settings().value("view/slideshowCaptionMode", "caption")
-
-    @Slot(str)
-    def setSlideshowCaptionMode(self, value: str) -> None:  # noqa: N802
-        """A vetítés feliratmódja (#433): felirat / fájlnév / semmi."""
-        if value not in ("caption", "filename", "none"):
-            return
-        self._get_settings().setValue("view/slideshowCaptionMode", value)
-        self.statusChanged.emit()
-
-    @Property(str, notify=statusChanged)
-    def folderSort(self):
-        return self._get_settings().value("view/folderSort", "date")
-
-    @Property(bool, notify=statusChanged)
-    def folderSortReverse(self):
-        value = self._get_settings().value("view/folderSortReverse", "false")
-        return value in (True, "true", "1")
-
-    @Property(str, notify=statusChanged)
-    def paneSort(self):
-        """A BAL HASÁB rendezése (#461/3) — a rácsétól FÜGGETLEN beállítás.
-
-        Az eredeti Picasában a bal panel saját jobbklikk-menüje
-        (`AlbumList`, ld. `ui-audit-context-menus.md` A.2) tartalmazta a
-        „Rendezés dátum / név / méret / legutóbbi változtatás alapján"
-        tételeket — vagyis az a HASÁBOT rendezte. A Mappa ▸ Rendezés ettől
-        külön, a RÁCSOT állítja (#321). Két parancs, két cél."""
-        return self._get_settings().value("view/paneSort", "date")
-
-    @Property(bool, notify=statusChanged)
-    def paneSortReverse(self):
-        value = self._get_settings().value("view/paneSortReverse", "false")
-        return value in (True, "true", "1")
-
-    @Slot(str)
-    def setPaneSort(self, mode: str) -> None:
-        """A bal hasáb rendezésének váltása (#461/3)."""
-        if mode not in ("date", "changed", "size", "name"):
-            return
-        self._get_settings().setValue("view/paneSort", mode)
-        self._reload_folders()
-
-    @Slot()
-    def togglePaneSortReverse(self) -> None:
-        self._get_settings().setValue(
-            "view/paneSortReverse", not self.paneSortReverse
-        )
-        self._reload_folders()
-
-    @Slot(str)
-    def setFolderSort(self, mode: str) -> None:
-        """A MAPPA-BLOKKOK sorrendje a rácson (Mappa ▸ Rendezés):
-        date / changed / size / name.
-
-        ⚠️ #1759 — MÉRVE, mert a korábbi leírás félrevezetett. Ez a
-        beállítás azt dönti el, milyen sorrendben követik egymást a
-        MAPPÁK a rácson (`_feed_records` → `folder_order`). Nem rendezi
-        át a mappán BELÜLI képeket, és nem a bal hasáb sorrendje.
-
-        Három, egymástól FÜGGETLEN rendezés él a programban:
-
-        | beállítás | mit rendez | honnan |
-        |---|---|---|
-        | `folderSort` (ez) | a mappa-blokkokat a RÁCSON | Mappa ▸ Rendezés |
-        | kézi sorrend (#4890) | a mappa KÉPEIT, mappánként | mappa-jobbklikk |
-        | `paneSort` (#461/3) | a BAL HASÁB sorait | a hasáb helyi menüje |
-
-        A #1595 kutatása épp azért vont le téves következtetést, mert a
-        korábbi docstring („a RÁCS rendezése") alapján úgy tűnt, hogy ez
-        és a kézi sorrend ugyanaz kétféle felirattal — az összevonás
-        egy működő szempontot („legutóbbi változtatások") vett volna el.
-
-        #1454: a Nézet ▸ Mappanézet almenü — ahonnan ez korábban szintén
-        hívható volt — nem rendez, hanem a bal hasáb szerkezetét állítja.
-        """
-        if mode not in ("date", "changed", "size", "name"):
-            return
-        self._get_settings().setValue("view/folderSort", mode)
-        self._refresh_view()
-
-    @Slot(int)
-    def setThumbCellSize(self, cella_px: int) -> None:  # noqa: N802 — QML-stílus
-        """A rács cellamérete → a bélyegkép-SZINT (#598).
-
-        A QML a csúszka fokozatát adja át; a szintet a bélyegkép-tár dönti
-        el (`72 · 144 · a maximum`). A felső szinten `None` megy a modellbe,
-        hogy az URL bájtra a #598 előtti legyen — a meglévő gyorstár így
-        érvényes marad.
-
-        Egy szint több csúszka-fokozatot fed le, ezért a húzás nem kér újra
-        minden bélyegképet, csak a szinthatár átlépése."""
-        model = getattr(self, "photos", None)
-        if model is None or cella_px <= 0:
-            return
-        szint = self._provider.level_for(cella_px)
-        model.set_thumb_level(None if szint >= self._provider.top_level else szint)
-
-    @Slot(int, int, bool, result=int)
-    def prefetchThumbnails(  # noqa: N802 — QML-stílus
-        self, start_row: int, count: int, reverse: bool = False
-    ) -> int:
-        """A rács görgetési irányában következő bélyegképek előtöltése (#4289).
-
-        A modell URL-jeit használjuk, hogy a bélyegképszintet, a vágást és
-        a többi URL-címkét ugyanaz a meglévő render-út kapja, mint a látható
-        celláknál. A provider a munkákat alacsony prioritással sorolja be.
-        """
-        photos = self._photos.photos
-        if start_row < 0 or count <= 0 or start_row >= len(photos):
-            return 0
-        stop = min(len(photos), start_row + count)
-        rows = range(stop - 1, start_row - 1, -1) if reverse else range(
-            start_row, stop
-        )
-        prefix = "image://thumbs/"
-        photo_ids = []
-        for row in rows:
-            url = self._photos.thumbUrlAt(row)
-            if url.startswith(prefix):
-                photo_ids.append(url[len(prefix):])
-        return self._provider.prefetch_images(photo_ids)
-
-    @Slot(result=bool)
-    def backgroundWorkRunning(self) -> bool:  # noqa: N802 — QML-stílus
-        """Fut-e BÁRMELYIK vezérlő háttérmunkája (#671).
-
-        A kilépés kérdéséhez kell (`Main.qml` `kilepes()`): az eredeti Picasa
-        a kilépést nem blokkolja, de ha folyamatban van munka, RÁKÉRDEZ
-        („Uploads are in progress. Would you like to exit now?", két gombbal).
-
-        ⚠️ SZÁNDÉKOSAN a globális nyilvántartást kérdezi
-        (`running_background_workers`), nem a saját mixinjét: a futó munka
-        lehet a webexport, a kötegelt effekt vagy az arc-szkennelés
-        vezérlőjében is, és a felhasználó számára az mind „még dolgozik".
-        """
-        from .worker_thread import running_background_workers
-
-        return bool(running_background_workers())
-
-    @Slot()
-    def toggleFolderSortReverse(self) -> None:
-        self._get_settings().setValue(
-            "view/folderSortReverse", not self.folderSortReverse
-        )
-        self._reload_folders()
-        self._refresh_view()  # a feed sorrendje követi a hasábot (#64)
-
-    def _reload_folders(self) -> None:
-        # #321 + #461/3: a bal hasábnak SAJÁT rendezése van — a Mappa ▸
-        # Rendezés (folderSort) továbbra sem nyúl hozzá, azt csak a rács
-        # követi. A hasáb sorrendjét a saját jobbklikk-menüje állítja
-        # (`paneSort`), ahogy az eredeti Picasa `AlbumList` menüje tette.
-        with open_index(self._db_path) as conn:
-            self._folders.load(
-                conn,
-                self.paneSort,
-                self.paneSortReverse,
-                # #1637: a rejtett mappákat ugyanaz a kapcsoló hozza
-                # vissza, ami a rejtett fotókat — nem külön beállítás
-                include_hidden=self.showHidden,
-                # #2031: a PROJEKT-mappák csak a Projektek alatt látszanak
-                # (a `P2category` kizáró, #1033). Az útvonalak MÁR itt
-                # vannak — a hasáb-gyűjtemények betöltése cache-eli őket —,
-                # tehát nem kell újabb `.picasa.ini`-söprés.
-                exclude_paths=[m.path for m in self._project_folders],
-            )
-        self.statusChanged.emit()
-
-    # -- gyűjtemények a bal hasábon (#320) -----------------------------------
-
-    @Slot(str, result=bool)
-    def isCollectionCollapsed(self, name: str) -> bool:
-        """Csukva van-e a gyűjtemény fejléce (perzisztens)."""
-        if name not in COLLECTIONS:
-            return False
-        stored = self._get_settings().value(
-            collection_setting_key(name), DEFAULT_COLLAPSED[name]
-        )
-        return stored in (True, "true", "1", 1)
-
-    @Slot(str, bool)
-    def setCollectionCollapsed(self, name: str, collapsed: bool) -> None:
-        """A gyűjtemény-fejléc csukása/nyitása — ismeretlen nevet kihagy."""
-        if name not in COLLECTIONS:
-            return
-        self._get_settings().setValue(collection_setting_key(name), bool(collapsed))
-        self.statusChanged.emit()
-
-    # -- bal oldali mappapanel szélessége (#322) -----------------------------
-
-    @Property(int, notify=statusChanged)
-    def folderPaneWidth(self):
-        """A mappapanel szélessége képpontban — perzisztens, határok közé
-        szorítva. Olvashatatlan (kézzel elrontott) érték esetén az
-        alapértelmezés jön vissza, nem hiba."""
-        raw = self._get_settings().value(
-            "view/folderPaneWidth", FOLDER_PANE_WIDTH_DEFAULT
-        )
-        try:
-            width = int(raw)
-        except (TypeError, ValueError):
-            return FOLDER_PANE_WIDTH_DEFAULT
-        return _clamp_folder_pane_width(width)
-
-    @Slot(int)
-    def setFolderPaneWidth(self, width: int) -> None:
-        """A húzással beállított szélesség mentése (a QML a SplitView
-        fogantyújának elengedésekor hívja)."""
-        try:
-            clamped = _clamp_folder_pane_width(int(width))
-        except (TypeError, ValueError):
-            return
-        self._get_settings().setValue("view/folderPaneWidth", clamped)
-        self.statusChanged.emit()
-
-    @Property(str, notify=statusChanged)
-    def thumbCaptionMode(self):
-        """Indexkép-felirat mód (Nézet → Indexkép felirata) — perzisztens."""
-        return self._thumb_caption_mode
-
-    @Slot(str)
-    def setThumbCaptionMode(self, mode: str) -> None:
-        """Indexkép-felirat mód beállítása (Nézet menü) — 5 kizáró opció."""
-        if mode not in _THUMB_CAPTION_MODES:
-            return
-        self._thumb_caption_mode = mode
-        self._get_settings().setValue("view/thumbCaption", mode)
-        self.statusChanged.emit()
-
-    # -- felirat-sáv láthatósága (#1816) -------------------------------------
-
-    @Property(bool, notify=statusChanged)
-    def captionVisible(self):
-        """Látszik-e a nagy kép alatti felirat-sáv.
-
-        #1816: az eredetiben ez TARTÓS állapot, nem pillanatnyi kapcsoló —
-        a `Preferences\\LastCaptionButton` őrzi, és a főablak-építő
-        (`0x0040bf70`) induláskor visszaállítja. Ha egyszer elrejtetted, a
-        Picasa legközelebb is elrejtve indul.
-
-        Alapból LÁTSZIK: a felirat a Picasa egyik fő fogalma, az elrejtés a
-        felhasználó külön döntése."""
-        value = self._get_settings().value("view/captionVisible", "true")
-        return value in (True, "true", "1")
-
-    def setCaptionVisible(self, visible: bool) -> None:
-        """A felirat-sáv láthatóságának beállítása.
-
-        SZÁNDÉKOSAN nem `@Slot`: a QML-nek csak a BILLENTŐ-t kínáljuk (az
-        eredeti `captionbutton` megfelelője). Egy felületről elérhetetlen
-        slot a képesség-őr szerint szakadás — és joggal: néma ígéret."""
-        self._get_settings().setValue("view/captionVisible", bool(visible))
-        self.statusChanged.emit()
-
-    @Slot()
-    def toggleCaptionVisible(self) -> None:
-        """A `captionbutton` („Show/Hide Caption") viselkedése."""
-        self.setCaptionVisible(not self.captionVisible)
 
     # -- rejtett MAPPÁK (#1637) ----------------------------------------------
 
-    @Slot(str, result=bool)
-    def isFolderHidden(self, path: str) -> bool:
-        """Rejtett-e a mappa — a menütétel felirata ebből vált."""
-        if not path:
-            return False
-        with open_index(self._db_path) as conn:
-            return is_folder_hidden(conn, path)
-
-    @Slot(str)
-    def toggleFolderHidden(self, path: str) -> None:
-        """A „Mappa elrejtése / Megjelenítés" menütétel.
-
-        A LEMEZEN semmit nem mozgat — csak jelöl. Elrejtés után a mappa
-        eltűnik a bal hasábról, és a Nézet ▸ Rejtett képek kapcsolóval jön
-        vissza (ugyanaz az út, mint a rejtett fotóknál); rejtett
-        állapotban a kijelölés a mappáról lekerül, hogy ne maradjon egy
-        láthatatlan mappa tartalma a rácsban."""
-        if not path:
-            return
-        with open_index(self._db_path) as conn:
-            rejtve = is_folder_hidden(conn, path)
-            van_mappa = Path(path).is_dir()
-            if rejtve and not van_mappa:
-                # Offline mappa ini-je nem írható: a megjelenítés nem
-                # engedett (a rejtett mappa nem válhat láthatóvá úgy, hogy
-                # az ini még „Hidden Folders" — a Picasa újra elrejtené).
-                self.folderHideFailed.emit(path, "offline-unhide")
-                return
-            # #4597: az igazságforrás a mappa ini-je (P2category) — előbb az
-            # ini. Elrejtésnél írási hibára a mappa AZONNAL rejtett (2-es
-            # jelölés, a szinkron pótolja); megjelenítésnél hibára rejtett
-            # marad, és a felület jelzést kap.
-            try:
-                if van_mappa:
-                    set_folder_hidden_in_ini(path, not rejtve)
-            except (OSError, RuntimeError, ValueError):
-                _log.warning("A mappa rejtése nem írható az ini-be: %s", path, exc_info=True)
-                if rejtve:
-                    self.folderHideFailed.emit(path, "write-failed-unhide")
-                    return
-                set_folder_hidden(conn, path, True, ini_pending=True)
-                self.folderHideFailed.emit(path, "write-failed-hide")
-            else:
-                # Offline mappánál a rejtés az indexben vár (2), a mappa
-                # visszatérésekor a szinkron beírja az ini-be.
-                set_folder_hidden(
-                    conn, path, not rejtve, ini_pending=not van_mappa
-                )
-                if van_mappa:
-                    self._init_custom_collections()
-                    self._set_cached_folder_category(
-                        path,
-                        FOLDERS_ON_DISK_CATEGORY if rejtve else HIDDEN_FOLDERS_CATEGORY,
-                    )
-        if not rejtve and not self.showHidden and self._current_folder == path:
-            self._current_folder = ""
-            self._view_mode = ("folder", "")
-            self._show(())
-        # #4887: a mappa képei a többi nézetből (feed, szűrők, Emberek) is
-        # azonnal tűnjenek el / térjenek vissza. Az Emberek-lista teljes
-        # ini-söprést kér (NAS-on drága) — csak akkor, ha a mappában van
-        # megnevezett arc, tehát a darabszám egyáltalán változhat.
-        self._rejtett_lathatosag_valtozott(
-            emberek=_mappaban_megnevezett_arc(
-                path, central_contacts_path(self._db_path)
-            )
-        )
-        # #5704: a kérdés csak az elrejtés után jelenik meg. A felfedés és a
-        # Nézet → Rejtett képek kapcsoló nem indítja el ezt az ajánlatot.
-        if (
-            not rejtve
-            and not self.hiddenPasswordSet
-            and not is_confirm_suppressed(
-                self._get_settings(), "DoNotConfirmHiddenPwd"
-            )
-        ):
-            self.hiddenPasswordOfferRequested.emit()
-
-    def _rejtett_lathatosag_kozlese(self) -> None:
-        """#4887: a tényleges `showHidden` közlése az indexszel — EZ az egy
-        pont, ahonnan a rejtett mappák képeinek láthatósága minden
-        lekérdezéshez eljut (keresés, szűrők, Emberek, idővonal, albumok,
-        térkép, diavetítés, képernyővédő; ld. `index/hidden_scope.py`)."""
-        set_hidden_folders_visible(self._db_path, self.showHidden)
-
-    def _rejtett_lathatosag_valtozott(self, *, emberek: bool = True) -> None:
-        """A tényleges `showHidden` (kapcsoló, jelszó, feloldás) változása
-        után: közlés az indexszel, majd minden ebből élő nézet frissítése."""
-        self._rejtett_lathatosag_kozlese()
-        self._refresh_view()
-        self._reload_folders()
-        self._gyujtemenyek_ujrarajzolasa()
-        # Az Emberek névsor-darabszámai is a láthatóságot követik
-        if emberek:
-            with open_index(self._db_path) as conn:
-                self._load_people(conn)
-        # A tálca a más mappából tartott képeket gyorstárazza — ürüljön,
-        # hogy a rejtett mappa képe az exportba/kollázsba se jusson be
-        if getattr(self, "_tray_wired", False):
-            self._tray_photos_changed()
-        self.statusChanged.emit()
-
-    def _hidden_folder_paths(self) -> frozenset[str]:
-        """A hasábokból kiszűrendő rejtett mappák (#4597): üres, ha a
-        rejtettek megjelenítése be van kapcsolva."""
-        if self.showHidden:
-            return frozenset()
-        with open_index(self._db_path) as conn:
-            return frozenset(hidden_folders(conn))
-
-    def _folder_is_hidden(self, folder_path: str) -> bool:
-        with open_index(self._db_path) as conn:
-            return is_folder_hidden(conn, folder_path)
-
-    def _gyujtemenyek_ujrarajzolasa(self) -> None:
-        """Az egyéni gyűjtemények és a Projektek listája is a rejtettséget
-        követi — mindkettő a `folders.hidden`-ből szűr."""
-        self.customCollectionsChanged.emit()
-        self.projectFoldersChanged.emit()
-
-    # -- rejtett képek (#17) -------------------------------------------------
-
-    # -- a rejtettek JELSZÓ-kapuja (#1637) -----------------------------------
-    #
-    # A tulajdonos döntése (2026-09-03): a Picasa-kompatibilis (hex MD5) és a
-    # modern (sózott PBKDF2) alak EGYÜTT él, az ellenőrzés mindkettőt
-    # elfogadja — így egy Picasában beállított jelszó nem zárja ki a
-    # felhasználót, és az átállás fokozatos lehet.
-    #
-    # ⚠️ Ez a kapu a MEGJELENÍTÉST zárja, nem a fájlokat: a rejtett mappák a
-    # lemezen változatlanul ott vannak. A felület ezt mondja ki.
-
-    _HIDDEN_PWD_KEY = "view/hiddenPasswordHash"
-
-    # #1476: SIMA Python-tulajdonság, nem `Property` — a QML-nek a
-    # `hiddenPasswordSet` logikai válasza kell, a LENYOMAT maga nem való a
-    # felületre. Qt-Propertyként a képesség-őr joggal jelezné szakadásnak.
-    @property
-    def hiddenPasswordHash(self) -> str:
-        """A tárolt lenyomat (sosem a nyílt jelszó); üres, ha nincs jelszó."""
-        return str(self._get_settings().value(self._HIDDEN_PWD_KEY, "") or "")
-
-    @Property(bool, notify=statusChanged)
-    def hiddenPasswordSet(self) -> bool:
-        """Van-e egyáltalán beállított jelszó."""
-        return bool(self.hiddenPasswordHash)
-
-    # #1476: nem `Slot` — a felület a `setHiddenPassword`-öt hívja, ez a
-    # NYERS lenyomat útja (átvétel, teszt). A QML-nek nincs dolga vele.
-    def adoptHiddenPasswordHash(self, hash_value: str) -> None:
-        """Picasából átvett lenyomat (#4597): csak ha még nincs jelszónk —
-        a meglévőt az átvétel sosem írja felül."""
-        if not self.hiddenPasswordHash:
-            self.setHiddenPasswordHash(hash_value)
-
-    def setHiddenPasswordHash(self, hash_value: str) -> None:
-        """A LENYOMAT közvetlen beállítása (import, teszt). A feloldás
-        állapotát nullázza — új jelszó után újra kérni kell."""
-        self._get_settings().setValue(self._HIDDEN_PWD_KEY, str(hash_value))
-        self.lockHidden()
-
-    @Slot(str, bool, result=bool)
-    def setHiddenPassword(self, password: str, modern: bool = False) -> bool:
-        """Jelszó beállítása a választott alakban.
-
-        Args:
-            password: a nyílt jelszó — NEM tárolódik, csak a lenyomata.
-            modern: `True`-nál sózott PBKDF2 (a windowsos Picasa nem nyitja),
-                `False`-nál a Picasa-kompatibilis hex MD5.
-        """
-        if self.hiddenPasswordSet or not password:
-            return False
-        keszit = modern_lenyomat if modern else picasa_lenyomat
-        self.setHiddenPasswordHash(keszit(password))
-        return True
-
-    @Slot(str, result=bool)
-    def verifyHiddenPassword(self, password: str) -> bool:  # noqa: N802
-        """A Rejtett mappák jelszavának ellenőrzése mellékhatás nélkül."""
-        return jelszo_egyezik(self.hiddenPasswordHash, password)
-
-    @Slot(str, str, bool, result=bool)
-    def changeHiddenPassword(  # noqa: N802
-        self,
-        current_password: str,
-        password: str,
-        modern: bool = False,
-    ) -> bool:
-        """A rejtettmappa-jelszó cseréje csak a jelenlegi jelszóval."""
-        if not self.verifyHiddenPassword(current_password) or not password:
-            return False
-        keszit = modern_lenyomat if modern else picasa_lenyomat
-        self.setHiddenPasswordHash(keszit(password))
-        return True
-
-    @Slot(str, result=bool)
-    def clearHiddenPassword(self, current_password: str = "") -> bool:
-        """Jelszó törlése; beállított védelemhez a jelenlegi jelszó kell."""
-        if self.hiddenPasswordSet and not self.verifyHiddenPassword(current_password):
-            return False
-        self._get_settings().remove(self._HIDDEN_PWD_KEY)
-        self.lockHidden()
-        return True
-
-    @Slot(str, result=bool)
-    def unlockHidden(self, password: str) -> bool:
-        """Feloldás a beírt jelszóval. Csak a munkamenetre szól."""
-        if jelszo_egyezik(self.hiddenPasswordHash, password):
-            elotte = self.showHidden
-            self._hidden_unlocked = True
-            # #4887: ha a kapcsoló már be volt kapcsolva, a feloldás azonnal
-            # láthatóvá teszi a rejtett mappák képeit
-            if self.showHidden != elotte:
-                self._rejtett_lathatosag_valtozott()
-            else:
-                self.statusChanged.emit()
-            return True
-        return False
-
-    # #1476: nem `Slot` — a visszazárást a jelszó beállítása és törlése
-    # végzi, magától. A felületről NEM hívható, mert az eredeti Picasában
-    # sincs „zárd vissza most" parancs; ha egyszer mérve lesz, kaphat.
-    def lockHidden(self) -> None:
-        """Visszazárás: a kapcsoló is visszaáll, hogy a rejtettek eltűnjenek."""
-        elotte = self.showHidden
-        self._hidden_unlocked = False
-        if self._show_hidden_setting():
-            self._get_settings().setValue("view/showHidden", False)
-        if elotte:
-            self._rejtett_lathatosag_valtozott()
-            return
-        self._rejtett_lathatosag_kozlese()
-        self._gyujtemenyek_ujrarajzolasa()
-        self.statusChanged.emit()
-
-    @Property(bool, notify=statusChanged)
-    def hiddenUnlocked(self) -> bool:
-        """Fel van-e oldva EBBEN a munkamenetben."""
-        return bool(getattr(self, "_hidden_unlocked", False))
-
-    def _show_hidden_setting(self) -> bool:
-        """A TÁROLT kapcsoló (újraindítás után is megmarad)."""
-        value = self._get_settings().value("view/showHidden", "false")
-        return value in (True, "true", "1")
-
-    @Property(bool, notify=statusChanged)
-    def showHidden(self):
-        """Nézet → Rejtett képek: látszanak-e a rejtettek (halványítva).
-
-        TÉNYLEGES érték (#4597): a tárolt kapcsoló csak akkor számít, ha nincs
-        jelszó, vagy ebben a munkamenetben fel van oldva — a feloldás nem
-        marad meg újraindítás után, a kapcsoló viszont igen."""
-        return self._show_hidden_setting() and (
-            not self.hiddenPasswordSet or self.hiddenUnlocked
-        )
-
-    @Property(bool, notify=statusChanged)
-    def showOnlyBigImages(self):  # noqa: N802 — QML-konvenció
-        """A könyvtári rács csak a Picasa szerint nagy képeket mutassa-e."""
-        value = self._get_settings().value(
-            SHOW_ONLY_BIG_IMAGES_KEY, small_picture_filter.DEFAULT_SHOW_ONLY_BIG_IMAGES
-        )
-        return coerce_show_only_big_images(value)
-
-    @Slot(bool)
-    def setShowOnlyBigImages(self, show: bool) -> None:  # noqa: N802
-        """A `Show only big images` választás mentése és a rács frissítése."""
-        show = bool(show)
-        if show == self.showOnlyBigImages:
-            return
-        self._get_settings().setValue(SHOW_ONLY_BIG_IMAGES_KEY, show)
-        self._refresh_view()
-        self.statusChanged.emit()
-
-    @Slot(bool)
-    def setShowHidden(self, show: bool) -> None:
-        # #1637/2: a bal hasábot IS újra kell tölteni. A #1637 első köre a
-        # rejtett MAPPÁKAT is erre a kapcsolóra bízta, de itt csak a rács
-        # frissült — a mappa így csak egy későbbi, más okból kiváltott
-        # újratöltéskor bukkant elő. A kapcsoló látszólag működött (a
-        # rejtett KÉPEK azonnal megjelentek), ezért maradt észrevétlen.
-        # #1637: ha van beállított jelszó, a bekapcsolás CSAK feloldás után
-        # mehet — enélkül a kapu csak látszólag zárna.
-        if show and self.hiddenPasswordSet and not self.hiddenUnlocked:
-            self.statusChanged.emit()
-            return
-        self._get_settings().setValue("view/showHidden", bool(show))
-        self._rejtett_lathatosag_valtozott()
-
-    @Slot()
-    def toggleShowHidden(self) -> None:
-        self.setShowHidden(not self.showHidden)
 
     # -- műveletek ----------------------------------------------------------
 
-    @Slot()
-    def restoreSession(self) -> None:
-        """Az utoljára kiválasztott mappa visszaállítása (session restore).
 
-        Ha nincs mentett mappa, vagy az már nincs az indexben, az első
-        mappát választjuk. Nem ír felül kézi választást: csak akkor fut,
-        ha még nincs kiválasztott mappa."""
-        if self._current_folder:
-            return
-        saved = self._get_settings().value("session/lastFolder", "")
-        with open_index(self._db_path) as conn:
-            paths = [
-                row["path"]
-                # #4887: rejtett mappa nem állhat vissza jelenlegi mappának
-                for row in conn.execute(
-                    "SELECT path FROM folders f"
-                    f" WHERE {visible_folder_sql(conn)} ORDER BY path"
-                )
-            ]
-        if saved and saved in paths:
-            self.selectFolder(saved)
-        elif paths:
-            self.selectFolder(paths[0])
-
-    @Slot(str)
-    def focusFolder(self, folder_path: str) -> None:
-        """A rács fókusza másik mappára került (#1183) — a bal hasáb
-        kiemelése kövesse, de a nézet NE mozduljon.
-
-        Az eredetiben a jelenlegi mappa a rács fókuszát követi: a váltó
-        (`0x0056bc10`) elengedi az előző mappa kijelölés-csomópontját
-        (`0x718a50`), beállítja az újat (`[this+0xeac]`), és kimondja, hogy
-        „a jelenlegi album megváltozott" (`0x56b910`). Ez tehát nem
-        nézetváltás — ezért itt NINCS `folderActivated` (nem görgetünk oda,
-        a felhasználó már ott van) és nincs feed-újraolvasás sem.
-
-        Csak sima mappanézetben fut: keresés/album nézetben a bal hasáb mást
-        mutat, ott a fókusz nem határozza meg a kiemelést.
-        """
-        if not folder_path or self._view_mode[0] != "folder":
-            return
-        if folder_path == self._current_folder:
-            return
-        self._current_folder = folder_path
-        self._view_mode = ("folder", folder_path)
-        self._folder_description = self._read_folder_description(folder_path)
-        self.statusChanged.emit()
 
     @Slot(str)
     def selectFolder(self, folder_path: str) -> None:
@@ -1455,39 +423,7 @@ class AppController(
         self._show(records)
         self.folderActivated.emit(folder_path)
 
-    def _clear_unread(self, folder_path: str) -> None:
-        """Az „olvasatlan" jelölő törlése egy mappára (#1644).
 
-        Csak akkor ír, ha a jelölő tényleg fent van: a mappaváltás gyakori
-        művelet, és egy feltétel nélküli UPDATE minden kattintásra
-        WAL-bejegyzést szülne (a #139 azonos megfontolása)."""
-        if not folder_path:
-            return
-        with open_index(self._db_path) as conn:
-            kurzor = conn.execute(
-                "UPDATE folders SET unread = 0 WHERE path = ? AND unread = 1",
-                (str(folder_path),),
-            )
-            if not kurzor.rowcount:
-                return
-            conn.commit()
-        # A bal hasáb kövér szedése ebből a mezőből él — újratöltés nélkül
-        # a mappa megnyitás után is kövér maradna.
-        self._reload_folders()
-
-    def _index_stamp(self) -> tuple:
-        """Az index-adatbázis olcsó változás-pecsétje (#142): a db és a
-        -wal fájl (mtime_ns, méret) párja. Bármely index-írás (sync,
-        fotóművelet — akár külső folyamatból) megváltoztatja, így a
-        mappaváltás gyorsútja sosem mutathat elavult feedet."""
-        stamp = []
-        for path in (self._db_path, Path(f"{self._db_path}-wal")):
-            try:
-                stat = path.stat()
-                stamp.append((stat.st_mtime_ns, stat.st_size))
-            except OSError:
-                stamp.append(None)
-        return tuple(stamp)
 
     def _feed_records(self, conn) -> tuple:
         """A teljes könyvtár a Mappa ▸ Rendezés szerint (#64, #321).
@@ -1514,298 +450,9 @@ class AppController(
 
     # -- mappa-leírás (#64) --------------------------------------------------
 
-    @staticmethod
-    def _read_folder_description(folder_path: str) -> str:
-        """A mappa `[Picasa]/description` kulcsának beolvasása az ini-ből."""
-        ini_path = Path(folder_path) / PICASA_INI_NAME
-        section = load_or_empty(ini_path).section("Picasa")
-        return (section.get("description") if section else None) or ""
-
-    # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a felület a mappát is átadó
-    # `setFolderDescriptionOf(path, …)` alakot hívja; ez a kompatibilitási út.
-    def setFolderDescription(self, text: str) -> None:
-        """A KIVÁLASZTOTT mappa leírásának mentése (kompatibilitási út —
-        a feed-fejlécek a setFolderDescriptionOf-ot hívják)."""
-        if not self._current_folder:
-            return
-        self.setFolderDescriptionOf(self._current_folder, text)
-
-    @Slot(str, str)
-    def setFolderDescriptionOf(self, folder_path: str, text: str) -> None:
-        """Mappa-leírás mentése — Picasa-kompatibilis: `[Picasa]/description`
-        kulcs a mappa `.picasa.ini`-jében (nem indexelt, resync nem kell)."""
-        if not folder_path:
-            return
-        text = text.strip()
-        ini_path = Path(folder_path) / PICASA_INI_NAME
-
-        # #137: útvonalanként soros írás — az előzetes ujjlenyomat-
-        # ellenőrzésig észlelt Picasa-módosítás újrajátszódik. A check/save
-        # közti külső írás teljes kizárását a fájlrendszer nem garantálja.
-        def mutate(document):
-            if text:
-                return document.with_value("Picasa", "description", text)
-            return document.with_removed("Picasa", "description")
-
-        # #2506: az írás bukása NEM lehet néma. Írásvédett mappán vagy tele
-        # lemezen a kivétel eddig a QML-slotból szökött ki, a feed-fejléc
-        # pedig már az ÚJ leírást mutatta — a felhasználó azt hitte,
-        # mentett. A projekt meglévő hibacsatornája ez (#459: a
-        # `photoOpFailed` a `syncFailed`-en át a `Main.qml` `errorBanner`-be
-        # fut be); a gyorstárat és a jelzéseket csak SIKERES írás után
-        # frissítjük, hogy a felület se hazudjon (#2497 tanulsága).
-        try:
-            update_document(ini_path, mutate, backup=True)
-        except _WRITE_ERRORS as error:
-            self.jelentsdAzIrasiHibat(error)
-            return
-        self._descriptions[folder_path] = text
-        if folder_path == self._current_folder:
-            self._folder_description = text
-        self._description_revision += 1
-        self.descriptionsChanged.emit()
-        self.statusChanged.emit()
-
-    @Slot(str, result=str)
-    def folderDescriptionOf(self, folder_path: str) -> str:
-        """Mappa-leírás a feed-fejlécnek (#64) — ini-olvasás kis cache-sel,
-        hogy NAS-on se olvassunk fejléc-megjelenésenként fájlt."""
-        if folder_path not in self._descriptions:
-            self._descriptions[folder_path] = self._read_folder_description(
-                folder_path
-            )
-        return self._descriptions[folder_path]
-
-    # -- infó-szövegek (formázás: formatting.py) -----------------------------
-
-    @Slot(int, result=str)
-    def photoInfo(self, row: int) -> str:
-        """A kék infó-sáv kijelöléskori tartalma, Picasa-stílusban:
-        `név   dátum   SZxM képpont   méret`."""
-        photos = self._photos.photos
-        if not 0 <= row < len(photos):
-            return ""
-        return formatting.photo_info_text(photos[row], QLocale(), formatting.fordit)
-
-    @Slot("QVariantList", result=str)
-    def selectionInfo(self, rows) -> str:
-        """A kék sáv szövege TÖBB kijelölt képnél (#1189).
-
-        Az eredetiben ezt a `GetSelectionInfo` (`0x0056fbc0`) állítja elő,
-        és a KIJELÖLÉSRŐL ír: darabszám, dátum(tartomány), összméret
-        (`il_GetSelectionInfo::3/4/5`). Valódi Picasa-képernyőképpel
-        megerősítve: „25 képek   2026. január 2., péntek-2026. május 18.,
-        hétfő   37,5 MB a lemezen".
-
-        Ugyanaz a formázó fut, mint a mappa-összesítésre (`statusText`) —
-        csak a KIJELÖLT rekordokon. Érvénytelen/ismétlődő sorindexek
-        kiszűrve, hogy egy elszállt QML-tömb ne torzítsa az összeget.
-        """
-        photos = self._photos.photos
-        latott: set[int] = set()
-        kijelolt = []
-        for nyers in rows or ():
-            try:
-                row = int(nyers)
-            except (TypeError, ValueError):
-                continue
-            if 0 <= row < len(photos) and row not in latott:
-                latott.add(row)
-                kijelolt.append(photos[row])
-        if not kijelolt:
-            return self._status
-        return formatting.status_text(
-            kijelolt, QLocale(), formatting.fordit, self.tr
-        )
-
-    @Slot(int, result="QVariantList")
-    def propertiesOf(self, row: int) -> list:
-        """A Tulajdonságok-panel (#13) sorai: {label, value} párok."""
-        photos = self._photos.photos
-        if not 0 <= row < len(photos):
-            return []
-        entries = formatting.properties_entries(
-            photos[row],
-            QLocale(),
-            formatting.fordit,
-            central_contacts_path(self._db_path),
-        )
-        return [{"label": label, "value": value} for label, value in entries]
-
-    @Slot(int, result=str)
-    def viewerInfo(self, row: int) -> str:
-        """A néző sávja: `mappa > név   dátum   felbontás   méret   (N / i)   címkék`."""
-        photos = self._photos.photos
-        if not 0 <= row < len(photos):
-            return ""
-        photo = photos[row]
-        folder = formatting.PATH_TAIL.split(photo.folder_path)[-1]
-        # #2587: a SZÁMLÁLÓ visszakerült a MÉRT helyére — a fájlméret UTÁN
-        # és a címkék ELŐTT (`picasa3-felirat-bekapcsolva. 223224.jpg`,
-        # teljes szélességű ablak: `… 807 KB   (82 / 3)   Címkék: AI image`).
-        # A #2565 körében tévesen kivettük: az akkori felvételen a Picasa
-        # FÉL SZÉLESSÉGŰ ablakban állt, a sáv szövege le volt vágva, és a
-        # levágást olvastuk hiánynak.
-        alap = formatting.photo_info_text(
-            photo,
-            QLocale(),
-            formatting.fordit,
-            self.szamlalo_szoveg(row + 1, len(photos)),
-        )
-        return alap.replace(photo.name, f"{folder} > {photo.name}", 1)
-
-    @staticmethod
-    def szamlalo_szoveg(aktualis: int, osszes: int) -> str:
-        """A „hányadik / hányból" számláló — a SORREND a fordításé (#1960).
-
-        Az eredeti angol erőforrása `%1$d of %2$d` (aktuális / összes), a
-        magyar `%2$d / %1$d` (**összes / aktuális**) —
-        `ThumbUIPrint::PrintCount`, `stringres` 2287. Élesben a tulajdonos
-        felvételén egy ötképes mappa harmadik képénél `(5 / 3)` áll.
-
-        Ezért nem fűzünk össze és nem égetünk be sorrendet: nevesített
-        pozíció-argumentumokat adunk át, és a `.ts` dönti el, melyik nyelv
-        melyik sorrendet kapja."""
-        sablon = QCoreApplication.translate(
-            "AppController", "({current} / {total})"
-        )
-        return sablon.format(current=aktualis, total=osszes)
 
     # -- csillag-szűrő és különleges album ----------------------------------
 
-    @Slot()
-    def showStarred(self) -> None:
-        """A ★ eszköztári szűrője — megőrzi a mappa-kontextust."""
-        self._show_starred_photos("starred")
-
-    @Slot()
-    def showStarredAlbum(self) -> None:  # noqa: N802
-        """A bal oldali Csillagozott különleges albumát nyitja meg (#4883).
-
-        A tartalma ugyanazokból a csillagozott képekből áll, mint a ★ szűrőé,
-        de a `]star` album-tokent is hordozza, így a törlés csak a csillagot
-        veszi le. A két belépő nézete és törlési szemantikája külön marad.
-        """
-        self._show_starred_photos("starred_album")
-
-    def _show_starred_photos(self, mode: str) -> None:
-        self._view_mode = (mode, "")
-        started = time.perf_counter()
-        with open_index(self._db_path) as conn:
-            records = starred_photos(conn)
-        self._show_filtered(records, time.perf_counter() - started)
-
-    # -- film-szűrő (#1830) --------------------------------------------------
-
-    @Slot()
-    def showVideosOnly(self) -> None:
-        """„Csak filmek" — az eredeti `moviesearch` szűrője.
-
-        A csillag-szűrő mintáját követi: szűrt NÉZET, nem külön nézetmód,
-        a mappa-kontextus megmarad a `clearFilter`-es visszaváltáshoz.
-        A `kind` indexmezőre épül, tehát nem igényel újraindexelést."""
-        self._view_mode = ("videos", "")
-        started = time.perf_counter()
-        with open_index(self._db_path) as conn:
-            records = video_photos(conn)
-        self._show_filtered(records, time.perf_counter() - started)
-
-    # -- kor-szűrő: az idő-csúszka (#1830) ------------------------------------
-
-    @Slot(float)
-    def setAgeFilter(self, ertek: float) -> None:
-        """Az idő-csúszka: „legfeljebb ennyi napos képek" (`timeslider`).
-
-        ⚠️ A csúszka NEM tartományt választ, hiába ezt sejti a felirata
-        („Filter by date range") — az eredetiben is egyetlen érték adja meg
-        a MAXIMÁLIS KORT. A képlet és a mérés az `app/kor_szuro.py`-ban áll.
-
-        Nulla értéknél a szűrő KIKAPCSOL (ez az eredeti nulla-ága), tehát a
-        csúszka bal széle nem „nagyon régi", hanem „nincs szűrés".
-        """
-        nap = kor_szuro.napok(max(0.0, min(1.0, float(ertek))))
-        if nap is None:
-            self._age_filter_days = None
-            self.clearFilter()
-            return
-        self._age_filter_days = nap
-        self._view_mode = ("age", nap)
-        self._show_age_filtered(nap)
-
-    def _show_age_filtered(self, nap: float) -> None:
-        """A kor-szűrt nézet — a vágópont MINDIG a hívás pillanatához mérve.
-
-        Ezért nem a vágópontot tároljuk, hanem a napokat: egy órákkal
-        későbbi frissítésnek a MOSTANI „most"-hoz kell mérnie, különben a
-        nézet észrevétlenül elavul."""
-        started = time.perf_counter()
-        vagas = kor_szuro.vagopont(nap, datetime.now())
-        with open_index(self._db_path) as conn:
-            records = photos_up_to_age(conn, vagas.isoformat(timespec="seconds"))
-        self._show_filtered(records, time.perf_counter() - started)
-
-    @Property(str, notify=statusChanged)
-    def ageFilterText(self) -> str:
-        """A kor-szűrő felirata a találati sávra, vagy üres, ha nincs szűrés.
-
-        A négy szövegforma és a csonkított mértékegység a `.tre`-ből és a
-        binárisból mérve (`kor_szuro.felirat`)."""
-        if self._age_filter_days is None:
-            return ""
-        return kor_szuro.felirat(self._age_filter_days, formatting.fordit)
-
-    # -- arc-szűrő (#1830) ---------------------------------------------------
-
-    @Slot()
-    def showFacesOnly(self) -> None:
-        """„Arcos képek" — az eredeti `facesearch` szűrője.
-
-        A film- és a csillag-szűrő mintáját követi: szűrt NÉZET, nem külön
-        nézetmód, a mappa-kontextus megmarad a `clearFilter`-es
-        visszaváltáshoz.
-
-        A MEGLÉVŐ `.picasa.ini` `faces=` adatára épül (`photos_with_faces`),
-        tehát nem igényel arcfelismerést — a megnevezetlen arc is arc.
-
-        ⚠️ A geo-szűrővel ellentétben ez NEM kap engedélyezési kaput. A geo
-        azért kaphat, mert az adata az indexben van, tehát a darabszám
-        olcsó; az arc-adat ini-söprést igényel, amit nem futtathatunk
-        minden kötés-kiértékelésnél. Ha nincs arcos kép, a szűrő üres
-        rácsot ad — az pedig a #1945 óta kimondja magáról, hogy üres."""
-        self._view_mode = ("faces", "")
-        started = time.perf_counter()
-        with open_index(self._db_path) as conn:
-            records = photos_with_faces(conn)
-        self._show_filtered(records, time.perf_counter() - started)
-
-    # -- virtuális albumok (#9) -----------------------------------------------
-
-    @Slot(str)
-    def showAlbum(self, token: str) -> None:
-        """Album-szűrő be — a showStarred mintáját követi: az album is
-        egy szűrt nézet (nem új nézetmód), a mappa-kontextus megmarad a
-        clearFilter-es visszaváltáshoz."""
-        if not token:
-            return
-        self._view_mode = ("album", token)
-        started = time.perf_counter()
-        with open_index(self._db_path) as conn:
-            records = album_photos(conn, token)
-        self._show_filtered(records, time.perf_counter() - started)
-
-    @Slot()
-    def clearFilter(self) -> None:
-        """Szűrő ki („Az összes megtekintése") — vissza a mappa-nézethez."""
-        self._filter_active = False
-        self._filter_status = ""
-        # #1830: a kor-felirat is tűnjön el — különben a sávon ottmaradna
-        # egy „Legfeljebb N napos képek." mondat szűrés nélkül
-        self._age_filter_days = None
-        if self._current_folder:
-            self.selectFolder(self._current_folder)
-        else:
-            self._view_mode = ("folder", "")
-            self._show(())
 
     # -- belső --------------------------------------------------------------
 
@@ -2063,3 +710,69 @@ class AppController(
             records, QLocale(), formatting.fordit, self.tr
         )
         self.statusChanged.emit()
+
+    def _set_folder_hidden_in_ini(self, path: str, hidden: bool) -> None:
+        """A rejtési írás cserélhető pontja a korábbi controller API-hoz."""
+        set_folder_hidden_in_ini(path, hidden)
+
+    # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a felület a mappát is átadó
+    # `setFolderDescriptionOf(path, …)` alakot hívja; ez a kompatibilitási út.
+    def setFolderDescription(self, text: str) -> None:
+        """A KIVÁLASZTOTT mappa leírásának mentése (kompatibilitási út —
+        a feed-fejlécek a setFolderDescriptionOf-ot hívják)."""
+        if not self._current_folder:
+            return
+        self.setFolderDescriptionOf(self._current_folder, text)
+
+    @Slot(str, str)
+    def setFolderDescriptionOf(self, folder_path: str, text: str) -> None:
+        """Mappa-leírás mentése — Picasa-kompatibilis: `[Picasa]/description`
+        kulcs a mappa `.picasa.ini`-jében (nem indexelt, resync nem kell)."""
+        if not folder_path:
+            return
+        text = text.strip()
+        ini_path = Path(folder_path) / PICASA_INI_NAME
+
+        # #137: útvonalanként soros írás — az előzetes ujjlenyomat-
+        # ellenőrzésig észlelt Picasa-módosítás újrajátszódik. A check/save
+        # közti külső írás teljes kizárását a fájlrendszer nem garantálja.
+        def mutate(document):
+            if text:
+                return document.with_value("Picasa", "description", text)
+            return document.with_removed("Picasa", "description")
+
+        # #2506: az írás bukása NEM lehet néma. Írásvédett mappán vagy tele
+        # lemezen a kivétel eddig a QML-slotból szökött ki, a feed-fejléc
+        # pedig már az ÚJ leírást mutatta — a felhasználó azt hitte,
+        # mentett. A projekt meglévő hibacsatornája ez (#459: a
+        # `photoOpFailed` a `syncFailed`-en át a `Main.qml` `errorBanner`-be
+        # fut be); a gyorstárat és a jelzéseket csak SIKERES írás után
+        # frissítjük, hogy a felület se hazudjon (#2497 tanulsága).
+        try:
+            update_document(ini_path, mutate, backup=True)
+        except _WRITE_ERRORS as error:
+            self.jelentsdAzIrasiHibat(error)
+            return
+        self._descriptions[folder_path] = text
+        if folder_path == self._current_folder:
+            self._folder_description = text
+        self._description_revision += 1
+        self.descriptionsChanged.emit()
+        self.statusChanged.emit()
+
+    @staticmethod
+    def szamlalo_szoveg(aktualis: int, osszes: int) -> str:
+        """A „hányadik / hányból" számláló — a SORREND a fordításé (#1960).
+
+        Az eredeti angol erőforrása `%1$d of %2$d` (aktuális / összes), a
+        magyar `%2$d / %1$d` (**összes / aktuális**) —
+        `ThumbUIPrint::PrintCount`, `stringres` 2287. Élesben a tulajdonos
+        felvételén egy ötképes mappa harmadik képénél `(5 / 3)` áll.
+
+        Ezért nem fűzünk össze és nem égetünk be sorrendet: nevesített
+        pozíció-argumentumokat adunk át, és a `.ts` dönti el, melyik nyelv
+        melyik sorrendet kapja."""
+        sablon = QCoreApplication.translate(
+            "AppController", "({current} / {total})"
+        )
+        return sablon.format(current=aktualis, total=osszes)

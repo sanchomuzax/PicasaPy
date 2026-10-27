@@ -13,18 +13,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QObject
+from tests.support.folder_pane_components_6019 import folder_pane_source_text
 from tests.support.qml_blokk import blokk_horgonyra
 
 _MENU = (
     Path(__file__).resolve().parents[3]
     / "src/picasapy/app/qml/PicasaPy/FolderContextMenu.qml"
 )
-_PANE = (
-    Path(__file__).resolve().parents[3]
-    / "src/picasapy/app/qml/PicasaPy/FolderPane.qml"
-)
-
-
 class TestATetelELO:
     def test_mar_NEM_helyfoglalo(self):
         forras = _MENU.read_text(encoding="utf-8")
@@ -35,16 +30,14 @@ class TestATetelELO:
         assert "onTriggered:" in blokk, "nincs kezelője"
 
     def test_a_jelzest_a_hasab_elkapja(self):
-        assert "onHideFolderRequested" in _PANE.read_text(encoding="utf-8"), (
+        assert "onHideFolderRequested" in folder_pane_source_text(), (
             "a jelzésnek nincs kezelője — néma vezérlő maradna"
         )
 
     def test_a_felirat_a_menu_nyitasakor_dol_el(self):
         """A rejtettség az indexben él, ami nem értesítő tulajdonság —
         kötésből a felirat sosem frissülne."""
-        assert "folderContextMenu.folderHidden =" in _PANE.read_text(
-            encoding="utf-8"
-        )
+        assert "folderContextMenu.folderHidden =" in folder_pane_source_text()
 
 
 class TestAzEloFaban:

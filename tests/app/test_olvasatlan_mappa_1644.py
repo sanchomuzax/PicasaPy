@@ -27,16 +27,11 @@ from PySide6.QtCore import QSettings
 from picasapy.index import open_index, sync_tree
 from picasapy.index.schema import MIGRATIONS, SCHEMA_VERSION
 from support.jpeg_factory import make_jpeg
+from tests.support.folder_pane_components_6019 import folder_pane_source_text
 
 _CTL = (
     Path(picasapy.app.__file__).parent / "controller.py"
 ).read_text(encoding="utf-8")
-_PANE = (
-    Path(picasapy.app.__file__).parent
-    / "qml" / "PicasaPy" / "FolderPane.qml"
-).read_text(encoding="utf-8")
-
-
 @pytest.fixture
 def library(tmp_path):
     root = tmp_path / "kepek"
@@ -162,10 +157,10 @@ class TestAVisszaallas:
 
 class TestAFelulet:
     def test_a_szerep_eljut_a_sorig(self):
-        assert "required property bool unread" in _PANE
+        assert "required property bool unread" in folder_pane_source_text()
 
     def test_a_nev_KOVER_ha_olvasatlan(self):
-        assert "font.bold: unread" in _PANE
+        assert "font.bold: unread" in folder_pane_source_text()
 
     def test_a_modell_adja_a_szerepet(self):
         modellek = (

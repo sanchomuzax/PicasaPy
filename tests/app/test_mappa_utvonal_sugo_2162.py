@@ -18,21 +18,15 @@ rámutatáskor jelenik meg.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from tests.support.qml_blokk import tulajdonsag_erteke
-
-_QML = (
-    Path(__file__).resolve().parents[2]
-    / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "FolderPane.qml"
-)
+from tests.support.folder_pane_components_6019 import folder_pane_source_text
 
 
 @pytest.fixture(scope="module")
 def forras() -> str:
-    return _QML.read_text(encoding="utf-8")
+    return folder_pane_source_text()
 
 
 def _tooltip_sor(forras: str, mezo: str) -> str:

@@ -7270,97 +7270,60 @@ picasapy-origin-key: stringres:RestoreDialog::cantlaunch</extracomment>
     <context>
         <name>FolderPane</name>
         <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="1490" />
-            <source>Remove People</source>
-            <extracomment>DeleteMessage::UnknownPeopleTitle
-picasapy-origin: picasa
-picasapy-origin-key: stringres:DeleteMessage::UnknownPeopleTitle</extracomment>
-            <translation>إزالة الأشخاص</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="1506" />
-            <source>Are you sure you want to delete the people album "%1"?</source>
-            <extracomment>DeleteMessage::DeletePeopleAlbum
-picasapy-origin: picasapy</extracomment>
-            <translation>هل تريد بالتأكيد حذف ألبوم الأشخاص «%1»؟</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="1514" />
-            <source>Delete tagged faces from synced Picasa Web albums, too</source>
-            <extracomment>ThumbUI::DeleteOnlinePeople
-picasapy-origin: picasa
-picasapy-origin-key: stringres:ThumbUI::DeleteOnlinePeople</extracomment>
-            <translation>حذف الوجوه المعلَّمة من ألبومات الويب بيكاسا التي تمت مزامنتها أيضًا</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="1535" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_Cancel</extracomment>
-            <translation>إلغاء</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="183" />
             <source>Calculating…</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:il_BurnPanel::calculating</extracomment>
             <translation>يتم الآن حساب...</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="186" />
             <source>All Files are backed up in this set</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Text2(thumbui/lightbox_bgtext)</extracomment>
             <translation>تم عمل نسخ احتياطية لجميع الملفات في هذه المجموعة</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="182" />
             <source>Create a Set or use an existing one</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Text2(publish/backupcdheader)</extracomment>
             <translation>إنشاء مجموعة أو استخدام مجموعة موجودة</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="105" />
             <source>Default View</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ViewRoot::AllFolders</extracomment>
             <translation>العرض الافتراضي</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="107" />
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="110" />
             <source>My Computer</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>جهاز الكمبيوتر</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="579" />
             <source>Do you want to remove the folder %1 and its subfolders?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>هل تريد إزالة المجلد %1 ومجلداته الفرعية؟</translation>
         </message>
         <message>
-            <source>Remove Folder</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI:ManageAlbumYesButton</extracomment>
-            <translation>إزالة مجلد</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="234" />
             <source>Are you sure you want to move the folder "%1" and its contents to the Recycle Bin?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>هل تريد بالتأكيد نقل المجلد «%1» ومحتوياته إلى سلة المحذوفات؟</translation>
         </message>
         <message>
-            <source>Delete Folder</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>حذف المجلد</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="355" />
             <source>Are you sure you want to delete the album "%1"?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>هل تريد بالتأكيد حذف الألبوم «%1»؟</translation>
         </message>
         <message>
-            <source>Delete Album</source>
-            <extracomment>DeleteMessage::DeleteAlbumTitle;DeleteMessage::DeleteAlbumYesButton
-picasapy-origin: picasapy</extracomment>
-            <translation>حذف الألبوم</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="432" />
             <source>You are about to close your last collection. No pictures will be shown in the thumbnail area. Do you want to continue?
 
 To open a collection, double-click its name or click the icon next to it.</source>
@@ -7370,45 +7333,10 @@ To open a collection, double-click its name or click the icon next to it.</sourc
 لفتح مجموعة، انقر نقرًا مزدوجًا على اسمها أو انقر على الأيقونة المجاورة له.</translation>
         </message>
         <message>
-            <source>Close Last Collection?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CLOSING_LAST_COLLECTION_TITLE</extracomment>
-            <translation>هل ترغب في إغلاق المجموعة الأخيرة؟</translation>
-        </message>
-        <message>
-            <source>Close Collection</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CloseCollection::YesButon</extracomment>
-            <translation>إغلاق المجموعة</translation>
-        </message>
-        <message>
-            <source>Move Folder</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>نقل المجلد</translation>
-        </message>
-        <message>
             <source>Exported Pictures</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_EXPORTED_CATEGORY</extracomment>
             <translation>صور مُصدّرة</translation>
-        </message>
-        <message>
-            <source>Ignored people</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CAlbumLabel::Ignored</extracomment>
-            <translation>الأشخاص الذين تم تجاهلهم</translation>
-        </message>
-        <message>
-            <source>Ignored</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbDB::ignorefacealbum</extracomment>
-            <translation>تم تجاهله</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="586" />
-            <source>Currently unavailable — the folder stays in the database, thumbnails come from the cache.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>غير متاح حاليًا — سيبقى المجلد في قاعدة البيانات، وستُعرض الصور المصغرة من الذاكرة المؤقتة.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="67" />
@@ -7425,7 +7353,7 @@ picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
             <translation>صور مميزة بنجمة</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="112" />
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="28" />
             <source>Search results for "%1" (%2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>نتائج البحث عن «%1» (%2)</translation>
@@ -7438,12 +7366,6 @@ picasapy-origin-key: stringres:CAlbumList::liststicky2;stringres:CAlbumState::Fo
             <translation>المجلدات</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="178" />
-            <source>People</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>الأشخاص</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="189" />
             <source>Projects</source>
             <extracomment>picasapy-origin: picasa
@@ -7451,28 +7373,9 @@ picasapy-origin-key: stringres:IDS_PROJECTS</extracomment>
             <translation>مشروعات</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="309" />
-            <source>Other</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:Other;stringres:EXIF::Other;stringres:ytICDVDR::MFOther</extracomment>
-            <translation>غير ذلك</translation>
-        </message>
-        <message>
             <source>Remove this folder from PicasaPy? The files stay on disk.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>هل تريد إزالة هذا المجلد من PicasaPy؟ ستبقى الملفات على القرص.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" />
-            <source>Are you sure you want to remove the collection “%1”? All folders in it will be moved to the collection “%2”.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>هل تريد بالتأكيد إزالة المجموعة «%1»؟ ستُنقل جميع المجلدات فيها إلى المجموعة «%2».</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" />
-            <source>Folders on Disk</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>المجلدات على القرص</translation>
         </message>
         <message>
             <source>You can drag and drop pictures here to make a new album.</source>
@@ -7480,15 +7383,151 @@ picasapy-origin-key: stringres:AspectRatioList:Other;stringres:EXIF::Other;strin
 picasapy-origin-key: stringres:CAlbumList::newalbumprompt</extracomment>
             <translation>يمكنك سحب الصور وإفلاتها هنا لعمل ألبوم جديد.</translation>
         </message>
+    </context>
+    <context>
+        <name>FolderPaneContent</name>
         <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="59" />
+            <source>People</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>الأشخاص</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="97" />
             <source>Scanning for faces... %1% complete</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>جارٍ البحث عن الوجوه... اكتمل %1%</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="99" />
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="113" />
             <source>Unnamed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>بلا اسم</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="208" />
+            <source>Ignored</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ignorefacealbum</extracomment>
+            <translation>تم تجاهله</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="224" />
+            <source>Ignored people</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumLabel::Ignored</extracomment>
+            <translation>الأشخاص الذين تم تجاهلهم</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="500" />
+            <source>Other</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Other;stringres:EXIF::Other;stringres:ytICDVDR::MFOther</extracomment>
+            <translation>غير ذلك</translation>
+        </message>
+    </context>
+    <context>
+        <name>FolderPaneMenus</name>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="63" />
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="64" />
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="142" />
+            <source>Delete Album</source>
+            <extracomment>DeleteMessage::DeleteAlbumTitle;DeleteMessage::DeleteAlbumYesButton
+picasapy-origin: picasapy</extracomment>
+            <translation>حذف الألبوم</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="106" />
+            <source>Remove People</source>
+            <extracomment>DeleteMessage::UnknownPeopleTitle
+picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::UnknownPeopleTitle</extracomment>
+            <translation>إزالة الأشخاص</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="122" />
+            <source>Are you sure you want to delete the people album "%1"?</source>
+            <extracomment>DeleteMessage::DeletePeopleAlbum
+picasapy-origin: picasapy</extracomment>
+            <translation>هل تريد بالتأكيد حذف ألبوم الأشخاص «%1»؟</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="130" />
+            <source>Delete tagged faces from synced Picasa Web albums, too</source>
+            <extracomment>ThumbUI::DeleteOnlinePeople
+picasapy-origin: picasa
+picasapy-origin-key: stringres:ThumbUI::DeleteOnlinePeople</extracomment>
+            <translation>حذف الوجوه المعلَّمة من ألبومات الويب بيكاسا التي تمت مزامنتها أيضًا</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="151" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
+            <translation>إلغاء</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="208" />
+            <source>Move Folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>نقل المجلد</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="241" />
+            <source>Are you sure you want to move the folder "%1" and its contents to the Recycle Bin?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>هل تريد بالتأكيد نقل المجلد «%1» ومحتوياته إلى سلة المحذوفات؟</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="315" />
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="316" />
+            <source>Delete Folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>حذف المجلد</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="331" />
+            <source>Remove Folder</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI:ManageAlbumYesButton</extracomment>
+            <translation>إزالة مجلد</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="349" />
+            <source>Close Last Collection?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CLOSING_LAST_COLLECTION_TITLE</extracomment>
+            <translation>هل ترغب في إغلاق المجموعة الأخيرة؟</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="350" />
+            <source>Close Collection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CloseCollection::YesButon</extracomment>
+            <translation>إغلاق المجموعة</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="446" />
+            <source>Are you sure you want to remove the collection “%1”? All folders in it will be moved to the collection “%2”.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>هل تريد بالتأكيد إزالة المجموعة «%1»؟ ستُنقل جميع المجلدات فيها إلى المجموعة «%2».</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="450" />
+            <source>Folders on Disk</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>المجلدات على القرص</translation>
+        </message>
+    </context>
+    <context>
+        <name>FolderPaneTreeRow</name>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneTreeRow.qml" line="242" />
+            <source>Currently unavailable — the folder stays in the database, thumbnails come from the cache.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>غير متاح حاليًا — سيبقى المجلد في قاعدة البيانات، وستُعرض الصور المصغرة من الذاكرة المؤقتة.</translation>
         </message>
     </context>
     <context>
