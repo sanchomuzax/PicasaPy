@@ -5,7 +5,9 @@ import QtQuick.Layouts
 PicasaMenu {
     id: menuView
     property var bar: null
-    property var controllerRef: null
+    property var controllerRef:
+        (typeof controller !== "undefined" && controller)
+            ? controller : null
     function openFolderViewMenu(anchorItem) {
         folderViewMenu.popup(anchorItem, 0, anchorItem.height)
     }
@@ -227,7 +229,7 @@ PicasaMenu {
             if (zarva && !controllerRef.showHidden) {
                 bar.hiddenUnlockRequested()
             } else {
-                controller.toggleShowHidden()
+                controllerRef.toggleShowHidden()
             }
             // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
             // `checked`-et, és ez eldobja a fenti kötést. A jelszó-kérés
@@ -251,7 +253,7 @@ PicasaMenu {
         checked: (controllerRef && controllerRef.colorManagement !== undefined)
             ? controllerRef.colorManagement : false
         onTriggered: {
-            controller.toggleColorManagement()
+            controllerRef.toggleColorManagement()
             // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
             // `checked`-et, és ez eldobja a fenti kötést — a jelzés utáni
             // visszakötés nélkül a pipa a következő megnyitásig hazudna.
@@ -272,7 +274,7 @@ PicasaMenu {
         checkable: true
         checked: (controllerRef && controllerRef.darkTheme !== undefined) ? controllerRef.darkTheme : false
         onTriggered: {
-            controller.toggleDarkTheme()
+            controllerRef.toggleDarkTheme()
             // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
             // `checked`-et, és ez eldobja a fenti kötést. Ma azért nem
             // látszik, mert a művelet mindig átbillenti az állapotot —
@@ -320,7 +322,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.displayMode === "auto"
             onTriggered: {
-                controller.setDisplayMode("auto")
+                controllerRef.setDisplayMode("auto")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.displayMode === "auto"
                 })
@@ -333,7 +335,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.displayMode === "normal"
             onTriggered: {
-                controller.setDisplayMode("normal")
+                controllerRef.setDisplayMode("normal")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.displayMode === "normal"
                 })
@@ -345,7 +347,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.displayMode === "dither16"
             onTriggered: {
-                controller.setDisplayMode("dither16")
+                controllerRef.setDisplayMode("dither16")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.displayMode === "dither16"
                 })
@@ -366,7 +368,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.displayMode === "lcd"
             onTriggered: {
-                controller.setDisplayMode("lcd")
+                controllerRef.setDisplayMode("lcd")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.displayMode === "lcd"
                 })
@@ -378,7 +380,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.displayMode === "projector"
             onTriggered: {
-                controller.setDisplayMode("projector")
+                controllerRef.setDisplayMode("projector")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.displayMode === "projector"
                 })
@@ -391,7 +393,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.displayMode === "overflow"
             onTriggered: {
-                controller.setDisplayMode("overflow")
+                controllerRef.setDisplayMode("overflow")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.displayMode === "overflow"
                 })
@@ -408,7 +410,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.displayMode === "mac"
             onTriggered: {
-                controller.setDisplayMode("mac")
+                controllerRef.setDisplayMode("mac")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.displayMode === "mac"
                 })
@@ -420,7 +422,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.displayMode === "linear"
             onTriggered: {
-                controller.setDisplayMode("linear")
+                controllerRef.setDisplayMode("linear")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.displayMode === "linear"
                 })
@@ -433,7 +435,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.displayMode === "sepia"
             onTriggered: {
-                controller.setDisplayMode("sepia")
+                controllerRef.setDisplayMode("sepia")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.displayMode === "sepia"
                 })
@@ -445,7 +447,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.displayMode === "bw"
             onTriggered: {
-                controller.setDisplayMode("bw")
+                controllerRef.setDisplayMode("bw")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.displayMode === "bw"
                 })
@@ -474,7 +476,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.thumbCaptionMode === "none"
             onTriggered: {
-                controller.setThumbCaptionMode("none")
+                controllerRef.setThumbCaptionMode("none")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.thumbCaptionMode === "none"
                 })
@@ -486,7 +488,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.thumbCaptionMode === "filename"
             onTriggered: {
-                controller.setThumbCaptionMode("filename")
+                controllerRef.setThumbCaptionMode("filename")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.thumbCaptionMode === "filename"
                 })
@@ -498,7 +500,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.thumbCaptionMode === "caption"
             onTriggered: {
-                controller.setThumbCaptionMode("caption")
+                controllerRef.setThumbCaptionMode("caption")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.thumbCaptionMode === "caption"
                 })
@@ -510,7 +512,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.thumbCaptionMode === "tags"
             onTriggered: {
-                controller.setThumbCaptionMode("tags")
+                controllerRef.setThumbCaptionMode("tags")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.thumbCaptionMode === "tags"
                 })
@@ -522,7 +524,7 @@ PicasaMenu {
             checkable: true
             checked: controllerRef && controllerRef.thumbCaptionMode === "resolution"
             onTriggered: {
-                controller.setThumbCaptionMode("resolution")
+                controllerRef.setThumbCaptionMode("resolution")
                 checked = Qt.binding(function () {
                     return controllerRef && controllerRef.thumbCaptionMode === "resolution"
                 })

@@ -133,11 +133,13 @@ class TestABekotes:
         marad — a két végpont külön-külön attól még „helyesnek" látszik.
         """
         blokk = _almenu()
-        assert re.search(r"rendezes:\s*\n?\s*\(controller && controller\.paneSort",
-                         blokk), (
+        assert re.search(
+            r"rendezes:\s*\n?\s*\(controllerRef && controllerRef\.paneSort",
+            blokk,
+        ), (
             "a menü `rendezes` tulajdonsága nem a vezérlő `paneSort`-jából jön"
         )
-        assert "controller.paneSortReverse" in blokk, (
+        assert "controllerRef.paneSortReverse" in blokk, (
             "a megfordítás pipája nem a vezérlő állapotára köt"
         )
         for nev, _ in OTOS[:4]:

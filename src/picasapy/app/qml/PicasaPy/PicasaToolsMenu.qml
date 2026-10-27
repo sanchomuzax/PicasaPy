@@ -4,6 +4,9 @@ import QtQuick.Layouts
 
 PicasaMenu {
     property var bar: null
+    readonly property var controllerRef:
+        (typeof controller !== "undefined" && controller)
+            ? controller : null
     objectName: "menuTools"
     title: qsTr("&Tools")
     MenuItem {
@@ -343,73 +346,73 @@ PicasaMenu {
         title: qsTr("Language")
         MenuItem {
             objectName: "menuLanguageSystem"
-            text: controller
-                ? qsTr("System Default (%1)").arg(controller.systemLanguageSuffix)
+            text: controllerRef
+                ? qsTr("System Default (%1)").arg(controllerRef.systemLanguageSuffix)
                 : qsTr("System Default")
             checkable: true
-            checked: (controller && controller.systemLanguageCode !== undefined)
-                ? controller.pendingLanguage === controller.systemLanguageCode
+            checked: (controllerRef && controllerRef.systemLanguageCode !== undefined)
+                ? controllerRef.pendingLanguage === controllerRef.systemLanguageCode
                 : false
             onTriggered: {
                 bar.requestLanguageChange(
-                    controller ? controller.systemLanguageCode : "system")
+                    controllerRef ? controllerRef.systemLanguageCode : "system")
                 checked = Qt.binding(function () {
-                    return (controller && controller.systemLanguageCode !== undefined)
-                        ? controller.pendingLanguage === controller.systemLanguageCode
+                    return (controllerRef && controllerRef.systemLanguageCode !== undefined)
+                        ? controllerRef.pendingLanguage === controllerRef.systemLanguageCode
                         : false
                 })
             }
         }
         MenuItem {
             objectName: "menuLanguageEnglish"
-            text: controller ? controller.ownLanguageName("en") : "English (US)"
+            text: controllerRef ? controllerRef.ownLanguageName("en") : "English (US)"
             checkable: true
-            checked: controller ? controller.pendingLanguage === "en" : true
+            checked: controllerRef ? controllerRef.pendingLanguage === "en" : true
             onTriggered: {
                 bar.requestLanguageChange("en")
                 checked = Qt.binding(function () {
-                    return controller ? controller.pendingLanguage === "en" : true
+                    return controllerRef ? controllerRef.pendingLanguage === "en" : true
                 })
             }
         }
         MenuItem {
             objectName: "menuLanguageHungarian"
-            text: controller ? controller.ownLanguageName("hu") : "Magyar"
+            text: controllerRef ? controllerRef.ownLanguageName("hu") : "Magyar"
             checkable: true
-            checked: controller ? controller.pendingLanguage === "hu" : false
+            checked: controllerRef ? controllerRef.pendingLanguage === "hu" : false
             onTriggered: {
                 bar.requestLanguageChange("hu")
                 checked = Qt.binding(function () {
-                    return controller ? controller.pendingLanguage === "hu" : false
+                    return controllerRef ? controllerRef.pendingLanguage === "hu" : false
                 })
             }
         }
         Instantiator {
             objectName: "menuLanguageAdditionalChoices"
-            model: controller
-                ? controller.availableLanguages.filter(
+            model: controllerRef
+                ? controllerRef.availableLanguages.filter(
                     function (code) { return code !== "en" && code !== "hu" })
                 : []
             delegate: MenuItem {
                 property string languageCode: modelData
                 objectName: "menuLanguage" + languageCode
-                text: controller ? controller.ownLanguageName(languageCode) : languageCode
+                text: controllerRef ? controllerRef.ownLanguageName(languageCode) : languageCode
                 checkable: true
-                checked: controller
-                    ? controller.pendingLanguage === languageCode
+                checked: controllerRef
+                    ? controllerRef.pendingLanguage === languageCode
                     : false
                 onTriggered: {
                     bar.requestLanguageChange(languageCode)
                     checked = Qt.binding(function () {
-                        return controller
-                            ? controller.pendingLanguage === languageCode
+                        return controllerRef
+                            ? controllerRef.pendingLanguage === languageCode
                             : false
                     })
                 }
             }
             onObjectAdded: function (index, object) {
                 languageMenu.insertItem(
-                    controller.availableLanguages.indexOf(object.languageCode) + 1,
+                    controllerRef.availableLanguages.indexOf(object.languageCode) + 1,
                     object)
             }
             onObjectRemoved: function (_index, object) {

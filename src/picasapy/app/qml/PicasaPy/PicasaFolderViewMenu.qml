@@ -5,6 +5,9 @@ import QtQuick.Layouts
 PicasaMenu {
     id: folderViewMenu
     property var bar: null
+    readonly property var controllerRef:
+        (typeof controller !== "undefined" && controller)
+            ? controller : null
     objectName: "menuViewFolderView"
     title: qsTr("&Folder View")
     // A vezérlő állapota EGY helyen — a tételek pipái ezt olvassák,
@@ -31,15 +34,15 @@ PicasaMenu {
     //: mozogjon. A `!== undefined` a próbák stub-vezérlőjére véd
     //: (#1572, `scripts/qml_undefined_or.py`).
     readonly property string rendezes:
-        (controller && controller.paneSort !== undefined)
-            ? controller.paneSort : ""
+        (controllerRef && controllerRef.paneSort !== undefined)
+            ? controllerRef.paneSort : ""
     readonly property bool rendezesForditott:
-        (controller && controller.paneSortReverse !== undefined)
-            ? controller.paneSortReverse : false
+        (controllerRef && controllerRef.paneSortReverse !== undefined)
+            ? controllerRef.paneSortReverse : false
     // #4528: az Emberek lista három rendezésének közös állapota.
     readonly property string peopleSort:
-        (controller && controller.peopleSort !== undefined)
-            ? controller.peopleSort : "name"
+        (controllerRef && controllerRef.peopleSort !== undefined)
+            ? controllerRef.peopleSort : "name"
 
     // MÉRT buktató (#1454): a valódi kattintás IMPERATÍVAN
     // átbillenti a `checked`-et, MIELŐTT a `triggered` eldördülne.
@@ -172,7 +175,7 @@ PicasaMenu {
         checkable: true
         checked: folderViewMenu.rendezes === "date"
         onTriggered: {
-            if (controller) controller.setPaneSort("date")
+            if (controllerRef) controllerRef.setPaneSort("date")
             checked = Qt.binding(function () {
                 return folderViewMenu.rendezes === "date"
             })
@@ -184,7 +187,7 @@ PicasaMenu {
         checkable: true
         checked: folderViewMenu.rendezes === "changed"
         onTriggered: {
-            if (controller) controller.setPaneSort("changed")
+            if (controllerRef) controllerRef.setPaneSort("changed")
             checked = Qt.binding(function () {
                 return folderViewMenu.rendezes === "changed"
             })
@@ -196,7 +199,7 @@ PicasaMenu {
         checkable: true
         checked: folderViewMenu.rendezes === "size"
         onTriggered: {
-            if (controller) controller.setPaneSort("size")
+            if (controllerRef) controllerRef.setPaneSort("size")
             checked = Qt.binding(function () {
                 return folderViewMenu.rendezes === "size"
             })
@@ -208,7 +211,7 @@ PicasaMenu {
         checkable: true
         checked: folderViewMenu.rendezes === "name"
         onTriggered: {
-            if (controller) controller.setPaneSort("name")
+            if (controllerRef) controllerRef.setPaneSort("name")
             checked = Qt.binding(function () {
                 return folderViewMenu.rendezes === "name"
             })
@@ -220,7 +223,7 @@ PicasaMenu {
         checkable: true
         checked: folderViewMenu.rendezesForditott
         onTriggered: {
-            if (controller) controller.togglePaneSortReverse()
+            if (controllerRef) controllerRef.togglePaneSortReverse()
             // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
             // `checked`-et, és ez eldobja a fenti kötést. Ma azért nem
             // látszik, mert a művelet mindig átbillenti az állapotot —
@@ -241,7 +244,7 @@ PicasaMenu {
         checkable: true
         checked: folderViewMenu.peopleSort === "name"
         onTriggered: {
-            if (controller) controller.setPeopleSort("name")
+            if (controllerRef) controllerRef.setPeopleSort("name")
             checked = Qt.binding(function () {
                 return folderViewMenu.peopleSort === "name"
             })
@@ -253,7 +256,7 @@ PicasaMenu {
         checkable: true
         checked: folderViewMenu.peopleSort === "count"
         onTriggered: {
-            if (controller) controller.setPeopleSort("count")
+            if (controllerRef) controllerRef.setPeopleSort("count")
             checked = Qt.binding(function () {
                 return folderViewMenu.peopleSort === "count"
             })
@@ -265,7 +268,7 @@ PicasaMenu {
         checkable: true
         checked: folderViewMenu.peopleSort === "top"
         onTriggered: {
-            if (controller) controller.setPeopleSort("top")
+            if (controllerRef) controllerRef.setPeopleSort("top")
             checked = Qt.binding(function () {
                 return folderViewMenu.peopleSort === "top"
             })

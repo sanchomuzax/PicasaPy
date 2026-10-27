@@ -19,9 +19,10 @@ from pathlib import Path
 
 import picasapy.app as app_csomag
 from tests.support.qml_blokk import blokk_horgonyra
+from tests.support.menubar_components_6016 import menu_sources
 
 _APP = Path(app_csomag.__file__).parent
-_MENU = (_APP / "qml" / "PicasaPy" / "PicasaMenuBar.qml").read_text(encoding="utf-8")
+_MENU = menu_sources()
 _MAIN = (_APP / "qml" / "Main.qml").read_text(encoding="utf-8")
 _PARBESZED = (_APP / "qml" / "PicasaPy" / "PicasaDataImportDialog.qml").read_text(encoding="utf-8")
 _TS = (_APP / "i18n" / "picasapy_hu.ts").read_text(encoding="utf-8")

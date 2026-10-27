@@ -66,7 +66,7 @@ def _menuk(gyoker) -> list[QObject]:
     return [
         gy
         for gy in gyoker.findChildren(QObject)
-        if gy.metaObject().className().startswith("PicasaMenu_QMLTYPE")
+        if gy.metaObject().className().partition("_QMLTYPE_")[0].endswith("Menu")
     ]
 
 
