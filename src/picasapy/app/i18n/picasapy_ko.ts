@@ -1196,77 +1196,77 @@ picasapy-origin-key: options:options/button190.title</extracomment>
         <message>
             <source>Waiting for Google authorization…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google 인증을 기다리는 중…</translation>
         </message>
         <message>
             <source>Enter a valid OAuth client ID and client secret.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>유효한 OAuth 클라이언트 ID와 클라이언트 비밀번호를 입력하세요.</translation>
         </message>
         <message>
             <source>Could not open the system browser.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>시스템 브라우저를 열 수 없습니다.</translation>
         </message>
         <message>
             <source>Sign-in was cancelled.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>로그인이 취소되었습니다.</translation>
         </message>
         <message>
             <source>Sign-in timed out. Try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>로그인 시간이 초과되었습니다. 다시 시도하세요.</translation>
         </message>
         <message>
             <source>Network error. Check your connection and try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>네트워크 오류입니다. 연결을 확인하고 다시 시도하세요.</translation>
         </message>
         <message>
             <source>Your Google Photos sign-in has expired. Sign in again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google 포토 로그인 만료되었습니다. 다시 로그인하세요.</translation>
         </message>
         <message>
             <source>Google sign-in failed. Check the OAuth client settings.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google 로그인에 실패했습니다. OAuth 클라이언트 설정을 확인하세요.</translation>
         </message>
         <message>
             <source>Signed in to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google 포토에 로그인됨</translation>
         </message>
         <message>
             <source>Not signed in to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google 포토에 로그인되지 않음</translation>
         </message>
         <message>
             <source>Use your own Google OAuth client (Desktop app).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>자체 Google OAuth 클라이언트(데스크톱 앱)를 사용하세요.</translation>
         </message>
         <message>
             <source>OAuth client ID</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>OAuth 클라이언트 ID</translation>
         </message>
         <message>
             <source>OAuth client secret</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>OAuth 클라이언트 비밀번호</translation>
         </message>
         <message>
             <source>Leave blank to keep the saved client secret</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>저장된 클라이언트 비밀번호를 유지하려면 비워 두세요.</translation>
         </message>
         <message>
             <source>The client secret and refresh token are stored in the system keyring or user settings.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>클라이언트 비밀번호와 새로 고침 토큰은 시스템 키링 또는 사용자 설정에 저장됩니다.</translation>
         </message>
         <message>
             <source>Save</source>
@@ -1289,7 +1289,7 @@ picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
         <message>
             <source>Uploaded photos are limited to 1600 pixels on the longer side.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>업로드된 사진은 긴 변이 1600픽셀로 제한됩니다.</translation>
         </message>
     </context>
     <context>
@@ -12436,12 +12436,12 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/instructions)</extr
         <message>
             <source>Network error. Check your connection and try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>네트워크 오류입니다. 연결을 확인하고 다시 시도하세요.</translation>
         </message>
         <message>
             <source>Your Google Photos sign-in has expired. Sign in again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google 포토 로그인 만료되었습니다. 다시 로그인하세요.</translation>
         </message>
         <message>
             <source>Maximum Upload Rate Exceeded</source>
@@ -12458,27 +12458,27 @@ picasapy-origin-key: stringres:Lighthouse::ServiceUnavailableES</extracomment>
         <message>
             <source>Upload cancelled</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>업로드가 취소되었습니다</translation>
         </message>
         <message>
             <source>A photo could not be prepared for upload.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>사진을 업로드할 준비를 하지 못했습니다.</translation>
         </message>
         <message>
             <source>This photo is too large to upload.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>이 사진은 업로드하기에 너무 큽니다.</translation>
         </message>
         <message>
             <source>There are no photos in the Photo Tray.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>사진 트레이에 사진이 없습니다.</translation>
         </message>
         <message>
             <source>Google Photos could not complete the upload. Try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google 포토에서 업로드를 완료하지 못했습니다. 다시 시도해 주세요.</translation>
         </message>
         <message>
             <source>Upload complete</source>
@@ -12489,23 +12489,23 @@ picasapy-origin-key: stringres:uploadmgr::complete</extracomment>
         <message>
             <source>Preparing photo %1 of %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>사진 %1/%2 준비 중</translation>
         </message>
         <message>
             <source>Uploading %1</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:QuickUploader::progress</extracomment>
-            <translation>%s 퍼센트 업로드...</translation>
+            <translation>%1 업로드 중</translation>
         </message>
         <message>
             <source>Adding photo %1 of %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>사진 %1/%2 추가 중</translation>
         </message>
         <message>
             <source>Preparing photos for upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>사진 업로드 준비 중</translation>
         </message>
         <message>
             <source>Upload photos in the Photo Tray to Google Photos</source>
@@ -12517,7 +12517,7 @@ picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs</extracomment>
             <source>Failed to upload %1</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:QuickUploader::errorMsg</extracomment>
-            <translation>%s을(를) 업로드하지 못했습니다.</translation>
+            <translation>%1 업로드 실패</translation>
         </message>
         <message>
             <source>Close</source>

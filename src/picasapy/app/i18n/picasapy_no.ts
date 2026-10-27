@@ -1196,77 +1196,77 @@ picasapy-origin-key: options:options/button190.title</extracomment>
         <message>
             <source>Waiting for Google authorization…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Venter på Google-godkjenning…</translation>
         </message>
         <message>
             <source>Enter a valid OAuth client ID and client secret.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Skriv inn en gyldig OAuth-klient-ID og klienthemmelighet.</translation>
         </message>
         <message>
             <source>Could not open the system browser.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kunne ikke åpne systemnettleseren.</translation>
         </message>
         <message>
             <source>Sign-in was cancelled.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Påloggingen ble avbrutt.</translation>
         </message>
         <message>
             <source>Sign-in timed out. Try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tidsavbrudd for pålogging. Prøv på nytt.</translation>
         </message>
         <message>
             <source>Network error. Check your connection and try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nettverksfeil. Kontroller tilkoblingen og prøv på nytt.</translation>
         </message>
         <message>
             <source>Your Google Photos sign-in has expired. Sign in again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google Foto-påloggingen er utløpt. Logg på igjen.</translation>
         </message>
         <message>
             <source>Google sign-in failed. Check the OAuth client settings.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google-pålogging mislyktes. Kontroller innstillingene for OAuth-klienten.</translation>
         </message>
         <message>
             <source>Signed in to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Logget på Google Foto</translation>
         </message>
         <message>
             <source>Not signed in to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ikke logget på Google Foto</translation>
         </message>
         <message>
             <source>Use your own Google OAuth client (Desktop app).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Bruk din egen Google OAuth-klient (skrivebordsapp).</translation>
         </message>
         <message>
             <source>OAuth client ID</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>OAuth-klient-ID</translation>
         </message>
         <message>
             <source>OAuth client secret</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>OAuth-klienthemmelighet</translation>
         </message>
         <message>
             <source>Leave blank to keep the saved client secret</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>La feltet stå tomt for å beholde den lagrede klienthemmeligheten</translation>
         </message>
         <message>
             <source>The client secret and refresh token are stored in the system keyring or user settings.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Klienthemmeligheten og oppdateringstokenet lagres i systemnøkkelringen eller brukerinnstillingene.</translation>
         </message>
         <message>
             <source>Save</source>
@@ -1289,7 +1289,7 @@ picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
         <message>
             <source>Uploaded photos are limited to 1600 pixels on the longer side.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Opplastede bilder kan ha en lengste side på maksimalt 1600 piksler.</translation>
         </message>
     </context>
     <context>
@@ -12436,12 +12436,12 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/instructions)</extr
         <message>
             <source>Network error. Check your connection and try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nettverksfeil. Kontroller tilkoblingen og prøv på nytt.</translation>
         </message>
         <message>
             <source>Your Google Photos sign-in has expired. Sign in again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google Foto-påloggingen er utløpt. Logg på igjen.</translation>
         </message>
         <message>
             <source>Maximum Upload Rate Exceeded</source>
@@ -12458,27 +12458,27 @@ picasapy-origin-key: stringres:Lighthouse::ServiceUnavailableES</extracomment>
         <message>
             <source>Upload cancelled</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Opplasting avbrutt</translation>
         </message>
         <message>
             <source>A photo could not be prepared for upload.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Et bilde kunne ikke klargjøres for opplasting.</translation>
         </message>
         <message>
             <source>This photo is too large to upload.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dette bildet er for stort til å lastes opp.</translation>
         </message>
         <message>
             <source>There are no photos in the Photo Tray.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Det er ingen bilder i fotobakken.</translation>
         </message>
         <message>
             <source>Google Photos could not complete the upload. Try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google Bilder kunne ikke fullføre opplastingen. Prøv igjen.</translation>
         </message>
         <message>
             <source>Upload complete</source>
@@ -12489,23 +12489,23 @@ picasapy-origin-key: stringres:uploadmgr::complete</extracomment>
         <message>
             <source>Preparing photo %1 of %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Klargjør bilde %1 av %2</translation>
         </message>
         <message>
             <source>Uploading %1</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:QuickUploader::progress</extracomment>
-            <translation>Laster opp %s</translation>
+            <translation>Laster opp %1</translation>
         </message>
         <message>
             <source>Adding photo %1 of %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Legger til bilde %1 av %2</translation>
         </message>
         <message>
             <source>Preparing photos for upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Forbereder bilder for opplasting</translation>
         </message>
         <message>
             <source>Upload photos in the Photo Tray to Google Photos</source>
@@ -12517,13 +12517,13 @@ picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs</extracomment>
             <source>Failed to upload %1</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:QuickUploader::errorMsg</extracomment>
-            <translation>Fikk ikke lastet opp %s</translation>
+            <translation>Kunne ikke laste opp %1</translation>
         </message>
         <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Lukk</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="0" />

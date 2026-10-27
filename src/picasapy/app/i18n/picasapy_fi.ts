@@ -1197,77 +1197,77 @@ picasapy-origin-key: options:options/button190.title</extracomment>
         <message>
             <source>Waiting for Google authorization…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Odotetaan Googlen valtuutusta…</translation>
         </message>
         <message>
             <source>Enter a valid OAuth client ID and client secret.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Anna kelvollinen OAuth-asiakastunnus ja asiakassalaisuus.</translation>
         </message>
         <message>
             <source>Could not open the system browser.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Järjestelmän selainta ei voitu avata.</translation>
         </message>
         <message>
             <source>Sign-in was cancelled.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kirjautuminen peruutettiin.</translation>
         </message>
         <message>
             <source>Sign-in timed out. Try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kirjautuminen aikakatkaistiin. Yritä uudelleen.</translation>
         </message>
         <message>
             <source>Network error. Check your connection and try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Verkkovirhe. Tarkista yhteys ja yritä uudelleen.</translation>
         </message>
         <message>
             <source>Your Google Photos sign-in has expired. Sign in again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google Kuvien kirjautuminen on vanhentunut. Kirjaudu uudelleen.</translation>
         </message>
         <message>
             <source>Google sign-in failed. Check the OAuth client settings.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google-kirjautuminen epäonnistui. Tarkista OAuth-asiakasasetukset.</translation>
         </message>
         <message>
             <source>Signed in to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kirjautunut Google Kuviin</translation>
         </message>
         <message>
             <source>Not signed in to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ei kirjautunut Google Kuviin</translation>
         </message>
         <message>
             <source>Use your own Google OAuth client (Desktop app).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Käytä omaa Google OAuth -asiakasta (työpöytäsovellus).</translation>
         </message>
         <message>
             <source>OAuth client ID</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>OAuth-asiakastunnus</translation>
         </message>
         <message>
             <source>OAuth client secret</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>OAuth-asiakassalaisuus</translation>
         </message>
         <message>
             <source>Leave blank to keep the saved client secret</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Jätä tyhjäksi, jos haluat säilyttää tallennetun asiakassalaisuuden</translation>
         </message>
         <message>
             <source>The client secret and refresh token are stored in the system keyring or user settings.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Asiakassalaisuus ja päivitystunniste tallennetaan järjestelmän avainnippuun tai käyttäjäasetuksiin.</translation>
         </message>
         <message>
             <source>Save</source>
@@ -1290,7 +1290,7 @@ picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
         <message>
             <source>Uploaded photos are limited to 1600 pixels on the longer side.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ladattavien kuvien pidempi sivu voi olla enintään 1600 pikseliä.</translation>
         </message>
     </context>
     <context>
@@ -12449,12 +12449,12 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/instructions)</extr
         <message>
             <source>Network error. Check your connection and try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Verkkovirhe. Tarkista yhteys ja yritä uudelleen.</translation>
         </message>
         <message>
             <source>Your Google Photos sign-in has expired. Sign in again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google Kuvien kirjautuminen on vanhentunut. Kirjaudu uudelleen.</translation>
         </message>
         <message>
             <source>Maximum Upload Rate Exceeded</source>
@@ -12471,27 +12471,27 @@ picasapy-origin-key: stringres:Lighthouse::ServiceUnavailableES</extracomment>
         <message>
             <source>Upload cancelled</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Lataus peruutettiin</translation>
         </message>
         <message>
             <source>A photo could not be prepared for upload.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kuvan valmistelu lataamista varten epäonnistui.</translation>
         </message>
         <message>
             <source>This photo is too large to upload.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tämä kuva on liian suuri ladattavaksi.</translation>
         </message>
         <message>
             <source>There are no photos in the Photo Tray.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Valokuvalokerossa ei ole kuvia.</translation>
         </message>
         <message>
             <source>Google Photos could not complete the upload. Try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Google Kuvat ei voinut viimeistellä latausta. Yritä uudelleen.</translation>
         </message>
         <message>
             <source>Upload complete</source>
@@ -12502,23 +12502,23 @@ picasapy-origin-key: stringres:uploadmgr::complete</extracomment>
         <message>
             <source>Preparing photo %1 of %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Valmistellaan kuvaa %1/%2</translation>
         </message>
         <message>
             <source>Uploading %1</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:QuickUploader::progress</extracomment>
-            <translation>Ladataan %s</translation>
+            <translation>Lähetetään %1</translation>
         </message>
         <message>
             <source>Adding photo %1 of %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Lisätään kuvaa %1/%2</translation>
         </message>
         <message>
             <source>Preparing photos for upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Valmistellaan kuvia lataamista varten</translation>
         </message>
         <message>
             <source>Upload photos in the Photo Tray to Google Photos</source>
@@ -12530,13 +12530,13 @@ picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs</extracomment>
             <source>Failed to upload %1</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:QuickUploader::errorMsg</extracomment>
-            <translation>Lähetys epäonnistui %s</translation>
+            <translation>Kohteen %1 lähettäminen epäonnistui</translation>
         </message>
         <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation type="unfinished" />
+            <translation>Sulje</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="0" />

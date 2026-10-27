@@ -1198,77 +1198,77 @@ picasapy-origin-key: options:options/button190.title</extracomment>
         <message>
             <source>Waiting for Google authorization…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Čeká se na autorizaci Google…</translation>
         </message>
         <message>
             <source>Enter a valid OAuth client ID and client secret.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Zadejte platné ID klienta OAuth a tajný klíč klienta.</translation>
         </message>
         <message>
             <source>Could not open the system browser.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nepodařilo se otevřít systémový prohlížeč.</translation>
         </message>
         <message>
             <source>Sign-in was cancelled.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Přihlášení bylo zrušeno.</translation>
         </message>
         <message>
             <source>Sign-in timed out. Try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Časový limit přihlášení vypršel. Zkuste to znovu.</translation>
         </message>
         <message>
             <source>Network error. Check your connection and try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Chyba sítě. Zkontrolujte připojení a zkuste to znovu.</translation>
         </message>
         <message>
             <source>Your Google Photos sign-in has expired. Sign in again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Platnost přihlášení ke Google Fotkám vypršela. Přihlaste se znovu.</translation>
         </message>
         <message>
             <source>Google sign-in failed. Check the OAuth client settings.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Přihlášení ke Googlu se nezdařilo. Zkontrolujte nastavení klienta OAuth.</translation>
         </message>
         <message>
             <source>Signed in to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Jste přihlášeni ke Google Fotkám</translation>
         </message>
         <message>
             <source>Not signed in to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nejste přihlášeni ke Google Fotkám</translation>
         </message>
         <message>
             <source>Use your own Google OAuth client (Desktop app).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Použijte vlastního klienta Google OAuth (desktopovou aplikaci).</translation>
         </message>
         <message>
             <source>OAuth client ID</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ID klienta OAuth</translation>
         </message>
         <message>
             <source>OAuth client secret</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tajný klíč klienta OAuth</translation>
         </message>
         <message>
             <source>Leave blank to keep the saved client secret</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ponechte prázdné, chcete-li zachovat uložený tajný klíč klienta</translation>
         </message>
         <message>
             <source>The client secret and refresh token are stored in the system keyring or user settings.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tajný klíč klienta a obnovovací token se ukládají do systémové klíčenky nebo nastavení uživatele.</translation>
         </message>
         <message>
             <source>Save</source>
@@ -1291,7 +1291,7 @@ picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
         <message>
             <source>Uploaded photos are limited to 1600 pixels on the longer side.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nahrané fotky mají maximálně 1600 pixelů na delší straně.</translation>
         </message>
     </context>
     <context>
@@ -12462,12 +12462,12 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/instructions)</extr
         <message>
             <source>Network error. Check your connection and try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Chyba sítě. Zkontrolujte připojení a zkuste to znovu.</translation>
         </message>
         <message>
             <source>Your Google Photos sign-in has expired. Sign in again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Platnost přihlášení ke Google Fotkám vypršela. Přihlaste se znovu.</translation>
         </message>
         <message>
             <source>Maximum Upload Rate Exceeded</source>
@@ -12484,27 +12484,27 @@ picasapy-origin-key: stringres:Lighthouse::ServiceUnavailableES</extracomment>
         <message>
             <source>Upload cancelled</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nahrávání bylo zrušeno</translation>
         </message>
         <message>
             <source>A photo could not be prepared for upload.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Fotografii se nepodařilo připravit k nahrání.</translation>
         </message>
         <message>
             <source>This photo is too large to upload.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tato fotografie je pro nahrání příliš velká.</translation>
         </message>
         <message>
             <source>There are no photos in the Photo Tray.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ve fotopřihrádce nejsou žádné fotografie.</translation>
         </message>
         <message>
             <source>Google Photos could not complete the upload. Try again.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Fotky Google nemohly dokončit nahrávání. Zkuste to znovu.</translation>
         </message>
         <message>
             <source>Upload complete</source>
@@ -12515,23 +12515,23 @@ picasapy-origin-key: stringres:uploadmgr::complete</extracomment>
         <message>
             <source>Preparing photo %1 of %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Připravuji fotku %1 z %2</translation>
         </message>
         <message>
             <source>Uploading %1</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:QuickUploader::progress</extracomment>
-            <translation>Nahrávání %s</translation>
+            <translation>Nahrávám %1</translation>
         </message>
         <message>
             <source>Adding photo %1 of %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Přidávám fotku %1 z %2</translation>
         </message>
         <message>
             <source>Preparing photos for upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Příprava fotografií k nahrání</translation>
         </message>
         <message>
             <source>Upload photos in the Photo Tray to Google Photos</source>
@@ -12543,7 +12543,7 @@ picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs</extracomment>
             <source>Failed to upload %1</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:QuickUploader::errorMsg</extracomment>
-            <translation>Nepodařilo se nahrát %s</translation>
+            <translation>Nahrání položky %1 se nezdařilo</translation>
         </message>
         <message>
             <source>Close</source>
