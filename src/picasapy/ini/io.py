@@ -35,6 +35,8 @@ from .names import INI_NAME, LEGACY_INI_NAME
 from .photo_touch import notify_picasa_after_ini_write
 
 _BOM = b"\xef\xbb\xbf"
+_INI_LOCK_RETRIES = 8
+_INI_LOCK_RETRY_DELAY = 0.05
 
 #: A HELYBEN írás fájlmegnyitó fogantyúja (`save_document(in_place=True)`).
 #: #1375 tanulsága szerint MODULSZINTŰ, hogy a teszt EZT cserélhesse — a
@@ -254,7 +256,16 @@ def save_document(
         if in_place:
             _write_in_place(target, payload)
             return
-        write_atomic(target, payload)
+        # Windowson a Picasa, a bélyegkép-olvasó vagy egy víruskereső rövid
+        # időre nyitva tarthatja a célfájlt. Az ini-nél megőrizzük az atomikus
+        # cserét (nincs közvetlen írási fallback), és a sharing violationt
+        # korlátozott ideig újrapróbáljuk.
+        write_atomic(
+            target,
+            payload,
+            lock_retries=_INI_LOCK_RETRIES,
+            lock_retry_delay=_INI_LOCK_RETRY_DELAY,
+        )
 
 
 def _write_in_place(target: Path, payload: bytes) -> None:
