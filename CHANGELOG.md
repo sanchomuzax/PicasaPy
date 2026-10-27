@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.262] - 2026-10-27
+
+- Az alkalmazás indulása megnevezett lépésekre bomlik. (#5958).
+
+## [0.9.261] - 2026-10-27
+
+- A szerkesztő-vezérlő kódja kilenc témarészre (munkamenet, előzmények, mentés, előnézet, vágás, retusálás, vörösszem, szöveg, effektek) került, a felület és a működés változatlan. (#5957).
+- A Név nélküliek nézet frissítése a program bezárásakor nem hív már elérhetetlen arcvezérlő-műveletet. (#6033).
+
 ## [0.9.260] - 2026-10-27
 
 - A szerkesztő fülikonjai az eredeti színeket, átmeneteket, formát és függőleges igazítást követik. (#5959).
