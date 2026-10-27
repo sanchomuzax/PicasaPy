@@ -295,12 +295,12 @@ class TestMeasuredDefaults:
 
 
 class TestLegacyColorwheelDefaults5949:
-    """A régi színkerekes effektek panelje a natív induló színt használja."""
+    """A négy generic színkerék a Picasa natív induló színét használja."""
 
     @pytest.mark.parametrize(
         ("name", "expected"),
         [
-            ("ansel", "#545454"),
+            ("ansel", "#ffffff"),
             ("tint", "#ffffff"),
             ("dir_tint", "#ffffff"),
             ("radtint", "#ffffff"),
