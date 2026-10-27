@@ -472,6 +472,10 @@ def test_a_valodi_fan_erdemi_mennyiseget_nez_at(valodi: or_.Elemzes) -> None:
         ("faceScanController", "cancelScan", "az arckereső párbeszéd Mégse gombja"),
         ("fileOpsController", "movePhotos", "a fájlműveleti párbeszéd"),
         ("folderHierarchyController", "expandAll", "kétlépcsős aliason át"),
+        ("folderHierarchyController", "rows", "a hierarchikus sorok modellje"),
+        ("folderHierarchyController", "mentesSorok", "mentési nézet sorai"),
+        ("folderHierarchyController", "toggle", "a fasor nyitása és csukása"),
+        ("folderHierarchyController", "collapseAll", "az összes fasor csukása"),
         ("importSourceController", "toggleStar", "az importáló nézet csillaga"),
     ],
 )
