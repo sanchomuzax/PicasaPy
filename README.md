@@ -17,6 +17,10 @@
   <img src="docs/assets/screenshot-fo-ablak.png" alt="PicasaPy – photo grid / képrács" width="700">
 </p>
 
+<p align="center">
+  <img src="docs/assets/promo.webp" alt="PicasaPy – 10-second teaser / 10 másodperces bemutató" width="300">
+</p>
+
 <p align="center"><a href="#english">English</a> · <a href="#magyar">Magyar</a></p>
 
 # English
