@@ -6694,6 +6694,23 @@ Az alábbi címek a helyi, SHA-256 `da370693b59d89e7d48646d9617f5f595e371f8e1828
 
 **Módosított fájl:** `docs/specs/picasa-arcfelismeres.md` (54.3/a korábbi Ghidra-kéréseinek státusza; új 54.3/c a `classifier arr`, az ObjectRef-streamhatár, a WeakClassifier `+0x1c` mezője és a bizonyítottsági korlátok).
 
+### 54.3/d A `+0x1c` összehasonlító szerepének és a J8 mérőadatának friss ellenőrzése (2026-10-27)
+
+**Eredeti | Nálunk | Teendő.**
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A vizsgált Red.dll `vsi_FaceViewDetector::runOnOneWindow` útja az összesített pontszámot a rekord `+0x1c` floatjához hasonlítja: `0x10103c14` betölti a mezőt, `0x10103c17` összevet, a `0x10103c1e` ág pedig a küszöb alatti pontszámnál a visszautasító ágra jut. A mező betöltött számértéke és az, hogy ugyanez a DLL fut-e a tiszta Picasa 3.9-ben: **NINCS MEG**. | A PicasaPy YuNet-detektora `score_threshold=0.9` értéket használ; a `FRRecommendIncludeLimit=0,50` a Picasa külön ajánlási útjához tartozik. Egyik érték sem azonosítható a Red rekordjának `+0x1c` mezőjével. | Szerezz tiszta Picasa 3.9 futásból Red.dll-hash-t és a `classifier arr` tényleges streamjét, majd mérd ki a betöltött floatot. A `0.9` és `0,50` értéket ne használd az eredeti mező értékeként. |
+| A `contacts.xml`, `.picasa.ini` és db3 műveletenkénti tartós írási időpontja a bináris helper útjából nem következik. | A helyi mérőarchívum célzottan kibontott 15 `.picasa.ini` fájljában nincs `[Contacts2]`, `faces=`, `ffffffffffffffff` vagy `]facealbum:` jelölő; az archívumban `contacts.xml`, db3 és eredeti Picasa-profiltag sincs. Ez az archívum tartalmát írja le, nem az eredeti program viselkedését. | J8: eredeti Picasa-profilban rögzítsd a `contacts.xml`, `backup.xml`, érintett `.picasa.ini` és db3 állapotát névadás/Choose, javaslat elfogadása/elutasítása, mellőzés, személytörlés, kilépés és újraindítás előtt és után. |
+
+**Két független út és bizonyítottság.** **A út:** a `0x10103870` célzott utasításszintű olvasata (`0x10103c14`-`0x10103c1e`) és a Ghidra-kimenet ugyanazt a küszöb alatti visszautasító ágat mutatja. **B út:** a külön `vsi_WeakClassifier` betöltő `0x10107f20` a `+0x1c` címet float-olvasónak adja (`0x10107f87`-`0x10107f8c`), a szerializáló `0x10107d70` pedig ugyanezt a mezőt `threshold =` néven írja; a Red-index RTTI/vtable adata a mezőt a WeakClassifier típushoz köti. A két út egyezik abban, hogy a helyi DLL mezője küszöbként használt float. Ez **megerősített a vizsgált DLL-re**, de nem igazolja a Picasa 3.9-es runtime DLL azonosságát vagy a futáskor betöltött értéket.
+
+**Cáfoló kísérlet.** Ellenőriztem, hogy a `0,50` `FRRecommendIncludeLimit` vagy a PicasaPy `0.9` értéke használható-e a Red-küszöb bizonyítékaként. A `0,50` a Picasa ajánlási útjához, a `0.9` pedig egy másik detektorhoz tartozik; nincs adat, amely bármelyiket a Red-modell adatfolyamának mezőjéhez kötné. Ez cáfolja az értékek közötti bizonyítatlan megfeleltetést, de nem állítja, hogy a futásidejű Red-float számszerűen biztosan eltér tőlük.
+
+**A #5185 „Kész, ha” 7-8. pontjához.** A 7. pont részleges marad: archívumunk nem tartalmazza az eredeti profilkontrollt, a műveletenkénti írási idő és a db3 rekordváltozás **NINCS MEG**; a megszerzés útja a fenti J8. A 8. pont részleges: a helyi DLL összehasonlító mezőjének szerepe megerősített, de a tiszta 3.9-es DLL/hash, a tényleges stream és float, valamint a scan indítása, kihagyásai, bemeneti mérete és mért eredménye **NINCS MEG**; ezekhez J7-es kontrollált eredeti futás és adatkinyerés szükséges. A fennmaradó kérdéshez új Ghidra-kör nem kell: a hiányzó bizonyíték futásidejű adat és profilfelvétel.
+
+**Módosított fájl:** `docs/specs/picasa-arcfelismeres.md` (54.3/d: a küszöb-összehasonlítás friss független ellenőrzése, az archívum határa és a 7-8. pont nyitott mérései).
+
 ## 55. #5184, helyi Codex-kutatói kör: a helyi archívum nem dönt N1/N3/N7-ről (2026-10-26)
 
 **Hatókör:** a mérőadat-archívum célzott ellenőrzése és az eddigi bináris-/Colab-leletek összevetése. Az eredeti Picasát ebben a körben nem futtattam; a helyi Wine futtató hiányzik. Az archívumból nem bontottam ki fotókat.
