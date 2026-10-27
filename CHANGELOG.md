@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.267] - 2026-10-27
+
+- A bal oldali mappafa kódja önálló részekre (tartalom, fasor, helyi menük) került, a megjelenés és a működés változatlan. (#6019).
+
 ## [0.9.266] - 2026-10-27
 
 - Az arcfelismerés-vezérlő kódja hét témarészre (keresés, beágyazás, alaphelyzet, beállítások, javaslatok, Név nélküliek, közös segédek) került, a felület és a működés változatlan. (#6025).
