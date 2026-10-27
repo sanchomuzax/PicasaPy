@@ -213,6 +213,16 @@ def _kep_bajtok(kep: Any) -> bytes:
     return bytes(rgba.constBits())
 
 
+def _hatter_dolgozik() -> bool:
+    """Fut-e nyilvántartott háttérmunka (pl. az `editpreview` renderje, #6078).
+
+    A nézőkép végleges kockáját háttérszál számolja; a lassabb CI-gépen ez a
+    stabil-kocka ablakon túl érkezett, és két rögzítés 16 képpontban eltért."""
+    from picasapy.app.worker_thread import running_background_workers
+
+    return bool(running_background_workers())
+
+
 def _stabil_ablakkepernyo(ablak: Any, alkalmazas: Any, allapot: str) -> Any:
     """Határidővel vár tíz változatlan QImage-kockára.
 
@@ -233,7 +243,11 @@ def _stabil_ablakkepernyo(ablak: Any, alkalmazas: Any, allapot: str) -> Any:
     while time.monotonic() < vege:
         alkalmazas.processEvents()
         kep = ablak.grabWindow()
-        if kep.isNull():
+        if _hatter_dolgozik():
+            # futó render alatt a kép még változhat: a számlálás újraindul
+            elozo = None
+            azonos = 0
+        elif kep.isNull():
             azonos = 0
         else:
             bajtok = _kep_bajtok(kep)
