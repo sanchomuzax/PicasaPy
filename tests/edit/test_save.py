@@ -82,7 +82,8 @@ class TestSaveEditedFirstTime:
 
     def test_original_backup_preserves_source_mtime(self, photo):
         image_path, original_bytes = photo
-        source_mtime_ns = 1_600_000_000_123_456_789
+        # 100 ns többszöröse: az NTFS ennél finomabban nem tárolja az időbélyeget
+        source_mtime_ns = 1_600_000_000_123_456_700
         os.utime(image_path, ns=(source_mtime_ns, source_mtime_ns))
 
         result = save_edited(
@@ -144,7 +145,8 @@ class TestSaveEditedSecondTime:
     def test_second_save_preserves_first_original(self, photo):
         image_path, original_bytes = photo
         backup_path = image_path.parent / ORIGINALS_DIR_NAME / image_path.name
-        source_mtime_ns = 1_600_000_000_123_456_789
+        # 100 ns többszöröse: az NTFS ennél finomabban nem tárolja az időbélyeget
+        source_mtime_ns = 1_600_000_000_123_456_700
         os.utime(image_path, ns=(source_mtime_ns, source_mtime_ns))
 
         first = save_edited(
