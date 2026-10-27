@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.269] - 2026-10-27
+
+- A felső menüsor belső QML-menüi külön komponensekbe kerültek változatlan megjelenéssel és működéssel (#6016).
+
 ## [0.9.268] - 2026-10-27
 
 - Windows alatt a fotónéző más alakban megadott útvonalnál is megtalálja a képet, és a .picasa.ini mentése kivárja az átmeneti fájlzárat. (#6043).
