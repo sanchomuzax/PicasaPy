@@ -110,6 +110,24 @@ _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
     ("FaceScanControllerUnnamedMixin", "All unnamed faces ({0})"): "FaceScanController",
     ("FaceScanControllerUnnamedMixin", "Group {0} ({1})"): "FaceScanController",
     ("FaceScanControllerUnnamedMixin", "Not yet grouped ({0})"): "FaceScanController",
+    # #6057: a nyomtatás témamixinjei futásidőben a PrintController
+    # fordítási kontextusát használják.
+    ("PrintControllerPrinterMixin", "landscape"): "PrintController",
+    ("PrintControllerPrinterMixin", "portrait"): "PrintController",
+    ("PrintControllerPrinterMixin", "No printer selected."): "PrintController",
+    ("PrintControllerPrinterMixin", "Unknown printer: %1"): "PrintController",
+    ("PrintControllerOutputMixin", "Invalid output path."): "PrintController",
+    ("PrintControllerOutputMixin", "default printer"): "PrintController",
+    ("PrintControllerOutputMixin", "Unknown printer: %1"): "PrintController",
+    ("PrintControllerOutputMixin", "Unnamed Album"): "PrintController",
+    ("PrintControllerOutputMixin", "Date:"): "PrintController",
+    ("PrintControllerOutputMixin", "No pictures to print."): "PrintController",
+    ("PrintControllerOutputMixin", "The print job could not be started."): "PrintController",
+    (
+        "PrintControllerOutputMixin",
+        "None of the selected pictures could be printed: %1",
+    ): "PrintController",
+    ("PrintControllerOutputMixin", "Invalid print settings: %1"): "PrintController",
 }
 
 

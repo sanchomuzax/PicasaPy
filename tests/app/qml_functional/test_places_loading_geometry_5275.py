@@ -4,7 +4,7 @@ A `docs/specs/jobb-fiok-meretek.md` 4. szakasza szerint a betöltő felirat
 (213 × 25) y 117-nél, az ikon (64 × 52) y 153-nál áll a geopanel vásznán. A
 térkép és a `loading_base` y 28-nál kezdődik, tehát a betöltő területhez képest
 a felirat y 89-nél, az ikon y 125-nél van. Az ikon képpontjait a renderelt
-ablakon vetjük össze az eredeti `loading_icon` PNG-jével.
+ablakon vetjük össze a szállított, saját rajzú `loading_icon` PNG-vel (#6068).
 """
 
 from __future__ import annotations

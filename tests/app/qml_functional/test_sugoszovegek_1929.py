@@ -31,7 +31,9 @@ from pathlib import Path
 import picasapy.app
 
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
-_TRAYBAR = (_QML / "TrayBar.qml").read_text(encoding="utf-8")
+_TRAYBAR = "\n".join(
+    fajl.read_text(encoding="utf-8") for fajl in sorted(_QML.glob("Tray*.qml"))
+)
 _TOOLBAR = (_QML / "MainToolbar.qml").read_text(encoding="utf-8")
 _TS = (
     Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"

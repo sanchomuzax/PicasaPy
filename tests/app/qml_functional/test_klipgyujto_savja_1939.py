@@ -37,8 +37,8 @@ from PySide6.QtTest import QTest
 import picasapy.app
 from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
-_TRAYBAR = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
+_SINGLE_ACTION_BAR = (
+    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TraySingleActionBar.qml"
 ).read_text(encoding="utf-8")
 _MAIN = (
     Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
@@ -123,8 +123,8 @@ class TestASavLetezikEsAHelyenVan:
 class TestASavTartalma:
     def test_az_uzenet_a_hivatalos_magyar_szoveg(self):
         """A `thumbui/single_action_message` hivatalos fordítása."""
-        assert "Jelölje ki azokat az elemeket" in _TRAYBAR or (
-            "single_action_message" in _TRAYBAR
+        assert "Jelölje ki azokat az elemeket" in _SINGLE_ACTION_BAR or (
+            "single_action_message" in _SINGLE_ACTION_BAR
         )
 
     def test_az_uzenet_JOBBRA_igazitott(self, qml_app, qt_app):
@@ -132,7 +132,7 @@ class TestASavTartalma:
         window, _c, _e = qml_app
         uzenet = _elem(window, "traySingleActionMessage")
         assert uzenet is not None
-        assert "AlignRight" in _TRAYBAR
+        assert "AlignRight" in _SINGLE_ACTION_BAR
 
     def test_a_vissza_gomb_109x43(self, qml_app, qt_app):
         window, _c, _e = qml_app

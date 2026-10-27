@@ -103,7 +103,35 @@ Window {
 
     function acceptOptions() {
         optionsDraft.commit()
+        saveAcceptedOptionSettings()
         optionsWindow.visible = false
+    }
+
+    function saveAcceptedOptionSettings() {
+        if (typeof controller === "undefined" || !controller
+                || typeof controller.saveOptionSettings !== "function"
+                || typeof importSourceController === "undefined"
+                || !importSourceController
+                || typeof printController === "undefined" || !printController
+                || typeof faceScanController === "undefined" || !faceScanController)
+            return
+
+        var values = {
+            "import/autoexclude": importSourceController.autoExclude,
+            "printing/printerQuality": printController.printerQuality(),
+            "printing/resamplerQuality": printController.printResamplerQuality(),
+            "printing/proxyPreview": printController.printProxyPreview(),
+            "faces/automaticDetection": faceScanController.automaticDetectionEnabled(),
+            "faces/suggestionsEnabled": faceScanController.suggestionsEnabled(),
+            "faces/suggestStep": faceScanController.suggestionThreshold(),
+            "faces/clusterStep2": faceScanController.clusterThreshold()
+        }
+        var fileTypeGroups = ["bmp", "psd", "tiff", "webp", "png", "gif", "movies"]
+        for (var i = 0; i < fileTypeGroups.length; ++i) {
+            var group = fileTypeGroups[i]
+            values["library/fileTypes/" + group] = controller.fileTypeEnabled(group)
+        }
+        controller.saveOptionSettings(values)
     }
 
     function cancelOptions() {

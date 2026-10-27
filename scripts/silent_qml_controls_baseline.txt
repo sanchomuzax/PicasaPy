@@ -22,9 +22,9 @@ constant-disabled	src/picasapy/app/qml/PicasaPy/PeopleManagerDialog.qml:345:enab
 constant-disabled	src/picasapy/app/qml/PicasaPy/PeopleManagerDialog.qml:374:enabled=false	Online Google Contacts-művelet; nincs ilyen integráció.
 constant-disabled	src/picasapy/app/qml/PicasaPy/PeopleManagerDialog.qml:379:enabled=false	Online Google Contacts-művelet; nincs ilyen integráció.
 constant-disabled	src/picasapy/app/qml/PicasaPy/PhotoViewer.qml:4479:enabled=false	A modal párbeszéd mögötti elmosás díszítő réteg; a Qt modalitása kezeli az inputot.
-constant-disabled	src/picasapy/app/qml/PicasaPy/TrayBar.qml:2011:enabled=false	A nyomat-rendelő partner szolgáltatása megszűnt (#1672).
-constant-disabled	src/picasapy/app/qml/PicasaPy/TrayBar.qml:2028:enabled=false	A „Hello” megosztáshoz nincs backend; a forráskomment jelöli.
-constant-disabled	src/picasapy/app/qml/PicasaPy/TrayBar.qml:2043:enabled=false	A Blogger-integráció megszűnt (#1672).
+constant-disabled	src/picasapy/app/qml/PicasaPy/TrayActionArea.qml:391:enabled=false	A nyomat-rendelő partner szolgáltatása megszűnt (#1672).
+constant-disabled	src/picasapy/app/qml/PicasaPy/TrayActionArea.qml:408:enabled=false	A „Hello” megosztáshoz nincs backend; a forráskomment jelöli.
+constant-disabled	src/picasapy/app/qml/PicasaPy/TrayActionArea.qml:423:enabled=false	A Blogger-integráció megszűnt (#1672).
 unbound-signal	src/picasapy/app/qml/PicasaPy/CollageDialogs.qml::formatRejected	A „Don't Set” gomb bezárja a figyelmeztetést; nincs további folytatás, ezt a kattintásteszt igazolja.
 unbound-signal	src/picasapy/app/qml/PicasaPy/DocumentTabStrip.qml::tabActivated	A fülváltás az activeTabId kötésén át frissíti a tartalmat; a jelet a Main nem fogyasztja.
 unbound-signal	src/picasapy/app/qml/PicasaPy/EditorPanel.qml::cropRequested	Elavult, redundáns jelzés: a cropActive/toolActivated útvonal nyitja az eszközt.

@@ -12672,6 +12672,334 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/instructions)</extr
         </message>
     </context>
     <context>
+        <name>TrayInfoBar</name>
+    </context>
+    <context>
+        <name>TrayScratchPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="578" />
+            <source>Clear Tray</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Notīrīt krātuvi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="558" />
+            <source>Screensaver</source>
+            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
+            <translation>Ekrānsaudzētājs</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="563" />
+            <source>Starred Photos</source>
+            <comment>stringres:CThumbDB::starredphotos</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
+            <translation>Ar zvaigznīti atzīmētie fotoattēli</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="568" />
+            <source>New Album...</source>
+            <comment>stringres:il_NewAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_NewAlbumName</extracomment>
+            <translation>Jauns albums...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="522" />
+            <source>Add selected items to an Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/addtobuttcon)</extracomment>
+            <translation>Pievienojiet atlasītos vienumus albumam</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="416" />
+            <source>Selection</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atlase</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="451" />
+            <source>Hold selected items</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/scratchhold)</extracomment>
+            <translation>Paturiet atlasītos vienumus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="478" />
+            <source>Clear items from the selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/scratchclear)</extracomment>
+            <translation>Notīriet vienumus no atlases</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="582" />
+            <source>This will clear your entire tray. Are you sure you want to do this?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CLEARTRAY</extracomment>
+            <translation>Tādējādi tiks notīrīta visa krātuve. Vai tiešām vēlaties to darīt?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="598" />
+            <source>Clear Tray</source>
+            <comment>IDS_CLEARTRAY_YES_BUTTON</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CLEARTRAY_YES_BUTTON;stringres:il_ClearFromTrayYesButton</extracomment>
+            <translation>Notīrīt krātuvi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="611" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atcelt</translation>
+        </message>
+    </context>
+    <context>
+        <name>TrayRightPane</name>
+    </context>
+    <context>
+        <name>TrayTopRow</name>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="530" />
+            <source>Fit Photo inside viewing area</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/fit)</extracomment>
+            <translation>Ietilpiniet fotoattēlu skatīšanas apgabalā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="551" />
+            <source>Display Photo at actual size</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
+            <translation>Rādiet fotoattēlus faktiskajā lielumā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="56" />
+            <source>Add/Remove Star</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/startoggle);tooltips:Tooltip(thumbui/startoggle)</extracomment>
+            <translation>Pievienojiet/noņemiet zvaigznīti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="430" />
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="434" />
+            <source>Click and drag over photos to magnify them</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/loupehit)</extracomment>
+            <translation>Noklikšķiniet un velciet pāri fotoattēliem, lai tos palielinātu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="116" />
+            <source>Rotate counter-clockwise</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pagriezt pretēji pulksteņrādītāja virzienam</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="161" />
+            <source>Rotate clockwise</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pagriezt pulksteņrādītāja virzienā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="245" />
+            <source>People</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Personas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="248" />
+            <source>Places</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vietas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="251" />
+            <source>Tags</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atzīmes</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="254" />
+            <source>Properties</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Rekvizīti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="246" />
+            <source>Show/Hide People Panel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/people_toggle)</extracomment>
+            <translation>Rādiet/slēpiet personu paneli</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="249" />
+            <source>Show/Hide Places Panel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/places_toggle)</extracomment>
+            <translation>Rādiet/slēpiet vietu paneli</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="252" />
+            <source>Show/Hide Tags Panel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/tags_toggle)</extracomment>
+            <translation>Rādiet/slēpiet atzīmju paneli</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="255" />
+            <source>Show/Hide Properties Panel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/properties_toggle)</extracomment>
+            <translation>Rādiet/slēpiet rekvizītu paneli</translation>
+        </message>
+    </context>
+    <context>
+        <name>TrayActionArea</name>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="56" />
+            <source>Upload photos in the Photo Tray to Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs</extracomment>
+            <translation>Augšupielādēt fotogrozā esošos fotoattēlus pakalpojumā Google fotoattēli</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="133" />
+            <source>Failed to upload %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:QuickUploader::errorMsg</extracomment>
+            <translation>Neizdevās augšupielādēt %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="159" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Aizvērt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="479" />
+            <source>Movie Maker</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_MakeMovieButton;tooltips:Label(panelroot/makemovietab)</extracomment>
+            <translation>Movie Maker</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="496" />
+            <source>Create Movie Presentation</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_movie);headerpaneltext:Tooltip(headerpanel/create_movie)</extracomment>
+            <translation>Izveidojiet filmas prezentāciju</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="541" />
+            <source>More...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vēl...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="563" />
+            <source>Click here for more options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/morebutton);tooltips:Tooltip(outputlayout/morebutton)</extracomment>
+            <translation>Noklikšķiniet, lai redzētu vairāk opciju</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="394" />
+            <source>Order Prints (service discontinued)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pasūtīt izdrukas (pakalpojums vairs nav pieejams)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="426" />
+            <source>Publish to Blogger (service discontinued)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Publicēt vietnē Blogger (pakalpojums vairs nav pieejams)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="340" />
+            <source>E-Mail</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>E-pasts</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="313" />
+            <source>Print</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Drukāt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="363" />
+            <source>Export</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Eksportēt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="45" />
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="104" />
+            <source>Upload to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Augšupielādēt pakalpojumā Google fotoattēli</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="455" />
+            <source>Collage</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kolāža</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="467" />
+            <source>Create a Photo Collage with your selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/collage);tooltips:Tooltip(outputlayout/collage)</extracomment>
+            <translation>Izveidojiet fotoattēlu kolāžu, izmantojot savu atlasi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="159" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atcelt</translation>
+        </message>
+    </context>
+    <context>
+        <name>TraySingleActionBar</name>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="86" />
+            <source>Select items to add to your project's clips tray, then press the "Back" button to return to your project</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(thumbui/single_action_message)</extracomment>
+            <translation>Atlasiet vienumus, ko pievienot sava projekta klipu krātuvei, pēc tam nospiediet pogu "Atpakaļ", lai atgrieztos pie projekta</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="109" />
+            <source>Go back to what you were editing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_return)</extracomment>
+            <translation>Atgriezieties pie rediģēšanas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="108" />
+            <source>Back to Collage</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:collagepanel::back_to_collage</extracomment>
+            <translation>Atpakaļ uz kolāžu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="107" />
+            <source>Back to Movie Maker</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::back_to_slideshow</extracomment>
+            <translation>Atpakaļ uz programmu Movie Maker</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="132" />
+            <source>Cancel "Get more"</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_close)</extracomment>
+            <translation>Atcelt "Iegūt vēl"</translation>
+        </message>
+    </context>
+    <context>
         <name>TrayBar</name>
         <message>
             <source>Network error. Check your connection and try again.</source>
@@ -12748,207 +13076,6 @@ picasapy-origin-key: stringres:QuickUploader::progress</extracomment>
             <translation>Fotoattēlu sagatavošana augšupielādei</translation>
         </message>
         <message>
-            <source>Upload photos in the Photo Tray to Google Photos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs</extracomment>
-            <translation>Augšupielādēt fotogrozā esošos fotoattēlus pakalpojumā Google fotoattēli</translation>
-        </message>
-        <message>
-            <source>Failed to upload %1</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:QuickUploader::errorMsg</extracomment>
-            <translation>Neizdevās augšupielādēt %1</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Aizvērt</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="0" />
-            <source>Movie Maker</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_MakeMovieButton;tooltips:Label(panelroot/makemovietab)</extracomment>
-            <translation>Movie Maker</translation>
-        </message>
-        <message>
-            <source>Create Movie Presentation</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_movie);headerpaneltext:Tooltip(headerpanel/create_movie)</extracomment>
-            <translation>Izveidojiet filmas prezentāciju</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Fit Photo inside viewing area</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/fit)</extracomment>
-            <translation>Ietilpiniet fotoattēlu skatīšanas apgabalā</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Display Photo at actual size</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
-            <translation>Rādiet fotoattēlus faktiskajā lielumā</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>More...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vēl...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Click here for more options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/morebutton);tooltips:Tooltip(outputlayout/morebutton)</extracomment>
-            <translation>Noklikšķiniet, lai redzētu vairāk opciju</translation>
-        </message>
-        <message>
-            <source>Clear Tray</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Notīrīt krātuvi</translation>
-        </message>
-        <message>
-            <source>Add/Remove Star</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/startoggle);tooltips:Tooltip(thumbui/startoggle)</extracomment>
-            <translation>Pievienojiet/noņemiet zvaigznīti</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Screensaver</source>
-            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
-            <translation>Ekrānsaudzētājs</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Starred Photos</source>
-            <comment>stringres:CThumbDB::starredphotos</comment>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
-            <translation>Ar zvaigznīti atzīmētie fotoattēli</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>New Album...</source>
-            <comment>stringres:il_NewAlbumName</comment>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_NewAlbumName</extracomment>
-            <translation>Jauns albums...</translation>
-        </message>
-        <message>
-            <source>Click and drag over photos to magnify them</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/loupehit)</extracomment>
-            <translation>Noklikšķiniet un velciet pāri fotoattēliem, lai tos palielinātu</translation>
-        </message>
-        <message>
-            <source>Select items to add to your project's clips tray, then press the "Back" button to return to your project</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(thumbui/single_action_message)</extracomment>
-            <translation>Atlasiet vienumus, ko pievienot sava projekta klipu krātuvei, pēc tam nospiediet pogu "Atpakaļ", lai atgrieztos pie projekta</translation>
-        </message>
-        <message>
-            <source>Go back to what you were editing</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_return)</extracomment>
-            <translation>Atgriezieties pie rediģēšanas</translation>
-        </message>
-        <message>
-            <source>Back to Collage</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:collagepanel::back_to_collage</extracomment>
-            <translation>Atpakaļ uz kolāžu</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Back to Movie Maker</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::back_to_slideshow</extracomment>
-            <translation>Atpakaļ uz programmu Movie Maker</translation>
-        </message>
-        <message>
-            <source>Cancel "Get more"</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_close)</extracomment>
-            <translation>Atcelt "Iegūt vēl"</translation>
-        </message>
-        <message>
-            <source>Rotate counter-clockwise</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pagriezt pretēji pulksteņrādītāja virzienam</translation>
-        </message>
-        <message>
-            <source>Rotate clockwise</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pagriezt pulksteņrādītāja virzienā</translation>
-        </message>
-        <message>
-            <source>People</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Personas</translation>
-        </message>
-        <message>
-            <source>Places</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vietas</translation>
-        </message>
-        <message>
-            <source>Tags</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atzīmes</translation>
-        </message>
-        <message>
-            <source>Properties</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Rekvizīti</translation>
-        </message>
-        <message>
-            <source>Show/Hide People Panel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/people_toggle)</extracomment>
-            <translation>Rādiet/slēpiet personu paneli</translation>
-        </message>
-        <message>
-            <source>Show/Hide Places Panel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/places_toggle)</extracomment>
-            <translation>Rādiet/slēpiet vietu paneli</translation>
-        </message>
-        <message>
-            <source>Show/Hide Tags Panel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/tags_toggle)</extracomment>
-            <translation>Rādiet/slēpiet atzīmju paneli</translation>
-        </message>
-        <message>
-            <source>Show/Hide Properties Panel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/properties_toggle)</extracomment>
-            <translation>Rādiet/slēpiet rekvizītu paneli</translation>
-        </message>
-        <message>
-            <source>Order Prints (service discontinued)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pasūtīt izdrukas (pakalpojums vairs nav pieejams)</translation>
-        </message>
-        <message>
-            <source>Publish to Blogger (service discontinued)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Publicēt vietnē Blogger (pakalpojums vairs nav pieejams)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Add selected items to an Album</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/addtobuttcon)</extracomment>
-            <translation>Pievienojiet atlasītos vienumus albumam</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
             <source>Waiting for the collage to be created…</source>
             <extracomment>picasapy-origin: picasa
@@ -12960,84 +13087,6 @@ picasapy-origin-key: stringres:CThumbUI::CreateCollageWait</extracomment>
             <source>Add to</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Pievienot</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="102" />
-            <source>Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atlase</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="176" />
-            <source>E-Mail</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>E-pasts</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="177" />
-            <source>Print</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Drukāt</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="180" />
-            <source>Export</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Eksportēt</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="189" />
-            <source>Upload to Google Photos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Augšupielādēt pakalpojumā Google fotoattēli</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Collage</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kolāža</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Create a Photo Collage with your selection</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/collage);tooltips:Tooltip(outputlayout/collage)</extracomment>
-            <translation>Izveidojiet fotoattēlu kolāžu, izmantojot savu atlasi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="232" />
-            <source>Hold selected items</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/scratchhold)</extracomment>
-            <translation>Paturiet atlasītos vienumus</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="249" />
-            <source>Clear items from the selection</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/scratchclear)</extracomment>
-            <translation>Notīriet vienumus no atlases</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>This will clear your entire tray. Are you sure you want to do this?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CLEARTRAY</extracomment>
-            <translation>Tādējādi tiks notīrīta visa krātuve. Vai tiešām vēlaties to darīt?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Clear Tray</source>
-            <comment>IDS_CLEARTRAY_YES_BUTTON</comment>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CLEARTRAY_YES_BUTTON;stringres:il_ClearFromTrayYesButton</extracomment>
-            <translation>Notīrīt krātuvi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atcelt</translation>
         </message>
     </context>
     <context>

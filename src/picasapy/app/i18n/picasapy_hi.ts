@@ -12646,6 +12646,334 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/instructions)</extr
         </message>
     </context>
     <context>
+        <name>TrayInfoBar</name>
+    </context>
+    <context>
+        <name>TrayScratchPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="578" />
+            <source>Clear Tray</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ट्रे साफ़ करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="558" />
+            <source>Screensaver</source>
+            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
+            <translation>स्क्रीनसेवर</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="563" />
+            <source>Starred Photos</source>
+            <comment>stringres:CThumbDB::starredphotos</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
+            <translation>तारांकित फ़ोटो</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="568" />
+            <source>New Album...</source>
+            <comment>stringres:il_NewAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_NewAlbumName</extracomment>
+            <translation>नया एल्बम...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="522" />
+            <source>Add selected items to an Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/addtobuttcon)</extracomment>
+            <translation>किसी एल्बम में चयनित आइटम जोड़ें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="416" />
+            <source>Selection</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>चयन</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="451" />
+            <source>Hold selected items</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/scratchhold)</extracomment>
+            <translation>चयनित आइटम पकड़ें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="478" />
+            <source>Clear items from the selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/scratchclear)</extracomment>
+            <translation>चयन से आइटम साफ़ करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="582" />
+            <source>This will clear your entire tray. Are you sure you want to do this?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CLEARTRAY</extracomment>
+            <translation>यह आपकी संपूर्ण ट्रे को साफ़ कर देगा.  क्या वाकई आप ऐसा करना चाहते हैं?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="598" />
+            <source>Clear Tray</source>
+            <comment>IDS_CLEARTRAY_YES_BUTTON</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CLEARTRAY_YES_BUTTON;stringres:il_ClearFromTrayYesButton</extracomment>
+            <translation>ट्रे साफ़ करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayScratchPanel.qml" line="611" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>रद्द करें</translation>
+        </message>
+    </context>
+    <context>
+        <name>TrayRightPane</name>
+    </context>
+    <context>
+        <name>TrayTopRow</name>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="530" />
+            <source>Fit Photo inside viewing area</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/fit)</extracomment>
+            <translation>फ़ोटो को अवलोकन क्षेत्र के भीतर फ़िट करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="551" />
+            <source>Display Photo at actual size</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
+            <translation>चित्र वास्तविक आकार में दिखाएं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="56" />
+            <source>Add/Remove Star</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/startoggle);tooltips:Tooltip(thumbui/startoggle)</extracomment>
+            <translation>तारा जोड़ें/निकालें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="430" />
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="434" />
+            <source>Click and drag over photos to magnify them</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/loupehit)</extracomment>
+            <translation>फ़ोटो बड़ा करने के लिए उनके ऊपर क्लिक करें और खींचें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="116" />
+            <source>Rotate counter-clockwise</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>वामावर्त घुमाएं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="161" />
+            <source>Rotate clockwise</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>दक्षिणावर्त घुमाएं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="245" />
+            <source>People</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>लोग</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="248" />
+            <source>Places</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>स्थान</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="251" />
+            <source>Tags</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>टैग</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="254" />
+            <source>Properties</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>गुण</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="246" />
+            <source>Show/Hide People Panel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/people_toggle)</extracomment>
+            <translation>लोग पैनल दिखाएं/छुपाएं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="249" />
+            <source>Show/Hide Places Panel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/places_toggle)</extracomment>
+            <translation>स्थान फलक दिखाएं/छुपाएं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="252" />
+            <source>Show/Hide Tags Panel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/tags_toggle)</extracomment>
+            <translation>टैग पैनल दिखाएं/छुपाएं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayTopRow.qml" line="255" />
+            <source>Show/Hide Properties Panel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/properties_toggle)</extracomment>
+            <translation>गुण फलक दिखाएं/छुपाएं</translation>
+        </message>
+    </context>
+    <context>
+        <name>TrayActionArea</name>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="56" />
+            <source>Upload photos in the Photo Tray to Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs</extracomment>
+            <translation>Google फ़ोटो पर फ़ोटो ट्रे में फ़ोटो अपलोड करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="133" />
+            <source>Failed to upload %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:QuickUploader::errorMsg</extracomment>
+            <translation>%1 अपलोड नहीं हो सका</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="159" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>बंद करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="479" />
+            <source>Movie Maker</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_MakeMovieButton;tooltips:Label(panelroot/makemovietab)</extracomment>
+            <translation>मूवी मेकर</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="496" />
+            <source>Create Movie Presentation</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_movie);headerpaneltext:Tooltip(headerpanel/create_movie)</extracomment>
+            <translation>मूवी प्रस्तुति बनाएं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="541" />
+            <source>More...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>और...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="563" />
+            <source>Click here for more options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/morebutton);tooltips:Tooltip(outputlayout/morebutton)</extracomment>
+            <translation>और विकल्पों को देखने के लिए क्लिक करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="394" />
+            <source>Order Prints (service discontinued)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>प्रिंट ऑर्डर करें (सेवा बंद है)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="426" />
+            <source>Publish to Blogger (service discontinued)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Blogger पर प्रकाशित करें (सेवा बंद है)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="340" />
+            <source>E-Mail</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ईमेल</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="313" />
+            <source>Print</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>प्रिंट करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="363" />
+            <source>Export</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>निर्यात करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="45" />
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="104" />
+            <source>Upload to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google Photos पर अपलोड करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="455" />
+            <source>Collage</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>कोलाज</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="467" />
+            <source>Create a Photo Collage with your selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/collage);tooltips:Tooltip(outputlayout/collage)</extracomment>
+            <translation>अपने चयन से चित्रों का कोलाज बनाएं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayActionArea.qml" line="159" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>रद्द करें</translation>
+        </message>
+    </context>
+    <context>
+        <name>TraySingleActionBar</name>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="86" />
+            <source>Select items to add to your project's clips tray, then press the "Back" button to return to your project</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(thumbui/single_action_message)</extracomment>
+            <translation>अपने प्रोजेक्ट की क्लिप ट्रे पर जोड़ने के लिए आइटम को चुनें, फिर अपने प्रोजेक्ट पर वापस लौटने के लिए "वापस जाएं" बटन दबाएं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="109" />
+            <source>Go back to what you were editing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_return)</extracomment>
+            <translation>आप जो संपादित कर रहे थे, उस पर वापस जाएं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="108" />
+            <source>Back to Collage</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:collagepanel::back_to_collage</extracomment>
+            <translation>कोलाज पर वापस जाएं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="107" />
+            <source>Back to Movie Maker</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::back_to_slideshow</extracomment>
+            <translation>मूवी मेकर में वापस</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TraySingleActionBar.qml" line="132" />
+            <source>Cancel "Get more"</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_close)</extracomment>
+            <translation>"और प्राप्त करें" रहने दें</translation>
+        </message>
+    </context>
+    <context>
         <name>TrayBar</name>
         <message>
             <source>Network error. Check your connection and try again.</source>
@@ -12722,207 +13050,6 @@ picasapy-origin-key: stringres:QuickUploader::progress</extracomment>
             <translation>फ़ोटो अपलोड करने के लिए तैयार की जा रही हैं</translation>
         </message>
         <message>
-            <source>Upload photos in the Photo Tray to Google Photos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs</extracomment>
-            <translation>Google फ़ोटो पर फ़ोटो ट्रे में फ़ोटो अपलोड करें</translation>
-        </message>
-        <message>
-            <source>Failed to upload %1</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:QuickUploader::errorMsg</extracomment>
-            <translation>%1 अपलोड नहीं हो सका</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>बंद करें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="0" />
-            <source>Movie Maker</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_MakeMovieButton;tooltips:Label(panelroot/makemovietab)</extracomment>
-            <translation>मूवी मेकर</translation>
-        </message>
-        <message>
-            <source>Create Movie Presentation</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_movie);headerpaneltext:Tooltip(headerpanel/create_movie)</extracomment>
-            <translation>मूवी प्रस्तुति बनाएं</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Fit Photo inside viewing area</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/fit)</extracomment>
-            <translation>फ़ोटो को अवलोकन क्षेत्र के भीतर फ़िट करें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Display Photo at actual size</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
-            <translation>चित्र वास्तविक आकार में दिखाएं</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>More...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>और...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Click here for more options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/morebutton);tooltips:Tooltip(outputlayout/morebutton)</extracomment>
-            <translation>और विकल्पों को देखने के लिए क्लिक करें</translation>
-        </message>
-        <message>
-            <source>Clear Tray</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ट्रे साफ़ करें</translation>
-        </message>
-        <message>
-            <source>Add/Remove Star</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/startoggle);tooltips:Tooltip(thumbui/startoggle)</extracomment>
-            <translation>तारा जोड़ें/निकालें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Screensaver</source>
-            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
-            <translation>स्क्रीनसेवर</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Starred Photos</source>
-            <comment>stringres:CThumbDB::starredphotos</comment>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
-            <translation>तारांकित फ़ोटो</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>New Album...</source>
-            <comment>stringres:il_NewAlbumName</comment>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_NewAlbumName</extracomment>
-            <translation>नया एल्बम...</translation>
-        </message>
-        <message>
-            <source>Click and drag over photos to magnify them</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/loupehit)</extracomment>
-            <translation>फ़ोटो बड़ा करने के लिए उनके ऊपर क्लिक करें और खींचें</translation>
-        </message>
-        <message>
-            <source>Select items to add to your project's clips tray, then press the "Back" button to return to your project</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(thumbui/single_action_message)</extracomment>
-            <translation>अपने प्रोजेक्ट की क्लिप ट्रे पर जोड़ने के लिए आइटम को चुनें, फिर अपने प्रोजेक्ट पर वापस लौटने के लिए "वापस जाएं" बटन दबाएं</translation>
-        </message>
-        <message>
-            <source>Go back to what you were editing</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_return)</extracomment>
-            <translation>आप जो संपादित कर रहे थे, उस पर वापस जाएं</translation>
-        </message>
-        <message>
-            <source>Back to Collage</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:collagepanel::back_to_collage</extracomment>
-            <translation>कोलाज पर वापस जाएं</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Back to Movie Maker</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::back_to_slideshow</extracomment>
-            <translation>मूवी मेकर में वापस</translation>
-        </message>
-        <message>
-            <source>Cancel "Get more"</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/single_action_close)</extracomment>
-            <translation>"और प्राप्त करें" रहने दें</translation>
-        </message>
-        <message>
-            <source>Rotate counter-clockwise</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>वामावर्त घुमाएं</translation>
-        </message>
-        <message>
-            <source>Rotate clockwise</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>दक्षिणावर्त घुमाएं</translation>
-        </message>
-        <message>
-            <source>People</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>लोग</translation>
-        </message>
-        <message>
-            <source>Places</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>स्थान</translation>
-        </message>
-        <message>
-            <source>Tags</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>टैग</translation>
-        </message>
-        <message>
-            <source>Properties</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>गुण</translation>
-        </message>
-        <message>
-            <source>Show/Hide People Panel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/people_toggle)</extracomment>
-            <translation>लोग पैनल दिखाएं/छुपाएं</translation>
-        </message>
-        <message>
-            <source>Show/Hide Places Panel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/places_toggle)</extracomment>
-            <translation>स्थान फलक दिखाएं/छुपाएं</translation>
-        </message>
-        <message>
-            <source>Show/Hide Tags Panel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/tags_toggle)</extracomment>
-            <translation>टैग पैनल दिखाएं/छुपाएं</translation>
-        </message>
-        <message>
-            <source>Show/Hide Properties Panel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/properties_toggle)</extracomment>
-            <translation>गुण फलक दिखाएं/छुपाएं</translation>
-        </message>
-        <message>
-            <source>Order Prints (service discontinued)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>प्रिंट ऑर्डर करें (सेवा बंद है)</translation>
-        </message>
-        <message>
-            <source>Publish to Blogger (service discontinued)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Blogger पर प्रकाशित करें (सेवा बंद है)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Add selected items to an Album</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/addtobuttcon)</extracomment>
-            <translation>किसी एल्बम में चयनित आइटम जोड़ें</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" />
             <source>Waiting for the collage to be created…</source>
             <extracomment>picasapy-origin: picasa
@@ -12934,84 +13061,6 @@ picasapy-origin-key: stringres:CThumbUI::CreateCollageWait</extracomment>
             <source>Add to</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>इसमें जोड़ें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="102" />
-            <source>Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>चयन</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="176" />
-            <source>E-Mail</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ईमेल</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="177" />
-            <source>Print</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>प्रिंट करें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="180" />
-            <source>Export</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>निर्यात करें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="189" />
-            <source>Upload to Google Photos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Google Photos पर अपलोड करें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Collage</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>कोलाज</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Create a Photo Collage with your selection</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: outputlayout_text:Tooltip(outputlayout/collage);tooltips:Tooltip(outputlayout/collage)</extracomment>
-            <translation>अपने चयन से चित्रों का कोलाज बनाएं</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="232" />
-            <source>Hold selected items</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/scratchhold)</extracomment>
-            <translation>चयनित आइटम पकड़ें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" line="249" />
-            <source>Clear items from the selection</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/scratchclear)</extracomment>
-            <translation>चयन से आइटम साफ़ करें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>This will clear your entire tray. Are you sure you want to do this?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CLEARTRAY</extracomment>
-            <translation>यह आपकी संपूर्ण ट्रे को साफ़ कर देगा.  क्या वाकई आप ऐसा करना चाहते हैं?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Clear Tray</source>
-            <comment>IDS_CLEARTRAY_YES_BUTTON</comment>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CLEARTRAY_YES_BUTTON;stringres:il_ClearFromTrayYesButton</extracomment>
-            <translation>ट्रे साफ़ करें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/TrayBar.qml" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>रद्द करें</translation>
         </message>
     </context>
     <context>
