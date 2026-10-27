@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.263] - 2026-10-27
+
+- A főablak és a fotónéző képernyőkép-őre 30 állapotot rögzít (könyvtár, személyalbum, mind a nyolc felső menü, eszköztár, tálca, diavetítés, szerkesztőfülek), a főablak szétbontása előtti mércéül. (#5954).
+
 ## [0.9.262] - 2026-10-27
 
 - Az alkalmazás indulása megnevezett lépésekre bomlik. (#5958).
