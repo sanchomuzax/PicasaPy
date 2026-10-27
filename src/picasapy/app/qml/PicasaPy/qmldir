@@ -2,6 +2,9 @@ module PicasaPy
 singleton Theme 1.0 Theme.qml
 SelectionDim 1.0 SelectionDim.qml
 FolderPane 1.0 FolderPane.qml
+FolderPaneContent 1.0 FolderPaneContent.qml
+FolderPaneTreeRow 1.0 FolderPaneTreeRow.qml
+FolderPaneMenus 1.0 FolderPaneMenus.qml
 ThumbDelegate 1.0 ThumbDelegate.qml
 PicasaMenuBar 1.0 PicasaMenuBar.qml
 internal PicasaFileMenu PicasaFileMenu.qml

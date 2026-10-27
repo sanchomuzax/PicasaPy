@@ -17,17 +17,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QObject
+from tests.support.folder_pane_components_6019 import folder_pane_source_text
 from tests.support.qml_blokk import blokk_horgonyra
 
 _MENU = (
     Path(__file__).resolve().parents[3]
     / "src/picasapy/app/qml/PicasaPy/FolderListContextMenu.qml"
 )
-_PANE = (
-    Path(__file__).resolve().parents[3]
-    / "src/picasapy/app/qml/PicasaPy/FolderPane.qml"
-)
-
 _TETELEK = {
     "folderListMenuSortPeopleByName": "name",
     "folderListMenuSortPeopleByCount": "count",
@@ -46,7 +42,7 @@ class TestATetelekELOK:
             assert "onTriggered:" in blokk, f"{nev}: nincs kezelője"
 
     def test_a_jelzest_a_hasab_elkapja(self):
-        assert "onPeopleSortRequested" in _PANE.read_text(encoding="utf-8")
+        assert "onPeopleSortRequested" in folder_pane_source_text()
 
     def test_mindharom_VISSZAKOTI_a_pipat(self):
         """A rádió-csapda ellen — enélkül a menü újranyitásakor egyik

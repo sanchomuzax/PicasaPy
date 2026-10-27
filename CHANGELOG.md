@@ -7,6 +7,22 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.268] - 2026-10-27
+
+- Windows alatt a fotónéző más alakban megadott útvonalnál is megtalálja a képet, és a .picasa.ini mentése kivárja az átmeneti fájlzárat. (#6043).
+
+## [0.9.267] - 2026-10-27
+
+- A bal oldali mappafa kódja önálló részekre (tartalom, fasor, helyi menük) került, a megjelenés és a működés változatlan. (#6019).
+
+## [0.9.266] - 2026-10-27
+
+- Az arcfelismerés-vezérlő kódja hét témarészre (keresés, beágyazás, alaphelyzet, beállítások, javaslatok, Név nélküliek, közös segédek) került, a felület és a működés változatlan. (#6025).
+
+## [0.9.265] - 2026-10-27
+
+- A fő vezérlő kódjának maradék témái (szűrők, mappanézet, rejtett mappák, navigáció, hálózati beállítások, diavetítés, állapot, tartalominfó) külön részekbe kerültek, a felület és a működés változatlan. (#6022).
+
 ## [0.9.264] - 2026-10-27
 
 - A képművelet-vezérlő kódja hat témarészre (album, effekt-vágólap, átnevezés, forgatás és tükrözés, ini-írás, XMP) került, a felület és a működés változatlan. (#6023).
