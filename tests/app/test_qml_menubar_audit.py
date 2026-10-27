@@ -20,6 +20,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
+from support.menubar_components_6016 import menu_sources
 
 _MENU_QML = (
     Path(__file__).resolve().parents[2]
@@ -41,7 +42,7 @@ def _source() -> str:
     `&` jelölés, nem tartalom. A mnemonikokat a saját őrük méri
     (`test_menu_mnemonikok_2152.py`), ütközés-vizsgálattal együtt.
     """
-    return _MENU_QML.read_text(encoding="utf-8").replace("&", "")
+    return menu_sources().replace("&", "")
 
 
 # -- 1. réteg: a korábban teljesen hiányzó feliratok mindegyike bekerült ---

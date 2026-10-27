@@ -31,7 +31,7 @@ import picasapy.app as app_csomag
 from tests.support.qml_blokk import blokk_horgonyra
 
 _QML = (
-    Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
+    Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "PicasaToolsMenu.qml"
 ).read_text(encoding="utf-8")
 _TS = (
     Path(app_csomag.__file__).parent / "i18n" / "picasapy_hu.ts"

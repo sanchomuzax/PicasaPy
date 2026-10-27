@@ -15,12 +15,11 @@ Minden tesztet −5 / 0 / +5 px ablakmagassággal futtatunk.
 from __future__ import annotations
 
 import re
-from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QObject
 
-import picasapy.app
+from support.menubar_components_6016 import menu_sources
 from tests.app.qml_functional._felsomenupontok_helpers_4329 import (
     _ABLAKMAGASSAG_ELTOLASOK,
     _kattints,
@@ -28,8 +27,6 @@ from tests.app.qml_functional._felsomenupontok_helpers_4329 import (
     _objektum,
     _varj,
 )
-
-_QML_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
 
 #: (menü-kulcs, a felső sáv fejlécének lehetséges feliratai, tétel objectName)
 _SAJAT_TETELEK = (
@@ -162,12 +159,12 @@ class TestForrasJelolese:
 
     @pytest.mark.parametrize(("_menu", "_feliratok", "nev"), _SAJAT_TETELEK)
     def test_a_forras_tetele_sajat_jelolest_visel(self, _menu, _feliratok, nev):
-        szoveg = (_QML_DIR / "PicasaMenuBar.qml").read_text(encoding="utf-8")
+        szoveg = menu_sources()
         blokk = re.search(
             rf'objectName: "{nev}"([^{{}}]*)',
             szoveg,
         )
-        assert blokk is not None, f"{nev} nem szerepel a PicasaMenuBar.qml-ben"
+        assert blokk is not None, f"{nev} nem szerepel a felső menük forrásában"
         assert "sajat: true" in blokk.group(1), (
             f"{nev} tételében nincs `sajat: true` a forrásban"
         )

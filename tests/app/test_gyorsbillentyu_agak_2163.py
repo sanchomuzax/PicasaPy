@@ -25,12 +25,13 @@ import re
 from pathlib import Path
 
 import pytest
+from support.menubar_components_6016 import menu_sources
 
 import picasapy.app
 
 _QML = Path(picasapy.app.__file__).parent / "qml"
 _MAIN = (_QML / "Main.qml").read_text(encoding="utf-8")
-_MENU = (_QML / "PicasaPy" / "PicasaMenuBar.qml").read_text(encoding="utf-8")
+_MENU = menu_sources()
 _TRAY = (_QML / "PicasaPy" / "TrayBar.qml").read_text(encoding="utf-8")
 
 #: A 10.3 tábla mind a 34 ága — a `Ctrl` mindegyiknél kötelező

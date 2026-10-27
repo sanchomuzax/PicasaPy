@@ -559,7 +559,7 @@ def test_rossz_kontextusnevvel_a_tagok_halottnak_latszanak(tmp_path: Path) -> No
 def test_a_bekotes_kivetelekor_uj_szakadas_keletkezik(tmp_path: Path) -> None:
     """Egy meglévő bekötés ideiglenes kivétele — az őr foga a valódi fán."""
     gyoker = _valodi_masolat(tmp_path)
-    menu = gyoker / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
+    menu = gyoker / "qml" / "PicasaPy" / "PicasaViewMenu.qml"
     menu.write_text(
         menu.read_text(encoding="utf-8").replace("toggleShowHidden", "toggleShowHiddenXX"),
         encoding="utf-8",

@@ -35,10 +35,12 @@ from pathlib import Path
 
 import pytest
 
-#: A kötelező tulajdonságok, amiket a tárolók kérhetnek. Sorrendben próbáljuk;
-#: az első, amivel felépül, nyer. Új `required property` esetén ide kell egy
-#: sor — a „nem épült fel" eset ezt hangosan meg is követeli.
+#: A kötelező tulajdonságok, amiket a párbeszéd-tárolók kérhetnek.
+#: A menüforrásokat nem példányosítjuk párbeszéd-tárolóként: két belső
+#: menü csak kommentben említi a Dialog szót, és a modulon kívülről nem
+#: érhető el közvetlen QML-típusként.
 _KOTELEZO_VALTOZATOK = ("", "appWindow: null", "panel: null", "appWindow: null; panel: null")
+_NEM_PARBESZED_TAROLOK = frozenset({"PicasaFileMenu", "PicasaToolsMenu"})
 
 _GYEREK = textwrap.dedent(
     '''
@@ -57,12 +59,14 @@ _GYEREK = textwrap.dedent(
     qInstallMessageHandler(lambda t, ctx, msg: uzenetek.append(msg))
     app = QGuiApplication(sys.argv[:1])
     qml = Path(picasapy.app.__file__).parent / "qml"
+    nem_parbeszed_tarolok = %(kizaras)r
     motor = QQmlEngine()
     motor.addImportPath(str(qml))
 
     tarolok = sorted(
         p.stem for p in (qml / "PicasaPy").glob("*.qml")
         if "Dialog" in p.read_text(encoding="utf-8")
+        and p.stem not in nem_parbeszed_tarolok
     )
     hosszu = ("Unable to save all files due to a disk error. "
               "IMG_20260827_183045_nyaralas_horvatorszag.jpg — "
@@ -112,7 +116,10 @@ _GYEREK = textwrap.dedent(
     print("STILUS", os.environ.get("QT_QUICK_CONTROLS_STYLE"))
     print("VEGE")
     '''
-) % {"valtozatok": _KOTELEZO_VALTOZATOK}
+) % {
+    "valtozatok": _KOTELEZO_VALTOZATOK,
+    "kizaras": tuple(_NEM_PARBESZED_TAROLOK),
+}
 
 
 @pytest.fixture(scope="module")

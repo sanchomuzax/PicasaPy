@@ -107,7 +107,7 @@ class TestAMenutetel:
 
         forras = (
             Path(picasapy.app.__file__).parent
-            / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
+            / "qml" / "PicasaPy" / "PicasaCreateMenu.qml"
         ).read_text(encoding="utf-8")
         i = forras.index('text: qsTr("Set as &Desktop...")')
         blokk = forras[i - 400 : i + 200]
