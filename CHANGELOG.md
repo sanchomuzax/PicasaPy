@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.265] - 2026-10-27
+
+- A fő vezérlő kódjának maradék témái (szűrők, mappanézet, rejtett mappák, navigáció, hálózati beállítások, diavetítés, állapot, tartalominfó) külön részekbe kerültek, a felület és a működés változatlan. (#6022).
+
 ## [0.9.264] - 2026-10-27
 
 - A képművelet-vezérlő kódja hat témarészre (album, effekt-vágólap, átnevezés, forgatás és tükrözés, ini-írás, XMP) került, a felület és a működés változatlan. (#6023).
