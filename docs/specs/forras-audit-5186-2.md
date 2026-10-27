@@ -789,3 +789,50 @@ Nincs külön új jegyjavaslat. A hiányzó eredeti mérések a #4440, #4482, #4
   teendő és elfogadási pontok a húsz jegyhez.
 - `docs/specs/00-index.md` - hivatkozás az új auditlapra.
 - `.codex-jelentes.md` - összesítő táblázat és a következő mérések listája.
+
+#### #6009 2. kör - a futásidejű s és r a bináris kódból (2026-10-27)
+
+**Ítélet ebben a körben: a QEMU-futtatás NEM készült, mert a döntő bemenet (a futásidejű `s`) ellentmond a fenti 0.0 állításnak, és az ecsetérték-leképezés nyitott.** Nem illesztettem paramétert. Az alábbi számok a binárisból kiolvasott képletből számolt értékek, nem QEMU-mérések.
+
+**HELYESBÍTÉS a 2026-10-27 előtti „s = 0.0" állításra:** a `0x00d68950` PE-fájlbeli alapértéke valóban 0.0, de a futó programban nem marad 0.0. A `0x00912ae0` setter egyetlen hívója a `0x00c32560` wrapper, amelynek címe a C++ dinamikus-inicializáló táblában áll; a CRT induláskor ezt a táblát lefuttatja. Az eddigi „nincs indexelt hívó" megállapítás a táblán keresztüli hívást nem látta. A #318/#319 perem-összevetés és a QEMU-s w-tábla (`s = 0`) ezért nem a futó program profilja.
+
+| Mennyiség | Bináris cím | Kiolvasott érték / képlet | Mérés |
+|---|---|---|---|
+| `R = min(0.9·r, r-1)` | `0x00910e98`-`0x00910ef3` (`fmul [0x00cf48b8]`, `fsub [0x00c7e328]`) | a `0x00cf48b8` = 0.8999999761581421, a `0x00c7e328` = 1.0 | disassembly |
+| `r` a köradatból | `0x00910e9f`-`0x00910ea2` (`mov eax,[ebp+0x18]`; `fld [eax+0x14]`) | `r = *(*(arg+0x18)+0x14)` | disassembly |
+| `a = s·R` | `0x00910ee3`-`0x00910eec` | `fld [ebp+0x14]` × R | disassembly |
+| smoothstep-ág | `0x00910fb1`-`0x00911003` | `w=0` ha `d<=a`; `w=1` ha `d>=R`; különben `t=(d-a)/(R-a)`, `w=t²(3-2t)` (`0x00cf39f8` = 3.0) | disassembly; a `s = 0` ág a QEMU-s táblával egyezik (lásd a fenti táblát) |
+| `s` írója (setter) | `0x00912ae0`; `fstp [0x00d68950]` a `0x00912afa`-nál | arg2 → `0xd68950` (arg1 → `0xd68948`, arg3 → `0xd68954`) | disassembly |
+| `s` hívója | `0x00c32580` `call 0x00912ae0`, a `0x00c32560` függvényben | wrapper-argumentumok: `0.2` (`0xc7e4b0`), `0.5` (`0xc7dafc`), `0.001` (`0xc7999c`) → `0xd68948 = 0.2`, **`0xd68950 = 0.5`**, `0xd68954 = 0.001` | disassembly |
+| a wrapper induláskor fut | `0x00c416b4` bejegyzés (`0x00c32560`) a `0x00c40aec`-`0x00c418c0` táblában; a ciklus `0x00bef61c`-`0x00bef63a` minden nem-nulla bejegyzést hív | `cinit` közvetlenül a `main` előtt | disassembly; a futás nincs QEMU-ban megerősítve |
+| ecsetérték (konstruktor) | `0x0060a763` → `0x00c7c608` | `0.25` (`00 00 80 3e`) | bináris |
+| sugárképlet | `0x0060b430` (spec: `2026-10-27-5975-retus-ecset.txt`): `Rképernyő = max(3·max(z,1), min(100, min(w,h)/2)·s·z)`, `Rforrás = Rképernyő/z` | ha `min(w,h)/2 >= 100` és `100·s·z >= 3·max(z,1)`, akkor **`r = 100·s`, zoomtól független** | a képlet a #5975 körből származik; ebben a körben nem olvastam újra |
+| zoom a job-319-en | `kepernyo__12.png`: „Zoomed to 80%", export 1024×1024 | `z = 0.8` | képernyőkép + export mérete |
+| ecset-csúszka a job-319-en | `kepernyo__12.png` (nagyított kivágás): a fogantyú közepe kb. x=134, a sáv kb. x=80,7-187,7 közötti mozgástartományban | kb. 0,50 a sáv közepén | **NYITOTT**: a csúszka-érték → `s` leképezés nincs meg (a `brushslider/scaleslider` `Property slider 0`, a tartomány a `.tre`-ben nincs) |
+
+**Következmény az r-re:** `r = 100·s_ecset`, és a zoom kiesik. Ezért a 25 px nem egy másik skála, hanem a 0.25 ecsetértékből jön. Ha a job-319 ecsetértéke valójában 0.5 (ahogy a csúszka állása sugallja), akkor `r = 50`, és a profil lényegesen más. A job-319 szkriptje nem nyúl a csúszkához, tehát a konstruktor-érték (0.25) az alapfeltevés, a csúszka-állás viszont ellentmond neki. Ezt a csúszka-leképezés dönti el.
+
+**Számolt súlyprofil** (`w(d)`, a binárisból kiolvasott képlettel; `d` = a középponttól mért távolság; NEM QEMU-mérés, NEM Poisson-megoldás):
+
+| eset | r | R | s (futás) | a = s·R | w(16) | w(18) | w(20) | w(22) | w(24) | w(26) | w(28) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| A: régi spec (s = 0) | 25 | 22,5 | 0 | 0 | 0,797849 | 0,896000 | 0,965706 | 0,998540 | 1 | 1 | 1 |
+| B: futásidejű s = 0,5, r = 25 | 25 | 22,5 | 0,5 | 11,25 | 0,384274 | 0,648000 | 0,873800 | 0,994250 | 1 | 1 | 1 |
+| C: futásidejű s = 0,5, r = 50 (ha az ecset 0,5) | 50 | 45 | 0,5 | 22,5 | 0 | 0 | 0 | 0 | 0,012741 | 0,065064 | 0,150047 |
+
+Az A oszlop a QEMU-s mért táblával (spec, fent) egyezik minden sorban (pl. `d=16`: 0,797849119). Ez a formula a=0 ágát igazolja, az `a > 0` ágat (B, C) csak a disassembly, nem a futtatás támasztja alá.
+
+**Gyűrűnként (2 px-es, 16-28):** a gyűrű-középpontok (16,5; 18,5; …; 26,5) súlya A: 0,824593; 0,916423; 0,977701; 1,000000; 1,000000; 1,000000. B: 0,450074; 0,710639; 0,916423; 1,000000; 1,000000; 1,000000. C: 0; 0; 0; 0; 0,022299; 0,083578.
+
+**Ami NEM mérhető a w-ből:** a gyűrűnkénti eltérés (20,40; 13,59; …) a teljes Poisson-megoldásból jön, nem a w-ből közvetlenül. A w-profil alapján nem lehet megmondani, melyik eset adja a mért gyűrűket. Ehhez a `0x00910e90` QEMU-futtatás és a Poisson-kimenet összevetése kell.
+
+**Nyitott kérdések (mindegyik megszerzési úttal):**
+1. **Ecset-csúszka → `s`:** a `brushslider/scaleslider` tartománya és a `0x005f80d0`/`0x0060b350` útja. Megszerzés: a csúszka-eseményt író függvény kiolvasása, vagy egy Colab-feladat, amely a csúszkát ismert állásba állítja, és a `0x0060a980` ekkor használt `s`-ét mérjük (a képernyőn látható sugár 20 px = 0,25, 40 px = 0,5 lenne).
+2. **Futó `s` (0xd68950):** a wrapper induláskori futásának QEMU-megerősítése (`0x00c32560`-t lefuttatni a CRT-táblán keresztül, és kiolvasni `0xd68950`-et).
+3. **`0x00910e90` QEMU-futtatás `a > 0` ággal** (`s = 0,5`): a `this`-objektum vtable-stubjaival (`[eax+0x10]`, `[eax+0x14]`, `[eax+0x18]`, `[eax+0x1c]`), ami a `qemu-picasa-verem-es-stub-csapdak.md` szerint külön buktatókat hoz.
+
+**Mért tény összefoglalva:** nincs új QEMU-érték. A binárisból kiolvasott tények: (a) `r = 100·s_ecset`; (b) a futó `s = 0,5` (nem 0,0); (c) a job-319 csúszka-állása kb. 0,5, ami ellentmond a 0,25 konstruktor-alapfeltevésnek. (c) és (a) együtt azt jelenti, hogy az `r` lehet 50 is, nem csak 25.
+
+**Bizonyítottsági fok:** (a) és (b) erős (disassembly, több ponton keresztül követhető); a futtatás hiánya miatt (a) és (b) együtt „megerősített" nem lehet; (c) feltételes; a gyűrű-összevetés nyitott.
+
+**Fejlesztői teendő:** NINCS még. Előfeltétel: az 1. és 2. nyitott kérdés. Nem javasolt a `render/retouch.py` módosítása a számolt profil alapján, amíg a `s` és az `r` nincs bizonyítva.
