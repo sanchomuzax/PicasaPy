@@ -14,7 +14,7 @@ from tests.support.qml_blokk import blokk_horgonyra
 
 _QML = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml/PicasaPy"
 _HEADER = (_QML / "LightboxHeader.qml").read_text(encoding="utf-8")
-_TRAY = (_QML / "TrayBar.qml").read_text(encoding="utf-8")
+_TRAY_MUVELETSOR = (_QML / "TrayActionArea.qml").read_text(encoding="utf-8")
 _KEEP_ALIVE: list[QObject] = []
 
 
@@ -53,7 +53,8 @@ def test_a_diavetites_gombja_az_eredeti_sugot_adja():
 
 
 def test_a_mozgofilm_gombja_az_eredeti_sugot_adja():
-    blokk = blokk_horgonyra(_TRAY, "trayMovieButton")
+    # #6050: a Movie gomb a TrayActionArea komponensbe került.
+    blokk = blokk_horgonyra(_TRAY_MUVELETSOR, "trayMovieButton")
     assert 'ToolTip.text: qsTr("Create Movie Presentation")' in blokk
 
 

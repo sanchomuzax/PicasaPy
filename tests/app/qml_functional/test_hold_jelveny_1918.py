@@ -108,7 +108,8 @@ class TestAJelveny:
 
         qml = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
         racs = (qml / "ThumbDelegate.qml").read_text(encoding="utf-8")
-        talca = (qml / "TrayBar.qml").read_text(encoding="utf-8")
+        # #6050: a megtartott kijelölés jelvénye a TrayScratchPanel része.
+        talca = (qml / "TrayScratchPanel.qml").read_text(encoding="utf-8")
         assert 'source: "icons/hold-pin.svg"' in racs
         assert 'source: "icons/hold-pin.svg"' in talca
 
@@ -116,7 +117,7 @@ class TestAJelveny:
         import picasapy.app
 
         talca = (
-            Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
+            Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayScratchPanel.qml"
         ).read_text(encoding="utf-8")
         kezdet = talca.index('objectName: "trayHoldMark"')
         assert "kicsomagolt" in talca[kezdet - 1200 : kezdet]

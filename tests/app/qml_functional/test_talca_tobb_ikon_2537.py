@@ -101,7 +101,7 @@ def test_a_fajl_letezik():
 def test_a_gomb_hivatkozik_ra():
     qml = (
         Path(__file__).resolve().parents[3]
-        / "src/picasapy/app/qml/PicasaPy/TrayBar.qml"
+        / "src/picasapy/app/qml/PicasaPy/TrayActionArea.qml"
     ).read_text(encoding="utf-8")
     assert 'iconSource: "icons/tray-more.svg"' in qml, (
         "a `trayMoreButton` nem hivatkozik a mért ikonra — a #2493 óta ikon "

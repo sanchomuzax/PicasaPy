@@ -226,7 +226,8 @@ class TestAForrasSzintuOr:
         from pathlib import Path
 
         forras = (
-            Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
+            # #6050: a könyvtári nagyítósor a felső tálcasor komponensébe került.
+            Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "TrayTopRow.qml"
         ).read_text(encoding="utf-8")
         blokk = blokk_horgonyra(forras, 'id: trayLibraryZoomRow')
         assert 'text: "−"' not in blokk

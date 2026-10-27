@@ -59,7 +59,7 @@ class TestAVizjelMINDIG_latszik:
 
         forras = (
             Path(__file__).resolve().parents[3]
-            / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "TrayBar.qml"
+            / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "TrayScratchPanel.qml"
         ).read_text(encoding="utf-8")
         kezdet = forras.index('objectName: "trayScratchLabel"')
         blokk = forras[kezdet : forras.index("}", kezdet)]

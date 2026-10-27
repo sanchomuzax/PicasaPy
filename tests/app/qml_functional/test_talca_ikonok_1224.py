@@ -41,7 +41,7 @@ from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 IKONOK = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "icons"
 _TRAYBAR = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
+    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayTopRow.qml"
 ).read_text(encoding="utf-8")
 
 #: MÉRT méretek (#1914 réteg-leltár)

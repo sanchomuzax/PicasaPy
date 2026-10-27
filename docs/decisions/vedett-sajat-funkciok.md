@@ -128,7 +128,7 @@ kódtól).
   **Eszközök ▸ Arcok keresése…** menütétel. Az eredetiben az arckeresés háttérszál
   volt, menüparancs nélkül (`docs/specs/ui-audit-menus.md`, 7. szakasz); a
   menütétel a kék jelölést (`sajat: true`) kapja.
-- `src/picasapy/app/qml/PicasaPy/TrayBar.qml` (#70) — az alsó kék
+- `src/picasapy/app/qml/PicasaPy/TrayInfoBar.qml` (#70, #6050) — az alsó kék
   állapotsáv (`infoBar`) `busySweep` fény-hullám animációja háttérmunka
   (indexelés, bélyegkép-gyártás) közben. Az eredetiben nincs ilyen vizuális
   visszajelzés — saját UX-kiegészítés, felhasználói panasz nyomán (ld. #70
