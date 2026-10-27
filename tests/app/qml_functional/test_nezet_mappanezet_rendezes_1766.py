@@ -33,14 +33,11 @@ ugyanaz a hiba lenne, fordítva.
 from __future__ import annotations
 
 import re
-from pathlib import Path
 
-import picasapy.app
 from tests.support.qml_blokk import blokk_horgonyra
+from support.menubar_components_6016 import menu_sources
 
-_QML = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
-).read_text(encoding="utf-8")
+_QML = menu_sources()
 
 #: (objectName, angol forrásszöveg) — a felvételen mért SORRENDBEN.
 OTOS = (
@@ -136,11 +133,13 @@ class TestABekotes:
         marad — a két végpont külön-külön attól még „helyesnek" látszik.
         """
         blokk = _almenu()
-        assert re.search(r"rendezes:\s*\n?\s*\(controller && controller\.paneSort",
-                         blokk), (
+        assert re.search(
+            r"rendezes:\s*\n?\s*\(controllerRef && controllerRef\.paneSort",
+            blokk,
+        ), (
             "a menü `rendezes` tulajdonsága nem a vezérlő `paneSort`-jából jön"
         )
-        assert "controller.paneSortReverse" in blokk, (
+        assert "controllerRef.paneSortReverse" in blokk, (
             "a megfordítás pipája nem a vezérlő állapotára köt"
         )
         for nev, _ in OTOS[:4]:

@@ -36,7 +36,7 @@ _TOOLBAR = (
 #: menütételek MEGLÉTÉT és a gyorsbillentyűjüket méri, arra nézve jelölés.
 _MENU = (
     Path(picasapy.app.__file__).parent
-    / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
+    / "qml" / "PicasaPy" / "PicasaViewMenu.qml"
 ).read_text(encoding="utf-8").replace("&", "")
 _MAIN = (
     Path(picasapy.app.__file__).parent / "qml" / "Main.qml"

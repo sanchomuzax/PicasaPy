@@ -23,10 +23,11 @@ from pathlib import Path
 import pytest
 
 from tests.support.qml_blokk import blokk_horgonyra
+from support.menubar_components_6016 import menu_sources
 
-_QML = (
+_QML_DIR = (
     Path(__file__).resolve().parents[2]
-    / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
+    / "src" / "picasapy" / "app" / "qml" / "PicasaPy"
 )
 
 #: Megszűnt szolgáltatás — véglegesen szürke.
@@ -72,7 +73,7 @@ NYUGDIJAZOTT = (
 def forras() -> str:
     # #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma — ez a
     # fájl a kivezetett menütételek MEGLÉTÉT méri, arra nézve jelölés.
-    return _QML.read_text(encoding="utf-8").replace("&", "")
+    return menu_sources().replace("&", "")
 
 
 def _tetel_sora(forras: str, felirat: str) -> str:
@@ -116,7 +117,7 @@ class TestAKetFeluletUgyanaztMondja:
 
     def test_a_feltoltes_mindket_helyen_nyugdijazott(self, forras: str) -> None:
         kontextus = (
-            _QML.parent / "PhotoContextMenu.qml"
+            _QML_DIR / "PhotoContextMenu.qml"
         ).read_text(encoding="utf-8")
 
         assert "retired: true" in kontextus

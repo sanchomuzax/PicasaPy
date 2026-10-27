@@ -7243,97 +7243,60 @@ picasapy-origin-key: stringres:RestoreDialog::cantlaunch</extracomment>
     <context>
         <name>FolderPane</name>
         <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="1490" />
-            <source>Remove People</source>
-            <extracomment>DeleteMessage::UnknownPeopleTitle
-picasapy-origin: picasa
-picasapy-origin-key: stringres:DeleteMessage::UnknownPeopleTitle</extracomment>
-            <translation>Eliminaţi persoane</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="1506" />
-            <source>Are you sure you want to delete the people album "%1"?</source>
-            <extracomment>DeleteMessage::DeletePeopleAlbum
-picasapy-origin: picasapy</extracomment>
-            <translation>Sigur doriţi să ştergeţi albumul de persoane „%1”?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="1514" />
-            <source>Delete tagged faces from synced Picasa Web albums, too</source>
-            <extracomment>ThumbUI::DeleteOnlinePeople
-picasapy-origin: picasa
-picasapy-origin-key: stringres:ThumbUI::DeleteOnlinePeople</extracomment>
-            <translation>Ștergeţi inclusiv chipurile etichetate din albumele Picasa Web Albums sincronizate</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="1535" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_Cancel</extracomment>
-            <translation>Anulați</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="183" />
             <source>Calculating…</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:il_BurnPanel::calculating</extracomment>
             <translation>Se calculează...</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="186" />
             <source>All Files are backed up in this set</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Text2(thumbui/lightbox_bgtext)</extracomment>
             <translation>Toate fişierele sunt salvate în acest grup</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="182" />
             <source>Create a Set or use an existing one</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Text2(publish/backupcdheader)</extracomment>
             <translation>Creaţi un grup sau utilizaţi unul deja existent</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="105" />
             <source>Default View</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ViewRoot::AllFolders</extracomment>
             <translation>Vizualizare prestabilită</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="107" />
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="110" />
             <source>My Computer</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Computerul meu</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="579" />
             <source>Do you want to remove the folder %1 and its subfolders?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Doriţi să eliminaţi dosarul %1 şi subdosarele sale?</translation>
         </message>
         <message>
-            <source>Remove Folder</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI:ManageAlbumYesButton</extracomment>
-            <translation>Eliminaţi dosarul</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="234" />
             <source>Are you sure you want to move the folder "%1" and its contents to the Recycle Bin?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Sigur doriţi să mutaţi dosarul „%1” şi conţinutul său în Coşul de reciclare?</translation>
         </message>
         <message>
-            <source>Delete Folder</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ştergeţi dosarul</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="355" />
             <source>Are you sure you want to delete the album "%1"?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Sigur doriţi să ştergeţi albumul „%1”?</translation>
         </message>
         <message>
-            <source>Delete Album</source>
-            <extracomment>DeleteMessage::DeleteAlbumTitle;DeleteMessage::DeleteAlbumYesButton
-picasapy-origin: picasapy</extracomment>
-            <translation>Ştergeţi albumul</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="432" />
             <source>You are about to close your last collection. No pictures will be shown in the thumbnail area. Do you want to continue?
 
 To open a collection, double-click its name or click the icon next to it.</source>
@@ -7343,45 +7306,10 @@ To open a collection, double-click its name or click the icon next to it.</sourc
 Pentru a deschide o colecţie, faceţi dublu clic pe numele ei sau faceţi clic pe pictograma alăturată.</translation>
         </message>
         <message>
-            <source>Close Last Collection?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CLOSING_LAST_COLLECTION_TITLE</extracomment>
-            <translation>Închideţi ultima colecţie?</translation>
-        </message>
-        <message>
-            <source>Close Collection</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CloseCollection::YesButon</extracomment>
-            <translation>Închideţi colecţia</translation>
-        </message>
-        <message>
-            <source>Move Folder</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mutaţi dosarul</translation>
-        </message>
-        <message>
             <source>Exported Pictures</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_EXPORTED_CATEGORY</extracomment>
             <translation>Fotografii exportate</translation>
-        </message>
-        <message>
-            <source>Ignored people</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CAlbumLabel::Ignored</extracomment>
-            <translation>Persoanele ignorate</translation>
-        </message>
-        <message>
-            <source>Ignored</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbDB::ignorefacealbum</extracomment>
-            <translation>Ignorată</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="586" />
-            <source>Currently unavailable — the folder stays in the database, thumbnails come from the cache.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Momentan indisponibil — dosarul rămâne în baza de date, iar miniaturile provin din memoria cache.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="67" />
@@ -7398,7 +7326,7 @@ picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
             <translation>Fotografii cu stea</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="112" />
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="28" />
             <source>Search results for "%1" (%2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Rezultatele căutării pentru „%1” (%2)</translation>
@@ -7411,12 +7339,6 @@ picasapy-origin-key: stringres:CAlbumList::liststicky2;stringres:CAlbumState::Fo
             <translation>Dosare</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="178" />
-            <source>People</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Persoane</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="189" />
             <source>Projects</source>
             <extracomment>picasapy-origin: picasa
@@ -7424,28 +7346,9 @@ picasapy-origin-key: stringres:IDS_PROJECTS</extracomment>
             <translation>Proiecte</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="309" />
-            <source>Other</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:Other;stringres:EXIF::Other;stringres:ytICDVDR::MFOther</extracomment>
-            <translation>Altele</translation>
-        </message>
-        <message>
             <source>Remove this folder from PicasaPy? The files stay on disk.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Eliminaţi acest dosar din PicasaPy? Fişierele rămân pe disc.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" />
-            <source>Are you sure you want to remove the collection “%1”? All folders in it will be moved to the collection “%2”.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Sigur doriţi să eliminaţi colecţia „%1”? Toate dosarele din ea vor fi mutate în colecţia „%2”.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" />
-            <source>Folders on Disk</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Dosare de pe disc</translation>
         </message>
         <message>
             <source>You can drag and drop pictures here to make a new album.</source>
@@ -7453,15 +7356,151 @@ picasapy-origin-key: stringres:AspectRatioList:Other;stringres:EXIF::Other;strin
 picasapy-origin-key: stringres:CAlbumList::newalbumprompt</extracomment>
             <translation>Aveţi posibilitatea să trageţi şi să plasaţi fotografii aici pentru a realiza un album nou.</translation>
         </message>
+    </context>
+    <context>
+        <name>FolderPaneContent</name>
         <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="59" />
+            <source>People</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Persoane</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="97" />
             <source>Scanning for faces... %1% complete</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Se scanează pentru detectarea chipurilor... %1% finalizat</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="99" />
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="113" />
             <source>Unnamed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nedenumite</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="208" />
+            <source>Ignored</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ignorefacealbum</extracomment>
+            <translation>Ignorată</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="224" />
+            <source>Ignored people</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumLabel::Ignored</extracomment>
+            <translation>Persoanele ignorate</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="500" />
+            <source>Other</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Other;stringres:EXIF::Other;stringres:ytICDVDR::MFOther</extracomment>
+            <translation>Altele</translation>
+        </message>
+    </context>
+    <context>
+        <name>FolderPaneMenus</name>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="63" />
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="64" />
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="142" />
+            <source>Delete Album</source>
+            <extracomment>DeleteMessage::DeleteAlbumTitle;DeleteMessage::DeleteAlbumYesButton
+picasapy-origin: picasapy</extracomment>
+            <translation>Ştergeţi albumul</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="106" />
+            <source>Remove People</source>
+            <extracomment>DeleteMessage::UnknownPeopleTitle
+picasapy-origin: picasa
+picasapy-origin-key: stringres:DeleteMessage::UnknownPeopleTitle</extracomment>
+            <translation>Eliminaţi persoane</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="122" />
+            <source>Are you sure you want to delete the people album "%1"?</source>
+            <extracomment>DeleteMessage::DeletePeopleAlbum
+picasapy-origin: picasapy</extracomment>
+            <translation>Sigur doriţi să ştergeţi albumul de persoane „%1”?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="130" />
+            <source>Delete tagged faces from synced Picasa Web albums, too</source>
+            <extracomment>ThumbUI::DeleteOnlinePeople
+picasapy-origin: picasa
+picasapy-origin-key: stringres:ThumbUI::DeleteOnlinePeople</extracomment>
+            <translation>Ștergeţi inclusiv chipurile etichetate din albumele Picasa Web Albums sincronizate</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="151" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
+            <translation>Anulați</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="208" />
+            <source>Move Folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mutaţi dosarul</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="241" />
+            <source>Are you sure you want to move the folder "%1" and its contents to the Recycle Bin?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sigur doriţi să mutaţi dosarul „%1” şi conţinutul său în Coşul de reciclare?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="315" />
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="316" />
+            <source>Delete Folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ştergeţi dosarul</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="331" />
+            <source>Remove Folder</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI:ManageAlbumYesButton</extracomment>
+            <translation>Eliminaţi dosarul</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="349" />
+            <source>Close Last Collection?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CLOSING_LAST_COLLECTION_TITLE</extracomment>
+            <translation>Închideţi ultima colecţie?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="350" />
+            <source>Close Collection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CloseCollection::YesButon</extracomment>
+            <translation>Închideţi colecţia</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="446" />
+            <source>Are you sure you want to remove the collection “%1”? All folders in it will be moved to the collection “%2”.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sigur doriţi să eliminaţi colecţia „%1”? Toate dosarele din ea vor fi mutate în colecţia „%2”.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="450" />
+            <source>Folders on Disk</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Dosare de pe disc</translation>
+        </message>
+    </context>
+    <context>
+        <name>FolderPaneTreeRow</name>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneTreeRow.qml" line="242" />
+            <source>Currently unavailable — the folder stays in the database, thumbnails come from the cache.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Momentan indisponibil — dosarul rămâne în baza de date, iar miniaturile provin din memoria cache.</translation>
         </message>
     </context>
     <context>
@@ -10410,179 +10449,6 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
     <context>
         <name>PicasaMenuBar</name>
         <message>
-            <source>My &amp;Computer</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Computerul meu</translation>
-        </message>
-        <message>
-            <source>My &amp;Pictures</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Fotografiile &amp;mele</translation>
-        </message>
-        <message>
-            <source>My Do&amp;cuments</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Do&amp;cumentele mele</translation>
-        </message>
-        <message>
-            <source>&amp;Desktop</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Desktop</translation>
-        </message>
-        <message>
-            <source>&amp;Shortcuts</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::Shortcuts;stringres:eMenuView::Shortcuts</extracomment>
-            <translation>&amp;Comenzi rapide</translation>
-        </message>
-        <message>
-            <source>Sort &amp;People by Name</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYNAME</extracomment>
-            <translation>Sortaţi &amp;persoane după nume</translation>
-        </message>
-        <message>
-            <source>Sort People by &amp;Amount</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNT</extracomment>
-            <translation>Sortaţi persoane în funcţie de &amp;volum</translation>
-        </message>
-        <message>
-            <source>Sort People by Top &amp;10</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNTTOP10</extracomment>
-            <translation>Sortaţi persoanele în funcţie de cele mai importante &amp;10 dintre acestea</translation>
-        </message>
-        <message>
-            <source>Write faces to XMP...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_WRITE_XMP_FACES</extracomment>
-            <translation>Scrieţi etichetele de chipuri în XMP...</translation>
-        </message>
-        <message>
-            <source>Publish via FTP...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
-            <translation>Publicaţi prin FTP...</translation>
-        </message>
-        <message>
-            <source>Show &amp;tag as album...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_SEARCHTOKEN</extracomment>
-            <translation>Afişaţi &amp;eticheta ca album...</translation>
-        </message>
-        <message>
-            <source>&amp;Passport photo...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_PASSPORT</extracomment>
-            <translation>Fotografie &amp;paşaport...</translation>
-        </message>
-        <message>
-            <source>Save &amp;search results...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_SAVESEARCH</extracomment>
-            <translation>Salvaţi rezultatele &amp;căutării...</translation>
-        </message>
-        <message>
-            <source>Search for...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Căutaţi...</translation>
-        </message>
-        <message>
-            <source>&amp;Red</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_RED</extracomment>
-            <translation>&amp;Roşu</translation>
-        </message>
-        <message>
-            <source>&amp;Orange</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_ORANGE</extracomment>
-            <translation>&amp;Portocaliu</translation>
-        </message>
-        <message>
-            <source>&amp;Yellow</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_YELLOW</extracomment>
-            <translation>&amp;Galben</translation>
-        </message>
-        <message>
-            <source>&amp;Green</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_GREEN</extracomment>
-            <translation>&amp;Verde</translation>
-        </message>
-        <message>
-            <source>&amp;Blue</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_BLUE</extracomment>
-            <translation>&amp;Albastru</translation>
-        </message>
-        <message>
-            <source>&amp;Purple</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_PURPLE</extracomment>
-            <translation>&amp;Purpuriu</translation>
-        </message>
-        <message>
-            <source>Show Duplicate Files</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_DUPES</extracomment>
-            <translation>Afişaţi fişiere dubluri</translation>
-        </message>
-        <message>
-            <source>Choose database location...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_MOVE_DATABASE</extracomment>
-            <translation>Alegeţi locaţia bazei de date...</translation>
-        </message>
-        <message>
-            <source>Save &amp;As...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEAS</extracomment>
-            <translation>Salvaţi &amp;ca...</translation>
-        </message>
-        <message>
-            <source>Save a Cop&amp;y</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEACOPY</extracomment>
-            <translation>Salvaţi o copi&amp;e</translation>
-        </message>
-        <message>
-            <source>Clear Geotags</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
-            <translation>Ștergeţi geoetichetele</translation>
-        </message>
-        <message>
-            <source>Sort by &amp;Creation Date</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Sortaţi după &amp;Data creării</translation>
-        </message>
-        <message>
-            <source>Sort by &amp;Recent Changes</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_VIEWBYRECENT;stringres:eMenuView::ID_VIEWBYRECENT</extracomment>
-            <translation>Sortaţi după &amp;Modificări recente</translation>
-        </message>
-        <message>
-            <source>Sort by &amp;Size</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_VIEWBYSIZE;stringres:eMenuView::ID_VIEWBYSIZE</extracomment>
-            <translation>Sortaţi după &amp;dimensiune</translation>
-        </message>
-        <message>
-            <source>Sort by &amp;Name</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Sortaţi după &amp;nume</translation>
-        </message>
-        <message>
-            <source>Re&amp;verse sort</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_VIEWREVERSE;stringres:eMenuView::ID_VIEWREVERSE</extracomment>
-            <translation>O&amp;rdine inversă</translation>
-        </message>
-        <message>
             <source>Remove from Album</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
@@ -10595,63 +10461,9 @@ picasapy-origin-key: stringres:PplAlbumPhoto::ID_FILE_DELETEFROMDISK</extracomme
             <translation>&amp;Eliminaţi din album</translation>
         </message>
         <message>
-            <source>Find Faces...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CAlbumList::Finding0</extracomment>
-            <translation>Se scanează pentru detectare de chipuri...</translation>
-        </message>
-        <message>
             <source>&amp;Search for</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>&amp;Căutaţi</translation>
-        </message>
-        <message>
-            <source>&amp;Red</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_RED</extracomment>
-            <translation>&amp;Roşu</translation>
-        </message>
-        <message>
-            <source>&amp;Orange</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_ORANGE</extracomment>
-            <translation>&amp;Portocaliu</translation>
-        </message>
-        <message>
-            <source>&amp;Yellow</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_YELLOW</extracomment>
-            <translation>&amp;Galben</translation>
-        </message>
-        <message>
-            <source>&amp;Green</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_GREEN</extracomment>
-            <translation>&amp;Verde</translation>
-        </message>
-        <message>
-            <source>&amp;Blue</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_BLUE</extracomment>
-            <translation>&amp;Albastru</translation>
-        </message>
-        <message>
-            <source>&amp;Purple</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_PURPLE</extracomment>
-            <translation>&amp;Purpuriu</translation>
-        </message>
-        <message>
-            <source>Export to Google Earth File</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_EXPORT_EARTH</extracomment>
-            <translation>Exportaţi în fişier Google Earth</translation>
-        </message>
-        <message>
-            <source>View in Google Earth...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_VIEW_EARTH</extracomment>
-            <translation>Vizualizaţi în Google Earth...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
@@ -10661,274 +10473,10 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>Conectaţi-vă utilizând Contul Google</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="37" />
-            <source>&amp;File</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile</extracomment>
-            <translation>&amp;Fişier</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="38" />
-            <source>&amp;New Album...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Album nou...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="39" />
-            <source>Add Folder to PicasaPy...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_TOOLS_INCLUDEEXCLUDEFOLDERS</extracomment>
-            <translation>Adăugaţi dosarul la PicasaPy...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="40" />
-            <source>Add &amp;File to PicasaPy...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
-            <translation>Adăugaţi un &amp;fişier la PicasaPy...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="41" />
-            <source>&amp;Import From...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_IMPORTPICTURE</extracomment>
-            <translation>I&amp;mportaţi din...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="45" />
-            <source>&amp;Rename...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Redenumiţi...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="49" />
-            <source>&amp;Save</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Salvaţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="50" />
-            <source>Rever&amp;t</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Reveniţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="53" />
-            <source>Export Pi&amp;cture to Folder...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_EXPORTTOFOLDER</extracomment>
-            <translation>Exportaţi fo&amp;tografia în dosarul...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="60" />
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="232" />
-            <source>Locate on Disk</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Localizaţi pe disc</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="66" />
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ştergeţi de pe disc</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
-            <source>&amp;Print...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Imprimaţi...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="72" />
-            <source>&amp;E-Mail...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;E-mail...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="74" />
-            <source>E&amp;xit</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>I&amp;eşiţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="77" />
-            <source>&amp;Edit</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuEdit</extracomment>
-            <translation>&amp;Editaţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="295" />
-            <source>Undo Paste All Effects</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Anulaţi lipirea tuturor efectelor</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="301" />
-            <source>Undo Batch Edit</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Anulaţi editarea în lot</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="80" />
-            <source>C&amp;opy All Effects</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_COPYALLEFFECTS</extracomment>
-            <translation>C&amp;opiaţi toate efectele</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="86" />
-            <source>Paste All E&amp;ffects</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTEALLEFFECTS</extracomment>
-            <translation>Inseraţi toate e&amp;fectele</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92" />
-            <source>Select All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Selectaţi tot</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="96" />
-            <source>Select &amp;Starred</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuEdit::ID_SELECTSTAR</extracomment>
-            <translation>Selectaţi &amp;elementele cu stea</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="99" />
-            <source>&amp;Invert Selection</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_SELECT_INVERT</extracomment>
-            <translation>&amp;Inversaţi selecţia</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="101" />
-            <source>C&amp;lear Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>E&amp;liminaţi selecţia</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106" />
-            <source>&amp;View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView</extracomment>
-            <translation>&amp;Vizualizaţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="107" />
-            <source>&amp;Library View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_LIGHTBOXVIEW</extracomment>
-            <translation>&amp;Vizualizaţi fototeca</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="110" />
-            <source>S&amp;mall Thumbnails</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_SMALLTHUMBNAILS</extracomment>
-            <translation>&amp;Miniaturi mici</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="114" />
-            <source>&amp;Normal Thumbnails</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_LARGETHUMBNAILS</extracomment>
-            <translation>Miniaturi &amp;normale</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="117" />
-            <source>&amp;Edit View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_PICTURE</extracomment>
-            <translation>Modul &amp;Editare</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="121" />
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="249" />
-            <source>Properties</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Proprietăţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="128" />
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="204" />
-            <source>&amp;Tags</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Etichete</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="133" />
-            <source>People</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Persoane</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="134" />
-            <source>&amp;Places</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Locaţii</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="138" />
-            <source>&amp;Slideshow</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Slideshow</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141" />
-            <source>Ti&amp;meline</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Or&amp;dine cronologică</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="144" />
-            <source>&amp;Hidden Pictures</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_SHOWHIDDEN</extracomment>
-            <translation>&amp;Fotografii ascunse</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152" />
-            <source>Dark Theme</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Temă întunecată</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="150" />
-            <source>&amp;Folder View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::FolderView</extracomment>
-            <translation>Vedere &amp;dosar</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Flat Folder View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_FOLDERS</extracomment>
-            <translation>Vedere &amp;dosar desfăşurat</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Tree View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_ALL</extracomment>
-            <translation>&amp;Vizualizare arborescentă</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Simplified Tree View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_VIEW_WATCHED;stringres:eMenuView::ID_VIEW_WATCHED</extracomment>
-            <translation>&amp;Vizualizare arborescentă simplificată</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>Show &amp;Thumbnails in Library</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_VIEW_THUMBNAILS;stringres:eMenuView::ID_VIEW_THUMBNAILS</extracomment>
-            <translation>Afişaţi &amp;miniaturi în fototecă</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152" />
@@ -10964,268 +10512,6 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWREVERSE;stringres:eMenuView::ID
             <translation>O&amp;rdine inversă</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="184" />
-            <source>Thumbnail &amp;Caption</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ThumbnailCaption</extracomment>
-            <translation>&amp;Legendă pentru miniatură</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="186" />
-            <source>None</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
-            <translation>Niciunul</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="192" />
-            <source>&amp;Filename</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nume de &amp;fişier</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="198" />
-            <source>&amp;Caption</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Legendă</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="210" />
-            <source>&amp;Resolution</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_CAPRES</extracomment>
-            <translation>&amp;Rezoluţie</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="218" />
-            <source>F&amp;older</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>D&amp;osar</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1636" />
-            <source>&amp;Album</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Album</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="219" />
-            <source>&amp;Edit Description...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuLabelFolder::ID_ALBUM_EDITCAPTIONS</extracomment>
-            <translation>&amp;Editaţi descrierea...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1640" />
-            <source>&amp;Edit Album Description...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_ALBUM_EDITCAPTIONS</extracomment>
-            <translation>&amp;Editaţi descrierea albumului...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="222" />
-            <source>&amp;View Slideshow</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuLabelFolder::ID_ALBUM_SLIDESHOW</extracomment>
-            <translation>&amp;Vizualizaţi slideshow-ul</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="227" />
-            <source>Refresh &amp;Thumbnails</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Actualizaţi &amp;miniaturi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="230" />
-            <source>&amp;Sort By</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuLabelFolder::SortBy</extracomment>
-            <translation>&amp;Sortaţi după</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="233" />
-            <source>&amp;Remove from PicasaPy...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Eliminaţi din PicasaPy...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="236" />
-            <source>&amp;Picture</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Fotografie</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="237" />
-            <source>&amp;View and Edit</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Vizualizaţi şi editaţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="238" />
-            <source>&amp;Batch Edit</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuPicture::BatchEdit</extracomment>
-            <translation>&amp;Editaţi lotul</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="253" />
-            <source>A&amp;uto Contrast</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>A&amp;justaţi automat contrastul</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="259" />
-            <source>&amp;Auto Color</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Ajustaţi automat culoarea</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265" />
-            <source>Auto Red Eye Correction</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_AUTO_REDEYE</extracomment>
-            <translation>Corectaţi automat efectul de ochi roşii</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="271" />
-            <source>I'm Feeling Lucky</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mă simt norocos</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="277" />
-            <source>S&amp;harpen</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Co&amp;nturaţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="283" />
-            <source>&amp;Film Grain</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Adăugaţi granulaţie &amp;filmului</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="289" />
-            <source>&amp;Warmify</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Aplicaţi tonuri calde</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="296" />
-            <source>R&amp;otate Clockwise</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>R&amp;otiţi spre dreapta</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="302" />
-            <source>Rotate &amp;Counterclockwise</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Rotiţi spre &amp;stânga</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="313" />
-            <source>Show Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_SHOW_TEXT;tooltips:Label(editpanel/showtextlabel)</extracomment>
-            <translation>Afişaţi textul</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="314" />
-            <source>Hide Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_HIDE_TEXT</extracomment>
-            <translation>Ascundeţi textul</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="239" />
-            <source>Undo &amp;All Edits</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Anulați &amp;toate editările făcute</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="243" />
-            <source>&amp;Hide</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>A&amp;scundeţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="254" />
-            <source>&amp;Create</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Creaţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="255" />
-            <source>Make a &amp;Poster...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Realizaţi un &amp;poster...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="256" />
-            <source>&amp;Picture Collage...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
-            <translation>&amp;Colaj de imagini...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="257" />
-            <source>&amp;Movie</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Film</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="260" />
-            <source>&amp;Tools</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Instrumente</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="262" />
-            <source>&amp;Folder Manager...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Administrator de dosare...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265" />
-            <source>People Manager...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_CONTACTMGR</extracomment>
-            <translation>Manager de persoane...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="267" />
-            <source>&amp;Back Up Pictures...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_BACKUP</extracomment>
-            <translation>&amp;Creaţi copii de rezervă pentru fotografii...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="268" />
-            <source>Adjust &amp;Date and Time...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_ADJUST_TIMESTAMP</extracomment>
-            <translation>Reglaţi &amp;data şi ora...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="270" />
-            <source>&amp;Options...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Opţiuni...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="273" />
-            <source>&amp;Help</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Ajutor</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="274" />
-            <source>&amp;Help Contents and Index</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuHelp::ID_HELP_DEFAULT</extracomment>
-            <translation>&amp;Conţinut ajutător şi index</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="275" />
             <source>&amp;Keyboard Shortcuts</source>
             <extracomment>picasapy-origin: picasa
@@ -11233,136 +10519,10 @@ picasapy-origin-key: stringres:eMenuHelp::ID_HELP_KEYBOARD_SHORTCUTS</extracomme
             <translation>&amp;Comenzi rapide de la tastatură</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="277" />
-            <source>&amp;Check for Updates</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuHelp::ID_HELP_CHECK_FOR_UPDATES</extracomment>
-            <translation>&amp;Căutaţi actualizări</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="281" />
-            <source>Performance Monitor</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Monitor de performanţă</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1291" />
-            <source>Test Mode (logs the next startup)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mod test (înregistrează la următoarea pornire)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1303" />
-            <source>Send Log...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Trimiteţi jurnalul...</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="58" />
             <source>TEST MODE — logging startup</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>MOD TEST — se înregistrează pornirea</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="287" />
-            <source>About PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Despre PicasaPy</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="748" />
-            <source>Import from Google Photos...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_GETMYSTUFF_ES</extracomment>
-            <translation>Importă din Google Foto...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2429" />
-            <source>Upload to Google &amp;Photos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_UPLOAD</extracomment>
-            <translation>Încărcaţi în Google &amp;Foto</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2435" />
-            <source>Upload to a Collaborative Web Album</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_COLLAB</extracomment>
-            <translation>Încărcaţi într-un album web colectiv</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2441" />
-            <source>Upload to &amp;YouTube</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_YOUTUBE</extracomment>
-            <translation>Încărcaţi în &amp;YouTube</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92" />
-            <source>&amp;Open File(s) in an Editor</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPENINANEDITOR</extracomment>
-            <translation>&amp;Deschideţi fişier(e) într-un editor</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="95" />
-            <source>Mo&amp;ve to New Folder...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mu&amp;taţi în dosar nou...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106" />
-            <source>Save &amp;As...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEAS</extracomment>
-            <translation>Salvaţi &amp;ca...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="107" />
-            <source>Save a Cop&amp;y</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEACOPY</extracomment>
-            <translation>Salvaţi o copi&amp;e</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="132" />
-            <source>Order Prin&amp;ts...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_EPROCESS</extracomment>
-            <translation>Comandaţi &amp;printări...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="139" />
-            <source>Cu&amp;t</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tă&amp;iaţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="140" />
-            <source>&amp;Copy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Copiaţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141" />
-            <source>&amp;Paste</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Address::ID_PASTE;stringres:eMenuEdit::ID_PASTE</extracomment>
-            <translation>&amp;Inseraţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="157" />
-            <source>Copy Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_COPYTEXT</extracomment>
-            <translation>Copiaţi textul</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="158" />
-            <source>Paste Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTETEXT</extracomment>
-            <translation>Inseraţi text</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
@@ -11386,164 +10546,10 @@ picasapy-origin-key: stringres:CDGo::ReplaceButton;stringres:CTextEditNode::conf
             <translation>Anulaţi</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="212" />
-            <source>Show Edit Controls</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_EDIT</extracomment>
-            <translation>Afişaţi comenzile de editare</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="225" />
-            <source>Search &amp;Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_SEARCHVIEW</extracomment>
-            <translation>&amp;Opţiuni de căutare</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="228" />
-            <source>Small &amp;Pictures</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_SMALL</extracomment>
-            <translation>Foto&amp;grafii mici</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="237" />
-            <source>Use Color Management</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
-            <translation>Utilizaţi sistemul de gestionare a culorilor</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="249" />
-            <source>&amp;Display Mode</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::DisplayMode</extracomment>
-            <translation>&amp;Mod de afişare</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;Automatic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Automat</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;24-bit</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_NORMAL</extracomment>
-            <translation>Pe &amp;24 de biţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;16-bit (dithered)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_16</extracomment>
-            <translation>Pe &amp;16 biţi (intercalată)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;Remote Desktop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_RDESK</extracomment>
-            <translation>&amp;Desktop la distanţă</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;LCD Whitepoint</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_LCD</extracomment>
-            <translation>Punctul alb &amp;LCD</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;Projector Mode</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_PROJECTOR</extracomment>
-            <translation>&amp;Modul proiectorului</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;Show overflow pixels</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_OV</extracomment>
-            <translation>&amp;Afişaţi pixelii excedenţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;Mac Gamma (1.6)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_MAC</extracomment>
-            <translation>Gamma &amp;Mac (1.6)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>Linear &amp;Gamma (2.2)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_LINEAR</extracomment>
-            <translation>Gamma &amp;liniar (2.2)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1850" />
-            <source>&amp;Sepia</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Sepia</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>Sepia</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Sepia</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;Black and White</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Alb-negru</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="374" />
-            <source>&amp;Unhide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPicture::ID_PICTURE_UNHIDE</extracomment>
-            <translation>&amp;Afişaţi</translation>
-        </message>
-        <message>
             <source>Show</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPicture::ID_PICTURE_UNHIDE</extracomment>
             <translation>&amp;Afişaţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="377" />
-            <source>Print Contact Sheet...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET</extracomment>
-            <translation>&amp;Printaţi un index foto...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="378" />
-            <source>E&amp;xport as HTML Page...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>E&amp;xportaţi ca pagină HTML...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="384" />
-            <source>&amp;Move...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Mutaţi...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="385" />
-            <source>&amp;Delete...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Ştergeţi...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="406" />
-            <source>Reset &amp;Faces</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMenuPicture::ID_PICTURE_RESET_FACES</extracomment>
-            <translation>Resetaţi &amp;chipurile</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
@@ -11574,11 +10580,38 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
             <translation>Da</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="416" />
-            <source>Set as &amp;Desktop...</source>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="455" />
+            <source>Find Duplicates...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Căutaţi duplicate...</translation>
+        </message>
+        <message>
+            <source>Move Database...</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuCreate::ID_WALLPAPER</extracomment>
-            <translation>Setaţi ca &amp;desktop...</translation>
+picasapy-origin-key: move_database:move_database/window1.title</extracomment>
+            <translation>Mutaţi baza de date</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaCreateMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="254" />
+            <source>&amp;Create</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Creaţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="257" />
+            <source>&amp;Movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Film</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="256" />
+            <source>&amp;Picture Collage...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
+            <translation>&amp;Colaj de imagini...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="425" />
@@ -11592,12 +10625,6 @@ picasapy-origin-key: stringres:eMenuCreate::ID_WALLPAPER</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuCreate::ID_BURNCD</extracomment>
             <translation>Creaţi un &amp;CD cadou...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="434" />
-            <source>New Movie...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Film nou...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1947" />
@@ -11614,11 +10641,799 @@ picasapy-origin-key: stringres:eMenuCreateMovie::ID_FACESRANDOM</extracomment>
             <translation>Din albume cu persoane...</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="255" />
+            <source>Make a &amp;Poster...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Realizaţi un &amp;poster...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="434" />
+            <source>New Movie...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Film nou...</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="440" />
             <source>Publish to &amp;Blogger...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuCreate::ID_EXPORT_SENDTOBLOGGER</extracomment>
             <translation>Publicaţi în &amp;Blogger...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="416" />
+            <source>Set as &amp;Desktop...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreate::ID_WALLPAPER</extracomment>
+            <translation>Setaţi ca &amp;desktop...</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaEditMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="140" />
+            <source>&amp;Copy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Copiaţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="77" />
+            <source>&amp;Edit</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuEdit</extracomment>
+            <translation>&amp;Editaţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="99" />
+            <source>&amp;Invert Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_SELECT_INVERT</extracomment>
+            <translation>&amp;Inversaţi selecţia</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141" />
+            <source>&amp;Paste</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Address::ID_PASTE;stringres:eMenuEdit::ID_PASTE</extracomment>
+            <translation>&amp;Inseraţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="101" />
+            <source>C&amp;lear Selection</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>E&amp;liminaţi selecţia</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="80" />
+            <source>C&amp;opy All Effects</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_COPYALLEFFECTS</extracomment>
+            <translation>C&amp;opiaţi toate efectele</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="157" />
+            <source>Copy Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_COPYTEXT</extracomment>
+            <translation>Copiaţi textul</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="139" />
+            <source>Cu&amp;t</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tă&amp;iaţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="86" />
+            <source>Paste All E&amp;ffects</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTEALLEFFECTS</extracomment>
+            <translation>Inseraţi toate e&amp;fectele</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="158" />
+            <source>Paste Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTETEXT</extracomment>
+            <translation>Inseraţi text</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="96" />
+            <source>Select &amp;Starred</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuEdit::ID_SELECTSTAR</extracomment>
+            <translation>Selectaţi &amp;elementele cu stea</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92" />
+            <source>Select All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Selectaţi tot</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="301" />
+            <source>Undo Batch Edit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Anulaţi editarea în lot</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="295" />
+            <source>Undo Paste All Effects</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Anulaţi lipirea tuturor efectelor</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaFileMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="72" />
+            <source>&amp;E-Mail...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;E-mail...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="37" />
+            <source>&amp;File</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile</extracomment>
+            <translation>&amp;Fişier</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="41" />
+            <source>&amp;Import From...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_IMPORTPICTURE</extracomment>
+            <translation>I&amp;mportaţi din...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="38" />
+            <source>&amp;New Album...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Album nou...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92" />
+            <source>&amp;Open File(s) in an Editor</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPENINANEDITOR</extracomment>
+            <translation>&amp;Deschideţi fişier(e) într-un editor</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
+            <source>&amp;Print...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Imprimaţi...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="45" />
+            <source>&amp;Rename...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Redenumiţi...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="49" />
+            <source>&amp;Save</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Salvaţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="40" />
+            <source>Add &amp;File to PicasaPy...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
+            <translation>Adăugaţi un &amp;fişier la PicasaPy...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="39" />
+            <source>Add Folder to PicasaPy...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_TOOLS_INCLUDEEXCLUDEFOLDERS</extracomment>
+            <translation>Adăugaţi dosarul la PicasaPy...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="74" />
+            <source>E&amp;xit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>I&amp;eşiţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="53" />
+            <source>Export Pi&amp;cture to Folder...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_EXPORTTOFOLDER</extracomment>
+            <translation>Exportaţi fo&amp;tografia în dosarul...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="748" />
+            <source>Import from Google Photos...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_GETMYSTUFF_ES</extracomment>
+            <translation>Importă din Google Foto...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="60" />
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="232" />
+            <source>Locate on Disk</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Localizaţi pe disc</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="95" />
+            <source>Mo&amp;ve to New Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mu&amp;taţi în dosar nou...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="132" />
+            <source>Order Prin&amp;ts...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_EPROCESS</extracomment>
+            <translation>Comandaţi &amp;printări...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="50" />
+            <source>Rever&amp;t</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Reveniţi</translation>
+        </message>
+        <message>
+            <source>Save &amp;As...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEAS</extracomment>
+            <translation>Salvaţi &amp;ca...</translation>
+        </message>
+        <message>
+            <source>Save a Cop&amp;y</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEACOPY</extracomment>
+            <translation>Salvaţi o copi&amp;e</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaFolderMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1636" />
+            <source>&amp;Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Album</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Dată</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="385" />
+            <source>&amp;Delete...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Ştergeţi...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1640" />
+            <source>&amp;Edit Album Description...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_EDITCAPTIONS</extracomment>
+            <translation>&amp;Editaţi descrierea albumului...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="219" />
+            <source>&amp;Edit Description...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuLabelFolder::ID_ALBUM_EDITCAPTIONS</extracomment>
+            <translation>&amp;Editaţi descrierea...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="243" />
+            <source>&amp;Hide</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A&amp;scundeţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="384" />
+            <source>&amp;Move...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Mutaţi...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Name</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Nume</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="233" />
+            <source>&amp;Remove from PicasaPy...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Eliminaţi din PicasaPy...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Reverse order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::ID_REVERSESORT</extracomment>
+            <translation>&amp;Ordine inversă</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Size</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>D&amp;imensiune</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="230" />
+            <source>&amp;Sort By</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuLabelFolder::SortBy</extracomment>
+            <translation>&amp;Sortaţi după</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="374" />
+            <source>&amp;Unhide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPicture::ID_PICTURE_UNHIDE</extracomment>
+            <translation>&amp;Afişaţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="222" />
+            <source>&amp;View Slideshow</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuLabelFolder::ID_ALBUM_SLIDESHOW</extracomment>
+            <translation>&amp;Vizualizaţi slideshow-ul</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="378" />
+            <source>E&amp;xport as HTML Page...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>E&amp;xportaţi ca pagină HTML...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="218" />
+            <source>F&amp;older</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>D&amp;osar</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="60" />
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="232" />
+            <source>Locate on Disk</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Localizaţi pe disc</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="377" />
+            <source>Print Contact Sheet...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET</extracomment>
+            <translation>&amp;Printaţi un index foto...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>Recent &amp;changes</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Modificări &amp;recente</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="227" />
+            <source>Refresh &amp;Thumbnails</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Actualizaţi &amp;miniaturi</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaFolderViewMenu</name>
+        <message>
+            <source>&amp;Desktop</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Desktop</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Flat Folder View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_FOLDERS</extracomment>
+            <translation>Vedere &amp;dosar desfăşurat</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="150" />
+            <source>&amp;Folder View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::FolderView</extracomment>
+            <translation>Vedere &amp;dosar</translation>
+        </message>
+        <message>
+            <source>&amp;Shortcuts</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::Shortcuts;stringres:eMenuView::Shortcuts</extracomment>
+            <translation>&amp;Comenzi rapide</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Simplified Tree View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_VIEW_WATCHED;stringres:eMenuView::ID_VIEW_WATCHED</extracomment>
+            <translation>&amp;Vizualizare arborescentă simplificată</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Tree View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_ALL</extracomment>
+            <translation>&amp;Vizualizare arborescentă</translation>
+        </message>
+        <message>
+            <source>My &amp;Computer</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Computerul meu</translation>
+        </message>
+        <message>
+            <source>My &amp;Pictures</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fotografiile &amp;mele</translation>
+        </message>
+        <message>
+            <source>My Do&amp;cuments</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Do&amp;cumentele mele</translation>
+        </message>
+        <message>
+            <source>Re&amp;verse sort</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_VIEWREVERSE;stringres:eMenuView::ID_VIEWREVERSE</extracomment>
+            <translation>O&amp;rdine inversă</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>Show &amp;Thumbnails in Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_VIEW_THUMBNAILS;stringres:eMenuView::ID_VIEW_THUMBNAILS</extracomment>
+            <translation>Afişaţi &amp;miniaturi în fototecă</translation>
+        </message>
+        <message>
+            <source>Sort &amp;People by Name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYNAME</extracomment>
+            <translation>Sortaţi &amp;persoane după nume</translation>
+        </message>
+        <message>
+            <source>Sort People by &amp;Amount</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNT</extracomment>
+            <translation>Sortaţi persoane în funcţie de &amp;volum</translation>
+        </message>
+        <message>
+            <source>Sort People by Top &amp;10</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNTTOP10</extracomment>
+            <translation>Sortaţi persoanele în funcţie de cele mai importante &amp;10 dintre acestea</translation>
+        </message>
+        <message>
+            <source>Sort by &amp;Creation Date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sortaţi după &amp;Data creării</translation>
+        </message>
+        <message>
+            <source>Sort by &amp;Name</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sortaţi după &amp;nume</translation>
+        </message>
+        <message>
+            <source>Sort by &amp;Recent Changes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_VIEWBYRECENT;stringres:eMenuView::ID_VIEWBYRECENT</extracomment>
+            <translation>Sortaţi după &amp;Modificări recente</translation>
+        </message>
+        <message>
+            <source>Sort by &amp;Size</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_VIEWBYSIZE;stringres:eMenuView::ID_VIEWBYSIZE</extracomment>
+            <translation>Sortaţi după &amp;dimensiune</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaHelpMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="277" />
+            <source>&amp;Check for Updates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_CHECK_FOR_UPDATES</extracomment>
+            <translation>&amp;Căutaţi actualizări</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="273" />
+            <source>&amp;Help</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Ajutor</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="274" />
+            <source>&amp;Help Contents and Index</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_DEFAULT</extracomment>
+            <translation>&amp;Conţinut ajutător şi index</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="275" />
+            <source>&amp;Keyboard Shortcuts</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_KEYBOARD_SHORTCUTS</extracomment>
+            <translation>&amp;Comenzi rapide de la tastatură</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="287" />
+            <source>About PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Despre PicasaPy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="482" />
+            <source>Online Information</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_PICASA_README</extracomment>
+            <translation>Fişier &amp;ReadMe online</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="281" />
+            <source>Performance Monitor</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Monitor de performanţă</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="481" />
+            <source>Picasa &amp;Forums</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_PICASA_FORUMS</extracomment>
+            <translation>&amp;Forumuri Picasa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="485" />
+            <source>Privacy Policy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: eula:eula/privacylink.title;stringres:INSTALLRES_PrivacyText;stringres:eMenuHelp::ID_HELP_PRIVACY</extracomment>
+            <translation>Politica de confidenţialitate</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="483" />
+            <source>Product Release Notes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_RELEASENOTES</extracomment>
+            <translation>&amp;Note privind versiunea</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1303" />
+            <source>Send Log...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Trimiteţi jurnalul...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="486" />
+            <source>Terms of Service</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: eula:eula/toslink.title;stringres:INSTALLRES_TosText;stringres:XMP::UsageTerms;stringres:eMenuHelp::ID_HELP_TERMS</extracomment>
+            <translation>Termenii şi condiţiile</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1291" />
+            <source>Test Mode (logs the next startup)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mod test (înregistrează la următoarea pornire)</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaPictureMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="259" />
+            <source>&amp;Auto Color</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Ajustaţi automat culoarea</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="238" />
+            <source>&amp;Batch Edit</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuPicture::BatchEdit</extracomment>
+            <translation>&amp;Editaţi lotul</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Black and White</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Alb-negru</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="283" />
+            <source>&amp;Film Grain</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Adăugaţi granulaţie &amp;filmului</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="243" />
+            <source>&amp;Hide</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A&amp;scundeţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="236" />
+            <source>&amp;Picture</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Fotografie</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="45" />
+            <source>&amp;Rename...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Redenumiţi...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1850" />
+            <source>&amp;Sepia</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Sepia</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="374" />
+            <source>&amp;Unhide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPicture::ID_PICTURE_UNHIDE</extracomment>
+            <translation>&amp;Afişaţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="237" />
+            <source>&amp;View and Edit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Vizualizaţi şi editaţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="289" />
+            <source>&amp;Warmify</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Aplicaţi tonuri calde</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="253" />
+            <source>A&amp;uto Contrast</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A&amp;justaţi automat contrastul</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265" />
+            <source>Auto Red Eye Correction</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_AUTO_REDEYE</extracomment>
+            <translation>Corectaţi automat efectul de ochi roşii</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="314" />
+            <source>Hide Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_HIDE_TEXT</extracomment>
+            <translation>Ascundeţi textul</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="271" />
+            <source>I'm Feeling Lucky</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mă simt norocos</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="121" />
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="249" />
+            <source>Properties</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Proprietăţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="296" />
+            <source>R&amp;otate Clockwise</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>R&amp;otiţi spre dreapta</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="406" />
+            <source>Reset &amp;Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMenuPicture::ID_PICTURE_RESET_FACES</extracomment>
+            <translation>Resetaţi &amp;chipurile</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="302" />
+            <source>Rotate &amp;Counterclockwise</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Rotiţi spre &amp;stânga</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="277" />
+            <source>S&amp;harpen</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Co&amp;nturaţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="313" />
+            <source>Show Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_SHOW_TEXT;tooltips:Label(editpanel/showtextlabel)</extracomment>
+            <translation>Afişaţi textul</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="239" />
+            <source>Undo &amp;All Edits</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Anulați &amp;toate editările făcute</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaToolsMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="267" />
+            <source>&amp;Back Up Pictures...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_BACKUP</extracomment>
+            <translation>&amp;Creaţi copii de rezervă pentru fotografii...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Black and White</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Alb-negru</translation>
+        </message>
+        <message>
+            <source>&amp;Blue</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_S_BLUE</extracomment>
+            <translation>&amp;Albastru</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="262" />
+            <source>&amp;Folder Manager...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Administrator de dosare...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="468" />
+            <source>&amp;Geotag</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Geoetichetaţi</translation>
+        </message>
+        <message>
+            <source>&amp;Green</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_S_GREEN</extracomment>
+            <translation>&amp;Verde</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="270" />
+            <source>&amp;Options...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Opţiuni...</translation>
+        </message>
+        <message>
+            <source>&amp;Orange</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_S_ORANGE</extracomment>
+            <translation>&amp;Portocaliu</translation>
+        </message>
+        <message>
+            <source>&amp;Passport photo...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_PASSPORT</extracomment>
+            <translation>Fotografie &amp;paşaport...</translation>
+        </message>
+        <message>
+            <source>&amp;Purple</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_S_PURPLE</extracomment>
+            <translation>&amp;Purpuriu</translation>
+        </message>
+        <message>
+            <source>&amp;Red</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_S_RED</extracomment>
+            <translation>&amp;Roşu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="260" />
+            <source>&amp;Tools</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Instrumente</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="450" />
@@ -11627,10 +11442,46 @@ picasapy-origin-key: stringres:eMenuCreate::ID_EXPORT_SENDTOBLOGGER</extracommen
             <translation>&amp;Administrator de încărcări...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="455" />
-            <source>Find Duplicates...</source>
+            <source>&amp;Yellow</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_S_YELLOW</extracomment>
+            <translation>&amp;Galben</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="268" />
+            <source>Adjust &amp;Date and Time...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_ADJUST_TIMESTAMP</extracomment>
+            <translation>Reglaţi &amp;data şi ora...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="463" />
+            <source>Batch Upload...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Căutaţi duplicate...</translation>
+            <translation>Încărcaţi un lot...</translation>
+        </message>
+        <message>
+            <source>Choose database location...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_MOVE_DATABASE</extracomment>
+            <translation>Alegeţi locaţia bazei de date...</translation>
+        </message>
+        <message>
+            <source>Clear Geotags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
+            <translation>Ștergeţi geoetichetele</translation>
+        </message>
+        <message>
+            <source>Compact Database...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Compactaţi baza de date...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="471" />
+            <source>Configure Buttons...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Configuraţi butoanele...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="460" />
@@ -11646,24 +11497,6 @@ picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_CONFIG_SCREENSAVER</extracom
             <translation>Configuraţi screensaverul...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="463" />
-            <source>Batch Upload...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Încărcaţi un lot...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="467" />
-            <source>U&amp;pload</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Î&amp;ncărcaţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="468" />
-            <source>&amp;Geotag</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Geoetichetaţi</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="469" />
             <source>Experimental</source>
             <extracomment>picasapy-origin: picasa
@@ -11671,45 +11504,21 @@ picasapy-origin-key: stringres:eMenuTools::Experimental</extracomment>
             <translation>Experimental</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="471" />
-            <source>Configure Buttons...</source>
+            <source>Export to Google Earth File</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_EXPORT_EARTH</extracomment>
+            <translation>Exportaţi în fişier Google Earth</translation>
+        </message>
+        <message>
+            <source>Find Faces...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumList::Finding0</extracomment>
+            <translation>Se scanează pentru detectare de chipuri...</translation>
+        </message>
+        <message>
+            <source>Import from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Configuraţi butoanele...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="481" />
-            <source>Picasa &amp;Forums</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuHelp::ID_HELP_PICASA_FORUMS</extracomment>
-            <translation>&amp;Forumuri Picasa</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="482" />
-            <source>Online Information</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuHelp::ID_HELP_PICASA_README</extracomment>
-            <translation>Fişier &amp;ReadMe online</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="483" />
-            <source>Product Release Notes</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuHelp::ID_HELP_RELEASENOTES</extracomment>
-            <translation>&amp;Note privind versiunea</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="485" />
-            <source>Privacy Policy</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: eula:eula/privacylink.title;stringres:INSTALLRES_PrivacyText;stringres:eMenuHelp::ID_HELP_PRIVACY</extracomment>
-            <translation>Politica de confidenţialitate</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="486" />
-            <source>Terms of Service</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: eula:eula/toslink.title;stringres:INSTALLRES_TosText;stringres:XMP::UsageTerms;stringres:eMenuHelp::ID_HELP_TERMS</extracomment>
-            <translation>Termenii şi condiţiile</translation>
+            <translation>Importaţi din Picasa...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="478" />
@@ -11719,9 +11528,45 @@ picasapy-origin-key: options:options/labelgroup25.title</extracomment>
             <translation>Limbă:</translation>
         </message>
         <message>
-            <source>System Default (%1)</source>
+            <source>Manage Duplicates...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Implicită de sistem (%1)</translation>
+            <translation>Gestionaţi fişierele duplicate...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265" />
+            <source>People Manager...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_CONTACTMGR</extracomment>
+            <translation>Manager de persoane...</translation>
+        </message>
+        <message>
+            <source>Publish via FTP...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
+            <translation>Publicaţi prin FTP...</translation>
+        </message>
+        <message>
+            <source>Save &amp;search results...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_SAVESEARCH</extracomment>
+            <translation>Salvaţi rezultatele &amp;căutării...</translation>
+        </message>
+        <message>
+            <source>Search for...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Căutaţi...</translation>
+        </message>
+        <message>
+            <source>Show &amp;tag as album...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_SEARCHTOKEN</extracomment>
+            <translation>Afişaţi &amp;eticheta ca album...</translation>
+        </message>
+        <message>
+            <source>Show Duplicate Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_DUPES</extracomment>
+            <translation>Afişaţi fişiere dubluri</translation>
         </message>
         <message>
             <source>System Default</source>
@@ -11730,56 +11575,279 @@ picasapy-origin-key: stringres:Lang::sys</extracomment>
             <translation>Sistem prestabilit</translation>
         </message>
         <message>
-            <source>Move Database...</source>
+            <source>System Default (%1)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Implicită de sistem (%1)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="467" />
+            <source>U&amp;pload</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Î&amp;ncărcaţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2441" />
+            <source>Upload to &amp;YouTube</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: move_database:move_database/window1.title</extracomment>
-            <translation>Mutaţi baza de date</translation>
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_YOUTUBE</extracomment>
+            <translation>Încărcaţi în &amp;YouTube</translation>
         </message>
         <message>
-            <source>Compact Database...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Compactaţi baza de date...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Date</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Dată</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Name</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>&amp;Nume</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>D&amp;imensiune</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Reverse order</source>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2429" />
+            <source>Upload to Google &amp;Photos</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::ID_REVERSESORT</extracomment>
-            <translation>&amp;Ordine inversă</translation>
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_UPLOAD</extracomment>
+            <translation>Încărcaţi în Google &amp;Foto</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>Recent &amp;changes</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Modificări &amp;recente</translation>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2435" />
+            <source>Upload to a Collaborative Web Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_COLLAB</extracomment>
+            <translation>Încărcaţi într-un album web colectiv</translation>
         </message>
         <message>
-            <source>Manage Duplicates...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Gestionaţi fişierele duplicate...</translation>
+            <source>View in Google Earth...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_VIEW_EARTH</extracomment>
+            <translation>Vizualizaţi în Google Earth...</translation>
         </message>
         <message>
-            <source>Import from Picasa...</source>
+            <source>Write faces to XMP...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_WRITE_XMP_FACES</extracomment>
+            <translation>Scrieţi etichetele de chipuri în XMP...</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaViewMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;16-bit (dithered)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_16</extracomment>
+            <translation>Pe &amp;16 biţi (intercalată)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;24-bit</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_NORMAL</extracomment>
+            <translation>Pe &amp;24 de biţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Automatic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Importaţi din Picasa...</translation>
+            <translation>&amp;Automat</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Black and White</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Alb-negru</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="198" />
+            <source>&amp;Caption</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Legendă</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="249" />
+            <source>&amp;Display Mode</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::DisplayMode</extracomment>
+            <translation>&amp;Mod de afişare</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="117" />
+            <source>&amp;Edit View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_PICTURE</extracomment>
+            <translation>Modul &amp;Editare</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="192" />
+            <source>&amp;Filename</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nume de &amp;fişier</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="144" />
+            <source>&amp;Hidden Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_SHOWHIDDEN</extracomment>
+            <translation>&amp;Fotografii ascunse</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;LCD Whitepoint</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_LCD</extracomment>
+            <translation>Punctul alb &amp;LCD</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="107" />
+            <source>&amp;Library View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_LIGHTBOXVIEW</extracomment>
+            <translation>&amp;Vizualizaţi fototeca</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Mac Gamma (1.6)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_MAC</extracomment>
+            <translation>Gamma &amp;Mac (1.6)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="114" />
+            <source>&amp;Normal Thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_LARGETHUMBNAILS</extracomment>
+            <translation>Miniaturi &amp;normale</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="134" />
+            <source>&amp;Places</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Locaţii</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Projector Mode</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_PROJECTOR</extracomment>
+            <translation>&amp;Modul proiectorului</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Remote Desktop</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_RDESK</extracomment>
+            <translation>&amp;Desktop la distanţă</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="210" />
+            <source>&amp;Resolution</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_CAPRES</extracomment>
+            <translation>&amp;Rezoluţie</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Show overflow pixels</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_OV</extracomment>
+            <translation>&amp;Afişaţi pixelii excedenţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="138" />
+            <source>&amp;Slideshow</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Slideshow</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="128" />
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="204" />
+            <source>&amp;Tags</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Etichete</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106" />
+            <source>&amp;View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView</extracomment>
+            <translation>&amp;Vizualizaţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152" />
+            <source>Dark Theme</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Temă întunecată</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>Linear &amp;Gamma (2.2)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_LINEAR</extracomment>
+            <translation>Gamma &amp;liniar (2.2)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="186" />
+            <source>None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
+            <translation>Niciunul</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="133" />
+            <source>People</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Persoane</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="121" />
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="249" />
+            <source>Properties</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Proprietăţi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="110" />
+            <source>S&amp;mall Thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_SMALLTHUMBNAILS</extracomment>
+            <translation>&amp;Miniaturi mici</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="225" />
+            <source>Search &amp;Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_SEARCHVIEW</extracomment>
+            <translation>&amp;Opţiuni de căutare</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>Sepia</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sepia</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="212" />
+            <source>Show Edit Controls</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_EDIT</extracomment>
+            <translation>Afişaţi comenzile de editare</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="228" />
+            <source>Small &amp;Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_SMALL</extracomment>
+            <translation>Foto&amp;grafii mici</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="184" />
+            <source>Thumbnail &amp;Caption</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ThumbnailCaption</extracomment>
+            <translation>&amp;Legendă pentru miniatură</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141" />
+            <source>Ti&amp;meline</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Or&amp;dine cronologică</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="237" />
+            <source>Use Color Management</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
+            <translation>Utilizaţi sistemul de gestionare a culorilor</translation>
         </message>
     </context>
     <context>

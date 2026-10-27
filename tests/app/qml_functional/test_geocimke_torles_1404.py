@@ -29,10 +29,9 @@ from pathlib import Path
 
 import picasapy.app
 from tests.support.qml_blokk import blokk_horgonyra
+from support.menubar_components_6016 import menu_sources
 
-_MENU = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
-).read_text(encoding="utf-8")
+_MENU = menu_sources()
 _PLACES = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "PlacesPanel.qml"
 ).read_text(encoding="utf-8")
