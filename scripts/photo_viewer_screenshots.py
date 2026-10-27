@@ -98,6 +98,8 @@ _AKTIV_FUL_OBJEKTUMOK = (
 _KERET_SZIN = (255, 0, 255, 255)
 _STABIL_KOCKAK = 3
 _STABIL_KEPKOCKAK = 10
+_STABIL_KEPKOCKAK_KOZTI_VARAKOZAS_MP = 0.02
+_ALAPNEZET_KEPKOCKAK_KOZTI_VARAKOZAS_MP = 0.05
 _STABIL_HATARIDO_MP = 8.0
 _ALLAPOT_HATARIDO_MP = 8.0
 
@@ -216,11 +218,18 @@ def _stabil_ablakkepernyo(ablak: Any, alkalmazas: Any, allapot: str) -> Any:
 
     A `editpreview` képszolgáltatós kép egy megfigyelésben a korábbi
     háromkockás mintavétel után 18 pixelt frissített; tíz azonos kocka ezt
-    a késői képet is megvárja.
+    a késői képet is megvárja. Az `alapnezet` állapot 50 ms-os mintaköze
+    450 ms-nyi stabil képet hagy; a többi állapot 20 ms-os közt használ.
+    Mindegyik állapot tíz egyező képkockát igényel.
     """
     elozo: bytes | None = None
     azonos = 0
     vege = time.monotonic() + _STABIL_HATARIDO_MP
+    mintakoz = (
+        _ALAPNEZET_KEPKOCKAK_KOZTI_VARAKOZAS_MP
+        if allapot == "alapnezet"
+        else _STABIL_KEPKOCKAK_KOZTI_VARAKOZAS_MP
+    )
     while time.monotonic() < vege:
         alkalmazas.processEvents()
         kep = ablak.grabWindow()
@@ -232,7 +241,7 @@ def _stabil_ablakkepernyo(ablak: Any, alkalmazas: Any, allapot: str) -> Any:
             if azonos >= _STABIL_KEPKOCKAK:
                 return kep.copy()
             elozo = bajtok
-        time.sleep(0.05)
+        time.sleep(mintakoz)
     raise RuntimeError(
         f"A(z) {allapot!r} állapot képe nem stabilizálódott "
         f"{_STABIL_HATARIDO_MP:g} másodpercen belül."
