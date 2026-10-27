@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.268] - 2026-10-27
+
+- Windows alatt a fotónéző más alakban megadott útvonalnál is megtalálja a képet, és a .picasa.ini mentése kivárja az átmeneti fájlzárat. (#6043).
+
 ## [0.9.267] - 2026-10-27
 
 - A bal oldali mappafa kódja önálló részekre (tartalom, fasor, helyi menük) került, a megjelenés és a működés változatlan. (#6019).
