@@ -7,6 +7,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.266] - 2026-10-27
+
+- Az arcfelismerés-vezérlő kódja hét témarészre (keresés, beágyazás, alaphelyzet, beállítások, javaslatok, Név nélküliek, közös segédek) került, a felület és a működés változatlan. (#6025).
+
+## [0.9.265] - 2026-10-27
+
+- A fő vezérlő kódjának maradék témái (szűrők, mappanézet, rejtett mappák, navigáció, hálózati beállítások, diavetítés, állapot, tartalominfó) külön részekbe kerültek, a felület és a működés változatlan. (#6022).
+
+## [0.9.264] - 2026-10-27
+
+- A képművelet-vezérlő kódja hat témarészre (album, effekt-vágólap, átnevezés, forgatás és tükrözés, ini-írás, XMP) került, a felület és a működés változatlan. (#6023).
+- A főablak arcszámlálói a program bezárásakor nem írnak hibát a naplóba. (#6039).
+
+## [0.9.263] - 2026-10-27
+
+- A főablak és a fotónéző képernyőkép-őre 30 állapotot rögzít (könyvtár, személyalbum, mind a nyolc felső menü, eszköztár, tálca, diavetítés, szerkesztőfülek), a főablak szétbontása előtti mércéül. (#5954).
+
 ## [0.9.262] - 2026-10-27
 
 - Az alkalmazás indulása megnevezett lépésekre bomlik. (#5958).

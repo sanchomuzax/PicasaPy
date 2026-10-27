@@ -142,8 +142,15 @@ class SignalDecl:
         Azért nem csak a név: nyolc jelzésnév KÉTSZER szerepel a fában
         (pl. `scanStarted` a dedup- és az arc-vezérlőben is), és a puszta
         névre kulcsolt lista az egyiket némán elnyelné.
+
+        A külön `*_signals.py` modul identitása a gazda-vezérlő fájlja,
+        így a mixinbe költöztetés nem tesz egy már ismert néma jelet új tétellé
+        (#6025).
         """
-        return f"{self.path}::{self.name}"
+        path = Path(self.path)
+        if path.stem.endswith("_signals"):
+            path = path.with_name(f"{path.stem.removesuffix('_signals')}.py")
+        return f"{path.as_posix()}::{self.name}"
 
     @property
     def target_names(self) -> set[str]:

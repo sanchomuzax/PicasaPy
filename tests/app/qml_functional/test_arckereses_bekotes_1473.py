@@ -437,7 +437,7 @@ class TestCsoportositas:
         A küszöbök és az Enable suggestions állapot ugyanúgy a vezérlő
         beállításaiból érkezik, mint a kézi csoportosító gombnál.
         """
-        import picasapy.app.face_scan_controller as controller_module
+        import picasapy.app.face_scan_controller_embedding_mixin as controller_module
         from picasapy.faces.clustering import cluster_step_to_threshold, step_to_threshold
         from picasapy.index import face_groups, open_index
 
