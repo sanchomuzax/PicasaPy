@@ -52,8 +52,8 @@ Item {
     readonly property var ikonMeretek: [
         [15, 16], [17, 18], [20, 19], [25, 19], [25, 19], [25, 19], [25, 19]
     ]
-    // #4846: a 4–5. fül tájképes négyzetének felhője mindkét fülön fehér
-    readonly property color felhoSzin: "#ffffff"
+    // #5959: a Picasa két tájképes ikonjának eltérő, mért felhőszíne.
+    readonly property color felhoSzin: "#f8faf7"
     function ikonSzelesseg(index) { return tabBarRoot.ikonMeretek[index][0] }
     function ikonMagassag(index) { return tabBarRoot.ikonMeretek[index][1] }
 
@@ -98,7 +98,7 @@ Item {
         label: qsTr("Effects")
         description: qsTr("Fun and useful image processing")
         iconKind: "brush"
-        iconAccent: Theme.iconInk
+        iconAccent: "#373535"
     }
     // #328/#338: 4. fül — ZÖLD ecset ("kreatív effektek"), a docs/specs/
     // ui-audit-editor.md leírása szerint zöld táj-mintával megkülönböztetve.
@@ -131,7 +131,7 @@ Item {
         description: qsTr("Even more fun and useful image processing")
         iconKind: "brush"
         iconAccent: Theme.brandBlue
-        iconFleck: tabBarRoot.felhoSzin
+        iconFleck: "#f5f9fc"
     }
     // #422 (felhasználói döntés): 6. fül — azok a Glimmer-effektek,
     // amelyek NEM szerepelnek a 3–5. fül igazolt listáján. Külön fülön,

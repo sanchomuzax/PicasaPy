@@ -119,11 +119,11 @@ def test_a_betoltott_vezerlo_is_a_teszt_halo_mappajat_hasznalja(
 def test_a_linux_uzenet_megmarad_es_a_tobbi_platform_exportal():
     qml_path = (
         Path(__file__).resolve().parents[2]
-        / "src/picasapy/app/qml/PicasaPy/PhotoViewer.qml"
+        / "src/picasapy/app/qml/PicasaPy/PhotoViewerLeftDrawer.qml"
     )
     qml = qml_path.read_text(encoding="utf-8")
     handler = qml.split("onExportClipRequested:", 1)[1].split("\n                    }", 1)[0]
 
     assert "!controller.movieClipExportSupported" in handler
     assert 'qsTr("This feature is not supported for Linux")' in handler
-    assert "controller.exportMovieClip(viewer.currentIndex)" in handler
+    assert "controller.exportMovieClip(leftDrawer.hostViewer.currentIndex)" in handler

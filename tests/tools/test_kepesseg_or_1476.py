@@ -482,6 +482,14 @@ def test_pozitiv_kontroll_a_helyes_mintat_is_megtalalja(
     assert valodi.elo(kontextus, tag), f"{kontextus}.{tag} élő kell legyen ({miert})"
 
 
+def test_a_fotonezo_kulon_szerkesztopanelje_elerheto_vezerlo_aliasokat_ad(
+    valodi: or_.Elemzes,
+) -> None:
+    """A komponens a gazdától kapott editCtl property-n át hívja a vezérlőt."""
+    assert valodi.elo("editController", "fillLight")
+    assert valodi.elo("editController", "undoLabel")
+
+
 @pytest.mark.parametrize(
     ("kontextus", "tag"),
     [("dedupController", "cancelScan"), ("importSourceController", "toggleStar")],

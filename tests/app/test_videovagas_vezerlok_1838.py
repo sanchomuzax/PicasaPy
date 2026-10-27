@@ -1,7 +1,7 @@
 """#1838: a három vágás-vezérlő a videó-sávon (`setin`/`setout`/`reset_trim`).
 
 Forrás-szintű őr: a `VideoPlayerView.qml` a vágást **nem maga menti**, hanem
-jelez, és a `PhotoViewer.qml` hívja a vezérlőt a sor indexével. A lap ezt a
+jelez, és a `PhotoViewerPhotoArea.qml` hívja a vezérlőt a sor indexével. A lap ezt a
 láncot köti ki — a `QtMultimedia` miatt a komponenst gépi teszt itt nem tudja
 betölteni (a CI-n nincs videó-dekódolás), ezért a kötések SZÖVEGÉT mérjük, és
 ezt a korlátot kimondjuk.
@@ -18,6 +18,7 @@ import picasapy.app
 
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
 _LEJATSZO = (_QML / "VideoPlayerView.qml").read_text(encoding="utf-8")
+_PHOTO_AREA = (_QML / "PhotoViewerPhotoArea.qml").read_text(encoding="utf-8")
 _NEZO = (_QML / "PhotoViewer.qml").read_text(encoding="utf-8")
 # #4566: a visszaállítás, a képkocka és az export a videó-panelen él, nem a
 # lejátszó sávján.
@@ -65,24 +66,24 @@ class TestAHaromVezerlo:
 
 class TestANezoKotiBe:
     def test_mindket_slot_hivasa_megvan(self):
-        assert "controller.setMovieTrim(" in _NEZO
+        assert "controller.setMovieTrim(" in _PHOTO_AREA
         assert "controller.resetMovieTrim(" in _NEZO
 
     def test_a_SOR_indexet_adja_at(self):
-        kezd = _NEZO.index("controller.setMovieTrim(")
-        assert "viewer.currentIndex" in _NEZO[kezd : kezd + 200]
+        kezd = _PHOTO_AREA.index("controller.setMovieTrim(")
+        assert "photoArea.hostViewer.currentIndex" in _PHOTO_AREA[kezd : kezd + 200]
 
     def test_a_kotes_a_REVISION_tol_is_fugg(self):
         """A `movieTrimAt` sima slot-hívás: enélkül a mentés után a lejátszó a
         régi szakaszt tartaná, és a vágás csak átnavigálás után élne."""
-        kezd = _NEZO.index('property: "trimStartMs"')
-        veg = _NEZO.index('property: "trimEndMs"', kezd)
-        assert "photosModel.revision" in _NEZO[kezd:veg]
+        kezd = _PHOTO_AREA.index('property: "trimStartMs"')
+        veg = _PHOTO_AREA.index('property: "trimEndMs"', kezd)
+        assert "hostViewer.photosModel.revision" in _PHOTO_AREA[kezd:veg]
 
     def test_a_jelzes_csak_VIDEONAL_el(self):
-        kezd = _NEZO.index("function onTrimRequested(")
-        blokk = _NEZO[max(0, kezd - 500) : kezd]
-        assert "viewer.isCurrentVideo" in blokk
+        kezd = _PHOTO_AREA.index("function onTrimRequested(")
+        blokk = _PHOTO_AREA[max(0, kezd - 500) : kezd]
+        assert "photoArea.hostViewer.isCurrentVideo" in blokk
 
 
 class TestKepkockaGomb:
@@ -120,15 +121,15 @@ class TestKepkockaGomb:
         assert "controller.captureMovieFrame" not in _LEJATSZO
 
     def test_a_nezo_a_SOR_indexevel_hivja_a_vezerlot(self):
-        assert "function onCaptureFrameRequested(positionMs)" in _NEZO
-        kezd = _NEZO.index("function onCaptureFrameRequested(positionMs)")
-        blokk = _NEZO[kezd : kezd + 400]
+        assert "function onCaptureFrameRequested(positionMs)" in _PHOTO_AREA
+        kezd = _PHOTO_AREA.index("function onCaptureFrameRequested(positionMs)")
+        blokk = _PHOTO_AREA[kezd : kezd + 400]
         assert "controller.captureMovieFrame(" in blokk
-        assert "viewer.currentIndex" in blokk
+        assert "photoArea.hostViewer.currentIndex" in blokk
 
     def test_a_vegeredmeny_MINDKET_agon_latszik(self):
         """Siker és bukás is kap visszajelzést — a bukás nem lehet néma."""
-        assert "function onMovieFrameCaptured(path)" in _NEZO
-        assert "function onMovieFrameCaptureFailed()" in _NEZO
-        assert 'qsTr("Failed to capture frame")' in _NEZO
-        assert 'qsTr("Saved %1 to Captured Videos")' in _NEZO
+        assert "function onMovieFrameCaptured(path)" in _PHOTO_AREA
+        assert "function onMovieFrameCaptureFailed()" in _PHOTO_AREA
+        assert 'qsTr("Failed to capture frame")' in _PHOTO_AREA
+        assert 'qsTr("Saved %1 to Captured Videos")' in _PHOTO_AREA

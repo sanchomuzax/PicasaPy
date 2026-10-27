@@ -21,7 +21,8 @@ főablak-építő (`0x0040bf70`) induláskor visszaállítja.
 
 A jegy előírja, hogy az elrejtés **mindkét** nézetben elérhető legyen
 (`editpanel/` és `editoneup/captionbutton`). Nálunk a szerkesztő panel a
-**nézőn belül** él (`EditorPanel` ugyanabban a fájlban, `PhotoViewer.qml`),
+**nézőn belül** él (`PhotoViewer.qml` → `PhotoViewerLeftDrawer.qml` →
+`PhotoViewerEditorPanel.qml`),
 tehát egy sáv szolgálja mindkét állapotot. A teszt ezt **méri**: a sáv
 láthatósága nem függ a szerkesztő nyitottságától.
 """
@@ -33,9 +34,9 @@ from pathlib import Path
 from PySide6.QtCore import QMetaObject, QObject, Qt
 from tests.support.qml_blokk import blokk_horgonyra
 
-_VIEWER_QML = (
+_QML_DIR = (
     Path(__file__).resolve().parents[3]
-    / "src/picasapy/app/qml/PicasaPy/PhotoViewer.qml"
+    / "src/picasapy/app/qml/PicasaPy"
 )
 
 
@@ -140,7 +141,7 @@ class TestAKetBelepesiPont:
         BELÜL él, tehát egy sáv szolgálja mindkettőt — de ezt mérni kell,
         nem feltételezni: a sáv `visible`-je nem hivatkozhat a szerkesztő
         nyitottságára."""
-        forras = _VIEWER_QML.read_text(encoding="utf-8")
+        forras = (_QML_DIR / "PhotoViewer.qml").read_text(encoding="utf-8")
         blokk = blokk_horgonyra(forras, 'objectName: "captionBar"')
         assert "visible: viewer.captionVisible" in blokk, (
             "a felirat-sáv láthatósága nem csak a beállításon múlik"
@@ -153,10 +154,13 @@ class TestAKetBelepesiPont:
     def test_a_szerkeszto_panel_a_nezon_belul_van(self):
         """A fenti következtetés alapja — ha ez megváltozik, a fenti
         teszt önmagában már nem elég, és ezt itt kell megtudni."""
-        forras = _VIEWER_QML.read_text(encoding="utf-8")
-        assert "EditorPanel {" in forras, (
+        nezo = (_QML_DIR / "PhotoViewer.qml").read_text(encoding="utf-8")
+        fiok = (_QML_DIR / "PhotoViewerLeftDrawer.qml").read_text(
+            encoding="utf-8"
+        )
+        assert "PhotoViewerLeftDrawer {" in nezo and "PhotoViewerEditorPanel {" in fiok, (
             "a szerkesztő panel kikerült a nézőből — a #1816 két belépési "
-            "pontját újra kell mérni"
+            "pontját újra kell mérni (a PhotoViewer → bal fiók → szerkesztőpanel lánc megszakadt)"
         )
 
 

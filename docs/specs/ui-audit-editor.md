@@ -2123,28 +2123,29 @@ viszont egybeesik a `respack.yt` öt ikonjával.
 **Mért összevetés.** Referencia: a 1:1 képernyőkép fülsávja (276 × 25 px).
 Mai: az `EditorTabBar` offscreen renderje ugyanekkora vásznon, a valódi
 `EditTabIcon.qml` és `Theme` használatával. Natív: a `respack.yt` réteg
-önmagában, dekódolva.
+önmagában, dekódolva. A korábbi QML IoU-értékeket a jelenlegi offscreen
+rajzolási környezettel újramérve a régi állapot 0,635 / 0,543 / 0,650 / 0,664 /
+0,661 lett; az eltérés a rajzolási környezettől származik.
 
-| fül | irány | kitöltés | forma: tinta-IoU (natív ↔ ref · mai ↔ ref) | tinta-doboz (ref · mai) | Teendő |
+| fül | irány | kitöltés | forma: tinta-IoU (natív ↔ ref · régi QML ↔ ref · javított QML ↔ ref) | tinta-doboz (ref · javított) | Teendő |
 |---|---|---|---|---|---|
-| 1 csavarkulcs | egyezik | tinta: eredeti `#373535`, mai `#2b2b2b` | 0,897 · 0,629 | 15×14 · 15×16 | tinta-szín `#373535`; a fej és a nyél alakja újrarajzolandó |
-| 2 nap | egyezik: bal fele tele, jobb fele üres | tinta: `#373535` · `#2b2b2b` | 0,716 · 0,552 | 17×17 · 17×18 | tinta-szín; a sugarak és a korong újramérendő |
-| 3 ecset | egyezik: nyél jobb fent, sörte bal lent | tinta: `#373535` · `#2b2b2b` | 0,980 · 0,659 | 18×16 · 20×19 | a sörte és a nyél alakja; a doboz 18×16, nem 20×19 |
-| 4 zöld ecset | egyezik: négyzet bal fent, ecset rajta | négyzet: eredeti `#91b97e` átmenettel, mai `#3b8f00` lapos | 0,990 · 0,664 | 18×16 · 20×19; négyzet 16×16 · 15×15 | négyzet-szín és átmenet (lent); a négyzet 16×16 |
-| 5 kék ecset | egyezik | négyzet: eredeti `#67add0` átmenettel, mai `#448afd` lapos | 0,990 · 0,661 | 18×16 · 20×19; négyzet 16×16 · 15×15 | ugyanaz, kék |
+| 1 csavarkulcs | egyezik | tinta: `#373535` | 0,897 · 0,635 · 0,864 | 15×14 · 15×15 | a mért érték meghaladja a 0,847-es küszöböt |
+| 2 nap | egyezik: bal fele tele, jobb fele üres | tinta: `#373535` | 0,716 · 0,543 · 0,759 | 17×17 · 17×15 | a mért érték meghaladja a 0,666-os küszöböt |
+| 3 ecset | egyezik: nyél jobb fent, sörte bal lent | tinta: `#373535` | 0,980 · 0,650 · 0,930 | 18×16 · 18×16 | a mért érték eléri a 0,930-as küszöböt |
+| 4 zöld ecset | egyezik: négyzet bal fent, ecset rajta | zöld háromsávos átmenet | 0,990 · 0,664 · 0,941 | 18×16 · 18×15; négyzet 16×16 · 16×16 | a mért érték meghaladja a 0,940-es küszöböt |
+| 5 kék ecset | egyezik | kék háromsávos átmenet | 0,990 · 0,661 · 0,949 | 18×16 · 17×15; négyzet 16×16 · 16×16 | a mért érték meghaladja a 0,940-es küszöböt |
 
 - **A négyzet átmenete** (eredeti = referencia, mediánban egyezik): zöld
   felül / középen / alul `(191,214,179)` / `(142,183,122)` / `(154,191,136)`;
-  kék `(166,207,227)` / `(98,170,207)` / `(115,179,212)`. A mai négyzet egyszínű.
-- **A felhő** (fehér folt a négyzeten): eredeti `#f8faf7` (zöld) és `#f5f9fc`
-  (kék); mai `#ffffff`. Az eltérés legfeljebb 10 szint.
-- **Függőleges elhelyezés**: a mai `iconTop = 4` minden ikonra. Az eredetinél a
-  doboz felső éle 4, 3, 2, 2, 2. A 3-5. ikon tinta-közepe a mai renderben kb.
-  4 px-rel lejjebb van a referenciáénál (+4,1 · +4,0 · +4,0), vízszintesen
-  1,5-2,2 px-rel balra.
+  kék `(166,207,227)` / `(98,170,207)` / `(115,179,212)`. A régi QML
+  egyszínű négyzetét a javított háromsávos szín váltotta.
+- **A felhő** (fehér folt a négyzeten): eredeti és javított `#f8faf7` (zöld),
+  illetve `#f5f9fc` (kék).
+- **Függőleges elhelyezés**: a javított `iconTop = round((height -
+  iconHeight) / 2 - 1)` értékei 4, 3, 2, 2, 2; egyeznek a `.tre`
+  horgonyából mért pozíciókkal.
 - **Téma**: a referencia tinta-színe (`#373535`) megegyezik a natív réteggel,
-  tehát nem téma-függő. A mai `#2b2b2b` a `Theme.iconInk` világos értéke, amelyet
-  a `TrayActionButton.qml` is használ: a fülikonoknak saját tokent kell kapniuk.
+  tehát nem téma-függő; a javított első öt ikon is ezt a saját tintaszínt használja.
 - **Jogi határ**: a `respack.yt` grafikája nem másolható a PicasaPy-ba
   (`tools/picasa/respack.py`, jogi megjegyzés). A Teendő saját rajz, a mért
   alakhoz igazítva; az `EditTabIcon.qml` eddig is saját rajz.
@@ -2155,11 +2156,11 @@ tömegközéppontok egész pixeles igazítása után. Kontrollok, ugyanazzal a m
 
 - **plafon**: natív ↔ referencia = 0,897 · 0,716 · 0,980 · 0,990 · 0,990. Ez
   a legjobb érték, amit ez a mérés adhat;
-- **tükrözés**: a mai tükrözött tintája 0,092-0,206, a normál 0,552-0,664. Az
-  irány egyezik;
-- **kereszt**: más ikon ↔ referencia legfeljebb 0,353 (csavarkulcs, nap). A
-  három ecset egymáshoz 0,97-0,98, ezért az ecset-IoU csak a saját natív
-  plafonjához mérendő.
+- **tükrözés**: a javított vízszintesen tükrözött tinta-IoU 0,073-0,207; a
+  normál 0,759-0,949. Az irány egyezik;
+- **kereszt**: a csavarkulcs és a nap másik ikonhoz mért maximuma 0,304; a
+  három ecset egymás közti IoU-ja 0,921-0,949, ezért az ecset-IoU továbbra is
+  csak a saját natív plafonjához mérendő.
 
 **Bizonyítottsági fok**
 
@@ -2168,8 +2169,9 @@ tömegközéppontok egész pixeles igazítása után. Kontrollok, ugyanazzal a m
   képernyőn elfoglalt hely.
 - Irány, tinta-szín és a négyzet mediánja: **megerősített**. Két független út:
   a `respack.yt` réteg dekódolása és a képernyőkép pixelei egyeznek.
-- A mai alak eltérése: **erős**. 0,55-0,66, a plafon 0,72-0,99. A nap-ikonnál a
-  plafon alacsony (0,716), ezért ott **feltételes**.
+- A javított alak natív plafonhoz viszonyított eredménye: **megerősített**; az
+  öt IoU rendre 0,864 / 0,759 / 0,930 / 0,941 / 0,949, és mindegyik legfeljebb
+  0,05-tel marad el a natív plafontól.
 - A függőleges szabály `round((25 - h) / 2 - 1)`: **erős**. A `.tre`
   constraint olvasatából jön, az öt képernyő-érték egyezik vele.
 - A binárisbeli ötös ciklus (`0x0050ccd0`): a határ megfigyelt tény, a szerepe

@@ -17,7 +17,7 @@ import picasapy.app
 import pytest
 
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
-_NEZO = (_QML / "PhotoViewer.qml").read_text(encoding="utf-8")
+_PHOTO_AREA = (_QML / "PhotoViewerPhotoArea.qml").read_text(encoding="utf-8")
 _LEJATSZO = (_QML / "VideoPlayerView.qml").read_text(encoding="utf-8")
 
 #: a tulajdonos könyvtárából mért lánc (a `movieend` áll elöl)
@@ -79,17 +79,17 @@ class TestAModell:
 
 class TestANezoAtadja:
     def test_mindket_pont_kotese_megvan(self):
-        assert 'property: "trimStartMs"' in _NEZO
-        assert 'property: "trimEndMs"' in _NEZO
+        assert 'property: "trimStartMs"' in _PHOTO_AREA
+        assert 'property: "trimEndMs"' in _PHOTO_AREA
 
     def test_a_MODELLBOL_jon(self):
-        assert "movieTrimAt(" in _NEZO
+        assert "movieTrimAt(" in _PHOTO_AREA
 
     def test_a_kotes_csak_VIDEONAL_el(self):
         """A fotó-nézetet nem érintheti — a Loader is csak videónál aktív."""
-        kezd = _NEZO.index('property: "trimStartMs"')
-        veg = _NEZO.index('property: "trimEndMs"', kezd)
-        assert "viewer.isCurrentVideo" in _NEZO[kezd:veg]
+        kezd = _PHOTO_AREA.index('property: "trimStartMs"')
+        veg = _PHOTO_AREA.index('property: "trimEndMs"', kezd)
+        assert "photoArea.hostViewer.isCurrentVideo" in _PHOTO_AREA[kezd:veg]
 
 
 class TestALejatszo:
