@@ -65,6 +65,7 @@ from .formatting import to_local_path as _to_local_path  # noqa: F401 — a
 # fileops_controller kompatibilis import-útja (#150 előtt itt élt a függvény)
 from .keywords_controller import KeywordsMixin
 from .library_controller import LibraryMixin
+from .option_settings import save_all_option_settings
 from .models import FolderListModel, PhotoGridModel, folder_order
 from .people_controller import PeopleMixin
 from .project_folders_controller import ProjectFoldersMixin
@@ -344,6 +345,11 @@ class AppController(
         if self._settings is None:
             self._settings = QSettings("PicasaPy", "PicasaPy")
         return self._settings
+
+    @Slot("QVariantMap")
+    def saveOptionSettings(self, values: dict[str, object]) -> None:  # noqa: N802
+        """Az Opciók OK gombja kiírja a teljes, már elfogadott értékképet."""
+        save_all_option_settings(self._get_settings(), values)
 
     # -- QML-nek kitett tulajdonságok --------------------------------------
 

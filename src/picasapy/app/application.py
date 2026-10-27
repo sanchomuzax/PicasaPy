@@ -82,6 +82,9 @@ from .startup_relocate import (
     KoltozesHid,
 )
 from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
+from .option_settings import (
+    initialize_option_settings,
+)
 from .i18n_build import forditsd
 from .language_controller import (
     DEFAULT_LANGUAGE,
@@ -1863,6 +1866,15 @@ def _startup_step_register_qml_context(state):
         # írjuk-e ki az XMP-t" kapcsoló (alapérték BE, ahogy az eredetiben).
         settings=QSettings(),
         face_detection_enabled=controller.faceDetectionEnabledFor,
+    )
+    # #6067: a regisztrált értékeket induláskor rögzítjük, hogy egy későbbi
+    # alapérték-változás ne módosítsa a felhasználó által látott állapotot.
+    initialize_option_settings(
+        controller._get_settings(),
+        import_source_controller=import_source_controller,
+        library_controller=controller,
+        print_controller=print_controller,
+        face_scan_controller=face_scan_controller,
     )
     engine.rootContext().setContextProperty("faceScanController", face_scan_controller)
     face_scan_controller.unnamedCountChanged.connect(
