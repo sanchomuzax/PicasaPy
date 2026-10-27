@@ -500,7 +500,7 @@ A két teljes Capstone-törzsben a kapacitásbővítés `0x28`-as rekordmérette
 
 **A követett pixelút:** a független index-olvasás `0x00901110 → 0x00913960 → 0x00910bc0 → 0x00910630` hívási kapcsolatot ad. A célzott utasítások szerint a `0x00910630` a sor `y`, a középpont `centerY` és a sugár `r` alapján `dy = y - centerY`, `q = r² - dy²` értéket képez (`0x00910a2b`-`0x00910a56`). Ha `q ≥ 0`, a `0x0049fe60` négyzetgyök-út után a sor két x-határa `centerX - sqrt(q)` és `centerX + sqrt(q)` (`0x00910a6b`-`0x00910aa1`); a határkonverzió `fistp`, majd a tárolt tartomány korlátozása következik. A `0x00913960` a két körhöz tartozó ROI-puffereket állítja elő, és a sorokat `4 * (xEnd - xStart)` bájtos lépésekben másolja (`0x00913b3e`-`0x00913b47`, `0x00bf2350`=`_memcpy`). Ez a puffer-előkészítés önmagában nem keverési művelet; a pixelenkénti radiális súly a későbbi `0x00910e90` Poisson-útban van.
 
-**Bizonyítottság:** `feltételes`. Az utasításszintű út (A) adja meg a képletet és az argumentumok sorrendjét. A tőle külön RTTI/index- és adatút, valamint az eredeti UI súgószövege (B) azonosítja a retus renderútját, az első célpontot és a második forráspontot; a gyűrűmérés a lecsengést alátámasztja, de a hiányzó eredeti forráspont miatt nem igazolja számszerűen a smoothstepet. Ezért a képlet bináris lelete erős, de az előírt két, a pontos képletet külön igazoló út nem áll rendelkezésre. A régebbi `2026-10-26-5975-kettos-retus.txt` dumpban a `0x0090…` törzsek nem voltak meg; a későbbi `2026-10-27-6002-retus-puffer.txt` ezt pótolja.
+**Bizonyítottság:** `megerősített` a bináris súlyprofilra a 2026-10-27-i QEMU-méréssel együtt. Az A út a korábban dokumentált utasításszintű képlet és adatkonstans; a B út az eredeti `0x00910e90` futtatása QEMU-ban, az interpolációba átadott tényleges `w` rögzítésével. A két út a `r=25`, `s=0` paraméterezésre egyezik: `R=22.5`, `a=0`, a súly 0-ról 1-re nő. A gyűrűátlagok külön képkimeneti mérések, nem a súly közvetlen mérései. Ezért a bináris profil bizonyított, de a job #318/#319 teljes kimenetével való egyezés `feltételes`: az eredeti kattintáspontok hiányoznak, és a PicasaPy módosított Poisson-kimenete nem készült el ebben a kutatói körben.
 
 **Mérés és PicasaPy-összevetés:** a job #318/#319 eredeti pár 1024×1024; a briefben megadott 25 px-es sugár mellett a küszöb `max(|ΔR|,|ΔG|,|ΔB|)>12`. Az eredeti gyűrűátlagot a `(47,622)` célközépponttól számítva, a PicasaPy `apply_retouch_patches()` kimenetét ugyanezzel a sugárral és célközéppel újramérve:
 
@@ -589,6 +589,63 @@ A job #321 eredeti szerkesztőképernyőjén (mérésfájl: `~/.local/share/pica
 **Fejlesztési jegy javasolt:** az eredeti radiális súlyprofilját kell a PicasaPy `NORMAL_CLONE` kimenetéhez mérés alapján közelíteni; a paramétereket nem szabad a megadott gyűrűkből szabadon illeszteni. A fenti, „Retusfolt peremprofiljának egyeztetése” táblázat a rögzített gyűrűcélokat tartalmazza.
 
 **A korábbi Ghidra-kérdés lezárása:** a `2026-10-27-6002-retus-puffer.txt` meglévő dekompilációja és a célzott utasításkövetés válaszolja meg a puffer-sorrendet és az `s` statikus forrását. Új Ghidra-kör nem szükséges; a futó folyamat `s` memóriaértékét ez a statikus vizsgálat nem mérte.
+
+#### #6009 - futásidejű peremsúly job #319 paramétereivel
+
+A QEMU-harness az eredeti EXE `0x00910e90` függvényét futtatta; a súlyokat a `0x00910e00` interpolációs hívásba belépve rögzítette. A körben a dokumentált job #319-hez tartozó `r=25` forrásképi sugár és a bináris alap `s=0.0` szerepelt. A sugárközéppont a megadott célpontra, `(47,622)`-re volt állítva; a 31 minta ezen a soron `x=47..77`, azaz `d=0..30` távolságot fedte le. A képleírók és a sor-/x-intervallum stubjai szintetikusak voltak, de a sugár- és súlyszámítást az eredeti bináris végezte. A forráspont a súlyképletben nem szerepel; a teljes Poisson-megoldáshoz és kimeneti összevetéshez viszont kell.
+
+| Távolság `d` (px) | Mért `w` |
+|---:|---:|
+| 0 | 0.000000000 |
+| 1 | 0.005750343 |
+| 2 | 0.022299040 |
+| 3 | 0.048592597 |
+| 4 | 0.083577506 |
+| 5 | 0.126200274 |
+| 6 | 0.175407425 |
+| 7 | 0.230145410 |
+| 8 | 0.289360762 |
+| 9 | 0.352000028 |
+| 10 | 0.417009592 |
+| 11 | 0.483336091 |
+| 12 | 0.549925983 |
+| 13 | 0.615725696 |
+| 14 | 0.679681778 |
+| 15 | 0.740740776 |
+| 16 | 0.797849119 |
+| 17 | 0.849953353 |
+| 18 | 0.896000028 |
+| 19 | 0.934935510 |
+| 20 | 0.965706468 |
+| 21 | 0.987259209 |
+| 22 | 0.998540461 |
+| 23 | 1.000000000 |
+| 24 | 1.000000000 |
+| 25 | 1.000000000 |
+| 26 | 1.000000000 |
+| 27 | 1.000000000 |
+| 28 | 1.000000000 |
+| 29 | 1.000000000 |
+| 30 | 1.000000000 |
+
+A QEMU-kimenetben `r=25.0`, `R=22.5`, `a=0.0`; a belső interpoláló rutin 155-ször futott, öt hívás jutott mind a 31 mintára. A súly 22 px-nél `0.998540461`, 23 px-től `1.0`.
+
+| 2 px-es gyűrű | QEMU `w` az egész `d` mintákon | Eredeti job #318/#319 max-RGB átlag | PicasaPy jelenlegi max-RGB átlag |
+|---|---:|---:|---:|
+| 16-18 px | 0.797849-0.849953 | 20.396226 | 20.202830 |
+| 18-20 px | 0.896000-0.934936 | 13.591667 | 18.954167 |
+| 20-22 px | 0.965706-0.987259 | 11.947761 | 14.436567 |
+| 22-24 px | 0.998540-1.000000 | 9.264493 | 4.840580 |
+| 24-26 px | 1.000000-1.000000 | 5.368750 | 1.978125 |
+| 26-28 px | 1.000000-1.000000 | 3.108824 | 0.844118 |
+
+A `w` dimenzió nélküli gradienskeverési súly, a gyűrűértékek pedig mentett JPEG-ek pixelkülönbségeinek átlagai; a számok nem közvetlenül összehasonlíthatók. Az eredeti pixelkülönbség a távolsággal csökken, miközben a mért `w` nő, ami irányában összhangban van a forrásgradiensről célgradiensre váltással, de a PicasaPy végső értékeit nem jósolja meg.
+
+**Cáfoló kísérlet:** a feladatban közölt korábbi #6007 modellfutás ugyanazt a képletes súlyprofilt a PicasaPy jelölt renderére alkalmazva csak `4.61; 2.48; 1.47; 0.59; 0.01; 0.00` gyűrűátlagot adott az eredeti `20.40; 13.59; 11.95; 9.26; 5.37; 3.11` helyett; a `>12` maszk 174 px volt az eredeti 835 képpontjával szemben. Ez a kimeneti elfogadási feltételt cáfolja azzal a próbával, hogy a sugárkezelés önmagában elegendő lenne. A mostani QEMU-futás megerősíti a `r=25 → R=22.5` súlyprofilt, de nem magyarázza a két képkimenet eltérését, és a modellfutást nem ismétli meg.
+
+**Ítélet:** a futásidejű képlet és súlyprofil megerősített; a teljes job #318/#319 kimenet-egyezés nyitott. A `r=25` sugár az eddig dokumentált 80%-os nézethez és 0.25 ecsetértékhez tartozik, de a QEMU-kör nem futtatta végig a UI-eseményből a képi Poisson-útig tartó láncot. Az eredeti forráspont és a súlyozás PicasaPy Poisson-gradiensbe történő, végponttól végpontig mért beépítése **NINCS MEG**. Nincs szükség új Ghidra-körre; a következő fejlesztői mérésnek az egyező képbemeneten a tényleges gradiensmegoldást és a hat gyűrűt kell ellenőriznie.
+
+**A #6009 készre jelentésének állapota:** a bináris súlyprofil futásidejű igazolása kész; PicasaPy-kód nem változott, ezért az implementációs, képkimeneti és meglévő retusteszt-feltételek ebben a kutatói körben nem teljesültek.
 
 ### #4550 - Egyéni méretarány példa és törlés
 
