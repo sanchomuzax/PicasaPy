@@ -22,9 +22,10 @@ Finomhangolás, Effektek, Kreatív, Művészi, További effektek, Régi effektek
 arcréteg; teljes képernyő. Minden állapotot a
 `tests/app/qml_functional/conftest.py` közös `_build_qml_app` építője állít
 elő, azonos szintetikus fotókkal, rögzített mtime-mal és elszigetelt
-beállításokkal. Animációt nem veszünk mintának: a képrögzítés határidőig
-várja, hogy három egymást követő ablakkép azonos legyen. Kihagyott állapot
-nincs.
+beállításokkal. A fotónéző képszolgáltatós képe a három egyező kockából
+álló korábbi mintánál későbbi kockán is megváltozott (egy megfigyelésben
+18 pixel frissült). A képrögzítés ezért határidőig várja, hogy tíz
+egymást követő ablakkép azonos legyen. Kihagyott állapot nincs.
 
 Használat:
     python scripts/photo_viewer_screenshots.py capture --output /tmp/nezokep
@@ -96,6 +97,7 @@ _AKTIV_FUL_OBJEKTUMOK = (
 )
 _KERET_SZIN = (255, 0, 255, 255)
 _STABIL_KOCKAK = 3
+_STABIL_KEPKOCKAK = 10
 _STABIL_HATARIDO_MP = 8.0
 _ALLAPOT_HATARIDO_MP = 8.0
 
@@ -210,7 +212,12 @@ def _kep_bajtok(kep: Any) -> bytes:
 
 
 def _stabil_ablakkepernyo(ablak: Any, alkalmazas: Any, allapot: str) -> Any:
-    """Határidővel vár három változatlan QImage-kockára, fix alvás nélkül."""
+    """Határidővel vár tíz változatlan QImage-kockára.
+
+    A `editpreview` képszolgáltatós kép egy megfigyelésben a korábbi
+    háromkockás mintavétel után 18 pixelt frissített; tíz azonos kocka ezt
+    a késői képet is megvárja.
+    """
     elozo: bytes | None = None
     azonos = 0
     vege = time.monotonic() + _STABIL_HATARIDO_MP
@@ -222,7 +229,7 @@ def _stabil_ablakkepernyo(ablak: Any, alkalmazas: Any, allapot: str) -> Any:
         else:
             bajtok = _kep_bajtok(kep)
             azonos = azonos + 1 if bajtok == elozo else 1
-            if azonos >= _STABIL_KOCKAK:
+            if azonos >= _STABIL_KEPKOCKAK:
                 return kep.copy()
             elozo = bajtok
         time.sleep(0.05)

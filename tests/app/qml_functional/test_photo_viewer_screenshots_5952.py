@@ -11,6 +11,8 @@ import sys
 import pytest
 from PySide6.QtGui import QColor, QImage
 
+from scripts import photo_viewer_screenshots as screenshot_script
+
 
 GYOKER = Path(__file__).resolve().parents[3]
 MERO = GYOKER / "scripts" / "photo_viewer_screenshots.py"
@@ -68,6 +70,33 @@ def _run(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedP
         capture_output=True,
         check=False,
         timeout=120,
+    )
+
+
+def _assert_capture_waits_past_a_late_preview_frame() -> None:
+    stale = QImage(4, 3, QImage.Format.Format_RGBA8888)
+    stale.fill(QColor("#142536"))
+    settled = QImage(4, 3, QImage.Format.Format_RGBA8888)
+    settled.fill(QColor("#abcdef"))
+
+    class _Alkalmazas:
+        @staticmethod
+        def processEvents() -> None:
+            pass
+
+    class _Ablak:
+        def __init__(self) -> None:
+            self.frame = 0
+
+        def grabWindow(self) -> QImage:
+            self.frame += 1
+            return stale if self.frame <= 3 else settled
+
+    eredmeny = screenshot_script._stabil_ablakkepernyo(
+        _Ablak(), _Alkalmazas(), "alapnezet"
+    )
+    assert screenshot_script._kep_bajtok(eredmeny) == screenshot_script._kep_bajtok(
+        settled
     )
 
 
@@ -189,6 +218,50 @@ def test_capture_creates_visible_main_and_viewer_states(
         records["mainSplit-max"]["folder_pane_width"]
         - (records["mainSplit-max"]["main_split_width"] - 240)
     ) <= 3
+
+
+@pytest.mark.parametrize("height", (695, 700, 705))
+def test_two_consecutive_captures_are_pixel_identical_in_all_states(
+    tmp_path: Path, height: int
+) -> None:
+    _assert_capture_waits_past_a_late_preview_frame()
+    env = os.environ.copy()
+    env["QT_QPA_PLATFORM"] = "offscreen"
+    env["QT_QUICK_BACKEND"] = "software"
+    before = tmp_path / "elso"
+    after = tmp_path / "masodik"
+
+    for output in (before, after):
+        result = _run(
+            "capture",
+            "--output",
+            str(output),
+            "--width",
+            "1024",
+            "--height",
+            str(height),
+            env=env,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+
+    result = _run(
+        "compare",
+        "--before",
+        str(before),
+        "--after",
+        str(after),
+        "--diff-dir",
+        str(tmp_path / "kulonbseg"),
+    )
+
+    sorok = result.stdout.splitlines()
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert len(sorok) == len(ALLAPOTOK)
+    assert all(sor.endswith(": 0 eltérő képpont") for sor in sorok), result.stdout
+
+
+def test_capture_waits_past_a_late_preview_frame() -> None:
+    _assert_capture_waits_past_a_late_preview_frame()
 
 
 def test_compare_reports_exact_pixel_count_rectangle_and_diff(tmp_path: Path) -> None:
