@@ -139,7 +139,8 @@ Item {
             // különben egy elvetett párbeszéd némán kikapcsolná a kérdést.
             CheckBox {
                 objectName: "saveConfirmRememberCheck"
-                text: qsTr("Do not ask again")
+                //: IDS_CLOSE_LAST_CHECK — az eredeti Mentés-jelölő felirata
+                text: qsTr("Do not ask me again.")
                 checked: saveConfirmDialog.rememberChecked
                 onToggled: saveConfirmDialog.rememberChecked = checked
             }

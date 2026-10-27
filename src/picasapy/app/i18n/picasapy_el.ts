@@ -6631,10 +6631,10 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::progress</extracomment>
             <translation>Θα δημιουργηθεί αντίγραφο ασφαλείας αυτού του αρχείου.</translation>
         </message>
         <message>
-            <source>Do not ask again</source>
+            <source>Do not ask me again.</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeFaceMoviePanelRememberDialog</extracomment>
-            <translation>Να μην ερωτηθώ ξανά</translation>
+picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
+            <translation>Να μην εμφανιστεί ξανά η ερώτηση.</translation>
         </message>
         <message>
             <source>Save As...</source>
