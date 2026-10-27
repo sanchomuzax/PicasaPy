@@ -37,7 +37,7 @@ from tests.support.qml_blokk import blokk_horgonyra
 from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 _QML = (
-    Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
+    Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "TrayTopRow.qml"
 ).read_text(encoding="utf-8")
 
 KAPCSOLOK = ["people", "places", "tags", "properties"]

@@ -443,6 +443,11 @@ TALCA_LENYOMASRA = [
     "trayCollageButton",    # headerpanel/create_collage
     "trayMovieButton",      # headerpanel/create_movie
 ]
+TALCA_GOMB_FORRASA = {
+    "trayStarButton": "TrayTopRow.qml",
+    "trayCollageButton": "TrayActionArea.qml",
+    "trayMovieButton": "TrayActionArea.qml",
+}
 
 #: a négy fiók-váltó EGY delegate-ből jön (`trayPanelToggle_<név>`), ezért az
 #: elemneve összefűzött kifejezés — külön próba nézi.
@@ -453,15 +458,16 @@ FIOK_VALTO_HORGONY = 'objectName: "trayPanelToggle_" + modelData.nev'
 class TestATalcasav:
     """A tálcasáv nézet- és panelnyitó gombjai LENYOMÁSRA sülnek el.
 
-    Forrás-szintű őr: ezek a gombok a `TrayBar.qml`-ben élnek, aminek a
-    felépítéséhez a teljes ablak és egy betöltött tálca kell — a
+    Forrás-szintű őr: ezek a gombok a külön tálcakomponensekben élnek; a
+    felépítésükhöz a teljes ablak és egy betöltött tálca kell — a
     `lenyomasra` kapcsoló VISELKEDÉSÉT a `TestAKapcsolo` méri a komponensen
     (lenyomásra sül, felengedéskor nem sül el másodszor, tiltva nem sül).
     """
 
     @pytest.mark.parametrize("nev", TALCA_LENYOMASRA)
     def test_a_talca_valtoi_lenyomasra(self, nev: str) -> None:
-        forras = (_QML / "PicasaPy" / "TrayBar.qml").read_text(encoding="utf-8")
+        fajl = TALCA_GOMB_FORRASA[nev]
+        forras = (_QML / "PicasaPy" / fajl).read_text(encoding="utf-8")
         kezd = forras.index(f'objectName: "{nev}"')
         kovetkezo = forras.find("objectName:", kezd + 10)
         blokk = forras[kezd : kovetkezo if kovetkezo > 0 else len(forras)]
@@ -473,7 +479,7 @@ class TestATalcasav:
     def test_a_negy_fiok_valto_lenyomasra(self) -> None:
         """A négy váltó (`properties_toggle`, `tags_toggle`, `places_toggle`,
         `people_toggle`) EGY delegate-ből jön — egy kapcsoló mind a négyre."""
-        forras = (_QML / "PicasaPy" / "TrayBar.qml").read_text(encoding="utf-8")
+        forras = (_QML / "PicasaPy" / "TrayTopRow.qml").read_text(encoding="utf-8")
         kezd = forras.index(FIOK_VALTO_HORGONY)
         blokk = forras[kezd : kezd + 900]
         assert "lenyomasra: true" in blokk, (
@@ -486,8 +492,10 @@ class TestATalcasav:
         „Albumba" MŰVELET, nem nézetváltás — azokon az eredetiben sincs
         `mousedown`, és a „lenyomtam, de elhúztam" visszavonhatóság ott a
         fontos."""
-        forras = (_QML / "PicasaPy" / "TrayBar.qml").read_text(encoding="utf-8")
         for nev in ("trayAddToButton", "trayClearConfirmYesButton"):
+            forras = (_QML / "PicasaPy" / "TrayScratchPanel.qml").read_text(
+                encoding="utf-8"
+            )
             kezd = forras.index(f'objectName: "{nev}"')
             vege = forras.find("objectName:", kezd + 10)
             assert "lenyomasra" not in forras[kezd:vege], (
