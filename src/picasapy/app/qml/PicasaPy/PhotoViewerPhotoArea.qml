@@ -807,13 +807,15 @@ Item {
                  && photoArea.hostViewer.isCurrentVideo
         ignoreUnknownSignals: true
         function onTrimRequested(startMs, endMs) {
-            if (controller && controller.setMovieTrim !== undefined)
+            if (typeof controller !== "undefined" && controller
+                    && controller.setMovieTrim !== undefined)
                 controller.setMovieTrim(
                     photoArea.hostViewer.currentIndex, startMs, endMs)
         }
         //: #1838: a képkocka mentése — a vezérlő dekódol és ír
         function onCaptureFrameRequested(positionMs) {
-            if (controller && controller.captureMovieFrame !== undefined)
+            if (typeof controller !== "undefined" && controller
+                    && controller.captureMovieFrame !== undefined)
                 controller.captureMovieFrame(
                     photoArea.hostViewer.currentIndex, positionMs)
         }
@@ -850,7 +852,7 @@ Item {
     }
 
     Connections {
-        target: controller
+        target: typeof controller !== "undefined" ? controller : null
         ignoreUnknownSignals: true
         function onMovieFrameCapturing() {
             kepkockaJelzes.mutasd(qsTr("Capturing frame..."))
@@ -931,13 +933,15 @@ Item {
         //: (#72); a programozott szinkron (nyitás, lapozás)
         //: nem vált ki előnézetet (#131)
         onCsuszkaMozgott: (ertek) => {
-            if (photoArea.hostEditorPanel.tiltActive && !photoArea.hostViewer.tiltSzinkronFut)
+            if (typeof editController !== "undefined"
+                    && photoArea.hostEditorPanel.tiltActive && !photoArea.hostViewer.tiltSzinkronFut)
                 editController.previewTilt(ertek)
         }
         //: #4058: az elengedés csak az előnézetet frissíti;
         //: menteni az Alkalmaz gomb fog.
         onCsuszkaElengedve: (ertek) => {
-            if (photoArea.hostEditorPanel.tiltActive)
+            if (typeof editController !== "undefined"
+                    && photoArea.hostEditorPanel.tiltActive)
                 editController.previewTilt(ertek)
         }
         //: A sáv a kép forgatása fölötti, forgatatlan rétegen
@@ -990,7 +994,8 @@ Item {
             //: Alkalmazás. Változatlan értéknél ne keletkezzen
             //: fölösleges réteg vagy Visszavonás-lépés.
             if (tool === "tilt") {
-                if (editorToolBar.csuszkaErtek
+                if (typeof editController !== "undefined"
+                        && editorToolBar.csuszkaErtek
                         !== photoArea.hostViewer.tiltErtekNyitaskor)
                     editController.setTilt(
                         editorToolBar.csuszkaErtek)
@@ -1099,7 +1104,8 @@ Item {
             ? photoArea.hostViewer.photosModel.filePathAt(photoArea.hostViewer.aktivSor) : ""
         onEdited: function(manualAdded) {
             photoArea.hostViewer.facesEditRevision += 1
-            if (photoArea.hostViewer.controllerReady)
+            if (typeof controller !== "undefined"
+                    && photoArea.hostViewer.controllerReady)
                 controller.refreshCollections()
             if (manualAdded) {
                 if (photoArea.hostViewer.appWindow)
@@ -1141,8 +1147,8 @@ Item {
         parent: photoArea.fokuszKep
         z: 5
         readonly property bool aktiv:
-            (editController && editController.paintMaskSupported
-             !== undefined)
+            (typeof editController !== "undefined" && editController
+             && editController.paintMaskSupported !== undefined)
                 ? editController.paintMaskSupported : false
         visible: paintMaskArea.aktiv
         enabled: paintMaskArea.aktiv
@@ -1157,7 +1163,7 @@ Item {
         cursorShape: Qt.BlankCursor
 
         function fess(pont) {
-            if (!editController) return
+            if (typeof editController === "undefined" || !editController) return
             editController.paintStroke(
                 pont.x / Math.max(1, width),
                 pont.y / Math.max(1, height))
@@ -1173,8 +1179,8 @@ Item {
             objectName: "paintMaskCursor"
             visible: paintMaskArea.containsMouse
             readonly property real sugar:
-                ((editController && editController.paintBrushRatio
-                  !== undefined)
+                ((typeof editController !== "undefined" && editController
+                  && editController.paintBrushRatio !== undefined)
                     ? editController.paintBrushRatio : 0.03)
                 * Math.min(paintMaskArea.width,
                            paintMaskArea.height)
@@ -1185,8 +1191,8 @@ Item {
             y: paintMaskArea.mouseY - sugar
             color: "transparent"
             border.width: 1
-            border.color: (editController
-                           && editController.paintEraser)
+            border.color: (typeof editController !== "undefined"
+                           && editController && editController.paintEraser)
                 ? "#ff6666" : "#ffffff"
         }
     }
@@ -1207,7 +1213,7 @@ Item {
         height: photoArea.fokuszKep.paintedHeight
         cursorShape: Qt.CrossCursor
         onClicked: function(mouse) {
-            if (!editController) return
+            if (typeof editController === "undefined" || !editController) return
             editController.pickNeutralColor(
                 mouse.x / Math.max(1, width),
                 mouse.y / Math.max(1, height))
@@ -1233,7 +1239,7 @@ Item {
         height: photoArea.fokuszKep.paintedHeight
         cursorShape: Qt.CrossCursor
         onClicked: function(mouse) {
-            if (!editController) return
+            if (typeof editController === "undefined" || !editController) return
             var hex = editController.pickEffectColor(
                 mouse.x / Math.max(1, width),
                 mouse.y / Math.max(1, height))
@@ -1277,7 +1283,7 @@ Item {
         property bool hasRetouchSource: false
         property bool committingRetouchPatch: false
         readonly property real brushRadius:
-            (editController
+            (typeof editController !== "undefined" && editController
              && editController.retouchBrushRadiusRatio !== undefined
                 ? editController.retouchBrushRadiusRatio : 0)
             * Math.min(width, height)
@@ -1322,7 +1328,8 @@ Item {
                 photoArea.hostViewer.clampPan()
                 return
             }
-            if (editController.retouchPatchPending)
+            if (typeof editController !== "undefined"
+                    && editController.retouchPatchPending)
                 editController.previewRetouchSource(
                     mouse.x / width, mouse.y / height)
         }
@@ -1332,7 +1339,8 @@ Item {
             // Ctrl+húzás UTÁNi felengedés is "clicked"-et vált
             // ki QML-ben — ez NEM patch-kattintás
             if (mouse.modifiers & Qt.ControlModifier) return
-            if (editController.retouchPatchPending) {
+            if (typeof editController !== "undefined"
+                    && editController.retouchPatchPending) {
                 retouchSourceX = mouse.x / width
                 retouchSourceY = mouse.y / height
                 hasRetouchSource = true
@@ -1345,8 +1353,9 @@ Item {
                 retouchTargetY = mouse.y / height
                 hasRetouchTarget = true
                 hasRetouchSource = false
-                editController.beginRetouchPatch(
-                    mouse.x / width, mouse.y / height)
+                if (typeof editController !== "undefined")
+                    editController.beginRetouchPatch(
+                        mouse.x / width, mouse.y / height)
             }
         }
 
@@ -1531,6 +1540,7 @@ Item {
             onPositionChanged: function(mouse) {
                 if (!dragging) {
                     keretenAll = (width > 0 && height > 0
+                        && typeof editController !== "undefined"
                         && editController.redeyeRegionHitAt(
                             mouse.x / width, mouse.y / height))
                     return
@@ -1548,16 +1558,19 @@ Item {
                 //: változatlanul új régiót ad, akkor is, ha
                 //: egy meglévő kereten indul.
                 if (selW <= 0 || selH <= 0) {
-                    editController.removeRedeyeRegionAt(
-                        mouse.x / width, mouse.y / height)
-                    keretenAll = editController
-                        .redeyeRegionHitAt(
+                    if (typeof editController !== "undefined") {
+                        editController.removeRedeyeRegionAt(
                             mouse.x / width, mouse.y / height)
+                        keretenAll = editController
+                            .redeyeRegionHitAt(
+                                mouse.x / width, mouse.y / height)
+                    }
                     return
                 }
-                editController.addRedeyeRegion(
-                    selX / width, selY / height,
-                    selW / width, selH / height)
+                if (typeof editController !== "undefined")
+                    editController.addRedeyeRegion(
+                        selX / width, selY / height,
+                        selW / width, selH / height)
             }
         }
     }
@@ -1579,8 +1592,9 @@ Item {
         cursorShape: Qt.CrossCursor
         onClicked: function(mouse) {
             if (width <= 0 || height <= 0) return
-            editController.previewNewTextPlacement(
-                mouse.x / width, mouse.y / height)
+            if (typeof editController !== "undefined")
+                editController.previewNewTextPlacement(
+                    mouse.x / width, mouse.y / height)
         }
     }
     // #4545: a mentett szövegdobozok áttetsző, kattintható
@@ -1632,7 +1646,10 @@ Item {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: containsMouse ? Qt.IBeamCursor : Qt.ArrowCursor
-                onClicked: editController.selectTextOverlay(modelData.index)
+                onClicked: {
+                    if (typeof editController !== "undefined")
+                        editController.selectTextOverlay(modelData.index)
+                }
             }
         }
     }
