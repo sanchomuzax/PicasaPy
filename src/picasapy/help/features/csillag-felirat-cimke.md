@@ -132,7 +132,10 @@ tájékoztató ablak elmondja, hogyan kerül címke a gombra, és semmi nem
 A gombok tartalmát a **Gyorscímkék konfigurálása** párbeszédben állítod
 be; ezt a felirat melletti fogaskerék-gomb nyitja meg (buboréksúgója is
 **Gyorscímkék konfigurálása**). Itt bekapcsolhatod, hogy a felső két gombot a program tartsa fenn a
-legutóbb használt címkéknek, és egy gombbal fel is töltheted az üres
+legutóbb használt címkéknek: az új címke az első gombra kerül, az addigi
+első a másodikra csúszik, az addigi második pedig kiesik. Ha olyan
+címkét használsz, amely már a két gomb egyikén áll, a sorrend nem
+változik. Egy gombbal fel is töltheted az üres
 mezőket a gyakran használt címkéiddel. Ha a legutóbbiak fenntartása ki
 van kapcsolva, a program a gyorscímkézést nem is jegyzi fel a
 legutóbbiak közé: ha később bekapcsolod, a közben használt címkék nem

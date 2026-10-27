@@ -6,6 +6,7 @@ Specifikáció: docs/specs/picasa-ini-format.md (`redo=`, `originhash`,
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import cv2
@@ -79,6 +80,20 @@ class TestSaveEditedFirstTime:
         assert result.backup_created_now is True
         assert result.original_backup_path == backup_path
 
+    def test_original_backup_preserves_source_mtime(self, photo):
+        image_path, original_bytes = photo
+        source_mtime_ns = 1_600_000_000_123_456_789
+        os.utime(image_path, ns=(source_mtime_ns, source_mtime_ns))
+
+        result = save_edited(
+            image_path,
+            _solid_image((99, 88, 77)),
+            EditSession.from_value("enhance=1;"),
+        )
+
+        assert result.original_backup_path.read_bytes() == original_bytes
+        assert result.original_backup_path.stat().st_mtime_ns == source_mtime_ns
+
     def test_rendered_image_at_original_location(self, photo):
         image_path, _original_bytes = photo
         rendered = _solid_image((99, 88, 77))
@@ -129,6 +144,8 @@ class TestSaveEditedSecondTime:
     def test_second_save_preserves_first_original(self, photo):
         image_path, original_bytes = photo
         backup_path = image_path.parent / ORIGINALS_DIR_NAME / image_path.name
+        source_mtime_ns = 1_600_000_000_123_456_789
+        os.utime(image_path, ns=(source_mtime_ns, source_mtime_ns))
 
         first = save_edited(
             image_path,
@@ -137,6 +154,7 @@ class TestSaveEditedSecondTime:
         )
         assert first.backup_created_now is True
         assert backup_path.read_bytes() == original_bytes
+        assert backup_path.stat().st_mtime_ns == source_mtime_ns
 
         second = save_edited(
             image_path,
@@ -146,6 +164,7 @@ class TestSaveEditedSecondTime:
         assert second.backup_created_now is False
         # Az eredeti MÉG MINDIG az első (legelső) eredeti bájtjai.
         assert backup_path.read_bytes() == original_bytes
+        assert backup_path.stat().st_mtime_ns == source_mtime_ns
 
         # A látott fájl viszont a MÁSODIK renderelt tartalmat mutatja.
         decoded = cv2.imdecode(
