@@ -172,7 +172,7 @@ class TestFestoReteg:
 
     @property
     def forras(self):
-        return (_QML_DIR / "PhotoViewer.qml").read_text(encoding="utf-8")
+        return (_QML_DIR / "PhotoViewerPhotoArea.qml").read_text(encoding="utf-8")
 
     def test_a_reteg_letezik(self):
         assert 'objectName: "paintMaskArea"' in self.forras

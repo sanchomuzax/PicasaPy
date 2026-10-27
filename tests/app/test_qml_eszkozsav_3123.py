@@ -409,7 +409,7 @@ class TestAKepFolott:
     def test_a_forras_a_MERT_kenyszereket_koveti(self):
         f = (
             Path(__file__).resolve().parents[2]
-            / "src/picasapy/app/qml/PicasaPy/PhotoViewer.qml"
+            / "src/picasapy/app/qml/PicasaPy/PhotoViewerPhotoArea.qml"
         ).read_text(encoding="utf-8")
         # A sáv a forgatatlan photoArea-rétegen áll. A forgatás UTÁNI
         # kirajzolt kép négy sarka adja a középpontot és az alsó élt; a

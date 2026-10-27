@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.260] - 2026-10-27
+
+- A szerkesztő fülikonjai az eredeti színeket, átmeneteket, formát és függőleges igazítást követik. (#5959).
+
+## [0.9.259] - 2026-10-27
+
+- A fotónéző szerkesztőpanelje, bal oldali fiókja, filmcsíkja és képterülete külön QML-komponensekbe került, változatlan megjelenéssel. (#5953).
+
 ## [0.9.258] - 2026-10-27
 
 - A zöld tálca-gomb a felhasználó OAuth-kliensével a tálca képeit tölti fel a Google Fotókba. (#5976).

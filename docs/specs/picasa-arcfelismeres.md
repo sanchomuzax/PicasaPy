@@ -6694,6 +6694,23 @@ Az alábbi címek a helyi, SHA-256 `da370693b59d89e7d48646d9617f5f595e371f8e1828
 
 **Módosított fájl:** `docs/specs/picasa-arcfelismeres.md` (54.3/a korábbi Ghidra-kéréseinek státusza; új 54.3/c a `classifier arr`, az ObjectRef-streamhatár, a WeakClassifier `+0x1c` mezője és a bizonyítottsági korlátok).
 
+### 54.3/d A `+0x1c` összehasonlító szerepének és a J8 mérőadatának friss ellenőrzése (2026-10-27)
+
+**Eredeti | Nálunk | Teendő.**
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A vizsgált Red.dll `vsi_FaceViewDetector::runOnOneWindow` útja az összesített pontszámot a rekord `+0x1c` floatjához hasonlítja: `0x10103c14` betölti a mezőt, `0x10103c17` összevet, a `0x10103c1e` ág pedig a küszöb alatti pontszámnál a visszautasító ágra jut. A mező betöltött számértéke és az, hogy ugyanez a DLL fut-e a tiszta Picasa 3.9-ben: **NINCS MEG**. | A PicasaPy YuNet-detektora `score_threshold=0.9` értéket használ; a `FRRecommendIncludeLimit=0,50` a Picasa külön ajánlási útjához tartozik. Egyik érték sem azonosítható a Red rekordjának `+0x1c` mezőjével. | Szerezz tiszta Picasa 3.9 futásból Red.dll-hash-t és a `classifier arr` tényleges streamjét, majd mérd ki a betöltött floatot. A `0.9` és `0,50` értéket ne használd az eredeti mező értékeként. |
+| A `contacts.xml`, `.picasa.ini` és db3 műveletenkénti tartós írási időpontja a bináris helper útjából nem következik. | A helyi mérőarchívum célzottan kibontott 15 `.picasa.ini` fájljában nincs `[Contacts2]`, `faces=`, `ffffffffffffffff` vagy `]facealbum:` jelölő; az archívumban `contacts.xml`, db3 és eredeti Picasa-profiltag sincs. Ez az archívum tartalmát írja le, nem az eredeti program viselkedését. | J8: eredeti Picasa-profilban rögzítsd a `contacts.xml`, `backup.xml`, érintett `.picasa.ini` és db3 állapotát névadás/Choose, javaslat elfogadása/elutasítása, mellőzés, személytörlés, kilépés és újraindítás előtt és után. |
+
+**Két független út és bizonyítottság.** **A út:** a `0x10103870` célzott utasításszintű olvasata (`0x10103c14`-`0x10103c1e`) és a Ghidra-kimenet ugyanazt a küszöb alatti visszautasító ágat mutatja. **B út:** a külön `vsi_WeakClassifier` betöltő `0x10107f20` a `+0x1c` címet float-olvasónak adja (`0x10107f87`-`0x10107f8c`), a szerializáló `0x10107d70` pedig ugyanezt a mezőt `threshold =` néven írja; a Red-index RTTI/vtable adata a mezőt a WeakClassifier típushoz köti. A két út egyezik abban, hogy a helyi DLL mezője küszöbként használt float. Ez **megerősített a vizsgált DLL-re**, de nem igazolja a Picasa 3.9-es runtime DLL azonosságát vagy a futáskor betöltött értéket.
+
+**Cáfoló kísérlet.** Ellenőriztem, hogy a `0,50` `FRRecommendIncludeLimit` vagy a PicasaPy `0.9` értéke használható-e a Red-küszöb bizonyítékaként. A `0,50` a Picasa ajánlási útjához, a `0.9` pedig egy másik detektorhoz tartozik; nincs adat, amely bármelyiket a Red-modell adatfolyamának mezőjéhez kötné. Ez cáfolja az értékek közötti bizonyítatlan megfeleltetést, de nem állítja, hogy a futásidejű Red-float számszerűen biztosan eltér tőlük.
+
+**A #5185 „Kész, ha” 7-8. pontjához.** A 7. pont részleges marad: archívumunk nem tartalmazza az eredeti profilkontrollt, a műveletenkénti írási idő és a db3 rekordváltozás **NINCS MEG**; a megszerzés útja a fenti J8. A 8. pont részleges: a helyi DLL összehasonlító mezőjének szerepe megerősített, de a tiszta 3.9-es DLL/hash, a tényleges stream és float, valamint a scan indítása, kihagyásai, bemeneti mérete és mért eredménye **NINCS MEG**; ezekhez J7-es kontrollált eredeti futás és adatkinyerés szükséges. A fennmaradó kérdéshez új Ghidra-kör nem kell: a hiányzó bizonyíték futásidejű adat és profilfelvétel.
+
+**Módosított fájl:** `docs/specs/picasa-arcfelismeres.md` (54.3/d: a küszöb-összehasonlítás friss független ellenőrzése, az archívum határa és a 7-8. pont nyitott mérései).
+
 ## 55. #5184, helyi Codex-kutatói kör: a helyi archívum nem dönt N1/N3/N7-ről (2026-10-26)
 
 **Hatókör:** a mérőadat-archívum célzott ellenőrzése és az eddigi bináris-/Colab-leletek összevetése. Az eredeti Picasát ebben a körben nem futtattam; a helyi Wine futtató hiányzik. Az archívumból nem bontottam ki fotókat.
@@ -6724,3 +6741,91 @@ Az N4 eredménye változatlanul **nincs alapértelmezett keret vagy név** (`mé
 **Összesített állapot:** N1, N3 és a People Manager N7-része nyitott; a teljes „Kész, ha” lista ezért nem teljes. Eredeti/PicasaPy-eltérés nincs bizonyítva, tehát nincs teendő a kódban és új fejlesztői jegy sem indokolt. Új kutatási jegy nem szükséges; a döntő lépések az eredeti Picasa futásidejű felvételei/mérései a fenti táblában.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (új 55. szakasz: célzott archívummérés, N1/N3/N7 aktuális állapota és megszerzési út); `docs/specs/00-index.md` (#5184 felvétele a kézzel karbantartott nyitott kérdések listájába).
+
+
+## 56. #5184, helyi Codex-ellenőrzés: a munkasor-jelző nem bizonyít név szerinti kihagyást (2026-10-26)
+
+**Hatókör.** A 55. szakasz után a N1 munkasor-jelzőjét két külön disassemblerrel, a bináris-index hívási xrefjeivel és az archivált mintával ellenőriztem; N3-hoz a helyi Red.dll küszöbmező-szerializáló útját olvastam újra. Eredeti Picasa-futtatás és People Manager Ctrl/Shift-felvétel nem készült.
+
+### 56.1 N1: a munkasor +0x10 bájtja igazolt; a fotó névállapota nincs hozzákötve
+
+| Állítás | Forrás | Eredmény |
+|---|---|---|
+| A 0x0047b9f0 az átadott rekord +0x10 bájtját 1-re állítja; a 0x0047baf0 a normál rekordot 0-val építi fel. | bináris (0x0047ba82, 0x0047bb7a) | megerősített: a Capstone-annotált és az llvm-objdump utasításolvasata egyezik |
+| A 0x0049de00 a forrás +0x10 bájtját az új munkatétel +0x10 mezőjébe másolja; a 0x0047b020 ezt a mezőt vizsgálja. | bináris (0x0049de46-0x0049de49, 0x0047b031) | megerősített: két külön disassembler azonos eredménye |
+| A 0x004987c0 a +0x6c sorfej +4 elemét adja át a 0x0047b020 workernek. | bináris (0x0049892d-0x00498933) | megerősített: az utasításolvasat és a picasa3-index xrefs hívókapcsolata egyezik |
+| Nem nulla bitnél a worker a 0x0048bd80 hívása után kész-státusszal visszatér; nulla bitnél a rendes feldolgozási ág folytatódik. | bináris (0x0047b031-0x0047b049) | megerősített a worker vezérlési útjára; nem azonosítja a fotó névállapotát |
+| A 0x004985e0 külön másolója forrás +0x08 dwordot ír a kimenet +0x10 dwordjára; ez átfed a worker által tesztelt byte-tal. | bináris (0x004985f3-0x004985f8); xref (0x00425f60, 0x0045a9d0, 0x00484820) | a másoló és a queue közti indirekt adatkapcsolat NINCS MEG; az eltérő közvetlen hívók önmagukban nem zárják ki |
+| A jelző a névvel rendelkező fotón maradt másik arcot jelenti-e. | NINCS MEG | az eredeti kétarcú fotó név előtti/utáni futásidejű felvétele kell |
+
+**Két független út.** **A út:** Capstone-annotált, címre szűrt disassembly a két producerben, a 0x0049de00 másolóban és a 0x0047b020 fogyasztóban. **B út:** az eredeti EXE ugyanazon utasításainak címre szűrt llvm-objdump olvasata, kiegészítve a külön SQLite-indexelt hívási xrefekkel. Egyeznek a bájt útján és ágviselkedésén; a fotó névállapotára nem adnak eredményt. A hívási kontextus szintén nem tesz a bitből névjelzőt: a 0x0047baf0 egyik hívója, a 0x00602890 a Preferences FRSuggestionThreshold kulcsot olvassa (alapérték: 0x55), majd ugyanazt a munkasor-producert hívja; a 0x00419150 pedig a #db3 adatbázis-út után hívja a 0x0047b9f0 egyes jelzőjű ágát.
+
+**Cáfoló kísérlet és helyesbítés.** Először azt próbáltam igazolni, hogy a 0x004985e0 nem írhatja a worker +0x10 byte-ját, mert másik közvetlen hívási láncban van. A két disassembler ezt nem cáfolja: a 0x004985f3-0x004985f8 utasítások a forrás +0x08 dwordját a kimenet +0x10 dwordjára másolják, majd a 0x004985f9-0x004985fc a +0x0c → +0x14 dwordot. Az első másolás tehát átfed a worker által tesztelt byte-tal. Az index a 0x004985e0 közvetlen hívójaként 0x00425f60, 0x0045a9d0 és 0x00484820 címeket sorol; ezek egyikét sem köti közvetlen xref a 0x0047b9f0/0x0047baf0/0x0049de00/0x004987c0/0x0047b020 sorlánchoz. Az indirekt adatkapcsolat ettől még nincs kizárva. A korábbi „külön másoló, tehát nem lehet forrás” állítás nem állt meg teljesen; a kapcsolat **feltételes / NINCS MEG**, ezért N1 nyitott marad.
+
+**N1 eredménye:** nyitott. A 0x0047b9f0 és 0x0047baf0 által közvetlenül előállított work-item flag útja és ágvezérlő szerepe igazolt; a 0x004985e0 külön másolójának kimenete átfed a vizsgált bájttal, de a munkasorhoz vezető adatkapcsolata nincs meg. Egyik út sem bizonyítja, hogy a bit a fotó névállapotát jelenti; az eredeti Picasa viselkedése név hozzárendelése előtt és után nincs megmérve.
+
+### 56.2 N3: Red-küszöb, képméret és felismerési arány továbbra sincs
+
+A PicasaPy saját forrása 960 px maximális detektálási méretet és 0,9 YuNet-küszöböt állít be (src/picasapy/faces/detector.py); ezek nem az eredeti Picasa értékei. A helyi EXE PE-verziója 3.9.141.259; a mellette levő Red.dll hash-e da370693b59d89e7d48646d9617f5f595e371f8e1828cb1aa9f12530a17c8233, de a DLL index-forrásjelentése Picasa 3.7-et nevez meg, és a DLL-ben nincs PE verzió-erőforrás. A tiszta Picasa 3.9 Red.dll-azonosság ezért NINCS MEG.
+
+`Mérés (a helyi red.cfg SHA-256 értéke): 916d69fd9a412ea937b49f3b0b1401076193dc9be096b3af71921aeba6f51835.` Az `esm_parse.py` aranykapuja ezt a Red.dll hash-ével együtt elfogadta. Az eszköz README-je szerint a parser a konténereket értelmezi, a modellobjektumok belső payloadját nyersen hagyja, ezért ezzel a konfigurációval az effektív Red-detektorküszöb továbbra is NINCS MEG.
+
+| Állítás | Forrás | Eredmény |
+|---|---|---|
+| A 0,50 érték a FRRecommendIncludeLimit downstream ajánlási határa, nem bizonyított Red-küszöb. | bináris (0x0048aab0, 0x0048e1f0; 49.1) | megerősített a Picasa EXE fogyasztóágára |
+| A Red 0x100057c0 kimeneti pontszámmaximumot állít elő; a 0x10001570 hívó a matcher státuszát kezeli. | bináris (0x100057c0, 0x10001570; Ghidra 2026-10-22-ghidra-sor-158-198.txt és -198-hivo.txt; 54.2) | megerősített a helyi hash-azonosított DLL e két függvényére; nem általános állítás minden Red útvonalról |
+| A WeakClassifier 0x10107d70 szerializáló útja a this+0x1c floatot küldi a threshold = konfigurációs mezőbe. | bináris (Red.dll 0x10107d70; llvm-objdump 0x10107dd8-0x10107de1; Ghidra 54.2) | megerősített a helyi DLL szerializáló ágára |
+| A 0x10103870 által összevetett +0x1c mező azonos-e a WeakClassifier szerializált mezőjével, és mi az effektív futó érték. | NINCS MEG | a meglévő Ghidra-kérés 53.5-ben szerepel; a Red objektumok közti adatút-azonosság és runtime-érték nyitott |
+| Az eredeti Red bemeneti WxH-ja és az eredeti felismerési arány ugyanazon címkézett képkészleten. | NINCS MEG | mindkét program futtatása és képenkénti eredményrögzítés kell |
+
+**Két független út és cáfoló próba.** **A út:** a 0x0048e1f0 fogyasztó a 0,50 mezőt ajánlásba-vételi határként használja, a meglévő Red Ghidra-olvasatok pedig a 0x100057c0 maximum- és a 0x10001570 státusz-szerepét mutatják. **B út:** a helyi binárisok címre szűrt utasításolvasata és az indexelt fogyasztói/hívási adatok ugyanezt erősítik; az llvm-objdump újra megmutatja a Red 0x10107d70 konfigurációs mező-szerializálását. Megpróbáltam a 0,50 értéket Red detektorküszöbként értelmezni. A Picasa fogyasztója ajánlási határként azonosítja, a vizsgált Red matcher és közvetlen hívó pedig nem végez végső küszöb-összevetést. A két külön modul útja ellenőrzi a cáfolatot, de más, még nem vizsgált Red callback létezését nem zárja ki.
+
+**N3 eredménye:** nyitott. Red effektív küszöb, tényleges bemeneti WxH és összehasonlítható felismerési arány NINCS MEG.
+
+### 56.3 N7: a People Manager Ctrl/Shift-módja nyitott
+
+A contactmgr.fen contacts listáján nincs kijelölési módot rögzítő attribútum; a 0x007b9630 handler egy aktuális sort tároló indexet frissít. A job-186 referencia egy személyt mutat kijelölve, de Ctrl/Shift-műveletet nem tartalmaz. A Név nélküliek többes kijelölését a job-180 felvétel igazolja, ez azonban nem bizonyítja a People Manager listájának kijelölési módját.
+
+| Állítás | Forrás | Eredmény |
+|---|---|---|
+| Név nélküliek több arcának együttes kijelölése | mérés (job-180; 53.3) | megerősített a Név nélküliek nézetére |
+| People Managerben több személy kijelölhető-e Ctrl/Shift használatával | NINCS MEG | két személyes eredeti Picasa-felvétel kell: sor-kattintás, Ctrl+kattintás, Shift-kattintás |
+
+**N7 eredménye:** részben nyitott; a People Manager többes kijelölési modelljét futásidejű felvétel dönti el.
+
+### 56.4 A többi „Kész, ha” pont változatlan
+
+| Pont | Eredmény | Bizonyíték |
+|---|---|---|
+| N4 - keret és név alapértelmezett láthatósága | ✅ | mérés (job-187; 36.3): a megnevezett arcon alapból sem keret, sem név |
+| N5 - személyszintű mellőzés | ✅ | mérés (job-222..226; 37.10-37.11): személyszintű Ignore nincs, a mellőzés arcszintű |
+| N6 - személy törlése és az arcok hatása | ✅ | mérés (job-222/224; 37.10): a faces sorok törlődnek, a Contacts2 megmarad; a PicasaPy-javítás #5391 |
+| N8 - People Manager referencia-kép | ✅ | mérés (job-186, 24. kép; 36.3) |
+
+Ezeket a felvételeket nem ismételtem meg.
+
+### 56.5 Független újralevezetés: a 0x004985e0 kimenete átfed a vizsgált bájttal
+
+A friss kontextusú, specet nem látó bináris-újralevezetés egyezett a közvetlen work-item lánccal: a 0x0047b9f0/0x0047baf0 1/0 értéket állít elő, a 0x0049de00 byte-szinten másol, a 0x004987c0 pedig a 0x0047b020-nak adja át az elemet. A worker 0x0047b020 string-xrefjei a Preferences és FRAddSuggesetions beállításnevek; a +0x10=1 ág még e beállítás olvasása előtt tér vissza a 0x0048bd80 útvonalon. A 0x00419150 hívó a #db3 adatbázis- és időzítési út után hívja a 0x0047b9f0-t. Ezek nem mutatnak fotónév-olvasást.
+
+A független újralevezetés helyesbítette a 0x004985e0 elvetését: ez a másoló a kimenet +0x10 dwordját is írja. Az indexelt közvetlen hívók külön útvonalat mutatnak, de nem zárják ki az indirekt adatfolyamot. Ezért a +0x10 forráskapcsolat az 56.1 táblázatban feltételesként marad; N1 névállapot-kérdése nyitott. A két út a munkasor-jelző ismert mechanikájában egyezik; a további másoló adatútjának teljességében eltérés marad.
+
+### 56.6 A #5184 „Kész, ha” pontjai és következmény
+
+| Kérdés | Állapot | Bizonyíték |
+|---|---|---|
+| N1: névvel rendelkező fotón talál-e az eredeti további ismeretlen arcot | ⛔ | a munkasor zászlóútja megvan, de névállapothoz nem kötött; eredeti kétarcú, név előtti/utáni felvétel kell |
+| N3: felismerési arány és küszöb a 960 px / 0,9 PicasaPy-beállításhoz képest | ⛔ | eredeti Red effektív küszöb, bemeneti WxH és címkézett arány NINCS MEG |
+| N4: alapértelmezett keret és név | ✅ | job-187 (36.3) |
+| N5: személyszintű mellőzés | ✅ | job-222..226 (37.10-37.11) |
+| N6: személy törlésének útja és hatása | ✅ | job-222/224 (37.10), javítás #5391 |
+| N7: People Manager és Név nélküliek kijelölési modellje | ⛔ | Név nélküliek többes kijelölése job-180-nal igazolt; People Manager Ctrl/Shift-felvétel NINCS MEG |
+| N8: People Manager referencia-kép | ✅ | job-186, 24. kép (36.3) |
+
+**Következtetés és fejlesztési döntés:** N1, N3 és a People Manager N7-része nyitva marad; PicasaPy-eltérés nem bizonyított. Nincs megvalósításra indokolt fejlesztői lista vagy új kutatási kérdés. A feloldáshoz N1 név előtti/utáni kétarcú eredeti felvétel, N3 azonos címkézett képkészletű futtatás és Red WxH/küszöb-rögzítés, N7 pedig a People Manager kattintás/Ctrl/Shift képkockái kellenek. Az N3 meglévő Ghidra-kérése 53.5-ben marad nyitva; ezt ebben a körben nem duplikáltam.
+
+**Kész jegytörzs-kiegészítés:** „A spec 56. szakasza rögzíti az új helyi ellenőrzést. N4, N5, N6 és N8 korábbi eredeti felvételekkel lezárt. N1 munkasor-jelzőjének útja ismert, de a fotó névállapotával való kapcsolata és a névvel ellátott kétarcú fotó eredménye nincs meg. N3 esetén a 0,50 ajánlási határ nem Red-küszöb; a Red effektív küszöbe, bemeneti WxH-ja és címkézett felismerési aránya nyitott. N7 People Manager Ctrl/Shift-kijelölése nyitott; a Név nélküliek többes kijelölését a job-180 igazolja. PicasaPy-eltérés nem bizonyított, ezért fejlesztői feladat nem indokolt. A lezáráshoz N1 név előtti/utáni kétarcú felvétel, N3 azonos címkézett adaton futtatás tényleges Red-bemeneti WxH-val és küszöbrögzítéssel, N7 pedig People Manager kattintás/Ctrl/Shift képkockák kellenek.”
+
+**Új kutatási jegyjavaslat:** nincs; a még nyitott pontok ugyanennek a #5184 feladatnak a szükséges eredeti Picasa-felvételei.
+
+**Módosított fájl:** docs/specs/picasa-arcfelismeres.md (56. szakasz: N1 zászlóút-korrekció és cáfolat, N3 helyi Red.dll-ellenőrzés, N7 runtime-nyitottság, pontról pontra a teljesültség).
