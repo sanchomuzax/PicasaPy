@@ -3613,12 +3613,12 @@ ApplicationWindow {
             peopleModel: controller ? controller.people : []
             selectedPersonName: controller ? controller.currentPersonName : ""
             unnamedFaceCount: (typeof faceScanController !== "undefined" && faceScanController)
-                               ? faceScanController.unnamedCount : 0
+                               ? (faceScanController.unnamedCount ?? 0) : 0
             unnamedFacesActive: window.unnamedFacesOpen
                                 && window.facesAlbumMode === "unnamed"
             // #449: a háttér-beolvasás haladása az albumlistában
             faceScanPercent: (typeof faceScanController !== "undefined" && faceScanController)
-                              ? faceScanController.scanPercent : -1
+                              ? (faceScanController.scanPercent ?? -1) : -1
             onFolderChosen: function(path) {
                 window.clearSelection()
                 window.unnamedFacesOpen = false
@@ -3678,7 +3678,7 @@ ApplicationWindow {
             projectFolders: controller ? controller.projectFolders : []
             ignoredFaceCount: (typeof faceScanController !== "undefined" && faceScanController)
                                ? (controller ? controller.photos.revision : 0,
-                                  faceScanController.ignoredCount)
+                                  faceScanController.ignoredCount ?? 0)
                                : 0
             ignoredFacesActive: window.unnamedFacesOpen
                                 && window.facesAlbumMode === "ignored"
@@ -4286,7 +4286,7 @@ ApplicationWindow {
         loading: window._selectionPending > 0
         uncheckedCount: window._selectionPending
         sortingPercent: window._faceScanController
-            ? window._faceScanController.sortingPercent : -1
+            ? (window._faceScanController.sortingPercent ?? -1) : -1
         folderSelected: controller ? controller.currentFolder.length > 0 : false
         unnamedAlbumMode: window.unnamedFacesOpen
         unnamedGrouped: unnamedFacesView.grouped
