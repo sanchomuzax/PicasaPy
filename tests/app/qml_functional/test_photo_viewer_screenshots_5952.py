@@ -11,6 +11,8 @@ import sys
 import pytest
 from PySide6.QtGui import QColor, QImage
 
+from scripts import photo_viewer_screenshots as screenshot_script
+
 
 GYOKER = Path(__file__).resolve().parents[3]
 MERO = GYOKER / "scripts" / "photo_viewer_screenshots.py"
@@ -71,19 +73,47 @@ def _run(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedP
     )
 
 
-@pytest.mark.skipif(
-    sys.platform == "win32",
-    reason="a rögzítés Linuxon, software renderrel készül; Windowson a képpont-egyezés nem értelmezhető (#3263, #6058)",
-)
-@pytest.mark.parametrize("height", (695, 700, 705))
-def test_capture_creates_visible_main_and_viewer_states(
-    tmp_path: Path, height: int
-) -> None:
-    output = tmp_path / "kepek"
+def _assert_capture_waits_past_a_late_preview_frame() -> None:
+    stale = QImage(4, 3, QImage.Format.Format_RGBA8888)
+    stale.fill(QColor("#142536"))
+    settled = QImage(4, 3, QImage.Format.Format_RGBA8888)
+    settled.fill(QColor("#abcdef"))
+
+    class _Alkalmazas:
+        @staticmethod
+        def processEvents() -> None:
+            pass
+
+    class _Ablak:
+        def __init__(self) -> None:
+            self.frame = 0
+
+        def grabWindow(self) -> QImage:
+            self.frame += 1
+            return stale if self.frame <= 3 else settled
+
+    ablak = _Ablak()
+    eredmeny = screenshot_script._stabil_ablakkepernyo(
+        ablak, _Alkalmazas(), "alapnezet"
+    )
+    assert screenshot_script._kep_bajtok(eredmeny) == screenshot_script._kep_bajtok(
+        settled
+    )
+    assert ablak.frame == 3 + screenshot_script._STABIL_KEPKOCKAK
+
+
+@pytest.fixture(scope="module")
+def captured_screenshot(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> tuple[Path, int]:
+    """Az első capture kimenetét a pixel-összevetés is újrahasznosítja."""
+    root = tmp_path_factory.mktemp("photo-viewer-screenshots")
+    height = int(os.environ.get("PICASA_SCREENSHOT_TEST_HEIGHT", "700"))
+    assert height in (695, 700, 705)
     env = os.environ.copy()
     env["QT_QPA_PLATFORM"] = "offscreen"
     env["QT_QUICK_BACKEND"] = "software"
-
+    output = root / str(height)
     result = _run(
         "capture",
         "--output",
@@ -94,8 +124,14 @@ def test_capture_creates_visible_main_and_viewer_states(
         str(height),
         env=env,
     )
-
     assert result.returncode == 0, result.stdout + result.stderr
+    return output, height
+
+
+def test_capture_creates_visible_main_and_viewer_states(
+    captured_screenshot: tuple[Path, int],
+) -> None:
+    output, height = captured_screenshot
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
     records = {record["name"]: record for record in manifest["states"]}
     assert manifest["sample_photo_mtimes_ns"] == [ROGZITETT_MTIME_NS] * 3
@@ -193,6 +229,48 @@ def test_capture_creates_visible_main_and_viewer_states(
         records["mainSplit-max"]["folder_pane_width"]
         - (records["mainSplit-max"]["main_split_width"] - 240)
     ) <= 3
+
+
+def test_two_consecutive_captures_are_pixel_identical_in_all_states(
+    tmp_path: Path, captured_screenshot: tuple[Path, int]
+) -> None:
+    _assert_capture_waits_past_a_late_preview_frame()
+    env = os.environ.copy()
+    env["QT_QPA_PLATFORM"] = "offscreen"
+    env["QT_QUICK_BACKEND"] = "software"
+    before, height = captured_screenshot
+    after = tmp_path / "masodik"
+
+    result = _run(
+        "capture",
+        "--output",
+        str(after),
+        "--width",
+        "1024",
+        "--height",
+        str(height),
+        env=env,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    result = _run(
+        "compare",
+        "--before",
+        str(before),
+        "--after",
+        str(after),
+        "--diff-dir",
+        str(tmp_path / "kulonbseg"),
+    )
+
+    sorok = result.stdout.splitlines()
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert len(sorok) == len(ALLAPOTOK)
+    assert all(sor.endswith(": 0 eltérő képpont") for sor in sorok), result.stdout
+
+
+def test_capture_waits_past_a_late_preview_frame() -> None:
+    _assert_capture_waits_past_a_late_preview_frame()
 
 
 def test_compare_reports_exact_pixel_count_rectangle_and_diff(tmp_path: Path) -> None:
