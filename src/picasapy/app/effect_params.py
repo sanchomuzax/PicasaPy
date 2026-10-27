@@ -187,9 +187,11 @@ _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     ),
     # ansel=1,#szín (#717: korábban egyáltalán nem volt katalógus-bejegyzése —
     # a gomb egykattintásos alapértékkel, színválasztó nélkül alkalmazott)
-    # #5949: a natív színmező alapértéke #545454; a descriptor `pixel` presetje
-    # külön #555555 és nem írja felül ezt a katalógusértéket (spec: #5944).
-    "ansel": (_color("color", "Pick Color", "#545454"),),
+    # #5990: az új generic FilterDesc színmezője 0xffffffff (`0x008f6910`),
+    # amit a CGenericFilter a +0x50 mezőbe másol (`0x008fc1a0`); ezt rajzolja
+    # az új panelút (`0x0050d740`). A #545454 a régi CDesaturateFilter/desat
+    # úté (`0x0050cf90`), nem az anselé (docs/specs/picasa-native-filter-registry.md, #5944).
+    "ansel": (_color("color", "Pick Color", "#ffffff"),),
     # dir_tint=1,x,y,gradiens,árnyék,#szín (#717: a szín korábban hiányzott)
     "dir_tint": (
         _p("x", "Center X", 0.0, 1.0, 0.5, 0.01),
