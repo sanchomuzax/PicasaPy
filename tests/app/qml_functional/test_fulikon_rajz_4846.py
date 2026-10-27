@@ -64,7 +64,11 @@ class _Ikon:
         p = obj.mapToScene(QPointF(0, 0))
         self.x0, self.y0 = round(p.x()), round(p.y())
         self.w, self.h = round(obj.width()), round(obj.height())
-        self.hatter = self.kep.pixelColor(self.x0 - 3, self.y0 - 3)
+        button = view.rootObject().findChild(QObject, nev)
+        assert button is not None, nev
+        bg = button.mapToScene(QPointF(2, button.height() / 2))
+        dpr = self.kep.devicePixelRatio()
+        self.hatter = self.kep.pixelColor(round(bg.x() * dpr), round(bg.y() * dpr))
 
     def szin(self, x, y):
         return self.kep.pixelColor(self.x0 + x, self.y0 + y)
@@ -131,15 +135,16 @@ def test_a_nap_korongjanak_jobb_fele_ures(sav, qt_app):
 ))
 def test_a_4_es_5_ful_tajkepes_negyzet_plusz_ecset(sav, qt_app, nev, csatorna):
     ikon = _Ikon(sav, qt_app, nev)
-    # a négyzet bal fent: a színcsatorna a vörös fölött áll
-    c = ikon.szin(3, ikon.h // 2 - 2)
+    # A négyzet belsejének szöveg- és felhőmentes pontja.
+    c = ikon.szin(8, ikon.h // 2 - 2)
     if csatorna == "green":
         assert c.green() > c.red() + 20 and c.green() > c.blue() + 20, c.name()
     else:
         assert c.blue() > c.red() + 40, c.name()
-    # a jobb fent (a négyzeten kívül) csak az ecset nyele: sötét
-    n = ikon.negyedek()
-    assert n["bf"] > n["jf"], n
+    # A 16×16-os négyzet a 25×19-es vászon középvonalán átnyúlik,
+    # ezért a negyedenkénti tömeg nem különíti el a négyzetet az ecsettől.
+    # A jobb felső sarokban közvetlenül a sötét nyél képpontját ellenőrizzük.
+    assert ikon.festett(22, 2), "az ecset nyele a jobb felső sarokban festett"
     # az ecset a jobb alsó negyedben sötét (nem színes)
     sotet = sum(
         1 for x in range(ikon.w // 2, ikon.w) for y in range(ikon.h // 2, ikon.h)

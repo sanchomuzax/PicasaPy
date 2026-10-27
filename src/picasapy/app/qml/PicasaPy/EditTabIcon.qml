@@ -39,16 +39,14 @@ Canvas {
         if (icon.kind === "sun") return [17, 18]
         return icon.landscape ? [25, 19] : [20, 19]
     }
-    // csavarkulcs: feje bal fent — teli kör, belőle a nyél tengelye mentén
-    // (225°, azaz bal-felfelé) kerek végű rés kivágva: két egyforma pofa,
-    // köztük kerek U-rés —, nyele jobb lent
+    // csavarkulcs: a nyitott pofa bal fent, a nyél jobb lent.
     function paintWrench(ctx) {
-        var cx = 4.7, cy = 4.7, r = 4.7
+        var cx = 4.3, cy = 4.5, r = 4.7
         ctx.strokeStyle = icon.strokeColor
         ctx.lineWidth = 3.2
         ctx.beginPath()
-        ctx.moveTo(6.5, 6.5)
-        ctx.lineTo(13.4, 14.4)
+        ctx.moveTo(6.4, 6.6)
+        ctx.lineTo(13.6, 13.9)
         ctx.stroke()
         ctx.fillStyle = icon.strokeColor
         ctx.beginPath()
@@ -56,81 +54,104 @@ Canvas {
         ctx.fill()
         ctx.save()
         ctx.globalCompositeOperation = "destination-out"
-        ctx.lineWidth = 2.4
         ctx.beginPath()
         ctx.moveTo(cx, cy)
-        ctx.lineTo(cx - r * 0.8, cy - r * 0.8)
-        ctx.stroke()
+        ctx.lineTo(cx - r * 1.3, cy)
+        ctx.lineTo(cx, cy - r * 1.3)
+        ctx.closePath()
+        ctx.fill()
         ctx.restore()
     }
-    // nap: 8 sugár (a négy főirányú hosszabb), a korong körvonala, a BAL
-    // fele kitöltve, a jobb fele üres
+    // nap: nyolc sugár, balra kitöltött korong és nyitott jobb fél.
     function paintSun(ctx) {
-        var cx = 8.5, cy = 9
+        var cx = 8.5, cy = 8.5
         ctx.strokeStyle = icon.strokeColor
         ctx.fillStyle = icon.strokeColor
-        ctx.lineWidth = 1.6
+        ctx.lineWidth = 1.5
         for (var i = 0; i < 8; i++) {
             var a = Math.PI * i / 4
             var diag = (i % 2 === 1)
-            var r0 = diag ? 5.6 : 5.4
-            var r1 = diag ? 7.0 : (i % 4 === 2 ? 8.2 : 7.7)
+            var r0 = diag ? 5.1 : 5.0
+            var r1 = diag ? 7.1 : (i % 4 === 0 ? 8.2 : (i % 4 === 2 ? 7.4 : 8.2))
             ctx.beginPath()
             ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0)
             ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1)
             ctx.stroke()
         }
-        ctx.lineWidth = 1.4
+        ctx.lineWidth = 1.6
         ctx.beginPath()
-        ctx.arc(cx, cy, 4.0, 0, Math.PI * 2)
+        ctx.arc(cx, cy, 4.4, 0, Math.PI * 2)
         ctx.stroke()
         ctx.beginPath()
-        ctx.arc(cx, cy, 4.0, Math.PI * 0.5, Math.PI * 1.5)
+        ctx.arc(cx, cy, 4.4, Math.PI * 0.5, Math.PI * 1.5)
         ctx.closePath()
         ctx.fill()
     }
     // ecset: nyele jobb fent, sörte bal lent; dx = vízszintes eltolás
     // (a tájképes négyzet mellett az ecset jobbra kerül)
-    function paintBrush(ctx, dx, bristle) {
+    function paintBrush(ctx, dx, bristle, landscapeBrush) {
         ctx.strokeStyle = icon.strokeColor
-        ctx.lineWidth = 3.4
+        ctx.lineWidth = landscapeBrush ? 5.0 : 4.6
         ctx.beginPath()
-        ctx.moveTo(dx + 18.2, 1.8)
-        ctx.lineTo(dx + 10.6, 9.6)
+        ctx.moveTo(dx + (landscapeBrush ? 19 : 18.5), landscapeBrush ? 0 : 0.5)
+        ctx.lineTo(dx + (landscapeBrush ? 12 : 11.5), landscapeBrush ? 7 : 7.5)
         ctx.stroke()
+        ctx.save()
+        ctx.translate(10, 10)
+        // #5959: a tájképen átfutó ecset sörtéjének félpixeles rajza a
+        // zöld és kék háttérrel más élszínt ad; a mért kontúrt külön igazítjuk.
+        var blueLandscape = icon.accentColor.b > icon.accentColor.g
+        var bristleScaleX = landscapeBrush && blueLandscape ? 0.95 : 0.9
+        ctx.scale(bristleScaleX, 0.9)
+        ctx.translate(-10, -10)
+        if (landscapeBrush)
+            ctx.translate(0.5, -0.5)
         ctx.fillStyle = bristle
         ctx.beginPath()
-        ctx.moveTo(dx + 11.2, 8.4)
-        ctx.lineTo(dx + 14.2, 11.4)
-        ctx.bezierCurveTo(dx + 12.8, 14.8, dx + 7.4, 17.8, dx + 0.7, 19)
-        ctx.lineTo(dx + 0, 18.2)
-        ctx.lineTo(dx + 0, 17.6)
-        ctx.bezierCurveTo(dx + 0.4, 15.4, dx + 3.0, 12.6, dx + 7.4, 11.4)
+        var bx = dx + 1
+        ctx.moveTo(bx + 7.4, 7.9)
+        ctx.lineTo(bx + 10.0, 9.8)
+        ctx.bezierCurveTo(bx + 11.4, 12.9, bx + 8.7, 15.4, bx + 6.4, 16.4)
+        ctx.lineTo(bx + 0.2, 15.6)
+        ctx.lineTo(bx + 0.5, 14.7)
+        ctx.bezierCurveTo(bx + 1.3, 11.7, bx + 4.5, 9.1, bx + 8.2, 8.3)
         ctx.closePath()
         ctx.fill()
+        ctx.restore()
     }
-    // tájképes négyzet (4./5. fül): a fül színe + fehér felhő
+    // A tájképes négyzet és a felhő az eredeti helyen, mért háromsávos színnel.
     function paintLandscape(ctx) {
-        var r = 3.5
-        ctx.fillStyle = icon.accentColor
+        var x = 4, y = 0, s = 16, r = 2.5
+        var green = icon.accentColor.g > icon.accentColor.b
+        var topColor = green ? "#bfd6b3" : "#a6cfe3"
+        var middleColor = green ? "#8eb77a" : "#62aacf"
+        var bottomColor = green ? "#9abf88" : "#73b3d4"
         ctx.beginPath()
-        ctx.moveTo(r, 0)
-        ctx.lineTo(15 - r, 0)
-        ctx.quadraticCurveTo(15, 0, 15, r)
-        ctx.lineTo(15, 15 - r)
-        ctx.quadraticCurveTo(15, 15, 15 - r, 15)
-        ctx.lineTo(r, 15)
-        ctx.quadraticCurveTo(0, 15, 0, 15 - r)
-        ctx.lineTo(0, r)
-        ctx.quadraticCurveTo(0, 0, r, 0)
+        ctx.moveTo(x + r, y)
+        ctx.lineTo(x + s - r, y)
+        ctx.quadraticCurveTo(x + s, y, x + s, y + r)
+        ctx.lineTo(x + s, y + s - r)
+        ctx.quadraticCurveTo(x + s, y + s, x + s - r, y + s)
+        ctx.lineTo(x + r, y + s)
+        ctx.quadraticCurveTo(x, y + s, x, y + s - r)
+        ctx.lineTo(x, y + r)
+        ctx.quadraticCurveTo(x, y, x + r, y)
         ctx.closePath()
-        ctx.fill()
+        ctx.save()
+        ctx.clip()
+        ctx.fillStyle = topColor
+        ctx.fillRect(x, y, s, 5)
+        ctx.fillStyle = middleColor
+        ctx.fillRect(x, y + 5, s, 6)
+        ctx.fillStyle = bottomColor
+        ctx.fillRect(x, y + 11, s, 5)
+        ctx.restore()
         ctx.fillStyle = icon.fleckColor
         ctx.beginPath()
-        ctx.moveTo(3.5, 5.6)
-        ctx.quadraticCurveTo(3.5, 3.4, 6.2, 3.4)
-        ctx.quadraticCurveTo(7.6, 2.4, 9.2, 3.6)
-        ctx.quadraticCurveTo(12, 3.8, 12, 5.6)
+        ctx.moveTo(x + 3.5, 5.6)
+        ctx.quadraticCurveTo(x + 3.5, 3.4, x + 6.2, 3.4)
+        ctx.quadraticCurveTo(x + 7.6, 2.4, x + 9.2, 3.6)
+        ctx.quadraticCurveTo(x + 12, 3.8, x + 12, 5.6)
         ctx.closePath()
         ctx.fill()
     }
@@ -149,9 +170,9 @@ Canvas {
             icon.paintSun(ctx)
         } else if (icon.landscape) {
             icon.paintLandscape(ctx)
-            icon.paintBrush(ctx, 5, icon.strokeColor)
+            icon.paintBrush(ctx, 5, icon.strokeColor, true)
         } else {
-            icon.paintBrush(ctx, 0, icon.accentColor)
+            icon.paintBrush(ctx, 0, icon.strokeColor, false)
         }
         ctx.restore()
     }
