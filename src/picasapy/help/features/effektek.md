@@ -21,7 +21,9 @@ A **Polaroid**, a **60-as évek** és a **Kerekített élek** színválasztója
 
 Néhány effektnek **színválasztója** is van a csúszkák mellett — például a
 **Neon**é, ahol te adod meg, milyen színnel világítsanak a kontúrok
-(alapból piros).
+(alapból piros). A **Szűrt FF** színe új képnél **fehérről** indul, mint
+az eredetiben. Ha a képen már van Szűrt FF, a panel a legutóbb alkalmazott
+színével nyílik meg.
 
 A csempék kis előnézete a képed **mostani állapotát** mutatja: ha már
 tettél rá effektet — mondjuk fekete-fehérré alakítottad —, akkor minden
