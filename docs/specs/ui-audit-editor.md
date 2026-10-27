@@ -2124,8 +2124,8 @@ viszont egybeesik a `respack.yt` öt ikonjával.
 Mai: az `EditorTabBar` offscreen renderje ugyanekkora vásznon, a valódi
 `EditTabIcon.qml` és `Theme` használatával. Natív: a `respack.yt` réteg
 önmagában, dekódolva. A korábbi QML IoU-értékeket a jelenlegi offscreen
-renderkörnyezettel újramérve a régi állapot 0,635 / 0,543 / 0,650 / 0,664 /
-0,661 lett; az eltérés a renderkörnyezettől származik.
+rajzolási környezettel újramérve a régi állapot 0,635 / 0,543 / 0,650 / 0,664 /
+0,661 lett; az eltérés a rajzolási környezettől származik.
 
 | fül | irány | kitöltés | forma: tinta-IoU (natív ↔ ref · régi QML ↔ ref · javított QML ↔ ref) | tinta-doboz (ref · javított) | Teendő |
 |---|---|---|---|---|---|
