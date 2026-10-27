@@ -22,6 +22,8 @@ _QML = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml/PicasaPy"
 _ARANY = Path(__file__).parent / "golden" / "create_dialogs_6051"
 # A rendszer-fájlválasztót nyitó állapotok (a QML FileDialog magassága platformfüggő).
 _FAJLVALASZTOK = frozenset({"collage-target", "movie-target", "movie-audio"})
+# A Qt saját színválasztóját nyitó állapotok (a ColorDialog szélessége platformfüggő).
+_SZINVALASZTOK = frozenset({"movie-text-color", "movie-background-color"})
 _ALLAPOTOK = (
     ("poster", "posterDialog", "open"),
     ("collage", "collageDialog", "open"),
@@ -171,6 +173,14 @@ def test_create_dialogs_render_bontas_elott_rogzitett_referenciakkal(
             referencia = QImage(str(referencia_fajl))
             if referencia.isNull():
                 hianyzo.append(str(referencia_fajl))
+                continue
+            if nev in _SZINVALASZTOK and kepnev.startswith("felugro-"):
+                # A Qt saját ColorDialogja: a szélessége platformonként más
+                # (CI 336, helyben 384, a referencia 374 képpont), a belseje
+                # nem a mi kódunk. Itt csak azt mérjük, hogy megnyílt.
+                assert not aktualis.isNull() and aktualis.width() > 0, (
+                    f"{nev}/{kepnev}: a színválasztó nem nyílt meg"
+                )
                 continue
             szelesseg = min(aktualis.width(), referencia.width())
             magassag = min(aktualis.height(), referencia.height())
