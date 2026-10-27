@@ -1174,6 +1174,18 @@ picasapy-origin-key: login_text:Label(login/gphotos_logotext);options:options/we
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
             <translation>Uždaryti</translation>
         </message>
+        <message>
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/button189.title</extracomment>
+            <translation>Gerai</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/button190.title</extracomment>
+            <translation>Atšaukti</translation>
+        </message>
     </context>
     <context>
         <name>OptionsTabGeneral</name>
@@ -1234,44 +1246,10 @@ picasapy-origin-key: options:options/autoexclude.title</extracomment>
             <translation>Aptikti dublikatus importuojant</translation>
         </message>
         <message>
-            <source>Clear Cache...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Išvalyti talpyklą...</translation>
-        </message>
-        <message>
-            <source>Empty the thumbnail cache? The thumbnails are rebuilt when needed — no picture is lost.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ištuštinti miniatiūrų talpyklą? Prireikus miniatiūros bus sukurtos iš naujo — nuotraukos nepradings.</translation>
-        </message>
-        <message>
-            <source>Empty</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Išvalyti</translation>
-        </message>
-        <message>
-            <source>Keep</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Palikti</translation>
-        </message>
-        <message>
-            <source>%1 freed.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atlaisvinta: %1.</translation>
-        </message>
-        <message>
-            <source>%1 bytes</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 baitų</translation>
-        </message>
-        <message>
-            <source>%1 kB</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 kB</translation>
-        </message>
-        <message>
-            <source>%1 MB</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 MB</translation>
+            <source>Clear cache files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/disposepreviews.title</extracomment>
+            <translation>Išvalyti talpyklos failus</translation>
         </message>
         <message>
             <source>Delete from disk without confirmation</source>
@@ -1391,6 +1369,12 @@ picasapy-origin-key: options:options/labelgroup53.title</extracomment>
             <translation>Siųsti filmus kaip:</translation>
         </message>
         <message>
+            <source>Output format:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup57.title</extracomment>
+            <translation>Išvesties formatas:</translation>
+        </message>
+        <message>
             <source>First frame</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;webexport:webexport/item11.title</extracomment>
@@ -1424,13 +1408,13 @@ picasapy-origin-key: options:options/radio42.title</extracomment>
     <context>
         <name>OptionsTabFileTypes</name>
         <message>
-            <source>.bmp</source>
+            <source>.BMP</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportBMP.title</extracomment>
             <translation>.bmp</translation>
         </message>
         <message>
-            <source>.gif</source>
+            <source>.GIF</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportGIF.title</extracomment>
             <translation>.gif</translation>
@@ -1442,31 +1426,31 @@ picasapy-origin-key: options:options/label61.title</extracomment>
             <translation>Rodyti JPEG failus ir:</translation>
         </message>
         <message>
-            <source>.png</source>
+            <source>.PNG</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportPNG.title</extracomment>
             <translation>.PNG</translation>
         </message>
         <message>
-            <source>.tga</source>
+            <source>.TGA</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportTGA.title</extracomment>
             <translation>.tga</translation>
         </message>
         <message>
-            <source>.tif, .tiff</source>
+            <source>.TIF, .TIFF</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportTIF.title</extracomment>
             <translation>.tif, .tiff</translation>
         </message>
         <message>
-            <source>.webp</source>
+            <source>.WEBP</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportWEBP.title</extracomment>
             <translation>.webp</translation>
         </message>
         <message>
-            <source>.psd (Photoshop)</source>
+            <source>.PSD (Photoshop)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportPSD.title</extracomment>
             <translation>.psd (Photoshop)</translation>
@@ -1483,7 +1467,7 @@ picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::R
             <translation>Filmai</translation>
         </message>
         <message>
-            <source>Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)</source>
+            <source>Movies (.AVI, .MPG, .ASF, .WMV)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportMovies.title</extracomment>
             <translation>Filmai (.mov, .mpg, .m4v, .3gp, .avi ir pan.)</translation>
@@ -1818,6 +1802,18 @@ picasapy-origin-key: options:options/PWAUseHiQualityJPEG.title</extracomment>
             <translation>Išlaikyti pradinę vaizdo kokybę (užima daugiau saugojimo vietos)</translation>
         </message>
         <message>
+            <source>JPEG Quality:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup154.title</extracomment>
+            <translation>JPEG kokybė:</translation>
+        </message>
+        <message>
+            <source>Syncing:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup158.title</extracomment>
+            <translation>Sinchronizuojama:</translation>
+        </message>
+        <message>
             <source>Sync starred photos only</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
@@ -1839,6 +1835,18 @@ picasapy-origin-key: options:options/confirmsync::disable.title</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/haswatermark.title</extracomment>
             <translation>Pridėti vandenženklį prie visų įkeliamų nuotraukų:</translation>
+        </message>
+        <message>
+            <source>Watermarks:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup163.title</extracomment>
+            <translation>Vandens ženklai:</translation>
+        </message>
+        <message>
+            <source>Stamp photos with your name, a web domain, or a copyright notice.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: export:export/label44.title</extracomment>
+            <translation>Pažymėkite nuotraukas savo vardu, žiniatinklio domenu ar autorių teisių pastaba.</translation>
         </message>
         <message>
             <source>Include with photo uploads</source>
@@ -1914,14 +1922,128 @@ picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
             <translation>Eksportuoti kaip HTML puslapį...</translation>
         </message>
         <message>
+            <source>Web page title:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup13.title</extracomment>
+            <translation>Tinklalapio pavadinimas:</translation>
+        </message>
+        <message>
             <source>Page title:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Puslapio pavadinimas:</translation>
         </message>
         <message>
+            <source>Folder:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup15.title</extracomment>
+            <translation>Aplankas:</translation>
+        </message>
+        <message>
             <source>Save to:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Įrašyti į:</translation>
+        </message>
+        <message>
+            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/label20.title</extracomment>
+            <translation>Jei norite pamatyti pavyzdį, paspauskite šablono pavadinimą. Pasirinkę spustelėkite „Eksportuoti“.</translation>
+        </message>
+        <message>
+            <source>Export</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/button29.title</extracomment>
+            <translation>Eksportuoti</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
+            <translation>Atšaukti</translation>
+        </message>
+        <message>
+            <source>Template 1, 2-page grey background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greybg_name</extracomment>
+            <translation>1 šablonas: 2 puslapių, pilkas fonas</translation>
+        </message>
+        <message>
+            <source>Template 2, 2-page black background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackbg_name</extracomment>
+            <translation>2 šablonas: 2 puslapių, juodas fonas</translation>
+        </message>
+        <message>
+            <source>Template 3, 2-page white background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitebg_name</extracomment>
+            <translation>3 šablonas: 2 puslapių, baltas fonas</translation>
+        </message>
+        <message>
+            <source>Template 4, 1-page grey background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greyfrm_name</extracomment>
+            <translation>4 šablonas: 1 puslapio, pilkas fonas</translation>
+        </message>
+        <message>
+            <source>Template 5, 1-page black background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackfrm_name</extracomment>
+            <translation>5 šablonas: 1 puslapio, juodas fonas</translation>
+        </message>
+        <message>
+            <source>Template 6, 1-page white background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitefrm_name</extracomment>
+            <translation>6 šablonas: 1 puslapio, baltas fonas</translation>
+        </message>
+        <message>
+            <source>XML Code</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_xml_name</extracomment>
+            <translation>XML kodas</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greybg_descr</extracomment>
+            <translation>Miniatiūrų rodyklės puslapis, susietas su viso vaizdo nuotraukos puslapiu.</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackbg_descr</extracomment>
+            <translation>Miniatiūrų rodyklės puslapis, susietas su viso vaizdo nuotraukos puslapiu.</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitebg_descr</extracomment>
+            <translation>Miniatiūrų rodyklės puslapis, susietas su viso vaizdo nuotraukos puslapiu.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greyfrm_descr</extracomment>
+            <translation>Slenkamoji miniatiūros rodyklė kairėje su visu nuotraukos vaizdu dešinėje.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackfrm_descr</extracomment>
+            <translation>Slenkamoji miniatiūros rodyklė kairėje su visu nuotraukos vaizdu dešinėje.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitefrm_descr</extracomment>
+            <translation>Slenkamoji miniatiūros rodyklė kairėje su visu nuotraukos vaizdu dešinėje.</translation>
+        </message>
+        <message>
+            <source>Raw XML-formatted text for further translation.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_xml_descr</extracomment>
+            <translation>Grynas XML tekstas tolesniam apdorojimui.</translation>
         </message>
         <message>
             <source>(not selected)</source>
@@ -6287,6 +6409,12 @@ picasapy-origin-key: stringres:DeleteMessage::DeleteSingleYesButton</extracommen
             <translation>Ištrinti vaizdą</translation>
         </message>
         <message>
+            <source>Don't ask again, always remove</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRM_REMOVE_CHECK_MESSAGE</extracomment>
+            <translation>Ateityje šalinti neklausiant</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="447" />
             <source>Are you sure you want to send the selected file to the Recycle Bin? (It will also be removed from any albums in which it appears)</source>
             <extracomment>DeleteMessage::DeleteSingle
@@ -6607,6 +6735,12 @@ picasapy-origin-key: stringres:CThumbUI::FileSave::message</extracomment>
             <source>Revert</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Grįžti</translation>
+        </message>
+        <message>
+            <source>Revert to original version of file?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
+            <translation>Grąžinti pradinę failo būseną?</translation>
         </message>
         <message>
             <source>Revert to original version of these file(s)?</source>
@@ -8084,6 +8218,20 @@ picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(i
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Patvirtinti</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>Pašalinti pakeitimus</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/no.title</extracomment>
+            <translation>Ne</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -12256,6 +12404,30 @@ picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/startoggle);tooltips
             <translation>Pridėti / pašalinti žvaigždutę</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Screensaver</source>
+            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
+            <translation>Ekrano užsklanda</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Starred Photos</source>
+            <comment>stringres:CThumbDB::starredphotos</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
+            <translation>Nuotraukos su žvaigždute</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>New Album...</source>
+            <comment>stringres:il_NewAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_NewAlbumName</extracomment>
+            <translation>Naujas albumas...</translation>
+        </message>
+        <message>
             <source>Click and drag over photos to magnify them</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(thumbui/loupehit)</extracomment>
@@ -13872,12 +14044,6 @@ picasapy-origin-key: stringres:AspectRatioList:CustomAspectRatios</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(editpanel/crop_delete_custom)</extracomment>
             <translation>Ištrina dabartinį formato koeficientą</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Suggested crops</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Siūlomi apkirpimai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -18738,6 +18904,14 @@ picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup
 picasapy-origin: picasa
 picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Žymų negalima keisti, nes vienas arba keli elementai yra nekeičiami.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Albumą galima išsaugoti tik indeksuotame nuotraukų aplanke.</translation>
         </message>
     </context>
 </TS>

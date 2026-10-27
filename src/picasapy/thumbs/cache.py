@@ -363,10 +363,10 @@ class ThumbnailCache:
     def clear(self) -> int:
         """A LEMEZES bélyegkép-tár ürítése; a felszabadult bájtok száma (#598).
 
-        Az eredeti Beállítások „Clear Cache…" kapcsolójának megfelelője
-        (`disposepreviews`). Minden szintet töröl, a mappaszerkezetet
-        meghagyja — a bélyegképek kérésre újraépülnek, tehát ez nem
-        adatvesztés, csak lemezhely-visszanyerés.
+        Az eredeti Beállítások `disposepreviews` kapcsolójának kért
+        kilépéskori takarítója (#5897). Minden szintet töröl, a
+        mappaszerkezetet meghagyja - a bélyegképek kérésre újraépülnek,
+        tehát ez nem adatvesztés, csak lemezhely-visszanyerés.
 
         Best-effort, mint a takarító: az időközben eltűnt vagy zárolt fájlt
         kihagyja. Egy sikertelen törlés nem hibaüzenet, hanem kevesebb

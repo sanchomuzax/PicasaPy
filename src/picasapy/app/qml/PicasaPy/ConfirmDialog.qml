@@ -44,10 +44,19 @@ Dialog {
     // testreszabható.
     property string yesText: qsTr("Yes")
     property string noText: qsTr("No")
+    // Egyes megerősítők biztonságos alapértelmezésként a Mégse gombra
+    // teszik a kezdeti fókuszt; az alapbeállítás a többi hívót változatlanul
+    // hagyja.
+    property bool focusCancelOnOpen: false
     // #5704: az opt-out a „No” ágon is menthető az eredeti rejtettjelszó-
     // ajánlatban. Más megerősítők változatlanul csak az „Yes” ágon mentenek.
     property bool rememberOnDenied: false
     property string rememberText: qsTr("Do not ask again")
+
+    onOpened: {
+        if (root.focusCancelOnOpen)
+            cancelButton.forceActiveFocus()
+    }
 
     // Igen (accept) — akkor is kibocsátva, ha a dialógus meg sem nyílt,
     // mert a kulcs már el volt nyomva
@@ -124,8 +133,29 @@ Dialog {
                 }
             }
             PicasaButton {
+                id: cancelButton
                 objectName: root.namePrefix + "CancelButton"
                 text: qsTr("Cancel")
+                focus: root.focusCancelOnOpen
+                Keys.priority: Keys.BeforeItem
+                Keys.onReturnPressed: function(event) {
+                    if (!root.focusCancelOnOpen) {
+                        event.accepted = false
+                        return
+                    }
+                    root.close()
+                    root.canceled()
+                    event.accepted = true
+                }
+                Keys.onEnterPressed: function(event) {
+                    if (!root.focusCancelOnOpen) {
+                        event.accepted = false
+                        return
+                    }
+                    root.close()
+                    root.canceled()
+                    event.accepted = true
+                }
                 onClicked: {
                     root.close()
                     root.canceled()

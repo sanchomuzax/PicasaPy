@@ -1,0 +1,8 @@
+<%if isFirstTarget%>
+<li class="thumb-item">
+<a class="thumb-link" href="<%itemLargeImage%>" target="large-view">
+<img src="<%itemThumbnailImage%>" alt="<%if itemCaption%><%itemCaption%><%endif%><%if !itemCaption%><%itemName%><%endif%>">
+<span class="thumb-caption"><%if itemCaption%><%itemCaption%><%endif%><%if !itemCaption%><%itemName%><%endif%></span>
+</a>
+</li>
+<%endif%>

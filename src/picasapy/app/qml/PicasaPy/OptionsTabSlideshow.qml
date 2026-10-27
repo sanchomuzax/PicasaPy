@@ -8,6 +8,19 @@ import QtQuick.Layouts
 ColumnLayout {
     id: root
     spacing: 10
+    property var optionsDraft: null
+
+    function setting(key, fallback) {
+        return root.optionsDraft
+            ? root.optionsDraft.value(key, fallback) : fallback
+    }
+
+    function stage(key, value, writer) {
+        if (root.optionsDraft)
+            root.optionsDraft.stage(key, value, writer)
+        else
+            writer(value)
+    }
 
     readonly property var prefs: (typeof controller !== "undefined" && controller)
         ? controller : null
@@ -16,10 +29,11 @@ ColumnLayout {
         objectName: "optionsSlideshowLoopCheck"
         text: qsTr("Loop slideshow")
         checked: root.prefs && root.prefs.slideshowLoop !== undefined
-            ? root.prefs.slideshowLoop : false
+            ? root.setting("slideshow.loop", root.prefs.slideshowLoop) : false
         onToggled: if (root.prefs
                 && typeof root.prefs.setSlideshowLoop === "function")
-            root.prefs.setSlideshowLoop(checked)
+            root.stage("slideshow.loop", checked,
+                function(value) { root.prefs.setSlideshowLoop(value) })
     }
 
     ColumnLayout {
@@ -31,10 +45,12 @@ ColumnLayout {
             objectName: "optionsSlideshowPlayMusicCheck"
             text: qsTr("Play music tracks during slideshow")
             checked: root.prefs && root.prefs.slideshowMusicEnabled !== undefined
-                ? root.prefs.slideshowMusicEnabled : true
+                ? root.setting("slideshow.musicEnabled",
+                    root.prefs.slideshowMusicEnabled) : true
             onToggled: if (root.prefs
                     && typeof root.prefs.setSlideshowMusicEnabled === "function")
-                root.prefs.setSlideshowMusicEnabled(checked)
+                root.stage("slideshow.musicEnabled", checked,
+                    function(value) { root.prefs.setSlideshowMusicEnabled(value) })
         }
 
         ColumnLayout {
@@ -58,7 +74,8 @@ ColumnLayout {
                     readOnly: true
                     text: root.prefs
                         && root.prefs.slideshowMusicFolder !== undefined
-                            ? root.prefs.slideshowMusicFolder : ""
+                            ? root.setting("slideshow.musicFolder",
+                                root.prefs.slideshowMusicFolder) : ""
                     // #422: jobbklikk-menü (Picasa `Address`)
                     TextFieldContextArea {}
                 }
@@ -81,6 +98,10 @@ ColumnLayout {
             && root.prefs.slideshowMusicFolderUrl !== undefined
                 ? root.prefs.slideshowMusicFolderUrl : Qt.resolvedUrl(".")
         onAccepted: if (root.prefs)
-            root.prefs.setSlideshowMusicFolder(selectedFolder.toLocalFile())
+            root.stage("slideshow.musicFolder",
+                fileOpsController.toLocalPath(selectedFolder.toString()),
+                function(value) {
+                    root.prefs.setSlideshowMusicFolder(value)
+                })
     }
 }

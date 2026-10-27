@@ -32,7 +32,7 @@ Az alkalmazást és teszteket nem futtattam.
 | #4579: az öt panelsor eredeti sorrendje és megjelenési feltételei | bináris (`0x00633210`, `0x00a00120`, `0x00a34b50`, `0x009ea1e0`, `0x00a34b00`); `picasa-metaadat-tulajdonsagok.md:2339-2486` |
 | #4579: mind az öt sor szerepel a mai listában, a forrásadat meglétekor | mai forrás (`PropertiesPanel.qml:55-80`, `formatting.py:499-501,518-584`, `tulajdonsag_sorok.py:27-74`, `reader.py:322-360`, `jpeg_quality.py:66-85`) |
 | #4846: az eredeti ötös fülsáv ikonjainak iránya | mérés (eredeti Picasa-képernyőkép: `research/testdata/screenshot/2026-07-17 20 56 36.png`; a leltárt az `ui-audit-editor.md` hivatkozza) |
-| #4846: a mai ikonok tényleges, renderelt képe és alakbeli eltérése | NINCS MEG (mai renderkép nincs; `EditTabIcon.qml` csak a rajzutasításokat rögzíti) |
+| #4846: a mai ikonok tényleges, renderelt képe és alakbeli eltérése | mérés (2026-10-26, #5946: offscreen render 276×25-ön, a referencia-képernyőképhez illesztve; `ui-audit-editor.md`, „A fülikonok összevetése a referenciával”) |
 | #5121: 4-es `newalbumprompt` rekord céljára ejtés albumot hoz létre | bináris (`0x00cb283c`, `0x00765d30`, `0x005e39a0`, `0x006dc030`); `picasa-konyvtar-eszkoztar-viselkedes.md:576-605` |
 | #5121: meglévő album melletti húzások eredményei | mérés (korábbi feljegyzés szerint Colab job-155/-156/-159/-160; `paritas-ellenorzes.md` #5121 sora). A nyers felvételek NINCSENEK MEG a helyi `meroadat.tar`-ban. |
 | #5121: a 4-es rekord megjelenik-e a Picasa eredeti listájában nem üres albumszám mellett | NINCS MEG statikusan (`picasa-konyvtar-eszkoztar-viselkedes.md:607-655`) |

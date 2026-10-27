@@ -15,7 +15,8 @@ szerkesztheted — lásd [Nézegetés](nezegetes.md). Ugyanezt teszi a
 **Kép ▸ Megjelenítés és szerkesztés** is. Mindkettő szürke, amíg nincs
 kijelölt kép. A **Nézet ▸ Szerkesztési vezérlők megjelenítése** kapcsoló
 a néző bal oldali szerkesztőpanelét mutatja vagy rejti — lásd [A
-szerkesztő](szerkeszto.md).
+szerkesztő](szerkeszto.md). Könyvtárnézetben ez a tétel szürke és pipa
+nélküli, ahogy az eredeti Picasában: csak megnyitott nézőben kapcsolható.
 
 ## Mappák
 
@@ -255,14 +256,30 @@ ismételnek.
 Az album **nem mozgat fájlokat** — csak egy összeállítás. Ugyanaz a kép
 több albumban is szerepelhet.
 
-- Új albumot a **Fájl ▸ Új album…** (Ctrl+N) paranccsal, az eszköztár
-  **+** gombjával, vagy a képek helyi menüjének **Új album…** tételével
-  hozol létre. A program **nem kérdez nevet**: azonnal készít egy
-  **Névtelen** albumot a kijelölt képekből, ahogy az eredeti Picasa is
-  tette. A nevet utólag bármikor átírod (lásd lentebb). Kijelölés nélkül
-  nem történik semmi.
+- Új albumot a **Fájl ▸ Új album…** (Ctrl+N) paranccsal vagy a képek
+  helyi menüjének **Új album…** tételével hozol létre a kijelölt
+  képekből. A program **nem kérdez nevet**: azonnal készít egy
+  **Névtelen** albumot a kijelölt képekből. A nevet utólag bármikor
+  átírod (lásd lentebb). Kijelölés nélkül nem történik semmi.
+- Az eszköztár **+** gombja másképp működik, ahogy az eredeti Picasában
+  is: megnyitja az **Album tulajdonságai** ablakot (a név mezőben
+  **Névtelen** áll), és az **OK** után egy **üres** albumot készít, a
+  kijelölt képek nélkül. Ezt utólag töltöd fel képekkel, például
+  ráhúzással. Az album adatai egy képmappa `.picasa.ini` fájljába
+  kerülnek: ha a bal hasábon egy **mappa** van megnyitva, abba; az
+  **Időrend**, a keresési találatok vagy egy album nézetében pedig a
+  kijelölt (kijelölés nélkül a kiemelt) kép mappájába. Ha ilyen mappa
+  nincs, vagy a mappa nem része a könyvtárnak, a program szól: „Albumot
+  csak indexelt képmappába lehet menteni.", és nem készül album.
 - Meglévő albumhoz a kép helyi menüjének **Hozzáadás az albumhoz**
-  almenüjén át adsz hozzá képet. Ugyanez elérhető a képtálca album-gombjával.
+  almenüjén át adsz hozzá képet. Ugyanez elérhető a képtálca
+  album-gombjával: ez egy fölfelé nyíló menüt nyit, akkor is, ha még
+  nincs saját albumod. A menü sorai: **Képernyővédő** (a kijelölt képeket
+  a képernyővédőhöz adja, lásd [Képernyővédő](kepernyovedo.md)),
+  **Csillagozott képek** (a kijelölt képek csillagát kapcsolja), utána a
+  saját albumaid, végül az **Új album...**, ami az **Album
+  tulajdonságai** ablakot nyitja, és az **OK** után a kijelölt képekkel
+  készít új albumot a megnyitott mappában.
 - Kivenni a **Eltávolítás az albumból** paranccsal tudsz. A program
   rákérdez — az ablak **Elemek eltávolítása**, a gomb **Kép
   eltávolítása** (több képnél **Képek eltávolítása**) —, és a fájlhoz nem
@@ -336,6 +353,8 @@ alá. A hasábon a gyűjtemény fejlécére kattintva nyitod és csukod.
   gyűjteménybe** almenün át.
 - A gyűjtemény fejlécére jobbgombbal kattintva **átnevezheted** vagy
   **eltávolíthatod**. A gyűjtemény eltávolítása a mappáidat nem bántja.
+- Ugyanitt a **Jelszó megadása/módosítása...** tétellel jelszóval
+  zárhatod le a gyűjteményt (lásd lentebb).
 
 Azt, hogy egy mappa melyik gyűjteménybe tartozik, a program a mappa
 saját `.picasa.ini` fájljába írja, ahogy az eredeti Picasa is. A
@@ -345,6 +364,40 @@ a **Mappák a lemezen** csoportba.
 
 Ha az utolsó nyitott gyűjteményt is bezárnád, a program figyelmeztet:
 utána a rács üres lesz, amíg nem nyitsz ki valamit.
+
+### Jelszóval védett gyűjtemény
+
+A saját gyűjteményeidet jelszóval zárhatod le, ugyanúgy, mint a
+**Rejtett mappákat**.
+
+1. Kattints a gyűjtemény fejlécére a **jobb** egérgombbal, és válaszd a
+   **Jelszó megadása/módosítása...** tételt. Megnyílik a **Jelszó
+   megadása** ablak.
+2. Írd be a jelszót, majd még egyszer az **Ellenőrizze a jelszavát**
+   mezőbe. Amíg a kettő eltér, az ablak kiírja: **A jelszavak nem
+   egyeztek.**
+3. Kattints a **Jelszó megadása/módosítása...** gombra.
+
+A gyűjtemény ettől kezdve **zárva** van: a fejléce látszik, de a mappái
+eltűnnek alóla, és a képeik a rácsban sem jelennek meg. Kinyitni
+ugyanezzel a tétellel tudod: írd be a jelszót, és kattints a
+**Megnyitás** gombra. Rossz jelszónál az ablak nyitva marad, és kiírja:
+**Adjon meg érvényes jelszót.** A feloldás csak arra az egy
+gyűjteményre szól, és a program bezárásáig tart; a következő indításkor
+a gyűjtemény újra zárva lesz.
+
+Ha már van jelszó, az ablakban a jelenlegi jelszó beírása után két gomb
+is használható:
+
+- **Jelszó megadása/módosítása...** - új jelszót adhatsz meg (kétszer
+  beírva);
+- **A jelszó törlése** - leveszed a zárat.
+
+A gyűjtemény átnevezése után a jelszó megmarad. A jelszót a program
+nem a mappák `.picasa.ini` fájljába írja, hanem a saját beállításai
+közé, és nem a jelszót magát tárolja, csak egy belőle képzett
+lenyomatot. Ez is csak a PicasaPy felületén rejti el a képeket: a
+fájlok a lemezen bármelyik fájlkezelővel megnyithatók.
 
 ## Projektek
 
@@ -504,7 +557,9 @@ Ha egy képnek rossz a dátuma — például a gép órája rosszul volt beáll�
 —, javíthatod. Jelöld ki a képeket, majd **Eszközök ▸ Dátum és idő
 beállítása…**. A **Fotó dátumának módosítása - N elem.** ablakban
 (egyetlen képnél csak **Fotó dátumának módosítása**) látod az első
-kép bélyegképét és a **Jelenlegi fotódátum**át, megadhatod az **Új
+kép bélyegképét és a **Jelenlegi fotódátum**át: a dátum és az idő két
+külön, szürke (nem szerkeszthető) mezőben áll, ahogy az eredeti
+Picasában. Megadhatod az **Új
 fotódátum**ot (a dátumra kattintva naptár nyílik) és az **Új fotó
 időpontja**t. Két mód közül választasz:
 
@@ -608,7 +663,8 @@ kijelölésben már rejtett kép is van, azt nem hozza elő.
 A rejtett képek előhozásához kapcsold be a **Nézet ▸ Rejtett képek**
 pontot. Visszahozni a **Kép ▸ Megjelenítés** paranccsal tudod: a
 kijelölt képek közül csak a rejtetteket teszi újra láthatóvá, a már
-látható képeket nem rejti el. A kép helyi menüjében is ott van, ugyanennek
+látható képeket nem rejti el. A tétel csak akkor használható, ha a
+kijelölésben van rejtett kép; különben szürke. A kép helyi menüjében is ott van, ugyanennek
 a tételnek a helyén **Megjelenítés**-re vált.
 
 Egész mappát is elrejthetsz: jelöld ki, majd **Mappa ▸ Elrejtés**, vagy a
@@ -616,7 +672,8 @@ mappa helyi menüjében **Mappa elrejtése**. Album- és személynézetben nincs
 kijelölt mappa, ezért ott a **Mappa ▸ Elrejtés** és a **Mappa ▸
 Megjelenítés** szürke. A mappa eltűnik a bal hasábról;
 a **Nézet ▸ Rejtett képek** bekapcsolásával a **Rejtett mappák** között
-látod viszont. Visszahozni a **Mappa ▸ Megjelenítés** paranccsal tudod, vagy
+látod viszont. Visszahozni a **Mappa ▸ Megjelenítés** paranccsal tudod
+(ez csak rejtett mappán használható, látható mappán szürke), vagy
 a mappa helyi menüjének **Mappa megjelenítése** tételével: ehhez
 előbb kapcsold be a **Nézet ▸ Rejtett képek** pontot, és jelöld ki a mappát a
 **Rejtett mappák** között. A mappa ugyanúgy a
@@ -645,18 +702,30 @@ rejtését.
 A **Rejtett mappák** jelszóval zárható le. Ha van jelszó, a **Nézet ▸
 Rejtett képek** bekapcsolása előbb ezt kéri.
 
+Ha még nincs jelszavad, egy mappa elrejtése után a program rákérdez:
+„A "Rejtett mappák" gyűjteményt jelenleg nem védi jelszó. Szeretne most
+megadni egy jelszót?" A **Jelszó hozzáadása** gomb rögtön a jelszó
+ablakát nyitja, a **Jelszó hozzáadásának mellőzése** kihagyja. Ha
+bejelölöd a **Ne kérdezzen újra.** négyzetet, és a mellőzést választod,
+a kérdés többé nem jön elő. A mappa felfedése és a **Nézet ▸ Rejtett
+képek** kapcsoló nem hozza elő ezt a kérdést.
+
+Utólag így adsz meg jelszót:
+
 1. Kapcsold be a **Nézet ▸ Rejtett képek** pontot. A bal hasáb alján
    megjelenik a **Rejtett mappák** fejléc (csak akkor, ha van rejtett
    mappád).
 2. Kattints a fejlécre a **jobb** egérgombbal, és válaszd a **Jelszó
-   megadása/módosítása…** pontot. (A fejléc csak a jobb gombra válaszol:
-   kijelölni nem lehet.)
-3. Írd be a jelszót kétszer — a másodikat az **Írja be újra a jelszót**
-   mezőbe —, és nyomd meg az **OK**-t. Amíg a két mező nem egyezik, az OK
-   szürke, és a párbeszéd kiírja, hogy a jelszavak nem egyeznek.
+   megadása/módosítása...** pontot. (A fejléc csak a jobb gombra
+   válaszol: kijelölni nem lehet.) Megnyílik a **Jelszó megadása** ablak,
+   ugyanaz, mint a saját gyűjteményeknél.
+3. Írd be a jelszót kétszer (a másodikat az **Ellenőrizze a jelszavát**
+   mezőbe), és kattints a **Jelszó megadása/módosítása...** gombra.
+   Amíg a két mező nem egyezik, a gomb szürke, és az ablak kiírja: **A
+   jelszavak nem egyeztek.**
 
 A mezők alatt egy jelölőnégyzet áll: **Erősebb védelem (a Picasa nem
-nyitja meg)**.
+nyitja meg)**. Ez csak a Rejtett mappáknál látszik.
 
 - **Bejelöletlenül** (ez az alapértelmezés) a jelszó ugyanúgy tárolódik,
   ahogy a windowsos Picasa tárolta: ha ugyanazokat a mappákat mindkét
@@ -664,17 +733,18 @@ nyitja meg)**.
 - **Bejelölve** a jelszó erősebben tárolódik, cserébe a windowsos Picasa
   nem tudja megnyitni vele a rejtett mappákat.
 
-Ugyanezen az úton tudod a jelszót később megváltoztatni. Ha már van
-beállított jelszó, a párbeszédben megjelenik **A jelszó törlése** gomb is
-— ezzel veszed le a zárat.
+Ha már van jelszó, ugyanez az ablak a jelenlegi jelszót kéri. Beírva:
 
-Ha rossz jelszót írsz be a rejtett képek előhozásakor, a program **Hibás
-jelszó** címmel jelzi, és a rejtett mappák rejtve maradnak; az üzenetet
-bezárva újra próbálkozhatsz.
+- a **Megnyitás** gomb előhozza a rejtett képeket;
+- a **Jelszó megadása/módosítása...** gombbal új jelszót adhatsz meg;
+- **A jelszó törlése** gombbal leveszed a zárat.
+
+Ha rossz jelszót írsz be, az ablak nyitva marad, kiírja: **Adjon meg
+érvényes jelszót.**, és a rejtett mappák rejtve maradnak. Rögtön újra
+próbálkozhatsz.
 
 > A jelszó csak a PicasaPy felületén rejti el a képeket. A fájlok a
 > lemezen változatlanul ott vannak, bármelyik fájlkezelővel megnyithatók.
-> Ezt a párbeszéd maga is kiírja.
 
 ## Milyen fájlokat lát a program
 

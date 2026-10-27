@@ -89,8 +89,8 @@ _NINCS_LATHATO_HATAS = {
         "amit a felület nem jelenít meg."
     ),
     "menuEditCopyText": (
-        "Nincs látható változás: feliratszöveg kerül a vágólapra; "
-        "a mintaképen nincs feliratréteg."
+        "Nincs látható változás: Text eszközös réteg kerül a belső "
+        "vágólapra; a mintaképen nincs ilyen réteg."
     ),
     "menuEditPasteEffects": (
         "Nincs beilleszthető hatáslista: a tiszta profil belső "
@@ -109,6 +109,22 @@ _LETILTOTT_A_TISZTA_MINTABAN = {
     "menuViewLibraryView": (
         "A Könyvtárnézet csak megnyitott néző mellett aktív; a tiszta minta "
         "könyvtárnézetben indul."
+    ),
+    "menuViewEditControls": (
+        "A Show Edit Controls az eredetihez hasonlóan csak szerkesztőnézőben "
+        "aktív (#5878); a tiszta minta könyvtárnézetben indul."
+    ),
+    "menuFileSave": (
+        "A Fájl ▸ Save csak mentetlen szerkesztésnél aktív (#5883); a tiszta "
+        "minta képei szerkesztetlenek."
+    ),
+    "menuPictureUnhide": (
+        "A Kép ▸ Unhide csak rejtett képet tartalmazó kijelölésnél aktív "
+        "(#5882); a tiszta minta képei láthatók."
+    ),
+    "menuFolderShow": (
+        "A Mappa ▸ Unhide csak rejtett mappánál aktív (#5882); a tiszta minta "
+        "mappája látható."
     ),
     "menuViewAlbumThumbnails": (
         "A könyvtári bélyegkép-kapcsoló fanézetben letiltott; a teszt ezt az "
@@ -130,7 +146,10 @@ _LETILTOTT_A_TISZTA_MINTABAN = {
         "A mintában nincs beilleszthető fájl a vágólapon."
     ),
     "menuEditPasteText": (
-        "A kijelölt mintaképeken nincs beilleszthető feliratszöveg."
+        "A kijelölt mintaképeken nincs beilleszthető Text eszközös réteg."
+    ),
+    "menuEditCopyText": (
+        "A kijelölt mintaképeken nincs másolható Text eszközös réteg."
     ),
     "menuEditUndoPasteAllEffects": (
         "Nem történt hatáslista-beillesztés, ezért nincs mit visszavonni."

@@ -14,12 +14,17 @@ Item {
 
     // a főablak (kijelölés-ürítés a műveletek után)
     required property var appWindow
+    // #5846: a tálca új album sora ugyanazt a párbeszédet használja, mint
+    // az eszköztár, de jóváhagyáskor a pillanatfelvételnyi kijelölést is
+    // tagságként menti.
+    property var newAlbumPhotoRows: []
 
     function openRename(row) {
         renameDialog.openFor(row)
     }
-    // #366/#5396 (rename.fen paritás): a F2 és a menüsáv a kijelölés
-    // összes sorát ezen a külön dialóguson nevezi át, egyetlen képnél is.
+    // #366/#5396/#5804 (rename.fen paritás): az F2 és a menüsáv a kijelölés
+    // összes sorát ugyanazon a dialóguson nevezi át. Egyetlen képnél a mező
+    // a kiterjesztés nélküli nevet tölti elő és jelöli ki.
     function openRenameMany(rows) {
         renameManyDialog.openFor(rows)
     }
@@ -27,11 +32,9 @@ Item {
         moveFolderDialog.paths = paths
         if (moveFolderDialog.paths.length > 0) moveFolderDialog.open()
     }
-    // #1614: Fájl ▸ Áthelyezés új mappába… — egyetlen névmezős párbeszéd,
-    // mert a pontos alakjára nincs erősebb bizonyíték (ld. a jegy
-    // „Bizonyítottsági fok" szakasza). ⚠️ #2911: a mintaadó `newAlbumDialog`
-    // MEGSZŰNT — az „Új album" azóta csendben, névbekérés nélkül hoz létre
-    // „Névtelen" albumot, az eredeti mért viselkedése szerint.
+    // #5853: Fájl ▸ Áthelyezés új mappába… ugyanazt a Folder Properties
+    // párbeszédet használja, mint a mappa létrehozása/felosztása. A mezők
+    // elfogadása a meglévő kötegelt mozgatási útvonalat indítja.
     function openMoveToNewFolder(paths) {
         moveToNewFolderDialog.openFor(paths)
     }
@@ -55,25 +58,57 @@ Item {
         dialogs.appWindow.clearSelection()
     }
 
-    //: #2911: az „Új album" CSENDBEN hoz létre egy „Névtelen" albumot —
-    //: az eredetiben ezen az úton NINCS névbekérő (`thumbui/newalbum`,
-    //: kezelő `0x005eb810`: felépíti az album-leírót, a nevét a
-    //: `IDS_DEFAULT_ALBUM_NAME` erőforrásból tölti, létrehozza, és kész;
-    //: se párbeszéd, se számozás, se dátum). Az átnevezés utólag, a
-    //: meglévő albumátnevező úton történik.
-    //:
-    //: ⛔ ÜRES kijelölésnél nem történik semmi: nálunk az album a
-    //: `.picasa.ini`-ben él (`[.album:<token>]`), tehát TAG nélkül nincs
-    //: hova kiírni — az eredetinek adatbázisa volt, ott az üres album is
-    //: létezhetett. Ez a tárolásunk következménye, nem kihagyás.
+    //: #2911: a kép-helyi menü PicasaPy-kiegészítése a kijelölt képekből
+    //: készít albumot, névbekérés nélkül. Az eszköztár külön útja a #5812
+    //: alapján az Album Properties párbeszédet nyitja, és üres albumot ment.
     function openNewAlbum(rows) {
         if (!controller || !rows || rows.length === 0) return
         controller.createAlbum(dialogs.ujAlbumNeve, rows)
     }
 
+    // #5812: az eszköztár új album gombja az Album Properties párbeszédet
+    // nyitja. Jóváhagyáskor a controller az albumdefiníciót az aktuális
+    // mappa ini-jébe írja, képtagság létrehozása nélkül.
+    function openNewAlbumProperties(folderPath, rows) {
+        var dialog = toolbarAlbumPropertiesDialog
+        dialogs.newAlbumPhotoRows = rows && rows.length > 0 ? rows.slice() : []
+        dialog.albumFolderPath = folderPath || ""
+        dialog.albumToken = ""
+        dialog.albumName = dialog.untitledFolderName
+        dialog.currentDate = ""
+        dialog.albumLocation = ""
+        dialog.currentDescription = ""
+        dialog.currentMusicEnabled = false
+        dialog.currentMusicFile = ""
+        dialog.open()
+    }
+
     //: #2911: a MÉRT alapértelmezett albumnév (`IDS_DEFAULT_ALBUM_NAME`).
     //: Fordításból jön — magyar felületen „Névtelen" —, nem beégetve.
     readonly property string ujAlbumNeve: qsTr("Untitled")
+
+    FolderPropertiesDialog {
+        id: toolbarAlbumPropertiesDialog
+        objectName: "toolbarNewAlbumPropertiesDialog"
+        mode: "album"
+        newAlbumCreation: true
+        onNewAlbumPropertiesAccepted: function(folderPath, name, isoDate,
+                                                location, description,
+                                                useMusic, musicFile) {
+            if (!controller) return
+            var rows = dialogs.newAlbumPhotoRows
+            dialogs.newAlbumPhotoRows = []
+            if (rows.length > 0 && controller.createAlbumWithProperties) {
+                controller.createAlbumWithProperties(
+                    name, rows, isoDate, location, description,
+                    useMusic, musicFile)
+            } else if (controller.createEmptyAlbum) {
+                controller.createEmptyAlbum(
+                    name, folderPath, isoDate, location, description,
+                    useMusic, musicFile)
+            }
+        }
+    }
 
     // #1612: a vezérlő VISSZAJELZÉSEI. A hozzájuk tartozó `Connections`
     // SZÁNDÉKOSAN nem itt áll, hanem a `Main.qml`-ben (a #2096 mintája):
@@ -169,10 +204,12 @@ Item {
         anchors.centerIn: parent
         standardButtons: Dialog.Ok | Dialog.Cancel
         property var rows: []
+        property string openedName: ""
         // A Mégse is a saját fordításunkat kapja: a Qt szabványgombja a
         // rendszer nyelvét követné, és vegyes nyelvű lenne a párbeszéd.
         onOpened: {
             standardButton(Dialog.Ok).text = qsTr("Rename")
+            standardButton(Dialog.Ok).enabled = canRename()
             standardButton(Dialog.Cancel).text = qsTr("Cancel")
         }
         function acceptButtonText() {
@@ -181,7 +218,16 @@ Item {
         function openFor(rowList) {
             if (!rowList || rowList.length === 0) return
             rows = rowList
-            renameManyField.text = ""
+            var initialName = ""
+            if (controller && rowList.length === 1) {
+                var fileName = String(
+                    controller.photos.itemAt(Number(rowList[0])).name || "")
+                var extensionStart = fileName.lastIndexOf(".")
+                initialName = extensionStart > 0
+                    ? fileName.substring(0, extensionStart) : fileName
+            }
+            openedName = initialName || ""
+            renameManyField.text = initialName || ""
             // #4879: a két jelölő állása megmarad (RenameUseDate/RenameUseSize)
             var useDate = controller ? controller.renameUseDate() : false
             var useSize = controller ? controller.renameUseSize() : false
@@ -190,6 +236,7 @@ Item {
             updatePreview()
             open()
             renameManyField.forceActiveFocus()
+            renameManyField.selectAll()
         }
         // A `rename.fen` Example sora a név és a jelölők alapján frissül,
         // de a dátum-/méretminta és a .jpg kiterjesztés rögzített (#5702).
@@ -199,6 +246,13 @@ Item {
                       rows, renameManyField.text,
                       includeDateCheck.checked, includeSizeCheck.checked)
                 : ""
+            var renameButton = standardButton(Dialog.Ok)
+            if (renameButton)
+                renameButton.enabled = canRename()
+        }
+        function canRename() {
+            var base = renameManyField.text.trim()
+            return base.length > 0 && base !== openedName.trim()
         }
         property string previewText: ""
         function saveFlags() {
@@ -207,6 +261,7 @@ Item {
                     includeDateCheck.checked, includeSizeCheck.checked)
         }
         onAccepted: {
+            if (!canRename()) return
             var base = renameManyField.text.trim()
             if (base.length > 0 && controller) {
                 if (rows.length === 1 && appWindow)
@@ -247,7 +302,10 @@ Item {
                 validator: RegularExpressionValidator {
                     regularExpression: /^[^\\\/:*?"<>|]*$/
                 }
-                onAccepted: renameManyDialog.accept()
+                onAccepted: {
+                    if (renameManyDialog.canRename())
+                        renameManyDialog.accept()
+                }
                 onTextChanged: renameManyDialog.updatePreview()
                 // #422: jobbklikk-menü (Picasa `Address`)
                 TextFieldContextArea {}
@@ -286,51 +344,41 @@ Item {
             Text {
                 objectName: "renameManySampleLabel"
                 text: qsTr("Example:") + " " + renameManyDialog.previewText
+                visible: renameManyField.text.trim().length > 0
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
         }
     }
 
-    // #1614: Fájl ▸ Áthelyezés új mappába… — egyetlen névmező (a mintaadó
-    // `newAlbumDialog` a #2911 óta nincs meg). A tényleges névellenőrzés (üres/csak
-    // szóköz/Windows-tiltott karakter) és a mappa létrehozása a
-    // `fileOpsController.moveSelectionToNewFolder`-ben történik — hiba
-    // esetén a szokásos `operationFailed` → `fileOpsErrorDialog` úton jut
-    // el a felhasználóhoz, ezért itt nincs saját hibaágra szükség.
-    Dialog {
+    // #5853: a Folder Properties közös mezői; mentéskor marad a már létező
+    // moveSelectionToNewFolder / kötegelt áthelyezési útvonal.
+    FolderPropertiesDialog {
         id: moveToNewFolderDialog
         objectName: "moveToNewFolderDialog"
-        title: qsTr("Move to New Folder...")
-        modal: true
-        anchors.centerIn: parent
-        standardButtons: Dialog.Ok | Dialog.Cancel
+        newFolderCreation: true
+        showAutomaticDate: false
         property var paths: []
         function openFor(pathList) {
             if (!pathList || pathList.length === 0) return
-            paths = pathList
-            moveToNewFolderField.text = ""
+            paths = pathList.slice()
+            mode = "folder"
+            folderPath = ""
+            folderName = untitledFolderName
+            folderLocation = ""
+            currentDate = Qt.formatDate(new Date(), "yyyy-MM-dd")
+            currentDescription = ""
+            currentMusicEnabled = false
+            currentMusicFile = ""
+            splitPaths = paths
             open()
-            moveToNewFolderField.forceActiveFocus()
         }
-        // ⚠️ SZÁNDÉKOSAN nincs `clearSelection()` itt (eltérően a
-        // `runBatch`-től): a mappa létrehozása ELŐBB fut, mint bármelyik
-        // kép mozdulna — érvénytelen név vagy már foglalt célmappa esetén
-        // EGYETLEN fájl sem mozdul, tehát a kijelölés ürítése félrevezető
-        // volna. Sikeres áthelyezésnél a `wire_fileops` resyncje úgyis
-        // frissíti a rácsot; a kijelölés megmaradása itt nem hibaosztály.
-        onAccepted: {
+        onSplitFolderAccepted: function(paths, name, isoDate, location,
+                                        description, useMusic, musicFile) {
             if (fileOpsController)
                 fileOpsController.moveSelectionToNewFolder(
-                    paths, moveToNewFolderField.text.trim())
-        }
-        TextField {
-            id: moveToNewFolderField
-            objectName: "moveToNewFolderField"
-            width: 300
-            font.pixelSize: Theme.fontSize
-            // #422: jobbklikk-menü (Picasa `Address`)
-            TextFieldContextArea {}
+                    paths, name.trim(), isoDate, location, description,
+                    useMusic, musicFile)
         }
     }
 
@@ -448,7 +496,8 @@ Item {
     }
 
     // #367: az általános ConfirmDialog komponensre állítva (confirm.fen
-    // paritás) — a törlés-kulcs "delete", a "Do not ask again" jelöléssel
+    // paritás) - a törlés-kulcs "delete", a "Don't ask again, always remove"
+    // jelöléssel
     // legközelebb nem nyílik meg újra, hanem azonnal törli a kijelöltet.
     //
     // #457: NAS/hálózati meghajtón (ahol nincs elérhető lomtár, sem a
@@ -468,6 +517,9 @@ Item {
     ConfirmDialog {
         id: deleteConfirmDialog
         objectName: "deleteConfirmDialog"
+        //: IDS_CONFIRM_REMOVE_CHECK_MESSAGE, a confirm.fen törlési ága
+        rememberText: qsTr("Don't ask again, always remove")
+        focusCancelOnOpen: true
         //: DeleteMessage::DeleteItemsTitle
         title: qsTr("Delete Items")
         property var paths: []

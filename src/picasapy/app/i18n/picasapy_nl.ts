@@ -1172,6 +1172,18 @@ picasapy-origin-key: login_text:Label(login/gphotos_logotext);options:options/we
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
             <translation>Sluiten</translation>
         </message>
+        <message>
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/button189.title</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/button190.title</extracomment>
+            <translation>Annuleren</translation>
+        </message>
     </context>
     <context>
         <name>OptionsTabGeneral</name>
@@ -1232,44 +1244,10 @@ picasapy-origin-key: options:options/autoexclude.title</extracomment>
             <translation>Dubbele bestanden detecteren tijdens het importeren</translation>
         </message>
         <message>
-            <source>Clear Cache...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Cache wissen...</translation>
-        </message>
-        <message>
-            <source>Empty the thumbnail cache? The thumbnails are rebuilt when needed — no picture is lost.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>De miniatuurcache leegmaken? Miniaturen worden opnieuw opgebouwd wanneer dat nodig is — er gaan geen afbeeldingen verloren.</translation>
-        </message>
-        <message>
-            <source>Empty</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Leegmaken</translation>
-        </message>
-        <message>
-            <source>Keep</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Behouden</translation>
-        </message>
-        <message>
-            <source>%1 freed.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 vrijgemaakt.</translation>
-        </message>
-        <message>
-            <source>%1 bytes</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 bytes</translation>
-        </message>
-        <message>
-            <source>%1 kB</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 kB</translation>
-        </message>
-        <message>
-            <source>%1 MB</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 MB</translation>
+            <source>Clear cache files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/disposepreviews.title</extracomment>
+            <translation>Cachebestanden wissen</translation>
         </message>
         <message>
             <source>Delete from disk without confirmation</source>
@@ -1389,6 +1367,12 @@ picasapy-origin-key: options:options/labelgroup53.title</extracomment>
             <translation>Films verzenden als:</translation>
         </message>
         <message>
+            <source>Output format:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup57.title</extracomment>
+            <translation>Uitvoerindeling:</translation>
+        </message>
+        <message>
             <source>First frame</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;webexport:webexport/item11.title</extracomment>
@@ -1422,13 +1406,13 @@ picasapy-origin-key: options:options/radio42.title</extracomment>
     <context>
         <name>OptionsTabFileTypes</name>
         <message>
-            <source>.bmp</source>
+            <source>.BMP</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportBMP.title</extracomment>
             <translation>.bmp</translation>
         </message>
         <message>
-            <source>.gif</source>
+            <source>.GIF</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportGIF.title</extracomment>
             <translation>.gif</translation>
@@ -1440,31 +1424,31 @@ picasapy-origin-key: options:options/label61.title</extracomment>
             <translation>JPEG-bestanden weergeven en:</translation>
         </message>
         <message>
-            <source>.png</source>
+            <source>.PNG</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportPNG.title</extracomment>
             <translation>.png</translation>
         </message>
         <message>
-            <source>.tga</source>
+            <source>.TGA</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportTGA.title</extracomment>
             <translation>.tga</translation>
         </message>
         <message>
-            <source>.tif, .tiff</source>
+            <source>.TIF, .TIFF</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportTIF.title</extracomment>
             <translation>.tif, .tiff</translation>
         </message>
         <message>
-            <source>.webp</source>
+            <source>.WEBP</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportWEBP.title</extracomment>
             <translation>.webp</translation>
         </message>
         <message>
-            <source>.psd (Photoshop)</source>
+            <source>.PSD (Photoshop)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportPSD.title</extracomment>
             <translation>.psd (Photoshop)</translation>
@@ -1481,7 +1465,7 @@ picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::R
             <translation>Films</translation>
         </message>
         <message>
-            <source>Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)</source>
+            <source>Movies (.AVI, .MPG, .ASF, .WMV)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportMovies.title</extracomment>
             <translation>Filmpjes (.mov, .mpg, .m4v, .3gp, .avi, ...)</translation>
@@ -1816,6 +1800,18 @@ picasapy-origin-key: options:options/PWAUseHiQualityJPEG.title</extracomment>
             <translation>Originele beeldkwaliteit handhaven (kost meer opslagruimte)</translation>
         </message>
         <message>
+            <source>JPEG Quality:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup154.title</extracomment>
+            <translation>JPEG-kwaliteit:</translation>
+        </message>
+        <message>
+            <source>Syncing:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup158.title</extracomment>
+            <translation>Synchroniseren:</translation>
+        </message>
+        <message>
             <source>Sync starred photos only</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
@@ -1837,6 +1833,18 @@ picasapy-origin-key: options:options/confirmsync::disable.title</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/haswatermark.title</extracomment>
             <translation>Een watermerk toevoegen aan alle foto-uploads:</translation>
+        </message>
+        <message>
+            <source>Watermarks:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup163.title</extracomment>
+            <translation>Watermerken:</translation>
+        </message>
+        <message>
+            <source>Stamp photos with your name, a web domain, or a copyright notice.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: export:export/label44.title</extracomment>
+            <translation>Voeg uw naam, een webdomein of een auteursrechtmelding aan uw foto's toe.</translation>
         </message>
         <message>
             <source>Include with photo uploads</source>
@@ -1912,14 +1920,128 @@ picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
             <translation>Exporteren als HTML-pagina...</translation>
         </message>
         <message>
+            <source>Web page title:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup13.title</extracomment>
+            <translation>Titel webpagina:</translation>
+        </message>
+        <message>
             <source>Page title:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Paginatitel:</translation>
         </message>
         <message>
+            <source>Folder:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup15.title</extracomment>
+            <translation>Map:</translation>
+        </message>
+        <message>
             <source>Save to:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Opslaan in:</translation>
+        </message>
+        <message>
+            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/label20.title</extracomment>
+            <translation>Klik op een sjabloonnaam om een voorbeeld weer te geven. Klik op 'Exporteren' nadat u een selectie heeft gemaakt.</translation>
+        </message>
+        <message>
+            <source>Export</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/button29.title</extracomment>
+            <translation>Exporteren</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
+            <translation>Annuleren</translation>
+        </message>
+        <message>
+            <source>Template 1, 2-page grey background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greybg_name</extracomment>
+            <translation>Sjabloon 1, grijze achtergrond van 2 pagina’s</translation>
+        </message>
+        <message>
+            <source>Template 2, 2-page black background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackbg_name</extracomment>
+            <translation>Sjabloon 2, zwarte achtergrond van 2 pagina’s</translation>
+        </message>
+        <message>
+            <source>Template 3, 2-page white background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitebg_name</extracomment>
+            <translation>Sjabloon 3, witte achtergrond van 2 pagina’s</translation>
+        </message>
+        <message>
+            <source>Template 4, 1-page grey background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greyfrm_name</extracomment>
+            <translation>Sjabloon 4, grijze achtergrond van 1 pagina</translation>
+        </message>
+        <message>
+            <source>Template 5, 1-page black background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackfrm_name</extracomment>
+            <translation>Sjabloon 5, zwarte achtergrond van 1 pagina</translation>
+        </message>
+        <message>
+            <source>Template 6, 1-page white background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitefrm_name</extracomment>
+            <translation>Sjabloon 6, witte achtergrond van 1 pagina</translation>
+        </message>
+        <message>
+            <source>XML Code</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_xml_name</extracomment>
+            <translation>XML-code</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greybg_descr</extracomment>
+            <translation>Indexpagina van miniaturen gekoppeld aan een pagina met volledige weergave.</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackbg_descr</extracomment>
+            <translation>Indexpagina van miniaturen gekoppeld aan een pagina met volledige weergave.</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitebg_descr</extracomment>
+            <translation>Indexpagina van miniaturen gekoppeld aan een pagina met volledige weergave.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greyfrm_descr</extracomment>
+            <translation>Verschuifbare indexpagina van miniaturen links, met rechts de volledige weergave.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackfrm_descr</extracomment>
+            <translation>Verschuifbare indexpagina van miniaturen links, met rechts de volledige weergave.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitefrm_descr</extracomment>
+            <translation>Verschuifbare indexpagina van miniaturen links, met rechts de volledige weergave.</translation>
+        </message>
+        <message>
+            <source>Raw XML-formatted text for further translation.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_xml_descr</extracomment>
+            <translation>Tekst met ruwe XML-indeling voor verdere vertaling.</translation>
         </message>
         <message>
             <source>(not selected)</source>
@@ -6283,6 +6405,12 @@ picasapy-origin-key: stringres:DeleteMessage::DeleteSingleYesButton</extracommen
             <translation>Afbeelding verwijderen</translation>
         </message>
         <message>
+            <source>Don't ask again, always remove</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRM_REMOVE_CHECK_MESSAGE</extracomment>
+            <translation>Deze vraag niet meer stellen, altijd verwijderen</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="447" />
             <source>Are you sure you want to send the selected file to the Recycle Bin? (It will also be removed from any albums in which it appears)</source>
             <extracomment>DeleteMessage::DeleteSingle
@@ -6589,6 +6717,12 @@ picasapy-origin-key: stringres:CThumbUI::FileSave::message</extracomment>
             <source>Revert</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Terugzetten</translation>
+        </message>
+        <message>
+            <source>Revert to original version of file?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
+            <translation>Terug naar oorspronkelijke versie van bestand?</translation>
         </message>
         <message>
             <source>Revert to original version of these file(s)?</source>
@@ -8066,6 +8200,20 @@ picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(i
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Bevestigen</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>Bewerkingen verwijderen</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/no.title</extracomment>
+            <translation>Nee</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -12230,6 +12378,30 @@ picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/startoggle);tooltips
             <translation>Ster toevoegen/verwijderen</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Screensaver</source>
+            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
+            <translation>Screensaver</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Starred Photos</source>
+            <comment>stringres:CThumbDB::starredphotos</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
+            <translation>Foto's met ster</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>New Album...</source>
+            <comment>stringres:il_NewAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_NewAlbumName</extracomment>
+            <translation>Nieuw album...</translation>
+        </message>
+        <message>
             <source>Click and drag over photos to magnify them</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(thumbui/loupehit)</extracomment>
@@ -13845,12 +14017,6 @@ picasapy-origin-key: stringres:AspectRatioList:CustomAspectRatios</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(editpanel/crop_delete_custom)</extracomment>
             <translation>Hiermee verwijdert u de huidige beeldverhouding</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Suggested crops</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Voorgestelde uitsneden</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -18711,6 +18877,14 @@ picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup
 picasapy-origin: picasa
 picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Tags kunnen niet worden aangepast omdat een of meer items alleen-lezen zijn.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Een album kan alleen worden opgeslagen in een geïndexeerde fotomap.</translation>
         </message>
     </context>
 </TS>

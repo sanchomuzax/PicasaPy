@@ -241,3 +241,69 @@ class TestCreateAlbum:
         by_token = {a["token"]: a for a in controller.albums}
         assert by_token[token]["name"] == "Friss"
         assert by_token[token]["count"] == 1
+
+
+class TestCreateEmptyAlbum:
+    def test_missing_folder_emits_album_write_failure(self, controller):
+        from PySide6.QtTest import QSignalSpy
+
+        failures = QSignalSpy(controller.albumWriteFailed)
+        token = controller.createEmptyAlbum(
+            "Mappa nélkül", "", "", "", "", False, ""
+        )
+
+        assert token == ""
+        assert failures.count() == 1
+        assert failures.at(0)[0]
+
+    def test_unindexed_folder_emits_album_write_failure(
+        self, controller, tmp_path
+    ):
+        from PySide6.QtTest import QSignalSpy
+
+        unindexed = tmp_path / "unindexed"
+        unindexed.mkdir()
+        failures = QSignalSpy(controller.albumWriteFailed)
+        token = controller.createEmptyAlbum(
+            "Index nélkül", str(unindexed), "", "", "", False, ""
+        )
+
+        assert token == ""
+        assert failures.count() == 1
+        assert failures.at(0)[0]
+
+    def test_writes_empty_definition_to_folder_ini_and_survives_reindex(
+        self, controller, library, tmp_path
+    ):
+        from picasapy.index import open_index, sync_tree
+
+        folder = library / "varos"
+        token = controller.createEmptyAlbum(
+            "Budapest",
+            str(folder),
+            "2026-10-25",
+            "Budapest",
+            "Üres album",
+            False,
+            "",
+        )
+
+        assert re.fullmatch(r"[0-9a-f]{32}", token)
+        document = load_document(folder / ".picasa.ini")
+        album = document.section(f".album:{token}")
+        assert album is not None
+        assert album.get("name") == "Budapest"
+        assert album.get("date") == "2026-10-25"
+        assert album.get("location") == "Budapest"
+        assert album.get("description") == "Üres album"
+        photo = document.section("c.jpg")
+        assert photo is None or photo.get("albums") is None
+        assert {a["token"]: a["count"] for a in controller.albums}[token] == 0
+
+        with open_index(tmp_path / "index.db") as conn:
+            sync_tree(conn, library)
+        controller._reload()
+
+        by_token = {a["token"]: a for a in controller.albums}
+        assert by_token[token]["name"] == "Budapest"
+        assert by_token[token]["count"] == 0

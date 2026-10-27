@@ -1173,6 +1173,18 @@ picasapy-origin-key: login_text:Label(login/gphotos_logotext);options:options/we
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
             <translation>Schließen</translation>
         </message>
+        <message>
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/button189.title</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/button190.title</extracomment>
+            <translation>Abbrechen</translation>
+        </message>
     </context>
     <context>
         <name>OptionsTabGeneral</name>
@@ -1233,44 +1245,10 @@ picasapy-origin-key: options:options/autoexclude.title</extracomment>
             <translation>Duplikate beim Importieren erkennen</translation>
         </message>
         <message>
-            <source>Clear Cache...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Cache leeren...</translation>
-        </message>
-        <message>
-            <source>Empty the thumbnail cache? The thumbnails are rebuilt when needed — no picture is lost.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Möchten Sie den Miniaturansichten-Cache leeren? Die Miniaturansichten werden bei Bedarf neu erstellt — dabei geht kein Bild verloren.</translation>
-        </message>
-        <message>
-            <source>Empty</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Leeren</translation>
-        </message>
-        <message>
-            <source>Keep</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Behalten</translation>
-        </message>
-        <message>
-            <source>%1 freed.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 freigegeben.</translation>
-        </message>
-        <message>
-            <source>%1 bytes</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 Bytes</translation>
-        </message>
-        <message>
-            <source>%1 kB</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 kB</translation>
-        </message>
-        <message>
-            <source>%1 MB</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 MB</translation>
+            <source>Clear cache files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/disposepreviews.title</extracomment>
+            <translation>Cache-Dateien löschen</translation>
         </message>
         <message>
             <source>Delete from disk without confirmation</source>
@@ -1390,6 +1368,12 @@ picasapy-origin-key: options:options/labelgroup53.title</extracomment>
             <translation>Filme senden als:</translation>
         </message>
         <message>
+            <source>Output format:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup57.title</extracomment>
+            <translation>Ausgabeformat:</translation>
+        </message>
+        <message>
             <source>First frame</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;webexport:webexport/item11.title</extracomment>
@@ -1423,13 +1407,13 @@ picasapy-origin-key: options:options/radio42.title</extracomment>
     <context>
         <name>OptionsTabFileTypes</name>
         <message>
-            <source>.bmp</source>
+            <source>.BMP</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportBMP.title</extracomment>
             <translation>BMP</translation>
         </message>
         <message>
-            <source>.gif</source>
+            <source>.GIF</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportGIF.title</extracomment>
             <translation>GIF</translation>
@@ -1441,31 +1425,31 @@ picasapy-origin-key: options:options/label61.title</extracomment>
             <translation>JPEG-Dateien anzeigen und:</translation>
         </message>
         <message>
-            <source>.png</source>
+            <source>.PNG</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportPNG.title</extracomment>
             <translation>PNG</translation>
         </message>
         <message>
-            <source>.tga</source>
+            <source>.TGA</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportTGA.title</extracomment>
             <translation>TGA</translation>
         </message>
         <message>
-            <source>.tif, .tiff</source>
+            <source>.TIF, .TIFF</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportTIF.title</extracomment>
             <translation>TIF, TIFF</translation>
         </message>
         <message>
-            <source>.webp</source>
+            <source>.WEBP</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportWEBP.title</extracomment>
             <translation>WEBP</translation>
         </message>
         <message>
-            <source>.psd (Photoshop)</source>
+            <source>.PSD (Photoshop)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportPSD.title</extracomment>
             <translation>PSD (Photoshop)</translation>
@@ -1482,7 +1466,7 @@ picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::R
             <translation>Filme</translation>
         </message>
         <message>
-            <source>Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)</source>
+            <source>Movies (.AVI, .MPG, .ASF, .WMV)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportMovies.title</extracomment>
             <translation>Filme (MOV, MPG, M4V, 3GP, AVI usw.)</translation>
@@ -1817,6 +1801,18 @@ picasapy-origin-key: options:options/PWAUseHiQualityJPEG.title</extracomment>
             <translation>Qualität des Originalbildes beibehalten (verbraucht mehr Speicherplatz)</translation>
         </message>
         <message>
+            <source>JPEG Quality:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup154.title</extracomment>
+            <translation>JPEG-Qualität:</translation>
+        </message>
+        <message>
+            <source>Syncing:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup158.title</extracomment>
+            <translation>Synchronisierung:</translation>
+        </message>
+        <message>
             <source>Sync starred photos only</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
@@ -1838,6 +1834,18 @@ picasapy-origin-key: options:options/confirmsync::disable.title</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/haswatermark.title</extracomment>
             <translation>Für alle Foto-Uploads Wasserzeichen hinzufügen:</translation>
+        </message>
+        <message>
+            <source>Watermarks:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup163.title</extracomment>
+            <translation>Wasserzeichen:</translation>
+        </message>
+        <message>
+            <source>Stamp photos with your name, a web domain, or a copyright notice.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: export:export/label44.title</extracomment>
+            <translation>Versehen Sie Fotos mit Ihrem Namen, einer Web-Domain oder einem Urheberrechtshinweis.</translation>
         </message>
         <message>
             <source>Include with photo uploads</source>
@@ -1913,14 +1921,128 @@ picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
             <translation>Als HTML-Seite exportieren...</translation>
         </message>
         <message>
+            <source>Web page title:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup13.title</extracomment>
+            <translation>Titel der Webseite:</translation>
+        </message>
+        <message>
             <source>Page title:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Seitentitel:</translation>
         </message>
         <message>
+            <source>Folder:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup15.title</extracomment>
+            <translation>Ordner:</translation>
+        </message>
+        <message>
             <source>Save to:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Speichern unter:</translation>
+        </message>
+        <message>
+            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/label20.title</extracomment>
+            <translation>Klicken Sie zur Anzeige eines Beispiels auf einen Vorlagenamen. Klicken Sie auf "Exportieren", wenn Sie Ihre Auswahl getroffen haben.</translation>
+        </message>
+        <message>
+            <source>Export</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/button29.title</extracomment>
+            <translation>Exportieren</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
+            <translation>Abbrechen</translation>
+        </message>
+        <message>
+            <source>Template 1, 2-page grey background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greybg_name</extracomment>
+            <translation>Vorlage 1, 2 Seiten mit grauem Hintergrund</translation>
+        </message>
+        <message>
+            <source>Template 2, 2-page black background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackbg_name</extracomment>
+            <translation>Vorlage 2, 2 Seiten mit schwarzem Hintergrund</translation>
+        </message>
+        <message>
+            <source>Template 3, 2-page white background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitebg_name</extracomment>
+            <translation>Vorlage 3, 2 Seiten mit weißem Hintergrund</translation>
+        </message>
+        <message>
+            <source>Template 4, 1-page grey background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greyfrm_name</extracomment>
+            <translation>Vorlage 4, 1 Seite mit grauem Hintergrund</translation>
+        </message>
+        <message>
+            <source>Template 5, 1-page black background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackfrm_name</extracomment>
+            <translation>Vorlage 5, 1 Seite mit schwarzem Hintergrund</translation>
+        </message>
+        <message>
+            <source>Template 6, 1-page white background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitefrm_name</extracomment>
+            <translation>Vorlage 6, 1 Seite mit weißem Hintergrund</translation>
+        </message>
+        <message>
+            <source>XML Code</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_xml_name</extracomment>
+            <translation>XML-Code</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greybg_descr</extracomment>
+            <translation>Index-Seite in Miniaturansicht, verknüpft mit einer ganzseitigen Bildansicht.</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackbg_descr</extracomment>
+            <translation>Index-Seite in Miniaturansicht, verknüpft mit einer ganzseitigen Bildansicht</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitebg_descr</extracomment>
+            <translation>Index-Seite in Miniaturansicht, verknüpft mit einer ganzseitigen Bildansicht.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greyfrm_descr</extracomment>
+            <translation>Links ein Index in Miniaturansicht, durch den Sie scrollen können, mit einer ganzseitigen Bildansicht auf der rechten Seite</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackfrm_descr</extracomment>
+            <translation>Links ein Index in Miniaturansicht, durch den Sie scrollen können, mit einer ganzseitigen Bildansicht auf der rechten Seite.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitefrm_descr</extracomment>
+            <translation>Links ein Index in Miniaturansicht, durch den Sie scrollen können, mit einer ganzseitigen Bildansicht auf der rechten Seite.</translation>
+        </message>
+        <message>
+            <source>Raw XML-formatted text for further translation.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_xml_descr</extracomment>
+            <translation>Reiner XML-formatierter Text zur weiteren Übersetzung</translation>
         </message>
         <message>
             <source>(not selected)</source>
@@ -6285,6 +6407,12 @@ picasapy-origin-key: stringres:DeleteMessage::DeleteSingleYesButton</extracommen
             <translation>Bild löschen</translation>
         </message>
         <message>
+            <source>Don't ask again, always remove</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRM_REMOVE_CHECK_MESSAGE</extracomment>
+            <translation>Nicht mehr fragen, immer entfernen</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="447" />
             <source>Are you sure you want to send the selected file to the Recycle Bin? (It will also be removed from any albums in which it appears)</source>
             <extracomment>DeleteMessage::DeleteSingle
@@ -6598,6 +6726,12 @@ picasapy-origin-key: stringres:CThumbUI::FileSave::message</extracomment>
             <source>Revert</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Zurücksetzen</translation>
+        </message>
+        <message>
+            <source>Revert to original version of file?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
+            <translation>Originalversion der Datei wiederherstellen?</translation>
         </message>
         <message>
             <source>Revert to original version of these file(s)?</source>
@@ -8075,6 +8209,20 @@ picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(i
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Bestätigen</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>Bearbeitungen entfernen</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/no.title</extracomment>
+            <translation>Nein</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -12243,6 +12391,30 @@ picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/startoggle);tooltips
             <translation>Markierung hinzufügen/entfernen</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Screensaver</source>
+            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
+            <translation>Bildschirmschoner</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Starred Photos</source>
+            <comment>stringres:CThumbDB::starredphotos</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
+            <translation>Markierte Fotos</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>New Album...</source>
+            <comment>stringres:il_NewAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_NewAlbumName</extracomment>
+            <translation>Neues Album...</translation>
+        </message>
+        <message>
             <source>Click and drag over photos to magnify them</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(thumbui/loupehit)</extracomment>
@@ -13858,12 +14030,6 @@ picasapy-origin-key: stringres:AspectRatioList:CustomAspectRatios</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(editpanel/crop_delete_custom)</extracomment>
             <translation>Löscht das derzeitige Seitenverhältnis</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Suggested crops</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vorgeschlagene Zuschnitte</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -18724,6 +18890,14 @@ picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup
 picasapy-origin: picasa
 picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Tags können nicht bearbeitet werden, da ein oder mehr Elemente schreibgeschützt sind.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ein Album kann nur in einem indizierten Fotoordner gespeichert werden.</translation>
         </message>
     </context>
 </TS>

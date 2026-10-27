@@ -27,7 +27,8 @@ TOP_MARGIN_RATIO = 1.0 / 3.0
 #: alul: az arcmagasság 0,6-szorosa ráhagyás (váll)
 BOTTOM_MARGIN_RATIO = 0.6
 
-#: A három döntési kimenet (`0x00531c60`: `Passport0`/`Passport1`/siker).
+#: A három döntési kimenet; az eredeti (`0x00531c60`) a két hibát egy
+#: ágon, ugyanazzal a `Passport0` szöveggel jelzi (#5930).
 NO_FACE = "no_face"
 MULTIPLE_FACES = "multiple_faces"
 SINGLE_FACE = "single_face"
@@ -36,8 +37,8 @@ SINGLE_FACE = "single_face"
 def classify_face_count(face_count: int) -> str:
     """A talált arcok száma → a három kimenet egyike.
 
-    Nulla arcnál `NO_FACE` („Nem találhatók arcok"), egynél többnél
-    `MULTIPLE_FACES` („Úgy tűnik, több arc van a képen."), pontosan egynél
+    Nulla arcnál `NO_FACE`, egynél többnél `MULTIPLE_FACES` (mindkettő
+    „Nem találhatók arcok"), pontosan egynél
     `SINGLE_FACE` — ekkor mehet a kivágás."""
     if face_count <= 0:
         return NO_FACE

@@ -12,6 +12,8 @@ nézet. Az élő mérés (picasa-colab-jobs #49/#50/#54) a mérce:
 
 from __future__ import annotations
 
+import os
+
 import pytest
 from PySide6.QtCore import QObject, QPointF, Qt
 from PySide6.QtGui import QGuiApplication
@@ -146,7 +148,8 @@ class TestAHibaablak:
             ((), "Can't find any faces"),
             (
                 (_arc(10, 10, 40, 50), _arc(100, 60, 140, 110)),
-                "There appear to be multiple faces.",
+                # #5930: az eredeti több arcnál is a `Passport0` szövegét adja
+                "Can't find any faces",
             ),
         ],
         ids=["nulla-arc", "tobb-arc"],
@@ -167,6 +170,12 @@ class TestAHibaablak:
         assert dialog.property("visible") is True
         assert dialog.property("title") == "Try another picture?"
         assert _elem(window, "passportErrorMessage").property("text") == szoveg
+        kep_ut = os.environ.get("PICASAPY_5930_KIADASKEP")
+        if arcok and kep_ut:
+            # Kiadáskép: a több arcos kép hibaablaka, a főablak közepéről kivágva.
+            kep = window.grabWindow()
+            meret = kep.width(), kep.height()
+            kep.copy(meret[0] // 2 - 230, meret[1] // 2 - 110, 460, 220).save(kep_ut)
 
         # a párbeszéd a LÁTHATÓ főablakban él, nem egy rejtett ablakban
         gomb = _elem(window, "passportErrorOkButton")

@@ -2,12 +2,25 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// #350/#4318: a Picasa options.fen Nyomtatás füle élő beállításokat ad a
-// PrintControllernek; a print.fen beállításai a nyomtatásnál érvényesülnek.
+// #350/#4318: a Picasa options.fen Nyomtatás füle beállításokat ad a
+// PrintControllernek; az értékek az Options OK gombjáig piszkozatban állnak.
 ColumnLayout {
     id: root
     objectName: "optionsTabPrintingPanel"
     spacing: 10
+    property var optionsDraft: null
+
+    function setting(key, fallback) {
+        return root.optionsDraft
+            ? root.optionsDraft.value(key, fallback) : fallback
+    }
+
+    function stage(key, value, writer) {
+        if (root.optionsDraft)
+            root.optionsDraft.stage(key, value, writer)
+        else
+            writer(value)
+    }
 
     readonly property var printCtl: (typeof printController !== "undefined")
         ? printController : null
@@ -97,14 +110,20 @@ ColumnLayout {
                     model: root.printSizeLabels
                     currentIndex: {
                         if (!root.printCtl) return -1
-                        return root.printSizeIds.indexOf(
-                            root.printCtl.printSizePresets()[presetCell.index])
+                        var key = "printing.preset." + presetCell.index
+                        var actual = root.printCtl.printSizePresets()[presetCell.index]
+                        return root.printSizeIds.indexOf(root.setting(key, actual))
                     }
                     onActivated: {
                         if (root.printCtl && currentIndex >= 0)
-                            root.printCtl.setPrintSizePreset(
-                                presetCell.index,
-                                root.printSizeIds[currentIndex])
+                            root.stage(
+                                "printing.preset." + presetCell.index,
+                                root.printSizeIds[currentIndex],
+                                function(value) {
+                                    root.printCtl.setPrintSizePreset(
+                                        presetCell.index, value)
+                                }
+                            )
                     }
                 }
 
@@ -162,9 +181,14 @@ ColumnLayout {
                     wrapMode: Text.WordWrap
                     verticalAlignment: Text.AlignVCenter
                 }
-                checked: root.printCtl ? !root.printCtl.printProxyPreview() : false
+                checked: root.printCtl
+                    ? root.setting("printing.highQualityPreview",
+                        !root.printCtl.printProxyPreview()) : false
                 onToggled: if (root.printCtl)
-                    root.printCtl.setPrintProxyPreview(!checked)
+                    root.stage("printing.highQualityPreview", checked,
+                        function(value) {
+                            root.printCtl.setPrintProxyPreview(!value)
+                        })
             }
         }
 
@@ -188,18 +212,26 @@ ColumnLayout {
                     text: qsTr("Compatible (half-res)")
                     ButtonGroup.group: qualityGroup
                     checked: root.printCtl
-                        ? root.printCtl.printerQuality() === 2 : true
+                        ? root.setting("printing.quality",
+                            root.printCtl.printerQuality()) === 2 : true
                     onClicked: if (root.printCtl)
-                        root.printCtl.setPrinterQuality(2)
+                        root.stage("printing.quality", 2,
+                            function(value) {
+                                root.printCtl.setPrinterQuality(value)
+                            })
                 }
                 RadioButton {
                     objectName: "optionsPrintQualityHighQualityRadio"
                     text: qsTr("High Quality (full-res)")
                     ButtonGroup.group: qualityGroup
                     checked: root.printCtl
-                        ? root.printCtl.printerQuality() === 3 : false
+                        ? root.setting("printing.quality",
+                            root.printCtl.printerQuality()) === 3 : false
                     onClicked: if (root.printCtl)
-                        root.printCtl.setPrinterQuality(3)
+                        root.stage("printing.quality", 3,
+                            function(value) {
+                                root.printCtl.setPrinterQuality(value)
+                            })
                 }
             }
         }
@@ -223,18 +255,26 @@ ColumnLayout {
                     text: qsTr("General (Lanczos-3)")
                     ButtonGroup.group: resizeGroup
                     checked: root.printCtl
-                        ? root.printCtl.printResamplerQuality() === 5 : true
+                        ? root.setting("printing.resamplerQuality",
+                            root.printCtl.printResamplerQuality()) === 5 : true
                     onClicked: if (root.printCtl)
-                        root.printCtl.setPrintResamplerQuality(5)
+                        root.stage("printing.resamplerQuality", 5,
+                            function(value) {
+                                root.printCtl.setPrintResamplerQuality(value)
+                            })
                 }
                 RadioButton {
                     objectName: "optionsPrintResizeSharpRadio"
                     text: qsTr("Extra sharp (Lanczos-8)")
                     ButtonGroup.group: resizeGroup
                     checked: root.printCtl
-                        ? root.printCtl.printResamplerQuality() === 8 : false
+                        ? root.setting("printing.resamplerQuality",
+                            root.printCtl.printResamplerQuality()) === 8 : false
                     onClicked: if (root.printCtl)
-                        root.printCtl.setPrintResamplerQuality(8)
+                        root.stage("printing.resamplerQuality", 8,
+                            function(value) {
+                                root.printCtl.setPrintResamplerQuality(value)
+                            })
                 }
             }
         }

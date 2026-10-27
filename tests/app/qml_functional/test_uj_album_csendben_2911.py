@@ -1,4 +1,4 @@
-"""Az „Új album" CSENDBEN hoz létre „Névtelen" albumot — mind a négy belépő (#2911).
+"""A kijelöléses „Új album" utak csendben hoznak létre albumot (#2911).
 
 ## A mérés
 
@@ -9,9 +9,9 @@ Nincs számozás és nincs dátum — minden alkalommal ugyanaz a név.
 
 ## Amit ez az őr állít
 
-- mind a **négy belépő** (eszköztár, `Fájl ▸ Új album`, `Ctrl+N`,
-  fogd-és-vidd a bal hasábra) ugyanazt az utat járja: album jön létre,
-  párbeszéd nélkül;
+- a Fájl menü, a Ctrl+N, a kép-helyi menü és a bal hasábra ejtés
+  névbekérés nélkül készít albumot; az eszköztár útja a #5812 szerint
+  külön Album Properties párbeszédet használ;
 - a név a felület saját, FORDÍTHATÓ felirata (a próba-motorban a forrásalak
   `Untitled`; hogy magyarul „Névtelen", azt a
   `tests/app/test_ujalbum_nev_forditas_2911.py` méri a `.qm`-ből);
@@ -37,11 +37,11 @@ def _kijelol(window, qt_app, sor: int) -> None:
     qt_app.processEvents()
 
 
-class TestANegyBelepo:
-    def test_az_eszkoztar_gombja(self, qml_app, qt_app):
-        """A gomb egy `TapHandler`-es `Item` (nincs `clicked` jelzése), a
-        hatását a tálca `newAlbumRequested` jelzése viszi tovább — a próba
-        ezt süti el, ahogy a koppintás tenné."""
+class TestEszkoztarParbeszed:
+    def test_az_eszkoztar_gombja_album_properties_parbeszedet_nyit(
+        self, qml_app, qt_app
+    ):
+        """A #5812 eszköztárútja nem a kijelöléses albumkészítő út."""
         window, controller, _engine = qml_app
         _kijelol(window, qt_app, 0)
         assert _elem(window, "toolbarNewAlbumButton") is not None
@@ -49,8 +49,16 @@ class TestANegyBelepo:
         _elem(window, "mainToolbar").newAlbumRequested.emit()
         qt_app.processEvents()
 
-        assert [a["name"] for a in controller.albums] == ["Untitled"]
+        dialog = _elem(window, "toolbarNewAlbumPropertiesDialog")
+        assert dialog.property("opened") is True
+        assert dialog.property("title") == "Album Properties"
+        name_field = _elem(dialog, "folderPropertiesNameField")
+        assert name_field.property("text") == "Untitled"
+        assert name_field.property("selectedText") == "Untitled"
+        assert controller.albums == []
 
+
+class TestKijelolesesBelepo:
     def test_a_menutetel(self, qml_app, qt_app):
         window, controller, _engine = qml_app
         _kijelol(window, qt_app, 0)

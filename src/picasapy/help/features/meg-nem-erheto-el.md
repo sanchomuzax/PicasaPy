@@ -25,8 +25,6 @@ az utóbbi a működő gyorsbillentyűk listáját, lásd
 
 - Társítás a néző helyi menüjében — a könyvtárban, a kép helyi menüjében
   viszont **működik**, lásd [Fájlműveletek](fajlmuveletek.md)
-- Jelszó megadása/módosítása… a saját gyűjteményeken — a **Rejtett
-  mappák** fejlécén viszont **működik**, lásd [A könyvtár](konyvtar.md)
 
 **Beállítások**
 

@@ -13,6 +13,9 @@ import pytest
 from support.qt_wait import wait_for_photo_op
 
 from support.jpeg_factory import make_jpeg
+from picasapy.ini import load_document
+
+# rontás-kontroll: picasapy.ini.backuphash.backuphash_for_local_datetime = 65536 → 1 failed
 
 
 @pytest.fixture
@@ -76,6 +79,29 @@ def _ini_text_b(folder) -> str:
     return (folder / "b" / ".picasa.ini").read_text(encoding="utf-8")
 
 
+def _without_backuphash(text: str) -> list[str]:
+    return [
+        line
+        for line in text.splitlines()
+        if not line.casefold().startswith("backuphash=")
+    ]
+
+
+def _assert_valid_backuphash(text: str, section_name: str) -> None:
+    after_header = text.split(f"[{section_name}]", 1)[1]
+    section = after_header.split("\n[", 1)[0]
+    value = next(
+        (
+            line.partition("=")[2]
+            for line in section.splitlines()
+            if line.startswith("backuphash=")
+        ),
+        None,
+    )
+    assert value is not None, f"[{section_name}] szakaszból hiányzik a backuphash"
+    assert value.isdecimal() and 0 <= int(value) <= 0xFFFF
+
+
 def _run(controller, action) -> None:
     """A kötegelt művelet bevárása a KÖZÖS, hangos segéddel (#475).
 
@@ -116,6 +142,19 @@ class TestApplyEffectMany:
         ][0]
         assert section_line == "filters=sat=1,-0.2;autolight=1;"
 
+    def test_sharpen_az_unsharp2_alaperteket_irja(self, controller, library):
+        _run(
+            controller,
+            lambda: controller.applyEffectMany(
+                _rows_by_name(controller, "x.jpg"), "unsharp"
+            ),
+        )
+        section_line = [
+            line for line in _ini_text(library).splitlines()
+            if line.startswith("filters=")
+        ][0]
+        assert section_line == "filters=sat=1,-0.2;unsharp2=1,0.600000;"
+
     def test_sepia_a_kijelolt_kepekre_kerul_es_egy_lepesben_visszavonhato(
         self, controller, library
     ):
@@ -132,7 +171,11 @@ class TestApplyEffectMany:
 
         controller.undoBatchEdit()
 
-        assert _ini_text(library) == before_a
+        assert _without_backuphash(_ini_text(library)) == _without_backuphash(
+            before_a
+        )
+        _assert_valid_backuphash(_ini_text(library), "x.jpg")
+        _assert_valid_backuphash(_ini_text_b(library), "z.jpg")
         assert "filters=sepia=1;" not in _ini_text_b(library)
         assert controller.canUndoBatchEdit is False
 
@@ -148,6 +191,22 @@ class TestApplyEffectMany:
         lines = text.splitlines()
         y_index = lines.index("[y.jpg]")
         assert lines[y_index + 1] == "filters=enhance=1;"
+
+    def test_apply_effect_many_uj_kepen_backuphash_t_is_ir(self, controller, library):
+        _run(
+            controller,
+            lambda: controller.applyEffectMany(
+                _rows_by_name(controller, "y.jpg"), "enhance"
+            ),
+        )
+        szakasz = _ini_text(library).split("[y.jpg]", 1)[1].split("[", 1)[0]
+        hash_sor = next(
+            (sor for sor in szakasz.splitlines() if sor.startswith("backuphash=")),
+            None,
+        )
+        assert hash_sor is not None, "az applyEffectMany nem írt backuphash-t"
+        ertek = hash_sor.partition("=")[2]
+        assert ertek.isdecimal() and 0 <= int(ertek) <= 0xFFFF
 
     def test_mappankent_minden_erintett_mappa_iridik(self, controller, library):
         _run(
@@ -201,10 +260,12 @@ class TestUndoBatchEdit:
                 _rows_by_name(controller, "x.jpg", "z.jpg"), "unsharp"
             ),
         )
+        assert "unsharp2=1,0.600000;" in _ini_text(library)
+        assert "unsharp2=1,0.600000;" in _ini_text_b(library)
         assert controller.canUndoBatchEdit is True
         controller.undoBatchEdit()
-        assert "unsharp=1;" not in _ini_text(library)
-        assert "unsharp=1;" not in _ini_text_b(library)
+        assert "unsharp2=1,0.600000;" not in _ini_text(library)
+        assert "unsharp2=1,0.600000;" not in _ini_text_b(library)
         # az x.jpg eredeti lánca (sat=1,-0.2;) visszaállt
         section_line = [
             line for line in _ini_text(library).splitlines()
@@ -274,10 +335,29 @@ class TestClearAllEffectsMany:
             ),
         )
         text = _ini_text(library)
-        # az egykulcsos [x.jpg] szekció a filters= törlésével teljesen
-        # eltűnik (a `with_removed` az üres szekciót nem tartja meg)
+        # A job-254 szerint a szekció a filters= törlése után a backuphash
+        # miatt megmarad; a korábbi „üres szekció eltűnik” állítás elavult.
         assert "filters=sat=1,-0.2;" not in text
-        assert "[x.jpg]" not in text
+        section = load_document(library / "a" / ".picasa.ini").section("x.jpg")
+        assert section is not None
+        assert section.get("filters") is None
+
+    def test_a_torles_backuphash_kulcsot_hagy_a_kep_szakaszaban(
+        self, controller, library
+    ):
+        _run(
+            controller,
+            lambda: controller.clearAllEffectsMany(
+                _rows_by_name(controller, "x.jpg")
+            ),
+        )
+
+        section = load_document(library / "a" / ".picasa.ini").section("x.jpg")
+        assert section is not None, "a törölt lánc után a képszakasz hiányzik"
+        values = dict(section.items())
+        assert set(values) == {"backuphash"}, values
+        assert values["backuphash"].isdecimal()
+        assert 0 <= int(values["backuphash"]) <= 0xFFFF
 
     def test_torli_a_crop_tukorkulcsot_is(self, controller, library):
         _run(

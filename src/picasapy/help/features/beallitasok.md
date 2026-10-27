@@ -12,9 +12,19 @@
 > szürkék. A **Webalbumok** fül **nem működik**: a Picasa Webalbumok
 > megszűnt szolgáltatás, a fül csak az eredeti Picasa elrendezését követi.
 > Az Általános fülön szürke a **Névtelen használati statisztikák
-> küldése a Google részére** és az **Automatikus frissítések** is. A
-> **Bezárás** gomb zárja az ablakot; nincs külön OK, mert az élő
-> beállítások azonnal hatnak (a nyelv a kivétel, lásd alább).
+> küldése a Google részére** és az **Automatikus frissítések** is.
+
+Az ablak alján két gomb áll, ahogy az eredeti Picasában:
+
+- **OK** (vagy az **Enter**) elmenti a füleken végzett változtatásokat,
+  és bezárja az ablakot;
+- **Mégse** (vagy az **Esc**, illetve az ablak bezárása) elveti őket:
+  minden úgy marad, ahogy az ablak megnyitásakor volt.
+
+A beállítások tehát csak az **OK** után lépnek életbe; a **Mégse** az
+**Általános** fül **Gyorsítótárban lévő fájlok törlése** jelölőjének
+módosítását is elveti. A nyelv az **OK** után sem vált át azonnal, lásd
+alább.
 
 Ha az ablakot **keskenyre** húzod, a nyolc fül nem szorul össze
 olvashatatlanra: a fülsor vízszintesen **görgethetővé** válik, a két
@@ -44,7 +54,8 @@ alapján várnál.
 
 **Fájlok:** a **Másodpéldányok észlelése az importálás során** kapcsoló, a
 **Törlés a lemezről megerősítés nélkül**, az **Eltávolítás az albumból
-megerősítés nélkül** és a **Gyorsítótár ürítése…** gomb — lásd lentebb.
+megerősítés nélkül** és a **Gyorsítótárban lévő fájlok törlése** jelölő,
+lásd lentebb.
 
 **Nyelv:** lásd a következő szakaszt.
 
@@ -84,9 +95,9 @@ A kérdés csak egyszer jön; a nyelvet később bármikor átállíthatod.
 Eszközök menüben rákattintasz egy tételre, a
 program megkérdezi: „Módosítja a PicasaPy kezelőfelületének nyelvét? A
 változás a program következő megnyitásakor lép érvénybe." **Igen** esetén
-a választás elmentődik, és **a következő indításnál** lép életbe; **Nem**
-vagy **Mégse** esetén semmi nem változik. Az eredeti Picasa is így
-viselkedik.
+a választás elmentődik (a Beállítások ablakban csak az **OK** után), és
+**a következő indításnál** lép életbe; **Nem** vagy **Mégse** esetén
+semmi nem változik. Az eredeti Picasa is így viselkedik.
 
 A választó és a menü **pipája a kért nyelvet mutatja**, tehát a válasz
 után a még nem érvényes nyelven áll — így látszik, mi fog betöltődni
@@ -96,7 +107,8 @@ legközelebb.
 
 Ha bekapcsolod a **Törlés a lemezről megerősítés nélkül** pipát, a
 program a törlésnél nem kérdez rá többé. Ugyanezt beállíthatod magában a
-törlés-megerősítő ablakban is, a **Ne kérdezze meg újra** pipával.
+törlés-megerősítő ablakban is, a **Ne kérdezzen újból, mindig
+távolítsa el** pipával.
 
 ### Másodpéldányok észlelése az importálás során
 
@@ -107,30 +119,38 @@ Picasában; ha egyszer kikapcsolod, a program megjegyzi. Ugyanez a kapcsoló az 
 beállítást** mutatja, tehát amit az egyiken átállítasz, a másikon is
 látszik.
 
-### Gyorsítótár ürítése
+### Gyorsítótárban lévő fájlok törlése
 
-Az **Általános** fülön a **Gyorsítótár ürítése…** gomb kitakarítja a
-lemezen tartott bélyegképeket. A program rákérdez, és a kiürítés után
-megmondja, mennyi helyet szabadított fel.
+Az **Általános** fülön a **Gyorsítótárban lévő fájlok törlése** jelölő
+azt dönti el, hogy a program **kilépéskor** kitakarítsa-e a lemezen
+tartott bélyegképeket. Alapból ki van kapcsolva. A módosítás az Opciók
+ablakban piszkozat marad: az **OK** menti, a **Mégse** elveti. Azonnali
+ürítés nincs: a takarítás mindig a program bezárásakor történik.
 
 Egyetlen kép sem vész el: a bélyegképek szükség szerint újra elkészülnek.
-Közvetlenül utána a mappák lassabban nyílnak meg, amíg a bélyegképek
-újra fel nem épülnek.
+A következő indítás után viszont a mappák lassabban nyílnak meg, amíg a
+bélyegképek újra fel nem épülnek.
 
 ### Fájltípusok fül
 
 A **Megjelenítés: JPEG-fájlok és** sor alatt jelölőnégyzetekkel
 választod ki, mely formátumokat vegye fel a könyvtár a JPEG mellé:
-**.bmp**, **.gif**, **.png**, **.tga**, **.tif, .tiff**, **.webp**,
-**.psd (Photoshop)**, **RAW formátumok**, **Mozgófilmek**
-(.mov, .mpg, .m4v, .3gp, .avi, …) és **Quicktime-filmek (.MOV)**. A
+**.BMP**, **.GIF**, **.PNG**, **.TGA**, **.TIF, .TIFF**, **.WEBP**,
+**.PSD (Photoshop)**, **RAW formátumok**, **Mozgófilmek (.AVI, .MPG,
+.ASF, .WMV)** és **Quicktime-filmek (.MOV)**. A **Mozgófilmek** sor
+felirata az eredeti Picasa négy formátumát sorolja, de a program a többi
+ismert videóformátumot (például .MP4, .M4V, .3GP, .MKV) is ehhez a sorhoz
+számítja; csak a .MOV tartozik a külön Quicktime-sorhoz. A
 **RAW formátumok** mellett a **Támogatott formátumok** hivatkozás
 felsorolja, milyen RAW-kiterjesztéseket ismer a program. A JPEG mindig
 része a könyvtárnak.
 
-Alapból minden formátum be van jelölve. Amit kikapcsolsz, azt a program a
-mappák **következő beolvasásától** nem veszi fel; a fájlok a lemezen
-maradnak.
+Alapból, ahogy az eredeti Picasában, a **.GIF**, a **.PNG** és a
+**.TGA** **ki van kapcsolva**, a többi formátum be van jelölve. Ha
+korábban már átállítottál egy jelölőt, a program a te választásodat
+tartja meg. Amit kikapcsolsz, azt a program a mappák **következő
+beolvasásától** nem veszi fel; a fájlok a lemezen maradnak. Ha tehát a
+GIF- vagy PNG-képeidet is látni szeretnéd, itt kapcsold be őket.
 
 ### Diavetítés fül
 
@@ -155,7 +175,9 @@ maradnak.
 - **Előnézetek:** **Magas minőségű előnézetek használata (lassabb)** —
   a nyomtatási előnézet pontosabb, de lassabban készül el.
 - **Nyomtató minősége:** **Kompatibilis (ötven százalékos felbontás)**
-  (alapérték) vagy **Magas minőség (teljes felbontás)**.
+  (alapérték) vagy **Magas minőség (teljes felbontás)**. Ez akkor hat,
+  ha a **Nyomtatás** ablakban a **Normál** mód van kiválasztva; az
+  **Optimalizált** mód mindig teljes felbontással nyomtat.
 - **Nyomtatási mintavételezési minőség:** **Általános (Lanczos-3)**
   (alapérték) vagy **Extra éles (Lanczos-8)** — a képet ezzel az
   átméretező szűrővel kicsinyíti a nyomtatás.

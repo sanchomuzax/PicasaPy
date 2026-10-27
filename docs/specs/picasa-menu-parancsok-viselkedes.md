@@ -803,10 +803,12 @@ Három erőforráskulcs ismert: `Passport0` = „Can't find any faces",
 `Passport1` = „There appear to be multiple faces.”, `Passportfail` = „Try
 another picture?”. A `0x00531c60` visszafejtett hibaága a
 `Passportfail` címet és a `Passport0` törzsszöveget adja át; ebben az
-ágban nincs `Passport1`-re választás. **Élő mérés (#49/#50, 2026-09-26):**
-a nulla arcú eset címe „Try another picture?”, szövege „Can't find any
-faces”, egyetlen OK gombbal. A többarcú eset élő szövege még nincs külön
-mérve. Belépési pont: **Tools ▸ Experimental ▸ Passport photo…**, a
+ágban nincs `Passport1`-re választás. A `Passport1` fordítási erőforrásként
+létezik a `Picasa3i18n.dll`-ben, de a `Picasa3.exe` adat-sztringjei között
+nincs jelen. A teljes kódhivatkozás-listát és a független pásztázást a 24/c
+szakasz rögzíti. **Élő mérés (#49/#50, 2026-09-26):** a nulla arcú eset
+címe „Try another picture?”, szövege „Can't find any faces”, egyetlen OK
+gombbal. Belépési pont: **Tools ▸ Experimental ▸ Passport photo…**, a
 Kísérleti almenü 6. tétele (a kilenc: Publish via FTP… (PicasaPy kihagyja) ·
 Show Duplicate Files · Search for ▸ · Save search results… · Show tag as
 album… · Passport photo… · Delete empty online albums… · Choose database
@@ -937,7 +939,7 @@ a lapra rendezés/laptörés is feltárt; a részletes bináris bizonyítékot �
 az élő Picasa-mérést lásd a [`picasa-nyomtatas.md`](picasa-nyomtatas.md)
 17. szakaszának #1401/#3646 részeiben. A #5658 összevetése következik.
 
-### 24/c: #5658: az eredeti útlevélkép és a PicasaPy tételes összevetése
+### 24/c: #5658/#5930: az eredeti útlevélkép és a PicasaPy tételes összevetése
 
 Az EXE PE-verzióadata: **Picasa 3.9.141.259**. Fontos címjavítás:
 `0x00c89994` (`CThumbUI::Passportfail`) és `0x00c899c4`
@@ -950,7 +952,7 @@ a tényleges kezelő `0x00531c60`.
 | **Bemeneti kép.** Bináris: `0x00531c60` a `this+0x399` képre futtatja az arcellenőrzést; a `-1` index korai visszatérés. | `Main.qml` a `photoActionRows()` első sorát adja át. Egyetlen kijelölt képnél **EGYEZIK**. Több kijelölt képnél az eredeti kiválasztási sorrend/viselkedés **NINCS MEG**; megszerzés: Picasa 3.9-ben két kijelölt képpel indítsd a menüpontot, rögzítsd melyik képre fut. | Egyképes út lezárható; több kijelölésre ne állítsunk egyezést az élő ellenőrzésig. |
 | **Arcok száma.** Bináris: `0x00531d8c` hívja a `0x0047ae90`-et; `0x00531d95`-`0x00531d98` a tárolt arcdarabszámot pontosan egyre vizsgálja. | `classify_face_count()` csak az egy arcot engedi tovább. A darabszám-feltétel **EGYEZIK**. | Lezárható a döntési feltétel; az érzékelők kimenetének egyezése külön nyitott pont. |
 | **Arcfelismerő motor.** A `0x0047ae90` dekompilátuma és disassembly-je a `param_1+0x48` objektum vtable-jának `+0xd0` slotját hívja, `param_2` bemenettel és két kimeneti címmel (`0x0047aead`-`0x0047aecf`). A hívás visszatérési értékétől függően folytatja a geometria feldolgozását, de a konkrét célosztályt, modellt/adatot, küszöböt és normalizált arcdobozt **NINCS MEG**. A `0x00531c60` hívó igazolja, hogy a visszaadott arcdarabszámot a kezelő pontosan egyre vizsgálja (`0x00531d8c`-`0x00531d98`); ez nem nevezi meg a dinamikus implementációt. | `FaceDetectorYN` YuNet `face_detection_yunet_2023mar.onnx` modellt használ; score 0,9, NMS 0,3, topK 5000, legnagyobb detektálási méret 960 px (`faces/detector.py`). | **Bizonyítottsági fok: feltételes.** A hívási felület és az egyarcú kapu címmel igazolt; a motor részlete és eredményparitása a konkrét vtable-cél feloldása, majd azonos, címkézett képkészleten végzett eredeti/PicasaPy-mérés nélkül nem állítható. |
-| **Sikertelen arcellenőrzés.** Bináris: `0x00531c60` nem-egy-arc ága a `CThumbUI::Passportfail` címet és a `CThumbUI::Passport0` törzset adja át. Élő mérés (#49/#50): nulla arcnál „Try another picture?” / „Can't find any faces” / egy OK. | Nulla arcnál ugyanez a cím, szöveg és OK gomb. Több arcnál a QML `Passport1`-et („There appear to be multiple faces.”) mutat. Az eredeti handler visszafejtett ága ott is `Passport0`-t ad át, tehát a szöveg **ELTÉR**. | A többarcú PicasaPy-hiba törzsszövege kövesse az eredeti `Passport0`-t; élő többarcú eredeti UI-val még erősítsük meg. |
+| **Sikertelen arcellenőrzés.** Bináris: `0x00531d98` az arcdarabszámot pontosan egyre hasonlítja. A nem-egy-arc ág `0x00531da1`-nél `CThumbUI::Passportfail`-t, `0x00531de2`-nél `CThumbUI::Passport0`-t ad át; a törzsszöveg címe `0x00c899ac` („Can't find any faces”). A teljes `.text`-pásztázás nem talált közvetlen kódhivatkozást a `Passport1` kulcsra. | Nulla arcnál ugyanez a cím, szöveg és OK gomb. Több arcnál a `PassportErrorDialog.qml:34-37` `Passport1`-et („There appear to be multiple faces.”) mutatja. A `passport_controller.py:67-68` és `faces/passport.py:30,36-41` megjegyzése is külön eredeti `Passport1` ágat állít; a funkcionális teszt (`test_utlevelkep_utvonal_1401.py:143-152`) ezt a jelenlegi szöveget várja. A PicasaPy többarcú szövege **ELTÉR** az eredeti kezelő által átadott `Passport0`-tól. | Több arcnál is a `Passport0` szövegét mutassuk; a megkülönböztetett belső arc-darabszám kimenet megmaradhat. |
 | **Kivágási arány és alak.** Bináris: `0x00531efa`-`0x00531f5a` arc-téglalap; `0x00cf39f8` = 3,0, `0x00cf3a70` = 0,6; `0x00531faa`-`0x00531ffd` négyzetesítés és képszélre korlátozás. | A `faces/passport.py` ugyanazt az 1/3 felső és 0,6 alsó ráhagyást, középre igazított négyzetet és független szélső korlátokat alkalmazza. **EGYEZIK** az arány/alak szabálya. | Lezárható az arány- és határszabály. |
 | **Kivágási kerekítés.** Bináris: `0x00531efa`-`0x00531f5a` félpixeles eltolásokat és `fistp`-t használ; a futásidejű FPU-kerekítési mód **NINCS MEG**. | A `passport_crop_rect()` a kezdeti arcéleknél `floor`/`ceil`, a további határoknál Python `round()` műveletet használ. Az utasítássor **ELTÉR**; a pixelkülönbség konkrét képen **NINCS MEG**. A forrás docstringjének „legfeljebb egy képpont” állítása nincs méréssel igazolva. Megszerzés: eredeti és Py kimenet összevetése ismert tört/egész határeseteket és képszéli arcokat lefedő címkézett mintákon. | A PicasaPy eredményét a bináris kerekítési menetéhez kell igazítani; készre csak a FPU-mód tisztázása és bájtszinten egyező kivágási aranyminták után jelentsük. |
 | **Sikeres kimenet útja és mérete.** Bináris: `0x00531c60` → `0x0056b5c0` → `0x006b0200` → `0x00579910(2)` → `0x00744d00(0xf)` nyomtatási munkát indít; `0x00775ce0` enumtábla szerint `0xf` = `ePassport`, fizikai mérete `0x00775660` → `0x00cf3a48` = 2 × 2 hüvelyk. | A kivágás a gyorsítótár `passport.png` fájljába kerül, majd a PicasaPy nyomtatási előnézetét nyitja `PASSPORT` (2 × 2 hüvelyk) mérettel. Nincs külön szerkesztőbe ugrás vagy végleges képfájl-mentés. **EGYEZIK** a felhasználói kimenet fő útja és mérete. | Lezárható a nyomtatási út és fizikai méret; az ideiglenes fájl reprezentációja nem felhasználói kimenet. |
@@ -961,11 +963,26 @@ a tényleges kezelő `0x00531c60`.
 | **Felirat tartalma saját metaadatokkal.** Bináris: hogy a Passport-út a `usecaption`/`usefilename`/`useexif` módokhoz pontosan mely képrekordot adja, **NINCS MEG**. Megszerzés: `0x00744d00`-tól a `printoptions::text` fogyasztóig visszakövetni, majd mindhárom módot élő eredeti képen mérni. | A Py által létrehozott ideiglenes `PhotoRecord` neve `passport.png`, `caption=None`, `taken_at=None` (`print_controller.py::_passport_record`). | Nincs igazolt eltérés, amíg az eredeti szövegforrása nem bizonyított. A fenti kódkülönbség lehetséges hatását célzott eredeti/Py mintán kell eldönteni. |
 | **Nyomtató/cél alapértelmezése.** Bináris: az első Passport-nyomtatási panelen kiválasztott nyomtató és alapcél **NINCS MEG**. Megszerzés: Picasa 3.9 tiszta profillal, telepített alapértelmezett és PDF-nyomtató mellett mérd a panel induló választását. | A Py listáján a PDF-cél az első és alapértelmezett választás. | Az eltérés mértékét az eredeti élő mérés után állapítsuk meg; ne állítsunk egyezést. |
 
-**Bizonyítottsági fok: feltételes.** A menü→diszpécser→kezelő→nyomtatási munka lánc, a crop-szabály és az enum/2 hüvelykes méret bináris útja a jelenlegi forrással egyezik; az arcdetektor kimenete, a félpixeles crop eredménye, a kiválasztási él-esetek és a teljes nyomati képazonosság nincs megmérve. A #5739 dekompilátuma megerősíti, hogy a `0x0047ae90` virtuális diszpécser, de nem azonosítja a vtable konkrét célját.
+**A `CThumbUI::Passport1` közvetlen kódhivatkozásainak jegyzéke.** Az SQLite `string_xrefs` táblája nem ad `Passport1`-találatot, de az index negatív eredménye önmagában nem bizonyíték. A `Picasa3.exe` adat-sztringjei között sincs `CThumbUI::Passport1`; a kulcs csak a `Picasa3i18n.dll` lokalizációs XML-jében szerepel (fájloffset `0x5e4ea1`, angol szövege `0x5e4ec2`: „There appear to be multiple faces.”). A teljes, streaming `.text`-pásztázás **2 884 879** utasítást vizsgált, és **10** közvetlen Passport-adat-sztring hivatkozást talált - `Passport1`-re egyet sem:
 
-**Két független út.** A: a meglévő Ghidra-visszafejtés és a célzott utasításszintű olvasás ugyanazt a `0x00531c60` arc- és hibaágat, majd a `0x00744d00` nyomtatási ágat adja. B: az SQLite sztring-xrefjei a `0x00559150` menüépítőt, a `0x005cb990` diszpécsert és a `0x00744d00` Passport-feliratokat külön mutatják; a független élő #49/#50 és #54 mérések igazolják a no-face panelt, illetve a Crop to Fit/1 példány indulást. A két út ezekben a pontokban egyezik; a detektor- és teljes renderelési egyezésre nem adnak választ.
+| utasításcím | adatcím | adat-sztring |
+|---|---|---|
+| `0x00531da1` | `0x00c89994` | `CThumbUI::Passportfail` |
+| `0x00531da6` | `0x00c8997c` | `Try another picture?` |
+| `0x00531de2` | `0x00c899c4` | `CThumbUI::Passport0` |
+| `0x00531de7` | `0x00c899ac` | `Can't find any faces` |
+| `0x0055c3eb` | `0x00c8de18` | `eMenuTools::ID_PASSPORT` |
+| `0x0055c3f0` | `0x00c8de30` | `&Passport photo...` |
+| `0x00775e87` | `0x00cb38dc` | `ytPrintSizes::ePassport` |
+| `0x00775e8c` | `0x00cb38d0` | `Passport` |
+| `0x007760ba` | `0x00cb3c4c` | `ytPrintTip::ePassport` |
+| `0x007760bf` | `0x00cb3c2c` | `Print pictures for a passport` |
 
-**Cáfoló próba.** Megpróbáltam igazolni azt a korábbi feltevést, hogy több arc esetén az eredeti kezelő `Passport1`-et ad át. A `0x00531c60` Ghidra-kimenetének nem-egy-arc ága és a helyi disassembly ugyanezt cáfolja: a hibaág a `CThumbUI::Passport0` kulcsot tölti be. A `Passport1` erőforrás létezik, de ebből a függvényből nincs hozzá hivatkozás; globális használatáról nem teszek negatív állítást.
+**Két független út - a hibaüzenet döntése: megerősített.** A: a `0x00531c60` teljes, célzott disassembly-je megmutatja a `cmp ecx, 2` feltételt és a nem-egy-arc ágon átadott `Passportfail` + `Passport0` kulcsot. B: a teljes `.text`-re kiterjedő, memóriakorlátos `paszta.py` pásztázás az összes közvetlen Passport-adat-sztring hivatkozást kilistázza; `Passport1` nincs közöttük, miközben a DLL-ben csak fordítási erőforrásként jelenik meg. Mindkét út szerint több arcnál is `Passport0` a törzsszöveg.
+
+**Cáfoló próba és annak ellenőrzése.** Azt próbáltam cáfolni, hogy a `Passport1`-nek nincs közvetlen kódhivatkozása a Picasa3.exe-ben: a teljes `.text` utasításfolyamban kerestem a Passporthoz tartozó adat-sztringekre mutató operandusokat, nem csak a `0x00531c60` függvényben. Talált ellenpéldát nem kaptam; a tíz hivatkozás mind a fenti jegyzékben szerepel. A `Passport1` kulcs tényleges megléte külön ellenőrzött: az csak a `Picasa3i18n.dll` lokalizációs XML-erőforrásában található, tehát az erőforrás megléte nem cáfolja a közvetlen kódhivatkozások negatív eredményét.
+
+**Az egész Passport-út paritásának bizonyítottsági foka: feltételes.** A menü→diszpécser→kezelő→nyomtatási munka lánc, a crop-szabály és az enum/2 hüvelykes méret bináris útja a jelenlegi forrással egyezik; az arcdetektor kimenete, a félpixeles crop eredménye, a kiválasztási él-esetek és a teljes nyomati képazonosság nincs megmérve. A #5739 dekompilátuma megerősíti, hogy a `0x0047ae90` virtuális diszpécser, de nem azonosítja a vtable konkrét célját.
 
 **A #5739 célzott Ghidra-kiegészítése (2026-10-24).** A meglévő `0x0047ae90` dekompilálást és a címzett függvény teljes célzott disassembly-jét összevetettem azzal a feltevéssel, hogy maga ez a wrapper rögzíti a modellt vagy küszöböt. Cáfoló eredmény: a hívási cél futásidőben, a `[param_1+0x48]` vtable `+0xd0` slotjából jön; az utasításfolyam nem ad közvetlen célcímet vagy modell-/küszöbkonstanst. Ez csak a wrapperről szól, a konkrét implementációban lévő értékeket nem cáfolja. A független hívóút (`0x00531c60`) a visszatérő arcdarabszámot pontosan egyre szűri, de a modellt és a normalizálást nem oldja fel.
 
@@ -973,7 +990,7 @@ a tényleges kezelő `0x00531c60`.
 
 - `Ghidra-kör kell: 0x0047ae90 - mely konstruktor vagy állapot írja a detektorobjektum vftábláját a [param_1+0x48] mezőbe, és mi a +0xd0 slot konkrét célja? A 2026-10-24-i dekompilátum a dinamikus hívást mutatja, de nem nevezi meg az implementációt, ezért modell/küszöb/arcdoboz sem nyerhető ki belőle. [blokkoló]`
 - Eredeti/Py azonos képkészletes arcdetektor-paritás: mérj az eredeti és a `FaceDetectorYN` által elfogadott arcok számával és téglalapjaival; mérőadat-archívumban releváns minta nem volt.
-- A PicasaPy félpixeles crop eredménye, a többarcú eredeti párbeszéd tényleges szövege, több kijelölt kép sorrendje, a felirat-metaadat forrása, az eredeti kezdőnyomtató és az azonos nyomtatón készült teljes Passport-lap képi egyezése a táblázatban megadott módszerrel szerezhető meg.
+- A PicasaPy félpixeles crop eredménye, több kijelölt kép sorrendje, a felirat-metaadat forrása, az eredeti kezdőnyomtató és az azonos nyomtatón készült teljes Passport-lap képi egyezése a táblázatban megadott módszerrel szerezhető meg. A többarcú hibaüzenet bináris kulcsválasztása lezárt; élő UI-mérést nem végeztünk.
 
 #### Javasolt jegytörzs-bővítés (#5658)
 
@@ -1792,6 +1809,17 @@ kell elolvasni, nem a kulcsszót keresni.)* A mi oldalunkon
 4. jóváhagyás után képenként a **különleges régió-tokenek** törlése —
    `redeye` · `retouch` · `picnik` (`0x5ef6e1`–`0x5ef877`, a `filters=`
    láncból), majd az `editpanel/preview` frissítése.
+
+**Futásidejű mérés (job-254, #5836):** a könyvtárnézet Kép menüjéből,
+EGY kijelölt képpel indítva az eredeti a **többes** szöveget mutatja
+(„This will remove all edits you have made to ALL of the selected
+pictures.  Do you want to continue?”), az ablakcím **„Confirm”**, a
+gombok **„Remove Edits”** (alapértelmezett) és **„No”**, „Do not ask
+again” jelölő nincs. A könyvtárnézetből tehát egy képnél sem a 2. pont
+egyes számú szövege jön; a nézőből indított ágat nem mértük, arra a 2. pont
+statikus olvasata marad érvényes. Jóváhagyás után a kép
+szakaszából a `filters=` törlődik, és `backuphash=` kerül bele (job-254:
+`backuphash=37968`, más kulcs nincs).
 
 *(Megkülönböztetendő a fájlszintű Revert-től: a
 `CThumbUI::FileRevert`-család (`0x0053b2e0`, „Revert to original version
@@ -3504,10 +3532,10 @@ le. Az `0x0083ea00` a tíz mezőt olvassa/kezeli; az `0x0083f3f0` a
 |---|---|---|
 | **Belépés:** Nézet → Címkék (`0xd6e018`, cmd `0x9d2c`, `0x00559150` → `0x0065ab50`); a panel gyors beállítása `quick_config` (`0x00639c00`, `0x0063d840`). | Nézet → Tags / Ctrl+T (`PicasaMenuBar.qml:1071-1076`, `Main.qml:3948-3952`); a fogaskerék nyitja a párbeszédet (`TagsPanel.qml:234-248`). | **EGYEZIK**: ugyanaz a panel és beállítóút. |
 | **Mezők:** tíz címke (`edit_0..9`; `0x0083efa2`, `cmp eax, 0xa`); üres kulcs alapértéke `]empty` (`0x0083f3f0`). | Tíz `quickTagField0..9` mező; a hiányzó beállítás üres sztringekkel egészül ki (`QuickTagsConfigDialog.qml:83-124`, `keywords_controller.py:235-244`). | **EGYEZIK**: 10 szerkeszthető hely, üres alapérték. |
-| **Legutóbbiak:** `Preferences\quicktags::enable_recents`, hiányzó kulcsnál `1` (`0x0063c7d0`, `0x00639c00`); bekapcsolva az első két gomb a `recent0/1`-et mutatja (`0x0063c7d0`, `0x0063c120`). | `quickTags/reserveRecentForTop2`, hiányzó kulcsnál `True`; a gomblista első két elemét írja felül (`keywords_controller.py:298-307`, `:320-331`). | **EGYEZIK**: az alapérték és a két látható hely egyezik. |
-| **Előzményfrissítő út:** a címke-hozzáadó (`0x0063bed0`) csak bekapcsolt `quicktags::enable_recents` mellett hívja a `0x0063c120` frissítőt (`0x0063c05a-0x0063c08a`); ez a segéd a `recent%d` értékeket beolvassa és a panel két előzményhelyét frissíti (`0x0063c303-0x0063c371`, ciklushatár: `0x0063c578-0x0063c57e`). **A tartós `recent%d`-írás hatása nincs igazolva.** | Az `addKeywordToRows` minden érvényes címkénél meghívja a `_record_recent_quick_tag`-et a beállítástól függetlenül; ez QSettings-listát ír, míg a beállítás csak a gombok megjelenítését kapuzza (`keywords_controller.py:149-162`, `:250-261`, `:320-331`). | **ELTÉRÉS a kikapcsolt állapot útjában:** nálunk az előzménylista frissül, az eredeti kihagyja a frissítő hívást. A bináris későbbi/persistált látható eredménye **NINCS MEG**; ne állítsunk róla többet. |
+| **Legutóbbiak:** `Preferences\quicktags::enable_recents`, hiányzó kulcsnál `1` (`0x0063c7d0`, `0x00639c00`); bekapcsolva az első két gomb a `recent0/1`-et mutatja (`0x0063c7d0`). A `0x0063c120` a `Preferences\quicktags::recent0/1` értékeket írja (`0x00ca0894`, `0x0063c303-0x0063c376`, íróhívás `0x00407760`). | `quickTags/reserveRecentForTop2`, hiányzó kulcsnál `True`; a gomblista első két elemét írja felül (`keywords_controller.py:334-338`, `:356-367`). | **EGYEZIK**: az alapérték és a két látható hely egyezik; a tárolási kulcsok eltérnek. |
+| **Előzményfrissítő út (#5978):** a `0x0063bed0` csak bekapcsolt `quicktags::enable_recents` mellett hívja a `0x0063c120`-at (`0x0063c05a-0x0063c08a`). A segéd byte-azonos egyezést keres az első két megjelenített helyen; egyezéskor nem rendez át. Új címkénél a korábbi 0. hely a 1.-re csúszik, az új érték kerül a 0.-ra; a korábbi 1. kiesik. Csak a két `recent%d` kulcsot írja, a tíz `tag%d` kézi helyet nem. | Az `addKeywordToRows` csak bekapcsolt beállításnál rögzít (`keywords_controller.py:177-184`); `_record_recent_quick_tag` casefold szerint eltávolít minden egyezést, majd előre teszi az új értéket és legfeljebb 8-at tárol a `quickTags/recentKeywords` kulcsban (`:37-40`, `:286-297`). | **ELTÉRÉS:** az ismételt címkét nálunk előresorolja, az eredeti a már első két recent közöttit nem rendezi át; a duplikátum-összevetés és a tárolt elemszám/kulcs is eltér. A kikapcsolt frissítési ág **EGYEZIK**. |
 | **Autofill:** egyszeri kitöltő művelet; a `0x0083f580` a közös címkelistából az üres szerkesztőmezőkbe ír, meglévő címkét/duplikátumot átugrik, és a Legutóbbiak kapcsolótól függően a 0. vagy 2. mezőtől indul. A párbeszéd a `quicktagconfig/autofill` vezérlőt köti be (`0x0083ea00`); ehhez nem olvas/ír tartós Autofill-beállítást. Felirat: `quicktagconfig_text.tre`, `0x0083ea00`. | Tartós `quickTags/autoFillFrequent` jelölőnégyzet, alapértéke `False`; bekapcsolva a `quickTagButtons` minden lekéréskor dinamikusan tölti az üresen maradt gombokat az index gyakorisági sorrendjéből (`QuickTagsConfigDialog.qml:144-158`, `keywords_controller.py:309-342`). | **ELTÉRÉS:** a jelölőnégyzet helyett egyszeri kitöltés írja be az üres konfigurációs mezőket; az eredményt a felhasználó az OK-val menti. |
-| **Gyorscímke kimenete:** a `quicktag_%d` esemény a `0x0063bed0` hozzáadási útjára jut (`0x0063a5e0` → `0x0063bed0`); a panel frissítőhívását a Legutóbbiak kapcsoló kapuzza. A tartós fájlíró teljes útja **NINCS MEG**; megszerzés: a `0x0063bed0` → `0x0063b960` utáni modell-/íróhívások követése, majd ellenőrzött, címkézés előtti/utáni mintafájl-mérés. | A kijelölt sorokra ad címkét; JPEG-nél IPTC Keywords írás, íráshiba vagy más formátum esetén `.picasa.ini` `keywords=` fallback és index-frissítés (`keywords_controller.py:149-162`, `:176-231`). | **NINCS DÖNTÉS** az írási paritásról: a bináris íróút megszerzése után hasonlítható össze. |
+| **Gyorscímke kimenete:** a `quicktag_%d` esemény a `0x0063bed0` hozzáadási útjára jut (`0x0063a5e0` → `0x0063bed0`). A címke a `CThumbUI::IKeywordUpdate` `+0x284` interfész `+0x14` slotján (`0x00c906d8` → `0x0065b4b0`) a `0x005c76b0` kijelölési/listaépítő útba kerül. A tényleges fájl-/adatbázis-író és az IPTC Keywords mezőn belüli beszúrási irány továbbra is **NINCS MEG**; a `0x005c7710` indirekt callbacket kell feloldani, majd eredeti JPEG-et mérni. | A kijelölt sorokra ad címkét; JPEG-nél IPTC Keywords írás, íráshiba vagy más formátum esetén `.picasa.ini` `keywords=` fallback és index-frissítés (`keywords_controller.py:149-162`, `:176-231`). | **NINCS DÖNTÉS** az írási paritásról: a bináris fájlíró út és az eredeti JPEG mezősorrendje még hiányzik. |
 | **Párbeszéd:** OK / Cancel; a tíz `quicktags::tag%d` mező és a `quicktags::enable_recents` értékét kezeli/menti (`0x0083ea00`, `0x0083f3f0`, `0x0083f2f0`). | OK / Cancel; a mezők és kapcsolók QSettings-be íródnak, Mégse megnyitáskori állapotra állít vissza (`QuickTagsConfigDialog.qml:36`, `:60-75`). | **EGYEZIK**: a mentés és elvetés látható eredménye egyezik. |
 
 **Autofill-cáfoló kör.** A `quicktagconfig/autofill` ugyanazt a `tag_group`
@@ -3520,14 +3548,16 @@ nincs tartós Autofill-beállítás olvasása vagy írása. A következtetés ez
 eseménykezelő, a párbeszédépítő és az erőforrás egymástól külön ellenőrzött
 nyomára épül, nem pusztán a feliratra.
 
-**A Legutóbbiak cáfoló köre.** A kezdeti értelmezés szerint a `0x0063c120` két
-`recent%d` rekordot ír. Ezt a segédfüggvény utasításszintű ellenőrzése
-cáfolta: a vizsgált út `Preferences`-ből olvassa ezeket a kulcsokat, majd a
-panel két előzményhelyét kezeli; közvetlen írás nem látható. Ettől
-függetlenül a `0x0063bed0` feltételes hívása és a `0x0063c7d0` betöltő
-ágazása egyaránt igazolja, hogy a kikapcsolt jelző mellett az eredeti nem
-hívja a frissítőt és nem használja a `recent%d` értékeket a két gombon.
-A későbbi/persistált látható hatás nyitott marad.
+**A Legutóbbiak cáfoló köre - korábbi következtetés helyesbítése (#5978).**
+A korábbi olvasat tévesen azt állította, hogy a `0x0063c120` csak beolvassa
+a `recent%d` értékeket. A teljes függvényben a `quicktags::recent%d`
+formázása (`0x00ca0894`), a 0-1 indexű íróciklus (`0x0063c303-0x0063c376`,
+ciklusvég `0x0063c578-0x0063c57e`) és a `0x00407760` íróhívás igazolja a
+két Preferences-érték frissítését. Függetlenül, a `0x0063c7d0` betöltőút
+az első két UI-helyhez `recent0/1`-et, a 2-9. helyhez `tag2..9`-et választ;
+a `0x0083f3f0` külön tíz `tag0..9` értéket ment. Ez cáfolja azt az
+alternatívát, hogy az új címke a kézi lista elejére szúródik és a tizedik
+kézi címke kiszorulna.
 
 **Nyitott részletek:** az `0x0063d260` által kapott közös címkelista pontos
 forrása és sorrendje **NINCS MEG**. Megszerzés: a `0x0063c7d0`-ban az
@@ -3572,34 +3602,93 @@ felül a kézzel beállított értékeket vagy a fenntartott legfelső két mez�
 #### B. A Legutóbbiak kikapcsolásakor az előzmény ne változzon
 
 **Eredeti:** `quicktags::enable_recents=0` mellett a hozzáadási út kihagyja
-a `0x0063c120` előzményfrissítő hívását; a segédfüggvény közvetlen tartós
-írása és a későbbi visszakapcsolás eredménye nincs meg.
+a `0x0063c120` előzményfrissítő hívását (`0x0063c05a-0x0063c08a`).
 
-**Nálunk:** a `quickTagsReserveRecent` állapotától függetlenül frissítjük a
-QSettings-ben tárolt előzménylistát; a gombok megjelenítését külön kapuzzuk.
+**Nálunk:** az `addKeywordToRows` csak bekapcsolt `quickTagsReserveRecent`
+állapotban hívja a `_record_recent_quick_tag`-et (`keywords_controller.py:177-184`).
 
-**Teendő:** a binárisban igazolt hívási feltétellel összhangban a legutóbbiak listáját
-csak bekapcsolt „felső két hely a legutóbbiaknak” állapotban frissíteni.
+**Eredmény:** a kikapcsolt állapotú frissítés a mai forráskódban egyezik az
+eredetivel; a #5659-ben korábban jelzett eltérés elavult. A #5978 tényleges
+fejlesztési eltérése az ismételt címke átrendezése és a recent lista tárolási
+szemantikája; ld. a lentebbi javaslatot.
+
+### 43.2.2 ⭐ Címke hozzáadásakor a két elemű Legutóbbiak frissítése (#5978, 2026-10-26)
+
+**Eredeti út és feltétel.** A `quicktag_%d` gomb eseményútja a
+`0x0063a5e0`-tól a címkéző `0x0063bed0`-ig jut; a begépelt címke útja a
+`0x0063bb30`-ból éri el ugyanezt a függvényt. A `0x0063bed0` csak akkor
+hívja a frissítőt, ha a `Preferences\quicktags::enable_recents` jelző igaz
+(`0x0063c05a-0x0063c08a`; a `0x0063c7d0` hiányzó kulcsnál `1`-et tölt be).
+
+**Tárolás és sorrend.** A `0x0063c120` az új címkét a jelenlegi első két
+megjelenített recent értékkel byte-azonosan hasonlítja össze
+(`0x0063c142-0x0063c258`). Ha bármelyikkel egyezik, nem rendezi át és ezen
+az úton nem írja újra a két kulcsot. Új értéknél a korábbi `recent0`
+`recent1` lesz, majd az új címke kerül `recent0`-ba
+(`0x0063c2e4-0x0063c2f8`). A beállításíró ciklus kizárólag a
+`Preferences\quicktags::recent0` és `Preferences\quicktags::recent1`
+kulcsot frissíti (`0x00ca0894`, `0x0063c303-0x0063c376`, `0x00407760`);
+így a korábbi `recent1` esik ki a két elemű előzményből. Ha a címke csak
+kézi `tag%d` helyen szerepel, az updater nem tekinti duplikátumnak.
+
+**A tíz kézi hely és a tizedik elem.** A `0x0063c7d0` tíz UI-helyet épít
+(`0x0063d0ec-0x0063d102`): bekapcsolt Legutóbbiak mellett az első kettő
+`recent0/1`, a többi `tag2..tag9`; kikapcsolva mind a tíz `tag0..tag9`.
+A konfiguráció külön útja, `0x0083f3f0`, mind a tíz kézi kulcsot menti
+(`0x0083f43e-0x0083f525`). Tehát a tizedik kézi címke (`tag9`) nem tolódik
+ki és nem íródik felül; a kézi `tag0` és `tag1` tárolva marad, de bekapcsolt
+Legutóbbiak mellett nem ezek látszanak az első két gombon.
+
+**Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy az automatikus frissítés a
+tíz kézi mező elejére szúr és a tizedik helyet eldobja. A `0x0063c120`
+teljes, kétindexű `recent%d` íróciklusa és a külön `0x0083f3f0` tízindexű
+`tag%d` mentőciklusa ezt az alternatívát cáfolta; a két út eltérő kulcsot
+és eltérő ciklushatárt használ.
+
+### Javasolt fejlesztési jegy (#5978)
+
+**Eredeti:** a `quicktags::enable_recents` bekapcsolásakor az új címke a
+`recent0` elejére kerül; korábbi `recent0` a `recent1`-be csúszik, a korábbi
+`recent1` kiesik. Ha a címke már a két recent érték egyike, nincs átrendezés.
+Az összevetés byte-azonos, és a kulcsok `Preferences\quicktags::recent0/1`.
+
+**Nálunk:** a `keywords_controller.py:177-184` ugyanúgy csak bekapcsolt
+`quickTags/reserveRecentForTop2` mellett frissít. A
+`keywords_controller.py:286-297` viszont casefold-egyezésnél is eltávolítja
+a meglévő elemet és a címkét előre mozgatja, majd legfeljebb nyolc elemet
+ment a `quickTags/recentKeywords` kulcsba. A felső két gombon kívüli hat
+elem nem látszik, de a beállításban megmarad.
+
+**Teendő:** ha az eredeti viselkedés a cél, az előzményt két értékre
+korlátozni; az első két érték byte-azonos ismétlésén nem változtatni a
+sorrendet; és a két eredeti recent-hely tárolási szemantikáját követni.
+Az eltérésként korábban jelzett kikapcsolt állapotú frissítés nem teendő:
+a mai forráskódban már az eredetivel egyező feltétel van.
 
 **Kész, ha:**
 
-- [ ] kikapcsolt állapotban végzett címkézés nem hívja meg és nem írja át az
-  előzményfrissítő listát;
-- [ ] bekapcsolt állapotban a friss címke az első helyre kerül, duplikáció
-  nélkül.
+- [ ] új, különböző címke a 0. recent-helyre kerül, a korábbi 0. a 1.-re
+  csúszik, a korábbi 1. pedig kiesik;
+- [ ] a két recent-hely bármelyikével byte-azonos címke ismétlése nem rendezi
+  át az előzményt;
+- [ ] a kézi `tag0..tag9` értékek nem tolódnak el és nem íródnak felül;
+- [ ] kikapcsolt Legutóbbiak mellett az előzmény nem frissül.
 
 ### Nyitott kérdések mérlege (43.)
 
 ```
-Nyitott kérdések: 4 nyílt (az Autofill jelöltlistája és vezérlőjének vizuális/állapot-viselkedése; a bináris fájlíró útja; a legutóbbiak frissítőjének későbbi/persistált látható hatása) · 4 lezárva · 2 megerősített fejlesztési eltérés
+Nyitott kérdések: 3 nyílt (az Autofill jelöltlistája és vezérlőjének vizuális/állapot-viselkedése; a címkézés fájlíró útja) · 5 lezárva · 2 megerősített fejlesztési eltérés
 ```
 
 - **LEZÁRVA:** a megfeleltetési fájl átvilágítása — a `collagepanel` volt
   az egyetlen elavult sor (43.1); a gyorscímke-helyek száma két
   független forrásból (leltár + ciklushatár, 43.2); a tárolási kulcsok
-  és az OK/Cancel viselkedés (43.2-43.3). A #5659 két, forráskóddal is
-  összevetett eltérést igazolt (Autofill; kikapcsolt Legutóbbiak beállítás melletti
-  frissítőhívás). A Legutóbbiak későbbi, tartós látható hatása nyitott.
+  és az OK/Cancel viselkedés (43.2-43.3); a Legutóbbiak két kulcsba írása,
+  ismétlési feltétele és a tíz kézi helytől való különállása (#5978, 43.2.1-2).
+  A #5659 kikapcsolt Legutóbbiakra vonatkozó korábbi eltérésállítása
+  elavult: a mai kód kapuja egyezik az eredetivel. Fejlesztési eltérések:
+  Autofill-viselkedés (#5659) és az ismételt címke/listaméret tárolási
+  szemantikája (#5978).
 
 ### Amit KIZÁRTAM
 
@@ -7421,11 +7510,11 @@ FileVersion 3.9.141.259 (mérés: PE FileVersion).
 | Mozgókép mód | EGYEZIK: Első képkocka / Teljes mozgófilm; alapérték Preferences\WebExportMovie = 0, vagyis Első képkocka (0x007f5355). | EGYEZIK: ugyanezek a módok és alapérték; QSettings-kulcs: webexport/movieFull. |
 | Célmappa | A 0x007f52b0 a Preferences\WebExportPath értéket olvassa és a 0x007f5e80 menti. Hiányzó értéknél a 0x00996230 által feloldott Personal mappához a bináris 0x00cbc7f8 `Picasa HTML Exports` nevet fűzi a 0x007f53a7 útvonalon. | Eltér: a rendszer Képek mappája / „Picasa HTML exportok” az alap (webexport_controller.py); a célmappa nincs QSettings-be mentve, csak a párbeszéd objektumában marad meg. |
 | Sablon | A Preferences\WebExportTemplate kulcsot a 0x007f52b0 olvassa és a 0x007f5e80 menti; üres tárolt értéknél a párbeszéd alapindexe 0. | Részben egyezik: az alapindex 0, de a sablonválasztást a PicasaPy nem menti QSettings-be; a templateIndex a párbeszéd kezdeti állapota. |
-| Sablon-előnézet | A webexport.fen sablonlistát, leírást és élő előnézetet ír le (a helyi telepítés erőforrása, 1-16. sor). | Eltér: sablonleírás és sematikus kép van; élő, sablonból renderelt előnézet nincs (WebExportDialog.qml). |
+| Sablon-előnézet | A webexport.fen sablonlistát, leírást és élő előnézetet ír le (a helyi telepítés erőforrása, 1-16. sor). | Sablononkénti leírás és a sablon saját `preview.svg` képe látszik; az előnézet sematikus, élő sablonból renderelt változat nincs (#5909, WebExportDialog.qml). |
 | FTP-fiókok | AccountMGR alatt a kulcsok: ftpUser (0x00cb9ecc), ftpPass (0x00cb9ed4), ftpDomain (0x00cb9edc), ftpRoot (0x00cb9ee8), webUrl (0x00cb9ef0), secure (0x00cb9ef8). A hiányzó szövegértékek alapja az üres 0x00c7f979; a secure mező alapértéke 0 (0x007e8340). | NINCS MEG: nincs FTP-fiók- vagy beállítási réteg a src/picasapy alatt. |
 | Fióktárolás | A kulcsok olvasása/írása a HKCU beállítási rétegen át történik, AccountMGR névtérrel (0x007e8340, 0x007e89e0, 0x007e8f80; olvasó segéd: 0x00407630). A teljes fizikai registry-útvonal NINCS MEG; megszerzés: a 0x00407630/0x00407ea0 registry-kulcs-összeállításának célzott követése. | NINCS MEG: nincs megfelelő fióktároló. |
 | Fiókpárbeszéd pontos mezőcímkéi és elrendezése | NINCS MEG: a helyi runtime FEN-leírók között nincs FTP/AMgr párbeszéd. Megszerzés: Windows alatt az AMgr hozzáadás/szerkesztés párbeszéd megnyitása és a mezők/feliratok rögzítése, vagy az AMgr erőforrás célzott kibontása. | NINCS MEG: nincs megfelelő párbeszéd. |
-| Oldalcím induló értéke | NINCS MEG: a webexport.fen edit mezőt mutat, de a futáskor előtöltött szöveget a fájl nem rögzíti. Megszerzés: a webexport párbeszéd megnyitása a Picasa 3.9-ben, kijelölt mappával és albummal. | A QML albumTitle üres sztringgel indul; eltérhet az eredeti előtöltéstől. |
+| Oldalcím induló értéke | NINCS MEG: a webexport.fen edit mezőt mutat, de a futáskor előtöltött szöveget a fájl nem rögzíti. Megszerzés: a webexport párbeszéd megnyitása a Picasa 3.9-ben, kijelölt mappával és albummal. | HTML-módban megnyitáskor a jelenlegi mappa nevére áll (#5909); FTP-módban a párbeszéd korábbi értéke marad. |
 | FTP-kiszolgáló és távoli gyökér | ftpDomain és ftpRoot értékek kerülnek a CFtpSync kapcsolat/útvonal-ellenőrzésébe; címek: 0x00958a00 (Verifying Domain…, Verifying root path…) és 0x00967c00 (InternetConnectA). | NINCS MEG: FTP-kapcsolat és távoli útvonalkezelés nincs. |
 | FTP-port | Az InternetConnectA hívás 0x00967c35 címen a 0x15 portértéket adja át, azaz 21; a fiókkulcsok között külön portbeállítás nincs. | NINCS MEG: nincs FTP-kapcsolat vagy portbeállítás. |
 | webUrl és secure mező jelentése | NINCS MEG: a webUrl végső felhasználása és a secure fiókmező FTP-műveletre gyakorolt hatása nem bizonyított. Megszerzés: az AccountMGR objektummező fogyasztóinak célzott követése a 0x007e81b0 és 0x007f6d50 körül, majd Windowsos fiókpárbeszéd-mérés. | NINCS MEG: ezeknek nincs megfelelője. |
@@ -7439,7 +7528,7 @@ FileVersion 3.9.141.259 (mérés: PE FileVersion).
 | **Méret és film mód.** Alap: 640 px és Első képkocka; mindkettő megmarad a következő indításra (0x007f5310, 0x007f5355, 0x007f5e80). | EGYEZIK: alapérték és felhasználói választás megőrzése megvan. | Nincs teendő. |
 | **Célmappa és sablon megőrzése.** Preferences\WebExportPath és Preferences\WebExportTemplate (0x007f52b0, 0x007f5e80); alapút `Personal/Picasa HTML Exports`. | Célmappa Képek/Picasa HTML exportok; a cél és a sablonválasztás nincs újraindítások között megőrizve. | Külön paritásjegyben állítsa helyre a célmappa- és sablonválasztás megőrzését, és döntse el, hogy az alapútvonal egyezzen-e a Personal/Picasa HTML Exports útvonallal. |
 | **FTP-fiók és feltöltés.** AccountMGR 0x00cb9ec0, fiókválasztó 0x005e7370, fiókkezelő 0x005cfff0, CFtpSync 0x00957630; távoli gyökérrel és az InternetConnectA 0x00967c35 címen átadott 21-es porttal. | Nincs fiókkezelő vagy FTP-feltöltés. | Valósítsa meg a fiókválasztás/kezelés és a webexport-fájlok FTP-szinkronizálásának útját. A mezőcímkéket, a secure működését és a webUrl használatát ne következtesse ki a mezőnevekből; előbb zárja le a nyitott bizonyítást. |
-| **Élő sablon-előnézet.** A párbeszéd építője 0x007f4be0; mérés: a szállított runtime/webexport.fen 1-16. sora. | Nálunk sematikus előnézet látható. | A fejlesztőjegyben rögzítse, hogy a meglévő egyszerűsített előnézet elfogadott eltérés-e; ha paritás a cél, a sablont élőben kell megjeleníteni. |
+| **Élő sablon-előnézet.** A párbeszéd építője 0x007f4be0; mérés: a szállított runtime/webexport.fen 1-16. sora. | #5909 óta sablononként a saját `preview.svg` látszik; ez sematikus, nem a sablonból renderelt élő előnézet. | Ha a teljes élő előnézet is cél, a sablont renderelve kell megjeleníteni. |
 
 ### A két független út
 

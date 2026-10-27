@@ -1127,7 +1127,7 @@ kimondott korlátja, ezért a negatívot **nem** általánosítom.*
 szerkesztés előtti (eredeti) fájl bájtjait hasheli?" — **tárgytalan**: a
 mentés egyáltalán nem ír ilyen kulcsot.*
 
-### 1. A korpusz-mérés: `originhash` és `redo=` kizárja egymást
+### 1. Korpusz-mérés: az `originhash` és a `redo=` sosem áll együtt
 
 A tulajdonos 859 valódi `.picasa.ini`-je (`referencia/ini-korpusz`),
 szakaszonként számolva:
@@ -1138,9 +1138,12 @@ szakaszonként számolva:
 | van | nincs | 1 787 |
 | nincs | van | 34 |
 
-A `redo=` a mentés kimondott nyoma (a beégetett szerkesztési lánc). Ha az
-`originhash`-t a mentés írná, a két kulcs a szerkesztett képeknél
-együtt állna — **egyetlen esetben sem áll**.
+Ez a 0 együttállás korpusz-tény, de önmagában nem bizonyít mentési
+ok-okozatot. A #5829 bináris- és job-253 vizsgálata szerint a `redo=` nem
+általános mentésjelző: a rendes mentés után a képszakaszban hiányozhat, miközben
+csak `backuphash` marad. Ezért az `originhash` mentéskori írásának kizárását a
+lentebbi bináris rekordíró-út és a letöltési út együttes bizonyítéka támasztja
+alá; a `redo=` hiánya nem használható erre a következtetésre.
 
 ### 2. A társkulcsok a letöltési utat mutatják
 
@@ -2028,4 +2031,3 @@ korábban azzal, hogy *„a minta már megvan a korpuszban"* (52
 `.picasaoriginals` említés). **Ez téves volt** — a mérés szerint azoknál a
 képeknél épp nincs `originhash`. A jegy kérdése így is eldőlt, csak nem azon
 az úton, amit a jegy ígért.
-

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import functools
 from collections import defaultdict
 from pathlib import Path
 from typing import Iterable
@@ -41,6 +42,9 @@ def _relative_import_base(module: str, is_package: bool, level: int) -> str:
     return ".".join(parts[:keep])
 
 
+# a passzív fájlok rekurzív feloldása (`_passziv_fajl`) lépésenként újra
+# kérte; a gráf a futás alatt nem változik, és senki nem módosítja
+@functools.lru_cache(maxsize=None)
 def _import_graph(
     root: Path,
 ) -> tuple[dict[str, set[str]], dict[str, set[str]], set[str]]:

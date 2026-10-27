@@ -31,8 +31,9 @@ from picasapy.scanner import PICASA_INI_NAME
 
 def _kep(mappa: Path, nev: str, tartalom: bytes = b"szerkesztett") -> Path:
     mappa.mkdir(parents=True, exist_ok=True)
-    # Az `undo_save` a mappa `.picasa.ini`-jéből olvassa vissza a `redo=`
-    # láncot — mentés után az mindig ott van.
+    # Az `undo_save` az eredeti-mappa `.picasa.ini`-jéből olvassa vissza a
+    # `filters=` láncot; régi mentéseknél az aktuális ini `redo=` kulcsa a
+    # visszaesési forrás.
     ini = mappa / PICASA_INI_NAME
     if not ini.exists():
         ini.write_text("", encoding="utf-8")

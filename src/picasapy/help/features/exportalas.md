@@ -54,12 +54,13 @@ helyi menüjéből.
 
 Beállítható:
 
-- **Oldal címe**,
-- **Mentés ide** (**Tallózás…**) — előre kitöltve a képmappádon belüli
-  **Picasa HTML exportok** mappával. Ez csak javaslat: a mappát a program
-  csak a **Létrehozás** gombra kattintva hozza létre, és bármikor
-  átírhatod.
-- **Sablon** — a kész oldal kinézete, kis előnézeti rajzzal,
+- **Weboldal címe:**,
+- **Mappa:** (**Tallózás…**) - első alkalommal előre kitöltve a
+  képmappádon belüli **Picasa HTML exportok** mappával (Windowson a
+  Dokumentumok mappádon belüli **Picasa HTML Exports** mappával). Ez csak
+  javaslat: a mappát a program csak az **Exportálás** gombra kattintva
+  hozza létre, és bármikor átírhatod.
+- a **sablonlista**: a kész oldal kinézete (lásd lentebb),
 - **Képek exportálása innen:** — a nagy képek mérete: **Eredeti méret**,
   **1024 képpont (nagy képernyőkhöz)**, **800 képpont (nagyméretű
   weboldalakhoz)**, **640 képpont (weboldalakhoz)** — ez az alapérték —
@@ -71,25 +72,36 @@ Beállítható:
   program a filmfájlt változatlanul másolja az oldal mellé). Az a film,
   amelyet a program nem tud beolvasni, kimarad az oldalról.
 
-A méretet és a mozgófilm-módot a program megjegyzi a következő
-exportálásig.
+A méretet, a mozgófilm-módot, a **célmappát** és a **sablont** a program
+megjegyzi a következő exportálásig.
 
-A **Létrehozás** gomb után a program megírja, hány fájlt írt és hova.
+Az **Exportálás** gomb után a program megírja, hány fájlt írt és hova. A
+**Mégse** bezárja az ablakot.
 
 ### A hét sablon
 
-Hat galéria-sablon van: három háttérszín, mindegyik kétféle csempével.
+Az ablak középső részén, a „Kattintson a sablonok nevére a minta
+megjelenítéséhez." kezdetű sor alatt egy lista áll a hét sablonnal, az
+eredeti Picasa sorrendjében és nevén. Egy névre kattintva a lista alatt
+megjelenik a sablon rövid leírása, jobbra pedig egy kis előnézeti rajz.
+A kijelölt sablon szerint készül az oldal.
 
-| sablon | háttér | csempe |
+| a lista sora | háttér | csempe |
 |---|---|---|
-| Fehér | fehér | sima |
-| Fehér keret | fehér | passzpartus keret |
-| Szürke | szürke | sima |
-| Szürke keret | szürke | passzpartus keret |
-| Fekete | fekete | sima |
-| Fekete keret | fekete | passzpartus keret |
+| 1. sablon, 2 oldalas, szürke háttér | szürke | sima |
+| 2. sablon, 2 oldalas, fekete háttér | fekete | sima |
+| 3. sablon, 2 oldalas, fehér háttér | fehér | sima |
+| 4. sablon, 1 oldalas, szürke háttér | szürke | keretes |
+| 5. sablon, 1 oldalas, fekete háttér | fekete | keretes |
+| 6. sablon, 1 oldalas, fehér háttér | fehér | keretes |
+| XML-kód | - | - |
 
-A hetedik, az **XML (gépi)**, nem weboldal: egyetlen `album.xml` fájlt ír
+A leírások az eredeti Picasa szövegei. A PicasaPy mind a hat
+galéria-sablonnál ugyanolyan felépítésű oldalt készít: indexképes
+kezdőoldalt, ahonnan a képekre kattintva a nagy kép nyílik meg. A hat
+sablon a háttérszínben és a csempék kinézetében különbözik.
+
+Az utolsó, az **XML-kód**, nem weboldal: egyetlen `album.xml` fájlt ír
 az album és a képek adataival. Akkor jó, ha az adatokat egy másik program
 dolgozza fel; böngészőben nem lesz belőle galéria.
 
@@ -108,8 +120,54 @@ fejlécében megadott név; ha nincs ilyen, az almappa neve. Ha egy saját
 sablon almappája ugyanazt a nevet viseli, mint egy gyári sablon, a gyári
 marad meg, a saját nem jelenik meg.
 
-Az ablak a tartalmához igazodik, ezért a **Létrehozás** gomb alapméretben is
+Az ablak a tartalmához igazodik, ezért az **Exportálás** gomb alapméretben is
 látszik.
+
+## Közzététel FTP-n
+
+Az **Eszközök ▸ Kísérleti ▸ Közzététel FTP-n keresztül...** paranccsal a
+weboldalt nem a gépedre mented, hanem egy FTP-kiszolgálóra, például a
+tárhelyedre töltöd fel. Ugyanaz az ablak nyílik meg, mint az
+**Exportálás HTML-oldalként…** parancsnál, a címe **Közzététel FTP-n
+keresztül...**. A **Mappa:** sor helyén az **FTP-fiók:** választó
+áll, mellette a **Kezelés…** gombbal. A cím sora itt **Oldal címe:**, a
+sablont pedig nem lista, hanem egy **Sablon:** legördülő választja ki
+(alatta a kis előnézettel és a leírással). A képméret és a mozgófilm-mód
+ugyanaz, mint fent.
+
+### FTP-fiók felvétele
+
+Ha még nincs fiókod, az ablak megnyitásakor rögtön az **FTP-fiókok
+kezelése** ablak nyílik meg. Később a **Kezelés…** gombbal éred el. Mezői:
+
+- **Fiók neve:** - ezen a néven látod a fiókot a választóban;
+- **FTP-kiszolgáló:** - a kiszolgáló címe;
+- **Felhasználónév:** és **Jelszó:**;
+- **Távoli mappa:** - a kiszolgálón ebbe a mappába kerül az oldal. Ha
+  nincs ilyen mappa, a program létrehozza.
+
+Az **Új** gomb üres űrlapot ad egy újabb fiókhoz, a **Törlés** törli a
+kiválasztottat, a **Mentés** elmenti, a **Mégse** bezárja az ablakot.
+Meglévő fiók szerkesztésekor a jelszómezőt üresen hagyhatod: ilyenkor a
+korábban mentett jelszó marad meg.
+
+A jelszót a program nem a saját beállításai közé írja, hanem a
+számítógéped **rendszerszintű jelszótárába** (kulcstartójába). Ha ilyen
+nincs a gépen, a program szól, és a fiókot nem tudja menteni.
+
+### A feltöltés
+
+Válaszd ki a fiókot, és kattints a **Közzététel** gombra. A program
+előbb elkészíti az oldalt, majd a fájlokat feltölti a fiók távoli
+mappájába. A végén kiírja, hány fájlt töltött fel, és melyik fiókba. A
+kiszolgálón már ott lévő fájlokat nem törli, az azonos nevűeket
+felülírja. Hiba esetén (például rossz jelszónál vagy elérhetetlen
+kiszolgálónál) a program megírja, mi volt a gond.
+
+> A feltöltés hagyományos, **titkosítatlan** FTP-vel megy a szokásos
+> (21-es) porton. A jelszó és a fájlok így titkosítatlanul utaznak a
+> hálózaton. Titkosított (FTPS vagy SFTP) kapcsolatot a program nem
+> ismer.
 
 ## Arcinformációk kísérőfájlba
 

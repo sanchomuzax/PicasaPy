@@ -354,6 +354,88 @@ Fejlesztés: **#3539**.
 sztringekkel). Hogy a három hívó melyik menüműveletnél melyik fajtát adja,
 **nincs** végigkövetve — a fajták jelentése a szövegeikből következik.*
 
+### 3.3.2 Törlési megerősítés: „ne kérdezze”, alapérték és fókusz - `0x005fd670` (#5825, 2026-10-25)
+
+`0x005fd670` (1293 B) a `confirm.fen` párbeszédet építő rutin. A `0x005fdc30`
+választja ki a művelet címét, üzenetét és igen-gombját (lásd §3.3.1); a
+megerősítő sablon és a „ne kérdezze” jelölő ettől külön réteg.
+
+**Kulcs és olvasás:** a rutin `ebp=4` esetén a
+`DoNotConfirmDeleteFromDisk` kulcsot választja (`0x005fd79e-0x005fd7a8`), majd
+`Preferences` névtérrel adja át a `0x00407a20` olvasónak (`0x005fd7cc-0x005fd7e5`).
+A `0x004019b0` alakítja a beolvasott értéket logikai értékké
+(`0x005fd7ee`); igaz értéknél a `0x005fd7f3` ág a párbeszéd létrehozása előtt
+kilép, és a rutin 1-et ad vissza (`0x005fd81b`). Tehát egy már igaz
+`Preferences\DoNotConfirmDeleteFromDisk` érték kihagyja a következő ilyen
+megerősítőt.
+
+A `0x006e0cb0` beállítás-betöltő a kulcsot `0` alapértékkel regisztrálja:
+`push 0` (`0x006e0d0c`), a kulcs neve (`0x006e0d0f`), majd a
+`0x006e0a70` hívása (`0x006e0d14`). A helper az átadott alapértéket az
+aktuálisan olvasott értékkel hasonlítja össze (`0x006e0a9f`). Ez a hiányzó
+beállítás futásidejű alapértékét bizonyítja (`0`/hamis), nem azt, hogy az
+indítási út ezt az értéket el is menti. Az eredeti `options.fen` General →
+Files részében a `Delete from disk without confirmation` jelölő neve
+`DoNotConfirmDeleteFromDisk`; nincs rajta explicit `checked` attribútum.
+
+A sablon jelölőjének neve `remember` (`confirm.fen`); a törlési rutin a
+`0x009baae0`-n át olvassa ezt a nevű vezérlőt. A futásidejű felirat
+„Don't ask again, always remove” UTF-16 karakterlánca `0x00e04642`; a
+`0x005fd849-0x005fd858` út az `IDS_CONFIRM_REMOVE_CHECK_MESSAGE` erőforráson
+keresztül választja ki. **NINCS MEG:** a feltárt utasításfolyam nem azonosít
+olyan külön setter-hívást, amely bizonyítaná, hogy a párbeszédben bepipált
+`remember` érték miként íródik vissza a fenti Preferences-kulcsba. A
+következő párbeszéd kihagyása a tárolt kulcs igaz értékére bizonyított; a
+jegyben leírt „bejelölés → mentés → kihagyás” teljes lánc külön ellenőrzendő.
+
+**Alapértelmezett gomb/fókusz:** a szokásos megerősítő út a párbeszédet a
+`0x009ba4d0`-vel építi, majd `2`-t ír a párbeszéd `+0xd8` mezőjébe
+(`0x005fd8d7`) és meghívja a `0x009bab50`-t. Az online törlési út ugyanezt
+teszi (`0x005fdad2`). A `0x009bab50` a `2` értéket a `buttons` csoport
+`+0x88` mezőjének `1` értékére képezi (`0x009babca-0x009babde`), de a bináris
+önmagában nem nevezi meg a gombot. A `confirm.fen` sorrendje Yes / No / Cancel,
+ablakfókusza `buttons`. A #5825-höz átadott job-252 (`kepernyo__08.png`)
+felvételleírás egyképes törlésnél Cancel fókuszt és Enterre elmaradó törlést
+rögzít; ez az egy mérés köti a bináris választóértéket a Cancel gombhoz.
+Mivel a `0x005fd670` mindkét párbeszédépítő útja ugyanazt a `2` értéket adja,
+nincs külön darabszám-, mappa- vagy albumgomb-választó ág. Az egyképes mérés
+gombnevének átvitele a többi típusra a közös sablon/érték miatt következik,
+azokat a job-252 leírás nem méri külön.
+
+**PicasaPy összevetés:** nálunk a `FileOpsDialogs.qml` `deleteConfirmDialog`
+komponense a közös `ConfirmDialog`-ot használja, amelynek van „Do not ask
+again” jelölője. A lomtáras ágon `ask("delete", …)` ellenőrzi a döntést,
+elnyomott kulcsnál azonnal megerősít; végleges törléshez külön
+`deletePermanently` döntéskulcs van (`ConfirmDialog.qml`). A helyi
+QSettings-kulcs a lomtáras ághoz `confirm/delete/remember`, hiányzó értéke
+hamis, és a jelölő minden megnyitás előtt üresre áll. Az Opciók → General
+`Delete from disk without confirmation` kapcsoló ezt a döntést
+`setSuppressed("delete", checked)` útján vissza- és bekapcsolja
+(`OptionsTabGeneral.qml`). Így a jegy „hiányzik a jelölő” megállapítása
+elavult; a felirat és a fókusz javított állapotát a #5827 bejegyzés rögzíti.
+**#5827 (2026-10-25, PicasaPy QML-mérés):** a törlés ág jelölője most az
+eredeti `Don't ask again, always remove` feliratot használja, a hivatalos
+magyar fordítással. Megnyitáskor a Mégse kap fókuszt; az Enter a párbeszédet
+Mégse-ként zárja be, a fájl megmarad, a `Delete Image` gomb valódi kattintása
+pedig törli. A rontás-kontroll a korábbi rövid felirattal és fókusz nélkül
+piros lett; az új, valódi bélyegképes QML-teszt mindhárom ablakmagasságon
+ellenőrzi a kattintási geometriát, a teljes billentyűs folyamatot pedig az
+alapmagasságon. A jelölő mentése és az Opciók → General visszakapcsolója nem
+változott.
+Az eredeti job-252 kép nyers fájlja a helyi mérőadat-archívumban nem volt
+megtalálható; a fenti fókuszállítás a jegyhez mellékelt felvételleíráson
+alapul.
+
+*Bizonyítottsági fok: **feltételes**. A Preferences-kulcs, a futásidejű
+hamis alapérték, a truthy olvasás miatti korai visszatérés, a két dialog-ág
+közös választóértéke és a PicasaPy oldali kapcsoló forrásból megerősített.
+A `remember` mező Preferences-be írása, valamint a Cancel-fókusz külön
+képernyős ellenőrzése többes/mappa/album esetben **nincs meg**.*
+
+Ghidra-kör kell: 0x005fd670 - a `remember` jelölő igaz értéke miként íródik
+vissza a `Preferences\DoNotConfirmDeleteFromDisk` kulcsba a
+`0x009baae0`-s olvasás után? [blokkoló]
+
 ### 3.4 `input.fen` — Generikus szöveg-/jelszóbekérő (V1, alapinfrastruktúra)
 
 Minimalista, egysoros bemenetkérő; a `<password>` mező jelenléte arra utal,
@@ -406,17 +488,19 @@ következnek.
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
 | **Menü és indítás:** a jegy útvonala `Kép > Csoportos szerkesztés > Átnevezés`. A menü-diszpécser `0x005cb990` tartalmazza a `0x00532ec0` hívást (`0x005cc4e9`); az F2-kezelő `0x005e6710` szintén ezt hívja. A lokális menüleltár a `Batch Edit` almenüt rögzíti, de a `Rename` gyermek parancsazonosítóját nem. | A `File > Rename... F2` és a `Picture > Batch Edit > Rename... F2` ugyanazt a `renameRequested` jelet küldi (`PicasaMenuBar.qml`). | **NINCS MEG** a bináris menüparancs és a `Batch Edit > Rename` pontos kapcsolata. Megszerzés: a `0x005cb990` elágazási táblájának (`0x005cdc30`, `0x005cde04`) célzott visszafejtése, majd egyeztetés a menü-erőforrással. |
-| **Párbeszéd és alapmező:** `rename.fen:1-17`; a `newname` mezőt olvasó rutinok `0x00532960`, `0x00532c70`; a címke frissítése `0x00532960`. Névmező, `files`-ből kötött darabszám, dátum/felbontás jelölő, Example, Rename/Cancel. A `.fen` nem ad meg előre kitöltött nevet. | A QML ugyanezeket a mezőket és feliratokat használja; a darabszám a sorok számából jön, megnyitáskor kiüríti a névmezőt (`FileOpsDialogs.qml:182-194, 222-225`). | **EGYEZIK** a mezőkészlet, a darabszámkijelzés és az üres kezdeti név (`rename.fen`; `0x00532960`). |
+| **Párbeszéd és alapmező:** `rename.fen:1-17`; a `newname` mezőt olvasó rutinok `0x00532960`, `0x00532c70`; a címke frissítése `0x00532960`. Névmező, `files`-ből kötött darabszám, dátum/felbontás jelölő, Example, Rename/Cancel. A `.fen` nem ad meg előre kitöltött nevet; a `picasa-colab-jobs` job-244 felvételén az egyképes megnyitás viszont a `kepernyo__08` nevet mutatta kijelölve. | A QML ugyanezeket a mezőket és feliratokat használja; a darabszám a sorok számából jön. Egy kép esetén az aktuális fájlnév kiterjesztés nélküli része kerül a mezőbe és kijelölődik; több képnél a mező üres (`FileOpsDialogs.qml`, #5804). | **EGYEZIK** a mezőkészlet és a darabszámkijelzés. Az egyképes mezőkezdő értéket a futás közbeni felvétel igazolja, de a binárisban a kitöltést végző hívó rutin **NINCS MEG**; a `.fen` csak azt rögzíti, hogy maga a párbeszéd nem ad alapértéket. |
 | **Dátum/felbontás jelölők alapértéke:** a Preferences/rename alatt tárolt `RenameUseDate` (`0x00c899e0`) és `RenameUseSize` (`0x00c899f0`) kulcsokat a konstruktor `0x00532070` olvassa; a hozzájuk tartozó mezőket előtte nullázza. | A `renameUseDate/Size` hiányzó beállításnál `False` értéket ad (`photo_ops_controller.py:169-174, 730-740`). | **EGYEZIK**: friss beállításnál mindkét jelölő kikapcsolt. |
 | **A jelölők módosított állásának megőrzése:** a kulcsok beolvasása bizonyított (`0x00532070`), a visszaírás helye és feltétele ebből a függvényből nem állapítható meg. | A QSettings minden kapcsoláskor elmenti a két jelölő állását (`photo_ops_controller.py:742-747`). | **NINCS MEG.** Megszerzés: `Ghidra-kör kell: 0x008d2640: a RenameDialog jelölőinek módosított állása visszaíródik-e a Preferences/rename kulcsokba?` |
 | **Névmező szűrése:** a `rename.fen:7` `filter="filename"` attribútumot ad át; a filter-regisztráló `0x008e30e0` a `filename` esetén a `0x008e3160` callbacket állítja be. | A mező tiltja a `\\ / : * ? " < > |` karaktereket és 200 karakterre korlátoz (`FileOpsDialogs.qml:235-247`). | **NINCS MEG** az eredeti callback pontos karakter- és hosszhatára. Megszerzés: `Ghidra-kör kell: 0x008e3160: a filename filter pontos megengedett karakterei és hosszhatára [blokkoló]`. |
 | **Dátumutótag:** a `0x00532ec0` útvonal per-fájl dátum/időt formáz (`0x0098b650`, `0x0098c470`), majd `:` és `/` → `-` (`0x005332e0`-`0x005332ec`). A `0x00c89a18` minta ` 08-01-2004 2-30-45 PM` csak a párbeszéd előnézetéhez tartozik. | A `format_taken_at` a `QLocale` dátum- és időformáját használja, fájlnévben a tiltott elválasztókat `-`-re cseréli (`rename.py:198-215`). Pontmérés: `en_US`, `2004-08-01T14:30:45` → `8-1-2004 2-30-45 PM`. | **NINCS MEG** az eredeti tényleges kimenet ugyanilyen dátummal és rögzített Windows-területi beállítással. Megszerzés: Picasa 3.9 mérése egy dátumot és időt tartalmazó mintafájlon, azonos területi beállítással; a statikus előnézeti példa nem helyettesíti ezt. |
 | **Felbontás-utótag:** `%dx%d` (`0x00c89a9c`), per-fájl használat `0x00533358`; párbeszéd-minta ` 640x480` (`0x00c89a4c`). | `widthxheight` (`rename.py:233-235`); a mért `640x480` bemenetre `640x480` kimenet. | **EGYEZIK** a formátum; az eredeti és a PicasaPy is az adott fénykép szélességét/magasságát használja (`0x00532ec0`, `0x00533332`-`0x00533361`; `photo_ops_controller.py:759-765`). |
 | **Előnézet:** a `0x00532710` a jelölők szerint a rögzített dátum- és méretmintát használja; a `0x00532960` `Example: ` (`0x00c89a74`) címkével, beégetett `.jpg`-vel (`0x00c80a50`) állítja elő. Nem a kijelölt fájlból olvas. | A `renamePreview` a kijelölés első sorának tényleges dátumát, felbontását és kiterjesztését használja (`FileOpsDialogs.qml:195-203`, `photo_ops_controller.py:749-769`, `rename.py:238-262`). | **ELTÉR.** A kompatibilitási cél szerint az előnézetet az eredeti rögzített mintájához kell igazítani; külön fejlesztési jegytörzs lent. |
-| **Sorszám és kiterjesztés a tényleges kimenetben:** a `.fen`-ben nincs sorszámmező; a rutin fájlonként járja a kijelölést (`0x00533200`-`0x00533361`), majd `0x00533517` címen meghívja a `0x00479870` műveletet. A pontos sorszámképzés és az eredeti kiterjesztés kezelése nem bizonyított. | Automatikus `név`, `név-1`, `név-2`… sorszámozás; az eredeti kiterjesztést megtartja (`rename.py:238-262, 324-330`). | **NINCS MEG.** Megszerzés: `Ghidra-kör kell: 0x00532ec0: a teljes célfájlnév képzése, különösen a sorszám és az eredeti kiterjesztés [blokkoló]`. |
-| **Ütközés, fájlművelet, `.picasa.ini`:** a `0x00532ec0` a `0x00479870` rutinon keresztül hajt végre műveletet, de az ütközési szabály és az ini-szekciók sorsa nem következik a vizsgált utasításokból. | Előellenőrzi a teljes köteg célütközéseit, átnevezi a fájlt, átviszi az ini-szekciót és a kísérő `- Originals` fájlt; futás közbeni részleges hiba után nincs köteg-szintű visszagörgetés (`rename.py:42-105, 265-352`). | **NINCS MEG.** Megszerzés: `Ghidra-kör kell: 0x00479870: az eredeti fájlrendszeri átnevezés, ütközéskezelés és metaadat-/adatbázis-követés [blokkoló]`. A korábbi `0x008d2640` kérés nem ezt a műveletet célozta; az a `0x00532c70`-ből elért általános objektum-visszahívás, ezért törölve. |
+| **Sorszám és kiterjesztés a tényleges kimenetben:** a `.fen`-ben nincs sorszámmező; a rutin fájlonként járja a kijelölést (`0x00533200`-`0x00533361`), majd `0x00533517` címen meghívja a `0x00479870` műveletet. Ez a `0x00479a62` címen hívja a `0x00993650` egyedi-nevet kereső rutint. Szabad cél esetén az alapnév marad; foglalt cél esetén a `0x00cd8d64` formátum (`"%s-%03lu"`, használat: `0x00993b07`) szerint `-001`-től próbálkozik, a három számjegy minimum szélesség. Foglalt jelöltnél növel, legfeljebb `-4095`-ig; a 4096-os próbálkozás hibára fut (`0x00993a96`, `0x00993a17`-`0x00993a24`, `0x00993b52`-`0x00993b69`). A meglévő `-szám` végződést ütközéskor folytatja (`sscanf("%d")`, `0x00993902`-`0x0099399b`). Az útvonal-összeállító külön kiterjesztésmezőt tart meg: a betűírást nem normalizálja, üres mezőnél nem tesz pontot (`0x009a3320`, `0x009a3402`-`0x009a3490`). | A `preview_name` listaindex alapján `név`, `név-1`, `név-2`… alakot készít; a kiterjesztést `Path.suffix`-ból veszi (`rename.py:238-262, 324-330`). Kiterjesztés nélkül a záró pontot/szóközt levágja (`rename.py:258-262`). A köteg célütközéseit előre elutasítja (`rename.py:265-292, 331`). | **ELTÉR.** Az eredeti sorszámozását az ütközés vezérli, nullákkal tölti a háromjegyű minimumszélességet, és szabad első cél esetén nem tesz utótagot; a PicasaPy a kijelölési indexet számozza. Foglalt egyfájlos cél esetén az eredeti szabad utótagot keres, a PicasaPy hibát jelez. A kiterjesztés írásmódja egyezik, és egyik út sem ad hozzá pontot, ha nincs kiterjesztés; a PicasaPy ezen felül levágja a kiterjesztés nélküli név végéről a pontot/szóközt. |
+| **Ütközés, fájlművelet, `.picasa.ini`:** a célút ütközési szabálya a fenti `0x00993650` egyedi-név keresővel bizonyított. A `0x00479870` további fájlműveleti és metaadat-ágai, különösen az ini-szekciók és kísérőfájlok sorsa ettől külön kérdés. | Előellenőrzi a teljes köteg célütközéseit, átnevezi a fájlt, átviszi az ini-szekciót és a kísérő `- Originals` fájlt; futás közbeni részleges hiba után nincs köteg-szintű visszagörgetés (`rename.py:42-105, 265-352`). | **A célút ütközéskezelése bizonyított;** az ini-/metaadat- és kísérőfájl-kezelés összevetése ezen a kutatáson kívül maradt. Külön feltárásnál a `0x00479870` teljes fájlműveleti útját kell követni. A korábbi `0x008d2640` kérés nem ezt a műveletet célozta; az a `0x00532c70`-ből elért általános objektum-visszahívás, ezért törölve. |
 
 **Bizonyítottság:** az előnézet eltérése megerősített. A bináris út (`0x00532710` + `0x00532960`, rögzített minták és `.jpg`) és a PicasaPy út (`renamePreview` → első kijelölt sor tényleges adatai/kiterjesztése) egymástól függetlenül ugyanazt az eltérést mutatja. Cáfoló próbában a `0x00532960` teljes függvényében kerestem kijelölt fájlra vagy fájl-metaadatra mutató bemenetet: ilyen nincs; a rutin a `newname` mezőt, a két statikus mintát és a `.jpg` konstansot használja. A `rename.fen` `sample` mezője és a PicasaPy controller első-sort olvasó útja ezt külön is ellenőrzi.
+
+**Bizonyítottság (#5939): feltételes.** A `0x00532ec0` → `0x00479870` → `0x00993650` utasításszintű út mutatja a szabad cél változatlanul hagyását, az ütközésre induló `-001` számozást, a növelést és a külön kiterjesztésmezőt. Ettől független index-/adatút a híváskapcsolatot és a `0x00cd8d64` címen levő `%s-%03lu` nyers PE-sztringet is igazolja; ez a formátumot ellenőrzi, de nem a feltételt, korlátot és kiterjesztési ágakat, ezért a teljes viselkedés nem minősül megerősítettnek. Cáfoló próbában azt az állítást vizsgáltam, hogy a sorszámot a kijelölési index adja: a csoportos hívó csak a fájlművelet után lépteti a bejárást, míg a számláló a `0x00993650`-ben 1-ről indul és csak foglalt jelöltnél változik. A PicasaPy a `rename.py:324-331` útvonalon a listaindexet használja és a foglalt célokat előre elutasítja; ezért eltér. A kiterjesztés külön mezőből, betűírás-normalizálás nélkül épül, és az üres mezőhöz nem kerül pont; a PicasaPy kiterjesztés nélküli alapnév végéről ezen felül levágja a pontot/szóközt (`rename.py:258-262`).
 
 ### 3.6 `move_database.fen` — Adatbázis áthelyezése (V1)
 

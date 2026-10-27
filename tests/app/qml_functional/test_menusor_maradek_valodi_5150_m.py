@@ -128,7 +128,7 @@ class TestKepKotegeltEffektek:
             ("menuBatchAutoColor", "autocolor=1;"),
             ("menuBatchEnhance", "enhance=1;"),
             ("menuBatchSepia", "sepia=1;"),
-            ("menuBatchSharpen", "unsharp=1;"),
+            ("menuBatchSharpen", "unsharp2=1,0.600000;"),
             ("menuBatchWarmify", "warm=1;"),
             ("menuBatchFilmGrain", "grain2=1;"),
             ("menuBatchBlackWhite", "bw=1;"),

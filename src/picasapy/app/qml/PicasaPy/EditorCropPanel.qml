@@ -285,15 +285,8 @@ ColumnLayout {
     // szín-dominancia · variancia). Melyik három jelenik meg, azt a kép
     // dönti el: ha van rajta mentett arc, az arc-stratégiák előznek.
     //
-    // A feliratok kulcsból oldódnak fel (`panel.cropSuggestionLabel`), mert
-    // a stratégiát a kontroller választja, nem a felület.
-    Text {
-        Layout.fillWidth: true
-        visible: panel.cropSuggestions.length > 0
-        text: qsTr("Suggested crops")
-        font.pixelSize: Theme.fontSize - 1
-        color: Theme.textGray
-    }
+    // Az eredeti Picasához igazodva a három javaslat csak képi előnézet:
+    // nincs fölöttük csoportcím, és az előnézetek alatt sincs címke.
     RowLayout {
         objectName: "cropSuggestionRow"
         Layout.fillWidth: true
@@ -309,7 +302,6 @@ ColumnLayout {
             readonly property var suggestion: panel.cropSuggestions.length > slot
                 ? panel.cropSuggestions[slot] : null
             visible: suggestion !== null
-            label: suggestion ? panel.cropSuggestionLabel(suggestion.key) : ""
             // #448: SAJÁT ELŐNÉZET minden javaslathoz (az eredeti
             // `cropsug_preview1..3`-a). A forrás mindháromnál ugyanaz a
             // vágatlan kép; a `thumbSourceRect` szűkíti a JAVASOLT

@@ -1041,12 +1041,39 @@ dialógus nem létezik.
 ▶**KÉP**, `…195123.png`. A legördülő alatt **3 bélyegkép** (nem szöveges
 gomb!) — a kiválasztott aránnyal (itt 4:3) a fotó három eltérő
 kivágás-javaslata: bal = felül/szűkebb kivágás, közép = a teljes jelenet
-(legszélesebb), jobb = az állófigurára közelebb húzott kivágás. Ez a
-PicasaPy jelenlegi **„Bal-felső" / „Fekvő" / „Álló" (topleft/landscape/
-portrait) feliratos szövegdoboz-hármasának** felel meg funkcióban
-(darabszám: 3 = 3 egyezik), de **vizuálisan más**: az eredeti élő
-fotó-bélyegképet mutat (a tényleges kivágást előnézve), a PicasaPy jelenleg
-csak feliratos gombokat rajzol előnézet nélkül.
+(legszélesebb), jobb = az állófigurára közelebb húzott kivágás. A PicasaPy
+jelenlegi hármasa is három javaslatot mutat, de az eredeti képi
+előnézeteihez képest saját „Suggested crops” címet és stratégiánkénti
+szövegcímkét ad.
+
+**#5933 - az eredeti javaslat-előnézetek felirata.** A bináris út a
+`0x005efa30` vágóeszköz-beállító függvényből hívja a `0x005f0840`
+előnézet-feltöltőt; ez a `0x005f03b0` javaslatgenerátort hívja, majd a
+`editpanel/cropsug_preview%d` neveken tölti fel a képi előnézeteket. A
+`editpanel.tre:765-769` a `cropsug_preview1..3` elemeket a
+`cropsug1..3` gyerekeiként, `m_centerXY` igazítással deklarálja; a
+`editpanel.tre:772-782` horgonyokat ad meg, szöveg- vagy címtulajdonságot
+nem. A három `cropsug` kattintását a `0x005d59f0` rendre `1`, `2`, `3`
+választási indexszel továbbítja a `0x005efef0` felé.
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A vágóeszköz neve `Crop` (`IDS_CROP_LABEL` kulcs `0x00c97f84`, angol szöveg `0x00e044ea`), de a három előnézet fölött nincs „Suggested crops” cím, és a preview-khoz nincs stratégiánkénti látható felirat. A `0x007ec710` hét belső stratégialeírást tartalmaz; a `0x005f0840` a javaslatok képi előnézetét tölti fel, a címkék preview-hoz kötését nem mutatja. | Az `EditorCropPanel.qml:290-296` „Suggested crops” fejlécet, a `EditorPanel.qml:475-482` pedig stratégiánkénti címkét ad; a `EditorCropPanel.qml:307-324` a preview-képeket és a kiválasztást is megvalósítja. | Ha a cél az eredeti felülethez igazodás, el kell hagyni a csoportcímet és a preview-k feliratait, a három képi előnézetet és a hozzájuk tartozó kiválasztást meg kell tartani. |
+
+Az eredeti fő vágóeszköz-felirata tehát **van** (`Crop` / `Vágás`), de az
+alcím („Suggested crops”) és a három javaslat szöveges címkéje **nincs**.
+Az `0x007ec710`-ban található „Close crop to faces”, „Compose picture
+around faces”, „Crop by horizon line”, „Crop by Red/Green”, „Crop by
+variance”, „Crop border” és „Fake crop” karakterláncok belső
+stratégialeírások; a preview-feltöltési út nem rendeli őket a preview-
+elemek látható szövegéhez. A „Close crop to faces” (`0x00cb9f50`) szó
+szerinti egyezés a PicasaPy egyik címkéjével, de ez a sztring csak a
+stratégiafüggvényben bizonyított, látható eredeti címkeként nem.
+
+**A belső stringek címei:** `0x00cb9f50` = „Close crop to faces”;
+`0x00cb9f64` = „Compose picture around faces”; `0x00cb9f84` = „Crop by
+horizon line”; `0x00cb9f9c` = „Crop by Red/Green”; `0x00cb9fb0` = „Crop
+by variance”; `0x00cb9fc4` = „Crop border”; `0x00cb9fd0` = „Fake crop”.
 
 ### Gombsor a bélyegképek alatt
 
@@ -2044,15 +2071,133 @@ A fülsáv öt füle és a hozzájuk tartozó ikonok a `respack.yt`-ból:
 | — | `movietab` | 187 … 222 | 35 | — | — | — |
 
 - a fülsáv (`buttcontainer: tabs`) **276 × 25**, y = **45**;
-- minden ikon **y = 49** (a fül tetejétől 4 px-re), tehát egy vonalban ülnek;
+- ~~minden ikon **y = 49** (a fül tetejétől 4 px-re), tehát egy vonalban ülnek;~~ ⛔ **HELYESBÍTVE (2026-10-26, #5946):** a 49 a réteg tervezési koordinátája; futásidőben a `.tre` szerint középre kerülnek (lásd lent: „A fülikonok összevetése a referenciával”);
 - **az ikonok NEM azonos méretűek**: 15×16 · 17×18 · 20×19 · 25×19 · 25×19 —
   a három effekt-fülé (3–5) a legnagyobb;
 - az ikon a fülön belül **középre** kerül (pl. `tab1` közepe 30,5, az ikoné
-  29,5).
+  29,5). ⛔ **HELYESBÍTVE (2026-10-26, #5946):** a 29,5 a tervezési x-ből (22)
+  számolt érték; a képernyőn mért közép 31,5, vagyis a fül közepétől legfeljebb
+  1 px-re van.
 
 > A `movietab` (35 px) a videó-fül, alapból **rejtett** (`m_hidden`), és
 > beékelődik a `tab4` és a `tab5` közé — ezért nem szabad a fülek
 > x-sávjait folytonosnak feltételezni, ha a videó-fül látszik.
+
+### A fülikonok összevetése a referenciával (#5946, 2026-10-26)
+
+**Kérdés.** Az öt eredeti fülikon iránya, kitöltése és formája egyezik-e a mai
+rajzzal? A mai sáv **hét fület** mutat (`EditorTabBar.qml`, `tabCount: 7`;
+döntés: `docs/decisions/szerkeszto-bal-panel.md`, 2. pont). Az első öt az
+eredeti öt fülnek felel meg. A 6-7. fül nincs a referencia-képen, ezért nem
+vetettük össze.
+
+**Eredeti forrás (erőforrás-hivatkozás).** Mind az öt ikon a `respack.yt`
+rétegeiből jön, a `.tre` szülő-deklarációja szerint. A képernyőn mért hely a
+doboz bal-felső sarka a panelben (x, y).
+
+| fül | ikon (`respack.yt`, fájl-eltolás) | doboz | `.tre` (`editpanel.tre`) | képernyőn mért hely |
+|---|---|---|---|---|
+| 1 csavarkulcs | `layer:editpanel/basic_icon` (701102) | 15×16 | `:122` | 24, 4 |
+| 2 nap | `layer:editpanel/tuning_icon` (699786) | 17×18 | `:247` | 78, 3 |
+| 3 ecset | `layer:editpanel/tab3_icon` (698793) | 20×19 | `:281` | 131, 2 |
+| 4 zöld ecset | `layer:editpanel/tab4_icon` (697582) | 25×19 | `:440` | 185, 2 |
+| 5 kék ecset | `layer:editpanel/tab5_icon` (696241) | 25×19 | `:458` | 240, 2 |
+
+**Bináris horgony (feltételes).** A `0x0050ccd0` (221 bájt) az
+`editpanel/tab%d` formátumsztringgel az `ebp = 1 … 5` ciklusban hívja a
+`0x0040eab0`-t (a ciklus határa: `cmp ebp, 5`). A hívott függvények szerepe
+nincs elolvasva, ezért a „fülsávot építi” állítás feltételes. Az ötös határ
+viszont egybeesik a `respack.yt` öt ikonjával.
+
+**⛔ HELYESBÍTÉS (2026-10-26, #5946).** A fenti szakasz két állítása téves:
+
+- „minden ikon y = 49, tehát egy vonalban ülnek": a 49 a réteg **tervezési**
+  koordinátája. Futásidőben a `.tre` szerint (`XConstraint 0.5, 0.5, 0`,
+  `YConstraint 0.5, 0.5, -1`) az ikon a fül közepére kerül. A doboz felső éle
+  `round((25 - h) / 2 - 1)` (a 0,5-ös értéket felfelé kerekítve), azaz
+  **4, 3, 2, 2, 2** (h = 16, 18, 19, 19, 19).
+  A képernyőn mért öt érték pontosan ezt adja.
+- „tab1 közepe 30,5, az ikoné 29,5": a 29,5 a tervezési x-ből (22) jön. A
+  képernyőn mért közép 31,5, vagyis a fül közepétől legfeljebb 1 px-re van.
+
+**Mért összevetés.** Referencia: a 1:1 képernyőkép fülsávja (276 × 25 px).
+Mai: az `EditorTabBar` offscreen renderje ugyanekkora vásznon, a valódi
+`EditTabIcon.qml` és `Theme` használatával. Natív: a `respack.yt` réteg
+önmagában, dekódolva.
+
+| fül | irány | kitöltés | forma: tinta-IoU (natív ↔ ref · mai ↔ ref) | tinta-doboz (ref · mai) | Teendő |
+|---|---|---|---|---|---|
+| 1 csavarkulcs | egyezik | tinta: eredeti `#373535`, mai `#2b2b2b` | 0,897 · 0,629 | 15×14 · 15×16 | tinta-szín `#373535`; a fej és a nyél alakja újrarajzolandó |
+| 2 nap | egyezik: bal fele tele, jobb fele üres | tinta: `#373535` · `#2b2b2b` | 0,716 · 0,552 | 17×17 · 17×18 | tinta-szín; a sugarak és a korong újramérendő |
+| 3 ecset | egyezik: nyél jobb fent, sörte bal lent | tinta: `#373535` · `#2b2b2b` | 0,980 · 0,659 | 18×16 · 20×19 | a sörte és a nyél alakja; a doboz 18×16, nem 20×19 |
+| 4 zöld ecset | egyezik: négyzet bal fent, ecset rajta | négyzet: eredeti `#91b97e` átmenettel, mai `#3b8f00` lapos | 0,990 · 0,664 | 18×16 · 20×19; négyzet 16×16 · 15×15 | négyzet-szín és átmenet (lent); a négyzet 16×16 |
+| 5 kék ecset | egyezik | négyzet: eredeti `#67add0` átmenettel, mai `#448afd` lapos | 0,990 · 0,661 | 18×16 · 20×19; négyzet 16×16 · 15×15 | ugyanaz, kék |
+
+- **A négyzet átmenete** (eredeti = referencia, mediánban egyezik): zöld
+  felül / középen / alul `(191,214,179)` / `(142,183,122)` / `(154,191,136)`;
+  kék `(166,207,227)` / `(98,170,207)` / `(115,179,212)`. A mai négyzet egyszínű.
+- **A felhő** (fehér folt a négyzeten): eredeti `#f8faf7` (zöld) és `#f5f9fc`
+  (kék); mai `#ffffff`. Az eltérés legfeljebb 10 szint.
+- **Függőleges elhelyezés**: a mai `iconTop = 4` minden ikonra. Az eredetinél a
+  doboz felső éle 4, 3, 2, 2, 2. A 3-5. ikon tinta-közepe a mai renderben kb.
+  4 px-rel lejjebb van a referenciáénál (+4,1 · +4,0 · +4,0), vízszintesen
+  1,5-2,2 px-rel balra.
+- **Téma**: a referencia tinta-színe (`#373535`) megegyezik a natív réteggel,
+  tehát nem téma-függő. A mai `#2b2b2b` a `Theme.iconInk` világos értéke, amelyet
+  a `TrayActionButton.qml` is használ: a fülikonoknak saját tokent kell kapniuk.
+- **Jogi határ**: a `respack.yt` grafikája nem másolható a PicasaPy-ba
+  (`tools/picasa/respack.py`, jogi megjegyzés). A Teendő saját rajz, a mért
+  alakhoz igazítva; az `EditTabIcon.qml` eddig is saját rajz.
+
+**Mérési módszer.** Tinta: L < 110 és telítetlen pixel. Négyzet: telítettség
+> 0,25, a fül 1 px-es kijelölő-szegélye nélkül. Alak: a tinta-maszkok IoU-ja a
+tömegközéppontok egész pixeles igazítása után. Kontrollok, ugyanazzal a mércével:
+
+- **plafon**: natív ↔ referencia = 0,897 · 0,716 · 0,980 · 0,990 · 0,990. Ez
+  a legjobb érték, amit ez a mérés adhat;
+- **tükrözés**: a mai tükrözött tintája 0,092-0,206, a normál 0,552-0,664. Az
+  irány egyezik;
+- **kereszt**: más ikon ↔ referencia legfeljebb 0,353 (csavarkulcs, nap). A
+  három ecset egymáshoz 0,97-0,98, ezért az ecset-IoU csak a saját natív
+  plafonjához mérendő.
+
+**Bizonyítottsági fok**
+
+- Az öt ikon eredete és sorrendje (fül ↔ réteg ↔ hely): **megerősített**.
+  Három független út adja: a `.tre` szülő-deklaráció, a réteg geometriája, a
+  képernyőn elfoglalt hely.
+- Irány, tinta-szín és a négyzet mediánja: **megerősített**. Két független út:
+  a `respack.yt` réteg dekódolása és a képernyőkép pixelei egyeznek.
+- A mai alak eltérése: **erős**. 0,55-0,66, a plafon 0,72-0,99. A nap-ikonnál a
+  plafon alacsony (0,716), ezért ott **feltételes**.
+- A függőleges szabály `round((25 - h) / 2 - 1)`: **erős**. A `.tre`
+  constraint olvasatából jön, az öt képernyő-érték egyezik vele.
+- A binárisbeli ötös ciklus (`0x0050ccd0`): a határ megfigyelt tény, a szerepe
+  **feltételes**.
+
+**Cáfoló kísérlet (15.2).**
+
+1. *Mérési műtermék?* Ha a küszöb vagy az illesztés okozná az alacsony IoU-t,
+   a natív réteg is alacsony lenne a referenciához. Nem az: 0,90-0,99.
+2. *Más felületi téma vagy méretarány?* A négyzet- és tinta-színek mediánja egyezik a
+   respack-rétegekkel, a fülhatárok 55 / 55 / 56 / 55 / 55 px-esek, tehát a kép
+   1:1.
+3. *Téma-függő eltérés?* A referencia és a natív tinta azonos, így a különbség a
+   mi rajzunké.
+
+A cáfolat ellenőrzése ugyanazzal a mércével (15.2/b): a tükrözés- és a
+kereszt-kontroll ugyanazon IoU-val fut, és egyik sem támasztja alá, hogy a mai
+rajz egyezne az eredetivel.
+
+**Amit NEM mértünk (kimondva).**
+
+- A fülkeret színe: a képernyőn bézs (inaktív `(202,197,188)`), a `respack.yt`
+  keret kékes. Nem ikon és nem a jegy kérdése; külön nyitott.
+- A 6-7. fül ikonjai: nincs referencia-kép.
+- A mai render offscreen Qt-val készült, nem a tulajdonos Windows-gépén. A mért
+  eltérések az ikonrajzot érintik, a betűkészletet nem.
+- A fülépítő függvény hívottjai (`0x0040eab0`, `0x00c07db2`): nincsenek
+  elolvasva. Dekompilálás nem kellett.
 
 ### ⚠️ Három felirat-javítás (2026-08-16)
 

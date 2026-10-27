@@ -11,7 +11,7 @@ from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.fileops import is_folder_writable
 from picasapy.index import all_photos, open_index
-from picasapy.ini import update_document
+from picasapy.ini import update_document, with_backuphash
 from picasapy.metadata import write_iptc_keywords
 from picasapy.scanner import PICASA_INI_NAME
 
@@ -30,14 +30,18 @@ from .photo_sort import photo_date
 _QUICK_TAG_SLOTS = 10
 # a felső ennyi gomb foglalható le a legutóbb használt címkéknek
 _QUICK_TAG_RESERVED = 2
-# ennél többet a „legutóbb használt" lista nem kell hogy őrizzen (a felső
-# 2 gombhoz elég, de eggyel több puffer a stabilabb sorrendhez)
-_QUICK_TAG_RECENT_LIMIT = 8
+# Az eredeti két recent-helyet írja: az új címke az első, a korábbi első a
+# második, a korábbi második pedig kiesik.
+_QUICK_TAG_RECENT_LIMIT = _QUICK_TAG_RESERVED
 
 _KEY_QUICK_LABELS = "quickTags/labels"
 _KEY_QUICK_RESERVE_RECENT = "quickTags/reserveRecentForTop2"
 _KEY_QUICK_AUTOFILL = "quickTags/autoFillFrequent"
 _KEY_QUICK_RECENT = "quickTags/recentKeywords"
+
+_ASCII_CASE_FOLD = str.maketrans(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"
+)
 
 #: #2998: az írhatóság-próba MODULSZINTŰ fogantyúja (a `fileops/trash.py`
 #: `_access`-mintája). A próba valódi fájlt ír és töröl a mappába, ezért a
@@ -51,6 +55,11 @@ def _split_keywords(raw: str | None) -> tuple[str, ...]:
     if not raw:
         return ()
     return tuple(part.strip() for part in raw.split(",") if part.strip())
+
+
+def _ascii_fold_keyword(keyword: str) -> str:
+    """Az eredeti címke-rendező csak az ASCII A–Z betűket hajtja kisbetűre."""
+    return keyword.translate(_ASCII_CASE_FOLD)
 
 
 def _clean_keyword(text: str) -> str:
@@ -76,7 +85,7 @@ def _as_bool(value, default: bool) -> bool:
 
 
 class KeywordsMixin:
-    """A Címkék-panel (#12) műveletei: unió-lista, hozzáadás, levétel.
+    """A Címkék-panel (#12) műveletei: címkelista, hozzáadás, levétel.
 
     #193: a panel alján a Gyorscímkék szekció (2×4 gomb) is ide tartozik —
     a gombok konfigurációja (8 szlot + két kapcsoló) és a „legutóbb
@@ -98,15 +107,33 @@ class KeywordsMixin:
 
     @Slot(list, result=list)
     def keywordsOfRows(self, rows) -> list:
-        """A kijelölés címkéinek uniója, névsorban — a Címkék-panel listája."""
+        """A kijelölés címkéi gyakoriság, majd fordított névsor szerint."""
         photos = self._photos.photos
-        seen: dict[str, str] = {}  # casefold → első előfordulás (írásmód-őrző)
+        seen: dict[str, tuple[str, int]] = {}
         for row in rows:
             if not 0 <= int(row) < len(photos):
                 continue
+            photo_seen: set[str] = set()
             for keyword in _split_keywords(photos[int(row)].keywords):
-                seen.setdefault(keyword.casefold(), keyword)
-        return sorted(seen.values(), key=str.casefold)
+                folded = _ascii_fold_keyword(keyword)
+                if folded in photo_seen:
+                    continue
+                photo_seen.add(folded)
+                if folded in seen:
+                    first_spelling, count = seen[folded]
+                    seen[folded] = (first_spelling, count + 1)
+                else:
+                    seen[folded] = (keyword, 1)
+
+        rendezett = sorted(
+            seen.values(),
+            key=lambda item: (
+                item[1],
+                _ascii_fold_keyword(item[0]).encode("utf-8", "surrogatepass"),
+            ),
+            reverse=True,
+        )
+        return [keyword for keyword, _count in rendezett]
 
     @Slot(list, result=bool)
     def selectionReadOnly(self, rows) -> bool:
@@ -191,11 +218,13 @@ class KeywordsMixin:
             # a mutate-en KÍVÜL, egyszer végezzük el, és csak az ini-be
             # kerülő (kulcs, érték|None) módosításokat gyűjtjük a mutate-nek.
             ini_edits: list[tuple[str, str | None]] = []
+            changed_photos: list[str] = []
             for photo in folder_photos:
                 current = _split_keywords(photo.keywords)
                 updated = transform(current)
                 if updated == current:
                     continue
+                changed_photos.append(photo.name)
                 wrote_iptc = False
                 if photo.name.lower().endswith((".jpg", ".jpeg")):
                     wrote_iptc = write_iptc_keywords(
@@ -205,14 +234,20 @@ class KeywordsMixin:
                     ini_edits.append(
                         (photo.name, ",".join(updated) if updated else None)
                     )
-            if ini_edits:
-                def mutate(document, edits=ini_edits):
+            if changed_photos:
+                def mutate(
+                    document,
+                    edits=ini_edits,
+                    names=changed_photos,
+                ):
                     for name, value in edits:
                         document = (
                             document.with_value(name, "keywords", value)
                             if value is not None
                             else document.with_removed(name, "keywords")
                         )
+                    for name in names:
+                        document = with_backuphash(document, name)
                     return document
 
                 # #2506: az írás bukása NEM lehet néma. Írásvédett mappán a
@@ -245,19 +280,29 @@ class KeywordsMixin:
         return labels
 
     def _quick_tag_recent(self) -> list[str]:
-        """A legutóbb használt címkék, legfrissebb elöl."""
-        return _as_str_list(self._get_settings().value(_KEY_QUICK_RECENT))
+        """A két legutóbb használt címke, legfrissebb elöl."""
+        return _as_str_list(
+            self._get_settings().value(_KEY_QUICK_RECENT)
+        )[:_QUICK_TAG_RECENT_LIMIT]
 
     def _record_recent_quick_tag(self, keyword: str) -> None:
         """A gyorscímke-előzmény frissítése egy sikeres/kísérelt
-        hozzáadáskor (#193) — az ismételt használat a lista elejére kerül,
-        duplikátum nélkül."""
-        recent = [
-            k for k in self._quick_tag_recent() if k.casefold() != keyword.casefold()
-        ]
-        recent.insert(0, keyword)
-        self._get_settings().setValue(
-            _KEY_QUICK_RECENT, recent[:_QUICK_TAG_RECENT_LIMIT]
+        hozzáadáskor (#193). Az új címke a 0. helyre kerül, a régi 0. az
+        1.-re csúszik; a két hely egyikén már szereplő címke nem rendez át."""
+        settings = self._get_settings()
+        stored_recent = _as_str_list(settings.value(_KEY_QUICK_RECENT))
+        recent = stored_recent[:_QUICK_TAG_RECENT_LIMIT]
+        folded = keyword.casefold()
+        if any(item.casefold() == folded for item in recent):
+            # A korábbi, nyolcelemű beállítást is két helyre szűkítjük, de
+            # meglévő recent ismétlésénél a sorrend változatlan marad.
+            if stored_recent != recent:
+                settings.setValue(_KEY_QUICK_RECENT, recent)
+            return
+
+        settings.setValue(
+            _KEY_QUICK_RECENT,
+            [keyword, *recent[: _QUICK_TAG_RECENT_LIMIT - 1]],
         )
         self.quickTagsChanged.emit()
 

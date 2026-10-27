@@ -110,6 +110,84 @@ pontosan az, amit a tulajdonos képernyőmentése mutat.
 `Paste Text`), a `Select &Starred`-nek pedig **nincs gyorsbillentyűje** —
 ezek nem elírások, hanem a mért állapot.
 
+#### A `Copy Text` és `Paste Text` engedélyezése (#5877)
+
+A két parancs frissítését a `CThumbUI` `0x0056e1c0` címen kezdődő
+menüfrissítője végzi; a Szerkesztés-menü ága a kapcsolótábla 1. esete,
+belépési címe `0x0056e742`. Az ág **két UI-állapot szerint eltérő
+feltételrendszert** használ. A disassembly nem nevezi meg a `this` mezők
+szemantikáját, ezért alább a bináris mezőeltolásai szerepelnek.
+
+Jelölések az ágban:
+
+- `P`: a `dword[0x00d67914]` nem nulla, az `editpanel/preview` objektum
+  megtalálható, és az objektum `+0x20c` bájtja nulla
+  (`0x0056e240`-`0x0056e265`).
+- `D`: a `this+0x3094` vagy a `this+0x30a0` értéke nagyobb nullánál
+  (`0x0056e30b`-`0x0056e322`).
+- `F`: a `this+0x34a8` értéke. A `F & 0x4000` bitet a
+  `0x0056e2e8`-`0x0056e2ef`, a `(F & 0x6) != 0` őrfeltételt a
+  `0x0056e2f4`-`0x0056e306` vizsgálja.
+- `T`: van kijelölt elem (`this+0xe64 != -1`), és a
+  `0x006b1e80` segédfüggvény nem üres szöveget olvas ki az első kijelölt
+  elemről (`0x0056e801`-`0x0056e873`, a kijelölési vektor előállítása:
+  `0x0056e9cd`-`0x0056ea0a`). Több kijelölésnél ez az ág az első elem
+  szövegét ellenőrzi.
+- `C`: a `this+0xcc8` szövegpuffer nem üres: a mutató nem null, a
+  `(dword[puffer] & 0xffffff00) != 0`, és a `byte[puffer+4] != 0`
+  (`0x0056e931`-`0x0056e95b`, illetve `0x0056eb40`-`0x0056eb80`).
+- `B`: a `this+0x34a4` értéke nulla.
+
+Az ágak explicit állapotírásainál a kiszámított feltétel igazságakor az
+átadott argumentum `0`, hamisságakor `1`. A binárislelet nem azonosítja
+megbízhatóan a fogadó API mezőjének nevét/polaritását, ezért a táblázat a
+nyers argumentumot rögzíti, nem nevezi önmagában „engedélyezettnek” vagy
+„szürkének”.
+
+| Útvonal | `Copy Text` állapotargumentuma | `Paste Text` állapotargumentuma |
+|---|---|---|
+| `P` igaz, `D` igaz | `1` (`0x0056e7b4`-`0x0056e7e5`) | `1` (`0x0056e7b4`-`0x0056e7e5`) |
+| `P` igaz, `D` hamis | `0`, ha `T && B`; különben `1` (`0x0056e801`-`0x0056e873`) | ha `C` igaz: `0`, ha `B`, különben `1`; ha `C` hamis, ez az ág nem ír állapotot (`0x0056e92b`-`0x0056e95b`) |
+| `P` hamis, `F & 0x4000` nem nulla | `1` (`0x0056e9c0`, `0x0056eba2`-`0x0056ebbe`) | `1` (`0x0056e9c0`, `0x0056eba2`-`0x0056ebbe`) |
+| `P` hamis, `F & 0x4000` nulla | `1`, ha `(F & 0x6) != 0 && T && B`; különben `0` (`0x0056ea45`-`0x0056ea72`) | `1`, ha `(F & 0x6) != 0 && B && C`; különben `0` (`0x0056eb40`-`0x0056eb80`) |
+
+**Futásidejű ellenőrzés:**
+
+- `job-277`: könyvtárnézet, egy kijelölt kép, felirat nélkül - mindkét tétel
+  szürke, miközben a `Copy All Effects` és a fájl-`Cut`/`Copy` engedélyezett.
+- `job-283`: a nézőben beírt képfelirat után mindkét tétel a nézőben és a
+  könyvtárban is szürke marad. A feltétel tehát nem a `.picasa.ini`
+  képfelirata.
+- `job-287`: a Basic Fixes ▸ Text eszközzel létrehozott és alkalmazott
+  rétegnél a nézőben mindkét tétel engedélyezett. A kép ini-szakaszában
+  `text=...` és `textactive=1` áll. Ez a `T` rétegfeltételt és a
+  `this+0xcc8` szövegpuffer szerepét támasztja alá.
+
+**QML-feltétel a mért állapotokra:** a `Copy Text` csak az első kijelölt kép
+értelmezhető, nem üres Text eszközös `text=` rétegénél él. A `Paste Text`
+akkor él, ha a belső szövegpufferben van ilyen réteg; a job-287 szerint a
+Text eszközzel épp létrehozott réteg is ezt a puffert adja, külön Copy Text
+kattintás nélkül. A külön Copy Text után a puffer a kijelölésváltás után is
+megmarad.
+
+**Képfelirat (#1526):** a két menüpont ezentúl nem másol és nem illeszt be
+képfeliratot; a felirat vágólap-controller API-ja megmarad külön
+feliratműveletekhez. A felirat a néző `captionField` mezőjében szerkeszthető,
+és a szokásos fókuszált szövegmező-műveletekkel másolható vagy illeszthető
+be. Nincs igazolt eredeti Szerkesztés-menüútvonal a képfelirat műveleteihez.
+
+**Bizonyítottság: részleges.** Az UpdateUI ág és az állapotargumentumokat
+képző utasítások címei a táblázatban szerepelnek. A futásidejű mérések a
+képfeliratot kizárják, és a Text-réteggel való kapcsolatot igazolják; a
+`P`, `D`, `F` és `B` mezők teljes UI-szemantikája, illetve az összes
+elágazás callback-polaritása továbbra sincs megállapítva.
+
+**Címhelyesbítés:** a korábbi szöveg a `0x005fecd0`/`0x005fefc0` címeket a
+Text parancsokhoz rendelte. Ezek a címek a teljes `filters=` láncot másoló
+és beillesztő kezelőkhöz tartoznak (#1534; lásd
+`docs/decisions/effektus-vagolap-ket-reteg.md`); a Text parancsok bizonyítéka
+itt az UpdateUI-ág, a `0x006b1e80` rétegsegéd és a `this+0xcc8` puffer.
+
 #### ⛔ Visszavonás/Ismétlés a Szerkesztés menüben NINCS — és nem is lehet
 
 A #1774 köre azt gyanította, hogy a menüépítő **feltételesen** teszi be a

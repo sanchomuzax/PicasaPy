@@ -20,7 +20,7 @@ from PySide6.QtCore import QPointF, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
-from support.qt_wait import wait_for_signal
+from support.qt_wait import wait_for_photo_op, wait_for_signal
 from tests.app.qml_functional._fomenu_4420_menu import _megnyit
 from tests.app.qml_functional.test_fajl_szerkesztes_menu_valodi_5150 import (  # noqa: F401
     _elokeszit,
@@ -101,6 +101,13 @@ class TestMentesUtan:
         window, controller, _engine = fajl_app
         menu_bar = window.property("menuBar")
         _elokeszit(window, qt_app, controller)
+        window.setProperty("selectedIndexes", [0])
+        window.setProperty("selectedIndex", 0)
+        wait_for_photo_op(
+            controller,
+            lambda: controller.applyEffectMany([0], "enhance"),
+            qt_app=qt_app,
+        )
         assert _gyerek(window, "menuFileRevert").property("enabled") is False, (
             "a próba előfeltétele: mentés előtt a Visszaállítás tiltott legyen"
         )

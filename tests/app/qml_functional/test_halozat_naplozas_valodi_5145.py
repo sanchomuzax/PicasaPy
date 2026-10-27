@@ -23,6 +23,7 @@ from tests.app.qml_functional.test_menu_talca_egyeb_valodi_5135_b import (
     _elokeszit,
     _gyerek,
     _keszits_konyvtarat,
+    _klikk_ablakban,
     _latszik,
     _valassz_legordulobol,
     _varj,
@@ -60,10 +61,16 @@ class TestNaplozasiSzint:
 
         _valassz_legordulobol(qt_app, beallitasok, legordulo, "Detailed log information")
 
-        assert _varj(qt_app, lambda: controller.networkLogLevel == 3), (
-            "a legördülő tétele nem mentette a naplózási szintet"
+        assert _varj(qt_app, lambda: legordulo.property("currentIndex") == 3)
+        assert controller.networkLogLevel == 2, (
+            "a naplózási szint csak az OK elfogadásakor íródhat ki"
         )
-        _zar(qt_app, beallitasok)
+        _klikk_ablakban(
+            qt_app, beallitasok, _gyerek(beallitasok, "optionsOkButton")
+        )
+        assert _varj(qt_app, lambda: controller.networkLogLevel == 3), (
+            "az OK nem mentette a naplózási szintet"
+        )
 
         beallitasok = _halozati_ful(window, qt_app)
         legordulo = _gyerek(beallitasok, "optionsNetworkLogLevelCombo")

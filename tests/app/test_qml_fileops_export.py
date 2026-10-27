@@ -221,11 +221,11 @@ class TestRenameManyDialog:
             qt_app=qt_app,
         )
         assert (lib / "nyaralas.jpg").exists()
-        assert (lib / "nyaralas-1.jpg").exists()
+        assert (lib / "nyaralas-001.jpg").exists()
         assert not (lib / "a.jpg").exists()
         assert not (lib / "b.jpg").exists()
         model_names = {photo.name for photo in controller.photos.photos}
-        assert model_names == {"nyaralas.jpg", "nyaralas-1.jpg"}
+        assert model_names == {"nyaralas.jpg", "nyaralas-001.jpg"}
 
     def test_empty_selection_does_not_open(self, qml_app, qt_app):
         window, _controller, _lib, _engine = qml_app
@@ -240,8 +240,8 @@ class TestRenameManyDialog:
 
 class TestDeleteConfirmDialog:
     """#367: a törlés-megerősítés az általános ConfirmDialog komponensre
-    állítva (confirm.fen paritás) — üzenet, "Do not ask again" jelölő,
-    kulcs-alapú elnyomás."""
+    állítva (confirm.fen paritás) — üzenet, az eredeti "Don't ask again,
+    always remove" jelölő, kulcs-alapú elnyomás."""
 
     def _open_delete(self, window, qt_app, paths):
         dialog = _child(window, "deleteConfirmDialog")

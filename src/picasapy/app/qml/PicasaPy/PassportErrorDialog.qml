@@ -8,7 +8,7 @@ import QtQuick.Layouts
 //
 // Élő mérés (picasa-colab-jobs #49/#50): a `CThumbUI::Passportfail`
 // („Try another picture?") az ablak CÍME, nem igen/nem kérdés; benne a
-// hibaszöveg (`Passport0` / `Passport1`) és EGYETLEN OK gomb.
+// hibaszöveg (`Passport0`, nulla és több arcnál is) és EGYETLEN OK gomb.
 //
 // A két saját ág (olvashatatlan kép, ki nem írható kivágás) nem arc-hiba:
 // ott a cím a parancs neve, és a szöveg a valódi okot mondja.
@@ -26,15 +26,13 @@ Dialog {
 
     //: `kind`: "noFace" · "multipleFaces" · "read" · "write"
     function showError(kind) {
-        if (kind === "noFace") {
+        // #5930: az eredeti kezelő (`0x00531c60`) minden nem-egy-arc
+        // eredményt ugyanarra az ágra küld, több arcnál is `Passport0`-t ad át
+        if (kind === "noFace" || kind === "multipleFaces") {
             //: `CThumbUI::Passportfail`
             root.title = qsTr("Try another picture?")
             //: `CThumbUI::Passport0`
             root.message = qsTr("Can't find any faces")
-        } else if (kind === "multipleFaces") {
-            root.title = qsTr("Try another picture?")
-            //: `CThumbUI::Passport1`
-            root.message = qsTr("There appear to be multiple faces.")
         } else if (kind === "read") {
             //: `eMenuTools::ID_PASSPORT` menüfelirata, gyorsbillentyű nélkül
             root.title = qsTr("Passport photo")

@@ -86,6 +86,36 @@ A képre jobbgombbal kattintva ugyanazok a parancsok érhetők el, mint a
 rácsban: forgatás, mentés, visszaállítás, elrejtés, keresés a lemezen,
 tulajdonságok, törlés a lemezről.
 
+## Kép megnyitása a fájlkezelőből
+
+Ha a PicasaPy-t egy **képfájllal** indítod (a fájlkezelő **Megnyitás
+ezzel** parancsával, vagy indításkor a kép nevét megadva, lásd
+[Első lépések](../getting-started.md)), a program nem a könyvtárat
+tölti be, hanem rögtön a képet mutatja egy egyszerűsített nézőben, ahogy
+az eredeti Picasa Fotómegjelenítője. A **Beállítások** **Teljes
+képernyős indítás** jelölőnégyzete itt is érvényes.
+
+A néző csak azokat a képeket mutatja, amelyeket megadtál; ha több képet
+adtál meg, akár különböző mappákból, a nyilakkal végiglépkedhetsz
+rajtuk. A felső sáv a filmszalaggal, valamint az oldalsó panelek
+(Tulajdonságok, Címkék, Helyek, Emberek) ilyenkor nem látszanak. Alul egy saját eszközsáv áll:
+
+- **Nagyítás**, **Kicsinyítés** és **Nagyítás 1:1 méretre**;
+- **Szerkesztés a PicasaPy-ban** - bezárja ezt a nézőt, és
+  elindítja a teljes programot a könyvtáraddal;
+- **Előző fotó**, **Diavetítés lejátszása**, **Következő fotó**;
+- **Forgatás balra**, **Forgatás jobbra** és **Csillag**: a csillagos
+  kép a nézőben is csillaggal látszik, és a **Csillag** gomb leveszi
+  róla, a csillag nélküliről pedig felteszi;
+- a **Kattintson ide a további opciókért** gomb a kép helyi menüjét
+  nyitja meg.
+
+A **Gyors feltöltés** gomb szürke: a Picasa online szolgáltatásai
+megszűntek, ez nem is fog működni.
+
+Az egyszerűsített néző bezárásakor (például **Esc**-kel) a program a megszokott
+könyvtárnézettel folytatódik.
+
 ## Két kép egymás mellett
 
 A néző alsó sávjában, a **Lejátszás** gomb előtt három kis szegmens áll
@@ -347,18 +377,27 @@ készítőjében maradt meg.
 ## Időrend
 
 A **Nézet ▸ Időrend** (Ctrl+5) teljes képernyős, animált bemutatót nyit a
-könyvtáradról. Minden mappa egy **kártya**: a képei egymásra rakott
-fotókként látszanak, mellette a mappa neve és dátuma. A kártyák a mappák
-legrégebbi képének dátuma szerint követik egymást.
+könyvtáradról. Minden mappa és minden album egy **kártya**: a képei
+egymásra rakott fotókként látszanak, mellette a neve és a hónap meg az
+év (például *Július 2024*). A kártyák a legrégebbi képük **felvételi
+dátuma** szerint követik egymást. Ha egy mappában vagy albumban egyetlen
+képnek sincs felvételi dátuma, a kártyája dátum nélkül, a sor **végére**
+kerül. Az üres albumok nem kapnak kártyát, és a rejtett képek sem
+jelennek meg.
+
+Az Időrend mindig az **első** kártyánál nyílik meg.
 
 - A **→** és **←** billentyűvel, vagy a sáv nyílgombjaival a következő,
-  illetve az előző mappára lépsz.
+  illetve az előző kártyára lépsz.
 - Az alsó **csúszkán** húzva nagyobbat ugorhatsz az időben; két oldalán
   a könyvtár első és utolsó dátuma áll.
-- A **Szóköz** vagy a lejátszás gomb az éppen látott mappa
-  **diavetítését** indítja. A vetítésből kilépve a könyvtárba kerülsz,
-  ahol ez a mappa van megnyitva.
+- A **Szóköz** vagy a lejátszás gomb az éppen látott mappa vagy album
+  **diavetítését** indítja.
 - Az **Esc** vagy a sáv bezáró gombja kilép az Időrendből.
+
+Akár kilépsz, akár a diavetítésből térsz vissza, a könyvtárban az a
+mappa vagy album lesz megnyitva, amelynek a kártyáját utoljára láttad,
+és az első képe lesz kijelölve.
 
 ## Megjelenítési mód
 
@@ -456,6 +495,10 @@ képkocka rögzítése*) az éppen látott képkockát JPEG-ként mentheted. A k
 mappába kerül (a Képek mappád Picasa almappájában), a videó nevével;
 ha már van ilyen nevű, `-001`, `-002` sorszámot kap.
 
-A képkocka a videó **saját felbontásában** készül, nem abból, amit épp
-kicsinyítve látsz. A mentésről — sikerről és hibáról egyaránt —
-visszajelzést kapsz.
+A képkocka a videó **saját felbontásában**, 85-ös JPEG-minőséggel
+készül, nem abból, amit épp kicsinyítve látsz. Mentés közben a néző
+előbb a **Képkocka rögzítése...**, majd a **Mentés a Rögzített
+videoklipek albumba** feliratot mutatja; a végén azt, hogy a kép
+elkészült, vagy hogy nem sikerült. Ha a **Rögzített videoklipek**
+mappa még nem létezett, a program létrehozza, és az eredeti Picasa
+módján a program saját (projekt-) mappájaként jelöli meg.

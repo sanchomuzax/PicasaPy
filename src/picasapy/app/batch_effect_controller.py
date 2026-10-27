@@ -46,7 +46,7 @@ from pathlib import Path
 from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.edit.session import EditSession
-from picasapy.ini import load_or_empty, update_document
+from picasapy.ini import load_or_empty, update_document, with_backuphash
 from picasapy.ini.text_overlay import (
     parse_text,
     parse_text_active,
@@ -124,9 +124,11 @@ def _apply_one(session: EditSession, name: str) -> EditSession:
     A metódus-választás az `EditSession` már meglévő, szűk API-ját követi
     (nem vezet be új réteg-fajtát) — `apply()` az append-only egygombos
     javításokhoz, `toggle()` a redeye-hoz (az egyetlen létező toggle-effekt),
-    `append_effect()` a paraméter nélküli effektekhez (unsharp alap-erőssége
-    megegyezik a puszta `unsharp=1`-gyel, ld. `EditorPanel.qml` #315
-    megjegyzése)."""
+    `append_effect()` a paraméter nélküli effektekhez; a kötegelt `unsharp`
+    név az eredeti Picasa alapértelmezett `unsharp2=1,0.600000` tagjaként
+    kerül a láncba."""
+    if name == "unsharp":
+        return session.append_effect("unsharp2", ("1", "0.600000"))
     if name in _APPLY_NAMES:
         return session.apply(name)
     if name in _TOGGLE_NAMES:
@@ -136,10 +138,13 @@ def _apply_one(session: EditSession, name: str) -> EditSession:
 
 def _write_filters(document, section_name: str, session: EditSession):
     """A `filters=` kulcs beírása/törlése (a `crop=` tükör-kulcs nélkül —
-    ez a szelet sosem érinti a crop64-et)."""
+    ez a szelet sosem érinti a crop64-et); a kép `backuphash`-ével együtt."""
     if session.is_empty():
-        return document.with_removed(section_name, "filters")
-    return document.with_value(section_name, "filters", session.to_value())
+        document = document.with_removed(section_name, "filters")
+    else:
+        document = document.with_value(section_name, "filters", session.to_value())
+    # #5854: a szűrőlánc és az időbélyeg ugyanazon mappánkénti ini-tranzakció része.
+    return with_backuphash(document, section_name)
 
 
 def _clear_all_effects(document, section_name: str):
@@ -403,6 +408,7 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                         prev_crop = section.get("crop") if section else None
                         fresh.append((folder, photo.name, prev, prev_crop))
                         document = _clear_all_effects(document, photo.name)
+                        document = with_backuphash(document, photo.name)
                     entries[:] = fresh
                     return document
 
@@ -500,6 +506,9 @@ class BatchEffectMixin(BackgroundWorkerMixin):
                             )
                         else:
                             document = document.with_removed(name, "crop")
+                        # A visszaállított lánc ugyanúgy ini-írás, mint az
+                        # alkalmazott effekt: a képszakasz időbélyege frissül.
+                        document = with_backuphash(document, name)
                     return document
 
                 try:

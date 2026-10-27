@@ -1172,6 +1172,18 @@ picasapy-origin-key: login_text:Label(login/gphotos_logotext);options:options/we
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
             <translation>Isara</translation>
         </message>
+        <message>
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/button189.title</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/button190.title</extracomment>
+            <translation>Kanselahin</translation>
+        </message>
     </context>
     <context>
         <name>OptionsTabGeneral</name>
@@ -1232,44 +1244,10 @@ picasapy-origin-key: options:options/autoexclude.title</extracomment>
             <translation>Tukuyin ang mga doble habang ini-import</translation>
         </message>
         <message>
-            <source>Clear Cache...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>I-clear ang cache...</translation>
-        </message>
-        <message>
-            <source>Empty the thumbnail cache? The thumbnails are rebuilt when needed — no picture is lost.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Alisin ang laman ng thumbnail cache? Muling gagawin ang mga thumbnail kapag kinailangan — walang larawang mawawala.</translation>
-        </message>
-        <message>
-            <source>Empty</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Alisin ang laman</translation>
-        </message>
-        <message>
-            <source>Keep</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Panatilihin</translation>
-        </message>
-        <message>
-            <source>%1 freed.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nabakante ang %1.</translation>
-        </message>
-        <message>
-            <source>%1 bytes</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 byte</translation>
-        </message>
-        <message>
-            <source>%1 kB</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 kB</translation>
-        </message>
-        <message>
-            <source>%1 MB</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 MB</translation>
+            <source>Clear cache files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/disposepreviews.title</extracomment>
+            <translation>Limasin ang mga cache file</translation>
         </message>
         <message>
             <source>Delete from disk without confirmation</source>
@@ -1389,6 +1367,12 @@ picasapy-origin-key: options:options/labelgroup53.title</extracomment>
             <translation>Ipadala ang mga movie bilang:</translation>
         </message>
         <message>
+            <source>Output format:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup57.title</extracomment>
+            <translation>Format ng Output:</translation>
+        </message>
+        <message>
             <source>First frame</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;webexport:webexport/item11.title</extracomment>
@@ -1422,13 +1406,13 @@ picasapy-origin-key: options:options/radio42.title</extracomment>
     <context>
         <name>OptionsTabFileTypes</name>
         <message>
-            <source>.bmp</source>
+            <source>.BMP</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportBMP.title</extracomment>
             <translation>.bmp</translation>
         </message>
         <message>
-            <source>.gif</source>
+            <source>.GIF</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportGIF.title</extracomment>
             <translation>.GIF</translation>
@@ -1440,31 +1424,31 @@ picasapy-origin-key: options:options/label61.title</extracomment>
             <translation>Ipakita ang mga JPEG file at:</translation>
         </message>
         <message>
-            <source>.png</source>
+            <source>.PNG</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportPNG.title</extracomment>
             <translation>.png</translation>
         </message>
         <message>
-            <source>.tga</source>
+            <source>.TGA</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportTGA.title</extracomment>
             <translation>.TGA</translation>
         </message>
         <message>
-            <source>.tif, .tiff</source>
+            <source>.TIF, .TIFF</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportTIF.title</extracomment>
             <translation>.tif, .tiff</translation>
         </message>
         <message>
-            <source>.webp</source>
+            <source>.WEBP</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportWEBP.title</extracomment>
             <translation>.webp</translation>
         </message>
         <message>
-            <source>.psd (Photoshop)</source>
+            <source>.PSD (Photoshop)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportPSD.title</extracomment>
             <translation>.psd (Photoshop)</translation>
@@ -1481,7 +1465,7 @@ picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::R
             <translation>Mga Movie</translation>
         </message>
         <message>
-            <source>Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)</source>
+            <source>Movies (.AVI, .MPG, .ASF, .WMV)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportMovies.title</extracomment>
             <translation>Mga movie (.mov, .mpg, .m4v, .3gp, .avi, ...)</translation>
@@ -1816,6 +1800,18 @@ picasapy-origin-key: options:options/PWAUseHiQualityJPEG.title</extracomment>
             <translation>Panatiliin ang orihinal na kalidad ng larawan (gumagamit ng higit pang imbakan)</translation>
         </message>
         <message>
+            <source>JPEG Quality:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup154.title</extracomment>
+            <translation>Kalidad ng JPEG:</translation>
+        </message>
+        <message>
+            <source>Syncing:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup158.title</extracomment>
+            <translation>Pag-sync:</translation>
+        </message>
+        <message>
             <source>Sync starred photos only</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
@@ -1837,6 +1833,18 @@ picasapy-origin-key: options:options/confirmsync::disable.title</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/haswatermark.title</extracomment>
             <translation>Magdagdag ng isang watermark para sa lahat ng mga nai-upload na larawan.</translation>
+        </message>
+        <message>
+            <source>Watermarks:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup163.title</extracomment>
+            <translation>Mga Watermark:</translation>
+        </message>
+        <message>
+            <source>Stamp photos with your name, a web domain, or a copyright notice.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: export:export/label44.title</extracomment>
+            <translation>Lagyan ang mga larawan ng iyong pangalan, web domain, o paunawa sa copyright.</translation>
         </message>
         <message>
             <source>Include with photo uploads</source>
@@ -1912,14 +1920,128 @@ picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
             <translation>I-export bilang HTML Page...</translation>
         </message>
         <message>
+            <source>Web page title:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup13.title</extracomment>
+            <translation>Pamagat ng web page:</translation>
+        </message>
+        <message>
             <source>Page title:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Pamagat ng page:</translation>
         </message>
         <message>
+            <source>Folder:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup15.title</extracomment>
+            <translation>Folder:</translation>
+        </message>
+        <message>
             <source>Save to:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>I-save sa:</translation>
+        </message>
+        <message>
+            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/label20.title</extracomment>
+            <translation>Mag-click sa Pangalan ng Template upang tingnan ang isang halimbawa. Kapag nakapili ka na, i-click ang Export.</translation>
+        </message>
+        <message>
+            <source>Export</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/button29.title</extracomment>
+            <translation>I-export</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
+            <translation>Kanselahin</translation>
+        </message>
+        <message>
+            <source>Template 1, 2-page grey background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greybg_name</extracomment>
+            <translation>Template 1, 2-pahina abuhin na background</translation>
+        </message>
+        <message>
+            <source>Template 2, 2-page black background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackbg_name</extracomment>
+            <translation>Template 2, 2-pahina itim na background</translation>
+        </message>
+        <message>
+            <source>Template 3, 2-page white background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitebg_name</extracomment>
+            <translation>Template 3, 2-pahina puti na background</translation>
+        </message>
+        <message>
+            <source>Template 4, 1-page grey background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greyfrm_name</extracomment>
+            <translation>Template 4, 1-pahina abuhin na background</translation>
+        </message>
+        <message>
+            <source>Template 5, 1-page black background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackfrm_name</extracomment>
+            <translation>Template 5, 1-pahina itim na background</translation>
+        </message>
+        <message>
+            <source>Template 6, 1-page white background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitefrm_name</extracomment>
+            <translation>Templayte 6, 1-pahina puti na background</translation>
+        </message>
+        <message>
+            <source>XML Code</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_xml_name</extracomment>
+            <translation>XML Code</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greybg_descr</extracomment>
+            <translation>Pahina ng index ng thumbnail na naka-link sa isang pahina ng larawan na may buong pagtingin.</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackbg_descr</extracomment>
+            <translation>Pahina ng index ng thumbnail na naka-link sa isang pahina ng larawan na may buong pagtingin.</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitebg_descr</extracomment>
+            <translation>Pahina ng index ng thumbnail na naka-link sa isang pahina ng larawan na may buong pagtingin.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greyfrm_descr</extracomment>
+            <translation>Maii-scroll na thumbnail index sa kaliwa na may buong pagtingin sa larawan sa kanan.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackfrm_descr</extracomment>
+            <translation>Maii-scroll na thumbnail index sa kaliwa na may buong pagtingin sa larawan sa kanan.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitefrm_descr</extracomment>
+            <translation>Maii-scroll na thumbnail index sa kaliwa na may buong pagtingin sa larawan sa kanan.</translation>
+        </message>
+        <message>
+            <source>Raw XML-formatted text for further translation.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_xml_descr</extracomment>
+            <translation>Raw XML-formatted na teksto para sa karagdagang pagsasalin.</translation>
         </message>
         <message>
             <source>(not selected)</source>
@@ -6283,6 +6405,12 @@ picasapy-origin-key: stringres:DeleteMessage::DeleteSingleYesButton</extracommen
             <translation>Tanggalin ang Larawan</translation>
         </message>
         <message>
+            <source>Don't ask again, always remove</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRM_REMOVE_CHECK_MESSAGE</extracomment>
+            <translation>Huwag nang tatanungin ulit, palaging tanggalin</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="447" />
             <source>Are you sure you want to send the selected file to the Recycle Bin? (It will also be removed from any albums in which it appears)</source>
             <extracomment>DeleteMessage::DeleteSingle
@@ -6589,6 +6717,12 @@ picasapy-origin-key: stringres:CThumbUI::FileSave::message</extracomment>
             <source>Revert</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ibalik</translation>
+        </message>
+        <message>
+            <source>Revert to original version of file?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
+            <translation>Balikan ang orihinal na bersyon ng file?</translation>
         </message>
         <message>
             <source>Revert to original version of these file(s)?</source>
@@ -8066,6 +8200,20 @@ picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(i
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Kumpirmahin</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>Alisin ang Mga In-edit</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/no.title</extracomment>
+            <translation>Hindi</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -12230,6 +12378,30 @@ picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/startoggle);tooltips
             <translation>Magdagdag/Mag-alis ng Star</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Screensaver</source>
+            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
+            <translation>Screensaver</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Starred Photos</source>
+            <comment>stringres:CThumbDB::starredphotos</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
+            <translation>May Star na mga Larawan</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>New Album...</source>
+            <comment>stringres:il_NewAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_NewAlbumName</extracomment>
+            <translation>Bagong Album...</translation>
+        </message>
+        <message>
             <source>Click and drag over photos to magnify them</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(thumbui/loupehit)</extracomment>
@@ -13845,12 +14017,6 @@ picasapy-origin-key: stringres:AspectRatioList:CustomAspectRatios</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(editpanel/crop_delete_custom)</extracomment>
             <translation>Tinatanggal ang kasalukuyang ratio ng aspeto</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Suggested crops</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mga mungkahing crop</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -18711,6 +18877,14 @@ picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup
 picasapy-origin: picasa
 picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Ang mga tag ay hindi mababago dahil isa o higit pang mga item ay read-only.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Maaari lamang i-save ang album sa isang naka-index na folder ng larawan.</translation>
         </message>
     </context>
 </TS>

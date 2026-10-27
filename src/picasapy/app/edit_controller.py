@@ -41,6 +41,7 @@ from picasapy.ini import (
     load_or_empty,
     parse_faces,
     update_document,
+    with_backuphash,
 )
 from picasapy.ini.rect64 import Rect64, encode_rect64
 from picasapy.ini.redeye import EyeCircle64
@@ -608,20 +609,29 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
 
     @Property(str, notify=gpuRevisionChanged)
     def gpuPrefixSource(self) -> str:
-        """A finetune2 ELŐTTI köztes kép URL-je (#22), vagy üres string, ha
-        nincs aktív szerkesztés vagy a jelenlegi lánc nem GPU-alkalmas
-        (`EditSession.gpu_finetune_prefix()` — ld. ott a feltételt). A
-        `GpuPointFilterPreview.qml` ezt tölti be `sourceItem`-ként; a hívó
-        (QML) ÜRES string esetén nem is jeleníti meg a GPU-réteget."""
-        if not self._photo_id or self._session.gpu_finetune_prefix() is None:
+        """A finetune2 ELŐTTI köztes kép URL-je (#22), ha az el is érhető.
+
+        Üres stringet ad, amíg nincs aktív, GPU-alkalmas lánc, illetve amíg a
+        provider cache-ében nincs meg mindkét GPU-kép. Így a Qt nem kér le
+        null képet egy még folyamatban lévő előnézet-render közben.
+        """
+        if (
+            not self._photo_id
+            or self._session.gpu_finetune_prefix() is None
+            or not self._provider.gpu_preview_ready(self._kulcs)
+        ):
             return ""
         return f"image://editpreview/{self._kulcs}?gpuprefix=1&rev={self._gpu_revision}"
 
     @Property(str, notify=gpuRevisionChanged)
     def gpuLutSource(self) -> str:
         """A jelenlegi finetune2-LUT 256×1 képének URL-je (#22) — ugyanaz az
-        eligibilitási feltétel, mint `gpuPrefixSource`-nál."""
-        if not self._photo_id or self._session.gpu_finetune_prefix() is None:
+        elérhetőségi feltétel, mint `gpuPrefixSource`-nál."""
+        if (
+            not self._photo_id
+            or self._session.gpu_finetune_prefix() is None
+            or not self._provider.gpu_preview_ready(self._kulcs)
+        ):
             return ""
         return f"image://editpreview/{self._kulcs}?gpulut=1&rev={self._gpu_revision}"
 
@@ -2850,6 +2860,9 @@ class EditController(PaintMaskMixin, QObject, BackgroundWorkerMixin):
                 document = document.with_value(
                     self._section_name, "filters", self._session.to_value()
                 )
+            # #5854: a közös író a szerkesztési lánc frissítésekor a kép
+            # szakaszának backuphash-ét is ugyanebben az ini-írásban állítja.
+            document = with_backuphash(document, self._section_name)
             # Picasa-paritás (#73): a vágás a filters= mellett külön
             # crop=rect64(...) kulcsba is kerül — a Picasa 3.x is így ír.
             crop = self.crop()

@@ -26,7 +26,7 @@ elvégzett mérésnek.
 | #4534 | EGYEZIK | megerősített | `picasa-menu-parancsok-viselkedes.md` § `ID_PICTURE_SPLITALBUMHERE`; bináris `0x00730790`, `0x005cb990`, `0x005e8570` | A műveleti kattintásos és `.picasa.ini`-ellenőrzés még kell. |
 | #4539 | EGYEZIK | feltételes | `picasa-create-features.md` §2.8/c; mérés: `research/testdata/screenshot/2026-07-17 20 54 38.png` | A filmkészítő megnyitását kattintással ellenőrizni. |
 | #4542 | NEM DÖNTHETŐ EL | nyitott | bináris figyelmeztetőszöveg `0x00e063da`, xref `0x005f30e0`; a megjelenési feltétel NINCS MEG | Colab-felvétel kell kiegyenesített és kiegyenesítetlen képpel. |
-| #4544 | NEM DÖNTHETŐ EL | nyitott | `editpanel.tre` a retusáló kezelőt azonosítja; az eredeti képi hatás NINCS MEG | Colab-felvétel kell azonos bemenet és azonos retusáló vonás előtte-utána kimenetével. |
+| #4544 | NYITOTT | Picasa 3.7 bináris (`0x0060a980`, `0x00847880`, `0x00901110`, `0x00913960`, `0x00913420`); RTTI-név: 3.9-es index; mai `render/retouch.py` | Az eredeti út rekordból, illetve float-paraméterből téglalapnyi feldolgozási régiót képez és képsorokat másol; a látható peremképzés nem azonosított. Eredeti és mai mentett kimenet összehasonlítása hiányzik. |
 | #4550 | EGYEZIK | feltételes | `customaspectratio.fen`; `editpanel.tre` | A jegy „élő példa” premisszáját statikus példára kell javítani; mai render nincs. |
 | #4551 | EGYEZIK | feltételes | `editpanel.tre`; mérés: eredeti crop-panel erőforrásleltár | A mai renderelt panelt a referenciával összevetni. |
 | #4557 | EGYEZIK | feltételes | `ui-audit-editor.md`; `filterdesc-registry.md` §162-163 | Kattintásos Shift+Ragyogás-próba kell. |
@@ -433,25 +433,33 @@ után, majd a mai feltételt a felvételhez igazítsuk.
 
 ### #4544 - Retusfolt szélének olvadása
 
-**Eredeti:** az `editpanel.tre` az eredeti retusáló eszközt azonosítja, de
-az algoritmust és a szél átmenetét leíró bináris/spec bizonyíték, illetve
-azonos mintájú eredeti kimenet NINCS MEG. A mérőadat-archívumban sincs ehhez
-a jegyhez címkézett retus-kimenet. Döntő mérés: Colabban ugyanazt a forrásképet
-és ugyanazt a vonást használni, a Picasa előtte-utána képét és kimeneti fájlját
-elmenteni.
+**Eredeti bináris út - RetouchEdit és feldolgozási terület (#5975):** az `editpanel.tre:958-963` az `editpanel/retouchoverlay`-hez köti a `Handler retoucher`-t a körkurzorral és ecsetvezérlővel. A `RetoucherHandler::vftable` (`0x00c9b130`) a `0x0060a980` eseménykezelőre mutat; a dekompilált kód az egér-esemény koordinátáit képpont-/képkoordináta-útba viszi, a `retouchcheckpoint` erőforrást pedig a lezáró ágban használja.
 
-**Nálunk:** `render/retouch.py` irányított Poisson-gyógyítást használ.
+A `RetouchEdit::vftable` (`0x00ca83c4`) a `0x00847880`, `0x00848030`, `0x00848a10` és `0x00847f30` függvényeket tartalmazza. A `0x00848030` és `0x00848a10` 40 bájtos (`0x28`) rekordokból álló tömböket bővít/ürít; pixelpuffert vagy peremkeverést nem számolnak. A `0x00847880` célzott diszasszemblyje a rekord négy mezőjéből 16 bájtos téglalapot állít elő: az eredmény `(r[0x18], r[0x1c], r[0x18]+r[0x08], r[0x1c]+r[0x0c])` (`0x0084799e`-`0x008479b6`). A `0x00847f30` a kiszámított téglalapot és a képkulcsot a `0x006bd580` régió-/frissítési útjára adja át. A `PatchEdit::vftable` (`0x00ca8344`) szintén tartalmazza a két rekordkezelő függvényt: ez cáfolja azt az erősebb olvasatot, hogy a két konténermetódus önmagában a Retouch-folt alakját vagy peremképletét írná le.
 
-**Ítélet: NEM DÖNTHETŐ EL.** Az eredeti pixelszintű szélhatás nincs megmérve,
-így sem egyezést, sem eltérést nem állítok.
+A további útban a 3.9-es binary-index szerint `CRetouchFilter`-hez tartozó `0x00901110` rutin 20 bájtos (`0x14`) rekordokon iterál, majd a `0x00913960`-at hívja (`0x009012a5`). A `0x00913960` a határkoordináták különbségeiből területet és sorcímeket számol (`0x009139e3`-`0x00913a16`), két alkalommal meghívja a `0x00913420`-at, majd a sorok másolásához a bináris-indexben `_memcpy` néven szereplő `0x00bf2350` címet hívja (`0x00913b44`-`0x00913b47`). A `0x00913420` float-paramétert ír az objektum `[+0x48]` mezőjébe, koordinátákból területhatárokat képez, majd ezeket a képméretekhez korlátozza (`0x0091346c`-`0x00913839`); ez téglalapnyi feldolgozási geometria, nem látható alfa- vagy színkeverési képlet. A sor-másolási út a téglalapnyi ROI feldolgozását támasztja alá, de nem mondja meg a perempixelek súlyát vagy a mentett kimenet látható alakját. A függvénycímekhez használt RTTI-nevek a helyi 3.9-es binary-indexből származnak; a fenti utasítások az eredeti 3.7-es EXE célzott diszasszemblyjéből valók. **A látható folthatár képlete és ecsetméret-függése NINCS MEG.**
 
-**Teendő:** Retusfolt-szél egyezést csak azonos bemeneten rögzített eredeti
-és PicasaPy-kimenet pixel-összevetése után lehet megállapítani.
+A `retouch=1;` token nem hordoz foltkoordinátát (`filters-decoded.md`, „A `redeye` és a `retouch` sosem hordoz régiót”). A mérőadat-archívum tagneveiben `#5975`, `#4544`, `retouch`, `retus` vagy `ui_capture` egyezés nincs; a korábbi Colab-képleltár job #58-a sem tartalmaz retus-kimenetet. Eredeti mentett előtte-utána kép és új Colab job-szám **NINCS MEG**.
 
-**Kész, ha:**
+**Nálunk:** a `PhotoViewer.qml`/`edit_controller.py` út két kattintással rögzíti a cél- és forráspontot; a `render/retouch.py:68-71` a sugarat a kép rövidebb oldalához viszonyítja, a `:150-161` körmaszkot készít, a `:203` pedig `cv2.seamlessClone`-t hív (kivételkezelő Poisson-fallbackdel). Ez a jelenlegi forrás útja, nem azonos bemeneten mért eredmény.
 
-- ⛔ A mért eredeti széleffekt hiányzik.
-- ⛔ Referencia-kimenetes összehasonlítás és eltérésmérés hiányzik.
+#### Eredeti / nálunk / teendő
+
+| | eredeti | nálunk | teendő |
+|---|---|---|---|
+| feldolgozási geometria | Bináris (`0x00847880`, `0x00913420`): rekordból, illetve koordináták és float-paraméter alapján téglalap és képszélhez korlátozott ROI; a filterút soronként másol | Forrás (`render/retouch.py:150-161`): körmaszk, `:203`: seamlessClone | Azonos kép és ecset mellett mentett eredeti és PicasaPy kimenet kell; a téglalap/ROI önmagában nem bizonyít látható alakot. |
+| folthatár | A vizsgált bináris útból az alfa-/súlyozási képlet **NINCS MEG** | A mai körmaszk/Poisson-folyamat ismert | Pixelkülönbség-méréssel dönthető el, hogy a különböző belső utak láthatóan eltérnek-e. |
+
+**Ítélet: NYITOTT.** A bináris feldolgozási terület útja a virtuális kezelőtől a koordináták/float-paraméter alapján képszélhez korlátozott téglalapig és a képsorok másolásáig részben feltárt. A látható perempixelek súlyozása és az eredeti kimenet nincs mérve; a belső módszerek különbözősége önmagában nem bizonyít képi eltérést.
+
+**Teendő:** ugyanazon ismert kép, azonos ecsetméret és ecsetvonás mellett készítsen új eredeti Colab-felvételt a mentett kimenettel és valódi kattintásos PicasaPy-párt. A két fájl képpontkülönbségét mérje meg. A bináris feldolgozási út további bővítése helyett a konkrét folthatár viselkedését a mentett minták döntik el; a jelen munkamenetben ilyen eredeti/PicasaPy-felvétel nincs.
+
+**Kész, ha (#5975):**
+
+- ✅ Binárisból az egér-esemény és a feldolgozási régió útja részben azonosított (`0x0060a980` → RetouchEdit téglalapok → `0x00901110`/`0x00913960`/`0x00913420` ROI és képsor-másolás); ⛔ a látható perempixelek súlyozása **NYITOTT**.
+- ⛔ Eredeti Colab-retusfelvétel és mentett kimenet: **NINCS MEG**.
+- ⛔ PicasaPy valódi kattintásos párja és mentett kimenete: **NINCS MEG**.
+- ⛔ Kimeneti pixelkülönbség, látható folthatár-ítélet: **NINCS MEG**.
 
 ### #4550 - Egyéni méretarány példa és törlés
 

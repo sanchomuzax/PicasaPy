@@ -1172,6 +1172,18 @@ picasapy-origin-key: login_text:Label(login/gphotos_logotext);options:options/we
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
             <translation>Затваряне</translation>
         </message>
+        <message>
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/button189.title</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/button190.title</extracomment>
+            <translation>Отказ</translation>
+        </message>
     </context>
     <context>
         <name>OptionsTabGeneral</name>
@@ -1232,44 +1244,10 @@ picasapy-origin-key: options:options/autoexclude.title</extracomment>
             <translation>Откриване на дубликати при импортирането</translation>
         </message>
         <message>
-            <source>Clear Cache...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Изчистване на кеша...</translation>
-        </message>
-        <message>
-            <source>Empty the thumbnail cache? The thumbnails are rebuilt when needed — no picture is lost.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Да се изпразни ли кешът с миниатюри? Миниатюрите ще бъдат създадени отново при нужда — снимките няма да се загубят.</translation>
-        </message>
-        <message>
-            <source>Empty</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Изпразване</translation>
-        </message>
-        <message>
-            <source>Keep</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Запазване</translation>
-        </message>
-        <message>
-            <source>%1 freed.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Освободени са %1.</translation>
-        </message>
-        <message>
-            <source>%1 bytes</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 байта</translation>
-        </message>
-        <message>
-            <source>%1 kB</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 kB</translation>
-        </message>
-        <message>
-            <source>%1 MB</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 MB</translation>
+            <source>Clear cache files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/disposepreviews.title</extracomment>
+            <translation>Кешираните файлове да се изчистват</translation>
         </message>
         <message>
             <source>Delete from disk without confirmation</source>
@@ -1389,6 +1367,12 @@ picasapy-origin-key: options:options/labelgroup53.title</extracomment>
             <translation>Изпращане на филмите като:</translation>
         </message>
         <message>
+            <source>Output format:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup57.title</extracomment>
+            <translation>Изходен формат:</translation>
+        </message>
+        <message>
             <source>First frame</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: export:export/radio37.title;options:options/radio55.title;webexport:webexport/item11.title</extracomment>
@@ -1422,13 +1406,13 @@ picasapy-origin-key: options:options/radio42.title</extracomment>
     <context>
         <name>OptionsTabFileTypes</name>
         <message>
-            <source>.bmp</source>
+            <source>.BMP</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportBMP.title</extracomment>
             <translation>.bmp</translation>
         </message>
         <message>
-            <source>.gif</source>
+            <source>.GIF</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportGIF.title</extracomment>
             <translation>.gif</translation>
@@ -1440,31 +1424,31 @@ picasapy-origin-key: options:options/label61.title</extracomment>
             <translation>Показване на JPEG файлове и:</translation>
         </message>
         <message>
-            <source>.png</source>
+            <source>.PNG</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportPNG.title</extracomment>
             <translation>.png</translation>
         </message>
         <message>
-            <source>.tga</source>
+            <source>.TGA</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportTGA.title</extracomment>
             <translation>.tga</translation>
         </message>
         <message>
-            <source>.tif, .tiff</source>
+            <source>.TIF, .TIFF</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportTIF.title</extracomment>
             <translation>.tif, .tiff</translation>
         </message>
         <message>
-            <source>.webp</source>
+            <source>.WEBP</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportWEBP.title</extracomment>
             <translation>.webp</translation>
         </message>
         <message>
-            <source>.psd (Photoshop)</source>
+            <source>.PSD (Photoshop)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportPSD.title</extracomment>
             <translation>.psd (Photoshop)</translation>
@@ -1481,7 +1465,7 @@ picasapy-origin-key: options:options/SupportRAW.title;stringres:OptionsDialog::R
             <translation>Филми</translation>
         </message>
         <message>
-            <source>Videos (.mov, .mpg, .m4v, .3gp, .avi, ...)</source>
+            <source>Movies (.AVI, .MPG, .ASF, .WMV)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/SupportMovies.title</extracomment>
             <translation>Филми (.mov, .mpg, .m4v, .3gp, .avi и др.)</translation>
@@ -1816,6 +1800,18 @@ picasapy-origin-key: options:options/PWAUseHiQualityJPEG.title</extracomment>
             <translation>Съхраняване на оригиналното качество на изображението (заема по-голямо място в хранилището)</translation>
         </message>
         <message>
+            <source>JPEG Quality:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup154.title</extracomment>
+            <translation>Качество на JPEG файла:</translation>
+        </message>
+        <message>
+            <source>Syncing:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup158.title</extracomment>
+            <translation>Синхронизира се:</translation>
+        </message>
+        <message>
             <source>Sync starred photos only</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
@@ -1837,6 +1833,18 @@ picasapy-origin-key: options:options/confirmsync::disable.title</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/haswatermark.title</extracomment>
             <translation>Добавяне на воден знак към всички качвани снимки:</translation>
+        </message>
+        <message>
+            <source>Watermarks:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/labelgroup163.title</extracomment>
+            <translation>Водни знаци:</translation>
+        </message>
+        <message>
+            <source>Stamp photos with your name, a web domain, or a copyright notice.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: export:export/label44.title</extracomment>
+            <translation>Означете снимките си със своето име, уеб домейн или съобщение за авторско право.</translation>
         </message>
         <message>
             <source>Include with photo uploads</source>
@@ -1912,14 +1920,128 @@ picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
             <translation>Експортиране като HTML страница...</translation>
         </message>
         <message>
+            <source>Web page title:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup13.title</extracomment>
+            <translation>Заглавие на уеб страницата:</translation>
+        </message>
+        <message>
             <source>Page title:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Заглавие на страницата:</translation>
         </message>
         <message>
+            <source>Folder:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/labelgroup15.title</extracomment>
+            <translation>Папка:</translation>
+        </message>
+        <message>
             <source>Save to:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Запазване в:</translation>
+        </message>
+        <message>
+            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/label20.title</extracomment>
+            <translation>Кликнете върху име на шаблон, за да видите пример.  Когато направите избора си, кликнете върху „Експортиране“.</translation>
+        </message>
+        <message>
+            <source>Export</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/button29.title</extracomment>
+            <translation>Експортиране</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
+            <translation>Отказ</translation>
+        </message>
+        <message>
+            <source>Template 1, 2-page grey background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greybg_name</extracomment>
+            <translation>Шаблон 1, 2 страници на сив фон</translation>
+        </message>
+        <message>
+            <source>Template 2, 2-page black background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackbg_name</extracomment>
+            <translation>Шаблон 2, 2 страници на черен фон</translation>
+        </message>
+        <message>
+            <source>Template 3, 2-page white background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitebg_name</extracomment>
+            <translation>Шаблон 3, 2 страници на бял фон</translation>
+        </message>
+        <message>
+            <source>Template 4, 1-page grey background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greyfrm_name</extracomment>
+            <translation>Шаблон 4, 1 страница на сив фон</translation>
+        </message>
+        <message>
+            <source>Template 5, 1-page black background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackfrm_name</extracomment>
+            <translation>Шаблон 5, 1 страница на черен фон</translation>
+        </message>
+        <message>
+            <source>Template 6, 1-page white background</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitefrm_name</extracomment>
+            <translation>Шаблон 6, 1 страница на бял фон</translation>
+        </message>
+        <message>
+            <source>XML Code</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_xml_name</extracomment>
+            <translation>XML код</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greybg_descr</extracomment>
+            <translation>Страница с индекс на всички кадри с връзка към страница със снимката в цял размер.</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackbg_descr</extracomment>
+            <translation>Страница с индекс на всички кадри с връзка към страница със снимката в цял размер.</translation>
+        </message>
+        <message>
+            <source>Thumbnail index page linked to a full view picture page.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitebg_descr</extracomment>
+            <translation>Страница с индекс на всички кадри с връзка към страница със снимката в цял размер.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_greyfrm_descr</extracomment>
+            <translation>Индекс с превъртане с всички кадри вляво със снимката в цял размер вдясно.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_blackfrm_descr</extracomment>
+            <translation>Индекс с превъртане с всички кадри вляво със снимката в цял размер вдясно.</translation>
+        </message>
+        <message>
+            <source>Scrollable thumbnail index on left with full view picture on right.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_whitefrm_descr</extracomment>
+            <translation>Индекс с превъртане с всички кадри вляво със снимката в цял размер вдясно.</translation>
+        </message>
+        <message>
+            <source>Raw XML-formatted text for further translation.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:webtpl_xml_descr</extracomment>
+            <translation>Необработен текст във формат XML за по-нататъшен превод.</translation>
         </message>
         <message>
             <source>(not selected)</source>
@@ -6283,6 +6405,12 @@ picasapy-origin-key: stringres:DeleteMessage::DeleteSingleYesButton</extracommen
             <translation>Изтриване на изображението</translation>
         </message>
         <message>
+            <source>Don't ask again, always remove</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRM_REMOVE_CHECK_MESSAGE</extracomment>
+            <translation>Деактивиране на въпроса. Винаги да се премахва</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/FileOpsDialogs.qml" line="447" />
             <source>Are you sure you want to send the selected file to the Recycle Bin? (It will also be removed from any albums in which it appears)</source>
             <extracomment>DeleteMessage::DeleteSingle
@@ -6589,6 +6717,12 @@ picasapy-origin-key: stringres:CThumbUI::FileSave::message</extracomment>
             <source>Revert</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Възстановяване</translation>
+        </message>
+        <message>
+            <source>Revert to original version of file?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileRevert::message1</extracomment>
+            <translation>Да се възстанови ли първоначалната версия на файла?</translation>
         </message>
         <message>
             <source>Revert to original version of these file(s)?</source>
@@ -8066,6 +8200,20 @@ picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(i
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Потвърждаване</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>Премахване на редакциите</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/no.title</extracomment>
+            <translation>Не</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -12230,6 +12378,30 @@ picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/startoggle);tooltips
             <translation>Добавяне/Премахване на звезда</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Screensaver</source>
+            <comment>stringres:CThumbDB::ScreensaverAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::ScreensaverAlbumName</extracomment>
+            <translation>Скрийнсейвър</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>Starred Photos</source>
+            <comment>stringres:CThumbDB::starredphotos</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
+            <translation>Снимки със звезда</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/TrayBar.qml" />
+            <source>New Album...</source>
+            <comment>stringres:il_NewAlbumName</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_NewAlbumName</extracomment>
+            <translation>Нов албум...</translation>
+        </message>
+        <message>
             <source>Click and drag over photos to magnify them</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(thumbui/loupehit)</extracomment>
@@ -13845,12 +14017,6 @@ picasapy-origin-key: stringres:AspectRatioList:CustomAspectRatios</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(editpanel/crop_delete_custom)</extracomment>
             <translation>Изтрива текущия формат</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
-            <source>Suggested crops</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Предложени изрязвания</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorCropPanel.qml" />
@@ -18711,6 +18877,14 @@ picasapy-origin-key: buttonmgr_text:Label(buttonmgr/done);capturemoviepanelpopup
 picasapy-origin: picasa
 picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <translation>Маркерите не могат да се променят, понеже един или повече елемента са само за четене.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoOpsMixin</name>
+        <message>
+            <source>An album must be saved in an indexed photo folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Албумът може да бъде запазен само в индексирана папка със снимки.</translation>
         </message>
     </context>
 </TS>

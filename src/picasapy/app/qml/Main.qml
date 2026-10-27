@@ -78,18 +78,26 @@ ApplicationWindow {
 
     palette {
         window: Theme.canvasBg
-        windowText: Theme.ink
+        active.windowText: Theme.ink
+        inactive.windowText: Theme.ink
         base: Theme.controlBase
         alternateBase: Theme.panelBg
-        text: Theme.ink
+        active.text: Theme.ink
+        inactive.text: Theme.ink
         button: Theme.buttonBg
-        buttonText: Theme.ink
+        active.buttonText: Theme.ink
+        inactive.buttonText: Theme.ink
         highlight: Theme.selectionBlue
         highlightedText: Theme.panelSelectionText
         placeholderText: Theme.placeholderText
         mid: Theme.chromeBorder
         light: Theme.shadeLight
         dark: Theme.shadeDark
+        // #5874: az aktív/inaktív tinták ne írják felül a Qt Controls
+        // disabled csoportját; a Theme token mindkét témában olvasható.
+        disabled.windowText: Theme.textGray
+        disabled.text: Theme.textGray
+        disabled.buttonText: Theme.textGray
     }
 
     // #985: a globális `controller` egy KONTEXTUS-property, a `CollagePanel`
@@ -699,6 +707,28 @@ ApplicationWindow {
             window.selectedIndexes, window.selectedIndex)
     }
 
+    // #5883: a mentés csak akkor írja lemezre a kijelölést, ha valamelyik
+    // kép filters lánca eltér a lemezre mentett állapottól. A modell
+    // `hasEdits` mezője ezt a `.picasa.ini`-ben tárolt láncból adja; a
+    // `photos.revision` a QML-kötést a láncváltás után újraértékelteti.
+    function vanMentetlenSzerkesztes(sorok) {
+        if (!controller || !controller.photos || !sorok) return false
+        for (var i = 0; i < sorok.length; ++i) {
+            var foto = controller.photos.itemAt(Number(sorok[i]))
+            if (foto && foto.hasEdits === true) return true
+        }
+        return false
+    }
+
+    readonly property bool kijelolesbenVanMentetlenSzerkesztes:
+        controller
+        ? (controller.photos.revision,
+           window.vanMentetlenSzerkesztes(window.selectedRows())) : false
+    readonly property bool muveletiCelbanVanMentetlenSzerkesztes:
+        controller
+        ? (controller.photos.revision,
+           window.vanMentetlenSzerkesztes(window.photoActionRows())) : false
+
     // A fotóhoz kötött menük célpontja nézőben a szerkesztett oldal, a
     // könyvtárban pedig a kijelölés. A kijelölés megmarad a néző mögött,
     // ezért ott nem használható a menü célpontjának.
@@ -735,6 +765,29 @@ ApplicationWindow {
             if (path.length > 0) paths.push(path)
         }
         return paths
+    }
+
+    // #5835: mappa nélküli nézetben a kijelölt vagy fókuszban levő kép
+    // mappája az üres album tárolási helye. Sima mappanézetben a #5812
+    // szerinti aktuális mappa marad az elsődleges cél.
+    function newAlbumFolderPath() {
+        if (!controller) return ""
+        if (controller.viewModeName === "folder" && controller.currentFolder)
+            return controller.currentFolder
+
+        var photoPath = ""
+        var paths = window.photoActionPaths()
+        if (paths.length > 0) {
+            photoPath = paths[0]
+        } else {
+            var row = window.photoActionIndex()
+            if (row >= 0 && controller.photos)
+                photoPath = controller.photos.filePathAt(row)
+        }
+        var separator = Math.max(
+            photoPath.lastIndexOf("/"), photoPath.lastIndexOf("\\")
+        )
+        return separator > 0 ? photoPath.substring(0, separator) : ""
     }
 
     function addPhotosToScreensaver(paths) {
@@ -1562,6 +1615,7 @@ ApplicationWindow {
         id: shortcutSave
         sequence: "Ctrl+S"
         enabled: !window._szovegmezoneVanFokusz
+                 && window.muveletiCelbanVanMentetlenSzerkesztes
         onActivated: saveDialogs.ensure().openSave(window.photoActionRows())
     }
 
@@ -1717,24 +1771,21 @@ ApplicationWindow {
     //: hívja. (⚠️ A billentyű-őr a `Shortcut` törzsét egy szintig elemzi,
     //: tehát ott nem lehet ágas kód: ha a logika a `Shortcut`-ba kerül, az
     //: őr NEM LÁTJA meg a kötést, és a menütétel „néma hirdetőnek" látszik.)
-    //: #1526: „Szöveg másolása" — a KIJELÖLÉS első képének felirata a
-    //: vágólapra. Ágazás a `Shortcut`/menü törzsében nincs: a #1616 őre
-    //: egyetlen zárójel-szintet lát, ezért a logika függvényben áll.
-    function masoldAFeliratot() {
+    // #5877: „Copy Text" - a kijelölés első képének Text eszközös rétege.
+    function masoldASzovegreteget() {
         if (!controller) return
         var sorok = window.photoActionRows()
         if (sorok.length === 0) return
-        controller.copyCaptionText(sorok[0])
+        controller.copyTextLayer(sorok)
     }
 
-    //: #1526: „Szöveg beillesztése" — a vágólap szövege MINDEN kijelölt kép
-    //: feliratába. Üres vágólapra a vezérlő nem tesz semmit (a menütétel
-    //: ilyenkor amúgy is szürke).
-    function illesdBeAFeliratot() {
+    // #5877: „Paste Text" - a másolt Text eszközös réteg a kijelölés minden
+    // képére kerül; a kijelölt réteg pufferként is használható.
+    function illeszdBeASzovegreteget() {
         if (!controller) return
         var sorok = window.photoActionRows()
         if (sorok.length === 0) return
-        controller.pasteCaptionText(sorok)
+        controller.pasteTextLayer(sorok)
     }
 
     function beillesztAVagolaprol() {
@@ -2144,6 +2195,22 @@ ApplicationWindow {
                 ? controller.hasTextOverlayStateInSelection(rows, true) : false
         }
         photoActionsEnabled: window.photoActionRows().length > 0
+        photoHasPendingEdits: window.muveletiCelbanVanMentetlenSzerkesztes
+        // #5882: a fotómodell revíziója frissíti ezt a kötést a hidden
+        // állapot változásakor; a kijelölés a könyvtár és a néző célpontját
+        // egyaránt lefedi.
+        hasHiddenPhotoSelection: {
+            if (!controller || !controller.photos) return false
+            var photos = controller.photos
+            var revision = photos.revision
+            if (revision < 0) return false
+            var rows = window.photoActionRows()
+            for (var i = 0; i < rows.length; ++i) {
+                var photo = photos.itemAt(Number(rows[i]))
+                if (photo && photo.hidden === true) return true
+            }
+            return false
+        }
         libraryPhotoActionsEnabled: !window.viewerOpen
                                     && window.selectedIndexes.length > 0
         //: #1768: a Mappakezelő két belépési pontja szürke, amíg a
@@ -2173,17 +2240,17 @@ ApplicationWindow {
         //: indul el, és a sávon üzenetet adunk — némán nem tűnik el.
         clipboardHasFiles: fileOpsController
                            ? fileOpsController.clipboardHasFiles : false
-        //: #1526: a szöveg-vágólap jelzője — a „Szöveg beillesztése"
-        //: tételhez. A vezérlő a Qt vágólapjának `dataChanged`-jére van
-        //: kötve, tehát egy MÁS program írása is eljut ide.
-        hasCaptionTextClipboard: (controller
-                                  && controller.hasCaptionTextClipboard !== undefined)
-                                 ? controller.hasCaptionTextClipboard : false
-        //: #1526: a felirat SZÖVEGE a vágólapra, illetve a vágólapról a
-        //: kijelölt képek feliratába. Egy belépő mindkettőre — a
-        //: `window.selectedRows()` adja a hatókört.
-        onCopyTextRequested: window.masoldAFeliratot()
-        onPasteTextRequested: window.illesdBeAFeliratot()
+        // #5877: a text= réteg állapotát a .picasa.ini-ből olvassa;
+        // a textactive= láthatósága nem változtatja meg a réteg meglétét.
+        hasSelectedTextLayer: (controller
+                               && controller.hasTextLayerInSelection !== undefined)
+                              ? controller.hasTextLayerInSelection(
+                                    window.photoActionRows()) : false
+        hasTextLayerClipboard: (controller
+                                && controller.hasTextLayerClipboard !== undefined)
+                               ? controller.hasTextLayerClipboard : false
+        onCopyTextRequested: window.masoldASzovegreteget()
+        onPasteTextRequested: window.illeszdBeASzovegreteget()
         onPasteFilesRequested: window.beillesztAVagolaprol()
         // #1595: a Mappa menü négy tétele a MEGNYITOTT mappára hat. A
         // párbeszédek és a megerősítések a bal hasábon élnek (ott van a
@@ -2452,7 +2519,7 @@ ApplicationWindow {
         // #465 3. pont: „Undo All Edits" — megerősítéssel, a kijelölt
         // kép(ek) TELJES szerkesztési lánca törlődik (`clearAllEffectsMany`,
         // ugyanaz a kötegelt undo-verem mint a `applyEffectMany`-nál).
-        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openFor(
+        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openForLibrary(
             window.photoActionRows())
         // #3555: nyelvváltás — a menütétel csak jelez (a `ConfirmDialog` nem
         // fér el a MenuBar gyermekeként), a kérdés és a `setLanguage`-hívás
@@ -2462,9 +2529,8 @@ ApplicationWindow {
         }
     }
 
-    // #465 3. pont: az általános ConfirmDialog mintáját követi (ld.
-    // FileOpsDialogs.qml deleteConfirmDialog) — a döntés-kulcs
-    // "undoAllEdits" a „Do not ask again" jelölő eltárolásához.
+    // #5836: a mért eredeti cím és a két gomb kell, ezért ez nem a közös
+    // pipás/Mégse-vel működő ConfirmDialog-komponens.
     // #1404: a geocímke-törlés MEGERŐSÍTÉSE. Az eredeti `ClearGeoTag::warn`
     // szövegével, szó szerint — nem átfogalmazva.
     //
@@ -2712,23 +2778,38 @@ ApplicationWindow {
         objectName: "undoAllEditsDialogLoader"
         anchors.fill: parent
         sourceComponent: Component {
-            ConfirmDialog {
+            Dialog {
+                id: undoAllEditsConfirmDialog
                 objectName: "undoAllEditsDialog"
-                namePrefix: "undoAllEdits"
-                title: qsTr("Undo All Edits")
+                //: Az eredeti cím: `ytApp::ConfirmTitle`.
+                title: qsTr("Confirm")
+                modal: true
+                focus: true
+                anchors.centerIn: parent ? Overlay.overlay : undefined
                 property var rows: []
+                property string message: ""
                 // #465: az eredeti Picasa KÉT külön szöveget használ egy, illetve
                 // több képre (IDS_CONFIRMREVERT / IDS_CONFIRMREVERT_MULTIPLE) — a
                 // többesszámúban a „MINDEGYIK" nagybetűs. Ha a kijelölésben van
                 // vörösszem-javítás, az eredeti KÜLÖN is figyelmeztet rá
                 // (IDS_CONFIRM_REDEYE_REVERT): az régió-adat, és a törléssel
                 // véglegesen elvész.
+                // Az egyparaméteres openFor szerződését megtartjuk: a néző és
+                // a #3573 régi őre is ezt hívja, a könyvtári menük külön kérik
+                // a mért többes szöveget.
                 function openFor(rowList) {
+                    openWithText(rowList, false)
+                }
+                function openForLibrary(rowList) {
+                    openWithText(rowList, true)
+                }
+                function openWithText(rowList, useMultipleText) {
                     if (rowList.length === 0) return
                     rows = rowList
                     //: `IDS_CONFIRMREVERT` / `IDS_CONFIRMREVERT_MULTIPLE` —
                     //: az eredeti szövege, a záró kérdéssel együtt (#3573)
-                    var text = rowList.length === 1
+                    var singlePicture = rowList.length === 1 && !useMultipleText
+                    var text = singlePicture
                         ? qsTr("This will remove all edits you have made to the"
                                + " current picture.  Do you want to continue?")
                         : qsTr("This will remove all edits you have made to ALL of"
@@ -2745,9 +2826,45 @@ ApplicationWindow {
                                               + "Are you sure you want to remove the"
                                               + " fixes forever?")
                                               .arg(redeyeNames.join(", "))
-                    ask("undoAllEdits", text)
+                    // A job-254 útján a könyvtárnézet egyetlen kijelölése is
+                    // ezt a többes szöveget és minden alkalommal megerősítést kér.
+                    message = text
+                    open()
                 }
-                onConfirmed: controller.clearAllEffectsMany(rows)
+                onAccepted: controller.clearAllEffectsMany(rows)
+
+                ColumnLayout {
+                    spacing: 12
+
+                    Text {
+                        objectName: "undoAllEditsMessageLabel"
+                        Layout.preferredWidth: 320
+                        text: undoAllEditsConfirmDialog.message
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: Theme.fontSize
+                        color: Theme.ink
+                    }
+
+                    RowLayout {
+                        Layout.alignment: Qt.AlignRight
+                        spacing: 8
+
+                        PicasaButton {
+                            objectName: "undoAllEditsYesButton"
+                            //: `IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON`.
+                            text: qsTr("Remove Edits")
+                            accent: Theme.picasaGreen
+                            focus: true
+                            onClicked: undoAllEditsConfirmDialog.accept()
+                        }
+                        PicasaButton {
+                            objectName: "undoAllEditsNoButton"
+                            //: Az eredeti `confirm:confirm/no.title` felirata.
+                            text: qsTr("No")
+                            onClicked: undoAllEditsConfirmDialog.reject()
+                        }
+                    }
+                }
             }
         }
     }
@@ -3098,9 +3215,12 @@ ApplicationWindow {
         }
         // #23: az "Import" gomb az Import forrásból ablakot nyitja
         onImportRequested: importSourceDialog.open()
-        // #1421: az eszköztár `newalbum` gombja UGYANOTT köt ki, mint a
-        // Fájl ▸ Új album… és a kép-helyimenü tétele — egy út, egy dialógus.
-        onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())
+        // #5812: az eszköztár az Album Properties ablakot nyitja.
+        // #5835: mappa nélküli nézetben a kijelölt vagy fókuszban levő kép
+        // mappáját adja át; a többi albumút külön él.
+        onNewAlbumRequested:
+            fileOpsDialogs.ensure().openNewAlbumProperties(
+                window.newAlbumFolderPath())
         // #1421: az eszköztár `timelinebutton`-ja UGYANAZT a váltást
         // végzi, mint a Nézet ▸ Időrend és a Ctrl+5.
         // #1421: a nézetváltó pár UGYANAZT a vezérlőt hívja, mint a
@@ -4825,6 +4945,16 @@ ApplicationWindow {
         // valódi oka annak, hogy a Beállítások e-mail-módja némának
         // látszott: az egész küldési út néma volt.
         onEmailRequested: window.sendSelectionByEmail()
+        onAddSelectedToScreensaverRequested: window.requestAddToScreensaver()
+        onStarSelectedPhotosRequested: {
+            if (controller)
+                controller.toggleStarMany(window.photoActionRows())
+        }
+        onNewAlbumWithSelectionRequested: {
+            fileOpsDialogs.ensure().openNewAlbumProperties(
+                controller ? controller.currentFolder : "",
+                window.photoActionRows())
+        }
     }
 
     // -- fájlműveletek (#15): kontextusmenü + dialógusok --------------------
@@ -4870,7 +5000,8 @@ ApplicationWindow {
             ? controller.hasSavedBackup(window.selectedRows()) : false
         onSaveRequested: saveDialogs.ensure().openSave(window.selectedRows())
         onRevertRequested: saveDialogs.ensure().openRevert(window.selectedRows())
-        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openFor(window.selectedRows())
+        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openForLibrary(
+            window.selectedRows())
         onResetFacesRequested: resetFacesForPaths(window.selectedPaths())
         onHideToggleRequested: window.toggleHiddenSelection()
         onMoveRequested: fileOpsDialogs.ensure().openMove(window.selectedPaths())

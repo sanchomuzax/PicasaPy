@@ -48,22 +48,13 @@ A sáv két végén egy-egy kis gomb áll:
 A rácsban a **Nézet ▸ Indexkép felirata ▸ Képfelirat** beállítással
 hozhatod elő az indexképek alá.
 
-### Ugyanaz a felirat több képre
+### Felirat másolása több képre
 
-A **Szerkesztés ▸ Szöveg másolása** a kijelölt kép feliratát a vágólapra
-teszi, a **Szerkesztés ▸ Szöveg beillesztése** pedig a vágólap szövegét
-**minden kijelölt kép** feliratába beírja. Így egy feliratot végig lehet
-vinni egy egész sorozaton.
-
-Üres vágólappal a **Szöveg beillesztése** szürke, tehát nem tudja
-véletlenül letörölni a meglévő feliratokat.
-
-Ha a kijelölt képek közül **bármelyiken már van felirat**, a program
-előbb rákérdez: „Biztosan lecseréli a jelenlegi képfeliratot a vágólap
-tartalmára? (Ez a művelet nem vonható vissza)". A **Csere** gomb
-beírja a vágólap szövegét minden kijelölt kép feliratába, a **Mégse**
-semmit nem változtat. Ha egyik kijelölt képnek sincs még felirata, a
-beillesztés kérdés nélkül lefut.
+A **Szerkesztés ▸ Szöveg másolása** és **Szöveg beillesztése** parancs
+nem a képfeliratot, hanem a **Szöveg** eszközzel a képre írt szöveget
+másolja (lásd [A szerkesztő](szerkeszto.md)), ahogy az eredeti Picasában.
+A képfeliratot menüből ma nem lehet egyszerre több képre átvinni: képenként
+kell beírnod.
 
 A feliratot a PicasaPy a JPEG-fájl IPTC-mezőjébe is beírja, így más
 programok is látják.
@@ -83,9 +74,15 @@ nyitja és zárja is a panelt.
   fejléc megmondja, mire vonatkozik: egyetlen kijelölt képnél a kép
   nevét írja (*kép.jpg címkéi:*), több képnél *Címkék az aktuális
   kijelölésben:*, ha pedig a megjelenített album **összes** képe ki van
-  jelölve, *Címkék az aktuális kijelölésben (teljes album):*. Egy címkére
-  jobbgombbal kattintva: **Címke hozzáadása a teljes kijelöléshez**,
-  **Így címkézett elemek keresése**, **Címke eltávolítása**.
+  jelölve, *Címkék az aktuális kijelölésben (teljes album):*.
+- A lista sorrendje az eredeti Picasáét követi: elöl az a címke áll,
+  amelyik a kijelölésben a **legtöbb képen** szerepel. Az egyformán
+  gyakori címkék **fordított névsorban** követik egymást (Z-től A felé).
+- Egy címkére jobb gombbal kattintva három tételt kapsz, ebben a
+  sorrendben: **A címke eltávolítása**, **Az ilyen címkével ellátott
+  elemek keresése** és **A címke hozzáadása a teljes kijelölt részhez**.
+  A keresés a címkét beírja a felső keresőmezőbe, és rögtön a találatokat
+  mutatja; a keresőmezőt törölve visszakapod a teljes nézetet.
 
 ### Sok képre egyszerre
 
@@ -94,7 +91,7 @@ rákérdez: „Meglehetősen nagy számú elemet jelölt ki. Biztosan az összes
 (*N*) elemre alkalmazni szeretné ezt a címkét?" Az **OK** felrakja a
 címkét a kijelölés minden képére, a **Mégse** nem címkéz semmit. A kérdés
 a beíró mezőre, a gyorscímke-gombokra és a címke helyi menüjének
-**Címke hozzáadása a teljes kijelöléshez** tételére egyaránt érvényes. A kijelölést a
+**A címke hozzáadása a teljes kijelölt részhez** tételére egyaránt érvényes. A kijelölést a
 program a kérdés megjelenésekor rögzíti, tehát a döntésedig nem változhat
 a cél.
 

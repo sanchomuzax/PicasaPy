@@ -36,7 +36,8 @@ kapjon. A **Nézet ▸ Szerkesztési vezérlők megjelenítése** kapcsoló muta
 teszi (buboréksúgója: *Szerkesztési vezérlők megjelenítése/elrejtése*). A
 kettő ugyanazt az állapotot kapcsolja, és a választás **megmarad** a
 következő indításig. Billentyűvel a **Ctrl+9** teszi ugyanezt, amíg a
-néző nyitva van.
+néző nyitva van. A menütétel csak a megnyitott nézőben használható;
+könyvtárnézetben szürke, és nincs előtte pipa.
 
 ## Szöveg megjelenítése és elrejtése a képen
 
@@ -299,6 +300,24 @@ A beállítások a `.picasa.ini`-be kerülnek — a **betűtípus**, a
 színek is —, tehát a felirat legközelebb is úgy néz ki, ahogy
 beállítottad, és a windowsos Picasa is így látja.
 
+### A képre írt szöveg átvitele más képekre
+
+A **Szöveg** eszközzel írt szöveget egy mozdulattal más képekre is
+átteheted, ugyanazzal a betűvel, színnel és helyen:
+
+1. Jelöld ki a könyvtárban azt a képet, amelyre már írtál szöveget, és
+   válaszd a **Szerkesztés ▸ Szöveg másolása** parancsot.
+2. Jelöld ki a célképeket, és válaszd a **Szerkesztés ▸ Szöveg
+   beillesztése** parancsot.
+
+A beillesztés a kijelölt képek **mindegyikére** ráteszi a szöveget; ha
+valamelyiken már volt ilyen szöveg, azt lecseréli. Videóra nem kerül
+szöveg. A **Szöveg másolása** csak akkor használható, ha a kijelölés
+első képén van a **Szöveg** eszközzel írt szöveg. A **Szöveg
+beillesztése** akkor használható, ha már másoltál szöveget, vagy ha a
+kijelölés első képén van ilyen szöveg: ilyenkor másolás nélkül is azt
+viszi át a kijelölés többi képére.
+
 > Korábban a program minden feliratot félkövérként mentett, a körvonal
 > vastagsága pedig mindig elveszett. Mindkettő megjavult; a régebben
 > mentett feliratokat érdemes egyszer ellenőrizni.
@@ -316,10 +335,12 @@ paletta mellett.
 
 A rögzített palettán túl **bármilyen színt** választhatsz: a választó
 színkerék-gombja (buboréksúgója: **Színválasztás**) egy nagyobb
-színválasztót nyit. Ebben felül az öt legutóbbi szín áll, alatta egy
-nagy színmező, legalul pedig a teljes színskála csíkja: a csíkon a
-színárnyalatot választod, a színmezőben annak világosabb, sötétebb vagy
-fakóbb változatát. Amire kattintasz, az azonnal
+színválasztót nyit, az eredeti Picasáéval azonos elrendezésben. Ebben
+felül az öt legutóbbi szín rekesze áll; amíg egy rekesz még üres, egy
+halvány alapszín tölti ki, és nem kattintható. Alatta egy sorban harminc
+kész színminta, legalul pedig egy nagy színmező, amelyben az összes
+árnyalat és világosság megtalálható. A színmezőben kattintva vagy az
+egeret nyomva húzva választasz. Amire kattintasz, az azonnal
 érvényesül a képen, és bekerül a legutóbbi színek közé.
 
 A színt **magáról a képről** is kiveheted: a színmező melletti kis

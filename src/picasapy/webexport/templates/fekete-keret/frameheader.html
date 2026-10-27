@@ -1,0 +1,17 @@
+<%if isFirstTarget%>
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<title><%albumName%></title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="thumbnail-index">
+<header class="album-header">
+<h1><%albumName%></h1>
+<%if albumCaption%><p class="album-caption"><%albumCaption%></p><%endif%>
+<p class="album-meta"><%albumDate%> · <%albumItemCount%> kép</p>
+</header>
+<nav aria-label="Indexképek">
+<ul class="thumb-list">
+<%endif%>

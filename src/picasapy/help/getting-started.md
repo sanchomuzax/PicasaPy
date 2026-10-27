@@ -73,8 +73,19 @@ python picasapy C:\Kepek
 Mappa megadása nélkül is elindul; a figyelt mappákat utólag is fel tudod
 venni (lásd [Mappakezelő](features/mappakezelo.md)).
 
-A programnak nincs parancssori felülete a megnyitandó mappákon kívül —
-minden művelet az ablakban érhető el.
+Mappa helyett **képfájlt** is megadhatsz, akár többet is:
+
+```bash
+./picasapy ~/Kepek/nyaralas.jpg
+```
+
+Ilyenkor a program nem a könyvtárat tölti be, hanem a képet rögtön a
+**egyszerűsített nézőben** nyitja meg (lásd [Nézegetés](features/nezegetes.md)).
+Linuxon a program az első indításkor bejegyzi magát a képtípusok mellé,
+így a fájlkezelő **Megnyitás ezzel** listájában is ott lesz a PicasaPy.
+
+A programnak ezen kívül nincs parancssori felülete - minden művelet az
+ablakban érhető el.
 
 ## Az első indítás
 

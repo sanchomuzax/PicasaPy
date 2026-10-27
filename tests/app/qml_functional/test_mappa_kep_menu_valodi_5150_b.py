@@ -43,7 +43,7 @@ _EFFEKTEK = (
     ("menuBatchAutoContrast", "autolight=1;"),
     ("menuBatchAutoColor", "autocolor=1;"),
     ("menuBatchEnhance", "enhance=1;"),
-    ("menuBatchSharpen", "unsharp=1;"),
+    ("menuBatchSharpen", "unsharp2=1,0.600000;"),
     ("menuBatchWarmify", "warm=1;"),
     ("menuBatchFilmGrain", "grain2=1;"),
     ("menuBatchAutoRedeye", "redeye="),
@@ -111,6 +111,11 @@ class TestKotegeltEffektek:
             f"a {nev} kattintás nem írta a {kulcs} szűrőt a kijelölt képekre: "
             f"{[szures(controller, sor) for sor in _KIJELOLT_SOROK]}"
         )
+        if nev == "menuBatchSharpen":
+            assert all(szures(controller, sor) == kulcs for sor in _KIJELOLT_SOROK), (
+                "a Sharpen nem a kért pontos filters= értéket írta: "
+                f"{[szures(controller, sor) for sor in _KIJELOLT_SOROK]}"
+            )
         assert kulcs not in szures(controller, _KIJELOLETLEN_SOR), (
             "a kijelöletlen kép is kapta az effektet"
         )

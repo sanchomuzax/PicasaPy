@@ -1,95 +1,106 @@
-/* PicasaPy „Fehér keret" webexport-sablon — saját, GPL-kompatibilis stílus.
-   Az eredeti Picasa `whitefrm` sablonjának KINÉZETÉT idézi (passzpartús keret a csempék körül);
-   a CSS/HTML maga saját írás, a Picasa sablonfájljaiból semmi nem került
-   át (#534). A szerkezet és a helyőrző-nyelv az eredetié, az szabadon
-   követhető: `docs/specs/picasa-web-template-nyelv.md`. */
-
+/* PicasaPy saját, frame-alapú galéria (#5926, a #534 GPL-kompatibilis sablonokkal). */
 :root {
   color-scheme: light;
+  --page: #f5f5f5;
+  --text: #222222;
+  --muted: #666666;
+  --card: #ffffff;
+  --border: #cccccc;
+  --image-mat: #ffffff;
+  --image-border: #b0b0b0;
+  --focus: #333333;
 }
 
+* { box-sizing: border-box; }
+
+html,
 body {
+  min-height: 100%;
   margin: 0;
-  background: #ffffff;
-  color: #222222;
+}
+
+body.thumbnail-index {
+  overflow-y: auto;
+  padding: 12px;
+  background: var(--page);
+  color: var(--text);
   font-family: "Helvetica Neue", Arial, sans-serif;
 }
 
 .album-header {
-  padding: 24px 32px 12px;
-  border-bottom: 1px solid #e2e2e2;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
 }
 
 .album-header h1 {
   margin: 0 0 6px;
-  font-size: 1.6em;
+  font-size: 1.1rem;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
-.album-caption {
-  margin: 0 0 4px;
-  color: #555555;
-}
-
+.album-caption,
 .album-meta {
-  margin: 0;
-  color: #888888;
-  font-size: 0.9em;
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
 }
 
-main {
-  padding: 24px 32px;
-}
-
-.thumb-grid {
+.thumb-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.thumb {
+  flex-direction: column;
+  gap: 10px;
   margin: 0;
-  background: #ffffff;
-  padding: 10px;
-  border: 1px solid #9a9a9a;
-  text-align: center;
+  padding: 0;
+  list-style: none;
 }
 
-.thumb.shadow {
-  box-shadow: 0 2px 6px 0 var(--shadow-color, #ffffff);
+.thumb-item {
+  padding: 7px;
+  border: 1px solid var(--border);
+  background: var(--card);
 }
 
-.thumb img {
+.thumb-link {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.thumb-link:hover,
+.thumb-link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.thumb-link img {
   display: block;
-  max-width: 100%;
-  height: auto;
+  width: 88px;
+  height: 66px;
+  flex: 0 0 auto;
+  border: 1px solid var(--image-border);
+  background: var(--image-mat);
+  object-fit: contain;
 }
 
-.thumb figcaption {
-  margin-top: 4px;
-  font-size: 0.8em;
-  color: #555555;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.thumb-caption {
+  min-width: 0;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
 }
 
-.page-list {
-  padding: 0 32px 32px;
-}
-
-.page-list ol {
-  columns: 3;
-}
-
-.page-list a {
-  color: #222222;
-}
-
-.item-page {
+body.item-page {
+  overflow: auto;
+  padding: 20px;
+  background: var(--page);
+  color: var(--text);
+  font-family: "Helvetica Neue", Arial, sans-serif;
   text-align: center;
-  padding: 24px;
 }
 
 .back-link {
@@ -98,30 +109,29 @@ main {
 
 .back-link a,
 .item-nav a {
-  color: #222222;
+  color: var(--text);
 }
 
 .item-figure {
-  margin: 16px auto;
-  background: #ffffff;
-  padding: 10px;
-  border: 1px solid #9a9a9a;
   display: inline-block;
+  max-width: 100%;
+  margin: 16px auto;
+  padding: 10px;
+  border: 1px solid var(--image-border);
+  background: var(--image-mat);
 }
 
-.item-figure.shadow img {
-  box-shadow: 0 4px 16px 0 var(--shadow-color, #ffffff);
-}
-
-.item-figure img {
+.item-figure img,
+.item-figure video {
+  display: block;
   max-width: 100%;
   height: auto;
+  margin: auto;
 }
 
 .item-figure figcaption {
   margin-top: 6px;
-  color: #555555;
-  font-size: 0.9em;
+  color: #333333;
 }
 
 .item-nav {
@@ -131,12 +141,5 @@ main {
 }
 
 .item-nav .disabled {
-  color: #888888;
-}
-
-.album-footer {
-  padding: 16px 32px;
-  color: #888888;
-  font-size: 0.8em;
-  border-top: 1px solid #e2e2e2;
+  color: var(--muted);
 }

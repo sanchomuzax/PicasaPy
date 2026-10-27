@@ -12,8 +12,9 @@ import QtQuick.Layouts
 // Beállítások... menüpont bekötése) az integrátoré.
 //
 // Az "General", "E-Mail" (#32), "Slideshow" (#4320) és "Printing" (#4318)
-// füleken élő vezérlők vannak; a többi fül csak ott tiltott, ahol a mögöttes
-// funkció nincs meg a PicasaPy-ban (ld. az egyes OptionsTab*.qml fejléceit).
+// füleken működő beállítások vannak; a fülek az értékeket piszkozatban
+// tartják, amíg az OK el nem menti őket. A többi fül csak ott tiltott, ahol
+// a mögöttes funkció nincs meg a PicasaPy-ban (ld. a tabfájlok fejléceit).
 Window {
     id: optionsWindow
     objectName: "optionsDialog"
@@ -24,6 +25,49 @@ Window {
     //: főablak súgója mögé kerülne, ezért a `WindowHelp` a párbeszéd FÖLÖTT,
     //: külön ablakban nyitja.
     property string helpTopic: "features/beallitasok.md"
+
+    // Az eredeti OK gombja ment, a Cancel pedig elveti a füleken végzett
+    // módosításokat. A fülek ezért csak ezt a piszkozatot írják; a vezérlők
+    // setterei kizárólag az OK elfogadásakor futnak le.
+    QtObject {
+        id: optionsDraft
+        property var values: ({})
+        property var writers: ({})
+
+        function value(key, fallback) {
+            return Object.prototype.hasOwnProperty.call(values, key)
+                ? values[key] : fallback
+        }
+
+        function stage(key, value, writer) {
+            var nextValues = ({})
+            var nextWriters = ({})
+            for (var oldKey in values)
+                nextValues[oldKey] = values[oldKey]
+            for (var writerKey in writers)
+                nextWriters[writerKey] = writers[writerKey]
+            nextValues[key] = value
+            nextWriters[key] = writer
+            values = nextValues
+            writers = nextWriters
+        }
+
+        function discard() {
+            values = ({})
+            writers = ({})
+        }
+
+        function commit() {
+            var keys = Object.keys(values)
+            for (var i = 0; i < keys.length; ++i) {
+                var key = keys[i]
+                var writer = writers[key]
+                if (typeof writer === "function")
+                    writer(values[key])
+            }
+            discard()
+        }
+    }
     WindowHelp { tema: optionsWindow.helpTopic }
     // #3661 (2. lelet): az eredeti 560 px-es alapszélesség belső
     // tartalomterülete (536 px) kisebb, mint a 8 magyar fülcím összesen
@@ -51,7 +95,40 @@ Window {
     color: Theme.canvasBg
 
     function open() {
+        optionsDraft.discard()
         optionsWindow.visible = true
+        Qt.callLater(function() { okButton.forceActiveFocus() })
+    }
+
+    function acceptOptions() {
+        optionsDraft.commit()
+        optionsWindow.visible = false
+    }
+
+    function cancelOptions() {
+        optionsDraft.discard()
+        optionsWindow.visible = false
+    }
+
+    onClosing: optionsDraft.discard()
+
+    Shortcut {
+        sequence: "Return"
+        context: Qt.WindowShortcut
+        enabled: optionsWindow.visible
+        onActivated: optionsWindow.acceptOptions()
+    }
+    Shortcut {
+        sequence: "Enter"
+        context: Qt.WindowShortcut
+        enabled: optionsWindow.visible
+        onActivated: optionsWindow.acceptOptions()
+    }
+    Shortcut {
+        sequence: "Escape"
+        context: Qt.WindowShortcut
+        enabled: optionsWindow.visible
+        onActivated: optionsWindow.cancelOptions()
     }
 
     ColumnLayout {
@@ -229,27 +306,64 @@ Window {
             currentIndex: tabBar.currentIndex
             clip: true
 
-            OptionsTabGeneral { Layout.fillWidth: true }
-            OptionsTabEmail { Layout.fillWidth: true }
-            OptionsTabFileTypes { Layout.fillWidth: true }
-            OptionsTabSlideshow { Layout.fillWidth: true }
-            OptionsTabPrinting { Layout.fillWidth: true }
-            OptionsTabNetwork { Layout.fillWidth: true }
-            OptionsTabWebAlbums { Layout.fillWidth: true }
-            OptionsTabNameTags { Layout.fillWidth: true }
+            OptionsTabGeneral {
+                optionsDraft: optionsDraft
+                Layout.fillWidth: true
+            }
+            OptionsTabEmail {
+                optionsDraft: optionsDraft
+                Layout.fillWidth: true
+            }
+            OptionsTabFileTypes {
+                optionsDraft: optionsDraft
+                Layout.fillWidth: true
+            }
+            OptionsTabSlideshow {
+                optionsDraft: optionsDraft
+                Layout.fillWidth: true
+            }
+            OptionsTabPrinting {
+                optionsDraft: optionsDraft
+                Layout.fillWidth: true
+            }
+            OptionsTabNetwork {
+                optionsDraft: optionsDraft
+                Layout.fillWidth: true
+            }
+            OptionsTabWebAlbums {
+                optionsDraft: optionsDraft
+                Layout.fillWidth: true
+            }
+            OptionsTabNameTags {
+                optionsDraft: optionsDraft
+                Layout.fillWidth: true
+            }
         }
 
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
             Item { Layout.fillWidth: true }
-            // a mostani élő beállítások (nyelv, törlés-megerősítés) azonnal
-            // hatnak, ahogy a menüből is — nincs külön OK/Alkalmaz szükséges
             PicasaButton {
-                objectName: "optionsCloseButton"
-                text: qsTr("Close")
-                accent: Theme.picasaGreen
-                onClicked: optionsWindow.visible = false
+                id: okButton
+                objectName: "optionsOkButton"
+                text: qsTr("OK")
+                onClicked: optionsWindow.acceptOptions()
+
+                // Az eredeti alapértelmezett OK gombjának kék kerete.
+                Rectangle {
+                    objectName: "optionsOkDefaultBorder"
+                    anchors.fill: parent
+                    radius: 2.5
+                    color: "transparent"
+                    border.width: 2
+                    border.color: Theme.selectionBlue
+                }
+            }
+            PicasaButton {
+                objectName: "optionsCancelButton"
+                text: qsTr("Cancel")
+                onClicked: optionsWindow.cancelOptions()
             }
         }
     }

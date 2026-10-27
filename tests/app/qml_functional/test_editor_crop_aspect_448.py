@@ -300,7 +300,7 @@ class TestCropSuggestionButtons:
         qt_app.processEvents()
         return viewer, panel
 
-    def test_three_buttons_appear_with_labels(self, qml_app, qt_app):
+    def test_three_buttons_appear_without_labels(self, qml_app, qt_app):
         window, _, _ = qml_app
         _viewer, panel = self._open_crop(window, qt_app)
         row = window.findChild(QObject, "cropSuggestionRow")
@@ -309,7 +309,15 @@ class TestCropSuggestionButtons:
         for index in range(3):
             button = window.findChild(QObject, f"cropSuggestion{index}")
             assert button is not None, index
-            assert str(button.property("label")), f"{index}. javaslat felirat nélkül"
+            assert button.property("label") == "", (
+                f"a(z) {index}. javaslat stratégiacímkéje látható maradt"
+            )
+        feliratok = [
+            obj.property("text")
+            for obj in panel.findChildren(QObject)
+            if obj.property("text") is not None
+        ]
+        assert "Suggested crops" not in feliratok
 
     def test_choosing_a_suggestion_fills_the_selection(self, qml_app, qt_app):
         """A javaslat a KIJELÖLÉSBE kerül — nem alkalmazódik azonnal, hogy a

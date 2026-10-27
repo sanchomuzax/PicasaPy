@@ -30,21 +30,26 @@ def _nev(local_path: str) -> str:
     return re.split(r"[\\/]", local_path)[-1]
 
 
-def _wordhash_bytes(entries: tuple[tuple[str, tuple[int, ...]], ...]) -> bytes:
+def _wordhash_bytes(
+    entries: tuple[tuple[str, tuple[int, ...]], ...], *, pool_count: int = 1
+) -> bytes:
     """Kis kivonat a mért 1.6-os wordhash-formátummal és listákkal."""
-    pool = bytearray(0x10000)
+    pools = [bytearray(0x10000) for _ in range(pool_count)]
+    target_pool = pool_count - 1
+    for pool in pools[:target_pool]:
+        pool[:] = b"x\x00" * (len(pool) // 2)
     offsets: dict[str, int] = {}
     used = 0
     for word, _rows in entries:
         encoded = word.encode("ascii") + b"\x00"
-        offsets[word] = used
-        pool[used : used + len(encoded)] = encoded
+        offsets[word] = target_pool * 0x10000 + used
+        pools[target_pool][used : used + len(encoded)] = encoded
         used += len(encoded)
 
     # A mért 0x04/0x08 érték 36/1. A 0x04 jelentése nem ismert, és nem a
     # thumbindex 32 sorának darabszáma, ezért a beolvasó nem egyeztetheti őket.
-    result = bytearray(struct.pack("<fIIII", 1.6, 36, 1, 0x10000, used))
-    result.extend(pool)
+    result = bytearray(struct.pack("<fIIII", 1.6, 36, pool_count, 0x10000, used))
+    result.extend(b"".join(pools))
     result.extend(struct.pack("<I", len(entries)))
     for word, rows in entries:
         result.extend(struct.pack("<II", offsets[word], len(rows)))
@@ -52,7 +57,9 @@ def _wordhash_bytes(entries: tuple[tuple[str, tuple[int, ...]], ...]) -> bytes:
     return bytes(result)
 
 
-def _write_db3(tmp_path, wordhash_entries, *, nested_directory=False):
+def _write_db3(
+    tmp_path, wordhash_entries, *, nested_directory=False, pool_count=1
+):
     db3 = tmp_path / "db3"
     db3.mkdir()
     local_folder = tmp_path / "photos"
@@ -87,7 +94,9 @@ def _write_db3(tmp_path, wordhash_entries, *, nested_directory=False):
     (db3 / "albumdata_category.pmp").write_bytes(
         build_pmp_column(0x1, [2, 0])
     )
-    (db3 / "wordhash.dat").write_bytes(_wordhash_bytes(tuple(wordhash_entries)))
+    (db3 / "wordhash.dat").write_bytes(
+        _wordhash_bytes(tuple(wordhash_entries), pool_count=pool_count)
+    )
 
     remapper = PathRemapper.from_dict({_FOLDER: str(local_folder)})
     return db3, local_folder, remapper
@@ -289,3 +298,19 @@ def test_csonka_wordhashot_a_parser_format_hibakent_elutasitja(tmp_path):
 
     with pytest.raises(WordHashFormatError):
         read_wordhash(path)
+
+
+def test_huszonnyolc_poolos_wordhash_mappasorrendje_beolvashato(tmp_path):
+    from picasapy.pmpimport.importer import beolvas_db3
+
+    db3, _local_folder, remapper = _write_db3(
+        tmp_path,
+        ((_FOLDER_TOKEN, (8, 5, 2)),),
+        pool_count=28,
+    )
+
+    beolvasas = beolvas_db3(db3, remapper)
+    records = {record.row: record for record in beolvasas.rekordok}
+
+    assert beolvasas.wordhash_kihagyott == 0
+    assert records[8].manual_priority == 0.0

@@ -99,14 +99,14 @@ olvasója viszont **bármennyi tokent elfogad**, és a két mezőt névtelen
 | `keywords` | `beer,empanadas` | címkék (JPEG-nél IPTC Keywords-be) |
 | `rotate` | `rotate(1)` | 90°-os forgatás lépések (0–3) |
 | `filters` | ld. lentebb | nem-destruktív szerkesztési lánc |
-| `redo` | `redo=crop64=1,...;` | visszavonási (redo) verem — megőrzendő! |
+| `redo` | `redo=crop64=1,...;` | a `redo` szerkesztési lista kiírt alakja; nem általános mentésjelző (lásd lent, #5829) |
 | `faces` | `rect64(3f84...),8e62...;` | arcok: rect64 + contact_id párok `;`-vel |
 | `albums` | `65d12673f3b51e3f...` | album-tokenek CSV listája |
 | `crop` | `crop=rect64(...)` | (előfordul filters-en kívül is) |
 | `geotag` | `33.770556,-84.293055` | GPS — szélesség,hosszúság tizedes fokban; a PicasaPy olvassa ÉS írja (#30). A kép helye: `geotag=` > EXIF GPS-IFD; törléskor csak a kulcs tűnik el, a fájl EXIF-je érintetlen. |
 | `width`,`height` | `5184`, `3456` | képméret cache |
 | `moddate` | `8094e2826277cd01` | módosítási idő (bináris FILETIME jellegű) |
-| `backuphash` | `36003` | **MEGFEJTVE (#643)**: az ÍRÁS IDŐPONTJÁBÓL képzett 16 bites érték, nem tartalom-hash — ld. lent |
+| `backuphash` | `36003` | **A képlet megerősítve (#643, #5806):** helyi időből képzett OLE DATE négy 16 bites szavának XOR-ja; az íróút és a mentési készletenkénti összehasonlítás is ismert - ld. lent |
 | `<készletnév>-backuphash` | `BKTag Saját mentési készlet-backuphash=40037` | **MEGFEJTVE (2026-09-05, #440)**: a mentés-KÉSZLETENKÉNTI bélyeg, ugyanazzal a képlettel — ld. lent |
 | `originhash` | `033f1132c874...` | ✅ **MEGFEJTVE (2026-09-07, #791): KÉT tartalomkulcs szöveges összefűzése** — `fmt16(originfast) + fmt16(originslow)`, 16 + 16 kisbetűs hexa jegy. Nem egy digest, ezért bukott korábban mind a nyolc egy-digestes jelölt. A teljes bizonyíték és a mérés: [`picasa-tartalomkulcs.md`](picasa-tartalomkulcs.md), „Az `originhash` — a két kulcs SZÖVEGES PÁRJA” és „⭐⭐ MEGVAN… 55/60 valós fájlon”. **Nálunk KISZÁMÍTHATÓ (2026-09-08, #2733):** `picasapy.dedup.originhash.origin_hash(útvonal)` — `hex16(originfast) ‖ hex16(originslow)`, mindkét fél `%016I64x` alakban; a szétszedő `originhash_szetszed()`. Mérve **55/60 = 91,7 %** a tulajdonos valós fájljain, és minden eltérés MINDKÉT félen bukik (⇒ a fájl változott, nem a képlet). ⛔ **Írni NEM írjuk — mérve nem mentéskori kulcs (2026-09-09, #2675).** A korpuszban `originhash` és `redo=` **egyetlen szakaszban sem** áll együtt (igen+igen → **0**; igen+nem → 1 787; nem+igen → 34), a társkulcsai pedig a letöltési utat mutatják (`IIDLIST_<név>_lh` 877, `backuphash` 760, `onlinechecksum` 380). Binárisan is: a kiírt rekord `+0x90`-ét az `operator=` másolja, és a rekord-vektor `push_back`-jének egyetlen hívója a *Download from Google Photos* (`FUN_006f9cc0`). ⇒ a mentés nem ír ilyen kulcsot, és a Visszaállítás sem törli; a #2675 eredeti kérdése — a mentett vagy az eredeti fájl bájtjai — ezzel tárgytalan. ⛔ A régebbi „szerkesztési verem integritás-hash” leírás a MI 2026-07-23-i döntésünk (#21) átvétele volt, nem mérés |
 | `IIDLIST_<user>_lh` | `4dfe636c9cf4c302` | webre feltöltött kép 64-bit hex ID; fiókfüggő, ezért a kulcsnév maga is adat. A korpusz **második leggyakoribb** kulcsa (6 045). A kódunk nem értelmezi, de **bájtra megőrzi** (#791) |
@@ -1002,33 +1002,138 @@ Az „Other Pictures" pedig ott van a mai beépített gyűjtemény-nevek listáj
 round-trip elv szerint **változatlanul meg kell őriznie** — importnál pedig a
 `name`/`category` kiolvasható belőle.
 
-### A `backuphash` — MEGFEJTVE (#643, 2026-08-14)
+### A `backuphash` - 16 bites írásiidő-lenyomat (#643, #5806)
 
-Eddig „dekódolatlan, változatlanul visszaírandó" volt. A visszafejtés
-(`0x00454770` → `0x0098b6e0` → `0x0098b550`) megmutatta, hogy **nem a fájl
-tartalmának hash-e**, hanem az **írás időpontjából** képzett érték:
+A `backuphash` **nem képfájl-hash**. A `0x00454770` a kulcs frissítési útján
+az aktuális időből készít 16 bites értéket; a fájl bájtjai, mérete és
+módosítási ideje nem bemenete ennek a számítási ágnak.
 
 ```c
-double d = OLE_DATE(most);          // az aktuális helyi idő OLE Automation DATE-ként
-uint16_t w[4];  memcpy(w, &d, 8);   // a double négy 16 bites szava
-backuphash = w[0] ^ w[1] ^ w[2] ^ w[3];
-sprintf(buf, "%d", backuphash);
+double d = OLE_DATE(localtime(now));  // 0x0098b6e0 -> 0x0098b550
+uint16_t w[4]; memcpy(w, &d, 8);      // x86-on a double négy 16 bites szava
+uint16_t backuphash = w[0] ^ w[1] ^ w[2] ^ w[3];
+sprintf(buf, "%d", backuphash);           // 0x004548d8: "%d"
 ```
 
-Az OLE-dátum a szokásos képlettel készül, `693703` (`0xa96c7`) alapnappal —
-azaz az **1899-12-30 = 0.0** referenciával. Ezt ellenőriztük: a kinyert képlet
-erre a dátumra pontosan `0.0`-t ad.
+**Képlet és forrás.** `0x0098b6e0` a `__time64` (`0x00c0a421`, a
+`GetSystemTimeAsFileTime` importot használja) eredményét `__localtime64`-en
+(`0x00c0abc2`) viszi át, majd a helyi naptári időt adja a `0x0098b550`
+dátumsegédnek; a `tm` mezők másodperc pontosságúak. A segéd a
+nap-számlálóból `0xa96c7`-et von ki
+(**693959**, `0x0098b617`), és a `0xcf3f20` címen lévő **86400.0** másodperc/
+nap konstanssal készíti a nap törtrészét (`0x0098b623`). Az így kapott IEEE-754
+`double` négy 16 bites szavát a `0x004548ba`-`0x004548ce` XOR-olja, majd
+nullával bővítve, előjel nélküli 16 bites értékként írja ki (`0x004548d1`-
+`0x004548dd`). A `0xa96c7` hexadecimális érték **693959**; a korábbi
+`693703` tizedes átírás téves volt. A dátumsegéd 1899-12-30-ra 0.0 OLE DATE-et
+állít elő.
 
-**Miért nem sikerült eddig dekódolni:** mert nincs mit dekódolni a *tartalomból*.
-Ugyanaz a fájl két különböző időpontban írva más `backuphash`-t kap.
+**Mikor írja?** A `0x00454770` ötparaméteres közös ini-kulcsíró a hívó
+ötödik argumentumát vizsgálja (`0x004548a7`). Előbb megpróbálja írni a hívó
+kulcsát a `.picasa.ini`-be (`0x00454846`, általános frissítő: `0x005ab210`);
+ha ennek a hívásnak az eredménye nulla, és az ötödik argumentum nem nulla,
+akkor kiszámítja és megpróbálja beírni a `backuphash`-t (`0x004548b5`-
+`0x0045490e`). Ha a második frissítőhívás eredménye is nulla, az értéket az
+adatbázis-rekordba is átadja (`0x00454917`-`0x0045492a` → `0x006a5a60`).
+Ez a bináris vezérlési feltétel; a nulla visszatérési érték üzleti jelentése
+ebből a függvényből önmagában nincs elnevezve.
 
-**Következmények:**
+| hívóút | kulcs és kapu | bináris hely |
+|---|---|---|
+| elforgatás | `rotate`, ötödik argumentum `1` | `0x0042c980` → `0x00454770` (`0x0042c9ee`-`0x0042c9fc`) |
+| felirat | `caption`, ötödik argumentum `1` | `0x00437cf0` → `0x00454770` (`0x00438780`-`0x0043878a`) |
+| kulcsszó/címke | `keywords`, ötödik argumentum `1` | `0x00455ff0` → `0x00454770` (`0x004564db`-`0x004564e8`) |
+| arcadat ini-írása | a `faces` majd `facedata` frissítőág nulla eredménye után saját hash-írás | `0x00484820`, `0x0048517a`-`0x00485287` |
+| ellenpélda: `textactive` | ötödik argumentum `0`; a közös író kihagyja a hash-ágat | `0x00462500`, `0x0046276a`-`0x00462773` |
 
-- Az érték **előállítható** — a PicasaPy is tud érvényeset írni.
-- Az értéktartomány 0…65535, ami egyezik a megfigyelt `23764` / `36003`
-  mintákkal (szimulációval 2015–2026 közötti időpontokra 16 298…62 695).
-- **Nem ez okozza a #643-as beolvasási hibát** — a Picasa a szakaszunkat
-  akkor sem olvasná be, ha volna benne `backuphash`.
+A közös író további hívói között van a `crop` (`0x0042b370`, `0x0042b820`,
+`0x0042bb50`), a `flipped` (`0x0042d7e0`), több szövegkulcs és a `geotag`
+(`0x00477ff0`); az ötödik argumentum értékét hívónként kell ellenőrizni.
+A kód megállapítja, mikor fut le a **kulcsfrissítő** hash-ága, de a vizsgált
+függvényrészlet nem állapítja meg, hogy ez a képfájl lemezre írásához képest
+előtte vagy utána történik.
+
+Külön íróút a készletenkénti kulcs: a `0x00429cf0` felépíti a
+`<készlet>-backuphash` nevet, elolvassa annak értékét, és csak nulla esetén
+készít új időbélyeget. Ekkor a `0x00429ca0` ugyanazzal a négy szavas XOR-ral
+írja a sima `backuphash`-t, a hívó pedig az értéket a készletkulcsba is írja
+(`0x00429d4d`-`0x00429d9f`). Ez az út a mentési készlet bélyegzéséhez tartozik,
+nem azonos a forgatás/felirat/kulcsszó kulcsfrissítési hívásaival.
+
+**Olvasás és szerep.** A `.picasa.ini`-olvasó `0x00456610` a `backuphash`
+szöveget egészre alakítja és 16 bitre szűkíti (`0x00458542`-`0x004585ad`;
+`0x004599a0`-`0x004599f9` egy másik mezőág). Az imagedata-rekordban a mezőt
+`0x004127c0` regisztrálja. A mentési készlet útja ugyanabból a képszektorból
+olvassa a sima kulcsot és a `BKTag <készletnév>-backuphash` társkulcsot; az
+egyezés jelöli, hogy a kép naprakész abban a készletben, az eltérés vagy
+hiány mentendő képet jelez (`biztonsagi-mentes.md` §9.2; kulcsnév/olvasási
+út: `0x00429cf0`, `0x006a5790`). Ez az érték tehát nem önálló tartalom- vagy
+integritás-hash.
+
+**Nem állapítható meg ebből a bizonyítékból**, hogy a sima `backuphash`
+azonosítja-e az `Originals` / `.picasaoriginals` mappába mentett fájlt, vagy
+hogy része-e a visszaállítási kiválasztásnak. E kapcsolatot nem szabad a
+mentési készlet összehasonlításával azonosítani. A visszaállítási felület útja
+`0x0053b2e0` → `0x0046d7d0`; a helyi diszasszemblálásban a `0x0046d7d0`
+függvénytest nem hivatkozik közvetlenül a `backuphash` literálra, de a
+rekordmező közvetett használatát ez nem zárja ki.
+
+Ghidra-kör kell: `0x0046d7d0` - a FileRevert végrehajtási út olvassa vagy
+összehasonlítja-e a `backuphash` mezőt az `Originals` /
+`.picasaoriginals` példány kiválasztásakor? A meglévő Ghidra-kimenetek ezen a
+címen csak hívás-xrefeket tartalmaznak, a függvény dekompilált törzsét nem.
+
+**A #5396 felvételi számai.** A #5396 első köréről megmaradt jelentés a
+job-231 jobbra forgatásnál `62465`-öt és balra forgatásnál `27964`-et, a
+job-242 címkefelvételnél `33706`-ot rögzít (`paritas-ellenorzes.md`, „Futás
+közbeni összevetés”). A jelentés az eredeti képernyőképeket és ini-kimeneteket
+akkor megmaradtnak mondja, de ezek a nyers tagok most nem találhatók a
+mérőcsomagban vagy a munkafában; a job-249 `61475`-ös sora is csak a jelen
+feladatleírásból ismert. A képlet ezért **nem ellenőrizhető számszerűen** ezekre
+az értékekre: hiányzik mindegyik hash-hívás pontos helyi ideje, a nyers ini és
+a megfelelő eredeti kép-/műveletfelvétel. Az ellenőrzés útja: kontrollált
+Picasa-futtatáskor naplózni a hash-hívás időpontját és helyi időzónáját, és
+együtt megőrizni a hívás előtti/utáni ini-t, valamint a képfájl előtte/utána
+állapotát.
+
+**PicasaPy (#5833).** A rendes lemezmentés az aktuális mappa képszakaszából
+törli a `filters=` és `redo=` kulcsot, és a #5810 képletével frissíti a
+`backuphash`-t. A beégetett láncot a kiválasztott eredeti-mappa
+`.picasa.ini`-jének azonos képnevű szakaszába írja `filters=`-ként. Ezt az
+`src/picasapy/edit/save.py` az `ini` round-trip API-ján keresztül végzi.
+
+### A rendes lemezmentés ini-hatása (#5829, #5833)
+
+Mentés után az aktuális mappa képszakaszában a mentési lánc nem marad
+`filters=`-ként, és mentési jelzőként `redo=` sem íródik. Az aktuális
+szakasz `backuphash`-t kap a fenti #5810 képletével. A beégetett lánc az
+eredeti fájl kiválasztott mappájának (`.picasaoriginals` vagy régi
+`Originals`) `.picasa.ini` fájljába kerül, a kép nevével azonos szakasz
+`filters=` kulcsába. A kulcsokat kizárólag az `ini` csomag író API-ján át
+szabad módosítani.
+
+Az „Utolsó mentés visszavonása” a láncot az eredeti-mappa ini-jéből olvassa
+vissza az aktuális mappa kép-szakaszának `filters=` kulcsába, miközben a
+kép bájtjait a mentés előtti pillanatképből állítja helyre. Korábbi
+PicasaPy-verzió által írt `redo=`-t csak akkor használ, ha az eredeti-mappa
+ini-jében nincs lánc az adott képhez. A `redo=` újra-lista írása külön
+szerkesztési funkció; a mentés nem használhatja mentésjelzőként.
+
+A #5864 job-265 megfigyelése szerint a mentés az eredeti-mappa ini-jébe a
+`filters` mellett a mentés előtti képfájl `moddate` értékét is elteszi. Ez
+100 ns-os Windows FILETIME az 1601-01-01 UTC kezdőponttól, 8 bájtos kis-endián
+sorrendben, 16 kisbetűs hexajegyként. Az Undo Save a meglévő `moddate`-et a
+visszaállított `filters` mellé az aktuális képszakaszba másolja, és frissíti a
+`backuphash`-t. Régi eredeti-mappai ini `moddate` nélkül esetén a visszavonás
+nem hoz létre újat. A job-265 értéke `1842276f6964dd01`, amely teljes
+FILETIME-pontossággal 2026-10-25 10:13:09.0170392 UTC; a feladatleírás
+másodperc pontosságú időt közölt.
+
+Az eredeti Picasa mentési és ini-írási útját a #5833-as feladatban megadott
+disassembly-címek és job-253 futásidejű felvétel támasztják alá. Ezek a
+nyers mérési tagok ebben a dokumentációs munkafában nem találhatók; a fenti
+leírás a feladatban átadott megfigyelést rögzíti, és nem állít önálló helyi
+Picasa-futásidejű ellenőrzést.
 
 ### ⭐ A `<készletnév>-backuphash` — a MENTÉS-KÉSZLETENKÉNTI másodpéldány (2026-09-05, #440)
 
@@ -2686,6 +2791,39 @@ A Picasa a módosítás előtti eredetit külön mappába menti. A korpuszban
 A váltás **2009-ben** történt (az egyetlen átfedő év). Egy ini-t olvasó
 implementációnak **mindkettőt** ismernie kell, ha a „vissza az eredetihez"
 funkciót támogatja. *Bizonyítottsági fok: megerősített* (181 valós mappa).
+
+## A rendes lemezmentés ini-hatása (#5829)
+
+**Hatókör:** a Picasa 3.9 mentés-megerősítője `0x0053a790`-ben a
+`CFileSaveThread` munkaszálat indítja (`0x0053af72`); a munkaszál
+`0x00539020` a `0x00539b0a` helyen hívja a `0x00467ca0` feldolgozót.
+Az alábbi út bináris diszasszemblálásból származik; a job-253 mérés a jegyben
+közölt egy konkrét futás eredménye, a nyers `.ini`-fájlok ehhez a körhöz nem
+érhetők el helyben.
+
+| cél / kérdés | bináris út | eredmény és bizonyítottság |
+|---|---|---|
+| Eredeti képfájl helye | `0x00467ca0` → `0x00462ba0`; a helper először `.picasaoriginals`-útvonaljelöltet készít (`0x00462ccd`), ha a jelölt nem létezik, `Originals`-t próbál (`0x00462d2e`), sikertelenségkor pedig `.picasaoriginals`-ra tér vissza (`0x00462d87`). | Az új mentés alaphelye rejtett `.picasaoriginals/<fájlnév>`; meglévő eredeti esetén az `Originals`-beli példányt is fel tudja oldani. `bináris (0x00462ba0)` |
+| Eredeti-mappai ini | A kiválasztott eredeti út mellé a `0x0046b49b` a `0x00410ff0`-nel ini-kezelőt készít; az alapértelmezett fájlnév `.picasa.ini` (`0x00410ff4`). A korábbi `filters` érték másolása `0x0046b53f`, `filters` kulcs átadása `0x0046b57c`; az ini-kezelőt a `0x0046bb98` és `0x0046d6ac` a `0x00410770`-nel zárja/kiírja. | Az eredeti-mappa ini-jébe a mentés átviszi a korábbi `filters` értéket, és további kép-metaadatokat is kezel (`crop`, `rotate`, `flipped`, `moddate`, `width`, `height`, `text`, `textactive`). A korpusz 52 ilyen ini-jében 172 `filters=` szakasz, de 0 `redo=` és 0 `backuphash=` van. A 172 backup-szakaszból 26 `filters`-e egyezik a szülő azonos nevű képszakaszával, 146-é eltér vagy a szülőből hiányzik; 158 szülőszakaszban van `backuphash`. A konkrét job-253 backup-ini tartalma `NINCS MEG`. `bináris (0x0046b49b-0x0046d6ac)`; `mérés (referencia/ini-korpusz/korpusz.txt)` |
+| Aktuális mappai ini, `filters` és `redo` | A mentési feldolgozó `0x0046d5a7` → `0x004613c0` → `0x00460e20` útja a `filters` és `redo` listát (`0x00460e98`, `0x00460eb0`) a `0x0069f710` szerializálón át a közös `0x00454770` ini-íróhoz küldi; utóbbi a kép rekordjához tartozó `.picasa.ini`-t nyitja (`0x00454846`). | A job-253 felvétel szerint a mentés után a képszakaszban egyik kulcs sincs; ez a konkrét futásban a beégetés utáni eredmény. A bináris út a kiírás helyét és a kulcsokat azonosítja, az üres érték törlési/elhagyási szemantikája önmagában ebből a körből nem bizonyítható. `bináris (0x00460e20, 0x0069f710, 0x00454770)`; `mérés (picasa-colab-jobs job-253, jegyszöveg)` |
+| Aktuális mappai ini, `backuphash` | A `0x00454770` a hívó ötödik argumentuma esetén időbélyegből képzett `backuphash`-t írhat; az író és képlete külön bizonyítva van e lap „A `backuphash`” szakaszában. | Job-253: `backuphash=45837`, más kulcs nincs a képszakaszban. Ez egyezik a közös író útjával, de az egy konkrét `backuphash`-hívás közvetlen hozzárendelése nincs megmérve. `bináris (0x00454770)`; `mérés (picasa-colab-jobs job-253, jegyszöveg)` |
+| A korpusz `redo=` sorai | A `redo` kulcsot a `0x00460e20` adja át a `0x0069f710` → `0x00454770` útvonalnak; a binárisban a `redo` külön kulcsként szerepel (`0x00c814b4`), nem található `redo=` formájú statikus INI-sor. | A korpusz 807 aktuális mappai ini-je közül 23 tartalmaz összesen 34 `redo=` sort (az összes 859 ini-ből 52 a `.picasaoriginals` alatti). Ezek a főmappai ini-kben vannak; egyedi soronkénti kiváltó műveletük, illetve az, hogy melyik konkrét mentési/szerkesztési futás írta őket, `NINCS MEG`. A mentés tehát nem általános `redo=`-létrehozó: a job-253 ellenpélda. `bináris (0x00460e20)`; `mérés (referencia/ini-korpusz/korpusz.txt; job-253)` |
+
+**Értelmezés.** A `filters=` a mentéskor az eredeti-mappai `.picasa.ini`-be
+kerül át; az aktuális mappai ini `filters`/`redo` állapota külön útvonalon
+frissül. A job-253 az aktuális képszakaszból mindkettő hiányát, valamint a
+`backuphash` jelenlétét méri. A mentés után a `.picasaoriginals/.picasa.ini`
+(vagy a kiválasztott régi `Originals/.picasa.ini`) pontos tartalma ebben a
+futásban **nyitott**; az elérhető korpusz csak a fenti csoportos mintát
+támasztja alá, nem a job-253 konkrét fájlját.
+
+**A `redo=` keletkezésének nyitott része:** a `0x0069f777` a belső `redo`
+állapotból kér szerializált szöveget, majd a `0x0069f799` a `redo` kulccsal
+adja át a közös írónak. A szerializáló bemeneti állapota, a nem üres értéket
+előállító felhasználói művelet, valamint a korpusz egyes sorainak konkrét
+eredete **NINCS MEG**. A kiegészítő felvételben a mentés előtt és után is el
+kell menteni az aktuális mappai ini-t, valamint a kiválasztott eredeti mappa
+teljes ini-jét.
 
 ## A `filterdesc` tartományai a VALÓS korpuszon ellenőrizve (2026-08-16)
 

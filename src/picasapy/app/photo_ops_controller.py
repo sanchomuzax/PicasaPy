@@ -43,9 +43,10 @@ from __future__ import annotations
 
 import secrets
 import threading
+from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import Property, Qt, Signal, Slot
+from PySide6.QtCore import QCoreApplication, Property, Qt, Signal, Slot
 from PySide6.QtGui import QGuiApplication
 
 from picasapy.export import export_sidecar_for_photo
@@ -77,7 +78,9 @@ from picasapy.ini import (
     IniSaveError,
     STAR_ALBUM_TOKEN,
     load_existing,
+    load_or_empty,
     update_document,
+    with_backuphash,
 )
 from picasapy.ini.album_order import AlbumOrderWriteError, write_album_places
 from picasapy.ini.document import ALBUM_SECTION_PREFIX
@@ -89,6 +92,7 @@ from picasapy.ini.albums import (
     without_album,
     without_album_everywhere,
 )
+from picasapy.ini.text_overlay import parse_text
 from picasapy.index.album_sort import SORT_MODES, new_places, sorted_album
 from picasapy.metadata import write_iptc_caption
 from picasapy.render.flip import (
@@ -100,6 +104,7 @@ from picasapy.render.flip import (
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
+from .ini_ujraprobalas import update_document_ujraprobalva
 from .appearance_controller import coerce_ui_preference_flag
 from .worker_thread import BackgroundWorkerMixin
 
@@ -186,18 +191,21 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # más szálból jövő emitet, ahogy a watcherDirty is teszi).
     # #1443: a harmadik elem az utómunka (hívható vagy None) — a GUI-szálon,
     # a sor frissítése UTÁN fut le. A felület a modell változását követi.
-    _photoFieldUpdated = Signal(int, object, object)
+    # A quick-viewer rekord az ütközésmentes, JavaScriptben pontos negatív
+    # azonosítótartományban él, ami meghaladja a C++ `int` 32 bites keretét.
+    # A Qt `qint64` megőrzi az azonosítót a háttérírás és a modellfrissítés
+    # közötti jelzésben is.
+    _photoFieldUpdated = Signal("qint64", object, object)
     #: #3830: a sikertelen írás hiba-utómunkája (hívható) — a GUI-szálon,
     #: a `photoOpFailed` ELŐTT fut le (ugyanabból a szálból küldött, sorba
     #: állított jelzések sorrendje megmarad), így a hibára váró hívó már a
     #: kitakarított állapotot látja.
     _photoWriteAborted = Signal(object)
     photoOpFailed = Signal(str)
-    #: #1526: a SZÖVEG-vágólap tartalma változott — ettől él/szürkül a
-    #: „Szöveg beillesztése" menütétel. A Qt vágólapjának `dataChanged`-jére
-    #: kötjük (`_ensure_caption_clipboard`), tehát egy MÁS program írása is
-    #: eljut a menühöz, nem csak a sajátunk.
-    captionClipboardChanged = Signal()
+    #: #5877: a Text eszköz `text=` rétegének belső vágólapja. A felirat
+    #: szöveg-vágólapja ettől külön marad; a Szerkesztés menü nem a feliratot
+    #: másolja.
+    textLayerClipboardChanged = Signal()
     #: #4628: a kijelölt képek valamelyikének már van felirata, ezért a
     #: vágólapról beillesztés előtt a QML megerősítést kér.
     captionPasteConfirmationRequested = Signal()
@@ -305,7 +313,7 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         self._rotate_running: set[int] = set()
         self._rotate_target: dict[int, int] = {}
 
-    @Slot(int, object, object)
+    @Slot("qint64", object, object)
     def _on_photo_field_updated(self, photo_id: int, record, after=None) -> None:
         if record is not None:
             # A provider regiszterét a modell értesítése ELŐTT frissítjük.
@@ -517,16 +525,32 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             update_document(ini_path, mutate, backup=True)
             return {"star": int(new_star)}
 
+        def after() -> None:
+            # A közvetlenül megnyitott gyorsnézeti kép nincs az SQLite
+            # indexben, ezért a `photo_by_id` nem ad új rekordot. Az ini-írás
+            # után a néző élő rekordját is frissíteni kell, különben a következő
+            # kattintás ugyanabból a régi csillagállapotból indulna.
+            row_now = self._photos.row_of_id(photo.id)
+            if row_now >= 0:
+                current = self._photos.photos[row_now]
+                if current.star != new_star:
+                    updated = replace(current, star=new_star)
+                    records = tuple(
+                        updated if existing.id == photo.id else existing
+                        for existing in self._photos.photos
+                    )
+                    self._provider.register_photos(records)
+                    self._photos.update_photo(photo.id, updated)
+            self._refresh_if_star_filtered()
+
         self._run_photo_write(
-            photo.id, perform, after=self._refresh_if_star_filtered
+            photo.id, perform, after=after
         )
 
     # -- Szöveg-vágólap: a FELIRATRA hat, nem a fájlra (#1526) -------------
     #
-    # MÉRVE: az `eMenuEdit` névtérben a `Copy Text` / `Paste Text` a
-    # feliratszöveg vágólap-műveletei — a fájl-vágólap (`Cut`/`Copy`/`Paste`,
-    # `fileops_controller`) ettől KÜLÖN készlet, két külön névtérben
-    # (`eMenuEdit` és `Address`). A jegy hét parancsából ez a kettő maradt.
+    # #5877: a menü Text eszköz réteget másol; a külön képfelirat-vágólap
+    # Python oldali segédjei ettől elkülönülnek.
     #
     # ⚠️ Fej nélküli környezetben (`offscreen`/`minimal`) NEM nyúlunk a
     # rendszervágólaphoz: nincs mögötte vágólap-tulajdonos, és a Qt-hívás a
@@ -537,35 +561,18 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
     # feltennénk.
 
     def _ensure_caption_clipboard(self) -> None:
-        """Lusta, egyszeri bekötés a rendszervágólap `dataChanged`-jére.
+        """A külön felirat-segéd tartalék tárát inicializálja fej nélküli futáshoz."""
+        if not hasattr(self, "_caption_clipboard"):
+            self._caption_clipboard = ""
 
-        Enélkül a menütétel csak a MI írásainkról tudna, egy másik program
-        vágólap-írásáról nem — a „Szöveg beillesztése" hazug állapotban
-        ragadna. Fej nélküli környezetben nincs mihez kötni; ott a
-        munkamenet-szintű tár változásait a saját írásunk jelzi."""
-        if getattr(self, "_caption_clipboard_wired", False):
-            return
-        self._caption_clipboard_wired = True
-        self._caption_clipboard = ""
-        from PySide6.QtGui import QGuiApplication
-
-        if QGuiApplication.platformName() in ("offscreen", "minimal"):
-            return
-        vagolap = QGuiApplication.clipboard()
-        if vagolap is not None:
-            vagolap.dataChanged.connect(self.captionClipboardChanged.emit)
-
-    #: ⚠️ SZÁNDÉKOSAN nem `@Slot`: a felület nem a szövegtárral beszél, hanem
-    #: a `copyCaptionText`/`pasteCaptionText` parancsokkal. Egy bekötetlen
-    #: slot néma lánc-szakadás lenne (`scripts/kepesseg_or.py`), ez viszont
-    #: a próbák és a fej nélküli környezet belépője.
+    #: ⚠️ SZÁNDÉKOSAN nem `@Slot`: ez a külön képfelirat-vágólap Python-API-ja;
+    #: a Szerkesztés menü a Text eszköz réteget kezeli (#5877).
     def setCaptionClipboardText(self, text: str) -> None:  # noqa: N802
         """A szöveg-vágólap FELTÖLTÉSE."""
         from PySide6.QtGui import QGuiApplication
 
         self._ensure_caption_clipboard()
         self._caption_clipboard = str(text or "")
-        self.captionClipboardChanged.emit()
         if QGuiApplication.platformName() in ("offscreen", "minimal"):
             return
         vagolap = QGuiApplication.clipboard()
@@ -585,18 +592,10 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         vagolap = QGuiApplication.clipboard()
         return "" if vagolap is None else vagolap.text()
 
-    @Property(bool, notify=captionClipboardChanged)
-    def hasCaptionTextClipboard(self) -> bool:  # noqa: N802
-        """Van-e SZÖVEG a vágólapon — ettől él a „Szöveg beillesztése".
-
-        Szándékosan nem gyorstárazzuk: a vágólapot más program is átírhatja,
-        és a menü megnyitásakor a FRISS állapot kell (a `clipboardHasFiles`
-        mintája)."""
-        return bool(self.captionClipboardText().strip())
-
-    @Slot(int, result=bool)
     def copyCaptionText(self, row: int) -> bool:  # noqa: N802
-        """A kép FELIRATA a vágólapra („Copy Text").
+        """Python oldali segéd a kép feliratának vágólapra másolásához.
+
+        A `Copy Text` menütétel külön a Text eszköz rétegét kezeli (#5877).
 
         `False`, ha nincs mit másolni: érvénytelen sor, vagy a képnek nincs
         felirata. Üres szöveget feltenni annyi lenne, mint kiürítni a
@@ -610,13 +609,12 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         self.setCaptionClipboardText(felirat)
         return True
 
-    @Slot("QVariantList", result=int)
     def pasteCaptionText(self, rows) -> int:  # noqa: N802
-        """A vágólap szövege a KIJELÖLT képek feliratába („Paste Text").
+        """Python oldali segéd a vágólap feliratként való beillesztéséhez.
 
-        Az eredetiben a parancs a kijelölésre hat, nem egy képre. Visszaadja,
+        Nem a Szerkesztés menü `Paste Text` parancsa (#5877). Visszaadja,
         hány képre indult írás. Ha a kijelölésben van már feliratozott kép,
-        a QML előbb megerősítést kér; az írás csak a `confirmCaptionPaste`
+        a QML megerősítést kér; az írás csak a `confirmCaptionPaste`
         hívásakor indul.
 
         ⚠️ ÜRES vágólapra nem tesz semmit: a meglévő feliratok letörlése néma
@@ -668,6 +666,94 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             after=utomunka,
         )
         return len(kijeloles)
+
+    def _ensure_text_layer_clipboard(self) -> None:
+        if not hasattr(self, "_text_layer_clipboard_value"):
+            self._text_layer_clipboard_value: str | None = None
+
+    @staticmethod
+    def _text_layer_value(photo) -> str | None:
+        """A kép értelmezhető, nem üres Text eszközös `text=` sora."""
+        if photo.kind == "video":
+            return None
+        try:
+            document = load_or_empty(
+                Path(photo.folder_path) / PICASA_INI_NAME
+            )
+        except (OSError, UnicodeError):
+            return None
+        section = document.section(photo.name)
+        raw = section.get("text") if section is not None else None
+        if not raw:
+            return None
+        try:
+            overlay = parse_text(raw)
+        except ValueError:
+            return None
+        if overlay is None or not any(block.content for block in overlay.blocks):
+            return None
+        return raw
+
+    @Slot(list, result=bool)
+    def hasTextLayerInSelection(self, rows) -> bool:  # noqa: N802
+        """A kijelölés első képén van-e nem üres Text eszközös réteg."""
+        photos = self._rows_to_photos(rows or ())
+        return bool(photos and self._text_layer_value(photos[0]) is not None)
+
+    @Property(bool, notify=textLayerClipboardChanged)
+    def hasTextLayerClipboard(self) -> bool:  # noqa: N802
+        """Van-e a Text eszköz rétegpuffere a `Paste Text` számára."""
+        self._ensure_text_layer_clipboard()
+        return self._text_layer_clipboard_value is not None
+
+    @Slot(list, result=bool)
+    def copyTextLayer(self, rows) -> bool:  # noqa: N802
+        """A kijelölés első képének Text eszközös rétegét másolja.
+
+        A `.picasa.ini` `text=` értéke a képhez írt szövegréteg, nem a kép
+        felirata. A felirat-vágólap (#1526) másik adatot kezel.
+        """
+        self._ensure_text_layer_clipboard()
+        photos = self._rows_to_photos(rows or ())
+        if not photos:
+            return False
+        value = self._text_layer_value(photos[0])
+        if value is None:
+            return False
+        self._text_layer_clipboard_value = value
+        self.textLayerClipboardChanged.emit()
+        return True
+
+    @Slot(list)
+    def pasteTextLayer(self, rows) -> None:  # noqa: N802
+        """A Text eszközös réteget a kijelölt képekre írja.
+
+        A Text eszköz által az aktuális képre mentett réteg a Picasa belső
+        szövegpuffere is lehet (#5881, `this+0xcc8`), ezért ha még nem futott
+        le külön Copy Text, a kijelölés első rétege adja a beilleszthető
+        tartalmat. Így a mért job-287 állapotban a Paste Text is elérhető.
+        """
+        self._ensure_text_layer_clipboard()
+        photos = [
+            photo for photo in self._rows_to_photos(rows or ())
+            if photo.kind != "video"
+        ]
+        if not photos:
+            return
+        value = self._text_layer_clipboard_value
+        if value is None:
+            value = self._text_layer_value(photos[0])
+            if value is None:
+                return
+            self._text_layer_clipboard_value = value
+            self.textLayerClipboardChanged.emit()
+
+        def mutate(document, photo):
+            document = document.with_value(photo.name, "text", value)
+            document = document.with_value(photo.name, "textactive", "1")
+            return with_backuphash(document, photo.name)
+
+        self._apply_batch(photos, mutate)
 
     @Slot(result=int)
     def confirmCaptionPaste(self) -> int:  # noqa: N802
@@ -724,13 +810,23 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             if is_jpeg:
                 path = Path(photo.folder_path) / photo.name
                 if write_iptc_caption(path, text):
+                    ini_path = Path(photo.folder_path) / PICASA_INI_NAME
+                    # #5900: az IPTC-írás után Windowson az ini átmenetileg
+                    # zárolt lehet; a backuphash-lépés ezért újrapróbál.
+                    update_document_ujraprobalva(
+                        ini_path,
+                        lambda document: with_backuphash(document, photo.name),
+                        backup=True,
+                    )
                     return {"caption_file": text or None}
             ini_path = Path(photo.folder_path) / PICASA_INI_NAME
 
             def mutate(document):
                 if text:
-                    return document.with_value(photo.name, "caption", text)
-                return document.with_removed(photo.name, "caption")
+                    document = document.with_value(photo.name, "caption", text)
+                else:
+                    document = document.with_removed(photo.name, "caption")
+                return with_backuphash(document, photo.name)
 
             update_document(ini_path, mutate, backup=True)
             return {"caption_ini": text or None}
@@ -1306,6 +1402,110 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
         Visszaadja az új tokent (üres kijelölésnél/hibánál üres stringet)."""
         return self._albumot_keszit(name, self._rows_to_photos(rows))
 
+    @Slot(str, list, str, str, str, bool, str, result=str)
+    def createAlbumWithProperties(
+        self,
+        name: str,
+        rows,
+        date: str,
+        location: str,
+        description: str,
+        use_music: bool,
+        music_file: str,
+    ) -> str:
+        """Album Properties párbeszédből, a kijelölt képek tagságával (#5846).
+
+        A tulajdonságok és a tagság együtt, az érintett fotók mappáinak
+        `.picasa.ini` fájljaiba kerülnek, ugyanazon a kötegelt íróúton, mint
+        a meglévő „Create Album from Selection” művelet.
+        """
+        photos = self._rows_to_photos(rows)
+        if not photos:
+            return ""
+        token = secrets.token_hex(16)
+        clean_name = (name or "").strip() or None
+
+        def mutate(document, photo):
+            document = ensure_album(document, token, clean_name)
+            document = with_album_fields(
+                document,
+                token,
+                name=clean_name,
+                date=date,
+                location=location,
+                description=description,
+                use_music=use_music,
+                music_file=music_file,
+            )
+            return with_album(document, photo.name, token)
+
+        if not self._write_album_batch(photos, mutate):
+            return ""
+        return token
+
+    @Slot(str, str, str, str, str, bool, str, result=str)
+    def createEmptyAlbum(
+        self,
+        name: str,
+        folder_path: str,
+        date: str,
+        location: str,
+        description: str,
+        use_music: bool,
+        music_file: str,
+    ) -> str:
+        """Üres albumot ment az aktuális mappa ini-jébe (#5812).
+
+        Az album tulajdonságait a párbeszéd OK-ja után írjuk ki. A kijelölt
+        képek `albums=` mezői nem változnak; az index a definícióból 0 tagú
+        albumot olvas be, ami teljes újraindexelés után is megmarad.
+        """
+        folder_path = (folder_path or "").strip()
+        folder_error = QCoreApplication.translate(
+            "PhotoOpsMixin",
+            "An album must be saved in an indexed photo folder.",
+        )
+        if not folder_path:
+            self.albumWriteFailed.emit(folder_error)
+            return ""
+        folder = Path(folder_path)
+        if not folder.is_dir():
+            self.albumWriteFailed.emit(folder_error)
+            return ""
+
+        token = secrets.token_hex(16)
+        clean_name = (name or "").strip() or None
+        ini_path = folder / PICASA_INI_NAME
+
+        def mutate(document):
+            document = ensure_album(document, token, clean_name)
+            return with_album_fields(
+                document,
+                token,
+                name=clean_name,
+                date=date,
+                location=location,
+                description=description,
+                use_music=use_music,
+                music_file=music_file,
+            )
+
+        try:
+            with open_index(self._db_path) as conn:
+                indexed = conn.execute(
+                    "SELECT 1 FROM folders WHERE path = ?", (str(folder),)
+                ).fetchone()
+                if indexed is None:
+                    self.albumWriteFailed.emit(folder_error)
+                    return ""
+                update_document(ini_path, mutate, backup=True)
+                self._sync_tree(conn, str(folder))
+                self._load_albums(conn)
+        except _WRITE_ERRORS as error:
+            self.albumWriteFailed.emit(str(error))
+            return ""
+        return token
+
     def _albumot_keszit(self, name: str, photos) -> str:
         """Album készítése MEGADOTT fotókból (a `createAlbum` magja, #1406).
 
@@ -1636,7 +1836,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
 
         def mutate(document, photo):
             steps = (photo.rotate_steps + delta) % 4
-            return forgatas_mutacio(document, photo.name, steps)
+            return with_backuphash(
+                forgatas_mutacio(document, photo.name, steps), photo.name
+            )
 
         self._apply_batch(valid, mutate)
 
@@ -1761,7 +1963,9 @@ class PhotoOpsMixin(BackgroundWorkerMixin):
             ini_path = Path(photo.folder_path) / PICASA_INI_NAME
 
             def mutate(document):
-                return forgatas_mutacio(document, photo.name, steps)
+                return with_backuphash(
+                    forgatas_mutacio(document, photo.name, steps), photo.name
+                )
 
             update_document(ini_path, mutate, backup=True)
             return {"rotate_steps": steps}

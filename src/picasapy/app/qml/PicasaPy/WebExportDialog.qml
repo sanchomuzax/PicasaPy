@@ -7,12 +7,11 @@ import QtQuick.Layouts
 // picasa-fen-dialogs.md 3.12.): a kijelölt mappa/album exportja statikus
 // HTML-galériává a Picasa `.tpl` sablonnyelvével (`picasapy.webexport`).
 //
-// A FEN-eredetiben van egy élő `printpreview` sablon-előnézet — ez itt
-// KIMARADT (a motor a lényeg, nem a sablonválasztó UI-csiszolása); helyette
-// a sablon neve/leírása szöveges. Önálló, mozgatható/átméretezhető Window
-// (a MoveDatabaseDialog/#368 mintája) — a `Main.qml`-be illesztés (menü-
-// bekötés, `webExportController` context property) az integrátoré, ld. a
-// `webexport_controller.py` docstringjét.
+// A párbeszéd a `webexport.fen` sablonlistáját, leírását és előnézeti
+// képét adja. Önálló, mozgatható/átméretezhető Window (a
+// MoveDatabaseDialog/#368 mintája), a `Main.qml`-be illesztés
+// (menübekötés, `webExportController` context property) az integrátoré,
+// ld. a `webexport_controller.py` docstringjét.
 Window {
     id: webExportWindow
     objectName: "webExportDialog"
@@ -24,13 +23,13 @@ Window {
     //: külön ablakban nyitja.
     property string helpTopic: "features/exportalas.md"
     WindowHelp { tema: webExportWindow.helpTopic }
-    width: 520
+    width: 760
     //: #4611: a tartalomhoz igazodik. A rögzített 360/420 px-es magasságnál a
     //: „Létrehozás" gomb a 435. képpontnál kezdődött, azaz az ablakon kívül
     //: esett, és sablontól függetlenül nem volt kattintható.
     readonly property real fitHeight: mainColumn.implicitHeight + 2 * mainColumn.anchors.margins
     height: Math.max(webExportWindow.minimumHeight, webExportWindow.fitHeight)
-    minimumWidth: 460
+    minimumWidth: 700
     minimumHeight: 320
     color: Theme.canvasBg
 
@@ -44,6 +43,13 @@ Window {
         webExportWindow.templateIndex >= 0
         && webExportWindow.templateIndex < webExportWindow.templates.length
             ? webExportWindow.templates[webExportWindow.templateIndex].id : ""
+    readonly property var htmlTemplateEntries: orderedHtmlTemplateEntries()
+    readonly property var templateDisplayNames:
+        webExportWindow.htmlTemplateEntries.map(
+            function (template) { return webExportWindow.templateDisplayName(template) })
+    readonly property int htmlTemplateIndex:
+        webExportWindow.htmlTemplateEntries.findIndex(
+            function (template) { return template.id === webExportWindow.templateId })
     //: #534: a kiválasztott sablon előnézeti rajzának URL-je (üres, ha
     //: nincs) — az eredeti választójában is előnézeti kép van
     //: (`preview.jpg`), nálunk saját, sematikus SVG.
@@ -51,6 +57,97 @@ Window {
         webExportWindow.templateIndex >= 0
         && webExportWindow.templateIndex < webExportWindow.templates.length
             ? webExportWindow.templates[webExportWindow.templateIndex].preview : ""
+
+    function orderedHtmlTemplateEntries() {
+        var picasaOrder = [
+            "szurke", "fekete", "feher",
+            "szurke-keret", "fekete-keret", "feher-keret", "xml"
+        ]
+        var ordered = []
+        for (var i = 0; i < picasaOrder.length; ++i) {
+            for (var j = 0; j < webExportWindow.templates.length; ++j) {
+                if (webExportWindow.templates[j].id === picasaOrder[i])
+                    ordered.push(webExportWindow.templates[j])
+            }
+        }
+        for (var k = 0; k < webExportWindow.templates.length; ++k) {
+            if (picasaOrder.indexOf(webExportWindow.templates[k].id) < 0)
+                ordered.push(webExportWindow.templates[k])
+        }
+        return ordered
+    }
+
+    function templateDisplayName(template) {
+        if (!template) return ""
+        switch (template.id) {
+        case "szurke":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_greybg_name
+            return qsTr("Template 1, 2-page grey background")
+        case "fekete":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_blackbg_name
+            return qsTr("Template 2, 2-page black background")
+        case "feher":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_whitebg_name
+            return qsTr("Template 3, 2-page white background")
+        case "szurke-keret":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_greyfrm_name
+            return qsTr("Template 4, 1-page grey background")
+        case "fekete-keret":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_blackfrm_name
+            return qsTr("Template 5, 1-page black background")
+        case "feher-keret":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_whitefrm_name
+            return qsTr("Template 6, 1-page white background")
+        case "xml":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_xml_name
+            return qsTr("XML Code")
+        default:
+            return template.name
+        }
+    }
+
+    function templateDescription(template) {
+        if (!template) return ""
+        switch (template.id) {
+        case "szurke":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_greybg_descr
+            return qsTr("Thumbnail index page linked to a full view picture page.")
+        case "fekete":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_blackbg_descr
+            return qsTr("Thumbnail index page linked to a full view picture page.")
+        case "feher":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_whitebg_descr
+            return qsTr("Thumbnail index page linked to a full view picture page.")
+        case "szurke-keret":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_greyfrm_descr
+            return qsTr("Scrollable thumbnail index on left with full view picture on right.")
+        case "fekete-keret":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_blackfrm_descr
+            return qsTr("Scrollable thumbnail index on left with full view picture on right.")
+        case "feher-keret":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_whitefrm_descr
+            return qsTr("Scrollable thumbnail index on left with full view picture on right.")
+        case "xml":
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:webtpl_xml_descr
+            return qsTr("Raw XML-formatted text for further translation.")
+        default:
+            return template.description
+        }
+    }
 
     property bool exporting: false
     property bool ftpMode: false
@@ -72,8 +169,17 @@ Window {
         webExportWindow.openWithMode(true)
     }
 
+    function currentFolderTitle() {
+        if (typeof controller === "undefined" || !controller) return ""
+        var path = String(controller.currentFolder || "").replace(/[\\/]+$/, "")
+        var parts = path.split(/[\\/]/)
+        return parts.length > 0 ? parts[parts.length - 1] : ""
+    }
+
     function openWithMode(publishViaFtp) {
         webExportWindow.ftpMode = publishViaFtp === true
+        if (!webExportWindow.ftpMode)
+            webExportWindow.albumTitle = webExportWindow.currentFolderTitle()
         webExportWindow.lastError = ""
         webExportWindow.lastOutputFolder = ""
         webExportWindow.lastFtpAccount = ""
@@ -96,11 +202,14 @@ Window {
                 webExportWindow.targetFolder = prefs.targetDir
                     || webExportController.defaultWebExportTarget()
             }
-            // A korábban mentett sablont azonosító alapján keressük; üres vagy
-            // már nem telepített azonosítónál az eredeti 0. index az alap.
+            // A mentett sablont azonosító alapján keressük. HTML-módban az
+            // eredeti lista első eleme (Template 1, szürke háttér) az alap;
+            // FTP-módban a korábbi kiválasztás marad.
+            var defaultTemplateId = webExportWindow.ftpMode ? "" : "szurke"
+            var preferredTemplateId = prefs.templateId || defaultTemplateId
             var savedTemplateIndex = 0
             for (var i = 0; i < webExportWindow.templates.length; ++i) {
-                if (webExportWindow.templates[i].id === prefs.templateId) {
+                if (webExportWindow.templates[i].id === preferredTemplateId) {
                     savedTemplateIndex = i
                     break
                 }
@@ -163,6 +272,27 @@ Window {
         }
     }
 
+    function generateButtonText() {
+        if (webExportWindow.ftpMode) return qsTr("Publish")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: webexport:webexport/button29.title
+        return qsTr("Export")
+    }
+
+    function closeButtonText() {
+        if (webExportWindow.ftpMode) return qsTr("Close")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: webexport:webexport/button30.title
+        return qsTr("Cancel")
+    }
+
+    function titleLabelText() {
+        if (webExportWindow.ftpMode) return qsTr("Page title:")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: webexport:webexport/labelgroup13.title
+        return qsTr("Web page title:")
+    }
+
     Connections {
         target: typeof webExportController !== "undefined" ? webExportController : null
         function onWebExportStarted() {
@@ -196,13 +326,61 @@ Window {
         anchors.margins: 12
         spacing: 10
 
+        // -- méret és mozgókép-mód -----------------------------------------------
+        // #4610 (spec `picasa-menu-parancsok-viselkedes.md` 6.1): az eredeti
+        // `webexport.fen` EGY méretválasztót ad (`sizeradio`, a nagy kép
+        // mérete): a bélyegkép méretét a sablon szabja meg (hiányában 144
+        // képpont). Mellette a mozgókép-mód (`moviesradio`). Az elemek
+        // sorrendje és angol forrásszövege a FEN-é, a magyar felirat a
+        // hivatalos katalógusé (`webexport/itemN`); a címke+legördülő
+        // rács elrendezése a miénk. A képpont-táblát a vezérlő tartja
+        // (`SIZE_CHOICES`), a QML csak az indexet adja át.
+        GridLayout {
+            Layout.fillWidth: true
+            columns: 2
+            columnSpacing: 8
+            rowSpacing: 6
+            enabled: !webExportWindow.exporting
+            Text {
+                text: qsTr("Export pictures at:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            PicasaComboBox {
+                id: sizeBox
+                objectName: "webExportSizeBox"
+                Layout.fillWidth: true
+                model: [qsTr("Original Size"),
+                        qsTr("1024 pixels (for large monitors)"),
+                        qsTr("800 pixels (for large Web pages)"),
+                        qsTr("640 pixels (for Web pages)"),
+                        qsTr("320 pixels (for email)")]
+                // `Preferences\\WebExportSize` alapértéke → 640 képpont
+                currentIndex: 3
+            }
+            Text {
+                text: qsTr("Export movies using:")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            PicasaComboBox {
+                id: movieBox
+                objectName: "webExportMovieBox"
+                Layout.fillWidth: true
+                model: [qsTr("First frame"), qsTr("Full movie")]
+                // `Preferences\\WebExportMovie` alapértéke → Első képkocka
+                currentIndex: 0
+            }
+        }
+
         // -- cím (albumName override) --------------------------------------
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 2
             enabled: !webExportWindow.exporting
             Text {
-                text: qsTr("Page title:")
+                objectName: "webExportTitleLabel"
+                text: webExportWindow.titleLabelText()
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
@@ -262,7 +440,10 @@ Window {
             enabled: !webExportWindow.exporting
             visible: !webExportWindow.ftpMode
             Text {
-                text: qsTr("Save to:")
+                objectName: "webExportTargetLabel"
+                //: picasapy-origin: picasa
+                //: picasapy-origin-key: webexport:webexport/labelgroup15.title
+                text: qsTr("Folder:")
                 font.pixelSize: Theme.fontSize
                 color: Theme.ink
             }
@@ -287,11 +468,93 @@ Window {
             }
         }
 
-        // -- sablon -------------------------------------------------------------
+        // -- HTML-sablonlista és előnézet ------------------------------------
         ColumnLayout {
+            objectName: "webExportHtmlTemplateSection"
             Layout.fillWidth: true
             spacing: 2
             enabled: !webExportWindow.exporting
+            visible: !webExportWindow.ftpMode
+            Text {
+                objectName: "webExportInstruction"
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                //: picasapy-origin: picasa
+                //: picasapy-origin-key: webexport:webexport/label20.title
+                text: qsTr("Click a Template Name to view an example.  When you have made your selection, click Export.")
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
+                ColumnLayout {
+                    Layout.preferredWidth: 340
+                    Layout.fillWidth: true
+                    spacing: 6
+                    ListView {
+                        id: templateList
+                        objectName: "webExportTemplateList"
+                        property real rowHeight: 34
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 7 * rowHeight
+                        clip: true
+                        model: webExportWindow.htmlTemplateEntries
+                        currentIndex: webExportWindow.htmlTemplateIndex
+                        delegate: ItemDelegate {
+                            required property var modelData
+                            required property int index
+                            width: templateList.width
+                            height: templateList.rowHeight
+                            text: webExportWindow.templateDisplayName(modelData)
+                            highlighted: ListView.isCurrentItem
+                            onClicked: {
+                                var selectedId = modelData.id
+                                for (var i = 0; i < webExportWindow.templates.length; ++i) {
+                                    if (webExportWindow.templates[i].id === selectedId) {
+                                        webExportWindow.templateIndex = i
+                                        break
+                                    }
+                                }
+                            }
+                        }
+                        ScrollBar.vertical: ScrollBar {
+                            policy: ScrollBar.AsNeeded
+                        }
+                    }
+                    Text {
+                        objectName: "webExportTemplateDescription"
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        text: webExportWindow.templateDescription(
+                            webExportWindow.templates[webExportWindow.templateIndex])
+                        font.pixelSize: Theme.fontSize - 1
+                        color: Theme.textGray
+                    }
+                }
+                Image {
+                    objectName: "webExportTemplatePreview"
+                    source: webExportWindow.templatePreview
+                    visible: webExportWindow.templatePreview.toString().length > 0
+                    // A sablon saját csomagolt preview.svg állománya.
+                    sourceSize.width: 480
+                    sourceSize.height: 300
+                    fillMode: Image.PreserveAspectFit
+                    Layout.preferredWidth: 280
+                    Layout.preferredHeight: 175
+                    Layout.alignment: Qt.AlignTop
+                }
+            }
+        }
+
+        // Az FTP-fiók választója marad a régi legördülő vezérlővel; a
+        // webes feltöltés útja és a kiválasztott sablonazonosító változatlan.
+        ColumnLayout {
+            objectName: "webExportFtpTemplateSection"
+            Layout.fillWidth: true
+            spacing: 2
+            enabled: !webExportWindow.exporting
+            visible: webExportWindow.ftpMode
             Text {
                 text: qsTr("Template:")
                 font.pixelSize: Theme.fontSize
@@ -306,11 +569,9 @@ Window {
                 onActivated: webExportWindow.templateIndex = currentIndex
             }
             Image {
-                objectName: "webExportTemplatePreview"
+                objectName: "webExportFtpTemplatePreview"
                 source: webExportWindow.templatePreview
                 visible: webExportWindow.templatePreview.toString().length > 0
-                //: a rajz 160 x 100; kétszeres méretben kérjük be, hogy
-                //: nagy felbontású kijelzőn se legyen puha
                 sourceSize.width: 320
                 sourceSize.height: 200
                 fillMode: Image.PreserveAspectFit
@@ -319,7 +580,7 @@ Window {
                 Layout.topMargin: 4
             }
             Text {
-                objectName: "webExportTemplateDescription"
+                objectName: "webExportFtpTemplateDescription"
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 text: webExportWindow.templateIndex >= 0
@@ -327,53 +588,6 @@ Window {
                       ? webExportWindow.templates[webExportWindow.templateIndex].description : ""
                 font.pixelSize: Theme.fontSize - 1
                 color: Theme.textGray
-            }
-        }
-
-        // -- méret és mozgókép-mód -----------------------------------------------
-        // #4610 (spec `picasa-menu-parancsok-viselkedes.md` 6.1): az eredeti
-        // `webexport.fen` EGY méretválasztót ad (`sizeradio`, a nagy kép
-        // mérete) — a bélyegkép méretét a sablon szabja meg (hiányában 144
-        // képpont). Mellette a mozgókép-mód (`moviesradio`). Az elemek
-        // sorrendje és angol forrásszövege a FEN-é, a magyar felirat a
-        // hivatalos katalógusé (`webexport/itemN`); a címke+legördülő
-        // rács elrendezése a miénk. A képpont-táblát a vezérlő tartja
-        // (`SIZE_CHOICES`), a QML csak az indexet adja át.
-        GridLayout {
-            Layout.fillWidth: true
-            columns: 2
-            columnSpacing: 8
-            rowSpacing: 6
-            enabled: !webExportWindow.exporting
-            Text {
-                text: qsTr("Export pictures at:")
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
-            }
-            PicasaComboBox {
-                id: sizeBox
-                objectName: "webExportSizeBox"
-                Layout.fillWidth: true
-                model: [qsTr("Original Size"),
-                        qsTr("1024 pixels (for large monitors)"),
-                        qsTr("800 pixels (for large Web pages)"),
-                        qsTr("640 pixels (for Web pages)"),
-                        qsTr("320 pixels (for email)")]
-                // `Preferences\WebExportSize` alapértéke → 640 képpont
-                currentIndex: 3
-            }
-            Text {
-                text: qsTr("Export movies using:")
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
-            }
-            PicasaComboBox {
-                id: movieBox
-                objectName: "webExportMovieBox"
-                Layout.fillWidth: true
-                model: [qsTr("First frame"), qsTr("Full movie")]
-                // `Preferences\WebExportMovie` alapértéke → Első képkocka
-                currentIndex: 0
             }
         }
 
@@ -442,7 +656,7 @@ Window {
             Item { Layout.fillWidth: true }
             PicasaButton {
                 objectName: "webExportGenerateButton"
-                text: webExportWindow.ftpMode ? qsTr("Publish") : qsTr("Create")
+                text: webExportWindow.generateButtonText()
                 accent: Theme.picasaGreen
                 enabled: (webExportWindow.ftpMode
                           || webExportWindow.targetFolder.length > 0)
@@ -454,7 +668,7 @@ Window {
             }
             PicasaButton {
                 objectName: "webExportCloseButton"
-                text: qsTr("Close")
+                text: webExportWindow.closeButtonText()
                 enabled: !webExportWindow.exporting
                 onClicked: webExportWindow.visible = false
             }
