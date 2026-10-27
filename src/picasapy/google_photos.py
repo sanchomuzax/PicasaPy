@@ -533,7 +533,7 @@ class LoopbackOAuthSession:
                 self._respond(200 if not error else 400, content)
 
             def log_message(self, _format, *args):
-                # A kérés URL-je OAuth state-et és authorization code-ot tartalmaz.
+                # A kérés URL-je OAuth `state` értéket és authorization code-ot tartalmaz.
                 return
 
         # ADR-011 kivétel: kizárólag a 127.0.0.1-re, véletlen szabad portra

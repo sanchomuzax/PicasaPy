@@ -63,7 +63,7 @@ rangsorban „fehér foltként" előkerülnie: a
   szükséges ideiglenes HTTP-végpont kizárólag `127.0.0.1`-re és az operációs
   rendszer által kiosztott szabad portra köt. Csak a bejelentkezés idején él,
   legfeljebb 300 másodpercig; egyetlen, véletlen `state`-értékkel egyező
-  callbacket fogad el, utána bezár. A hibás state-et tartalmazó kérés nem
+  callbacket fogad el, utána bezár. A hibás `state` értéket tartalmazó kérés nem
   fogyasztja el a callbacket. A végpont másik gépről/LAN-ról nem érhető el.
   A loopback hálózati szinten ugyanazon gép más folyamatai számára is
   elérhető lehet; az OAuth `state` és PKCE védi a hitelesítést, nem egy
