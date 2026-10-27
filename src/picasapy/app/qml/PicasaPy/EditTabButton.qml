@@ -39,8 +39,8 @@ Rectangle {
     // adja át. Az alapérték az eredeti 3. fülé.
     property int iconWidth: 20
     property int iconHeight: 19
-    // a spec szerint az ikon y-ja 4 képponttal a fül teteje alatt van
-    readonly property int iconTop: 4
+    // #5959: a réteg közepe a fül közepére horgonyozva, egy px felfelé.
+    readonly property int iconTop: Math.round((height - iconHeight) / 2 - 1)
 
     //: #1857: a fül LEÍRÁSA — mire való a fül —, nem a neve.
     //: Korábban a buboréksúgó a `label`-t ismételte, vagyis a
@@ -70,7 +70,9 @@ Rectangle {
         // 15 × 16 … 25 × 19) — a méretet a gazda adja át.
         width: tbtn.iconWidth; height: tbtn.iconHeight
         kind: tbtn.iconKind
-        strokeColor: Theme.iconInk
+        // Az eredeti Picasa első öt ikonja fix tintát használ; a két saját
+        // fül marad a témaszínű.
+        strokeColor: tbtn.tabIndex < 5 ? "#373535" : Theme.iconInk
         accentColor: tbtn.iconAccent
         fleckColor: tbtn.iconFleck
     }
