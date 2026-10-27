@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -170,6 +171,10 @@ def _folder_pane_render_megmarad(ablakmagassag_delta, qml_app, qt_app, tmp_path)
 
 
 @pytest.mark.parametrize("ablakmagassag_delta", [-5, 0, 5])
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="a referencia Linuxon, software renderrel készül; Windowson a képpont-egyezés nem értelmezhető (#3263, #6058)",
+)
 def test_folder_pane_render_allapotok(ablakmagassag_delta, qml_app, qt_app, tmp_path):
     """Minden referenciaállapotot a három közeli ablakmagasságon ellenőriz."""
     _folder_pane_render_megmarad(ablakmagassag_delta, qml_app, qt_app, tmp_path)
