@@ -14,7 +14,7 @@ továbbra is, de a KIMENET a megnyílt lap (`controller.collageOpen`) és a
 látható panel. A film ága érintetlen: az továbbra is párbeszéd.
 
 A `movieDialog` melletti `collageDialog` komponens egyelőre a helyén marad
-(`CollageCreateDialog.qml`), csak nem ez a belépési útja — a leszerelése külön
+(`CreateDialogs.qml`), csak nem ez a belépési útja — a leszerelése külön
 jegy.
 
 ## Miért nem fogta meg ezt a #922 hat tesztje

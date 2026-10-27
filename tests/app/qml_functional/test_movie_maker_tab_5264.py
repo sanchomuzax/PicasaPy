@@ -24,7 +24,6 @@ from PIL import Image, ImageDraw
 from conftest import _build_qml_app
 from support.jpeg_factory import make_jpeg
 from support.varakozas import var_feltetelre
-from tests.support.create_dialogs_components_6051 import create_dialogs_source_text
 from tests.app.qml_functional._fomenu_4420_menu import _megnyit
 
 _MAPPA = "fotok"
@@ -177,14 +176,9 @@ def _merd_a_respack_elrendezest(window):
         "a Mozgófilmkészítő még külön Dialog, nem főablakba ágyazott panel"
     )
     assert panel.window() == window, "a Mozgófilmkészítő külön ablakban nyílt meg"
-    # A #6051-es komponensgyökerek a belső elemek közvetlen szülői;
-    # a három réteggyökér továbbra is a filmkészítő panelhez tartozik.
-    assert left.parentItem() is not None
-    assert left.parentItem().parentItem() == panel
-    assert preview.parentItem() is not None
-    assert preview.parentItem().parentItem() == panel
-    assert filmstrip.parentItem() is not None
-    assert filmstrip.parentItem().parentItem() == panel
+    assert left.parentItem() == panel
+    assert preview.parentItem() == panel
+    assert filmstrip.parentItem() == panel
 
     scale = min(1.0, panel.width() / 800.0, panel.height() / 534.0)
 
@@ -384,7 +378,15 @@ def test_a_mozgofilmkeszito_foablaklap_es_minden_bezarasi_utja(
         _elem(window, "movieCropToFit").property("text")
         == "Teljes képkockás fotó körbevágása"
     )
-    movie_qml = create_dialogs_source_text()
+    movie_qml = (
+        Path(__file__).resolve().parents[3]
+        / "src"
+        / "picasapy"
+        / "app"
+        / "qml"
+        / "PicasaPy"
+        / "CreateDialogs.qml"
+    ).read_text(encoding="utf-8")
     assert movie_qml.count("font.pixelSize: Theme.fontSize - 4") == 2, (
         "a magyar Mozgófilm-fül keskeny jelölőfeliratai betűméretének "
         "forrás-őre eltűnt"

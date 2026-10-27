@@ -500,10 +500,8 @@ def test_a_mozgofilm_lap_es_foablaki_vezerloi_lathatok_maradnak(
             assert film.property("height") <= window.height()
             left = _elem(window, "movieLeftPanel")
             preview = _elem(window, "moviePreviewPanel")
-            assert left.parentItem() is not None
-            assert left.parentItem().parentItem() == film
-            assert preview.parentItem() is not None
-            assert preview.parentItem().parentItem() == film
+            assert left.parentItem() == film
+            assert preview.parentItem() == film
             left_bottom = left.mapToScene(
                 QPointF(left.property("width"), left.property("height"))
             )

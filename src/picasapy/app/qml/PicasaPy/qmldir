@@ -92,16 +92,6 @@ SaveDialogs 1.0 SaveDialogs.qml
 InitialScanDialog 1.0 InitialScanDialog.qml
 ExportDialogs 1.0 ExportDialogs.qml
 CreateDialogs 1.0 CreateDialogs.qml
-PosterCreateDialog 1.0 PosterCreateDialog.qml
-CollageCreateDialog 1.0 CollageCreateDialog.qml
-MovieMakerDialog 1.0 MovieMakerDialog.qml
-MovieMakerTabs 1.0 MovieMakerTabs.qml
-MovieMakerOptions 1.0 MovieMakerOptions.qml
-MovieMakerPreview 1.0 MovieMakerPreview.qml
-MovieMakerFilmstrip 1.0 MovieMakerFilmstrip.qml
-MovieMakerSlideLogic 1.0 MovieMakerSlideLogic.qml
-MovieMakerDialogs 1.0 MovieMakerDialogs.qml
-CreateResultDialog 1.0 CreateResultDialog.qml
 AdjustTimestampDialog 1.0 AdjustTimestampDialog.qml
 MovieTitleDialog 1.0 MovieTitleDialog.qml
 MoviePreviewFrame 1.0 MoviePreviewFrame.qml

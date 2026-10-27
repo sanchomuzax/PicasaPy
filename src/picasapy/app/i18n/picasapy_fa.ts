@@ -5039,1181 +5039,954 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
         </message>
     </context>
     <context>
-        <name>CollageCreateDialog</name>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="23" />
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="163" />
-            <source>Picture Collage...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
-            <translation>‏&amp;کلاژ عکس...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="68" />
-            <source>Select pictures in the library first, or put them in the Picture Tray.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ابتدا عکس‌هایی را در کتابخانه انتخاب کنید یا آن‌ها را در سینی عکس قرار دهید.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="76" />
-            <source>%1 pictures selected.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 عکس انتخاب شد.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="95" />
-            <source>Scramble Collage</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/rand_placement-label)</extracomment>
-            <translation>کلاژ درهم</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="105" />
-            <source>Collage type:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>نوع کلاژ:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="114" />
-            <source>Picture Pile</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::ePicturePile</extracomment>
-            <translation>توده عکس</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="114" />
-            <source>Mosaic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>موزاییک</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="115" />
-            <source>Frame Mosaic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>موزاییک قاب‌دار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="115" />
-            <source>Grid</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>شبکه</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="116" />
-            <source>Contact Sheet</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
-            <translation>برگهٔ تماس</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="116" />
-            <source>Multiple Exposure</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
-            <translation>نوردهی روی هم</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="123" />
-            <source>Picture borders:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/borders_label)</extracomment>
-            <translation>حاشیه‌های عکس</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
-            <source>None</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
-            <translation>هیچکدام</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
-            <source>White Border</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Border::ID_COLLAGE_BORDER_1;stringres:collage::whiteborder_dname</extracomment>
-            <translation>حاشیه سفید</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
-            <source>Polaroid</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
-            <translation>پولاروید</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="139" />
-            <source>Target file:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
-            <translation>فایل مقصد</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="149" />
-            <source>(not selected)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(انتخاب نشده)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="154" />
-            <source>Browse...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation>مرور…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="166" />
-            <source>JPEG images (*.jpg)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>تصاویر JPEG (*.jpg)</translation>
-        </message>
-    </context>
-    <context>
         <name>CreateDialogs</name>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="124" />
-            <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 عکس پیدا نشد و نمایش داده نمی‌شود. (ممکن است فایل‌های گمشده جابه‌جا، تغییرنام یا حذف شده باشند.)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="127" />
-            <source>%1 pictures were skipped.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 عکس نادیده گرفته شد.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="149" />
-            <source>Collage saved: %1</source>
-            <extracomment>A kollázs elkészült — az összegző párbeszéd megnyitása.
-picasapy-origin: picasapy</extracomment>
-            <translation>کلاژ ذخیره شد: %1</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="150" />
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="174" />
-            <source>%1 pictures used.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 عکس استفاده شد.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="158" />
-            <source>The collage could not be created.</source>
-            <extracomment>A kollázs nem készült el.
-picasapy-origin: picasapy</extracomment>
-            <translation>ساخت کلاژ ممکن نشد.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="173" />
-            <source>Movie saved: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>فیلم ذخیره شد: %1</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="183" />
-            <source>The movie could not be created.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ساخت فیلم ممکن نشد.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="189" />
-            <source>Poster tiles saved.</source>
-            <extracomment>#4268: a poszterlapok a forráskép mellett készültek el.
-picasapy-origin: picasapy</extracomment>
-            <translation>کاشی‌های پوستر ذخیره شدند.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="197" />
-            <source>The poster tiles could not be created.</source>
-            <extracomment>#4268: a poszterlapok írási hibája a párbeszédben jelenik meg.
-picasapy-origin: picasapy</extracomment>
-            <translation>ساخت کاشی‌های پوستر ممکن نشد.</translation>
-        </message>
-    </context>
-    <context>
-        <name>CreateResultDialog</name>
-        <message>
-            <location filename="../qml/PicasaPy/CreateResultDialog.qml" line="10" />
-            <source>Create</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ایجاد</translation>
-        </message>
-    </context>
-    <context>
-        <name>MovieMakerDialog</name>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="119" />
-            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="363" />
-            <source>Text Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
-            <translation>اسلاید نوشتاری</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="385" />
-            <source>%1     %2x%3 pixels</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1     %2×%3 پیکسل</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="387" />
-            <source>(%1 of %2)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(%1 از %2)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="519" />
-            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>این کار فیلم جدیدی می‌سازد و همهٔ اسلایدهای متنیِ افزوده‌شده را حذف می‌کند. مطمئن هستید؟</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="640" />
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>بستن</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="647" />
-            <source>Create Movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:buttonlabel:{606D1C6D-36E6-4dce-AFCA-A0EE575A6162}</extracomment>
-            <translation>ایجاد فیلم</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="797" />
-            <source>Please Confirm...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>لطفاً تأیید کنید…</translation>
-        </message>
-    </context>
-    <context>
-        <name>MovieMakerDialogs</name>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="23" />
-            <source>Replace Existing or Create New?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
-            <translation>جایگزین کلاژ کنونی یا ایجاد کلاژ جدید؟</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="32" />
-            <source>Replace Existing</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
-            <translation>جایگزین کردن مورد کنونی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="41" />
-            <source>Create New</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
-            <translation>ایجاد مورد جدید</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="49" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>لغو</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="70" />
-            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="113" />
-            <source>Movie</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>فیلم</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="73" />
-            <source>MP4 videos (*.mp4)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ویدیوهای MP4 (*.mp4)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="80" />
-            <source>Audio files</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>فایل‌های صوتی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="84" />
-            <source>Music files (*.mp3, *.wma)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
-            <translation>‏فایل‌های موسیقی (.mp3 ،*wma*)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="85" />
-            <source>Music files (*.mp3, *.m4a)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
-            <translation>‏فایل‌های موسیقی (*.mp3،*.m4a)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="96" />
-            <source>Text color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
-            <translation>رنگ نوشتار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="103" />
-            <source>Background color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
-            <translation>رنگ پس‌زمینه</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="123" />
-            <source>Creating movie: %1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>در حال ساخت فیلم: %1 / %2</translation>
-        </message>
-    </context>
-    <context>
-        <name>MovieMakerFilmstrip</name>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="38" />
-            <source>Add selected clips</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>افزودن کلیپ‌های انتخاب‌شده</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="50" />
-            <source>Remove selected clip</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>حذف کلیپ انتخاب‌شده</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="104" />
-            <source>Text Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
-            <translation>اسلاید نوشتاری</translation>
-        </message>
-    </context>
-    <context>
-        <name>MovieMakerOptions</name>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="22" />
-            <source>Dimensions</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ابعاد</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="51" />
-            <source>Show Captions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label);makemoviepaneltext:Label(makemoviepanel/show_captions_label);stringres:Slingshot::ID_SHOW_CAPTIONS</extracomment>
-            <translation>نمایش شرح‌های عکس</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="69" />
-            <source>Full frame photo crop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/crop_to_fit_label)</extracomment>
-            <translation>برش عکس تمام قاب</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="84" />
-            <source>Show Dates</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::show_dates_label</extracomment>
-            <translation>نمایش تاریخ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="96" />
-            <source>Remove Low Resolution Faces</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/remove_low_res_faces_label)</extracomment>
-            <translation>حذف چهره‌هایی با وضوح کم</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="111" />
-            <source>Ordering of Slides:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/ordering_header_label)</extracomment>
-            <translation>ترتیب اسلایدها:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="117" />
-            <source>Best Transitions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/smart_order_label)</extracomment>
-            <translation>بهترین جلوه‌های انتقالی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="125" />
-            <source>Album Order</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)</extracomment>
-            <translation>سفارش آلبوم</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="134" />
-            <source>Chronological</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>زمانی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="152" />
-            <source>Total Photos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/lengthslider_label)</extracomment>
-            <translation>کل عکس‌ها</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="174" />
-            <source>Don't filter by time taken</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);stringres:CMakeMoviePanel::movieburstzero</extracomment>
-            <translation>بر اساس زمان گرفتن فیلتر نشود</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="175" />
-            <source>Remove Photos Taken Within %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>حذف عکس‌های ثبت‌شده در بازهٔ %1</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="210" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
             <source>Get More...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
             <translation>دریافت بیشتر...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="212" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
             <source>Get more clips from Photo Library</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
             <translation>دریافت کلیپ‌های بیشتر از عکسخانه</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="219" />
-            <source>Recompute</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>محاسبهٔ مجدد</translation>
-        </message>
-    </context>
-    <context>
-        <name>MovieMakerPreview</name>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="155" />
-            <source>Pause</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>مکث</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="155" />
-            <source>Preview</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
-            <translation>پیش‌نمایش</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="220" />
-            <source>Show actual movie size (don't stretch)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(video_control_bar2/1to1)</extracomment>
-            <translation>نمایش اندازه واقعی فیلم (کشیده نشود)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="234" />
-            <source>Play full screen</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Tooltip(video_control_bar2/fullscreen)</extracomment>
-            <translation>پخش تمام صفحه</translation>
-        </message>
-    </context>
-    <context>
-        <name>MovieMakerSlideLogic</name>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="20" />
-            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="43" />
-            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="56" />
-            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="74" />
-            <source>Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
-            <translation>نوشتار</translation>
-        </message>
-    </context>
-    <context>
-        <name>MovieMakerTabs</name>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="61" />
-            <source>Movie</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>فیلم</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="62" />
-            <source>Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab2)</extracomment>
-            <translation>اسلاید</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="67" />
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="142" />
-            <source>Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
-            <translation>گزینه‌ها</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="68" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
             <source>Clips (%d)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::clips_title</extracomment>
             <translation>کلیپ (%d)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="96" />
-            <source>Audio Track:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
-            <translation>تراک صوتی:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="107" />
-            <source>None</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
-            <translation>هیچکدام</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="116" />
-            <source>Load…</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
-            <translation>بارگذاری…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="123" />
-            <source>Clear</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>پاک کردن</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="154" />
-            <source>Truncate audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption0</extracomment>
-            <translation>کوتاه کردن صدا</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="154" />
-            <source>Fit photos into audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption1</extracomment>
-            <translation>قرار دادن عکس در صدا</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="155" />
-            <source>Loop photos to match audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption2</extracomment>
-            <translation>نمایش عکس‌ها در طول مدت زمان پخش تراک صوتی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="160" />
-            <source>Transition style:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</extracomment>
-            <translation>سبک انتقال</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="169" />
-            <source>Cut</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>برش</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="169" />
-            <source>Dissolve</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolve</extracomment>
-            <translation>محو شدن</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="170" />
-            <source>Dissolve through black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolveblack</extracomment>
-            <translation>محو شدن در سیاهی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="170" />
-            <source>Dissolve through white</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
-            <translation>محو شدن در سفیدی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
-            <source>Wipe - left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
-            <translation>پاک کردن - سمت چپ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
-            <source>Wipe</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>گذار روبشی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
-            <source>Wipe - top</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
-            <translation>پاک کردن - بالا</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="172" />
-            <source>Wipe - bottom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
-            <translation>پاک کردن - پایین</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="172" />
-            <source>Wipe - up left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
-            <translation>پاک کردن - سمت چپ و بالا</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="173" />
-            <source>Wipe - up right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
-            <translation>پاک کردن - سمت بالا</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="173" />
-            <source>Wipe - down left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
-            <translation>پاک کردن - سمت چپ پایین</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
-            <source>Wipe - down right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
-            <translation>پاک کردن - سمت راست پایین</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
-            <source>Push - left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
-            <translation>حرکت - سمت چپ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
-            <source>Push</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
-            <translation>ارسال</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="175" />
-            <source>Push - top</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
-            <translation>حرکت - بالا</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="175" />
-            <source>Push - bottom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
-            <translation>حرکت - به سمت پایین</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="176" />
-            <source>Circle - inwards</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
-            <translation>حلقه - به داخل</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="176" />
-            <source>Circle</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
-            <translation>دایره</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="177" />
-            <source>Pan and Zoom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
-            <translation>حرکت و بزرگنمایی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="177" />
-            <source>Pan and Zoom - face</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
-            <translation>حرکت و بزرگنمایی - چهره</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="178" />
-            <source>Time Lapse</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
-            <translation>زمان سپری شده</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="178" />
-            <source>Rectangle</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
-            <translation>مستطیل</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="198" />
-            <source>Slide Duration:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_label)</extracomment>
-            <translation>مدت زمان اسلاید</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="203" />
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="244" />
-            <source>%1 Sec</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 ثانیه</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="239" />
-            <source>Overlap</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transitionslider_label)</extracomment>
-            <translation>همپوشانی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="279" />
-            <source>Target file:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
-            <translation>فایل مقصد</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="285" />
-            <source>(not selected)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(انتخاب نشده)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="290" />
-            <source>Browse...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation>مرور…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="297" />
-            <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>عکس‌ها و زمان‌بندی فیلم از فایل پروژه گرفته می‌شوند؛ اندازه با مقدار پیش‌فرض آغاز می‌شود.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="307" />
-            <source>%1 pictures selected.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 عکس انتخاب شد.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="313" />
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="315" />
-            <source>Back to selected slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/rewind)</extracomment>
-            <translation>بازگشت به اسلاید انتخاب شده</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="336" />
-            <source>Text slide:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
-            <translation>اسلاید نوشتاری</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="341" />
-            <source>Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
-            <translation>نوشتار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="347" />
-            <source>Font:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>قلم:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="357" />
-            <source>Size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>اندازه:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="371" />
-            <source>Style:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Label(edittextpanel/style_label);makemoviepaneltext:Label(makemoviepanel/style_label)</extracomment>
-            <translation>سبک:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
-            <source>Centered</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Centered</extracomment>
-            <translation>در وسط قرار گرفته است</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
-            <source>I'm Feeling Lucky</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>حس خوش‌شانسی دارم</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
-            <source>Caption</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>شرح</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="378" />
-            <source>Caption - Classic</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle3</extracomment>
-            <translation>شرح عکس - کلاسیک</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="378" />
-            <source>Gradient - Black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle4</extracomment>
-            <translation>سیاه - شیب رنگ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="379" />
-            <source>Gradient - White</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle5</extracomment>
-            <translation>سفید - شیب رنگ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="379" />
-            <source>Transparent - Black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle6</extracomment>
-            <translation>شفاف - سیاه</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="380" />
-            <source>Transparent - White</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle7</extracomment>
-            <translation>شفاف - سفید</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="380" />
-            <source>Scrolling Credits</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle8</extracomment>
-            <translation>پیمایش اسامی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="381" />
-            <source>Music Video - Left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle9</extracomment>
-            <translation>نماهنگ - سمت چپ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="381" />
-            <source>Music Video - Right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle10</extracomment>
-            <translation>نماهنگ - راست</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="382" />
-            <source>Caption - Typewriter</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
-            <translation>شرح عکس - ماشین تحریر</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="390" />
-            <source>Bold</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/bold);makemoviepaneltext:Tooltip(makemoviepanel/bold);stringres:CTitleDialog::fontBold</extracomment>
-            <translation>پررنگ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="396" />
-            <source>Italic</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepaneltext:Tooltip(makemoviepanel/italic);stringres:CTitleDialog::fontItalic</extracomment>
-            <translation>مورب</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="404" />
-            <source>Automatic Outline</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>خط دور خودکار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="406" />
-            <source>Automatic Outline (like movie subtitles)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/outline)</extracomment>
-            <translation>طرح کلی خودکار (مانند زیرنویس‌های فیلم)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="414" />
-            <source>Text color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
-            <translation>رنگ نوشتار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="431" />
-            <source>Background color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
-            <translation>رنگ پس‌زمینه</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="436" />
-            <source>Insert Text Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/insert_slide)</extracomment>
-            <translation>افزودن یک اسلاید نوشتاری جدید</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="443" />
-            <source>Remove Selected Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
-            <translation>حذف اسلاید انتخابی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="445" />
-            <source>Remove the selected slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
-            <translation>حذف اسلاید انتخابی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="474" />
-            <source>Text Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
-            <translation>اسلاید نوشتاری</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="541" />
-            <source>Get More...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
-            <translation>دریافت بیشتر...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="543" />
-            <source>Get more clips from Photo Library</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
-            <translation>دریافت کلیپ‌های بیشتر از عکسخانه</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="557" />
-            <source>Recompute</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>محاسبهٔ مجدد</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="566" />
-            <source>Add selected clips</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>افزودن کلیپ‌های انتخاب‌شده</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="569" />
-            <source>Add the selected clip(s) to the end of the movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addtomovie)</extracomment>
-            <translation>افزودن کلیپ(های) انتخاب شده به آخر فیلم</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="576" />
-            <source>Remove selected clip</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>حذف کلیپ انتخاب‌شده</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="579" />
-            <source>Remove the selected clip(s) from the tray</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</extracomment>
-            <translation>حذف کلیپ‌های انتخابی از سبد</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="588" />
-            <source>Play selected clip only</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>فقط پخش کلیپ انتخاب‌شده</translation>
-        </message>
-    </context>
-    <context>
-        <name>PosterCreateDialog</name>
-        <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="11" />
             <source>Poster Settings</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/window1.title</extracomment>
             <translation>تنظیمات پوستر</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="29" />
-            <source>4x6</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
-            <translation>۴×۶</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="30" />
-            <source>8.5x11</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:FullPage;stringres:CPosterDlg::size2</extracomment>
-            <translation>۸٫۵×۱۱</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="31" />
-            <source>10x15</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:10x15m</extracomment>
-            <translation>۱۵ × ۱۰</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="32" />
-            <source>20x25</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::Crop20x25m</extracomment>
-            <translation>۲۵ × ۲۰</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="69" />
             <source>Tip: if you don't want to trim, crop your picture to the same size as the paper.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/label2.title</extracomment>
             <translation>نکته: اگر نمی‌خواهید عکس خود را کوتاه کنید، آن را به اندازه کاغذ برش دهید.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="79" />
             <source>Poster size:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/labelgroup3.title</extracomment>
             <translation>اندازه پوستر:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
             <source>200%</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/item5.title</extracomment>
             <translation>200%</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
             <source>300%</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/item6.title</extracomment>
             <translation>٪۳۰۰</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
             <source>400%</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/item7.title</extracomment>
             <translation>٪۴۰۰</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
             <source>500%</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/item8.title</extracomment>
             <translation>٪۵۰۰</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
             <source>600%</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/item9.title</extracomment>
             <translation>٪۶۰۰</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
             <source>700%</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/item10.title</extracomment>
             <translation>٪۷۰۰</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
             <source>800%</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/item11.title</extracomment>
             <translation>٪۸۰۰</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
             <source>900%</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/item12.title</extracomment>
             <translation>٪۹۰۰</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
             <source>1000%</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/item13.title</extracomment>
             <translation>٪۱۰۰۰</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="97" />
             <source>Paper size:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/labelgroup14.title</extracomment>
             <translation>اندازه کاغذ:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="113" />
+            <source>4x6</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
+            <translation>۴×۶</translation>
+        </message>
+        <message>
+            <source>8.5x11</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:FullPage;stringres:CPosterDlg::size2</extracomment>
+            <translation>۸٫۵×۱۱</translation>
+        </message>
+        <message>
+            <source>10x15</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:10x15m</extracomment>
+            <translation>۱۵ × ۱۰</translation>
+        </message>
+        <message>
+            <source>20x25</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::Crop20x25m</extracomment>
+            <translation>۲۵ × ۲۰</translation>
+        </message>
+        <message>
             <source>Overlap tiles</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: poster:poster/overlap.title</extracomment>
             <translation>همپوشانی کاشی‌ها</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="122" />
             <source>OK</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
             <translation>تأیید</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="128" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>لغو</translation>
+        </message>
+        <message>
+            <source>Poster tiles saved.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>کاشی‌های پوستر ذخیره شدند.</translation>
+        </message>
+        <message>
+            <source>The poster tiles could not be created.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ساخت کاشی‌های پوستر ممکن نشد.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="266" />
+            <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 عکس پیدا نشد و نمایش داده نمی‌شود. (ممکن است فایل‌های گمشده جابه‌جا، تغییرنام یا حذف شده باشند.)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="24" />
+            <source>Picture Collage...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
+            <translation>‏&amp;کلاژ عکس...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="44" />
+            <source>%1 pictures selected.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 عکس انتخاب شد.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="52" />
+            <source>Collage type:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>نوع کلاژ:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
+            <source>Picture Grid</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::ePictureGrid</extracomment>
+            <translation>شبکه عکس</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="77" />
+            <source>Mosaic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>موزاییک</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
+            <source>Grid</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>شبکه</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="79" />
+            <source>Multiple Exposure</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
+            <translation>نوردهی روی هم</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="85" />
+            <source>Picture borders:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/borders_label)</extracomment>
+            <translation>حاشیه‌های عکس</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
+            <source>None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
+            <translation>هیچکدام</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
+            <source>White Border</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Border::ID_COLLAGE_BORDER_1;stringres:collage::whiteborder_dname</extracomment>
+            <translation>حاشیه سفید</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
+            <source>Polaroid</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
+            <translation>پولاروید</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="55" />
+            <source>Select pictures in the library first, or put them in the Picture Tray.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ابتدا عکس‌هایی را در کتابخانه انتخاب کنید یا آن‌ها را در سینی عکس قرار دهید.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="121" />
+            <source>Scramble Collage</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/rand_placement-label)</extracomment>
+            <translation>کلاژ درهم</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
+            <source>Contact Sheet</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
+            <translation>برگهٔ تماس</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
+            <source>Frame Mosaic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>موزاییک قاب‌دار</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
+            <source>Picture Pile</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::ePicturePile</extracomment>
+            <translation>توده عکس</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="69" />
+            <source>Target file:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
+            <translation>فایل مقصد</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
+            <source>(not selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(انتخاب نشده)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="83" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>مرور…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
+            <source>JPEG images (*.jpg)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تصاویر JPEG (*.jpg)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="98" />
+            <source>Movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>فیلم</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="130" />
+            <source>Video size:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>اندازهٔ ویدیو:</translation>
+        </message>
+        <message>
+            <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>عکس‌ها و زمان‌بندی فیلم از فایل پروژه گرفته می‌شوند؛ اندازه با مقدار پیش‌فرض آغاز می‌شود.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="146" />
+            <source>Seconds per picture:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ثانیه برای هر عکس:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="185" />
+            <source>MP4 videos (*.mp4)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ویدیوهای MP4 (*.mp4)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="202" />
+            <source>Creating movie: %1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>در حال ساخت فیلم: %1 / %2</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="226" />
+            <source>Create</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ایجاد</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="247" />
+            <source>Collage saved: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>کلاژ ذخیره شد: %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="248" />
+            <source>%1 pictures used.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 عکس استفاده شد.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="240" />
+            <source>%1 pictures were skipped.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 عکس نادیده گرفته شد.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="254" />
+            <source>The collage could not be created.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ساخت کلاژ ممکن نشد.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="264" />
+            <source>Movie saved: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>فیلم ذخیره شد: %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Replace Existing or Create New?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
+            <translation>جایگزین کلاژ کنونی یا ایجاد کلاژ جدید؟</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Replace Existing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
+            <translation>جایگزین کردن مورد کنونی</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Create New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
+            <translation>ایجاد مورد جدید</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="271" />
+            <source>The movie could not be created.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ساخت فیلم ممکن نشد.</translation>
+        </message>
+        <message>
+            <source>Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
+            <translation>نوشتار</translation>
+        </message>
+        <message>
+            <source>Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab2)</extracomment>
+            <translation>اسلاید</translation>
+        </message>
+        <message>
+            <source>Clips</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab3)</extracomment>
+            <translation>کلیپ‌ها</translation>
+        </message>
+        <message>
+            <source>Sizes</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>اندازه‌ها</translation>
+        </message>
+        <message>
+            <source>Dimensions</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ابعاد</translation>
+        </message>
+        <message>
+            <source>Transition style:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</extracomment>
+            <translation>سبک انتقال</translation>
+        </message>
+        <message>
+            <source>Cut</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>برش</translation>
+        </message>
+        <message>
+            <source>Dissolve</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolve</extracomment>
+            <translation>محو شدن</translation>
+        </message>
+        <message>
+            <source>Dissolve through black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolveblack</extracomment>
+            <translation>محو شدن در سیاهی</translation>
+        </message>
+        <message>
+            <source>Dissolve through white</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
+            <translation>محو شدن در سفیدی</translation>
+        </message>
+        <message>
+            <source>Wipe - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
+            <translation>پاک کردن - سمت چپ</translation>
+        </message>
+        <message>
+            <source>Wipe</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>گذار روبشی</translation>
+        </message>
+        <message>
+            <source>Wipe - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
+            <translation>پاک کردن - بالا</translation>
+        </message>
+        <message>
+            <source>Wipe - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
+            <translation>پاک کردن - پایین</translation>
+        </message>
+        <message>
+            <source>Wipe - up left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
+            <translation>پاک کردن - سمت چپ و بالا</translation>
+        </message>
+        <message>
+            <source>Wipe - up right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
+            <translation>پاک کردن - سمت بالا</translation>
+        </message>
+        <message>
+            <source>Wipe - down left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
+            <translation>پاک کردن - سمت چپ پایین</translation>
+        </message>
+        <message>
+            <source>Wipe - down right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
+            <translation>پاک کردن - سمت راست پایین</translation>
+        </message>
+        <message>
+            <source>Push - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
+            <translation>حرکت - سمت چپ</translation>
+        </message>
+        <message>
+            <source>Push</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
+            <translation>ارسال</translation>
+        </message>
+        <message>
+            <source>Push - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
+            <translation>حرکت - بالا</translation>
+        </message>
+        <message>
+            <source>Push - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
+            <translation>حرکت - به سمت پایین</translation>
+        </message>
+        <message>
+            <source>Circle - inwards</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
+            <translation>حلقه - به داخل</translation>
+        </message>
+        <message>
+            <source>Circle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
+            <translation>دایره</translation>
+        </message>
+        <message>
+            <source>Pan and Zoom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
+            <translation>حرکت و بزرگنمایی</translation>
+        </message>
+        <message>
+            <source>Pan and Zoom - face</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
+            <translation>حرکت و بزرگنمایی - چهره</translation>
+        </message>
+        <message>
+            <source>Time Lapse</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
+            <translation>زمان سپری شده</translation>
+        </message>
+        <message>
+            <source>Rectangle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
+            <translation>مستطیل</translation>
+        </message>
+        <message>
+            <source>Overlap</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transitionslider_label)</extracomment>
+            <translation>همپوشانی</translation>
+        </message>
+        <message>
+            <source>Slide Duration:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_label)</extracomment>
+            <translation>مدت زمان اسلاید</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>%1 Sec</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 ثانیه</translation>
+        </message>
+        <message>
+            <source>Audio:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
+            <translation>تراک صوتی:</translation>
+        </message>
+        <message>
+            <source>Audio Track:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
+            <translation>تراک صوتی:</translation>
+        </message>
+        <message>
+            <source>No audio selected</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>هیچ صدایی انتخاب نشده است</translation>
+        </message>
+        <message>
+            <source>Load…</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
+            <translation>بارگذاری…</translation>
+        </message>
+        <message>
+            <source>Clear</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>پاک کردن</translation>
+        </message>
+        <message>
+            <source>Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
+            <translation>گزینه‌ها</translation>
+        </message>
+        <message>
+            <source>Truncate audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption0</extracomment>
+            <translation>کوتاه کردن صدا</translation>
+        </message>
+        <message>
+            <source>Fit photos into audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption1</extracomment>
+            <translation>قرار دادن عکس در صدا</translation>
+        </message>
+        <message>
+            <source>Loop photos to match audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption2</extracomment>
+            <translation>نمایش عکس‌ها در طول مدت زمان پخش تراک صوتی</translation>
+        </message>
+        <message>
+            <source>Show Captions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label);makemoviepaneltext:Label(makemoviepanel/show_captions_label);stringres:Slingshot::ID_SHOW_CAPTIONS</extracomment>
+            <translation>نمایش شرح‌های عکس</translation>
+        </message>
+        <message>
+            <source>Show Dates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::show_dates_label</extracomment>
+            <translation>نمایش تاریخ</translation>
+        </message>
+        <message>
+            <source>Full frame photo crop</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/crop_to_fit_label)</extracomment>
+            <translation>برش عکس تمام قاب</translation>
+        </message>
+        <message>
+            <source>Remove Low Resolution Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/remove_low_res_faces_label)</extracomment>
+            <translation>حذف چهره‌هایی با وضوح کم</translation>
+        </message>
+        <message>
+            <source>Best Transitions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/smart_order_label)</extracomment>
+            <translation>بهترین جلوه‌های انتقالی</translation>
+        </message>
+        <message>
+            <source>Album Order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)</extracomment>
+            <translation>سفارش آلبوم</translation>
+        </message>
+        <message>
+            <source>Chronological</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>زمانی</translation>
+        </message>
+        <message>
+            <source>Ordering of Slides:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/ordering_header_label)</extracomment>
+            <translation>ترتیب اسلایدها:</translation>
+        </message>
+        <message>
+            <source>Total Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/lengthslider_label)</extracomment>
+            <translation>کل عکس‌ها</translation>
+        </message>
+        <message>
+            <source>Don't filter by time taken</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);stringres:CMakeMoviePanel::movieburstzero</extracomment>
+            <translation>بر اساس زمان گرفتن فیلتر نشود</translation>
+        </message>
+        <message>
+            <source>Remove Photos Taken Within %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>حذف عکس‌های ثبت‌شده در بازهٔ %1</translation>
+        </message>
+        <message>
+            <source>Back to selected slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/rewind)</extracomment>
+            <translation>بازگشت به اسلاید انتخاب شده</translation>
+        </message>
+        <message>
+            <source>Text slide:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>اسلاید نوشتاری</translation>
+        </message>
+        <message>
+            <source>Font:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>قلم:</translation>
+        </message>
+        <message>
+            <source>Size:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>اندازه:</translation>
+        </message>
+        <message>
+            <source>Style:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Label(edittextpanel/style_label);makemoviepaneltext:Label(makemoviepanel/style_label)</extracomment>
+            <translation>سبک:</translation>
+        </message>
+        <message>
+            <source>Centered</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Centered</extracomment>
+            <translation>در وسط قرار گرفته است</translation>
+        </message>
+        <message>
+            <source>I'm Feeling Lucky</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>حس خوش‌شانسی دارم</translation>
+        </message>
+        <message>
+            <source>Caption</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>شرح</translation>
+        </message>
+        <message>
+            <source>Caption - Classic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle3</extracomment>
+            <translation>شرح عکس - کلاسیک</translation>
+        </message>
+        <message>
+            <source>Gradient - Black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle4</extracomment>
+            <translation>سیاه - شیب رنگ</translation>
+        </message>
+        <message>
+            <source>Gradient - White</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle5</extracomment>
+            <translation>سفید - شیب رنگ</translation>
+        </message>
+        <message>
+            <source>Transparent - Black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle6</extracomment>
+            <translation>شفاف - سیاه</translation>
+        </message>
+        <message>
+            <source>Transparent - White</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle7</extracomment>
+            <translation>شفاف - سفید</translation>
+        </message>
+        <message>
+            <source>Scrolling Credits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle8</extracomment>
+            <translation>پیمایش اسامی</translation>
+        </message>
+        <message>
+            <source>Music Video - Left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle9</extracomment>
+            <translation>نماهنگ - سمت چپ</translation>
+        </message>
+        <message>
+            <source>Music Video - Right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle10</extracomment>
+            <translation>نماهنگ - راست</translation>
+        </message>
+        <message>
+            <source>Caption - Typewriter</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
+            <translation>شرح عکس - ماشین تحریر</translation>
+        </message>
+        <message>
+            <source>Bold</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/bold);makemoviepaneltext:Tooltip(makemoviepanel/bold);stringres:CTitleDialog::fontBold</extracomment>
+            <translation>پررنگ</translation>
+        </message>
+        <message>
+            <source>Italic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepaneltext:Tooltip(makemoviepanel/italic);stringres:CTitleDialog::fontItalic</extracomment>
+            <translation>مورب</translation>
+        </message>
+        <message>
+            <source>Automatic Outline</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>خط دور خودکار</translation>
+        </message>
+        <message>
+            <source>Automatic Outline (like movie subtitles)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/outline)</extracomment>
+            <translation>طرح کلی خودکار (مانند زیرنویس‌های فیلم)</translation>
+        </message>
+        <message>
+            <source>Text color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
+            <translation>رنگ نوشتار</translation>
+        </message>
+        <message>
+            <source>Background color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
+            <translation>رنگ پس‌زمینه</translation>
+        </message>
+        <message>
+            <source>Insert Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/insert_slide)</extracomment>
+            <translation>افزودن یک اسلاید نوشتاری جدید</translation>
+        </message>
+        <message>
+            <source>Remove Selected Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
+            <translation>حذف اسلاید انتخابی</translation>
+        </message>
+        <message>
+            <source>Remove the selected slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
+            <translation>حذف اسلاید انتخابی</translation>
+        </message>
+        <message>
+            <source>Add selected clips</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>افزودن کلیپ‌های انتخاب‌شده</translation>
+        </message>
+        <message>
+            <source>Remove selected clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>حذف کلیپ انتخاب‌شده</translation>
+        </message>
+        <message>
+            <source>Add the selected clip(s) to the end of the movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addtomovie)</extracomment>
+            <translation>افزودن کلیپ(های) انتخاب شده به آخر فیلم</translation>
+        </message>
+        <message>
+            <source>Remove the selected clip(s) from the tray</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</extracomment>
+            <translation>حذف کلیپ‌های انتخابی از سبد</translation>
+        </message>
+        <message>
+            <source>Play selected clip only</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>فقط پخش کلیپ انتخاب‌شده</translation>
+        </message>
+        <message>
+            <source>Preview</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
+            <translation>پیش‌نمایش</translation>
+        </message>
+        <message>
+            <source>Pause</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>مکث</translation>
+        </message>
+        <message>
+            <source>Show actual movie size (don't stretch)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(video_control_bar2/1to1)</extracomment>
+            <translation>نمایش اندازه واقعی فیلم (کشیده نشود)</translation>
+        </message>
+        <message>
+            <source>Play full screen</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Tooltip(video_control_bar2/fullscreen)</extracomment>
+            <translation>پخش تمام صفحه</translation>
+        </message>
+        <message>
+            <source>Please Confirm...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>لطفاً تأیید کنید…</translation>
+        </message>
+        <message>
+            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>این کار فیلم جدیدی می‌سازد و همهٔ اسلایدهای متنیِ افزوده‌شده را حذف می‌کند. مطمئن هستید؟</translation>
+        </message>
+        <message>
+            <source>Recompute</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>محاسبهٔ مجدد</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>بستن</translation>
+        </message>
+        <message>
+            <source>Create Movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:buttonlabel:{606D1C6D-36E6-4dce-AFCA-A0EE575A6162}</extracomment>
+            <translation>ایجاد فیلم</translation>
+        </message>
+        <message>
+            <source>Audio files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>فایل‌های صوتی</translation>
+        </message>
+        <message>
+            <source>Music files (*.mp3, *.wma)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
+            <translation>‏فایل‌های موسیقی (.mp3 ،*wma*)</translation>
+        </message>
+        <message>
+            <source>Music files (*.mp3, *.m4a)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
+            <translation>‏فایل‌های موسیقی (*.mp3،*.m4a)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>اسلاید نوشتاری</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>%1     %2x%3 pixels</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1     %2×%3 پیکسل</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <source>(%1 of %2)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(%1 از %2)</translation>
         </message>
     </context>
     <context>

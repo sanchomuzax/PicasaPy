@@ -13,8 +13,6 @@ from PySide6.QtGui import QImage
 from PySide6.QtQml import QQmlExpression, qmlContext
 from PySide6.QtTest import QTest
 
-from tests.support.create_dialogs_components_6051 import create_dialogs_source_text
-
 from picasapy.lazy_cv2 import cv2
 from picasapy.movie.slideshow import (
     _TRANSITION_TYPES,
@@ -630,7 +628,10 @@ def test_az_1_1_es_a_kattintott_diaszerkesztes_a_nezoket_frissiti(
 
 
 def test_a_film_es_a_renderelo_atmenetkulcskeszlete_megegyezik():
-    qml = create_dialogs_source_text()
+    qml = (
+        Path(__file__).parents[3]
+        / "src/picasapy/app/qml/PicasaPy/CreateDialogs.qml"
+    ).read_text(encoding="utf-8")
     match = re.search(
         r"readonly property var transitionKeys:\s*\[(.*?)\]", qml, re.DOTALL
     )
