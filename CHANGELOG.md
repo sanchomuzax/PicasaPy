@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.266] - 2026-10-27
+
+- Az arcfelismerés-vezérlő kódja hét témarészre (keresés, beágyazás, alaphelyzet, beállítások, javaslatok, Név nélküliek, közös segédek) került, a felület és a működés változatlan. (#6025).
+
 ## [0.9.265] - 2026-10-27
 
 - A fő vezérlő kódjának maradék témái (szűrők, mappanézet, rejtett mappák, navigáció, hálózati beállítások, diavetítés, állapot, tartalominfó) külön részekbe kerültek, a felület és a működés változatlan. (#6022).
