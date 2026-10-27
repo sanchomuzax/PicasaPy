@@ -114,6 +114,41 @@ function tryOpenParamPanel(name, displayLabel) {
     return false
 }
 
+// A már betöltött Filtered B&W lánc aktív színét tartjuk meg a panelen.
+// A katalógus alapértéke csak olyan képnél használható, amelyen még nincs
+// ansel bejegyzés. A lánc végén álló ansel az utoljára alkalmazott érték.
+function initialParamValues(name, params) {
+    var values = []
+    for (var i = 0; i < params.length; i++)
+        values.push(params[i].kind === "color" ? params[i].color : params[i].default)
+
+    if (name !== "ansel" || !panel.hasEffectController()
+            || typeof editController.effectChain !== "string")
+        return values
+
+    var entries = editController.effectChain.split(";")
+    for (var entryIndex = entries.length - 1; entryIndex >= 0; entryIndex--) {
+        var entry = entries[entryIndex]
+        var separator = entry.indexOf("=")
+        if (separator < 0 || entry.substring(0, separator) !== name)
+            continue
+
+        var fields = entry.substring(separator + 1).split(",")
+        if (fields.length !== 2 || fields[0] !== "1")
+            continue
+
+        var color = fields[1].toLowerCase()
+        if (/^[0-9a-f]{8}$/.test(color))
+            color = color.substring(2)
+        else if (!/^[0-9a-f]{6}$/.test(color))
+            continue
+
+        values[0] = "#" + color
+        break
+    }
+    return values
+}
+
 // az alpanel megnyitása: csúszkák a katalógus alapértékein, azonnali
 // élő előnézettel.
 function openParamPanel(name, displayLabel) {
@@ -121,10 +156,9 @@ function openParamPanel(name, displayLabel) {
     panel.paramPanelSuspended = false
     var params = editController.effectParams(name)
     // #516: a "color" vezérlők kezdőértéke a katalógus hex-alapértéke,
-    // nem a (náluk értelmezetlen) numerikus `default` mező
-    var values = []
-    for (var i = 0; i < params.length; i++)
-        values.push(params[i].kind === "color" ? params[i].color : params[i].default)
+    // nem a (náluk értelmezetlen) numerikus `default` mező; #5990: a
+    // betöltött Filtered B&W saját mentett színe ezt felülírja.
+    var values = initialParamValues(name, params)
     panel.paramEffectName = name
     panel.paramEffectLabel = displayLabel ? displayLabel : ""
     panel.paramEffectParams = params
