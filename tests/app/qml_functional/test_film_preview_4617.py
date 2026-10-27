@@ -10,6 +10,8 @@ from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt, QUrl
 from PySide6.QtGui import QColor, QImage
 from PySide6.QtTest import QTest
 
+from tests.support.create_dialogs_components_6051 import create_dialogs_source_text
+
 
 def _elem(gyoker, nev):
     elem = gyoker.findChild(QObject, nev)
@@ -253,10 +255,7 @@ def test_kattintott_hangerocsuszka_a_hangkimenet_hangerejet_is_allitja(
     ).read_text(encoding="utf-8")
     assert 'font.family: String(frame.slideData.font || "DejaVu Sans")' in qml_forras
     assert "Number(frame.slideData.size || 16) * parent.height" in qml_forras
-    assert "onOutputVolumeChanged: if (item) item.volume = outputVolume" in (
-        Path(__file__).parents[3]
-        / "src/picasapy/app/qml/PicasaPy/CreateDialogs.qml"
-    ).read_text(encoding="utf-8")
+    assert "onOutputVolumeChanged: if (item) item.volume = outputVolume" in create_dialogs_source_text()
     assert "volume: root.volume" in hang_forras
 
 
