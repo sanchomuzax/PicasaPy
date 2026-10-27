@@ -325,6 +325,7 @@ registryben nincs érték.
 | `SupportTGA` | **0** |
 | `SupportAudio` | **0** |
 | `SupportMovies` | *(számított)* |
+| `SupportQuicktime` | *(számított)* |
 
 #### ⚠️ MÉRÉS a tulajdonos valódi katalógusán — és egy MEGDŐLT állítás a saját kódunkban (2026-09-04, #2344)
 
@@ -448,13 +449,113 @@ eredeti a PNG-t és a BMP-t az alapérték ellenére is indexeli.)*
 | `PWADefaultSize` | **1600** (`0x640`) | `0x006e0d7a` |
 | `PWADefaultSizeES` | **2048** (`0x800`) | `0x006e0d8d` |
 | `FRSuggestionThreshold` | **85** (`0x55`) | `0x006e0ed5` |
-| `FRSortThreshold` | **85** (`0x55`) | `0x006e0eed` |
+| `FRSortThreshold` | **85** (`0x55`) | `0x006e0ee8` |
 
 ### Külön kezelt
 
 `ytHLocal::lang` (nyelv), `PrinterQuality`, `PrintResamplerQuality`,
 `PWAShareAccess` — ezek nem a logikai regisztrálón mennek át; az
 alapértékük külön ágban dől el.
+
+### A 39 regisztrált kulcs írási életciklusa és a PicasaPy-összevetés (#6062)
+
+`0x006e0cb0` 39 alapérték-regisztrációt tartalmaz: 31 logikai és 8
+egészértékűt. A `0x006e0a70` (logikai) és `0x006e0b20` (egész) segéd
+`0x004019b0`-n keresztül **olvas** a `Preferences`-ből, és hiányzó értéknél
+a regisztráló által átadott alapértéket adja vissza; ezek a segédek nem írják
+be az alapértéket. A `0x006e0bc0` külön `PWAWatermark`-olvasás, nem
+regisztráció. Az alábbi táblában az „íróút” azt jelenti, hogy a kódban
+azonosítottam-e konkrét `0x00401900` írást; a `NINCS MEG` **nem** azt
+bizonyítja, hogy sehol sincs írás, csak azt, hogy a kötelező közvetlen
+sztring-/utasításvizsgálat nem döntötte el az útját vagy időzítését.
+Az `0x004183c0` migrációban a hiányzó `dbVersion` olvasási alapértéke `0`
+(`0x00418469`); a `0` és `15` értéknél továbbugró feltételek címe
+`0x0041848c` és `0x00418492`.
+
+| Eredeti kulcs | Típus, regisztrált alapérték (bináris cím) | Eredeti íróút és igazolt időzítés | PicasaPy-kulcs és induláskori mentés |
+|---|---|---|---|
+| `AutoUpgradeCheck` | bool, `1` (`0x006e0cb1`) | `0x006e3990`: Opciók elfogadásakor | nincs megfelelő QSettings-kulcs |
+| `AutoUpgradeAsk` | bool, `0` (`0x006e0cbe`) | `0x006e3990`: Opciók elfogadásakor | nincs megfelelő QSettings-kulcs |
+| `AutoInfoCheck` | bool, `1` (`0x006e0ccb`) | íróút/időzítés: **NINCS MEG** | nincs megfelelő QSettings-kulcs |
+| `UITransitions` | bool, `1` (`0x006e0cd8`) | íróút/időzítés: **NINCS MEG** | `view/uiTransitions`; alapértéket olvas, mentés csak explicit setterrel |
+| `ShowTooltips` | bool, `1` (`0x006e0ce5`) | íróút/időzítés: **NINCS MEG** | `view/showTooltips`; alapértéket olvas, mentés csak explicit setterrel |
+| `SingleClickExit` | bool, `0` (`0x006e0cf2`) | íróút/időzítés: **NINCS MEG** | `view/singleClickExit`; alapértéket olvas, mentés csak explicit setterrel |
+| `disposepreviews` | bool, `0` (`0x006e0cff`) | `0x005cf5b0` csak akkor ír `0`-t, ha az olvasott érték nem nulla; az ezt kiváltó pontos esemény **NINCS MEG** | `view/disposePreviewsOnExit`; mentés explicit setterrel; életciklus-párhuzam nyitott |
+| `DoNotConfirmDeleteFromDisk` | bool, `0` (`0x006e0d0c`) | `0x005fd670`: a törlési megerősítő párbeszéd döntési/„ne kérdezze újra” útján | `confirm/delete/remember`; a párbeszéd döntésekor `true`-t és `false`-t is ment |
+| `DoNotConfirmRemoveFromAlbum` | bool, `0` (`0x006e0d19`) | `0x005fd670`: az albumeltávolítás megerősítő párbeszédének döntési útján | `confirm/removeFromAlbum/remember`; a párbeszéd döntésekor `true`-t és `false`-t is ment |
+| `autoexclude` | bool, `1` (`0x006e0d29`) | `0x0051f600`: az importálási művelet a panelen látott értéket kiírja | `import/autoexclude`; alapértéket olvas, mentés csak explicit setterrel |
+| `ytHLocal::lang` | egész, `0` (`0x006e0d37`) | nyelvválasztási/nyelvbetöltési utak; lásd e lap nyelvi leletét (`0x004060b0`); nem az alapérték-regisztráló írja | `general/language`; a `resolve_startup_language()` minden induláskor elmenti a feloldott nyelvet |
+| `PrinterQuality` | egész, `2` (`0x006e0d47`) | `0x006e3990`: Opciók elfogadásakor; nyomtatási útvonalak: `0x00746060`, `0x008613b0` | `printing/printerQuality`; alapértéket olvas, mentés csak explicit setterrel |
+| `PrintResamplerQuality` | egész, `5` (`0x006e0d5a`) | `0x006e3990`: Opciók elfogadásakor | `printing/resamplerQuality`; alapértéket olvas, mentés csak explicit setterrel |
+| `PrintProxyPreview` | bool, `1` (`0x006e0d69`) | `0x006e3990`: Opciók elfogadásakor | `printing/proxyPreview`; alapértéket olvas, mentés csak explicit setterrel |
+| `PWADefaultSize` | egész, `1600` (`0x006e0d7a`) | `0x006e3990`: a Web Albums Opció-lap elfogadásakor | nincs aktív PicasaPy-megfelelő |
+| `PWADefaultSizeES` | egész, `2048` (`0x006e0d8d`) | közvetlen íróút/időzítés: **NINCS MEG** | nincs aktív PicasaPy-megfelelő |
+| `PWAShareAccess` | egész, `0` (`0x006e0da0`) | közvetlen íróút/időzítés: **NINCS MEG** | nincs aktív PicasaPy-megfelelő |
+| `PWAStarred` | bool, `0` (`0x006e0daf`) | közvetlen íróút/időzítés: **NINCS MEG** | nincs aktív PicasaPy-megfelelő |
+| `PWASyncOrder` | bool, `1` (`0x006e0dbc`) | `0x009627d0`: Gaia/webalbum-szinkron út | nincs aktív PicasaPy-megfelelő |
+| `PWAStriped` | bool, `0` (`0x006e0dd2`) | közvetlen íróút/időzítés: **NINCS MEG** | nincs aktív PicasaPy-megfelelő |
+| `PWAUseHiQualityJPEG` | bool, `0` (`0x006e0ddf`) | közvetlen íróút/időzítés: **NINCS MEG** | nincs aktív PicasaPy-megfelelő |
+| `LoopSlideshow` | bool, `0` (`0x006e0dec`) | közvetlen íróút/időzítés: **NINCS MEG** | `view/slideshowLoop`; alapértéket olvas, mentés csak explicit setterrel |
+| `PlayMP3Tracks` | bool, `1` (`0x006e0df9`) | közvetlen íróút/időzítés: **NINCS MEG** | `view/slideshowMusicEnabled`; alapértéket olvas, mentés csak explicit setterrel |
+| `SupportMovies` | bool, számított (`0x00981af0`; regisztráció `0x006e0e06-0x006e0e17`) | `0x004183c0`: indulási adatbázis-migrációkor, ha `dbVersion` nem `0` és nem `15` (`0x0041848c`, `0x00418492`); `0x005757d0`: a „Don't Show” filmdialógus ága | `library/fileTypes/movies`; alapértéket olvas, mentés csak explicit setterrel |
+| `SupportQuicktime` | bool, számított (`0x00981af0`; regisztráció `0x006e0e1c-0x006e0e2d`) | `0x00544bd0`: egy képességvizsgálati ágban `0`-t ír; a külső esemény/időzítés **NINCS MEG** | `library/fileTypes/quicktime`; alapértéket olvas, mentés csak explicit setterrel |
+| `SupportAudio` | bool, `0` (`0x006e0e32`) | közvetlen íróút/időzítés: **NINCS MEG** | nincs fájltípus-QSettings-megfelelő |
+| `SupportTIF` | bool, `1` (`0x006e0e3f`) | `0x004183c0`: migrációs írás csak `dbVersion ∉ {0, 15}` (`0x0041848c`, `0x00418492`) esetén; az első indulás nem ezen az ágon ír | `library/fileTypes/tiff`; alapértéket olvas, mentés csak explicit setterrel |
+| `SupportWEBP` | bool, `1` (`0x006e0e4c`) | `0x004183c0`: migrációs írás csak `dbVersion ∉ {0, 15}` (`0x0041848c`, `0x00418492`) esetén; az első indulás nem ezen az ágon ír | `library/fileTypes/webp`; alapértéket olvas, mentés csak explicit setterrel |
+| `SupportBMP` | bool, `1` (`0x006e0e5c`) | `0x004183c0`: migrációs írás csak `dbVersion ∉ {0, 15}` (`0x0041848c`, `0x00418492`) esetén; az első indulás nem ezen az ágon ír | `library/fileTypes/bmp`; alapértéket olvas, mentés csak explicit setterrel |
+| `SupportPSD` | bool, `1` (`0x006e0e69`) | `0x004183c0`: migrációs írás csak `dbVersion ∉ {0, 15}` (`0x0041848c`, `0x00418492`) esetén; az első indulás nem ezen az ágon ír | `library/fileTypes/psd`; alapértéket olvas, mentés csak explicit setterrel |
+| `SupportGIF` | bool, `0` (`0x006e0e76`) | `0x004183c0`: migrációs írás csak `dbVersion ∉ {0, 15}` (`0x0041848c`, `0x00418492`) esetén; az első indulás nem ezen az ágon ír | `library/fileTypes/gif`; alapértéket olvas, mentés csak explicit setterrel |
+| `SupportPNG` | bool, `0` (`0x006e0e83`) | `0x004183c0`: migrációs írás csak `dbVersion ∉ {0, 15}` (`0x0041848c`, `0x00418492`) esetén; az első indulás nem ezen az ágon ír | `library/fileTypes/png`; alapértéket olvas, mentés csak explicit setterrel |
+| `SupportTGA` | bool, `0` (`0x006e0e90`) | közvetlen íróút/időzítés: **NINCS MEG** | `library/fileTypes/tga`; alapértéket olvas, mentés csak explicit setterrel |
+| `SupportRAW` | bool, `1` (`0x006e0e9d`) | közvetlen íróút/időzítés: **NINCS MEG** | `library/fileTypes/raw`; alapértéket olvas, mentés csak explicit setterrel |
+| `BgFaceDetectThread` | bool, `1` (`0x006e0eaa`) | `0x006e3990`: Opciók elfogadásakor | `faces/automaticDetection`; alapértéket olvas, mentés csak explicit setterrel |
+| `FRAddSuggesetions` | bool, `1` (`0x006e0eba`) | `0x006e3990`: Opciók elfogadásakor | `faces/suggestionsEnabled`; alapértéket olvas, mentés csak explicit setterrel |
+| `FREnableUploads` | bool, `1` (`0x006e0ec7`) | `0x006e3990`: Opciók elfogadásakor | nincs aktív QSettings-megfelelő; a webalbum-funkció letiltott |
+| `FRSuggestionThreshold` | egész, `85` (`0x006e0ed5`) | `0x006e3990`: Opciók elfogadásakor; `0x0048aab0`: arcküszöb-íróút | `faces/suggestStep` (felületi lépcső); alapértéket olvas, mentés csak explicit setterrel |
+| `FRSortThreshold` | egész, `85` (`0x006e0ee8`) | `0x006e3990`: Opciók elfogadásakor; `0x0048aab0`: arcküszöb-íróút | `faces/clusterStep2` (átalakított lépcső); hiányzó új és régi kulcsnál az alaplépcsőt adja vissza, és nem menti el |
+
+**Bizonyított PicasaPy-mentési hiányok a talált eredeti íróutakkal.** A
+`filetype_preferences.py` csoportolvasója alapértéket ad vissza, a
+`set_file_type_enabled()` pedig csak explicit setterhíváskor ír. Ugyanez a
+„hiányzó kulcsnél alapérték, írás csak setterből” minta igazolt az
+automatikus kizárásra, a nyomtatás három beállítására és a négy arctag-
+beállításra. A PicasaPy jelenleg nem hozza létre ezeket a kulcsokat az első
+feloldáskor; frissítés után a korábban még nem mentett érték ezért az új
+alapértéket követné.
+
+| Eredeti | PicasaPy-kulcs | Eredeti íróút, amihez a hiányzó alapmentés viszonyítandó |
+|---|---|---|
+| `autoexclude` | `import/autoexclude` | importáláskor, `0x0051f600` |
+| `SupportBMP` | `library/fileTypes/bmp` | feltételes adatbázis-migráció, `0x004183c0` |
+| `SupportPSD` | `library/fileTypes/psd` | feltételes adatbázis-migráció, `0x004183c0` |
+| `SupportTIF` | `library/fileTypes/tiff` | feltételes adatbázis-migráció, `0x004183c0` |
+| `SupportWEBP` | `library/fileTypes/webp` | feltételes adatbázis-migráció, `0x004183c0` |
+| `SupportPNG` | `library/fileTypes/png` | feltételes adatbázis-migráció, `0x004183c0` |
+| `SupportGIF` | `library/fileTypes/gif` | feltételes adatbázis-migráció, `0x004183c0` |
+| `SupportMovies` | `library/fileTypes/movies` | feltételes adatbázis-migráció (`0x004183c0`) és film-figyelmeztetési ág (`0x005757d0`) |
+| `PrinterQuality` | `printing/printerQuality` | Opciók elfogadása (`0x006e3990`), nyomtatási utak (`0x00746060`, `0x008613b0`) |
+| `PrintResamplerQuality` | `printing/resamplerQuality` | Opciók elfogadása, `0x006e3990` |
+| `PrintProxyPreview` | `printing/proxyPreview` | Opciók elfogadása, `0x006e3990` |
+| `BgFaceDetectThread` | `faces/automaticDetection` | Opciók elfogadása, `0x006e3990` |
+| `FRAddSuggesetions` | `faces/suggestionsEnabled` | Opciók elfogadása, `0x006e3990` |
+| `FRSuggestionThreshold` | `faces/suggestStep` | Opciók elfogadása (`0x006e3990`) és arcküszöb-íróút (`0x0048aab0`) |
+| `FRSortThreshold` | `faces/clusterStep2` | Opciók elfogadása (`0x006e3990`) és arcküszöb-íróút (`0x0048aab0`) |
+
+Ez a lista a QSettings-oldali, közvetlenül leképezett hiányokra szűkül; nem
+javasolja az eredeti nyers értékek bemásolását. A fejlesztési feladat
+konkrét megőrzési szabálya: az adott érték QSettings-feloldása után csak
+akkor írja el az **effektív, a felületen használt értéket**, ha a kulcs még
+nincs jelen; a már mentett felhasználói értéket ne írja felül. A
+`SupportQuicktime` második írásútja és a `disposepreviews` pontos kiváltó
+eseménye nyitott, ezért ezeket nem számoltam a fenti 15 megerősített
+QSettings-hiány közé.
+
+*Bizonyítottság: feltételes az írási életciklus teljességére.* A teljes
+utasításszintű kulcssztring-pásztázás megtalálta a 39/39 regisztrált kulcsot;
+a regisztráló segédek, a konkrét írófüggvények és a PicasaPy `value` /
+`setValue` útjai külön ellenőrizve vannak. Az „ismeretlen íróút” sorok
+nyitva maradnak, mert egy közvetett/vtáblás írás eredetét ez a leltár nem
+állapítja meg.
 
 ### Amit ebből a PicasaPy visz
 
@@ -774,7 +875,7 @@ adatmásolási viselkedése.*
 ### 1. Forrás, módszer, eltérések
 
 - **Kezelő:** `0x006e1100` (9 494 bájt, `CGeneralPrefsPage`). Mind a nyolc fül vezérlőit ez építi, és ez olvassa a kulcsaikat.
-- **Alapérték-regisztráló:** `0x006e0cb0` (590 bájt), 39 regisztrálási hívással. 31 hívás a `0x006e0a70`-et használja (`push <alapérték>`, `mov eax, <kulcs>`), 7 a `0x006e0b20`-at (egész kulcs: `eax` az alapérték, `ecx` a kulcs sztringje), 1 a `0x006e0bc0`-at. A `0x006e0b20` a `Preferences\<kulcs>` értéket olvassa, és az alapértéket adja vissza, ha nincs tárolt érték.
+- **Alapérték-regisztráló:** `0x006e0cb0` (590 bájt), 39 regisztrálással: 31 logikai hívás a `0x006e0a70` segédhez és 8 egész hívás a `0x006e0b20` segédhez. Mindkettő a `Preferences\<kulcs>` értéket olvassa, és hiányzó értéknél visszaadja a hívó alapértékét; egyik sem írja be azt. A `0x006e0bc0` külön `PWAWatermark`-olvasás, nem regisztrálási hívás.
 - **Olvasó:** `0x00407a20`, a `Preferences\<kulcs>` értéke. Az alapértéket a hívó adja át: a `ReportStats` olvasásánál ez `-1` (`0x006e1327`), és az eredményt `cmp eax, -1` ellenőrzi (`0x006e1340`).
 - **Sablon:** `runtime/options.fen`, 262 sor, **nyolc** `<tab>`. A bináris SHA-256-jának első nyolc jegye (`644b7bec`) egyezik a sablon telepítésének `Picasa3.exe`-jével.
 - **Eltérés a feladatleírástól:** a feladat hét fület említ. A sablon, a kezelő kulcs-hivatkozásai és a PicasaPy `OptionsDialog.qml` is **nyolc** fület ír le: Általános, E-Mail, Fájltípusok, Diavetítés, Nyomtatás, Hálózat, Webalbumok, Névcímkék. A fejléc „9 fül" megjegyzése is téves.
