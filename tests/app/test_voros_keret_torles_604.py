@@ -28,7 +28,7 @@ import pytest
 from support.jpeg_factory import make_jpeg
 
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
-_NEZO = (_QML / "PhotoViewer.qml").read_text(encoding="utf-8")
+_PHOTO_AREA = (_QML / "PhotoViewerPhotoArea.qml").read_text(encoding="utf-8")
 _PANEL = (_QML / "EditorRedeyePanel.qml").read_text(encoding="utf-8")
 
 
@@ -38,9 +38,9 @@ def _huzo_blokk() -> str:
     ⚠️ Szándékosan nem fix karakterszámú ablak: a rögzített méretű vágás
     minden jogos bővítésnél elcsúszik, és akkor az őr a saját ablakát méri,
     nem a kódot."""
-    kezd = _NEZO.index('objectName: "redeyeDragArea"')
-    veg = _NEZO.index('objectName: "textClickArea"', kezd)
-    return _NEZO[kezd:veg]
+    kezd = _PHOTO_AREA.index('objectName: "redeyeDragArea"')
+    veg = _PHOTO_AREA.index('objectName: "textClickArea"', kezd)
+    return _PHOTO_AREA[kezd:veg]
 
 
 @pytest.fixture

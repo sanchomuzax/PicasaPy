@@ -11,7 +11,7 @@ Amit itt mérünk:
   kérhető a fotó azonosítójával;
 * a vezérlő `framePlacement`-je ezt adja tovább a QML-nek (keret nélkül
   `None`, tehát a rétegek a mai módon viselkednek);
-* a `PhotoViewer.qml` a két réteget EGY közös, a leképezés szerint
+* a `PhotoViewerPhotoArea.qml` a két réteget EGY közös, a leképezés szerint
   elhelyezett és elforgatott területbe teszi.
 
 ⚠️ A LÁTVÁNYT ez a teszt nem méri: hogy az arckeret a Polaroid-os képen
@@ -28,9 +28,9 @@ import pytest
 from picasapy.app.edit_preview import EditPreviewProvider
 from picasapy.ini.filters import parse_filters
 
-_QML = (
+_PHOTO_AREA_QML = (
     Path(__file__).resolve().parents[2]
-    / "src/picasapy/app/qml/PicasaPy/PhotoViewer.qml"
+    / "src/picasapy/app/qml/PicasaPy/PhotoViewerPhotoArea.qml"
 )
 
 
@@ -86,7 +86,7 @@ class TestSzolgaltato:
 class TestQmlAtfedok:
     @property
     def forras(self):
-        return _QML.read_text(encoding="utf-8")
+        return _PHOTO_AREA_QML.read_text(encoding="utf-8")
 
     def test_van_kozos_tartalom_terulet(self):
         assert 'objectName: "frameContentArea"' in self.forras
@@ -114,7 +114,7 @@ class TestArckeretAPolaroidAlatt:
     A mérés a `tests/render/test_keret_geometria_3166.py` módszerét követi
     (gradiens háttér + egy teljes tengelyen átfutó, enyhe jelölő-sáv, a
     különbség-kép profiljának súlypontja) — de itt nem a renderelő mátrixát
-    hasonlítjuk, hanem **azt a számítást, amit a `PhotoViewer.qml` végez** a
+    hasonlítjuk, hanem **azt a számítást, amit a `PhotoViewerPhotoArea.qml` végez** a
     `framePlacement` szótárból. Így a felületi formula is mérve van, nem
     csak átvezetve.
 
@@ -168,7 +168,7 @@ class TestArckeretAPolaroidAlatt:
 
     @staticmethod
     def _qml_pont(hely, kimenet_w, kimenet_h, rel_x, rel_y):
-        """A `PhotoViewer.qml` `frameContentArea`-jának aritmetikája.
+        """A `PhotoViewerPhotoArea.qml` `frameContentArea`-jának aritmetikája.
 
         A terület a kirajzolt képen belül ül (itt 1:1-ben a kimenet), a
         középpontja `(kozepX, kozepY)`, a mérete `(szelesseg, magassag)`, és
