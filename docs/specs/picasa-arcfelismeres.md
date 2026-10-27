@@ -6862,3 +6862,20 @@ A független újralevezetés helyesbítette a 0x004985e0 elvetését: ez a máso
 **Következtetés és megvalósítás.** N1, N3 és N7 People Manager-része nyitott; N4, N5, N6 és N8 az előző felvételekkel lezárt (56.4). Eredeti/PicasaPy-eltérés nincs bizonyítva, ezért fejlesztői teendő és új kutatási jegy nem indokolt. A feloldás a fenti három futásidejű felvétel/mérés; ez a session a GitHub-alapú Colab-feladatfeladást nem használta.
 
 **Módosított fájl:** `docs/specs/picasa-arcfelismeres.md` (57. szakasz: a 2026-10-27-i, célzott archívum- és Ghidra-leltár, a három nyitott pont bizonyítékhatára és megszerzési út).
+
+## 58. #5184 N7: a People Manager listája egyszeres kijelölésű (felvétel, 2026-10-27)
+
+**Felvétel:** picasa-colab-jobs job-325 (az előző, job-227 nem mérte a kérdést: az első név utáni Enter az ismeretlen névre nyíló People névjegyablakot hozta fel, és a lépéssor abban ragadt). A javított lépéssor két arcot nevez el (`Teszt Elek`, `Masik Ember`) a New Person, majd OK úton, megnyitja az Eszközök ▸ People Manager ablakot, és a listán sorban: első sor kattintás, második sor Ctrl-kattintás, első sor kattintás, második sor Shift-kattintás.
+
+**Eredmény (33-41. kép):**
+
+| lépés | kijelölt sor |
+|---|---|
+| kattintás a `Masik Ember` sorra | `Masik Ember` |
+| Ctrl-kattintás a `Teszt Elek` sorra | csak `Teszt Elek` (az első kijelölése megszűnik) |
+| kattintás a `Masik Ember` sorra | `Masik Ember` |
+| Shift-kattintás a `Teszt Elek` sorra | csak `Teszt Elek` |
+
+A jobb oldali Name mező mindig az épp kijelölt személy nevét mutatja. **A People Manager listája egyszeres kijelölésű: a Ctrl és a Shift nem bővíti a kijelölést.** (A Név nélküliek nézet csempéinek többes kijelölése ettől független, azt a job-180 igazolja.)
+
+**PicasaPy:** a `PeopleManagerDialog.qml` egyetlen kijelölt kulcsot tart (`selectedKey`), a lista `currentIndex`-szel jelöl; ez egyezik az eredetivel. **N7 lezárva, eltérés nincs.**
