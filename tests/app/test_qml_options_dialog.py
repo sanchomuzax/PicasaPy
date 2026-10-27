@@ -968,8 +968,9 @@ class TestFileTypesTab:
         raw = _child(window, "optionsFileTypeRawCheck")
         assert raw.property("enabled") is True
         assert raw.property("checked") is True
-        assert controller.fileTypeEnabled("gif") is False
-        assert controller.fileTypeEnabled("png") is False
+        # #6060: elmentett választás nélkül minden típus bekapcsolt.
+        assert controller.fileTypeEnabled("gif") is True
+        assert controller.fileTypeEnabled("png") is True
         for object_name in (
             "optionsFileTypeBmpCheck",
             "optionsFileTypeGifCheck",
