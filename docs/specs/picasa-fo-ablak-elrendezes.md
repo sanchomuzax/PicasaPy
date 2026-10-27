@@ -516,8 +516,8 @@ Az `0x004183c0` migrációban a hiányzó `dbVersion` olvasási alapértéke `0`
 
 **Bizonyított PicasaPy-mentési hiányok a talált eredeti íróutakkal.** A
 `filetype_preferences.py` csoportolvasója alapértéket ad vissza, a
-`set_file_type_enabled()` pedig csak explicit setterhíváskor ír. Ugyanez a
-„hiányzó kulcsnél alapérték, írás csak setterből” minta igazolt az
+`set_file_type_enabled()` pedig csak kifejezett beállító hívásra ír. Ugyanez a
+„hiányzó kulcs esetén alapérték, írás csak a beállító hívásból” minta igazolt az
 automatikus kizárásra, a nyomtatás három beállítására és a négy arctag-
 beállításra. A PicasaPy jelenleg nem hozza létre ezeket a kulcsokat az első
 feloldáskor; frissítés után a korábban még nem mentett érték ezért az új
@@ -551,7 +551,7 @@ eseménye nyitott, ezért ezeket nem számoltam a fenti 15 megerősített
 QSettings-hiány közé.
 
 *Bizonyítottság: feltételes az írási életciklus teljességére.* A teljes
-utasításszintű kulcssztring-pásztázás megtalálta a 39/39 regisztrált kulcsot;
+utasításszintű pásztázás a kulcsnevekre megtalálta a 39/39 regisztrált kulcsot;
 a regisztráló segédek, a konkrét írófüggvények és a PicasaPy `value` /
 `setValue` útjai külön ellenőrizve vannak. Az „ismeretlen íróút” sorok
 nyitva maradnak, mert egy közvetett/vtáblás írás eredetét ez a leltár nem
