@@ -71,6 +71,10 @@ def _run(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedP
     )
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="a rögzítés Linuxon, software renderrel készül; Windowson a képpont-egyezés nem értelmezhető (#3263, #6058)",
+)
 @pytest.mark.parametrize("height", (695, 700, 705))
 def test_capture_creates_visible_main_and_viewer_states(
     tmp_path: Path, height: int
