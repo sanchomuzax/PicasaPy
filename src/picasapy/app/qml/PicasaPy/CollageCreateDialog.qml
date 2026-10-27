@@ -30,7 +30,8 @@ Dialog {
     // dönt (#455). Ebből él a tipp és az OK is.
     readonly property int sourceCount:
         root.trayHasPictures
-            ? ((typeof controller !== "undefined" && controller)
+            ? ((typeof controller !== "undefined" && controller
+                && controller.heldCount !== undefined)
                 ? controller.heldCount : 0)
             : root.appWindow.selectedIndexes.length
     // #920: élő előnézet — a Kollázs eddig VAKON dolgozott: a
