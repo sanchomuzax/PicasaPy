@@ -6783,10 +6783,10 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::progress</extracomment>
             <translation>سيتم إنشاء نسخة احتياطية من هذا الملف.</translation>
         </message>
         <message>
-            <source>Do not ask again</source>
+            <source>Do not ask me again.</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeFaceMoviePanelRememberDialog</extracomment>
-            <translation>عدم إظهار هذا السؤال مرة أخرى</translation>
+picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
+            <translation>عدم إظهار هذا السؤال مرة أخرى.</translation>
         </message>
         <message>
             <source>Save As...</source>
