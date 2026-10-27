@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.258] - 2026-10-27
+
+- A zöld tálca-gomb a felhasználó OAuth-kliensével a tálca képeit tölti fel a Google Fotókba. (#5976).
+
+## [0.9.257] - 2026-10-27
+
+- A Mentés megerősítő ablaka az eredeti jelölőfeliratot mutatja, a biztonsági másolat pedig megőrzi a fájl idejét. (#5997).
+
 ## [0.9.256] - 2026-10-27
 
 - A Filtered B&W színmezője induláskor fehér, és a betöltött kép mentett színét mutatja. (#5990).

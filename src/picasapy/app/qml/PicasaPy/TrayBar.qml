@@ -107,6 +107,49 @@ Column {
     // a forgatás/csillag célsora — a Main rotateTargetRow()-ja is ezt kéri
     readonly property int starTargetRow: trayStar.targetRow
 
+    function photosUploadMessage() {
+        if (!tray.ctl)
+            return ""
+        var code = tray.ctl.photosUploadError
+        if (code === "network")
+            return qsTr("Network error. Check your connection and try again.")
+        if (code === "token_expired")
+            return qsTr("Your Google Photos sign-in has expired. Sign in again.")
+        if (code === "quota")
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:UploadError::RateLimit
+            return qsTr("Maximum Upload Rate Exceeded")
+        if (code === "service_unavailable")
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:Lighthouse::ServiceUnavailableES
+            return qsTr("Google Photos is temporarily unavailable")
+        if (code === "cancelled")
+            return qsTr("Upload cancelled")
+        if (code === "invalid_image")
+            return qsTr("A photo could not be prepared for upload.")
+        if (code === "file_too_large")
+            return qsTr("This photo is too large to upload.")
+        if (code === "empty_tray")
+            return qsTr("There are no photos in the Photo Tray.")
+        if (code)
+            return qsTr("Google Photos could not complete the upload. Try again.")
+        if (tray.ctl.photosUploadFinished)
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:uploadmgr::complete
+            return qsTr("Upload complete")
+        if (tray.ctl.photosUploadPhase === "preparing")
+            return qsTr("Preparing photo %1 of %2").arg(
+                tray.ctl.photosUploadDone).arg(tray.ctl.photosUploadTotal)
+        if (tray.ctl.photosUploadPhase === "uploading")
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:QuickUploader::progress
+            return qsTr("Uploading %1").arg(tray.ctl.photosUploadCurrentName)
+        if (tray.ctl.photosUploadPhase === "creating")
+            return qsTr("Adding photo %1 of %2").arg(
+                tray.ctl.photosUploadDone).arg(tray.ctl.photosUploadTotal)
+        return qsTr("Preparing photos for upload")
+    }
+
     // #305: null-őr — a controller a QML-engine leépítésekor átmenetileg
     // null lehet, miközben ezek a kötések utoljára kiértékelődnek.
     readonly property var ctl: controller
@@ -1895,10 +1938,20 @@ Column {
                     anchors.centerIn: parent
                     width: 141
                     height: 35
+                    //: picasapy-origin: picasa
+                    //: picasapy-origin-key: stringres:CThumbUI::ShareButtonLabelEs
                     text: qsTr("Upload to Google Photos")
-                    enabled: false
+                    enabled: (tray.ctl
+                        && tray.ctl.googlePhotosUploadEnabled !== undefined)
+                        ? tray.ctl.googlePhotosUploadEnabled : false
+                    onClicked: {
+                        googlePhotosUploadDialog.open()
+                        tray.ctl.uploadGooglePhotosTray()
+                    }
                     accent: Theme.picasaGreen
-                    ToolTip.text: trayUploadBtn.text
+                    //: picasapy-origin: picasa
+                    //: picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs
+                    ToolTip.text: qsTr("Upload photos in the Photo Tray to Google Photos")
                     ToolTip.visible: trayUploadBtn.hovered
                     ToolTip.delay: Theme.tooltipDelay
                     // #1420: a gomb FIX 141 × 35, a felirat pedig KÉT SORBA
@@ -1938,6 +1991,76 @@ Column {
                             lineHeightMode: Text.ProportionalHeight
                             lineHeight: 10 / 12
                             clip: true
+                        }
+                    }
+                }
+            }
+
+            Dialog {
+                id: googlePhotosUploadDialog
+                objectName: "googlePhotosUploadDialog"
+                title: qsTr("Upload to Google Photos")
+                modal: true
+                width: 390
+                standardButtons: Dialog.NoButton
+
+                contentItem: ColumnLayout {
+                    spacing: 12
+
+                    Text {
+                        objectName: "googlePhotosUploadStatus"
+                        Layout.fillWidth: true
+                        text: tray.photosUploadMessage()
+                        color: Theme.ink
+                        font.pixelSize: Theme.fontSize
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Text {
+                    objectName: "googlePhotosUploadFailedFile"
+                        visible: !!tray.ctl
+                            && tray.ctl.photosUploadError !== undefined
+                            && tray.ctl.photosUploadCurrentName !== undefined
+                            && tray.ctl.photosUploadError
+                            && tray.ctl.photosUploadError !== "cancelled"
+                            && tray.ctl.photosUploadCurrentName.length > 0
+                        Layout.fillWidth: true
+                        text: visible
+                            //: picasapy-origin: picasa
+                            //: picasapy-origin-key: stringres:QuickUploader::errorMsg
+                            ? qsTr("Failed to upload %1").arg(tray.ctl.photosUploadCurrentName)
+                            : ""
+                        color: Theme.ink
+                        font.pixelSize: Theme.fontSize
+                        wrapMode: Text.WordWrap
+                    }
+
+                    ProgressBar {
+                        objectName: "googlePhotosUploadProgress"
+                        Layout.fillWidth: true
+                        from: 0
+                        to: (tray.ctl && tray.ctl.photosUploadTotal !== undefined)
+                            ? Math.max(1, tray.ctl.photosUploadTotal) : 1
+                        value: (tray.ctl && tray.ctl.photosUploadDone !== undefined)
+                            ? tray.ctl.photosUploadDone : 0
+                        visible: (tray.ctl
+                            && tray.ctl.photosUploadRunning !== undefined)
+                            ? tray.ctl.photosUploadRunning : false
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Item { Layout.fillWidth: true }
+                        PicasaButton {
+                            objectName: "googlePhotosUploadCancelButton"
+                            text: tray.ctl && tray.ctl.photosUploadRunning
+                                ? qsTr("Cancel") : qsTr("Close")
+                            onClicked: {
+                                if (tray.ctl && tray.ctl.photosUploadRunning)
+                                    tray.ctl.cancelGooglePhotosUpload()
+                                else
+                                    googlePhotosUploadDialog.close()
+                            }
                         }
                     }
                 }

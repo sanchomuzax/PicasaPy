@@ -52,12 +52,13 @@ példányszámodat, és a megjegyzett nyomatméretet.
 
 | üzenet | mit jelent |
 |---|---|
-| **Nem találhatók arcok** | a program egy arcot sem talált a képen |
-| **Úgy tűnik, több arc van a képen.** | egynél több arcot talált — útlevélképhez egy arc kell |
+| **Nem találhatók arcok** | a program nem talált a képen pontosan egy arcot: vagy egyet sem, vagy egynél többet |
 | **A kép nem olvasható be.** | a képfájlt nem tudta megnyitni |
 | **A kivágott kép nem menthető.** | a kivágást nem tudta ideiglenes fájlba kiírni |
 
-Az első kettő fölött **Megpróbálkozik egy másik képpel?** áll: válassz
+Az eredeti Picasához hasonlóan a több arcos képnél is ez az üzenet
+jelenik meg, külön szöveg nincs rá. Fölötte **Megpróbálkozik egy másik
+képpel?** áll: válassz
 olyan képet, amin egyetlen, jól látható arc van. A párbeszédet az **OK**
 zárja, és semmi nem történik — a kép érintetlen marad.
 

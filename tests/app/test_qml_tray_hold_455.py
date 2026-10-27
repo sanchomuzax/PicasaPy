@@ -105,6 +105,8 @@ class FakeController(QObject):
 
     heldChanged = Signal()
     isWorkingChanged = Signal()
+    googlePhotosChanged = Signal()
+    photosUploadChanged = Signal()
 
     def __init__(self):
         super().__init__()
@@ -143,6 +145,25 @@ class FakeController(QObject):
     @Property(int, notify=heldChanged)
     def heldCount(self):
         return len(self._held_ids)
+
+    # A #5976 új, alaphelyzetben tiltott feltöltési felülete — a teszt itt
+    # továbbra is a tartás/ürítés működését méri.
+    googlePhotosUploadEnabled = Property(bool, lambda self: False, constant=True)
+    photosUploadRunning = Property(bool, lambda self: False, constant=True)
+    photosUploadPhase = Property(str, lambda self: "", constant=True)
+    photosUploadDone = Property(int, lambda self: 0, constant=True)
+    photosUploadTotal = Property(int, lambda self: 0, constant=True)
+    photosUploadCurrentName = Property(str, lambda self: "", constant=True)
+    photosUploadError = Property(str, lambda self: "", constant=True)
+    photosUploadFinished = Property(bool, lambda self: False, constant=True)
+
+    @Slot(result=bool)
+    def uploadGooglePhotosTray(self):
+        return False
+
+    @Slot()
+    def cancelGooglePhotosUpload(self):
+        pass
 
     @Slot(list)
     def holdRows(self, rows):

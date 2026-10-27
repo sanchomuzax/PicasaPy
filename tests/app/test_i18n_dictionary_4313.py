@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections import Counter
+import re
+
 import pytest
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -220,3 +223,74 @@ def test_every_language_has_all_messages_of_the_hungarian_catalog_4863():
         "a magyar .ts üzeneteiből hiányzik a nyelvi fájlokból "
         f"(futtasd: python3 scripts/build_i18n_dictionaries.py): {lagging}"
     )
+
+
+def test_google_photos_messages_have_finished_placeholder_safe_translations():
+    """A #5976 új feliratai minden nyelven kész, Qt-helyőrzőkkel szerepelnek."""
+    google_photos_sources = {
+        message.findtext("source") or ""
+        for context in ET.parse(_I18N / "picasapy_hu.ts").getroot().iter("context")
+        if context.findtext("name") == "OptionsTabGooglePhotos"
+        for message in context.findall("message")
+    }
+    tray_sources = {
+        "Network error. Check your connection and try again.",
+        "Your Google Photos sign-in has expired. Sign in again.",
+        "Maximum Upload Rate Exceeded",
+        "Google Photos is temporarily unavailable",
+        "Upload cancelled",
+        "A photo could not be prepared for upload.",
+        "This photo is too large to upload.",
+        "There are no photos in the Photo Tray.",
+        "Google Photos could not complete the upload. Try again.",
+        "Upload complete",
+        "Preparing photo %1 of %2",
+        "Uploading %1",
+        "Adding photo %1 of %2",
+        "Preparing photos for upload",
+        "Upload photos in the Photo Tray to Google Photos",
+        "Failed to upload %1",
+        "Close",
+    }
+    assert len(google_photos_sources) == 19
+    assert len(tray_sources) == 17
+
+    def placeholders(value: str) -> Counter[str]:
+        return Counter(re.findall(r"%(?:[1-9]\d*|n)", value))
+
+    failures = []
+    for code in SUPPORTED_LANGUAGES:
+        root = ET.parse(_I18N / f"picasapy_{code}.ts").getroot()
+        messages = {}
+        for context in root.iter("context"):
+            name = context.findtext("name") or ""
+            for message in context.findall("message"):
+                source = message.findtext("source") or ""
+                if (name == "OptionsTabGooglePhotos" and source in google_photos_sources) or (
+                    name == "TrayBar" and source in tray_sources
+                ):
+                    messages[(name, source)] = message
+
+        expected = {
+            *(('OptionsTabGooglePhotos', source) for source in google_photos_sources),
+            *(('TrayBar', source) for source in tray_sources),
+        }
+        for key in sorted(expected):
+            message = messages.get(key)
+            translation = None if message is None else message.find("translation")
+            translated_text = (
+                "" if translation is None else "".join(translation.itertext()).strip()
+            )
+            if (
+                translation is None
+                or translation.get("type") in {"unfinished", "obsolete", "vanished"}
+                or not translated_text
+            ):
+                failures.append(f"{code}/{key[0]}: hiányzó vagy befejezetlen {key[1]!r}")
+                continue
+            if placeholders(key[1]) != placeholders(translated_text):
+                failures.append(
+                    f"{code}/{key[0]}: eltérő helyőrzők {key[1]!r} → {translated_text!r}"
+                )
+
+    assert not failures, "Hibás Google Photos-fordítások:\n" + "\n".join(failures[:30])
