@@ -102,19 +102,71 @@ class TestNincsBeegetettIpCim:
     #: Picasa verziószáma (`3.9.141.259`) is ilyen alakú, és az nem hiba.
     IPV4 = __import__("re").compile(r"(?://|\\\\)\d{1,3}(?:\.\d{1,3}){3}")
 
+    # ADR-011 / #5976: csak a Google Photos OAuth loopback URI-jának pontos
+    # sora kivétel, ha ugyanebben a fájlban a kiszolgáló 127.0.0.1:0-ra köt.
+    ADR_011_5976_FILE = "src/picasapy/google_photos.py"
+    ADR_011_5976_BIND = 'server = HTTPServer(("127.0.0.1", 0), CallbackHandler)'
+    ADR_011_5976_REDIRECT = 'self.redirect_uri = f"http://127.0.0.1:{port}"'
+
     def _termekfajlok(self):
         gyoker = Path(__file__).resolve().parents[2] / "src" / "picasapy"
         return [f for f in gyoker.rglob("*.py")] + [f for f in gyoker.rglob("*.qml")]
 
     def test_a_termekkodban_nincs_ipv4_cim(self):
+        assert self._ip_cim_leletek() == []
+
+    def _ip_cim_leletek(self, gyoker=None):
+        gyoker = gyoker or Path(__file__).resolve().parents[2]
+        fajlok = [f for f in (gyoker / "src" / "picasapy").rglob("*.py")]
+        fajlok.extend((gyoker / "src" / "picasapy").rglob("*.qml"))
         talalatok = []
-        for fajl in self._termekfajlok():
-            for szam, sor in enumerate(
-                fajl.read_text(encoding="utf-8", errors="replace").splitlines(), 1
-            ):
-                if self.IPV4.search(sor):
+        for fajl in fajlok:
+            sorok = fajl.read_text(encoding="utf-8", errors="replace").splitlines()
+            relativ = fajl.relative_to(gyoker).as_posix()
+            adr_011_5976_loopback = (
+                relativ == self.ADR_011_5976_FILE
+                and any(sor.strip() == self.ADR_011_5976_BIND for sor in sorok)
+            )
+            for szam, sor in enumerate(sorok, 1):
+                if self.IPV4.search(sor) and not (
+                    adr_011_5976_loopback
+                    and sor.strip() == self.ADR_011_5976_REDIRECT
+                ):
                     talalatok.append(f"{fajl.name}:{szam}: {sor.strip()[:90]}")
-        assert not talalatok, "beégetett IP-cím a termékkódban:\n" + "\n".join(talalatok)
+        return talalatok
+
+    def test_adr011_5976_loopback_url_csak_a_nevesitett_fajlban_engedett(
+        self, tmp_path
+    ):
+        google_photos = tmp_path / self.ADR_011_5976_FILE
+        google_photos.parent.mkdir(parents=True)
+        google_photos.write_text(
+            self.ADR_011_5976_BIND + "\n" + self.ADR_011_5976_REDIRECT + "\n",
+            encoding="utf-8",
+        )
+
+        assert self._ip_cim_leletek(tmp_path) == []
+
+    def test_adr011_5976_loopback_url_mas_fajlban_tovabbra_is_tiltott(
+        self, tmp_path
+    ):
+        masik = tmp_path / "src" / "picasapy" / "other.py"
+        masik.parent.mkdir(parents=True)
+        masik.write_text(self.ADR_011_5976_REDIRECT + "\n", encoding="utf-8")
+
+        assert self._ip_cim_leletek(tmp_path)
+
+    def test_adr011_5976_url_kivetelhez_127001_bind_kell(self, tmp_path):
+        google_photos = tmp_path / self.ADR_011_5976_FILE
+        google_photos.parent.mkdir(parents=True)
+        google_photos.write_text(
+            'server = HTTPServer(("0.0.0.0", 0), CallbackHandler)\n'
+            + self.ADR_011_5976_REDIRECT
+            + "\n",
+            encoding="utf-8",
+        )
+
+        assert self._ip_cim_leletek(tmp_path)
 
     def test_a_megosztas_gepnevet_hasznal(self):
         from picasapy.perf.tesztuzem import MEGOSZTAS_WINDOWS

@@ -49,6 +49,8 @@ HIVATALOS = {
         "A jelszavak nem egyeztek.", "CThumbUI::PassVerifyWrong"),
     "Do not ask again": (
         "Ne kérdezze meg újra", "CMakeFaceMoviePanelRememberDialog"),
+    "Do not ask me again.": (
+        "Ne kérdezzen újra.", "IDS_CLOSE_LAST_CHECK"),
     "Add this tag to entire selection": (
         "A címke hozzáadása a teljes kijelölt részhez",
         "Tags::ID_APPLYTHISTAGTOSELECTION"),
@@ -169,7 +171,7 @@ QUICKTAG_UTMUTATO = 'You can use Quick Tags to apply a tag with a single click. 
 #: fájl → a benne várt hivatalos feliratok
 ELOFORDULASOK = {
     "PicasaPy/HiddenPasswordDialog.qml": ["The passwords did not match."],
-    "PicasaPy/SaveDialogs.qml": ["Do not ask again"],
+    "PicasaPy/SaveDialogs.qml": ["Do not ask me again."],
     "PicasaPy/ConfirmDialog.qml": ["Do not ask again"],
     "PicasaPy/TagContextMenu.qml": [
         "Remove this tag",

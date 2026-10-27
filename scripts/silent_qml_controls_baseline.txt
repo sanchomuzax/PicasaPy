@@ -22,7 +22,6 @@ constant-disabled	src/picasapy/app/qml/PicasaPy/PeopleManagerDialog.qml:345:enab
 constant-disabled	src/picasapy/app/qml/PicasaPy/PeopleManagerDialog.qml:374:enabled=false	Online Google Contacts-művelet; nincs ilyen integráció.
 constant-disabled	src/picasapy/app/qml/PicasaPy/PeopleManagerDialog.qml:379:enabled=false	Online Google Contacts-művelet; nincs ilyen integráció.
 constant-disabled	src/picasapy/app/qml/PicasaPy/PhotoViewer.qml:4479:enabled=false	A modal párbeszéd mögötti elmosás díszítő réteg; a Qt modalitása kezeli az inputot.
-constant-disabled	src/picasapy/app/qml/PicasaPy/TrayBar.qml:1774:enabled=false	Google Photos-feltöltés nincs implementálva; online feltöltő szolgáltatás kell hozzá.
 constant-disabled	src/picasapy/app/qml/PicasaPy/TrayBar.qml:2011:enabled=false	A nyomat-rendelő partner szolgáltatása megszűnt (#1672).
 constant-disabled	src/picasapy/app/qml/PicasaPy/TrayBar.qml:2028:enabled=false	A „Hello” megosztáshoz nincs backend; a forráskomment jelöli.
 constant-disabled	src/picasapy/app/qml/PicasaPy/TrayBar.qml:2043:enabled=false	A Blogger-integráció megszűnt (#1672).

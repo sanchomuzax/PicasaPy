@@ -3532,8 +3532,8 @@ le. Az `0x0083ea00` a tíz mezőt olvassa/kezeli; az `0x0083f3f0` a
 |---|---|---|
 | **Belépés:** Nézet → Címkék (`0xd6e018`, cmd `0x9d2c`, `0x00559150` → `0x0065ab50`); a panel gyors beállítása `quick_config` (`0x00639c00`, `0x0063d840`). | Nézet → Tags / Ctrl+T (`PicasaMenuBar.qml:1071-1076`, `Main.qml:3948-3952`); a fogaskerék nyitja a párbeszédet (`TagsPanel.qml:234-248`). | **EGYEZIK**: ugyanaz a panel és beállítóút. |
 | **Mezők:** tíz címke (`edit_0..9`; `0x0083efa2`, `cmp eax, 0xa`); üres kulcs alapértéke `]empty` (`0x0083f3f0`). | Tíz `quickTagField0..9` mező; a hiányzó beállítás üres sztringekkel egészül ki (`QuickTagsConfigDialog.qml:83-124`, `keywords_controller.py:235-244`). | **EGYEZIK**: 10 szerkeszthető hely, üres alapérték. |
-| **Legutóbbiak:** `Preferences\quicktags::enable_recents`, hiányzó kulcsnál `1` (`0x0063c7d0`, `0x00639c00`); bekapcsolva az első két gomb a `recent0/1`-et mutatja (`0x0063c7d0`, `0x0063c120`). | `quickTags/reserveRecentForTop2`, hiányzó kulcsnál `True`; a gomblista első két elemét írja felül (`keywords_controller.py:298-307`, `:320-331`). | **EGYEZIK**: az alapérték és a két látható hely egyezik. |
-| **Előzményfrissítő út:** a címke-hozzáadó (`0x0063bed0`) csak bekapcsolt `quicktags::enable_recents` mellett hívja a `0x0063c120` frissítőt (`0x0063c05a-0x0063c08a`); ez a segéd a `recent%d` értékeket beolvassa és a panel két előzményhelyét frissíti (`0x0063c303-0x0063c371`, ciklushatár: `0x0063c578-0x0063c57e`). **A tartós `recent%d`-írás hatása nincs igazolva.** | Az `addKeywordToRows` minden érvényes címkénél meghívja a `_record_recent_quick_tag`-et a beállítástól függetlenül; ez QSettings-listát ír, míg a beállítás csak a gombok megjelenítését kapuzza (`keywords_controller.py:149-162`, `:250-261`, `:320-331`). | **ELTÉRÉS a kikapcsolt állapot útjában:** nálunk az előzménylista frissül, az eredeti kihagyja a frissítő hívást. A bináris későbbi/persistált látható eredménye **NINCS MEG**; ne állítsunk róla többet. |
+| **Legutóbbiak:** `Preferences\quicktags::enable_recents`, hiányzó kulcsnál `1` (`0x0063c7d0`, `0x00639c00`); bekapcsolva az első két gomb a `recent0/1`-et mutatja (`0x0063c7d0`). A `0x0063c120` a `Preferences\quicktags::recent0/1` értékeket írja (`0x00ca0894`, `0x0063c303-0x0063c376`, íróhívás `0x00407760`). | `quickTags/reserveRecentForTop2`, hiányzó kulcsnál `True`; a gomblista első két elemét írja felül (`keywords_controller.py:334-338`, `:356-367`). | **EGYEZIK**: az alapérték és a két látható hely egyezik; a tárolási kulcsok eltérnek. |
+| **Előzményfrissítő út (#5978):** a `0x0063bed0` csak bekapcsolt `quicktags::enable_recents` mellett hívja a `0x0063c120`-at (`0x0063c05a-0x0063c08a`). A segéd byte-azonos egyezést keres az első két megjelenített helyen; egyezéskor nem rendez át. Új címkénél a korábbi 0. hely a 1.-re csúszik, az új érték kerül a 0.-ra; a korábbi 1. kiesik. Csak a két `recent%d` kulcsot írja, a tíz `tag%d` kézi helyet nem. | Az `addKeywordToRows` csak bekapcsolt beállításnál rögzít (`keywords_controller.py:177-184`); `_record_recent_quick_tag` casefold szerint eltávolít minden egyezést, majd előre teszi az új értéket és legfeljebb 8-at tárol a `quickTags/recentKeywords` kulcsban (`:37-40`, `:286-297`). | **ELTÉRÉS:** az ismételt címkét nálunk előresorolja, az eredeti a már első két recent közöttit nem rendezi át; a duplikátum-összevetés és a tárolt elemszám/kulcs is eltér. A kikapcsolt frissítési ág **EGYEZIK**. |
 | **Autofill:** egyszeri kitöltő művelet; a `0x0083f580` a közös címkelistából az üres szerkesztőmezőkbe ír, meglévő címkét/duplikátumot átugrik, és a Legutóbbiak kapcsolótól függően a 0. vagy 2. mezőtől indul. A párbeszéd a `quicktagconfig/autofill` vezérlőt köti be (`0x0083ea00`); ehhez nem olvas/ír tartós Autofill-beállítást. Felirat: `quicktagconfig_text.tre`, `0x0083ea00`. | Tartós `quickTags/autoFillFrequent` jelölőnégyzet, alapértéke `False`; bekapcsolva a `quickTagButtons` minden lekéréskor dinamikusan tölti az üresen maradt gombokat az index gyakorisági sorrendjéből (`QuickTagsConfigDialog.qml:144-158`, `keywords_controller.py:309-342`). | **ELTÉRÉS:** a jelölőnégyzet helyett egyszeri kitöltés írja be az üres konfigurációs mezőket; az eredményt a felhasználó az OK-val menti. |
 | **Gyorscímke kimenete:** a `quicktag_%d` esemény a `0x0063bed0` hozzáadási útjára jut (`0x0063a5e0` → `0x0063bed0`). A címke a `CThumbUI::IKeywordUpdate` `+0x284` interfész `+0x14` slotján (`0x00c906d8` → `0x0065b4b0`) a `0x005c76b0` kijelölési/listaépítő útba kerül. A tényleges fájl-/adatbázis-író és az IPTC Keywords mezőn belüli beszúrási irány továbbra is **NINCS MEG**; a `0x005c7710` indirekt callbacket kell feloldani, majd eredeti JPEG-et mérni. | A kijelölt sorokra ad címkét; JPEG-nél IPTC Keywords írás, íráshiba vagy más formátum esetén `.picasa.ini` `keywords=` fallback és index-frissítés (`keywords_controller.py:149-162`, `:176-231`). | **NINCS DÖNTÉS** az írási paritásról: a bináris fájlíró út és az eredeti JPEG mezősorrendje még hiányzik. |
 | **Párbeszéd:** OK / Cancel; a tíz `quicktags::tag%d` mező és a `quicktags::enable_recents` értékét kezeli/menti (`0x0083ea00`, `0x0083f3f0`, `0x0083f2f0`). | OK / Cancel; a mezők és kapcsolók QSettings-be íródnak, Mégse megnyitáskori állapotra állít vissza (`QuickTagsConfigDialog.qml:36`, `:60-75`). | **EGYEZIK**: a mentés és elvetés látható eredménye egyezik. |
@@ -3548,14 +3548,16 @@ nincs tartós Autofill-beállítás olvasása vagy írása. A következtetés ez
 eseménykezelő, a párbeszédépítő és az erőforrás egymástól külön ellenőrzött
 nyomára épül, nem pusztán a feliratra.
 
-**A Legutóbbiak cáfoló köre.** A kezdeti értelmezés szerint a `0x0063c120` két
-`recent%d` rekordot ír. Ezt a segédfüggvény utasításszintű ellenőrzése
-cáfolta: a vizsgált út `Preferences`-ből olvassa ezeket a kulcsokat, majd a
-panel két előzményhelyét kezeli; közvetlen írás nem látható. Ettől
-függetlenül a `0x0063bed0` feltételes hívása és a `0x0063c7d0` betöltő
-ágazása egyaránt igazolja, hogy a kikapcsolt jelző mellett az eredeti nem
-hívja a frissítőt és nem használja a `recent%d` értékeket a két gombon.
-A későbbi/persistált látható hatás nyitott marad.
+**A Legutóbbiak cáfoló köre - korábbi következtetés helyesbítése (#5978).**
+A korábbi olvasat tévesen azt állította, hogy a `0x0063c120` csak beolvassa
+a `recent%d` értékeket. A teljes függvényben a `quicktags::recent%d`
+formázása (`0x00ca0894`), a 0-1 indexű íróciklus (`0x0063c303-0x0063c376`,
+ciklusvég `0x0063c578-0x0063c57e`) és a `0x00407760` íróhívás igazolja a
+két Preferences-érték frissítését. Függetlenül, a `0x0063c7d0` betöltőút
+az első két UI-helyhez `recent0/1`-et, a 2-9. helyhez `tag2..9`-et választ;
+a `0x0083f3f0` külön tíz `tag0..9` értéket ment. Ez cáfolja azt az
+alternatívát, hogy az új címke a kézi lista elejére szúródik és a tizedik
+kézi címke kiszorulna.
 
 **Nyitott részletek:** az `0x0063d260` által kapott közös címkelista pontos
 forrása és sorrendje **NINCS MEG**. Megszerzés: a `0x0063c7d0`-ban az
@@ -3600,34 +3602,93 @@ felül a kézzel beállított értékeket vagy a fenntartott legfelső két mez�
 #### B. A Legutóbbiak kikapcsolásakor az előzmény ne változzon
 
 **Eredeti:** `quicktags::enable_recents=0` mellett a hozzáadási út kihagyja
-a `0x0063c120` előzményfrissítő hívását; a segédfüggvény közvetlen tartós
-írása és a későbbi visszakapcsolás eredménye nincs meg.
+a `0x0063c120` előzményfrissítő hívását (`0x0063c05a-0x0063c08a`).
 
-**Nálunk:** a `quickTagsReserveRecent` állapotától függetlenül frissítjük a
-QSettings-ben tárolt előzménylistát; a gombok megjelenítését külön kapuzzuk.
+**Nálunk:** az `addKeywordToRows` csak bekapcsolt `quickTagsReserveRecent`
+állapotban hívja a `_record_recent_quick_tag`-et (`keywords_controller.py:177-184`).
 
-**Teendő:** a binárisban igazolt hívási feltétellel összhangban a legutóbbiak listáját
-csak bekapcsolt „felső két hely a legutóbbiaknak” állapotban frissíteni.
+**Eredmény:** a kikapcsolt állapotú frissítés a mai forráskódban egyezik az
+eredetivel; a #5659-ben korábban jelzett eltérés elavult. A #5978 tényleges
+fejlesztési eltérése az ismételt címke átrendezése és a recent lista tárolási
+szemantikája; ld. a lentebbi javaslatot.
+
+### 43.2.2 ⭐ Címke hozzáadásakor a két elemű Legutóbbiak frissítése (#5978, 2026-10-26)
+
+**Eredeti út és feltétel.** A `quicktag_%d` gomb eseményútja a
+`0x0063a5e0`-tól a címkéző `0x0063bed0`-ig jut; a begépelt címke útja a
+`0x0063bb30`-ból éri el ugyanezt a függvényt. A `0x0063bed0` csak akkor
+hívja a frissítőt, ha a `Preferences\quicktags::enable_recents` jelző igaz
+(`0x0063c05a-0x0063c08a`; a `0x0063c7d0` hiányzó kulcsnál `1`-et tölt be).
+
+**Tárolás és sorrend.** A `0x0063c120` az új címkét a jelenlegi első két
+megjelenített recent értékkel byte-azonosan hasonlítja össze
+(`0x0063c142-0x0063c258`). Ha bármelyikkel egyezik, nem rendezi át és ezen
+az úton nem írja újra a két kulcsot. Új értéknél a korábbi `recent0`
+`recent1` lesz, majd az új címke kerül `recent0`-ba
+(`0x0063c2e4-0x0063c2f8`). A beállításíró ciklus kizárólag a
+`Preferences\quicktags::recent0` és `Preferences\quicktags::recent1`
+kulcsot frissíti (`0x00ca0894`, `0x0063c303-0x0063c376`, `0x00407760`);
+így a korábbi `recent1` esik ki a két elemű előzményből. Ha a címke csak
+kézi `tag%d` helyen szerepel, az updater nem tekinti duplikátumnak.
+
+**A tíz kézi hely és a tizedik elem.** A `0x0063c7d0` tíz UI-helyet épít
+(`0x0063d0ec-0x0063d102`): bekapcsolt Legutóbbiak mellett az első kettő
+`recent0/1`, a többi `tag2..tag9`; kikapcsolva mind a tíz `tag0..tag9`.
+A konfiguráció külön útja, `0x0083f3f0`, mind a tíz kézi kulcsot menti
+(`0x0083f43e-0x0083f525`). Tehát a tizedik kézi címke (`tag9`) nem tolódik
+ki és nem íródik felül; a kézi `tag0` és `tag1` tárolva marad, de bekapcsolt
+Legutóbbiak mellett nem ezek látszanak az első két gombon.
+
+**Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy az automatikus frissítés a
+tíz kézi mező elejére szúr és a tizedik helyet eldobja. A `0x0063c120`
+teljes, kétindexű `recent%d` íróciklusa és a külön `0x0083f3f0` tízindexű
+`tag%d` mentőciklusa ezt az alternatívát cáfolta; a két út eltérő kulcsot
+és eltérő ciklushatárt használ.
+
+### Javasolt fejlesztési jegy (#5978)
+
+**Eredeti:** a `quicktags::enable_recents` bekapcsolásakor az új címke a
+`recent0` elejére kerül; korábbi `recent0` a `recent1`-be csúszik, a korábbi
+`recent1` kiesik. Ha a címke már a két recent érték egyike, nincs átrendezés.
+Az összevetés byte-azonos, és a kulcsok `Preferences\quicktags::recent0/1`.
+
+**Nálunk:** a `keywords_controller.py:177-184` ugyanúgy csak bekapcsolt
+`quickTags/reserveRecentForTop2` mellett frissít. A
+`keywords_controller.py:286-297` viszont casefold-egyezésnél is eltávolítja
+a meglévő elemet és a címkét előre mozgatja, majd legfeljebb nyolc elemet
+ment a `quickTags/recentKeywords` kulcsba. A felső két gombon kívüli hat
+elem nem látszik, de a beállításban megmarad.
+
+**Teendő:** ha az eredeti viselkedés a cél, az előzményt két értékre
+korlátozni; az első két érték byte-azonos ismétlésén nem változtatni a
+sorrendet; és a két eredeti recent-hely tárolási szemantikáját követni.
+Az eltérésként korábban jelzett kikapcsolt állapotú frissítés nem teendő:
+a mai forráskódban már az eredetivel egyező feltétel van.
 
 **Kész, ha:**
 
-- [ ] kikapcsolt állapotban végzett címkézés nem hívja meg és nem írja át az
-  előzményfrissítő listát;
-- [ ] bekapcsolt állapotban a friss címke az első helyre kerül, duplikáció
-  nélkül.
+- [ ] új, különböző címke a 0. recent-helyre kerül, a korábbi 0. a 1.-re
+  csúszik, a korábbi 1. pedig kiesik;
+- [ ] a két recent-hely bármelyikével byte-azonos címke ismétlése nem rendezi
+  át az előzményt;
+- [ ] a kézi `tag0..tag9` értékek nem tolódnak el és nem íródnak felül;
+- [ ] kikapcsolt Legutóbbiak mellett az előzmény nem frissül.
 
 ### Nyitott kérdések mérlege (43.)
 
 ```
-Nyitott kérdések: 4 nyílt (az Autofill jelöltlistája és vezérlőjének vizuális/állapot-viselkedése; a bináris fájlíró útja; a legutóbbiak frissítőjének későbbi/persistált látható hatása) · 4 lezárva · 2 megerősített fejlesztési eltérés
+Nyitott kérdések: 3 nyílt (az Autofill jelöltlistája és vezérlőjének vizuális/állapot-viselkedése; a címkézés fájlíró útja) · 5 lezárva · 2 megerősített fejlesztési eltérés
 ```
 
 - **LEZÁRVA:** a megfeleltetési fájl átvilágítása — a `collagepanel` volt
   az egyetlen elavult sor (43.1); a gyorscímke-helyek száma két
   független forrásból (leltár + ciklushatár, 43.2); a tárolási kulcsok
-  és az OK/Cancel viselkedés (43.2-43.3). A #5659 két, forráskóddal is
-  összevetett eltérést igazolt (Autofill; kikapcsolt Legutóbbiak beállítás melletti
-  frissítőhívás). A Legutóbbiak későbbi, tartós látható hatása nyitott.
+  és az OK/Cancel viselkedés (43.2-43.3); a Legutóbbiak két kulcsba írása,
+  ismétlési feltétele és a tíz kézi helytől való különállása (#5978, 43.2.1-2).
+  A #5659 kikapcsolt Legutóbbiakra vonatkozó korábbi eltérésállítása
+  elavult: a mai kód kapuja egyezik az eredetivel. Fejlesztési eltérések:
+  Autofill-viselkedés (#5659) és az ismételt címke/listaméret tárolási
+  szemantikája (#5978).
 
 ### Amit KIZÁRTAM
 

@@ -7,6 +7,50 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.259] - 2026-10-27
+
+- A fotónéző szerkesztőpanelje, bal oldali fiókja, filmcsíkja és képterülete külön QML-komponensekbe került, változatlan megjelenéssel. (#5953).
+
+## [0.9.258] - 2026-10-27
+
+- A zöld tálca-gomb a felhasználó OAuth-kliensével a tálca képeit tölti fel a Google Fotókba. (#5976).
+
+## [0.9.257] - 2026-10-27
+
+- A Mentés megerősítő ablaka az eredeti jelölőfeliratot mutatja, a biztonsági másolat pedig megőrzi a fájl idejét. (#5997).
+
+## [0.9.256] - 2026-10-27
+
+- A Filtered B&W színmezője induláskor fehér, és a betöltött kép mentett színét mutatja. (#5990).
+
+## [0.9.255] - 2026-10-27
+
+- Fixed QML layout warnings in the tags and face editor, and prevented GPU preview requests until both preview images are ready (#5984).
+
+## [0.9.254] - 2026-10-26
+
+- A gyorscímke-sáv két legutóbbi címkét tart meg, az ismételt használat pedig megőrzi a sorrendet. (#5980).
+
+## [0.9.253] - 2026-10-26
+
+- A fotónéző képernyőkép-mérője Windowson is lefut, a magyar kimenete nem okoz hibát (#5971).
+
+## [0.9.252] - 2026-10-26
+
+- A db3-importáló most már a több tárolórészre bontott wordhash-listákat is beolvassa, és gyorsabban veszi át a sorrendadatokat. (#5964).
+
+## [0.9.251] - 2026-10-26
+
+- A fotónéző főállapotairól képernyőképek készíthetők és képpontra összevethetők (#5952).
+
+## [0.9.250] - 2026-10-26
+
+- A Filtered B&W színmezője az eredetihez igazodva #545454-ről indul (#5949).
+
+## [0.9.249] - 2026-10-26
+
+- Az ismételt db3-import nem hoz létre duplikált adatot, és útvonalütközésnél a később módosított bejegyzést tartja meg. (#5945).
+
 ## [0.9.248] - 2026-10-26
 
 - A csoportos átnevezés foglalt cél esetén -001-től sorszámoz, és megőrzi a kiterjesztés írásmódját. (#5941).

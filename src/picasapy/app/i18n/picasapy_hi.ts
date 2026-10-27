@@ -1167,6 +1167,12 @@ picasapy-origin-key: login_text:Label(login/gphotos_logotext);options:options/we
             <translation>नाम टैग</translation>
         </message>
         <message>
+            <source>Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::WebAlbumsTabEs</extracomment>
+            <translation>Google फ़ोटो</translation>
+        </message>
+        <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
@@ -1183,6 +1189,107 @@ picasapy-origin-key: options:options/button189.title</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/button190.title</extracomment>
             <translation>अभी नहीं</translation>
+        </message>
+    </context>
+    <context>
+        <name>OptionsTabGooglePhotos</name>
+        <message>
+            <source>Waiting for Google authorization…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google प्राधिकरण की प्रतीक्षा हो रही है…</translation>
+        </message>
+        <message>
+            <source>Enter a valid OAuth client ID and client secret.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>मान्य OAuth क्लाइंट ID और क्लाइंट सीक्रेट दर्ज करें।</translation>
+        </message>
+        <message>
+            <source>Could not open the system browser.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>सिस्टम ब्राउज़र नहीं खोला जा सका।</translation>
+        </message>
+        <message>
+            <source>Sign-in was cancelled.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>साइन-इन रद्द कर दिया गया।</translation>
+        </message>
+        <message>
+            <source>Sign-in timed out. Try again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>साइन-इन का समय समाप्त हो गया। फिर से कोशिश करें।</translation>
+        </message>
+        <message>
+            <source>Network error. Check your connection and try again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>नेटवर्क त्रुटि। अपना कनेक्शन जाँचें और फिर से कोशिश करें।</translation>
+        </message>
+        <message>
+            <source>Your Google Photos sign-in has expired. Sign in again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google Photos का साइन-इन समाप्त हो गया है। फिर से साइन-इन करें।</translation>
+        </message>
+        <message>
+            <source>Google sign-in failed. Check the OAuth client settings.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google साइन-इन विफल रहा। OAuth क्लाइंट सेटिंग जाँचें।</translation>
+        </message>
+        <message>
+            <source>Signed in to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google Photos में साइन-इन किया गया</translation>
+        </message>
+        <message>
+            <source>Not signed in to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google Photos में साइन-इन नहीं किया गया</translation>
+        </message>
+        <message>
+            <source>Use your own Google OAuth client (Desktop app).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>अपना Google OAuth क्लाइंट इस्तेमाल करें (डेस्कटॉप ऐप)।</translation>
+        </message>
+        <message>
+            <source>OAuth client ID</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>OAuth क्लाइंट ID</translation>
+        </message>
+        <message>
+            <source>OAuth client secret</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>OAuth क्लाइंट सीक्रेट</translation>
+        </message>
+        <message>
+            <source>Leave blank to keep the saved client secret</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>सहेजे गए क्लाइंट सीक्रेट को बनाए रखने के लिए इसे खाली छोड़ें</translation>
+        </message>
+        <message>
+            <source>The client secret and refresh token are stored in the system keyring or user settings.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>क्लाइंट सीक्रेट और रिफ़्रेश टोकन सिस्टम कीरिंग या उपयोगकर्ता सेटिंग में संग्रहीत होते हैं।</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileSave::saveButton</extracomment>
+            <translation>सहेजें</translation>
+        </message>
+        <message>
+            <source>Sign in with Google Account</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
+            <translation>Google खाता के साथ प्रवेश करें</translation>
+        </message>
+        <message>
+            <source>Sign Out</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
+            <translation>प्रस्थान करें</translation>
+        </message>
+        <message>
+            <source>Uploaded photos are limited to 1600 pixels on the longer side.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>अपलोड की गई फ़ोटो की लंबी भुजा 1600 पिक्सेल तक सीमित है।</translation>
         </message>
     </context>
     <context>
@@ -6631,10 +6738,10 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::progress</extracomment>
             <translation>इस फ़ाइल का बैकअप बनाया जाएगा.</translation>
         </message>
         <message>
-            <source>Do not ask again</source>
+            <source>Do not ask me again.</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeFaceMoviePanelRememberDialog</extracomment>
-            <translation>दोबारा न पूछें</translation>
+picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
+            <translation>मुझेसे दोबारा न पूछें.</translation>
         </message>
         <message>
             <source>Save As...</source>
@@ -9469,52 +9576,6 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
     <context>
         <name>PhotoViewer</name>
         <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>This feature is not supported for Linux</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:LinuxNomovie</extracomment>
-            <translation>यह सुविधा Linux के लिए समर्थित नहीं है</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Capturing frame...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCaptureFrame::captureframeprog1</extracomment>
-            <translation>फ़्रेम कैप्चर कर रहा है...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Saving to Captured Videos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
-            <translation>कैप्चर किए गए वीडियो में सहेज रहा है</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Saved %1 to Captured Videos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 को कैप्चर किए गए वीडियो में सहेजा गया</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Saved %1 to Exported Videos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 को निर्यात किए गए वीडियो में सहेजा गया</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Failed to capture frame</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
-            <translation>फ़्रेम कैप्चर करने में विफल हुआ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Failed to export clip</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>क्लिप निर्यात नहीं हो सकी</translation>
-        </message>
-        <message>
             <source>Show only one picture</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(editpanel/only_1up_toggle)</extracomment>
@@ -9577,28 +9638,6 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/toggle_left_drawer)</extracommen
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(editpanel/in_progress_label)</extracomment>
             <translation>प्रगति में है...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Redeye fixes cannot be recovered with redo.
-Are you sure you want to undo?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>लाल-आंख सुधार फिर से करने पर वापस नहीं पाए जा सकते.
-क्या आप वाकई इन्हें पूर्ववत करना चाहते हैं?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Retouch fixes cannot be recovered with redo.
-Are you sure you want to undo?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>रीटच सुधार फिर से करने पर वापस नहीं पाए जा सकते.
-क्या आप वाकई इन्हें पूर्ववत करना चाहते हैं?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>कैप्शन आपके लिखे लेख की जगह लेगा. (यह कार्रवाई पूर्ववत नहीं की जा सकती)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="299" />
@@ -9849,13 +9888,6 @@ picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill
             <translation>पूर्ववत करें: क्रॉप</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="401" />
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="403" />
-            <source>Redo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>फिर से करें</translation>
-        </message>
-        <message>
             <source>Redo: Crop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>फिर से करें: क्रॉप</translation>
@@ -9865,12 +9897,6 @@ picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Text(nerdview/nvhead)</extracomment>
             <translation>हिस्टोग्राम और कैमरा जानकारी</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="588" />
-            <source>Video playback requires the Qt Multimedia module.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>वीडियो चलाने के लिए Qt Multimedia मॉड्यूल ज़रूरी है.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="704" />
@@ -12326,6 +12352,98 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/instructions)</extr
     </context>
     <context>
         <name>TrayBar</name>
+        <message>
+            <source>Network error. Check your connection and try again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>नेटवर्क त्रुटि। अपना कनेक्शन जाँचें और फिर से कोशिश करें।</translation>
+        </message>
+        <message>
+            <source>Your Google Photos sign-in has expired. Sign in again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google Photos का साइन-इन समाप्त हो गया है। फिर से साइन-इन करें।</translation>
+        </message>
+        <message>
+            <source>Maximum Upload Rate Exceeded</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:UploadError::RateLimit</extracomment>
+            <translation>अधिकतम अपलोड रेट पार हो गई</translation>
+        </message>
+        <message>
+            <source>Google Photos is temporarily unavailable</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Lighthouse::ServiceUnavailableES</extracomment>
+            <translation>Google फ़ोटो अस्थायी रूप से अनुपलब्ध है</translation>
+        </message>
+        <message>
+            <source>Upload cancelled</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>अपलोड रद्द किया गया</translation>
+        </message>
+        <message>
+            <source>A photo could not be prepared for upload.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>फ़ोटो को अपलोड के लिए तैयार नहीं किया जा सका।</translation>
+        </message>
+        <message>
+            <source>This photo is too large to upload.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>यह फ़ोटो अपलोड करने के लिए बहुत बड़ी है।</translation>
+        </message>
+        <message>
+            <source>There are no photos in the Photo Tray.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>फ़ोटो ट्रे में कोई फ़ोटो नहीं है।</translation>
+        </message>
+        <message>
+            <source>Google Photos could not complete the upload. Try again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google फ़ोटो अपलोड पूरा नहीं कर सका। फिर से कोशिश करें।</translation>
+        </message>
+        <message>
+            <source>Upload complete</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:uploadmgr::complete</extracomment>
+            <translation>अपलोड पूर्ण</translation>
+        </message>
+        <message>
+            <source>Preparing photo %1 of %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>फ़ोटो %1/%2 तैयार हो रही है</translation>
+        </message>
+        <message>
+            <source>Uploading %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:QuickUploader::progress</extracomment>
+            <translation>%1 अपलोड हो रहा है</translation>
+        </message>
+        <message>
+            <source>Adding photo %1 of %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>फ़ोटो %1/%2 जोड़ी जा रही है</translation>
+        </message>
+        <message>
+            <source>Preparing photos for upload</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>फ़ोटो अपलोड करने के लिए तैयार की जा रही हैं</translation>
+        </message>
+        <message>
+            <source>Upload photos in the Photo Tray to Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs</extracomment>
+            <translation>Google फ़ोटो पर फ़ोटो ट्रे में फ़ोटो अपलोड करें</translation>
+        </message>
+        <message>
+            <source>Failed to upload %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:QuickUploader::errorMsg</extracomment>
+            <translation>%1 अपलोड नहीं हो सका</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>बंद करें</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="0" />
             <source>Movie Maker</source>
@@ -18885,6 +19003,101 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <source>An album must be saved in an indexed photo folder.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>एल्बम को केवल अनुक्रमित फ़ोटो फ़ोल्डर में ही सहेजा जा सकता है।</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerPhotoArea</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="854" />
+            <source>Capturing frame...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog1</extracomment>
+            <translation>फ़्रेम कैप्चर कर रहा है...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="858" />
+            <source>Saving to Captured Videos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
+            <translation>कैप्चर किए गए वीडियो में सहेज रहा है</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="863" />
+            <source>Saved %1 to Captured Videos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 को कैप्चर किए गए वीडियो में सहेजा गया</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="873" />
+            <source>Saved %1 to Exported Videos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 को निर्यात किए गए वीडियो में सहेजा गया</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="868" />
+            <source>Failed to capture frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
+            <translation>फ़्रेम कैप्चर करने में विफल हुआ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="876" />
+            <source>Failed to export clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>क्लिप निर्यात नहीं हो सकी</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="885" />
+            <source>Video playback requires the Qt Multimedia module.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>वीडियो चलाने के लिए Qt Multimedia मॉड्यूल ज़रूरी है.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerLeftDrawer</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerLeftDrawer.qml" />
+            <source>This feature is not supported for Linux</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:LinuxNomovie</extracomment>
+            <translation>यह सुविधा Linux के लिए समर्थित नहीं है</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerEditorPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="52" />
+            <source>Undo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>पूर्ववत करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="54" />
+            <source>Redo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>फिर से करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="122" />
+            <source>Retouch fixes cannot be recovered with redo.
+Are you sure you want to undo?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>रीटच सुधार फिर से करने पर वापस नहीं पाए जा सकते.
+क्या आप वाकई इन्हें पूर्ववत करना चाहते हैं?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="126" />
+            <source>Redeye fixes cannot be recovered with redo.
+Are you sure you want to undo?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>लाल-आंख सुधार फिर से करने पर वापस नहीं पाए जा सकते.
+क्या आप वाकई इन्हें पूर्ववत करना चाहते हैं?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="262" />
+            <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>कैप्शन आपके लिखे लेख की जगह लेगा. (यह कार्रवाई पूर्ववत नहीं की जा सकती)</translation>
         </message>
     </context>
 </TS>

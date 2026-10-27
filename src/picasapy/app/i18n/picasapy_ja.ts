@@ -1167,6 +1167,12 @@ picasapy-origin-key: login_text:Label(login/gphotos_logotext);options:options/we
             <translation>名前タグ</translation>
         </message>
         <message>
+            <source>Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::WebAlbumsTabEs</extracomment>
+            <translation>Google フォト</translation>
+        </message>
+        <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
@@ -1183,6 +1189,107 @@ picasapy-origin-key: options:options/button189.title</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/button190.title</extracomment>
             <translation>キャンセル</translation>
+        </message>
+    </context>
+    <context>
+        <name>OptionsTabGooglePhotos</name>
+        <message>
+            <source>Waiting for Google authorization…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google の認証を待っています…</translation>
+        </message>
+        <message>
+            <source>Enter a valid OAuth client ID and client secret.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>有効な OAuth クライアント ID とクライアント シークレットを入力してください。</translation>
+        </message>
+        <message>
+            <source>Could not open the system browser.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>システム ブラウザーを開けませんでした。</translation>
+        </message>
+        <message>
+            <source>Sign-in was cancelled.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ログインはキャンセルされました。</translation>
+        </message>
+        <message>
+            <source>Sign-in timed out. Try again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ログインがタイムアウトしました。もう一度お試しください。</translation>
+        </message>
+        <message>
+            <source>Network error. Check your connection and try again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ネットワーク エラーです。接続を確認してもう一度お試しください。</translation>
+        </message>
+        <message>
+            <source>Your Google Photos sign-in has expired. Sign in again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google フォトへのログイン期限が切れました。もう一度ログインしてください。</translation>
+        </message>
+        <message>
+            <source>Google sign-in failed. Check the OAuth client settings.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google へのログインに失敗しました。OAuth クライアントの設定を確認してください。</translation>
+        </message>
+        <message>
+            <source>Signed in to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google フォトにログインしています</translation>
+        </message>
+        <message>
+            <source>Not signed in to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google フォトにログインしていません</translation>
+        </message>
+        <message>
+            <source>Use your own Google OAuth client (Desktop app).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>独自の Google OAuth クライアント（デスクトップ アプリ）を使用します。</translation>
+        </message>
+        <message>
+            <source>OAuth client ID</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>OAuth クライアント ID</translation>
+        </message>
+        <message>
+            <source>OAuth client secret</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>OAuth クライアント シークレット</translation>
+        </message>
+        <message>
+            <source>Leave blank to keep the saved client secret</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>保存済みのクライアント シークレットを保持するには空欄にします</translation>
+        </message>
+        <message>
+            <source>The client secret and refresh token are stored in the system keyring or user settings.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>クライアント シークレットと更新トークンは、システムのキーリングまたはユーザー設定に保存されます。</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileSave::saveButton</extracomment>
+            <translation>保存</translation>
+        </message>
+        <message>
+            <source>Sign in with Google Account</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
+            <translation>Google アカウントでログイン</translation>
+        </message>
+        <message>
+            <source>Sign Out</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
+            <translation>ログアウト</translation>
+        </message>
+        <message>
+            <source>Uploaded photos are limited to 1600 pixels on the longer side.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>アップロードする写真の長辺は 1600 ピクセルまでです。</translation>
         </message>
     </context>
     <context>
@@ -6631,10 +6738,10 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::progress</extracomment>
             <translation>このファイルのバックアップを作成します。</translation>
         </message>
         <message>
-            <source>Do not ask again</source>
+            <source>Do not ask me again.</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeFaceMoviePanelRememberDialog</extracomment>
-            <translation>次回から表示しない</translation>
+picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
+            <translation>次回から表示しない。</translation>
         </message>
         <message>
             <source>Save As...</source>
@@ -9469,52 +9576,6 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
     <context>
         <name>PhotoViewer</name>
         <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>This feature is not supported for Linux</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:LinuxNomovie</extracomment>
-            <translation>この機能は Linux ではサポートされません</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Capturing frame...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCaptureFrame::captureframeprog1</extracomment>
-            <translation>フレームをキャプチャしています...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Saving to Captured Videos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
-            <translation>キャプチャ済み動画に保存しています</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Saved %1 to Captured Videos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>「%1」をキャプチャした動画に保存しました</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Saved %1 to Exported Videos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>「%1」をエクスポートした動画に保存しました</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Failed to capture frame</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
-            <translation>フレームをキャプチャできませんでした</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Failed to export clip</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>クリップのエクスポートに失敗しました</translation>
-        </message>
-        <message>
             <source>Show only one picture</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(editpanel/only_1up_toggle)</extracomment>
@@ -9577,28 +9638,6 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/toggle_left_drawer)</extracommen
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(editpanel/in_progress_label)</extracomment>
             <translation>処理しています...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Redeye fixes cannot be recovered with redo.
-Are you sure you want to undo?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>赤目の修正はやり直しで復元できません。
-操作を元に戻しますか？</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Retouch fixes cannot be recovered with redo.
-Are you sure you want to undo?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>レタッチの修正はやり直しで復元できません。
-操作を元に戻しますか？</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>説明が入力済みのテキストを置き換えます。（この操作は元に戻せません）</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="299" />
@@ -9849,13 +9888,6 @@ picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill
             <translation>元に戻す: トリミング</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="401" />
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="403" />
-            <source>Redo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>やり直し</translation>
-        </message>
-        <message>
             <source>Redo: Crop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>やり直す: トリミング</translation>
@@ -9865,12 +9897,6 @@ picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Text(nerdview/nvhead)</extracomment>
             <translation>ヒストグラムとカメラの情報</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="588" />
-            <source>Video playback requires the Qt Multimedia module.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>動画を再生するには Qt Multimedia モジュールが必要です。</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="704" />
@@ -12326,6 +12352,98 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/instructions)</extr
     </context>
     <context>
         <name>TrayBar</name>
+        <message>
+            <source>Network error. Check your connection and try again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ネットワーク エラーです。接続を確認してもう一度お試しください。</translation>
+        </message>
+        <message>
+            <source>Your Google Photos sign-in has expired. Sign in again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google フォトへのログイン期限が切れました。もう一度ログインしてください。</translation>
+        </message>
+        <message>
+            <source>Maximum Upload Rate Exceeded</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:UploadError::RateLimit</extracomment>
+            <translation>最大アップロード速度を超えました</translation>
+        </message>
+        <message>
+            <source>Google Photos is temporarily unavailable</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Lighthouse::ServiceUnavailableES</extracomment>
+            <translation>Google フォトは一時的にご利用いただけません</translation>
+        </message>
+        <message>
+            <source>Upload cancelled</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>アップロードをキャンセルしました</translation>
+        </message>
+        <message>
+            <source>A photo could not be prepared for upload.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>写真をアップロードする準備ができませんでした。</translation>
+        </message>
+        <message>
+            <source>This photo is too large to upload.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>この写真はアップロードするには大きすぎます。</translation>
+        </message>
+        <message>
+            <source>There are no photos in the Photo Tray.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>フォト トレイに写真がありません。</translation>
+        </message>
+        <message>
+            <source>Google Photos could not complete the upload. Try again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google フォトでアップロードを完了できませんでした。もう一度お試しください。</translation>
+        </message>
+        <message>
+            <source>Upload complete</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:uploadmgr::complete</extracomment>
+            <translation>アップロード完了</translation>
+        </message>
+        <message>
+            <source>Preparing photo %1 of %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>写真 %1/%2 を準備中</translation>
+        </message>
+        <message>
+            <source>Uploading %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:QuickUploader::progress</extracomment>
+            <translation>%1 をアップロード中</translation>
+        </message>
+        <message>
+            <source>Adding photo %1 of %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>写真 %1/%2 を追加中</translation>
+        </message>
+        <message>
+            <source>Preparing photos for upload</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>写真をアップロードする準備をしています</translation>
+        </message>
+        <message>
+            <source>Upload photos in the Photo Tray to Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs</extracomment>
+            <translation>フォトトレイの写真を Google フォトにアップロード</translation>
+        </message>
+        <message>
+            <source>Failed to upload %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:QuickUploader::errorMsg</extracomment>
+            <translation>%1 をアップロードできませんでした</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>閉じる</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="0" />
             <source>Movie Maker</source>
@@ -18885,6 +19003,101 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <source>An album must be saved in an indexed photo folder.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>アルバムはインデックス済みの写真フォルダにのみ保存できます。</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerPhotoArea</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="854" />
+            <source>Capturing frame...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog1</extracomment>
+            <translation>フレームをキャプチャしています...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="858" />
+            <source>Saving to Captured Videos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
+            <translation>キャプチャ済み動画に保存しています</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="863" />
+            <source>Saved %1 to Captured Videos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>「%1」をキャプチャした動画に保存しました</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="873" />
+            <source>Saved %1 to Exported Videos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>「%1」をエクスポートした動画に保存しました</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="868" />
+            <source>Failed to capture frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
+            <translation>フレームをキャプチャできませんでした</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="876" />
+            <source>Failed to export clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>クリップのエクスポートに失敗しました</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="885" />
+            <source>Video playback requires the Qt Multimedia module.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>動画を再生するには Qt Multimedia モジュールが必要です。</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerLeftDrawer</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerLeftDrawer.qml" />
+            <source>This feature is not supported for Linux</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:LinuxNomovie</extracomment>
+            <translation>この機能は Linux ではサポートされません</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerEditorPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="52" />
+            <source>Undo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>取消し</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="54" />
+            <source>Redo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>やり直し</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="122" />
+            <source>Retouch fixes cannot be recovered with redo.
+Are you sure you want to undo?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>レタッチの修正はやり直しで復元できません。
+操作を元に戻しますか？</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="126" />
+            <source>Redeye fixes cannot be recovered with redo.
+Are you sure you want to undo?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>赤目の修正はやり直しで復元できません。
+操作を元に戻しますか？</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="262" />
+            <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>説明が入力済みのテキストを置き換えます。（この操作は元に戻せません）</translation>
         </message>
     </context>
 </TS>

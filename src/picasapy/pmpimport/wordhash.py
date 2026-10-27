@@ -23,16 +23,17 @@ class WordHashFormatError(ValueError):
 def read_wordhash(path: Path) -> dict[str, tuple[int, ...]]:
     """Beolvassa a ]album:<token> postinglistákat, az eredeti sorrendben.
 
-    A listaelemek little-endian thumbindex-sorazonosítók. A 0x04 és 0x08
-    fejlécmezők jelentése a mért specifikációban ismeretlen, ezért ezeket
-    nem egyeztetjük a thumbindex rekordszámával.
+    A listaelemek little-endian thumbindex-sorazonosítók. A 0x04 fejlécmező
+    jelentése a mért specifikációban ismeretlen, ezért nem egyeztetjük a
+    thumbindex rekordszámával. A 0x08 a poolok száma; minden pool a fejlécben
+    megadott méretű, az utolsó pool használt bájtszámát pedig a 0x10 mező adja.
     """
     path = Path(path)
     data = path.read_bytes()
     if len(data) < _RECORDS_OFFSET:
         raise WordHashFormatError(f"A fejléc vagy a szótárpool csonka: {path}")
 
-    version, _unknown_04, _unknown_08, pool_size, pool_used = _HEADER.unpack_from(
+    version, _unknown_04, pool_count, pool_size, pool_used = _HEADER.unpack_from(
         data
     )
     if not math.isclose(version, _VERSION, rel_tol=0.0, abs_tol=1e-6):
@@ -43,14 +44,23 @@ def read_wordhash(path: Path) -> dict[str, tuple[int, ...]]:
         raise WordHashFormatError(
             f"Hibás poolméret ({pool_size:#x}, várt {_POOL_SIZE:#x}): {path}"
         )
+    if pool_count == 0:
+        raise WordHashFormatError(f"Üres szótárpool-szám: {path}")
     if pool_used > pool_size:
         raise WordHashFormatError(
             f"A foglalt poolhossz túl nagy ({pool_used}): {path}"
         )
 
-    pool = data[_POOL_OFFSET:_WORD_COUNT_OFFSET]
-    word_count = struct.unpack_from("<I", data, _WORD_COUNT_OFFSET)[0]
-    offset = _RECORDS_OFFSET
+    word_count_offset = _POOL_OFFSET + pool_count * pool_size
+    records_offset = word_count_offset + 4
+    if records_offset > len(data):
+        raise WordHashFormatError(
+            f"Csonka szótárpool ({pool_count} × {pool_size} bájt): {path}"
+        )
+    pool_used_total = (pool_count - 1) * pool_size + pool_used
+    pool = data[_POOL_OFFSET:word_count_offset]
+    word_count = struct.unpack_from("<I", data, word_count_offset)[0]
+    offset = records_offset
     if word_count > (len(data) - offset) // _WORD_RECORD.size:
         raise WordHashFormatError(f"Csonka szótár: a szószám nem fér el: {path}")
 
@@ -61,12 +71,14 @@ def read_wordhash(path: Path) -> dict[str, tuple[int, ...]]:
         word_offset, row_count = _WORD_RECORD.unpack_from(data, offset)
         offset += _WORD_RECORD.size
 
-        if word_offset >= pool_used or (word_offset and pool[word_offset - 1] != 0):
+        if word_offset >= pool_used_total or (
+            word_offset and pool[word_offset - 1] != 0
+        ):
             raise WordHashFormatError(
                 f"A szóeltolás nem foglalt sztringkezdetre mutat "
                 f"({word_offset}): {path}"
             )
-        terminator = pool.find(b"\x00", word_offset, pool_used)
+        terminator = pool.find(b"\x00", word_offset, pool_used_total)
         if terminator < 0:
             raise WordHashFormatError(
                 f"Nincs lezáró nulla a szó végén (#{word_number}): {path}"

@@ -1167,6 +1167,12 @@ picasapy-origin-key: login_text:Label(login/gphotos_logotext);options:options/we
             <translation>Name Tags</translation>
         </message>
         <message>
+            <source>Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CGeneralPrefsPage::WebAlbumsTabEs</extracomment>
+            <translation>Google Photos</translation>
+        </message>
+        <message>
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
@@ -1183,6 +1189,107 @@ picasapy-origin-key: options:options/button189.title</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/button190.title</extracomment>
             <translation>Cancel</translation>
+        </message>
+    </context>
+    <context>
+        <name>OptionsTabGooglePhotos</name>
+        <message>
+            <source>Waiting for Google authorization…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Waiting for Google authorization…</translation>
+        </message>
+        <message>
+            <source>Enter a valid OAuth client ID and client secret.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Enter a valid OAuth client ID and client secret.</translation>
+        </message>
+        <message>
+            <source>Could not open the system browser.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Could not open the system browser.</translation>
+        </message>
+        <message>
+            <source>Sign-in was cancelled.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sign-in was cancelled.</translation>
+        </message>
+        <message>
+            <source>Sign-in timed out. Try again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sign-in timed out. Try again.</translation>
+        </message>
+        <message>
+            <source>Network error. Check your connection and try again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Network error. Check your connection and try again.</translation>
+        </message>
+        <message>
+            <source>Your Google Photos sign-in has expired. Sign in again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Your Google Photos sign-in has expired. Sign in again.</translation>
+        </message>
+        <message>
+            <source>Google sign-in failed. Check the OAuth client settings.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google sign-in failed. Check the OAuth client settings.</translation>
+        </message>
+        <message>
+            <source>Signed in to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Signed in to Google Photos</translation>
+        </message>
+        <message>
+            <source>Not signed in to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Not signed in to Google Photos</translation>
+        </message>
+        <message>
+            <source>Use your own Google OAuth client (Desktop app).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Use your own Google OAuth client (Desktop app).</translation>
+        </message>
+        <message>
+            <source>OAuth client ID</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>OAuth client ID</translation>
+        </message>
+        <message>
+            <source>OAuth client secret</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>OAuth client secret</translation>
+        </message>
+        <message>
+            <source>Leave blank to keep the saved client secret</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Leave blank to keep the saved client secret</translation>
+        </message>
+        <message>
+            <source>The client secret and refresh token are stored in the system keyring or user settings.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>The client secret and refresh token are stored in the system keyring or user settings.</translation>
+        </message>
+        <message>
+            <source>Save</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::FileSave::saveButton</extracomment>
+            <translation>Save</translation>
+        </message>
+        <message>
+            <source>Sign in with Google Account</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
+            <translation>Sign in with Google Account</translation>
+        </message>
+        <message>
+            <source>Sign Out</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
+            <translation>Sign Out</translation>
+        </message>
+        <message>
+            <source>Uploaded photos are limited to 1600 pixels on the longer side.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Uploaded photos are limited to 1600 pixels on the longer side.</translation>
         </message>
     </context>
     <context>
@@ -6631,10 +6738,10 @@ picasapy-origin-key: stringres:CThumbUI::FileRevert::progress</extracomment>
             <translation>A backup of this file will be made.</translation>
         </message>
         <message>
-            <source>Do not ask again</source>
+            <source>Do not ask me again.</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeFaceMoviePanelRememberDialog</extracomment>
-            <translation>Do not ask again</translation>
+picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
+            <translation>Do not ask me again.</translation>
         </message>
         <message>
             <source>Save As...</source>
@@ -9468,52 +9575,6 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
     <context>
         <name>PhotoViewer</name>
         <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>This feature is not supported for Linux</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:LinuxNomovie</extracomment>
-            <translation>This feature is not supported for Linux</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Capturing frame...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCaptureFrame::captureframeprog1</extracomment>
-            <translation>Capturing frame...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Saving to Captured Videos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
-            <translation>Saving to Captured Videos</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Saved %1 to Captured Videos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Saved %1 to Captured Videos</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Saved %1 to Exported Videos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Saved %1 to Exported Videos</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Failed to capture frame</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
-            <translation>Failed to capture frame</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Failed to export clip</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Failed to export clip</translation>
-        </message>
-        <message>
             <source>Show only one picture</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(editpanel/only_1up_toggle)</extracomment>
@@ -9576,28 +9637,6 @@ picasapy-origin-key: tooltips:Tooltip(editpanel/toggle_left_drawer)</extracommen
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(editpanel/in_progress_label)</extracomment>
             <translation>In Progress...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Redeye fixes cannot be recovered with redo.
-Are you sure you want to undo?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Redeye fixes cannot be recovered with redo.
-Are you sure you want to undo?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Retouch fixes cannot be recovered with redo.
-Are you sure you want to undo?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Retouch fixes cannot be recovered with redo.
-Are you sure you want to undo?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>The caption will replace the text you have typed. (This operation is not undoable)</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="299" />
@@ -9848,13 +9887,6 @@ picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill
             <translation>Undo: Crop</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="401" />
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="403" />
-            <source>Redo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Redo</translation>
-        </message>
-        <message>
             <source>Redo: Crop</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Redo: Crop</translation>
@@ -9864,12 +9896,6 @@ picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Text(nerdview/nvhead)</extracomment>
             <translation>Histogram and camera information</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="588" />
-            <source>Video playback requires the Qt Multimedia module.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Video playback requires the Qt Multimedia module.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewer.qml" line="704" />
@@ -12325,6 +12351,98 @@ picasapy-origin-key: quicktagconfig_text:Text(quicktagconfig/instructions)</extr
     </context>
     <context>
         <name>TrayBar</name>
+        <message>
+            <source>Network error. Check your connection and try again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Network error. Check your connection and try again.</translation>
+        </message>
+        <message>
+            <source>Your Google Photos sign-in has expired. Sign in again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Your Google Photos sign-in has expired. Sign in again.</translation>
+        </message>
+        <message>
+            <source>Maximum Upload Rate Exceeded</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:UploadError::RateLimit</extracomment>
+            <translation>Maximum Upload Rate Exceeded</translation>
+        </message>
+        <message>
+            <source>Google Photos is temporarily unavailable</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Lighthouse::ServiceUnavailableES</extracomment>
+            <translation>Google Photos is temporarily unavailable</translation>
+        </message>
+        <message>
+            <source>Upload cancelled</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Upload cancelled</translation>
+        </message>
+        <message>
+            <source>A photo could not be prepared for upload.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A photo could not be prepared for upload.</translation>
+        </message>
+        <message>
+            <source>This photo is too large to upload.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>This photo is too large to upload.</translation>
+        </message>
+        <message>
+            <source>There are no photos in the Photo Tray.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>There are no photos in the Photo Tray.</translation>
+        </message>
+        <message>
+            <source>Google Photos could not complete the upload. Try again.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google Photos could not complete the upload. Try again.</translation>
+        </message>
+        <message>
+            <source>Upload complete</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:uploadmgr::complete</extracomment>
+            <translation>Upload complete</translation>
+        </message>
+        <message>
+            <source>Preparing photo %1 of %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Preparing photo %1 of %2</translation>
+        </message>
+        <message>
+            <source>Uploading %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:QuickUploader::progress</extracomment>
+            <translation>Uploading %1</translation>
+        </message>
+        <message>
+            <source>Adding photo %1 of %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Adding photo %1 of %2</translation>
+        </message>
+        <message>
+            <source>Preparing photos for upload</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Preparing photos for upload</translation>
+        </message>
+        <message>
+            <source>Upload photos in the Photo Tray to Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ShareButtonTipEs</extracomment>
+            <translation>Upload photos in the Photo Tray to Google Photos</translation>
+        </message>
+        <message>
+            <source>Failed to upload %1</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:QuickUploader::errorMsg</extracomment>
+            <translation>Failed to upload %1</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Close</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/TrayBar.qml" line="0" />
             <source>Movie Maker</source>
@@ -18884,6 +19002,101 @@ picasapy-origin-key: keywordstext:Label(keywords/readonly_label)</extracomment>
             <source>An album must be saved in an indexed photo folder.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>An album must be saved in an indexed photo folder.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerPhotoArea</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="854" />
+            <source>Capturing frame...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog1</extracomment>
+            <translation>Capturing frame...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="858" />
+            <source>Saving to Captured Videos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
+            <translation>Saving to Captured Videos</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="863" />
+            <source>Saved %1 to Captured Videos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Saved %1 to Captured Videos</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="873" />
+            <source>Saved %1 to Exported Videos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Saved %1 to Exported Videos</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="868" />
+            <source>Failed to capture frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
+            <translation>Failed to capture frame</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="876" />
+            <source>Failed to export clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Failed to export clip</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="885" />
+            <source>Video playback requires the Qt Multimedia module.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Video playback requires the Qt Multimedia module.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerLeftDrawer</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerLeftDrawer.qml" />
+            <source>This feature is not supported for Linux</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:LinuxNomovie</extracomment>
+            <translation>This feature is not supported for Linux</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerEditorPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="52" />
+            <source>Undo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Undo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="54" />
+            <source>Redo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Redo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="122" />
+            <source>Retouch fixes cannot be recovered with redo.
+Are you sure you want to undo?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Retouch fixes cannot be recovered with redo.
+Are you sure you want to undo?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="126" />
+            <source>Redeye fixes cannot be recovered with redo.
+Are you sure you want to undo?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Redeye fixes cannot be recovered with redo.
+Are you sure you want to undo?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerEditorPanel.qml" line="262" />
+            <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>The caption will replace the text you have typed. (This operation is not undoable)</translation>
         </message>
     </context>
 </TS>

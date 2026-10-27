@@ -30,9 +30,9 @@ from .photo_sort import photo_date
 _QUICK_TAG_SLOTS = 10
 # a felső ennyi gomb foglalható le a legutóbb használt címkéknek
 _QUICK_TAG_RESERVED = 2
-# ennél többet a „legutóbb használt" lista nem kell hogy őrizzen (a felső
-# 2 gombhoz elég, de eggyel több puffer a stabilabb sorrendhez)
-_QUICK_TAG_RECENT_LIMIT = 8
+# Az eredeti két recent-helyet írja: az új címke az első, a korábbi első a
+# második, a korábbi második pedig kiesik.
+_QUICK_TAG_RECENT_LIMIT = _QUICK_TAG_RESERVED
 
 _KEY_QUICK_LABELS = "quickTags/labels"
 _KEY_QUICK_RESERVE_RECENT = "quickTags/reserveRecentForTop2"
@@ -280,19 +280,29 @@ class KeywordsMixin:
         return labels
 
     def _quick_tag_recent(self) -> list[str]:
-        """A legutóbb használt címkék, legfrissebb elöl."""
-        return _as_str_list(self._get_settings().value(_KEY_QUICK_RECENT))
+        """A két legutóbb használt címke, legfrissebb elöl."""
+        return _as_str_list(
+            self._get_settings().value(_KEY_QUICK_RECENT)
+        )[:_QUICK_TAG_RECENT_LIMIT]
 
     def _record_recent_quick_tag(self, keyword: str) -> None:
         """A gyorscímke-előzmény frissítése egy sikeres/kísérelt
-        hozzáadáskor (#193) — az ismételt használat a lista elejére kerül,
-        duplikátum nélkül."""
-        recent = [
-            k for k in self._quick_tag_recent() if k.casefold() != keyword.casefold()
-        ]
-        recent.insert(0, keyword)
-        self._get_settings().setValue(
-            _KEY_QUICK_RECENT, recent[:_QUICK_TAG_RECENT_LIMIT]
+        hozzáadáskor (#193). Az új címke a 0. helyre kerül, a régi 0. az
+        1.-re csúszik; a két hely egyikén már szereplő címke nem rendez át."""
+        settings = self._get_settings()
+        stored_recent = _as_str_list(settings.value(_KEY_QUICK_RECENT))
+        recent = stored_recent[:_QUICK_TAG_RECENT_LIMIT]
+        folded = keyword.casefold()
+        if any(item.casefold() == folded for item in recent):
+            # A korábbi, nyolcelemű beállítást is két helyre szűkítjük, de
+            # meglévő recent ismétlésénél a sorrend változatlan marad.
+            if stored_recent != recent:
+                settings.setValue(_KEY_QUICK_RECENT, recent)
+            return
+
+        settings.setValue(
+            _KEY_QUICK_RECENT,
+            [keyword, *recent[: _QUICK_TAG_RECENT_LIMIT - 1]],
         )
         self.quickTagsChanged.emit()
 

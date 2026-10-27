@@ -294,6 +294,23 @@ class TestMeasuredDefaults:
         ]
 
 
+class TestLegacyColorwheelDefaults5949:
+    """A négy generic színkerék a Picasa natív induló színét használja."""
+
+    @pytest.mark.parametrize(
+        ("name", "expected"),
+        [
+            ("ansel", "#ffffff"),
+            ("tint", "#ffffff"),
+            ("dir_tint", "#ffffff"),
+            ("radtint", "#ffffff"),
+        ],
+    )
+    def test_initial_color_matches_the_native_panel(self, name, expected):
+        colors = [param.color.lower() for param in effect_params(name) if param.kind == "color"]
+        assert colors == [expected]
+
+
 class TestFormatting:
     """A láncba a Picasa `filters=` alakja kerül (round-trip elv)."""
 

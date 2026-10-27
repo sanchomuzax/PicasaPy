@@ -1,4 +1,4 @@
-"""A termékben NINCS hallgatózó hálózati kiszolgáló (#2023, ADR-011).
+"""A termékben nincs általános hálózati kiszolgáló (#2023, ADR-011).
 
 Az eredeti Picasa 3 saját HTTP/WebDAV-kiszolgálót futtat (14 végpont, köztük
 egy **adatbázis-böngésző** lap), a helyi hálózaton hirdeti a gépnevet és a
@@ -10,8 +10,9 @@ meg** — az indoklás: `docs/decisions/nincs-halozati-kiszolgalo.md`.
 
 Egy „nem építjük meg" döntést semmi nem tart be, ha nincs mérője: egy későbbi
 kör jóhiszeműen „fehér foltként" találna rá, és elkezdené megvalósítani. A
-döntés ezért **kapuval** jár (a projekt szabálya: minden új szabály mellé
-kapu vagy mérő).
+    döntés ezért **kapuval** jár (a projekt szabálya: minden új szabály mellé
+    kapu vagy mérő). Az ADR-011 / #5976 pontos loopback OAuth-kivételét a
+    `_ADR_011_5976_LOOPBACK_LINES` nevezi meg.
 
 ## ⚠️ Amit ez NEM tilt
 
@@ -47,9 +48,21 @@ _MINTAK: tuple[tuple[str, str], ...] = (
     (r"picasapy://", "saját URL-séma"),
 )
 
-#: Indokolt kivételek: `(fájl, minta-leírás)`. A lista SZÁNDÉKOSAN zárt — aki
-#: felvesz ide valamit, a döntést módosítja (ADR-011), nem a tesztet igazítja.
-_KIVETELEK: set[tuple[str, str]] = set()
+#: ADR-011 / #5976 szűk kivétele: csak a Google Fotók OAuth loopback
+#: végpontjának pontos forrás-sorai és a 127.0.0.1:0 bindje engedélyezett.
+_ADR_011_5976_LOOPBACK_FILE = "src/picasapy/google_photos.py"
+_ADR_011_5976_LOOPBACK_BIND = 'server = HTTPServer(("127.0.0.1", 0), CallbackHandler)'
+_ADR_011_5976_LOOPBACK_LINES: dict[str, set[str]] = {
+    "http.server.HTTPServer": {
+        "from http.server import BaseHTTPRequestHandler, HTTPServer",
+        "def _create_server(self) -> HTTPServer:",
+        _ADR_011_5976_LOOPBACK_BIND,
+    },
+    "HTTP-kéréskezelő": {
+        "from http.server import BaseHTTPRequestHandler, HTTPServer",
+        "class CallbackHandler(BaseHTTPRequestHandler):",
+    },
+}
 
 
 def leletek(gyoker: Path | None = None) -> list[str]:
@@ -58,6 +71,10 @@ def leletek(gyoker: Path | None = None) -> list[str]:
     talalatok: list[str] = []
     for ut in sorted((gyoker / "src").rglob("*.py")):
         sorok = ut.read_text(encoding="utf-8", errors="replace").splitlines()
+        relativ = ut.relative_to(gyoker).as_posix()
+        adr_011_5976_loopback = relativ == _ADR_011_5976_LOOPBACK_FILE and any(
+            sor.strip() == _ADR_011_5976_LOOPBACK_BIND for sor in sorok
+        )
         for szam, sor in enumerate(sorok, start=1):
             # a kommentek és a docstring-sorok NEM leletek: a döntést épp
             # magyarázni kell tudni a kódban is (a `#2023` hivatkozásokat is
@@ -68,8 +85,10 @@ def leletek(gyoker: Path | None = None) -> list[str]:
             for minta, leiras in _MINTAK:
                 if not re.search(minta, sor):
                     continue
-                relativ = ut.relative_to(gyoker).as_posix()
-                if (relativ, leiras) in _KIVETELEK:
+                if (
+                    adr_011_5976_loopback
+                    and csupasz in _ADR_011_5976_LOOPBACK_LINES.get(leiras, set())
+                ):
                     continue
                 talalatok.append(f"{relativ}:{szam} — {leiras}: {csupasz[:70]}")
     return talalatok
@@ -141,6 +160,66 @@ class TestAKapuMagaIsMukodik:
         )
         assert leletek(tmp_path) == []
 
+    def test_adr011_5976_loopback_kivetel_a_nevesitett_fajlban_ervenyes(
+        self, tmp_path: Path
+    ) -> None:
+        """Az ADR-011 csak a Google Fotók ideiglenes loopback OAuth-végpontját
+        engedi: az exact cím és a szabad port része a kivételnek."""
+        cel = tmp_path / "src" / "picasapy" / "google_photos.py"
+        cel.parent.mkdir(parents=True)
+        cel.write_text(
+            "from http.server import BaseHTTPRequestHandler, HTTPServer\n"
+            "class CallbackHandler(BaseHTTPRequestHandler):\n"
+            'server = HTTPServer(("127.0.0.1", 0), CallbackHandler)\n',
+            encoding="utf-8",
+        )
+
+        assert leletek(tmp_path) == []
+
+    def test_adr011_5976_hurok_kivul_masik_fajlban_tovabbra_is_tiltott(
+        self, tmp_path: Path
+    ) -> None:
+        (tmp_path / "src" / "picasapy").mkdir(parents=True)
+        (tmp_path / "src" / "picasapy" / "other.py").write_text(
+            "from http.server import HTTPServer\n"
+            'szerver = HTTPServer(("127.0.0.1", 0), None)\n',
+            encoding="utf-8",
+        )
+
+        talalatok = leletek(tmp_path)
+        assert talalatok
+        assert any("HTTPServer" in talalat for talalat in talalatok)
+
+    def test_adr011_5976_google_photos_mas_cimet_tovabbra_is_tilt(
+        self, tmp_path: Path
+    ) -> None:
+        cel = tmp_path / "src" / "picasapy" / "google_photos.py"
+        cel.parent.mkdir(parents=True)
+        cel.write_text(
+            "from http.server import BaseHTTPRequestHandler, HTTPServer\n"
+            "class CallbackHandler(BaseHTTPRequestHandler):\n"
+            '    return HTTPServer(("0.0.0.0", 0), CallbackHandler)\n',
+            encoding="utf-8",
+        )
+
+        talalatok = leletek(tmp_path)
+        assert any("HTTPServer" in talalat for talalat in talalatok)
+
+    def test_adr011_5976_google_photos_mas_halozati_cimet_is_tilt(
+        self, tmp_path: Path
+    ) -> None:
+        cel = tmp_path / "src" / "picasapy" / "google_photos.py"
+        cel.parent.mkdir(parents=True)
+        cel.write_text(
+            "from http.server import BaseHTTPRequestHandler, HTTPServer\n"
+            "class CallbackHandler(BaseHTTPRequestHandler):\n"
+            '    return HTTPServer(("192.168.1.25", 0), CallbackHandler)\n',
+            encoding="utf-8",
+        )
+
+        talalatok = leletek(tmp_path)
+        assert any("HTTPServer" in talalat for talalat in talalatok)
+
 
 class TestADontesLapMEGVAN:
     """A kapu és a döntés együtt érnek valamit: ha a lap eltűnik, a teszt
@@ -152,6 +231,9 @@ class TestADontesLapMEGVAN:
         szoveg = lap.read_text(encoding="utf-8")
         assert "#2023" in szoveg
         assert "picasa://" in szoveg, "a mért felület nevesítve legyen"
+        kivetel = szoveg.split("## Amit ez NEM zár ki", 1)[1].split("\n## ", 1)[0]
+        assert "#5976" in kivetel
+        assert "127.0.0.1" in kivetel and "300 másodpercig" in kivetel
 
     def test_a_feature_map_NEM_CELKENT_jeloli(self) -> None:
         terkep = (GYOKER / "docs" / "specs" / "feature-map.md").read_text(

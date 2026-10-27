@@ -9,6 +9,8 @@ MenuCimke 1.0 MenuCimke.qml
 PicasaMenu 1.0 PicasaMenu.qml
 LightboxHeader 1.0 LightboxHeader.qml
 PhotoViewer 1.0 PhotoViewer.qml
+PhotoViewerFilmstrip 1.0 PhotoViewerFilmstrip.qml
+PhotoViewerEditorPanel 1.0 PhotoViewerEditorPanel.qml
 ZoomNavigator 1.0 ZoomNavigator.qml
 EffectFocalPuck 1.0 EffectFocalPuck.qml
 FolderIcon 1.0 FolderIcon.qml
@@ -132,6 +134,7 @@ OptionsTabPrinting 1.0 OptionsTabPrinting.qml
 OptionsTabNetwork 1.0 OptionsTabNetwork.qml
 OptionsTabWebAlbums 1.0 OptionsTabWebAlbums.qml
 OptionsTabNameTags 1.0 OptionsTabNameTags.qml
+OptionsTabGooglePhotos 1.0 OptionsTabGooglePhotos.qml
 WebExportDialog 1.0 WebExportDialog.qml
 PrintDialog 1.0 PrintDialog.qml
 PrintOptionsPanel 1.0 PrintOptionsPanel.qml
@@ -191,3 +194,5 @@ PicasaNotifier 1.0 PicasaNotifier.qml
 ActivityBadge 1.0 ActivityBadge.qml
 EditorSlider 1.0 EditorSlider.qml
 EditorSliderCaption 1.0 EditorSliderCaption.qml
+PhotoViewerLeftDrawer 1.0 PhotoViewerLeftDrawer.qml
+PhotoViewerPhotoArea 1.0 PhotoViewerPhotoArea.qml

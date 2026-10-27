@@ -152,16 +152,11 @@ class TestChainCarriesTheFullParameterSet:
         )
 
     def test_default_apply_uses_white_as_the_pick_color(self, editing):
-        # #357: a mért NAS-mintákban a Picasa fehér alapszínnel ELHAGYJA a
-        # szín-paramétert — a mi íróoldalunk ezt nem tükrözi (mindig
-        # kiírjuk), de a fehér ugyanaz az alapérték, mint a renderelő
-        # `_DEFAULT_TINT_COLOR`-ja (`render/chain.py`), tehát a hiányzó
-        # paraméter esetén is ugyanazt a képet adja.
-        # #3908: az alfa `ff` — a négy régi, színkerekes effekt (`tint`/
-        # `ansel`/`dir_tint`/`radtint`) a Picnik-generációs effektektől
-        # eltérően `ff`-fel ír, a valós korpusz szerint (`filters-decoded.md`).
-        editing.applyEffectWithParams("ansel", [])
-        assert _chain(editing) == "ansel=1,ffffffff;"
+        # #5949: az `ansel` natív alapértéke #545454-re változik; ez a
+        # próba a továbbra is fehér `tint` alapértékét őrzi.
+        # #3908: a régi színkerekes effekt `ff` alfával írja a színt.
+        editing.applyEffectWithParams("tint", [])
+        assert _chain(editing) == "tint=1,0.500000,ffffffff;"
 
     def test_radtint_default_apply_writes_the_full_set(self, editing):
         editing.applyEffectWithParams("radtint", [])

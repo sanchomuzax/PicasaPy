@@ -40,6 +40,10 @@ HIVATALOS: dict[tuple[str, str], str] = {
         "SaveDialogs",
         "A backup of this file will be made.",
     ): "A program biztonsági másolatot készít erről a fájlról.",
+    (
+        "SaveDialogs",
+        "Do not ask me again.",
+    ): "Ne kérdezzen újra.",
     # CThumbUI::FileSave::messagetagX — TÖBB fájl
     (
         "SaveDialogs",
