@@ -6415,7 +6415,7 @@ A `red.cfg` bájtjai ezt a konkrét objektumpárt adják: a `0x22b08a` rekord `C
 
 **Cáfoló kísérlet.** A 0.0/1.0 összevetéseket végső elfogadási határként próbáltam értelmezni. A diszasszemblálásban a feltételes ágak a két float-érték közül választanak, majd a függvény floatot ad vissza; a nyers PE-ben a konstansok pontosan 0.0 és 1.0. Ez cáfolja, hogy ezekben az utasításokban bool döntés történne, de a pontszám-korlátozás olvasata csak feltételes marad a második vezérlési út hiánya miatt. A DLL 3.9-es runtime-hoz tartozása nincs igazolva, ezért a cáfolat sem terjed ki a teljes 3.9-es felismerőre.
 
-**Nyitott és megszerzési út.** Szerezd meg a Red.dll-t tiszta Picasa 3.9 csomagból vagy az eredeti Colab-példányból, majd hasonlítsd a SHA-256-át a helyi `da3706…c8233` fájlhoz. Egyezés esetén a helyi címek átvihetősége külön ellenőrizhető; eltérés esetén az új DLL-t kell indexelni és a megfelelő virtuális hívás/pontszám-fogyasztó ágát célzottan vizsgálni. A helyi `red.cfg` `ref=1`-es objektumhivatkozása feloldódott; a további Ghidra-kérdés: `Ghidra-kör kell: 0x101044f0: kövesd a 0x10103870 által olvasott detektor-rekord +0x1c mező beállítását/betöltését a Red konfigurációs objektumáig; állapítsd meg, hogy a mező ugyanahhoz az adatúthoz vagy ponthoz kapcsolódik-e, mint a vfr_SdkRelator → vqc_Relator::sim eredménye. A meglévő 0x10103870 kimenet csak az összevetést, a 0x10063f30 kimenet pedig az általános ObjectRef-betöltést mutatja, a mezőkapcsolatot nem. [blokkoló]** A scan-indítás, a már megnevezett arcot tartalmazó fotó kihagyása, a tényleges bemeneti méret és a mért felismerési arány külön J7 felvételt igényel.
+**Nyitott és megszerzési út.** Szerezd meg a Red.dll-t tiszta Picasa 3.9 csomagból vagy az eredeti Colab-példányból, majd hasonlítsd a SHA-256-át a helyi `da3706…c8233` fájlhoz. Egyezés esetén a helyi címek átvihetősége külön ellenőrizhető; eltérés esetén az új DLL-t kell indexelni és a megfelelő virtuális hívás/pontszám-fogyasztó ágát célzottan vizsgálni. A korábban kért `0x101044f0` Ghidra-kör lefutott (`2026-10-26-2026-10-26-ghidra-sor-282-304-red.txt`): megadja az ablakbejáró `0x10103870` detektorhívását és a jelöltek pontszám szerinti rangsorolását. A `2026-10-26-5185-red-weak.txt` és az 54.3/c további kimenetei a classifier-array általános ObjectRef-betöltését és a `vsi_WeakClassifier` `+0x1c` adatfolyam-mezőjét írják le. Ezek **nem** azonosítják a betöltött modellstream fájlját vagy floatját, és nem kötik a detektor rekord `+0x1c` mezőjét a `vfr_SdkRelator` → `vqc_Relator::sim` eredményéhez. A korábbi Ghidra-kérés tehát végrehajtva, a mezők közti kapcsolat nyitott; ugyanarra a címre új kérést nem adok. A ténylegesen betöltött DLL/hash, modellstream és effektív érték megszerzéséhez J7 futásidejű felvétel kell, a scan-indítással, a megnevezett arcot tartalmazó fotó kihagyásával, a bemeneti mérettel és a címkézett készleten mért eredménnyel együtt.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (35.3/8. pont és 35.4 jegytörzs-kiegészítés pontosítása, 52.5: a helyi Red.dll pontszámlelete és a verzióazonosság bizonyítékhatára); `docs/specs/00-index.md` (5185-ös nyitott állapot).
 
@@ -6554,7 +6554,7 @@ A `0x10103870` Ghidra-törzse továbbra is a detektor rekordjának `+0x1c` mező
 | 5. Személy-album, nézetváltás, átnevezés, egyesítés, törlés | ⛔ Részben | job-213, job-222/224 és 35.3/5.; zoommód első állapota, átnevezés és teljes összevonás felvétele nyitott (J5). |
 | 6. People Manager elrendezés, kijelölés, mezők, OK/Mégse | ⛔ Részben | job-163/167/226, job-186, `contactmgr.fen` és 35.3/6.; Ctrl/Shift és a módosított adatok tartós Cancel-hatása nyitott (J6). |
 | 7. `contacts.xml`, `[Contacts2]`, `faces=`, db3 olvasása/írása | ⛔ Részben | A 54.1 és 35.3/7 dokumentálja az ismert olvasó-/íróágakat és mért ini/db3 kimeneteket; műveleti időzítés és teljes diff J8-cal nyitott. |
-| 8. Arcfelismerés indítása, kihagyásai és küszöbe | ⛔ Részben | Az 52.5/54.2 feloldja a helyi Red.dll+`red.cfg` `vqc_Relator` objektumpárt, a 35.3/8 dokumentálja a pontszám-feldolgozást; a `vsi_FaceViewDetector` effektív `+0x1c` mezője, a 3.9-es build-azonosság, a bemeneti méret, indítás/kihagyás és mérési arány J7/Ghidra-köre nyitott. |
+| 8. Arcfelismerés indítása, kihagyásai és küszöbe | ⛔ Részben | Az 52.5/54.2-54.3/c feloldja a helyi Red.dll `vqc_Relator` objektumpárt, az ablakbejáró hívási szerepét és a `vsi_WeakClassifier` streamelt mezőjét; a tényleges modellstream, a detektorrekord és az osztályozómező kapcsolata, a tiszta 3.9-es DLL-azonosság, a futásidejű érték, a bemeneti méret, indítás/kihagyás és mért arány J7-felvétellel nyitott. A `0x101044f0` korábbi Ghidra-köre lefutott; új, azonos című kérés nincs. |
 
 **Következtetés és jegykezelés.** Mind a nyolc pontnál van hivatkozott felvétel vagy bináris eredmény, illetve konkrét nyitott megszerzési út, de a jegy teljes „Kész, ha” feltétele nem teljesült. PicasaPy-eltérésre nincs bizonyíték, ezért Codex-kész kódmódosítási lista nem indokolt. A #5179-#5184 jegytörzsek átírása ebben a munkamenetben nem történt meg; a GitHub-hozzáférés tiltott, a jegyek teljes törzse a megadott anyagban nincs benne. A nyitott felvételek a már meglévő J2-J8 feladatok; külön kutatási jegy csak akkor kell, ha a hívó a következő Ghidra-kört vagy tiszta 3.9-es DLL-hash beszerzését külön munkára bontja. A 52.5 régi `0x10063f30`-as objektumhivatkozás-kérdése megválaszolódott; a detektor `+0x1c` mező és a `vqc_Relator` pontszáma közti kapcsolat maradt nyitott.
 
@@ -6829,3 +6829,53 @@ A független újralevezetés helyesbítette a 0x004985e0 elvetését: ez a máso
 **Új kutatási jegyjavaslat:** nincs; a még nyitott pontok ugyanennek a #5184 feladatnak a szükséges eredeti Picasa-felvételei.
 
 **Módosított fájl:** docs/specs/picasa-arcfelismeres.md (56. szakasz: N1 zászlóút-korrekció és cáfolat, N3 helyi Red.dll-ellenőrzés, N7 runtime-nyitottság, pontról pontra a teljesültség).
+
+## 57. #5184, 2026-10-27: az archívum ismételt leltára nem ad N1/N3/N7-kontrollt
+
+**Hatókör.** A mérőarchívum taglistáját, a dokumentum- és INI-tagokat, az egyetlen PNG-t, valamint a korábban feltárt címek Ghidra-kimeneteit ellenőriztem. A JPG/RAW-képeket és a NAS-t nem olvastam; az eredeti Picasát nem futtattam, új Colab-feladatot nem adtam fel.
+
+### 57.1 A mérőarchívum tartalma
+
+| Állítás | Forrás | Eredmény |
+|---|---|---|
+| Az archívum 944 tagja 926 fájlra és 18 könyvtárra oszlik; a fájlok között 15 INI, 5 TXT, 4 CSV, 900 JPG, 1 PNG és 1 RAW van. | mérés (`meroadat.tar` teljes taglistája) | pontos tag- és kiterjesztésszám |
+| A 15 INI-ben `faces=`, `[Contacts2]`, `]facealbum:` és `ffffffffffffffff` előfordulása egyaránt 0. | mérés (a 15 INI célzott kibontása és jelölőszámlálása) | nem található névvel/arcokkal rögzített Picasa-kontroll |
+| Az 5 TXT és 4 CSV egyike sem tartalmaz arc-/személycímkézést; a CSV-k fejlécében effekt, fájl, lánc és csúszka-adatok állnak. | mérés (célzott TXT/CSV-sorvizsgálat) | nem található címkézett felismerési adatkészlet |
+| Az egyetlen PNG mérete 358×121; egy PicasaPy „Exportálás” hibaablakot mutat. | mérés (PNG-fájlméret és képi ellenőrzés) | nem eredeti Picasa-felvétel, ezért N7-re nem kontroll |
+
+**A JPG-kről nem következtetek arctartalomra.** Az archívumban lévő képek nem adnak címkézett, azonos Picasa/PicasaPy futtatásokhoz kötött eredményt; önmagukban nem használhatók N1 vagy N3 döntésére.
+
+### 57.2 N1, N3 és N7 állapota
+
+| Pont | Eredmény | Bizonyíték / hiányzó mérés |
+|---|---|---|
+| N1: a névvel rendelkező képen talál-e az eredeti további ismeretlen arcot | ⛔ Nyitott | A `0x0047b020` munkasor-jelző útja ismert (56.1), de a fotó névállapotához nincs kötve. Az archívum nem ad `faces=` kontrollt. Ugyanazon legalább kétarcú eredeti fotó név előtti és utáni felvétele kell, Név nélküliek-listával és INI-kimenettel. |
+| N3: eredeti arány és Red-küszöb a 960 px / 0,9 YuNet-beállításhoz képest | ⛔ Nyitott | Az archívumban nincs címkézett mérőkészlet. A helyi Red.dll `+0x1c` mezőútja (54.3/c, 54.3/d) nem azonosítja a tiszta Picasa 3.9 tényleges DLL-jét, betöltött floatját, bemeneti WxH-ját vagy azonos címkézett mintán mért arányát. Ezekhez eredeti futás és azonos készletű PicasaPy-mérés kell. |
+| N7: People Manager többes kijelölése | ⛔ Részben nyitott | A korábbi egy személyes People Manager-felvétel nem bizonyít Ctrl/Shift-viselkedést; az archívum egyetlen PNG-je PicasaPy-hibaablak. Két személyes eredeti felvétel kell a sima sor-kattintás, Ctrl+kattintás és Shift+kattintás után. A Név nélküliek `job-180` többes kijelölése ettől külön, lezárt viselkedés. |
+
+**Két független út.** **A út:** a bináris és a már meglévő Ghidra-olvasatok az N1 munkasor-vezérlését, az N3 Red-pontszám/küszöb-mezők különbségét és az N7 aktuális sorindexét írják le; egyik sem rögzíti az eredeti program kérdezett, felhasználói futásidejű kimenetét. **B út:** a mérőarchívum INI-/CSV-/TXT-leltára és az egyetlen PNG közvetlen ellenőrzése nem tartalmazza a hiányzó név előtti/utáni kontrollt, címkézett összehasonlító készletet vagy két személyes kiválasztási sorozatot. Az utak abban egyeznek, hogy a helyi adatokkal egyik kérdezett viselkedés sem dőlt el.
+
+**Cáfoló kísérlet.** Azt próbáltam megcáfolni, hogy az archívum alkalmatlan a nyitott pontok eldöntésére: végigszámoltam minden tagot, kibontottam az összes INI/TXT/CSV dokumentumot és az egyetlen PNG-t is. Az INI-jelölők mind 0-k, a dokumentumokban nincs felismerési címkézés, a PNG pedig PicasaPy hibaablak. Ez a próba nem talált felhasználható kontrollt. A 900 JPG-ről nem állítom, hogy arcmentesek; azt állítom, hogy nincs hozzájuk igazolt eredeti kimenet vagy címkézés.
+
+**Ghidra-nyitott.** A korábbi §53.5 kérés `0x10107d70` címére a helyi Ghidra-tárban továbbra sincs kimenet; a `0x10103870` és a `0x10107f20` kimenete megvan, de külön kezeli a detektori összevetést és a `WeakClassifier` mezőjét. A megmaradt statikus kérdés: `Ghidra-kör kell: 0x10107d70 - állapítsa meg, hogy a FaceViewDetector által bejárt gyűjtemény `+0x1c` mezője valóban a vsi_WeakClassifier modellstreamből betöltött threshold mező-e, a betöltő út és a dinamikus elemtípus követésével.` Ez nem adja meg a futáskor ténylegesen használt értéket vagy a felismerési arányt; a #5184 N3 lezárásához a runtime-mérés ettől függetlenül szükséges. Azonos címre új kérést ebben a körben nem indítottam.
+
+**Következtetés és megvalósítás.** N1, N3 és N7 People Manager-része nyitott; N4, N5, N6 és N8 az előző felvételekkel lezárt (56.4). Eredeti/PicasaPy-eltérés nincs bizonyítva, ezért fejlesztői teendő és új kutatási jegy nem indokolt. A feloldás a fenti három futásidejű felvétel/mérés; ez a session a GitHub-alapú Colab-feladatfeladást nem használta.
+
+**Módosított fájl:** `docs/specs/picasa-arcfelismeres.md` (57. szakasz: a 2026-10-27-i, célzott archívum- és Ghidra-leltár, a három nyitott pont bizonyítékhatára és megszerzési út).
+
+## 58. #5184 N7: a People Manager listája egyszeres kijelölésű (felvétel, 2026-10-27)
+
+**Felvétel:** picasa-colab-jobs job-325 (az előző, job-227 nem mérte a kérdést: az első név utáni Enter az ismeretlen névre nyíló People névjegyablakot hozta fel, és a lépéssor abban ragadt). A javított lépéssor két arcot nevez el (`Teszt Elek`, `Masik Ember`) a New Person, majd OK úton, megnyitja az Eszközök ▸ People Manager ablakot, és a listán sorban: első sor kattintás, második sor Ctrl-kattintás, első sor kattintás, második sor Shift-kattintás.
+
+**Eredmény (33-41. kép):**
+
+| lépés | kijelölt sor |
+|---|---|
+| kattintás a `Masik Ember` sorra | `Masik Ember` |
+| Ctrl-kattintás a `Teszt Elek` sorra | csak `Teszt Elek` (az első kijelölése megszűnik) |
+| kattintás a `Masik Ember` sorra | `Masik Ember` |
+| Shift-kattintás a `Teszt Elek` sorra | csak `Teszt Elek` |
+
+A jobb oldali Name mező mindig az épp kijelölt személy nevét mutatja. **A People Manager listája egyszeres kijelölésű: a Ctrl és a Shift nem bővíti a kijelölést.** (A Név nélküliek nézet csempéinek többes kijelölése ettől független, azt a job-180 igazolja.)
+
+**PicasaPy:** a `PeopleManagerDialog.qml` egyetlen kijelölt kulcsot tart (`selectedKey`), a lista `currentIndex`-szel jelöl; ez egyezik az eredetivel. **N7 lezárva, eltérés nincs.**

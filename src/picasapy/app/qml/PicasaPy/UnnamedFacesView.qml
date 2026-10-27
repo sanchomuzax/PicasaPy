@@ -54,7 +54,10 @@ ColumnLayout {
     spacing: 8
 
     function reload() {
-        if (!faceScanController) {
+        // lebontás közben az objektum még él, de a slotjai már nem hívhatók (#6033)
+        if (!faceScanController
+                || typeof faceScanController.ignoredGroups !== "function"
+                || typeof faceScanController.unnamedGroups !== "function") {
             root.groupsModel = []
             root.facesModel = []
             root.hasIgnoredFaces = false

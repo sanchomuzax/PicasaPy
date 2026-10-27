@@ -166,6 +166,23 @@ class TestUnnamedFacesViewWithoutController:
         assert model in ([], None)
 
 
+class _BomloVezerlo(QObject):
+    """Lebontás alatti vezérlő: az objektum még él, de a slotjai már nem
+    hívhatók (#6033: a CI-n `ignoredGroups ... is not a function`)."""
+
+
+class TestUnnamedFacesViewBomloVezerlovel:
+    def test_a_reload_nem_hiv_elerhetetlen_metodust(self, qt_app):
+        """# rontás-kontroll: a `reload()` őre nélkül TypeError és QML-hiba."""
+        view = _make_view(qt_app, controller=_BomloVezerlo())
+        QMetaObject.invokeMethod(view, "reload")
+        qt_app.processEvents()
+        model = view.property("groupsModel")
+        model = model.toVariant() if hasattr(model, "toVariant") else model
+        assert model in ([], None)
+        assert view.property("hasIgnoredFaces") is False
+
+
 class TestUnnamedFacesViewWiring:
     def test_reload_calls_unnamed_groups_with_toggle_state(self, qt_app):
         stub = _StubFaceScanController(groups=[{"label": "Csoport 1", "faces": []}])
