@@ -496,11 +496,13 @@ Az eredeti retusált JPEG és a PicasaPy-render közötti `(x=15,y=600,w=65,h=60
 
 **A megnevezett címek:** az eredeti EXE PE-verziója `3.9.141.259` (a verzió-erőforrásból). A `0x00848030` és `0x00848a10` 40 bájtos (`0x28`) rekordtömbök kezelését végzik: a célzott törzsek allokálást, nullázást, rekordkonstruktor/-destruktor hívásokat és felszabadítást tartalmaznak. Képpont-puffer címzést, sugártávolságot vagy forrás/cél színkeverést nem tartalmaznak. A helyi RTTI-index mindkettőt a `PatchEdit::vftable` (`0x00ca8344`) és a `RetouchEdit::vftable` (`0x00ca83c4`) slotjaként jelöli.
 
+A két teljes Capstone-törzsben a kapacitásbővítés `0x28`-as rekordmérettel számol; például a `0x008485ea`, `0x00848905`, `0x00848b20` és `0x008492fd` utasításokban ez közvetlenül látszik. A lebegőpontos konverziót és az exponensbitek kiolvasását végző szekvenciák (`0x0084859d`-`0x008485bc`, `0x00848f6d`-`0x00848f8c`) a következő tömbkapacitást számítják, nem képponttávolságot vagy keverési súlyt. A `RetouchEdit` vtable `+0x38` slotját a `0x008489d1` és `0x008493db` tölti be; a hívások `0x008489e4` és `0x008493ec` címen történnek. A slot a `0x00847f30` téglalap-/régiófrissítőre mutat, amely a `0x006bd580` útját hívja (`0x00847fa4`).
+
 **A követett pixelút:** a független index-olvasás `0x00901110 → 0x00913960 → 0x00910bc0 → 0x00910630` hívási kapcsolatot ad. A célzott utasítások szerint a `0x00910630` a sor `y`, a középpont `centerY` és a sugár `r` alapján `dy = y - centerY`, `q = r² - dy²` értéket képez (`0x00910a2b`-`0x00910a56`). Ha `q ≥ 0`, a `0x0049fe60` négyzetgyök-út után a sor két x-határa `centerX - sqrt(q)` és `centerX + sqrt(q)` (`0x00910a6b`-`0x00910aa1`); a határkonverzió `fistp`, majd a tárolt tartomány korlátozása következik. A `0x00913960` a sor két puffer-címét virtuális hívásokból kéri, a hosszt `4 * (xEnd - xStart)` bájtban számolja (`0x00913b3e`-`0x00913b44`), majd `0x00bf2350` (`_memcpy`) hívással másolja (`0x00913b47`). Ezen az útvonalon kör alakú sorintervallum és pixelenkénti súlyozás nélküli másolás látható, nem folytonos alfa-/peremsúly-képlet.
 
 **Bizonyítottság:** `feltételes`. Az assembly közvetlen utasításolvasása (A) a rekordkezelést, a körintervallum képletét és a sor-másolást mutatja. A tőle külön olvasott index/RTTI út (B) megerősíti a két `0x0084…` vftábla-hozzárendelést és a renderút címkapcsolatait, de önmagában nem írja le az utasítások szemantikáját; a „nincs folytonos súlyozás” ezért nem két, egyaránt szemantikai útból megerősített állítás. A meglévő `2026-10-26-5975-kettos-retus.txt` dumpot címekre átnéztem; a `0x0090…` függvényekhez csak hivatkozások vannak benne, törzs nincs. A négyzetgyök út pontos függvényhatárát ez a kutatás nem bontotta ki.
 
-**Nyitott:** `Ghidra-kör kell: 0x00913960 - a virtuális soradapterek melyik képadatot adják a memcpy forrásának és céljának, és van-e a másolt sorokon kívül további súlyozó lépés a teljes retusútban? [blokkoló]`
+**Nyitott:** `Ghidra-kör kell: 0x00910e90 - a 0x00910c20/0x00913ca0 hívási út melyik pixelpufferét jelenti a forráskép és melyiket a változatlan célkép, és a bemeneti köradat +0x1c mező milyen beállításból, milyen futásidejű értékkel érkezik? [blokkoló]`
 
 **Mérés és PicasaPy-összevetés:** a job #318/#319 eredeti pár 1024×1024; a briefben megadott 25 px-es sugár mellett a küszöb `max(|ΔR|,|ΔG|,|ΔB|)>12`. Az eredeti gyűrűátlagot a `(47,622)` célközépponttól számítva, a PicasaPy `apply_retouch_patches()` kimenetét ugyanezzel a sugárral és célközéppel újramérve:
 
@@ -513,7 +515,7 @@ Az eredeti retusált JPEG és a PicasaPy-render közötti `(x=15,y=600,w=65,h=60
 | 24-26 px | 5,37 | 1,98 |
 | 26-28 px | 3,11 | 0,84 |
 
-Mérés: az eredeti `>12` maszk 835 px, befoglaló mérete 46×40 px; a PicasaPy közvetlen kimenet 859 px, befoglaló mérete 43×41 px. A PicasaPy mérés rögzített reprodukciós bemenete `target=(47,622)`, `source=(123,699)`, sugár 25 px. Az eredeti felvétel pontos forráspontja és numerikus ecsetállása **NINCS MEG**. A gyűrűértékek mentett JPEG-párok kimeneti különbségének max-RGB-átlagai; ezek nem alfa-/keverési súlyok. A profil eltérése mérve van, de a hiányzó eredeti forráspont miatt nem bizonyít azonos teljes bemeneten algoritmikus eltérést.
+Mérés: az eredeti `>12` maszk 835 px, befoglaló mérete 46×40 px; a PicasaPy közvetlen kimenet 859 px, befoglaló mérete 43×41 px. A PicasaPy mérés rögzített reprodukciós bemenete `target=(47,622)`, `source=(123,699)`, sugár 25 px. Az eredeti felvétel pontos forráspontja és numerikus ecsetállása **NINCS MEG**. A gyűrűértékek mentett JPEG-párok kimeneti különbségének max-RGB-átlagai; ezek nem alfa-/keverési súlyok. A később feltárt bináris smoothstep és a PicasaPy külön pixelenkénti smoothstep-réteg nélküli körmaszkos útja algoritmikus peremkezelési eltérés; a hiányzó eredeti forráspont miatt a #318/#319 konkrét gyűrűeltéréshez való pontos hozzájárulása még nem különíthető el.
 
 **Cáfoló kísérlet:** a jelölt `(47,622)` / `(123,699)` pontokon 25 px-es egyszerű körmásolást futtattam, a fenti `>12` küszöbbel. Eredménye 1913 px és 51×51 px befoglaló méret, tehát nem reprodukálja az eredeti 835 px / 46×40 px profilt. Mivel a forráskoordináta az eredeti futásból nem igazolt, ez a kísérlet a jelöltet cáfolja, nem az eredeti bináris pixelútját.
 
@@ -531,9 +533,59 @@ Mérés: az eredeti `>12` maszk 835 px, befoglaló mérete 46×40 px; a PicasaPy
 
 **Kész, ha (#6002):**
 
-- ✅ A két nevesített `0x00848030`/`0x00848a10` függvény szerepe utasításszinten azonosítva: 0x28-as rekordtömb-kezelés, nem pixelművelet.
-- ✅ A követett pixelút kör-sorintervallum képlete és másolási pontja címmel dokumentálva (`0x00910630`, `0x00913960`, `0x00bf2350`). Folytonos peremsúly az út utasításaiban nem látszik; a teljes állítás bizonyítottsága feltételes.
-- ⛔ A PicasaPy és az eredeti profil egyező teljes bemeneten való eltérése nincs eldöntve; fejlesztési jegyjavaslat mérési célértékekkel fent.
+- ✅ A két nevesített `0x00848030`/`0x00848a10` függvény 0x28-as rekordtömb-kezelő, nem pixelművelet. A valódi peremsúlyozás a `0x00910e90` függvényben van; a jegy eredeti címfeltevése téves volt.
+- ✅ A körsor-intervallum és másolás címmel dokumentálva (`0x00910630`, `0x00913960`, `0x00bf2350`); a további `0x00910e90` út radiális súlya is feltárva alább.
+- ✅ A job #322 fekete→fehér próbáján az eredeti és a PicasaPy is fehéren hagyta a célcellát; az egyszerű körmásolást a kontroll cáfolta. Ez a gyógyító módszerosztály egyezését támasztja alá. A #318/#319 peremprofil-eltérése ettől függetlenül fejlesztési feladat marad.
+- ✅ A bináris radiális peremsúly képlete megvan. A futásidejű `s` érték, valamint a két interpolált puffer eredeti forrás/cél szerepe **NINCS MEG**; a #318/#319 azonos képpárján a pontos oksági hozzájárulás nem különíthető el teljesen.
+
+#### #6002 folytatás - job #322 fekete cellából fehérre
+
+A megadott eredeti export 800×800 képpont, 4×4 darab, 200×200-as egyszínű cellával. A retus előtti lapot a repóban lévő `_color_patches()` tesztsegéd eredeti színpalettájából állítottam elő (`tests/app/qml_functional/test_kiegyenesites_hatter_4036.py:31-49`); a job-322 export 15 nem retusált cellájának belső 80×80-as mediánja mind a 15 cellán egyezett a palettával. A JPEG-tábla így az eredeti cellaszíneket kapta, a már retusált célfolt pedig nem került vissza a bemenetbe.
+
+A job #321 képernyőképének adatai szerint a képterület bal felső pontja `(353,79)`, a nagyítás `107%`, a cél képernyőpontja `(888,380)`, a forrásé `(1103,380)`. Az átszámított képi koordináták cél `(500.000000,281.308411)`, forrás `(700.934579,281.308411)`; a renderelő egész képpont koordinátái `(500,281)` és `(701,281)`. A forráskör sugara 25 képpont (`RetouchPatch.radius = 25/800 = 0.03125`). A rekonstruált célcellában RGB `(255,255,255)`, a forráscellában RGB `(0,0,0)` volt.
+
+| Mérés | Eredeti job #322 export | PicasaPy `apply_retouch_patches()` |
+|---|---:|---:|
+| Célcella átlagos RGB | `(254.966975,254.966975,254.966975)`; egészre kerekítve `(255,255,255)` | `(254.997875,254.997875,254.997875)` |
+| Max eltérés a fehértől | 3 | 1 |
+| `>3` eltérésű célcella-pixelek | 0 | 0 |
+| `>8` eltérésű célcella-pixelek | 0 | 0 |
+
+**Cáfoló kísérlet:** ugyanazon rekonstruált képen, azonos középpontokkal és 25 px-es körrel egyszerű forrás→cél másolást futtattam. A körmaszk 1961 pixelből állt; a célcella átlagos RGB-je `(242.498625,242.498625,242.498625)`, a max eltérés 255, a `>3` és `>8` küszöb fölötti pixelszám egyaránt 1961. Az egyszerű másolás tehát nem reprodukálja sem az eredeti, sem a PicasaPy kimenetét.
+
+A PicasaPy útja a `cv2.seamlessClone(..., cv2.NORMAL_CLONE)` hívást használja (`src/picasapy/render/retouch.py:202-209`). Hiba esetén a lokális Jacobi-fallback a kör peremét és a képszélre eső határt az eredeti célértékeken rögzíti: ez Dirichlet-határfeltétel (`src/picasapy/render/retouch.py:86,94-105,112-134`). A #318/#319 eltérő gyűrűprofiljára a job #322 lapos színű cellája önmagában nem bizonyíték; a bináris smoothstep és a PicasaPy külön súlyréteg nélküli körmaszkos `NORMAL_CLONE` útja viszont közvetlenül igazolt peremkezelési eltérés. Ezért a két felkínált magyarázat közül a peremkezelés a közvetlenebbül alátámasztott ok, míg az ismeretlen eredeti forráspont továbbra is zavaró tényező, amely miatt az adott gyűrűmérés oksági szétválasztása feltételes.
+
+**A fenti Ghidra-kérdéshez:** a már meglévő Ghidra-dumpokban a `0x00910e90` címre csak hivatkozás van, a függvény törzse nincs.
+
+#### #6002 folytatás - a tényleges radiális peremsúly
+
+A két célként megadott `0x00848030` és `0x00848a10` továbbra is rekordtömb-kezelő, de a későbbi, célzott utasításszintű követés eljutott a pixelkeverésig: a `CRetouchFilter::vftable` (`0x00cc1b0c`) egyik render-slotja a `0x00901110`; a hívási út `0x00901110 → 0x00913ca0 → 0x00910c20 → 0x00910e90`, az interpoláló segéd pedig `0x00910e00`. E lelet felülírja a fenti korábbi „peremsúly-képlet nincs meg” állítást; az ismeretlen puffernevek és a numerikus `s` érték nyitott marad.
+
+A `0x00910e90` számítása (az utasítások egyes köztes eredményei `float`-ként tárolódnak):
+
+```text
+r = *(float *)(bemeneti_köradat + 0x6c)       # [bemeneti_köradat+0x58+0x14]
+s = *(float *)(bemeneti_köradat + 0x1c)       # 0x00913ca0 adja át a helyi +0x14 mezőbe
+R = min(0.8999999761581421 * r, r - 1.0)       # 0x00cf48b8 és 0x00c7e328
+a = s * R
+d = sqrt((x-cx)^2 + (y-cy)^2)
+
+ha d <= a:             w = 0
+ha d >= R:             w = 1
+egyébként:
+    t = (d-a) / (R-a)
+    w = t^2 * (3 - 2*t)                       # 0x00cf39f8 = 3.0
+
+P_out = P_A + (P_B - P_A) * w                # 0x00910e00
+```
+
+A távolságot a pixel és a körközéppont koordinátáiból a `0x00910f40`-`0x00910fa6` tartomány számítja (`0x0049fe60` négyzetgyök-hívással); `x,y` a feldolgozott pixel, `cx,cy` a bemeneti köradat `+0x70/+0x74` float mezője. A határ-összehasonlítás és a `t²(3-2t)` a `0x00910fb1`-`0x00911003` tartományban van. A `0x00910e00` a két bemeneti packed pixelszín csatornáit interpolálja a `w` súllyal. A `P_A`/`P_B` melyikét adja a forráspontból vett puffer és melyikét a célkép, a jelen diszasszemblyben nem nevezhető meg bizonyítottsággal. A `s` mező címe megvan, a futásidejű értéke nincs; a #5975-ben szereplő `0.25`-öt nem azonosítottam ezzel a mezővel.
+
+**Összevetés:** az eredeti út a körön belül `sR`-től `R`-ig radiális smoothstep átmenetet kever, majd a `R` határon túl a másik puffer értékére áll. A PicasaPy renderer a 25 px-es körmaszkot és `cv2.seamlessClone(..., cv2.NORMAL_CLONE)` hívást használja (`src/picasapy/render/retouch.py:150-161,202-213`), külön pixelenkénti smoothstep keverési réteg nélkül. A #318/#319 gyűrűeltérése ezért legközvetlenebbül a peremkezelés eltérésével egyezik; az eredeti forráspont bizonytalansága továbbra is zavaró tényező, így az egyedi mérés oksági része feltételes.
+
+**Fejlesztési jegy javasolt:** az eredeti radiális súlyprofilját kell a PicasaPy `NORMAL_CLONE` kimenetéhez mérés alapján közelíteni; a paramétereket nem szabad a megadott gyűrűkből szabadon illeszteni. A fenti, „Retusfolt peremprofiljának egyeztetése” táblázat a rögzített gyűrűcélokat tartalmazza.
+
+**A nyitott Ghidra-kérdés:** lásd a fenti, `0x00910e90`-re szóló kérést; a meglévő dumpban a függvény törzse nincs meg, csak hívási hivatkozás szerepel.
 
 ### #4550 - Egyéni méretarány példa és törlés
 
