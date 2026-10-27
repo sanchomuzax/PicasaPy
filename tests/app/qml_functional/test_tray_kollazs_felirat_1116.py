@@ -19,10 +19,13 @@ from pathlib import Path
 import pytest
 
 import picasapy.app
+from tests.support.qml_blokk import blokk_horgonyra
 
-_QML_FORRAS = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "TrayBar.qml"
-).read_text(encoding="utf-8")
+_QML_KONYVTAR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+_QML_FORRAS = "\n".join(
+    (_QML_KONYVTAR / fajl).read_text(encoding="utf-8")
+    for fajl in ("TrayBar.qml", "TrayActionArea.qml")
+)
 
 _TS_FORRAS = (
     Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"
@@ -63,7 +66,7 @@ class TestForrasszovegek:
     def test_a_gombnak_van_szoveg_tulajdonsaga(self):
         """A felirat a `text`-en át jön, mint a Nyomtatás/Exportálás
         gomboknál — így a súgó és a felirat egy forrásból származik."""
-        blokk = _QML_FORRAS.split("id: trayCollageBtn", 1)[1].split("PicasaButton {", 1)[0]
+        blokk = blokk_horgonyra(_QML_FORRAS, "id: trayCollageBtn")
         assert 'text: qsTr("Collage")' in blokk
         assert "ToolTip.text:" in blokk
         assert "trayCollageLabel" in blokk
@@ -113,8 +116,6 @@ class TestKompaktKuszob:
         nem hivatkozhat semmilyen szélesség-küszöbre. (A LÁTHATÓSÁGOT
         magát a `tests/app/test_qml_tray_responsive.py` méri a valódi
         komponensen.)"""
-        blokk = _QML_FORRAS.split("id: trayCollageBtn", 1)[1].split(
-            "TrayActionCell {", 1
-        )[0]
+        blokk = blokk_horgonyra(_QML_FORRAS, "id: trayCollageBtn")
         assert "labelVisible" not in blokk
         assert "collageLabelVisible" not in _QML_FORRAS

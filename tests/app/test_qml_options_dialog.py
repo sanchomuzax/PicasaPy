@@ -968,8 +968,9 @@ class TestFileTypesTab:
         raw = _child(window, "optionsFileTypeRawCheck")
         assert raw.property("enabled") is True
         assert raw.property("checked") is True
-        assert controller.fileTypeEnabled("gif") is False
-        assert controller.fileTypeEnabled("png") is False
+        # #6060: elmentett választás nélkül minden típus bekapcsolt.
+        assert controller.fileTypeEnabled("gif") is True
+        assert controller.fileTypeEnabled("png") is True
         for object_name in (
             "optionsFileTypeBmpCheck",
             "optionsFileTypeGifCheck",
@@ -1648,6 +1649,7 @@ class TestGeneralTabAutoExclude:
             engine.deleteLater()
             qt_app.processEvents()
 
+
     def test_vezerlo_NELKUL_tiltott(self, dialog):
         """Hazug „élő" állapot tilos: ha nincs kihez kötni, a pipa semmit nem
         tárolna el."""
@@ -1697,3 +1699,137 @@ class TestGeneralTabAutoExclude:
             window.deleteLater()
             engine.deleteLater()
             qt_app.processEvents()
+
+
+def test_ok_mind_a_tizenot_beallitasi_kulcsot_kiir(tmp_path, qt_app):
+    """#6067: az OK mind a teljes, feloldott beállításképet elmenti."""
+    import picasapy.app.application as app_module
+    from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+    keys = (
+        "import/autoexclude",
+        "library/fileTypes/bmp",
+        "library/fileTypes/psd",
+        "library/fileTypes/tiff",
+        "library/fileTypes/webp",
+        "library/fileTypes/png",
+        "library/fileTypes/gif",
+        "library/fileTypes/movies",
+        "printing/printerQuality",
+        "printing/resamplerQuality",
+        "printing/proxyPreview",
+        "faces/automaticDetection",
+        "faces/suggestionsEnabled",
+        "faces/suggestStep",
+        "faces/clusterStep2",
+    )
+    settings = QSettings(
+        str(tmp_path / "options.ini"), QSettings.Format.IniFormat
+    )
+    settings.setValue("library/fileTypes/png", False)
+    settings.setValue("printing/printerQuality", 3)
+
+    class SnapshotController(FakeController):
+        def __init__(self, filetype_settings):
+            super().__init__(filetype_settings=filetype_settings)
+            self.saved_snapshots = []
+
+        def _get_settings(self):
+            return self._filetype_settings
+
+        @Slot("QVariantMap")
+        def saveOptionSettings(self, values):
+            from picasapy.app.controller import AppController
+
+            self.saved_snapshots.append(dict(values))
+            AppController.saveOptionSettings(self, values)
+
+    class SnapshotPrintController(QObject):
+        @Slot(result=list)
+        def printOptionSizes(self):
+            return ["M4X6", "M5X7", "M8X10", "CONTACT"]
+
+        @Slot(result=list)
+        def printSizePresets(self):
+            return ["M4X6"] * 5
+
+        @Slot(result=bool)
+        def printProxyPreview(self):
+            return bool(settings.value("printing/proxyPreview", True))
+
+        @Slot(bool)
+        def setPrintProxyPreview(self, value):
+            settings.setValue("printing/proxyPreview", value)
+
+        @Slot(result=int)
+        def printerQuality(self):
+            return int(settings.value("printing/printerQuality", 2))
+
+        @Slot(int)
+        def setPrinterQuality(self, value):
+            settings.setValue("printing/printerQuality", value)
+
+        @Slot(result=int)
+        def printResamplerQuality(self):
+            return int(settings.value("printing/resamplerQuality", 5))
+
+        @Slot(int)
+        def setPrintResamplerQuality(self, value):
+            settings.setValue("printing/resamplerQuality", value)
+
+    class SnapshotImportController(FakeImportSourceController):
+        pass
+
+    controller = SnapshotController(settings)
+    importer = SnapshotImportController(auto_exclude=False)
+    face_controller = FakeFaceScanController(enabled=True)
+    print_controller = SnapshotPrintController()
+    confirm_settings = FakeConfirmSettings()
+
+    engine = QQmlEngine()
+    engine.addImportPath(str(app_module._APP_DIR / "qml"))
+    for name, value in (
+        ("controller", controller),
+        ("confirmSettings", confirm_settings),
+        ("importSourceController", importer),
+        ("faceScanController", face_controller),
+        ("printController", print_controller),
+    ):
+        engine.rootContext().setContextProperty(name, value)
+    factory = QQmlComponent(
+        engine,
+        str(app_module._APP_DIR / "qml" / "PicasaPy" / "OptionsDialog.qml"),
+    )
+    window = factory.create()
+    assert window is not None, factory.errorString()
+
+    try:
+        assert QMetaObject.invokeMethod(window, "acceptOptions")
+        qt_app.processEvents()
+
+        assert len(controller.saved_snapshots) == 1
+        assert set(controller.saved_snapshots[0]) == set(keys)
+        assert controller.saved_snapshots[0] == {
+            "import/autoexclude": False,
+            "library/fileTypes/bmp": True,
+            "library/fileTypes/psd": True,
+            "library/fileTypes/tiff": True,
+            "library/fileTypes/webp": True,
+            "library/fileTypes/png": False,
+            "library/fileTypes/gif": True,
+            "library/fileTypes/movies": True,
+            "printing/printerQuality": 3,
+            "printing/resamplerQuality": 5,
+            "printing/proxyPreview": True,
+            "faces/automaticDetection": True,
+            "faces/suggestionsEnabled": True,
+            "faces/suggestStep": 85,
+            "faces/clusterStep2": 85,
+        }
+        assert set(settings.allKeys()) == set(keys)
+        assert settings.value("library/fileTypes/png") is False
+        assert settings.value("printing/printerQuality") == 3
+    finally:
+        window.deleteLater()
+        engine.deleteLater()
+        qt_app.processEvents()

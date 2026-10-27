@@ -22,7 +22,7 @@ _MNEMONIC = re.compile(r"(?<!&)&(?!&)(?=\S)")
 # elvesztették a forrásban jelölt gyorsbillentyűt; a kész fordításokhoz nem
 # nyúlunk.
 _EXISTING_MNEMONIC_EXCEPTIONS = {
-    ("PicasaMenuBar", "Re&verse sort"),
+    ("PicasaFolderViewMenu", "Re&verse sort"),
     ("FolderContextMenu", "&Color"),
     ("FolderListContextMenu", "Re&verse sort"),
 }

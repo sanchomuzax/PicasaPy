@@ -116,7 +116,7 @@ def test_klipgyujto_uzenet_qstr_je_az_eredeti_angol_forrasszoveg():
         Path(picasapy.app.__file__).parent
         / "qml"
         / "PicasaPy"
-        / "TrayBar.qml"
+        / "TraySingleActionBar.qml"
     ).read_text(encoding="utf-8")
     eredeti = (
         'Select items to add to your project\'s clips tray, then press the '

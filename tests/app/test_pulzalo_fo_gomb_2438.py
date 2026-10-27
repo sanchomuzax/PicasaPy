@@ -166,7 +166,7 @@ class TestMelyikGOMBUNKPulzal2450:
     #: (QML-fájl, elemnév, az EREDETI neve a respack `superbutton`-listából)
     PULZALOK = (
         ("CollagePanel.qml", "collageShareButton", "collagepanel/sharebutton"),
-        ("TrayBar.qml", "traySingleActionReturn", "thumbui/single_action_return"),
+        ("TraySingleActionBar.qml", "traySingleActionReturn", "thumbui/single_action_return"),
     )
 
     @pytest.mark.parametrize(

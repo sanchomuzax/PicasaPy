@@ -26,16 +26,12 @@ megszületnie — ez a jegy azt teszi, és csak UTÁNA veszi ki a tételt.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
 
 from support.halasztott_parbeszed import nyisd_meg
+from support.menubar_components_6016 import menu_sources
 
-_MENU_QML = (
-    Path(__file__).resolve().parents[3]
-    / "src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml"
-)
+_MENU_QML = menu_sources()
 
 
 def _gyerek(gyoker, nev):
@@ -123,7 +119,7 @@ class TestAGombAParbeszedben:
 class TestAMenutetelElkerult:
     def test_a_fajl_menuben_MAR_NINCS_undo_save_tetel(self):
         """A mért eredeti Fájl menüjében nincs ilyen tétel."""
-        forras = _MENU_QML.read_text(encoding="utf-8")
+        forras = _MENU_QML
         assert "menuFileUndoSave" not in forras, (
             "az „Undo Save\" még mindig menütétel — a mért eredetiben a "
             "Fájl menü mentés-csoportja két tételből áll (#1791)"
@@ -132,5 +128,5 @@ class TestAMenutetelElkerult:
     def test_a_jelzes_es_a_belepesi_pont_is_elkerult(self):
         """Az őr foga: a `placeholder` nélküli, kezelő nélküli maradék
         jelzés némán ott ragadna."""
-        forras = _MENU_QML.read_text(encoding="utf-8")
+        forras = _MENU_QML
         assert "undoSaveRequested" not in forras

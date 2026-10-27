@@ -30,7 +30,7 @@ import re
 from pathlib import Path
 
 _GYOKER = Path(__file__).resolve().parents[2]
-_QML = _GYOKER / "src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml"
+_QML = _GYOKER / "src/picasapy/app/qml/PicasaPy/PicasaFolderMenu.qml"
 _TS = _GYOKER / "src/picasapy/app/i18n/picasapy_hu.ts"
 
 #: az eredeti erőforrás angol szövege (az `&` gyorsítójel nélkül, ahogy a

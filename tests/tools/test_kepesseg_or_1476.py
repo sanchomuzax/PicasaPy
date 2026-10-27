@@ -472,6 +472,10 @@ def test_a_valodi_fan_erdemi_mennyiseget_nez_at(valodi: or_.Elemzes) -> None:
         ("faceScanController", "cancelScan", "az arckereső párbeszéd Mégse gombja"),
         ("fileOpsController", "movePhotos", "a fájlműveleti párbeszéd"),
         ("folderHierarchyController", "expandAll", "kétlépcsős aliason át"),
+        ("folderHierarchyController", "rows", "a hierarchikus sorok modellje"),
+        ("folderHierarchyController", "mentesSorok", "mentési nézet sorai"),
+        ("folderHierarchyController", "toggle", "a fasor nyitása és csukása"),
+        ("folderHierarchyController", "collapseAll", "az összes fasor csukása"),
         ("importSourceController", "toggleStar", "az importáló nézet csillaga"),
     ],
 )
@@ -555,7 +559,7 @@ def test_rossz_kontextusnevvel_a_tagok_halottnak_latszanak(tmp_path: Path) -> No
 def test_a_bekotes_kivetelekor_uj_szakadas_keletkezik(tmp_path: Path) -> None:
     """Egy meglévő bekötés ideiglenes kivétele — az őr foga a valódi fán."""
     gyoker = _valodi_masolat(tmp_path)
-    menu = gyoker / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
+    menu = gyoker / "qml" / "PicasaPy" / "PicasaViewMenu.qml"
     menu.write_text(
         menu.read_text(encoding="utf-8").replace("toggleShowHidden", "toggleShowHiddenXX"),
         encoding="utf-8",

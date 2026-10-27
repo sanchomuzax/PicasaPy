@@ -108,12 +108,12 @@ kódtól).
   eredetiben a másodpéldány-kezelés két MÁS mechanizmus: az importáláskori
   ellenőrzés (`AcquireDupeCheckThread`) és a keresési sáv `dupesearch` módja
   (#1398) — önálló kereső-párbeszéd nincs. A miénk tudatos hozzáadás.
-- `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml` (#1364) — a
+- `src/picasapy/app/qml/PicasaPy/PicasaHelpMenu.qml` (#1364, #6016) — a
   **Teljesítmény-monitor** a Súgó menüben: fejlesztői eszköz, az eredetiben
   nincs ilyen menüpont. *(Az eredetinek volt `/uidebug` lapja a beépített
   kiszolgálón, de azt szándékosan nem építjük meg — ADR-011,
   `docs/decisions/nincs-halozati-kiszolgalo.md`.)*
-- `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml` (#1595) — a **Mappa ▸
+- `src/picasapy/app/qml/PicasaPy/PicasaFolderMenu.qml` (#1595, #6016) — a **Mappa ▸
   Rendezés ▸ „Legutóbbi változtatások"** tétel. Az eredeti Mappa menü
   rendezés-készlete (`ID_DATESORT` / `ID_NAMESORT` / `ID_SIZESORT` /
   `ID_REVERSESORT`) NÉGY tagú, és nincs benne „legutóbbi változtatások" —
@@ -121,14 +121,14 @@ kódtól).
   hasznos rendezés (#1759), ezért a #1595 nem törölte a hűség kedvéért,
   hanem `sajat: true` jelöléssel hagyta bent: kék felirat + kötelező
   buboréksúgó. Ld. `docs/decisions/sajat-funkciok-jelolese.md`.
-- `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml` (#28, #4638) — a **Nézet ▸
+- `src/picasapy/app/qml/PicasaPy/PicasaViewMenu.qml` (#28, #4638, #6016) — a **Nézet ▸
   Sötét téma** menütétel. A téma maga a fenti `Theme.qml` tétel; a menütétel
   a kék jelölést (`sajat: true`) kapja, mert az eredetiben nincs ilyen parancs.
-- `src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml` (#1473, #4638) — az
+- `src/picasapy/app/qml/PicasaPy/PicasaToolsMenu.qml` (#1473, #4638, #6016) — az
   **Eszközök ▸ Arcok keresése…** menütétel. Az eredetiben az arckeresés háttérszál
   volt, menüparancs nélkül (`docs/specs/ui-audit-menus.md`, 7. szakasz); a
   menütétel a kék jelölést (`sajat: true`) kapja.
-- `src/picasapy/app/qml/PicasaPy/TrayBar.qml` (#70) — az alsó kék
+- `src/picasapy/app/qml/PicasaPy/TrayInfoBar.qml` (#70, #6050) — az alsó kék
   állapotsáv (`infoBar`) `busySweep` fény-hullám animációja háttérmunka
   (indexelés, bélyegkép-gyártás) közben. Az eredetiben nincs ilyen vizuális
   visszajelzés — saját UX-kiegészítés, felhasználói panasz nyomán (ld. #70

@@ -36,7 +36,7 @@ from PySide6.QtGui import QFontInfo
 
 GYOKER = Path(__file__).resolve().parents[3]
 THEME = GYOKER / "src/picasapy/app/qml/PicasaPy/Theme.qml"
-TRAYBAR = GYOKER / "src/picasapy/app/qml/PicasaPy/TrayBar.qml"
+TRAY_INFO_BAR = GYOKER / "src/picasapy/app/qml/PicasaPy/TrayInfoBar.qml"
 APPLICATION = GYOKER / "src/picasapy/app/application.py"
 
 
@@ -99,8 +99,8 @@ def test_a_lathato_feliraton_a_MERT_csalad_jelenik_meg(qml_app) -> None:
         f"{kert!r} nincs betöltve")
 
 
-def test_a_traybar_a_tokenre_hivatkozik_nem_a_nevre() -> None:
+def test_a_talca_a_tokenre_hivatkozik_nem_a_nevre() -> None:
     """A felirat a tokenen át kérje a családot, ne beégetett sztringgel."""
-    forras = TRAYBAR.read_text(encoding="utf-8")
+    forras = TRAY_INFO_BAR.read_text(encoding="utf-8")
     assert "font.family: Theme.uiFamily" in forras
     assert 'font.family: "Open Sans"' not in forras

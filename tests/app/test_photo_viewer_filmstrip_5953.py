@@ -38,13 +38,15 @@ def test_zoom_allapot_az_uj_aliasfelulet_elott_epul_fel() -> None:
     """
     viewer = (QML / "PhotoViewer.qml").read_text(encoding="utf-8")
     main = (GYOKER / "src/picasapy/app/qml/Main.qml").read_text(encoding="utf-8")
-    tray = (QML / "TrayBar.qml").read_text(encoding="utf-8")
+    tray_top_row = (QML / "TrayTopRow.qml").read_text(encoding="utf-8")
 
     assert viewer.index("property real zoomValue: 0") < viewer.index(
         "property alias editorPanel: leftDrawer.hostEditorPanel"
     )
     assert "viewerZoomValue: photoViewer.zoomValue" in main
-    assert "value: tray.viewerZoomValue" in tray
+    # #6050: a csúszka a TrayTopRow komponensbe került; a stabil
+    # értékforrás továbbra is a TrayBar gyökértulajdonsága.
+    assert "value: trayRoot.viewerZoomValue" in tray_top_row
 
 
 def test_editor_panel_kulon_tipus_es_forditasi_kontextus() -> None:

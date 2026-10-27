@@ -24,7 +24,7 @@ from PySide6.QtCore import (
 from picasapy.metadata import megjelenitett_meret
 from picasapy.index import PhotoRecord
 from picasapy.index.hidden_scope import show_hidden_folders
-from picasapy.paths import flat_key
+from picasapy.paths import flat_key, path_key
 
 from .display_mode_paint import (
     current_display_mode,
@@ -976,7 +976,11 @@ class PhotoGridModel(QAbstractListModel):
         `/`-t használ — a nyers egyenlőség a windows-lábon némán bukna."""
         if not path:
             return -1
-        cel = os.path.normcase(os.path.normpath(str(path)))
+        # Az index a mappákat `normalize_path()`-szal tárolja, a hívó viszont
+        # adhat symlink/junction aliason át érkező Path/string alakot. A cél
+        # feloldása hozza ugyanarra a tárolt útvonalra; a jelöltek már az
+        # index kanonikus mappájából épülnek.
+        cel = path_key(path)
         for i, photo in enumerate(self._photos):
             jelolt = os.path.normcase(
                 os.path.normpath(os.path.join(photo.folder_path, photo.name))

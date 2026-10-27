@@ -37,6 +37,11 @@ _TRAY = (
     Path(__file__).resolve().parents[3]
     / "src/picasapy/app/qml/PicasaPy/TrayBar.qml"
 )
+_TRAY_QML = (
+    _TRAY.read_text(encoding="utf-8")
+    + "\n"
+    + _TRAY.with_name("TrayActionArea.qml").read_text(encoding="utf-8")
+)
 
 #: A mért sorrend azon része, ami nálunk megvan (a `morebutton` nélkül).
 MERT_SORREND = [
@@ -55,7 +60,7 @@ class TestASorrend:
     def test_a_gombok_a_MERT_sorrendben_allnak(self):
         """A sorrend a forrásbeli deklarációk sorrendje — a `Row`
         ugyanígy rakja ki őket."""
-        forras = _TRAY.read_text(encoding="utf-8")
+        forras = _TRAY_QML
         helyek = [(forras.index(f'"{nev}"'), nev) for nev in MERT_SORREND]
         assert [nev for _hely, nev in sorted(helyek)] == MERT_SORREND, (
             "a tálca gombjai nem a mért sorrendben állnak (#1672)"
@@ -80,7 +85,7 @@ class TestAKivezetesJelolese:
     def test_a_buborekusgo_KIMONDJA_hogy_megszunt(self):
         """A `retired` nem ígér semmit — de ezt meg is kell mondani,
         különben a szürke gomb „még nem kész"-nek látszik."""
-        forras = _TRAY.read_text(encoding="utf-8")
+        forras = _TRAY_QML
         for szoveg in (
             "Order Prints (service discontinued)",
             "Publish to Blogger (service discontinued)",
@@ -97,7 +102,7 @@ class TestASzukAblak:
     eredetiben erre a `morebutton`/`overflow` való, ami nálunk nincs meg."""
 
     def test_a_kivezetettek_kulon_kuszobot_kapnak(self):
-        forras = _TRAY.read_text(encoding="utf-8")
+        forras = _TRAY_QML
         assert "retiredVisible" in forras, (
             "a kivezetett gombok nem tűnnek el szűk ablakban — a sáv "
             "kilógna (a #1345 elrendezés-őre ezt meg is fogja)"
@@ -106,7 +111,7 @@ class TestASzukAblak:
     def test_a_kuszobuk_MAGASABB_az_elvalasztokenal(self):
         """Ha nem lenne magasabb, a két 59 képpontos cella pont akkor
         maradna bent, amikor már a helye sincs meg."""
-        forras = _TRAY.read_text(encoding="utf-8")
+        forras = _TRAY_QML
         assert (
             "windowWidthFor(actionCellCount + retiredCellCount + 2)"
             in forras
@@ -118,7 +123,7 @@ class TestAMorebuttonMarBent:
     a helyén kell legyen — de csak a MÉRT feliratokkal."""
 
     def test_a_morebutton_BE_van_kotve(self):
-        forras = _TRAY.read_text(encoding="utf-8")
+        forras = _TRAY_QML
         assert 'objectName: "trayMoreButton"' in forras, (
             "eltűnt a „További…” — a #2191 kimérte és bekötötte"
         )
@@ -128,7 +133,7 @@ class TestAMorebuttonMarBent:
         szabadon fordított alak itt nem elfogadható."""
         from tests.support.qml_blokk import blokk_horgonyra
 
-        forras = _TRAY.read_text(encoding="utf-8")
+        forras = _TRAY_QML
         # ⚠️ #2493: MÉRT blokkhatár egy karakterszám helyett — a rögzített
         # ablak a gomb magyarázó kommentjétől kicsúszott a mért sorok alól.
         blokk = blokk_horgonyra(forras, 'objectName: "trayMoreButton"')
@@ -144,7 +149,7 @@ class TestAKommentSemHazudhat:
     olvassák: egy elavult megjegyzés ugyanúgy félrevisz, mint egy hibás sor."""
 
     def test_nem_allitja_hogy_hianyzik(self):
-        forras = _TRAY.read_text(encoding="utf-8")
+        forras = _TRAY_QML
         for hamis in ("nálunk még nincs meg", "hiányzó `shop`/`blog`/`morebutton`"):
             assert hamis not in forras, (
                 f"elavult komment a tálca-sorban: {hamis!r} — a „További…” "
@@ -159,7 +164,7 @@ class TestAKommentSemHazudhat:
         #: ⚠️ NEM a `blokk_horgonyra` segítővel: az szándékosan KIVÁGJA a
         #: kommenteket (#2493), ez az eset viszont épp a kommentet méri.
         #: Ezért két NEVESÍTETT horgony közti nyers szelet — nem fix ablak.
-        forras = _TRAY.read_text(encoding="utf-8")
+        forras = _TRAY_QML
         kezd = forras.index('objectName: "trayMoreCell"')
         veg = forras.index('objectName: "trayMoreButton"', kezd)
         blokk = forras[kezd:veg]
@@ -177,7 +182,7 @@ class TestAKommentSemHazudhat:
 
         Ez a próba ezért két dolgot állít: a mérésre HIVATKOZIK, és a régi,
         feltevésre hivatkozó mondat NINCS ott."""
-        forras = _TRAY.read_text(encoding="utf-8")
+        forras = _TRAY_QML
         kezd = forras.index('objectName: "trayMoreCell"')
         veg = forras.index('objectName: "trayMoreButton"', kezd)
         blokk = forras[kezd:veg]

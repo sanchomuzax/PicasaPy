@@ -7,6 +7,50 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.270] - 2026-10-27
+
+- A képpontos képernyőkép-tesztek Windowson indokkal kimaradnak, mert a referencia Linuxon készül (#6058).
+- Frissítés után a PNG, GIF és TGA képek nem tűnnek el többé: elmentett fájltípus-választás nélkül minden képtípus látszik (#6060).
+- A README tetején mozgó előnézet mutatja a 10 másodperces bemutatót (#6063).
+
+## [0.9.269] - 2026-10-27
+
+- A felső menüsor belső QML-menüi külön komponensekbe kerültek változatlan megjelenéssel és működéssel (#6016).
+
+## [0.9.268] - 2026-10-27
+
+- Windows alatt a fotónéző más alakban megadott útvonalnál is megtalálja a képet, és a .picasa.ini mentése kivárja az átmeneti fájlzárat. (#6043).
+
+## [0.9.267] - 2026-10-27
+
+- A bal oldali mappafa kódja önálló részekre (tartalom, fasor, helyi menük) került, a megjelenés és a működés változatlan. (#6019).
+
+## [0.9.266] - 2026-10-27
+
+- Az arcfelismerés-vezérlő kódja hét témarészre (keresés, beágyazás, alaphelyzet, beállítások, javaslatok, Név nélküliek, közös segédek) került, a felület és a működés változatlan. (#6025).
+
+## [0.9.265] - 2026-10-27
+
+- A fő vezérlő kódjának maradék témái (szűrők, mappanézet, rejtett mappák, navigáció, hálózati beállítások, diavetítés, állapot, tartalominfó) külön részekbe kerültek, a felület és a működés változatlan. (#6022).
+
+## [0.9.264] - 2026-10-27
+
+- A képművelet-vezérlő kódja hat témarészre (album, effekt-vágólap, átnevezés, forgatás és tükrözés, ini-írás, XMP) került, a felület és a működés változatlan. (#6023).
+- A főablak arcszámlálói a program bezárásakor nem írnak hibát a naplóba. (#6039).
+
+## [0.9.263] - 2026-10-27
+
+- A főablak és a fotónéző képernyőkép-őre 30 állapotot rögzít (könyvtár, személyalbum, mind a nyolc felső menü, eszköztár, tálca, diavetítés, szerkesztőfülek), a főablak szétbontása előtti mércéül. (#5954).
+
+## [0.9.262] - 2026-10-27
+
+- Az alkalmazás indulása megnevezett lépésekre bomlik. (#5958).
+
+## [0.9.261] - 2026-10-27
+
+- A szerkesztő-vezérlő kódja kilenc témarészre (munkamenet, előzmények, mentés, előnézet, vágás, retusálás, vörösszem, szöveg, effektek) került, a felület és a működés változatlan. (#5957).
+- A Név nélküliek nézet frissítése a program bezárásakor nem hív már elérhetetlen arcvezérlő-műveletet. (#6033).
+
 ## [0.9.260] - 2026-10-27
 
 - A szerkesztő fülikonjai az eredeti színeket, átmeneteket, formát és függőleges igazítást követik. (#5959).

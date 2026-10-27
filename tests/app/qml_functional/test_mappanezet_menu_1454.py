@@ -42,20 +42,11 @@ hasábon. Egy elrontott kötés így nem maradhat zölden.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from PySide6.QtCore import QMetaObject, QObject, Qt
 from PySide6.QtQuick import QQuickItem
+from support.menubar_components_6016 import menu_sources
 
-_MENU_QML = (
-    Path(__file__).resolve().parents[3]
-    / "src"
-    / "picasapy"
-    / "app"
-    / "qml"
-    / "PicasaPy"
-    / "PicasaMenuBar.qml"
-)
+_MENU_QML = menu_sources()
 
 
 def _child(root, name):
@@ -165,7 +156,7 @@ class TestAMappanezetAlmenuTartalma:
         """A `Mappa ▸ Sort By` négy szempontja + a megfordítás — és semmi
         más. Forrásszintű őr: a duplikálás pont így csúszott be."""
         # #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma.
-        source = _MENU_QML.read_text(encoding="utf-8").replace("&", "")
+        source = _MENU_QML.replace("&", "")
         assert source.count("controller.setFolderSort(") == 4
         assert source.count("controller.toggleFolderSortReverse()") == 1
 

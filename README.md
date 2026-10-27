@@ -17,6 +17,10 @@
   <img src="docs/assets/screenshot-fo-ablak.png" alt="PicasaPy – photo grid / képrács" width="700">
 </p>
 
+<p align="center">
+  <img src="docs/assets/promo.webp" alt="PicasaPy – 10-second teaser / 10 másodperces bemutató" width="300">
+</p>
+
 <p align="center"><a href="#english">English</a> · <a href="#magyar">Magyar</a></p>
 
 # English
@@ -24,6 +28,8 @@
 ## What is PicasaPy?
 
 PicasaPy is an open-source photo manager and editor built with Python, PySide6, and Qt Quick. It is designed as a modern successor to Google Picasa and reads and writes the same `.picasa.ini` format, so both applications can work with the same photo folders. PicasaPy updates the modification time of edited photos so a running Picasa can refresh them, but Picasa may overwrite external edits the next time it writes its own changes. The shared format therefore does not provide conflict-safe live synchronization.
+
+PicasaPy is an independent project. It is not affiliated with, endorsed by, or sponsored by Google; Picasa is a trademark of Google LLC.
 
 ## Features
 
@@ -85,6 +91,8 @@ PicasaPy is licensed under [GPL-3.0](LICENSE).
 ## Mi a PicasaPy?
 
 A PicasaPy nyílt forráskódú fotókezelő és képszerkesztő Python, PySide6 és Qt Quick alapokon. A Google Picasa modern utódjának készül, és ugyanazt a `.picasa.ini` formátumot olvassa és írja, így a két program ugyanazokkal a fotómappákkal használható. A PicasaPy a módosított képek fájlidejét is frissíti, hogy a már futó Picasa észlelhesse a változást, de a Picasa egy későbbi saját írásakor felülírhatja a külső módosításokat. A közös formátum ezért nem jelent ütközésbiztos, élő szinkronizálást.
+
+A PicasaPy független projekt: nem kapcsolódik a Google-höz, és a Google nem támogatja vagy szponzorálja. A Picasa a Google LLC védjegye.
 
 ## Funkciók
 

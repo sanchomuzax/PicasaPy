@@ -321,7 +321,7 @@ class TestJegy4131:
         ),
         "thumbui/cdmode": (
             "megvan",
-            "PicasaPy/PicasaMenuBar.qml:1795;PicasaPy/GiftCdHost.qml:67;"
+            "PicasaPy/PicasaCreateMenu.qml:48;PicasaPy/GiftCdHost.qml:67;"
             "PicasaPy/PublishPanel.qml:181",
         ),
         "thumbui/hlistsizer": ("megvan", "Main.qml:2294"),
@@ -360,7 +360,7 @@ class TestJegy4131:
             if nev == "thumbui/cdmode":
                 # A Gift CD a Létrehozás menüből nyílik, ezért máshol van,
                 # mint az eredeti thumbui-panel.
-                assert "PicasaPy/PicasaMenuBar.qml" not in panel_fajlok
+                assert "PicasaPy/PicasaCreateMenu.qml" not in panel_fajlok
                 continue
             for hivatkozas in bizonyitek.split(";"):
                 fajl = hivatkozas.partition(":")[0]

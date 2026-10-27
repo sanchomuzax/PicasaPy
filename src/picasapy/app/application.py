@@ -19,6 +19,7 @@ import threading
 import time
 from collections.abc import Callable, Mapping
 from pathlib import Path
+from types import SimpleNamespace as _SimpleNamespace
 
 import shutil
 import subprocess
@@ -81,6 +82,9 @@ from .startup_relocate import (
     KoltozesHid,
 )
 from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
+from .option_settings import (
+    initialize_option_settings,
+)
 from .i18n_build import forditsd
 from .language_controller import (
     DEFAULT_LANGUAGE,
@@ -1199,37 +1203,10 @@ def argv_indulasellenorzes(argv: list[str]) -> tuple[bool, list[str]]:
     return True, [elem for elem in argv if elem != _INDULAS_ELLENORZES_KAPCSOLO]
 
 
-def run(argv: list[str], *, entry_at: float | None = None) -> int:
-    """Az alkalmazás indítása.
-
-    #1601: az `entry_at` a belépési pont (`__main__.py`) legelső saját
-    sorában olvasott `time.monotonic()` — ebből látszik, mennyit visz el
-    maga a Python- és PySide6-import, mielőtt idáig eljutnánk. `None`
-    esetén ez a szakasz kimarad a jelentésből; mérni nem kötelező.
-
-    Az idővonal alapból KI van kapcsolva; a tartós „tesztüzem" beállítás
-    (#1654), a `--tesztuzem` kapcsoló és a `PICASAPY_STARTUP_TIMELINE=1`
-    környezeti változó (#1601) kapcsolja be — ld. `_indulasi_idovonal`."""
-    # #4613: a tétlenség-figyelő hívja — főablak, példányzár és napló nélkül
-    if KEPERNYOVEDO_KAPCSOLO in argv:
-        # lustán töltve: a normál indulás importlánca ne hízzon (#1653)
-        from . import screensaver_mode
-
-        _kepernyovedo, argv = screensaver_mode.argv_kepernyovedo(argv)
-        return screensaver_mode.run_screensaver(argv)
-    progress_log = StartupProgressLog()
-    progress_log.mark("Python- és PySide6-modulok betöltése befejeződött")
-    onellenorzes, argv = argv_onellenorzes(argv)
-    startup_smoke, argv = argv_indulasellenorzes(argv)
-    progress_log.mark("Indulási argumentumok beolvasva")
-    timeline, argv = _indulasi_idovonal(argv, entry_at=entry_at)
-    # #5762: a fájlok közvetlenül a viewer listájába kerülnek; a könyvtárak
-    # maradnak a könyvtárnézet gyökerei. A fájlnevek Qt-argumentumként sem
-    # szükségesek, az alkalmazás a saját listájából olvassa őket.
-    from .quick_view import parse_launch_arguments
-
-    launch_arguments = parse_launch_arguments(argv)
-    library_argv = [argv[0] if argv else "picasapy", *launch_arguments.directory_roots]
+def _startup_step_log_and_qt_setup(state):
+    argv = state.argv
+    progress_log = state.progress_log
+    timeline = state.timeline
 
     for message in runtime_version_messages(PySide6.__version__, qVersion() or "ismeretlen"):
         write_console(message, error=True)
@@ -1283,6 +1260,14 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     timeline.mark("fordítás betöltése")
     progress_log.mark("Fordítás betöltve")
 
+    state.early_error_log = early_error_log
+    state.app = app
+
+
+def _startup_step_prepare_storage(state, bootstrap_storage):
+    progress_log = state.progress_log
+    timeline = state.timeline
+
     # #3214: az előjegyzett adatbázis-költözés MÉG a tárhely-előkészítés
     # előtt fut le — különben a program a régi helyet nyitná meg, és
     # újraindítást kellene kérni (a mért eredeti sem kér).
@@ -1297,7 +1282,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # egyszer számolja ki, a régi és új zárat pedig futás végéig őrzi.
     progress_log.mark("Tárhely és példányzár előkészítése elkezdődött")
     try:
-        storage_bootstrap = _bootstrap_storage()
+        storage_bootstrap = bootstrap_storage()
     except StorageAlreadyRunning:
         progress_log.mark("Tárhely előkészítése megszakadt: már fut egy példány")
         print(
@@ -1323,10 +1308,22 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     )
     progress_log.mark("Splash állapotobjektum létrehozva")
 
-    progress_log.mark("Figyelt könyvtárak beolvasása elkezdődött")
-    with timeline.phase("figyelt gyökerek beolvasása (WatchedFolders.txt)"):
-        roots = _resolve_roots(library_argv)
-    progress_log.mark("Figyelt könyvtárak beolvasva")
+    state.koltozes = koltozes
+    state.storage_bootstrap = storage_bootstrap
+    state.startup_status = startup_status
+
+    return None
+
+
+def _startup_step_prepare_index_and_main_controller(state):
+    app = state.app
+    launch_arguments = state.launch_arguments
+    progress_log = state.progress_log
+    roots = state.roots
+    startup_status = state.startup_status
+    storage_bootstrap = state.storage_bootstrap
+    timeline = state.timeline
+
     data_dir = storage_bootstrap.data_dir
     cache_dir = storage_bootstrap.cache_dir
     config_dir = storage_bootstrap.config_dir
@@ -1402,6 +1399,20 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         lambda: progress_log.mark("Az induláskori könyvtárszinkron befejeződött")
     )
     timeline.mark("bélyegkép-gyorstár és fővezérlő létrehozása")
+
+    state.data_dir = data_dir
+    state.cache_dir = cache_dir
+    state.config_dir = config_dir
+    state.error_log = error_log
+    state.thumb_cache = thumb_cache
+    state.provider = provider
+    state.controller = controller
+    state.quick_view_started = quick_view_started
+
+
+def _startup_step_create_edit_and_file_controllers(state):
+    controller = state.controller
+    provider = state.provider
 
     # szerkesztő-előnézet (#19): a provider a filters= láncot alkalmazva
     # rendereli a képet; a hidat az EditController adja a QML-nek
@@ -1507,6 +1518,31 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # listázása — a FolderManagerDialog.qml hídja
     FolderTreeController = _lazy_app_symbol("FolderTreeController")
     folder_tree_controller = FolderTreeController()
+
+    state.edit_preview = edit_preview
+    state.edit_controller = edit_controller
+    state.edit_controller_masodik = edit_controller_masodik
+    state.second_preview = second_preview
+    state.effect_thumb_provider = effect_thumb_provider
+    state.fileops_controller = fileops_controller
+    state._display_mode_bridge = _display_mode_bridge
+    state._color_management_bridge = _color_management_bridge
+    state.confirm_settings = confirm_settings
+    state.camera_capture_controller = camera_capture_controller
+    state.gombsav = gombsav
+    state.discovery_controller = discovery_controller
+    state.drop_import_controller = drop_import_controller
+    state.folder_tree_controller = folder_tree_controller
+
+
+def _startup_step_create_library_controllers(state):
+    app = state.app
+    controller = state.controller
+    data_dir = state.data_dir
+    progress_log = state.progress_log
+    provider = state.provider
+    roots = state.roots
+    startup_status = state.startup_status
 
     # A bal hasáb fa-mappanézete (#702): az INDEXELT mappák hierarchiája,
     # részfa-összegzett darabszámmal — a FolderHierarchyView.qml hídja.
@@ -1643,6 +1679,30 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         index_path=data_dir / "index.db",
     )
 
+    state.folder_hierarchy_controller = folder_hierarchy_controller
+    state.startup_maintenance = startup_maintenance
+    state._mappafa_sorai = _mappafa_sorai
+    state._reload_folder_hierarchy = _reload_folder_hierarchy
+    state.timeline_controller = timeline_controller
+    state.backup_controller = backup_controller
+    state.dedup_controller = dedup_controller
+    state.email_controller = email_controller
+    state.web_export_controller = web_export_controller
+    state.print_controller = print_controller
+    state.import_source_controller = import_source_controller
+    state._lathato_fotok = _lathato_fotok
+    state._talca_fotok = _talca_fotok
+
+
+def _startup_step_create_qml_engine(state):
+    controller = state.controller
+    data_dir = state.data_dir
+    edit_preview = state.edit_preview
+    effect_thumb_provider = state.effect_thumb_provider
+    provider = state.provider
+    thumb_cache = state.thumb_cache
+    timeline = state.timeline
+
     # #1653: a QML-MOTOR létrehozása külön szakasz. Az eddigi közös
     # mérőpont („a többi vezérlő létrehozása és regisztrálása") egyben
     # mérte a vezérlők konstruktorait, a `QQmlApplicationEngine()`-t és a
@@ -1688,6 +1748,41 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # #1653: idáig tart a motor felállítása (konstruktor + kép-szolgáltatók
     # + import-útvonal); innentől már csak kontextus-bekötés következik.
     timeline.mark("QML-motor létrehozása és import-útvonalak")
+
+    state.engine = engine
+    state.color_palette_provider = color_palette_provider
+    state.folder_cover_provider = folder_cover_provider
+
+
+def _startup_step_register_qml_context(state):
+    app = state.app
+    backup_controller = state.backup_controller
+    cache_dir = state.cache_dir
+    config_dir = state.config_dir
+    camera_capture_controller = state.camera_capture_controller
+    confirm_settings = state.confirm_settings
+    controller = state.controller
+    data_dir = state.data_dir
+    dedup_controller = state.dedup_controller
+    discovery_controller = state.discovery_controller
+    drop_import_controller = state.drop_import_controller
+    edit_controller = state.edit_controller
+    email_controller = state.email_controller
+    engine = state.engine
+    fileops_controller = state.fileops_controller
+    folder_hierarchy_controller = state.folder_hierarchy_controller
+    folder_tree_controller = state.folder_tree_controller
+    gombsav = state.gombsav
+    import_source_controller = state.import_source_controller
+    progress_log = state.progress_log
+    print_controller = state.print_controller
+    second_preview = state.second_preview
+    startup_status = state.startup_status
+    timeline = state.timeline
+    timeline_controller = state.timeline_controller
+    _lathato_fotok = state._lathato_fotok
+    web_export_controller = state.web_export_controller
+
     ScreenCaptureController = _lazy_app_symbol("ScreenCaptureController")
     screen_capture_controller = ScreenCaptureController(
         settings=QSettings("PicasaPy", "PicasaPy"), parent=app
@@ -1772,6 +1867,15 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         settings=QSettings(),
         face_detection_enabled=controller.faceDetectionEnabledFor,
     )
+    # #6067: a regisztrált értékeket induláskor rögzítjük, hogy egy későbbi
+    # alapérték-változás ne módosítsa a felhasználó által látott állapotot.
+    initialize_option_settings(
+        controller._get_settings(),
+        import_source_controller=import_source_controller,
+        library_controller=controller,
+        print_controller=print_controller,
+        face_scan_controller=face_scan_controller,
+    )
     engine.rootContext().setContextProperty("faceScanController", face_scan_controller)
     face_scan_controller.unnamedCountChanged.connect(
         controller._invalidate_people_manager_contacts_cache
@@ -1785,6 +1889,21 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     engine.rootContext().setContextProperty("startupStatus", startup_status)
     timeline.mark("vezérlők regisztrálása a QML-kontextusban")
     progress_log.mark("QML-kontextus és vezérlők regisztrálva")
+
+    state.screen_capture_controller = screen_capture_controller
+    state.passport_controller = passport_controller
+    state.compact_controller = compact_controller
+    state.picasa_import_controller = picasa_import_controller
+    state.faces_helper = faces_helper
+    state.face_scan_controller = face_scan_controller
+
+
+def _startup_step_load_qml(state):
+    engine = state.engine
+    progress_log = state.progress_log
+    screen_capture_controller = state.screen_capture_controller
+    timeline = state.timeline
+
     progress_log.mark("Main.qml betöltése elkezdődött")
     with timeline.phase("QML betöltése (Main.qml)"):
         engine.load(str(_APP_DIR / "qml" / "Main.qml"))
@@ -1794,21 +1913,102 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         return 1
     progress_log.mark("Main.qml betöltve; főablak létrejött")
 
+    return None
+
+
+def _startup_step_screensaver(argv: list[str]) -> int | None:
+    """A képernyővédő belépője a normál bootstrap előtt (#4613)."""
+    if KEPERNYOVEDO_KAPCSOLO not in argv:
+        return None
+    # lustán töltve: a normál indulás importlánca ne hízzon (#1653)
+    from . import screensaver_mode
+
+    _kepernyovedo, argv = screensaver_mode.argv_kepernyovedo(argv)
+    return screensaver_mode.run_screensaver(argv)
+
+
+def _startup_step_smoke_test(state) -> None:
+    print("onellenorzes: a felulet felepult", flush=True)
+    state.screen_capture_controller.shutdown()
+    state.controller.shutdown()
+    state.edit_controller.cancelPendingPreview()
+    state.edit_controller.waitForBackgroundWorkers(2.0)
+
+
+def run(argv: list[str], *, entry_at: float | None = None) -> int:
+    """Az alkalmazás indítása.
+
+    #1601: az entry_at a belépési pont (__main__.py) legelső saját
+    sorában olvasott time.monotonic() — ebből látszik, mennyit visz el
+    maga a Python- és PySide6-import, mielőtt idáig eljutnánk. None
+    esetén ez a szakasz kimarad a jelentésből; mérni nem kötelező.
+
+    Az idővonal alapból KI van kapcsolva; a tartós tesztüzem beállítás
+    (#1654), a --tesztuzem kapcsoló és a PICASAPY_STARTUP_TIMELINE=1
+    környezeti változó (#1601) kapcsolja be — ld. _indulasi_idovonal.
+    """
+    screensaver_exit = _startup_step_screensaver(argv)
+    if screensaver_exit is not None:
+        return screensaver_exit
+
+    progress_log = StartupProgressLog()
+    progress_log.mark("Python- és PySide6-modulok betöltése befejeződött")
+    onellenorzes, argv = argv_onellenorzes(argv)
+    startup_smoke, argv = argv_indulasellenorzes(argv)
+    progress_log.mark("Indulási argumentumok beolvasva")
+    timeline, argv = _indulasi_idovonal(argv, entry_at=entry_at)
+    # #5762: a fájlok közvetlenül a viewer listájába kerülnek; a könyvtárak
+    # maradnak a könyvtárnézet gyökerei. A fájlnevek Qt-argumentumként sem
+    # szükségesek, az alkalmazás a saját listájából olvassa őket.
+    from .quick_view import parse_launch_arguments
+
+    launch_arguments = parse_launch_arguments(argv)
+    library_argv = [argv[0] if argv else "picasapy", *launch_arguments.directory_roots]
+    state = _SimpleNamespace(
+        argv=argv,
+        progress_log=progress_log,
+        timeline=timeline,
+        onellenorzes=onellenorzes,
+        startup_smoke=startup_smoke,
+        launch_arguments=launch_arguments,
+        library_argv=library_argv,
+    )
+
+    _startup_step_log_and_qt_setup(state)
+    # A hívást késleltetjük: a lépés előbb ellenőrzi a #3214 költözést,
+    # aztán a #1076 tárhely-bootstrapot, mindkettőt a gyökerek feloldása előtt.
+    storage_exit = _startup_step_prepare_storage(
+        state, bootstrap_storage=lambda: _bootstrap_storage()
+    )
+    if storage_exit is not None:
+        return storage_exit
+
+    progress_log.mark("Figyelt könyvtárak beolvasása elkezdődött")
+    with timeline.phase("figyelt gyökerek beolvasása (WatchedFolders.txt)"):
+        roots = _resolve_roots(library_argv)
+    progress_log.mark("Figyelt könyvtárak beolvasva")
+    state.roots = roots
+
+    _startup_step_prepare_index_and_main_controller(state)
+    _startup_step_create_edit_and_file_controllers(state)
+    _startup_step_create_library_controllers(state)
+    _startup_step_create_qml_engine(state)
+    _startup_step_register_qml_context(state)
+    load_exit = _startup_step_load_qml(state)
+    if load_exit is not None:
+        return load_exit
+
     #: #3021: a csomagolás füstpróbája. Idáig eljutni azt jelenti, hogy a
     #: Qt-bővítmények, a QML-fa, a fordítás és az ikon MIND a csomagban van
     #: — a felület felépült. Az ablakot már nem mutatjuk meg, és az
     #: eseményciklus el sem indul.
     #:
-    #: ⚠️ A LEZÁRÁS nem hagyható ki. A vezérlő ekkor már él, és háttérszálai
+    #: A LEZÁRÁS nem hagyható ki. A vezérlő ekkor már él, és háttérszálai
     #: vannak; nélkülük a processz nem lép ki, csak áll — a windowsos
     #: CI-futáson MÉRVE 38 percig, amíg a job időkorlátja levágta. A
     #: füstpróba pontosan azt nem mutatta volna meg, amiért van.
     if onellenorzes:
-        print("onellenorzes: a felulet felepult", flush=True)
-        screen_capture_controller.shutdown()
-        controller.shutdown()
-        edit_controller.cancelPendingPreview()
-        edit_controller.waitForBackgroundWorkers(2.0)
+        _startup_step_smoke_test(state)
         return 0
 
     # #240: a betöltés csak az ablak ELSŐ kirajzolt képkockája UTÁN indul —
@@ -1816,13 +2016,17 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # finish() a splash-t láthatatlanul kifakította. A splash emellett
     # legalább _SPLASH_MIN_VISIBLE_MS-ig látszik (gyors betöltésnél is van
     # ideje megjelenni, a Picasa-élményhez hasonlóan).
-    window = engine.rootObjects()[0]
+    window = state.engine.rootObjects()[0]
 
     # #192: az utolsó ablakpozíció/-méret visszaállítása induláskor,
     # mentése az ablak zárásakor — a controllerrel közös QSettings-tárba
-    wire_window_geometry(window, QSettings("PicasaPy", "PicasaPy"), virtual_desktop_rect(app))
+    wire_window_geometry(
+        window, QSettings("PicasaPy", "PicasaPy"), virtual_desktop_rect(state.app)
+    )
     smoke_probe = (
-        _StartupSmokeProbe(app, window, startup_status, controller, progress_log)
+        _StartupSmokeProbe(
+            state.app, window, state.startup_status, state.controller, progress_log
+        )
         if startup_smoke
         else None
     )
@@ -1831,18 +2035,18 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     def _start_and_finish() -> None:
         startup_state["first_frame_at"] = time.monotonic()
-        if quick_view_started:
+        if state.quick_view_started:
             # Ne kérdezzük le a mentett könyvtárat és ne indítsuk el a
             # könyvtárszkennelést: a gyorsnézegető induló képsora csak a
             # parancssorban kapott fájlokat tartalmazza.
-            startup_status.finish()
+            state.startup_status.finish()
             timeline.mark("közvetlen gyorsnézegető-indítás")
             progress_log.mark("A gyorsnézegető megnyílt a megadott képekkel")
             return
         # #4687: a három induláskori karbantartás külön háttérszálon, de
         # egymás után fut. Így a lassú hálózati stat nem fogja a Qt főszálat,
         # a takarítás mégis a könyvtárszinkron ELŐTT commitol.
-        startup_maintenance.enqueue(
+        state.startup_maintenance.enqueue(
             "initial",
             (
                 StartupMaintenanceStep(
@@ -1852,7 +2056,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
                         "startup", "Checking folders…"
                     ),
                     work=lambda: _ottragadt_mappak_takaritasa(
-                        data_dir / "index.db", roots, QSettings()
+                        state.data_dir / "index.db", roots, QSettings()
                     ),
                 ),
                 StartupMaintenanceStep(
@@ -1861,7 +2065,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
                     status_text=QCoreApplication.translate(
                         "startup", "Refreshing folder list…"
                     ),
-                    work=_mappafa_sorai,
+                    work=state._mappafa_sorai,
                 ),
                 StartupMaintenanceStep(
                     key="exported_folders",
@@ -1870,7 +2074,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
                         "startup", "Checking export folders…"
                     ),
                     work=lambda: _exportcelok_visszavetele(
-                        data_dir / "index.db", QSettings()
+                        state.data_dir / "index.db", QSettings()
                     ),
                 ),
             ),
@@ -1881,23 +2085,28 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
             return
         progress_log.mark("Induláskori könyvtárszinkron indítása")
         with timeline.phase("könyvtár betöltése (a vezérlő indítása)"):
-            _start_initial_scan(startup_status, controller, storage_bootstrap.migration_notice)
+            _start_initial_scan(
+                state.startup_status,
+                state.controller,
+                state.storage_bootstrap.migration_notice,
+            )
         elapsed_ms = (
             time.monotonic() - startup_state["first_frame_at"]
         ) * 1000
         _jelentsd_az_idovonalat(
             timeline,
-            lambda: _indexelt_kepszamok(data_dir),
+            lambda: _indexelt_kepszamok(state.data_dir),
             lambda: _takaritas_gyokerei(roots, QSettings()),
         )
+
         def _finish_splash() -> None:
             progress_log.mark("A splash lezárása elkezdődött")
-            startup_status.finish()
+            state.startup_status.finish()
             progress_log.mark("A splash állapota készre váltott")
 
         QTimer.singleShot(_remaining_splash_ms(elapsed_ms), _finish_splash)
 
-    startup_maintenance.batchFinished.connect(
+    state.startup_maintenance.batchFinished.connect(
         _maintenance_batch_finished, Qt.ConnectionType.QueuedConnection
     )
 
@@ -1910,6 +2119,11 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         progress_log.mark("Első főablak-képkocka; a rács megjelent")
         QTimer.singleShot(0, _start_and_finish)
 
+    app = state.app
+    controller = state.controller
+    edit_controller = state.edit_controller
+    screen_capture_controller = state.screen_capture_controller
+    startup_maintenance = state.startup_maintenance
     window.frameSwapped.connect(_on_first_frame)
     # tartalék: ha a frameSwapped nem jönne (pl. offscreen platform), az
     # indulás legkésőbb 1 s után akkor is elkezdődik
@@ -1922,7 +2136,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     screen_capture_controller.shutdown()
     controller.shutdown()
     # #547: a szerkesztő háttér-renderét külön kell lezárni — az
-    # `edit_controller` önálló objektum, nem része a `controller.shutdown()`
+    # edit_controller önálló objektum, nem része a controller.shutdown()
     # láncának. Előbb ÉRVÉNYTELENÍTÜNK (a worker így a végén sem emitál egy
     # közben megsemmisülő QObject-nek, ld. #430), utána rövid ideig várunk:
     # a perces rendert nem kell végigvárni, a daemon-szál emit nélkül fut ki.

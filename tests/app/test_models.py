@@ -308,6 +308,25 @@ class TestPhotoGridModel:
         assert model.rowOfPath(str(library / "nincs.jpg")) == -1
         assert model.rowOfPath("") == -1
 
+    def test_row_of_path_feloldja_a_symlinkes_mappa_aliasat(
+        self, qt_app, conn, library, tmp_path
+    ):
+        from picasapy.app.models import PhotoGridModel
+
+        model = PhotoGridModel()
+        model.set_photos(photos_in_folder(conn, library / "nyaralas"))
+        alias = tmp_path / "kepek-alias"
+        try:
+            alias.symlink_to(library, target_is_directory=True)
+        except OSError as error:
+            pytest.skip(f"a fájlrendszer nem enged könyvtár-szimbolikus linket: {error}")
+
+        elvart = model.rowOfPath(str(library / "nyaralas" / "IMG_0001.jpg"))
+        alias_ut = str(alias / "nyaralas" / "IMG_0001.jpg")
+
+        assert elvart >= 0
+        assert model.rowOfPath(alias_ut) == elvart
+
     def test_set_photos_resets(self, qt_app, conn, library):
         from picasapy.app.models import PhotoGridModel
 
