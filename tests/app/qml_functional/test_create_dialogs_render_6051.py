@@ -20,6 +20,8 @@ QCoreApplication.setAttribute(Qt.ApplicationAttribute.AA_DontUseNativeDialogs, T
 
 _QML = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml/PicasaPy"
 _ARANY = Path(__file__).parent / "golden" / "create_dialogs_6051"
+# A rendszer-fájlválasztót nyitó állapotok (a QML FileDialog magassága platformfüggő).
+_FAJLVALASZTOK = frozenset({"collage-target", "movie-target", "movie-audio"})
 _ALLAPOTOK = (
     ("poster", "posterDialog", "open"),
     ("collage", "collageDialog", "open"),
@@ -176,7 +178,7 @@ def test_create_dialogs_render_bontas_elott_rogzitett_referenciakkal(
                 f"{nev}/{kepnev}: eltérő szélesség, "
                 f"aktuális={aktualis.width()}, referencia={referencia.width()}"
             )
-            fajlvalaszto_popup = cel.startswith("file:") and kepnev.startswith(
+            fajlvalaszto_popup = nev in _FAJLVALASZTOK and kepnev.startswith(
                 "felugro-"
             )
             if fajlvalaszto_popup:
