@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.264] - 2026-10-27
+
+- A képművelet-vezérlő kódja hat témarészre (album, effekt-vágólap, átnevezés, forgatás és tükrözés, ini-írás, XMP) került, a felület és a működés változatlan. (#6023).
+- A főablak arcszámlálói a program bezárásakor nem írnak hibát a naplóba. (#6039).
+
 ## [0.9.263] - 2026-10-27
 
 - A főablak és a fotónéző képernyőkép-őre 30 állapotot rögzít (könyvtár, személyalbum, mind a nyolc felső menü, eszköztár, tálca, diavetítés, szerkesztőfülek), a főablak szétbontása előtti mércéül. (#5954).
