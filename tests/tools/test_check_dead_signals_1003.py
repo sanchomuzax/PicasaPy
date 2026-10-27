@@ -544,3 +544,60 @@ def test_az_alapallapot_minden_tetelehez_van_indoklas() -> None:
     tetelek = guard.load_baseline(guard._DEFAULT_BASELINE)
     assert tetelek, "az alapállapot nem lehet üres, amíg van néma jelzés"
     assert all(indoklas.strip() for indoklas in tetelek.values())
+
+
+def test_a_masik_modul_aliasan_at_irt_notify_is_ertesito(tmp_path: Path) -> None:
+    """`notify=_Jelzesek.kesz` a jelzésmixin `kesz`-ét teszi értesítővé (#5957)."""
+    gyoker = tmp_path / "src"
+    gyoker.mkdir()
+    (gyoker / "szerk_signals.py").write_text(
+        """\
+from PySide6.QtCore import Signal
+
+
+class SzerkSignalsMixin:
+    kesz = Signal()
+""",
+        encoding="utf-8",
+    )
+    (gyoker / "szerk_vagas_mixin.py").write_text(
+        """\
+from PySide6.QtCore import Property
+
+from .szerk_signals import SzerkSignalsMixin as _Jelzesek
+
+
+class SzerkVagasMixin:
+    @Property(bool, notify=_Jelzesek.kesz)
+    def ready(self):
+        return True
+""",
+        encoding="utf-8",
+    )
+
+    assert _nema_kulcsok(gyoker) == set()
+
+
+def test_a_jelzesmodul_jelzeset_a_gazda_vezerlo_neven_fogadjak(tmp_path: Path) -> None:
+    """A `szerk_controller_signals` jelzése a `szerkController` QML-néven él (#5957)."""
+    gyoker = tmp_path / "src"
+    gyoker.mkdir()
+    (gyoker / "szerk_controller_signals.py").write_text(
+        """\
+from PySide6.QtCore import Signal
+
+
+class SzerkControllerSignalsMixin:
+    mentve = Signal()
+
+    def ment(self):
+        self.mentve.emit()
+""",
+        encoding="utf-8",
+    )
+    (gyoker / "Fo.qml").write_text(
+        "Item { Connections { target: szerkController; function onMentve() {} } }",
+        encoding="utf-8",
+    )
+
+    assert _nema_kulcsok(gyoker) == set()
