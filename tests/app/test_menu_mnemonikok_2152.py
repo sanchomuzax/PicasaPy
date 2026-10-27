@@ -38,23 +38,38 @@ import re
 from pathlib import Path
 
 import picasapy.app as app_csomag
+from support.menubar_components_6016 import menu_sources
 
-_QML = (
-    Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
-).read_text(encoding="utf-8")
+_QML = menu_sources()
 _TS = (
     Path(app_csomag.__file__).parent / "i18n" / "picasapy_hu.ts"
 ).read_text(encoding="utf-8")
 
 
 def _forditasok() -> dict[str, str]:
-    m = re.search(r"<name>PicasaMenuBar</name>(.*?)</context>", _TS, re.S)
-    assert m, "nincs PicasaMenuBar kontextus a fordításban"
+    kontextusok = (
+        "PicasaMenuBar",
+        "PicasaFileMenu",
+        "PicasaEditMenu",
+        "PicasaViewMenu",
+        "PicasaFolderMenu",
+        "PicasaFolderViewMenu",
+        "PicasaPictureMenu",
+        "PicasaCreateMenu",
+        "PicasaToolsMenu",
+        "PicasaHelpMenu",
+    )
+    blokkok = [
+        m.group(1)
+        for nev in kontextusok
+        if (m := re.search(rf"<name>{nev}</name>(.*?)</context>", _TS, re.S))
+    ]
+    assert len(blokkok) == len(kontextusok), "hiányos menü-fordítási kontextusok"
     return {
         html.unescape(a): html.unescape(b)
         for a, b in re.findall(
             r"<source>([^<]*)</source>\s*(?:<extracomment>[^<]*</extracomment>\s*)?<translation>([^<]*)</translation>",
-            m.group(1),
+            "\n".join(blokkok),
         )
     }
 

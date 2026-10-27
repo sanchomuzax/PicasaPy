@@ -19,7 +19,7 @@ LEGACY_ACCELERATOR_EXCEPTIONS = {
     ("EditorPanel", "Filtered B&W"),
     ("PublishPanel", "Choose folders & albums to back up"),
     ("PhotoViewer", "Filtered B&W"),
-    ("PicasaMenuBar", "Re&verse sort"),
+    ("PicasaFolderViewMenu", "Re&verse sort"),
     ("EditorEffectsTab1", "Focal B&W"),
     ("EditorEffectsTab1", "Filtered B&W"),
     (

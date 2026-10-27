@@ -10423,179 +10423,6 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
     <context>
         <name>PicasaMenuBar</name>
         <message>
-            <source>My &amp;Computer</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;رایانهٔ من</translation>
-        </message>
-        <message>
-            <source>My &amp;Pictures</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;تصاویر من</translation>
-        </message>
-        <message>
-            <source>My Do&amp;cuments</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;اسناد من</translation>
-        </message>
-        <message>
-            <source>&amp;Desktop</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;میزکار</translation>
-        </message>
-        <message>
-            <source>&amp;Shortcuts</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::Shortcuts;stringres:eMenuView::Shortcuts</extracomment>
-            <translation>‏&amp;میانبرها</translation>
-        </message>
-        <message>
-            <source>Sort &amp;People by Name</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYNAME</extracomment>
-            <translation>‏مرتب‌سازی &amp;افراد بر اساس نام</translation>
-        </message>
-        <message>
-            <source>Sort People by &amp;Amount</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNT</extracomment>
-            <translation>‏مرتب‌سازی افراد بر اساس &amp;تعداد</translation>
-        </message>
-        <message>
-            <source>Sort People by Top &amp;10</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNTTOP10</extracomment>
-            <translation>‏مرتب‌سازی افراد بر اساس &amp;10 مورد برتر</translation>
-        </message>
-        <message>
-            <source>Write faces to XMP...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_WRITE_XMP_FACES</extracomment>
-            <translation>‏نوشتن چهره‌ها در XMP…</translation>
-        </message>
-        <message>
-            <source>Publish via FTP...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
-            <translation>‏انتشار از طریق FTP...</translation>
-        </message>
-        <message>
-            <source>Show &amp;tag as album...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_SEARCHTOKEN</extracomment>
-            <translation>‏نمایش &amp;نشان به‌عنوان آلبوم...</translation>
-        </message>
-        <message>
-            <source>&amp;Passport photo...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_PASSPORT</extracomment>
-            <translation>‏&amp;عکس گذرنامه…</translation>
-        </message>
-        <message>
-            <source>Save &amp;search results...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_SAVESEARCH</extracomment>
-            <translation>‏ذخیره &amp;نتایج جستجو…</translation>
-        </message>
-        <message>
-            <source>Search for...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>جست‌وجو برای…</translation>
-        </message>
-        <message>
-            <source>&amp;Red</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_RED</extracomment>
-            <translation>‏&amp;قرمز</translation>
-        </message>
-        <message>
-            <source>&amp;Orange</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_ORANGE</extracomment>
-            <translation>‏&amp;نارنجی</translation>
-        </message>
-        <message>
-            <source>&amp;Yellow</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_YELLOW</extracomment>
-            <translation>‏&amp;زرد</translation>
-        </message>
-        <message>
-            <source>&amp;Green</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_GREEN</extracomment>
-            <translation>‏&amp;سبز</translation>
-        </message>
-        <message>
-            <source>&amp;Blue</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_BLUE</extracomment>
-            <translation>‏&amp;آبی</translation>
-        </message>
-        <message>
-            <source>&amp;Purple</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_PURPLE</extracomment>
-            <translation>‏&amp;بنفش</translation>
-        </message>
-        <message>
-            <source>Show Duplicate Files</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_DUPES</extracomment>
-            <translation>نمایش فایل‌های تکراری</translation>
-        </message>
-        <message>
-            <source>Choose database location...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_MOVE_DATABASE</extracomment>
-            <translation>انتخاب مکان پایگاه داده...</translation>
-        </message>
-        <message>
-            <source>Save &amp;As...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEAS</extracomment>
-            <translation>‏ذخیره &amp;به عنوان...</translation>
-        </message>
-        <message>
-            <source>Save a Cop&amp;y</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEACOPY</extracomment>
-            <translation>‏ذخیره یک &amp;کپی</translation>
-        </message>
-        <message>
-            <source>Clear Geotags</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
-            <translation>پاک کردن برچسب‌های مکان</translation>
-        </message>
-        <message>
-            <source>Sort by &amp;Creation Date</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;مرتب‌سازی بر اساس تاریخ ایجاد</translation>
-        </message>
-        <message>
-            <source>Sort by &amp;Recent Changes</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_VIEWBYRECENT;stringres:eMenuView::ID_VIEWBYRECENT</extracomment>
-            <translation>‏مرتب‌سازی بر اساس تغییرات &amp;اخیر</translation>
-        </message>
-        <message>
-            <source>Sort by &amp;Size</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_VIEWBYSIZE;stringres:eMenuView::ID_VIEWBYSIZE</extracomment>
-            <translation>‏مرتب‌سازی براساس &amp;اندازه</translation>
-        </message>
-        <message>
-            <source>Sort by &amp;Name</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;مرتب‌سازی بر اساس نام</translation>
-        </message>
-        <message>
-            <source>Re&amp;verse sort</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_VIEWREVERSE;stringres:eMenuView::ID_VIEWREVERSE</extracomment>
-            <translation>‏&amp;مرتب‌سازی معکوس</translation>
-        </message>
-        <message>
             <source>Remove from Album</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_FILE_DELETEFROMDISK</extracomment>
@@ -10608,63 +10435,9 @@ picasapy-origin-key: stringres:PplAlbumPhoto::ID_FILE_DELETEFROMDISK</extracomme
             <translation>‏&amp;حذف از آلبوم افراد</translation>
         </message>
         <message>
-            <source>Find Faces...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CAlbumList::Finding0</extracomment>
-            <translation>اسکن چهره‌ها...</translation>
-        </message>
-        <message>
             <source>&amp;Search for</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>‏&amp;جست‌وجوی…</translation>
-        </message>
-        <message>
-            <source>&amp;Red</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_RED</extracomment>
-            <translation>‏&amp;قرمز</translation>
-        </message>
-        <message>
-            <source>&amp;Orange</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_ORANGE</extracomment>
-            <translation>‏&amp;نارنجی</translation>
-        </message>
-        <message>
-            <source>&amp;Yellow</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_YELLOW</extracomment>
-            <translation>‏&amp;زرد</translation>
-        </message>
-        <message>
-            <source>&amp;Green</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_GREEN</extracomment>
-            <translation>‏&amp;سبز</translation>
-        </message>
-        <message>
-            <source>&amp;Blue</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_BLUE</extracomment>
-            <translation>‏&amp;آبی</translation>
-        </message>
-        <message>
-            <source>&amp;Purple</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_S_PURPLE</extracomment>
-            <translation>‏&amp;بنفش</translation>
-        </message>
-        <message>
-            <source>Export to Google Earth File</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_EXPORT_EARTH</extracomment>
-            <translation>‏صادر کردن در فایل Google Earth</translation>
-        </message>
-        <message>
-            <source>View in Google Earth...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_VIEW_EARTH</extracomment>
-            <translation>‏مشاهده در Google Earth…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
@@ -10674,274 +10447,10 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>‏ورود به سیستم با حساب Google</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="37" />
-            <source>&amp;File</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile</extracomment>
-            <translation>‏&amp;فایل</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="38" />
-            <source>&amp;New Album...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;آلبوم جدید…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="39" />
-            <source>Add Folder to PicasaPy...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_TOOLS_INCLUDEEXCLUDEFOLDERS</extracomment>
-            <translation>‏افزودن پوشه به PicasaPy...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="40" />
-            <source>Add &amp;File to PicasaPy...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
-            <translation>‏افزودن &amp;فایل به PicasaPy...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="41" />
-            <source>&amp;Import From...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_IMPORTPICTURE</extracomment>
-            <translation>‏&amp;وارد کردن از…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="45" />
-            <source>&amp;Rename...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;تغییر نام…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="49" />
-            <source>&amp;Save</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;ذخیره</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="50" />
-            <source>Rever&amp;t</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;بازگردانی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="53" />
-            <source>Export Pi&amp;cture to Folder...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_EXPORTTOFOLDER</extracomment>
-            <translation>‏صادر کردن &amp;عکس به پوشه…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="60" />
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="232" />
-            <source>Locate on Disk</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>یافتن در دیسک</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="66" />
             <source>Delete from Disk</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>حذف از دیسک</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
-            <source>&amp;Print...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;چاپ…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="72" />
-            <source>&amp;E-Mail...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;ایمیل…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="74" />
-            <source>E&amp;xit</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;خروج</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="77" />
-            <source>&amp;Edit</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuEdit</extracomment>
-            <translation>‏&amp;ویرایش</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="295" />
-            <source>Undo Paste All Effects</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>واگرد چسباندن همهٔ جلوه‌ها</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="301" />
-            <source>Undo Batch Edit</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>واگرد ویرایش گروهی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="80" />
-            <source>C&amp;opy All Effects</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_COPYALLEFFECTS</extracomment>
-            <translation>‏تهیه &amp;کپی از همه جلوه‌ها</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="86" />
-            <source>Paste All E&amp;ffects</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTEALLEFFECTS</extracomment>
-            <translation>‏جای‌گذاری همه &amp;جلوه‌ها</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92" />
-            <source>Select All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>انتخاب همه</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="96" />
-            <source>Select &amp;Starred</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuEdit::ID_SELECTSTAR</extracomment>
-            <translation>‏انتخاب موارد &amp;ستاره‌دار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="99" />
-            <source>&amp;Invert Selection</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_SELECT_INVERT</extracomment>
-            <translation>‏&amp;معکوس کردن انتخاب</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="101" />
-            <source>C&amp;lear Selection</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;پاک کردن انتخاب</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106" />
-            <source>&amp;View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView</extracomment>
-            <translation>‏&amp;نما</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="107" />
-            <source>&amp;Library View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_LIGHTBOXVIEW</extracomment>
-            <translation>‏مشاهده &amp;مجموعه عکس</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="110" />
-            <source>S&amp;mall Thumbnails</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_SMALLTHUMBNAILS</extracomment>
-            <translation>‏"تصاویر کوچک" &amp;کوچک</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="114" />
-            <source>&amp;Normal Thumbnails</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_LARGETHUMBNAILS</extracomment>
-            <translation>‏تصاویر کوجک &amp;عادی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="117" />
-            <source>&amp;Edit View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_PICTURE</extracomment>
-            <translation>‏&amp;مشاهده ویرایش</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="121" />
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="249" />
-            <source>Properties</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ویژگی‌ها</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="128" />
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="204" />
-            <source>&amp;Tags</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;نشان‌ها</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="133" />
-            <source>People</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>افراد</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="134" />
-            <source>&amp;Places</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;مکان‌ها</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="138" />
-            <source>&amp;Slideshow</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;نمایش اسلاید</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141" />
-            <source>Ti&amp;meline</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;خط زمانی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="144" />
-            <source>&amp;Hidden Pictures</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_SHOWHIDDEN</extracomment>
-            <translation>‏عکس‌های &amp;پنهان</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152" />
-            <source>Dark Theme</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>تم تیره</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="150" />
-            <source>&amp;Folder View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::FolderView</extracomment>
-            <translation>‏&amp;مشاهده پوشه</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Flat Folder View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_FOLDERS</extracomment>
-            <translation>‏&amp;نمای پوشه مسطح</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Tree View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_ALL</extracomment>
-            <translation>‏&amp;نمای درختی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Simplified Tree View</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_VIEW_WATCHED;stringres:eMenuView::ID_VIEW_WATCHED</extracomment>
-            <translation>‏&amp;نمای درختی ساده شده</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>Show &amp;Thumbnails in Library</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumList::ID_VIEW_THUMBNAILS;stringres:eMenuView::ID_VIEW_THUMBNAILS</extracomment>
-            <translation>‏نمایش &amp;تصاویر کوچک در عکسخانه</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152" />
@@ -10977,268 +10486,6 @@ picasapy-origin-key: stringres:AlbumList::ID_VIEWREVERSE;stringres:eMenuView::ID
             <translation>‏&amp;مرتب‌سازی معکوس</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="184" />
-            <source>Thumbnail &amp;Caption</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ThumbnailCaption</extracomment>
-            <translation>‏&amp;شرح عکس تصویر کوچک</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="186" />
-            <source>None</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
-            <translation>هیچکدام</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="192" />
-            <source>&amp;Filename</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;نام فایل</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="198" />
-            <source>&amp;Caption</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;شرح</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="210" />
-            <source>&amp;Resolution</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_CAPRES</extracomment>
-            <translation>‏&amp;تفکیک‌پذیری:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="218" />
-            <source>F&amp;older</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;پوشه</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1636" />
-            <source>&amp;Album</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;آلبوم</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="219" />
-            <source>&amp;Edit Description...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuLabelFolder::ID_ALBUM_EDITCAPTIONS</extracomment>
-            <translation>‏&amp;ویرایش توضیح...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1640" />
-            <source>&amp;Edit Album Description...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_ALBUM_EDITCAPTIONS</extracomment>
-            <translation>‏&amp; ویرایش توضیحات آلبوم …</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="222" />
-            <source>&amp;View Slideshow</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuLabelFolder::ID_ALBUM_SLIDESHOW</extracomment>
-            <translation>‏&amp;مشاهده نمایش اسلاید</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="227" />
-            <source>Refresh &amp;Thumbnails</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;بازآوری تصاویر کوچک</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="230" />
-            <source>&amp;Sort By</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuLabelFolder::SortBy</extracomment>
-            <translation>‏&amp;مرتب‌سازی براساس</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="233" />
-            <source>&amp;Remove from PicasaPy...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;حذف از PicasaPy…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="236" />
-            <source>&amp;Picture</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;عکس</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="237" />
-            <source>&amp;View and Edit</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;مشاهده و ویرایش</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="238" />
-            <source>&amp;Batch Edit</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuPicture::BatchEdit</extracomment>
-            <translation>‏&amp;ویرایش دسته‌ای</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="253" />
-            <source>A&amp;uto Contrast</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;کنتراست خودکار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="259" />
-            <source>&amp;Auto Color</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;رنگ خودکار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265" />
-            <source>Auto Red Eye Correction</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_AUTO_REDEYE</extracomment>
-            <translation>اصلاح سرخی چشم خودکار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="271" />
-            <source>I'm Feeling Lucky</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>حس خوش‌شانسی دارم</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="277" />
-            <source>S&amp;harpen</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;افزایش وضوح</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="283" />
-            <source>&amp;Film Grain</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;دانه‌دانه شدن فیلم</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="289" />
-            <source>&amp;Warmify</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;گرم‌کردن رنگ‌ها</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="296" />
-            <source>R&amp;otate Clockwise</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;چرخش ساعت‌گرد</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="302" />
-            <source>Rotate &amp;Counterclockwise</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;چرخش پادساعت‌گرد</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="313" />
-            <source>Show Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_SHOW_TEXT;tooltips:Label(editpanel/showtextlabel)</extracomment>
-            <translation>نمایش نوشتار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="314" />
-            <source>Hide Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_HIDE_TEXT</extracomment>
-            <translation>پنهان کردن نوشتار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="239" />
-            <source>Undo &amp;All Edits</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;واگرد همهٔ ویرایش‌ها</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="243" />
-            <source>&amp;Hide</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;پنهان کردن</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="254" />
-            <source>&amp;Create</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;ایجاد</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="255" />
-            <source>Make a &amp;Poster...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;ساخت پوستر…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="256" />
-            <source>&amp;Picture Collage...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
-            <translation>‏&amp;کلاژ عکس...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="257" />
-            <source>&amp;Movie</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;فیلم</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="260" />
-            <source>&amp;Tools</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;ابزارها</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="262" />
-            <source>&amp;Folder Manager...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;مدیریت پوشه‌ها…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265" />
-            <source>People Manager...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_CONTACTMGR</extracomment>
-            <translation>مدیر افراد...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="267" />
-            <source>&amp;Back Up Pictures...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_BACKUP</extracomment>
-            <translation>‏تهیهٔ نسخهٔ &amp;پشتیبان از عکس‌ها…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="268" />
-            <source>Adjust &amp;Date and Time...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_ADJUST_TIMESTAMP</extracomment>
-            <translation>‏تنظیم &amp;تاریخ و زمان…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="270" />
-            <source>&amp;Options...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;گزینه‌ها…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="273" />
-            <source>&amp;Help</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;راهنما</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="274" />
-            <source>&amp;Help Contents and Index</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuHelp::ID_HELP_DEFAULT</extracomment>
-            <translation>‏&amp;راهنمای محتواها و فهرست</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="275" />
             <source>&amp;Keyboard Shortcuts</source>
             <extracomment>picasapy-origin: picasa
@@ -11246,136 +10493,10 @@ picasapy-origin-key: stringres:eMenuHelp::ID_HELP_KEYBOARD_SHORTCUTS</extracomme
             <translation>‏میانبرهای &amp;صفحه کلید</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="277" />
-            <source>&amp;Check for Updates</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuHelp::ID_HELP_CHECK_FOR_UPDATES</extracomment>
-            <translation>‏&amp;بررسی برای وجود به‌روزرسانی‌ها</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="281" />
-            <source>Performance Monitor</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>پایشگر کارایی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1291" />
-            <source>Test Mode (logs the next startup)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>حالت آزمایش (ثبت گزارش در اجرای بعدی)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1303" />
-            <source>Send Log...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ارسال گزارش…</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="58" />
             <source>TEST MODE — logging startup</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>حالت آزمایش — ثبت گزارش هنگام اجرا</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="287" />
-            <source>About PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>دربارهٔ PicasaPy</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="748" />
-            <source>Import from Google Photos...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_GETMYSTUFF_ES</extracomment>
-            <translation>‏وارد کردن از Google Photos…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2429" />
-            <source>Upload to Google &amp;Photos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_UPLOAD</extracomment>
-            <translation>‏&amp;بارگذاری در Google Photos</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2435" />
-            <source>Upload to a Collaborative Web Album</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_COLLAB</extracomment>
-            <translation>آپلود در یک آلبوم وب مشارکتی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2441" />
-            <source>Upload to &amp;YouTube</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_YOUTUBE</extracomment>
-            <translation>‏آپلود در &amp;YouTube</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92" />
-            <source>&amp;Open File(s) in an Editor</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPENINANEDITOR</extracomment>
-            <translation>‏&amp;باز کردن فایل(ها) در یک ویرایشگر</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="95" />
-            <source>Mo&amp;ve to New Folder...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;انتقال به پوشهٔ جدید…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106" />
-            <source>Save &amp;As...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEAS</extracomment>
-            <translation>‏ذخیره &amp;به عنوان...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="107" />
-            <source>Save a Cop&amp;y</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEACOPY</extracomment>
-            <translation>‏ذخیره یک &amp;کپی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="132" />
-            <source>Order Prin&amp;ts...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuFile::ID_FILE_EPROCESS</extracomment>
-            <translation>‏سفارش &amp;چاپ‌ها…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="139" />
-            <source>Cu&amp;t</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;برش</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="140" />
-            <source>&amp;Copy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;کپی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141" />
-            <source>&amp;Paste</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Address::ID_PASTE;stringres:eMenuEdit::ID_PASTE</extracomment>
-            <translation>‏&amp;جای‌گذاری</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="157" />
-            <source>Copy Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_COPYTEXT</extracomment>
-            <translation>تهیه رونوشت از نوشتار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="158" />
-            <source>Paste Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTETEXT</extracomment>
-            <translation>جای‌گذاری نوشتار</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
@@ -11399,164 +10520,10 @@ picasapy-origin-key: stringres:CDGo::ReplaceButton;stringres:CTextEditNode::conf
             <translation>لغو</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="212" />
-            <source>Show Edit Controls</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_EDIT</extracomment>
-            <translation>نمایش کنترل‌های ویرایش</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="225" />
-            <source>Search &amp;Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_SEARCHVIEW</extracomment>
-            <translation>‏&amp;گزینه‌های جستجو</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="228" />
-            <source>Small &amp;Pictures</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_SMALL</extracomment>
-            <translation>‏&amp;عکس‌های کوچک</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="237" />
-            <source>Use Color Management</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
-            <translation>استفاده از مدیریت رنگ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="249" />
-            <source>&amp;Display Mode</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::DisplayMode</extracomment>
-            <translation>‏حالت&amp;نمایش</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;Automatic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;خودکار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;24-bit</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_NORMAL</extracomment>
-            <translation>‏&amp;24 بیت</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;16-bit (dithered)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_16</extracomment>
-            <translation>‏&amp;۱۶ بیت (ترکیب رنگ)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;Remote Desktop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_RDESK</extracomment>
-            <translation>‏&amp;دسک‌تاپ از راه دور</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;LCD Whitepoint</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_LCD</extracomment>
-            <translation>‏&amp;تنظیم LCD</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;Projector Mode</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_PROJECTOR</extracomment>
-            <translation>‏&amp;حالت پروژکتور</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;Show overflow pixels</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_OV</extracomment>
-            <translation>‏&amp;نمایش پیکسل سرریز</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;Mac Gamma (1.6)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_MAC</extracomment>
-            <translation>‏&amp;گاما (1.6) در Mac</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>Linear &amp;Gamma (2.2)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuView::ID_VIEW_LINEAR</extracomment>
-            <translation>‏گامای &amp;خطی (۲/۲)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1850" />
-            <source>&amp;Sepia</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;سپیا</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>Sepia</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>سپیا</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
-            <source>&amp;Black and White</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;سیاه و سفید</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="374" />
-            <source>&amp;Unhide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPicture::ID_PICTURE_UNHIDE</extracomment>
-            <translation>‏&amp;نمایش مجدد</translation>
-        </message>
-        <message>
             <source>Show</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPicture::ID_PICTURE_UNHIDE</extracomment>
             <translation>‏&amp;نمایش مجدد</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="377" />
-            <source>Print Contact Sheet...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET</extracomment>
-            <translation>‏&amp;چاپ برگه کنتاکت...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="378" />
-            <source>E&amp;xport as HTML Page...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;صادر کردن به‌صورت صفحهٔ HTML…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="384" />
-            <source>&amp;Move...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;انتقال…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="385" />
-            <source>&amp;Delete...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;حذف…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="406" />
-            <source>Reset &amp;Faces</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMenuPicture::ID_PICTURE_RESET_FACES</extracomment>
-            <translation>‏بازنشانی &amp;چهره‌ها</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" />
@@ -11587,11 +10554,38 @@ picasapy-origin-key: confirm:confirm/yes.title;stringres:CMakeFaceMoviePanel::Ye
             <translation>بله</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="416" />
-            <source>Set as &amp;Desktop...</source>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="455" />
+            <source>Find Duplicates...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>یافتن موارد تکراری…</translation>
+        </message>
+        <message>
+            <source>Move Database...</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuCreate::ID_WALLPAPER</extracomment>
-            <translation>‏تنظیم به‌عنوان &amp;دسک‌تاپ...</translation>
+picasapy-origin-key: move_database:move_database/window1.title</extracomment>
+            <translation>انتقال پایگاه داده</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaCreateMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="254" />
+            <source>&amp;Create</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;ایجاد</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="257" />
+            <source>&amp;Movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;فیلم</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="256" />
+            <source>&amp;Picture Collage...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
+            <translation>‏&amp;کلاژ عکس...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="425" />
@@ -11605,12 +10599,6 @@ picasapy-origin-key: stringres:eMenuCreate::ID_WALLPAPER</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuCreate::ID_BURNCD</extracomment>
             <translation>‏ایجاد یک CD &amp;هدیه...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="434" />
-            <source>New Movie...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>فیلم جدید…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1947" />
@@ -11627,11 +10615,799 @@ picasapy-origin-key: stringres:eMenuCreateMovie::ID_FACESRANDOM</extracomment>
             <translation>از آلبوم‌های افراد...</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="255" />
+            <source>Make a &amp;Poster...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;ساخت پوستر…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="434" />
+            <source>New Movie...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>فیلم جدید…</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="440" />
             <source>Publish to &amp;Blogger...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuCreate::ID_EXPORT_SENDTOBLOGGER</extracomment>
             <translation>‏انتشار در &amp;بلاگر...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="416" />
+            <source>Set as &amp;Desktop...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuCreate::ID_WALLPAPER</extracomment>
+            <translation>‏تنظیم به‌عنوان &amp;دسک‌تاپ...</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaEditMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="140" />
+            <source>&amp;Copy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;کپی</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="77" />
+            <source>&amp;Edit</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuEdit</extracomment>
+            <translation>‏&amp;ویرایش</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="99" />
+            <source>&amp;Invert Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_SELECT_INVERT</extracomment>
+            <translation>‏&amp;معکوس کردن انتخاب</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141" />
+            <source>&amp;Paste</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Address::ID_PASTE;stringres:eMenuEdit::ID_PASTE</extracomment>
+            <translation>‏&amp;جای‌گذاری</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="101" />
+            <source>C&amp;lear Selection</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;پاک کردن انتخاب</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="80" />
+            <source>C&amp;opy All Effects</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_COPYALLEFFECTS</extracomment>
+            <translation>‏تهیه &amp;کپی از همه جلوه‌ها</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="157" />
+            <source>Copy Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_COPYTEXT</extracomment>
+            <translation>تهیه رونوشت از نوشتار</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="139" />
+            <source>Cu&amp;t</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;برش</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="86" />
+            <source>Paste All E&amp;ffects</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTEALLEFFECTS</extracomment>
+            <translation>‏جای‌گذاری همه &amp;جلوه‌ها</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="158" />
+            <source>Paste Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuEdit::ID_EDIT_PASTETEXT</extracomment>
+            <translation>جای‌گذاری نوشتار</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="96" />
+            <source>Select &amp;Starred</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuEdit::ID_SELECTSTAR</extracomment>
+            <translation>‏انتخاب موارد &amp;ستاره‌دار</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92" />
+            <source>Select All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>انتخاب همه</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="301" />
+            <source>Undo Batch Edit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>واگرد ویرایش گروهی</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="295" />
+            <source>Undo Paste All Effects</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>واگرد چسباندن همهٔ جلوه‌ها</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaFileMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="72" />
+            <source>&amp;E-Mail...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;ایمیل…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="37" />
+            <source>&amp;File</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile</extracomment>
+            <translation>‏&amp;فایل</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="41" />
+            <source>&amp;Import From...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_IMPORTPICTURE</extracomment>
+            <translation>‏&amp;وارد کردن از…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="38" />
+            <source>&amp;New Album...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;آلبوم جدید…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="92" />
+            <source>&amp;Open File(s) in an Editor</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPENINANEDITOR</extracomment>
+            <translation>‏&amp;باز کردن فایل(ها) در یک ویرایشگر</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="71" />
+            <source>&amp;Print...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;چاپ…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="45" />
+            <source>&amp;Rename...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;تغییر نام…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="49" />
+            <source>&amp;Save</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;ذخیره</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="40" />
+            <source>Add &amp;File to PicasaPy...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_OPEN</extracomment>
+            <translation>‏افزودن &amp;فایل به PicasaPy...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="39" />
+            <source>Add Folder to PicasaPy...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_TOOLS_INCLUDEEXCLUDEFOLDERS</extracomment>
+            <translation>‏افزودن پوشه به PicasaPy...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="74" />
+            <source>E&amp;xit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;خروج</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="53" />
+            <source>Export Pi&amp;cture to Folder...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_EXPORTTOFOLDER</extracomment>
+            <translation>‏صادر کردن &amp;عکس به پوشه…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="748" />
+            <source>Import from Google Photos...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_GETMYSTUFF_ES</extracomment>
+            <translation>‏وارد کردن از Google Photos…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="60" />
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="232" />
+            <source>Locate on Disk</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>یافتن در دیسک</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="95" />
+            <source>Mo&amp;ve to New Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;انتقال به پوشهٔ جدید…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="132" />
+            <source>Order Prin&amp;ts...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_EPROCESS</extracomment>
+            <translation>‏سفارش &amp;چاپ‌ها…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="50" />
+            <source>Rever&amp;t</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;بازگردانی</translation>
+        </message>
+        <message>
+            <source>Save &amp;As...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEAS</extracomment>
+            <translation>‏ذخیره &amp;به عنوان...</translation>
+        </message>
+        <message>
+            <source>Save a Cop&amp;y</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuFile::ID_FILE_SAVEACOPY</extracomment>
+            <translation>‏ذخیره یک &amp;کپی</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaFolderMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1636" />
+            <source>&amp;Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;آلبوم</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;تاریخ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="385" />
+            <source>&amp;Delete...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;حذف…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1640" />
+            <source>&amp;Edit Album Description...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_EDITCAPTIONS</extracomment>
+            <translation>‏&amp; ویرایش توضیحات آلبوم …</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="219" />
+            <source>&amp;Edit Description...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuLabelFolder::ID_ALBUM_EDITCAPTIONS</extracomment>
+            <translation>‏&amp;ویرایش توضیح...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="243" />
+            <source>&amp;Hide</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;پنهان کردن</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="384" />
+            <source>&amp;Move...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;انتقال…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Name</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;نام</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="233" />
+            <source>&amp;Remove from PicasaPy...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;حذف از PicasaPy…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Reverse order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::ID_REVERSESORT</extracomment>
+            <translation>‏ترتیب &amp;معکوس</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Size</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;اندازه</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="230" />
+            <source>&amp;Sort By</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuLabelFolder::SortBy</extracomment>
+            <translation>‏&amp;مرتب‌سازی براساس</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="374" />
+            <source>&amp;Unhide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPicture::ID_PICTURE_UNHIDE</extracomment>
+            <translation>‏&amp;نمایش مجدد</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="222" />
+            <source>&amp;View Slideshow</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuLabelFolder::ID_ALBUM_SLIDESHOW</extracomment>
+            <translation>‏&amp;مشاهده نمایش اسلاید</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="378" />
+            <source>E&amp;xport as HTML Page...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;صادر کردن به‌صورت صفحهٔ HTML…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="218" />
+            <source>F&amp;older</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;پوشه</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="60" />
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="232" />
+            <source>Locate on Disk</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>یافتن در دیسک</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="377" />
+            <source>Print Contact Sheet...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuLabelFolder::ID_FILE_PRINTCONTACTSHEET</extracomment>
+            <translation>‏&amp;چاپ برگه کنتاکت...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>Recent &amp;changes</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;تغییرات اخیر</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="227" />
+            <source>Refresh &amp;Thumbnails</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;بازآوری تصاویر کوچک</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaFolderViewMenu</name>
+        <message>
+            <source>&amp;Desktop</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;میزکار</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Flat Folder View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_FOLDERS</extracomment>
+            <translation>‏&amp;نمای پوشه مسطح</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="150" />
+            <source>&amp;Folder View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::FolderView</extracomment>
+            <translation>‏&amp;مشاهده پوشه</translation>
+        </message>
+        <message>
+            <source>&amp;Shortcuts</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::Shortcuts;stringres:eMenuView::Shortcuts</extracomment>
+            <translation>‏&amp;میانبرها</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Simplified Tree View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_VIEW_WATCHED;stringres:eMenuView::ID_VIEW_WATCHED</extracomment>
+            <translation>‏&amp;نمای درختی ساده شده</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>&amp;Tree View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_ALL</extracomment>
+            <translation>‏&amp;نمای درختی</translation>
+        </message>
+        <message>
+            <source>My &amp;Computer</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;رایانهٔ من</translation>
+        </message>
+        <message>
+            <source>My &amp;Pictures</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;تصاویر من</translation>
+        </message>
+        <message>
+            <source>My Do&amp;cuments</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;اسناد من</translation>
+        </message>
+        <message>
+            <source>Re&amp;verse sort</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_VIEWREVERSE;stringres:eMenuView::ID_VIEWREVERSE</extracomment>
+            <translation>‏&amp;مرتب‌سازی معکوس</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>Show &amp;Thumbnails in Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_VIEW_THUMBNAILS;stringres:eMenuView::ID_VIEW_THUMBNAILS</extracomment>
+            <translation>‏نمایش &amp;تصاویر کوچک در عکسخانه</translation>
+        </message>
+        <message>
+            <source>Sort &amp;People by Name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYNAME</extracomment>
+            <translation>‏مرتب‌سازی &amp;افراد بر اساس نام</translation>
+        </message>
+        <message>
+            <source>Sort People by &amp;Amount</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNT</extracomment>
+            <translation>‏مرتب‌سازی افراد بر اساس &amp;تعداد</translation>
+        </message>
+        <message>
+            <source>Sort People by Top &amp;10</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_PEOPLEBYAMOUNTTOP10</extracomment>
+            <translation>‏مرتب‌سازی افراد بر اساس &amp;10 مورد برتر</translation>
+        </message>
+        <message>
+            <source>Sort by &amp;Creation Date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;مرتب‌سازی بر اساس تاریخ ایجاد</translation>
+        </message>
+        <message>
+            <source>Sort by &amp;Name</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;مرتب‌سازی بر اساس نام</translation>
+        </message>
+        <message>
+            <source>Sort by &amp;Recent Changes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_VIEWBYRECENT;stringres:eMenuView::ID_VIEWBYRECENT</extracomment>
+            <translation>‏مرتب‌سازی بر اساس تغییرات &amp;اخیر</translation>
+        </message>
+        <message>
+            <source>Sort by &amp;Size</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumList::ID_VIEWBYSIZE;stringres:eMenuView::ID_VIEWBYSIZE</extracomment>
+            <translation>‏مرتب‌سازی براساس &amp;اندازه</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaHelpMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="277" />
+            <source>&amp;Check for Updates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_CHECK_FOR_UPDATES</extracomment>
+            <translation>‏&amp;بررسی برای وجود به‌روزرسانی‌ها</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="273" />
+            <source>&amp;Help</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;راهنما</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="274" />
+            <source>&amp;Help Contents and Index</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_DEFAULT</extracomment>
+            <translation>‏&amp;راهنمای محتواها و فهرست</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="275" />
+            <source>&amp;Keyboard Shortcuts</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_KEYBOARD_SHORTCUTS</extracomment>
+            <translation>‏میانبرهای &amp;صفحه کلید</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="287" />
+            <source>About PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>دربارهٔ PicasaPy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="482" />
+            <source>Online Information</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_PICASA_README</extracomment>
+            <translation>‏&amp;مرا بخوان آنلاین</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="281" />
+            <source>Performance Monitor</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>پایشگر کارایی</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="481" />
+            <source>Picasa &amp;Forums</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_PICASA_FORUMS</extracomment>
+            <translation>‏تالارهای &amp;گفتمان</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="485" />
+            <source>Privacy Policy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: eula:eula/privacylink.title;stringres:INSTALLRES_PrivacyText;stringres:eMenuHelp::ID_HELP_PRIVACY</extracomment>
+            <translation>سیاست حفظ حریم خصوصی</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="483" />
+            <source>Product Release Notes</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_RELEASENOTES</extracomment>
+            <translation>‏&amp;نکات هنگام انتشار</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1303" />
+            <source>Send Log...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ارسال گزارش…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="486" />
+            <source>Terms of Service</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: eula:eula/toslink.title;stringres:INSTALLRES_TosText;stringres:XMP::UsageTerms;stringres:eMenuHelp::ID_HELP_TERMS</extracomment>
+            <translation>شرایط استفاده از خدمات</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1291" />
+            <source>Test Mode (logs the next startup)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>حالت آزمایش (ثبت گزارش در اجرای بعدی)</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaPictureMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="259" />
+            <source>&amp;Auto Color</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;رنگ خودکار</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="238" />
+            <source>&amp;Batch Edit</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuPicture::BatchEdit</extracomment>
+            <translation>‏&amp;ویرایش دسته‌ای</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Black and White</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;سیاه و سفید</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="283" />
+            <source>&amp;Film Grain</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;دانه‌دانه شدن فیلم</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="243" />
+            <source>&amp;Hide</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;پنهان کردن</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="236" />
+            <source>&amp;Picture</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;عکس</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="45" />
+            <source>&amp;Rename...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;تغییر نام…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="1850" />
+            <source>&amp;Sepia</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;سپیا</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="374" />
+            <source>&amp;Unhide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_UNHIDE;stringres:eMenuPicture::ID_PICTURE_UNHIDE</extracomment>
+            <translation>‏&amp;نمایش مجدد</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="237" />
+            <source>&amp;View and Edit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;مشاهده و ویرایش</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="289" />
+            <source>&amp;Warmify</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;گرم‌کردن رنگ‌ها</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="253" />
+            <source>A&amp;uto Contrast</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;کنتراست خودکار</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265" />
+            <source>Auto Red Eye Correction</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_AUTO_REDEYE</extracomment>
+            <translation>اصلاح سرخی چشم خودکار</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="314" />
+            <source>Hide Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_HIDE_TEXT</extracomment>
+            <translation>پنهان کردن نوشتار</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="271" />
+            <source>I'm Feeling Lucky</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>حس خوش‌شانسی دارم</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="121" />
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="249" />
+            <source>Properties</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ویژگی‌ها</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="296" />
+            <source>R&amp;otate Clockwise</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;چرخش ساعت‌گرد</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="406" />
+            <source>Reset &amp;Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMenuPicture::ID_PICTURE_RESET_FACES</extracomment>
+            <translation>‏بازنشانی &amp;چهره‌ها</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="302" />
+            <source>Rotate &amp;Counterclockwise</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;چرخش پادساعت‌گرد</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="277" />
+            <source>S&amp;harpen</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;افزایش وضوح</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="313" />
+            <source>Show Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuPicture::ID_PICTURE_SHOW_TEXT;tooltips:Label(editpanel/showtextlabel)</extracomment>
+            <translation>نمایش نوشتار</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="239" />
+            <source>Undo &amp;All Edits</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;واگرد همهٔ ویرایش‌ها</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaToolsMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="267" />
+            <source>&amp;Back Up Pictures...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_BACKUP</extracomment>
+            <translation>‏تهیهٔ نسخهٔ &amp;پشتیبان از عکس‌ها…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Black and White</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;سیاه و سفید</translation>
+        </message>
+        <message>
+            <source>&amp;Blue</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_S_BLUE</extracomment>
+            <translation>‏&amp;آبی</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="262" />
+            <source>&amp;Folder Manager...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;مدیریت پوشه‌ها…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="468" />
+            <source>&amp;Geotag</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;برچسب مکان</translation>
+        </message>
+        <message>
+            <source>&amp;Green</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_S_GREEN</extracomment>
+            <translation>‏&amp;سبز</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="270" />
+            <source>&amp;Options...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;گزینه‌ها…</translation>
+        </message>
+        <message>
+            <source>&amp;Orange</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_S_ORANGE</extracomment>
+            <translation>‏&amp;نارنجی</translation>
+        </message>
+        <message>
+            <source>&amp;Passport photo...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_PASSPORT</extracomment>
+            <translation>‏&amp;عکس گذرنامه…</translation>
+        </message>
+        <message>
+            <source>&amp;Purple</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_S_PURPLE</extracomment>
+            <translation>‏&amp;بنفش</translation>
+        </message>
+        <message>
+            <source>&amp;Red</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_S_RED</extracomment>
+            <translation>‏&amp;قرمز</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="260" />
+            <source>&amp;Tools</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;ابزارها</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="450" />
@@ -11640,10 +11416,46 @@ picasapy-origin-key: stringres:eMenuCreate::ID_EXPORT_SENDTOBLOGGER</extracommen
             <translation>‏&amp;مدیر بارگذاری…</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="455" />
-            <source>Find Duplicates...</source>
+            <source>&amp;Yellow</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_S_YELLOW</extracomment>
+            <translation>‏&amp;زرد</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="268" />
+            <source>Adjust &amp;Date and Time...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_ADJUST_TIMESTAMP</extracomment>
+            <translation>‏تنظیم &amp;تاریخ و زمان…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="463" />
+            <source>Batch Upload...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>یافتن موارد تکراری…</translation>
+            <translation>بارگذاری گروهی…</translation>
+        </message>
+        <message>
+            <source>Choose database location...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_MOVE_DATABASE</extracomment>
+            <translation>انتخاب مکان پایگاه داده...</translation>
+        </message>
+        <message>
+            <source>Clear Geotags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
+            <translation>پاک کردن برچسب‌های مکان</translation>
+        </message>
+        <message>
+            <source>Compact Database...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>فشرده‌سازی پایگاه‌داده…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="471" />
+            <source>Configure Buttons...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>پیکربندی دکمه‌ها…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="460" />
@@ -11659,24 +11471,6 @@ picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_CONFIG_SCREENSAVER</extracom
             <translation>پیکربندی محافظ صفحهٔ نمایش ...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="463" />
-            <source>Batch Upload...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>بارگذاری گروهی…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="467" />
-            <source>U&amp;pload</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;بارگذاری</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="468" />
-            <source>&amp;Geotag</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;برچسب مکان</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="469" />
             <source>Experimental</source>
             <extracomment>picasapy-origin: picasa
@@ -11684,45 +11478,21 @@ picasapy-origin-key: stringres:eMenuTools::Experimental</extracomment>
             <translation>تجربی</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="471" />
-            <source>Configure Buttons...</source>
+            <source>Export to Google Earth File</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_EXPORT_EARTH</extracomment>
+            <translation>‏صادر کردن در فایل Google Earth</translation>
+        </message>
+        <message>
+            <source>Find Faces...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumList::Finding0</extracomment>
+            <translation>اسکن چهره‌ها...</translation>
+        </message>
+        <message>
+            <source>Import from Picasa...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>پیکربندی دکمه‌ها…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="481" />
-            <source>Picasa &amp;Forums</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuHelp::ID_HELP_PICASA_FORUMS</extracomment>
-            <translation>‏تالارهای &amp;گفتمان</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="482" />
-            <source>Online Information</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuHelp::ID_HELP_PICASA_README</extracomment>
-            <translation>‏&amp;مرا بخوان آنلاین</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="483" />
-            <source>Product Release Notes</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuHelp::ID_HELP_RELEASENOTES</extracomment>
-            <translation>‏&amp;نکات هنگام انتشار</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="485" />
-            <source>Privacy Policy</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: eula:eula/privacylink.title;stringres:INSTALLRES_PrivacyText;stringres:eMenuHelp::ID_HELP_PRIVACY</extracomment>
-            <translation>سیاست حفظ حریم خصوصی</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="486" />
-            <source>Terms of Service</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: eula:eula/toslink.title;stringres:INSTALLRES_TosText;stringres:XMP::UsageTerms;stringres:eMenuHelp::ID_HELP_TERMS</extracomment>
-            <translation>شرایط استفاده از خدمات</translation>
+            <translation>وارد کردن از Picasa…</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="478" />
@@ -11732,9 +11502,45 @@ picasapy-origin-key: options:options/labelgroup25.title</extracomment>
             <translation>زبان:</translation>
         </message>
         <message>
-            <source>System Default (%1)</source>
+            <source>Manage Duplicates...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>پیش‌فرض سیستم (%1)</translation>
+            <translation>مدیریت موارد تکراری…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="265" />
+            <source>People Manager...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_CONTACTMGR</extracomment>
+            <translation>مدیر افراد...</translation>
+        </message>
+        <message>
+            <source>Publish via FTP...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_FTPWEB</extracomment>
+            <translation>‏انتشار از طریق FTP...</translation>
+        </message>
+        <message>
+            <source>Save &amp;search results...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_SAVESEARCH</extracomment>
+            <translation>‏ذخیره &amp;نتایج جستجو…</translation>
+        </message>
+        <message>
+            <source>Search for...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>جست‌وجو برای…</translation>
+        </message>
+        <message>
+            <source>Show &amp;tag as album...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_SEARCHTOKEN</extracomment>
+            <translation>‏نمایش &amp;نشان به‌عنوان آلبوم...</translation>
+        </message>
+        <message>
+            <source>Show Duplicate Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_DUPES</extracomment>
+            <translation>نمایش فایل‌های تکراری</translation>
         </message>
         <message>
             <source>System Default</source>
@@ -11743,56 +11549,279 @@ picasapy-origin-key: stringres:Lang::sys</extracomment>
             <translation>پیش‌فرض سیستم</translation>
         </message>
         <message>
-            <source>Move Database...</source>
+            <source>System Default (%1)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>پیش‌فرض سیستم (%1)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="467" />
+            <source>U&amp;pload</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;بارگذاری</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2441" />
+            <source>Upload to &amp;YouTube</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: move_database:move_database/window1.title</extracomment>
-            <translation>انتقال پایگاه داده</translation>
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_YOUTUBE</extracomment>
+            <translation>‏آپلود در &amp;YouTube</translation>
         </message>
         <message>
-            <source>Compact Database...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>فشرده‌سازی پایگاه‌داده…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Date</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;تاریخ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Name</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;نام</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Size</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;اندازه</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>&amp;Reverse order</source>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2429" />
+            <source>Upload to Google &amp;Photos</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::ID_REVERSESORT</extracomment>
-            <translation>‏ترتیب &amp;معکوس</translation>
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_UPLOAD</extracomment>
+            <translation>‏&amp;بارگذاری در Google Photos</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
-            <source>Recent &amp;changes</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>‏&amp;تغییرات اخیر</translation>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="2435" />
+            <source>Upload to a Collaborative Web Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_TOOLS_COLLAB</extracomment>
+            <translation>آپلود در یک آلبوم وب مشارکتی</translation>
         </message>
         <message>
-            <source>Manage Duplicates...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>مدیریت موارد تکراری…</translation>
+            <source>View in Google Earth...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_VIEW_EARTH</extracomment>
+            <translation>‏مشاهده در Google Earth…</translation>
         </message>
         <message>
-            <source>Import from Picasa...</source>
+            <source>Write faces to XMP...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_WRITE_XMP_FACES</extracomment>
+            <translation>‏نوشتن چهره‌ها در XMP…</translation>
+        </message>
+    </context>
+    <context>
+        <name>PicasaViewMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;16-bit (dithered)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_16</extracomment>
+            <translation>‏&amp;۱۶ بیت (ترکیب رنگ)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;24-bit</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_NORMAL</extracomment>
+            <translation>‏&amp;24 بیت</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Automatic</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>وارد کردن از Picasa…</translation>
+            <translation>‏&amp;خودکار</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Black and White</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;سیاه و سفید</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="198" />
+            <source>&amp;Caption</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;شرح</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="249" />
+            <source>&amp;Display Mode</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::DisplayMode</extracomment>
+            <translation>‏حالت&amp;نمایش</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="117" />
+            <source>&amp;Edit View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_PICTURE</extracomment>
+            <translation>‏&amp;مشاهده ویرایش</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="192" />
+            <source>&amp;Filename</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;نام فایل</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="144" />
+            <source>&amp;Hidden Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_SHOWHIDDEN</extracomment>
+            <translation>‏عکس‌های &amp;پنهان</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;LCD Whitepoint</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_LCD</extracomment>
+            <translation>‏&amp;تنظیم LCD</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="107" />
+            <source>&amp;Library View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_LIGHTBOXVIEW</extracomment>
+            <translation>‏مشاهده &amp;مجموعه عکس</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Mac Gamma (1.6)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_MAC</extracomment>
+            <translation>‏&amp;گاما (1.6) در Mac</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="114" />
+            <source>&amp;Normal Thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_LARGETHUMBNAILS</extracomment>
+            <translation>‏تصاویر کوجک &amp;عادی</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="134" />
+            <source>&amp;Places</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;مکان‌ها</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Projector Mode</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_PROJECTOR</extracomment>
+            <translation>‏&amp;حالت پروژکتور</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Remote Desktop</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_RDESK</extracomment>
+            <translation>‏&amp;دسک‌تاپ از راه دور</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="210" />
+            <source>&amp;Resolution</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_CAPRES</extracomment>
+            <translation>‏&amp;تفکیک‌پذیری:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>&amp;Show overflow pixels</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_OV</extracomment>
+            <translation>‏&amp;نمایش پیکسل سرریز</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="138" />
+            <source>&amp;Slideshow</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;نمایش اسلاید</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="128" />
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="204" />
+            <source>&amp;Tags</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;نشان‌ها</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="106" />
+            <source>&amp;View</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView</extracomment>
+            <translation>‏&amp;نما</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="152" />
+            <source>Dark Theme</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تم تیره</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>Linear &amp;Gamma (2.2)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_LINEAR</extracomment>
+            <translation>‏گامای &amp;خطی (۲/۲)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="186" />
+            <source>None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
+            <translation>هیچکدام</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="133" />
+            <source>People</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>افراد</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="121" />
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="249" />
+            <source>Properties</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ویژگی‌ها</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="110" />
+            <source>S&amp;mall Thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_SMALLTHUMBNAILS</extracomment>
+            <translation>‏"تصاویر کوچک" &amp;کوچک</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="225" />
+            <source>Search &amp;Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_SEARCHVIEW</extracomment>
+            <translation>‏&amp;گزینه‌های جستجو</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="250" />
+            <source>Sepia</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>سپیا</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="212" />
+            <source>Show Edit Controls</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_EDIT</extracomment>
+            <translation>نمایش کنترل‌های ویرایش</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="228" />
+            <source>Small &amp;Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_SMALL</extracomment>
+            <translation>‏&amp;عکس‌های کوچک</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="184" />
+            <source>Thumbnail &amp;Caption</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ThumbnailCaption</extracomment>
+            <translation>‏&amp;شرح عکس تصویر کوچک</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="141" />
+            <source>Ti&amp;meline</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>‏&amp;خط زمانی</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="237" />
+            <source>Use Color Management</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
+            <translation>استفاده از مدیریت رنگ</translation>
         </message>
     </context>
     <context>

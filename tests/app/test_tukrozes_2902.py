@@ -18,9 +18,10 @@ from PySide6.QtCore import QSettings
 
 from picasapy.render.flip import FLIP_HORIZONTAL, FLIP_VERTICAL
 from support.jpeg_factory import make_jpeg
+from support.menubar_components_6016 import menu_sources
 
 _QML = Path(picasapy.app.__file__).parent / "qml"
-_MENU = (_QML / "PicasaPy" / "PicasaMenuBar.qml").read_text(encoding="utf-8")
+_MENU = menu_sources()
 
 
 @pytest.fixture

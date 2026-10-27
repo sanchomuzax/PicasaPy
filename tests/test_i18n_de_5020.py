@@ -23,7 +23,7 @@ _MNEMONIC = re.compile(r"(?<!&)&(?!&)(?=\S)")
 # a gyorsbillentyű-jelölőt. A meglévő fordítások érintetlenül hagyása miatt
 # csak ezeknél nem követeljük meg a forrásszöveg jelölőjét.
 _EXISTING_MNEMONIC_EXCEPTIONS = {
-    ("PicasaMenuBar", "&Paste"),
+    ("PicasaEditMenu", "&Paste"),
     ("FolderContextMenu", "&Color"),
 }
 

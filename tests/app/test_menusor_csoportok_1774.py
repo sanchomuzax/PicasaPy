@@ -33,8 +33,9 @@ import re
 from pathlib import Path
 
 from tests.support.qml_blokk import kommentek_nelkul
+from support.menubar_components_6016 import menu_component_source
 
-_MENU_QML = Path(__file__).resolve().parents[2] / "src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml"
+_MENU_DIR = Path(__file__).resolve().parents[2] / "src/picasapy/app/qml/PicasaPy"
 
 #: Elválasztó a várt alakokban.
 SZ = "---"
@@ -299,7 +300,56 @@ def _alak() -> dict[str, list[str]]:
     `re.sub(r"//…")` nem ismerte a blokk-kommentet, és a sortöréseket sem
     tartotta meg — a `kommentek_nelkul` mindkettőt kezeli.
     """
-    forras = kommentek_nelkul(_MENU_QML.read_text(encoding="utf-8"))
+    view_source = menu_component_source("PicasaViewMenu.qml")
+    folder_view_source = menu_component_source("PicasaFolderViewMenu.qml")
+
+    def component_root(source: str) -> str:
+        kezdet = source.index("PicasaMenu {")
+        nyito = source.index("{", kezdet)
+        melyseg = 0
+        for veg in range(nyito, len(source)):
+            if source[veg] == "{":
+                melyseg += 1
+            elif source[veg] == "}":
+                melyseg -= 1
+                if melyseg == 0:
+                    return source[kezdet : veg + 1]
+        raise AssertionError("a menükomponens zárójele nem záródik be")
+
+    folder_view_instance = view_source.index("PicasaFolderViewMenu {")
+    instance_open = view_source.index("{", folder_view_instance)
+    depth = 0
+    for instance_end in range(instance_open, len(view_source)):
+        if view_source[instance_end] == "{":
+            depth += 1
+        elif view_source[instance_end] == "}":
+            depth -= 1
+            if depth == 0:
+                break
+    else:
+        raise AssertionError("a Mappanézet-komponens példánya nincs lezárva")
+    view_source = (
+        view_source[:folder_view_instance]
+        + component_root(folder_view_source)
+        + view_source[instance_end + 1 :]
+    )
+    forras = kommentek_nelkul(
+        "\n".join(
+            menu_component_source(name)
+            if name != "PicasaViewMenu.qml"
+            else view_source
+            for name in (
+                "PicasaFileMenu.qml",
+                "PicasaEditMenu.qml",
+                "PicasaViewMenu.qml",
+                "PicasaFolderMenu.qml",
+                "PicasaPictureMenu.qml",
+                "PicasaCreateMenu.qml",
+                "PicasaToolsMenu.qml",
+                "PicasaHelpMenu.qml",
+            )
+        )
+    )
     melyseg = 0
     verem: list[int] = []
     menuk: list[tuple[str, list[str]]] = []
@@ -423,13 +473,9 @@ class TestAMappanezetAlmenuSORRENDJE:
     """
 
     def _almenu(self) -> str:
-        from pathlib import Path
 
-        import picasapy.app
 
-        forras = (
-            Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
-        ).read_text(encoding="utf-8")
+        forras = menu_component_source("PicasaFolderViewMenu.qml")
         kezdet = forras.index('objectName: "menuViewFolderView"')
         nyito = forras.rindex("{", 0, kezdet)
         melyseg = 0

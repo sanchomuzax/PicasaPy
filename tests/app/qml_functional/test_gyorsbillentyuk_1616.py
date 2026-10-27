@@ -56,6 +56,7 @@ from PySide6.QtCore import QMetaObject, QObject, Qt
 from PySide6.QtTest import QTest
 
 import picasapy.app
+from support.menubar_components_6016 import menu_component_source, menu_sources
 
 _APP_DIR = Path(picasapy.app.__file__).parent
 _QML_DIR = _APP_DIR / "qml"
@@ -222,7 +223,7 @@ class TestUjAlbumMenupontEsCtrlN:
     def test_a_menupont_nem_placeholder_a_forrasban(self):
         # #2152: az `&` a MNEMONIK jelölése, nem a felirat tartalma —
         # ez a próba a GYORSBILLENTYŰT méri a feliratban.
-        forras = _MENU_QML.read_text(encoding="utf-8").replace("&", "")
+        forras = menu_component_source("PicasaFileMenu.qml").replace("&", "")
         tetel = re.search(
             r"MenuItem\s*\{[^}]*?menuFileNewAlbum[^}]*?\}", forras, re.S
         )
@@ -373,7 +374,7 @@ class TestSweepOr:
 
     def test_eles_menusav_minden_hirdetett_billentyuje_kotve_van(self):
         forrasok = _valos_qml_forrasok()
-        menu_forras = forrasok[str(_MENU_QML)]
+        menu_forras = menu_sources()
         hibak = _igeretszegesek(menu_forras, forrasok)
         assert not hibak, (
             "hirdetett, de sehol nem kötött gyorsbillentyű(k) a menüsávban: "
@@ -385,7 +386,7 @@ class TestSweepOr:
         hatókörön kívüli helyfoglaló tételén (Ctrl+X/C/V/I/3, F1, …)
         magától bukjon el — azok NEM ennek a jegynek a hatóköre."""
         forrasok = _valos_qml_forrasok()
-        menu_forras = forrasok[str(_MENU_QML)]
+        menu_forras = menu_sources()
         tetelek = list(_menu_tetelek(menu_forras))
         helyfoglalo_hirdetok = [t for t in tetelek if t["placeholder"]]
         # ⚠️ #1686: 8 → 7. A „Kijelölés megfordítása" (Ctrl+I) tétele ÉLŐVÉ
@@ -432,13 +433,14 @@ class TestSweepOr:
         soha nem létező billentyűt — az őrnek ezt el KELL kapnia. A
         forrást csak STRINGKÉNT mutáljuk, a lemezen lévő fájl változatlan."""
         forrasok = _valos_qml_forrasok()
-        menu_forras = forrasok[str(_MENU_QML)]
+        menu_forras = menu_sources()
         hamis = menu_forras.replace(
-            'MenuItem {\n            objectName: "menuFileNewAlbum"',
-            'MenuItem {\n            objectName: "menuHamisTeszt1616"\n'
-            '            text: qsTr("Hamis tétel") + "\\tCtrl+Zzzz"\n'
-            "        }\n"
-            '        MenuItem {\n            objectName: "menuFileNewAlbum"',
+            'PicasaMenu {\n    id: menuFile',
+            'PicasaMenu {\n    MenuItem {\n'
+            '        objectName: "menuHamisTeszt1616"\n'
+            '        text: qsTr("Hamis tétel") + "\\tCtrl+Zzzz"\n'
+            "    }\n"
+            "    id: menuFile",
             1,
         )
         assert hamis != menu_forras, "a mutáció mintája nem talált semmit"
@@ -466,7 +468,7 @@ class TestSweepOr:
         megjelölje az őr. A `Shortcut { ... }` blokkot a teljes tartalmával
         együtt távolítjuk el a menüsáv-forrás egy MÁSOLATÁBÓL."""
         forrasok = _valos_qml_forrasok()
-        menu_forras = forrasok[str(_MENU_QML)]
+        menu_forras = menu_sources()
 
         blokk_minta = re.compile(
             r"Shortcut \{[^{}]*" + re.escape(objectname_minta) + r"[^{}]*\}\n",
@@ -488,7 +490,7 @@ class TestSweepOr:
         """MUTÁCIÓ: a `shortcutPrint` szekvenciája elcsúszik — a `Ctrl+P`-t
         hirdető menütételnek ígéretszegésként kell megjelennie."""
         forrasok = _valos_qml_forrasok()
-        menu_forras = forrasok[str(_MENU_QML)]
+        menu_forras = menu_sources()
         mutalt_menu = menu_forras.replace(
             'objectName: "shortcutPrint"\n        sequence: "Ctrl+P"',
             'objectName: "shortcutPrint"\n        sequence: "Ctrl+Shift+9"',

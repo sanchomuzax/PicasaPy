@@ -127,7 +127,7 @@ class TestIdorendGomb:
 
     def test_a_MENUTETEL_helye_megmarad(self):
         """A hely az eredetiben létezik - csak a tartalma nincs kész."""
-        menu = (_TOOLBAR.parent / "PicasaMenuBar.qml").read_text(
+        menu = (_TOOLBAR.parent / "PicasaViewMenu.qml").read_text(
             encoding="utf-8"
         )
         assert 'objectName: "menuViewTimeline"' in menu

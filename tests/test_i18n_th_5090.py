@@ -20,8 +20,8 @@ _HTML_TAG = re.compile(r"</?[A-Za-z][\w:-]*\b[^>]*?/?>")
 _MNEMONIC = re.compile(r"(?<!&)&(?!&|\s)")
 _LITERAL_AMPERSANDS = re.compile(r"\bB&W\b", re.IGNORECASE)
 _EXISTING_MNEMONIC_EXCEPTIONS = {
-    ("PicasaMenuBar", "Save &As..."),
-    ("PicasaMenuBar", "Search &Options"),
+    ("PicasaFileMenu", "Save &As..."),
+    ("PicasaViewMenu", "Search &Options"),
     ("AlbumContextMenu", "Sort &Album By"),
     ("FolderContextMenu", "&Color"),
     ("FolderListContextMenu", "Sort by &Date"),

@@ -18,9 +18,10 @@ import picasapy.app
 import pytest
 from PySide6.QtCore import QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
+from support.menubar_components_6016 import menu_sources
 
 _QML = Path(picasapy.app.__file__).parent / "qml"
-_MENU = (_QML / "PicasaPy" / "PicasaMenuBar.qml").read_text(encoding="utf-8")
+_MENU = menu_sources()
 #: #2074: a kimenet-választó bekötését a MÉRT `PublishPanel`-en mérjük
 _PANEL = (_QML / "PicasaPy" / "PublishPanel.qml").read_text(encoding="utf-8")
 _GAZDA = (_QML / "PicasaPy" / "BackupHost.qml").read_text(encoding="utf-8")
