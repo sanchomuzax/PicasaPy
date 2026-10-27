@@ -6711,7 +6711,7 @@ Az alábbi címek a helyi, SHA-256 `da370693b59d89e7d48646d9617f5f595e371f8e1828
 
 **Módosított fájl:** `docs/specs/picasa-arcfelismeres.md` (54.3/d: a gyűjteményelem pointerének és visszautasítási ágának közvetlen címzett útja, a parserrel ellenőrzött `red.cfg`-határ, az archívum kibontás nélküli ellenőrzése és a 7-8. pont nyitott mérései).
 
-### 54.3/e 2026-10-28 — a `+0x1c` segédútja nem adja meg az effektív küszöböt
+### 54.3/e 2026-10-28 - a `+0x1c` segédútja nem adja meg az effektív küszöböt
 
 **Hatókör.** A hashazonos helyi Red.dll `0x10103670` függvényét a Red-indexben megadott 302 bájtos tartományon belül Capstone-nal és `llvm-objdump`-bal olvastam. A teljes `.text`-et nem pásztáztam. A helyi `Picasa3.exe` PE-verziója `3.9.141.259` (SHA-256: `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`); a mellette levő `plugins/Red.dll` SHA-256-a `da370693b59d89e7d48646d9617f5f595e371f8e1828cb1aa9f12530a17c8233`, azonos a Red-index `meta.json` hashével. A Red-index átadási riportja ezt a DLL-t helyi Picasa 3.7 telepítésből származóként azonosítja. A Picasa3.exe verziója és a DLL együttállása nem bizonyítja, hogy ez a DLL töltődött be egy tiszta Picasa 3.9 futásban; a Red.dll PE-erőforrásában nincs `VS_FIXEDFILEINFO`.
 
@@ -6737,7 +6737,7 @@ Az alábbi címek a helyi, SHA-256 `da370693b59d89e7d48646d9617f5f595e371f8e1828
 
 **Nyitott.** A `+0x1c` mező tényleges értéke és az azt adó `esm_InStream` fájl-/modellforrása **NINCS MEG**. A meglévő `2026-10-26-5185-red-weak.txt` a `0x10104290` célfüggvény mező-loaderjeit mutatja, de az upstream virtuális hívót és a stream nyitását nem. A pontos következő dekompilálási kérdés:
 
-`Ghidra-kör kell: 0x101d5160 — a vsi_FaceViewDetector vtable 0x10104290 célfüggvényére vezető virtuális hívó és az átadott esm_InStream fájl-/modellforrásának visszakövetése; a meglévő dump a célfüggvényt dekompilálja, a 0x101aad94 sztring útja pedig csak strncpy-másolásig ismert, a stream előállítóját egyik sem azonosítja. [blokkoló]`
+`Ghidra-kör kell: 0x101d5160 - a vsi_FaceViewDetector vtable 0x10104290 célfüggvényére vezető virtuális hívó és az átadott esm_InStream fájl-/modellforrásának visszakövetése; a meglévő dump a célfüggvényt dekompilálja, a 0x101aad94 sztring útja pedig csak strncpy-másolásig ismert, a stream előállítóját egyik sem azonosítja. [blokkoló]`
 
 J8-hoz az eredeti, vezérelt Colab-profilt kell felvenni; a most ellenőrzött `meroadat.tar` nem tartalmaz hozzá profilt. Így a #5185 7-8. pontja továbbra is részleges.
 
@@ -6941,9 +6941,9 @@ A Picasa EXE `FRRecommendIncludeLimit=0,50` értéke a javaslatba-vételhez tart
 
 ### 59.3 Független utak és cáfoló kísérlet
 
-**A út — bináris.** A Picasa EXE célzott Capstone-olvasata és az SQLite pozitív hívási xrefjei megerősítik az N1 munkasor-részutat; a Red.dll Ghidra-/Capstone-olvasatai azonosítják a helyi classifier-mező és a `threshold`-szerializálás külön útját. Egyik sem ad fotónév szerinti N1-viselkedést, tényleges 3.9-es Red-modellstreamet vagy címkézett arányt.
+**A út - bináris.** A Picasa EXE célzott Capstone-olvasata és az SQLite pozitív hívási xrefjei megerősítik az N1 munkasor-részutat; a Red.dll Ghidra-/Capstone-olvasatai azonosítják a helyi classifier-mező és a `threshold`-szerializálás külön útját. Egyik sem ad fotónév szerinti N1-viselkedést, tényleges 3.9-es Red-modellstreamet vagy címkézett arányt.
 
-**B út — mérőadat.** Az archívum összes nem képi dokumentumtagjának közvetlen ellenőrzése nem talált arc-/személy-/detektor-címkézést, `faces=` sort vagy `[Contacts2]` kontrollt. Ez külön, futásidejű kimenetektől függetlenül igazolja, hogy a helyi mérőarchívum nem dönt N1/N3-ról. A két út abban egyezik, hogy a rendelkezésre álló helyi anyag nem határozza meg a kérdezett runtime eredményt; viselkedési eredményt egyikből sem állítok.
+**B út - mérőadat.** Az archívum összes nem képi dokumentumtagjának közvetlen ellenőrzése nem talált arc-/személy-/detektor-címkézést, `faces=` sort vagy `[Contacts2]` kontrollt. Ez külön, futásidejű kimenetektől függetlenül igazolja, hogy a helyi mérőarchívum nem dönt N1/N3-ról. A két út abban egyezik, hogy a rendelkezésre álló helyi anyag nem határozza meg a kérdezett runtime eredményt; viselkedési eredményt egyikből sem állítok.
 
 **Cáfoló kísérlet.** Megpróbáltam megcáfolni, hogy a helyi mérőadat nem tartalmaz megfelelő kontrollt: a tar összes INI/TXT/CSV tagját kibontottam a `.bt` alá, majd célzottan kerestem az arc/személy jelölőket és címkézést. A 15 INI négy jelölője 0 találatot adott; a TXT-kben talált két `felismeri` előfordulás teljes mondatát ellenőriztem, mindkettő szerkesztési beállítások mappamegnyitáskor történő Picasa-felismeréséről szólt, nem arcfelismerésről. A cáfoló eredményt ugyanazzal a mércével ellenőriztem a tagkiterjesztés-leltáron és az egyedi dokumentumtartalmakon. A JPG-ket nem vizsgáltam, ezért nem állítom, hogy azok arctalanok; címkézett eredeti/PicasaPy-kimenet nélkül viszont N3-arány nem számolható.
 
@@ -6951,16 +6951,16 @@ A Picasa EXE `FRRecommendIncludeLimit=0,50` értéke a javaslatba-vételhez tart
 
 | Pont | Állapot | Bizonyíték |
 |---|---|---|
-| N1 — további ismeretlen arc megtalálása névvel ellátott fotón | ⛔ Nyitott | §59.1; eredeti kétarcú fotó név előtti/utáni felvétele hiányzik |
-| N3 — eredeti felismerési arány és Red-küszöb a 960 px / 0,9 YuNet-beállításhoz képest | ⛔ Nyitott | §59.2; effektív Red-érték, bemeneti WxH és azonos címkézett mérés NINCS MEG |
-| N4 — alapból látszó keret és név | ✅ | mérés (job-187; §36.3) |
-| N5 — személyszintű mellőzés és hatása | ✅ | mérés (job-222..226; §37.10-37.11) |
-| N6 — személy törlésének útja és hatása az arcokra | ✅ | mérés (job-222/224; §37.10); PicasaPy-javítás #5391 |
-| N7 — People Manager/Név nélküliek kijelölési modellje | ✅ | People Manager egyszeres kijelölése (job-325; §58); Név nélküliek többes kijelölése (job-180; §53.3) |
-| N8 — People Manager referencia-kép | ✅ | mérés (job-186, 24. kép; §36.3) |
+| N1 - további ismeretlen arc megtalálása névvel ellátott fotón | ⛔ Nyitott | §59.1; eredeti kétarcú fotó név előtti/utáni felvétele hiányzik |
+| N3 - eredeti felismerési arány és Red-küszöb a 960 px / 0,9 YuNet-beállításhoz képest | ⛔ Nyitott | §59.2; effektív Red-érték, bemeneti WxH és azonos címkézett mérés NINCS MEG |
+| N4 - alapból látszó keret és név | ✅ | mérés (job-187; §36.3) |
+| N5 - személyszintű mellőzés és hatása | ✅ | mérés (job-222..226; §37.10-37.11) |
+| N6 - személy törlésének útja és hatása az arcokra | ✅ | mérés (job-222/224; §37.10); PicasaPy-javítás #5391 |
+| N7 - People Manager/Név nélküliek kijelölési modellje | ✅ | People Manager egyszeres kijelölése (job-325; §58); Név nélküliek többes kijelölése (job-180; §53.3) |
+| N8 - People Manager referencia-kép | ✅ | mérés (job-186, 24. kép; §36.3) |
 
-**Következtetés és fejlesztési döntés.** N4–N8 mérési/bizonyítéki pontjai lezártak; N1 és N3 azért marad nyitva, mert a helyi bináris nem adja meg a futásidejű kimenetet, a helyi archívumban pedig nincs hozzá címkézett kontroll. PicasaPy-eltérés nincs bizonyítva, ezért most nincs indokolt fejlesztői lista és új kutatási jegy. N1-hez a kétarcú név előtti/utáni eredeti felvétel; N3-hoz tiszta Picasa 3.9 Red.dll-hash, az effektív streamelt küszöb és a detektor tényleges bemeneti mérete, valamint ugyanazon címkézett képkészlet képenkénti Picasa/PicasaPy eredménye szükséges.
+**Következtetés és fejlesztési döntés.** N4-N8 mérési/bizonyítéki pontjai lezártak; N1 és N3 azért marad nyitva, mert a helyi bináris nem adja meg a futásidejű kimenetet, a helyi archívumban pedig nincs hozzá címkézett kontroll. PicasaPy-eltérés nincs bizonyítva, ezért most nincs indokolt fejlesztői lista és új kutatási jegy. N1-hez a kétarcú név előtti/utáni eredeti felvétel; N3-hoz tiszta Picasa 3.9 Red.dll-hash, az effektív streamelt küszöb és a detektor tényleges bemeneti mérete, valamint ugyanazon címkézett képkészlet képenkénti Picasa/PicasaPy eredménye szükséges.
 
-**Meglévő, nem duplikált statikus nyitott tétel:** `Ghidra-kör kell: 0x10107d70 — a FaceViewDetector classifier-array aktuális elemének +0x1c mezőjét kösse a vsi_WeakClassifier modellstreamből betöltött threshold mezőhöz, a betöltő út és dinamikus elemtípus követésével [blokkoló]`. A feladat már az 57. szakaszban szerepel; új kört nem indítottam. Ez önmagában sem adja meg a futáskor használt értéket vagy a felismerési arányt.
+**Meglévő, nem duplikált statikus nyitott tétel:** `Ghidra-kör kell: 0x10107d70 - a FaceViewDetector classifier-array aktuális elemének +0x1c mezőjét kösse a vsi_WeakClassifier modellstreamből betöltött threshold mezőhöz, a betöltő út és dinamikus elemtípus követésével [blokkoló]`. A feladat már az 57. szakaszban szerepel; új kört nem indítottam. Ez önmagában sem adja meg a futáskor használt értéket vagy a felismerési arányt.
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (59. szakasz: N1/N3 helyi bizonyítékhatárai, független utak, cáfoló próba és pontonkénti állapot); `docs/specs/00-index.md` (#5184 nyitott pontjainak frissítése, N7 lezárásával).
