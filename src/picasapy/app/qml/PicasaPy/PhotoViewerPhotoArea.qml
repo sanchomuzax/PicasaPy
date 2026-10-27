@@ -933,14 +933,14 @@ Item {
         //: (#72); a programozott szinkron (nyitás, lapozás)
         //: nem vált ki előnézetet (#131)
         onCsuszkaMozgott: (ertek) => {
-            if (typeof editController !== "undefined"
+            if (typeof editController !== "undefined" && editController
                     && photoArea.hostEditorPanel.tiltActive && !photoArea.hostViewer.tiltSzinkronFut)
                 editController.previewTilt(ertek)
         }
         //: #4058: az elengedés csak az előnézetet frissíti;
         //: menteni az Alkalmaz gomb fog.
         onCsuszkaElengedve: (ertek) => {
-            if (typeof editController !== "undefined"
+            if (typeof editController !== "undefined" && editController
                     && photoArea.hostEditorPanel.tiltActive)
                 editController.previewTilt(ertek)
         }
@@ -994,7 +994,7 @@ Item {
             //: Alkalmazás. Változatlan értéknél ne keletkezzen
             //: fölösleges réteg vagy Visszavonás-lépés.
             if (tool === "tilt") {
-                if (typeof editController !== "undefined"
+                if (typeof editController !== "undefined" && editController
                         && editorToolBar.csuszkaErtek
                         !== photoArea.hostViewer.tiltErtekNyitaskor)
                     editController.setTilt(
@@ -1104,7 +1104,7 @@ Item {
             ? photoArea.hostViewer.photosModel.filePathAt(photoArea.hostViewer.aktivSor) : ""
         onEdited: function(manualAdded) {
             photoArea.hostViewer.facesEditRevision += 1
-            if (typeof controller !== "undefined"
+            if (typeof controller !== "undefined" && controller
                     && photoArea.hostViewer.controllerReady)
                 controller.refreshCollections()
             if (manualAdded) {
@@ -1328,7 +1328,7 @@ Item {
                 photoArea.hostViewer.clampPan()
                 return
             }
-            if (typeof editController !== "undefined"
+            if (typeof editController !== "undefined" && editController
                     && editController.retouchPatchPending)
                 editController.previewRetouchSource(
                     mouse.x / width, mouse.y / height)
@@ -1339,7 +1339,7 @@ Item {
             // Ctrl+húzás UTÁNi felengedés is "clicked"-et vált
             // ki QML-ben — ez NEM patch-kattintás
             if (mouse.modifiers & Qt.ControlModifier) return
-            if (typeof editController !== "undefined"
+            if (typeof editController !== "undefined" && editController
                     && editController.retouchPatchPending) {
                 retouchSourceX = mouse.x / width
                 retouchSourceY = mouse.y / height
@@ -1353,7 +1353,7 @@ Item {
                 retouchTargetY = mouse.y / height
                 hasRetouchTarget = true
                 hasRetouchSource = false
-                if (typeof editController !== "undefined")
+                if (typeof editController !== "undefined" && editController)
                     editController.beginRetouchPatch(
                         mouse.x / width, mouse.y / height)
             }
@@ -1540,7 +1540,7 @@ Item {
             onPositionChanged: function(mouse) {
                 if (!dragging) {
                     keretenAll = (width > 0 && height > 0
-                        && typeof editController !== "undefined"
+                        && typeof editController !== "undefined" && editController
                         && editController.redeyeRegionHitAt(
                             mouse.x / width, mouse.y / height))
                     return
@@ -1558,7 +1558,7 @@ Item {
                 //: változatlanul új régiót ad, akkor is, ha
                 //: egy meglévő kereten indul.
                 if (selW <= 0 || selH <= 0) {
-                    if (typeof editController !== "undefined") {
+                    if (typeof editController !== "undefined" && editController) {
                         editController.removeRedeyeRegionAt(
                             mouse.x / width, mouse.y / height)
                         keretenAll = editController
@@ -1567,7 +1567,7 @@ Item {
                     }
                     return
                 }
-                if (typeof editController !== "undefined")
+                if (typeof editController !== "undefined" && editController)
                     editController.addRedeyeRegion(
                         selX / width, selY / height,
                         selW / width, selH / height)
@@ -1592,7 +1592,7 @@ Item {
         cursorShape: Qt.CrossCursor
         onClicked: function(mouse) {
             if (width <= 0 || height <= 0) return
-            if (typeof editController !== "undefined")
+            if (typeof editController !== "undefined" && editController)
                 editController.previewNewTextPlacement(
                     mouse.x / width, mouse.y / height)
         }
@@ -1647,7 +1647,7 @@ Item {
                 hoverEnabled: true
                 cursorShape: containsMouse ? Qt.IBeamCursor : Qt.ArrowCursor
                 onClicked: {
-                    if (typeof editController !== "undefined")
+                    if (typeof editController !== "undefined" && editController)
                         editController.selectTextOverlay(modelData.index)
                 }
             }
