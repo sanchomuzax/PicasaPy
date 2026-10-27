@@ -6937,11 +6937,11 @@ A jobb oldali Name mező mindig az épp kijelölt személy nevét mutatja. **A P
 
 A Picasa EXE `FRRecommendIncludeLimit=0,50` értéke a javaslatba-vételhez tartozik, nem bizonyított Red-detektorküszöb (§54.2). A PicasaPy `960 px / 0,9 YuNet` beállítása külön detektorhoz tartozik (§56.2); egyikből sem következtetek az eredeti küszöbére vagy felismerési arányára.
 
-**N3 eredménye: nyitott.** A 2026-10-28-i helyi binárisazonosság- és célzott diszasszemblálás nem adja meg a runtime értéket vagy az arányt. A `0x006cde50` címre szűrt olvasata a képrecord méretmezőinek ellenőrzése után indirekt `[esi+0x44]` hívást ad át; Red-küszöböt vagy futásidejű eredményt ez a függvény nem szolgáltat.
+**N3 eredménye: nyitott.** A 2026-10-28-i helyi binárisazonosság- és célzott diszasszemblálás nem adja meg a runtime értéket vagy az arányt. A `0x006cde50` címre szűrt olvasata a képrekord méretmezőinek ellenőrzése után indirekt `[esi+0x44]` hívást ad át; Red-küszöböt vagy futásidejű eredményt ez a függvény nem szolgáltat.
 
 ### 59.3 Független utak és cáfoló kísérlet
 
-**A út - bináris.** A Picasa EXE célzott Capstone-olvasata és az SQLite pozitív hívási xrefjei megerősítik az N1 munkasor-részutat; a Red.dll Ghidra-/Capstone-olvasatai azonosítják a helyi classifier-mező és a `threshold`-szerializálás külön útját. Egyik sem ad fotónév szerinti N1-viselkedést, tényleges 3.9-es Red-modellstreamet vagy címkézett arányt.
+**A út - bináris.** A Picasa EXE célzott Capstone-olvasata és az SQLite pozitív hívási xrefjei megerősítik az N1 munkasor-részutat; a Red.dll Ghidra-/Capstone-olvasatai azonosítják a helyi osztályozó-mező és a `threshold`-szerializálás külön útját. Egyik sem ad fotónév szerinti N1-viselkedést, tényleges 3.9-es Red-modellstreamet vagy címkézett arányt.
 
 **B út - mérőadat.** Az archívum összes nem képi dokumentumtagjának közvetlen ellenőrzése nem talált arc-/személy-/detektor-címkézést, `faces=` sort vagy `[Contacts2]` kontrollt. Ez külön, futásidejű kimenetektől függetlenül igazolja, hogy a helyi mérőarchívum nem dönt N1/N3-ról. A két út abban egyezik, hogy a rendelkezésre álló helyi anyag nem határozza meg a kérdezett runtime eredményt; viselkedési eredményt egyikből sem állítok.
 
