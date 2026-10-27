@@ -8,12 +8,32 @@ from pathlib import Path
 import subprocess
 import sys
 
+import pytest
 from PySide6.QtGui import QColor, QImage
 
 
 GYOKER = Path(__file__).resolve().parents[3]
 MERO = GYOKER / "scripts" / "photo_viewer_screenshots.py"
+ROGZITETT_MTIME_NS = 1_577_836_800_000_000_000
 ALLAPOTOK = (
+    "main-library",
+    "people-album",
+    "menu-file",
+    "menu-edit",
+    "menu-view",
+    "menu-folder",
+    "menu-picture",
+    "menu-create",
+    "menu-tools",
+    "menu-help",
+    "toolbar",
+    "tray",
+    "slideshow",
+    "undo-all-edits",
+    "drop-geotag",
+    "mainSplit-min",
+    "mainSplit-max",
+    "photo-viewer",
     "alapnezet",
     "bal-fiok-nyitva",
     "filmcsik",
@@ -51,7 +71,10 @@ def _run(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedP
     )
 
 
-def test_capture_low_resolution_creates_visible_viewer_states(tmp_path: Path) -> None:
+@pytest.mark.parametrize("height", (695, 700, 705))
+def test_capture_creates_visible_main_and_viewer_states(
+    tmp_path: Path, height: int
+) -> None:
     output = tmp_path / "kepek"
     env = os.environ.copy()
     env["QT_QPA_PLATFORM"] = "offscreen"
@@ -64,19 +87,50 @@ def test_capture_low_resolution_creates_visible_viewer_states(tmp_path: Path) ->
         "--width",
         "1024",
         "--height",
-        "700",
+        str(height),
         env=env,
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
     records = {record["name"]: record for record in manifest["states"]}
+    assert manifest["sample_photo_mtimes_ns"] == [ROGZITETT_MTIME_NS] * 3
     assert tuple(records) == ALLAPOTOK
-    assert manifest["requested_size"] == {"width": 1024, "height": 700}
-    assert manifest["actual_window_size"] == {"width": 1024, "height": 700}
+    assert manifest["requested_size"] == {"width": 1024, "height": height}
+    assert manifest["actual_window_size"] == {"width": 1024, "height": height}
     assert records["alapnezet"]["window_size"] == manifest["actual_window_size"]
 
     required = {
+        "main-library": {
+            "mainSplit",
+            "folderPane",
+            "folderListView",
+            "albumRepeater",
+            "photoGrid",
+        },
+        "people-album": {
+            "mainSplit",
+            "folderPane",
+            "personAlbumHeader",
+            "personAlbumName",
+            "photoGrid",
+        },
+        "menu-file": {"menuFileAddFolder"},
+        "menu-edit": {"menuEditCut"},
+        "menu-view": {"menuViewLibraryView"},
+        "menu-folder": {"menuFolderSlideshow"},
+        "menu-picture": {"menuPictureViewAndEdit"},
+        "menu-create": {"menuCreateCollage"},
+        "menu-tools": {"menuToolsFolderManager"},
+        "menu-help": {"menuHelpContents"},
+        "toolbar": {"mainToolbar", "toolbarImportButton"},
+        "tray": {"trayBar", "trayMainBar", "trayStarButton"},
+        "slideshow": {"slideshowView", "slideshowImage"},
+        "photo-viewer": {"photoViewer", "viewerPhotoArea", "viewerImage"},
+        "undo-all-edits": {"undoAllEditsDialogLoader", "undoAllEditsDialog"},
+        "drop-geotag": {"dropGeotagDialogLoader", "dropGeotagConfirm"},
+        "mainSplit-min": {"mainSplit", "folderPane", "photoGrid"},
+        "mainSplit-max": {"mainSplit", "folderPane", "photoGrid"},
         "alapnezet": {"photoViewer", "viewerPhotoArea", "viewerImage"},
         "bal-fiok-nyitva": {"photoViewer", "viewerLeftDrawer", "viewerEditorPanel"},
         "filmcsik": {"photoViewer", "viewerFilmstrip", "viewerImage"},
@@ -121,6 +175,20 @@ def test_capture_low_resolution_creates_visible_viewer_states(tmp_path: Path) ->
     )
     assert records["arcreteg"]["face_count"] > 0
     assert records["teljes-kepernyo"]["fullscreen"] is True
+    assert records["main-library"]["folder_count"] > 0
+    assert records["main-library"]["album_count"] > 0
+    assert records["main-library"]["thumbnail_sampled_colors"] > 1
+    assert records["people-album"]["thumbnail_sampled_colors"] > 1
+    assert records["people-album"]["person_name"] == "Teszt Elek"
+    assert QImage(str(output / "photo-viewer.png")) == QImage(
+        str(output / "alapnezet.png")
+    )
+    assert records["tray"]["tray_item_count"] > 0
+    assert records["mainSplit-min"]["folder_pane_width"] <= 243
+    assert abs(
+        records["mainSplit-max"]["folder_pane_width"]
+        - (records["mainSplit-max"]["main_split_width"] - 240)
+    ) <= 3
 
 
 def test_compare_reports_exact_pixel_count_rectangle_and_diff(tmp_path: Path) -> None:
