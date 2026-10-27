@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.256] - 2026-10-27
+
+- A Filtered B&W színmezője induláskor fehér, és a betöltött kép mentett színét mutatja. (#5990).
+
 ## [0.9.255] - 2026-10-27
 
 - Fixed QML layout warnings in the tags and face editor, and prevented GPU preview requests until both preview images are ready (#5984).
