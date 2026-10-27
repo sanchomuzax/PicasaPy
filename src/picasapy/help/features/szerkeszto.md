@@ -175,9 +175,11 @@ oldalainál fogva méretezhető, belül húzva mozgatható.
   „Kézi: 1200x800"), a **Jelenlegi méretarány** sor a teljes kép méretét.
   A kézi sor értéke követi a keretet, amíg húzod.
 - **Forgatás** gomb — a képarány oldalainak cseréje.
-- **Javasolt vágások** — a program kínál néhány kivágást: a részletre, a
-  színre, a horizontra, illetve az arcokra komponálva és az arcokra
-  szűkítve.
+- **Javasolt vágások** - a program legfeljebb három kivágást kínál kis
+  előnézeti képként: a részletre, a színre, a horizontra, illetve az
+  arcokra komponálva vagy az arcokra szűkítve. Az eredetihez hasonlóan
+  az előnézetek fölött nincs cím, alattuk nincs felirat: a kép maga
+  mutatja, mit vágna ki.
 - **Előnézet** — megnézed, milyen lesz.
 - **Alkalmaz** véglegesíti (nem-destruktívan), **Mégse** elveti,
   **Alaphelyzet** eldobja a már alkalmazott vágást.
