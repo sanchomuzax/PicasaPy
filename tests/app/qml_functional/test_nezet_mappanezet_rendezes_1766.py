@@ -33,14 +33,11 @@ ugyanaz a hiba lenne, fordítva.
 from __future__ import annotations
 
 import re
-from pathlib import Path
 
-import picasapy.app
 from tests.support.qml_blokk import blokk_horgonyra
+from support.menubar_components_6016 import menu_sources
 
-_QML = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "PicasaMenuBar.qml"
-).read_text(encoding="utf-8")
+_QML = menu_sources()
 
 #: (objectName, angol forrásszöveg) — a felvételen mért SORRENDBEN.
 OTOS = (

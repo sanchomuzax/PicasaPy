@@ -19,10 +19,11 @@ from pathlib import Path
 
 import picasapy.app
 import pytest
+from support.menubar_components_6016 import menu_sources
 
 _QML_DIR = Path(picasapy.app.__file__).parent / "qml"
 _MAIN = (_QML_DIR / "Main.qml").read_text(encoding="utf-8")
-_MENU = (_QML_DIR / "PicasaPy" / "PicasaMenuBar.qml").read_text(encoding="utf-8")
+_MENU = menu_sources()
 
 
 class TestAKilepesEgyHelyenDolEl:

@@ -194,7 +194,7 @@ ELOFORDULASOK = {
         "Loading faces for file...", "Looking for other people...",
         "Sorting face data, %1%", "Loading faces for %1 files...",
         ", %1 files unchecked."],
-    "PicasaPy/PicasaMenuBar.qml": ["From Faces in Selection..."],
+    "PicasaPy/PicasaCreateMenu.qml": ["From Faces in Selection..."],
     "PicasaPy/SlideshowView.qml": ["Display Time", "seconds"],
     "PicasaPy/VideoTrimSlider.qml": ["Start Point", "End Point"],
     # #3575
@@ -566,7 +566,19 @@ def test_a_nyelvlista_nevei_sehol_nincsenek_beegetve() -> None:
     literálként nem maradhat a nyelvlistát építő QML-ekben — a név egyetlen
     forrása az `OWN_LANGUAGE_NAMES`."""
     hibak = []
-    for fajl in ("PicasaPy/PicasaMenuBar.qml", "PicasaPy/OptionsTabGeneral.qml"):
+    for fajl in (
+        "PicasaPy/PicasaMenuBar.qml",
+        "PicasaPy/PicasaFileMenu.qml",
+        "PicasaPy/PicasaEditMenu.qml",
+        "PicasaPy/PicasaViewMenu.qml",
+        "PicasaPy/PicasaFolderMenu.qml",
+        "PicasaPy/PicasaFolderViewMenu.qml",
+        "PicasaPy/PicasaPictureMenu.qml",
+        "PicasaPy/PicasaCreateMenu.qml",
+        "PicasaPy/PicasaToolsMenu.qml",
+        "PicasaPy/PicasaHelpMenu.qml",
+        "PicasaPy/OptionsTabGeneral.qml",
+    ):
         forras = (QML / fajl).read_text(encoding="utf-8")
         for regi in ("English", "Hungarian", "Magyar"):
             if re.search(rf'text:\s*(qsTr\()?"{regi}"', forras):

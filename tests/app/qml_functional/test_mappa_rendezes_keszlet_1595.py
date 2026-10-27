@@ -30,11 +30,8 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject
 from tests.support.qml_blokk import blokk_horgonyra, elem_tipusa
+from support.menubar_components_6016 import menu_component_source
 
-_MENU = (
-    Path(__file__).resolve().parents[3]
-    / "src/picasapy/app/qml/PicasaPy/PicasaMenuBar.qml"
-)
 _HELYI = (
     Path(__file__).resolve().parents[3]
     / "src/picasapy/app/qml/PicasaPy/FolderContextMenu.qml"
@@ -61,7 +58,7 @@ def _mappa_menu_szakasz() -> str:
     belőle. A teszt így „hiányzó feliratot" jelentett olyanra, ami ott
     van. A vágás ezért a záró tétel után történik, nem hosszra.
     """
-    forras = _MENU.read_text(encoding="utf-8")
+    forras = menu_component_source("PicasaFolderMenu.qml")
     kezdet = forras.index('objectName: "menuFolderSortBy"')
     zaro = forras.index('objectName: "menuFolderSortReverse"', kezdet)
     veg = forras.index("}", forras.index("onTriggered", zaro))

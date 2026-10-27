@@ -4,6 +4,15 @@ SelectionDim 1.0 SelectionDim.qml
 FolderPane 1.0 FolderPane.qml
 ThumbDelegate 1.0 ThumbDelegate.qml
 PicasaMenuBar 1.0 PicasaMenuBar.qml
+internal PicasaFileMenu PicasaFileMenu.qml
+internal PicasaEditMenu PicasaEditMenu.qml
+internal PicasaViewMenu PicasaViewMenu.qml
+internal PicasaFolderMenu PicasaFolderMenu.qml
+internal PicasaPictureMenu PicasaPictureMenu.qml
+internal PicasaCreateMenu PicasaCreateMenu.qml
+internal PicasaToolsMenu PicasaToolsMenu.qml
+internal PicasaHelpMenu PicasaHelpMenu.qml
+internal PicasaFolderViewMenu PicasaFolderViewMenu.qml
 PicasaMenuItem 1.0 PicasaMenuItem.qml
 MenuCimke 1.0 MenuCimke.qml
 PicasaMenu 1.0 PicasaMenu.qml
