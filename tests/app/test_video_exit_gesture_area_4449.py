@@ -44,7 +44,8 @@ def _kattints(ablak, elem, dupla=False):
 def test_a_videofelulet_kilepese_a_nezo_kozos_kilepesi_utjara_vezet():
     gesztus = (_QML_DIR / "VideoExitGestureArea.qml").read_text(encoding="utf-8")
     lejatsszo = (_QML_DIR / "VideoPlayerView.qml").read_text(encoding="utf-8")
-    nezo = (_QML_DIR / "PhotoViewer.qml").read_text(encoding="utf-8")
+    # #5953: a videó kilépésének fogadója a képterület komponensébe került
+    nezo = (_QML_DIR / "PhotoViewerPhotoArea.qml").read_text(encoding="utf-8")
 
     assert "anchors.fill: viewport" in lejatsszo
     assert "singleClickExit: true" not in gesztus
@@ -52,7 +53,7 @@ def test_a_videofelulet_kilepese_a_nezo_kozos_kilepesi_utjara_vezet():
     assert "onDoubleClicked:" in gesztus and "!root.singleClickExit" in gesztus
     assert "onExitRequested: player.exitRequested()" in lejatsszo
     assert "function onExitRequested()" in nezo
-    assert "viewer.kerBezaras()" in nezo
+    assert "hostViewer.kerBezaras()" in nezo
 
 
 @pytest.mark.parametrize("magassageltolas", (-5, 0, 5))

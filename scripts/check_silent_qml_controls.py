@@ -165,6 +165,58 @@ def _root_body(masked: str) -> str:
     return masked[opening + 1 : closing] if closing is not None else ""
 
 
+def _root_identifier(masked: str) -> str | None:
+    """A gyökér QML-objektum id-je, ha van."""
+    match = re.search(r"\bid\s*:\s*(\w+)\b", _root_body(masked))
+    return match.group(1) if match else None
+
+
+def _component_property_forwards_target(
+    owner_path: Path,
+    owner_root_id: str | None,
+    component_path: Path,
+    component_masked: str,
+    target: str,
+    owner_masked: str,
+) -> bool:
+    """Követi a gyerek root-tulajdonságán át továbbadott gazda-jelet.
+
+    Példa: a `PhotoArea.qml` Connections célja `photoArea.hostViewer`, a
+    PhotoArea példány pedig `hostViewer: viewer` kötést kap a PhotoViewer.qml
+    gyökér-azonosítójára. A tulajdonság deklarációját és a példány kötését is
+    ellenőrizzük, így egy pusztán azonos nevű handler nem számít fogadónak.
+    """
+    target_path = re.fullmatch(r"\s*(\w+)\s*\.\s*(\w+)\s*", target)
+    if not target_path or owner_root_id is None:
+        return False
+
+    component_root_id, property_name = target_path.groups()
+    if _root_identifier(component_masked) != component_root_id:
+        return False
+
+    component_root = _root_body(component_masked)
+    declaration = re.compile(
+        r"\bproperty\s+(?:(?:readonly|default)\s+)*"
+        r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*\s+"
+        + re.escape(property_name)
+        + r"\b"
+    )
+    if not declaration.search(component_root):
+        return False
+
+    binding = re.compile(
+        r"\b"
+        + re.escape(property_name)
+        + r"\s*:\s*"
+        + re.escape(owner_root_id)
+        + r"\b"
+    )
+    return any(
+        binding.search(body)
+        for body in _object_blocks(owner_masked, component_path.stem)
+    )
+
+
 def _qml_handler_receives(
     owner_path: Path,
     name: str,
@@ -184,9 +236,9 @@ def _qml_handler_receives(
 
     aliases_by_file: dict[Path, set[str]] = {}
     if owner_type == owner_path.stem:
-        root_id = re.search(r"\bid\s*:\s*(\w+)\b", root_body)
+        root_id = _root_identifier(owner_masked)
         if root_id:
-            aliases_by_file.setdefault(owner_path, set()).add(root_id.group(1))
+            aliases_by_file.setdefault(owner_path, set()).add(root_id)
 
     for path, (_, masked) in qml_sources.items():
         for body in _object_blocks(masked, owner_type):
@@ -200,9 +252,25 @@ def _qml_handler_receives(
         aliases = aliases_by_file.get(path, set())
         for body in _object_blocks(masked, "Connections"):
             target = re.search(r"\btarget\s*:\s*([\w.]+)", body)
-            if not target or target.group(1).split(".")[-1] not in aliases:
+            if not target:
                 continue
-            if _has_top_level_handler(body, handler):
+            if (
+                target.group(1).split(".")[-1] in aliases
+                and _has_top_level_handler(body, handler)
+            ):
+                return True
+            owner_root_id = _root_identifier(owner_masked)
+            if (
+                _has_top_level_handler(body, handler)
+                and _component_property_forwards_target(
+                    owner_path,
+                    owner_root_id,
+                    path,
+                    masked,
+                    target.group(1),
+                    owner_masked,
+                )
+            ):
                 return True
 
     # A Loader does not spell the loaded type as a QML object (its target is
