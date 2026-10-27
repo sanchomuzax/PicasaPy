@@ -847,3 +847,39 @@ bájtszintű különbsége `NINCS MEG`. PicasaPy-oldalon sem készült új futá
 `test_talca_csillag_forgatas_paritas_5396.py` valódi kattintásos próbája a
 forgatási/ini-értékeket ellenőrzi, de a jelen futtatókörnyezet a szükséges
 memóriakorlátos user systemd scope-ot nem engedte elindítani.
+
+### Mentés és Exportálás - 2026-10-27 (job-315-318)
+
+Az eredeti oszlop a jegyben átadott, 2026-10-27-i Colab-mérések összefoglalója;
+a feladatok nyers mellékletei nem találhatók a helyi mérőcsomagban. A PicasaPy
+oszlop forráskódot, célzott teszteket és hamis mappán futtatott fájlműveletet
+használ; ez nem valódi, egymás melletti GUI-felvétel.
+
+| Művelet | Eredeti | Nálunk | Eltérés | Bizonyíték |
+|---|---|---|---|---|
+| Mentés - megerősítő ablak | „A backup of this file will be made.”; „Do not ask me again.” jelölőnégyzet (job-315). | A backup-megjegyzés szövege egyezik. A jelölő felirata `Do not ask again`; elfogadáskor a választás megjegyezhető. | A jelölő felirata eltér: hiányzik a „me” és a záró pont. Az eredeti jelölő alapállapota a kapott mérési összefoglalóból `NINCS MEG`. | `mérés (job-315, a jegyben átadott összefoglaló)`; PicasaPy: `src/picasapy/app/qml/PicasaPy/SaveDialogs.qml:44-59, 94-145`; futtatott QML: `tests/app/qml_functional/test_mentes_parancsok_1527.py:293-325`. |
+| Mentés - kép és biztonsági másolat | A retusált kép mentés után új fájltartalmat kap; `.picasaoriginals/<fájlnév>` az eredeti tartalommal és változatlan mtime-mal jön létre (job-315). | Hamis mappán a mentett kép tartalma megváltozott, a másolat tartalma az eredeti bájtokkal egyezett, de a másolat mtime-ja `1793061608573028407 ns`, miközben a forrás előre beállított mtime-ja `1700000000000000000 ns` volt. A PicasaPy emellett `.picasaoriginals/.picasapy-snapshots/retouch.1.jpg` fájlt készített. | Az eredeti-biztonsági másolat mtime-jának megőrzése eltér a kapott job-315 leírástól. A másolat tartalma egyezik; a PicasaPy visszavonást támogató extra snapshotja dokumentált termékdöntés. | `mérés (job-315, átadott összefoglaló)`; hamis mappa (`.codex-jelentes.md`, 2026-10-27); `src/picasapy/edit/save.py:363-431`; extra snapshot: `docs/decisions/pillanatkep-nevter.md:108-114` (#2512). |
+| Mentés - ini-hatások | A job-315 összefoglalója szerint a forrásmappa kép-szakaszában a `backuphash` és `filters=retouch=1;` is megmarad; létrejön `.picasaoriginals/.picasa.ini`. | A hamis mappás futásban a forrás-szakaszban csak `backuphash=23423` maradt; a `filters=retouch=1;` és `moddate=00006dc64717da01` az eredeti-mappa ini-jébe került. | A filters helye eltér a job-315 leírásától, de a forrás nem dönthető el: a korábbi bináris spec és job-253 épp az áthelyezést rögzíti. A job-315 nyers ini hiányában ezt nem tekintem igazolt fejlesztési eltérésnek. | `mérés (job-315 összefoglaló; PicasaPy hamis mappa)`; PicasaPy: `src/picasapy/edit/save.py:363-431`; cáfoló korábbi út: [`picasa-ini-format.md`](picasa-ini-format.md) „Mentéskor az eredeti ini kezelése”, bináris `0x00462ba0`, `0x0046b49b`-`0x0046d6ac`, `0x00460e20`, `0x00454770`, valamint job-253. |
+| Exportálás - ablak alapállapota | Job-316-318 állapotában a hely a Képek mappa, a mappanév a forrásmappa neve, a `Resize to: 800 pixels` aktív, a minőség `Automatic`, vízjel és sorszámozás ki. | Üres PicasaPy-beállításokkal a hely `<Pictures>/Picasa/Exports`, a mappanév a forrásmappa neve, az eredeti-méret választó aktív (`resize=False`; a tárolt méretindex ettől még 800), `Automatic`, vízjel és sorszámozás ki. | A mappanév, minőség, vízjel és sorszámozás egyezik; a hely és a resize-választás eltér a megadott job-állapottól. Ez feltételes eltérés: az eredeti exporthely és méret mentett beállítás, a tiszta profil és az előző profilállapot nincs igazolva. A meglévő eredeti spec eredeti méretet, valamint `DefaultExportPath` hiányában `Picasa\Exports` helyet nevez alapnak; ezért a job-mérés önmagában nem bizonyít univerzális alapértéket. | `mérés (job-316-318, átadott összefoglaló)`; PicasaPy: `src/picasapy/app/export_prefs.py`, `export_controller.py:124-153`, `src/picasapy/app/qml/PicasaPy/ExportDialogs.qml:176-205`; teszt: `tests/app/test_export_beallitasok_1138.py:57-78`, `tests/app/qml_functional/test_export_felulet_1138.py:78-85`; cáfoló korábbi út: [`export-parbeszed.md`](export-parbeszed.md) 3.2, 4. szakasz, bináris `0x00738c00`, `0x00738c43`, `0x00738c58`, `0x00738d16`. |
+| Exportálás - fájlnév, méret és forrás-ini | A kimenet a forrás fájlnevét kapja; a mért 1024×1024 forrásból alapból 800×800, `Use original size` mellett 1024×1024 lesz. A forrás `.picasa.ini` nem változik (job-316-318). | A hamis mappás futásban a név `camera.jpg` maradt; üres PicasaPy-beállításokkal 1024×1024, `max_dimension=800` mellett 800×800 lett. A forrás-ini bájtjai mindkét futásban változatlanok maradtak. Felirat/kulcsszó átadásakor a célmappába ini készül, a forrás-ini akkor is változatlan. | A fájlnév és forrás-ini viselkedése egyezik. A méret a megadott job-állapothoz képest eltér az üres PicasaPy-beállításokkal; az alapértékek profilfüggése miatt ez még nem általánosított paritáshiba. | `mérés (job-316-318, átadott összefoglaló; PicasaPy hamis mappa)`; PicasaPy: `src/picasapy/export/exporter.py:339-377, 413-449, 793-800`; `tests/export/test_exporter.py`; eredeti beállításút: [`export-parbeszed.md`](export-parbeszed.md) 12.1 és 13.4. |
+
+**Futtatott ellenőrzés.** A projekt tesztfuttatójával a mentési és exportpárbeszéd,
+a mentési ini-kezelés, a save lánc és az exportáló célzott tesztjei: 7 fájl,
+154 teszt, mind zöld; a helyi PySide6 6.8.2.1, a CI-verzió 6.11.2. Külön
+hamis mappán ellenőriztem a mentési másolat/ini kimenetét és az export
+800/eredeti méret, fájlnév, valamint forrás-ini hatását. A tesztek nem pótolják
+a Colab és a PicasaPy valós GUI-felvételét.
+
+**Nyitott, a jegyben kapott méréssel nem feloldható pontok.** A job-315 nyers
+forrás- és `.picasaoriginals/.picasa.ini` fájlja nem érhető el; a `filters`
+helye ezért ütközik a job-253-mal és a bináris speccel. A job-316-318
+exportbeállításainak előzménye, a tiszta profil állapota és a nyers célmappa
+nem érhető el; ezért a 800-as resize és a Képek gyökér univerzális alapértéke
+nem dönthető el. A kapott összefoglaló a forrás-ini változatlanságáról szól; a
+célmappa ini-tartalmáról nem ad bájtszintű adat.
+
+**Független utak és cáfolás.** A út: a PicasaPy mentési/export-kódút közvetlen olvasása; B út: a célzott Qt-tesztek és külön hamis mappán végzett kimenetmérés. A két út a jelenlegi PicasaPy backup-bájtegyezését, ini-írását, exportfájlnevét, méretét és forrás-ini-hatásának leírását ellenőrizte. Az eredeti oldal A útja a jegyben átadott job-315-318 mérési összefoglaló; B útja a korábbi, független job-253 és a bináris ini-/export-beállítási leírás. A mentési `filters` helyére és az export alapállapotára az eredeti utak nem egyeznek, ezért ezek nyitott kérdések; a jelölőszöveg és a backup mtime eltérése a kapott job-összefoglaló és a PicasaPy-ellenőrzés alapján feltételes, nem két független eredeti felvétellel megerősített.
+
+Cáfoló próbának a job-315 `filters` állítását a job-253-cal és a `picasa-ini-format.md` utasításszintű leírásával vetettem össze; ezek az eredeti-mappa ini-be helyezést támasztják alá, így a job-315-ből általános `filters`-szabály nem mondható ki. A job-316-318 800-as méretét az `export-parbeszed.md` eredeti-méret alapállásával és a mentett beállítások tényével vetettem össze; ez cáfolja, hogy a felvételből tiszta profilra vonatkozó alapérték következne. A felvételek nyers ini-je, profilja és célmappája nem elérhető, ezért az ellentmondás feloldatlan.
+
+A futtatott 7 célzott tesztfájl: `tests/app/qml_functional/test_export_felulet_1138.py`, `tests/app/qml_functional/test_mentes_parancsok_1527.py`, `tests/app/qml_functional/test_save_chain_originals_5833.py`, `tests/app/test_export_beallitasok_1138.py`, `tests/edit/test_mentes_eredeti_ini_5833.py`, `tests/edit/test_save.py`, `tests/export/test_exporter.py`.
