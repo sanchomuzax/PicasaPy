@@ -98,11 +98,12 @@ FILETYPE_GROUP_EXTENSIONS = {
     "quicktime": QUICKTIME_EXTENSIONS,
 }
 FILETYPE_GROUPS = tuple(FILETYPE_GROUP_EXTENSIONS)
-# A Picasa binárisának regisztrált alapértékei szerint GIF, PNG és TGA
-# kikapcsolt (#5898). A QuickTime-sor az eredetiben a telepítéstől függ;
-# nálunk a .MOV lejátszás nem igényel külön telepítést, ezért bekapcsolt.
-# A meglévő QSettings-érték felülírja ezt az induló állapotot.
-DEFAULT_ENABLED_FILETYPES = frozenset(FILETYPE_GROUPS) - {"gif", "png", "tga"}
+# Hiányzó beállításnál minden csoport bekapcsolt (#6060). A Picasa
+# binárisában a GIF, PNG és TGA regisztrált alapja kikapcsolt (#5898), de
+# ennek átvétele a frissítés után némán eltüntette a meglévő könyvtár
+# PNG-képeit azoknál, akiknél a választás sosem volt elmentve. Csak a
+# felhasználó által elmentett kikapcsolás szűr.
+DEFAULT_ENABLED_FILETYPES = frozenset(FILETYPE_GROUPS)
 JPEG_EXTENSIONS = frozenset({".jpg", ".jpeg", ".jpe"})
 _EXTENSION_FILETYPE_GROUP = {
     extension: group
