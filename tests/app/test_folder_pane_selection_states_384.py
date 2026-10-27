@@ -21,6 +21,7 @@ from types import SimpleNamespace
 import pytest
 from PySide6.QtCore import QObject, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
+from tests.support.folder_pane_components_6019 import folder_pane_source_text
 
 _KEEPALIVE = []
 _SELECTION_ACTIVE = "#25648b"  # constants.ui alist_selcolor_win
@@ -158,13 +159,9 @@ class TestHoverToneWiringInSource:
 
     @pytest.fixture
     def source_text(self, qml_source):
-        # #757: az Albumok gyűjtemény (csillagozott sor + album-sorok) a
-        # `FolderPane.qml`-ből önálló `AlbumsSection.qml`-be került, amikor
-        # a hasáb fájlja túlnőtte a 800 soros határt — a hover-kötések
-        # onnan is számítanak.
         albums_section = qml_source.with_name("AlbumsSection.qml")
         return (
-            qml_source.read_text(encoding="utf-8")
+            folder_pane_source_text()
             + albums_section.read_text(encoding="utf-8")
         )
 

@@ -10,15 +10,12 @@ album `.picasa.ini`-jébe.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 from PySide6.QtCore import QObject, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
+from tests.support.folder_pane_components_6019 import folder_pane_source_text
 
 _KEEPALIVE = []
-
-_QML_DIR = Path(__file__).resolve().parents[2] / "src/picasapy/app/qml/PicasaPy"
 
 _TESZT_QML = """
 import QtQuick
@@ -127,7 +124,7 @@ class TestAlbumMod:
 class TestAMenu:
     def test_a_menutetel_a_parbeszedet_nyitja(self):
         """A bekötés a `FolderPane.qml`-ben van (a mappa-ág mintájára)."""
-        forras = (_QML_DIR / "FolderPane.qml").read_text(encoding="utf-8")
+        forras = folder_pane_source_text()
         assert "onEditDescriptionRequested" in forras
         assert 'folderPropertiesDialog.mode = "album"' in forras
         assert "controller.editAlbumProperties(" in forras
