@@ -355,3 +355,33 @@ def test_compare_cp1252_kimenettel_sem_hasal_el(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stdout + result.stderr
     assert "0 eltérő képpont" in result.stdout
+
+
+def test_capture_waits_while_background_render_runs(monkeypatch) -> None:
+    """#6078: futó háttér-render alatt az azonos kockák sem számítanak."""
+    kep = QImage(4, 3, QImage.Format.Format_RGBA8888)
+    kep.fill(QColor("#abcdef"))
+    hivasok = {"n": 0}
+
+    def hatter_dolgozik() -> bool:
+        hivasok["n"] += 1
+        return hivasok["n"] <= 15
+
+    monkeypatch.setattr(screenshot_script, "_hatter_dolgozik", hatter_dolgozik)
+
+    class _Alkalmazas:
+        @staticmethod
+        def processEvents() -> None:
+            pass
+
+    class _Ablak:
+        def __init__(self) -> None:
+            self.frame = 0
+
+        def grabWindow(self) -> QImage:
+            self.frame += 1
+            return kep
+
+    ablak = _Ablak()
+    screenshot_script._stabil_ablakkepernyo(ablak, _Alkalmazas(), "filmcsik")
+    assert ablak.frame == 15 + screenshot_script._STABIL_KEPKOCKAK
