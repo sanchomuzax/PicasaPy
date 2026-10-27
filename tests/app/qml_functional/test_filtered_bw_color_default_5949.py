@@ -1,4 +1,4 @@
-"""#5949: a Filtered B&W panel natív színmezője valódi kattintásra nyílik."""
+"""#5990: a Filtered B&W színmezője fehéren nyílik és megőrzi a mentett színt."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtGui import QColor
 from PySide6.QtTest import QTest
 
+from picasapy.ini.io import update_document
 from support.varakozas import var_feltetelre
 
 
@@ -47,7 +48,7 @@ def _click(window, item, qt_app) -> None:
 
 
 @pytest.mark.parametrize("height_delta", (-5, 0, 5))
-def test_filtered_bw_panel_starts_at_native_gray_after_real_tile_click(
+def test_filtered_bw_panel_starts_white_after_real_tile_click(
     qml_app, qt_app, tmp_path, height_delta
 ):
     window, _controller, _engine = qml_app
@@ -84,14 +85,14 @@ def test_filtered_bw_panel_starts_at_native_gray_after_real_tile_click(
         "a színparaméteres effektpanel megnyílt kattintásra",
     )
     assert panel.property("paramEffectName") == "ansel"
-    assert panel.property("paramEffectParams")[0]["color"] == "#545454"
-    assert _as_list(panel.property("paramEffectValues")) == ["#545454"], (
-        "az új Filtered B&W panel induló színét felülírta egy másik érték"
+    assert panel.property("paramEffectParams")[0]["color"] == "#ffffff"
+    assert _as_list(panel.property("paramEffectValues")) == ["#ffffff"], (
+        "az új Filtered B&W panel induló színe nem fehér"
     )
 
     swatches = _visual_item(panel, "effectParamColor0")
     assert swatches is not None and swatches.isVisible()
-    assert QColor(swatches.property("currentColor")).name() == "#545454"
+    assert QColor(swatches.property("currentColor")).name() == "#ffffff"
 
     rendered = window.grabWindow()
     assert not rendered.isNull(), "a Filtered B&W panel nem rajzolódott ki"
@@ -109,3 +110,54 @@ def test_filtered_bw_panel_starts_at_native_gray_after_real_tile_click(
         abs(pixel.red() - 255), abs(pixel.green() - 255), abs(pixel.blue() - 255)
     ) <= 3, f"a kirajzolt, szöveg nélküli színminta nem fehér: {pixel.name()}"
     assert rendered.save(str(tmp_path / f"filtered-bw-panel-{height_delta}.png"))
+
+
+def test_filtered_bw_panel_keeps_color_from_loaded_filter_chain(
+    qml_app, qt_app, tmp_path
+):
+    """A mentett `ansel`-szín a képpel töltődjön be a panelbe."""
+    ini_path = tmp_path / "kepek" / ".picasa.ini"
+    update_document(
+        ini_path,
+        lambda document: document.with_value(
+            "a.jpg", "filters", "ansel=1,ff123456;"
+        ),
+        backup=False,
+    )
+
+    window, _controller, engine = qml_app
+    window.setProperty("viewerOpen", True)
+    _wait(
+        qt_app,
+        lambda: window.findChild(QObject, "photoViewer") is not None,
+        "a valódi néző megnyílt a mentett színű képpel",
+    )
+    viewer = window.findChild(QObject, "photoViewer")
+    viewer.setProperty("currentIndex", 0)
+    panel = window.findChild(QObject, "viewerEditorPanel")
+    edit_controller = engine.rootContext().contextProperty("editController")
+    _wait(
+        qt_app,
+        lambda: edit_controller.property("chainValue") == "ansel=1,ff123456;",
+        "a mentett ansel-szín betöltődött a képláncba",
+    )
+    panel.setProperty("activeTab", 2)
+    _wait(
+        qt_app,
+        lambda: (button := _visual_item(panel, "effectAnsel")) is not None
+        and button.width() > 0
+        and button.height() > 0,
+        "a Filtered B&W csempe felépült",
+    )
+
+    _click(window, _visual_item(panel, "effectAnsel"), qt_app)
+    _wait(
+        qt_app,
+        lambda: panel.property("paramPanelActive") is True,
+        "a színparaméteres effektpanel megnyílt kattintásra",
+    )
+
+    assert _as_list(panel.property("paramEffectValues")) == ["#123456"]
+    swatches = _visual_item(panel, "effectParamColor0")
+    assert swatches is not None
+    assert QColor(swatches.property("currentColor")).name() == "#123456"

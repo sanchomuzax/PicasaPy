@@ -4,8 +4,8 @@ import QtQuick.Layouts
 
 // #350: "Beállítások" (options.fen) — a Picasa legnagyobb preferencia-
 // dialógusa, a docs/specs/picasa-fen-dialogs.md 3.11. szakaszában
-// dokumentált 8 fül szerint (a forrás-doksi fejléce "9 fül"-et említ, de
-// a widget-fa csak 8 fület ír le részletesen — ld. az issue jelentését).
+// dokumentált 8 eredeti fül szerint; a #5976 a Google Photos OAuth-hoz egy
+// kilencedik, új beállításfület ad hozzá.
 //
 // A dialógus a MoveDatabaseDialog.qml (#368) mintáját követi: önálló,
 // mozgatható/átméretezhető Window, a Main.qml-be illesztés (Eszközök →
@@ -70,13 +70,14 @@ Window {
     }
     WindowHelp { tema: optionsWindow.helpTopic }
     // #3661 (2. lelet): az eredeti 560 px-es alapszélesség belső
-    // tartalomterülete (536 px) kisebb, mint a 8 magyar fülcím összesen
+    // tartalomterülete (536 px) kisebb, mint a 8 eredeti magyar fülcím összesen
     // igényelt szélessége (mérve, a csomagolt Open Sans-szal/`PicasaStyle`-
     // lal: ~646 px) — a fülsor emiatt a MEGNYITÁSKOR is levágta a jobb
     // szélső füleket, a korábbi „mindegyik látszik, csak összeszűkítve"
     // viselkedés helyett (regresszió a main-hez képest). A 680 px innen
     // számolt, ~10 px tartalékkal (646 + 2×12 margó + tartalék) — ennyin a
-    // fülsor a MEGNYITÁSKOR görgetés nélkül mutatja mind a 8 fület.
+    // fülsor a MEGNYITÁSKOR görgetés nélkül mutatja a 8 eredeti fület. A
+    // #5976 kilencedik füle a meglévő görgetőnyilakkal érhető el, ha nem fér ki.
     //
     // ⚠️ SZÁNDÉKOSAN NEM futásidőben, `tabBar.implicitWidth`-ből számolt
     // érték: a `Component.onCompleted`-ben mért `implicitWidth` a lenti
@@ -136,7 +137,7 @@ Window {
         anchors.margins: 12
         spacing: 10
 
-        // #3661 (2. lelet): 480 px-en a 8 magyar fülcím nem fér ki a
+        // #3661 (2. lelet): 480 px-en a 9 magyar fülcím nem fér ki a
         // fülsoron — a fülsor GÖRGETHETŐ (a `TabBar` belső `ListView`-ja
         // húzással/egérkerékkel amúgy is mozgatható), de érintő/kerék
         // nélkül ez láthatatlan maradna. A két nyíl LÁTHATÓVÁ teszi a
@@ -204,9 +205,12 @@ Window {
                 TabButton { objectName: "optionsTabNetwork"; text: qsTr("Network"); width: implicitWidth }
                 TabButton { objectName: "optionsTabWebAlbums"; text: qsTr("Web Albums"); width: implicitWidth }
                 TabButton { objectName: "optionsTabNameTags"; text: qsTr("Name Tags"); width: implicitWidth }
+                //: picasapy-origin: picasa
+                //: picasapy-origin-key: stringres:CGeneralPrefsPage::WebAlbumsTabEs
+                TabButton { objectName: "optionsTabGooglePhotos"; text: qsTr("Google Photos"); width: implicitWidth }
             }
 
-            // ⚠️ SZÁNDÉKOSAN a `tabBar.contentChildren` (a nyolc TABBUTTON
+            // ⚠️ SZÁNDÉKOSAN a `tabBar.contentChildren` (a kilenc TABBUTTON
             // SAJÁT `implicitWidth`-jeinek összege), NEM
             // `tabBar.contentItem.contentWidth`: az utóbbi KÖRKÖRÖS
             // bindinghurkot okozott (mérve: „Binding loop detected for
@@ -336,6 +340,9 @@ Window {
             }
             OptionsTabNameTags {
                 optionsDraft: optionsDraft
+                Layout.fillWidth: true
+            }
+            OptionsTabGooglePhotos {
                 Layout.fillWidth: true
             }
         }

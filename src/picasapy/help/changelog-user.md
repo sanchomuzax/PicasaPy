@@ -4,6 +4,54 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-27
+
+**Beállítások**
+
+- A **Gyorsítótárban lévő fájlok törlése** jelölő is csak az **OK**
+  gombra mentődik, a **Mégse** elveti. Lásd
+  [Beállítások](features/beallitasok.md).
+
+**Exportálás**
+
+- Az **Exportálás HTML-oldalként** 4-6. sablonja (1 oldalas) most
+  valóban egy ablakban mutat mindent: bal oldalt görgethető indexképsáv,
+  jobb oldalt a nagy kép. Lásd [Exportálás](features/exportalas.md).
+
+**Szerkesztés**
+
+- A **Vágás** panel javasolt kivágásai cím és felirat nélkül, csak kis
+  előnézetként jelennek meg, ahogy az eredetiben. Lásd
+  [A szerkesztő](features/szerkeszto.md).
+- A **Szűrt FF** effekt színe új képnél fehérről indul; ha a képen már
+  van ilyen effekt, a panel annak színével nyílik meg. Lásd
+  [Effektek listája](features/effektek.md).
+
+**Fájlműveletek**
+
+- A **Fájlok átnevezése** több képnél csak akkor tesz sorszámot a név
+  végére, ha a név már foglalt, és a sorszám háromjegyű (`-001`,
+  `-002`…). Foglalt név miatt már nem áll le az egész átnevezés. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+
+**Címkék**
+
+- A gyorscímke-sáv felső két gombja a két legutóbb használt címkét
+  tartja: az új az első helyre kerül, az addigi első a másodikra. Lásd
+  [Csillagok, feliratok, címkék](features/csillag-felirat-cimke.md).
+
+**Útlevélkép**
+
+- Ha a képen több arc van, az **Útlevélkép** is a **Nem találhatók
+  arcok** üzenetet adja, ahogy az eredeti. Lásd
+  [Útlevélkép](features/utlevelkep.md).
+
+**Átvétel a régi Picasából**
+
+- A régi adatok átvétele ismételt futtatáskor nem kettőz meg semmit,
+  nagy adatbázison is gyorsan lefut, és az albumtagságokat hiánytalanul
+  beolvassa. Lásd [Importálás](features/importalas.md).
+
 ## 2026-10-26
 
 **Beállítások**
@@ -572,7 +620,7 @@ fájljában van.
 **Szerkesztés**
 
 - Az effektek fülén a Shift lenyomására a kétféle effektet adó csempék
-  kis előnézete is átvált. Lásd [Effektek](features/effektek.md).
+  kis előnézete is átvált. Lásd [Effektek listája](features/effektek.md).
 - Az **Egyéni méretarány hozzáadása** ablak az eredeti feliratait kapta;
   a saját arányok az **Egyéni méretarányok** cím alatt állnak, és a
   lista melletti kukával törölhetők. Lásd [A szerkesztő](features/szerkeszto.md).
@@ -614,7 +662,7 @@ fájljában van.
   nem volt meg; a javasolt vágások maradtak.
 - A **Képregény** csúszkái az eredeti nevükön: **Színes ecset**,
   **Pontsűrűség**, **Ponthalványítás**. Lásd
-  [Effektek](features/effektek.md).
+  [Effektek listája](features/effektek.md).
 
 **Emberek, helyek, címkék**
 
@@ -711,7 +759,7 @@ fájljában van.
   **Sugár**). A **Színátmenet** **Lágy perem** alapértéke 0,25, a
   **Fókuszos FF** csúszkája **Méret**; a Polaroid, a 60-as évek és a
   Kerekített élek színmintája **Háttérszín**. Lásd
-  [Effektek](features/effektek.md).
+  [Effektek listája](features/effektek.md).
 - Egy effekt alkalmazása után az effektcsempék a frissített képet
   mutatják.
 
@@ -778,7 +826,7 @@ fájljában van.
 - A pontra összpontosító effekteknél (Lágy fókusz, Fókuszos FF,
   Színátmenet, Sugaras árnyalás, Fókusznagyítás, Képpontnövelés) a
   fókuszpontot **a képen húzhatod**, a Középpont csúszkák követik. Lásd
-  [Effektek](features/effektek.md).
+  [Effektek listája](features/effektek.md).
 - Az **Árnyalás** színe választható (**Tinta színe**), alapból
   világoskék, ahogy az eredetiben.
 - A **Ceruzarajz** panelje a **Sugár**, **Erősség** és **Fokozat**
@@ -1188,7 +1236,7 @@ sem marad a végükön.
   szerkesztések helyesen jelennek meg — viszont ha ezeket a csúszkákat
   egy **korábbi PicasaPy-változatban** állítottad be, az a néhány kép
   másképp nézhet ki; húzd meg újra a csúszkát. Lásd
-  [Effektek](features/effektek.md).
+  [Effektek listája](features/effektek.md).
 
 **Effektek az eredetihez igazítva**
 
@@ -2059,7 +2107,7 @@ belőlük.
 - Kilenc effekt-csempe **másik effektet ad, ha a Shiftet lenyomva tartod
   a fülre váltáskor** — a felirat is átvált, tehát látod, mit kapsz.
   Ilyen pár például az Élesítés → Élesítés (régi) és a Vignetta → Matt.
-  A teljes lista: [Effektek](features/effektek.md).
+  A teljes lista: [Effektek listája](features/effektek.md).
 - A vágás **képarány-listája** az eredeti Picasáéhoz igazodott: a
   papírképek méretei centiméterben (5×8, 9×13, 10×15, 13×18, 20×25),
   **A4**, és a képernyő-arányok **4:3**, **16:10**, **16:9**, **5:3**.
