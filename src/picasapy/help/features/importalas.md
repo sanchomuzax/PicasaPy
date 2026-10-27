@@ -166,6 +166,13 @@ Két fontos tulajdonsága van:
   dönt: a már meglévő arcokhoz nem nyúl, de a képen még hiányzó arcokat
   hozzáadja.
 - **Bármikor megismételhető** — a kimaradt mappákkal folytatja.
+  Ismételt futtatáskor semmit nem kettőz meg: ami az előző alkalommal
+  már átjött, az ugyanúgy marad.
+
+Ha a régi Picasa ugyanarról a képről több bejegyzést is őrzött, az átvétel a **később módosított**
+bejegyzés adatait veszi át. Nagy, sok éven át használt Picasa-adatbázis
+átvétele is gyorsan lefut, és az albumtagságokat ilyenkor is hiánytalanul
+beolvassa.
 
 A neveken, kulcsszavakon és helyeken kívül az átvétel ezeket is hozza:
 

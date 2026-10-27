@@ -42,18 +42,19 @@ def _picasa_ui_font(qt_app):
 
 
 class FakeController(QObject):
-    """A nyelvválasztáshoz szükséges felület (#333/#3555) — csak annyi,
-    amennyit az OptionsDialog "General" füle ténylegesen használ.
+    """Az OptionsDialog által használt, minimális vezérlőfelület.
 
     #3555: a `setLanguage` a valódi vezérlőhöz hasonlóan CSAK a
     `pendingLanguage`-et írja — a `language` (a futó felület nyelve) a
-    következő indításig nem változik."""
+    következő indításig nem változik. A Google Photos fül QML-betöltéséhez
+    annak olvasott állapotait is alapértékkel szolgáltatja."""
 
     languageChanged = Signal()
     pendingLanguageChanged = Signal()
     uiTransitionsEnabledChanged = Signal()
     showTooltipsEnabledChanged = Signal()
     singleClickExitEnabledChanged = Signal()
+    googlePhotosChanged = Signal()
 
     _OWN_NAMES = OWN_LANGUAGE_NAMES
 
@@ -102,6 +103,12 @@ class FakeController(QObject):
 
     systemLanguageCode = Property(str, lambda self: "system", constant=True)
     systemLanguageSuffix = Property(str, lambda self: "hu-HU", constant=True)
+    googlePhotosClientId = Property(str, lambda self: "", constant=True)
+    googlePhotosClientSecretConfigured = Property(bool, lambda self: False, constant=True)
+    googlePhotosSignedIn = Property(bool, lambda self: False, constant=True)
+    googlePhotosCanSignIn = Property(bool, lambda self: False, constant=True)
+    googlePhotosAuthBusy = Property(bool, lambda self: False, constant=True)
+    googlePhotosAuthError = Property(str, lambda self: "", constant=True)
 
     @Slot(str, result=str)
     def ownLanguageName(self, code) -> str:
@@ -372,6 +379,7 @@ TAB_OBJECT_NAMES = [
     "optionsTabNetwork",
     "optionsTabWebAlbums",
     "optionsTabNameTags",
+    "optionsTabGooglePhotos",
 ]
 
 

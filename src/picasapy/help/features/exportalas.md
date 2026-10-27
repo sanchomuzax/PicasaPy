@@ -96,10 +96,19 @@ A kijelölt sablon szerint készül az oldal.
 | 6. sablon, 1 oldalas, fehér háttér | fehér | keretes |
 | XML-kód | - | - |
 
-A leírások az eredeti Picasa szövegei. A PicasaPy mind a hat
-galéria-sablonnál ugyanolyan felépítésű oldalt készít: indexképes
-kezdőoldalt, ahonnan a képekre kattintva a nagy kép nyílik meg. A hat
-sablon a háttérszínben és a csempék kinézetében különbözik.
+A leírások az eredeti Picasa szövegei. A kész oldal felépítése a
+sablontól függ:
+
+- Az **1-3. sablon** (2 oldalas) indexképes kezdőoldalt készít; egy
+  képre kattintva a nagy kép külön oldalon nyílik meg.
+- A **4-6. sablon** (1 oldalas) egyetlen ablakban mutat mindent: **bal
+  oldalt** egy keskeny, görgethető sávban sorakoznak az indexképek a
+  feliratukkal, **jobb oldalt** a nagy kép látszik. Megnyitáskor az első
+  kép áll jobbra; egy indexképre kattintva az a kép jelenik meg a helyén,
+  a bal sáv pedig marad.
+
+A sablonok ezen felül a háttérszínben és a csempék kinézetében
+különböznek.
 
 Az utolsó, az **XML-kód**, nem weboldal: egyetlen `album.xml` fájlt ír
 az album és a képek adataival. Akkor jó, ha az adatokat egy másik program

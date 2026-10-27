@@ -161,6 +161,7 @@ NEM fájlútvonal-paraméteres) + `write_atomic` — pontosan az
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -356,13 +357,17 @@ def save_edited(
     # (#297). Első mentésnél ez maga az eredeti (ugyanaz, ami a
     # `.picasaoriginals`-ba kerül), ismételt mentésnél a KORÁBBI mentés
     # renderelt tartalma.
-    original_mtime_ns = image_path.stat().st_mtime_ns
+    source_stat = image_path.stat()
+    original_mtime_ns = source_stat.st_mtime_ns
     moddate_value = moddate_from_timestamp_ns(original_mtime_ns)
     bytes_before_write = image_path.read_bytes()
 
     # (a) Az eredeti megőrzése — KIZÁRÓLAG ha még nincs korábbi mentésből
     # (sem a mai, sem a 2009 előtti nevű mappában).
     backup_created_now = existing_backup is None
+    backup_mtime_ns = (
+        original_mtime_ns if backup_created_now else backup_path.stat().st_mtime_ns
+    )
     if backup_created_now:
         write_atomic(backup_path, bytes_before_write, make_parents=True)
 
@@ -430,6 +435,14 @@ def save_edited(
             section_name=section,
         )
         completed_ini_writes.append((original_ini_path, original_before))
+        # Az eredeti-mappa ini-frissítése a #643 szerint megérinti a
+        # képfájlokat; a megőrzött eredeti másolatán ezt vissza kell állítani
+        # az előzőleg rögzített mtime-ra. Első mentésnél ez a forrásé, későbbi
+        # mentéseknél a változatlanul megőrzött eredetié.
+        os.utime(
+            backup_path,
+            ns=(backup_path.stat().st_atime_ns, backup_mtime_ns),
+        )
     except _INI_WRITE_ERRORS as error:
         rollback_errors = []
         for ini_path, previous_state in reversed(completed_ini_writes):

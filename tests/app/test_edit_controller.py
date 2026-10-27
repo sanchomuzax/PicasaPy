@@ -862,6 +862,25 @@ class TestGpuFinetunePreview:
         assert controller.gpuPrefixSource.startswith("image://editpreview/1?gpuprefix=1")
         assert controller.gpuLutSource.startswith("image://editpreview/1?gpulut=1")
 
+    def test_gpu_sources_wait_until_provider_has_both_images(
+        self, controller, provider, photo
+    ):
+        """#5984: ne adjon a QML kép-URL-t, amíg a provider nem tud képet adni."""
+        controller.beginEdit("1", str(photo))
+        assert controller.gpuPrefixSource
+        assert controller.gpuLutSource
+
+        # A renderelés indulásakor előfordulhat, hogy a friss köztes képek
+        # még nincsenek a provider cache-ében. Ez a jelenlegi hibás állapotot
+        # szimulálja úgy, hogy a szerkesztési lánc továbbra is GPU-alkalmas.
+        provider.kepet_elenged("1")
+        assert controller.gpuPrefixSource == ""
+        assert controller.gpuLutSource == ""
+
+        controller._register_preview()
+        assert controller.gpuPrefixSource.startswith("image://editpreview/1?gpuprefix=1")
+        assert controller.gpuLutSource.startswith("image://editpreview/1?gpulut=1")
+
     def test_finetune_in_middle_of_chain_is_not_gpu_eligible(self, controller, photo):
         """Ha a finetune2 UTÁN másik effekt is van a mentett láncban, a
         GPU-előnézet nem biztonságos — üres URL-eket kell adnia."""

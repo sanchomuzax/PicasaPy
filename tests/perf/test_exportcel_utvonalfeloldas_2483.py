@@ -67,7 +67,7 @@ from picasapy.scanner.name_filters import default_name_filters
 from support.jpeg_factory import make_jpeg
 
 #: A #139 frissesség-védőablaka 2 s — a próbának ennél idősebb mappa kell,
-#: különben a kihagyás nem lép életbe, és nem a steady state-et mérnénk.
+#: különben a kihagyás nem lép életbe, és nem a steady `state` értéket mérnénk.
 #: Az mtime-ot ezért visszaállítjuk, nem várunk.
 _REGI_ELTOLAS_S = 3600
 
