@@ -18853,13 +18853,13 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="863" />
             <source>Saved %1 to Captured Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>S-a salvat %1 în albumul Videoclipuri capturate</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="873" />
             <source>Saved %1 to Exported Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>S-a salvat %1 în albumul Videoclipuri exportate</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="868" />
@@ -18872,13 +18872,13 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="876" />
             <source>Failed to export clip</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Exportarea decupajului a eşuat</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="885" />
             <source>Video playback requires the Qt Multimedia module.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Redarea videoclipurilor necesită modulul Qt Multimedia.</translation>
         </message>
     </context>
     <context>

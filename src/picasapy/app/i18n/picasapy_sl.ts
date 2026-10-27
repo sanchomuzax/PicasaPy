@@ -18867,13 +18867,13 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="863" />
             <source>Saved %1 to Captured Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Shranjeno %1 v album »Zajeti videoposnetki«</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="873" />
             <source>Saved %1 to Exported Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Shranjeno %1 v album »Izvoženi videoposnetki«</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="868" />
@@ -18886,13 +18886,13 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="876" />
             <source>Failed to export clip</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Izvoz izrezka ni uspel</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="885" />
             <source>Video playback requires the Qt Multimedia module.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Za predvajanje videa je potreben modul Qt Multimedia.</translation>
         </message>
     </context>
     <context>

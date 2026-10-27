@@ -18839,13 +18839,13 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="863" />
             <source>Saved %1 to Captured Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sparade %1 i Inspelade videor</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="873" />
             <source>Saved %1 to Exported Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sparade %1 i Exporterade videor</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="868" />
@@ -18858,13 +18858,13 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="876" />
             <source>Failed to export clip</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Det gick inte att exportera klippet</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="885" />
             <source>Video playback requires the Qt Multimedia module.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Videouppspelning kräver Qt Multimedia-modulen.</translation>
         </message>
     </context>
     <context>

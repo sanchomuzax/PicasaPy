@@ -18826,13 +18826,13 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog2</extracomment>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="863" />
             <source>Saved %1 to Captured Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 در ویدیوهای ضبط‌شده ذخیره شد</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="873" />
             <source>Saved %1 to Exported Videos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1 در ویدیوهای صادرشده ذخیره شد</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="868" />
@@ -18845,13 +18845,13 @@ picasapy-origin-key: stringres:CCaptureFrame::captureframeprog4</extracomment>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="876" />
             <source>Failed to export clip</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>صادر کردن کلیپ ناموفق بود</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PhotoViewerPhotoArea.qml" line="885" />
             <source>Video playback requires the Qt Multimedia module.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>پخش ویدیو به ماژول Qt Multimedia نیاز دارد.</translation>
         </message>
     </context>
     <context>
