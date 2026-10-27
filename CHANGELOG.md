@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.270] - 2026-10-27
+
+- A képpontos képernyőkép-tesztek Windowson indokkal kimaradnak, mert a referencia Linuxon készül (#6058).
+- Frissítés után a PNG, GIF és TGA képek nem tűnnek el többé: elmentett fájltípus-választás nélkül minden képtípus látszik (#6060).
+- A README tetején mozgó előnézet mutatja a 10 másodperces bemutatót (#6063).
+
 ## [0.9.269] - 2026-10-27
 
 - A felső menüsor belső QML-menüi külön komponensekbe kerültek változatlan megjelenéssel és működéssel (#6016).
