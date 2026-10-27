@@ -21,16 +21,18 @@ binárisból kiolvasva megvan:
 | LAN-hirdetés: `computer=%s`, `user=%s`, `httpport=%d`, `dbid=%s` | `0x00937800` |
 | `picasa://importbutton/?url=…` — **külső URL-ről tölt bővítményt** | `0x004bbaf0`, `0x004bbed0` |
 
-Nálunk ma **egyik sincs**: a `src/` alatt nincs hallgatózó socket (mérve, ld.
-lent), a hálózati műveleteink kizárólag **kimenők** (webexport fájlba, e-mail
-átadása a rendszer levelezőjének).
+Nálunk nincs Picasa-szerű vagy tartós hálózati kiszolgáló. A #5976 Google
+Fotók-bejelentkezése alább rögzített, szűk loopback-kivételt használ; a többi
+hálózati művelet kimenő (webexport fájlba, e-mail átadása a rendszer
+levelezőjének).
 
 ## A döntés
 
 **A PicasaPy szándékosan NEM építi meg ezt a felületet:**
 
-1. nem futtat **hallgatózó** hálózati kiszolgálót (HTTP, WebDAV, RSS,
-   bélyegkép-végpont, beküldő végpont);
+1. nem futtat **általános vagy tartós** hallgatózó hálózati kiszolgálót (HTTP,
+   WebDAV, RSS, bélyegkép-végpont, beküldő végpont); a #5976 alábbi, egyszeri
+   OAuth loopback-végpontja az egyetlen kivétel;
 2. nem hirdeti magát a helyi hálózaton (gépnév/felhasználónév),
 3. nem regisztrál egyedi **URL-sémát** (`picasapy://` vagy hasonló),
 4. és nem épít **külső URL-ről kódot betöltő** ágat.
@@ -57,6 +59,15 @@ rangsorban „fehér foltként" előkerülnie: a
 
 ## Amit ez NEM zár ki
 
+- **Google Fotók OAuth loopback (#5976):** az asztali OAuth-visszatéréshez
+  szükséges ideiglenes HTTP-végpont kizárólag `127.0.0.1`-re és az operációs
+  rendszer által kiosztott szabad portra köt. Csak a bejelentkezés idején él,
+  legfeljebb 300 másodpercig; egyetlen, véletlen `state`-értékkel egyező
+  callbacket fogad el, utána bezár. A hibás state-et tartalmazó kérés nem
+  fogyasztja el a callbacket. A végpont másik gépről/LAN-ról nem érhető el.
+  A loopback hálózati szinten ugyanazon gép más folyamatai számára is
+  elérhető lehet; az OAuth `state` és PKCE védi a hitelesítést, nem egy
+  böngésző-azonosító fejléc.
 - **A kimenő** hálózati műveletek (e-mail, jövőbeli feltöltés valamilyen
   szolgáltatásba) érintetlenek: a döntés a **beérkező** oldalról szól.
 - **Album-megosztás hálózaton** (`LANShareAlbums`): ha valaha kell, az
@@ -69,9 +80,11 @@ rangsorban „fehér foltként" előkerülnie: a
 
 `tests/test_nincs_halozati_kiszolgalo_2023.py`: a `src/` alá bekerülő
 hallgatózó socket (`bind(`, `listen(`, `HTTPServer`, `socketserver`,
-`aiohttp`, `flask`, `uvicorn`) és az URL-séma-regisztráció elbukik rajta. A
-próba **saját magát is ellenőrzi** egy ismert pozitívval — a nulla lelet csak
-így jelent valamit.
+`aiohttp`, `flask`, `uvicorn`) és az URL-séma-regisztráció elbukik rajta. Az
+ADR-011 / #5976 kivételt csak a `src/picasapy/google_photos.py` pontos
+`127.0.0.1:0` bind-sora kapja; egy másik fájl vagy másik cím továbbra is
+hibát ad. A próba **saját magát is ellenőrzi** ismert pozitívval — a nulla
+lelet csak így jelent valamit.
 
 *A szándékos eltérést a teszt védje, ne a jószándék.*
 

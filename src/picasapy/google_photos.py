@@ -39,6 +39,9 @@ GOOGLE_OAUTH_REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 DEFAULT_UPLOAD_MAX_SIDE = 1600
 MAX_BATCH_SIZE = 50
 MAX_PHOTO_BYTES = 200 * 1024 * 1024
+_OAUTH_CALLBACK_TIMEOUT_SECONDS = 300.0
+_OAUTH_CALLBACK_POLL_SECONDS = 0.25
+_monotonic = time.monotonic
 _KEYRING_SERVICE = "PicasaPy Google Photos"
 
 
@@ -459,18 +462,20 @@ class LoopbackOAuthSession:
             state=self._state,
             code_verifier=self._code_verifier,
         )
-        self._server.timeout = 0.25
+        self._server.timeout = _OAUTH_CALLBACK_POLL_SECONDS
         self._listener = threading.Thread(
             target=self._listen, name="picasapy-google-photos-oauth", daemon=True
         )
         self._listener.start()
 
-    def wait_for_tokens(self, timeout: float = 300.0) -> dict:
-        deadline = time.monotonic() + timeout
+    def wait_for_tokens(
+        self, timeout: float = _OAUTH_CALLBACK_TIMEOUT_SECONDS
+    ) -> dict:
+        deadline = _monotonic() + timeout
         while not self._result_ready.wait(0.1):
             if self._cancelled.is_set():
                 raise GooglePhotosError("cancelled")
-            if time.monotonic() >= deadline:
+            if _monotonic() >= deadline:
                 self.cancel()
                 raise GooglePhotosError("auth_timeout")
         if self._cancelled.is_set():
@@ -494,28 +499,8 @@ class LoopbackOAuthSession:
         session = self
 
         class CallbackHandler(BaseHTTPRequestHandler):
-            def do_GET(self):  # noqa: N802 — http.server callback API
-                parsed = urlparse(self.path)
-                query = parse_qs(parsed.query)
-                if parsed.path not in {"", "/"}:
-                    error = "auth_failed"
-                    code = ""
-                elif not secrets.compare_digest(
-                    (query.get("state") or [""])[0], session._state
-                ):
-                    error = "auth_failed"
-                    code = ""
-                elif query.get("error"):
-                    raw_error = (query.get("error") or [""])[0]
-                    error = "cancelled" if raw_error == "access_denied" else "auth_failed"
-                    code = ""
-                else:
-                    code = (query.get("code") or [""])[0]
-                    error = "" if code else "auth_failed"
-                session._result = (code, error)
-                session._result_ready.set()
-                content = b"Authorization complete. You can close this window."
-                self.send_response(200 if not error else 400)
+            def _respond(self, status: int, content: bytes) -> None:
+                self.send_response(status)
                 self.send_header("Content-Type", "text/plain; charset=utf-8")
                 self.send_header("Content-Length", str(len(content)))
                 self.send_header("Cache-Control", "no-store")
@@ -525,17 +510,45 @@ class LoopbackOAuthSession:
                 except OSError:
                     pass
 
+            def do_GET(self):  # noqa: N802 — http.server callback API
+                parsed = urlparse(self.path)
+                query = parse_qs(parsed.query)
+                valid_state = secrets.compare_digest(
+                    (query.get("state") or [""])[0], session._state
+                )
+                if parsed.path not in {"", "/"} or not valid_state:
+                    self._respond(400, b"Invalid authorization callback.")
+                    return
+
+                if query.get("error"):
+                    raw_error = (query.get("error") or [""])[0]
+                    error = "cancelled" if raw_error == "access_denied" else "auth_failed"
+                    code = ""
+                else:
+                    code = (query.get("code") or [""])[0]
+                    error = "" if code else "auth_failed"
+                session._result = (code, error)
+                session._result_ready.set()
+                content = b"Authorization complete. You can close this window."
+                self._respond(200 if not error else 400, content)
+
             def log_message(self, _format, *args):
                 # A kérés URL-je OAuth state-et és authorization code-ot tartalmaz.
                 return
 
-        return HTTPServer(("127.0.0.1", 0), CallbackHandler)
+        # ADR-011 kivétel: kizárólag a 127.0.0.1-re, véletlen szabad portra
+        # kötött, egyszeri Google OAuth callback (#5976).
+        server = HTTPServer(("127.0.0.1", 0), CallbackHandler)
+        if server.server_address[0] != "127.0.0.1":
+            server.server_close()
+            raise GooglePhotosError("auth_failed")
+        return server
 
     def _listen(self) -> None:
-        deadline = time.monotonic() + 300.0
+        deadline = _monotonic() + _OAUTH_CALLBACK_TIMEOUT_SECONDS
         try:
             while not self._cancelled.is_set() and not self._result_ready.is_set():
-                if time.monotonic() >= deadline:
+                if _monotonic() >= deadline:
                     self._result = ("", "auth_timeout")
                     self._result_ready.set()
                     return
