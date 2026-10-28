@@ -9404,19 +9404,6 @@ Zmena sa prejaví pri ďalšom spustení programu PicasaPy.</translation>
     <context>
         <name>MainToolbar</name>
         <message>
-            <location filename="../qml/PicasaPy/MainToolbar.qml" />
-            <source>Show starred photos only</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(searchcontainer/starsearch)</extracomment>
-            <translation>Zobraziť len fotografie označené hviezdičkou</translation>
-        </message>
-        <message>
-            <source>Filter by date range</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(searchcontainer/timecontainer_label)</extracomment>
-            <translation>Filtrovať podľa rozsahu dátumov</translation>
-        </message>
-        <message>
             <source>Show only photos with faces</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(searchcontainer/facesearch)</extracomment>
@@ -9427,16 +9414,6 @@ picasapy-origin-key: tooltips:Tooltip(searchcontainer/facesearch)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(thumbui/importbutton)</extracomment>
             <translation>Získať fotografie z fotoaparátu, skenera alebo iného média</translation>
-        </message>
-        <message>
-            <source>Show movies only</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zobraziť iba videá</translation>
-        </message>
-        <message>
-            <source>Show only photos with geotag</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zobraziť iba fotografie s geoznačkou</translation>
         </message>
         <message>
             <source>Clear your search</source>
@@ -9450,13 +9427,6 @@ picasapy-origin-key: tooltips:Tooltip(searchcontainer/searchclr)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
             <translation>Importovať</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MainToolbar.qml" line="46" />
-            <source>Filters</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_FILTERS;tooltips:Label(searchcontainer/filter_label)</extracomment>
-            <translation>Filtre</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="143" />
@@ -9538,6 +9508,50 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/folderviewpopup)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMoviePanelPopup::title;stringres:CanonCaptureMoviePanelPopup::title;tooltips:Label(panelroot/capturemovietab)</extracomment>
             <translation>Záznam</translation>
+        </message>
+    </context>
+    <context>
+        <name>ToolbarFilterControls</name>
+        <message>
+            <location filename="../qml/PicasaPy/ToolbarFilterControls.qml" />
+            <source>Show starred photos only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(searchcontainer/starsearch)</extracomment>
+            <translation>Zobraziť len fotografie označené hviezdičkou</translation>
+        </message>
+        <message>
+            <source>Filter by date range</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(searchcontainer/timecontainer_label)</extracomment>
+            <translation>Filtrovať podľa rozsahu dátumov</translation>
+        </message>
+        <message>
+            <source>Show only photos with faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(searchcontainer/facesearch)</extracomment>
+            <translation>Zobraziť len fotografie s tvárami</translation>
+        </message>
+        <message>
+            <source>Show movies only</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zobraziť iba videá</translation>
+        </message>
+        <message>
+            <source>Show only photos with geotag</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zobraziť iba fotografie s geoznačkou</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ToolbarFilterControls.qml" line="46" />
+            <source>Filters</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_FILTERS;tooltips:Label(searchcontainer/filter_label)</extracomment>
+            <translation>Filtre</translation>
+        </message>
+        <message>
+            <source>Show duplicate files only</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zobraziť iba duplicitné súbory</translation>
         </message>
     </context>
     <context>
