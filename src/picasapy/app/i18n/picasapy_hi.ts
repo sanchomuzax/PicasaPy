@@ -2265,19 +2265,19 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extr
             <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="39" />
             <source>PicasaPy is generating the web page.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy वेब पृष्ठ बना रहा है.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="69" />
             <source>Published %1 file(s) to %2.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%2 पर %1 फ़ाइलें प्रकाशित की गईं।</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="71" />
             <source>Web page generated: %1 file(s) in %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>वेब पृष्ठ बन गया: %2 में %1 फ़ाइलें</translation>
         </message>
     </context>
     <context>
@@ -2286,7 +2286,7 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extr
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="77" />
             <source>Account name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>खाते का नाम:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="144" />
@@ -2306,19 +2306,19 @@ picasapy-origin-key: stringres:il_Delete</extracomment>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="84" />
             <source>FTP server:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP सर्वर:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="118" />
             <source>Leave blank to keep the saved password.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>सहेजे गए पासवर्ड को बनाए रखने के लिए इसे खाली छोड़ें।</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="9" />
             <source>Manage FTP Accounts</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP खाते प्रबंधित करें</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="132" />
@@ -2338,7 +2338,7 @@ picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="106" />
             <source>Remote folder:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>दूरस्थ फ़ोल्डर:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="149" />
@@ -2351,7 +2351,7 @@ picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="68" />
             <source>The account could not be deleted.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>खाता हटाया नहीं जा सका।</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="91" />

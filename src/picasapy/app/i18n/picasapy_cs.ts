@@ -2267,19 +2267,19 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extr
             <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="39" />
             <source>PicasaPy is generating the web page.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy vytváří webovou stránku.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="69" />
             <source>Published %1 file(s) to %2.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Do %2 bylo zveřejněno %1 souborů.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="71" />
             <source>Web page generated: %1 file(s) in %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Webová stránka byla vytvořena: %1 souborů bylo uloženo do %2.</translation>
         </message>
     </context>
     <context>
@@ -2288,7 +2288,7 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extr
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="77" />
             <source>Account name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Název účtu:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="144" />
@@ -2308,19 +2308,19 @@ picasapy-origin-key: stringres:il_Delete</extracomment>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="84" />
             <source>FTP server:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>FTP server:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="118" />
             <source>Leave blank to keep the saved password.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ponechte prázdné, chcete-li zachovat uložené heslo.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="9" />
             <source>Manage FTP Accounts</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Spravovat účty FTP</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="132" />
@@ -2340,7 +2340,7 @@ picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="106" />
             <source>Remote folder:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Vzdálená složka:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="149" />
@@ -2353,7 +2353,7 @@ picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="68" />
             <source>The account could not be deleted.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Účet se nepodařilo odstranit.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="91" />

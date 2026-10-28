@@ -2266,19 +2266,19 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extr
             <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="39" />
             <source>PicasaPy is generating the web page.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy sta generando la pagina web.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="69" />
             <source>Published %1 file(s) to %2.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pubblicati %1 file in %2.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="71" />
             <source>Web page generated: %1 file(s) in %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pagina web generata: %1 file in %2</translation>
         </message>
     </context>
     <context>
@@ -2287,7 +2287,7 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extr
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="77" />
             <source>Account name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nome account:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="144" />
@@ -2307,19 +2307,19 @@ picasapy-origin-key: stringres:il_Delete</extracomment>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="84" />
             <source>FTP server:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Server FTP:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="118" />
             <source>Leave blank to keep the saved password.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Lascia vuoto per mantenere la password salvata.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="9" />
             <source>Manage FTP Accounts</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Gestisci account FTP</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="132" />
@@ -2339,7 +2339,7 @@ picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="106" />
             <source>Remote folder:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Cartella remota:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="149" />
@@ -2352,7 +2352,7 @@ picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="68" />
             <source>The account could not be deleted.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Impossibile eliminare l'account.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="91" />
