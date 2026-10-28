@@ -25,6 +25,7 @@ from PySide6.QtTest import QSignalSpy, QTest
 
 from picasapy.app import formatting
 from support.jpeg_factory import make_minta_jpeg
+from support.render_test_helpers import is_text_item
 from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
@@ -124,9 +125,7 @@ def _talca_kivagas(window, menu=None) -> tuple[QImage, int, int]:
 def _szovegdobozok_maszkolasa(window, kep: QImage, bal: int, felso: int) -> np.ndarray:
     ervenyes = np.ones((kep.height(), kep.width()), dtype=bool)
     for objektum in window.findChildren(QObject):
-        if not objektum.metaObject().className().startswith("QQuickText"):
-            continue
-        if not isinstance(objektum, QQuickItem):
+        if not isinstance(objektum, QQuickItem) or not is_text_item(objektum):
             continue
         if not objektum.isVisible() or objektum.width() <= 0 or objektum.height() <= 0:
             continue
@@ -323,7 +322,11 @@ def rogzitett_datum(monkeypatch):
 
 @pytest.mark.parametrize("ablakmagassag_eltolas", _ABLAKMAGASSAG_ELTOLASOK)
 def test_a_talca_fobb_allapotai_keppontra_megmaradnak(
-    ablakmagassag_eltolas, rogzitett_datum, qml_app, qt_app, tmp_path
+    ablakmagassag_eltolas,
+    rogzitett_datum,
+    qml_app,
+    qt_app,
+    tmp_path,
 ):
     """A rögzített tálcaállapotok `-5/0/+5` ablakmagasságnál is egyeznek."""
     _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas)

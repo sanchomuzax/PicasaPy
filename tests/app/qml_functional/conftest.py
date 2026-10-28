@@ -26,6 +26,7 @@ from support.folder_hierarchy_wiring import wire_folder_hierarchy
 from support.print_wiring import wire_passport, wire_print
 from support.jpeg_factory import make_jpeg
 from support import keep_burkok
+from support.render_test_helpers import rogzitett_betu_context
 
 
 @pytest.fixture(autouse=True)
@@ -423,8 +424,19 @@ def _build_qml_app(
 
 
 @pytest.fixture
+def rogzitett_betu(qt_app):
+    """A képpontos QML-összevetéshez rögzített betűt állít be."""
+    with rogzitett_betu_context():
+        yield
+
+
+@pytest.fixture
 def qml_app(qt_app, tmp_path, request):
     """Teljes app tesztenként, funkció-szintű állapot-izolációval."""
+    # A betűt még a QML-fa felépítése előtt kell beállítani. Csak azok a
+    # tesztek kérik, amelyek a rögzített betűs fixture-t is megadják.
+    if "rogzitett_betu" in request.fixturenames:
+        request.getfixturevalue("rogzitett_betu")
     yield from _build_qml_app(qt_app, tmp_path, keep_modul=request.module)
 
 
