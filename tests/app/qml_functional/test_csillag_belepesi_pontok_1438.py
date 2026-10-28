@@ -200,8 +200,13 @@ class TestABelepesiPontokLeltara:
             for path in _QML_DIR.rglob("*.qml")
             if "controller.toggleStar" in path.read_text(encoding="utf-8")
         )
-        assert hivok == ["Main.qml", "PicasaPy/TrayTopRow.qml"], (
+        assert hivok == [
+            "Main.qml",
+            "PicasaPy/MainSlideshow.qml",
+            "PicasaPy/TrayTopRow.qml",
+        ], (
             "új csillag-belépési pont került a felületre — ehhez a fájlhoz "
-            "őr-teszt is kell (a Main.qml a diavetítés gombját közvetíti, a "
-            "TrayTopRow.qml a tálcáét; #6050-ben a felső sor külön komponens lett)"
+            "őr-teszt is kell (a Main.qml kezeli a menüparancsot, a "
+            "MainSlideshow.qml a diavetítés gombját, a TrayTopRow.qml a tálcáét; "
+            "#6050-ben a felső sor külön komponens lett)"
         )

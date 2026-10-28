@@ -387,7 +387,7 @@ class TestQmlOldal:
             "a régi, darabszámmal kezdődő mondat még él")
 
     def test_a_vorosszem_figyelmeztetes_a_kepnevet_mondja(self) -> None:
-        forras = (QML / "Main.qml").read_text(encoding="utf-8")
+        forras = (QML / "PicasaPy" / "MainDialogs.qml").read_text(encoding="utf-8")
         assert "controller.redeyeNamesInSelection(" in forras
         assert '"Red eye fixes have been applied to %1.\\n"' in forras
 
