@@ -55,7 +55,21 @@ def _kepadat(kep: QImage) -> np.ndarray:
     adat = np.frombuffer(rgba.constBits(), dtype=np.uint8)
     return adat.reshape(rgba.height(), sorhossz)[:, : rgba.width() * 4].reshape(
         rgba.height(), rgba.width(), 4
-    ).copy()  # a nézet a függvény végén felszabaduló rgba-ra mutatna (#6085)
+    ).copy()
+
+
+def _hibakori_kepmentes(kep: QImage, allapot: str, ablakmagassag: int) -> None:
+    kimeneti_mappa = os.environ.get("PICASAPY_RENDER_FAILURE_DIR")
+    if not kimeneti_mappa:
+        return
+    kimenet = Path(kimeneti_mappa) / "tray"
+    kimenet.mkdir(parents=True, exist_ok=True)
+    assert kep.save(str(kimenet / f"{allapot}-{ablakmagassag}.png"), "PNG")
+
+
+def test_kepadat_a_qimage_elettartamatol_fuggetlen_tombot_ad():
+    kep = QImage(2, 2, QImage.Format.Format_RGBA8888)
+    assert _kepadat(kep).flags.owndata
 
 
 def _talca_kivagas(window, menu=None) -> tuple[QImage, int, int]:
@@ -132,6 +146,7 @@ def _kepet_rogzit_vagy_osszevet(window, allapot: str, qt_app, menu=None) -> None
         f"a(z) {allapot} állapot nem rajzolódott ki határidőn belül"
     )
     aktualis, bal, felso = _talca_kivagas(window, menu)
+    _hibakori_kepmentes(aktualis, allapot, window.height())
 
     kimenet = Path.cwd() / ".tmp" / "tray-bar-6050" / allapot
     kimenet.mkdir(parents=True, exist_ok=True)

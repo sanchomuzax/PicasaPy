@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -27,7 +28,23 @@ def _pixelek(kep: QImage) -> np.ndarray:
     adat = np.frombuffer(rgba.constBits(), dtype=np.uint8)
     return adat.reshape(rgba.height(), sorhossz)[:, : rgba.width() * 4].reshape(
         rgba.height(), rgba.width(), 4
-    ).copy()  # a nézet a függvény végén felszabaduló rgba-ra mutatna (#6085)
+    ).copy()
+
+
+def _hibakori_kepmentes(kep: QImage, allapot: str, ablakmagassag_delta: int) -> None:
+    kimeneti_mappa = os.environ.get("PICASAPY_RENDER_FAILURE_DIR")
+    if not kimeneti_mappa:
+        return
+    kimenet = Path(kimeneti_mappa) / "folder-pane"
+    kimenet.mkdir(parents=True, exist_ok=True)
+    assert kep.save(
+        str(kimenet / f"{allapot}-{ablakmagassag_delta:+d}.png"), "PNG"
+    )
+
+
+def test_pixelek_a_qimage_elettartamatol_fuggetlen_tombot_ad():
+    kep = QImage(2, 2, QImage.Format.Format_RGBA8888)
+    assert _pixelek(kep).flags.owndata
 
 
 def _szovegteruletek_kimaszkolasa(ablak, pane, ervenyes: np.ndarray) -> None:
@@ -98,6 +115,7 @@ def _folder_pane_render_megmarad(ablakmagassag_delta, qml_app, qt_app, tmp_path)
         )
         assert not actual.isNull()
         assert actual.save(str(out / f"{allapot}.png"))
+        _hibakori_kepmentes(actual, allapot, delta)
         reference = QImage(str(_ARANY / f"{allapot}.png"))
         assert not reference.isNull()
         width = min(actual.width(), reference.width())
