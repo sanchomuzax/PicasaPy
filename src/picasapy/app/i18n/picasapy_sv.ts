@@ -9216,44 +9216,6 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
             <translation>Detta skapar ett album med fler än 1000 bilder.  Vill du fortsätta?</translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" line="3284" />
-            <source>Back to View All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tillbaka till vyn Alla</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3370" />
-            <source>Duplicate Files</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Dubblettfiler</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3394" />
-            <source>Looking for duplicate files...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Söker efter dubblettfiler...</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3333" />
-            <source>Similarity Search Results</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
-            <translation>Sökresultat – likhet</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3351" />
-            <source>Clear Sample</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Rensa urval</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3419" />
-            <source>Updating similarity database (will be fast next time)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
-            <translation>Uppdaterar databas (kommer vara snabbare nästa gång)</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" line="2743" />
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -9413,6 +9375,47 @@ It will change the next time PicasaPy is opened.</source>
             <translation>Vill du ändra språket som PicasaPy använder?
 
 Ändringen börjar gälla nästa gång PicasaPy öppnas.</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainLibraryCanvas</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="54" />
+            <source>Back to View All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="140" />
+            <source>Duplicate Files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="164" />
+            <source>Looking for duplicate files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="103" />
+            <source>Similarity Search Results</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
+            <translation>Sökresultat – likhet</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="121" />
+            <source>Clear Sample</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="189" />
+            <source>Updating similarity database (will be fast next time)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
+            <translation>Uppdaterar databas (kommer vara snabbare nästa gång)</translation>
         </message>
     </context>
     <context>

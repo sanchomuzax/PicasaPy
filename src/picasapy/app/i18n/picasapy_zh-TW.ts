@@ -9203,44 +9203,6 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
             <translation>這樣將會建立一本包含超過 1000 張圖像的相簿。您想要繼續嗎？</translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" line="3284" />
-            <source>Back to View All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>返回全部檢視</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3370" />
-            <source>Duplicate Files</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>重複檔案</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3394" />
-            <source>Looking for duplicate files...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>正在尋找重複檔案…</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3333" />
-            <source>Similarity Search Results</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
-            <translation>相似搜尋結果</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3351" />
-            <source>Clear Sample</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>清除範例</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3419" />
-            <source>Updating similarity database (will be fast next time)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
-            <translation>更新相似的資料庫 (下次進行會更快)</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" line="2743" />
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -9400,6 +9362,47 @@ It will change the next time PicasaPy is opened.</source>
             <translation>要變更 PicasaPy 使用的語言嗎？
 
 下次開啟 PicasaPy 時就會變更。</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainLibraryCanvas</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="54" />
+            <source>Back to View All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="140" />
+            <source>Duplicate Files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="164" />
+            <source>Looking for duplicate files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="103" />
+            <source>Similarity Search Results</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
+            <translation>相似搜尋結果</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="121" />
+            <source>Clear Sample</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="189" />
+            <source>Updating similarity database (will be fast next time)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
+            <translation>更新相似的資料庫 (下次進行會更快)</translation>
         </message>
     </context>
     <context>
