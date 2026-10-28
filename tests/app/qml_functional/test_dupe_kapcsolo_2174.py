@@ -18,10 +18,11 @@ from pathlib import Path
 from PySide6.QtCore import QObject
 from tests.support.qml_blokk import blokk_horgonyra
 
-_TOOLBAR = (
+_QML_DIR = (
     Path(__file__).resolve().parents[3]
-    / "src/picasapy/app/qml/PicasaPy/MainToolbar.qml"
+    / "src/picasapy/app/qml/PicasaPy"
 )
+_FILTER_CONTROLS = _QML_DIR / "ToolbarFilterControls.qml"
 
 
 class TestAKapcsoloMegvan:
@@ -32,7 +33,7 @@ class TestAKapcsoloMegvan:
         )
 
     def test_van_hozza_buborekusgo(self):
-        assert "Show duplicate files only" in _TOOLBAR.read_text(
+        assert "Show duplicate files only" in _FILTER_CONTROLS.read_text(
             encoding="utf-8"
         )
 
@@ -76,14 +77,16 @@ class TestKOZOS_ut_a_menuponttal:
         """Az eredetiben a kapcsoló és a menüparancs bitre azonos hívás —
         nálunk sem lehet két külön ág."""
         blokk = blokk_horgonyra(
-            _TOOLBAR.read_text(encoding="utf-8"), 'objectName: "dupeFilter"'
+            _FILTER_CONTROLS.read_text(encoding="utf-8"),
+            'objectName: "dupeFilter"',
         )
         assert "controller.clearFilter()" in blokk
         assert "controller.showDuplicateFiles()" in blokk
 
     def test_a_kapcsolo_a_viewModeName_bol_dolgozik(self):
         blokk = blokk_horgonyra(
-            _TOOLBAR.read_text(encoding="utf-8"), 'objectName: "dupeFilter"'
+            _FILTER_CONTROLS.read_text(encoding="utf-8"),
+            'objectName: "dupeFilter"',
         )
         assert "viewModeName" in blokk
         assert '"dupes"' in blokk
