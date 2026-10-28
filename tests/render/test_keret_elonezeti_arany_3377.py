@@ -95,9 +95,8 @@ def test_az_elonezet_ugyanazt_a_keretet_MUTATJA_mint_a_mentett_kep():
         teljes.tobytes(), teljes.shape[1], teljes.shape[0], teljes.shape[1] * 3,
         QImage.Format.Format_RGB888,
     ).scaled(teljes.shape[1] // 2, teljes.shape[0] // 2)
-    mutatott = np.frombuffer(
-        kicsinyitett.convertToFormat(QImage.Format.Format_RGB888).constBits(), dtype=np.uint8
-    ).reshape(kicsinyitett.height(), kicsinyitett.bytesPerLine())[:, : kicsinyitett.width() * 3]
+    rgb = kicsinyitett.convertToFormat(QImage.Format.Format_RGB888)
+    mutatott = np.frombuffer(rgb.constBits(), dtype=np.uint8).reshape(rgb.height(), rgb.bytesPerLine())[:, : rgb.width() * 3]
     mutatott = mutatott.reshape(kicsinyitett.height(), kicsinyitett.width(), 3)
 
     elonezet = _render(_kep(1000, 750), KERET, arany=0.5).image

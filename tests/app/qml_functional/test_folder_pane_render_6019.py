@@ -27,7 +27,7 @@ def _pixelek(kep: QImage) -> np.ndarray:
     adat = np.frombuffer(rgba.constBits(), dtype=np.uint8)
     return adat.reshape(rgba.height(), sorhossz)[:, : rgba.width() * 4].reshape(
         rgba.height(), rgba.width(), 4
-    )
+    ).copy()  # a nézet a függvény végén felszabaduló rgba-ra mutatna (#6085)
 
 
 def _szovegteruletek_kimaszkolasa(ablak, pane, ervenyes: np.ndarray) -> None:

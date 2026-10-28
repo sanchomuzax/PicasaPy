@@ -55,7 +55,7 @@ def _kepadat(kep: QImage) -> np.ndarray:
     adat = np.frombuffer(rgba.constBits(), dtype=np.uint8)
     return adat.reshape(rgba.height(), sorhossz)[:, : rgba.width() * 4].reshape(
         rgba.height(), rgba.width(), 4
-    )
+    ).copy()  # a nézet a függvény végén felszabaduló rgba-ra mutatna (#6085)
 
 
 def _talca_kivagas(window, menu=None) -> tuple[QImage, int, int]:
