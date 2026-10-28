@@ -271,7 +271,52 @@ def test_two_consecutive_captures_are_pixel_identical_in_all_states(
     sorok = result.stdout.splitlines()
     assert result.returncode == 0, result.stdout + result.stderr
     assert len(sorok) == len(ALLAPOTOK)
-    assert all(sor.endswith(": 0 eltérő képpont") for sor in sorok), result.stdout
+    assert all(sor.endswith(": 0 eltérő képpont") for sor in sorok), (
+        result.stdout + _elteres_reszletei(before, after, sorok)
+    )
+
+
+def _elteres_reszletei(before: Path, after: Path, sorok: list[str]) -> str:
+    """#6078: a CI nem tölti fel a különbségképet, ezért a bukás üzenete
+    maga sorolja fel az eltérő képpontokat (hely, előtte/utána RGBA)."""
+    import numpy as np
+
+    def tomb(kep: QImage) -> np.ndarray:
+        return np.frombuffer(kep.constBits(), dtype=np.uint8).reshape(
+            kep.height(), kep.bytesPerLine() // 4, 4
+        )[:, : kep.width()]
+
+    reszletek = []
+    for sor in sorok:
+        if sor.endswith(": 0 eltérő képpont"):
+            continue
+        nev = sor.split(":", 1)[0]
+        elotte = QImage(str(before / nev)).convertToFormat(QImage.Format.Format_RGBA8888)
+        utana = QImage(str(after / nev)).convertToFormat(QImage.Format.Format_RGBA8888)
+        if elotte.size() != utana.size():
+            continue
+        a, b = tomb(elotte), tomb(utana)
+        ys, xs = np.nonzero(np.any(a != b, axis=2))
+        pontok = [
+            f"({x},{y}) {tuple(int(v) for v in a[y, x])}->{tuple(int(v) for v in b[y, x])}"
+            for y, x in list(zip(ys, xs, strict=True))[:24]
+        ]
+        reszletek.append(f"\n{nev}: " + "; ".join(pontok))
+    return "".join(reszletek)
+
+
+def test_elteres_reszletei_felsorolja_a_keppontokat(tmp_path: Path) -> None:
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    kep = QImage(5, 4, QImage.Format.Format_RGBA8888)
+    kep.fill(QColor("#102030"))
+    assert kep.save(str(tmp_path / "a" / "x.png"))
+    kep.setPixelColor(2, 3, QColor("#ff0000"))
+    assert kep.save(str(tmp_path / "b" / "x.png"))
+    szoveg = _elteres_reszletei(
+        tmp_path / "a", tmp_path / "b", ["x.png: 1 eltérő képpont; befoglaló"]
+    )
+    assert "x.png: (2,3) (16, 32, 48, 255)->(255, 0, 0, 255)" in szoveg
 
 
 def test_capture_waits_past_a_late_preview_frame() -> None:
