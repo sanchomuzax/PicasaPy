@@ -53,7 +53,7 @@ SlideshowView {
     // zene a Beállítások Diavetítés füléről vezérli a normál vetítést.
     loop: typeof controller === "undefined" || !controller
         || slideshow.screensaverMode ? true : controller.slideshowLoop
-    musicEnabled: typeof controller !== "undefined" && !!controller
+    musicEnabled: typeof controller !== "undefined" && controller
         && !slideshow.screensaverMode && controller.slideshowMusicEnabled
     musicTrackUrls: typeof controller === "undefined" || !controller
         || slideshow.screensaverMode ? [] : controller.slideshowMusicTrackUrls
