@@ -5039,954 +5039,1181 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
         </message>
     </context>
     <context>
-        <name>CreateDialogs</name>
+        <name>CollageCreateDialog</name>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Get More...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
-            <translation>Meer ophalen...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Get more clips from Photo Library</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
-            <translation>Meer clips uit de Fotobibliotheek ophalen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Clips (%d)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::clips_title</extracomment>
-            <translation>Clips (%d)</translation>
-        </message>
-        <message>
-            <source>Poster Settings</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/window1.title</extracomment>
-            <translation>Posterinstellingen</translation>
-        </message>
-        <message>
-            <source>Tip: if you don't want to trim, crop your picture to the same size as the paper.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/label2.title</extracomment>
-            <translation>Tip: als u de randen niet wilt laten bijsnijden, geef de foto dan dezelfde afmetingen als het papier.</translation>
-        </message>
-        <message>
-            <source>Poster size:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/labelgroup3.title</extracomment>
-            <translation>Posterformaat</translation>
-        </message>
-        <message>
-            <source>200%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item5.title</extracomment>
-            <translation>200%</translation>
-        </message>
-        <message>
-            <source>300%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item6.title</extracomment>
-            <translation>300%</translation>
-        </message>
-        <message>
-            <source>400%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item7.title</extracomment>
-            <translation>400%</translation>
-        </message>
-        <message>
-            <source>500%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item8.title</extracomment>
-            <translation>500%</translation>
-        </message>
-        <message>
-            <source>600%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item9.title</extracomment>
-            <translation>600%</translation>
-        </message>
-        <message>
-            <source>700%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item10.title</extracomment>
-            <translation>700%</translation>
-        </message>
-        <message>
-            <source>800%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item11.title</extracomment>
-            <translation>800%</translation>
-        </message>
-        <message>
-            <source>900%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item12.title</extracomment>
-            <translation>900%</translation>
-        </message>
-        <message>
-            <source>1000%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item13.title</extracomment>
-            <translation>1000%</translation>
-        </message>
-        <message>
-            <source>Paper size:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/labelgroup14.title</extracomment>
-            <translation>Papierformaat:</translation>
-        </message>
-        <message>
-            <source>4x6</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
-            <translation>10 x 15</translation>
-        </message>
-        <message>
-            <source>8.5x11</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:FullPage;stringres:CPosterDlg::size2</extracomment>
-            <translation>8.5x11</translation>
-        </message>
-        <message>
-            <source>10x15</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:10x15m</extracomment>
-            <translation>10 x 15</translation>
-        </message>
-        <message>
-            <source>20x25</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::Crop20x25m</extracomment>
-            <translation>20 x 25</translation>
-        </message>
-        <message>
-            <source>Overlap tiles</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/overlap.title</extracomment>
-            <translation>Elkaar overlappende tegels</translation>
-        </message>
-        <message>
-            <source>OK</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>OK</translation>
-        </message>
-        <message>
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Annuleren</translation>
-        </message>
-        <message>
-            <source>Poster tiles saved.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Postersegmenten opgeslagen.</translation>
-        </message>
-        <message>
-            <source>The poster tiles could not be created.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>De postersegmenten konden niet worden gemaakt.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="266" />
-            <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 afbeelding(en) konden niet worden gevonden en worden niet weergegeven. (De ontbrekende bestanden zijn mogelijk verplaatst, hernoemd of verwijderd)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="24" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="23" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="163" />
             <source>Picture Collage...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
             <translation>A&amp;fbeeldingscollage...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="44" />
-            <source>%1 pictures selected.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 afbeeldingen geselecteerd.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="52" />
-            <source>Collage type:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Collagetype:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
-            <source>Picture Grid</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::ePictureGrid</extracomment>
-            <translation>Fotoraster</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="77" />
-            <source>Mosaic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mozaïek</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
-            <source>Grid</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Raster</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="79" />
-            <source>Multiple Exposure</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
-            <translation>Multiweergave</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="85" />
-            <source>Picture borders:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/borders_label)</extracomment>
-            <translation>Fotoranden</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>None</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
-            <translation>Geen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>White Border</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Border::ID_COLLAGE_BORDER_1;stringres:collage::whiteborder_dname</extracomment>
-            <translation>Witte rand</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>Polaroid</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
-            <translation>Polaroid</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="55" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="68" />
             <source>Select pictures in the library first, or put them in the Picture Tray.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Selecteer eerst afbeeldingen in de bibliotheek of plaats ze in het fotovak.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="121" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="76" />
+            <source>%1 pictures selected.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 afbeeldingen geselecteerd.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="95" />
             <source>Scramble Collage</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/rand_placement-label)</extracomment>
             <translation>Collage schudden</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
-            <source>Contact Sheet</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
-            <translation>Contactblad</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
-            <source>Frame Mosaic</source>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="105" />
+            <source>Collage type:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mozaïek met fotolijst</translation>
+            <translation>Collagetype:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="114" />
             <source>Picture Pile</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::ePicturePile</extracomment>
             <translation>Stapel foto's</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="69" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="114" />
+            <source>Mosaic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mozaïek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="115" />
+            <source>Frame Mosaic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mozaïek met fotolijst</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="115" />
+            <source>Grid</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Raster</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="116" />
+            <source>Contact Sheet</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
+            <translation>Contactblad</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="116" />
+            <source>Multiple Exposure</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
+            <translation>Multiweergave</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="123" />
+            <source>Picture borders:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/borders_label)</extracomment>
+            <translation>Fotoranden</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
+            <translation>Geen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>White Border</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Border::ID_COLLAGE_BORDER_1;stringres:collage::whiteborder_dname</extracomment>
+            <translation>Witte rand</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>Polaroid</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
+            <translation>Polaroid</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="139" />
             <source>Target file:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
             <translation>Doelbestand</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="149" />
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>(niet geselecteerd)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="83" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="154" />
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
             <translation>Bladeren...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="166" />
             <source>JPEG images (*.jpg)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>JPEG-afbeeldingen (*.jpg)</translation>
         </message>
+    </context>
+    <context>
+        <name>CreateDialogs</name>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="98" />
-            <source>Movie</source>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="124" />
+            <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Film</translation>
+            <translation>%1 afbeelding(en) konden niet worden gevonden en worden niet weergegeven. (De ontbrekende bestanden zijn mogelijk verplaatst, hernoemd of verwijderd)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="130" />
-            <source>Video size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Videoformaat:</translation>
-        </message>
-        <message>
-            <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>De afbeeldingen en timing van de film komen uit het projectbestand; het formaat begint met de standaardinstelling.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="146" />
-            <source>Seconds per picture:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Seconden per afbeelding:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="185" />
-            <source>MP4 videos (*.mp4)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>MP4-video's (*.mp4)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="202" />
-            <source>Creating movie: %1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Film maken: %1 / %2</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="226" />
-            <source>Create</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Maken</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="247" />
-            <source>Collage saved: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Collage opgeslagen: %1</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="248" />
-            <source>%1 pictures used.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 afbeeldingen gebruikt.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="240" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="127" />
             <source>%1 pictures were skipped.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 afbeeldingen overgeslagen.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="254" />
-            <source>The collage could not be created.</source>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="149" />
+            <source>Collage saved: %1</source>
+            <extracomment>A kollázs elkészült — az összegző párbeszéd megnyitása.
+picasapy-origin: picasapy</extracomment>
+            <translation>Collage opgeslagen: %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="150" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="174" />
+            <source>%1 pictures used.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 afbeeldingen gebruikt.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="158" />
+            <source>The collage could not be created.</source>
+            <extracomment>A kollázs nem készült el.
+picasapy-origin: picasapy</extracomment>
             <translation>De collage kon niet worden gemaakt.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="264" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="173" />
             <source>Movie saved: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Film opgeslagen: %1</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Replace Existing or Create New?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
-            <translation>Bestaande vervangen of Nieuwe maken?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Replace Existing</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
-            <translation>Bestaande vervangen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Create New</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
-            <translation>Nieuwe maken</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="271" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="183" />
             <source>The movie could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>De film kon niet worden gemaakt.</translation>
         </message>
         <message>
-            <source>Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
-            <translation>Tekst</translation>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="189" />
+            <source>Poster tiles saved.</source>
+            <extracomment>#4268: a poszterlapok a forráskép mellett készültek el.
+picasapy-origin: picasapy</extracomment>
+            <translation>Postersegmenten opgeslagen.</translation>
         </message>
         <message>
-            <source>Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab2)</extracomment>
-            <translation>Dia</translation>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="197" />
+            <source>The poster tiles could not be created.</source>
+            <extracomment>#4268: a poszterlapok írási hibája a párbeszédben jelenik meg.
+picasapy-origin: picasapy</extracomment>
+            <translation>De postersegmenten konden niet worden gemaakt.</translation>
         </message>
+    </context>
+    <context>
+        <name>CreateResultDialog</name>
         <message>
-            <source>Clips</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab3)</extracomment>
-            <translation>Clips</translation>
-        </message>
-        <message>
-            <source>Sizes</source>
+            <location filename="../qml/PicasaPy/CreateResultDialog.qml" line="10" />
+            <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Formaten</translation>
+            <translation>Maken</translation>
         </message>
+    </context>
+    <context>
+        <name>MovieMakerDialog</name>
         <message>
-            <source>Dimensions</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Afmetingen</translation>
-        </message>
-        <message>
-            <source>Transition style:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</extracomment>
-            <translation>Overgangsstijl</translation>
-        </message>
-        <message>
-            <source>Cut</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Knippen</translation>
-        </message>
-        <message>
-            <source>Dissolve</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolve</extracomment>
-            <translation>Overvloeien</translation>
-        </message>
-        <message>
-            <source>Dissolve through black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolveblack</extracomment>
-            <translation>Overvloeien in zwart</translation>
-        </message>
-        <message>
-            <source>Dissolve through white</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
-            <translation>Overvloeien naar wit</translation>
-        </message>
-        <message>
-            <source>Wipe - left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
-            <translation>Wissen - naar links</translation>
-        </message>
-        <message>
-            <source>Wipe</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Veegovergang</translation>
-        </message>
-        <message>
-            <source>Wipe - top</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
-            <translation>Wissen - boven</translation>
-        </message>
-        <message>
-            <source>Wipe - bottom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
-            <translation>Wissen - onder</translation>
-        </message>
-        <message>
-            <source>Wipe - up left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
-            <translation>Wissen - naar linksboven</translation>
-        </message>
-        <message>
-            <source>Wipe - up right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
-            <translation>Wissen - naar rechtsboven</translation>
-        </message>
-        <message>
-            <source>Wipe - down left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
-            <translation>Wissen - naar linksonder</translation>
-        </message>
-        <message>
-            <source>Wipe - down right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
-            <translation>Wissen - naar rechtsonder</translation>
-        </message>
-        <message>
-            <source>Push - left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
-            <translation>Weergeven - links</translation>
-        </message>
-        <message>
-            <source>Push</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
-            <translation>Weergeven</translation>
-        </message>
-        <message>
-            <source>Push - top</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
-            <translation>Weergeven - top</translation>
-        </message>
-        <message>
-            <source>Push - bottom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
-            <translation>Weergeven - laatste</translation>
-        </message>
-        <message>
-            <source>Circle - inwards</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
-            <translation>Cirkelen - naar binnen</translation>
-        </message>
-        <message>
-            <source>Circle</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
-            <translation>Cirkel</translation>
-        </message>
-        <message>
-            <source>Pan and Zoom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
-            <translation>Pannen en zoomen</translation>
-        </message>
-        <message>
-            <source>Pan and Zoom - face</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
-            <translation>Pannen en zoomen - gezicht</translation>
-        </message>
-        <message>
-            <source>Time Lapse</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
-            <translation>Verstreken tijd</translation>
-        </message>
-        <message>
-            <source>Rectangle</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
-            <translation>Rechthoek</translation>
-        </message>
-        <message>
-            <source>Overlap</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transitionslider_label)</extracomment>
-            <translation>Overlappen</translation>
-        </message>
-        <message>
-            <source>Slide Duration:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_label)</extracomment>
-            <translation>Weergavetijd dia</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>%1 Sec</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 sec</translation>
-        </message>
-        <message>
-            <source>Audio:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
-            <translation>Geluidsspoor:</translation>
-        </message>
-        <message>
-            <source>Audio Track:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
-            <translation>Geluidsspoor:</translation>
-        </message>
-        <message>
-            <source>No audio selected</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Geen audio geselecteerd</translation>
-        </message>
-        <message>
-            <source>Load…</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
-            <translation>Laden…</translation>
-        </message>
-        <message>
-            <source>Clear</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Wissen</translation>
-        </message>
-        <message>
-            <source>Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
-            <translation>Opties</translation>
-        </message>
-        <message>
-            <source>Truncate audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption0</extracomment>
-            <translation>Audio afkappen</translation>
-        </message>
-        <message>
-            <source>Fit photos into audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption1</extracomment>
-            <translation>Foto's inpassen in audio</translation>
-        </message>
-        <message>
-            <source>Loop photos to match audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption2</extracomment>
-            <translation>Foto's herhalen om met geluid te synchroniseren</translation>
-        </message>
-        <message>
-            <source>Show Captions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label);makemoviepaneltext:Label(makemoviepanel/show_captions_label);stringres:Slingshot::ID_SHOW_CAPTIONS</extracomment>
-            <translation>Titels weergeven</translation>
-        </message>
-        <message>
-            <source>Show Dates</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::show_dates_label</extracomment>
-            <translation>Datums weergeven</translation>
-        </message>
-        <message>
-            <source>Full frame photo crop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/crop_to_fit_label)</extracomment>
-            <translation>Foto bijsnijden naar volledig frame</translation>
-        </message>
-        <message>
-            <source>Remove Low Resolution Faces</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/remove_low_res_faces_label)</extracomment>
-            <translation>Gezichten met lage resolutie verwijderen</translation>
-        </message>
-        <message>
-            <source>Best Transitions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/smart_order_label)</extracomment>
-            <translation>Beste overgangen</translation>
-        </message>
-        <message>
-            <source>Album Order</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)</extracomment>
-            <translation>Albumvolgorde</translation>
-        </message>
-        <message>
-            <source>Chronological</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Chronologisch</translation>
-        </message>
-        <message>
-            <source>Ordering of Slides:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/ordering_header_label)</extracomment>
-            <translation>Rangschikken van dia's:</translation>
-        </message>
-        <message>
-            <source>Total Photos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/lengthslider_label)</extracomment>
-            <translation>Totaalaantal foto's</translation>
-        </message>
-        <message>
-            <source>Don't filter by time taken</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);stringres:CMakeMoviePanel::movieburstzero</extracomment>
-            <translation>Niet filteren op tijdstip van opname</translation>
-        </message>
-        <message>
-            <source>Remove Photos Taken Within %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Foto's verwijderen die binnen %1 zijn gemaakt</translation>
-        </message>
-        <message>
-            <source>Back to selected slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/rewind)</extracomment>
-            <translation>Terug naar geselecteerde dia</translation>
-        </message>
-        <message>
-            <source>Text slide:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
-            <translation>Tekstdia</translation>
-        </message>
-        <message>
-            <source>Font:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Lettertype:</translation>
-        </message>
-        <message>
-            <source>Size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Grootte:</translation>
-        </message>
-        <message>
-            <source>Style:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Label(edittextpanel/style_label);makemoviepaneltext:Label(makemoviepanel/style_label)</extracomment>
-            <translation>Stijl:</translation>
-        </message>
-        <message>
-            <source>Centered</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Centered</extracomment>
-            <translation>Gecentreerd</translation>
-        </message>
-        <message>
-            <source>I'm Feeling Lucky</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ik doe een gok</translation>
-        </message>
-        <message>
-            <source>Caption</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Bijschrift</translation>
-        </message>
-        <message>
-            <source>Caption - Classic</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle3</extracomment>
-            <translation>Titel - Klassiek</translation>
-        </message>
-        <message>
-            <source>Gradient - Black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle4</extracomment>
-            <translation>Verloop - zwart</translation>
-        </message>
-        <message>
-            <source>Gradient - White</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle5</extracomment>
-            <translation>Verloop - Wit</translation>
-        </message>
-        <message>
-            <source>Transparent - Black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle6</extracomment>
-            <translation>Transparant - zwart</translation>
-        </message>
-        <message>
-            <source>Transparent - White</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle7</extracomment>
-            <translation>Transparant - Wit</translation>
-        </message>
-        <message>
-            <source>Scrolling Credits</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle8</extracomment>
-            <translation>Door credits bladeren</translation>
-        </message>
-        <message>
-            <source>Music Video - Left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle9</extracomment>
-            <translation>Muziekvideo - links</translation>
-        </message>
-        <message>
-            <source>Music Video - Right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle10</extracomment>
-            <translation>Muziekvideo - rechts</translation>
-        </message>
-        <message>
-            <source>Caption - Typewriter</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
-            <translation>Titel - Typemachine</translation>
-        </message>
-        <message>
-            <source>Bold</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/bold);makemoviepaneltext:Tooltip(makemoviepanel/bold);stringres:CTitleDialog::fontBold</extracomment>
-            <translation>Vet</translation>
-        </message>
-        <message>
-            <source>Italic</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepaneltext:Tooltip(makemoviepanel/italic);stringres:CTitleDialog::fontItalic</extracomment>
-            <translation>Cursief</translation>
-        </message>
-        <message>
-            <source>Automatic Outline</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Automatische omtrek</translation>
-        </message>
-        <message>
-            <source>Automatic Outline (like movie subtitles)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/outline)</extracomment>
-            <translation>Automatisch omlijnen (zoals filmondertitels)</translation>
-        </message>
-        <message>
-            <source>Text color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
-            <translation>Tekstkleur</translation>
-        </message>
-        <message>
-            <source>Background color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
-            <translation>Achtergrondkleur</translation>
-        </message>
-        <message>
-            <source>Insert Text Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/insert_slide)</extracomment>
-            <translation>Een nieuwe tekstdia toevoegen</translation>
-        </message>
-        <message>
-            <source>Remove Selected Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
-            <translation>De geselecteerde dia verwijderen</translation>
-        </message>
-        <message>
-            <source>Remove the selected slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
-            <translation>De geselecteerde dia verwijderen</translation>
-        </message>
-        <message>
-            <source>Add selected clips</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Geselecteerde clips toevoegen</translation>
-        </message>
-        <message>
-            <source>Remove selected clip</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Geselecteerde clip verwijderen</translation>
-        </message>
-        <message>
-            <source>Add the selected clip(s) to the end of the movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addtomovie)</extracomment>
-            <translation>De geselecteerde clip(s) toevoegen aan het einde van de film</translation>
-        </message>
-        <message>
-            <source>Remove the selected clip(s) from the tray</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</extracomment>
-            <translation>De geselecteerde clips uit het vak verwijderen</translation>
-        </message>
-        <message>
-            <source>Play selected clip only</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Alleen geselecteerde clip afspelen</translation>
-        </message>
-        <message>
-            <source>Preview</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
-            <translation>Voorbeeld</translation>
-        </message>
-        <message>
-            <source>Pause</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pauzeren</translation>
-        </message>
-        <message>
-            <source>Show actual movie size (don't stretch)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(video_control_bar2/1to1)</extracomment>
-            <translation>Feitelijk filmformaat weergeven (don't stretch)</translation>
-        </message>
-        <message>
-            <source>Play full screen</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Tooltip(video_control_bar2/fullscreen)</extracomment>
-            <translation>Afspelen op volledig scherm</translation>
-        </message>
-        <message>
-            <source>Please Confirm...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Bevestigen...</translation>
-        </message>
-        <message>
-            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Hiermee wordt een nieuwe film gemaakt, waarbij alle tekstslides die u hebt toegevoegd worden verwijderd. Weet u het zeker?</translation>
-        </message>
-        <message>
-            <source>Recompute</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Opnieuw berekenen</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Sluiten</translation>
-        </message>
-        <message>
-            <source>Create Movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:buttonlabel:{606D1C6D-36E6-4dce-AFCA-A0EE575A6162}</extracomment>
-            <translation>Film maken</translation>
-        </message>
-        <message>
-            <source>Audio files</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Audiobestanden</translation>
-        </message>
-        <message>
-            <source>Music files (*.mp3, *.wma)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
-            <translation>Muziekbestanden (*.mp3,*.wma)</translation>
-        </message>
-        <message>
-            <source>Music files (*.mp3, *.m4a)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
-            <translation>Muziekbestanden (*.mp3,*.m4a)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="119" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="363" />
             <source>Text Slide</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
             <translation>Tekstdia</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="385" />
             <source>%1     %2x%3 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1     %2x%3 pixels</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="387" />
             <source>(%1 of %2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>(%1 van %2)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="519" />
+            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hiermee wordt een nieuwe film gemaakt, waarbij alle tekstslides die u hebt toegevoegd worden verwijderd. Weet u het zeker?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="640" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Sluiten</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="647" />
+            <source>Create Movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:buttonlabel:{606D1C6D-36E6-4dce-AFCA-A0EE575A6162}</extracomment>
+            <translation>Film maken</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="797" />
+            <source>Please Confirm...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Bevestigen...</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerDialogs</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="23" />
+            <source>Replace Existing or Create New?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
+            <translation>Bestaande vervangen of Nieuwe maken?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="32" />
+            <source>Replace Existing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
+            <translation>Bestaande vervangen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="41" />
+            <source>Create New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
+            <translation>Nieuwe maken</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="49" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Annuleren</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="70" />
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="113" />
+            <source>Movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Film</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="73" />
+            <source>MP4 videos (*.mp4)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>MP4-video's (*.mp4)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="80" />
+            <source>Audio files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Audiobestanden</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="84" />
+            <source>Music files (*.mp3, *.wma)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
+            <translation>Muziekbestanden (*.mp3,*.wma)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="85" />
+            <source>Music files (*.mp3, *.m4a)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
+            <translation>Muziekbestanden (*.mp3,*.m4a)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="96" />
+            <source>Text color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
+            <translation>Tekstkleur</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="103" />
+            <source>Background color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
+            <translation>Achtergrondkleur</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="123" />
+            <source>Creating movie: %1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Film maken: %1 / %2</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerFilmstrip</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="38" />
+            <source>Add selected clips</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Geselecteerde clips toevoegen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="50" />
+            <source>Remove selected clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Geselecteerde clip verwijderen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="104" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Tekstdia</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerOptions</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="22" />
+            <source>Dimensions</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Afmetingen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="51" />
+            <source>Show Captions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label);makemoviepaneltext:Label(makemoviepanel/show_captions_label);stringres:Slingshot::ID_SHOW_CAPTIONS</extracomment>
+            <translation>Titels weergeven</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="69" />
+            <source>Full frame photo crop</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/crop_to_fit_label)</extracomment>
+            <translation>Foto bijsnijden naar volledig frame</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="84" />
+            <source>Show Dates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::show_dates_label</extracomment>
+            <translation>Datums weergeven</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="96" />
+            <source>Remove Low Resolution Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/remove_low_res_faces_label)</extracomment>
+            <translation>Gezichten met lage resolutie verwijderen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="111" />
+            <source>Ordering of Slides:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/ordering_header_label)</extracomment>
+            <translation>Rangschikken van dia's:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="117" />
+            <source>Best Transitions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/smart_order_label)</extracomment>
+            <translation>Beste overgangen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="125" />
+            <source>Album Order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)</extracomment>
+            <translation>Albumvolgorde</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="134" />
+            <source>Chronological</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Chronologisch</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="152" />
+            <source>Total Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/lengthslider_label)</extracomment>
+            <translation>Totaalaantal foto's</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="174" />
+            <source>Don't filter by time taken</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);stringres:CMakeMoviePanel::movieburstzero</extracomment>
+            <translation>Niet filteren op tijdstip van opname</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="175" />
+            <source>Remove Photos Taken Within %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Foto's verwijderen die binnen %1 zijn gemaakt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="210" />
+            <source>Get More...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
+            <translation>Meer ophalen...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="212" />
+            <source>Get more clips from Photo Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
+            <translation>Meer clips uit de Fotobibliotheek ophalen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="219" />
+            <source>Recompute</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Opnieuw berekenen</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerPreview</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="155" />
+            <source>Pause</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pauzeren</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="155" />
+            <source>Preview</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
+            <translation>Voorbeeld</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="220" />
+            <source>Show actual movie size (don't stretch)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(video_control_bar2/1to1)</extracomment>
+            <translation>Feitelijk filmformaat weergeven (don't stretch)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="234" />
+            <source>Play full screen</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Tooltip(video_control_bar2/fullscreen)</extracomment>
+            <translation>Afspelen op volledig scherm</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerSlideLogic</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="20" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="43" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="56" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="74" />
+            <source>Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
+            <translation>Tekst</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerTabs</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="61" />
+            <source>Movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Film</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="62" />
+            <source>Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab2)</extracomment>
+            <translation>Dia</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="67" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="142" />
+            <source>Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
+            <translation>Opties</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="68" />
+            <source>Clips (%d)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::clips_title</extracomment>
+            <translation>Clips (%d)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="96" />
+            <source>Audio Track:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
+            <translation>Geluidsspoor:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="107" />
+            <source>None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
+            <translation>Geen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="116" />
+            <source>Load…</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
+            <translation>Laden…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="123" />
+            <source>Clear</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Wissen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="154" />
+            <source>Truncate audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption0</extracomment>
+            <translation>Audio afkappen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="154" />
+            <source>Fit photos into audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption1</extracomment>
+            <translation>Foto's inpassen in audio</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="155" />
+            <source>Loop photos to match audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption2</extracomment>
+            <translation>Foto's herhalen om met geluid te synchroniseren</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="160" />
+            <source>Transition style:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</extracomment>
+            <translation>Overgangsstijl</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="169" />
+            <source>Cut</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Knippen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="169" />
+            <source>Dissolve</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolve</extracomment>
+            <translation>Overvloeien</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="170" />
+            <source>Dissolve through black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolveblack</extracomment>
+            <translation>Overvloeien in zwart</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="170" />
+            <source>Dissolve through white</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
+            <translation>Overvloeien naar wit</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
+            <translation>Wissen - naar links</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Veegovergang</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
+            <translation>Wissen - boven</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="172" />
+            <source>Wipe - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
+            <translation>Wissen - onder</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="172" />
+            <source>Wipe - up left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
+            <translation>Wissen - naar linksboven</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="173" />
+            <source>Wipe - up right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
+            <translation>Wissen - naar rechtsboven</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="173" />
+            <source>Wipe - down left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
+            <translation>Wissen - naar linksonder</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Wipe - down right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
+            <translation>Wissen - naar rechtsonder</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Push - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
+            <translation>Weergeven - links</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Push</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
+            <translation>Weergeven</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="175" />
+            <source>Push - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
+            <translation>Weergeven - top</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="175" />
+            <source>Push - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
+            <translation>Weergeven - laatste</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="176" />
+            <source>Circle - inwards</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
+            <translation>Cirkelen - naar binnen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="176" />
+            <source>Circle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
+            <translation>Cirkel</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="177" />
+            <source>Pan and Zoom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
+            <translation>Pannen en zoomen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="177" />
+            <source>Pan and Zoom - face</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
+            <translation>Pannen en zoomen - gezicht</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="178" />
+            <source>Time Lapse</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
+            <translation>Verstreken tijd</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="178" />
+            <source>Rectangle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
+            <translation>Rechthoek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="198" />
+            <source>Slide Duration:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_label)</extracomment>
+            <translation>Weergavetijd dia</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="203" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="244" />
+            <source>%1 Sec</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 sec</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="239" />
+            <source>Overlap</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transitionslider_label)</extracomment>
+            <translation>Overlappen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="279" />
+            <source>Target file:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
+            <translation>Doelbestand</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="285" />
+            <source>(not selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(niet geselecteerd)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="290" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Bladeren...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="297" />
+            <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>De afbeeldingen en timing van de film komen uit het projectbestand; het formaat begint met de standaardinstelling.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="307" />
+            <source>%1 pictures selected.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 afbeeldingen geselecteerd.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="313" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="315" />
+            <source>Back to selected slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/rewind)</extracomment>
+            <translation>Terug naar geselecteerde dia</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="336" />
+            <source>Text slide:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Tekstdia</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="341" />
+            <source>Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
+            <translation>Tekst</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="347" />
+            <source>Font:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Lettertype:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="357" />
+            <source>Size:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Grootte:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="371" />
+            <source>Style:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Label(edittextpanel/style_label);makemoviepaneltext:Label(makemoviepanel/style_label)</extracomment>
+            <translation>Stijl:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>Centered</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Centered</extracomment>
+            <translation>Gecentreerd</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>I'm Feeling Lucky</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ik doe een gok</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>Caption</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Bijschrift</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="378" />
+            <source>Caption - Classic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle3</extracomment>
+            <translation>Titel - Klassiek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="378" />
+            <source>Gradient - Black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle4</extracomment>
+            <translation>Verloop - zwart</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="379" />
+            <source>Gradient - White</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle5</extracomment>
+            <translation>Verloop - Wit</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="379" />
+            <source>Transparent - Black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle6</extracomment>
+            <translation>Transparant - zwart</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="380" />
+            <source>Transparent - White</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle7</extracomment>
+            <translation>Transparant - Wit</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="380" />
+            <source>Scrolling Credits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle8</extracomment>
+            <translation>Door credits bladeren</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="381" />
+            <source>Music Video - Left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle9</extracomment>
+            <translation>Muziekvideo - links</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="381" />
+            <source>Music Video - Right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle10</extracomment>
+            <translation>Muziekvideo - rechts</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="382" />
+            <source>Caption - Typewriter</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
+            <translation>Titel - Typemachine</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="390" />
+            <source>Bold</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/bold);makemoviepaneltext:Tooltip(makemoviepanel/bold);stringres:CTitleDialog::fontBold</extracomment>
+            <translation>Vet</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="396" />
+            <source>Italic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepaneltext:Tooltip(makemoviepanel/italic);stringres:CTitleDialog::fontItalic</extracomment>
+            <translation>Cursief</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="404" />
+            <source>Automatic Outline</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Automatische omtrek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="406" />
+            <source>Automatic Outline (like movie subtitles)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/outline)</extracomment>
+            <translation>Automatisch omlijnen (zoals filmondertitels)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="414" />
+            <source>Text color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
+            <translation>Tekstkleur</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="431" />
+            <source>Background color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
+            <translation>Achtergrondkleur</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="436" />
+            <source>Insert Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/insert_slide)</extracomment>
+            <translation>Een nieuwe tekstdia toevoegen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="443" />
+            <source>Remove Selected Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
+            <translation>De geselecteerde dia verwijderen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="445" />
+            <source>Remove the selected slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
+            <translation>De geselecteerde dia verwijderen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="474" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Tekstdia</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="541" />
+            <source>Get More...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
+            <translation>Meer ophalen...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="543" />
+            <source>Get more clips from Photo Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
+            <translation>Meer clips uit de Fotobibliotheek ophalen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="557" />
+            <source>Recompute</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Opnieuw berekenen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="566" />
+            <source>Add selected clips</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Geselecteerde clips toevoegen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="569" />
+            <source>Add the selected clip(s) to the end of the movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addtomovie)</extracomment>
+            <translation>De geselecteerde clip(s) toevoegen aan het einde van de film</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="576" />
+            <source>Remove selected clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Geselecteerde clip verwijderen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="579" />
+            <source>Remove the selected clip(s) from the tray</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</extracomment>
+            <translation>De geselecteerde clips uit het vak verwijderen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="588" />
+            <source>Play selected clip only</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Alleen geselecteerde clip afspelen</translation>
+        </message>
+    </context>
+    <context>
+        <name>PosterCreateDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="11" />
+            <source>Poster Settings</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/window1.title</extracomment>
+            <translation>Posterinstellingen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="29" />
+            <source>4x6</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
+            <translation>10 x 15</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="30" />
+            <source>8.5x11</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:FullPage;stringres:CPosterDlg::size2</extracomment>
+            <translation>8.5x11</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="31" />
+            <source>10x15</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:10x15m</extracomment>
+            <translation>10 x 15</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="32" />
+            <source>20x25</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::Crop20x25m</extracomment>
+            <translation>20 x 25</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="69" />
+            <source>Tip: if you don't want to trim, crop your picture to the same size as the paper.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/label2.title</extracomment>
+            <translation>Tip: als u de randen niet wilt laten bijsnijden, geef de foto dan dezelfde afmetingen als het papier.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="79" />
+            <source>Poster size:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/labelgroup3.title</extracomment>
+            <translation>Posterformaat</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>200%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item5.title</extracomment>
+            <translation>200%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>300%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item6.title</extracomment>
+            <translation>300%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>400%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item7.title</extracomment>
+            <translation>400%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>500%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item8.title</extracomment>
+            <translation>500%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>600%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item9.title</extracomment>
+            <translation>600%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>700%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item10.title</extracomment>
+            <translation>700%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>800%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item11.title</extracomment>
+            <translation>800%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>900%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item12.title</extracomment>
+            <translation>900%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>1000%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item13.title</extracomment>
+            <translation>1000%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="97" />
+            <source>Paper size:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/labelgroup14.title</extracomment>
+            <translation>Papierformaat:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="113" />
+            <source>Overlap tiles</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/overlap.title</extracomment>
+            <translation>Elkaar overlappende tegels</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="122" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="128" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Annuleren</translation>
         </message>
     </context>
     <context>
