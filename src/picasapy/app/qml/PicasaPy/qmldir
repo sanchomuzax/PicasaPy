@@ -168,6 +168,9 @@ OptionsTabWebAlbums 1.0 OptionsTabWebAlbums.qml
 OptionsTabNameTags 1.0 OptionsTabNameTags.qml
 OptionsTabGooglePhotos 1.0 OptionsTabGooglePhotos.qml
 WebExportDialog 1.0 WebExportDialog.qml
+WebExportTemplatePane 1.0 WebExportTemplatePane.qml
+WebExportStatusPane 1.0 WebExportStatusPane.qml
+FtpAccountDialog 1.0 FtpAccountDialog.qml
 PrintDialog 1.0 PrintDialog.qml
 PrintOptionsPanel 1.0 PrintOptionsPanel.qml
 PublishPanel 1.0 PublishPanel.qml
