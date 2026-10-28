@@ -3261,7 +3261,7 @@ ApplicationWindow {
                     visible: window.personAlbumName === ""
                         && ((controller && controller.filterActive !== undefined)
                             ? controller.filterActive : false)
-                    color: "#5aa865"
+                    color: Theme.filterResultsBg
                     RowLayout {
                         anchors.fill: parent
                         anchors.leftMargin: 8
@@ -3273,7 +3273,7 @@ ApplicationWindow {
                             Layout.preferredHeight: 18
                             Layout.preferredWidth: viewAllText.width + 20
                             radius: 9
-                            color: "#ffffff"
+                            color: Theme.controlBase
                             Text {
                                 id: viewAllText
                                 anchors.centerIn: parent
@@ -3284,7 +3284,7 @@ ApplicationWindow {
                                 text: qsTr("Back to View All")
                                 font.pixelSize: Theme.fontSize - 1
                                 font.bold: true
-                                color: "#3b8f00"
+                                color: Theme.picasaGreen
                             }
                             TapHandler {
                                 // #4531: keresésből a mező is ürüljön, és a bal
@@ -3315,7 +3315,7 @@ ApplicationWindow {
                                        + controller.ageFilterText
                                      : controller.filterStatusText)
                                   : ""
-                            color: "white"
+                            color: Theme.infoBarText
                             font.pixelSize: Theme.fontSize
                             font.bold: true
                         }
@@ -3331,7 +3331,7 @@ ApplicationWindow {
                                      ? controller.similaritySample.length > 0
                                      : false
                             text: qsTr("Similarity Search Results")
-                            color: "white"
+                            color: Theme.infoBarText
                             font.pixelSize: Theme.fontSize
                         }
                         Rectangle {
@@ -3343,7 +3343,7 @@ ApplicationWindow {
                             Layout.preferredHeight: 18
                             Layout.preferredWidth: clearSimText.width + 20
                             radius: 9
-                            color: "#ffffff"
+                            color: Theme.controlBase
                             Text {
                                 id: clearSimText
                                 anchors.centerIn: parent
@@ -3351,7 +3351,7 @@ ApplicationWindow {
                                 text: qsTr("Clear Sample")
                                 font.pixelSize: Theme.fontSize - 1
                                 font.bold: true
-                                color: "#3b8f00"
+                                color: Theme.picasaGreen
                             }
                             TapHandler {
                                 onTapped: controller.clearSimilarity()
@@ -3368,7 +3368,7 @@ ApplicationWindow {
                                      ? controller.viewModeName === "dupes"
                                      : false
                             text: qsTr("Duplicate Files")
-                            color: "white"
+                            color: Theme.infoBarText
                             font.pixelSize: Theme.fontSize
                         }
                         Item { Layout.fillWidth: true }
@@ -3385,7 +3385,7 @@ ApplicationWindow {
                     visible: (controller
                               && controller.dupeSearchScanning !== undefined)
                              ? controller.dupeSearchScanning : false
-                    color: "#f0e3b0"
+                    color: Theme.filterNoticeBg
                     Text {
                         objectName: "dupeSearchScanningText"
                         anchors.verticalCenter: parent.verticalCenter
@@ -3409,7 +3409,7 @@ ApplicationWindow {
                     visible: (controller
                               && controller.similarityUpdating !== undefined)
                              ? controller.similarityUpdating : false
-                    color: "#f0e3b0"
+                    color: Theme.filterNoticeBg
                     Text {
                         objectName: "similarityUpdatingText"
                         anchors.verticalCenter: parent.verticalCenter
@@ -4117,7 +4117,7 @@ ApplicationWindow {
                 id: errorBannerText
                 objectName: "errorBannerText"
                 text: ""
-                color: "white"
+                color: Theme.infoBarText
                 font.pixelSize: Theme.fontSize
                 wrapMode: Text.WordWrap
                 Layout.maximumWidth: 480
