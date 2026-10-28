@@ -22,11 +22,15 @@ from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QSignalSpy, QTest
 
+from picasapy.app import formatting
 from support.jpeg_factory import make_minta_jpeg
 from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
 _GOLDEN = Path(__file__).parent / "golden" / "tray_bar_6050"
+#: A goldenek rögzítésének napja (#6085). A fejléc a képek dátumát írja ki;
+#: a futás napjától függő szöveg hossza a goldenben kilógna a feliratmaszkból.
+_ROGZITETT_NAP = "2026-10-27"
 _ALLAPOTOK = (
     "ures",
     "keves_kijelolt",
@@ -304,7 +308,11 @@ def _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas: int) -> No
 
 @pytest.mark.parametrize("ablakmagassag_eltolas", _ABLAKMAGASSAG_ELTOLASOK)
 def test_a_talca_fobb_allapotai_keppontra_megmaradnak(
-    ablakmagassag_eltolas, qml_app, qt_app, tmp_path
+    ablakmagassag_eltolas, qml_app, qt_app, tmp_path, monkeypatch
 ):
     """A rögzített tálcaállapotok `-5/0/+5` ablakmagasságnál is egyeznek."""
+    eredeti = formatting.long_date
+    monkeypatch.setattr(
+        formatting, "long_date", lambda _iso, locale: eredeti(_ROGZITETT_NAP, locale)
+    )
     _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas)
