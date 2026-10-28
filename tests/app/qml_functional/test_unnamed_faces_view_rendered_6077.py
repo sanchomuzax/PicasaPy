@@ -9,12 +9,13 @@ from pathlib import Path
 import numpy as np
 import pytest
 from PySide6.QtCore import Property, QPoint, QPointF, QUrl, Qt, Signal
-from PySide6.QtGui import QColor, QImage
+from PySide6.QtGui import QColor, QFont, QFontDatabase, QGuiApplication, QImage
 from PySide6.QtQml import QQmlComponent, QQmlEngine, QQmlExpression
 from PySide6.QtQuick import QQuickItem, QQuickWindow
 from PySide6.QtTest import QSignalSpy, QTest
 
 from test_unnamed_faces_view import _StubController, _StubFaceScanController
+from tests.support.betucsalad import BETU_FORRAS
 from tests.support.varakozas import var_feltetelre
 
 _QML_DIR = Path(__file__).resolve().parents[3] / "src" / "picasapy" / "app" / "qml" / "PicasaPy"
@@ -34,6 +35,30 @@ class _SnapshotFaceScanController(_StubFaceScanController):
     @Property(int, notify=unnamedCountChanged)
     def unnamedCount(self):
         return sum(len(group.get("faces", [])) for group in self._groups)
+
+
+@pytest.fixture
+def rogzitett_betu(qt_app):
+    """A felület minden szövege a csomagolt Open Sansszal rajzolódik.
+
+    A rendszerbetű gépenként más (helyben Noto, a CI-n DejaVu), és a magasabb
+    fejléc a teljes arcrácsot lejjebb tolja. A feliratok képpontjai maszkolva
+    vannak, de az elrendezést csak azonos betűméretek teszik összevethetővé.
+    """
+    azonosito = QFontDatabase.addApplicationFont(str(BETU_FORRAS))
+    assert azonosito >= 0, "a csomagolt betű nem tölthető be"
+    csalad = QFontDatabase.applicationFontFamilies(azonosito)[0]
+    eredeti = QGuiApplication.font()
+    rogzitett = QFont(eredeti)
+    rogzitett.setFamilies([csalad])
+    QGuiApplication.setFont(rogzitett)
+    QFont.insertSubstitution("Georgia", csalad)
+    try:
+        yield
+    finally:
+        QFont.removeSubstitutions("Georgia")
+        QGuiApplication.setFont(eredeti)
+        QFontDatabase.removeApplicationFont(azonosito)
 
 
 def _find_item(root: QQuickItem, object_name: str) -> QQuickItem | None:
@@ -317,7 +342,9 @@ def _make_faces() -> list[dict[str, object]]:
 
 
 @pytest.mark.parametrize("height_offset", _HEIGHT_OFFSETS)
-def test_unnamed_faces_states_match_pre_split_images(qt_app, height_offset):
+def test_unnamed_faces_states_match_pre_split_images(
+    qt_app, rogzitett_betu, height_offset
+):
     (
         engine,
         component,
