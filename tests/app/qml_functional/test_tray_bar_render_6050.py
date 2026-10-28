@@ -306,13 +306,18 @@ def _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas: int) -> No
     assert not hibak, "\n".join(hibak)
 
 
-@pytest.mark.parametrize("ablakmagassag_eltolas", _ABLAKMAGASSAG_ELTOLASOK)
-def test_a_talca_fobb_allapotai_keppontra_megmaradnak(
-    ablakmagassag_eltolas, qml_app, qt_app, tmp_path, monkeypatch
-):
-    """A rögzített tálcaállapotok `-5/0/+5` ablakmagasságnál is egyeznek."""
+@pytest.fixture
+def rogzitett_datum(monkeypatch):
+    """A `qml_app` ELŐTT kell futnia: az induláskori fejléc is ezt használja."""
     eredeti = formatting.long_date
     monkeypatch.setattr(
         formatting, "long_date", lambda _iso, locale: eredeti(_ROGZITETT_NAP, locale)
     )
+
+
+@pytest.mark.parametrize("ablakmagassag_eltolas", _ABLAKMAGASSAG_ELTOLASOK)
+def test_a_talca_fobb_allapotai_keppontra_megmaradnak(
+    ablakmagassag_eltolas, rogzitett_datum, qml_app, qt_app, tmp_path
+):
+    """A rögzített tálcaállapotok `-5/0/+5` ablakmagasságnál is egyeznek."""
     _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas)
