@@ -50,7 +50,16 @@ HAT_GOMB = (
 #: bélyegkép-csúszka helyén ül), ezért a forrásfájlt gombonként kell
 #: megmondani — a súgó-követelmény maga VÁLTOZATLAN.
 _TALCA_FELSOSOR = (_QML / "TrayTopRow.qml").read_text(encoding="utf-8")
+_NEZO_FELSOSAV = (_QML / "PhotoViewerTopBar.qml").read_text(encoding="utf-8")
+_NEZO_FEDOVEZERLOK = (_QML / "PhotoViewerOverlayControls.qml").read_text(
+    encoding="utf-8"
+)
 GOMB_FORRASA = {
+    # #6109: a néző felső sávja és képfedő vezérlői önálló komponensbe kerültek.
+    "viewerPlayButton": _NEZO_FELSOSAV,
+    "viewerPrevButton": _NEZO_FELSOSAV,
+    "viewerNextButton": _NEZO_FELSOSAV,
+    "viewerCreateNowButton": _NEZO_FEDOVEZERLOK,
     # #6050: a nagyítógombok a felső sor komponensébe kerültek.
     "zoomFitButton": _TALCA_FELSOSOR,
     "zoomActualButton": _TALCA_FELSOSOR,

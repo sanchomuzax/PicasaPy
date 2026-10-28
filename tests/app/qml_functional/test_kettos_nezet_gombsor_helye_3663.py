@@ -330,8 +330,12 @@ class TestAJelvenyZSorrendje:
 
         jelveny = _gyerek(window, "viewerFocusBadge")
         terulet = _gyerek(window, "viewerPhotoArea")
-        assert jelveny.parent() is terulet.parent(), (
-            "a jelvény már nem a fotó-terület testvére"
+        overlay = _gyerek(window, "viewerOverlayControls")
+        assert jelveny.parent() is overlay, (
+            "a jelvény már nem a fedővezérlő-komponensben van"
+        )
+        assert overlay.parent() is terulet.parent(), (
+            "a fedővezérlő-komponens már nem a fotó-terület testvére"
         )
 
 

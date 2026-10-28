@@ -535,7 +535,8 @@ class TestAzElrendezesValtok:
 
     def test_a_ket_SWAP_gomb_felengedesre_marad(self) -> None:
         """Mért kivétel: ezeken a `.tre`-ben nincs `mousedown`."""
-        forras = (_QML / "PicasaPy" / "PhotoViewer.qml").read_text(
+        # #6109: az elrendezés-váltók a néző felső sáv-komponensében élnek.
+        forras = (_QML / "PicasaPy" / "PhotoViewerTopBar.qml").read_text(
             encoding="utf-8"
         )
         for nev in ("viewerSwapFocus", "viewerSwapLayout"):
@@ -548,7 +549,8 @@ class TestAzElrendezesValtok:
 
     def test_a_HAROM_valto_nem_kapcsolja_ki(self) -> None:
         """Ellenpróba: a három elrendezés-váltón NINCS `lenyomasra: false`."""
-        forras = (_QML / "PicasaPy" / "PhotoViewer.qml").read_text(
+        # #6109: az elrendezés-váltók a néző felső sáv-komponensében élnek.
+        forras = (_QML / "PicasaPy" / "PhotoViewerTopBar.qml").read_text(
             encoding="utf-8"
         )
         for nev in ("viewerLayoutOnly1up", "viewerLayoutAb", "viewerLayoutAa"):
