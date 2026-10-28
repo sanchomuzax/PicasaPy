@@ -157,7 +157,7 @@ class TestBukas:
     ):
         """Fél másolat (kép igen, eredeti nem) NINCS: az a néma
         funkcióvesztés, amit ez a jegy megszüntet."""
-        from picasapy.fileops import originals as originals_module
+        from picasapy.fileops import originals_copy as originals_module
 
         forras = tmp_path / "forras"
         cel = tmp_path / "cel"
@@ -278,7 +278,7 @@ class TestFelbemaradtMasolas:
         A korábbi próba csak a KÉP másolatát nézte, ezért a `_discard_copies`
         törzse `return`-nel kiütve is zöld maradt (7. lelet).
         """
-        from picasapy.fileops import originals as originals_module
+        from picasapy.fileops import originals_copy as originals_module
 
         forras = tmp_path / "forras"
         cel = tmp_path / "cel"
@@ -351,7 +351,7 @@ class TestFelbemaradtMasolas:
         self, tmp_path, monkeypatch
     ):
         """A visszavétel a KORÁBBI tartalmat állítja vissza, nem törli."""
-        from picasapy.fileops import originals as originals_module
+        from picasapy.fileops import originals_copy as originals_module
         from picasapy.fileops.originals import copy_preserved_originals
 
         forras = tmp_path / "forras"

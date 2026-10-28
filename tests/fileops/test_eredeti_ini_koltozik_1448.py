@@ -232,7 +232,7 @@ class TestVisszagorgetes:
         most a javítás hozta volna be.
         """
         from picasapy.fileops import move_preserved_originals
-        from picasapy.fileops import originals as originals_module
+        from picasapy.fileops import originals_move as originals_module
 
         forras = tmp_path / "A"
         cel = tmp_path / "B"
