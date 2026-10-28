@@ -123,7 +123,7 @@ def test_photo_area_onallo_tipus_es_a_kulso_azonositoi_megmaradnak() -> None:
     komponens = komponens_ut.read_text(encoding="utf-8")
     assert "PhotoViewerPhotoArea {" in gazda
     assert "hostViewer: viewer" in gazda
-    assert "hostViewerPanArea: viewerPanArea" in gazda
+    assert "hostViewerPanArea: viewerOverlayControls.hostViewerPanArea" in gazda
     assert "hostEditorPanel: editorPanel" in gazda
     assert 'objectName: "viewerPhotoArea"' in komponens
     assert "photoArea.hostViewer." in komponens

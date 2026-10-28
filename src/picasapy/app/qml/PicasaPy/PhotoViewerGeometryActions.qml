@@ -4,6 +4,8 @@ import QtQuick
 QtObject {
     id: geometryActions
     property var hostViewer: null
+    property var hostPhotoArea: null
+    property var hostEditController: null
     readonly property var viewer: hostViewer
     readonly property var editorPanel: viewer.editorPanel
     readonly property var cropOverlay: viewer.cropOverlay
@@ -182,9 +184,9 @@ readonly property real zoomDetent: 0.5
 // a nagyítást, a pásztázást és a kétképes nézet kivágását is leképezi.
 // A geometriai mezők olvasása a kötést minden QML-átrendezéskor frissíti.
 readonly property rect zoomNavigatorViewRect: {
-    var image = photoArea.fokuszKep
-    var frame = photoArea.fokuszKeret
-    if (!image || !frame || image.paintedWidth <= 0
+    var image = hostPhotoArea ? hostPhotoArea.fokuszKep : null
+    var frame = hostPhotoArea ? hostPhotoArea.fokuszKeret : null
+    if (!hostPhotoArea || !image || !frame || image.paintedWidth <= 0
             || image.paintedHeight <= 0 || viewer.zoomFactor <= 0
             || !isFinite(viewer.panX) || !isFinite(viewer.panY))
         return Qt.rect(0, 0, 1, 1)
@@ -253,8 +255,8 @@ function actualZoomFactor() {
     // forgatott képnél is `valodiSzelesseg / paintedWidth`.
     //: #3741: a fókuszban lévő fél képe - kettős nézetben bal
     //: fókusznál a `photoElotte`.
-    var kep = photoArea.fokuszKep
-    if (kep.paintedWidth <= 0)
+    var kep = hostPhotoArea ? hostPhotoArea.fokuszKep : null
+    if (!kep || kep.paintedWidth <= 0)
         return 1
     if (viewer.valodiSzelesseg > 0)
         return viewer.valodiSzelesseg / kep.paintedWidth
@@ -320,8 +322,10 @@ function wheelZoom(delta) { lepjZoom((delta / 120) * 0.05) }
 //: #3741: a fókuszban lévő fél képét és a SAJÁT felét nézi - egy képen
 //: ez a teljes `photoArea`, kettős nézetben a kép fele.
 function clampPan() {
-    var kep = photoArea.fokuszKep
-    var keret = photoArea.fokuszKeret
+    if (!hostPhotoArea) return
+    var kep = hostPhotoArea.fokuszKep
+    var keret = hostPhotoArea.fokuszKeret
+    if (!kep || !keret) return
     var w = (kep.iniSteps % 2 ? kep.paintedHeight
                               : kep.paintedWidth) * zoomFactor
     var h = (kep.iniSteps % 2 ? kep.paintedWidth
@@ -333,11 +337,12 @@ function clampPan() {
 }
 
 function panFromZoomNavigator(deltaX, deltaY) {
-    var image = photoArea.fokuszKep
+    if (!hostPhotoArea) return
+    var image = hostPhotoArea.fokuszKep
     if (!image || viewer.zoomFactor <= 1.01) return
-    var origin = image.mapToItem(photoArea, 0, 0)
+    var origin = image.mapToItem(hostPhotoArea, 0, 0)
     var moved = image.mapToItem(
-        photoArea,
+        hostPhotoArea,
         deltaX * image.paintedWidth,
         deltaY * image.paintedHeight)
     panX -= moved.x - origin.x
@@ -366,12 +371,13 @@ function selectMenuEffect(name) {
 // következő kép, vágó-mód megtartva; false: Alkalmaz gomb - a panel
 // visszaáll az eszközrácsra (Picasa-viselkedés).
 function applyCrop(advance) {
+    if (!hostEditController) return
     if (!cropOverlay.hasSelection) {
         if (!advance) editorPanel.cropActive = false
         return
     }
     var r = cropOverlay.cropRect
-    editController.applyCrop(r.x, r.y, r.width, r.height)
+    hostEditController.applyCrop(r.x, r.y, r.width, r.height)
     cropOverlay.resetSelection()
     if (advance) viewer.next()
     else editorPanel.cropActive = false

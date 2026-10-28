@@ -5,6 +5,7 @@ import QtQuick.Controls
 Item {
     id: editWorkflow
     property var hostViewer: null
+    property var hostEditController: null
     readonly property var viewer: hostViewer
     anchors.fill: parent
     visible: viewer.visible
@@ -188,8 +189,9 @@ function _cropModosult() {
 
 //: a fél (`"elso"` = bal/fent, `"masodik"` = jobb/lent) jelenlegi lánca
 function _aaFelLanca(fel) {
+    if (!hostEditController) return null
     var aFoVezerloE = (fel === "elso") === (viewer.aktivOldal === "bal")
-    return aFoVezerloE ? editController.chainValue
+    return aFoVezerloE ? hostEditController.chainValue
                        : viewer.masodikEditCtl.chainValue
 }
 
@@ -289,13 +291,13 @@ function _nyitottEszkozLezar(alkalmaz) {
             editorPanel.cropActive = false
         }
     } else if (editorPanel.retouchActive) {
-        if (alkalmaz) editController.applyRetouch()
+        if (alkalmaz && hostEditController) hostEditController.applyRetouch()
         editorPanel.retouchActive = false
     } else if (editorPanel.textActive) {
-        if (alkalmaz) editController.applyText()
+        if (alkalmaz && hostEditController) hostEditController.applyText()
         editorPanel.textActive = false
     } else if (editorPanel.redeyeActive) {
-        if (alkalmaz) editController.applyRedeye()
+        if (alkalmaz && hostEditController) hostEditController.applyRedeye()
         editorPanel.redeyeActive = false
     }
 }
@@ -395,12 +397,13 @@ function kerBezaras() {
 //: sem: a pár nélküli vagy tényleg semmiben nem különböző eset a
 //: vezérlőn belül no-op (code review lelet #3).
 function _aaFeleketCserel() {
+    if (!hostEditController) return
     editorPanel.cropActive = false
     editorPanel.tiltActive = false
     editorPanel.retouchActive = false
     editorPanel.textActive = false
     editorPanel.redeyeActive = false
-    editController.swapAaFocus()
+    hostEditController.swapAaFocus()
     viewer.syncTiltSlider()
 }
 
@@ -465,6 +468,7 @@ onAktivOldalChanged: {
 }
 
 function beginEditCurrent() {
+    if (!hostEditController) return
     //: #3187: a szerkesztett sor a KIJELÖLT oldal sora. Egy képes és
     //: „aa" módban ez maga a jelenlegi kép (az `aktivSor` ott
     //: `currentIndex`-et ad), tehát azokon a módokon semmi nem változik.
@@ -478,7 +482,7 @@ function beginEditCurrent() {
         if (viewer.aaFotoId === photosModel.idAt(sor)) {
             //: a fő vezérlő már ezen a fotón áll a kijelölt fél láncával
             //: - újratöltés a visszavonás-vermét dobná el
-            if (editController.previewSource !== "") return
+            if (hostEditController.previewSource !== "") return
         } else if (!viewer._aaLapozasKapu()) {
             return
         }
@@ -491,11 +495,11 @@ function beginEditCurrent() {
     if (photosModel.isVideoAt(sor)) {
         // videón nincs képszerkesztés (#14) - az előző kép nyitott
         // munkamenete záruljon, ne lógjon át az előnézete
-        editController.endEdit()
+        hostEditController.endEdit()
         return
     }
-    editController.beginEdit(photosModel.idAt(sor),
-                             photosModel.filePathAt(sor))
+    hostEditController.beginEdit(photosModel.idAt(sor),
+                                 photosModel.filePathAt(sor))
 }
 // #1598: a megjelenítési mód (`Nézet ▸ Megjelenítési mód`) KIZÁRÓLAG az
 // `editpreview` szolgáltatón át jut a képernyőre. A lenti `photo.source`
@@ -542,14 +546,16 @@ property bool tiltAlkalmazasFut: false
 property real tiltErtekNyitaskor: 0
 
 function syncTiltSlider() {
+    if (!hostEditController) return
     viewer.tiltSzinkronFut = true
-    editorToolBar.csuszkaErtek = editController.tiltParam
+    editorToolBar.csuszkaErtek = hostEditController.tiltParam
     viewer.tiltSzinkronFut = false
     // #448: a Kiegyenesítés-figyelmeztetés a vágó-panelen - a
     // tiltParam a mentett döntés-paraméter, 0.0 = nincs aktív tilt
-    editorPanel.straightenActive = editController.tiltParam !== 0
+    editorPanel.straightenActive = hostEditController.tiltParam !== 0
 }
 function syncPanelFromController() {
+    if (!hostEditController) return
     // #445: a panel `redeyeActive`-ja a Vágás/Retusálás mintájára
     // ESZKÖZ-nyitást jelent (nem a `redeye` réteg meglétét) - ezért NEM
     // a vezérlő `hasSavedRedeye`-jének tükre; azt onnan felülírni
@@ -558,43 +564,43 @@ function syncPanelFromController() {
     // névazonosság félrevitte a #1485-öt, ezért kapott beszédes nevet.
     // #448: a tilt-szűrő a láncban változhatott (pl. a felhasználó
     // épp most alkalmazta a Kiegyenesítést) - a figyelmeztetés kövesse
-    editorPanel.straightenActive = editController.tiltParam !== 0
+    editorPanel.straightenActive = hostEditController.tiltParam !== 0
     // egygombos javítások (#116): "nyomható-e" tükrözése - a gomb
     // tiltott, amíg ugyanez a szűrő a lánc utolsó eleme
-    editorPanel.enhanceEnabled = editController.enhanceEnabled
-    editorPanel.autolightEnabled = editController.autolightEnabled
-    editorPanel.autocolorEnabled = editController.autocolorEnabled
+    editorPanel.enhanceEnabled = hostEditController.enhanceEnabled
+    editorPanel.autolightEnabled = hostEditController.autolightEnabled
+    editorPanel.autocolorEnabled = hostEditController.autocolorEnabled
     // Finomhangolás-csúszkák (#20): a panel binding már frissítette a
     // fillLight/highlights/shadows/colorTemp értékeket a kontrollerből -
     // ez a hívás azokat suppress mellett a csúszkákba is beírja
     editorPanel.syncFinetuneSliders()
     // #450: "Remove all existing text" gomb tiltási állapota
-    editorPanel.hasTextOverlay = editController.hasTextOverlay
-    editorPanel.textOverlayVisible = editController.textOverlayVisible
+    editorPanel.hasTextOverlay = hostEditController.hasTextOverlay
+    editorPanel.textOverlayVisible = hostEditController.textOverlayVisible
     if (editorPanel.textActive)
-        editorPanel.textDraftContent = editController.textDraft
+        editorPanel.textDraftContent = hostEditController.textDraft
     // #450: szöveg-stílus - kitöltés+körvonal szín, körvonal-vastagság,
     // kitöltés ki/be, átlátszóság
     // #464: a Finomhangolás fül pipettája melletti színminta
-    editorPanel.neutralColor = editController.neutralColor
-    editorPanel.textFillColor = editController.textFillColor
-    editorPanel.textOutlineColor = editController.textOutlineColor
-    editorPanel.textOutlineThickness = editController.textOutlineThickness
-    editorPanel.textFillEnabled = editController.textFillEnabled
-    editorPanel.textOpacity = editController.textOpacity
+    editorPanel.neutralColor = hostEditController.neutralColor
+    editorPanel.textFillColor = hostEditController.textFillColor
+    editorPanel.textOutlineColor = hostEditController.textOutlineColor
+    editorPanel.textOutlineThickness = hostEditController.textOutlineThickness
+    editorPanel.textFillEnabled = hostEditController.textFillEnabled
+    editorPanel.textOpacity = hostEditController.textOpacity
     // #450 (2. lépcső): tipográfia - betűcsalád, méret, B/I/U, igazítás
     // #4966: a katalógus állandó, ezért egyszer kapja meg. A másolat
     // JS-tömböt ad: a nyers hozzárendelés Python-hoz kötött QVariant-ot
     // tárolna, és minden későbbi olvasás újrahívná a getter-t.
     if (editorPanel.fontFamilyCatalogue.length === 0)
-        editorPanel.fontFamilyCatalogue = editController.textFontFamilies.slice()
-    editorPanel.textFontFamily = editController.textFontFamily
-    editorPanel.textFontSize = editController.textFontSize
-    editorPanel.fontSizeChoices = editController.fontSizeChoices
-    editorPanel.textBold = editController.textBold
-    editorPanel.textItalic = editController.textItalic
-    editorPanel.textUnderline = editController.textUnderline
-    editorPanel.textAlign = editController.textAlign
+        editorPanel.fontFamilyCatalogue = hostEditController.textFontFamilies.slice()
+    editorPanel.textFontFamily = hostEditController.textFontFamily
+    editorPanel.textFontSize = hostEditController.textFontSize
+    editorPanel.fontSizeChoices = hostEditController.fontSizeChoices
+    editorPanel.textBold = hostEditController.textBold
+    editorPanel.textItalic = hostEditController.textItalic
+    editorPanel.textUnderline = hostEditController.textUnderline
+    editorPanel.textAlign = hostEditController.textAlign
 }
 onVisibleChanged: {
     if (visible) {
@@ -616,13 +622,14 @@ onVisibleChanged: {
         //: #3644: a kilépési utak a kapun (`aaKilepesKapu`) mennek át,
         //: tehát ide már lezárt munkamenettel érnek - ez a tartalék.
         viewer._aaLezaras()
-        editController.endEdit()
+        if (hostEditController) hostEditController.endEdit()
         //: #3187: a második rekesz munkamenete is záruljon - nyitva
         //: hagyva a szolgáltató gyorsítótárában maradna a képe.
         if (viewer.masodikEditCtl) viewer.masodikEditCtl.endEdit()
     }
 }
 onCurrentIndexChanged: {
+        if (!hostEditController) return
     if (ctrlF9AutoAdvanceTimer.running && !ctrlF9AutoStep)
         stopCtrlF9AutoAdvance()
     if (visible) {
@@ -644,8 +651,8 @@ onCurrentIndexChanged: {
         // értékeire állnak (#20)
         editorPanel.syncFinetuneSliders()
         if (editorPanel.cropActive) {
-            editController.enterCropTool()
-            cropOverlay.loadSelection(editController.cropSelection)
+            hostEditController.enterCropTool()
+            cropOverlay.loadSelection(hostEditController.cropSelection)
             viewer._cropNyitaskoriMegjegyez()
         } else {
             cropOverlay.resetSelection()
@@ -654,17 +661,17 @@ onCurrentIndexChanged: {
         // az új képhez újra kell nyitni (a puffer/piszkozat az ÚJ kép
         // mentett állapotával indul, a Vágás mintáját követve)
         if (editorPanel.retouchActive)
-            editController.enterRetouchTool()
+            hostEditController.enterRetouchTool()
         if (editorPanel.redeyeActive)
-            editController.enterRedeyeTool()
+            hostEditController.enterRedeyeTool()
         if (editorPanel.textActive) {
-            editController.enterTextTool()
-            editorPanel.textDraftContent = editController.textDraft
+            hostEditController.enterTextTool()
+            editorPanel.textDraftContent = hostEditController.textDraft
         }
     }
 }
 Connections {
-    target: editController
+    target: hostEditController
     function onToolsChanged() { viewer.syncPanelFromController() }
 }
 // Vágás eszköz nyitása/zárása (#71): nyitáskor a lánc crop64 nélküli
@@ -676,47 +683,52 @@ Connections {
         if (editorPanel.tiltActive)
             viewer.forceFitForFilter("tilt")
         else if (!viewer.tiltAlkalmazasFut
-                 && editController.previewSource !== "")
-            editController.discardTiltPreview()
+                 && hostEditController
+                 && hostEditController.previewSource !== "")
+            hostEditController.discardTiltPreview()
     }
     function onParamPanelActiveChanged() {
         if (editorPanel.paramPanelActive)
             viewer.forceFitForFilter(editorPanel.paramEffectName)
     }
     function onCropActiveChanged() {
+        if (!hostEditController) return
         if (editorPanel.cropActive) {
             viewer.zoomFit()   // #6: a vágó-overlay illesztett nézetet vár
-            editController.enterCropTool()
-            cropOverlay.loadSelection(editController.cropSelection)
+            hostEditController.enterCropTool()
+            cropOverlay.loadSelection(hostEditController.cropSelection)
             viewer._cropNyitaskoriMegjegyez()
         } else {
-            editController.exitCropTool()
+            hostEditController.exitCropTool()
         }
     }
     // #148: a Retusálás/Szöveg mód nyitása/zárása - a Vágás mintáját
     // követve az enter/exit a puffer/piszkozat élő előnézetét kezeli,
     // Alkalmazásig nem ír inibe.
     function onRetouchActiveChanged() {
+        if (!hostEditController) return
         if (editorPanel.retouchActive)
-            editController.enterRetouchTool()
+            hostEditController.enterRetouchTool()
         else
-            editController.exitRetouchTool()
+            hostEditController.exitRetouchTool()
     }
     // #445: a Vörösszem eszköz nyitása/zárása - nyitáskor az automatika
     // AZONNAL lefut az előnézeten (enterRedeyeTool), a kézi téglalapok
     // pedig az Alkalmazásig csak a pufferben élnek.
     function onRedeyeActiveChanged() {
+        if (!hostEditController) return
         if (editorPanel.redeyeActive)
-            editController.enterRedeyeTool()
+            hostEditController.enterRedeyeTool()
         else
-            editController.exitRedeyeTool()
+            hostEditController.exitRedeyeTool()
     }
     function onTextActiveChanged() {
+        if (!hostEditController) return
         if (editorPanel.textActive) {
-            editController.enterTextTool()
-            editorPanel.textDraftContent = editController.textDraft
+            hostEditController.enterTextTool()
+            editorPanel.textDraftContent = hostEditController.textDraft
         } else {
-            editController.exitTextTool()
+            hostEditController.exitTextTool()
         }
     }
 }

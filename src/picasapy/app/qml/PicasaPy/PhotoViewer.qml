@@ -531,6 +531,8 @@ Rectangle {
     PhotoViewerGeometryActions {
         id: viewerGeometry
         hostViewer: viewer
+        hostPhotoArea: photoArea
+        hostEditController: viewer.editCtl
         nextPreloadImage: viewerOverlayControls.nextPreloadImage
         previousPreloadImage: viewerOverlayControls.previousPreloadImage
     }
@@ -578,6 +580,7 @@ Rectangle {
     PhotoViewerEditWorkflow {
         id: viewerEditWorkflow
         hostViewer: viewer
+        hostEditController: viewer.editCtl
     }
 
     property alias wheelAccum: viewerNavigation.wheelAccum

@@ -18,11 +18,9 @@ döntésünk, és a `PhotoViewer.qml` kommentje kimondja.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from PySide6.QtCore import QObject
 
-import picasapy.app
+from tests.support.photo_viewer_components_6109 import photo_viewer_source_text
 
 def _nyisd_meg_a_nezot(window, qt_app):
     """A nézőt TÉNYLEGESEN megnyitja.
@@ -35,10 +33,7 @@ def _nyisd_meg_a_nezot(window, qt_app):
     qt_app.processEvents()
 
 
-_VIEWER = (
-    Path(picasapy.app.__file__).parent
-    / "qml" / "PicasaPy" / "PhotoViewer.qml"
-).read_text(encoding="utf-8")
+_VIEWER = photo_viewer_source_text()
 
 
 class TestARetegMegvan:
