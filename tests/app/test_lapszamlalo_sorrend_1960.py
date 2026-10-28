@@ -66,7 +66,7 @@ class TestASablonokLETEZNEK:
 
     def test_a_lapozo_sablont_hasznal(self):
         forras = (
-            _SRC / "app" / "qml" / "PicasaPy" / "PrintDialog.qml"
+            _SRC / "app" / "qml" / "PicasaPy" / "PrintPreviewPanel.qml"
         ).read_text(encoding="utf-8")
         assert f'qsTr("{LAPOZO_SABLON}")' in forras, (
             "a nyomtatás-előnézet lapozója nem fordítható sablonból áll össze"
@@ -82,7 +82,7 @@ class TestAMagyarSorrendFORDITOTT:
         )
 
     def test_a_lapozo_forditasa(self):
-        forditas = _forditas("PrintDialog", LAPOZO_SABLON)
+        forditas = _forditas("PrintPreviewPanel", LAPOZO_SABLON)
         assert forditas == "%2 / %1", (
             f"a lapozó magyar sablonja {forditas!r} — a mért eredeti "
             "(összes / aktuális) sorrendet kéri"

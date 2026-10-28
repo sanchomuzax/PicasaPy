@@ -81,7 +81,14 @@ _GYEREK = textwrap.dedent(
     qInstallMessageHandler(lambda t, ctx, msg: uzenetek.append(msg))
     app = QGuiApplication(sys.argv[:1])
     qml = Path(picasapy.app.__file__).parent / "qml"
-    nem_parbeszed_tarolok = %(kizaras)r
+    # A qmldir `internal` típusai a modulon kívülről nem példányosíthatók;
+    # ezek egy-egy tároló részei, és a tárolójukkal együtt épülnek fel (#6083).
+    belso = {
+        sor.split()[1]
+        for sor in (qml / "PicasaPy" / "qmldir").read_text(encoding="utf-8").splitlines()
+        if sor.startswith("internal ")
+    }
+    nem_parbeszed_tarolok = set(%(kizaras)r) | belso
     motor = QQmlEngine()
     motor.addImportPath(str(qml))
 

@@ -27,6 +27,20 @@ _KEEPALIVE = []
 _QML_DIR = Path(__file__).resolve().parents[2] / "src/picasapy/app/qml/PicasaPy"
 
 
+_KEPTERULET_FAJLOK = (
+    "PhotoViewerPhotoArea.qml",
+    "PhotoViewerStraightenGrid.qml",
+    "PhotoViewerTiltToolBar.qml",
+    "PhotoViewerElotteImage.qml",
+    "PhotoViewerFotoImage.qml",
+    "PhotoViewerGpuFinetune.qml",
+    "PhotoViewerPaintMaskArea.qml",
+    "PhotoViewerNeutralPickArea.qml",
+    "PhotoViewerEffectColorPickArea.qml",
+    "PhotoViewerRetouchArea.qml",
+)
+
+
 class EcsetCsonk(PaintMaskMixin, QObject):
     """Valódi festhetőségi szabályt használó, kisméretű panelvezérlő."""
 
@@ -172,7 +186,7 @@ class TestFestoReteg:
 
     @property
     def forras(self):
-        return (_QML_DIR / "PhotoViewerPhotoArea.qml").read_text(encoding="utf-8")
+        return "\n".join((_QML_DIR / f).read_text(encoding="utf-8") for f in _KEPTERULET_FAJLOK)
 
     def test_a_reteg_letezik(self):
         assert 'objectName: "paintMaskArea"' in self.forras

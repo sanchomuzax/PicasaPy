@@ -429,69 +429,9 @@ picasapy-origin-key: stringres:ytPrinter::unnamedalbum</extracomment>
     <context>
         <name>PrintDialog</name>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Border and Text Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(printpanel/captionoptionslabel)</extracomment>
-            <translation>Rahmen- und Textoptionen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Configure borders and text for Photos to be printed</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracomment>
-            <translation>Rahmen und Text für auszudruckende Fotos konfigurieren</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Help</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Hilfe</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Normal</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
-            <translation>Normal</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Optimized</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Optimiert</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Printer Setup</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
-            <translation>Drucker-Setup</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>A printer must be installed in order to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
-            <translation>Ein Drucker muss installiert sein, um drucken zu können.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Open printer setup controls for the selected printer</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
-            <translation>Steuerelemente für Setup des ausgewählten Druckers öffnen</translation>
-        </message>
-        <message>
             <source>Review</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Überprüfen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Einige Ihrer Bilder sind zu klein, um in guter Qualität gedruckt zu werden. Sie können diese Bilder entfernen, trotzdem drucken oder abbrechen und die Druckgröße ändern.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
@@ -500,69 +440,10 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
             <translation>Niedrige Qualität: %1</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Remove Selected Items</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: reviewprint:reviewprint/remove.title</extracomment>
-            <translation>Auswahl entfernen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Remove Low Quality Pictures</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: reviewprint:reviewprint/removeall.title</extracomment>
-            <translation>Minderwertige Bilder entfernen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>All of your pictures are ready to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::ready</extracomment>
-            <translation>Alle Bilder sind zum Drucken bereit.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>There are no pictures left to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::noneleft</extracomment>
-            <translation>Es sind keine zu druckenden Bilder mehr übrig.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>OK</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>OK</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Abbrechen</translation>
-        </message>
-        <message>
             <source>Make sure your photos are ready to print</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Tooltip(printpanel/reviewnowbutton2)</extracomment>
             <translation>Vergewissern Sie sich, dass Ihre Fotos zum Drucken bereit sind.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Best quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Beste Qualität (%1 Pixel/Zoll)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Good quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Gute Qualität (%1 Pixel/Zoll)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Bad quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Schlechte Qualität (%1 Pixel/Zoll)</translation>
         </message>
         <message>
             <source>These pictures are below %1 pixels/inch at the selected print size:</source>
@@ -573,16 +454,6 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Toolt
             <source>%1 pixels/inch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 Pixel/Zoll</translation>
-        </message>
-        <message>
-            <source>%1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 / %2</translation>
-        </message>
-        <message>
-            <source>Print size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Druckgröße:</translation>
         </message>
         <message>
             <source>CD Cover Size</source>
@@ -729,108 +600,15 @@ picasapy-origin-key: stringres:ThumbUIPrint::ReadyPrompt</extracomment>
             <translation>Zieldatei auswählen.</translation>
         </message>
         <message>
-            <source>These pictures could not be printed: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Diese Bilder konnten nicht gedruckt werden: %1</translation>
-        </message>
-        <message numerus="yes">
-            <source>Pictures to print: %1 (%n page(s))</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>
-                <numerusform>Zu druckende Bilder: %1 (%n Seite)</numerusform>
-                <numerusform>Zu druckende Bilder: %1 (%n Seiten)</numerusform>
-            </translation>
-        </message>
-        <message>
             <source>Contact Sheet</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
             <translation>Kontaktabzug</translation>
         </message>
         <message>
-            <source>Columns:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Spalten:</translation>
-        </message>
-        <message>
-            <source>Printer:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Drucker:</translation>
-        </message>
-        <message>
             <source>Print to a PDF file...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>In PDF-Datei drucken...</translation>
-        </message>
-        <message>
-            <source>(not selected)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(nicht ausgewählt)</translation>
-        </message>
-        <message>
-            <source>Browse...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation>Durchsuchen…</translation>
-        </message>
-        <message>
-            <source>Fit to page:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>An Seite anpassen:</translation>
-        </message>
-        <message>
-            <source>Whole picture</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Gesamtes Bild</translation>
-        </message>
-        <message>
-            <source>Fill the page (crop)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Seite ausfüllen (zuschneiden)</translation>
-        </message>
-        <message>
-            <source>Orientation:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
-            <translation>Ausrichtung</translation>
-        </message>
-        <message>
-            <source>Automatic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Automatisch</translation>
-        </message>
-        <message>
-            <source>Portrait</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
-            <translation>Porträt</translation>
-        </message>
-        <message>
-            <source>Landscape</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
-            <translation>Querformat</translation>
-        </message>
-        <message>
-            <source>Finished: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Abgeschlossen: %1</translation>
-        </message>
-        <message>
-            <source>Printing: %1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Druckt: %1 / %2</translation>
-        </message>
-        <message>
-            <source>Print</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Drucken</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Schließen</translation>
         </message>
         <message>
             <source>PDF documents (*.pdf)</source>
@@ -847,26 +625,285 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ein weiteres Exemplar jedes zu druckenden Fotos hinzufügen</translation>
         </message>
+    </context>
+    <context>
+        <name>PrintPreviewPanel</name>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>This will remove all of your pictures and cancel printing. Would you like to continue?</source>
+            <source>%1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 / %2</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintSelectionPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>A printer must be installed in order to print.</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::removedall</extracomment>
-            <translation>Hiermit werden alle Bilder entfernt und der Druckvorgang wird abgebrochen. Möchten Sie fortfahren?</translation>
+picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
+            <translation>Ein Drucker muss installiert sein, um drucken zu können.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>Normal</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
+            <translation>Normal</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>Optimized</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Optimiert</translation>
+        </message>
+        <message numerus="yes">
+            <source>Pictures to print: %1 (%n page(s))</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>
+                <numerusform>Zu druckende Bilder: %1 (%n Seite)</numerusform>
+                <numerusform>Zu druckende Bilder: %1 (%n Seiten)</numerusform>
+            </translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintSettingsPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSettingsPanel.qml" />
+            <source>Border and Text Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(printpanel/captionoptionslabel)</extracomment>
+            <translation>Rahmen- und Textoptionen</translation>
+        </message>
+        <message>
+            <source>Columns:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Spalten:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSettingsPanel.qml" />
+            <source>Configure borders and text for Photos to be printed</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracomment>
+            <translation>Rahmen und Text für auszudruckende Fotos konfigurieren</translation>
+        </message>
+        <message>
+            <source>Print size:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Druckgröße:</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintPrinterPanel</name>
+        <message>
+            <source>(not selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(nicht ausgewählt)</translation>
+        </message>
+        <message>
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Durchsuchen…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintPrinterPanel.qml" />
+            <source>Open printer setup controls for the selected printer</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
+            <translation>Steuerelemente für Setup des ausgewählten Druckers öffnen</translation>
+        </message>
+        <message>
+            <source>Print to a PDF file...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>In PDF-Datei drucken...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintPrinterPanel.qml" />
+            <source>Printer Setup</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
+            <translation>Drucker-Setup</translation>
+        </message>
+        <message>
+            <source>Printer:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Drucker:</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintFitPanel</name>
+        <message>
+            <source>Automatic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Automatisch</translation>
+        </message>
+        <message>
+            <source>Fill the page (crop)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Seite ausfüllen (zuschneiden)</translation>
+        </message>
+        <message>
+            <source>Fit to page:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>An Seite anpassen:</translation>
+        </message>
+        <message>
+            <source>Landscape</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
+            <translation>Querformat</translation>
+        </message>
+        <message>
+            <source>Orientation:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
+            <translation>Ausrichtung</translation>
+        </message>
+        <message>
+            <source>Portrait</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
+            <translation>Porträt</translation>
+        </message>
+        <message>
+            <source>Whole picture</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Gesamtes Bild</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintStatusPanel</name>
+        <message>
+            <source>Finished: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Abgeschlossen: %1</translation>
+        </message>
+        <message>
+            <source>Printing: %1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Druckt: %1 / %2</translation>
+        </message>
+        <message>
+            <source>These pictures could not be printed: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Diese Bilder konnten nicht gedruckt werden: %1</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintButtonRow</name>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Schließen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintButtonRow.qml" />
+            <source>Help</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hilfe</translation>
+        </message>
+        <message>
+            <source>Print</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Drucken</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintReviewPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>All of your pictures are ready to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::ready</extracomment>
+            <translation>Alle Bilder sind zum Drucken bereit.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Bad quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Schlechte Qualität (%1 Pixel/Zoll)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Best quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Beste Qualität (%1 Pixel/Zoll)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Abbrechen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Good quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Gute Qualität (%1 Pixel/Zoll)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Remove Low Quality Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: reviewprint:reviewprint/removeall.title</extracomment>
+            <translation>Minderwertige Bilder entfernen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Remove Selected Items</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: reviewprint:reviewprint/remove.title</extracomment>
+            <translation>Auswahl entfernen</translation>
+        </message>
+        <message>
+            <source>Review</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Überprüfen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Einige Ihrer Bilder sind zu klein, um in guter Qualität gedruckt zu werden. Sie können diese Bilder entfernen, trotzdem drucken oder abbrechen und die Druckgröße ändern.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>There are no pictures left to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::noneleft</extracomment>
+            <translation>Es sind keine zu druckenden Bilder mehr übrig.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintRemoveAllDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
+            <source>Don't Remove</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::removedallnobutton</extracomment>
+            <translation>Nicht entfernen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
             <source>Remove and Cancel</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CPrintDlg::removedallyesbutton</extracomment>
             <translation>Entfernen und abbrechen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Don't Remove</source>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
+            <source>This will remove all of your pictures and cancel printing. Would you like to continue?</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::removedallnobutton</extracomment>
-            <translation>Nicht entfernen</translation>
+picasapy-origin-key: stringres:CPrintDlg::removedall</extracomment>
+            <translation>Hiermit werden alle Bilder entfernt und der Druckvorgang wird abgebrochen. Möchten Sie fortfahren?</translation>
         </message>
     </context>
     <context>
@@ -13613,152 +13650,16 @@ DIES KANN NICHT RÜCKGÄNGIG GEMACHT WERDEN.
     <context>
         <name>ImportSourceDialog</name>
         <message>
-            <source>Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
-            <translation>Optionen</translation>
-        </message>
-        <message>
-            <source>Online options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button);headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
-            <translation>Online-Optionen</translation>
-        </message>
-        <message>
-            <source>Upload</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Hochladen</translation>
-        </message>
-        <message>
-            <source>Upload to Picasa Web Albums...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>In &amp;Picasa-Webalben hochladen...</translation>
-        </message>
-        <message>
-            <source>Sync starred photos only</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
-            <translation>Nur markierte Fotos synchronisieren</translation>
-        </message>
-        <message>
-            <source>View the previous Photo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vorheriges Foto anzeigen</translation>
-        </message>
-        <message>
-            <source>View the next Photo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nächstes Foto anzeigen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="20" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="19" />
             <source>Import from Source</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Aus Quelle importieren</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="122" />
-            <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Bilder und Videos aus einem anderen Ordner (z. B. einer eingebundenen Kamera oder Speicherkarte) in Ihre Bibliothek importieren.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="134" />
-            <source>Source:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Quelle:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="306" />
-            <source>Removable drives</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Wechseldatenträger</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="71" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="85" />
             <source>Removable Drive (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Wechseldatenträger (%1)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="144" />
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="245" />
-            <source>(none selected)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(keiner ausgewählt)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="150" />
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="251" />
-            <source>Browse...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation>Durchsuchen…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="175" />
-            <source>%1 pictures/videos found</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 Bilder/Videos gefunden</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="186" />
-            <source>No pictures or videos found in this folder.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>In diesem Ordner wurden keine Bilder oder Videos gefunden.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="200" />
-            <source>Exclude Duplicates</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Duplikate ausschließen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
-            <source>Exclude photos that are already imported into PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Fotos ausschließen, die bereits in PicasaPy importiert wurden</translation>
-        </message>
-        <message numerus="yes">
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
-            <source>%n of those are duplicates already in PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>
-                <numerusform>%n davon ist bereits ein Duplikat in PicasaPy</numerusform>
-                <numerusform>%n davon sind bereits Duplikate in PicasaPy</numerusform>
-            </translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="265" />
-            <source>Exclude All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Alle ausschließen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="270" />
-            <source>Include All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Alle einschließen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
-            <source>Include</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Einschließen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
-            <source>Exclude</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ausschließen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="235" />
-            <source>Destination:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IPTC::Destination</extracomment>
-            <translation>Ziel</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="260" />
@@ -13767,59 +13668,7 @@ picasapy-origin-key: stringres:IPTC::Destination</extracomment>
             <translation>Ordnervorlage:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="778" />
-            <source>Enter new folder title or choose existing folder to continue</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
-            <translation>Zum Fortfahren neuen Ordnertitel eingeben oder bestehenden Ordner auswählen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="376" />
-            <source>Enter Folder Title</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:iCAcquireUI::SubFolder</extracomment>
-            <translation>Ordnertitel eingeben</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="392" />
-            <source>Date Taken (YYYY-MM-DD)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
-            <translation>Aufnahmedatum (JJJJ-MM-TT)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="399" />
-            <source>%1 (Today)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 (Heute)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="408" />
-            <source>After Copying:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extracomment>
-            <translation>Nach dem Kopieren:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="419" />
-            <source>Leave card alone</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Speicherkarte unverändert lassen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="426" />
-            <source>Delete only copied photos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nur kopierte Fotos löschen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="433" />
-            <source>Delete everything on card</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Alle Dateien auf der Speicherkarte löschen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="115" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="249" />
             <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Möchten Sie die importierten Dateien wirklich von Ihrer Speicherkarte entfernen? DIES KANN NICHT RÜCKGÄNGIG GEMACHT WERDEN.</translation>
@@ -13837,111 +13686,360 @@ picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extraco
             <translation>Verschieben statt kopieren (Quelldateien werden gelöscht)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="466" />
-            <source>%1 / %2 imported</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 / %2 importiert</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="477" />
-            <source>Done: %1 imported, %2 failed</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Fertig: %1 importiert, %2 fehlgeschlagen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="490" />
-            <source>Import</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
-            <translation>Importieren</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="499" />
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Schließen</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="334" />
             <source>Import Files/Folder</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::importfilestitle</extracomment>
             <translation>Dateien/Ordner importieren</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="360" />
-            <source>Folder...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ordner...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="366" />
-            <source>Files...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Dateien...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="321" />
             <source>Choose source folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Quellordner auswählen...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="516" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="362" />
             <source>Choose destination folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Zielordner auswählen...</translation>
         </message>
         <message>
-            <source>%1 / %2 imported at %3/sec</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 / %2 importiert mit %3/s</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="143" />
             <source>bytes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Bytes</translation>
         </message>
         <message>
-            <source>File types:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</extracomment>
-            <translation>Dateitypen</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="350" />
             <source>Picture and Movie Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Bild- und Filmdateien</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="352" />
             <source>Picture Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
             <translation>Bilddateien</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="353" />
+            <source>All Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
+            <translation>Alle Dateien</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImportSourcePickerPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="166" />
+            <source>Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
+            <translation>Optionen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="167" />
+            <source>Online options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button);headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
+            <translation>Online-Optionen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="157" />
+            <source>Upload</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hochladen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="159" />
+            <source>Upload to Picasa Web Albums...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
+            <translation>In &amp;Picasa-Webalben hochladen...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="188" />
+            <source>Sync starred photos only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
+            <translation>Nur markierte Fotos synchronisieren</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="267" />
+            <source>View the previous Photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vorheriges Foto anzeigen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="279" />
+            <source>View the next Photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nächstes Foto anzeigen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="15" />
+            <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Bilder und Videos aus einem anderen Ordner (z. B. einer eingebundenen Kamera oder Speicherkarte) in Ihre Bibliothek importieren.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="28" />
+            <source>Source:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Quelle:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="63" />
+            <source>Removable drives</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Wechseldatenträger</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="38" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="38" />
+            <source>(none selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(keiner ausgewählt)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="79" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="79" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Durchsuchen…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="230" />
+            <source>%1 pictures/videos found</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 Bilder/Videos gefunden</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="241" />
+            <source>No pictures or videos found in this folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>In diesem Ordner wurden keine Bilder oder Videos gefunden.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="143" />
+            <source>Exclude Duplicates</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Duplikate ausschließen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="197" />
+            <source>Exclude photos that are already imported into PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fotos ausschließen, die bereits in PicasaPy importiert wurden</translation>
+        </message>
+        <message numerus="yes">
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="204" />
+            <source>%n of those are duplicates already in PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>
+                <numerusform>%n davon ist bereits ein Duplikat in PicasaPy</numerusform>
+                <numerusform>%n davon sind bereits Duplikate in PicasaPy</numerusform>
+            </translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="253" />
+            <source>Exclude All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Alle ausschließen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="258" />
+            <source>Include All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Alle einschließen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="88" />
+            <source>Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ordner...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="93" />
+            <source>Files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Dateien...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="107" />
+            <source>File types:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</extracomment>
+            <translation>Dateitypen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="116" />
+            <source>Picture and Movie Files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Bild- und Filmdateien</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="117" />
+            <source>Picture Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
+            <translation>Bilddateien</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="118" />
             <source>All Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <translation>Alle Dateien</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="51" />
             <source>Recent sources</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Zuletzt verwendete Quellen</translation>
         </message>
+    </context>
+    <context>
+        <name>ImportSourcePreview</name>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourcePreview.qml" line="122" />
+            <source>Include</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Einschließen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePreview.qml" line="122" />
+            <source>Exclude</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ausschließen</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImportSourceDestinationPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="26" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="26" />
+            <source>(none selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(keiner ausgewählt)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="98" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="98" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Durchsuchen…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="16" />
+            <source>Destination:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IPTC::Destination</extracomment>
+            <translation>Ziel</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="139" />
+            <source>Enter new folder title or choose existing folder to continue</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
+            <translation>Zum Fortfahren neuen Ordnertitel eingeben oder bestehenden Ordner auswählen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="111" />
+            <source>Enter Folder Title</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:iCAcquireUI::SubFolder</extracomment>
+            <translation>Ordnertitel eingeben</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="144" />
+            <source>Date Taken (YYYY-MM-DD)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
+            <translation>Aufnahmedatum (JJJJ-MM-TT)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="153" />
+            <source>%1 (Today)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 (Heute)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="162" />
+            <source>After Copying:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extracomment>
+            <translation>Nach dem Kopieren:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="173" />
+            <source>Leave card alone</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Speicherkarte unverändert lassen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="180" />
+            <source>Delete only copied photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nur kopierte Fotos löschen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="187" />
+            <source>Delete everything on card</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Alle Dateien auf der Speicherkarte löschen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="229" />
+            <source>%1 / %2 imported</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 / %2 importiert</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="240" />
+            <source>Done: %1 imported, %2 failed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fertig: %1 importiert, %2 fehlgeschlagen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="253" />
+            <source>Import</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
+            <translation>Importieren</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="264" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Schließen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="224" />
+            <source>%1 / %2 imported at %3/sec</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 / %2 importiert mit %3/s</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="59" />
             <source>Recent destinations</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Zuletzt verwendete Ziele</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="76" />
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Originalgröße</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="77" />
             <source>%1 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 Pixel</translation>

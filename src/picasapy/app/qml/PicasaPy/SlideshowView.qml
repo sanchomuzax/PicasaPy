@@ -55,45 +55,9 @@ Rectangle {
     property var musicTrackUrls: []
     property int _musicTrackIndex: 0
 
-    function _syncMusic() {
-        if (!show.visible || !show.playing || show.screensaverMode
-                || !show.musicEnabled || !show.musicTrackUrls
-                || show.musicTrackUrls.length === 0) {
-            musicPlayerLoader.active = false
-            return
-        }
-        musicPlayerLoader.active = true
-        var player = musicPlayerLoader.item
-        if (!player) return
-        if (show._musicTrackIndex < 0
-                || show._musicTrackIndex >= show.musicTrackUrls.length)
-            show._musicTrackIndex = 0
-        var target = show.musicTrackUrls[show._musicTrackIndex]
-        if (player.source !== target || !player.playing)
-            player.playTrack(target)
-    }
+    function _syncMusic() { slideshowMusic.sync() }
+    function _nextMusicTrack() { slideshowMusic.nextTrack() }
 
-    function _nextMusicTrack() {
-        if (!show.musicTrackUrls || show.musicTrackUrls.length === 0) {
-            show._syncMusic()
-            return
-        }
-        show._musicTrackIndex = (show._musicTrackIndex + 1)
-            % show.musicTrackUrls.length
-        show._syncMusic()
-    }
-
-    Loader {
-        id: musicPlayerLoader
-        objectName: "slideshowMusicPlayerLoader"
-        active: false
-        source: active ? "SlideshowMusicPlayer.qml" : ""
-        onLoaded: show._syncMusic()
-    }
-    Connections {
-        target: musicPlayerLoader.item
-        function onTrackEnded() { show._nextMusicTrack() }
-    }
     onMusicEnabledChanged: show._syncMusic()
     onMusicTrackUrlsChanged: {
         show._musicTrackIndex = 0
@@ -101,6 +65,11 @@ Rectangle {
     }
     onPlayingChanged: show._syncMusic()
     onScreensaverModeChanged: show._syncMusic()
+
+    SlideshowMusic {
+        id: slideshowMusic
+        slideshow: show
+    }
 
     //: #4856: a diavetítés átmenet-választója az eredeti hét elemét kínálja
     //: (`picasa-create-features.md` 4.3), ebben a sorrendben. A feliratok a
@@ -318,8 +287,7 @@ Rectangle {
 
     //: #3881: a látott kép útvonala a JELEN indexből
     function _kovetettUtFrissit() {
-        show._currentFilePath = show.photosModel && show.currentIndex >= 0
-            ? show.photosModel.filePathAt(show.currentIndex) : ""
+        slideshowModelSync.kovetettUtFrissit()
     }
 
     //: #3881: a modell szerkezeti jelére (sortörlés, teljes reset — pl.
@@ -327,77 +295,36 @@ Rectangle {
     //: eltolódhatnak vagy átrendeződhetnek anélkül, hogy a nézett kép
     //: megváltozna. A `layoutChanged`-et a `PhotoGridModel` nem küldi (az
     //: átrendezés teljes reset), ezért arra nincs kezelő.
-    Connections {
-        target: show.photosModel
-        function onRowsRemoved(parent, first, last) {
-            show._sorokTorolve(first, last)
-        }
-        function onModelReset() { show._modellReset() }
+    SlideshowModelSync {
+        id: slideshowModelSync
+        slideshow: show
+        currentImage: imageLayer.currentImage
     }
 
     //: az index CSENDBEN (átmenet nélkül) áll a megadott sorra
     function _indexCsendben(index) {
-        show._resyncing = true
-        show.currentIndex = index
-        show._resyncing = false
+        slideshowModelSync.indexCsendben(index)
     }
 
     //: kiürült lista: nincs látott kép, tehát a kilépés se jelöljön ki
     //: nem létező sort (`exitSlideshow` a -1-et kihagyja)
     function _uresListaLeall() {
-        show._indexCsendben(-1)
-        show.stop()
+        slideshowModelSync.uresListaLeall()
     }
 
     //: a törlés a jel argumentumaiból dől el, a lista bejárása nélkül
     function _sorokTorolve(first, last) {
-        if (!show.visible || !show.photosModel) return
-        if (show.count() === 0) { show._uresListaLeall(); return }
-        var i = show.currentIndex
-        if (i < 0) return
-        if (last < i) {
-            show._indexCsendben(i - (last - first + 1))
-        } else if (first <= i) {
-            // a látott kép törlődött: a helyén a KÖVETKEZŐ áll, a lista
-            // végén — ahogy az `advance()` — körbe a 0. sor
-            show._kovetkezoreLep(first)
-        } else {
-            // későbbi sor: a látott kép marad, de a következő változhatott
-            show._diakBetolt()
-        }
+        slideshowModelSync.sorokTorolve(first, last)
     }
 
     //: teljes reset után a látott fájlt EGY Python-hívás keresi vissza
     function _modellReset() {
-        if (!show.visible || !show.photosModel) return
-        if (show.count() === 0) { show._uresListaLeall(); return }
-        if (show._currentFilePath === "") return
-        var sor = show.photosModel.rowOfPath(show._currentFilePath)
-        if (sor >= 0) {
-            if (sor !== show.currentIndex)
-                show._indexCsendben(sor)
-            else
-                show._diakBetolt()   // az elő-betöltő a friss következőt
-            return
-        }
-        show._kovetkezoreLep(show.currentIndex)
+        slideshowModelSync.modellReset()
     }
 
     //: a látott kép eltűnt; `jelolt` az a sor, ahol most a következő áll
     function _kovetkezoreLep(jelolt) {
-        var kezdo = jelolt >= 0 && jelolt < show.count() ? jelolt : 0
-        var kovetkezo = show.clampToPhoto(kezdo)
-        if (kovetkezo < 0) { show._uresListaLeall(); return }
-        if (kovetkezo !== show.currentIndex) {
-            show.currentIndex = kovetkezo
-            return
-        }
-        // a szám nem változott, de alatta más kép áll — azonos értékre az
-        // `onCurrentIndexChanged` nem fut le, ezért kézzel váltunk
-        var kimeno = imageLayer.currentImage.source
-        show._kovetettUtFrissit()
-        if (kimeno !== "") show._atmenetIndit(kimeno)
-        show._diakBetolt()
+        slideshowModelSync.kovetkezoreLep(jelolt)
     }
 
     //: a vetített kép URL-je (#1640: a mód VALÓDI argumentum), üres, ha
