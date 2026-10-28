@@ -409,10 +409,12 @@ def _assert_toolbar_referenciaegyezes_belso(
             for a, b in zip(vart["center"], mostani["center"], strict=True)
         ), f"{nev} feliratközepe 2 px-nél jobban eltolódott"
 
-    if not sys.platform.startswith("linux"):
-        # A Linuxon rögzített képpont-referenciát más rendszer rasterizálója
-        # nem tudja bitre egyezően kirajzolni; ott a fenti geometria és
-        # felirat-őr fut, a helyi Linuxon pedig a teljes, maszkolt pixel-őr.
+    if not sys.platform.startswith("linux") or os.environ.get("CI"):
+        # A helyben rögzített képpont-referenciát más gép rasterizálója
+        # nem tudja bitre egyezően kirajzolni (a CI-n az SVG-tű árnyalata
+        # ±1-gyel, a csúszkafogantyú árnyéka erősebben eltér, #6140); ott a
+        # fenti geometria- és felirat-őr fut, a helyi Linuxon pedig a teljes,
+        # maszkolt pixel-őr.
         return
     assert abs(kep.width() - elotte.width()) <= 3
     assert abs(kep.height() - elotte.height()) <= 3
