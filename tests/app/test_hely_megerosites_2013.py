@@ -98,15 +98,16 @@ class TestAKuszobokAFeluletnekIsLathatok:
         assert controller.geoClearConfirmThreshold == HELY_TORLES_KUSZOB
 
     def test_a_QML_a_NEVESITETT_kuszobot_hasznalja(self):
-        """Forrás-őr: a `Main.qml` ne tartalmazzon beégetett küszöböt a
+        """Forrás-őr: a `MainDialogs.qml` ne tartalmazzon beégetett küszöböt a
         két megerősítésnél."""
         from pathlib import Path
 
         import picasapy.app
 
-        fo = (Path(picasapy.app.__file__).parent / "qml" / "Main.qml").read_text(
-            encoding="utf-8"
-        )
+        # A megerősítő ablakok a `MainDialogs.qml`-be kerültek (#5955).
+        fo = (
+            Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "MainDialogs.qml"
+        ).read_text(encoding="utf-8")
         kezdet = fo.index('objectName: "setGeotagConfirm"')
         blokk = fo[kezdet : fo.index('objectName: "panelClearGeotagConfirm"')]
         assert "geoChangeConfirmThreshold" in blokk
