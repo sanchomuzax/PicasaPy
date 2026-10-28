@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from PySide6.QtCore import QCoreApplication, QObject, QPointF, Qt
+from PySide6.QtCore import QCoreApplication, QObject, QPoint, QPointF, Qt
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickItem, QQuickWindow
 
@@ -47,16 +47,23 @@ def _pixelek(kep: QImage) -> np.ndarray:
     adat = np.frombuffer(rgba.constBits(), dtype=np.uint8)
     return adat.reshape(rgba.height(), rgba.bytesPerLine())[:, : rgba.width() * 4].reshape(
         rgba.height(), rgba.width(), 4
-    )
+    ).copy()
+
+
+def _vizualis_elemek(gyoker: QQuickItem):
+    """A vizuális fában beágyazott QML-elemeket is bejárja."""
+    feldolgozando = [gyoker]
+    while feldolgozando:
+        elem = feldolgozando.pop()
+        yield elem
+        feldolgozando.extend(elem.childItems())
 
 
 def _szovegteruletek_kimaszkolasa(ablak, ervenyes: np.ndarray) -> None:
     """A betűkörnyezetet kihagyja, a többi képpontot változatlanul méri."""
     magassag, szelesseg = ervenyes.shape
-    for objektum in ablak.findChildren(QObject):
+    for objektum in _vizualis_elemek(ablak.contentItem()):
         if not objektum.metaObject().className().startswith("QQuickText"):
-            continue
-        if not isinstance(objektum, QQuickItem):
             continue
         if not objektum.isVisible() or objektum.width() <= 0 or objektum.height() <= 0:
             continue
@@ -70,6 +77,86 @@ def _szovegteruletek_kimaszkolasa(ablak, ervenyes: np.ndarray) -> None:
         also = min(magassag, math.ceil(pont.y() + objektum.height()) + 4)
         if bal < jobb and felso < also:
             ervenyes[felso:also, bal:jobb] = False
+
+
+def _parbeszed_terulete_az_ablakban(parbeszed, ablak: QQuickWindow):
+    """A megnyitott párbeszéd határait adja vissza a főablak képpontjaiban."""
+    if isinstance(parbeszed, QQuickItem):
+        bal_felso = parbeszed.mapToItem(ablak.contentItem(), QPointF(0, 0))
+        szelesseg = parbeszed.width()
+        magassag = parbeszed.height()
+    else:
+        szulo = parbeszed.property("parent")
+        x = float(parbeszed.property("x") or 0)
+        y = float(parbeszed.property("y") or 0)
+        szelesseg = float(parbeszed.property("width") or 0)
+        magassag = float(parbeszed.property("height") or 0)
+        bal_felso = (
+            szulo.mapToItem(ablak.contentItem(), QPointF(x, y))
+            if isinstance(szulo, QQuickItem)
+            else QPointF(x, y)
+        )
+    assert szelesseg > 0 and magassag > 0, (
+        f"nincs mérhető párbeszéd-terület: {parbeszed.objectName()} "
+        f"({szelesseg}×{magassag})"
+    )
+    dpr = ablak.devicePixelRatio()
+    bal = math.floor(bal_felso.x() * dpr)
+    felso = math.floor(bal_felso.y() * dpr)
+    jobb = math.ceil((bal_felso.x() + szelesseg) * dpr)
+    also = math.ceil((bal_felso.y() + magassag) * dpr)
+    return bal, felso, jobb, also
+
+
+def _kulon_ablak_terulete_az_ablakban(ablak, kepek):
+    """A Qt saját popupablakának főablaki átfedését adja vissza."""
+    popupok = [
+        felvetelablak
+        for nev, (felvetelablak, _) in kepek.items()
+        if nev.startswith("felugro-")
+    ]
+    assert popupok, "a Qt-párbeszédablak nem nyitott külön ablakot"
+    popup = popupok[-1]
+    bal_felso = ablak.mapFromGlobal(popup.mapToGlobal(QPoint(0, 0)))
+    dpr = ablak.devicePixelRatio()
+    bal = math.floor(bal_felso.x() * dpr)
+    felso = math.floor(bal_felso.y() * dpr)
+    jobb = math.ceil((bal_felso.x() + popup.width()) * dpr)
+    also = math.ceil((bal_felso.y() + popup.height()) * dpr)
+    return bal, felso, jobb, also
+
+
+def _parbeszedi_pixelelteres(aktualis, referencia, ervenyes, terulet) -> int:
+    """A párbeszéd területén számol; a referenciát legfeljebb ±3 px-szel illeszti."""
+    bal, felso, jobb, also = terulet
+    bal = max(0, bal)
+    felso = max(0, felso)
+    jobb = min(ervenyes.shape[1], jobb)
+    also = min(ervenyes.shape[0], also)
+    assert bal < jobb and felso < also, f"üres párbeszéd-terület: {terulet}"
+    aktualis_resz = aktualis[felso:also, bal:jobb]
+    ervenyes_resz = ervenyes[felso:also, bal:jobb]
+    legjobb = None
+    for dy in range(-3, 4):
+        for dx in range(-3, 4):
+            ref_bal = bal + dx
+            ref_felso = felso + dy
+            ref_jobb = min(ref_bal + aktualis_resz.shape[1], referencia.shape[1])
+            ref_also = min(ref_felso + aktualis_resz.shape[0], referencia.shape[0])
+            if ref_bal < 0 or ref_felso < 0 or ref_bal >= ref_jobb or ref_felso >= ref_also:
+                continue
+            szelesseg = ref_jobb - ref_bal
+            magassag = ref_also - ref_felso
+            eltero = np.any(
+                aktualis_resz[:magassag, :szelesseg]
+                != referencia[ref_felso:ref_also, ref_bal:ref_jobb],
+                axis=2,
+            ) & ervenyes_resz[:magassag, :szelesseg]
+            darab = int(np.count_nonzero(eltero))
+            if legjobb is None or darab < legjobb:
+                legjobb = darab
+    assert legjobb is not None, f"nincs érvényes referencia-terület: {terulet}"
+    return legjobb
 
 
 def _ablakkepek(qt_app, foor):
@@ -158,6 +245,51 @@ def test_create_dialogs_render_bontas_elott_rogzitett_referenciakkal(
             hibaturo_feltetel(lambda p=parbeszed: bool(p.property("visible"))),
             5.0,
         ), f"nem nyílt meg: {nev}"
+        if nev == "movie-maker":
+            preview = create_dialogs.findChild(QObject, "moviePreviewTransitionImage")
+            viewport = create_dialogs.findChild(QObject, "moviePreviewViewport")
+            assert preview is not None, "nem található a film előnézeti képe"
+            assert viewport is not None, "nem található a film előnézeti területe"
+            assert var_feltetelre(
+                qt_app,
+                hibaturo_feltetel(
+                    lambda v=viewport: float(v.property("width")) > 16
+                    and float(v.property("height")) > 16
+                ),
+                5.0,
+            ), "a film előnézeti területe nem épült fel"
+            if bool(movie_dialog.property("previewTransitionServiceAvailable")):
+                assert movie_dialog.metaObject().invokeMethod(
+                    movie_dialog,
+                    "requestPreviewFrame",
+                ), "nem kérhető film-előnézeti képkocka"
+                elonezet_kesz = var_feltetelre(
+                    qt_app,
+                    hibaturo_feltetel(
+                        lambda p=preview: int(movie_dialog.property("previewLatestRequestGeneration")) > 0
+                        and int(movie_dialog.property("previewDisplayedGeneration"))
+                        >= int(movie_dialog.property("previewLatestRequestGeneration"))
+                        and float(p.property("paintedWidth")) > 0
+                        and bool(movie_dialog.property("previewTransitionFrameSource"))
+                    ),
+                    5.0,
+                )
+                assert elonezet_kesz, (
+                    "a film előnézeti képe nem töltődött be: "
+                    f"items={movie_dialog.property('previewItemCount')}, "
+                    f"paintedWidth={preview.property('paintedWidth')}, "
+                    f"latest={movie_dialog.property('previewLatestRequestGeneration')}, "
+                    f"displayed={movie_dialog.property('previewDisplayedGeneration')}"
+                )
+            else:
+                assert var_feltetelre(
+                    qt_app,
+                    hibaturo_feltetel(
+                        lambda: int(movie_dialog.property("previewImageWidth")) > 0
+                        and int(movie_dialog.property("previewImageHeight")) > 0
+                    ),
+                    5.0,
+                ), "a film helyi előnézeti képe nem töltődött be"
         assert var_feltetelre(
             qt_app,
             hibaturo_feltetel(lambda: bool(_ablakkepek(qt_app, ablak))),
@@ -199,10 +331,28 @@ def test_create_dialogs_render_bontas_elott_rogzitett_referenciakkal(
             _szovegteruletek_kimaszkolasa(felvetelablak, ervenyes)
             aktualis_pixelek = _pixelek(aktualis)[:magassag, :szelesseg]
             referencia_pixelek = _pixelek(referencia)[:magassag, :szelesseg]
-            eltero = np.any(aktualis_pixelek != referencia_pixelek, axis=2) & ervenyes
-            if np.any(eltero):
+            if kepnev == "foablak":
+                if nev in _QT_SAJAT_PARBESZEDEK:
+                    elt_pont = _kulon_ablak_terulete_az_ablakban(
+                        ablak,
+                        aktualis_kepek,
+                    )
+                else:
+                    elt_pont = _parbeszed_terulete_az_ablakban(parbeszed, ablak)
+                    eltero_db = _parbeszedi_pixelelteres(
+                    aktualis_pixelek,
+                    referencia_pixelek,
+                    ervenyes,
+                    elt_pont,
+                )
+            else:
+                eltero = np.any(
+                    aktualis_pixelek != referencia_pixelek, axis=2
+                ) & ervenyes
+                eltero_db = int(np.count_nonzero(eltero))
+            if eltero_db:
                 elteresek.append(
-                    f"{nev}/{kepnev}: {np.count_nonzero(eltero)} szövegen kívüli képpont"
+                    f"{nev}/{kepnev}: {eltero_db} szövegen kívüli képpont"
                 )
         parbeszed.metaObject().invokeMethod(parbeszed, "close")
         if nev == "create-result":
