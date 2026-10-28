@@ -100,7 +100,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 28.**
+**Felületről el nem ért vezérlő-tag: 34.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
@@ -129,6 +129,12 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `screenCaptureController` | `isListening` | Property | `app/screen_capture.py` | BELSŐ - az alkalmazásfolyamat figyelőszál-állapota, a QML-nek nem kell megjelenítenie |
 | `screenCaptureController` | `setEnabled` | Slot | `app/screen_capture.py` | BELSŐ - a beállítás Python-API-ja a figyelő indításához/leállításához; a felületi beállításvezérlő nincs a #5639 hatókörében |
 | `screenCaptureController` | `shutdown` | Slot | `app/screen_capture.py` | BELSŐ - az application.py hívja az alkalmazás leállításakor |
+| `secondPreview` | `previewSource` | Property | `app/second_preview.py` | FELVÁLTVA — a PhotoViewerGeometryActions.qml és a PhotoViewerElotteImage.qml a második előnézetet viewer.masodikEditCtl aliasán olvassa. |
+| `secondPreview` | `beginEdit` | Slot | `app/second_preview.py` | FELVÁLTVA — a PhotoViewerEditWorkflow.qml kétképes szerkesztés indításakor a viewer.masodikEditCtl aliasán át hívja. |
+| `secondPreview` | `endEdit` | Slot | `app/second_preview.py` | FELVÁLTVA — a PhotoViewerEditWorkflow.qml a második szerkesztési állapot lezárásakor a viewer.masodikEditCtl aliasán hívja. |
+| `secondPreview` | `chainValue` | Property | `app/second_preview.py` | FELVÁLTVA — a PhotoViewerEditWorkflow.qml a második szerkesztési láncot a viewer.masodikEditCtl aliasán olvassa. |
+| `secondPreview` | `beginEditInMemory` | Slot | `app/second_preview.py` | FELVÁLTVA — a PhotoViewerEditWorkflow.qml memóriabeli előnézetet ugyanazon viewer.masodikEditCtl aliasán át indít. |
+| `secondPreview` | `persistChain` | Slot | `app/second_preview.py` | FELVÁLTVA — a PhotoViewerEditWorkflow.qml a második szerkesztési láncot a viewer.masodikEditCtl aliasán menti. |
 | `startupStatus` | `busy` | Property | `app/startup_status.py` | ELDÖNTVE (#1487) — a nyitóképernyő SZÁNDÉKOSAN a saját `busy: !root.ready` alakját számolja (`SplashScreen.qml:42`): egyetlen forrásból (`ready`) vezeti le, így nem lehet a kettő ellentmondásban. A property marad, mert a `report`/`finish` (mindkettő BELSŐ) ugyanennek az objektumnak az indítási API-ja, és a próbák innen olvassák az állapotot. |
 | `startupStatus` | `report` | Slot | `app/startup_status.py` | BELSŐ — az indítás lépéseit az application.py jelenti be |
 | `startupStatus` | `finish` | Slot | `app/startup_status.py` | BELSŐ — az indítás végét az application.py jelenti be |

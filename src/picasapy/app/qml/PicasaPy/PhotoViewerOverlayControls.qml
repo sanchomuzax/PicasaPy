@@ -4,6 +4,7 @@ import QtQuick.Layouts
 
 Item {
     id: viewerOverlayControls
+    objectName: "viewerOverlayControls"
     anchors.fill: parent
     property var hostViewer: null
     property var hostPhotoArea: null
