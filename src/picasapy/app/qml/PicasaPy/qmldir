@@ -78,6 +78,13 @@ PropertiesPanel 1.0 PropertiesPanel.qml
 PeoplePanel 1.0 PeoplePanel.qml
 PeoplePanelRow 1.0 PeoplePanelRow.qml
 LightboxFeed 1.0 LightboxFeed.qml
+LightboxFeedSelection 1.0 LightboxFeedSelection.qml
+LightboxFeedGroup 1.0 LightboxFeedGroup.qml
+LightboxFeedPersonHeader 1.0 LightboxFeedPersonHeader.qml
+LightboxFeedHoverPreview 1.0 LightboxFeedHoverPreview.qml
+LightboxFeedEmptyState 1.0 LightboxFeedEmptyState.qml
+LightboxFeedWheelArea 1.0 LightboxFeedWheelArea.qml
+LightboxFeedLassoBand 1.0 LightboxFeedLassoBand.qml
 MainToolbar 1.0 MainToolbar.qml
 CaptureMoviePanelPopup 1.0 CaptureMoviePanelPopup.qml
 CaptureMovieMedia 1.0 CaptureMovieMedia.qml
