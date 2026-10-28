@@ -9991,425 +9991,371 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
         </message>
     </context>
     <context>
-        <name>PhotoViewer</name>
+        <name>PhotoViewerContextActions</name>
         <message>
-            <source>Show only one picture</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/only_1up_toggle)</extracomment>
-            <translation>Skatiet tikai vienu attēlu</translation>
-        </message>
-        <message>
-            <source>Show the same picture twice</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/aa_2up_toggle)</extracomment>
-            <translation>Skatiet to pašu attēlu divreiz</translation>
-        </message>
-        <message>
-            <source>Show two different pictures</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/ab_2up_toggle)</extracomment>
-            <translation>Skatiet divus dažādus attēlus</translation>
-        </message>
-        <message>
-            <source>Switch focus between the pictures</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/swap_2up_focus)</extracomment>
-            <translation>Mainiet attēlu, kurš ir fokusā</translation>
-        </message>
-        <message>
-            <source>Switch between horizontal and vertical layout</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/swap_2up_layout)</extracomment>
-            <translation>Pārslēdzieties starp horizontālo un vertikālo izkārtojumu</translation>
-        </message>
-        <message>
-            <source>Selected</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:ImageFilters::Selected;tooltips:Label(editpanel/selection_label);tooltips:Label(editpanel/selection_label_zoom)</extracomment>
-            <translation>Atlasīts</translation>
-        </message>
-        <message>
-            <source>Show/Hide Caption</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Rādīt/slēpt uzrakstu</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Show/Hide Edit Controls</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/toggle_left_drawer)</extracomment>
-            <translation>Rādiet/slēpiet rediģēšanas vadīklas</translation>
-        </message>
-        <message>
-            <source>Delete this caption</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Dzēst šo uzrakstu</translation>
-        </message>
-        <message>
-            <source>Create Now</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Izveidot tūlīt</translation>
-        </message>
-        <message>
-            <source>In Progress...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(editpanel/in_progress_label)</extracomment>
-            <translation>Notiek darbība...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="299" />
-            <source>Back to Library</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/albumview)</extracomment>
-            <translation>Bibliotēka</translation>
-        </message>
-        <message>
-            <source>Edit in PicasaPy</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
-            <translation>Rediģēt, izmantojot PicasaPy</translation>
-        </message>
-        <message>
-            <source>Launch PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Palaist PicasaPy</translation>
-        </message>
-        <message>
-            <source>Zoom In</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Zoom</extracomment>
-            <translation>Tuvinājums</translation>
-        </message>
-        <message>
-            <source>Zoom Out</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tālināt</translation>
-        </message>
-        <message>
-            <source>Play Slideshow</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atskaņot slaidrādi</translation>
-        </message>
-        <message>
-            <source>Previous Photo</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/previousbutton)</extracomment>
-            <translation>Iepriekšējais fotoattēls</translation>
-        </message>
-        <message>
-            <source>Next Photo</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/nextbutton)</extracomment>
-            <translation>Nākamais fotoattēls</translation>
-        </message>
-        <message>
-            <source>Rotate counter-clockwise</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/rotateleft)</extracomment>
-            <translation>Pagriezt pa kreisi</translation>
-        </message>
-        <message>
-            <source>Rotate clockwise</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/rotateright)</extracomment>
-            <translation>Pagriezt pulksteņrādītāju kustības virzienā</translation>
-        </message>
-        <message>
-            <source>Star</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zvaigznīte</translation>
-        </message>
-        <message>
-            <source>Zoom to 1:1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tālummaiņa 1:1</translation>
-        </message>
-        <message>
-            <source>Add/Remove Star</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/startoggle)</extracomment>
-            <translation>Pievienojiet/noņemiet zvaigznīti</translation>
-        </message>
-        <message>
-            <source>Click to see more options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(outputlayout/morebutton)</extracomment>
-            <translation>Noklikšķiniet, lai redzētu vairāk opciju</translation>
-        </message>
-        <message>
-            <source>More Options</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Citas opcijas</translation>
-        </message>
-        <message>
-            <source>Quick Upload</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD</extracomment>
-            <translation>Ātra augšupielāde</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="306" />
-            <source>Play</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(editpanel/sbutton)</extracomment>
-            <translation>Atskaņot</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="106" />
-            <source>Crop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CROP_LABEL;stringres:filter_crop64_label0;stringres:filter_crop_label0;tooltips:Label(editpanel/crop)</extracomment>
-            <translation>Apgriezt</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="107" />
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="460" />
-            <source>Straighten</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_tilt_label0;tooltips:Label(editpanel/horizonadjust)</extracomment>
-            <translation>Iztaisnot</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="108" />
-            <source>Redeye</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;tooltips:Label(editpanel/redeye)</extracomment>
-            <translation>Sarkano acu efekts</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="109" />
-            <source>I'm Feeling Lucky</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Man veicas</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="110" />
-            <source>Auto Contrast</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Automātisks kontrasts</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="111" />
-            <source>Auto Color</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Automātiska krāsu korekcija</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="112" />
-            <source>Fine Tuning</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_finetune2_label0;stringres:filter_finetune_label0</extracomment>
-            <translation>Uzlabošana</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="114" />
-            <source>Sepia</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Sēpija</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="115" />
-            <source>B&amp;W</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Meln&amp;balts</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="116" />
-            <source>Warmify</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Sasildīt</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="117" />
-            <source>Film Grain</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Filmas graudainums</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="118" />
-            <source>Tint</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_PicnikTint_label0</extracomment>
-            <translation>Tonis</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="119" />
-            <source>Saturation</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Saturation;stringres:filter_sat_label0</extracomment>
-            <translation>Piesātinājums</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="120" />
-            <source>Soft Focus</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_radblur_label0</extracomment>
-            <translation>Maigs fokuss</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="121" />
-            <source>Glow</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:ImageFilters::Blur1;stringres:filter_glow2_label0</extracomment>
-            <translation>Starojums</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="122" />
-            <source>Filtered B&amp;W</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CDesaturateFilter::name;stringres:filter_ansel_label0</extracomment>
-            <translation>Filtrēts melnbalts</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="123" />
-            <source>Focal Saturation</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_radsat_label0</extracomment>
-            <translation>MB fokuss</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="124" />
-            <source>Graduated Tint</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_dir_tint_label0</extracomment>
-            <translation>Toņa atlase</translation>
-        </message>
-        <message>
-            <source>Retouch</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::TouchUp;tooltips:Label(editpanel/retouch)</extracomment>
-            <translation>Retušēt</translation>
-        </message>
-        <message>
-            <source>Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
-            <translation>Teksts</translation>
-        </message>
-        <message>
-            <source>Fill Light</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill_label0;stringres:filter_finetune2_label1;stringres:filter_finetune_label1;stringres:filter_triple2_label1;stringres:filter_triple3_label1;stringres:filter_triple_label3;tooltips:Label(editpanel/filllightlabel)</extracomment>
-            <translation>Uzlabot apgaismojumu</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="396" />
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="398" />
-            <source>Undo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atsaukt</translation>
-        </message>
-        <message>
-            <source>Undo: Crop</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atsaukt: apgriešana</translation>
-        </message>
-        <message>
-            <source>Redo: Crop</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atkārtot: apgriešana</translation>
-        </message>
-        <message>
-            <source>Histogram and camera information</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Text(nerdview/nvhead)</extracomment>
-            <translation>Histogrammas un kameras informācija</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="704" />
-            <source>Show Faces</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Rādīt sejas</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="769" />
-            <source>Make a caption!</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pievienojiet uzrakstu!</translation>
-        </message>
-        <message>
-            <source>Edit Faces</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Rediģēt sejas</translation>
-        </message>
-        <message>
-            <source>Edit Collage</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(editpanel/editcollage)</extracomment>
-            <translation>Rediģēt kolāžu</translation>
-        </message>
-        <message>
-            <source>Edit the collage from which this image was created</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/editcollage)</extracomment>
-            <translation>Rediģējiet kolāžu, no kuras tika izveidots šis attēls</translation>
-        </message>
-        <message>
-            <source>Edit Movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(editpanel/editslideshow)</extracomment>
-            <translation>Rediģēt filmu</translation>
-        </message>
-        <message>
-            <source>Edit the movie presentation</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/editslideshow)</extracomment>
-            <translation>Rediģējiet šo filmas prezentāciju</translation>
-        </message>
-        <message>
-            <source>Start slideshow</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Sākt slaidrādi</translation>
-        </message>
-        <message>
-            <source>Previous picture</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:WebExport::template3</extracomment>
-            <translation>Iepriekšējais attēls</translation>
-        </message>
-        <message>
-            <source>Next picture</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:WebExport::template4</extracomment>
-            <translation>Nākamais attēls</translation>
-        </message>
-        <message>
-            <source>Render the final collage from this draft</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Izveidot galīgo kolāžu no šī melnraksta</translation>
-        </message>
-        <message>
-            <source>Fit Photo inside viewing area</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/fit)</extracomment>
-            <translation>Ietilpiniet fotoattēlu skatīšanas apgabalā</translation>
-        </message>
-        <message>
-            <source>Display Photo at actual size</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
-            <translation>Rādiet fotoattēlus faktiskajā lielumā</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="0" />
-            <source>Return to organized thumbnails</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thumbui/albumview)</extracomment>
-            <translation>Atgriezieties pie sakārtotiem sīktēliem</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <location filename="../qml/PicasaPy/PhotoViewerContextActions.qml" line="63" />
             <source>Remove Edits</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
             <translation>Noņemt labojumus</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <location filename="../qml/PicasaPy/PhotoViewerContextActions.qml" line="66" />
             <source>Remove all movie edits?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::UndomovieEdits</extracomment>
             <translation>Vai noņemt visus filmas labojumus?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerContextActions.qml" line="204" />
+            <source>Undo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atsaukt</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerOverlayControls</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="116" />
+            <source>Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ImageFilters::Selected;tooltips:Label(editpanel/selection_label);tooltips:Label(editpanel/selection_label_zoom)</extracomment>
+            <translation>Atlasīts</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="346" />
+            <source>In Progress...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(editpanel/in_progress_label)</extracomment>
+            <translation>Notiek darbība...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="346" />
+            <source>Create Now</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Izveidot tūlīt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="354" />
+            <source>Render the final collage from this draft</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Izveidot galīgo kolāžu no šī melnraksta</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="406" />
+            <source>Show Faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Rādīt sejas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="421" />
+            <source>Edit Faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Rediģēt sejas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="532" />
+            <source>Make a caption!</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pievienojiet uzrakstu!</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="550" />
+            <source>Delete this caption</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Dzēst šo uzrakstu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="627" />
+            <source>Show/Hide Caption</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Rādīt/slēpt uzrakstu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="683" />
+            <source>Show/Hide Edit Controls</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/toggle_left_drawer)</extracomment>
+            <translation>Rādiet/slēpiet rediģēšanas vadīklas</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerQuickToolbar</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="22" />
+            <source>Zoom In</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Zoom</extracomment>
+            <translation>Tuvinājums</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="35" />
+            <source>Zoom Out</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tālināt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="47" />
+            <source>Zoom to 1:1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tālummaiņa 1:1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="58" />
+            <source>Edit in PicasaPy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
+            <translation>Rediģēt, izmantojot PicasaPy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="59" />
+            <source>Launch PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Palaist PicasaPy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="82" />
+            <source>Previous Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/previousbutton)</extracomment>
+            <translation>Iepriekšējais fotoattēls</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="100" />
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="101" />
+            <source>Play Slideshow</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atskaņot slaidrādi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="116" />
+            <source>Next Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/nextbutton)</extracomment>
+            <translation>Nākamais fotoattēls</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="133" />
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="134" />
+            <source>Quick Upload</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD</extracomment>
+            <translation>Ātra augšupielāde</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="150" />
+            <source>Rotate counter-clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateleft)</extracomment>
+            <translation>Pagriezt pa kreisi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="167" />
+            <source>Rotate clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateright)</extracomment>
+            <translation>Pagriezt pulksteņrādītāju kustības virzienā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="184" />
+            <source>Star</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zvaigznīte</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="207" />
+            <source>More Options</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Citas opcijas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="208" />
+            <source>Click to see more options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(outputlayout/morebutton)</extracomment>
+            <translation>Noklikšķiniet, lai redzētu vairāk opciju</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerTopBar</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="45" />
+            <source>Zoom In</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Zoom</extracomment>
+            <translation>Tuvinājums</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="54" />
+            <source>Zoom Out</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tālināt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="63" />
+            <source>Zoom to 1:1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tālummaiņa 1:1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="81" />
+            <source>Edit in PicasaPy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
+            <translation>Rediģēt, izmantojot PicasaPy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="81" />
+            <source>Back to Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/albumview)</extracomment>
+            <translation>Bibliotēka</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="84" />
+            <source>Launch PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Palaist PicasaPy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="85" />
+            <source>Return to organized thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thumbui/albumview)</extracomment>
+            <translation>Atgriezieties pie sakārtotiem sīktēliem</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="114" />
+            <source>Edit Collage</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(editpanel/editcollage)</extracomment>
+            <translation>Rediģēt kolāžu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="117" />
+            <source>Edit the collage from which this image was created</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/editcollage)</extracomment>
+            <translation>Rediģējiet kolāžu, no kuras tika izveidots šis attēls</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="140" />
+            <source>Edit Movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(editpanel/editslideshow)</extracomment>
+            <translation>Rediģēt filmu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="143" />
+            <source>Edit the movie presentation</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/editslideshow)</extracomment>
+            <translation>Rediģējiet šo filmas prezentāciju</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="198" />
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="245" />
+            <source>Play</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(editpanel/sbutton)</extracomment>
+            <translation>Atskaņot</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="200" />
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="247" />
+            <source>Play Slideshow</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atskaņot slaidrādi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="238" />
+            <source>Previous Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/previousbutton)</extracomment>
+            <translation>Iepriekšējais fotoattēls</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="296" />
+            <source>Next Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/nextbutton)</extracomment>
+            <translation>Nākamais fotoattēls</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="309" />
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="310" />
+            <source>Quick Upload</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD</extracomment>
+            <translation>Ātra augšupielāde</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="325" />
+            <source>Rotate counter-clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateleft)</extracomment>
+            <translation>Pagriezt pa kreisi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="342" />
+            <source>Rotate clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateright)</extracomment>
+            <translation>Pagriezt pulksteņrādītāju kustības virzienā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="359" />
+            <source>Star</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zvaigznīte</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="382" />
+            <source>More Options</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Citas opcijas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="383" />
+            <source>Click to see more options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(outputlayout/morebutton)</extracomment>
+            <translation>Noklikšķiniet, lai redzētu vairāk opciju</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="434" />
+            <source>Show only one picture</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/only_1up_toggle)</extracomment>
+            <translation>Skatiet tikai vienu attēlu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="452" />
+            <source>Show two different pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/ab_2up_toggle)</extracomment>
+            <translation>Skatiet divus dažādus attēlus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="462" />
+            <source>Show the same picture twice</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/aa_2up_toggle)</extracomment>
+            <translation>Skatiet to pašu attēlu divreiz</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="484" />
+            <source>Switch focus between the pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/swap_2up_focus)</extracomment>
+            <translation>Mainiet attēlu, kurš ir fokusā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="509" />
+            <source>Switch between horizontal and vertical layout</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/swap_2up_layout)</extracomment>
+            <translation>Pārslēdzieties starp horizontālo un vertikālo izkārtojumu</translation>
         </message>
     </context>
     <context>

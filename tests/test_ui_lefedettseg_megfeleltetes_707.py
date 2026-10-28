@@ -291,22 +291,20 @@ class TestJegy4131:
     """A #4131 húsz, korábban `lekutatva` állapotú elemének mai párosítása."""
 
     ELVART = {
-        "editpanel/aa_2up_toggle": ("megvan", "PicasaPy/PhotoViewer.qml:1748"),
-        "editpanel/ab_2up_toggle": ("megvan", "PicasaPy/PhotoViewer.qml:1738"),
-        "editpanel/only_1up_toggle": ("megvan", "PicasaPy/PhotoViewer.qml:1720"),
-        "editpanel/swap_2up_focus": ("megvan", "PicasaPy/PhotoViewer.qml:1761"),
-        "editpanel/swap_2up_layout": ("megvan", "PicasaPy/PhotoViewer.qml:1786"),
+        "editpanel/aa_2up_toggle": ("megvan", "PicasaPy/PhotoViewerTopBar.qml:457"),
+        "editpanel/ab_2up_toggle": ("megvan", "PicasaPy/PhotoViewerTopBar.qml:447"),
+        "editpanel/only_1up_toggle": ("megvan", "PicasaPy/PhotoViewerTopBar.qml:429"),
+        "editpanel/swap_2up_focus": ("megvan", "PicasaPy/PhotoViewerTopBar.qml:470"),
+        "editpanel/swap_2up_layout": ("megvan", "PicasaPy/PhotoViewerTopBar.qml:497"),
         "editpanel/preview2": ("megvan", "PicasaPy/PhotoViewer.qml"),
-        "editpanel/movietab": ("megvan", "PicasaPy/PhotoViewer.qml:2892"),
+        "editpanel/movietab": ("megvan", "PicasaPy/PhotoViewerTopBar.qml:138"),
         "editpanel/movietabpanel": (
             "megvan",
-            "PicasaPy/VideoPlayerView.qml:116;PicasaPy/PhotoViewer.qml:2892",
+            "PicasaPy/VideoPlayerView.qml:116;PicasaPy/PhotoViewerTopBar.qml:138",
         ),
         "editpanel/modaldialogblur": (
             "megvan",
-            # #5953: a fenti blokkok kiemelése lerövidítette a gazdafájlt;
-            # a gyökérben maradt elhomályosító réteg a 3585. sorra került.
-            "PicasaPy/PhotoViewer.qml:3585",
+            "PicasaPy/PhotoViewerContextActions.qml:232",
         ),
         "editpanel/picnik_fx": ("nem-cel", "ui-audit-editor.md"),
         "editpanel/picnik_fx_label": ("nem-cel", "ui-audit-editor.md"),

@@ -60,9 +60,12 @@ def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:
 def _forras() -> str:
     import picasapy.app
 
-    return (
-        Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "PhotoViewer.qml"
-    ).read_text(encoding="utf-8")
+    qml = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+    # #6109: a néző felső sávjának vezérlői külön QML-komponensben élnek.
+    return "\n".join(
+        (qml / fajl).read_text(encoding="utf-8")
+        for fajl in ("PhotoViewer.qml", "PhotoViewerTopBar.qml")
+    )
 
 
 class TestALeptetoNyilak:
