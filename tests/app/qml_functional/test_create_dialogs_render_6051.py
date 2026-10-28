@@ -13,6 +13,7 @@ from PySide6.QtQuick import QQuickItem, QQuickWindow
 
 from support.jpeg_factory import make_jpeg
 from tests.app.qml_functional.conftest import _build_qml_app
+from support.render_test_helpers import is_text_item
 from tests.support.qml_halasztott import epitsd_fel
 from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
@@ -66,7 +67,7 @@ def _letrehozza_a_proba_kepeket(konyvtar: Path) -> None:
 
 
 @pytest.fixture
-def qml_app(qt_app, tmp_path, request):
+def qml_app(rogzitett_betu, qt_app, tmp_path, request):
     """A render-fixture dátuma és sorrendje ne függjön az órától vagy mtime-tól."""
     yield from _build_qml_app(
         qt_app,
@@ -89,7 +90,7 @@ def _szovegteruletek_kimaszkolasa(ablak, ervenyes: np.ndarray) -> None:
     """A betűkörnyezetet kihagyja, a többi képpontot változatlanul méri."""
     magassag, szelesseg = ervenyes.shape
     for objektum in _vizualis_elemek(ablak.contentItem()):
-        if not objektum.metaObject().className().startswith("QQuickText"):
+        if not is_text_item(objektum):
             continue
         if not objektum.isVisible() or objektum.width() <= 0 or objektum.height() <= 0:
             continue
