@@ -44,10 +44,13 @@ pytestmark = pytest.mark.skipif(
     not _VAN, reason="a PySide6.QtPrintSupport modul hiányzik ezen a gépen"
 )
 
-_DIALOG = (
-    Path(picasapy.app.__file__).parent
-    / "qml" / "PicasaPy" / "PrintDialog.qml"
-).read_text(encoding="utf-8")
+_QML_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+_DIALOG = "\n".join(
+    (_QML_DIR / nev).read_text(encoding="utf-8")
+    for nev in (
+        "PrintDialog.qml", "PrintSettingsPanel.qml", "PrintPreviewPanel.qml"
+    )
+)
 
 
 @pytest.fixture(scope="module")

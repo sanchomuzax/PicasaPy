@@ -202,7 +202,7 @@ ELOFORDULASOK = {
     "PicasaPy/FolderPropertiesDialog.qml": [
         "Description (optional):", "Place taken (optional):",
         "Use music for Slideshow and Movie presentation:"],
-    "PicasaPy/ImportSourceDialog.qml": [
+    "PicasaPy/ImportSourceDestinationPanel.qml": [
         "Enter Folder Title", "Date Taken (YYYY-MM-DD)", "%1 (Today)",
         "Enter new folder title or choose existing folder to continue"],
     "PicasaPy/MoveDatabaseDialog.qml": [
