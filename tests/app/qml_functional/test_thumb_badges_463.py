@@ -20,7 +20,7 @@ _QML_DIR = (
     / "src" / "picasapy" / "app" / "qml" / "PicasaPy"
 )
 _DELEGATE = (_QML_DIR / "ThumbDelegate.qml").read_text(encoding="utf-8")
-_FEED = (_QML_DIR / "LightboxFeed.qml").read_text(encoding="utf-8")
+_FEED = (_QML_DIR / "LightboxFeedGroup.qml").read_text(encoding="utf-8")
 
 #: a delegátum jelvény-kapcsolói — mindegyiket a rácsnak kell töltenie
 _BADGE_PROPERTIES = (

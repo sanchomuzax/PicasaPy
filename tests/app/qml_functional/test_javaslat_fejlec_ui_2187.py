@@ -35,10 +35,15 @@ _KEEP_ALIVE: list = []
 _MAIN = (
     Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
 ).read_text(encoding="utf-8")
-_FEED = (
-    Path(picasapy.app.__file__).parent
-    / "qml" / "PicasaPy" / "LightboxFeed.qml"
-).read_text(encoding="utf-8")
+_FEED_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+_FEED = "\n".join(
+    (_FEED_DIR / name).read_text(encoding="utf-8")
+    for name in (
+        "LightboxFeed.qml",
+        "LightboxFeedGroup.qml",
+        "LightboxFeedPersonHeader.qml",
+    )
+)
 
 
 def _fejlec(engine, **props):
