@@ -5,7 +5,7 @@ import QtQuick.Layouts
 Item {
     id: personAlbumFeedHeader
     required property var feed
-    readonly property var ctl: controller
+    readonly property var ctl: typeof controller !== "undefined" ? controller : null
     objectName: "personAlbumFeedHeader"
     readonly property bool active: feed.appWindow
         && feed.appWindow.personAlbumName !== ""

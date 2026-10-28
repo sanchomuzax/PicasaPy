@@ -4,7 +4,7 @@ import QtQuick.Window
 Window {
     id: hoverPreviewWindow
     required property var feed
-    readonly property var ctl: controller
+    readonly property var ctl: typeof controller !== "undefined" ? controller : null
     objectName: "ctrlAltHoverPreviewWindow"
     transientParent: feed.appWindow
     flags: Qt.ToolTip | Qt.WindowDoesNotAcceptFocus

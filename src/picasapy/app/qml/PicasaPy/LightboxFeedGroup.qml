@@ -8,7 +8,7 @@ import "../selection.js" as Selection
 Column {
     id: groupCol
     required property var feed
-    readonly property var ctl: controller
+    readonly property var ctl: typeof controller !== "undefined" ? controller : null
     required property var lassoOverlay
     required property var modelData
     width: feed.width

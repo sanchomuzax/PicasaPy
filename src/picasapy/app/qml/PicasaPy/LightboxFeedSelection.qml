@@ -5,7 +5,7 @@ import "../selection.js" as Selection
 QtObject {
     id: selection
     required property var feed
-    readonly property var ctl: controller
+    readonly property var ctl: typeof controller !== "undefined" ? controller : null
     property var lassoSnapshot: []
     property bool lassoActive: false
 
