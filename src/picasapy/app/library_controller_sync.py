@@ -15,6 +15,7 @@ from picasapy.scanner import DirectoryChange
 
 from .busy_registry import get_app_busy_registry
 from .folder_freshness import next_sweep_batch, stale_folders
+from .library_controller_activity import _FILETYPE_SNAPSHOT_UNSET
 
 
 def _legacy():
@@ -24,7 +25,7 @@ def _legacy():
     ) or importlib.import_module(".library_controller", __package__)
 
 
-class LibrarySyncMixin:
+class _LibrarySyncMixin:
     @Slot(list)
     def _on_folders_dirty(self, folders, *, felhasznaloi: bool = False) -> None:
         """A watcher által jelzett mappák célzott frissítése (#143, #5177).
@@ -483,7 +484,7 @@ class LibrarySyncMixin:
         )
 
     def _sync_worker(
-        self, enabled_filetypes=_legacy()._FILETYPE_SNAPSHOT_UNSET
+        self, enabled_filetypes=_FILETYPE_SNAPSHOT_UNSET
     ) -> None:
         """Háttér-szinkron. Egy rossz gyökér (pl. elavult Windows-útvonal a
         WatchedFolders-ből) nem nyelhet el mindent némán: hibánként jelzünk,

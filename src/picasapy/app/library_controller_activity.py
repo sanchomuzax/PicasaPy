@@ -5,7 +5,6 @@ from __future__ import annotations
 import importlib
 import sys
 
-from pathlib import Path
 import threading
 import time
 
@@ -25,7 +24,10 @@ def _legacy():
     ) or importlib.import_module(".library_controller", __package__)
 
 
-class LibraryActivityMixin:
+_FILETYPE_SNAPSHOT_UNSET = object()
+
+
+class _LibraryActivityMixin:
     @Slot()
     def cancelActivity(self) -> None:  # noqa: N802 — QML-slot-stílus
         """A futó, leállítható háttérmunkák megszakítása (#2966).
@@ -50,30 +52,6 @@ class LibraryActivityMixin:
             get_app_busy_registry().end()
 
     # -- „Importálás" folyamat-panel (#209) ----------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     @Slot()
@@ -147,7 +125,7 @@ class LibraryActivityMixin:
             if (
                 new_photos != state["new"]
                 or done == total
-                or now - state["last"] >= _PROGRESS_EMIT_MIN_S
+                or now - state["last"] >= _legacy()._PROGRESS_EMIT_MIN_S
             ):
                 state["last"] = now
                 state["new"] = new_photos
@@ -258,16 +236,22 @@ class LibraryActivityMixin:
         `WatchedFolders.txt`-ből származó) figyelt gyökerek normalizálása
         és duplikátum-szűrése — az elsőként látott alak marad meg
         (kanonikus, `path_key` szerint egyedi). Csak akkor ír, ha
-        ténylegesen változott valami (ne piszkítsuk 
+        ténylegesen változott valami (ne piszkítsuk a fájlt feleslegesen)."""
+        seen: dict[str, str] = {}
+        for root in self._roots:
+            normalized = normalize_path(root)
+            if not normalized:
+                continue
+            key = path_key(normalized)
+            seen.setdefault(key, normalized)
+        deduped = list(seen.values())
+        if deduped != self._roots:
+            self._roots = deduped
+            self._persist_roots()
 
-
-
-
-
-
-
-
-     if self._rescan_timer is not None:
+    def shutdown(self) -> None:
+        """Leállítás: figyelő, időzítő és kért cache-takarítás (#5897)."""
+        if self._rescan_timer is not None:
             self._rescan_timer.stop()
         if getattr(self, "_folder_poll_timer", None) is not None:
             self._folder_poll_timer.stop()
@@ -278,14 +262,13 @@ class LibraryActivityMixin:
         if self._watcher is not None:
             self._watcher.stop()
             # #1457: a figyelő MAGA dönti el, elengedhető-e. Ha a
-          
-
-
-
-
-
-
-
-
-
-
+            # megfigyelő szála a `join` után is fut, a referenciát nála
+            # hagyjuk — így nem egy felszabadított objektumra dolgozik
+            # tovább. A tényt a `LibraryWatcher` naplózza.
+            if self._watcher.leallt():
+                self._watcher = None
+        if getattr(self, "disposePreviewsOnExit", False):
+            # A már elfogadott bélyegkép-munkák fejeződjenek be, mielőtt a
+            # közös takarító törli a lemezes és memóriabeli cache-t.
+            self._provider.wait_for_done(10_000)
+            self._provider.clear_cache()

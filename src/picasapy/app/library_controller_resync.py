@@ -30,7 +30,7 @@ def _legacy():
     ) or importlib.import_module(".library_controller", __package__)
 
 
-class LibraryResyncMixin:
+class _LibraryResyncMixin:
     @Slot(str, str, result="QVariantMap")
     def renameFolder(self, folder_path: str, new_name: str) -> dict:
         """Mappanév módosítása úgy, hogy az index metaadatai is kövessék (#4482).

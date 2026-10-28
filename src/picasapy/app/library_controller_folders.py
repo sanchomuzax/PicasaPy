@@ -26,10 +26,6 @@ from picasapy.scanner import (
 )
 from picasapy.scanner.filetypes import RAW_EXTENSIONS
 
-from .exported_folders import (
-    EXPORTED_FOLDERS_SETTINGS_KEY,
-    existing_exported_folders,
-)
 from .filetype_preferences import (
     enabled_filetypes as enabled_filetype_groups,
     file_type_enabled,
@@ -41,8 +37,8 @@ from .initial_scan import (
     SKIP_INITIAL_SCAN_KEY,
     folders_for_choice,
     migration_detected,
-    needs_initial_scan,
 )
+from .library_controller_activity import _FILETYPE_SNAPSHOT_UNSET
 
 
 def _legacy():
@@ -52,7 +48,7 @@ def _legacy():
     ) or importlib.import_module(".library_controller", __package__)
 
 
-class LibraryFoldersMixin:
+class _LibraryFoldersMixin:
     def _ensure_folder_manager_scan_state(self) -> None:
         if hasattr(self, "_folder_scan_excluded"):
             return
@@ -167,7 +163,7 @@ class LibraryFoldersMixin:
         conn,
         root: str,
         progress=None,
-        enabled_filetypes=_legacy()._FILETYPE_SNAPSHOT_UNSET,
+        enabled_filetypes=_FILETYPE_SNAPSHOT_UNSET,
         *,
         scan_root: str | None = None,
     ) -> None:
@@ -202,17 +198,6 @@ class LibraryFoldersMixin:
         return None
 
     # -- #449: első indítás — egyetlen kérdés, egyetlen OK gomb -----------
-
-
-
-
-
-
-
-
-
-
-
 
 
     @Slot(result=bool)
