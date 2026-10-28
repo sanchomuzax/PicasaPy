@@ -657,7 +657,7 @@ class TestKotegeltAthelyezesUtkozes1430:
         eredeti mozgatásakor), annak az üzenete a `batchFinished`
         összegzésébe kerül — nem a darabszám mögé.
         """
-        from picasapy.fileops import originals as originals_module
+        from picasapy.fileops import originals_move as originals_module
 
         src = tmp_path / "forras"
         dest = tmp_path / "cel"
