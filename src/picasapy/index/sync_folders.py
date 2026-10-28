@@ -170,7 +170,7 @@ def folder_looks_offline(folder_path: Path) -> bool:
     lefedve; a rekord-id-k ott a következő sikeres scannel újraépülnek.
     """
     try:
-        with _scandir(folder_path) as it:
+        with legacy("_scandir")(folder_path) as it:
             if next(iter(it), None) is not None:
                 return False  # van benne valami — biztosan elérhető
     except FileNotFoundError:
@@ -179,7 +179,7 @@ def folder_looks_offline(folder_path: Path) -> bool:
         return False
     except OSError:
         return True  # elérhetetlen (levált mount, jogosultság, I/O hiba)
-    return _csatolasi_hataron_ul(folder_path)
+    return legacy("_csatolasi_hataron_ul")(folder_path)
 
 
 def _csatolasi_hataron_ul(folder_path: Path) -> bool:
