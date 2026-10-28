@@ -209,14 +209,15 @@ def _text_free_pixels(view: QQuickItem, width: int, height: int) -> np.ndarray:
     Az arckép belsejét a szoftveres raszterező mipmap-mintavétele gépenként
     másképp rajzolja (a CI-n az átméretezett kép egyes oszlopai térnek el).
     A kép HELYÉT és MÉRETÉT a `_face_image_rects` pontosan összeveti, a
-    kerete, a kijelölés és minden körülötte lévő képpont pedig itt marad.
+    kártya kerete, a kijelölés és minden körülötte lévő képpont pedig itt marad
+    (a kép szélső sorai is a kép tartalmához tartoznak: a CI-n ott is eltérnek).
     """
     valid = np.ones((height, width), dtype=bool)
     for left, top, item_width, item_height in _face_image_rects(view).values():
-        x0 = max(0, math.ceil(left) + 1)
-        y0 = max(0, math.ceil(top) + 1)
-        x1 = min(width, math.floor(left + item_width) - 1)
-        y1 = min(height, math.floor(top + item_height) - 1)
+        x0 = max(0, math.floor(left))
+        y0 = max(0, math.floor(top))
+        x1 = min(width, math.ceil(left + item_width))
+        y1 = min(height, math.ceil(top + item_height))
         if x0 < x1 and y0 < y1:
             valid[y0:y1, x0:x1] = False
     for item in _walk_items(view):
