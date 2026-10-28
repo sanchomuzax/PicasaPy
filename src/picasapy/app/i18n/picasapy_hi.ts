@@ -8241,59 +8241,6 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>क्या आप इस कार्रवाई को रद्द करना चाहते हैं?</translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" />
-            <source>Move photo here?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>क्या फ़ोटो यहां ले जाएं?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Move %d photos here?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>क्या %d फ़ोटो यहां ले जाएं?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Put photo here?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>क्या फ़ोटो यहां रखें?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Put %d photos here?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>क्या %d फ़ोटो यहां रखें?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>(OK)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(ठीक है)</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>You have a fairly large number of items selected.
-
-Are you sure you want to apply this tag to all %d items?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>आपने काफ़ी अधिक आइटम चुने हैं.
-
-क्या आप वाकई यह टैग सभी %d आइटम पर लागू करना चाहते हैं?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>OK</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>ठीक</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>रद्द करें</translation>
-        </message>
-        <message>
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>गुण</translation>
@@ -8340,26 +8287,6 @@ picasapy-origin-key: stringres:CUploadManagerThread::cancel</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(initialscan/ok-label);stringres:il_BurnPanel::InsertNext::1;stringres:il_ContinueButton;uploadmgr:Label(uploadmgr/resume)</extracomment>
             <translation>जारी रखें</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Confirm</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>पुष्टि करें</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Remove Edits</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
-            <translation>संपादन निकालें</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>No</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: confirm:confirm/no.title</extracomment>
-            <translation>नहीं</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -8428,12 +8355,6 @@ picasapy-origin-key: stringres:CAlbumState::addsearchprompt</extracomment>
             <translation>किसी तस्वीर पर यह टैग नहीं है.</translation>
         </message>
         <message>
-            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
-            <translation>यह 1000 से अधिक छवियों वाला एल्बम बनाएगा.  क्या आप जारी रखना चाहते हैं?</translation>
-        </message>
-        <message>
             <source>Create Album</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
@@ -8464,47 +8385,6 @@ picasapy-origin-key: stringres:eMenuTools::ID_SAVESEARCH</extracomment>
             <source>The password does not match. The hidden folders stay hidden.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>पासवर्ड मेल नहीं खाता. छिपे हुए फ़ोल्डर छिपे ही रहेंगे.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="1076" />
-            <source>Change Location</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>स्थान बदलें</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="1087" />
-            <source>You have more than a few items selected.
-
-Are you sure you want to change the location of all %1 items?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>आपने कुछ से अधिक आइटम चुने हैं.
-
-क्या आप वाकई सभी %1 आइटम का स्थान बदलना चाहते हैं?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="1112" />
-            <source>You have more than a few items selected.
-
-Are you sure you want to clear the locations for all %1 items?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>आपने कुछ से अधिक आइटम चुने हैं.
-
-क्या आप वाकई सभी %1 आइटम के स्थान साफ़ करना चाहते हैं?</translation>
-        </message>
-        <message>
-            <source>Clear Geotags</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
-            <translation>जियोटैग साफ़ करें</translation>
-        </message>
-        <message>
-            <source>You are about to erase all geographic location information (i.e., latitude and longitude) from the selected photos.
-
-OK to proceed?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>आप चुनी गई तस्वीरों से सभी भौगोलिक स्थान जानकारी (अर्थात् अक्षांश और देशांतर) मिटाने वाले हैं.
-
-क्या आगे बढ़ें?</translation>
         </message>
         <message>
             <source>Preparing attachments...</source>
@@ -8668,30 +8548,6 @@ picasapy-origin: picasapy</extracomment>
             </translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" />
-            <source>Red eye fixes have been applied to %1.
-If you remove all edits, your red eye fixes cannot be recovered with redo. 
-Are you sure you want to remove the fixes forever?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>लाल-आंख सुधार %1 पर लागू किए गए हैं.
-यदि आप सभी संपादन हटाते हैं, तो लाल-आंख सुधार फिर से लागू करके वापस नहीं पाए जा सकेंगे.
-क्या आप वाकई सुधारों को हमेशा के लिए हटाना चाहते हैं?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>This will remove all edits you have made to ALL of the selected pictures.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE</extracomment>
-            <translation>यह सभी चयनित चित्रों में आपके द्वारा किए गए सभी संपादनों को हटा देगा.  क्या आप जारी रखना चाहते हैं?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>This will remove all edits you have made to the current picture.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CONFIRMREVERT</extracomment>
-            <translation>यह वर्तमान चित्र में आपके द्वारा किए गए सभी संपादनों को निकाल देगा.   क्या आप जारी रखना चाहते हैं?</translation>
-        </message>
-        <message>
             <source>&amp;File</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile</extracomment>
@@ -8792,22 +8648,6 @@ picasapy-origin-key: stringres:IDS_FILTERS;tooltips:Label(searchcontainer/filter
             <source>Verzió és build</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>संस्करण और बिल्ड</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="441" />
-            <source>Back to View All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>सभी पर वापस जाएं</translation>
-        </message>
-        <message>
-            <source>Duplicate Files</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>डुप्लिकेट फ़ाइलें</translation>
-        </message>
-        <message>
-            <source>Looking for duplicate files...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>डुप्लिकेट फ़ाइलें खोजी जा रही हैं...</translation>
         </message>
         <message>
             <source>Rename...</source>
@@ -8991,32 +8831,6 @@ Would you like to hide the files on disk?</source>
 क्या आप डिस्क पर मौजूद फ़ाइलें छिपाना चाहेंगे?</translation>
         </message>
         <message>
-            <source>Similarity Search Results</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
-            <translation>समानता खोज परिणाम</translation>
-        </message>
-        <message>
-            <source>Clear Sample</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>नमूना साफ़ करें</translation>
-        </message>
-        <message>
-            <source>Updating similarity database (will be fast next time)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
-            <translation>समानता वाला डेटाबेस अपडेट कर रहा है (अगली बार तेज़ होगा)</translation>
-        </message>
-        <message>
-            <source>Change the language PicasaPy uses?
-
-It will change the next time PicasaPy is opened.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>PicasaPy द्वारा उपयोग की जाने वाली भाषा बदलें?
-
-अगली बार PicasaPy खोलने पर यह बदलाव लागू होगा.</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>Movie Maker</source>
             <extracomment>picasapy-origin: picasa
@@ -9048,6 +8862,212 @@ picasapy-origin-key: stringres:ThumbUI::HiddenPassword::NoButton</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
             <translation>मुझेसे दोबारा न पूछें.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="2328" />
+            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
+            <translation>यह 1000 से अधिक छवियों वाला एल्बम बनाएगा.  क्या आप जारी रखना चाहते हैं?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3284" />
+            <source>Back to View All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3370" />
+            <source>Duplicate Files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3394" />
+            <source>Looking for duplicate files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3333" />
+            <source>Similarity Search Results</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
+            <translation>समानता खोज परिणाम</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3351" />
+            <source>Clear Sample</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3419" />
+            <source>Updating similarity database (will be fast next time)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
+            <translation>समानता वाला डेटाबेस अपडेट कर रहा है (अगली बार तेज़ होगा)</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="2743" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>पुष्टि करें</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainDialogs</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="180" />
+            <source>Move photo here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>क्या फ़ोटो यहां ले जाएं?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="184" />
+            <source>Move %d photos here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>क्या %d फ़ोटो यहां ले जाएं?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="181" />
+            <source>Put photo here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>क्या फ़ोटो यहां रखें?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="185" />
+            <source>Put %d photos here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>क्या %d फ़ोटो यहां रखें?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="208" />
+            <source>(OK)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(ठीक है)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="73" />
+            <source>You have a fairly large number of items selected.
+
+Are you sure you want to apply this tag to all %d items?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>आपने काफ़ी अधिक आइटम चुने हैं.
+
+क्या आप वाकई यह टैग सभी %d आइटम पर लागू करना चाहते हैं?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="99" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>ठीक</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="105" />
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="214" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>रद्द करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="269" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>पुष्टि करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="339" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>संपादन निकालें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="347" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/no.title</extracomment>
+            <translation>नहीं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="133" />
+            <source>Change Location</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>स्थान बदलें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="145" />
+            <source>You have more than a few items selected.
+
+Are you sure you want to change the location of all %1 items?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>आपने कुछ से अधिक आइटम चुने हैं.
+
+क्या आप वाकई सभी %1 आइटम का स्थान बदलना चाहते हैं?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="247" />
+            <source>You have more than a few items selected.
+
+Are you sure you want to clear the locations for all %1 items?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>आपने कुछ से अधिक आइटम चुने हैं.
+
+क्या आप वाकई सभी %1 आइटम के स्थान साफ़ करना चाहते हैं?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="36" />
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="234" />
+            <source>Clear Geotags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
+            <translation>जियोटैग साफ़ करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="42" />
+            <source>You are about to erase all geographic location information (i.e., latitude and longitude) from the selected photos.
+
+OK to proceed?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>आप चुनी गई तस्वीरों से सभी भौगोलिक स्थान जानकारी (अर्थात् अक्षांश और देशांतर) मिटाने वाले हैं.
+
+क्या आगे बढ़ें?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="307" />
+            <source>Red eye fixes have been applied to %1.
+If you remove all edits, your red eye fixes cannot be recovered with redo. 
+Are you sure you want to remove the fixes forever?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>लाल-आंख सुधार %1 पर लागू किए गए हैं.
+यदि आप सभी संपादन हटाते हैं, तो लाल-आंख सुधार फिर से लागू करके वापस नहीं पाए जा सकेंगे.
+क्या आप वाकई सुधारों को हमेशा के लिए हटाना चाहते हैं?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="299" />
+            <source>This will remove all edits you have made to ALL of the selected pictures.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE</extracomment>
+            <translation>यह सभी चयनित चित्रों में आपके द्वारा किए गए सभी संपादनों को हटा देगा.  क्या आप जारी रखना चाहते हैं?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="297" />
+            <source>This will remove all edits you have made to the current picture.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT</extracomment>
+            <translation>यह वर्तमान चित्र में आपके द्वारा किए गए सभी संपादनों को निकाल देगा.   क्या आप जारी रखना चाहते हैं?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="372" />
+            <source>Change the language PicasaPy uses?
+
+It will change the next time PicasaPy is opened.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>PicasaPy द्वारा उपयोग की जाने वाली भाषा बदलें?
+
+अगली बार PicasaPy खोलने पर यह बदलाव लागू होगा.</translation>
         </message>
     </context>
     <context>

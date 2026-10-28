@@ -7,6 +7,7 @@ FolderPaneTreeRow 1.0 FolderPaneTreeRow.qml
 FolderPaneMenus 1.0 FolderPaneMenus.qml
 ThumbDelegate 1.0 ThumbDelegate.qml
 PicasaMenuBar 1.0 PicasaMenuBar.qml
+MainDialogs 1.0 MainDialogs.qml
 internal PicasaFileMenu PicasaFileMenu.qml
 internal PicasaEditMenu PicasaEditMenu.qml
 internal PicasaViewMenu PicasaViewMenu.qml
@@ -214,3 +215,5 @@ EditorSlider 1.0 EditorSlider.qml
 EditorSliderCaption 1.0 EditorSliderCaption.qml
 PhotoViewerLeftDrawer 1.0 PhotoViewerLeftDrawer.qml
 PhotoViewerPhotoArea 1.0 PhotoViewerPhotoArea.qml
+MainSlideshow 1.0 MainSlideshow.qml
+MainWindowToolbar 1.0 MainWindowToolbar.qml

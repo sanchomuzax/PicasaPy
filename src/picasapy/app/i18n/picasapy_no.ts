@@ -8241,59 +8241,6 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>Vil du avbryte denne operasjonen?</translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" />
-            <source>Move photo here?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vil du flytte bildet hit?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Move %d photos here?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vil du flytte %d bilder hit?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Put photo here?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vil du plassere bildet her?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Put %d photos here?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vil du plassere %d bilder her?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>(OK)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(OK)</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>You have a fairly large number of items selected.
-
-Are you sure you want to apply this tag to all %d items?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Du har valgt ganske mange elementer.
-
-Er du sikker på at du vil bruke denne etiketten på alle %d elementene?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>OK</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>OK</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Avbryt</translation>
-        </message>
-        <message>
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Egenskaper</translation>
@@ -8340,26 +8287,6 @@ picasapy-origin-key: stringres:CUploadManagerThread::cancel</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(initialscan/ok-label);stringres:il_BurnPanel::InsertNext::1;stringres:il_ContinueButton;uploadmgr:Label(uploadmgr/resume)</extracomment>
             <translation>Fortsett</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Confirm</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Bekreft</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Remove Edits</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
-            <translation>Fjern redigeringer</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>No</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: confirm:confirm/no.title</extracomment>
-            <translation>Nei</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -8428,12 +8355,6 @@ picasapy-origin-key: stringres:CAlbumState::addsearchprompt</extracomment>
             <translation>Ingen bilder har denne etiketten.</translation>
         </message>
         <message>
-            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
-            <translation>Dette oppretter et album med mer enn 1 000 bilder. Vil du fortsette?</translation>
-        </message>
-        <message>
             <source>Create Album</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
@@ -8464,47 +8385,6 @@ picasapy-origin-key: stringres:eMenuTools::ID_SAVESEARCH</extracomment>
             <source>The password does not match. The hidden folders stay hidden.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Passordet stemmer ikke. De skjulte mappene forblir skjult.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="1076" />
-            <source>Change Location</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Endre plassering</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="1087" />
-            <source>You have more than a few items selected.
-
-Are you sure you want to change the location of all %1 items?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Du har valgt ganske mange elementer.
-
-Er du sikker på at du vil endre plasseringen for alle %1 elementene?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="1112" />
-            <source>You have more than a few items selected.
-
-Are you sure you want to clear the locations for all %1 items?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Du har valgt ganske mange elementer.
-
-Er du sikker på at du vil fjerne plasseringen for alle %1 elementene?</translation>
-        </message>
-        <message>
-            <source>Clear Geotags</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
-            <translation>Slett geografiske etiketter</translation>
-        </message>
-        <message>
-            <source>You are about to erase all geographic location information (i.e., latitude and longitude) from the selected photos.
-
-OK to proceed?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Du er i ferd med å slette all geografisk posisjonsinformasjon (det vil si breddegrad og lengdegrad) fra de valgte bildene.
-
-Vil du fortsette?</translation>
         </message>
         <message>
             <source>Preparing attachments...</source>
@@ -8668,30 +8548,6 @@ picasapy-origin: picasapy</extracomment>
             </translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" />
-            <source>Red eye fixes have been applied to %1.
-If you remove all edits, your red eye fixes cannot be recovered with redo. 
-Are you sure you want to remove the fixes forever?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Retting av røde øyne er brukt på %1.
-Hvis du fjerner alle redigeringer, kan ikke rettingene av røde øyne gjenopprettes med «Gjør om».
-Er du sikker på at du vil fjerne rettingene for godt?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>This will remove all edits you have made to ALL of the selected pictures.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE</extracomment>
-            <translation>Dette fjerner alle endringene du har gjort i ALLE de valgte bildene. Vil du fortsette?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>This will remove all edits you have made to the current picture.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CONFIRMREVERT</extracomment>
-            <translation>Dette fjerner alle endringene du har gjort i gjeldende bilde. Vil du fortsette?</translation>
-        </message>
-        <message>
             <source>&amp;File</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile</extracomment>
@@ -8792,22 +8648,6 @@ picasapy-origin-key: stringres:IDS_FILTERS;tooltips:Label(searchcontainer/filter
             <source>Verzió és build</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Versjon og bygg</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="441" />
-            <source>Back to View All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tilbake til Vis alle</translation>
-        </message>
-        <message>
-            <source>Duplicate Files</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Duplikatfiler</translation>
-        </message>
-        <message>
-            <source>Looking for duplicate files...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Leter etter duplikatfiler...</translation>
         </message>
         <message>
             <source>Rename...</source>
@@ -8991,32 +8831,6 @@ Would you like to hide the files on disk?</source>
 Vil du skjule filene på disken?</translation>
         </message>
         <message>
-            <source>Similarity Search Results</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
-            <translation>Resultater for søk etter lignende uttrykk</translation>
-        </message>
-        <message>
-            <source>Clear Sample</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Fjern eksempelbildet</translation>
-        </message>
-        <message>
-            <source>Updating similarity database (will be fast next time)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
-            <translation>Oppdaterer likhetsdatabase (blir rask neste gang)</translation>
-        </message>
-        <message>
-            <source>Change the language PicasaPy uses?
-
-It will change the next time PicasaPy is opened.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vil du endre språket PicasaPy bruker?
-
-Endringen trer i kraft neste gang PicasaPy åpnes.</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>Movie Maker</source>
             <extracomment>picasapy-origin: picasa
@@ -9048,6 +8862,212 @@ picasapy-origin-key: stringres:ThumbUI::HiddenPassword::NoButton</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
             <translation>Ikke spør igjen.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="2328" />
+            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
+            <translation>Dette oppretter et album med mer enn 1 000 bilder. Vil du fortsette?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3284" />
+            <source>Back to View All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3370" />
+            <source>Duplicate Files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3394" />
+            <source>Looking for duplicate files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3333" />
+            <source>Similarity Search Results</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
+            <translation>Resultater for søk etter lignende uttrykk</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3351" />
+            <source>Clear Sample</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3419" />
+            <source>Updating similarity database (will be fast next time)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
+            <translation>Oppdaterer likhetsdatabase (blir rask neste gang)</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="2743" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Bekreft</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainDialogs</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="180" />
+            <source>Move photo here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vil du flytte bildet hit?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="184" />
+            <source>Move %d photos here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vil du flytte %d bilder hit?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="181" />
+            <source>Put photo here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vil du plassere bildet her?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="185" />
+            <source>Put %d photos here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vil du plassere %d bilder her?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="208" />
+            <source>(OK)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(OK)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="73" />
+            <source>You have a fairly large number of items selected.
+
+Are you sure you want to apply this tag to all %d items?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Du har valgt ganske mange elementer.
+
+Er du sikker på at du vil bruke denne etiketten på alle %d elementene?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="99" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="105" />
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="214" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Avbryt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="269" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Bekreft</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="339" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>Fjern redigeringer</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="347" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/no.title</extracomment>
+            <translation>Nei</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="133" />
+            <source>Change Location</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Endre plassering</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="145" />
+            <source>You have more than a few items selected.
+
+Are you sure you want to change the location of all %1 items?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Du har valgt ganske mange elementer.
+
+Er du sikker på at du vil endre plasseringen for alle %1 elementene?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="247" />
+            <source>You have more than a few items selected.
+
+Are you sure you want to clear the locations for all %1 items?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Du har valgt ganske mange elementer.
+
+Er du sikker på at du vil fjerne plasseringen for alle %1 elementene?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="36" />
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="234" />
+            <source>Clear Geotags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
+            <translation>Slett geografiske etiketter</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="42" />
+            <source>You are about to erase all geographic location information (i.e., latitude and longitude) from the selected photos.
+
+OK to proceed?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Du er i ferd med å slette all geografisk posisjonsinformasjon (det vil si breddegrad og lengdegrad) fra de valgte bildene.
+
+Vil du fortsette?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="307" />
+            <source>Red eye fixes have been applied to %1.
+If you remove all edits, your red eye fixes cannot be recovered with redo. 
+Are you sure you want to remove the fixes forever?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Retting av røde øyne er brukt på %1.
+Hvis du fjerner alle redigeringer, kan ikke rettingene av røde øyne gjenopprettes med «Gjør om».
+Er du sikker på at du vil fjerne rettingene for godt?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="299" />
+            <source>This will remove all edits you have made to ALL of the selected pictures.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE</extracomment>
+            <translation>Dette fjerner alle endringene du har gjort i ALLE de valgte bildene. Vil du fortsette?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="297" />
+            <source>This will remove all edits you have made to the current picture.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT</extracomment>
+            <translation>Dette fjerner alle endringene du har gjort i gjeldende bilde. Vil du fortsette?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="372" />
+            <source>Change the language PicasaPy uses?
+
+It will change the next time PicasaPy is opened.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vil du endre språket PicasaPy bruker?
+
+Endringen trer i kraft neste gang PicasaPy åpnes.</translation>
         </message>
     </context>
     <context>
