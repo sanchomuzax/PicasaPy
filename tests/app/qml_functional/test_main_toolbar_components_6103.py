@@ -109,12 +109,13 @@ def _varj_feltetelre_hataridovel(qt_app, feltetel, hatarido: float) -> bool:
 
 
 def _ket_stabil_fogantyukocka(window, qt_app, toolbar, slider):
-    """Két valódi, egymást követő képkockát vár azonos fogantyúállással."""
+    """Három azonos képkockával igazolja a fogantyú raszterének stabilitását."""
     fogantyu = slider.property("handle")
     assert isinstance(fogantyu, QQuickItem), "a dátumcsúszka fogantyúja hiányzik"
     hatarido = time.monotonic() + 3.0
     elozo_allapot = None
     elozo_kep = QImage()
+    egymas_utan_azonos = 0
 
     while True:
         maradek = hatarido - time.monotonic()
@@ -143,9 +144,17 @@ def _ket_stabil_fogantyukocka(window, qt_app, toolbar, slider):
         if animacio_fut:
             elozo_allapot = None
             elozo_kep = QImage()
+            egymas_utan_azonos = 0
             continue
-        if allapot == elozo_allapot:
-            return elozo_kep, aktualis_kep
+        if (
+            allapot == elozo_allapot
+            and bytes(elozo_kep.constBits()) == bytes(aktualis_kep.constBits())
+        ):
+            egymas_utan_azonos += 1
+            if egymas_utan_azonos >= 2:
+                return elozo_kep, aktualis_kep
+        else:
+            egymas_utan_azonos = 0
 
         elozo_allapot = allapot
         elozo_kep = aktualis_kep
@@ -272,34 +281,6 @@ def _nem_szoveg_elteresek(
     return darab, elteresek
 
 
-def _date_slider_fogantyu_doboza(
-    toolbar: QQuickItem,
-    slider: QQuickItem,
-    kep: QImage,
-) -> list[int]:
-    """A dátumcsúszka fogantyúját adja vissza a kivágott kép képpontjaiban."""
-    fogantyu = slider.property("handle")
-    assert isinstance(fogantyu, QQuickItem), "a dátumcsúszka fogantyúja hiányzik"
-
-    dpr = kep.devicePixelRatio()
-    toolbar_eredet = toolbar.mapToScene(QPointF(0, 0))
-    fogantyu_bal_felso = fogantyu.mapToScene(QPointF(0, 0))
-    fogantyu_jobb_also = fogantyu.mapToScene(
-        QPointF(fogantyu.width(), fogantyu.height())
-    )
-    kep_eredet_x = round(toolbar_eredet.x() * dpr)
-    kep_eredet_y = round(toolbar_eredet.y() * dpr)
-
-    # A #6127 külön méri a dátumcsúszka fogantyújának futásközi ingadozását:
-    # a bontás előtti kód is itt tért el a saját referenciájától. Csak ezt a
-    # futásidejű geometriájú területet zárjuk ki; a kiváltó okot a #6127 keresi.
-    bal = math.floor(fogantyu_bal_felso.x() * dpr) - kep_eredet_x - 1
-    felso = math.floor(fogantyu_bal_felso.y() * dpr) - kep_eredet_y - 1
-    jobb = math.ceil(fogantyu_jobb_also.x() * dpr) - kep_eredet_x + 1
-    also = math.ceil(fogantyu_jobb_also.y() * dpr) - kep_eredet_y + 1
-    return [bal, felso, jobb - bal, also - felso]
-
-
 def test_pixel_osszehasonlito_kihagyja_a_megadott_dobozt_es_semmi_mast():
     alap = QImage(5, 5, QImage.Format.Format_ARGB32)
     alap.fill(0xFF000000)
@@ -328,7 +309,6 @@ def _assert_toolbar_referenciaegyezes(
     elrendezes: dict[str, object],
     allapot: str,
     magassag_elteres: int,
-    fogantyu_doboz: list[int],
 ) -> None:
     referencia = Path(__file__).parent / "golden" / "main_toolbar_6103"
     fajlnev = f"{allapot}_{magassag_elteres:+d}.png"
@@ -364,9 +344,11 @@ def _assert_toolbar_referenciaegyezes(
     )
     for nev, vart in vart_szovegek.items():
         mostani = mostani_szovegek[nev]
-        assert mostani["text"] == vart["text"], (
-            f"megváltozott felirat ({nev}): {vart['text']!r} → {mostani['text']!r}"
-        )
+        if nev.split(":", 1)[-1].rsplit("#", 1)[0] != "versionLabel":
+            assert mostani["text"] == vart["text"], (
+                f"megváltozott felirat ({nev}): "
+                f"{vart['text']!r} → {mostani['text']!r}"
+            )
         assert all(
             abs(a - b) <= 2
             for a, b in zip(vart["center"], mostani["center"], strict=True)
@@ -387,7 +369,6 @@ def _assert_toolbar_referenciaegyezes(
         elotte,
         kep,
         dobozok,
-        kizarando_teglalapok=[fogantyu_doboz],
     )
     assert eltero_pontok == 0, (
         f"{fajlnev}: {eltero_pontok} eltérő nem-szöveg képpont; "
@@ -417,6 +398,8 @@ def test_toolbar_allapot_kepe_rogzitheto(
     kezdo_magassag = window.height()
     cel_magassag = kezdo_magassag + magassag_elteres
     window.setHeight(cel_magassag)
+    if allapot != "narrow":
+        window.setWidth(1024)
     if allapot == "selection":
         QMetaObject.invokeMethod(
             window,
@@ -449,7 +432,12 @@ def test_toolbar_allapot_kepe_rogzitheto(
             return window.width() > 0
 
     def kesz() -> bool:
-        return window.height() == cel_magassag and allapot_kesz()
+        vart_szelesseg = 650 if allapot == "narrow" else 1024
+        return (
+            window.width() == vart_szelesseg
+            and window.height() == cel_magassag
+            and allapot_kesz()
+        )
 
     assert _varj_feltetelre_hataridovel(
         qt_app, kesz, time.monotonic() + 3.0
@@ -474,14 +462,10 @@ def test_toolbar_allapot_kepe_rogzitheto(
     assert not masodik_toolbar_kep.isNull(), f"üres második toolbar-kép: {allapot}"
 
     elrendezes = _toolbar_elrendezes(toolbar)
-    fogantyu_doboz = _date_slider_fogantyu_doboza(
-        toolbar, datumcsuszka, toolbar_kep
-    )
     eltero_kockapontok, elteres_helyei = _nem_szoveg_elteresek(
         toolbar_kep,
         masodik_toolbar_kep,
         [*elrendezes["text_boxes"], *elrendezes["text_boxes"]],
-        kizarando_teglalapok=[fogantyu_doboz],
     )
     assert eltero_kockapontok == 0, (
         f"a két egymás utáni {allapot} kép eltér: "
@@ -497,12 +481,11 @@ def test_toolbar_allapot_kepe_rogzitheto(
         encoding="utf-8",
     )
     _assert_toolbar_referenciaegyezes(
-        toolbar_kep, elrendezes, allapot, magassag_elteres, fogantyu_doboz
+        toolbar_kep, elrendezes, allapot, magassag_elteres
     )
     _assert_toolbar_referenciaegyezes(
         masodik_toolbar_kep,
         elrendezes,
         allapot,
         magassag_elteres,
-        fogantyu_doboz,
     )

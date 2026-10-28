@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 
         // #423: NEM Column, hanem Item — a "Szűrők" felirat a Picasa
         // `searchcontainer.tre`-jének `filter_label` kényszere szerint
@@ -323,22 +324,60 @@ import QtQuick.Layouts
                 //:
                 //: A nulla NEM „nagyon régi", hanem „nincs szűrés" — a
                 //: vezérlő nulla értéknél kikapcsolja a szűrőt.
-                PicasaSlider {
-                    id: ageFilterSlider
-                    objectName: "dateRangeFilterSlider"
-                    width: 90; height: 20
-                    from: 0.0
-                    to: 1.0
-                    anchors.verticalCenter: parent.verticalCenter
-                    //: `timecontainer_label` — az eredeti buboréksúgója
-                    // #839: a `timecontainer_label` is `hottip
-                    // searchcontainer/filter_label` (a `.tre` hatodik ilyen
-                    // sora) — a súgó a „Szűrők" felirat helyén jelenik meg
-                    HoverHandler { id: dateRangeHover }
-                    //: a csúszka mozgatása KÖZBEN nem kérdezünk le: a
-                    //: `moved` az elengedésre/lépésre szól, a `valueChanged`
-                    //: minden képpontnyi vonszolásra lekérdezné az indexet
-                    onMoved: if (controller) controller.setAgeFilter(value)
+                Item {
+                    id: dateRangeSliderSlot
+                    width: 90
+                    height: 20
+                    PicasaSlider {
+                        id: ageFilterSlider
+                        objectName: "dateRangeFilterSlider"
+                        width: parent.width
+                        height: parent.height
+                        // #6127: a szűrőzóna x-e az ablak szélességének 40%-ából
+                        // jön, ezért 1024 px-nél a fogantyú 516,6 fizikai
+                        // képpontra esik. A teljes scene-pozíciót leképezzük, és
+                        // a közvetlen ős-koordináták olvasásával frissítjük a
+                        // kötést átméretezéskor is.
+                        x: {
+                            var hostWindow = parent.Window.window
+                            if (!hostWindow)
+                                return 0
+                            var slotOrigin = dateRangeSliderSlot.mapToItem(null, 0, 0)
+                            var toolbarOrigin = toolbar.parent
+                                ? toolbar.parent.mapToItem(null, toolbar.x, toolbar.y)
+                                : toolbar.mapToItem(null, 0, 0)
+                            var sceneX = toolbarOrigin.x + filterZone.parent.x
+                                + filterZone.x + filterIconsRow.x + dateRangeSliderSlot.x
+                            var dpr = hostWindow.devicePixelRatio > 0
+                                ? hostWindow.devicePixelRatio : 1
+                            return Math.round(sceneX * dpr) / dpr - slotOrigin.x
+                        }
+                        y: {
+                            var hostWindow = parent.Window.window
+                            if (!hostWindow)
+                                return 0
+                            var slotOrigin = dateRangeSliderSlot.mapToItem(null, 0, 0)
+                            var toolbarOrigin = toolbar.parent
+                                ? toolbar.parent.mapToItem(null, toolbar.x, toolbar.y)
+                                : toolbar.mapToItem(null, 0, 0)
+                            var sceneY = toolbarOrigin.y + filterZone.parent.y
+                                + filterZone.y + filterIconsRow.y + dateRangeSliderSlot.y
+                            var dpr = hostWindow.devicePixelRatio > 0
+                                ? hostWindow.devicePixelRatio : 1
+                            return Math.round(sceneY * dpr) / dpr - slotOrigin.y
+                        }
+                        from: 0.0
+                        to: 1.0
+                        //: `timecontainer_label` — az eredeti buboréksúgója
+                        // #839: a `timecontainer_label` is `hottip
+                        // searchcontainer/filter_label` (a `.tre` hatodik ilyen
+                        // sora) — a súgó a „Szűrők" felirat helyén jelenik meg
+                        HoverHandler { id: dateRangeHover }
+                        //: a csúszka mozgatása KÖZBEN nem kérdezünk le: a
+                        //: `moved` az elengedésre/lépésre szól, a `valueChanged`
+                        //: minden képpontnyi vonszolásra lekérdezné az indexet
+                        onMoved: if (controller) controller.setAgeFilter(value)
+                    }
                 }
                 Connections {
                     target: controller
