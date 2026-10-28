@@ -82,6 +82,20 @@ Item {
 """
 
 
+_KEPTERULET_FAJLOK = (
+    "PhotoViewerPhotoArea.qml",
+    "PhotoViewerStraightenGrid.qml",
+    "PhotoViewerTiltToolBar.qml",
+    "PhotoViewerElotteImage.qml",
+    "PhotoViewerFotoImage.qml",
+    "PhotoViewerGpuFinetune.qml",
+    "PhotoViewerPaintMaskArea.qml",
+    "PhotoViewerNeutralPickArea.qml",
+    "PhotoViewerEffectColorPickArea.qml",
+    "PhotoViewerRetouchArea.qml",
+)
+
+
 @pytest.fixture
 def betoltott(qt_app):
     import picasapy.app.application as app_module
@@ -407,10 +421,11 @@ class TestAKepFolott:
         assert abs(kozep - kep.property("width") / 2) <= 0.5
 
     def test_a_forras_a_MERT_kenyszereket_koveti(self):
-        f = (
-            Path(__file__).resolve().parents[2]
-            / "src/picasapy/app/qml/PicasaPy/PhotoViewerPhotoArea.qml"
-        ).read_text(encoding="utf-8")
+        f = "\n".join(
+            (Path(__file__).resolve().parents[2]
+             / "src/picasapy/app/qml/PicasaPy" / n).read_text(encoding="utf-8")
+            for n in _KEPTERULET_FAJLOK
+        )
         # A sáv a forgatatlan photoArea-rétegen áll. A forgatás UTÁNI
         # kirajzolt kép négy sarka adja a középpontot és az alsó élt; a
         # méret és a képszélhez mért rés továbbra is a kép skáláját követi.

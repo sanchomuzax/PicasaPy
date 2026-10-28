@@ -429,69 +429,9 @@ picasapy-origin-key: stringres:ytPrinter::unnamedalbum</extracomment>
     <context>
         <name>PrintDialog</name>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Border and Text Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(printpanel/captionoptionslabel)</extracomment>
-            <translation>Možnosti ohraničení a textu</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Configure borders and text for Photos to be printed</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracomment>
-            <translation>Konfigurovat ohraničení a text fotek, které chcete vytisknout</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Help</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nápověda</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Normal</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
-            <translation>Normální</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Optimized</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Optimalizovaný</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Printer Setup</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
-            <translation>Nastavení tiskárny</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>A printer must be installed in order to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
-            <translation>Aby bylo možné tisknout, musí být nainstalována tiskárna.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Open printer setup controls for the selected printer</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
-            <translation>Otevřít ovládací prvky nastavení tiskárny pro vybranou tiskárnu</translation>
-        </message>
-        <message>
             <source>Review</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Zkontrolovat</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Některé fotky jsou příliš malé na kvalitní tisk. Můžete je odebrat, vytisknout i tak, nebo tisk zrušit a změnit velikost tisku.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
@@ -500,69 +440,10 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
             <translation>Nízká kvalita: %1</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Remove Selected Items</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: reviewprint:reviewprint/remove.title</extracomment>
-            <translation>Odebrat vybrané</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Remove Low Quality Pictures</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: reviewprint:reviewprint/removeall.title</extracomment>
-            <translation>Odebrat fotky nízké kvality</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>All of your pictures are ready to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::ready</extracomment>
-            <translation>Všechny vaše fotky jsou připraveny k tisku.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>There are no pictures left to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::noneleft</extracomment>
-            <translation>Nezbývají žádné fotky pro tisk</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>OK</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>OK</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zrušit</translation>
-        </message>
-        <message>
             <source>Make sure your photos are ready to print</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Tooltip(printpanel/reviewnowbutton2)</extracomment>
             <translation>Před tiskem zkontrolujte, zda jsou fotky připravené.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Best quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nejvyšší kvalita (%1 pixelů na palec)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Good quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Dobrá kvalita (%1 pixelů na palec)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Bad quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nízká kvalita (%1 pixelů na palec)</translation>
         </message>
         <message>
             <source>These pictures are below %1 pixels/inch at the selected print size:</source>
@@ -573,16 +454,6 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Toolt
             <source>%1 pixels/inch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 pixelů na palec</translation>
-        </message>
-        <message>
-            <source>%1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 / %2</translation>
-        </message>
-        <message>
-            <source>Print size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Velikost tisku:</translation>
         </message>
         <message>
             <source>CD Cover Size</source>
@@ -729,109 +600,15 @@ picasapy-origin-key: stringres:ThumbUIPrint::ReadyPrompt</extracomment>
             <translation>Vyberte cílový soubor.</translation>
         </message>
         <message>
-            <source>These pictures could not be printed: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tyto fotky se nepodařilo vytisknout: %1</translation>
-        </message>
-        <message numerus="yes">
-            <source>Pictures to print: %1 (%n page(s))</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>
-                <numerusform>Fotky k tisku: %1 (%n stránka)</numerusform>
-                <numerusform>Fotky k tisku: %1 (%n stránky)</numerusform>
-                <numerusform>Fotky k tisku: %1 (%n stránek)</numerusform>
-            </translation>
-        </message>
-        <message>
             <source>Contact Sheet</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
             <translation>Miniatura</translation>
         </message>
         <message>
-            <source>Columns:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Sloupce:</translation>
-        </message>
-        <message>
-            <source>Printer:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tiskárna:</translation>
-        </message>
-        <message>
             <source>Print to a PDF file...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Tisk do souboru PDF...</translation>
-        </message>
-        <message>
-            <source>(not selected)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(není vybrána)</translation>
-        </message>
-        <message>
-            <source>Browse...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation>Procházet...</translation>
-        </message>
-        <message>
-            <source>Fit to page:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Přizpůsobit stránce</translation>
-        </message>
-        <message>
-            <source>Whole picture</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Celá fotka</translation>
-        </message>
-        <message>
-            <source>Fill the page (crop)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vyplnit stránku (oříznout)</translation>
-        </message>
-        <message>
-            <source>Orientation:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
-            <translation>Orientace</translation>
-        </message>
-        <message>
-            <source>Automatic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Automaticky</translation>
-        </message>
-        <message>
-            <source>Portrait</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
-            <translation>Na výšku</translation>
-        </message>
-        <message>
-            <source>Landscape</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
-            <translation>Na šířku</translation>
-        </message>
-        <message>
-            <source>Finished: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Dokončeno: %1</translation>
-        </message>
-        <message>
-            <source>Printing: %1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tisk: %1 / %2</translation>
-        </message>
-        <message>
-            <source>Print</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tisknout</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Zavřít</translation>
         </message>
         <message>
             <source>PDF documents (*.pdf)</source>
@@ -848,26 +625,286 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Přidat další kopii každé fotky k vytištění</translation>
         </message>
+    </context>
+    <context>
+        <name>PrintPreviewPanel</name>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>This will remove all of your pictures and cancel printing. Would you like to continue?</source>
+            <source>%1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 / %2</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintSelectionPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>A printer must be installed in order to print.</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::removedall</extracomment>
-            <translation>Tím odeberete všechny své fotky a zrušíte tisk. Chcete pokračovat?</translation>
+picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
+            <translation>Aby bylo možné tisknout, musí být nainstalována tiskárna.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>Normal</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
+            <translation>Normální</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>Optimized</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Optimalizovaný</translation>
+        </message>
+        <message numerus="yes">
+            <source>Pictures to print: %1 (%n page(s))</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>
+                <numerusform>Fotky k tisku: %1 (%n stránka)</numerusform>
+                <numerusform>Fotky k tisku: %1 (%n stránky)</numerusform>
+                <numerusform>Fotky k tisku: %1 (%n stránek)</numerusform>
+            </translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintSettingsPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSettingsPanel.qml" />
+            <source>Border and Text Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(printpanel/captionoptionslabel)</extracomment>
+            <translation>Možnosti ohraničení a textu</translation>
+        </message>
+        <message>
+            <source>Columns:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sloupce:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSettingsPanel.qml" />
+            <source>Configure borders and text for Photos to be printed</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracomment>
+            <translation>Konfigurovat ohraničení a text fotek, které chcete vytisknout</translation>
+        </message>
+        <message>
+            <source>Print size:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Velikost tisku:</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintPrinterPanel</name>
+        <message>
+            <source>(not selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(není vybrána)</translation>
+        </message>
+        <message>
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Procházet...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintPrinterPanel.qml" />
+            <source>Open printer setup controls for the selected printer</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
+            <translation>Otevřít ovládací prvky nastavení tiskárny pro vybranou tiskárnu</translation>
+        </message>
+        <message>
+            <source>Print to a PDF file...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tisk do souboru PDF...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintPrinterPanel.qml" />
+            <source>Printer Setup</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
+            <translation>Nastavení tiskárny</translation>
+        </message>
+        <message>
+            <source>Printer:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tiskárna:</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintFitPanel</name>
+        <message>
+            <source>Automatic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Automaticky</translation>
+        </message>
+        <message>
+            <source>Fill the page (crop)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vyplnit stránku (oříznout)</translation>
+        </message>
+        <message>
+            <source>Fit to page:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Přizpůsobit stránce</translation>
+        </message>
+        <message>
+            <source>Landscape</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
+            <translation>Na šířku</translation>
+        </message>
+        <message>
+            <source>Orientation:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
+            <translation>Orientace</translation>
+        </message>
+        <message>
+            <source>Portrait</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
+            <translation>Na výšku</translation>
+        </message>
+        <message>
+            <source>Whole picture</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Celá fotka</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintStatusPanel</name>
+        <message>
+            <source>Finished: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Dokončeno: %1</translation>
+        </message>
+        <message>
+            <source>Printing: %1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tisk: %1 / %2</translation>
+        </message>
+        <message>
+            <source>These pictures could not be printed: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tyto fotky se nepodařilo vytisknout: %1</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintButtonRow</name>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Zavřít</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintButtonRow.qml" />
+            <source>Help</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nápověda</translation>
+        </message>
+        <message>
+            <source>Print</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tisknout</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintReviewPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>All of your pictures are ready to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::ready</extracomment>
+            <translation>Všechny vaše fotky jsou připraveny k tisku.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Bad quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nízká kvalita (%1 pixelů na palec)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Best quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nejvyšší kvalita (%1 pixelů na palec)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zrušit</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Good quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Dobrá kvalita (%1 pixelů na palec)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Remove Low Quality Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: reviewprint:reviewprint/removeall.title</extracomment>
+            <translation>Odebrat fotky nízké kvality</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Remove Selected Items</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: reviewprint:reviewprint/remove.title</extracomment>
+            <translation>Odebrat vybrané</translation>
+        </message>
+        <message>
+            <source>Review</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zkontrolovat</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Některé fotky jsou příliš malé na kvalitní tisk. Můžete je odebrat, vytisknout i tak, nebo tisk zrušit a změnit velikost tisku.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>There are no pictures left to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::noneleft</extracomment>
+            <translation>Nezbývají žádné fotky pro tisk</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintRemoveAllDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
+            <source>Don't Remove</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::removedallnobutton</extracomment>
+            <translation>Neodebírat</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
             <source>Remove and Cancel</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CPrintDlg::removedallyesbutton</extracomment>
             <translation>Odebrat a zrušit</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Don't Remove</source>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
+            <source>This will remove all of your pictures and cancel printing. Would you like to continue?</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::removedallnobutton</extracomment>
-            <translation>Neodebírat</translation>
+picasapy-origin-key: stringres:CPrintDlg::removedall</extracomment>
+            <translation>Tím odeberete všechny své fotky a zrušíte tisk. Chcete pokračovat?</translation>
         </message>
     </context>
     <context>
@@ -5043,954 +5080,1181 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
         </message>
     </context>
     <context>
-        <name>CreateDialogs</name>
+        <name>CollageCreateDialog</name>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Get More...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
-            <translation>Získat více...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Get more clips from Photo Library</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
-            <translation>Získat další klipy z knihovny fotek</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Clips (%d)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::clips_title</extracomment>
-            <translation>Klipy (%d)</translation>
-        </message>
-        <message>
-            <source>Poster Settings</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/window1.title</extracomment>
-            <translation>Nastavení plakátu</translation>
-        </message>
-        <message>
-            <source>Tip: if you don't want to trim, crop your picture to the same size as the paper.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/label2.title</extracomment>
-            <translation>Tip: Pokud nechcete, aby byly ořezány okraje, ořízněte fotku na velikost papíru.</translation>
-        </message>
-        <message>
-            <source>Poster size:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/labelgroup3.title</extracomment>
-            <translation>Velikost plakátu:</translation>
-        </message>
-        <message>
-            <source>200%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item5.title</extracomment>
-            <translation>200 %</translation>
-        </message>
-        <message>
-            <source>300%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item6.title</extracomment>
-            <translation>300 %</translation>
-        </message>
-        <message>
-            <source>400%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item7.title</extracomment>
-            <translation>400 %</translation>
-        </message>
-        <message>
-            <source>500%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item8.title</extracomment>
-            <translation>500 %</translation>
-        </message>
-        <message>
-            <source>600%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item9.title</extracomment>
-            <translation>600 %</translation>
-        </message>
-        <message>
-            <source>700%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item10.title</extracomment>
-            <translation>700 %</translation>
-        </message>
-        <message>
-            <source>800%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item11.title</extracomment>
-            <translation>800 %</translation>
-        </message>
-        <message>
-            <source>900%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item12.title</extracomment>
-            <translation>900 %</translation>
-        </message>
-        <message>
-            <source>1000%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item13.title</extracomment>
-            <translation>1000 %</translation>
-        </message>
-        <message>
-            <source>Paper size:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/labelgroup14.title</extracomment>
-            <translation>Velikost papíru:</translation>
-        </message>
-        <message>
-            <source>4x6</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
-            <translation>4 x 6</translation>
-        </message>
-        <message>
-            <source>8.5x11</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:FullPage;stringres:CPosterDlg::size2</extracomment>
-            <translation>8,5 x 11</translation>
-        </message>
-        <message>
-            <source>10x15</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:10x15m</extracomment>
-            <translation>10 x 15</translation>
-        </message>
-        <message>
-            <source>20x25</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::Crop20x25m</extracomment>
-            <translation>20 x 25</translation>
-        </message>
-        <message>
-            <source>Overlap tiles</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/overlap.title</extracomment>
-            <translation>Přesah listů</translation>
-        </message>
-        <message>
-            <source>OK</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>OK</translation>
-        </message>
-        <message>
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zrušit</translation>
-        </message>
-        <message>
-            <source>Poster tiles saved.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Dlaždice plakátu byly uloženy.</translation>
-        </message>
-        <message>
-            <source>The poster tiles could not be created.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Dlaždice plakátu se nepodařilo vytvořit.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="266" />
-            <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 fotek se nepodařilo najít a nebudou zobrazeny. (Chybějící soubory mohly být přesunuty, přejmenovány nebo smazány)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="24" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="23" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="163" />
             <source>Picture Collage...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
             <translation>&amp;Koláž z fotek...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="44" />
-            <source>%1 pictures selected.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vybráno fotek: %1.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="52" />
-            <source>Collage type:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Typ koláže:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
-            <source>Picture Grid</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::ePictureGrid</extracomment>
-            <translation>Mřížka z fotek</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="77" />
-            <source>Mosaic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mozaika</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
-            <source>Grid</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mřížka</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="79" />
-            <source>Multiple Exposure</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
-            <translation>Vícenásobná expozice</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="85" />
-            <source>Picture borders:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/borders_label)</extracomment>
-            <translation>Okraje fotky</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>None</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
-            <translation>Žádné</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>White Border</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Border::ID_COLLAGE_BORDER_1;stringres:collage::whiteborder_dname</extracomment>
-            <translation>Bílý okraj</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>Polaroid</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
-            <translation>Polaroid</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="55" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="68" />
             <source>Select pictures in the library first, or put them in the Picture Tray.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nejprve vyberte fotky v knihovně nebo je přidejte na přihrádku fotek.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="121" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="76" />
+            <source>%1 pictures selected.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vybráno fotek: %1.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="95" />
             <source>Scramble Collage</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/rand_placement-label)</extracomment>
             <translation>Promíchat koláž</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
-            <source>Contact Sheet</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
-            <translation>Miniatura</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
-            <source>Frame Mosaic</source>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="105" />
+            <source>Collage type:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mozaika v rámečku</translation>
+            <translation>Typ koláže:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="114" />
             <source>Picture Pile</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::ePicturePile</extracomment>
             <translation>Hromádka fotek</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="69" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="114" />
+            <source>Mosaic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mozaika</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="115" />
+            <source>Frame Mosaic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mozaika v rámečku</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="115" />
+            <source>Grid</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mřížka</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="116" />
+            <source>Contact Sheet</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
+            <translation>Miniatura</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="116" />
+            <source>Multiple Exposure</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
+            <translation>Vícenásobná expozice</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="123" />
+            <source>Picture borders:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/borders_label)</extracomment>
+            <translation>Okraje fotky</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
+            <translation>Žádné</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>White Border</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Border::ID_COLLAGE_BORDER_1;stringres:collage::whiteborder_dname</extracomment>
+            <translation>Bílý okraj</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>Polaroid</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
+            <translation>Polaroid</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="139" />
             <source>Target file:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
             <translation>Cílový soubor</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="149" />
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>(není vybráno)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="83" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="154" />
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
             <translation>Procházet...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="166" />
             <source>JPEG images (*.jpg)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Obrázky JPEG (*.jpg)</translation>
         </message>
+    </context>
+    <context>
+        <name>CreateDialogs</name>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="98" />
-            <source>Movie</source>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="124" />
+            <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Film</translation>
+            <translation>%1 fotek se nepodařilo najít a nebudou zobrazeny. (Chybějící soubory mohly být přesunuty, přejmenovány nebo smazány)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="130" />
-            <source>Video size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Rozlišení videa:</translation>
-        </message>
-        <message>
-            <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Fotky a načasování filmu se načítají ze souboru projektu; velikost videa vychází z výchozí hodnoty.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="146" />
-            <source>Seconds per picture:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Počet sekund na fotku:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="185" />
-            <source>MP4 videos (*.mp4)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Videa MP4 (*.mp4)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="202" />
-            <source>Creating movie: %1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vytváření filmu: %1 / %2</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="226" />
-            <source>Create</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vytvořit</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="247" />
-            <source>Collage saved: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Koláž byla uložena: %1</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="248" />
-            <source>%1 pictures used.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 fotek použito.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="240" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="127" />
             <source>%1 pictures were skipped.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 fotek bylo přeskočeno.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="254" />
-            <source>The collage could not be created.</source>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="149" />
+            <source>Collage saved: %1</source>
+            <extracomment>A kollázs elkészült — az összegző párbeszéd megnyitása.
+picasapy-origin: picasapy</extracomment>
+            <translation>Koláž byla uložena: %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="150" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="174" />
+            <source>%1 pictures used.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 fotek použito.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="158" />
+            <source>The collage could not be created.</source>
+            <extracomment>A kollázs nem készült el.
+picasapy-origin: picasapy</extracomment>
             <translation>Koláž se nepodařilo vytvořit.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="264" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="173" />
             <source>Movie saved: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Film byl uložen: %1</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Replace Existing or Create New?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
-            <translation>Chcete nahradit stávající nebo vytvořit nový?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Replace Existing</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
-            <translation>Nahradit stávající</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Create New</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
-            <translation>Vytvořit nový</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="271" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="183" />
             <source>The movie could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Film se nepodařilo vytvořit.</translation>
         </message>
         <message>
-            <source>Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
-            <translation>Text</translation>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="189" />
+            <source>Poster tiles saved.</source>
+            <extracomment>#4268: a poszterlapok a forráskép mellett készültek el.
+picasapy-origin: picasapy</extracomment>
+            <translation>Dlaždice plakátu byly uloženy.</translation>
         </message>
         <message>
-            <source>Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab2)</extracomment>
-            <translation>Snímek</translation>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="197" />
+            <source>The poster tiles could not be created.</source>
+            <extracomment>#4268: a poszterlapok írási hibája a párbeszédben jelenik meg.
+picasapy-origin: picasapy</extracomment>
+            <translation>Dlaždice plakátu se nepodařilo vytvořit.</translation>
         </message>
+    </context>
+    <context>
+        <name>CreateResultDialog</name>
         <message>
-            <source>Clips</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab3)</extracomment>
-            <translation>Klipy</translation>
-        </message>
-        <message>
-            <source>Sizes</source>
+            <location filename="../qml/PicasaPy/CreateResultDialog.qml" line="10" />
+            <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Velikosti</translation>
+            <translation>Vytvořit</translation>
         </message>
+    </context>
+    <context>
+        <name>MovieMakerDialog</name>
         <message>
-            <source>Dimensions</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Rozměry</translation>
-        </message>
-        <message>
-            <source>Transition style:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</extracomment>
-            <translation>Styl přechodu</translation>
-        </message>
-        <message>
-            <source>Cut</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Střih</translation>
-        </message>
-        <message>
-            <source>Dissolve</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolve</extracomment>
-            <translation>Prolnout</translation>
-        </message>
-        <message>
-            <source>Dissolve through black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolveblack</extracomment>
-            <translation>Prolnout přes černou</translation>
-        </message>
-        <message>
-            <source>Dissolve through white</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
-            <translation>Prolnout přes bílou</translation>
-        </message>
-        <message>
-            <source>Wipe - left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
-            <translation>Setřít – vlevo</translation>
-        </message>
-        <message>
-            <source>Wipe</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Setření</translation>
-        </message>
-        <message>
-            <source>Wipe - top</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
-            <translation>Setřít – nahoře</translation>
-        </message>
-        <message>
-            <source>Wipe - bottom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
-            <translation>Setřít – dole</translation>
-        </message>
-        <message>
-            <source>Wipe - up left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
-            <translation>Setřít – nahoru doleva</translation>
-        </message>
-        <message>
-            <source>Wipe - up right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
-            <translation>Setřít – nahoru doprava</translation>
-        </message>
-        <message>
-            <source>Wipe - down left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
-            <translation>Setřít – dolů doleva</translation>
-        </message>
-        <message>
-            <source>Wipe - down right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
-            <translation>Setřít – dolů doprava</translation>
-        </message>
-        <message>
-            <source>Push - left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
-            <translation>Tlačit – doleva</translation>
-        </message>
-        <message>
-            <source>Push</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
-            <translation>Tlačit</translation>
-        </message>
-        <message>
-            <source>Push - top</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
-            <translation>Tlačit – nahoru</translation>
-        </message>
-        <message>
-            <source>Push - bottom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
-            <translation>Tlačit – dolů</translation>
-        </message>
-        <message>
-            <source>Circle - inwards</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
-            <translation>Kruh – dovnitř</translation>
-        </message>
-        <message>
-            <source>Circle</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
-            <translation>Kruh</translation>
-        </message>
-        <message>
-            <source>Pan and Zoom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
-            <translation>Posouvání a lupa</translation>
-        </message>
-        <message>
-            <source>Pan and Zoom - face</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
-            <translation>Posouvání a lupa – obličej</translation>
-        </message>
-        <message>
-            <source>Time Lapse</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
-            <translation>Časosběr</translation>
-        </message>
-        <message>
-            <source>Rectangle</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
-            <translation>Obdélník</translation>
-        </message>
-        <message>
-            <source>Overlap</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transitionslider_label)</extracomment>
-            <translation>Překrytí</translation>
-        </message>
-        <message>
-            <source>Slide Duration:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_label)</extracomment>
-            <translation>Trvání snímku</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>%1 Sec</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 s</translation>
-        </message>
-        <message>
-            <source>Audio:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
-            <translation>Zvuková stopa:</translation>
-        </message>
-        <message>
-            <source>Audio Track:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
-            <translation>Zvuková stopa:</translation>
-        </message>
-        <message>
-            <source>No audio selected</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Není vybrán zvuk</translation>
-        </message>
-        <message>
-            <source>Load…</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
-            <translation>Načíst…</translation>
-        </message>
-        <message>
-            <source>Clear</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vymazat</translation>
-        </message>
-        <message>
-            <source>Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
-            <translation>Možnosti</translation>
-        </message>
-        <message>
-            <source>Truncate audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption0</extracomment>
-            <translation>Zkrátit zvuk</translation>
-        </message>
-        <message>
-            <source>Fit photos into audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption1</extracomment>
-            <translation>Sladit fotky se zvukem</translation>
-        </message>
-        <message>
-            <source>Loop photos to match audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption2</extracomment>
-            <translation>Smyčka fotek za účelem sladění se zvukem</translation>
-        </message>
-        <message>
-            <source>Show Captions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label);makemoviepaneltext:Label(makemoviepanel/show_captions_label);stringres:Slingshot::ID_SHOW_CAPTIONS</extracomment>
-            <translation>Zobrazit popisky</translation>
-        </message>
-        <message>
-            <source>Show Dates</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::show_dates_label</extracomment>
-            <translation>Zobrazit data</translation>
-        </message>
-        <message>
-            <source>Full frame photo crop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/crop_to_fit_label)</extracomment>
-            <translation>Oříznutí fotky na celý snímek</translation>
-        </message>
-        <message>
-            <source>Remove Low Resolution Faces</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/remove_low_res_faces_label)</extracomment>
-            <translation>Odebrat tváře v nízkém rozlišení</translation>
-        </message>
-        <message>
-            <source>Best Transitions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/smart_order_label)</extracomment>
-            <translation>Nejlepší přechody</translation>
-        </message>
-        <message>
-            <source>Album Order</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)</extracomment>
-            <translation>Pořadí alb</translation>
-        </message>
-        <message>
-            <source>Chronological</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Chronologicky</translation>
-        </message>
-        <message>
-            <source>Ordering of Slides:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/ordering_header_label)</extracomment>
-            <translation>Pořadí snímků:</translation>
-        </message>
-        <message>
-            <source>Total Photos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/lengthslider_label)</extracomment>
-            <translation>Celkem fotografií</translation>
-        </message>
-        <message>
-            <source>Don't filter by time taken</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);stringres:CMakeMoviePanel::movieburstzero</extracomment>
-            <translation>Nefiltrovat podle času pořízení</translation>
-        </message>
-        <message>
-            <source>Remove Photos Taken Within %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Odebrat fotky pořízené během %1</translation>
-        </message>
-        <message>
-            <source>Back to selected slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/rewind)</extracomment>
-            <translation>Zpět k vybranému snímku</translation>
-        </message>
-        <message>
-            <source>Text slide:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
-            <translation>Textový snímek</translation>
-        </message>
-        <message>
-            <source>Font:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Písmo</translation>
-        </message>
-        <message>
-            <source>Size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Velikost</translation>
-        </message>
-        <message>
-            <source>Style:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Label(edittextpanel/style_label);makemoviepaneltext:Label(makemoviepanel/style_label)</extracomment>
-            <translation>Styl:</translation>
-        </message>
-        <message>
-            <source>Centered</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Centered</extracomment>
-            <translation>Na střed</translation>
-        </message>
-        <message>
-            <source>I'm Feeling Lucky</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zkusím štěstí</translation>
-        </message>
-        <message>
-            <source>Caption</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Popisek</translation>
-        </message>
-        <message>
-            <source>Caption - Classic</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle3</extracomment>
-            <translation>Popisek – klasický</translation>
-        </message>
-        <message>
-            <source>Gradient - Black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle4</extracomment>
-            <translation>Přechod – černá</translation>
-        </message>
-        <message>
-            <source>Gradient - White</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle5</extracomment>
-            <translation>Přechod – bílá</translation>
-        </message>
-        <message>
-            <source>Transparent - Black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle6</extracomment>
-            <translation>Průhledná – černá</translation>
-        </message>
-        <message>
-            <source>Transparent - White</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle7</extracomment>
-            <translation>Průhledná – bílá</translation>
-        </message>
-        <message>
-            <source>Scrolling Credits</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle8</extracomment>
-            <translation>Rolující titulky</translation>
-        </message>
-        <message>
-            <source>Music Video - Left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle9</extracomment>
-            <translation>Hudební video – vlevo</translation>
-        </message>
-        <message>
-            <source>Music Video - Right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle10</extracomment>
-            <translation>Hudební video – vpravo</translation>
-        </message>
-        <message>
-            <source>Caption - Typewriter</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
-            <translation>Popisek – psací stroj</translation>
-        </message>
-        <message>
-            <source>Bold</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/bold);makemoviepaneltext:Tooltip(makemoviepanel/bold);stringres:CTitleDialog::fontBold</extracomment>
-            <translation>Tučné</translation>
-        </message>
-        <message>
-            <source>Italic</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepaneltext:Tooltip(makemoviepanel/italic);stringres:CTitleDialog::fontItalic</extracomment>
-            <translation>Kurzíva</translation>
-        </message>
-        <message>
-            <source>Automatic Outline</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Automatický obrys</translation>
-        </message>
-        <message>
-            <source>Automatic Outline (like movie subtitles)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/outline)</extracomment>
-            <translation>Automatický obrys (např. titulky k filmu)</translation>
-        </message>
-        <message>
-            <source>Text color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
-            <translation>Barva textu</translation>
-        </message>
-        <message>
-            <source>Background color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
-            <translation>Barva pozadí</translation>
-        </message>
-        <message>
-            <source>Insert Text Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/insert_slide)</extracomment>
-            <translation>Přidat nový textový snímek</translation>
-        </message>
-        <message>
-            <source>Remove Selected Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
-            <translation>Odebrat vybraný snímek</translation>
-        </message>
-        <message>
-            <source>Remove the selected slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
-            <translation>Odebrat vybraný snímek</translation>
-        </message>
-        <message>
-            <source>Add selected clips</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Přidat vybrané klipy</translation>
-        </message>
-        <message>
-            <source>Remove selected clip</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Odebrat vybraný klip</translation>
-        </message>
-        <message>
-            <source>Add the selected clip(s) to the end of the movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addtomovie)</extracomment>
-            <translation>Přidat vybrané klipy na konec filmu</translation>
-        </message>
-        <message>
-            <source>Remove the selected clip(s) from the tray</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</extracomment>
-            <translation>Odebrat vybrané klipy z přihrádky</translation>
-        </message>
-        <message>
-            <source>Play selected clip only</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Přehrát pouze vybraný klip</translation>
-        </message>
-        <message>
-            <source>Preview</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
-            <translation>Náhled</translation>
-        </message>
-        <message>
-            <source>Pause</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pozastavit</translation>
-        </message>
-        <message>
-            <source>Show actual movie size (don't stretch)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(video_control_bar2/1to1)</extracomment>
-            <translation>Zobrazit skutečnou velikost filmu (bez roztažení)</translation>
-        </message>
-        <message>
-            <source>Play full screen</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Tooltip(video_control_bar2/fullscreen)</extracomment>
-            <translation>Přehrát na celé obrazovce</translation>
-        </message>
-        <message>
-            <source>Please Confirm...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Potvrďte prosím...</translation>
-        </message>
-        <message>
-            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tím se vytvoří nový film a odeberou se všechny přidané textové snímky. Opravdu chcete pokračovat?</translation>
-        </message>
-        <message>
-            <source>Recompute</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Znovu vypočítat</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Zavřít</translation>
-        </message>
-        <message>
-            <source>Create Movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:buttonlabel:{606D1C6D-36E6-4dce-AFCA-A0EE575A6162}</extracomment>
-            <translation>Vytvořit film</translation>
-        </message>
-        <message>
-            <source>Audio files</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zvukové soubory</translation>
-        </message>
-        <message>
-            <source>Music files (*.mp3, *.wma)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
-            <translation>Hudební soubory (*.mp3,*.wma)</translation>
-        </message>
-        <message>
-            <source>Music files (*.mp3, *.m4a)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
-            <translation>Hudební soubory (*.mp3,*.m4a)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="119" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="363" />
             <source>Text Slide</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
             <translation>Textový snímek</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="385" />
             <source>%1     %2x%3 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1     %2 × %3 pixelů</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="387" />
             <source>(%1 of %2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>(%1 z %2)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="519" />
+            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tím se vytvoří nový film a odeberou se všechny přidané textové snímky. Opravdu chcete pokračovat?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="640" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Zavřít</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="647" />
+            <source>Create Movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:buttonlabel:{606D1C6D-36E6-4dce-AFCA-A0EE575A6162}</extracomment>
+            <translation>Vytvořit film</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="797" />
+            <source>Please Confirm...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Potvrďte prosím...</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerDialogs</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="23" />
+            <source>Replace Existing or Create New?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
+            <translation>Chcete nahradit stávající nebo vytvořit nový?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="32" />
+            <source>Replace Existing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
+            <translation>Nahradit stávající</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="41" />
+            <source>Create New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
+            <translation>Vytvořit nový</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="49" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zrušit</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="70" />
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="113" />
+            <source>Movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Film</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="73" />
+            <source>MP4 videos (*.mp4)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Videa MP4 (*.mp4)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="80" />
+            <source>Audio files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zvukové soubory</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="84" />
+            <source>Music files (*.mp3, *.wma)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
+            <translation>Hudební soubory (*.mp3,*.wma)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="85" />
+            <source>Music files (*.mp3, *.m4a)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
+            <translation>Hudební soubory (*.mp3,*.m4a)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="96" />
+            <source>Text color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
+            <translation>Barva textu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="103" />
+            <source>Background color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
+            <translation>Barva pozadí</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="123" />
+            <source>Creating movie: %1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vytváření filmu: %1 / %2</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerFilmstrip</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="38" />
+            <source>Add selected clips</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Přidat vybrané klipy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="50" />
+            <source>Remove selected clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Odebrat vybraný klip</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="104" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Textový snímek</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerOptions</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="22" />
+            <source>Dimensions</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Rozměry</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="51" />
+            <source>Show Captions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label);makemoviepaneltext:Label(makemoviepanel/show_captions_label);stringres:Slingshot::ID_SHOW_CAPTIONS</extracomment>
+            <translation>Zobrazit popisky</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="69" />
+            <source>Full frame photo crop</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/crop_to_fit_label)</extracomment>
+            <translation>Oříznutí fotky na celý snímek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="84" />
+            <source>Show Dates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::show_dates_label</extracomment>
+            <translation>Zobrazit data</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="96" />
+            <source>Remove Low Resolution Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/remove_low_res_faces_label)</extracomment>
+            <translation>Odebrat tváře v nízkém rozlišení</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="111" />
+            <source>Ordering of Slides:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/ordering_header_label)</extracomment>
+            <translation>Pořadí snímků:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="117" />
+            <source>Best Transitions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/smart_order_label)</extracomment>
+            <translation>Nejlepší přechody</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="125" />
+            <source>Album Order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)</extracomment>
+            <translation>Pořadí alb</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="134" />
+            <source>Chronological</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Chronologicky</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="152" />
+            <source>Total Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/lengthslider_label)</extracomment>
+            <translation>Celkem fotografií</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="174" />
+            <source>Don't filter by time taken</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);stringres:CMakeMoviePanel::movieburstzero</extracomment>
+            <translation>Nefiltrovat podle času pořízení</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="175" />
+            <source>Remove Photos Taken Within %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Odebrat fotky pořízené během %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="210" />
+            <source>Get More...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
+            <translation>Získat více...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="212" />
+            <source>Get more clips from Photo Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
+            <translation>Získat další klipy z knihovny fotek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="219" />
+            <source>Recompute</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Znovu vypočítat</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerPreview</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="155" />
+            <source>Pause</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pozastavit</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="155" />
+            <source>Preview</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
+            <translation>Náhled</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="220" />
+            <source>Show actual movie size (don't stretch)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(video_control_bar2/1to1)</extracomment>
+            <translation>Zobrazit skutečnou velikost filmu (bez roztažení)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="234" />
+            <source>Play full screen</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Tooltip(video_control_bar2/fullscreen)</extracomment>
+            <translation>Přehrát na celé obrazovce</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerSlideLogic</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="20" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="43" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="56" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="74" />
+            <source>Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
+            <translation>Text</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerTabs</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="61" />
+            <source>Movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Film</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="62" />
+            <source>Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab2)</extracomment>
+            <translation>Snímek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="67" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="142" />
+            <source>Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
+            <translation>Možnosti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="68" />
+            <source>Clips (%d)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::clips_title</extracomment>
+            <translation>Klipy (%d)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="96" />
+            <source>Audio Track:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
+            <translation>Zvuková stopa:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="107" />
+            <source>None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
+            <translation>Žádné</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="116" />
+            <source>Load…</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
+            <translation>Načíst…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="123" />
+            <source>Clear</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vymazat</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="154" />
+            <source>Truncate audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption0</extracomment>
+            <translation>Zkrátit zvuk</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="154" />
+            <source>Fit photos into audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption1</extracomment>
+            <translation>Sladit fotky se zvukem</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="155" />
+            <source>Loop photos to match audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption2</extracomment>
+            <translation>Smyčka fotek za účelem sladění se zvukem</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="160" />
+            <source>Transition style:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</extracomment>
+            <translation>Styl přechodu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="169" />
+            <source>Cut</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Střih</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="169" />
+            <source>Dissolve</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolve</extracomment>
+            <translation>Prolnout</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="170" />
+            <source>Dissolve through black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolveblack</extracomment>
+            <translation>Prolnout přes černou</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="170" />
+            <source>Dissolve through white</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
+            <translation>Prolnout přes bílou</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
+            <translation>Setřít – vlevo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Setření</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
+            <translation>Setřít – nahoře</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="172" />
+            <source>Wipe - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
+            <translation>Setřít – dole</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="172" />
+            <source>Wipe - up left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
+            <translation>Setřít – nahoru doleva</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="173" />
+            <source>Wipe - up right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
+            <translation>Setřít – nahoru doprava</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="173" />
+            <source>Wipe - down left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
+            <translation>Setřít – dolů doleva</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Wipe - down right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
+            <translation>Setřít – dolů doprava</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Push - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
+            <translation>Tlačit – doleva</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Push</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
+            <translation>Tlačit</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="175" />
+            <source>Push - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
+            <translation>Tlačit – nahoru</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="175" />
+            <source>Push - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
+            <translation>Tlačit – dolů</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="176" />
+            <source>Circle - inwards</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
+            <translation>Kruh – dovnitř</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="176" />
+            <source>Circle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
+            <translation>Kruh</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="177" />
+            <source>Pan and Zoom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
+            <translation>Posouvání a lupa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="177" />
+            <source>Pan and Zoom - face</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
+            <translation>Posouvání a lupa – obličej</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="178" />
+            <source>Time Lapse</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
+            <translation>Časosběr</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="178" />
+            <source>Rectangle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
+            <translation>Obdélník</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="198" />
+            <source>Slide Duration:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_label)</extracomment>
+            <translation>Trvání snímku</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="203" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="244" />
+            <source>%1 Sec</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 s</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="239" />
+            <source>Overlap</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transitionslider_label)</extracomment>
+            <translation>Překrytí</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="279" />
+            <source>Target file:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
+            <translation>Cílový soubor</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="285" />
+            <source>(not selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(není vybráno)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="290" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Procházet...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="297" />
+            <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fotky a načasování filmu se načítají ze souboru projektu; velikost videa vychází z výchozí hodnoty.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="307" />
+            <source>%1 pictures selected.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vybráno fotek: %1.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="313" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="315" />
+            <source>Back to selected slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/rewind)</extracomment>
+            <translation>Zpět k vybranému snímku</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="336" />
+            <source>Text slide:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Textový snímek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="341" />
+            <source>Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
+            <translation>Text</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="347" />
+            <source>Font:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Písmo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="357" />
+            <source>Size:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Velikost</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="371" />
+            <source>Style:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Label(edittextpanel/style_label);makemoviepaneltext:Label(makemoviepanel/style_label)</extracomment>
+            <translation>Styl:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>Centered</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Centered</extracomment>
+            <translation>Na střed</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>I'm Feeling Lucky</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zkusím štěstí</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>Caption</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Popisek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="378" />
+            <source>Caption - Classic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle3</extracomment>
+            <translation>Popisek – klasický</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="378" />
+            <source>Gradient - Black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle4</extracomment>
+            <translation>Přechod – černá</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="379" />
+            <source>Gradient - White</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle5</extracomment>
+            <translation>Přechod – bílá</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="379" />
+            <source>Transparent - Black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle6</extracomment>
+            <translation>Průhledná – černá</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="380" />
+            <source>Transparent - White</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle7</extracomment>
+            <translation>Průhledná – bílá</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="380" />
+            <source>Scrolling Credits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle8</extracomment>
+            <translation>Rolující titulky</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="381" />
+            <source>Music Video - Left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle9</extracomment>
+            <translation>Hudební video – vlevo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="381" />
+            <source>Music Video - Right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle10</extracomment>
+            <translation>Hudební video – vpravo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="382" />
+            <source>Caption - Typewriter</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
+            <translation>Popisek – psací stroj</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="390" />
+            <source>Bold</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/bold);makemoviepaneltext:Tooltip(makemoviepanel/bold);stringres:CTitleDialog::fontBold</extracomment>
+            <translation>Tučné</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="396" />
+            <source>Italic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepaneltext:Tooltip(makemoviepanel/italic);stringres:CTitleDialog::fontItalic</extracomment>
+            <translation>Kurzíva</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="404" />
+            <source>Automatic Outline</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Automatický obrys</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="406" />
+            <source>Automatic Outline (like movie subtitles)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/outline)</extracomment>
+            <translation>Automatický obrys (např. titulky k filmu)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="414" />
+            <source>Text color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
+            <translation>Barva textu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="431" />
+            <source>Background color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
+            <translation>Barva pozadí</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="436" />
+            <source>Insert Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/insert_slide)</extracomment>
+            <translation>Přidat nový textový snímek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="443" />
+            <source>Remove Selected Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
+            <translation>Odebrat vybraný snímek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="445" />
+            <source>Remove the selected slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
+            <translation>Odebrat vybraný snímek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="474" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Textový snímek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="541" />
+            <source>Get More...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
+            <translation>Získat více...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="543" />
+            <source>Get more clips from Photo Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
+            <translation>Získat další klipy z knihovny fotek</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="557" />
+            <source>Recompute</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Znovu vypočítat</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="566" />
+            <source>Add selected clips</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Přidat vybrané klipy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="569" />
+            <source>Add the selected clip(s) to the end of the movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addtomovie)</extracomment>
+            <translation>Přidat vybrané klipy na konec filmu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="576" />
+            <source>Remove selected clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Odebrat vybraný klip</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="579" />
+            <source>Remove the selected clip(s) from the tray</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</extracomment>
+            <translation>Odebrat vybrané klipy z přihrádky</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="588" />
+            <source>Play selected clip only</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Přehrát pouze vybraný klip</translation>
+        </message>
+    </context>
+    <context>
+        <name>PosterCreateDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="11" />
+            <source>Poster Settings</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/window1.title</extracomment>
+            <translation>Nastavení plakátu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="29" />
+            <source>4x6</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
+            <translation>4 x 6</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="30" />
+            <source>8.5x11</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:FullPage;stringres:CPosterDlg::size2</extracomment>
+            <translation>8,5 x 11</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="31" />
+            <source>10x15</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:10x15m</extracomment>
+            <translation>10 x 15</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="32" />
+            <source>20x25</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::Crop20x25m</extracomment>
+            <translation>20 x 25</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="69" />
+            <source>Tip: if you don't want to trim, crop your picture to the same size as the paper.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/label2.title</extracomment>
+            <translation>Tip: Pokud nechcete, aby byly ořezány okraje, ořízněte fotku na velikost papíru.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="79" />
+            <source>Poster size:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/labelgroup3.title</extracomment>
+            <translation>Velikost plakátu:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>200%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item5.title</extracomment>
+            <translation>200 %</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>300%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item6.title</extracomment>
+            <translation>300 %</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>400%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item7.title</extracomment>
+            <translation>400 %</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>500%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item8.title</extracomment>
+            <translation>500 %</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>600%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item9.title</extracomment>
+            <translation>600 %</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>700%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item10.title</extracomment>
+            <translation>700 %</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>800%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item11.title</extracomment>
+            <translation>800 %</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>900%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item12.title</extracomment>
+            <translation>900 %</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>1000%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item13.title</extracomment>
+            <translation>1000 %</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="97" />
+            <source>Paper size:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/labelgroup14.title</extracomment>
+            <translation>Velikost papíru:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="113" />
+            <source>Overlap tiles</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/overlap.title</extracomment>
+            <translation>Přesah listů</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="122" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="128" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zrušit</translation>
         </message>
     </context>
     <context>
@@ -13385,153 +13649,16 @@ TUTO AKCI NELZE VRÁTIT ZPĚT.
     <context>
         <name>ImportSourceDialog</name>
         <message>
-            <source>Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
-            <translation>Možnosti</translation>
-        </message>
-        <message>
-            <source>Online options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button);headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
-            <translation>Možnosti režimu online</translation>
-        </message>
-        <message>
-            <source>Upload</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nahrát</translation>
-        </message>
-        <message>
-            <source>Upload to Picasa Web Albums...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>Nahrát do &amp;Webových alb Picasa...</translation>
-        </message>
-        <message>
-            <source>Sync starred photos only</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
-            <translation>Synchronizovat pouze fotky označené hvězdičkou</translation>
-        </message>
-        <message>
-            <source>View the previous Photo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zobrazit předchozí fotku</translation>
-        </message>
-        <message>
-            <source>View the next Photo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zobrazit další fotku</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="20" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="19" />
             <source>Import from Source</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Importovat ze zdroje</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="122" />
-            <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Importujte fotky a videa z jiné složky (například připojeného fotoaparátu nebo paměťové karty) do knihovny.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="134" />
-            <source>Source:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zdroj:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="306" />
-            <source>Removable drives</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vyměnitelné jednotky</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="71" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="85" />
             <source>Removable Drive (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Vyměnitelná jednotka (%1)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="144" />
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="245" />
-            <source>(none selected)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(není vybráno)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="150" />
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="251" />
-            <source>Browse...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation>Procházet...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="175" />
-            <source>%1 pictures/videos found</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nalezeno %1 fotek/videí</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="186" />
-            <source>No pictures or videos found in this folder.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>V této složce nebyly nalezeny žádné fotky ani videa.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="200" />
-            <source>Exclude Duplicates</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vyloučit duplicity</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
-            <source>Exclude photos that are already imported into PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vyloučit fotky, které už byly importovány do aplikace PicasaPy</translation>
-        </message>
-        <message numerus="yes">
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
-            <source>%n of those are duplicates already in PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>
-                <numerusform>%n z nich už je v aplikaci PicasaPy duplicitní.</numerusform>
-                <numerusform>%n z nich už jsou v aplikaci PicasaPy duplicitní.</numerusform>
-                <numerusform>%n z nich už je v aplikaci PicasaPy duplicitních.</numerusform>
-            </translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="265" />
-            <source>Exclude All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vyloučit vše</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="270" />
-            <source>Include All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zahrnout vše</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
-            <source>Include</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zahrnout</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
-            <source>Exclude</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vyloučit</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="235" />
-            <source>Destination:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IPTC::Destination</extracomment>
-            <translation>Cíl</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="260" />
@@ -13540,59 +13667,7 @@ picasapy-origin-key: stringres:IPTC::Destination</extracomment>
             <translation>Šablona složky:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="778" />
-            <source>Enter new folder title or choose existing folder to continue</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
-            <translation>Pokračujte zadáním nového názvu složky nebo zvolte stávající složku</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="376" />
-            <source>Enter Folder Title</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:iCAcquireUI::SubFolder</extracomment>
-            <translation>Zadejte název složky</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="392" />
-            <source>Date Taken (YYYY-MM-DD)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
-            <translation>Datum pořízení (RRRR-MM-DD)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="399" />
-            <source>%1 (Today)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 (dnes)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="408" />
-            <source>After Copying:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extracomment>
-            <translation>Po zkopírování:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="419" />
-            <source>Leave card alone</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ponechat kartu beze změny</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="426" />
-            <source>Delete only copied photos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Smazat pouze zkopírované fotky</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="433" />
-            <source>Delete everything on card</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Smazat vše z karty</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="115" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="249" />
             <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Opravdu chcete z karty odstranit importované soubory? TUTO AKCI NELZE VRÁTIT ZPĚT.</translation>
@@ -13610,111 +13685,361 @@ picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extraco
             <translation>Přesunout místo kopírování (zdrojové soubory budou odstraněny)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="466" />
-            <source>%1 / %2 imported</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 / %2 importováno</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="477" />
-            <source>Done: %1 imported, %2 failed</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Hotovo: importováno %1, chyb: %2</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="490" />
-            <source>Import</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
-            <translation>Importovat</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="499" />
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Zavřít</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="334" />
             <source>Import Files/Folder</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::importfilestitle</extracomment>
             <translation>Import souborů/složky</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="360" />
-            <source>Folder...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Složka...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="366" />
-            <source>Files...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Soubory...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="321" />
             <source>Choose source folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Vybrat zdrojovou složku...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="516" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="362" />
             <source>Choose destination folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Vybrat cílovou složku...</translation>
         </message>
         <message>
-            <source>%1 / %2 imported at %3/sec</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 / %2 importováno, %3/s</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="143" />
             <source>bytes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>bajtů</translation>
         </message>
         <message>
-            <source>File types:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</extracomment>
-            <translation>Typy souborů</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="350" />
             <source>Picture and Movie Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Soubory s fotkami a filmy</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="352" />
             <source>Picture Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
             <translation>Soubory s fotkami</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="353" />
+            <source>All Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
+            <translation>Všechny soubory</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImportSourcePickerPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="166" />
+            <source>Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
+            <translation>Možnosti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="167" />
+            <source>Online options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button);headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
+            <translation>Možnosti režimu online</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="157" />
+            <source>Upload</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nahrát</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="159" />
+            <source>Upload to Picasa Web Albums...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
+            <translation>Nahrát do &amp;Webových alb Picasa...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="188" />
+            <source>Sync starred photos only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
+            <translation>Synchronizovat pouze fotky označené hvězdičkou</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="267" />
+            <source>View the previous Photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zobrazit předchozí fotku</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="279" />
+            <source>View the next Photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zobrazit další fotku</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="15" />
+            <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Importujte fotky a videa z jiné složky (například připojeného fotoaparátu nebo paměťové karty) do knihovny.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="28" />
+            <source>Source:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zdroj:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="63" />
+            <source>Removable drives</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vyměnitelné jednotky</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="38" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="38" />
+            <source>(none selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(není vybráno)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="79" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="79" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Procházet...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="230" />
+            <source>%1 pictures/videos found</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nalezeno %1 fotek/videí</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="241" />
+            <source>No pictures or videos found in this folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>V této složce nebyly nalezeny žádné fotky ani videa.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="143" />
+            <source>Exclude Duplicates</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vyloučit duplicity</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="197" />
+            <source>Exclude photos that are already imported into PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vyloučit fotky, které už byly importovány do aplikace PicasaPy</translation>
+        </message>
+        <message numerus="yes">
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="204" />
+            <source>%n of those are duplicates already in PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>
+                <numerusform>%n z nich už je v aplikaci PicasaPy duplicitní.</numerusform>
+                <numerusform>%n z nich už jsou v aplikaci PicasaPy duplicitní.</numerusform>
+                <numerusform>%n z nich už je v aplikaci PicasaPy duplicitních.</numerusform>
+            </translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="253" />
+            <source>Exclude All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vyloučit vše</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="258" />
+            <source>Include All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zahrnout vše</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="88" />
+            <source>Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Složka...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="93" />
+            <source>Files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Soubory...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="107" />
+            <source>File types:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</extracomment>
+            <translation>Typy souborů</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="116" />
+            <source>Picture and Movie Files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Soubory s fotkami a filmy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="117" />
+            <source>Picture Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
+            <translation>Soubory s fotkami</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="118" />
             <source>All Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <translation>Všechny soubory</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="51" />
             <source>Recent sources</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nedávné zdroje</translation>
         </message>
+    </context>
+    <context>
+        <name>ImportSourcePreview</name>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourcePreview.qml" line="122" />
+            <source>Include</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zahrnout</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePreview.qml" line="122" />
+            <source>Exclude</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vyloučit</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImportSourceDestinationPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="26" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="26" />
+            <source>(none selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(není vybráno)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="98" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="98" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Procházet...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="16" />
+            <source>Destination:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IPTC::Destination</extracomment>
+            <translation>Cíl</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="139" />
+            <source>Enter new folder title or choose existing folder to continue</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
+            <translation>Pokračujte zadáním nového názvu složky nebo zvolte stávající složku</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="111" />
+            <source>Enter Folder Title</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:iCAcquireUI::SubFolder</extracomment>
+            <translation>Zadejte název složky</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="144" />
+            <source>Date Taken (YYYY-MM-DD)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
+            <translation>Datum pořízení (RRRR-MM-DD)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="153" />
+            <source>%1 (Today)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 (dnes)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="162" />
+            <source>After Copying:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extracomment>
+            <translation>Po zkopírování:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="173" />
+            <source>Leave card alone</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ponechat kartu beze změny</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="180" />
+            <source>Delete only copied photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Smazat pouze zkopírované fotky</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="187" />
+            <source>Delete everything on card</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Smazat vše z karty</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="229" />
+            <source>%1 / %2 imported</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 / %2 importováno</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="240" />
+            <source>Done: %1 imported, %2 failed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hotovo: importováno %1, chyb: %2</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="253" />
+            <source>Import</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
+            <translation>Importovat</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="264" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Zavřít</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="224" />
+            <source>%1 / %2 imported at %3/sec</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 / %2 importováno, %3/s</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="59" />
             <source>Recent destinations</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nedávná cílová umístění</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="76" />
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Původní velikost</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="77" />
             <source>%1 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 pixelů</translation>

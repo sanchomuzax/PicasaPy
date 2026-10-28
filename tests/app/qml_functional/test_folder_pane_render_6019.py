@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -27,7 +28,27 @@ def _pixelek(kep: QImage) -> np.ndarray:
     adat = np.frombuffer(rgba.constBits(), dtype=np.uint8)
     return adat.reshape(rgba.height(), sorhossz)[:, : rgba.width() * 4].reshape(
         rgba.height(), rgba.width(), 4
+    ).copy()
+
+
+def _hibakori_kepmentes(kep: QImage, allapot: str, ablakmagassag_delta: int) -> None:
+    kimeneti_mappa = os.environ.get("PICASAPY_RENDER_FAILURE_DIR")
+    if not kimeneti_mappa:
+        return
+    kimenet = Path(kimeneti_mappa) / "folder-pane"
+    kimenet.mkdir(parents=True, exist_ok=True)
+    assert kep.save(
+        str(kimenet / f"{allapot}-{ablakmagassag_delta:+d}.png"), "PNG"
     )
+
+
+def test_pixelek_a_qimage_elettartamatol_fuggetlen_tombot_ad():
+    kep = QImage(2, 2, QImage.Format.Format_RGBA8888)
+    assert _pixelek(kep).flags.owndata
+
+
+#: A panel aljához horgonyzott sáv magassága (a jobb alsó sarok eleme, #6085).
+_ALSO_SAV = 12
 
 
 def _szovegteruletek_kimaszkolasa(ablak, pane, ervenyes: np.ndarray) -> None:
@@ -85,6 +106,8 @@ def _folder_pane_render_megmarad(ablakmagassag_delta, qml_app, qt_app, tmp_path)
     out = Path.cwd() / ".bt" / "folder-pane-6019" / "after" / f"{delta:+d}"
     out.mkdir(parents=True, exist_ok=True)
 
+    hibak: list[str] = []
+
     def pillanatkep(allapot: str) -> None:
         qt_app.processEvents()
         teljes = ablak.grabWindow()
@@ -98,20 +121,32 @@ def _folder_pane_render_megmarad(ablakmagassag_delta, qml_app, qt_app, tmp_path)
         )
         assert not actual.isNull()
         assert actual.save(str(out / f"{allapot}.png"))
+        _hibakori_kepmentes(actual, allapot, delta)
         reference = QImage(str(_ARANY / f"{allapot}.png"))
         assert not reference.isNull()
         width = min(actual.width(), reference.width())
         height = min(actual.height(), reference.height())
-        actual_pixels = _pixelek(actual)[:height, :width]
-        reference_pixels = _pixelek(reference)[:height, :width]
-        ervenyes = np.ones((height, width), dtype=bool)
+        aktualis = _pixelek(actual)[:, :width]
+        referencia = _pixelek(reference)[:, :width]
+        ervenyes = np.ones((actual.height(), width), dtype=bool)
         _szovegteruletek_kimaszkolasa(ablak, pane, ervenyes)
-        eltero = np.any(actual_pixels != reference_pixels, axis=2) & ervenyes
-        assert not np.any(eltero), (
-            f"{allapot}, ablakmagasság-delta={delta}: "
-            f"{int(np.count_nonzero(eltero))} eltérő, szövegen kívüli képpont "
-            f"az összehasonlított {width}×{height} területen"
+        # #6085: a panel alsó sávja (a jobb alsó sarok eleme) az aljához
+        # horgonyzott, ezért az ablakmagassággal együtt mozdul: azt a kép
+        # ALJÁHOZ igazítva vetjük össze, a többit a tetejéhez.
+        felso = height - _ALSO_SAV
+        eltero_felul = (
+            np.any(aktualis[:felso] != referencia[:felso], axis=2) & ervenyes[:felso]
         )
+        eltero_alul = (
+            np.any(aktualis[-_ALSO_SAV:] != referencia[-_ALSO_SAV:], axis=2)
+            & ervenyes[-_ALSO_SAV:]
+        )
+        db = int(np.count_nonzero(eltero_felul) + np.count_nonzero(eltero_alul))
+        if db:
+            hibak.append(
+                f"{allapot}, ablakmagasság-delta={delta}: {db} eltérő, "
+                f"szövegen kívüli képpont az összehasonlított {width}×{height} területen"
+            )
 
     # Az üres állapothoz nem hozunk létre lemezmappákat.
     vezerlo.folders.load_matches([])
@@ -168,6 +203,7 @@ def _folder_pane_render_megmarad(ablakmagassag_delta, qml_app, qt_app, tmp_path)
         5.0,
     )
     pillanatkep("helyi-menuvel")
+    assert not hibak, "\n".join(hibak)
 
 
 @pytest.mark.parametrize("ablakmagassag_delta", [-5, 0, 5])

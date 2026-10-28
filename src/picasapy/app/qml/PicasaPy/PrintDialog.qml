@@ -57,7 +57,7 @@ Window {
         }
     }
     Connections {
-        target: printStatusBox
+        target: printStatusPanel.statusBox
         function onImplicitHeightChanged() {
             if (printWindow.meretezesFuggoben)
                 meretezesIdozito.restart()
@@ -67,12 +67,12 @@ Window {
         // ⚠️ csak az ELSŐ elrendezés UTÁN hívandó (ld. `meretezesIdozito`):
         // rejtett ablakban a Layout nem rendeződik újra, az implicitHeight
         // elavult (az előző nyitás/mód tartalmát tükrözi).
-        var statusMagassag = printStatusFlick.visible
-                             ? printStatusFlick.Layout.preferredHeight : 0
+        var statusMagassag = printStatusPanel.visible
+                             ? printStatusPanel.Layout.preferredHeight : 0
         var kell = printContent.implicitHeight + statusMagassag
                    + printButtonRow.implicitHeight
                    + 2 * keretMargo + printFrame.spacing
-                   + (printStatusFlick.visible ? printFrame.spacing : 0)
+                   + (printStatusPanel.visible ? printFrame.spacing : 0)
         // ⚠️ többmonitoros gépen a `Screen` az ablak képernyőjét adja, ami
         // nyitáskor még nem biztos, hogy a végleges — a plafon közelítés.
         var plafon = Math.max(minimumHeight,
@@ -129,7 +129,7 @@ Window {
     // hálózati nyomtató lecsatlakozott, a párbeszéd „PDF-fájlba"-t mutatott,
     // a `printRows` viszont lefutott az ALAPÉRTELMEZETT nyomtatóra: papír
     // ment ki, magyarázat nélkül. A származtatott property ezt kizárja.
-    readonly property int printerIndex: printerBox.currentIndex
+    readonly property int printerIndex: printPrinterPanel.currentIndex
     readonly property bool pdfSelected: printWindow.printerIndex === 0
     readonly property string printerName:
         printWindow.pdfSelected
@@ -238,7 +238,7 @@ Window {
         if (printWindow.reviewOpen) {
             printWindow.reviewList = printWindow.printCtl.reviewPictures(
                 printWindow.rows, printWindow.printSize)
-            printReviewList.currentIndex = printWindow.reviewList.length > 0 ? 0 : -1
+            printReviewPanel.currentIndex = printWindow.reviewList.length > 0 ? 0 : -1
         }
     }
 
@@ -254,7 +254,7 @@ Window {
     }
 
     function removeSelectedReviewPicture() {
-        var index = printReviewList.currentIndex
+        var index = printReviewPanel.currentIndex
         if (index < 0 || index >= printWindow.reviewList.length) return
         var kep = printWindow.reviewList[index]
         var kepSor = Number(kep.row)
@@ -298,7 +298,7 @@ Window {
         var mindAlacsony = printWindow.reviewList.length > 0
             && printWindow.reviewList.every(printWindow.isLowQualityReviewPicture)
         if (mindAlacsony) {
-            removeAllConfirm.open()
+            printRemoveAllDialog.open()
             return
         }
         printWindow.removeReviewPicturesWhere(printWindow.isLowQualityReviewPicture)
@@ -429,7 +429,7 @@ Window {
         if (azonosito === "CONTACT") {
             printWindow.contactSheet = true
             printWindow.printSize = azonosito
-            printSizeBox.currentIndex = printWindow.printSizeIds.indexOf(azonosito)
+            printSettingsPanel.sizeBox.currentIndex = printWindow.printSizeIds.indexOf(azonosito)
             printWindow.frissitsdAMinoseget()
             return
         }
@@ -437,7 +437,7 @@ Window {
         printWindow.printCtl.setPrintSize(azonosito)
         printWindow.contactSheet = false
         printWindow.printSize = azonosito
-        printSizeBox.currentIndex = printWindow.printSizeIds.indexOf(azonosito)
+        printSettingsPanel.sizeBox.currentIndex = printWindow.printSizeIds.indexOf(azonosito)
         printWindow.frissitsdAMinoseget()
     }
 
@@ -503,7 +503,7 @@ Window {
             printWindow.printSize = printWindow.passport
                 ? "PASSPORT" : printWindow.printCtl.printSize()
         }
-        printSizeBox.currentIndex = printWindow.printSizeIds.indexOf(
+        printSettingsPanel.sizeBox.currentIndex = printWindow.printSizeIds.indexOf(
             printWindow.contactSheet ? "CONTACT" : printWindow.printSize)
         printWindow.previewPage = 0
         printWindow.frissitsdAMinoseget()
@@ -621,203 +621,23 @@ Window {
             }
 
         ColumnLayout {
-        id: printContent
-        width: printContentFlick.width - (printScrollBar.visible ? printScrollBar.width : 0)
-        spacing: 10
+            id: printContent
+            width: printContentFlick.width - (printScrollBar.visible ? printScrollBar.width : 0)
+            spacing: 10
 
-        Text {
-            objectName: "printSelectionText"
-            Layout.fillWidth: true
-            //: #3712: a felirat NEM ígéri, hogy hány kép kerül egy lapra —
-            //: azt a tényleges lapszám mondja meg (méret szerinti
-            //: nyomtatásnál a rácselrendező, indexképnél a
-            //: `contactPageCount()` adja, ld. `frissitsdAzElonezetet()`).
-            //: #3712-review: a lapszám `%n`-es TÖBBES SZÁM — korábban a
-            //: szó szerinti "pages" mindig többes számban állt, tehát egy
-            //: lapnál is "(1 pages)" jelent meg.
-            text: qsTr("Pictures to print: %1 (%n page(s))", "",
-                       printWindow.printPageCount)
-                  .arg(printWindow.rows.length)
-            font.pixelSize: Theme.fontSize
-            color: Theme.ink
-        }
-
-        // #5684: az eredeti párbeszéd Normál/Optimalizált módválasztója.
-        // Kizárólag az eredeti nyers állapotpárt menti; a renderelési hatás
-        // nincs bekötve, amíg az eredeti és a PicasaPy kimenet nincs mérve.
-        RowLayout {
-            objectName: "printQualityModeRow"
-            Layout.fillWidth: true
-            spacing: 8
-
-            ButtonGroup { id: printQualityModeGroup }
-
-            RadioButton {
-                objectName: "printModeNormalRadio"
+            PrintSelectionPanel {
                 Layout.fillWidth: true
-                ButtonGroup.group: printQualityModeGroup
-                text: qsTr("Normal")
-                checked: !printWindow.optimizedPrintMode
-                onClicked: printWindow.valasszNyomtatasiModot(false)
+                printWindow: printWindow
             }
-            RadioButton {
-                objectName: "printModeOptimizedRadio"
+
+            PrintSettingsPanel {
+                id: printSettingsPanel
                 Layout.fillWidth: true
-                ButtonGroup.group: printQualityModeGroup
-                text: qsTr("Optimized")
-                checked: printWindow.optimizedPrintMode
-                onClicked: printWindow.valasszNyomtatasiModot(true)
-            }
-        }
+                printWindow: printWindow
+                printOptionsPanel: printOptionsPanel
+                printAreaVisible: !printWindow.contactSheet
 
-        // #4608: nyomtató nélküli gépen kimondja, mit kell tenni. Az
-        // eredeti őre (`IDS_MUST_INSTALL_PRINTER`) ugyanezt mondja. A
-        // PDF-cél a választóban marad, ezért ez tájékoztat, nem tilt.
-        // A tartalom tetején van: kis ablakban a nyomtatóválasztóhoz
-        // görgetni kell, a figyelmeztetésnek viszont azonnal látszania kell.
-        Text {
-            objectName: "printNoPrinterText"
-            Layout.fillWidth: true
-            visible: !!printWindow.printCtl && printWindow.printers.length === 0
-            //: IDS_MUST_INSTALL_PRINTER — a nyomtató-őr üzenete
-            text: qsTr("A printer must be installed in order to print.")
-            font.pixelSize: Theme.fontSize
-            color: Theme.textGray
-            wrapMode: Text.WordWrap
-        }
-
-        // -- szegély és felirat (#1780) -----------------------------------
-        PicasaButton {
-            id: printOptionsButton
-            objectName: "printOptionsButton"
-            Layout.fillWidth: true
-            text: qsTr("Border and Text Options")
-            enabled: printWindow.printCtl !== null
-            hoverEnabled: true
-            onClicked: printOptionsPanel.showOptions()
-
-            ToolTip {
-                objectName: "printOptionsTooltip"
-                parent: printOptionsButton
-                text: qsTr("Configure borders and text for Photos to be printed")
-                visible: printOptionsButton.hovered
-                delay: Theme.tooltipDelay
-            }
-        }
-
-        // -- nyomatméret + minőség-ellenőrzés (#1782) ---------------------
-        // Az eredeti panel a választott mérethez kiszámolja minden kép
-        // effektív felbontását, és nyomtatás ELŐTT szól, ha valamelyik túl
-        // kicsi. Enélkül egy 640×480-as kép szó nélkül ment ki 8×10-re.
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 2
-            Text {
-                text: qsTr("Print size:")
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
-            }
-            //: Az eredeti azonosítók sorrendje; a Contact Sheet elrendezése
-            //: és a Passport Photo forrása a saját külön útján marad.
-            PicasaComboBox {
-                id: printSizeBox
-                objectName: "printSizeBox"
-                Layout.fillWidth: true
-                model: printWindow.printSizeOptions
-                textRole: "label"
-                enabledRole: "enabled"
-                currentIndex: printWindow.printSizeIds.indexOf(
-                    printWindow.contactSheet ? "CONTACT" : printWindow.printSize)
-                //: #1401: az útlevélparancs külön forrásútja megőrzi az
-                //: eredeti Passport azonosítót a teljes méretkatalógusban.
-                displayText: currentIndex < 0
-                    ? (printWindow.printSizeLabelById[printWindow.printSize] || "")
-                    : currentText
-                onActivated: {
-                    var azonosito = printWindow.printSizeIds[currentIndex]
-                    if (!azonosito) return
-                    if (azonosito === "CDSIZE") {
-                        printSizeBox.currentIndex = printWindow.printSizeIds.indexOf(
-                            printWindow.printSize)
-                        return
-                    }
-                    if (azonosito === "CONTACT") {
-                        // #3712: az Indexképek nem CELLAMÉRET — a
-                        // `setPrintSize` a #1961 készletén kívüli nevet
-                        // úgyis elutasítaná, ezért nem is hívjuk.
-                        printWindow.contactSheet = true
-                    } else {
-                        printWindow.valasszNyomatmeretet(azonosito)
-                    }
-                    if (azonosito === "CONTACT")
-                        printWindow.frissitsdAMinoseget()
-                }
-            }
-
-            // #4318 / options.fen: a beállítás öt nyomtatható méretgombhoz
-            // rendel méretet; ezek a gombok közvetlenül a vezérlőn választják
-            // ki és mentik az adott nyomatméretet.
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 4
-                Repeater {
-                    objectName: "printSizePresetRepeater"
-                    model: printWindow.printSizePresetIds.length
-                    delegate: PicasaButton {
-                        objectName: "printPresetSize" + index
-                        Layout.fillWidth: true
-                        text: printWindow.printSizeLabelById[
-                            printWindow.printSizePresetIds[index]]
-                        enabled: printWindow.printCtl !== null
-                            && printWindow.printCtl.canUsePrintSizePreset(
-                                printWindow.printSizePresetIds[index])
-                        onClicked: printWindow.valasszNyomatmeretet(
-                            printWindow.printSizePresetIds[index])
-                    }
-                }
-                PicasaButton {
-                    objectName: "printPresetFullPage"
-                    Layout.fillWidth: true
-                    text: printWindow.printSizeLabelById["TELJES_OLDAL"]
-                    enabled: printWindow.printCtl !== null
-                    onClicked: printWindow.valasszNyomatmeretet("TELJES_OLDAL")
-                }
-            }
-
-            // #1590/#3712: az indexkép rácsának oszlopszáma — csak akkor
-            // látszik, ha a fenti listában az Indexképek van kijelölve.
-            RowLayout {
-                Layout.fillWidth: true
-                visible: printWindow.contactSheet
-                spacing: 6
-                Text {
-                    text: qsTr("Columns:")
-                    font.pixelSize: Theme.fontSize
-                    color: Theme.ink
-                }
-                SpinBox {
-                    objectName: "printContactColumnsBox"
-                    from: 1
-                    to: 10
-                    value: printWindow.contactColumns
-                    onValueModified: {
-                        printWindow.contactColumns = value
-                        printWindow.frissitsdAzElonezetet()
-                    }
-                }
-                Item { Layout.fillWidth: true }
-            }
-
-            // -- méret szerinti nyomtatás kizárólagos vezérlői -----------
-            // Az indexképnél nincs értelme: ott MINDIG a teljes kép
-            // látszik a cellában, és nincs képenkénti minőség-ellenőrzés.
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 2
-                visible: !printWindow.contactSheet
-                // #1819: KÉPENKÉNTI példányszám. A felirat az `IDS_COPIES`
-                // (`ThumbUIPrint::PrintCount`); a két gomb az
-                // `addprintsbutton` és a `subprintsbutton`.
+                // #1819: KÉPENKÉNTI példányszám.
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 6
@@ -831,8 +651,6 @@ Window {
                         text: "–"
                         Layout.preferredWidth: 26
                         Layout.preferredHeight: 22
-                        //: Egy alá nem mehet: nulla példány nem nyomtatás,
-                        //: hanem a párbeszéd értelmetlen állapota.
                         enabled: printWindow.copies > 1
                         onClicked: {
                             printWindow.copies -= 1
@@ -852,7 +670,6 @@ Window {
                         text: "+"
                         Layout.preferredWidth: 26
                         Layout.preferredHeight: 22
-                        //: Buboréksúgó az eredetiből (`addprintsbutton`).
                         ToolTip.text: qsTr(
                             "Add another copy of each Photo to be printed")
                         ToolTip.visible: hovered
@@ -865,68 +682,8 @@ Window {
                     Item { Layout.fillWidth: true }
                 }
 
-                // #1819: LAPOZHATÓ előnézet. A párbeszédnek eddig egyáltalán
-                // nem volt előnézete — a felhasználó vakon nyomott nyomtatást.
-                ColumnLayout {
-                    objectName: "printPreviewBlock"
-                    Layout.fillWidth: true
-                    spacing: 4
-                    visible: printWindow.previewPageCount > 0
-                    Image {
-                        objectName: "printPreviewImage"
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.preferredHeight: 150
-                        Layout.preferredWidth: 150
-                        fillMode: Image.PreserveAspectFit
-                        source: printWindow.previewSource
-                        asynchronous: true
-                        //: A gyorstár KIKAPCSOLVA: ugyanaz a fájlnév kap új
-                        //: tartalmat minden lapozáskor.
-                        cache: false
-                    }
-                    RowLayout {
-                        Layout.alignment: Qt.AlignHCenter
-                        spacing: 8
-                        PicasaButton {
-                            objectName: "printPreviewPrevButton"
-                            text: "◀"
-                            Layout.preferredWidth: 26
-                            Layout.preferredHeight: 22
-                            //: Az első lapon nincs hova visszalépni.
-                            enabled: printWindow.previewPage > 0
-                            onClicked: {
-                                printWindow.previewPage -= 1
-                                printWindow.frissitsdAzElonezetet()
-                            }
-                        }
-                        Text {
-                            objectName: "printPreviewPageText"
-                            //: #1960: a SORREND a fordításé, nem a kódé. Az
-                            //: eredeti angol erőforrása `%1$d of %2$d`
-                            //: (aktuális / összes), a magyar `%2$d / %1$d`
-                            //: (összes / aktuális) — `ThumbUIPrint::PrintCount`,
-                            //: `stringres` 2287. Ezért összefűzés helyett
-                            //: pozíció-argumentumos sablon: a `.ts` dönti el,
-                            //: melyik nyelv melyik sorrendet kapja.
-                            text: qsTr("%1 / %2")
-                                  .arg(printWindow.previewPage + 1)
-                                  .arg(printWindow.previewPageCount)
-                            font.pixelSize: Theme.fontSize
-                            color: Theme.ink
-                        }
-                        PicasaButton {
-                            objectName: "printPreviewNextButton"
-                            text: "▶"
-                            Layout.preferredWidth: 26
-                            Layout.preferredHeight: 22
-                            enabled: printWindow.previewPage
-                                     < printWindow.previewPageCount - 1
-                            onClicked: {
-                                printWindow.previewPage += 1
-                                printWindow.frissitsdAzElonezetet()
-                            }
-                        }
-                    }
+                PrintPreviewPanel {
+                    printWindow: printWindow
                 }
 
                 Text {
@@ -934,207 +691,63 @@ Window {
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     font.pixelSize: Theme.fontSize
-                    //: figyelmeztetés esetén hangsúlyos, egyébként semleges
                     color: printWindow.quality.ready === false
                            && printWindow.quality.total > 0
                            ? Theme.brandRed : Theme.ink
                     text: {
                         var q = printWindow.quality
                         if (!q || !q.total) return ""
-                        // #3573: az eredeti sorrendje és tördelése — a
-                        // `Smallest` sor végén sortörés, a `ReviewPrompt`
-                        // előbb felszólít, és csak új sorban mondja a számot
-                        //: `ThumbUIPrint::Smallest`
                         var sor = qsTr("Smallest picture: %1 pixels/inch.")
                                       .arg(q.smallest)
                         if (q.small > 0) {
-                            //: `ThumbUIPrint::picture` / `::pictures` — az
-                            //: egyes/többes szám az eredetiben is külön erőforrás
                             var mi = q.small === 1 ? qsTr("picture") : qsTr("pictures")
-                            //: `ThumbUIPrint::ReviewPrompt` — %1 a darabszám,
-                            //: %2 a „picture"/„pictures" szó
                             return sor + "\n"
                                    + qsTr("Please review before printing.\n%1 small %2 found.")
                                          .arg(q.small).arg(mi)
                         }
-                        //: `ThumbUIPrint::ReadyPrompt`
                         return sor + "\n" + qsTr("You are ready to print.")
                     }
                 }
 
-                // #1953: az üzenet megvolt, a GOMB nem — a felhasználó
-                // megtudta, hogy VAN kis felbontású kép, azt viszont nem,
-                // hogy MELYIK.
-                //
-                // Az eredetiben `printpanel/reviewnowbutton` (és `…button2`),
-                // felirat „Review", súgó „Make sure your photos are ready to
-                // print" (`ui-leltar.csv:1434–1437`). ⚠️ Hogy MIÉRT kettő, az
-                // NINCS mérve (a #1953 blokkolt kérdése); egy gomb elég.
                 PicasaButton {
                     objectName: "printReviewButton"
-                    //: `printpanel/reviewnowbutton` felirata
                     text: qsTr("Review")
                     font.pixelSize: Theme.fontSize
-                    //: `printpanel/reviewnowbutton` elemleírása
                     ToolTip.text: qsTr(
                         "Make sure your photos are ready to print")
                     ToolTip.visible: hovered
                     ToolTip.delay: Theme.tooltipDelay
-                    // Az eredetiben a „You are ready to print." ágon nincs
-                    // mit ellenőrizni.
                     visible: printWindow.quality.small > 0
                     onClicked: {
                         if (!printWindow.printCtl) return
                         printWindow.reviewList = printWindow.printCtl.reviewPictures(
                             printWindow.rows, printWindow.printSize)
                         printWindow.reviewOpen = true
-                        printReviewList.currentIndex =
+                        printReviewPanel.currentIndex =
                             printWindow.reviewList.length > 0 ? 0 : -1
                     }
                 }
             }
-        }
 
-        // -- nyomtató (vagy PDF-fájl) ------------------------------------
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 2
-            Text {
-                text: qsTr("Printer:")
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
-            }
-            PicasaComboBox {
-                id: printerBox
-                objectName: "printPrinterBox"
+            PrintPrinterPanel {
+                id: printPrinterPanel
                 Layout.fillWidth: true
-                model: [qsTr("Print to a PDF file...")].concat(printWindow.printers)
-                // a `currentIndex` a választó SAJÁTJA — a párbeszéd innen
-                // olvassa (`printerIndex`), nem fordítva (ld. ott)
+                printWindow: printWindow
+                pdfTargetDialog: pdfTargetDialog
             }
-            // #2103: belépési pont a nyomtató SAJÁT beállításaihoz
-            // (`printpanel/psetupbutton`). Az eredetiben az illesztőprogram
-            // tulajdonságlapját nyitja (`OpenPrinter` →
-            // `DocumentProperties` ×2, `0x00861750`); nálunk a Qt
-            // oldalbeállítóját, mert a `DocumentProperties` a Windows
-            // illesztőprogramé. A gomb HELYE és FELIRATA az, ami átvehető.
-            PicasaButton {
-                id: nyomtatoBeallitas
-                objectName: "printPrinterSetupButton"
-                //: `printpanel/setuplabel`
-                text: qsTr("Printer Setup")
-                //: A PDF-cél nem illesztőprogram: nincs mit beállítani.
-                enabled: !printWindow.pdfSelected
-                ToolTip.text: qsTr(
-                    "Open printer setup controls for the selected printer")
-                ToolTip.visible: nyomtatoBeallitas.hovered
-                ToolTip.delay: Theme.tooltipDelay
-                onClicked: {
-                    if (typeof printController !== "undefined" && printController) {
-                        printController.openPrinterSetup(printWindow.printerName)
-                        // #2368: az oldalbeállító elfogadott elrendezése a
-                        // papíradat FORRÁSA — a mezőt tehát a párbeszéd
-                        // bezárása után frissíteni kell, különben a régi
-                        // lapot mutatná.
-                        printWindow.frissitsdAPapiradatot()
-                    }
-                }
-            }
-        }
 
-        // -- papíradat (#2368) -------------------------------------------
-        // Az eredeti panel `printpanel/paperinfo` mezője: tisztán SZÖVEGES
-        // kijelző a nyomtató neve mellett (az állapotfrissítő, `0x00745980`,
-        // mind a négy információs mezőt ugyanazzal a szövegbeállítóval
-        // tölti). Innen látja a felhasználó, MILYEN LAPRA fog nyomtatni —
-        // a nyomat mérete és a „kis kép" figyelmeztetés is ettől függ.
-        Text {
-            objectName: "printPaperInfoText"
-            Layout.fillWidth: true
-            elide: Text.ElideRight
-            text: printWindow.papiradat
-            font.pixelSize: Theme.fontSizeLadder[0]
-            color: Theme.textGray
-        }
-
-        // -- a PDF célfájlja (csak PDF-módban) ----------------------------
-        RowLayout {
-            Layout.fillWidth: true
-            visible: printWindow.pdfSelected
-            spacing: 8
-            Text {
-                objectName: "printPdfTargetText"
+            PrintPrinterPanel {
+                id: printPrinterDetailsPanel
                 Layout.fillWidth: true
-                elide: Text.ElideMiddle
-                text: printWindow.pdfTarget.length > 0
-                      ? printWindow.pdfTarget : qsTr("(not selected)")
-                font.pixelSize: Theme.fontSize
-                color: Theme.textGray
+                printWindow: printWindow
+                pdfTargetDialog: pdfTargetDialog
+                details: true
             }
-            PicasaButton {
-                objectName: "printPdfBrowseButton"
-                text: qsTr("Browse...")
-                onClicked: pdfTargetDialog.open()
-            }
-        }
 
-        // -- illesztés ----------------------------------------------------
-        // #1590: az indexképnél nincs értelme — ott MINDIG a teljes kép
-        // látszik a cellában (ez az indexkép lényege), és a tájolást sem a
-        // képek szabják meg, mert egy lapon sok kép van
-        ColumnLayout {
-            Layout.fillWidth: true
-            visible: !printWindow.contactSheet
-            spacing: 2
-            Text {
-                text: qsTr("Fit to page:")
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
+            PrintFitPanel {
+                Layout.fillWidth: true
+                printWindow: printWindow
             }
-            RowLayout {
-                spacing: 16
-                RadioButton {
-                    objectName: "printFitRadio"
-                    text: qsTr("Whole picture")
-                    checked: printWindow.fitMode === "fit"
-                    onClicked: {
-                        printWindow.fitMode = "fit"
-                        printWindow.frissitsdAzElonezetet()
-                    }
-                }
-                RadioButton {
-                    objectName: "printFillRadio"
-                    text: qsTr("Fill the page (crop)")
-                    checked: printWindow.fitMode === "fill"
-                    onClicked: {
-                        printWindow.fitMode = "fill"
-                        printWindow.frissitsdAzElonezetet()
-                    }
-                }
-            }
-        }
-
-        // -- tájolás ------------------------------------------------------
-        ColumnLayout {
-            Layout.fillWidth: true
-            visible: !printWindow.contactSheet
-            spacing: 2
-            Text {
-                text: qsTr("Orientation:")
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
-            }
-            PicasaComboBox {
-                id: orientationBox
-                objectName: "printOrientationBox"
-                readonly property var values: ["auto", "portrait", "landscape"]
-                Layout.preferredWidth: 200
-                model: [qsTr("Automatic"), qsTr("Portrait"), qsTr("Landscape")]
-                currentIndex: 0
-                onActivated: printWindow.orientation = values[currentIndex]
-            }
-        }
-
         }
         }
 
@@ -1142,100 +755,15 @@ Window {
         // tartalmon kívül), hogy a Nyomtatás után mindig látsszon.
         // Felső korlát (az ablak harmada): hosszú kihagyott-lista se tolja
         // ki a gombsort — a szövegek ekkor a saját területükön görgethetők.
-        Flickable {
-            id: printStatusFlick
-            objectName: "printStatusFlick"
-            Layout.fillWidth: true
-            Layout.preferredHeight: printStatusBox.implicitHeight
-            Layout.maximumHeight: Math.max(60, printWindow.height / 3)
-            visible: printWindow.lastSkipped.length > 0
-                     || printWindow.lastError.length > 0
-                     || printWindow.printTotalPages > 0
-                     || printWindow.lastResult.length > 0
-            clip: true
-            contentWidth: width
-            contentHeight: printStatusBox.implicitHeight
-            boundsBehavior: Flickable.StopAtBounds
-            flickableDirection: Flickable.VerticalFlick
-            ScrollBar.vertical: ScrollBar {
-                policy: size < 1.0 ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
-            }
-
-        ColumnLayout {
-            id: printStatusBox
-            width: printStatusFlick.width
-            spacing: 10
-
-            Text {
-                objectName: "printSkippedText"
-                visible: printWindow.lastSkipped.length > 0
-                text: qsTr("These pictures could not be printed: %1")
-                      .arg(printWindow.lastSkipped.join(", "))
-                color: Theme.brandRed
-                font.pixelSize: Theme.fontSize
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-            }
-
-            Text {
-                objectName: "printErrorText"
-                visible: printWindow.lastError.length > 0
-                text: printWindow.lastError
-                color: Theme.brandRed
-                font.pixelSize: Theme.fontSize
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-            }
-
-            // #3016: LAPONKÉNTI haladás. A festés a GUI-szálon fut (a mérés
-            // szerint nem tolható háttérszálra: az a munka kétharmada, és a Qt
-            // festő-API-ja a GUI-szálhoz kötött), ezért a vezérlő laponként
-            // enged vissza a felületnek — enélkül a párbeszéd a feladat teljes
-            // idejére befagyna, és a felhasználó nem tudná, dolgozik-e még.
-            Text {
-                objectName: "printProgressText"
-                visible: printWindow.printTotalPages > 0
-                text: qsTr("Printing: %1 / %2")
-                    .arg(printWindow.printDonePages).arg(printWindow.printTotalPages)
-                color: Theme.textDark
-                font.pixelSize: Theme.fontSize
-                Layout.fillWidth: true
-            }
-
-            Text {
-                objectName: "printResultText"
-                visible: printWindow.lastResult.length > 0
-                text: qsTr("Finished: %1").arg(printWindow.lastResult)
-                color: Theme.picasaGreen
-                font.pixelSize: Theme.fontSize
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-            }
-        }
+        PrintStatusPanel {
+            id: printStatusPanel
+            printWindow: printWindow
         }
 
-        RowLayout {
+        PrintButtonRow {
             id: printButtonRow
-            Layout.fillWidth: true
-            spacing: 8
-            PicasaButton {
-                objectName: "printHelpButton"
-                text: qsTr("Help")
-                onClicked: printWindowHelp.nyisdASugot(printWindow.helpTopic)
-            }
-            Item { Layout.fillWidth: true }
-            PicasaButton {
-                objectName: "printStartButton"
-                text: qsTr("Print")
-                accent: Theme.picasaGreen
-                enabled: printWindow.canPrint
-                onClicked: printWindow.startPrint()
-            }
-            PicasaButton {
-                objectName: "printCloseButton"
-                text: qsTr("Close")
-                onClicked: printWindow.visible = false
-            }
+            printWindow: printWindow
+            printWindowHelp: printWindowHelp
         }
     }
 
@@ -1249,181 +777,14 @@ Window {
         onCloseRequested: printOptionsPanel.visible = false
     }
 
-    // #4280: az „Ellenőrzés" listája képenként mutatja a DPI-sávot és az
-    // effektív felbontást; a legrosszabb kerül előre.
-    Rectangle {
-        objectName: "printReviewPanel"
-        anchors.fill: parent
-        visible: printWindow.reviewOpen
-        color: Theme.canvasBg
-        z: 100
-
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 12
-            spacing: 8
-            Text {
-                //: `printpanel/reviewnowbutton` felirata — a lap címe is ez
-                text: qsTr("Review")
-                font.pixelSize: Theme.fontSize + 3
-                font.bold: true
-                color: Theme.ink
-            }
-            Text {
-                objectName: "printReviewWarningText"
-                Layout.fillWidth: true
-                wrapMode: Text.WordWrap
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
-                //: `CPrintDlg::toosmall`; eredeti figyelmeztetés a
-                //: `picasa-nyomtatas.md` 40.7 szerint.
-                visible: printWindow.reviewList.length > 0
-                text: qsTr("Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.")
-            }
-            ListView {
-                objectName: "printReviewList"
-                id: printReviewList
-                Layout.fillWidth: true
-                Layout.fillHeight: printWindow.reviewList.length > 0
-                clip: true
-                model: printWindow.reviewList
-                currentIndex: printWindow.reviewList.length > 0 ? 0 : -1
-                delegate: Item {
-                    required property var modelData
-                    required property int index
-                    objectName: "printReviewListRow"
-                    width: ListView.view.width
-                    height: reviewListRowText.implicitHeight + 8
-                    Rectangle {
-                        anchors.fill: parent
-                        color: ListView.isCurrentItem ? Theme.surfaceAlt : "transparent"
-                    }
-                    Text {
-                        id: reviewListRowText
-                        objectName: "printReviewListRowText"
-                        anchors.fill: parent
-                        anchors.margins: 4
-                        elide: Text.ElideMiddle
-                        font.pixelSize: Theme.fontSize
-                        color: Theme.ink
-                        //: A `CPrintDlg::bestqual` / `goodqual` / `badqual`
-                        //: hivatalos angol feliratai a fordításból jönnek.
-                        text: {
-                            var label = modelData.qualityCode === 2
-                                ? qsTr("Best quality (%1 pixels/inch)")
-                                : modelData.qualityCode === 1
-                                    ? qsTr("Good quality (%1 pixels/inch)")
-                                    : qsTr("Bad quality (%1 pixels/inch)")
-                            return modelData.name + "   —   "
-                                   + label.arg(modelData.dpi)
-                        }
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: printReviewList.currentIndex = index
-                    }
-                }
-            }
-            Text {
-                objectName: "printReviewEmptyText"
-                Layout.fillWidth: true
-                visible: printWindow.reviewList.length === 0
-                wrapMode: Text.WordWrap
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
-                text: printWindow.rows.length > 0
-                      && Number(printWindow.quality.total || 0) > 0
-                      ? qsTr("All of your pictures are ready to print.")
-                      : qsTr("There are no pictures left to print.")
-            }
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 6
-                PicasaButton {
-                    objectName: "printReviewRemoveSelectedButton"
-                    Layout.fillWidth: true
-                    enabled: printReviewList.currentIndex >= 0
-                    text: qsTr("Remove Selected Items")
-                    onClicked: printWindow.removeSelectedReviewPicture()
-                }
-                PicasaButton {
-                    objectName: "printReviewRemoveLowButton"
-                    Layout.fillWidth: true
-                    enabled: printWindow.reviewList.length > 0
-                    text: qsTr("Remove Low Quality Pictures")
-                    onClicked: printWindow.removeLowQualityReviewPictures()
-                }
-            }
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 6
-                Item { Layout.fillWidth: true }
-                PicasaButton {
-                    objectName: "printReviewAcceptButton"
-                    text: qsTr("OK")
-                    enabled: Number(printWindow.quality.total || 0) > 0
-                    onClicked: printWindow.acceptReviewAndPrint()
-                }
-                PicasaButton {
-                    objectName: "printReviewCancelButton"
-                    text: qsTr("Cancel")
-                    onClicked: printWindow.cancelReview()
-                }
-            }
-        }
+    PrintReviewPanel {
+        id: printReviewPanel
+        printWindow: printWindow
     }
 
-    // #5682 / 0x0085cce0: a „Remove Low Quality Pictures" megerősítése,
-    // ha MINDEN kép alacsony minőségű. Nincs „Ne kérdezze meg újra"
-    // jelölő (ld. CollageDialogs.qml, „Miért nem ConfirmDialog"): a törlés
-    // visszafordíthatatlan, ezért nem nyelhető el némán. Escape-pel vagy a
-    // Nem gombbal semmi nem változik.
-    Dialog {
-        id: removeAllConfirm
-        objectName: "printRemoveAllDialog"
-        parent: Overlay.overlay
-        anchors.centerIn: parent
-        modal: true
-        closePolicy: Popup.CloseOnEscape
-        // a nyomtatási ablak saját palettája sötét lehet: a háttér a téma
-        // tartalompaneljéé, mint a többi kérdésé
-        background: Rectangle {
-            color: Theme.contentPanel
-            border.width: 1
-            border.color: Theme.chromeBorder
-        }
-
-        ColumnLayout {
-            spacing: 12
-
-            Text {
-                objectName: "printRemoveAllMessage"
-                Layout.preferredWidth: 340
-                text: qsTr("This will remove all of your pictures and cancel printing. Would you like to continue?")
-                wrapMode: Text.WordWrap
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
-            }
-
-            RowLayout {
-                Layout.alignment: Qt.AlignRight
-                spacing: 8
-
-                PicasaButton {
-                    objectName: "printRemoveAllYesButton"
-                    text: qsTr("Remove and Cancel")
-                    onClicked: {
-                        removeAllConfirm.close()
-                        printWindow.removeAllReviewPicturesAndCancel()
-                    }
-                }
-                PicasaButton {
-                    objectName: "printRemoveAllNoButton"
-                    text: qsTr("Don't Remove")
-                    onClicked: removeAllConfirm.close()
-                }
-            }
-        }
+    PrintRemoveAllDialog {
+        id: printRemoveAllDialog
+        printWindow: printWindow
     }
 
     FileDialog {

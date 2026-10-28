@@ -7,6 +7,22 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.271] - 2026-10-28
+
+- A képernyőkép-mérő ugyanazon a kódon minden rögzítésnél ugyanazt a képet adja (a késve frissülő szerkesztő-előnézetet is kivárja). (#6044).
+- A képtálca belső QML-szerkezete önálló komponensekre bomlott (#6050).
+- A nyomtatási vezérlő belső szerkezete a későbbi karbantartás érdekében áttekinthetőbb lett (#6057).
+- Induláskor és az Opciók elfogadásakor elmenti a tényleges beállításokat, megőrizve a korábbi értékeket (#6067).
+- A térkép betöltésjelzője saját rajzú ikon lett, a kiegyenesítő rács pedig a saját rajzoló szkriptünkből készül; a README kimondja, hogy a PicasaPy független a Google-től (#6068).
+- A diavetítés belső szerkezete külön QML-komponensekre bomlott, változatlan megjelenéssel és működéssel (#6074).
+- A képrács felépítése különálló QML-komponensekre bomlott, a felület változatlan maradt (#6076).
+- A képernyőkép-mérő a nézőkép háttérben számolt végleges kockáját is megvárja, így a lassabb gépen sem tér el két rögzítés (#6078).
+- A képernyőkép-mérő megvárja a nagyítás értékének stabilizálódását a rögzítés előtt (#6081).
+- A mappafigyelő leállítása megvárja a már futó esemény-visszahívásokat, mielőtt elengedné a vezérlőt (#6087).
+- A QML-betöltési idő mérőszkriptje rögzített nyelvvel indítja a programot, így a főablak betöltését méri, nem a nyelvfelajánló ablakét (#6095).
+- Nem angol rendszeren az első indításkor újra megjelenik a rendszer nyelvét felajánló ablak; eddig csendben elmaradt (#6097).
+- Belső: a mappafigyelő tesztje modulszintű időzítő-fogantyút cserél a globális threading.Timer helyett (#6099).
+
 ## [0.9.270] - 2026-10-27
 
 - A képpontos képernyőkép-tesztek Windowson indokkal kimaradnak, mert a referencia Linuxon készül (#6058).
