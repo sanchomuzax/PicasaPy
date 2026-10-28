@@ -36,7 +36,7 @@ RangeSlider {
         implicitWidth: 14
         implicitHeight: 12
         radius: 2
-        color: "#d5d5d5"
+        color: Theme.mediaControlThumbBg
         border.width: 1
         border.color: "#202020"
     }
@@ -50,7 +50,7 @@ RangeSlider {
         implicitWidth: 14
         implicitHeight: 12
         radius: 2
-        color: "#d5d5d5"
+        color: Theme.mediaControlThumbBg
         border.width: 1
         border.color: "#202020"
     }
@@ -58,7 +58,7 @@ RangeSlider {
     Text {
         objectName: "videoTrimStartLabel"
         text: qsTr("Start Point")
-        color: "#e8e8e8"
+        color: Theme.mediaOverlayText
         font.pixelSize: 10
         horizontalAlignment: Text.AlignHCenter
         y: 0
@@ -68,7 +68,7 @@ RangeSlider {
     Text {
         objectName: "videoTrimEndLabel"
         text: qsTr("End Point")
-        color: "#e8e8e8"
+        color: Theme.mediaOverlayText
         font.pixelSize: 10
         horizontalAlignment: Text.AlignHCenter
         y: 0

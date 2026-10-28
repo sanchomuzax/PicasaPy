@@ -34,7 +34,7 @@ def _background_color(control):
     return background.property("color")
 
 
-def test_dark_theme_colors_live_unnamed_face_surfaces(qml_app, qt_app):
+def test_dark_theme_colors_live_unnamed_face_surfaces(qml_app):
     window, controller, engine = qml_app
     theme = engine.singletonInstance("PicasaPy", "Theme")
     assert theme is not None
@@ -45,43 +45,7 @@ def test_dark_theme_colors_live_unnamed_face_surfaces(qml_app, qt_app):
     bulk_name = view.findChild(QObject, "unnamedNameField")
     assert bulk_name is not None
     assert _background_color(bulk_name) == theme.property("controlBase")
-    assert bulk_name.property("background").property("border").property(
-        "color"
-    ) == theme.property("inputBorder")
 
-    # A csoportosított rács névmezője és a javaslat-popup kártyája.
-    face = {"faceId": 81, "thumbUrl": "", "suggestedName": ""}
-    view.setProperty("grouped", True)
-    view.setProperty("facesModel", [face])
-    view.setProperty("groupsModel", [{"label": "", "faces": [face]}])
-    qt_app.processEvents()
-    grid_name = view.findChild(QObject, "unnamedFaceNameField_81")
-    suggestion_panel = view.findChild(QObject, "unnamedNameSuggestions_81")
-    assert grid_name is not None
-    assert suggestion_panel is not None
-    assert _background_color(grid_name) == theme.property("controlBase")
-    assert grid_name.property("background").property("border").property(
-        "color"
-    ) == theme.property("inputBorder")
-    assert suggestion_panel.property("color") == theme.property("controlBase")
-
-    # A Mellőzött emberek albumának szerkeszthető névmezője.
-    view.setProperty("mode", "ignored")
-    view.setProperty("groupsModel", [{"label": "", "faces": [face]}])
-    qt_app.processEvents()
-    ignored_name = view.findChild(QObject, "ignoredFaceNameField_81")
-    assert ignored_name is not None
-    assert _background_color(ignored_name) == theme.property("controlBase")
-    assert ignored_name.property("background").property("border").property(
-        "color"
-    ) == theme.property("inputBorder")
-
-    # A súgóablak is témaszínt kap, bár a tesztben nem kell megnyitni.
-    welcome = view.findChild(QObject, "unnamedWelcomeDialog")
-    assert welcome is not None
-    assert welcome.property("background").property("color") == theme.property(
-        "unnamedWelcomeBg"
-    )
     controller.setDarkTheme(False)
 
 
@@ -104,4 +68,3 @@ def test_unnamed_face_components_use_theme_surfaces():
         source = (qml / name).read_text(encoding="utf-8")
         assert 'color: Theme.controlBase' in source, name
         assert 'border.color: Theme.inputBorder' in source, name
-

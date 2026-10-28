@@ -409,6 +409,7 @@ QtObject {
         // világos felület képpontja nem változik. A sötét párok új, semleges
         // krómértékek; a fotóra rajzolt rétegek nem ezeket használják.
         readonly property color inputBorder: tema.dark ? "#555555" : "#8a8a8a"
+        readonly property color searchClearBg: tema.dark ? "#555555" : "#b0b0b0"
         readonly property color unnamedGroupLabel: tema.dark ? "#c6b9b4" : "#68564f"
         readonly property color unnamedWelcomeBg: tema.dark ? "#303030" : "#606060"
         readonly property color unnamedWelcomeBorder: tema.dark ? "#5a5a5a" : "#999999"
@@ -672,6 +673,7 @@ QtObject {
     readonly property color captionToggleBg: tema._szin("captionToggleBg", nyersTokenek.captionToggleBg)
     readonly property color captionToggleBorder: tema._szin("captionToggleBorder", nyersTokenek.captionToggleBorder)
     readonly property color inputBorder: tema._szin("inputBorder", nyersTokenek.inputBorder)
+    readonly property color searchClearBg: tema._szin("searchClearBg", nyersTokenek.searchClearBg)
     readonly property color unnamedGroupLabel: tema._szin("unnamedGroupLabel", nyersTokenek.unnamedGroupLabel)
     readonly property color unnamedWelcomeBg: tema._szin("unnamedWelcomeBg", nyersTokenek.unnamedWelcomeBg)
     readonly property color unnamedWelcomeBorder: tema._szin("unnamedWelcomeBorder", nyersTokenek.unnamedWelcomeBorder)

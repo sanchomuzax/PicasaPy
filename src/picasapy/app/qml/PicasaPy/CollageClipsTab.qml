@@ -278,14 +278,14 @@ Item {
                     anchors.fill: parent
                     anchors.margins: 3
                     visible: clip.missing
-                    color: "#c8c8c8"
+                    color: Theme.collageMissingBg
                     border.width: 1
-                    border.color: "#787878"
+                    border.color: Theme.collageMissingBorder
 
                     Text {
                         anchors.centerIn: parent
                         text: "?"
-                        color: "#787878"
+                        color: Theme.collageMissingText
                         font.pixelSize: Theme.fontSize
                     }
                 }

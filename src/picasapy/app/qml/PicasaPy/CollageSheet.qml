@@ -208,7 +208,7 @@ Item {
         color: lap.controller && lap.controller.collageBackgroundColor
                ? lap.controller.collageBackgroundColor : "#ffffff"
         border.width: 1
-        border.color: "#9a9a9a"
+        border.color: Theme.collageSheetBorder
     }
 
     Image {

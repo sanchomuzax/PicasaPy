@@ -100,7 +100,7 @@ Dialog {
                 contentItem: Label {
                     objectName: "openWithOpenLabel"
                     text: qsTr("Open")
-                    color: "white"
+                    color: Theme.panelSelectionText
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
