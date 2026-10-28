@@ -34,10 +34,11 @@ _KEEP_ALIVE: list = []
 _TS = (
     Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"
 ).read_text(encoding="utf-8")
-_FEED = (
-    Path(picasapy.app.__file__).parent
-    / "qml" / "PicasaPy" / "LightboxFeed.qml"
-).read_text(encoding="utf-8")
+_QML_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+_FEED = "\n".join(
+    (_QML_DIR / name).read_text(encoding="utf-8")
+    for name in ("LightboxFeed.qml", "LightboxFeedGroup.qml")
+)
 _MAIN = (
     Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
 ).read_text(encoding="utf-8")
@@ -143,13 +144,13 @@ class TestABekotes:
     """A gomb csak akkor ér valamit, ha a parancsig eljut a kattintás."""
 
     def test_a_feed_atadja_a_kijeloles_darabszamat(self):
-        assert "selectedCount: grid.appWindow" in _FEED
+        assert "selectedCount: feed.appWindow" in _FEED
 
     def test_a_feed_bekoti_a_ket_jelet(self):
         assert "onSelectStarredRequested" in _FEED
-        assert "grid.appWindow.selectStarred()" in _FEED
+        assert "feed.appWindow.selectStarred()" in _FEED
         assert "onSaveEditsRequested" in _FEED
-        assert "grid.appWindow.saveSelectedEdits()" in _FEED
+        assert "feed.appWindow.saveSelectedEdits()" in _FEED
 
     def test_a_gazdaablaknak_VAN_ilyen_fuggvenye(self):
         """A #1153 osztálya: a jel elmegy, de a másik oldalon nincs, aki

@@ -98,7 +98,7 @@ picasapy-origin-key: stringres:CCollageUI::ButtonDiscard;stringres:CThumbUI::Con
         </message>
     </context>
     <context>
-        <name>LightboxFeed</name>
+        <name>LightboxFeedEmptyState</name>
         <message>
             <source>No photos found</source>
             <extracomment>picasapy-origin: picasa
