@@ -166,8 +166,8 @@ GridView {
                 font.pixelSize: Theme.fontSize - 2
                 placeholderText: qsTr("Add a name")
                 background: Rectangle {
-                    color: "#ffffff"
-                    border.color: "#8a8a8a"
+                    color: Theme.controlBase
+                    border.color: Theme.inputBorder
                     border.width: 1
                     radius: 0
                 }
@@ -232,8 +232,8 @@ GridView {
             background: Rectangle {
                 objectName: "unnamedNameSuggestions_"
                             + faceCard.modelData.faceId
-                color: "#ffffff"
-                border.color: "#8a8a8a"
+                color: Theme.controlBase
+                border.color: Theme.inputBorder
                 border.width: 1
             }
 
@@ -297,4 +297,3 @@ GridView {
         }
     }
 }
-

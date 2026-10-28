@@ -3743,7 +3743,7 @@ ApplicationWindow {
                 id: errorBannerText
                 objectName: "errorBannerText"
                 text: ""
-                color: "white"
+                color: Theme.infoBarText
                 font.pixelSize: Theme.fontSize
                 wrapMode: Text.WordWrap
                 Layout.maximumWidth: 480

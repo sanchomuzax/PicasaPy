@@ -274,7 +274,7 @@ Item {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 56
         visible: text !== ""
-        color: "#e8e8e8"
+        color: Theme.mediaOverlayText
         font.pixelSize: Theme.fontSize
         text: ""
 
@@ -326,7 +326,7 @@ Item {
                  && videoLoader.status === Loader.Error
         anchors.centerIn: parent
         text: qsTr("Video playback requires the Qt Multimedia module.")
-        color: "#e8e8e8"
+        color: Theme.mediaOverlayText
         font.pixelSize: Theme.fontSize
     }
 
