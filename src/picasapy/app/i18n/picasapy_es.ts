@@ -2050,12 +2050,6 @@ picasapy-origin-key: webexport:webexport/labelgroup15.title</extracomment>
             <translation>Guardar en:</translation>
         </message>
         <message>
-            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: webexport:webexport/label20.title</extracomment>
-            <translation>Haz clic en el nombre de una plantilla para ver un ejemplo. Cuando hayas realizado tu selección, haz clic en Exportar.</translation>
-        </message>
-        <message>
             <source>Export</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: webexport:webexport/button29.title</extracomment>
@@ -2168,12 +2162,6 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <translation>Elegir carpeta de destino...</translation>
         </message>
         <message>
-            <source>Template:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extracomment>
-            <translation>Plantilla:</translation>
-        </message>
-        <message>
             <source>Export pictures at:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: webexport:webexport/labelgroup2.title</extracomment>
@@ -2228,16 +2216,6 @@ picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.ti
             <translation>Película completa</translation>
         </message>
         <message>
-            <source>PicasaPy is generating the web page.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>PicasaPy está generando la página web.</translation>
-        </message>
-        <message>
-            <source>Web page generated: %1 file(s) in %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Página web generada: %1 archivos en %2</translation>
-        </message>
-        <message>
             <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Crear</translation>
@@ -2264,76 +2242,124 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
 picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
             <translation>publicando...</translation>
         </message>
+    </context>
+    <context>
+        <name>WebExportTemplatePane</name>
         <message>
+            <location filename="../qml/PicasaPy/WebExportTemplatePane.qml" line="39" />
+            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/label20.title</extracomment>
+            <translation>Haz clic en el nombre de una plantilla para ver un ejemplo. Cuando hayas realizado tu selección, haz clic en Exportar.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportTemplatePane.qml" line="104" />
+            <source>Template:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extracomment>
+            <translation>Plantilla:</translation>
+        </message>
+    </context>
+    <context>
+        <name>WebExportStatusPane</name>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="39" />
+            <source>PicasaPy is generating the web page.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>PicasaPy está generando la página web.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="69" />
             <source>Published %1 file(s) to %2.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Se publicaron %1 archivos en %2.</translation>
         </message>
         <message>
-            <source>Manage FTP Accounts</source>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="71" />
+            <source>Web page generated: %1 file(s) in %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Administrar cuentas FTP</translation>
+            <translation>Página web generada: %1 archivos en %2</translation>
         </message>
+    </context>
+    <context>
+        <name>FtpAccountDialog</name>
         <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="77" />
             <source>Account name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nombre de la cuenta:</translation>
         </message>
         <message>
-            <source>FTP server:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Servidor FTP:</translation>
-        </message>
-        <message>
-            <source>Username:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
-            <translation>Nombre de usuario:</translation>
-        </message>
-        <message>
-            <source>Password:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
-            <translation>Contraseña:</translation>
-        </message>
-        <message>
-            <source>Remote folder:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Carpeta remota:</translation>
-        </message>
-        <message>
-            <source>Leave blank to keep the saved password.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Déjelo en blanco para conservar la contraseña guardada.</translation>
-        </message>
-        <message>
-            <source>The account could not be deleted.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>No se pudo eliminar la cuenta.</translation>
-        </message>
-        <message>
-            <source>New</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: buzzupload_text:Label(buzzupload/newalbum2);upload_text:Label(upload/newalbum2)</extracomment>
-            <translation>Nuevo</translation>
-        </message>
-        <message>
-            <source>Delete</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_Delete</extracomment>
-            <translation>Eliminar</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="144" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:il_Cancel</extracomment>
             <translation>Cancelar</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="137" />
+            <source>Delete</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Delete</extracomment>
+            <translation>Eliminar</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="84" />
+            <source>FTP server:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Servidor FTP:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="118" />
+            <source>Leave blank to keep the saved password.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Déjelo en blanco para conservar la contraseña guardada.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="9" />
+            <source>Manage FTP Accounts</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Administrar cuentas FTP</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="132" />
+            <source>New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: upload_text:Label(upload/newalbum2)</extracomment>
+            <translation>Nuevo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="98" />
+            <source>Password:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
+            <translation>Contraseña:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="106" />
+            <source>Remote folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Carpeta remota:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="149" />
             <source>Save</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
             <translation>Guardar</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="68" />
+            <source>The account could not be deleted.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>No se pudo eliminar la cuenta.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="91" />
+            <source>Username:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
+            <translation>Nombre de usuario:</translation>
         </message>
     </context>
     <context>

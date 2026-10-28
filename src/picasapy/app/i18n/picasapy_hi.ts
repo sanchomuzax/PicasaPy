@@ -2049,12 +2049,6 @@ picasapy-origin-key: webexport:webexport/labelgroup15.title</extracomment>
             <translation>यहां सहेजें:</translation>
         </message>
         <message>
-            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: webexport:webexport/label20.title</extracomment>
-            <translation>कोई उदाहरण देखने के लिए एक टेंप्लेट नाम क्लिक करें.  अपना चयन कर लेने पर, निर्यात करें क्लिक करें.</translation>
-        </message>
-        <message>
             <source>Export</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: webexport:webexport/button29.title</extracomment>
@@ -2167,12 +2161,6 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <translation>लक्ष्य फ़ोल्डर चुनें...</translation>
         </message>
         <message>
-            <source>Template:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extracomment>
-            <translation>टेंप्लेट:</translation>
-        </message>
-        <message>
             <source>Export pictures at:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: webexport:webexport/labelgroup2.title</extracomment>
@@ -2227,16 +2215,6 @@ picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.ti
             <translation>पूर्ण मूवी</translation>
         </message>
         <message>
-            <source>PicasaPy is generating the web page.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>PicasaPy वेब पृष्ठ बना रहा है.</translation>
-        </message>
-        <message>
-            <source>Web page generated: %1 file(s) in %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>वेब पृष्ठ बन गया: %2 में %1 फ़ाइलें</translation>
-        </message>
-        <message>
             <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>बनाएं</translation>
@@ -2263,76 +2241,124 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
 picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
             <translation>प्रकाशित हो रहा है...</translation>
         </message>
+    </context>
+    <context>
+        <name>WebExportTemplatePane</name>
         <message>
+            <location filename="../qml/PicasaPy/WebExportTemplatePane.qml" line="39" />
+            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/label20.title</extracomment>
+            <translation>कोई उदाहरण देखने के लिए एक टेंप्लेट नाम क्लिक करें.  अपना चयन कर लेने पर, निर्यात करें क्लिक करें.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportTemplatePane.qml" line="104" />
+            <source>Template:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extracomment>
+            <translation>टेंप्लेट:</translation>
+        </message>
+    </context>
+    <context>
+        <name>WebExportStatusPane</name>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="39" />
+            <source>PicasaPy is generating the web page.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>PicasaPy वेब पृष्ठ बना रहा है.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="69" />
             <source>Published %1 file(s) to %2.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%2 पर %1 फ़ाइलें प्रकाशित की गईं।</translation>
         </message>
         <message>
-            <source>Manage FTP Accounts</source>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="71" />
+            <source>Web page generated: %1 file(s) in %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>FTP खाते प्रबंधित करें</translation>
+            <translation>वेब पृष्ठ बन गया: %2 में %1 फ़ाइलें</translation>
         </message>
+    </context>
+    <context>
+        <name>FtpAccountDialog</name>
         <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="77" />
             <source>Account name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>खाते का नाम:</translation>
         </message>
         <message>
-            <source>FTP server:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>FTP सर्वर:</translation>
-        </message>
-        <message>
-            <source>Username:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
-            <translation>उपयोगकर्ता नाम:</translation>
-        </message>
-        <message>
-            <source>Password:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
-            <translation>पासवर्ड:</translation>
-        </message>
-        <message>
-            <source>Remote folder:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>दूरस्थ फ़ोल्डर:</translation>
-        </message>
-        <message>
-            <source>Leave blank to keep the saved password.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>सहेजे गए पासवर्ड को बनाए रखने के लिए इसे खाली छोड़ें।</translation>
-        </message>
-        <message>
-            <source>The account could not be deleted.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>खाता हटाया नहीं जा सका।</translation>
-        </message>
-        <message>
-            <source>New</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: buzzupload_text:Label(buzzupload/newalbum2);upload_text:Label(upload/newalbum2)</extracomment>
-            <translation>नया</translation>
-        </message>
-        <message>
-            <source>Delete</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_Delete</extracomment>
-            <translation>हटाएं</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="144" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:il_Cancel</extracomment>
             <translation>अभी नहीं</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="137" />
+            <source>Delete</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Delete</extracomment>
+            <translation>हटाएं</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="84" />
+            <source>FTP server:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>FTP सर्वर:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="118" />
+            <source>Leave blank to keep the saved password.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>सहेजे गए पासवर्ड को बनाए रखने के लिए इसे खाली छोड़ें।</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="9" />
+            <source>Manage FTP Accounts</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>FTP खाते प्रबंधित करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="132" />
+            <source>New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: upload_text:Label(upload/newalbum2)</extracomment>
+            <translation>नया</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="98" />
+            <source>Password:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
+            <translation>पासवर्ड:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="106" />
+            <source>Remote folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>दूरस्थ फ़ोल्डर:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="149" />
             <source>Save</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
             <translation>सहेजें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="68" />
+            <source>The account could not be deleted.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>खाता हटाया नहीं जा सका।</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="91" />
+            <source>Username:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
+            <translation>उपयोगकर्ता नाम:</translation>
         </message>
     </context>
     <context>

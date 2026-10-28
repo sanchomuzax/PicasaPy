@@ -2051,12 +2051,6 @@ picasapy-origin-key: webexport:webexport/labelgroup15.title</extracomment>
             <translation>Uložiť do:</translation>
         </message>
         <message>
-            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: webexport:webexport/label20.title</extracomment>
-            <translation>Kliknutím na názov šablóny zobrazíte príklad. Po uskutočnení výberu kliknite na tlačidlo Exportovať.</translation>
-        </message>
-        <message>
             <source>Export</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: webexport:webexport/button29.title</extracomment>
@@ -2169,12 +2163,6 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <translation>Vyberte cieľový priečinok...</translation>
         </message>
         <message>
-            <source>Template:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extracomment>
-            <translation>Šablóna:</translation>
-        </message>
-        <message>
             <source>Export pictures at:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: webexport:webexport/labelgroup2.title</extracomment>
@@ -2229,16 +2217,6 @@ picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.ti
             <translation>Celý film</translation>
         </message>
         <message>
-            <source>PicasaPy is generating the web page.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>PicasaPy vytvára webovú stránku.</translation>
-        </message>
-        <message>
-            <source>Web page generated: %1 file(s) in %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Webová stránka bola vytvorená: %1 súborov v umiestnení %2</translation>
-        </message>
-        <message>
             <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Vytvoriť</translation>
@@ -2265,76 +2243,124 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
 picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
             <translation>publikuje sa...</translation>
         </message>
+    </context>
+    <context>
+        <name>WebExportTemplatePane</name>
         <message>
+            <location filename="../qml/PicasaPy/WebExportTemplatePane.qml" line="39" />
+            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/label20.title</extracomment>
+            <translation>Kliknutím na názov šablóny zobrazíte príklad. Po uskutočnení výberu kliknite na tlačidlo Exportovať.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportTemplatePane.qml" line="104" />
+            <source>Template:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extracomment>
+            <translation>Šablóna:</translation>
+        </message>
+    </context>
+    <context>
+        <name>WebExportStatusPane</name>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="39" />
+            <source>PicasaPy is generating the web page.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>PicasaPy vytvára webovú stránku.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="69" />
             <source>Published %1 file(s) to %2.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Do umiestnenia %2 bolo publikovaných %1 súborov.</translation>
         </message>
         <message>
-            <source>Manage FTP Accounts</source>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="71" />
+            <source>Web page generated: %1 file(s) in %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Spravovať FTP účty</translation>
+            <translation>Webová stránka bola vytvorená: %1 súborov v umiestnení %2</translation>
         </message>
+    </context>
+    <context>
+        <name>FtpAccountDialog</name>
         <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="77" />
             <source>Account name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Názov účtu:</translation>
         </message>
         <message>
-            <source>FTP server:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>FTP server:</translation>
-        </message>
-        <message>
-            <source>Username:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
-            <translation>Meno používateľa:</translation>
-        </message>
-        <message>
-            <source>Password:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
-            <translation>Heslo:</translation>
-        </message>
-        <message>
-            <source>Remote folder:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vzdialený priečinok:</translation>
-        </message>
-        <message>
-            <source>Leave blank to keep the saved password.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ak chcete ponechať uložené heslo, nechajte pole prázdne.</translation>
-        </message>
-        <message>
-            <source>The account could not be deleted.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Účet sa nepodarilo odstrániť.</translation>
-        </message>
-        <message>
-            <source>New</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: upload_text:Label(upload/newalbum2)</extracomment>
-            <translation>Novinka</translation>
-        </message>
-        <message>
-            <source>Delete</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_Delete</extracomment>
-            <translation>Odstrániť</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="144" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:il_Cancel</extracomment>
             <translation>Zrušiť</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="137" />
+            <source>Delete</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Delete</extracomment>
+            <translation>Odstrániť</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="84" />
+            <source>FTP server:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>FTP server:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="118" />
+            <source>Leave blank to keep the saved password.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ak chcete ponechať uložené heslo, nechajte pole prázdne.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="9" />
+            <source>Manage FTP Accounts</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Spravovať FTP účty</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="132" />
+            <source>New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: upload_text:Label(upload/newalbum2)</extracomment>
+            <translation>Novinka</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="98" />
+            <source>Password:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
+            <translation>Heslo:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="106" />
+            <source>Remote folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vzdialený priečinok:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="149" />
             <source>Save</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
             <translation>Uložiť</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="68" />
+            <source>The account could not be deleted.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Účet sa nepodarilo odstrániť.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="91" />
+            <source>Username:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
+            <translation>Meno používateľa:</translation>
         </message>
     </context>
     <context>
