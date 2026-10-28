@@ -13,6 +13,7 @@ _KOTELEZO_TESZTEK = (
     "test_folder_pane_render_6019.py",
     "test_create_dialogs_render_6051.py",
     "test_unnamed_faces_view_rendered_6077.py",
+    "test_main_toolbar_components_6103.py",
 )
 
 
@@ -28,7 +29,13 @@ def _pixel_golden_tesztek() -> list[tuple[Path, str]]:
         kepet_rogzit = "grabWindow(" in forras or "grabToImage(" in forras
         pixelt_hasonlit = any(
             jel in forras
-            for jel in ("np.any(", "np.count_nonzero(", "np.array_equal(")
+            for jel in (
+                "np.any(",
+                "np.count_nonzero(",
+                "np.array_equal(",
+                ".pixel(",
+                ".pixelColor(",
+            )
         )
         if sajat_golden and kepet_rogzit and pixelt_hasonlit:
             talalatok.append((fajl, forras))
@@ -56,10 +63,24 @@ def test_minden_golden_render_teszt_kozos_segedet_hasznal():
             if nev.name == "is_text_item"
         }
         helper_hasznalat = any(
-            isinstance(csomopont, ast.Name) and csomopont.id in helper_nevek
+            isinstance(csomopont, ast.Call)
+            and isinstance(csomopont.func, ast.Name)
+            and csomopont.func.id in helper_nevek
             for csomopont in ast.walk(fa)
         )
-        if not helper_nevek or not helper_hasznalat or "rogzitett_betu" not in forras:
+        rogzitett_betu_fixture = any(
+            isinstance(csomopont, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and any(
+                argument.arg == "rogzitett_betu"
+                for argument in [
+                    *csomopont.args.posonlyargs,
+                    *csomopont.args.args,
+                    *csomopont.args.kwonlyargs,
+                ]
+            )
+            for csomopont in ast.walk(fa)
+        )
+        if not helper_nevek or not helper_hasznalat or not rogzitett_betu_fixture:
             hianyos.append(fajl.name)
 
     assert not hianyos, (
