@@ -244,10 +244,12 @@ def test_unnamed_faces_states_match_pre_split_images(qt_app, height_offset):
         _wait(
             qt_app,
             lambda: all(
-                item is not None and item.property("progress") >= 1.0
+                item is not None
+                and item.property("progress") >= 1.0
+                and item.property("paintedWidth") > 0
                 for item in images
             ),
-            "a próbaarcok indexképei nem töltődtek be",
+            "a próbaarcok indexképei nem töltődtek be és rajzolódtak ki",
         )
         _capture_and_compare(window, view, "arcok", height_offset, qt_app)
 
