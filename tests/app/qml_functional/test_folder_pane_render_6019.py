@@ -15,6 +15,7 @@ from PySide6.QtQuick import QQuickItem
 
 from picasapy.index import open_index, sync_tree
 from tests.support.jpeg_factory import make_jpeg
+from support.render_test_helpers import is_text_item
 from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
@@ -55,9 +56,7 @@ def _szovegteruletek_kimaszkolasa(ablak, pane, ervenyes: np.ndarray) -> None:
     """A szövegdobozokat és 4 px környezetüket hagyja ki a pixel-őrökből."""
     magassag, szelesseg = ervenyes.shape
     for objektum in ablak.findChildren(QObject):
-        if not objektum.metaObject().className().startswith("QQuickText"):
-            continue
-        if not isinstance(objektum, QQuickItem):
+        if not isinstance(objektum, QQuickItem) or not is_text_item(objektum):
             continue
         if not objektum.isVisible() or objektum.width() <= 0 or objektum.height() <= 0:
             continue
@@ -211,6 +210,8 @@ def _folder_pane_render_megmarad(ablakmagassag_delta, qml_app, qt_app, tmp_path)
     sys.platform == "win32",
     reason="a referencia Linuxon, software renderrel készül; Windowson a képpont-egyezés nem értelmezhető (#3263, #6058)",
 )
-def test_folder_pane_render_allapotok(ablakmagassag_delta, qml_app, qt_app, tmp_path):
+def test_folder_pane_render_allapotok(
+    ablakmagassag_delta, rogzitett_betu, qml_app, qt_app, tmp_path
+):
     """Minden referenciaállapotot a három közeli ablakmagasságon ellenőriz."""
     _folder_pane_render_megmarad(ablakmagassag_delta, qml_app, qt_app, tmp_path)

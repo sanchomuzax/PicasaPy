@@ -24,6 +24,7 @@ from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QSignalSpy, QTest
 from tests.support.qml_blokk import blokk_horgonyra
+from support.render_test_helpers import is_text_item
 
 _KOMPONENS = "ToolbarFilterControls"
 _ALLAPOTOK = ("default", "selection", "filter", "narrow")
@@ -36,7 +37,7 @@ _KEPEK = tuple(
 
 
 @pytest.fixture
-def qml_app(qt_app, tmp_path, request):
+def qml_app(qt_app, tmp_path, request, rogzitett_betu):
     """A dátummezők és fájl-időbélyegek minden futásban azonosak legyenek."""
     from tests.app.qml_functional.conftest import _build_qml_app
     from support.jpeg_factory import make_jpeg
@@ -173,10 +174,8 @@ def _toolbar_elrendezes(toolbar) -> dict[str, object]:
     for objektum in objektumok:
         if not isinstance(objektum, QQuickItem) or not objektum.isVisible():
             continue
-        tipus = objektum.metaObject().className()
         nev = objektum.objectName()
-        szoveg_ertek = objektum.property("text")
-        szoveg_eleme = tipus.startswith("QQuickText") and szoveg_ertek is not None
+        szoveg_eleme = is_text_item(objektum)
         eredet = objektum.mapToItem(toolbar, QPointF(0, 0))
         if nev and not szoveg_eleme:
             darab = nevesitett_darabok.get(nev, 0)
@@ -190,6 +189,11 @@ def _toolbar_elrendezes(toolbar) -> dict[str, object]:
             ]
 
         if not szoveg_eleme:
+            continue
+        szoveg_ertek = objektum.property("text")
+        if not szoveg_ertek:
+            szoveg_ertek = objektum.property("placeholderText")
+        if szoveg_ertek is None:
             continue
         szoveg = str(szoveg_ertek)
         if not szoveg.strip():
