@@ -161,7 +161,18 @@ jobs:
         # hozzáadása is megoldotta volna, de az a tesztek futtatókörnyezetét
         # cserélné le egy kapcsoló kedvéért; a kifejezés a parancssort
         # állítja össze, a shellhez nem nyúl.
+        env:
+          PICASAPY_RENDER_FAILURE_DIR: ${{ runner.temp }}/picasapy-render-failures
         run: python scripts/run_tests.py --shard ${{ matrix.shard }}/${{ inputs.darabszam }} --fajllista "${{ runner.temp }}/picasapy-test-list.json" ${{ inputs.cov && '--cov' || '' }}
+
+      - name: Ubuntu renderképek feltöltése hiba esetén
+        if: ${{ failure() && runner.os == 'Linux' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-hibakepek-${{ matrix.shard }}
+          path: ${{ runner.temp }}/picasapy-render-failures/
+          if-no-files-found: ignore
+          retention-days: 3
 
       - name: Lefedettségi adatfájl feltöltése
         # #1156: a darab `.coverage`-e melléktermékként megy tovább. A
