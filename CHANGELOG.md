@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.273] - 2026-10-28
+
+- A kollázs mentését kezelő modul kisebb részekre bomlott; a mentés, a piszkozat és a projektmegnyitás viselkedése változatlan (#6113).
+- A fénytábla fejlécének felépítése önálló QML-komponensekre bomlott, a felület változatlan maradt (#6104).
+- A weboldal-exportálás párbeszédablakának belső részei önálló QML-komponensekbe kerültek, a megjelenés és működés változatlan (#6105).
+- Az eredeti fájlok megőrzését kezelő modul kisebb részekre bomlott, a működés változatlan. (#6110).
+- A szerkesztési előnézet belső képszolgáltatója kisebb modulokra bomlott, a megjelenő kép változatlan maradt (#6114).
+- A memóriakorlátos helyi tesztek és szkriptek mostantól a `picasapy-hatter.slice` szeletben futnak (#6117).
+- Javítottuk a Létrehozás párbeszédek render-tesztjének képmemória-kezelését és a képkocka betöltésére várását (#6121).
+
 ## [0.9.272] - 2026-10-28
 
 - A Létrehozás menü párbeszédablakai belső QML-komponensekre bomlottak, a felület változatlan maradt (#6051).
