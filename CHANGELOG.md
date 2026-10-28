@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.278] - 2026-10-28
+
+- A fordítás-teljességi teszt listafájlban adja át a forrásokat a lupdate-nek (#6142).
+- A könyvtárvezérlő kisebb, megnevezett részekre bomlott változatlan működéssel (#6137).
+- A könyvtárszinkron belső részei kisebb modulokba kerültek, működése változatlan maradt (#6138).
+- A Glimmer műveletei kisebb, megnevezett modulokba kerültek azonos képkimenettel (#6139).
+
 ## [0.9.277] - 2026-10-28
 
 - A fő eszköztár szűrővezérlői külön QML-komponensbe kerültek (#6103).
