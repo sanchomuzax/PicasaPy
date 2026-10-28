@@ -17,7 +17,7 @@ from picasapy.scanner import PICASA_INI_NAME
 _REDEYE_DETECTION_SPLIT = FilterOp("__redeye_detection_split__", ())
 
 #: #2271: a körvonalvastagság `[0, 1]`-ből képpontba. A felső határ a
-#: KORÁBBI csúszka maximuma (8 képpont) — így a megjelenés nem ugrik meg
+#: KORÁBBI csúszka maximuma (8 képpont) - így a megjelenés nem ugrik meg
 #: a mértékegység-váltástól. ⚠️ Ez KÖZELÍTÉS: az eredeti `[0, 1]` →
 #: képpont képlete nincs megmérve (a jegy a TÁROLÁST mérte ki, a
 #: rajzolást nem). Ha egyszer megmérjük, csak ez az egy szám változik.
@@ -136,7 +136,7 @@ class EditPreviewRedeyeMixin:
         """Az Auto gomb találatszáma és normalizált YuNet-szemkörei (#4261).
 
         Az `ops` a láncban a `redeye` beszúrási pontjáig tart (új rétegnél
-        a teljes lánc) — így a körök ugyanabban a képméretben értendők,
+        a teljes lánc) - így a körök ugyanabban a képméretben értendők,
         amelyen a renderben alkalmazódnak. A visszaadott méret és leképezés
         a kereteket a végső előnézetre vetíti, ha a mentett vörösszem-réteg
         után geometriai művelet (például vágás) következik.

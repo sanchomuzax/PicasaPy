@@ -18,7 +18,7 @@ _MAX_PREVIEW_EDGE = 2560
 
 @functools.lru_cache(maxsize=64)
 def _teljes_hosszabb_el(path: str, mtime: float | None) -> int | None:
-    """A forrás TELJES felbontású hosszabb éle — csak a fejlécből (#3377).
+    """A forrás TELJES felbontású hosszabb éle - csak a fejlécből (#3377).
 
     Az `mtime` a gyorsítótár-kulcs része: a lecserélt fájl új méretét adja.
     `None`, ha a méret nem olvasható."""
@@ -37,7 +37,7 @@ def _elonezeti_arany(
 
     Az eredeti a keret két vastagságát ezzel szorozza (`imageWidth /
     fullResImageWidth`). Teljes felbontású dekódnál, és ha a méret nem
-    állapítható meg, 1 — ilyenkor a keret a mai, teljes felbontású
+    állapítható meg, 1 - ilyenkor a keret a mai, teljes felbontású
     viselkedést adja."""
     if teljes_felbontas or source is None:
         return 1.0
@@ -52,23 +52,23 @@ def _decode_source(
 ) -> np.ndarray | None:
     """A forráskép dekódolása RGB numpy tömbbé, előnézet-felbontásra korlátozva.
 
-    QImageReader + autoTransform: az EXIF-orientációt a betöltés alkalmazza —
+    QImageReader + autoTransform: az EXIF-orientációt a betöltés alkalmazza -
     a néző natív Image-e is így tesz (autoTransform: true). A dekód mérete
     korlátozott: az előnézethez elég, és a GUI-szálon futó renderelés így
     nagy képnél is gyors marad. `None`, ha a kép nem olvasható be.
 
     #819: `full_res=True` esetén a korlát ELMARAD. A szűrő-regiszter 19
-    szűrőre `fullres` jelzőt ad — ezek csak teljes felbontáson adnak helyes
+    szűrőre `fullres` jelzőt ad - ezek csak teljes felbontáson adnak helyes
     eredményt, tehát a kicsinyített forráson futtatva a felhasználó MÁST
     látna, mint amit a mentett kép tartalmaz. A megjelenített előnézet
     ettől függetlenül a korlátra kicsinyül (`_kicsinyitsd_a_megjelenitendot`).
 
     #1725: `color_managed=True` esetén a képbe **beágyazott ICC-profil**
-    érvényesül — a kép sRGB-be alakul (`QImage.convertToColorSpace`). Ez az
+    érvényesül - a kép sRGB-be alakul (`QImage.convertToColorSpace`). Ez az
     eredeti `Színkezelés használata` kapcsolójának mért jelentése: littleCMS
     szabványos ICC-átalakítása, nem saját színtan (spec 5.12). Profil nélküli
-    vagy már sRGB képen ez no-op, a kikapcsolt állapot pedig — ahogy a
-    binárisban is — semmit nem tesz."""
+    vagy már sRGB képen ez no-op, a kikapcsolt állapot pedig - ahogy a
+    binárisban is - semmit nem tesz."""
     if nyers_utvonal(path):
         return _nyers_forras(path, full_res=full_res)
     reader = QImageReader(str(path))
@@ -97,10 +97,10 @@ def _nyers_forras(path: Path, *, full_res: bool) -> np.ndarray | None:
 
     Két dolog szándékosan MARAD EL itt:
 
-    * **EXIF-orientáció** — a LibRaw a nyers fájl saját `flip` mezőjét már a
+    * **EXIF-orientáció** - a LibRaw a nyers fájl saját `flip` mezőjét már a
       demozaikolás közben alkalmazza, tehát a `setAutoTransform` megfelelője
       megvan; másodszor forgatni hiba lenne.
-    * **ICC-átalakítás** (`color_managed`) — a LibRaw kimenete alapból sRGB,
+    * **ICC-átalakítás** (`color_managed`) - a LibRaw kimenete alapból sRGB,
       nincs mit átalakítani. A nyers fájlban nincs beégetett színtér, ezért a
       #1725 kapcsolójának itt nincs mit érvényesítenie.
     """
@@ -116,7 +116,7 @@ def _nyers_forras(path: Path, *, full_res: bool) -> np.ndarray | None:
 def _srgb_be(kep: QImage) -> QImage:
     """A beágyazott profillal jelölt kép sRGB-be alakítva (#1725).
 
-    Profil nélküli vagy már sRGB képnél változatlanul adja vissza — az
+    Profil nélküli vagy már sRGB képnél változatlanul adja vissza - az
     átalakítás így sosem „talál ki" színteret oda, ahol nincs.
     """
     szinter = kep.colorSpace()
@@ -129,7 +129,7 @@ def _srgb_be(kep: QImage) -> QImage:
 
 
 def _megjelenitendo(tomb: np.ndarray, teljes_felbontas: bool) -> np.ndarray:
-    """A MEGJELENÍTENDŐ kép — a teljes felbontású render kicsinyítve (#819).
+    """A MEGJELENÍTENDŐ kép - a teljes felbontású render kicsinyítve (#819).
 
     A `fullres` szűrők a teljes felbontású forráson futnak, de a felületre
     kikerülő előnézet ettől nem lehet nagyobb: a néző úgyis kicsinyítve
@@ -168,7 +168,7 @@ def _rgb_array_to_qimage(array: np.ndarray) -> QImage:
 
 
 def _lut_array_to_qimage(lut: np.ndarray) -> QImage:
-    """`(256, 3)` uint8 finetune2-LUT → 256×1 RGB8 `QImage` (#22) — a
+    """`(256, 3)` uint8 finetune2-LUT → 256×1 RGB8 `QImage` (#22) - a
     `GpuPointFilterPreview.qml` ezt tölti be `lutItem`-ként és mintavételezi
     csatornánként a shaderben (ld. `gpu_point_pipeline` modul-docsztring)."""
     return _rgb_array_to_qimage(lut[np.newaxis, :, :])
