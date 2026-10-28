@@ -83,7 +83,7 @@ def test_automatikus_keret_a_felismeresi_kep_meretet_hasznalja(
 def test_automatikus_keret_a_voros_szem_utani_vagashoz_igazodik(
     qt_app, tmp_path, monkeypatch
 ):
-    from picasapy.app import edit_preview
+    from picasapy.app import edit_preview_redeye
     from picasapy.faces.redeye import EyeCircle
 
     provider = EditPreviewProvider()
@@ -94,7 +94,7 @@ def test_automatikus_keret_a_voros_szem_utani_vagashoz_igazodik(
         Rect64(left=0.25, top=0.25, right=0.75, bottom=0.75)
     )
     monkeypatch.setattr(
-        edit_preview,
+        edit_preview_redeye,
         "detect_eye_circles",
         lambda _image: (EyeCircle(120, 100, 10),),
     )
@@ -113,7 +113,7 @@ def test_automatikus_keret_a_voros_szem_utani_vagashoz_igazodik(
 def test_detektalas_a_crop_ini_altal_normalizalt_elonezetet_hasznalja(
     monkeypatch, tmp_path
 ):
-    from picasapy.app import edit_preview
+    from picasapy.app import edit_preview_redeye
     from picasapy.faces.redeye import EyeCircle
 
     provider = EditPreviewProvider()
@@ -129,8 +129,8 @@ def test_detektalas_a_crop_ini_altal_normalizalt_elonezetet_hasznalja(
         seen_sizes.append((rendered.shape[1], rendered.shape[0]))
         return (EyeCircle(50, 50, 10),)
 
-    monkeypatch.setattr(edit_preview, "detect_eye_circles", detect)
-    monkeypatch.setattr(edit_preview, "count_redeye_spots", lambda *_args, **_kwargs: 1)
+    monkeypatch.setattr(edit_preview_redeye, "detect_eye_circles", detect)
+    monkeypatch.setattr(edit_preview_redeye, "count_redeye_spots", lambda *_args, **_kwargs: 1)
     old_crop = FilterOp(
         "crop64", ("1", encode_rect64(Rect64(0.1, 0.0, 0.9, 1.0)))
     )
@@ -148,7 +148,7 @@ def test_detektalas_a_crop_ini_altal_normalizalt_elonezetet_hasznalja(
 def test_auto_geometria_nem_futtatja_ujra_az_utotag_effektjeit(
     monkeypatch, tmp_path
 ):
-    from picasapy.app import edit_preview
+    from picasapy.app import edit_preview_redeye, edit_preview_cache
     from picasapy.faces.redeye import EyeCircle
     from picasapy.render.op_geometry import LancHelyzet
 
@@ -165,16 +165,16 @@ def test_auto_geometria_nem_futtatja_ujra_az_utotag_effektjeit(
         ),
     )
     monkeypatch.setattr(
-        edit_preview,
+        edit_preview_redeye,
         "detect_eye_circles",
         lambda _image: (EyeCircle(120, 80, 10),),
     )
-    monkeypatch.setattr(edit_preview, "count_redeye_spots", lambda *_args, **_kwargs: 1)
+    monkeypatch.setattr(edit_preview_redeye, "count_redeye_spots", lambda *_args, **_kwargs: 1)
 
     def unexpected_render(*_args, **_kwargs):
         raise AssertionError("A vetítéshez nem futhat újra a teljes utótag-render.")
 
-    monkeypatch.setattr(edit_preview, "apply_filters", unexpected_render)
+    monkeypatch.setattr(edit_preview_cache, "apply_filters", unexpected_render)
     crop_value = encode_rect64(Rect64(0.25, 0.25, 0.75, 0.75))
     monkeypatch.setattr(
         provider._crop_reader,

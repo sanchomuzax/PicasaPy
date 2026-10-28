@@ -10,10 +10,11 @@ from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
+from tests.support.fejlec_forras import fejlec_forras
 from tests.support.qml_blokk import blokk_horgonyra
 
 _QML = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml/PicasaPy"
-_HEADER = (_QML / "LightboxHeader.qml").read_text(encoding="utf-8")
+_HEADER = fejlec_forras()
 _TRAY_MUVELETSOR = (_QML / "TrayActionArea.qml").read_text(encoding="utf-8")
 _KEEP_ALIVE: list[QObject] = []
 

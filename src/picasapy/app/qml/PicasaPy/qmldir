@@ -21,6 +21,10 @@ PicasaMenuItem 1.0 PicasaMenuItem.qml
 MenuCimke 1.0 MenuCimke.qml
 PicasaMenu 1.0 PicasaMenu.qml
 LightboxHeader 1.0 LightboxHeader.qml
+LightboxHeaderTitle 1.0 LightboxHeaderTitle.qml
+LightboxHeaderButtons 1.0 LightboxHeaderButtons.qml
+LightboxHeaderSuggestionRow 1.0 LightboxHeaderSuggestionRow.qml
+LightboxHeaderDescription 1.0 LightboxHeaderDescription.qml
 PhotoViewer 1.0 PhotoViewer.qml
 PhotoViewerFilmstrip 1.0 PhotoViewerFilmstrip.qml
 PhotoViewerEditorPanel 1.0 PhotoViewerEditorPanel.qml
@@ -184,6 +188,9 @@ OptionsTabWebAlbums 1.0 OptionsTabWebAlbums.qml
 OptionsTabNameTags 1.0 OptionsTabNameTags.qml
 OptionsTabGooglePhotos 1.0 OptionsTabGooglePhotos.qml
 WebExportDialog 1.0 WebExportDialog.qml
+WebExportTemplatePane 1.0 WebExportTemplatePane.qml
+WebExportStatusPane 1.0 WebExportStatusPane.qml
+FtpAccountDialog 1.0 FtpAccountDialog.qml
 PrintDialog 1.0 PrintDialog.qml
 PrintSelectionPanel 1.0 PrintSelectionPanel.qml
 PrintSettingsPanel 1.0 PrintSettingsPanel.qml
