@@ -6,6 +6,8 @@ vezérlőket. A súgók láthatóságára legfeljebb három másodpercet várnak
 
 from __future__ import annotations
 
+import re
+
 import csv
 from pathlib import Path
 
@@ -201,7 +203,8 @@ def test_a_nyomtatas_sugogombja_es_beallitas_sugoja_a_foablakbol_elerheto(
     sorok = _csv_sorok()
     for nev in ("printpanel/captionoptionsbutton", "printpanel/phelpbutton"):
         assert sorok[nev]["allapot"] == "megvan", f"{nev} CSV-állapota elavult"
-        assert "PrintDialog.qml" in sorok[nev]["bizonyitek"]
+        # #6073: a Nyomtatás párbeszéd Print*.qml komponensekre bomlott
+        assert re.search(r"\bPrint\w*\.qml", sorok[nev]["bizonyitek"])
     froogle = sorok["printpanel/froogle"]
     assert froogle["allapot"] == "nem-cel"
     assert "megszűnt" in froogle["megjegyzes"].lower()

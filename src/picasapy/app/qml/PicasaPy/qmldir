@@ -169,6 +169,15 @@ OptionsTabNameTags 1.0 OptionsTabNameTags.qml
 OptionsTabGooglePhotos 1.0 OptionsTabGooglePhotos.qml
 WebExportDialog 1.0 WebExportDialog.qml
 PrintDialog 1.0 PrintDialog.qml
+PrintSelectionPanel 1.0 PrintSelectionPanel.qml
+PrintSettingsPanel 1.0 PrintSettingsPanel.qml
+PrintPreviewPanel 1.0 PrintPreviewPanel.qml
+PrintPrinterPanel 1.0 PrintPrinterPanel.qml
+PrintFitPanel 1.0 PrintFitPanel.qml
+PrintStatusPanel 1.0 PrintStatusPanel.qml
+PrintButtonRow 1.0 PrintButtonRow.qml
+PrintReviewPanel 1.0 PrintReviewPanel.qml
+PrintRemoveAllDialog 1.0 PrintRemoveAllDialog.qml
 PrintOptionsPanel 1.0 PrintOptionsPanel.qml
 PublishPanel 1.0 PublishPanel.qml
 GiftCdHost 1.0 GiftCdHost.qml
