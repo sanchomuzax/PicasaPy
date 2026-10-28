@@ -26,6 +26,10 @@ from watchdog.observers import Observer
 from .filetypes import media_kind_of
 from .walker import PICASA_INI_NAME
 
+#: A debounce időzítő osztálya; modulszintű fogantyú, hogy a teszt ezt
+#: cserélje, ne a globális `threading.Timer`-t (#1375).
+_Timer = threading.Timer
+
 
 @dataclass(frozen=True)
 class DirectoryChange:
@@ -275,7 +279,7 @@ class LibraryWatcher:
             elapsed = now - self._first_dirty_at
             remaining = max(0.0, self._max_debounce - elapsed)
             wait = min(self._debounce, remaining)
-            timer = threading.Timer(wait, self._flush)
+            timer = _Timer(wait, self._flush)
             self._timer = timer
             self._timers.add(timer)
             self._timer.daemon = True
