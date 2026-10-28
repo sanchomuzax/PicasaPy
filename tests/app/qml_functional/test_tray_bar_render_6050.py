@@ -139,7 +139,20 @@ def _szovegdobozok_maszkolasa(window, kep: QImage, bal: int, felso: int) -> np.n
     return ervenyes
 
 
-def _kepet_rogzit_vagy_osszevet(window, allapot: str, qt_app, menu=None) -> None:
+def _kepet_rogzit_vagy_osszevet(
+    window, allapot: str, qt_app, menu=None, hibak: list[str] | None = None
+) -> None:
+    """Ha `hibak` lista, az eltérést gyűjti, és a menet a többi állapottal
+    folytatódik: a CI így minden állapot képét feltölti (#6085)."""
+    try:
+        _rogzit_es_osszevet(window, allapot, qt_app, menu)
+    except AssertionError as hiba:
+        if hibak is None:
+            raise
+        hibak.append(str(hiba))
+
+
+def _rogzit_es_osszevet(window, allapot: str, qt_app, menu=None) -> None:
     frissult = QSignalSpy(window.frameSwapped)
     window.update()
     assert _var(qt_app, lambda: frissult.count() > 0, _ROVID_UI_HATARIDO_MASODPERC), (
@@ -218,6 +231,7 @@ def _fotok_feltoltese(controller, qt_app, tmp_path) -> None:
 
 
 def _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas: int) -> None:
+    hibak: list[str] = []
     window, controller, _engine = qml_app
     window.show()
     assert _var(qt_app, lambda: window.isExposed(), 10.0), "a főablak nem jelent meg"
@@ -232,12 +246,12 @@ def _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas: int) -> No
 
     assert controller.heldCount == 0
     _kijelol(window, qt_app, [])
-    _kepet_rogzit_vagy_osszevet(window, "ures", qt_app)
+    _kepet_rogzit_vagy_osszevet(window, "ures", qt_app, hibak=hibak)
 
     _fotok_feltoltese(controller, qt_app, tmp_path)
     _kijelol(window, qt_app, [0, 1, 2])
     assert _var(qt_app, lambda: controller.heldCount == 3, _MUTETI_HATARIDO_MASODPERC)
-    _kepet_rogzit_vagy_osszevet(window, "keves_kijelolt", qt_app)
+    _kepet_rogzit_vagy_osszevet(window, "keves_kijelolt", qt_app, hibak=hibak)
 
     hold = _elem(window, "trayHoldButton")
     _kattints(window, hold, qt_app)
@@ -250,7 +264,7 @@ def _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas: int) -> No
     )
     _kijelol(window, qt_app, [])
     assert _var(qt_app, lambda: controller.heldCount == 3, _MUTETI_HATARIDO_MASODPERC)
-    _kepet_rogzit_vagy_osszevet(window, "megtartott_kepek", qt_app)
+    _kepet_rogzit_vagy_osszevet(window, "megtartott_kepek", qt_app, hibak=hibak)
 
     album_gomb = _elem(window, "trayAddToButton")
     _kattints(window, album_gomb, qt_app)
@@ -263,7 +277,7 @@ def _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas: int) -> No
     ), (
         "a tálca albumválasztó menüje nem nyílt ki"
     )
-    _kepet_rogzit_vagy_osszevet(window, "album_lenyilo", qt_app, album_menu)
+    _kepet_rogzit_vagy_osszevet(window, "album_lenyilo", qt_app, album_menu, hibak)
     album_menu.close()
     assert _var(
         qt_app,
@@ -283,8 +297,9 @@ def _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas: int) -> No
     ), (
         "a tálca jobb gombos menüje nem nyílt ki"
     )
-    _kepet_rogzit_vagy_osszevet(window, "talca_helyi_menu", qt_app, helyi_menu)
+    _kepet_rogzit_vagy_osszevet(window, "talca_helyi_menu", qt_app, helyi_menu, hibak)
     helyi_menu.close()
+    assert not hibak, "\n".join(hibak)
 
 
 @pytest.mark.parametrize("ablakmagassag_eltolas", _ABLAKMAGASSAG_ELTOLASOK)
