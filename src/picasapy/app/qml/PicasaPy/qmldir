@@ -20,6 +20,10 @@ PicasaMenuItem 1.0 PicasaMenuItem.qml
 MenuCimke 1.0 MenuCimke.qml
 PicasaMenu 1.0 PicasaMenu.qml
 LightboxHeader 1.0 LightboxHeader.qml
+LightboxHeaderTitle 1.0 LightboxHeaderTitle.qml
+LightboxHeaderButtons 1.0 LightboxHeaderButtons.qml
+LightboxHeaderSuggestionRow 1.0 LightboxHeaderSuggestionRow.qml
+LightboxHeaderDescription 1.0 LightboxHeaderDescription.qml
 PhotoViewer 1.0 PhotoViewer.qml
 PhotoViewerFilmstrip 1.0 PhotoViewerFilmstrip.qml
 PhotoViewerEditorPanel 1.0 PhotoViewerEditorPanel.qml

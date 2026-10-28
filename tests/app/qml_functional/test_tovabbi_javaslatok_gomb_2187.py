@@ -34,21 +34,21 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.support.fejlec_forras import fejlec_forras
 from PySide6.QtCore import QObject
 
 QML = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml"
-FEJLEC = QML / "PicasaPy" / "LightboxHeader.qml"
 
 
 def test_a_gomb_MERT_merete_179x27() -> None:
-    forras = FEJLEC.read_text(encoding="utf-8")
+    forras = fejlec_forras()
     kezd = forras.index('objectName: "headerMoreSuggestionsButton"')
     blokk = forras[kezd:kezd + 900]
     assert re.search(r"width:\s*179;\s*height:\s*27", blokk), blokk[:400]
 
 
 def test_a_felirat_a_MERT_szoveg() -> None:
-    forras = FEJLEC.read_text(encoding="utf-8")
+    forras = fejlec_forras()
     assert 'qsTr("Find more suggestions")' in forras
 
 
@@ -61,7 +61,7 @@ def test_a_gomb_a_jovahagyas_par_HELYEN_all() -> None:
     tehát ugyanaz a kezdőpontja, akármelyik áll épp kint. Az őr ezért a
     KETTŐ EGYEZÉSÉT méri, nem egy konkrét horgony nevét.
     """
-    forras = FEJLEC.read_text(encoding="utf-8")
+    forras = fejlec_forras()
     helyek = {}
     for nev in ("headerMoreSuggestionsButton", "headerConfirmSuggestionsButton"):
         kezd = forras.index(f'objectName: "{nev}"')
@@ -75,7 +75,7 @@ def test_a_gomb_a_jovahagyas_par_HELYEN_all() -> None:
 
 def test_a_ket_allapot_KIZARJA_egymast() -> None:
     """Javaslat van → jóváhagyás-pár; nincs → „További javaslatok"."""
-    forras = FEJLEC.read_text(encoding="utf-8")
+    forras = fejlec_forras()
     kezd = forras.index('objectName: "headerMoreSuggestionsButton"')
     blokk = forras[kezd:kezd + 900]
     assert "visible: header.tovabbiJavaslatLatszik" in blokk
