@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.276] - 2026-10-28
+
+- A fotónéző belső részei önálló komponensekbe kerültek, változatlan megjelenítéssel. (#6109).
+
+## [0.9.275] - 2026-10-28
+
+- A Névtelen arcok nézete kisebb QML-komponensekre bomlott, változatlan megjelenéssel. (#6077).
+
 ## [0.9.274] - 2026-10-28
 
 - A főablak párbeszédablakai, eszköztára és diavetítése külön QML-komponensekbe kerültek, a felület változatlan maradt (#5955).

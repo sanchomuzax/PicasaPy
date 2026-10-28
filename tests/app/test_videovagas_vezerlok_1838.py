@@ -15,11 +15,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import picasapy.app
+from tests.support.photo_viewer_components_6109 import photo_viewer_source_text
 
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
 _LEJATSZO = (_QML / "VideoPlayerView.qml").read_text(encoding="utf-8")
 _PHOTO_AREA = (_QML / "PhotoViewerPhotoArea.qml").read_text(encoding="utf-8")
-_NEZO = (_QML / "PhotoViewer.qml").read_text(encoding="utf-8")
+_NEZO = photo_viewer_source_text()
 # #4566: a visszaállítás, a képkocka és az export a videó-panelen él, nem a
 # lejátszó sávján.
 _PANEL = (_QML / "VideoEditPanel.qml").read_text(encoding="utf-8")

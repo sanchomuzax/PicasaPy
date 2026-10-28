@@ -59,7 +59,10 @@ from PySide6.QtCore import QObject
 from support.varakozas import hibaturo_feltetel, var_feltetelre
 
 _QML_MAPPA = Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
-_NEZO = (_QML_MAPPA / "PhotoViewer.qml").read_text(encoding="utf-8")
+# #6109: a feliratsáv forrása a néző fedővezérlő-komponense.
+_NEZO = (_QML_MAPPA / "PhotoViewerOverlayControls.qml").read_text(
+    encoding="utf-8"
+)
 _TS = (
     Path(app_csomag.__file__).parent / "i18n" / "picasapy_hu.ts"
 ).read_text(encoding="utf-8")

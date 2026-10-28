@@ -21,7 +21,7 @@ constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabWebAlbums.qml:21:enabl
 constant-disabled	src/picasapy/app/qml/PicasaPy/PeopleManagerDialog.qml:345:enabled=false	Web Albums arccímke-szinkronhoz tartozik; nincs ilyen online integráció.
 constant-disabled	src/picasapy/app/qml/PicasaPy/PeopleManagerDialog.qml:374:enabled=false	Online Google Contacts-művelet; nincs ilyen integráció.
 constant-disabled	src/picasapy/app/qml/PicasaPy/PeopleManagerDialog.qml:379:enabled=false	Online Google Contacts-művelet; nincs ilyen integráció.
-constant-disabled	src/picasapy/app/qml/PicasaPy/PhotoViewer.qml:4479:enabled=false	A modal párbeszéd mögötti elmosás díszítő réteg; a Qt modalitása kezeli az inputot.
+constant-disabled	src/picasapy/app/qml/PicasaPy/PhotoViewerContextActions.qml:235:enabled=false	A modal párbeszéd mögötti elmosás díszítő réteg; a Qt modalitása kezeli az inputot.
 constant-disabled	src/picasapy/app/qml/PicasaPy/TrayActionArea.qml:391:enabled=false	A nyomat-rendelő partner szolgáltatása megszűnt (#1672).
 constant-disabled	src/picasapy/app/qml/PicasaPy/TrayActionArea.qml:408:enabled=false	A „Hello” megosztáshoz nincs backend; a forráskomment jelöli.
 constant-disabled	src/picasapy/app/qml/PicasaPy/TrayActionArea.qml:423:enabled=false	A Blogger-integráció megszűnt (#1672).
