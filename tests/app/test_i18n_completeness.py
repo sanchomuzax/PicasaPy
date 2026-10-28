@@ -128,6 +128,16 @@ _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
         "None of the selected pictures could be printed: %1",
     ): "PrintController",
     ("PrintControllerOutputMixin", "Invalid print settings: %1"): "PrintController",
+    # #6146: a kollázs- és filmkészítés műveletei futásidőben az
+    # AppController fordítási kontextusát használják (a `self` az övé).
+    ("CollageCreationOperations", "No pictures are selected."): "AppController",
+    ("CollageCreationOperations", "No target file was chosen."): "AppController",
+    ("CollageCreationOperations", "None of the selected pictures could be read."): "AppController",
+    ("CollageCreationOperations", "Unknown collage type."): "AppController",
+    ("CollageCreationOperations", "Unknown picture frame."): "AppController",
+    ("MovieCreationOperations", "No pictures are selected."): "AppController",
+    ("MovieCreationOperations", "None of the selected pictures could be read."): "AppController",
+    ("MovieCreationOperations", "The movie folder could not be created."): "AppController",
 }
 
 

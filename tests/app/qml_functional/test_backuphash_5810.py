@@ -16,7 +16,7 @@ from picasapy.ini import load_document, update_document
 from picasapy.metadata import read_file_metadata
 from support.jpeg_factory import make_minta_jpeg
 from tests.app.qml_functional.conftest import _build_qml_app
-from tests.support.varakozas import var_feltetelre
+from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
 _WINDOW_HEIGHT_OFFSETS = (-5, 0, 5)
@@ -49,7 +49,11 @@ def _child_item(parent, name: str):
 
 
 def _wait(qt_app, predicate, timeout: float = 10.0) -> bool:
-    return var_feltetelre(qt_app, predicate, timeout)
+    # #6156: Windowson az ini atomikus cseréje közben a fájl egy pillanatra
+    # nem nyitható meg; ez a várakozásban „még nem kész", nem hiba.
+    return var_feltetelre(
+        qt_app, hibaturo_feltetel(predicate, (PermissionError,)), timeout
+    )
 
 
 def _click(window, qt_app, item, button=Qt.MouseButton.LeftButton):
