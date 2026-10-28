@@ -295,16 +295,17 @@ import QtQuick.Window
                                   ? Theme.szuroHatterRamutat : "transparent")
                         border.width: 0
                     }
-                    // #361: saját helyjelölő-tű SVG a korábbi "⚲"
-                    // unicode-glif helyett (a hover/inaktív állapotot most
-                    // opacity vezérli — a piros tű már önmagában "geo"-
-                    // hangulatú, nem kell a Theme kék hoverje a színhez).
+                    // #361/#6140: a helyjelölő-tű külön raszteres képe a
+                    // korábbi "⚲" unicode-glif helyett. A raszter a helyi
+                    // SVG-rajzolatból készült, így a Qt SVG-rasterizálója nem
+                    // változtatja meg gépenként a képpontjait. A hover/inaktív
+                    // állapotot opacity vezérli.
                     Image {
                         objectName: "geoFilterIcon"
                         anchors.fill: parent
                         anchors.margins: 3
                         // A főablak magasságától függően a fejléc scene-Y-ja
-                        // fél fizikai képpontra eshet. Az SVG-t a jelenet
+                        // fél fizikai képpontra eshet. A rasztert a jelenet
                         // koordinátájában igazítjuk; az X marad a mért,
                         // szélességarányos pozícióban.
                         anchors.topMargin: {
@@ -317,11 +318,8 @@ import QtQuick.Window
                             return Math.round((parentOrigin.y + 3) * dpr) / dpr
                                 - parentOrigin.y
                         }
-                        source: "icons/geo-pin.svg"
-                        // az SVG a kirajzolt méretben raszterizálódik: a 24 px-es
-                        // kép futásidejű kicsinyítését a CI raszterezője másképp
-                        // simította, mint a helyi gép (#6103)
-                        sourceSize.width: height
+                        source: "icons/geo-pin-toolbar.png"
+                        sourceSize.width: width
                         sourceSize.height: height
                         fillMode: Image.PreserveAspectFit
                         opacity: parent.aktiv

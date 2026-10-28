@@ -54,6 +54,11 @@ _ICONS_DIR = (
     / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "icons"
 )
 
+_FIXED_RASTER_ICONS = (
+    "geo-pin-toolbar.png",  # #6140: a fő eszköztár rögzített 16×14-es tűje
+    "toolbar-slider-shadow-14x14.png",  # #6140: a csúszka fix 14×14-es árnyéka
+)
+
 # a kimeneti sáv + eszköztár ikonjai (#361)
 _EXPECTED_ICONS = (
     "upload.svg",           # outputlayout/webupload
@@ -322,7 +327,13 @@ class TestIconFilesExist:
         PSD/PNG vagy elfelejtett próbafájl (#361 kimeneti sáv + #411
         szerkesztő-eszköz-ikonok)."""
         actual = {p.name for p in _ICONS_DIR.glob("*")}
-        assert actual == set(_ALL_ICONS)
+        assert actual == set(_ALL_ICONS) | set(_FIXED_RASTER_ICONS)
+
+    @pytest.mark.parametrize("name", _FIXED_RASTER_ICONS)
+    def test_fixed_raster_icon_exists_and_is_png(self, name):
+        path = _ICONS_DIR / name
+        assert path.is_file(), f"hiányzik a rögzített raszter: {path}"
+        assert path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
 
 
@@ -471,8 +482,8 @@ class TestToolbarGeoIconWiring:
         icon = window.findChild(QObject, "geoFilterIcon")
         assert icon is not None
         source = str(icon.property("source").toString())
-        assert source.endswith("geo-pin.svg")
-        assert (_ICONS_DIR / "geo-pin.svg").is_file()
+        assert source.endswith("geo-pin-toolbar.png")
+        assert (_ICONS_DIR / "geo-pin-toolbar.png").is_file()
 
     @pytest.mark.skipif(not _SVG_TAMOGATOTT, reason=_SVG_HIANY_INDOK)
     def test_geo_filter_icon_is_actually_painted(self, qml_app, qt_app):
