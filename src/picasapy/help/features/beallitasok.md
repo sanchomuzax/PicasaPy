@@ -2,12 +2,14 @@
 
 ## A Beállítások párbeszéd
 
-**Eszközök ▸ Beállítások…** nyitja meg. Nyolc füle van: **Általános**,
+**Eszközök ▸ Beállítások…** nyitja meg. Kilenc füle van: **Általános**,
 **E-mail**, **Fájltípusok**, **Diavetítés**, **Nyomtatás**, **Hálózat**,
-**Webalbumok**, **Névcímkék**.
+**Webalbumok**, **Névcímkék**, **Google Fotók**. Az első nyolc az eredeti
+Picasáé, a **Google Fotók** fül a PicasaPy saját kiegészítése.
 
-> **Fontos:** hat fül működik: az **Általános**, az **E-mail**, a
-> **Fájltípusok**, a **Diavetítés**, a **Nyomtatás** és a **Névcímkék**.
+> **Fontos:** hét fül működik: az **Általános**, az **E-mail**, a
+> **Fájltípusok**, a **Diavetítés**, a **Nyomtatás**, a **Névcímkék** és
+> a **Google Fotók**.
 > A **Hálózat** fülön csak a naplózás működik, a proxy-beállítások
 > szürkék. A **Webalbumok** fül **nem működik**: a Picasa Webalbumok
 > megszűnt szolgáltatás, a fül csak az eredeti Picasa elrendezését követi.
@@ -26,10 +28,11 @@ A beállítások tehát csak az **OK** után lépnek életbe; a **Mégse** az
 módosítását is elveti. A nyelv az **OK** után sem vált át azonnal, lásd
 alább.
 
-Ha az ablakot **keskenyre** húzod, a nyolc fül nem szorul össze
+Ha az ablakot **keskenyre** húzod, a fülek nem szorulnak össze
 olvashatatlanra: a fülsor vízszintesen **görgethetővé** válik, a két
 szélén egy-egy **‹** és **›** nyíllal. A kiválasztott fül mindig
-láthatóra görög.
+láthatóra görög. A **Google Fotók** fül alapméretben sem fér ki mindig:
+ilyenkor a **›** nyíllal érheted el.
 
 Az ablak feliratai — a szürke vezérlők feliratai is — az **eredeti Picasa
 saját szövegei**, ezért néhol másképp fogalmaznak, mint amit a funkció
@@ -145,12 +148,12 @@ számítja; csak a .MOV tartozik a külön Quicktime-sorhoz. A
 felsorolja, milyen RAW-kiterjesztéseket ismer a program. A JPEG mindig
 része a könyvtárnak.
 
-Alapból, ahogy az eredeti Picasában, a **.GIF**, a **.PNG** és a
-**.TGA** **ki van kapcsolva**, a többi formátum be van jelölve. Ha
-korábban már átállítottál egy jelölőt, a program a te választásodat
-tartja meg. Amit kikapcsolsz, azt a program a mappák **következő
-beolvasásától** nem veszi fel; a fájlok a lemezen maradnak. Ha tehát a
-GIF- vagy PNG-képeidet is látni szeretnéd, itt kapcsold be őket.
+Alapból **minden formátum be van jelölve**, a **.GIF**, a **.PNG** és a
+**.TGA** is. (Az eredeti Picasában ez a három alapból ki volt kapcsolva;
+a PicasaPy szándékosan nem követi, hogy egy frissítés után ne tűnjenek el
+a meglévő képeid.) Ha korábban már átállítottál egy jelölőt, a program a
+te választásodat tartja meg. Amit kikapcsolsz, azt a program a mappák
+**következő beolvasásától** nem veszi fel; a fájlok a lemezen maradnak.
 
 ### Diavetítés fül
 
@@ -235,6 +238,12 @@ akkor érdemes elővenni, ha ez a letöltés nem sikerül.
 
 Az **Emberek album indexképeinek feltöltése a Google Címtárba** jelölő
 nem része a felületnek: az a szolgáltatás megszűnt.
+
+### Google Fotók fül
+
+Itt adod meg a saját Google-kliensed adatait, és itt jelentkezel be a
+Google Fotókba, hogy a képtálca zöld gombjával feltölthess. A lépéseket
+lásd: [Feltöltés a Google Fotókba](google-fotok.md).
 
 ## A Fotómegjelenítő beállítása
 

@@ -4,6 +4,36 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-28
+
+**Feltöltés**
+
+- A képtálca zöld **Feltöltés a Google Fotókba** gombja működik: a
+  tálca képeit a saját Google Fotók-fiókodba tölti fel. Ehhez a
+  **Beállítások** új **Google Fotók** fülén meg kell adnod a saját
+  Google-kliensed adatait, és be kell jelentkezned. Lásd
+  [Feltöltés a Google Fotókba](features/google-fotok.md).
+
+**Beállítások**
+
+- A **Fájltípusok** fülön alapból minden formátum be van jelölve, a
+  .GIF, a .PNG és a .TGA is. Aki ezeket sosem állította át, annál egy
+  frissítés után nem tűnnek el többé a PNG-, GIF- és TGA-képek. Lásd
+  [Beállítások](features/beallitasok.md).
+
+**Mentés**
+
+- A mentés megerősítő ablakában a jelölő felirata az eredeti szerint
+  **Ne kérdezzen újra.**, és a biztonsági másolat megőrzi az eredeti fájl
+  módosítási dátumát. Lásd [Mentés](features/mentes.md).
+
+**Egyéb**
+
+- Windowson a fotónéző és a `.picasa.ini` mentése megbízhatóbban
+  működik.
+- A szerkesztő fülikonjai az eredeti Picasa színével és helyzetével
+  jelennek meg.
+
 ## 2026-10-27
 
 **Beállítások**
