@@ -157,7 +157,9 @@ kijelölöd, duplán kattintva megnyitod a nézőben.
 **Alsó sáv (képtálca)** — kék információs csík a kijelölésről, alatta a
 tálca a kijelölt képekkel, és a műveletgombok: csillag, forgatás,
 nagyító, indexkép-méret, **Kollázs**, **Mozgófilm**, **Exportálás**,
-**Nyomtatás**, **E-mail**. A nézőben ugyanebben a sávban van a
+**Nyomtatás**, **E-mail**, valamint a zöld **Feltöltés a Google
+Fotókba** gomb (lásd [Feltöltés a Google Fotókba](features/google-fotok.md)).
+A nézőben ugyanebben a sávban van a
 nagyítás három vezérlője.
 
 **Jobb oldali fiók** — a Címkék, Emberek, Helyek és Tulajdonságok panel.
