@@ -57,6 +57,11 @@ lesz** működő szolgáltatás:
   webhelyre. Az almenü kinyílik, de a tételei szürkék.
 - Feltöltés a Picasa Webalbumokba…, Feltöltés a Google Fotókba…,
   Gyors feltöltés, Feltöltés tiltása, Online műveletek
+
+Kivétel a képtálca zöld **Feltöltés a Google Fotókba** gombja: az
+működik, a saját Google-kliensed segítségével. Lásd
+[Feltöltés a Google Fotókba](google-fotok.md). A fenti menüpontok ettől
+még nem működnek.
 - Picasa-fórumok, Online információ, Termékkiadási tájékoztató,
   Adatvédelmi irányelvek, Általános Szerződési Feltételek
 - Frissítések keresése — a frissítések ellenőrzése is egy Google-szolgáltatásra

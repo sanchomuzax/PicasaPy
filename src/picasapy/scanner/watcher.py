@@ -26,6 +26,10 @@ from watchdog.observers import Observer
 from .filetypes import media_kind_of
 from .walker import PICASA_INI_NAME
 
+#: A debounce időzítő osztálya; modulszintű fogantyú, hogy a teszt ezt
+#: cserélje, ne a globális `threading.Timer`-t (#1375).
+_Timer = threading.Timer
+
 
 @dataclass(frozen=True)
 class DirectoryChange:
@@ -167,6 +171,7 @@ class LibraryWatcher:
         self._lock = threading.Lock()
         self._dirty: set[str | DirectoryChange] = set()
         self._timer: threading.Timer | None = None
+        self._timers: set[threading.Timer] = set()
         self._first_dirty_at: float | None = None
         self._running = False
 
@@ -184,11 +189,12 @@ class LibraryWatcher:
         self._running = True
 
     def stop(self) -> None:
-        self._running = False
         with self._lock:
-            if self._timer is not None:
-                self._timer.cancel()
-                self._timer = None
+            self._running = False
+            timers = tuple(self._timers)
+            for timer in timers:
+                timer.cancel()
+            self._timer = None
             self._dirty.clear()
             self._first_dirty_at = None
         if self._observer is not None:
@@ -211,6 +217,18 @@ class LibraryWatcher:
                 )
             else:
                 self._observer = None
+        # A késleltető Timer külön szál, nem a watchdog Observeré. A cancel()
+        # a már elindult callbacket nem állítja meg, ezért minden időzítőszálat
+        # bevárunk, mielőtt a hívó elengedné a callbackben használt vezérlőt
+        # (#6087). Önmagát nem várja be, ha a callback állítja le a figyelőt.
+        current_thread = threading.current_thread()
+        for timer in timers:
+            if timer is not current_thread:
+                timer.join()
+        with self._lock:
+            self._timers.difference_update(
+                timer for timer in timers if not timer.is_alive()
+            )
 
     @staticmethod
     def _szal_el(megfigyelo) -> bool:
@@ -229,12 +247,16 @@ class LibraryWatcher:
             return False
 
     def leallt(self) -> bool:
-        """Leállt-e a figyelő MARADÉKTALANUL (#1457).
+        """Leállt-e az Observer és az összes debounce-szál (#1457, #6087).
 
-        `False`, ha a megfigyelő szála a `stop()` után is fut — a hívó
-        (teszt-teardown, alkalmazás-kilépés) így meg tudja nevezni a
-        problémát, ahelyett hogy a folyamat később jel nélkül halna meg."""
-        return self._observer is None or not self._szal_el(self._observer)
+        `False`, ha bármelyik háttérszál még fut — a hívó (teszt-teardown,
+        alkalmazás-kilépés) így nem engedi el a callbackben használt vezérlőt."""
+        with self._lock:
+            observer_stopped = (
+                self._observer is None or not self._szal_el(self._observer)
+            )
+            timers_stopped = not any(timer.is_alive() for timer in self._timers)
+        return observer_stopped and timers_stopped
 
     def _mark_dirty(self, folder: str | DirectoryChange) -> None:
         with self._lock:
@@ -246,21 +268,36 @@ class LibraryWatcher:
             self._dirty.add(folder)
             if self._timer is not None:
                 self._timer.cancel()
+            # A korábban cancel-elt Timer nem feltétlen jut el a _flush()-ig,
+            # ezért a befejezett szálak referenciáját itt is takarítjuk.
+            for timer in tuple(self._timers):
+                if not timer.is_alive():
+                    self._timers.discard(timer)
             # max. ablak: hosszú (folyamatos) másolás alatt a callback ne
             # halasztódjon a végtelenbe — a debounce-ot az első piszkos
             # jelzés óta eltelt idő korlátozza
             elapsed = now - self._first_dirty_at
             remaining = max(0.0, self._max_debounce - elapsed)
             wait = min(self._debounce, remaining)
-            self._timer = threading.Timer(wait, self._flush)
+            timer = _Timer(wait, self._flush)
+            self._timer = timer
+            self._timers.add(timer)
             self._timer.daemon = True
-            self._timer.start()
+            timer.start()
 
     def _flush(self) -> None:
-        with self._lock:
-            if not self._running or not self._dirty:
-                return
-            folders, self._dirty = self._dirty, set()
-            self._timer = None
-            self._first_dirty_at = None
-        self._callback(folders)
+        timer = threading.current_thread()
+        try:
+            with self._lock:
+                if not self._running or not self._dirty:
+                    return
+                folders, self._dirty = self._dirty, set()
+                if self._timer is timer:
+                    self._timer = None
+                self._first_dirty_at = None
+            self._callback(folders)
+        finally:
+            with self._lock:
+                if self._timer is timer:
+                    self._timer = None
+                self._timers.discard(timer)

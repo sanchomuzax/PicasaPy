@@ -34,9 +34,11 @@ from tests.support.jpeg_factory import make_jpeg
 from tests.support.qml_blokk import blokk_horgony_utan
 from support.varakozas import hibaturo_feltetel, var_feltetelre
 
-_FEED = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "LightboxFeed.qml"
-).read_text(encoding="utf-8")
+_FEED_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+_FEED = "\n".join(
+    (_FEED_DIR / name).read_text(encoding="utf-8")
+    for name in ("LightboxFeed.qml", "LightboxFeedGroup.qml")
+)
 _HEADER = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "LightboxHeader.qml"
 ).read_text(encoding="utf-8")
