@@ -42,7 +42,7 @@ import picasapy.app as app_csomag
 from tests.support.qml_blokk import blokk_horgonyra
 
 _FEED = (
-    Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "LightboxFeed.qml"
+    Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "LightboxFeedGroup.qml"
 ).read_text(encoding="utf-8")
 
 
