@@ -923,7 +923,7 @@ class CreateMixin(PosterMixin):
         """A kimenet melletti `.mxf`, ha létezik (#2114).
 
         A KERESÉST a `movie.mxf.projekt_utvonal` végzi (#3191 óta megvan,
-        a `collage_save_open._collage_project_path` párja); itt csak az
+        a `collage_save._collage_project_path` párja); itt csak az
         URL-alakot bontjuk vissza, mert a QML `file://`-ként adja tovább a
         néző útvonalát — enélkül a gomb SOSEM jelenne meg."""
         nyers = str(video_path or "")

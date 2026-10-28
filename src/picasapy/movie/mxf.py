@@ -356,7 +356,7 @@ __all__ = [
 def projekt_utvonal(kep_ut: Path | str) -> Path | None:
     """A képhez tartozó `.mxf`, ha van és olvasható fájl.
 
-    A `collage_save_open._collage_project_path` párja a film ágán: a projektfájl
+    A `collage_save._collage_project_path` párja a film ágán: a projektfájl
     a kirenderelt videó/kép MELLETT áll, azonos alapnévvel. A tulajdonos
     szava a kollázs-gombról: *„Ez a gomb mindig megjelenik, ha megnyitom a
     kollázst"* — tehát nem a létrehozás emléke kapcsolja be a szerkesztő

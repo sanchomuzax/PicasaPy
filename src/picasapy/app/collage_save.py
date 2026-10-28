@@ -1,23 +1,15 @@
-"""A kollázs-panel MENTÉSE és piszkozata (#949) - a spec 9. szakasza.
+"""A kollázs-panel MENTÉSE és piszkozata (#949) — a spec 9. szakasza.
 
 A `collage_controller.CollageMixin` szelete: minden, ami a **kimenet** körül
-dől el - a cím, a célfájl, a folyamatjelzés, a megszakítás, a Kollázsok
+dől el — a cím, a célfájl, a folyamatjelzés, a megszakítás, a Kollázsok
 albumba írt JPEG + `.cxf` pár, és a bezáráskori piszkozat.
 
-Ez a fájl a szelet ÖSSZEFOGÓJA: a jelzések, a property-k, a cím, a
-folyamatjelző és a háttérszál kimenetének fogadása itt élnek. A három nagy
-rész külön fájlban van, és ugyanebből az osztályból lesz egy:
-
-- `collage_save_render.py` - a létrehozás és a rajzolás (`createCollage`,
-  `_render_worker`)
-- `collage_save_draft.py` - a piszkozat mentése és visszaállítása
-  (`saveCollageDraft`, `restoreCollageDraft`)
-- `collage_save_open.py` - a mentett kollázs megnyitása szerkesztésre
-  (`openCollageProject`, `_apply_cxf_project`)
-
-A `CollageSaveMixin` NÉV SZERINTI szerződése (property-k, slotok, jelzések
-EGY objektumon) változatlan: a `collage_controller.py` és a QML ugyanúgy éri
-el, mint a szétbontás előtt. A #943-as API-teszt ezt közvetlenül állítja is.
+Miért külön fájl: a #943-as vezérlő a nyolcadik jeggyel 1100 sor fölé nőtt.
+A vágás nem önkényes — ez a szelet a panel ÁLLAPOTÁT csak olvassa
+(csomópontok, téma, laparány), és kifelé ír: fájlt, jelzést, piszkozatot. A
+`CollageMixin` ebből örököl, tehát a spec 8. szakaszának NÉV SZERINTI
+szerződése (property-k, slotok, jelzések EGY objektumon) változatlan — a
+#943 API-tesztje ezt közvetlenül állítja is.
 
 ## Két szabály, ami itt él
 
@@ -31,52 +23,63 @@ el, mint a szétbontás előtt. A #943-as API-teszt ezt közvetlenül állítja 
 ⚠️ **Névterek:** a `create_controller.CreateMixin` a `_collage_*` előtagot
 már használja, és a két szelet ugyanabban az `AppController`-ben él. Ezért
 itt is `_collage_panel_*` mezőnevek állnak, és a piszkozat mappáját a
-`_collage_panel_draft_dir()` adja - a `CreateMixin._collage_draft_dir`
+`_collage_panel_draft_dir()` adja — a `CreateMixin._collage_draft_dir`
 NEVÉHEZ nem nyúlunk, mert egy néma felülírás a régi Kollázs-menüt törné el.
-
-⚠️ **Fordítási kontextus:** a `tr()` hívások ebben az osztályban maradnak,
-mert a `picasapy_hu.ts` és az i18n-teszt a `CollageSaveMixin` kontextusra
-épít. Ami a részosztályba kerülne, az itt élő segédet hív
-(`_piszkozat_felirat()`, `_collage_megnyitas_hiba()`).
 """
 
 from __future__ import annotations
 
+import dataclasses
+import os
+import logging
 from pathlib import Path
 
 from PySide6.QtCore import Property, Qt, Signal, Slot
+from PySide6.QtGui import QColor
 
-from picasapy.collage.themes import MULTIEXP
+from picasapy.collage.autosave import (
+    discard_autosave,
+    read_autosave,
+    write_autosave,
+)
+from picasapy.collage import draft_placeholder, write_collage
+from picasapy.collage.picasa_render import render_nodes
+from picasapy.collage.cxf import read_cxf
+from picasapy.collage.draft import nodes_from_project, project_from_nodes
+from picasapy.collage.draft_state import draft_project_path, is_draft_image
+from picasapy.collage.win_paths import decode_cxf_path
+from picasapy.collage.page_formats import ORIENTATIONS, format_key_of
+from picasapy.collage.themes import BORDER_THEMES, COLLAGE_THEMES, MULTIEXP
 
 from . import collage_output as output
 from . import collage_prefs as prefs
-from .collage_save_draft import CollageSaveDraftMixin
-from .collage_save_open import CollageSaveOpenMixin
-from .collage_save_render import CollageSaveRenderMixin
+from .collage_model import CollageNode
 from .worker_thread import BackgroundWorkerMixin
 
-class CollageSaveMixin(
-    CollageSaveRenderMixin,
-    CollageSaveDraftMixin,
-    CollageSaveOpenMixin,
-    BackgroundWorkerMixin,
-):
+#: Az oldalformátum-egyezés tűrése az asztali háttérképnél — a képernyő
+#: aránya ritkán egyezik bitre a menü tételével.
+_RATIO_TOLERANCE = 0.01
+
+logger = logging.getLogger(__name__)
+
+
+class CollageSaveMixin(BackgroundWorkerMixin):
     """A kollázs kimenete, folyamatjelzése és piszkozata (spec 9.).
 
-    Az állapotát a  hozza létre - a
+    Az állapotát a  hozza létre — a
     panel egyetlen, lusta inicializálója, hogy ne legyen két félig kész
     állapot ugyanarra a lapra."""
 
     # -- jelzések (8.3) ----------------------------------------------------
 
     #: **BELSŐ, szál-határon átmenő jelzések (#988/#999).** A háttérszál
-    #: KIZÁRÓLAG ezeket emitálja, nyers adattal - az állapotírás, a
+    #: KIZÁRÓLAG ezeket emitálja, nyers adattal — az állapotírás, a
     #: fordítás (`tr`) és a NYILVÁNOS jelzések a rájuk kötött slotokban
     #: futnak, a fogadó (GUI-) szálon.
     #:
     #: Ok (#988 veremkiíratása): a rajzoló szál korábban maga írta a
     #: `_collage_panel_percent`-et és maga emitálta a nyilvános jelzéseket,
-    #: miközben a GUI-szálon szemétgyűjtés futhat a PySide-burkolókon - ez
+    #: miközben a GUI-szálon szemétgyűjtés futhat a PySide-burkolókon — ez
     #: a #430-as SIGSEGV-osztály. A minta a `busy_registry.py`-é: a
     #: szálhatárt EGY jelzés lépi át, a munka a fogadó szálán történik.
     _workerProgress = Signal(int, str)
@@ -92,35 +95,35 @@ class CollageSaveMixin(
     #: ki a „%1 kép nem található…" mondatot; nulla hiánynál NEM szólal meg.
     collageMissingImages = Signal(int)
     #: #949 (spec 9.1): a felhasználó megszakította a mentést. Fájl ilyenkor
-    #: nem keletkezik - a jelzés a folyamatjelző elrejtésének a horga.
+    #: nem keletkezik — a jelzés a folyamatjelző elrejtésének a horga.
     collageCanceled = Signal()
     #: Integrációs horog: a kész kép asztali háttérképnek szánva. A tényleges
     #: beállítás asztali környezettől függ (KDE/GNOME/labwc), ezért nem itt
-    #: dől el - a jelzés a  UTÁN érkezik.
+    #: dől el — a jelzés a  UTÁN érkezik.
     collageDesktopBackgroundReady = Signal(str)
-    #: #1005: a háttérkép TÉNYLEGESEN beállítva - az argumentum a sikeres
+    #: #1005: a háttérkép TÉNYLEGESEN beállítva — az argumentum a sikeres
     #: eszköz neve (`gsettings` · `pcmanfm` · `xfconf-query` · `feh`), hogy a
     #: felhasználó (és a naplónk) lássa, mi végezte el.
     desktopBackgroundApplied = Signal(str)
-    #: #1005: a BMP kiírva, de az asztalt NEM sikerült beállítani - az
+    #: #1005: a BMP kiírva, de az asztalt NEM sikerült beállítani — az
     #: argumentum a BMP útvonala. A néma sikertelenség a legrosszabb kimenet
     #: (#936): a felhasználónak legalább azt meg kell tudnia, HOVA került a
     #: kép, hogy kézzel beállíthassa.
     desktopBackgroundFailed = Signal(str)
 
     collageSavedPathChanged = Signal()
-    #: #1168 (spec 16.3): a `collageRendering` váltása - a FŐABLAK várakozó
+    #: #1168 (spec 16.3): a `collageRendering` váltása — a FŐABLAK várakozó
     #: sora (`CThumbUI::CreateCollageWait`) erre köt.
     collageRenderingChanged = Signal()
 
     # -- property-k (8.1) --------------------------------------------------
 
     # SZÁNDÉKOSAN nincs QML-hivatkozása (#1052): a kollázs nevét a felhasználó
-    # nem gépeli be - a fájlnév a FORRÁSMAPPÁBÓL jön (kollazs-eletciklus.md 8.6),
+    # nem gépeli be — a fájlnév a FORRÁSMAPPÁBÓL jön (kollazs-eletciklus.md 8.6),
     # ez a property csak a mentés bemenete.
     @property
     def collageTitle(self) -> str:
-        """A kollázs címe - ebből lesz a kimeneti fájl neve (spec 9.1).
+        """A kollázs címe — ebből lesz a kimeneti fájl neve (spec 9.1).
 
         A `openCollage` a FORRÁSMAPPA nevéből tölti fel; egy album-alapú
         belépési pont (Projektek ▸ Kollázsok) az album címét adhatja a
@@ -133,7 +136,7 @@ class CollageSaveMixin(
         """A kollázs legutóbbi kimeneti fájlja, vagy üres szöveg.
 
         Ha nem üres, az újramentés a „Lecseréli a meglévőt, vagy újat hoz
-        létre?" kérdéssel indul (spec 9.2) - a felület ebből tudja, hogy
+        létre?" kérdéssel indul (spec 9.2) — a felület ebből tudja, hogy
         egyáltalán fel kell-e tennie."""
         self._ensure_collage_panel()
         return self._collage_panel_saved_path
@@ -157,7 +160,7 @@ class CollageSaveMixin(
         self.collageSavedPathChanged.emit()
 
     def setCollageSavedPath(self, path: str) -> None:
-        """A kollázs meglévő kimeneti fájlja - a `.cxf`-ből nyitás horga.
+        """A kollázs meglévő kimeneti fájlja — a `.cxf`-ből nyitás horga.
 
         Spec 9.2: „ha a kollázs egy korábban létrehozottból készült", az
         újramentés a „Lecseréli a meglévőt, vagy újat hoz létre?" kérdéssel
@@ -178,7 +181,7 @@ class CollageSaveMixin(
     def cancelCollage(self) -> None:
         """A futó mentés megszakítása (spec 9.1).
 
-        A jelzőt a háttérszál a rajzolás UTÁN, az írás ELŐTT kérdezi meg -
+        A jelzőt a háttérszál a rajzolás UTÁN, az írás ELŐTT kérdezi meg —
         félkész fájl így nem keletkezhet. Futó munka nélkül ártalmatlan.
 
         A folyamatjelző ilyenkor „Kollázs létrehozása... leállítás"-ra vált
@@ -193,7 +196,7 @@ class CollageSaveMixin(
             )
 
     def _emit_progress(self, percent: int, text: str) -> None:
-        """A folyamatjelző egyetlen kapuja - a százalék itt jegyződik meg.
+        """A folyamatjelző egyetlen kapuja — a százalék itt jegyződik meg.
 
         ⚠️ CSAK a fogadó (GUI-) szálon hívható. A háttérszál a
         `_post_progress`-t használja (#988/#999)."""
@@ -209,16 +212,16 @@ class CollageSaveMixin(
         Az eredetiben a KÖNYVTÁRNÉZET is jelez a kollázs készítése alatt
         (`CThumbUI::CreateCollageWait` = „Várakozás a kollázs
         elkészítésére…"), nem csak a panel folyamatjelző doboza. A panel
-        közben be is zárulhat - ezért kell a főablaknak SAJÁT olvasata
+        közben be is zárulhat — ezért kell a főablaknak SAJÁT olvasata
         arról, hogy dolgozunk-e."""
         self._ensure_collage_panel()
         return self._collage_panel_rendering
 
     def _set_rendering(self, running: bool) -> None:
-        """A várakozó jelző EGYETLEN kapuja - idempotens.
+        """A várakozó jelző EGYETLEN kapuja — idempotens.
 
         Minden ág ide fut be: az indítás, a siker, a hiba, a megszakítás és
-        az olvashatatlan képek is. Aki új kimeneti ágat ír, ezt hívja -
+        az olvashatatlan képek is. Aki új kimeneti ágat ír, ezt hívja —
         különben a könyvtárnézetben BERAGAD a várakozó sor."""
         self._ensure_collage_panel()
         if bool(running) == self._collage_panel_rendering:
@@ -227,12 +230,12 @@ class CollageSaveMixin(
         self.collageRenderingChanged.emit()
 
     #: A háttérszálról küldhető folyamat-szövegek KULCSAI. A `tr()` hívása
-    #: is a fogadó szálon történik (#988/#999) - a szál csak kulcsot küld.
+    #: is a fogadó szálon történik (#988/#999) — a szál csak kulcsot küld.
     _PROGRESS_INITIALIZING = "initializing"
     _PROGRESS_READY = "ready"
 
     def _ensure_worker_bridge(self) -> None:
-        """A belső híd-jelzések bekötése - SORBA ÁLLÍTOTT kapcsolattal.
+        """A belső híd-jelzések bekötése — SORBA ÁLLÍTOTT kapcsolattal.
 
         A GUI-szálon hívandó, a háttérszál indítása ELŐTT. Idempotens."""
         if getattr(self, "_worker_bridge_ready", False):
@@ -246,7 +249,7 @@ class CollageSaveMixin(
         self._worker_bridge_ready = True
 
     def _post_progress(self, percent: int, key: str) -> None:
-        """A HÁTTÉRSZÁL folyamatjelzése - csak egy jelzés, semmi más."""
+        """A HÁTTÉRSZÁL folyamatjelzése — csak egy jelzés, semmi más."""
         self._workerProgress.emit(int(percent), key)
 
     @Slot(int, str)
@@ -260,12 +263,12 @@ class CollageSaveMixin(
 
     @Slot(object)
     def _on_worker_outcome(self, payload: dict) -> None:
-        """A rajzolás eredményének feldolgozása - a fogadó szálon.
+        """A rajzolás eredményének feldolgozása — a fogadó szálon.
 
         Minden állapotírás és minden NYILVÁNOS jelzés itt történik; a
         háttérszál csak a nyers adatot adta át.
 
-        ⚠️ A várakozó jelzőt (#1168) MINDEN ág lekapcsolja - a rajzolásnak
+        ⚠️ A várakozó jelzőt (#1168) MINDEN ág lekapcsolja — a rajzolásnak
         ez az egyetlen visszaérkezési pontja, tehát itt nem maradhat ki."""
         self._set_rendering(False)
         fajta = payload["fajta"]
@@ -284,11 +287,11 @@ class CollageSaveMixin(
         self._set_dirty(False)
         self._set_saved_path(ut)
         self._index_saved_collage(Path(ut))
-        # #1100: a piszkozat takarítása is a FOGADÓ szálon - a beállítás
+        # #1100: a piszkozat takarítása is a FOGADÓ szálon — a beállítás
         # írása (`QSettings`) és a jelzések ugyanabba a körbe tartoznak.
         self._discard_draft_after_render()
         if payload["hianyzo"]:
-            # 9.4: a hiány nem hiba - a kollázs elkészült, de a felhasználó
+            # 9.4: a hiány nem hiba — a kollázs elkészült, de a felhasználó
             # tudja meg, hogy hány kép maradt ki belőle
             self.collageMissingImages.emit(payload["hianyzo"])
         self._emit_progress(100, self.tr("The collage is ready"))
@@ -311,7 +314,7 @@ class CollageSaveMixin(
         from . import wallpaper
 
         try:
-            # A Hátterek mappa a KOLLÁZSOK mappa szomszédja - a szabály és
+            # A Hátterek mappa a KOLLÁZSOK mappa szomszédja — a szabály és
             # az indoklása a `wallpaper.backgrounds_dir`-ben áll (a #1775 óta
             # a menüparancs is ezt használja, egy hely, egy szabály).
             mappa = wallpaper.backgrounds_dir(
@@ -328,27 +331,789 @@ class CollageSaveMixin(
         else:
             self.desktopBackgroundFailed.emit(str(bmp))
 
+    # -- létrehozás (8.2, 9.1) ---------------------------------------------
+
+    @Slot(bool)
+    @Slot(bool, bool)
+    @Slot(bool, bool, bool)
+    def createCollage(
+        self,
+        asDesktopBackground: bool,  # noqa: N803 — a spec 8.2 neve
+        ignoreFormatMismatch: bool = False,  # noqa: N803
+        replaceExisting: bool = False,  # noqa: N803
+    ) -> None:
+        """A kollázs mentése — EGY kódút a két gombhoz (spec 8.2).
+
+        `asDesktopBackground` esetén a formátum-eltérésre előbb
+        figyelmeztetünk (9.1); a „Beállítás ennek ellenére" gomb ugyanezt a
+        slotot hívja `ignoreFormatMismatch=True`-val.
+
+        `replaceExisting` a „Meglévő cseréje" ága (9.2): a korábbi kimeneti
+        fájlt írjuk felül, számozás nélkül. Az „Új létrehozása" ág nem külön
+        kódút — a felület előbb a `dropSavedCollagePath()`-t hívja, és utána
+        ugyanezt a slotot."""
+        self._ensure_collage_panel()
+        nodes = self._nodes()
+        if not nodes:
+            self.collageNoImages.emit()
+            return
+        if (
+            asDesktopBackground
+            and not ignoreFormatMismatch
+            and abs(self.collagePageRatio - self._screen_ratio()) > _RATIO_TOLERANCE
+        ):
+            self.collageFormatMismatch.emit()
+            return
+        if not any(not node.missing for node in nodes):
+            # 9.4: a kollázs minden képe eltűnt a lemezről — ez ugyanaz a
+            # zsákutca, mint amikor mindet eltávolították, és a felület
+            # ugyanazt a „Mentés mellőzve" üzenetet mutatja rá. Nyers
+            # kivétel-szöveg semmiképp ne menjen ki a felhasználóhoz.
+            self.collageNoImages.emit()
+            return
+
+        target = self._target_path(replaceExisting)
+        self._collage_panel_cancel.clear()
+        self._ensure_worker_bridge()  # #988/#999: a GUI-szálon, a szál ELŐTT
+        self._emit_progress(0, self._progress_text_initializing())
+        # #1168 (16.3): innentől a KÖNYVTÁRNÉZET is jelzi a várakozást — az
+        # összes korábbi visszafordulás (nincs kép, formátum-eltérés) már
+        # megtörtént, tehát innen tényleg rajzolás következik.
+        self._set_rendering(True)
+        self._start_background(
+            self._render_worker,
+            args=(
+                output.render_nodes_of(nodes, theme=self._collage_panel_theme),
+                self._render_settings(),
+                target,
+                bool(asDesktopBackground),
+                # #1009: a háttérkép a GUI-szálon dől el — a háttérszál a
+                # modellhez nem nyúlhat
+                self._background_image_for_cxf(),
+            ),
+            name="picasapy-collage-panel",
+        )
+
     def _progress_text_initializing(self) -> str:
         """A folyamatjelző első sora. A Többszörös exponálásnak SAJÁT szövege
-        van (spec 9.1) - nem elrendez, hanem képeket vetít egymásra."""
+        van (spec 9.1) — nem elrendez, hanem képeket vetít egymásra."""
         if self._collage_panel_theme == MULTIEXP:
             return self.tr("Stacking pictures")
         return self.tr("Creating collage… initializing")
 
-    def _piszkozat_felirat(self) -> str:
-        """A piszkozat helykitöltő képének felirata (#1072).
+    def _target_path(self, replace_existing: bool) -> Path:
+        """A célfájl: a meglévő útvonal, vagy a cím alapján egy új név.
 
-        A `collage_save_draft.py` ezt hívja. A `tr()` azért marad itt, mert a
-        szöveg kontextusa a `CollageSaveMixin` (ld. a modul docstringjét)."""
-        return self.tr("DRAFT")
+        „Meglévő cseréje" esetén az EREDETI útvonalat írjuk felül, számozás
+        nélkül (spec 9.1 utolsó sora) — különben minden újramentés egy újabb
+        `név1.jpg`-t hagyna a Kollázsok albumban."""
+        if replace_existing and self._collage_panel_saved_path:
+            return Path(self._collage_panel_saved_path)
+        mappa = output.output_dir(
+            self._get_settings().value(prefs.OUTPUT_DIR_KEY)
+        )
+        sajat = self._draft_placeholder_target(mappa)
+        if sajat is not None:
+            return sajat
+        return output.output_path(mappa, self._collage_panel_title)
 
-    def _collage_megnyitas_hiba(self) -> None:
-        """A kész kollázs megnyitásának hibaüzenete (#1002).
+    def _draft_placeholder_target(self, mappa: Path) -> Path | None:
+        """A SAJÁT helykitöltőnk, ha a véglegesítés azt írja felül (#1125).
 
-        A `collage_save_open.py` innen jelez; a `tr()` szövege itt marad a
-        `CollageSaveMixin` kontextusában."""
-        self.collageFailed.emit(
-            self.tr("The collage project file could not be opened.")
+        A tulajdonos jelentése: bezárás → újranyitás → „Létrehozás" után a
+        PISZKOZAT-kép OTTMARADT, a kész kollázs pedig `L1.jpg` néven
+        született. A #1072 szándéka az volt, hogy a helykitöltő lefoglalja a
+        nevet — de a foglalás csak a NYITOTT panelen élt
+        (`collageSavedPath`), bezárás után elveszett.
+
+        **A felülírás MÉRT viselkedés**, nem használhatósági döntés: a
+        tulajdonos valódi, EREDETI Picasa által készített Kollázsok
+        mappájában 11 JPEG és 11 `.cxf` áll, és a párosítatlan JPEG-ek
+        száma **NULLA**. Ha az eredeti a helykitöltőt meghagyná és mellé
+        sorszámozna, ott pontosan olyan árva fájlok volnának, mint amilyet
+        a tulajdonos most kapott. A `%s%lu` sorszámozás használatban van
+        (AI → AI1 → AI2…), de csak KÜLÖN kollázsokra, ahol a nevet egy KÉSZ
+        (`.cxf`-fel párosított) kollázs foglalja.
+
+        ⚠️ A felismerés a piszkozat-NYILVÁNTARTÁSBÓL megy, nem a névből: a
+        „nincs `.cxf` párja" IGAZ egy idegen JPEG-re is, amit a felhasználó
+        tett a Kollázsok mappába — azt felülírni ADATVESZTÉS volna.
+
+        ⚠️ **Ez az idegen-fájl védőág a MI döntésünk, nem az eredeti
+        rekonstrukciója.** A 11 mintában ilyen eset NINCS, tehát nem tudjuk,
+        mit tenne a Picasa egy idegen, `.cxf` nélküli JPEG-gel. Óvatosabb
+        irányba tértünk el, szándékosan és kimondva.
+
+        Három feltétel EGYÜTT: a nyilvántartott útvonal (a) létezik, (b) a
+        célmappában van, és (c) nincs mellette `.cxf` — vagyis időközben nem
+        vált kész kollázzsá."""
+        jelolt = self._get_settings().value(prefs.PLACEHOLDER_KEY)
+        if not jelolt:
+            return None
+        ut = Path(str(jelolt))
+        if not ut.is_file() or ut.with_suffix(".cxf").exists():
+            return None
+        if os.path.normcase(str(ut.parent)) != os.path.normcase(str(mappa)):
+            return None
+        return ut
+
+    def _collage_output_width(self) -> int:
+        """A kimeneti kép szélessége. Külön metódus, hogy a teszt kisebb
+        vásznon dolgozhasson: az éles 5120 képpont egy tesztben másodperceket
+        és tíz-megabájtos tömböket jelentene, holott az állítás a fájlnévről
+        és a jelzésekről szól."""
+        return output.output_width(self.collagePageRatio)
+
+    def _render_settings(self):
+        """A panel állapotából renderelő-beállítás (a színváltás a modulban)."""
+        color = self._collage_panel_bg_color
+        return output.render_settings(
+            theme=self._collage_panel_theme,
+            border=self._collage_panel_border,
+            spacing=self._collage_panel_spacing,
+            shadows=self._collage_panel_shadows,
+            page_ratio=self.collagePageRatio,
+            background_rgb=(color.red(), color.green(), color.blue()),
+            frame_center=self._collage_panel_frame_center,
+            seed=self._collage_panel_seed,
+            width=self._collage_output_width(),
+            # #1015: csak KÉP-módban — a szín- és az átlagszín-mód (#1004)
+            # a `background` szín marad
+            background_image=(
+                self.collageBackgroundImage
+                if self._collage_panel_bg_mode == "image"
+                else ""
+            ),
+            # #1273: ugyanazok a mezők adják az Indexkép fejlécét, amelyeket
+            # a #1274 már megőriz a `.cxf` körbejárásában.
+            album_title=self._collage_panel_title,
+            album_date=self._collage_panel_album_date,
+            # #978: a „képfeliratok" kapcsoló innen jut el a rajzolóig
+            captions=self._collage_panel_captions,
         )
 
+    def _index_saved_collage(self, path: Path) -> None:
+        """A mentett kollázs mappáját felvesszük az INDEXBE.
+
+        ⚠️ Enélkül a kollázs SEHOL nem jelenik meg a bal hasábon, hiába
+        tökéletes a `.picasa.ini`. A Projektek gyűjtemény lekérdezése
+        (`index/project_folders.py`) így indul:
+
+            SELECT path FROM folders WHERE has_ini = 1
+
+        — vagyis csak a MÁR INDEXELT mappákon megy végig. A kollázs
+        célmappája (`<Képek>/Picasa/Kollázsok`) viszont tipikusan egyetlen
+        figyelt gyökér alatt sincs, tehát oda sem teljes újraindexeléssel,
+        sem másképp nem kerül be. Mérve a valódi indexen: 68 mappa, egy sem
+        a Kollázsok.
+
+        A `sync_folder` gyökér-korlátja itt úgy teljesül, hogy a gyökér MAGA
+        a célmappa — így csak ezt az egy mappát vesszük fel, a felhasználó
+        figyelt gyökereihez nem nyúlunk.
+
+        A hiba nem buktatja el a mentést: a kép már a lemezen van, és egy
+        index-gond miatt nem mondjuk azt, hogy a mentés meghiúsult."""
+        mappa = Path(path).parent
+        try:
+            from picasapy.index import open_index
+            from picasapy.index.sync import sync_folder
+
+            with open_index(self._db_path) as conn:
+                enabled_filetypes = getattr(
+                    self, "_filetype_scan_snapshot", None
+                )
+                if enabled_filetypes is None:
+                    sync_folder(conn, mappa, mappa)
+                else:
+                    sync_folder(
+                        conn,
+                        mappa,
+                        mappa,
+                        enabled_filetypes=enabled_filetypes,
+                    )
+        except Exception:  # noqa: BLE001 - az indexelés soha ne bukatassa a mentést
+            logger.warning(
+                "A mentett kollázs mappája nem került az indexbe: %s", mappa,
+                exc_info=True,
+            )
+
+    def _render_worker(
+        self, nodes, settings, target, wallpaper: bool, background_image: str
+    ) -> None:
+        """A háttérszál törzse — a `BackgroundWorkerMixin`-en fut (#430).
+
+        A folyamatjelzés SZAKASZOS, nem képenkénti: a rajzoló
+        (`collage/picasa_render.py`) nem ad képenkénti visszajelzést, és
+        kitalálni egyet rosszabb volna, mint durvábban jelezni. A három
+        szakasz — indulás, rajzolás kész, kiírva — a felhasználónak azt
+        mondja meg, ami tényleg igaz."""
+        self._post_progress(10, self._PROGRESS_INITIALIZING)
+        try:
+            eredmeny = output.render_collage(
+                nodes,
+                settings,
+                target,
+                album_title=self._collage_panel_title,
+                album_date=self._collage_panel_album_date,
+                album_uid=self._collage_panel_album_uid,
+                album_id=self._collage_panel_album_id,
+                background_image=background_image,
+                format_key=self._collage_panel_format,
+                node_uids=self._collage_panel_node_uids,
+                node_scales=self._collage_panel_node_scales,
+                should_cancel=self._rendered_now_writing,
+            )
+        except (ValueError, OSError) as error:
+            self._workerOutcome.emit({"fajta": "hiba", "uzenet": str(error)})
+            return
+        if eredmeny.canceled:
+            self._workerOutcome.emit({"fajta": "megszakitva"})
+            return
+        if eredmeny.path is None:
+            self._workerOutcome.emit({"fajta": "olvashatatlan"})
+            return
+        self._workerOutcome.emit(
+            {
+                "fajta": "kesz",
+                "ut": str(eredmeny.path),
+                "hianyzo": len(eredmeny.missing),
+                "hatterkep": bool(wallpaper),
+            }
+        )
+
+    def _discard_draft_after_render(self) -> None:
+        """A kész kollázs mellől ELTAKARÍTJUK a piszkozatot (#1100).
+
+        ⚠️ Nem rendrakás: a valódi Picasa az ottfelejtett `autosave.cxf`-et
+        **elárvult automentésként** ismeri fel, és a saját 640 × 480-as,
+        egyszínű sötétszürke helykitöltőjét írja mellé `autosave.jpg` néven
+        — a felhasználó Kollázsok mappájába. A tulajdonos ezt látta a
+        v0.8.23-ban, és a mi kimenetünknek hitte.
+
+        Vagyis a mi maradékunk SZEMETET GYÁRTAT a valódi Picasával. A
+        piszkozat a véglegesítéssel betöltötte a szerepét.
+
+        ⚠️ #1387: a takarítás a piszkozat TÉNYLEGES mappájából dob el, NEM a
+        jelenleg BEÁLLÍTOTT Kollázsok-mappából. A kettő szétválhat, ha a
+        felhasználó a piszkozat mentése UTÁN, a befejezés ELŐTT átállítja a
+        kimeneti mappát (`finishCollageDraft` egy MÁSHOL fekvő piszkozatot
+        nyit meg és véglegesít, ld. `openCollageProject`/`saveCollageDraft`
+        — mindkettő frissíti `_collage_panel_draft_source_dir`-t). Ha nincs
+        ismert tényleges hely (a panel még sosem mentett/nyitott piszkozatot
+        ebben a menetben), a beállított mappa marad a válasz — ez az eredeti,
+        egyszerű eset, ahol a kettő úgyis ugyanaz.
+
+        A beállításból is kivezetjük: ha csak a fájlt törölnénk, a program
+        indításkor még mindig felajánlaná a helyreállítást, és a felhasználó
+        egy nem létező munkát „állítana helyre".
+
+        ⚠️ A már ott lévő, PICASA által írt `autosave.jpg`-hez NEM nyúlunk —
+        az nem a mi fájlunk, a felhasználó mappájában van (#1100 döntése;
+        #1387 alatt is érvényben marad, hiszen csak az `autosave.cxf`-et
+        töröljük néven, nem a mappa teljes tartalmát).
+
+        A hiba nyelt: a kollázs ekkor már a lemezen van, és egy takarítási
+        gond nem teheti kudarccá a mentést."""
+        mappa = self._collage_panel_draft_source_dir or self._collage_panel_draft_dir()
+        try:
+            discard_autosave(mappa)
+        except OSError as hiba:
+            logger.warning("A piszkozat nem takarítható el: %s", hiba)
+            return
+        finally:
+            self._collage_panel_draft_source_dir = None
+        beallitas = self._get_settings()
+        beallitas.remove(prefs.AUTOSAVE_KEY)
+        # #1125: a helykitöltő szerepe is véget ért — a kész kollázs
+        # foglalja a helyét. A jelölő itt szűnik meg, nem a fájl.
+        beallitas.remove(prefs.PLACEHOLDER_KEY)
+
+    def _rendered_now_writing(self) -> bool:
+        """A rajzolás kész, jön a kiírás — és közben: megszakították-e?
+
+        Ez a `render_collage` `should_cancel` horga, és SZÁNDÉKOSAN kettős
+        feladatú: a rajzoló pontosan egyszer, a két szakasz HATÁRÁN kérdezi
+        meg. Ez az egyetlen pillanat, amiről a vezérlő biztosan tudja, hogy a
+        munka nagyja megvan — tehát ez az egyetlen hely, ahol a 90%-ot
+        őszintén ki lehet írni. Két külön horog ugyanide kötve csak
+        látszatra volna tisztább."""
+        self._post_progress(90, self._PROGRESS_INITIALIZING)
+        return self._collage_panel_cancel.is_set()
+
+    # -- piszkozat (3.3, 9.) -----------------------------------------------
+
+    def _collage_panel_draft_dir(self) -> Path:
+        """A piszkozat mappája: a „Kollázsok" album.
+
+        ⚠️ A név szándékosan `_collage_panel_*`: a `CreateMixin` a
+        `_collage_draft_dir` nevet MÁR használja, és a két szelet ugyanabban
+        az `AppController`-ben él — az azonos név néma felülírás volna."""
+        return output.output_dir(self._get_settings().value(prefs.OUTPUT_DIR_KEY))
+
+    @Slot()
+    def saveCollageDraft(self) -> None:
+        """„Piszkozat mentése" (spec 3.3): a vászon `.cxf`-ként a lemezre.
+
+        Csomópont nélkül NEM ír: egy üres piszkozat visszaállítva üres lapot
+        adna, ami rosszabb annál, mintha nem ajánlanánk fel semmit. A hiba
+        naplózott, de nyelt — a piszkozat baja sosem viheti el a
+        felhasználó kollázsát.
+
+        ⚠️ #1168 (spec 16.2/a): a kép nélküli ág eddig NÉMÁN tért vissza. Az
+        eredeti ilyenkor a **„Mentés mellőzve"** dobozt mutatja
+        (`collageUI::noimages_title` / `collageUI::noimages`) — ugyanaz a
+        `collageNoImages` jelzés, amit a végleges mentés is kiad, tehát a
+        felületnek nem kell új ágat írnia hozzá. A jelzés egyben azt is
+        eldönti, hogy a lap NYITVA marad: a felhasználó vegyen fel egy
+        képet, és próbálkozzon újra."""
+        self._ensure_collage_panel()
+        nodes = self._nodes()
+        if not nodes:
+            self.collageNoImages.emit()
+            return
+        try:
+            ut = write_autosave(
+                self._collage_panel_draft_dir(),
+                project_from_nodes(
+                    output.render_nodes_of(nodes, theme=self._collage_panel_theme),
+                    self._render_settings(),
+                    album_title=self._collage_panel_title,
+                    album_date=self._collage_panel_album_date,
+                    album_uid=self._collage_panel_album_uid,
+                    album_id=self._collage_panel_album_id,
+                    background_image=self._background_image_for_cxf(),
+                    format_key=self._collage_panel_format,
+                    node_uids=self._collage_panel_node_uids,
+                    node_scales=self._collage_panel_node_scales,
+                ),
+            )
+        except (OSError, ValueError) as hiba:
+            logger.warning("A kollázs-piszkozat nem írható: %s", hiba)
+            return
+        self._get_settings().setValue(prefs.AUTOSAVE_KEY, str(ut))
+        # #1387: ez a mappa a piszkozat TÉNYLEGES helye, függetlenül attól,
+        # hogy a beállítás később megváltozik-e — a befejezéskori takarítás
+        # ezt használja, nem a mindenkori beállítást.
+        self._collage_panel_draft_source_dir = ut.parent
+        self._write_draft_placeholder(nodes, ut.parent)
+        self.collageDraftSaved.emit(str(ut))
+
+    def _write_draft_placeholder(self, nodes, mappa: Path) -> None:
+        """A piszkozat HELYKITÖLTŐ képe — ettől látszik a Kollázsok albumban.
+
+        A tulajdonos jelentése: *„A friss képkollázs piszkozat mentése nem
+        jelenik meg a PicasaPy és Picasa alatt sem."* Az eredeti a mentéskor
+        AZONNAL ír egy képet a `.cxf` mellé (mérve a képernyőképéről:
+        `AI10.jpg`, 640 × 453), és ettől jelenik meg a piszkozat.
+
+        A kép a kollázs **végleges nevét** kapja — nem `autosave.jpg`-t. Ez
+        egyben lefoglalja a nevet: a „Létrehozás" innentől a meglévő fájlt
+        látja, és a felület felteszi a *„Lecseréli a meglévőt, vagy újat hoz
+        létre?"* kérdést (spec 9.2), ahogy az eredeti is. Így a befejezés
+        nem hagy maga után szemetet.
+
+        ⚠️ A hiba **nyelt**: a piszkozat `.cxf`-je már a lemezen van, és egy
+        helykitöltő baja nem viheti el a felhasználó munkáját. Naplózva
+        viszont igen — a #1075 tanulsága, hogy a néma ág miatt vakon
+        állunk."""
+        if not nodes:
+            return
+        try:
+            meglevo = self.collageSavedPath
+            cel = (
+                Path(meglevo)
+                if meglevo
+                else self._draft_placeholder_path(mappa)
+            )
+            szeles, magas = draft_placeholder.placeholder_size(
+                self.collagePageRatio
+            )
+            beallitas = dataclasses.replace(
+                self._render_settings(), width=szeles, height=magas
+            )
+            jelentes = render_nodes(
+                output.render_nodes_of(nodes, theme=self._collage_panel_theme),
+                beallitas,
+            )
+            kep = draft_placeholder.draw_draft_label(
+                jelentes.image, self.tr("DRAFT")
+            )
+            write_collage(cel, kep, quality=output.JPEG_QUALITY)
+        except Exception:  # noqa: BLE001 - a piszkozat baja nem vihet el munkát
+            logger.warning(
+                "A piszkozat helykitöltő képe nem írható (%s)", mappa, exc_info=True
+            )
+            return
+        self._set_saved_path(str(cel))
+        # #1125: JEGYEZZÜK FEL, melyik fájl a mi helykitöltőnk. A
+        # véglegesítés csak ezt írhatja felül — a „nincs `.cxf` párja"
+        # önmagában egy IDEGEN képre is igaz volna.
+        self._get_settings().setValue(prefs.PLACEHOLDER_KEY, str(cel))
+        self._index_saved_collage(cel)
+
+    def _draft_placeholder_path(self, mappa: Path) -> Path:
+        """A piszkozat helykitöltőjének célfájlja — ÚJRAÍRHATÓ, nem szaporodó.
+
+        A tulajdonos szava: *„A »PISZKOZAT« felirat akkor jelenik meg …
+        amikor a »Bezárás« gombot megnyomom … De csak addig van ott, amíg le
+        nem menti."* — vagyis a piszkozatnak EGYETLEN képe van. Ha a
+        visszaállítás után újra bezár, ugyanazt kell felülírnunk, különben
+        minden körben új `Kollázs1.jpg`, `Kollázs2.jpg` keletkezne.
+
+        A megkülönböztető a `.cxf` PÁR: a KÉSZ kollázs mellett ott áll a
+        projektfájlja (#1002 ezen az egy jelen áll), a helykitöltő mellett
+        nem — a piszkozat `.cxf`-je az `autosave.cxf`. Tehát ha a név
+        szabad, vagy már a MI helykitöltőnk ül rajta, azt írjuk felül; ha
+        egy kész kollázs foglalja, az `output_path` sorszámoz."""
+        alap = mappa / f"{output.safe_stem(self._collage_panel_title)}.jpg"
+        if not alap.exists() or not alap.with_suffix(".cxf").exists():
+            return alap
+        return output.output_path(mappa, self._collage_panel_title)
+
+    @Slot()
+    def restoreCollageDraft(self) -> None:
+        """A piszkozat visszatöltése — a lap UGYANAZT a vásznat mutatja.
+
+        A téma, az árnyék, a képfeliratok és a tájolás a `.cxf`-ből jönnek,
+        de a mezőket KÖZVETLENÜL állítjuk: a `setCollageTheme` újraszámolná
+        az elrendezést, és pont a visszaállítandó kézi helyeket dobná el.
+
+        Az oldalFORMÁTUM nem áll vissza (a `.cxf` arányt tárol, nem
+        menü-kulcsot) — a lap alakja a tájolásból és a jelenlegi formátumból
+        áll össze. A csomópontok arányosan érkeznek, tehát a kép a lapon
+        marad akkor is, ha a formátum közben más lett.
+
+        #1387: a beolvasott mappa itt a TÉNYLEGES piszkozat-hely is —
+        eltároljuk, hogy a befejezéskori takarítás akkor is ide nyúljon
+        vissza, ha a beállított Kollázsok-mappa időközben megváltozik."""
+        self._ensure_collage_panel()
+        mappa = self._collage_panel_draft_dir()
+        projekt = read_autosave(mappa)
+        if projekt is None:
+            return
+        self._collage_panel_draft_source_dir = mappa
+        self._apply_cxf_project(projekt, saved_path="")
+        meglevo = self._draft_placeholder_path(mappa)
+        if meglevo.exists():
+            self._set_saved_path(str(meglevo))
+
+    @Slot(str, result=bool)
+    def hasCollageProject(self, image_path: str) -> bool:  # noqa: N802
+        """Van-e a képnek `.cxf` párja — vagyis kollázs-e (#1002).
+
+        A szerkesztő „Kollázs szerkesztése" gombja ezen látszik
+        (`editpanel/editcollage`, `m_hidden`: alapból rejtett, csak
+        kollázsnál jön elő). A tulajdonos szava: *„Ez a gomb mindig
+        megjelenik, ha megnyitom a kollázst."* — tehát nem a létrehozás
+        emléke kapcsolja be, hanem a fájl mellett álló projektfájl."""
+        return self._collage_project_path(image_path) is not None
+
+    @Slot(str, result=bool)
+    def isCollageDraft(self, image_path: str) -> bool:  # noqa: N802
+        """Befejezetlen PISZKOZAT-e a megadott kép (#1072).
+
+        A `hasCollageProject` párja, de a MÁSIK állapotra: az KÉSZ
+        kollázsra igaz (van `<név>.cxf` párja), ez a piszkozatra (nincs
+        párja, de a mappában ott az `autosave.cxf`). A kettő soha nem igaz
+        egyszerre — a szabály a spec 1. szakaszának táblája.
+
+        Erre kötődik a felület három következménye: a „Létrehozás" gomb
+        megjelenése, a „Kollázs szerkesztése" gomb piszkozaton is, és a
+        megosztás/nyomtatás tilalma."""
+        return is_draft_image(image_path)
+
+    @Slot(str)
+    def openCollageProject(self, image_path: str) -> None:  # noqa: N802
+        """A kollázs újranyitása SZERKESZTÉSRE — készen és piszkozaton is.
+
+        A tulajdonos jelentése a v0.8.17-ről: *„Jelenleg ennek hiányában
+        nem szerkeszthető a kollázs."* (#1002) — a kész képhez nem vezetett
+        vissza út a panelra.
+
+        ⚠️ #1072: a PISZKOZAT projektje nem a kép melletti `<név>.cxf` (az
+        épp nincs is), hanem a mappa `autosave.cxf`-je. Enélkül a „Kollázs
+        szerkesztése" gomb a piszkozaton némán hatástalan lett volna,
+        pedig a spec 6. szakasza szerint ott is működik. A visszatöltés
+        maga UGYANAZ a kódút — a `restoreCollageDraft`-tal együtt három
+        belépési pont, egy `_apply_cxf_project`.
+
+        A `saved_path` a MEGNYITOTT képre áll, tehát a „Létrehozás" a
+        meglévő fájlt írja felül, nem újat számoz mellé: a felhasználó
+        ugyanazt a kollázst szerkeszti tovább, nem másolatot készít.
+
+        ⚠️ #1387: ha PISZKOZAT nyílik meg, a mappáját (ahol az `autosave.cxf`
+        ténylegesen fekszik) megjegyezzük — a `finishCollageDraft` (a
+        `createCollage` befejező hívása) ebből a TÉNYLEGES mappából takarít,
+        nem a jelenleg beállítottból. Kész kollázs megnyitásakor nincs
+        aktív piszkozat, ezért töröljük a korábbi jegyzetet."""
+        utvonal = self._collage_project_path(image_path)
+        piszkozat_mappa: Path | None = None
+        if utvonal is None:
+            utvonal = draft_project_path(image_path)
+            if utvonal is not None:
+                piszkozat_mappa = utvonal.parent
+        if utvonal is None:
+            return
+        try:
+            projekt = read_cxf(utvonal)
+        except ValueError:
+            logger.warning("A kollázs projektfájlja nem olvasható: %s", utvonal)
+            self.collageFailed.emit(
+                self.tr("The collage project file could not be opened.")
+            )
+            return
+        self._ensure_collage_panel()
+        self._collage_panel_draft_source_dir = piszkozat_mappa
+        self._apply_cxf_project(projekt, saved_path=str(image_path))
+
+    def _collage_project_path(self, image_path: str) -> Path | None:
+        """A képhez tartozó `.cxf`, ha van és olvasható fájl."""
+        if not image_path:
+            return None
+        try:
+            utvonal = Path(str(image_path)).with_suffix(".cxf")
+        except (OSError, ValueError):  # pragma: no cover - platformfüggő
+            return None
+        try:
+            return utvonal if utvonal.is_file() else None
+        except OSError:  # pragma: no cover - elérhetetlen hálózati út
+            return None
+
+    @Slot(str)
+    def finishCollageDraft(self, image_path: str) -> None:  # noqa: N802
+        """A piszkozat BEFEJEZÉSE — az `editpanel/render_now` gomb (#1072).
+
+        A jegy harmadik hiánya: nálunk *„a mentés egyben véglegesít"* volt,
+        vagyis egy MÁR mentett piszkozathoz nem vezetett külön befejező
+        lépés. Az eredetiben ez a kép fölött ülő **„Létrehozás"** gomb
+        (spec 4.1/4.3), és a `projectutils::draft_collage` szövege is erre
+        hivatkozik.
+
+        **Nem új mentő kódút** (spec 8.2 szabálya): betölti a piszkozat
+        projektjét, majd a meglévő `createCollage`-ot hívja
+        `replaceExisting=True`-val. Az eredeti is UGYANAZT a fájlnevet írja
+        felül — a spec 5.1 mért igazolása szerint az `AI10.jpg` a piszkozat
+        46 KB-járól ugyanazon a néven nőtt 2440 KB-ra, nem sorszámozott
+        mellé. A takarítás (az `autosave.cxf` és a helykitöltő-jelölő
+        megszűnése) a közös `_discard_draft_after_render` dolga.
+
+        Nem piszkozatra NEM csinál semmit: a felület null-őrei és a
+        gyorsan változó néző-sorok miatt ez a slot idegen útvonalat is
+        kaphat, és egy véletlen renderelés a felhasználó képét írná felül."""
+        if not is_draft_image(image_path):
+            return
+        self.openCollageProject(image_path)
+        if not self._collage_panel_open:
+            return
+        self.createCollage(False, False, True)
+
+    def _apply_cxf_background(self, hatter) -> None:
+        """A `.cxf` háttere vissza a panelra (#1085).
+
+        A tulajdonos jelentése: *„helyreállítja az előbbi fél mentést, de a
+        háttérképet elfelejti, sima színre kapcsolja vissza."* A
+        visszatöltés mindent visszahozott a témától a címig — a hátteret
+        nem, pedig a `.cxf` tárolja.
+
+        ⚠️ **A képháttér INDEXKÉNT él a panelen** (#1009: a háttérkép a
+        kollázs SAJÁT képeinek egyike), a `.cxf` viszont ÚTVONALAT tárol —
+        itt kell a kettő közé fordítani. Ha a hivatkozott kép már nincs a
+        kollázsban, **színre esünk vissza**: üres képhátteret mutatni
+        rosszabb volna, mint a színt, és törött hivatkozást a #1009
+        szabálya szerint sosem hagyunk.
+
+        A mezőket KÖZVETLENÜL állítjuk, a `set*` slotok helyett: azok
+        `_set_dirty(True)`-t hívnának, a visszatöltés viszont nem
+        módosítás."""
+        if hatter is None:
+            return
+        if hatter.type == "image" and hatter.src:
+            # #1096: a `.cxf` a hátteret is KÓDOLT alakban tárolja
+            # (`$My Pictures\…`), a csomópontok útvonala viszont a
+            # `nodes_from_project`-ben már feloldva érkezik. Kódolt
+            # szöveggel keresve az egyezés SOSEM jönne össze, és a háttér
+            # némán színre esne vissza — pont az a hiba, amit a #1085/#1103
+            # javított, csak az eredeti Picasa fájljain.
+            index = self._node_index_of_path(decode_cxf_path(hatter.src))
+            if index >= 0:
+                self._collage_panel_bg_index = index
+                self._collage_panel_bg_mode = "image"
+                self.collageBackgroundModeChanged.emit()
+                self.collageBackgroundImageChanged.emit()
+                return
+            logger.info(
+                "a piszkozat háttérképe már nincs a kollázsban (%s) — szín marad",
+                hatter.src,
+            )
+        self._collage_panel_bg_mode = "solid"
+        self.collageBackgroundModeChanged.emit()
+        szin = _qcolor_from_argb(hatter.color)
+        if szin is not None:
+            self._collage_panel_bg_color = szin
+            self.collageBackgroundColorChanged.emit()
+
+    def _node_index_of_path(self, utvonal: str) -> int:
+        """Melyik csomópont ez az útvonal; −1, ha nincs a kollázsban.
+
+        Az összehasonlítás NORMALIZÁLT: a `.cxf` a mentés platformjának
+        elválasztóit hordozza, a mai csomópont az aktuálisét (#1019)."""
+        cel = os.path.normcase(os.path.normpath(str(utvonal)))
+        for index, csomopont in enumerate(self._nodes()):
+            if csomopont.path is None:
+                continue
+            if os.path.normcase(os.path.normpath(str(csomopont.path))) == cel:
+                return index
+        return -1
+
+    def _apply_cxf_project(self, projekt, *, saved_path: str) -> None:
+        """Egy `.cxf` projekt ráterítése a panelra — EGY kódút.
+
+        A piszkozat-visszatöltés (#1051) és a kész kollázs újranyitása
+        (#1002) ugyanaz a művelet, csak a forrás más. Két külön
+        megvalósítás előbb-utóbb elválna, és a felhasználó azt látná, hogy
+        a kollázs máshogy jön vissza attól függően, honnan nyitotta."""
+        if projekt.theme in COLLAGE_THEMES:
+            self._collage_panel_theme = projekt.theme
+            self.collageThemeChanged.emit()
+            self.collageCapabilitiesChanged.emit()
+        if projekt.orientation in ORIENTATIONS:
+            self._collage_panel_orientation = projekt.orientation
+            self.collageOrientationChanged.emit()
+            self.collagePageRatioChanged.emit()
+        # ⚠️ #1272: a LAPFORMÁTUM is a fájlból jön, nem a legutóbb
+        # használtból. Eddig hiányzott, ezért az újranyitott kollázsra a
+        # mentett beállítás ült rá — a tulajdonos szava: „mindig az utolsó
+        # használt képarányt erőlteti rá a korábbi szerkesztésére."
+        #
+        # A `.cxf` a formátum NEVÉT tárolja (#1089: az A4 neve `297:210`),
+        # ezért kulccsá kell visszafordítani. Ismeretlen vagy dinamikus
+        # névnél a panel pillanatnyi formátuma marad: egy idegen fájl nem
+        # teheti használhatatlanná a panelt.
+        formatum_kulcs = format_key_of(projekt.aspect_ratio)
+        if formatum_kulcs is not None:
+            self._collage_panel_format = formatum_kulcs
+            self.collageFormatKeyChanged.emit()
+            self.collagePageRatioChanged.emit()
+        # #1274: a térköz ugyanígy a projekté, nem a legutóbbié.
+        terkoz = float(projekt.spacing or 0.0)
+        if self._collage_panel_spacing != terkoz:
+            self._collage_panel_spacing = terkoz
+            self.collageSpacingChanged.emit()
+        self._collage_panel_shadows = bool(projekt.shadows)
+        self._collage_panel_shadows_explicit = True
+        self.collageShadowsChanged.emit()
+        self._collage_panel_captions = bool(projekt.captions)
+        self.collageCaptionsChanged.emit()
+        if projekt.album_title:
+            self.setCollageTitle(projekt.album_title)
+        # ⚠️ #1274: az album-azonosítók és a dátum a panelen nem
+        # SZERKESZTHETŐK, de a projekté maradnak — újramentéskor
+        # változatlanul mennek vissza. Enélkül egy Picasával készült
+        # kollázs újramentése ELDOBTA volna őket (a 12 golden minta
+        # mindegyikében van albumUID és albumDate).
+        self._collage_panel_album_uid = projekt.album_uid
+        self._collage_panel_album_id = projekt.album_id
+        self._collage_panel_album_date = projekt.album_date
+        # #1092: a csomópont-azonosítókat a vászon-csomópont nem hordozza,
+        # ezért `src → uid` leképezésben tesszük el. A KÓDOLT és a
+        # FELOLDOTT alak is kulcs: a `.cxf` a Picasa változós útvonalát
+        # tárolja (`$My Pictures\…`, #1096), a visszaíráskor viszont az
+        # újrakódolt alakot keressük — a két kulcs együtt akkor is talál,
+        # ha a feloldás ezen a gépen máshova mutat.
+        self._collage_panel_node_uids = {
+            kulcs: node.uid
+            for node in projekt.nodes
+            if node.uid and node.src
+            for kulcs in {node.src, str(decode_cxf_path(node.src))}
+        }
+        # #2923: a `scale` UGYANÍGY a projektből él tovább. A #1412 277. köre
+        # kimérte, hogy az eredeti nem számolja: a fájlból örökli, és a
+        # másolók/`reset` változatlanul viszik. A mi számolt értékünk egy
+        # Picasával készült kollázs újramentésekor elrontotta a fájlt.
+        self._collage_panel_node_scales = {
+            kulcs: node.scale
+            for node in projekt.nodes
+            if node.scale and node.src
+            for kulcs in {node.src, str(decode_cxf_path(node.src))}
+        }
+        panel_csomopontok = _panel_nodes_of(nodes_from_project(projekt))
+        self._set_nodes(panel_csomopontok, dirty=False)
+        # ⚠️ #1274: a panel KERET-választója is a projekté. A `.cxf` a
+        # keretet csomópontonként tárolja, a panelen viszont EGY választó
+        # van — ezért csak akkor állítjuk, ha MINDEN csomópont ugyanazt
+        # viseli. Vegyes keretnél a választó a helyén marad: egy értéket
+        # mutatni ott hazugság volna, a felhasználó pedig azt hinné, hogy
+        # a kollázs egységes.
+        #
+        # Enélkül az újranyitott polaroidos kollázs „nincs keret"-et
+        # mutatott, és a KÖVETKEZŐ felvett kép keret nélkül került be — a
+        # mentés ugyanis a panel értékéből dolgozik.
+        keretek = {node.border for node in panel_csomopontok}
+        if len(keretek) == 1:
+            keret = keretek.pop()
+            if keret in BORDER_THEMES and keret != self._collage_panel_border:
+                self._collage_panel_border = keret
+                self.collageBorderChanged.emit()
+        # ⚠️ #1103: a háttér CSAK a csomópontok után. A képháttér a panelen
+        # INDEXKÉNT él (#1009), a `.cxf` viszont ÚTVONALAT tárol, tehát a
+        # visszaállítás megkeresi a képet a csomópontok között. Ha előbb
+        # fut, a lista még a RÉGI (újraindítás után: ÜRES), az index −1
+        # lesz, és a #1085 védőága — helyesen, de rossz pillanatban
+        # kérdezve — színre ejti a hátteret. A tulajdonos ezt a v0.8.20 óta
+        # látta: „a háttérképet elfelejti, sima színre kapcsolja vissza."
+        self._apply_cxf_background(projekt.background)
+        self._set_dirty(False)
+        self._set_saved_path(saved_path)
+        if not self._collage_panel_open:
+            self._collage_panel_open = True
+            self.collageOpenChanged.emit()
+
+
+
+def _panel_nodes_of(nodes) -> tuple[CollageNode, ...]:
+    """Rajzoló-csomópontok → a panel modell-csomópontjai.
+
+    Az `output.render_nodes_of` megfordítása: a kijelölés (a modell mezője) a
+    visszatöltésnél mindig üres, a kitöltés-mód (a rajzoló mezője) pedig a
+    témából él tovább — egyik sem utazik a `.cxf`-ben.
+
+    ⚠️ #989: a KÉP oldalarányát (`aspect`) a `.cxf` sem tárolja, ezért a
+    csomópont dobozából vesszük. A Képkupacnál, az Indexképnél és a
+    Többszörös exponálásnál ez PONTOS (ott a doboz a képé), a rácsos
+    témáknál viszont a CELLA aránya — a visszatöltött kollázs egy későbbi
+    téma-váltásnál ilyenkor közelítő arányokkal rendez újra. A képfájlok
+    fejlécének beolvasása pontos volna, de 350 képnél a visszatöltést
+    érezhetően lassítaná; ezt a cserét tudatosan vállaljuk."""
+    return tuple(
+        CollageNode(
+            path="" if node.path is None else str(node.path),
+            center_x=node.center_x,
+            center_y=node.center_y,
+            width=node.width,
+            height=node.height,
+            theta=node.theta,
+            border=node.border,
+            caption=node.caption,
+            missing=node.missing,
+            aspect=node.width / node.height,
+        )
+        for node in nodes
+    )
+
+
 __all__ = ["CollageSaveMixin"]
+
+
+def _qcolor_from_argb(ertek: str | None) -> QColor | None:
+    """`FFRRGGBB` (ARGB hexa) → `QColor`; érvénytelenre `None`.
+
+    A `.cxf` nagybetűs, nyolc karakteres ARGB-t tárol (`draft.py::_argb`); a
+    `QColor` `#AARRGGBB` alakot vár. Hibás értékre nem dobunk: egy idegen
+    `.cxf` sem tehet visszaállíthatatlanná egy kollázst."""
+    if not ertek:
+        return None
+    szoveg = str(ertek).strip().lstrip("#")
+    if len(szoveg) != 8:
+        return None
+    szin = QColor(f"#{szoveg}")
+    return szin if szin.isValid() else None

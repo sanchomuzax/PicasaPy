@@ -2153,7 +2153,7 @@ class LibraryMixin(FolderManagerSaveMixin, BackgroundWorkerMixin):
 
         ## A kapu: NYILVÁNTARTOTT exportcél, nem „bármi, ami kívül van"
 
-        A gyökér MAGA a célmappa, ahogy a `collage_save_render._index_saved_collage`
+        A gyökér MAGA a célmappa, ahogy a `collage_save._index_saved_collage`
         teszi — így egyetlen mappa kerül be, nem részfa, és a felhasználó
         **figyelt mappáihoz nem nyúlunk**: a `WatchedFolders.txt` a könyvtár
         horgonya (#1542/#1560), egy exportcél miatt nem bővítjük. Az
