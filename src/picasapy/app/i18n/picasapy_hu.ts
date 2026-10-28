@@ -12101,32 +12101,44 @@ picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres
         </message>
     </context>
     <context>
-        <name>SlideshowView</name>
+        <name>SlideshowControls</name>
         <message>
+            <location filename="../qml/PicasaPy/SlideshowControls.qml" />
             <source>Display Time</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: oneuptext:Text(oneup/tpslabel);tooltips:Text(editoneup/tpslabel);tooltips:Text(oneup/tpslabel)</extracomment>
             <translation>Megjelenítési idő</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/SlideshowView.qml" />
+            <location filename="../qml/PicasaPy/SlideshowControls.qml" />
+            <source>Exit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kilépés</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/SlideshowControls.qml" />
             <source>Timeline</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: oneuptext:Label(oneup/tllabel)</extracomment>
             <translation>Időrend</translation>
         </message>
         <message>
-            <source>seconds</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:OneUpUI::second;stringres:OneUpUI::seconds;stringres:uploadmgr::seconds</extracomment>
-            <translation>másodperc</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/SlideshowControls.qml" />
             <source>second</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:OneUpUI::second</extracomment>
             <translation>másodperc</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/SlideshowControls.qml" />
+            <source>seconds</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:OneUpUI::second;stringres:OneUpUI::seconds;stringres:uploadmgr::seconds</extracomment>
+            <translation>másodperc</translation>
+        </message>
+    </context>
+    <context>
+        <name>SlideshowView</name>
         <message>
             <source>Cut</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -12256,12 +12268,6 @@ picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
             <translation>Pásztázás és nagyítás</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/SlideshowView.qml" line="177" />
-            <source>Exit</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kilépés</translation>
         </message>
     </context>
     <context>
