@@ -8,7 +8,7 @@ from collections.abc import Iterator
 from PySide6.QtGui import QFont, QFontDatabase, QGuiApplication
 from PySide6.QtQuick import QQuickItem
 
-from tests.support.betucsalad import BETU_FORRAS
+from support.betucsalad import BETU_FORRAS
 
 TEXT_ITEM_CLASS_NAMES = ("QQuickText", "QQuickTextInput", "QQuickTextEdit")
 

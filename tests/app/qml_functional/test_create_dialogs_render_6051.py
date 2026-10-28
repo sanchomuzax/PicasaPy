@@ -13,7 +13,7 @@ from PySide6.QtQuick import QQuickItem, QQuickWindow
 
 from support.jpeg_factory import make_jpeg
 from tests.app.qml_functional.conftest import _build_qml_app
-from tests.support.render_test_helpers import is_text_item
+from support.render_test_helpers import is_text_item
 from tests.support.qml_halasztott import epitsd_fel
 from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 

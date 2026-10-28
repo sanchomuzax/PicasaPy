@@ -15,7 +15,7 @@ from PySide6.QtQuick import QQuickItem
 
 from picasapy.index import open_index, sync_tree
 from tests.support.jpeg_factory import make_jpeg
-from tests.support.render_test_helpers import is_text_item
+from support.render_test_helpers import is_text_item
 from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 

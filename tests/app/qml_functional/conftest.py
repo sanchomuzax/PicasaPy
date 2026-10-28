@@ -26,7 +26,7 @@ from support.folder_hierarchy_wiring import wire_folder_hierarchy
 from support.print_wiring import wire_passport, wire_print
 from support.jpeg_factory import make_jpeg
 from support import keep_burkok
-from tests.support.render_test_helpers import rogzitett_betu_context
+from support.render_test_helpers import rogzitett_betu_context
 
 
 @pytest.fixture(autouse=True)

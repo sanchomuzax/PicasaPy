@@ -61,7 +61,7 @@ def test_minden_golden_render_teszt_kozos_segedet_hasznal():
             nev.asname or nev.name
             for csomopont in ast.walk(fa)
             if isinstance(csomopont, ast.ImportFrom)
-            and csomopont.module == "tests.support.render_test_helpers"
+            and csomopont.module == "support.render_test_helpers"
             for nev in csomopont.names
             if nev.name == "is_text_item"
         }

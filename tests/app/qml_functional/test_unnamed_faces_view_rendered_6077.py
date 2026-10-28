@@ -16,7 +16,7 @@ from PySide6.QtQuick import QQuickItem, QQuickWindow
 from PySide6.QtTest import QSignalSpy, QTest
 
 from test_unnamed_faces_view import _StubController, _StubFaceScanController
-from tests.support.render_test_helpers import is_text_item as _is_text_item
+from support.render_test_helpers import is_text_item as _is_text_item
 from tests.support.varakozas import var_feltetelre
 
 _QML_DIR = Path(__file__).resolve().parents[3] / "src" / "picasapy" / "app" / "qml" / "PicasaPy"

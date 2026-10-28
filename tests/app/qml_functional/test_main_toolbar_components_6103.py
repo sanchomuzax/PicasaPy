@@ -24,7 +24,7 @@ from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QSignalSpy, QTest
 from tests.support.qml_blokk import blokk_horgonyra
-from tests.support.render_test_helpers import is_text_item
+from support.render_test_helpers import is_text_item
 
 _KOMPONENS = "ToolbarFilterControls"
 _ALLAPOTOK = ("default", "selection", "filter", "narrow")

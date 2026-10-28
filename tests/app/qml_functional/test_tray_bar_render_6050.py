@@ -25,7 +25,7 @@ from PySide6.QtTest import QSignalSpy, QTest
 
 from picasapy.app import formatting
 from support.jpeg_factory import make_minta_jpeg
-from tests.support.render_test_helpers import is_text_item
+from support.render_test_helpers import is_text_item
 from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
