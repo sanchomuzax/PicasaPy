@@ -1,3 +1,4 @@
+# ruff: noqa: F401
 """Ismételhető szinkron: fájlrendszer-scan + .picasa.ini → SQLite index.
 
 A 7. rögzített döntés (ismételhető migráció) miatt a szinkron idempotens:
@@ -47,6 +48,65 @@ from picasapy.scanner import (
     scan_folder,
     scan_tree,
 )
+
+
+# Régi importútvonalak: a függvények közvetlenül erről a modulról maradnak elérhetők.
+from .sync_folders import (
+    _PATH_TABLES,
+    _csatolasi_hataron_ul,
+    _ensure_scan_state,
+    _gyoker_baja,
+    _gyoker_ures_vagy_olvashatatlan,
+    _has_photos,
+    _remove_folder,
+    _reszfa_feltetel,
+    _scandir,
+    _set_folder_offline,
+    add_removed_folder,
+    clear_removed_folders_under,
+    folder_looks_offline,
+    folder_paths_under,
+    move_folder_tree,
+    remove_folder_tree,
+    removed_folder_paths,
+    watched_root_missing,
+)
+from .sync_state import (
+    _ensure_photo_hashes,
+    _ensure_similarity_features,
+    _filetype_signature,
+    _make_skip,
+    _store_scan_state,
+    folder_scan_stamps,
+)
+from .sync_photos import (
+    _FolderSyncResult,
+    _load_ini,
+    _prune_albums,
+    _prune_photos,
+    _rotate_steps,
+    _sync_albums,
+    _sync_folder,
+    _sync_folder_hidden,
+    _upsert_photo,
+    flip_jelzo,
+    sync_folder_date,
+)
+from .sync_cleanup import (
+    _TARGETED_UPDATE_COLUMNS,
+    _azonossag,
+    _elojeles64,
+    _feloldas_gyorstarral,
+    _has_indexed_folders,
+    _is_under,
+    _prune_folders,
+    _resolved_protected_roots,
+    _under_root_query,
+    prune_foreign_folders,
+    remove_root,
+    update_photo_fields,
+)
+
 
 #: Az `os.stat` MODULSZINTŰ fogantyúja (#1375, #1560) — a teszt EZT cserélje:
 #: `monkeypatch.setattr(sync, "_stat", …)`.
@@ -199,9 +259,7 @@ def sync_tree(
         if scan.skipped:
             # változatlan mappa: az indexbeli állapot érvényes; a haladás-
             # számláló ettől még lép (a hívó ritkítja a jelzés-árat)
-            if progress is not None and progress(
-                str(scan.path), done, len(scans), new_total
-            ):
+            if progress is not None and progress(str(scan.path), done, len(scans), new_total):
                 cancelled = True
                 break
             continue
@@ -217,9 +275,7 @@ def sync_tree(
         if incremental and (scan.files or scan.has_ini) and not folder_result.retry:
             _store_scan_state(conn, scan, filetype_signature)
         conn.commit()
-        if progress is not None and progress(
-            str(scan.path), done, len(scans), new_total
-        ):
+        if progress is not None and progress(str(scan.path), done, len(scans), new_total):
             cancelled = True
             break
     if cancelled:
@@ -294,13 +350,9 @@ def sync_folder(
     # ugyanarra az útra vezet — a kihagyás tehát a végeredményt nem
     # változtatja, csak a felesleges rendszerhívást takarítja meg (a #1706
     # `_resolved_protected_roots` érvelése, egy hívásra szűkítve).
-    folder_path = (
-        root_path if str(folder) == str(root) else Path(normalize_path(folder))
-    )
+    folder_path = root_path if str(folder) == str(root) else Path(normalize_path(folder))
     if not folder_path.is_relative_to(root_path):
-        raise ValueError(
-            f"A mappa nem a figyelt gyökér alatt van: {folder_path} ∉ {root_path}"
-        )
+        raise ValueError(f"A mappa nem a figyelt gyökér alatt van: {folder_path} ∉ {root_path}")
     _ensure_scan_state(conn)
     # #1249: a sírkövek itt is kizárnak (a watcher-ág is ide fut)
     #
@@ -310,12 +362,10 @@ def sync_folder(
     # veszteség, és a szorzó rossz: hívásonként (tehát exportcélonként)
     # futott le MINDEN sírkőre. MÉRVE: 20 sírkő × 10 exportcél = +800
     # `lstat` egyetlen induláson.
-    exclude_paths = tuple(
-        Path(normalize_path(item)) for item in exclude
-    ) + tuple(Path(item) for item in removed_folder_paths(conn))
-    excluded = any(
-        folder_path == item or item in folder_path.parents for item in exclude_paths
+    exclude_paths = tuple(Path(normalize_path(item)) for item in exclude) + tuple(
+        Path(item) for item in removed_folder_paths(conn)
     )
+    excluded = any(folder_path == item or item in folder_path.parents for item in exclude_paths)
     filetype_signature = _filetype_signature(enabled_filetypes)
     skip = _make_skip(conn, filetype_signature) if incremental else None
     # #2483: a `folder_path` EBBEN a függvényben lett feloldva — a
@@ -325,7 +375,9 @@ def sync_folder(
         None
         if excluded
         else scan_folder(
-            folder_path, skip=skip, mar_feloldva=True,
+            folder_path,
+            skip=skip,
+            mar_feloldva=True,
             enabled_filetypes=enabled_filetypes,
         )
     )
@@ -336,9 +388,7 @@ def sync_folder(
         # veszünk ki — ld. a `_gyoker_baja` docstringjét. A hibázás ára
         # aszimmetrikus: egy elavult sor átmeneti kényelmetlenség, a
         # kiürült index viszont a felhasználó teljes nyilvántartása.
-        row = conn.execute(
-            "SELECT id FROM folders WHERE path = ?", (str(folder_path),)
-        ).fetchone()
+        row = conn.execute("SELECT id FROM folders WHERE path = ?", (str(folder_path),)).fetchone()
         if row is not None:
             # a felhasználó ne néma üres rácsot lásson: a meglévő #459/5
             # jelölés (halvány, dőlt sor + súgószöveg + tájékoztató sáv)
@@ -346,8 +396,7 @@ def sync_folder(
             # visszafordítható: az első sikeres scan törli (`_sync_folder`).
             _set_folder_offline(conn, row["id"], True)
         logger.warning(
-            "#1560: a figyelt gyökér (%s) %s — a(z) %s mappa indexsorait "
-            "NEM takarítjuk.",
+            "#1560: a figyelt gyökér (%s) %s — a(z) %s mappa indexsorait NEM takarítjuk.",
             root_path,
             gyoker_baja,
             folder_path,
@@ -358,14 +407,14 @@ def sync_folder(
         # #459/5: a `scan_folder` a nem elérhető mappára is None-t ad — a
         # törlés előtt megkérdezzük, hogy tényleg eltűnt-e. A kizárt mappa
         # (#145) ettől függetlenül kikerül: ott nem elérhetőségről van szó.
-        row = None if excluded else conn.execute(
-            "SELECT id FROM folders WHERE path = ?", (str(folder_path),)
-        ).fetchone()
-        if (
-            row is not None
-            and _has_photos(conn, row["id"])
-            and folder_looks_offline(folder_path)
-        ):
+        row = (
+            None
+            if excluded
+            else conn.execute(
+                "SELECT id FROM folders WHERE path = ?", (str(folder_path),)
+            ).fetchone()
+        )
+        if row is not None and _has_photos(conn, row["id"]) and folder_looks_offline(folder_path):
             _set_folder_offline(conn, row["id"], True)
             logger.warning(
                 "A mappa jelenleg nem elérhető, az indexben marad: %s",
@@ -383,1309 +432,4 @@ def sync_folder(
         folder_result = _sync_folder(conn, scan)
         if (scan.files or scan.has_ini) and not folder_result.retry:
             _store_scan_state(conn, scan, filetype_signature)
-    conn.commit()
-
-
-def _gyoker_baja(root_path: Path) -> str:
-    """Üres szöveg, ha a figyelt gyökér BIZONYÍTJA, hogy a tároló ott van;
-    különben a baj rövid megnevezése — naplózásra (#1560).
-
-    ## Miért a gyökér a takarítás bizonyítéka
-
-    A `folder_looks_offline` (#459/5) egyetlen mappáról dönt, és a hiányzó
-    mappát eltűntnek veszi. Ez a mappa-szintű próba önmagában két, MÉRT
-    adatvesztést enged át — mindkettőben a `sync_folder` vette ki a
-    sorokat, miközben a képek a lemezen sértetlenek voltak:
-
-    * **a figyelt gyökeret fájlkezelővel áthelyezték** (#1560): a #1275
-      tízmásodperces lekérdezése 9,2 s alatt 3 mappa / 3 fotóról 0 / 0-ra
-      ürítette az indexet;
-    * **a NAS lecsatolódott**: a csatolási pont üres könyvtárként ott
-      marad, tehát a gyökér sora túléli — az ALMAPPÁI viszont nem, mert
-      azokra a `folder_looks_offline` `FileNotFoundError`-t kap.
-
-    A közös ok: a mappa hiánya önmagában nem bizonyíték. Csak akkor jelent
-    valódi hiányt, ha a GYÖKÉR igazolja, hogy a tároló olvasható és nem
-    üres. Pontosan ez a `sync_tree` #132-es szabálya is — a `sync_folder`
-    eddig egyszerűen nem követte; ez a függvény hozza össze a kettőt.
-
-    Két baj van, és a jegy kifejezetten kéri az elhatárolásukat:
-
-    * **eltűnt** (`watched_root_missing`): ENOENT/ENOTDIR, vagy az út már
-      nem könyvtár — a horgony maga nincs meg;
-    * **elérhetetlen** (`folder_looks_offline`): a gyökér olvasása
-      elhasal (ESTALE, ENOTCONN, elvett jog), vagy teljesen üres — így néz
-      ki egy lecsatolt mount.
-
-    A kettő KÖVETKEZMÉNYE azonos (nem takarítunk), a naplóüzenetük más. A
-    védelem szigorúan HOZZÁAD: nincs olyan ág, ahol miatta törlődne sor,
-    ami eddig megmaradt volna. És nem is fagyasztja be az indexet: amint a
-    gyökér ismét olvasható és nem üres, a takarítás magától újraindul (ld.
-    `test_a_visszateres_utan_a_takaritas_ismet_fut`).
-    """
-    if watched_root_missing(root_path):
-        return "nincs meg a lemezen"
-    if _gyoker_ures_vagy_olvashatatlan(root_path):
-        return "jelenleg nem elérhető (üres vagy olvashatatlan)"
-    return ""
-
-
-def _gyoker_ures_vagy_olvashatatlan(root_path: Path) -> bool:
-    """A GYÖKÉR-szintű próba: üres VAGY olvashatatlan → visszatartunk.
-
-    ⚠️ #1909: itt szándékosan TÁGABB a szabály, mint a mappa-szintű
-    `folder_looks_offline`-nál, és ez nem következetlenség, hanem a két
-    kérdés különbsége:
-
-    * a GYÖKÉR üressége már önmagában gyanús — a #1560 mérése szerint épp
-      így néz ki a lecsatolt NAS (a csatolási pont üres könyvtárként ott
-      marad), és a tévedés ára a TELJES index kiürülése volt (9,2 s alatt
-      3 mappa / 3 fotó → 0 / 0);
-    * egy MAPPA üressége viszont a leggyakoribb esetben azt jelenti, hogy
-      a felhasználó kiürítette — erről állított valótlant a felület
-      („jelenleg nem elérhető … lecsatolt meghajtó"), miközben a mappa
-      olvasható volt.
-
-    A gyökér-szintű visszatartás így továbbra is fedi a lecsatolt NAS
-    egész fáját (az almappák sorai megmaradnak), a mappa-szintű döntés
-    pedig nem hazudik a kiürített mappáról.
-    """
-    try:
-        with _scandir(root_path) as it:
-            return next(iter(it), None) is None
-    except FileNotFoundError:
-        return False
-    except NotADirectoryError:
-        return False
-    except OSError:
-        return True
-
-
-def watched_root_missing(root: str | Path) -> bool:
-    """Igaz, ha MAGA a figyelt gyökér ELTŰNT a lemezről (#1560).
-
-    A `_gyoker_baja` két próbája közül ez az egyik; a másik a
-    `folder_looks_offline`. A kettő elhatárolása szándékos és szűk:
-
-    * **eltűnt** — `FileNotFoundError`/`NotADirectoryError` (ENOENT,
-      ENOTDIR), vagy az út létezik ugyan, de már NEM könyvtár. A horgony
-      maga nincs meg: ilyet lát a program, ha a felhasználó a fő
-      képmappáját fájlkezelővel áthelyezte vagy átnevezte.
-    * **elérhetetlen** — **minden más `OSError`** (lecsatolt mount,
-      `ESTALE`, `ENOTCONN`, elvett jog). Erre ez a függvény HAMISAT ad: az
-      eset nem ide tartozik, hanem a `folder_looks_offline`-hoz.
-
-    Az elhatárolásnak a NAPLÓÜZENETRE van hatása, a döntésre nincs: a
-    `_gyoker_baja` mindkét bajra visszatartja a takarítást. Külön mégis
-    érdemes tartani őket, mert a két ok mást jelent a felhasználónak (az
-    egyiket ő maga okozta, a másik a tárolóé), és mert egy jövőbeli
-    „keressük meg az új helyet" lépés (a #1542 `move_folder_tree`-je) csak
-    az ELTŰNT ágon indulhat el — az elérhetetlen mountot megkeresni nem
-    kell, vissza fog jönni.
-    """
-    try:
-        stat = _stat(root)
-    except (FileNotFoundError, NotADirectoryError):
-        return True  # a horgony tényleg nincs meg
-    except OSError:
-        # elérhetetlen (levált mount, ESTALE, jogosultság): NEM eltűnt —
-        # innen a #459/5 ága viszi tovább
-        return False
-    return not stat_module.S_ISDIR(stat.st_mode)
-
-
-#: #1217/#1375: MODULSZINTŰ fogantyúk. A teszt ezeket cseréli, nem a
-#: globális `os.stat`/`os.scandir`-t — a globális átírás minden más
-#: modulra átszivárog, amíg a teszt fut.
-_stat = os.stat
-_scandir = os.scandir
-
-
-def folder_looks_offline(folder_path: Path) -> bool:
-    """Igaz, ha a mappa jelenleg NEM ELÉRHETŐNEK látszik (#459/5).
-
-    A #132 gyökér-szintű védelmének mappa-szintű párja. A megkülönböztetés
-    szándékosan szűk, hogy a „a felhasználó kiürítette a mappát" eset NE
-    minősüljön offline-nak:
-
-    - a `scandir` hibára fut (ESTALE/EIO/EACCES/ENOTCONN — levált mount,
-      megszűnt hálózati megosztás, elvett jog) → offline;
-    - a mappa létezik és hibátlanul olvasható, de ÜRES → **csak akkor**
-      offline, ha CSATOLÁSI HATÁR van rajta (ld. lentebb);
-    - a mappa nem létezik, vagy létezik és van benne bármi (csak épp
-      média nincs) → NEM offline, a takarítás futhat.
-
-    ## #1909: a „kiürített" és az „elérhetetlen" szétválasztása
-
-    Korábban **minden** üres mappa offline-nak számított, arra a feltevésre
-    építve, hogy „a kiürített fotómappában rendszerint ott marad legalább a
-    `.picasa.ini`". **Ez a feltevés élesben megdőlt:** a tulajdonos
-    kiürített egy mappát, semmi nem maradt benne, és a program azt
-    állította róla, hogy *„jelenleg nem elérhető (például lecsatolt
-    meghajtó vagy hálózati megosztás)"* — miközben a meghajtó megvolt és a
-    mappa olvasható volt. A felület VALÓTLANT állított, és a sor bent
-    ragadt.
-
-    A megkülönböztetés ezért nem egy véletlen maradék-fájlon múlik többé,
-    hanem azon, hogy **van-e csatolási határ a mappán**: az `st_dev`
-    eltér-e a SZÜLŐ mappáétól. Egy ÉLŐ, de üres csatolási pont továbbra is
-    offline (ez a levált NAS jellemző képe); egy közönséges, a szülővel
-    azonos eszközön ülő üres mappa viszont egyszerűen üres.
-
-    ⚠️ **A maradék kockázat kimondva:** ha egy BEÁGYAZOTT mount csatolódik
-    le teljesen, a csatolási pont közönséges üres könyvtárként marad ott
-    (`st_dev` = a szülőé), tehát ez a próba „egyszerűen üresnek" látja. Ezt
-    a `sync_folder` elé tett GYÖKÉR-szintű védelem fogja (`_gyoker_baja`,
-    #1560/#132): a figyelt gyökér elérhetetlensége önmagában megállítja a
-    takarítást, és a gyakori eset — a figyelt gyökér MAGA a NAS-útvonal —
-    ezzel le van fedve. A beágyazott, külön csatolt almappa esete NINCS
-    lefedve; a rekord-id-k ott a következő sikeres scannel újraépülnek.
-    """
-    try:
-        with _scandir(folder_path) as it:
-            if next(iter(it), None) is not None:
-                return False  # van benne valami — biztosan elérhető
-    except FileNotFoundError:
-        return False  # ténylegesen eltűnt mappa — nem offline, takarítható
-    except NotADirectoryError:
-        return False
-    except OSError:
-        return True  # elérhetetlen (levált mount, jogosultság, I/O hiba)
-    return _csatolasi_hataron_ul(folder_path)
-
-
-def _csatolasi_hataron_ul(folder_path: Path) -> bool:
-    """Igaz, ha a mappa MÁS eszközön ül, mint a szülője (#1909).
-
-    Ez az élő csatolási pont jele. Ha a szülő nem olvasható, óvatosak
-    vagyunk és igazat adunk: olyankor nem tudjuk kizárni a leválást."""
-    try:
-        sajat = _stat(folder_path).st_dev
-        szulo = _stat(folder_path.parent).st_dev
-    except OSError:
-        return True
-    return sajat != szulo
-
-
-def _has_photos(conn: sqlite3.Connection, folder_id: int) -> bool:
-    return (
-        conn.execute(
-            "SELECT 1 FROM photos WHERE folder_id = ? LIMIT 1", (folder_id,)
-        ).fetchone()
-        is not None
-    )
-
-
-def _set_folder_offline(conn: sqlite3.Connection, folder_id: int, offline: bool) -> None:
-    """Az offline jelölés írása — csak tényleges változásnál (a fölösleges
-    UPDATE-ek WAL-hízást okoznának minden szinkronban)."""
-    conn.execute(
-        "UPDATE folders SET offline = ? WHERE id = ? AND offline IS NOT ?",
-        (int(offline), folder_id, int(offline)),
-    )
-
-
-def _remove_folder(conn: sqlite3.Connection, folder_path: Path) -> None:
-    """Egy mappa sorának (és fotóinak, scan-állapotának) törlése. Explicit
-    photos-törlés a folders előtt, hogy az FTS-triggerek lefussanak."""
-    row = conn.execute(
-        "SELECT id FROM folders WHERE path = ?", (str(folder_path),)
-    ).fetchone()
-    if row is not None:
-        conn.execute("DELETE FROM photos WHERE folder_id = ?", (row["id"],))
-        conn.execute("DELETE FROM folders WHERE id = ?", (row["id"],))
-    conn.execute(
-        "DELETE FROM folder_scan_state WHERE path = ?", (str(folder_path),)
-    )
-
-
-def _ensure_scan_state(conn: sqlite3.Connection) -> None:
-    """A scan-állapot cache-tábla lusta létrehozása (ld. _SCAN_STATE_DDL)."""
-    conn.execute(_SCAN_STATE_DDL)
-    columns = {
-        row["name"] for row in conn.execute("PRAGMA table_info(folder_scan_state)")
-    }
-    if "filetype_signature" not in columns:
-        conn.execute(
-            "ALTER TABLE folder_scan_state ADD COLUMN filetype_signature TEXT"
-        )
-    conn.execute(_REMOVED_FOLDERS_DDL)
-
-
-#: #1249: az „Eltávolítás a Picasából" SÍRKÖVEI. Az eredetiben a mappa nem
-#: törlődik az albumtárból — `]album:removed` tokennel jelölt bejegyzés
-#: marad (`0x004b9200`), és a beolvasó ettől nem veszi fel újra. Nálunk a
-#: megfelelője ez a tábla: a beolvasás kihagyja a felsorolt útvonalakat
-#: (és alfáikat), az újra-hozzáadás pedig feloldja őket.
-_REMOVED_FOLDERS_DDL = """
-CREATE TABLE IF NOT EXISTS removed_folders (
-    path TEXT PRIMARY KEY
-)
-"""
-
-
-def add_removed_folder(conn: sqlite3.Connection, path: str | Path) -> None:
-    """Sírkő az eltávolított mappára (#1249) — a rescan nem hozza vissza."""
-    _ensure_scan_state(conn)
-    conn.execute(
-        "INSERT OR REPLACE INTO removed_folders (path) VALUES (?)",
-        (normalize_path(str(path)),),
-    )
-    conn.commit()
-
-
-def clear_removed_folders_under(conn: sqlite3.Connection, path: str | Path) -> None:
-    """A sírkövek feloldása az útvonalon ÉS alatta (#1249) — az újra
-    felvett mappa (vagy szülője) alatt semmi nem maradhat némán rejtve."""
-    _ensure_scan_state(conn)
-    torzs = Path(normalize_path(str(path)))
-    torlendo = [
-        row["path"]
-        for row in conn.execute("SELECT path FROM removed_folders")
-        if Path(row["path"]) == torzs or Path(row["path"]).is_relative_to(torzs)
-    ]
-    for item in torlendo:
-        conn.execute("DELETE FROM removed_folders WHERE path = ?", (item,))
-    conn.commit()
-
-
-def removed_folder_paths(conn: sqlite3.Connection) -> tuple[str, ...]:
-    """A sírkövek listája — a beolvasás kizáró-készletéhez (#1249)."""
-    _ensure_scan_state(conn)
-    return tuple(
-        row["path"]
-        for row in conn.execute("SELECT path FROM removed_folders ORDER BY path")
-    )
-
-
-def folder_paths_under(conn: sqlite3.Connection, root: str | Path) -> tuple[str, ...]:
-    """A `root` és az alatta lévő mappák INDEXBELI útvonalai (#1538).
-
-    Akkor kell, amikor egy részfa a LEMEZEN már nincs meg, tehát a „mi
-    tartozik ide" kérdésre csak az index tud válaszolni — a mappa-
-    áthelyezés RÉGI oldala pontosan ilyen. A hívó ezután mappánként
-    szinkronizál, így az eltűnt sorok a `sync_folder` saját
-    `folder_looks_offline` próbáján át esnek ki: egy ELÉRHETETLEN (nem
-    eltűnt) mappa sorai megmaradnak.
-
-    A LIKE-mintát a `_under_root_query` escape-eli, tehát a `%`/`_` a
-    mappanévben nem viselkedik jokerként. A sorrend determinisztikus
-    (`ORDER BY path`), hogy a naplók és a tesztek stabilak legyenek."""
-    root_path = Path(normalize_path(root))
-    query, params = _under_root_query("SELECT path", root_path)
-    return tuple(
-        row["path"] for row in conn.execute(f"{query} ORDER BY path", params)
-    )
-
-
-def remove_folder_tree(conn: sqlite3.Connection, root: str | Path) -> int:
-    """Egy eltűnt mappafa törlése kizárólag az indexből (#5177).
-
-    Nem ellenőrzi és nem járja be a lemezt. A jelzett út alatti indexsorokat
-    Path-alapon szűri, így Windows alatt az útvonal-komponensek és a
-    kis-nagybetű eltérése sem okoz téves előtag-egyezést. A fotókat a
-    mappasorok előtt törli, hogy a keresőindex-triggerek lefussanak.
-
-    A visszatérési érték a törölt mappasorok száma.
-    """
-    root_path = Path(normalize_path(root))
-    candidates = folder_paths_under(conn, root_path)
-    paths = tuple(
-        path
-        for path in candidates
-        if Path(path) == root_path or Path(path).is_relative_to(root_path)
-    )
-    if not paths:
-        return 0
-
-    removed = 0
-    for path in paths:
-        row = conn.execute("SELECT id FROM folders WHERE path = ?", (path,)).fetchone()
-        if row is None:
-            continue
-        conn.execute("DELETE FROM photos WHERE folder_id = ?", (row["id"],))
-        conn.execute("DELETE FROM folders WHERE id = ?", (row["id"],))
-        conn.execute("DELETE FROM folder_scan_state WHERE path = ?", (path,))
-        removed += 1
-    conn.commit()
-    return removed
-
-
-#: A #1542 útvonal-átírása ezeket a táblákat érinti — MINDEGYIK ABSZOLÚT
-#: útvonalat tárol kulcsként, tehát egy áthelyezett részfánál MIND elavul:
-#:
-#: * `folders` — a mappák sorai (a fotók a `folder_id`-n lógnak, azokhoz
-#:   ezért nem kell nyúlni: a részfa átírása egyetlen fotósort sem érint);
-#: * `folder_scan_state` — a „változott-e a mappa" pecsétek. Átírás nélkül
-#:   a teljes áthelyezett fa elavultnak látszana (fölösleges újraolvasás),
-#:   a régi sorok pedig örökre ottragadnának;
-#: * `removed_folders` — a #1249 SÍRKÖVEI. Átírás nélkül egy korábban
-#:   „Eltávolítás a Picasából"-val kivett almappa az áthelyezés után némán
-#:   VISSZAJÖNNE — a felhasználó döntése veszne el;
-#: * `photo_hashes` — a #294 dHash-gyorsítótára (FÁJL-útvonalra kulcsolva).
-#: * `photo_similarity` — a #5744 három Picasa-jellemzőjének cache-e.
-#:   Tisztán származtatott adat, de átírás nélkül az egész gyűjtemény
-#:   hash-eit újra kellene számolni, a régi sorok meg szemétként maradnának.
-_PATH_TABLES = (
-    "folders",
-    "folder_scan_state",
-    "removed_folders",
-    "photo_hashes",
-    "photo_similarity",
-)
-
-
-def _reszfa_feltetel(root: Path) -> tuple[str, tuple[str, int, str]]:
-    """Pontos kis-/nagybetűs WHERE-feltétel a ``root`` alatti sorokra.
-
-    Az `_under_root_query` mintája, de tábla NÉLKÜL: az `UPDATE`-be a
-    `FROM` záradék nem fér bele (SQLite 3.33 óta az `UPDATE … FROM` JOIN-t
-    jelent, és a `path` oszlop kétértelművé válna). A `LIKE` helyett a
-    `substr` + BINARY összehasonlítás pontos útvonal-egyezést és elválasztóval
-    zárt részfa-prefixet ad. Így a `Foo` részfa nem fogja meg a különálló
-    `foo` testvért, és a célütközés-ellenőrzés sem látja saját régi sorait.
-    """
-    root_text = str(root)
-    prefix = root_text.rstrip(os.sep) + os.sep
-    return (
-        "WHERE (path = ? COLLATE BINARY OR "
-        "substr(path, 1, ?) = ? COLLATE BINARY)",
-        (root_text, len(prefix), prefix),
-    )
-
-
-def move_folder_tree(
-    conn: sqlite3.Connection, old_root: str | Path, new_root: str | Path
-) -> int:
-    """Egy ÁTHELYEZETT részfa útvonalainak ÁTÍRÁSA az indexben (#1542).
-
-    Akkor kell, amikor MAGA a figyelt gyökér mozdult el: a `_roots` és a
-    `WatchedFolders.txt` az új helyre áll, tehát az indexnek is oda kell
-    mutatnia — különben a gyökér alá már egyetlen indexsor sem esik, és a
-    következő induláskor a `prune_foreign_folders` (#58) az egészet
-    kitakarítaná.
-
-    ⚠️ **Ez a függvény SORT NEM TÖRÖL ÉS NEM HOZ LÉTRE** — kizárólag a
-    `path` oszlopokat írja át. Ez a jegy adatbiztonsági súlypontja: egy
-    áthelyezés nem járhat sorvesztéssel, és a törlés-majd-újraolvasás
-    (`remove_root` + rescan) egy megszakadt köznél épp azt tenné.
-
-    Ütközésnél (az ÚJ út alatt már van indexsor) `ValueError`-t dob és
-    SEMMIT nem módosít: két, útvonal szerint megkülönböztethetetlen
-    részfáról nem tippelünk, melyik a hatályos — a hívó ilyenkor inkább
-    nem követi a gyökeret.
-
-    Visszatérési érték: az átírt MAPPA-sorok száma (a naplóhoz és a
-    tesztek fogához)."""
-    # A rename may already have moved the directory before this index update.
-    # Resolve the parent, but preserve each supplied leaf spelling: on a
-    # case-insensitive filesystem the stale old path can resolve to the new
-    # entry and erase the very case-only change this function must record.
-    def moved_path(path: str | Path) -> str:
-        entry = Path(path)
-        return str(Path(normalize_path(entry.parent)) / entry.name)
-
-    old_text = moved_path(old_root)
-    new_text = moved_path(new_root)
-    # Path equality is case-insensitive on Windows; preserve spelling here so
-    # a case-only rename updates every indexed path.
-    if old_text == new_text:
-        return 0
-    old_path = Path(old_text)
-    new_path = Path(new_text)
-    _ensure_scan_state(conn)
-    _ensure_photo_hashes(conn)
-    _ensure_similarity_features(conn)
-    utkozes, params = _reszfa_feltetel(new_path)
-    sor = conn.execute(
-        f"SELECT 1 FROM folders {utkozes} LIMIT 1", params
-    ).fetchone()
-    if sor is not None:
-        raise ValueError(
-            f"Az index már tartalmaz sorokat az új út alatt: {new_path} — "
-            "az áthelyezett részfa átírása kimarad."
-        )
-    # a levágandó előtag hossza; az SQLite `substr` 1-alapú, tehát a
-    # +1 adja a maradékot (a pontos egyezésnél üres sztringet)
-    vagas = len(str(old_path)) + 1
-    mozgatott = 0
-    try:
-        for table in _PATH_TABLES:
-            feltetel, params = _reszfa_feltetel(old_path)
-            kurzor = conn.execute(
-                f"UPDATE {table} SET path = ? || substr(path, ?) {feltetel}",
-                (str(new_path), vagas, *params),
-            )
-            if table == "folders":
-                mozgatott = kurzor.rowcount
-    except sqlite3.Error:
-        conn.rollback()
-        raise
-    conn.commit()
-    logger.info(
-        "#1542: az áthelyezett részfa átírva az indexben: %s → %s (%d mappa)",
-        old_path,
-        new_path,
-        mozgatott,
-    )
-    return mozgatott
-
-
-def _ensure_photo_hashes(conn: sqlite3.Connection) -> None:
-    """A #294 hash-gyorsítótár lusta létrehozása — a `move_folder_tree`
-    régi (a tábla bevezetése előtt született) indexen is futhat.
-
-    A MAI alakot hozza létre (#1494: nullázható `dhash` + `originfast`), a
-    `schema.py` `_PHOTO_HASHES_DDL`-jével egyezően. Egy MÁR LÉTEZŐ
-    táblát nem alakít át — az a sémaverzió-migráció dolga."""
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS photo_hashes ("
-        " path TEXT PRIMARY KEY,"
-        " mtime_ns INTEGER NOT NULL,"
-        " size INTEGER NOT NULL,"
-        " dhash INTEGER,"
-        " originfast INTEGER)"
-    )
-
-
-def _ensure_similarity_features(conn: sqlite3.Connection) -> None:
-    """Régi, közvetlenül megnyitott indexekhez is létrehozza a jellemző-cache-t."""
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS photo_similarity ("
-        " path TEXT PRIMARY KEY,"
-        " mtime_ns INTEGER NOT NULL,"
-        " size INTEGER NOT NULL,"
-        " rgb565 BLOB NOT NULL,"
-        " histogram BLOB NOT NULL,"
-        " edges BLOB NOT NULL)"
-    )
-
-
-def folder_scan_stamps(
-    conn: sqlite3.Connection, paths: tuple[str, ...]
-) -> dict[str, tuple[int, int | None]]:
-    """A megadott mappák utoljára LÁTOTT pecsétje (mtime_ns, ini_mtime_ns).
-
-    A `folder_scan_state` táblát a szinkron amúgy is vezeti — ez csak
-    OLVASSA (#1435), új séma nincs. A hívó (`app/folder_freshness.py`)
-    ehhez hasonlítja a lemezen mért pecsétet, és csak eltérésnél kér
-    teljes újraolvasást. A még sosem látott mappa egyszerűen kimarad a
-    szótárból."""
-    if not paths:
-        return {}
-    _ensure_scan_state(conn)
-    placeholders = ",".join("?" for _ in paths)
-    return {
-        row["path"]: (row["mtime_ns"], row["ini_mtime_ns"])
-        for row in conn.execute(
-            "SELECT s.path, s.mtime_ns, s.ini_mtime_ns"
-            " FROM folder_scan_state s JOIN folders f ON f.path = s.path"
-            f" WHERE s.path IN ({placeholders})",
-            paths,
-        )
-    }
-
-
-def _filetype_signature(enabled_filetypes: Collection[str] | None) -> str | None:
-    """Beállítás-kulcs a pecséthez: csoportváltáskor ne legyen régi skip."""
-    if enabled_filetypes is None:
-        return None
-    return ",".join(sorted(enabled_filetypes))
-
-
-def _make_skip(
-    conn: sqlite3.Connection, filetype_signature: str | None = None
-):
-    """Kihagyás-predikátum az inkrementális rescanhez (#143).
-
-    Csak olyan mappa hagyható ki, amely (1) az indexben is szerepel,
-    (2) mappa- és ini-mtime-ja bitre egyezik a tárolt állapottal, és
-    (3) mindkét mtime idősebb a frissesség-védőablaknál."""
-    state = {
-        row["path"]: (
-            row["mtime_ns"], row["ini_mtime_ns"], row["filetype_signature"]
-        )
-        for row in conn.execute(
-            "SELECT s.path, s.mtime_ns, s.ini_mtime_ns, s.filetype_signature"
-            " FROM folder_scan_state s JOIN folders f ON f.path = s.path"
-        )
-    }
-    # #4580: migráció után a régi indexek videói NULL formátummal indulnak.
-    # Ezek mappája nem hagyható ki akkor sem, ha a scan-pecsét még friss.
-    # #4597: az ini-be még be nem írt rejtés (régi index) mappája sem — az
-    # egyszeri átállás az első szinkronon lefut.
-    always_scan = {
-        row["path"]
-        for row in conn.execute(
-            "SELECT DISTINCT f.path FROM photos p"
-            " JOIN folders f ON f.id = p.folder_id"
-            " WHERE p.kind = 'video' AND p.movie_format IS NULL"
-        )
-    } | {
-        row["path"]
-        for row in conn.execute(
-            "SELECT path FROM folders WHERE hidden = ?", (HIDDEN_INI_PENDING,)
-        )
-    }
-    fresh_limit = time.time_ns() - _SKIP_SAFETY_NS
-
-    def skip(path: Path, mtime_ns: int, ini_mtime_ns: int | None) -> bool:
-        if str(path) in always_scan:
-            return False
-        return (
-            state.get(str(path)) == (mtime_ns, ini_mtime_ns, filetype_signature)
-            and mtime_ns <= fresh_limit
-            and (ini_mtime_ns is None or ini_mtime_ns <= fresh_limit)
-        )
-
-    return skip
-
-
-def _store_scan_state(
-    conn: sqlite3.Connection,
-    scan: FolderScan,
-    filetype_signature: str | None = None,
-) -> None:
-    if not scan.mtime_ns:
-        return  # a mappa statja nem sikerült — ne rögzítsünk hamis állapotot
-    conn.execute(
-        "INSERT INTO folder_scan_state(path, mtime_ns, ini_mtime_ns, "
-        "filetype_signature) VALUES (?, ?, ?, ?)"
-        " ON CONFLICT(path) DO UPDATE SET mtime_ns = excluded.mtime_ns,"
-        " ini_mtime_ns = excluded.ini_mtime_ns,"
-        " filetype_signature = excluded.filetype_signature",
-        (str(scan.path), scan.mtime_ns, scan.ini_mtime_ns, filetype_signature),
-    )
-
-
-class _FolderSyncResult(NamedTuple):
-    """Egy mappa szinkronjának eredménye: az új fotók száma (#209) és hogy
-    a mappa újrapróbálandó-e (#4597: olvashatatlan ini — a scan-állapot nem
-    menthető, különben az inkrementális sync többé nem nézné meg)."""
-
-    new_count: int
-    retry: bool
-
-
-def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> _FolderSyncResult:
-    """Egy mappa szinkronja; az eredményben az ÚJ (az indexben eddig
-    nem szereplő) fotók száma (#209, a haladás-jelzéshez)."""
-    # #459/5: a sikeres scan bizonyítja, hogy a mappa elérhető — az esetleges
-    # offline jelölés magától elmúlik (a NAS visszatérése után nincs teendő).
-    folder_id = conn.execute(
-        "INSERT INTO folders(path, has_ini, offline) VALUES (?, ?, 0) "
-        "ON CONFLICT(path) DO UPDATE SET has_ini = excluded.has_ini,"
-        " offline = 0 "
-        "RETURNING id",
-        (str(scan.path), int(scan.has_ini)),
-    ).fetchone()[0]
-    # Az ini-mezőket is beolvassuk (#139): változatlan fájl + változatlan
-    # ini-mezők esetén az UPDATE teljesen kimarad — az SQLite azonos
-    # értékeknél is átírná a sort és elsütné az FTS-triggert (delete+insert
-    # minden fotóra minden syncnél → WAL-hízás, flash-kopás).
-    existing = {
-        row["name"]: (
-            (row["mtime_ns"], row["size"]),
-            (
-                row["star"],
-                row["hidden"],
-                row["caption_ini"],
-                row["keywords_ini"],
-                row["rotate_steps"],
-                row["flip_flags"],
-                row["filters"],
-                row["geotag_ini"],
-            ),
-            row["movie_format"],
-        )
-        for row in conn.execute(
-            "SELECT name, mtime_ns, size, star, hidden, caption_ini,"
-            " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini,"
-            " movie_format"
-            " FROM photos WHERE folder_id = ?",
-            (folder_id,),
-        )
-    }
-    document = _load_ini(scan)
-    _sync_folder_hidden(conn, folder_id, scan, document)
-    new_count = 0
-    for media in scan.files:
-        section = document.section(media.name) if document else None
-        ini_fields = (
-            int(section.get("star") == "yes") if section else 0,
-            int(section.get("hidden") == "yes") if section else 0,
-            section.get("caption") if section else None,
-            section.get("keywords") if section else None,
-            _rotate_steps(section.get("rotate")) if section else 0,
-            # #2976: a tükrözés is ini-eredetű (a bit-jelentés a #2938 mérése)
-            flip_jelzo(section.get("flipped")) if section else 0,
-            section.get("filters") if section else None,
-            # #30: a geocímke nyers ini-értéke — a feloldást (ini > EXIF)
-            # a lekérdezés-réteg végzi, itt bitre pontosan az tárolódik,
-            # ami az ini-ben áll
-            section.get("geotag") if section else None,
-        )
-        current = existing.get(media.name)
-        if current is not None and current[0] == (media.mtime_ns, media.size):
-            # Változatlan fájl: a (drága) EXIF/IPTC-olvasás kimarad, a
-            # fájl-metaadat oszlopok maradnak. UPDATE csak akkor fut, ha
-            # az ini-mezők ténylegesen eltérnek (#139) — különben a sor
-            # érintetlen, az FTS-trigger sem sül el.
-            if media.kind == "video" and current[2] is None:
-                # #4580: a v20-ról migrált sorokból a fájl újraolvasása tölti
-                # fel a videómezőket.
-                _upsert_photo(conn, folder_id, scan, media, ini_fields)
-            elif current[1] != ini_fields:
-                conn.execute(
-                    "UPDATE photos SET star = ?, hidden = ?, caption_ini = ?,"
-                    " keywords_ini = ?, rotate_steps = ?, flip_flags = ?,"
-                    " filters = ?, geotag_ini = ?"
-                    " WHERE folder_id = ? AND name = ?",
-                    (*ini_fields, folder_id, media.name),
-                )
-        else:
-            if current is None:
-                new_count += 1  # #209: eddig nem indexelt fotó
-            _upsert_photo(conn, folder_id, scan, media, ini_fields)
-    nevek = [media.name for media in scan.files]
-    _prune_photos(conn, folder_id, nevek)
-    # #2038: a származás-öröklés (`origin_keys`) útvonalra van kulcsolva, és a
-    # takarítása eddig kimaradt. Ez a MINDEN utat lefedő pont: a fájl eltűnhet
-    # kukába dobással, átnevezéssel vagy a felhasználó fájlkezelőjéből — a
-    # mappa-szinkron mindegyiket itt látja meg.
-    forget_origin_keys_outside(conn, scan.path, nevek)
-    _sync_albums(conn, folder_id, document)
-    sync_folder_date(conn, folder_id, document)
-    # #1644: „olvasatlan" jelölő — a mappába ÚJ kép került. A `new_count` a
-    # #209 óta pontosan ezt számolja (az indexben eddig nem szereplő
-    # fotókat), tehát nincs szükség külön észlelésre.
-    #
-    # ⚠️ Csak BEÁLLÍT, sosem töröl: az első indexeléskor MINDEN mappa új
-    # képeket kap, de a visszaállítás a felhasználó dolga (megnyitja a
-    # mappát) — a sync nem tudhatja, mit nézett már meg.
-    if new_count:
-        conn.execute(
-            "UPDATE folders SET unread = 1 WHERE id = ?", (folder_id,)
-        )
-    if not scan.files and not scan.has_ini:
-        # A beállítás által kiszűrt, `.picasa.ini` nélküli mappa ne maradjon
-        # üres sorként a könyvtárban.
-        _remove_folder(conn, scan.path)
-    return _FolderSyncResult(new_count, scan.has_ini and document is None)
-
-
-def sync_folder_date(
-    conn: sqlite3.Connection, folder_id: int, document: IniDocument | None
-) -> None:
-    """Mappa-dátum (#320): a `.picasa.ini` `[Picasa]` `date=` kézi
-    felülírása elsőbbséget élvez; ennek hiányában az alapértelmezett Picasa-
-    viselkedés — automatikusan a legrégebbi felvétel ideje.
-
-    #2304: a felvételi idő hiányában a FÁJL ideje a tartalék. Enélkül egy
-    csupa EXIF-nélküli mappa (letöltött vagy generált képek) dátum nélkül
-    maradt: a fejlécében nem állt dátum, a bal hasábban pedig — mivel a
-    `models._with_year_separators` dátumtalan mappához nem tesz
-    évszám-fejlécet — az ELŐZŐ év alá csúszott. A tartalék nem új
-    találmány: a rács rendezőkulcsa (`app/photo_sort.photo_date`) már
-    eddig is pontosan erre esett vissza, és a `mtime_ns` a `photos`
-    táblában is megvan.
-
-    A `taken_at` ISO-alakú helyi idő, ezért a fájlidőt is helyi időre
-    alakítjuk (`'localtime'`) — különben a két ág nem lenne
-    összehasonlítható, és a `MIN` a nyári időszámítás körül rossz sorrendet
-    adna.
-
-    #2486: a tartalék a BEFAGYASZTOTT fájlidő (`first_seen_mtime_ns`),
-    nem az élő `mtime`. A mappa dátuma így nem ugrik el attól, hogy egy
-    mentés vagy a saját `photo_touch`-unk átírta a képek idejét; a
-    `COALESCE` a második tagja csak a v17 előtti, még fel nem töltött
-    sorokra kell (ott a viselkedés a #2486 előtti marad)."""
-    override = read_folder_date_override(document) if document else None
-    if override is not None:
-        conn.execute(
-            "UPDATE folders SET date = ? WHERE id = ?", (override, folder_id)
-        )
-        return
-    conn.execute(
-        "UPDATE folders SET date = ("
-        " SELECT MIN(COALESCE("
-        "  COALESCE(p.taken_at_override, p.taken_at),"
-        "  strftime('%Y-%m-%dT%H:%M:%S',"
-        "           COALESCE(p.first_seen_mtime_ns, p.mtime_ns) / 1000000000,"
-        "           'unixepoch', 'localtime')"
-        " )) FROM photos p WHERE p.folder_id = ?"
-        ") WHERE id = ?",
-        (folder_id, folder_id),
-    )
-
-
-def _upsert_photo(
-    conn: sqlite3.Connection,
-    folder_id: int,
-    scan: FolderScan,
-    media: MediaFile,
-    ini_fields: tuple,
-) -> None:
-    meta = (
-        read_file_metadata(scan.path / media.name)
-        if media.kind == "photo"
-        else EMPTY_METADATA
-    )
-    video_meta = (
-        read_video_metadata(scan.path / media.name)
-        if media.kind == "video"
-        else EMPTY_VIDEO_METADATA
-    )
-    conn.execute(
-        "INSERT INTO photos"
-        "(folder_id, name, kind, size, mtime_ns, star, hidden, caption_ini,"
-        " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini,"
-        " taken_at, orientation, width, height, caption_file, keywords_file,"
-        " movie_format, frame_rate, duration_seconds,"
-        " exif_lat, exif_lon, first_seen_mtime_ns)"
-        " VALUES (" + ", ".join("?" for _ in range(25)) + ") "
-        "ON CONFLICT(folder_id, name) DO UPDATE SET "
-        # #2486: a BEFAGYASZTÁS egyetlen sora. A `mtime_ns` az élő érték —
-        # a változás-detektálásé, a bélyegkép-gyorstáré, a „legutóbbi
-        # változtatás" rendezésé —, a `first_seen_mtime_ns` viszont az
-        # ELSŐ látáskori, és az ütközési ágon SOHA nem íródik felül. A
-        # `COALESCE` csak a még üres (v17 elé indexelt, majd újra
-        # feltűnő) sort tölti fel.
-        "first_seen_mtime_ns = COALESCE(photos.first_seen_mtime_ns,"
-        " excluded.first_seen_mtime_ns), "
-        "kind = excluded.kind, size = excluded.size, "
-        "mtime_ns = excluded.mtime_ns, star = excluded.star, "
-        "hidden = excluded.hidden, "
-        "caption_ini = excluded.caption_ini, "
-        "keywords_ini = excluded.keywords_ini, "
-        "rotate_steps = excluded.rotate_steps, "
-        "flip_flags = excluded.flip_flags, "
-        "filters = excluded.filters, "
-        "geotag_ini = excluded.geotag_ini, "
-        "taken_at = excluded.taken_at, orientation = excluded.orientation, "
-        # #4332: a kézi dátum a fájl változása után is megmarad — a program
-        # saját Mentése is átírja a fájlt, és az eredeti Picasa a dátumot a
-        # saját adatbázisában tartja.
-        "taken_at_override = photos.taken_at_override, "
-        "width = excluded.width, height = excluded.height, "
-        "caption_file = excluded.caption_file, "
-        "keywords_file = excluded.keywords_file, "
-        "movie_format = excluded.movie_format, "
-        "frame_rate = excluded.frame_rate, "
-        "duration_seconds = excluded.duration_seconds, "
-        "exif_lat = excluded.exif_lat, exif_lon = excluded.exif_lon",
-        (
-            folder_id,
-            media.name,
-            media.kind,
-            media.size,
-            media.mtime_ns,
-            *ini_fields,
-            meta.taken_at,
-            meta.orientation,
-            meta.width,
-            meta.height,
-            meta.caption,
-            ",".join(meta.keywords) or None,
-            video_meta.movie_format,
-            video_meta.frame_rate,
-            video_meta.duration_seconds,
-            meta.latitude,
-            meta.longitude,
-            media.mtime_ns,
-        ),
-    )
-
-
-def _sync_folder_hidden(
-    conn: sqlite3.Connection,
-    folder_id: int,
-    scan: FolderScan,
-    document: IniDocument | None,
-) -> None:
-    """#4597: a `folders.hidden` az ini `P2category=Hidden Folders` sorából
-    származik — az újraépített index is rejtve hagyja a mappát.
-
-    EGYSZERI ÁTÁLLÍTÁS: a `hidden = 2` („rejtett, az ini-be még nincs
-    beírva": régi index vagy offline mappa) mappára előbb az ini-be íródik a
-    `Hidden Folders`, és csak ezután számít az ini az igazságforrásnak. Ha az
-    ini nem írható vagy nem olvasható, a jelölés 2 marad (a mappa rejtett
-    marad, a következő szinkron újrapróbálja). Ini nélküli mappánál az 1-es
-    jelölés érintetlen."""
-    current = conn.execute(
-        "SELECT hidden FROM folders WHERE id = ?", (folder_id,)
-    ).fetchone()[0]
-    if current == HIDDEN_INI_PENDING:
-        if scan.has_ini and document is None:
-            return  # olvashatatlan ini: nem írunk rá, rejtett marad
-        try:
-            if not is_hidden_folders_category(
-                read_folder_category(document) if document else None
-            ):
-                set_folder_hidden_in_ini(scan.path, True)
-        except (OSError, ValueError, RuntimeError):
-            return
-        conn.execute("UPDATE folders SET hidden = 1 WHERE id = ?", (folder_id,))
-        return
-    if document is None:
-        return
-    hidden = int(is_hidden_folders_category(read_folder_category(document)))
-    if bool(current) != bool(hidden):
-        conn.execute("UPDATE folders SET hidden = ? WHERE id = ?", (hidden, folder_id))
-
-
-def _load_ini(scan: FolderScan) -> IniDocument | None:
-    if not scan.has_ini:
-        return None
-    try:
-        ini_path = ini_source_path(scan.path / INI_NAME)
-        if ini_path is None:
-            return None
-        return load_document(ini_path)
-    except (OSError, ValueError):
-        # Zárolt/olvashatatlan/sérült ini (pl. a futó Picasa fogja): a mappa
-        # metaadat nélkül indexelődik, a következő sync majd pótolja.
-        return None
-
-
-def _rotate_steps(value: str | None) -> int:
-    if value is None:
-        return 0
-    match = _ROTATE.match(value)
-    return int(match.group(1)) % 4 if match else 0
-
-
-def flip_jelzo(value: str | None) -> int:
-    """A `flipped(N)` maszkja; `0`, ha nincs, üres, vagy értelmezhetetlen.
-
-    A fölös bitek leesnek (`FLIP_MASK`): a mért írónak két bitje van, és egy
-    harmadikra nincs jelentésünk — kitalálni tilos."""
-    if not value:
-        return 0
-    match = _FLIPPED.match(value)
-    return int(match.group(1)) & FLIP_MASK if match else 0
-
-
-_PRUNE_TEMP_TABLE = "_prune_photos_names"
-
-
-def _sync_albums(conn, folder_id: int, document) -> None:
-    """A mappa virtuális albumainak és a tagságoknak a szinkronizálása (#9).
-
-    Két külön dolog jön az ini-ből:
-    - a `[.album:<token>]` szekciók az album DEFINÍCIÓJÁT adják (név, dátum);
-      ugyanaz az album több mappában is definiálva lehet, ezért `upsert` a
-      tokenre — az utoljára látott, nem üres név nyer,
-    - a képek `albums=` kulcsa a TAGSÁGOT adja; ezt mappánként újraépítjük,
-      hogy az ini-ből kivett kép az indexből is kiessen.
-
-    Az ini nélküli mappa csak a saját tagságait törli — a máshol definiált
-    albumokat nem bántja.
-    """
-    photo_ids = {
-        row["name"]: row["id"]
-        for row in conn.execute(
-            "SELECT id, name FROM photos WHERE folder_id = ?", (folder_id,)
-        )
-    }
-    conn.execute(
-        "DELETE FROM photo_albums WHERE photo_id IN"
-        " (SELECT id FROM photos WHERE folder_id = ?)",
-        (folder_id,),
-    )
-    # a mappa SAJÁT definícióit írjuk újra — így az ini-ből törölt album
-    # akkor is kiesik, ha egy másik mappa még hivatkozik rá
-    conn.execute("DELETE FROM albums WHERE folder_id = ?", (folder_id,))
-    if document is None:
-        _prune_albums(conn)
-        return
-
-    for album in albums_of(document):
-        conn.execute(
-            "INSERT INTO albums"
-            " (folder_id, token, name, date, description, location)"
-            " VALUES (?, ?, ?, ?, ?, ?)",
-            (
-                folder_id,
-                album.token,
-                album.name,
-                album.date,
-                album.description,
-                album.location,
-            ),
-        )
-
-    # #4599 (ADR-016): az album kézi helye (`albumorder=`) — az index csak
-    # gyorsítótárazza, az igazságforrás az ini.
-    for name, photo_id in photo_ids.items():
-        section = document.section(name)
-        if section is None:
-            continue
-        refs = section.get("albums")
-        if not refs:
-            continue
-        photo_places = places_of_section(section)
-        for token in parse_album_refs(refs):
-            conn.execute(
-                "INSERT OR IGNORE INTO photo_albums (photo_id, token, place)"
-                " VALUES (?, ?, ?)",
-                (photo_id, token, photo_places.get(token)),
-            )
-    _prune_albums(conn)
-
-
-def _prune_albums(conn) -> None:
-    """A már sehol nem DEFINIÁLT albumok tagságainak kivezetése.
-
-    Az albumot a definíciója tartja életben: ha egyetlen mappa ini-jében sem
-    szerepel többé a `[.album:<token>]` szekció, akkor a rá mutató tagságok
-    is értelmüket vesztik. A definíciós sorokat maga a mappa-szinkron írja
-    újra, itt csak az árván maradt hivatkozásokat takarítjuk.
-    """
-    conn.execute(
-        "DELETE FROM photo_albums WHERE token NOT IN (SELECT token FROM albums)"
-    )
-
-
-def _prune_photos(
-    conn: sqlite3.Connection, folder_id: int, names: list[str]
-) -> None:
-    """A mappából eltűnt fotók (indexbeli sorai) törlése.
-
-    #304: `names` egy nagy (32 766-nál — az SQLite `SQLITE_MAX_VARIABLE_
-    NUMBER` alapértéke — több elemű) mappánál nem paraméterezhető közvetlenül
-    egy `NOT IN (?, ?, ...)` listaként — az `sqlite3.OperationalError`-ral
-    bukna. Ehelyett egy ideiglenes (kapcsolat-lokális) táblába kerülnek a
-    látott nevek, és a törlés egy al-SELECT-tel szűr. A temp tábla neve nem
-    ütközhet más kapcsolattal (az SQLite temp táblái kapcsolat-lokálisak),
-    de a `_sync_folder` ugyanazon a kapcsolaton mappánként újra hívja ezt a
-    függvényt — ezért a hívás elején `DROP TABLE IF EXISTS`-szel takarítunk,
-    a végén pedig explicit `DROP TABLE`-lel."""
-    if not names:
-        conn.execute("DELETE FROM photos WHERE folder_id = ?", (folder_id,))
-        return
-    conn.execute(f"DROP TABLE IF EXISTS temp.{_PRUNE_TEMP_TABLE}")
-    conn.execute(f"CREATE TEMP TABLE {_PRUNE_TEMP_TABLE} (name TEXT PRIMARY KEY)")
-    conn.executemany(
-        f"INSERT INTO {_PRUNE_TEMP_TABLE}(name) VALUES (?)",
-        [(name,) for name in names],
-    )
-    conn.execute(
-        "DELETE FROM photos WHERE folder_id = ? AND name NOT IN"
-        f" (SELECT name FROM {_PRUNE_TEMP_TABLE})",
-        (folder_id,),
-    )
-    conn.execute(f"DROP TABLE {_PRUNE_TEMP_TABLE}")
-
-
-def _prune_folders(
-    conn: sqlite3.Connection, root: Path, seen_paths: set[str]
-) -> None:
-    """A gyökér alatti, de a mostani scanben nem látott mappák törlése.
-
-    #143: a gyökér-szűrés SQL-oldalon fut (indexelhető LIKE-prefix), nem
-    Pythonban az összes mappán iterálva. Explicit photos-törlés a folders
-    előtt, hogy az FTS-triggerek biztosan lefussanak (az FK-cascade nem
-    minden konfigurációban futtat triggert).
-
-    #459/5: a nem látott mappa nem feltétlenül eltűnt mappa — lehet, hogy
-    csak épp nem elérhető (levált NAS-mount). Az ilyen mappa a fotóival
-    EGYÜTT bennmarad az indexben, `offline = 1` jelöléssel; a takarítás
-    csak a bizonyítottan eltűnt mappákra fut. Ld. `folder_looks_offline`.
-    """
-    stale = [
-        (row["id"], row["path"])
-        for row in conn.execute(*_under_root_query("SELECT id, path", root))
-        if row["path"] not in seen_paths
-    ]
-    for folder_id, path in stale:
-        # Óvni csak azt érdemes, amiben van is mit veszíteni: fotó nélküli
-        # sor eltávolítása nem jár adatvesztéssel, ott a takarítás mehet.
-        if _has_photos(conn, folder_id) and folder_looks_offline(Path(path)):
-            _set_folder_offline(conn, folder_id, True)
-            logger.warning(
-                "A mappa jelenleg nem elérhető, az indexben marad: %s", path
-            )
-            continue
-        conn.execute("DELETE FROM photos WHERE folder_id = ?", (folder_id,))
-        conn.execute("DELETE FROM folders WHERE id = ?", (folder_id,))
-        conn.execute("DELETE FROM folder_scan_state WHERE path = ?", (path,))
-
-
-def _under_root_query(select: str, root: Path) -> tuple[str, tuple[str, str]]:
-    """SQL + paraméterek a gyökér alatti folders-sorokhoz (#143).
-
-    A LIKE-minta escape-elt (%, _ és \\ a path-ban nem viselkedhet
-    joker-ként), és elválasztóval zárt prefixet használ — a „/a/kep" gyökér
-    nem foghatja meg a „/a/kepek" mappáit."""
-    prefix = str(root).rstrip(os.sep) + os.sep
-    escaped = (
-        prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-    )
-    return (
-        f"{select} FROM folders WHERE path = ? OR path LIKE ? ESCAPE '\\'",
-        (str(root), escaped + "%"),
-    )
-
-
-def _is_under(path: Path, root: Path) -> bool:
-    return path == root or path.is_relative_to(root)
-
-
-def _has_indexed_folders(conn: sqlite3.Connection, root: Path) -> bool:
-    """Van-e a gyökér alá eső mappa az indexben (a scan-eredménytől függetlenül)."""
-    query, params = _under_root_query("SELECT 1", root)
-    return conn.execute(f"{query} LIMIT 1", params).fetchone() is not None
-
-
-# #141: fehérlista — csak ismert, biztonságos oszlopokra engedjük a célzott
-# UPDATE-et (csillag/felirat/forgatás gyors-útja, teljes resync nélkül).
-_TARGETED_UPDATE_COLUMNS = {
-    "star",
-    "hidden",
-    "caption_ini",
-    "caption_file",
-    "keywords_ini",
-    "keywords_file",
-    "rotate_steps",
-    # #2902/#2976: a tükrözés-jelző — a forgatás párja, ugyanígy célzottan
-    # frissíthető. A #2976 óta ini-eredetű is: a mappa-resync a `flipped(N)`
-    # kulcsból tölti, tehát az ini az igazságforrás, nem az index.
-    "flip_flags",
-    # #4332/#4693/#4885: a dátummódosítás a forrás EXIF-ét írja; ha ez nem
-    # lehetséges (videó, nem-JPEG, hibás vagy írásvédett JPEG), a dátum ebbe a
-    # mezőbe kerül.
-    "taken_at_override",
-}
-
-
-def update_photo_fields(conn: sqlite3.Connection, photo_id: int, **fields) -> None:
-    """Egy fotó indexsorának célzott, egy-soros UPDATE-je (#141).
-
-    A csillag/felirat/forgatás gyors-útja: amikor az új érték már ismert (a
-    hívó épp most írta az inibe/IPTC-be), nincs szükség a teljes mappa-
-    resyncre (`sync_tree`/`sync_folder`) — egyetlen UPDATE elég, ami az
-    FTS-triggert is csak az érintett sorra sütteti el."""
-    if not fields:
-        return
-    unknown = set(fields) - _TARGETED_UPDATE_COLUMNS
-    if unknown:
-        raise ValueError(f"Nem célzott-frissíthető oszlop(ok): {sorted(unknown)}")
-    columns = ", ".join(f"{name} = ?" for name in fields)
-    conn.execute(
-        f"UPDATE photos SET {columns} WHERE id = ?",
-        (*fields.values(), photo_id),
-    )
-    conn.commit()
-
-
-def remove_root(conn: sqlite3.Connection, root: str | Path) -> None:
-    """Egy gyökér teljes eltávolítása az indexből (Mappakezelő:
-    „Eltávolítás a Picasából"). Explicit photos-törlés a folders előtt,
-    hogy az FTS-triggerek lefussanak."""
-    root_path = Path(normalize_path(root))
-    _ensure_scan_state(conn)
-    _prune_folders(conn, root_path, set())
-    conn.commit()
-
-
-def _resolved_protected_roots(roots: tuple[str | Path, ...]) -> tuple[Path, ...]:
-    """A védett gyökerek FELOLDÁSA, kihagyva a pontosan egyező ismétlést
-    (#1706).
-
-    **Miért ez a lépés önmagában.** A `normalize_path` `Path.resolve()`-ot
-    hív, ami minden útvonal-komponensre `stat`/`lstat` rendszerhívást
-    jelent. MÉRVE (#1706, helyi lemezen, 21 gyökér): 20 nyilvántartott
-    exportcél feloldása **83** ilyen hívást igényelt — kb. 4/gyökér —,
-    miközben az utána következő SQL-összevetés (`_is_under`, tiszta Python)
-    ugyanazon a gépen **mikroszekundumos**, akkor is, ha a `folders` tábla
-    több száz sort tartalmaz. Hálózati megosztáson (a tulajdonos NAS-on
-    tartja a könyvtárát) ez a rendszerhívásonkénti költség dominál — ez a
-    #1706 mérésének fő eredménye.
-
-    **Amit ez a függvény tesz.** A nyilvántartott exportcélok listája
-    (`MAX_EXPORTED_FOLDERS = 20`) idővel PONTOSAN EGYEZŐ útvonalat is
-    tartalmazhat (pl. két különböző munkamenetből ugyanarra a célra
-    exportálva, mielőtt a `remember_exported_folder` dedupolt volna, vagy
-    egy figyelt gyökér, ami véletlenül megegyezik egy korábbi exportcéllal)
-    — az ilyen ismétlést a feloldás ELŐTT szűrjük ki, nyers
-    szövegösszehasonlítással (nem érinti a lemezt). Ez BIZTOSAN biztonságos:
-    ugyanaz a nyers string ugyanarra a feloldott útra vezet, tehát a
-    kihagyás a végeredményt nem változtatja, csak a felesleges
-    rendszerhívást takarítja meg.
-
-    **Amit ez a függvény SZÁNDÉKOSAN NEM tesz.** Nem próbálja kitalálni
-    (útvonal-előtag alapján, feloldás nélkül), hogy egy exportcél egy másik
-    védett gyökér ALATT van-e — az ilyen heurisztika egy szimbolikus linkkel
-    tévedhetne, és a #1667/#1560 védelme éppen az, hogy egy exportcél
-    SOHA ne essen áldozatul a takarításnak. A fennmaradó, nagyobb nyereség
-    (a feloldás cache-elése munkamenetek között) a #1859-ben készült el —
-    ld. `_feloldas_gyorstarral`."""
-    resolved: list[Path] = []
-    latott: set[str] = set()
-    for root in roots:
-        nyers = str(root)
-        if nyers in latott:
-            continue
-        latott.add(nyers)
-        resolved.append(Path(normalize_path(root)))
-    return tuple(resolved)
-
-
-def _azonossag(ut: str) -> tuple[int, int] | None:
-    """Az útvonal fájlrendszer-AZONOSSÁGA (`dev`, `ino`), vagy `None`.
-
-    `None` minden olyan esetben, amikor nem tudjuk megmondani: nem létezik,
-    nem olvasható, lecsatolt hálózati megosztás. A hívó ilyenkor NEM
-    gyorstáraz — a bizonytalanság sosem vezethet arra, hogy egy régi
-    feloldást igaznak veszünk (#1859)."""
-    try:
-        adat = _stat(ut)
-    except OSError:
-        return None
-    return (_elojeles64(adat.st_dev), _elojeles64(adat.st_ino))
-
-
-def _elojeles64(ertek: int) -> int:
-    """Előjel nélküli 64 bites azonosító → az SQLite előjeles `INTEGER`-e (#3549).
-
-    Windowson az `st_ino` a 64 bites ELŐJEL NÉLKÜLI fájlazonosító, és 2^63
-    fölé is eshet; az SQLite ezt `OverflowError`-ral utasítja vissza. A
-    leképezés bitre azonos (kettes komplemens), tehát kölcsönösen egyértelmű:
-    az összevetés a tárolt és a friss érték között ugyanúgy igaz vagy hamis,
-    mint a nyers értékek között.
-    """
-    ertek = int(ertek) & 0xFFFF_FFFF_FFFF_FFFF
-    return ertek - (1 << 64) if ertek >= (1 << 63) else ertek
-
-
-def _feloldas_gyorstarral(
-    conn: sqlite3.Connection, roots: tuple[str | Path, ...]
-) -> tuple[Path, ...]:
-    """A védett gyökerek feloldása, MUNKAMENETEK KÖZÖTT megőrzött
-    gyorstárral (#1859).
-
-    **Miért kell.** A `Path.resolve()` minden útvonal-komponensre
-    rendszerhívást tesz (mérve: gyökerenként 5, pontosan lineárisan), és ez
-    minden induláskor újrafut ugyanazokra az útvonalakra. Helyi lemezen
-    ingyen van; hálózati megosztáson minden hívás körülfordulás — a
-    tulajdonos a könyvtárát NAS-on tartja, és a #1706 mérése szerint épp ez
-    magyarázza a takarítás 125 → 969 ms-os romlását.
-
-    **Miért nem elég egy egyszerű szótár.** A feloldás eredménye KÍVÜLRŐL
-    változhat: átirányított szimbolikus link, le-/felcsatolt NAS,
-    átnevezett vagy megszűnt exportcél. Egy elavult bejegyzés a #1667/#1560
-    védelmét lyukasztaná ki — egy védett mappa „idegennek" minősülne, és a
-    takarítás TÖRÖLNÉ az indexből.
-
-    **Ezért a bejegyzés MINDKÉT végét azonosítjuk.** A nyers útvonalét és a
-    feloldottét is (`dev`/`ino`). A gyorstárazott feloldást csak akkor
-    fogadjuk el, ha
-      * a nyers útvonal ma is ugyanarra az objektumra mutat, ÉS
-      * a feloldott útvonal ma is ugyanaz az objektum, ÉS
-      * a kettő UGYANAZ az objektum.
-    Ez két `stat` hívás gyökerenként az öt helyett; bármelyik feltétel
-    sérülésekor (vagy bármilyen hibánál) a feloldás teljesen újrafut, és a
-    bejegyzés frissül. Az eredmény tehát SOHA nem lehet más, mint
-    gyorstár nélkül — csak gyorsabban áll elő.
-    """
-    try:
-        conn.execute("SELECT 1 FROM resolved_root_cache LIMIT 1")
-    except sqlite3.Error:
-        # A tábla hiánya (régi index, félbemaradt migráció) NEM hiba: a
-        # gyorstár származtatott adat, nélküle a régi út működik.
-        return _resolved_protected_roots(roots)
-
-    tarolt: dict[str, sqlite3.Row] = {
-        sor["raw"]: sor
-        for sor in conn.execute(
-            "SELECT raw, resolved, raw_dev, raw_ino, resolved_dev, resolved_ino"
-            " FROM resolved_root_cache"
-        )
-    }
-
-    eredmeny: list[Path] = []
-    latott: set[str] = set()
-    frissitendo: list[tuple] = []
-    for root in roots:
-        nyers = str(root)
-        if nyers in latott:
-            continue
-        latott.add(nyers)
-
-        sor = tarolt.get(nyers)
-        talalat = None
-        if sor is not None:
-            nyers_id = _azonossag(nyers)
-            if nyers_id is not None and nyers_id == (
-                sor["raw_dev"], sor["raw_ino"]
-            ):
-                feloldott_id = _azonossag(sor["resolved"])
-                if feloldott_id is not None and feloldott_id == nyers_id:
-                    talalat = str(sor["resolved"])
-        if talalat is not None:
-            eredmeny.append(Path(talalat))
-            continue
-
-        feloldott = normalize_path(root)
-        eredmeny.append(Path(feloldott))
-        azonossag = _azonossag(nyers)
-        feloldott_azonossag = _azonossag(feloldott)
-        # Csak azt tesszük el, aminek MINDKÉT vége azonosítható — egy
-        # nem létező vagy elérhetetlen útvonalra a gyorstár nem tudna
-        # érvényességet állítani.
-        if azonossag is not None and feloldott_azonossag is not None:
-            frissitendo.append(
-                (
-                    nyers,
-                    feloldott,
-                    azonossag[0],
-                    azonossag[1],
-                    feloldott_azonossag[0],
-                    feloldott_azonossag[1],
-                )
-            )
-
-    if frissitendo:
-        conn.executemany(
-            "INSERT INTO resolved_root_cache"
-            " (raw, resolved, raw_dev, raw_ino, resolved_dev, resolved_ino)"
-            " VALUES (?, ?, ?, ?, ?, ?)"
-            " ON CONFLICT(raw) DO UPDATE SET"
-            "  resolved = excluded.resolved,"
-            "  raw_dev = excluded.raw_dev, raw_ino = excluded.raw_ino,"
-            "  resolved_dev = excluded.resolved_dev,"
-            "  resolved_ino = excluded.resolved_ino",
-            frissitendo,
-        )
-        conn.commit()
-    return tuple(eredmeny)
-
-
-def prune_foreign_folders(
-    conn: sqlite3.Connection, roots: tuple[str | Path, ...]
-) -> None:
-    """A figyelt gyökerek egyikéhez sem tartozó mappák törlése az indexből.
-
-    Induláskor fut (#58): a korábbi futásokból ottragadt gyökerek (pl. régi
-    parancssori argumentum) mappái ne jelenjenek meg a bal hasábban. Üres
-    gyökérlistával nem csinál semmit — védekezés, nehogy egy hiányzó
-    WatchedFolders.txt csendben kiürítse az egész indexet. Explicit
-    photos-törlés a folders előtt, hogy az FTS-triggerek lefussanak.
-
-    A gyökerek feloldása (`_resolved_protected_roots`, #1706) kihagyja a
-    pontosan egyező ismétlést — ld. ott a mérést és az indoklást."""
-    if not roots:
-        return
-    _ensure_scan_state(conn)
-    root_paths = _feloldas_gyorstarral(conn, roots)
-    stale = [
-        (row["id"], row["path"])
-        for row in conn.execute("SELECT id, path FROM folders")
-        if not any(_is_under(Path(row["path"]), root) for root in root_paths)
-    ]
-    for folder_id, path in stale:
-        conn.execute("DELETE FROM photos WHERE folder_id = ?", (folder_id,))
-        conn.execute("DELETE FROM folders WHERE id = ?", (folder_id,))
-        conn.execute("DELETE FROM folder_scan_state WHERE path = ?", (path,))
     conn.commit()
