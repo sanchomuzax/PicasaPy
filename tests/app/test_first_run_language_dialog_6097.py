@@ -14,6 +14,19 @@ from picasapy.app import startup_language_prompt
 from picasapy.app.application import allitsd_be_a_stilust
 
 
+class _AzonnalVisszateroHurok:
+    """A modális várakozás helyett: a teszt csak a betöltést figyeli."""
+
+    def exec(self) -> int:
+        return 0
+
+    def isRunning(self) -> bool:
+        return False
+
+    def quit(self) -> None:
+        pass
+
+
 def test_a_nyelvfelajanlo_ablak_betoltodik(monkeypatch):
     app = QGuiApplication.instance() or QGuiApplication([])
     allitsd_be_a_stilust()
@@ -25,7 +38,8 @@ def test_a_nyelvfelajanlo_ablak_betoltodik(monkeypatch):
             gyokerek.append(len(self.rootObjects()))
 
     monkeypatch.setattr(startup_language_prompt, "QQmlApplicationEngine", FigyeltMotor)
-    startup_language_prompt.ask_startup_language_prompt("hu", timeout_ms=0)
+    monkeypatch.setattr(startup_language_prompt, "QEventLoop", _AzonnalVisszateroHurok)
+    startup_language_prompt.ask_startup_language_prompt("hu")
     app.processEvents()
 
     assert gyokerek == [1]
