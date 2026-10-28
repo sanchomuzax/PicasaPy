@@ -238,3 +238,12 @@ EditorSlider 1.0 EditorSlider.qml
 EditorSliderCaption 1.0 EditorSliderCaption.qml
 PhotoViewerLeftDrawer 1.0 PhotoViewerLeftDrawer.qml
 PhotoViewerPhotoArea 1.0 PhotoViewerPhotoArea.qml
+PhotoViewerStraightenGrid 1.0 PhotoViewerStraightenGrid.qml
+PhotoViewerTiltToolBar 1.0 PhotoViewerTiltToolBar.qml
+PhotoViewerElotteImage 1.0 PhotoViewerElotteImage.qml
+PhotoViewerFotoImage 1.0 PhotoViewerFotoImage.qml
+PhotoViewerGpuFinetune 1.0 PhotoViewerGpuFinetune.qml
+PhotoViewerPaintMaskArea 1.0 PhotoViewerPaintMaskArea.qml
+PhotoViewerNeutralPickArea 1.0 PhotoViewerNeutralPickArea.qml
+PhotoViewerEffectColorPickArea 1.0 PhotoViewerEffectColorPickArea.qml
+PhotoViewerRetouchArea 1.0 PhotoViewerRetouchArea.qml

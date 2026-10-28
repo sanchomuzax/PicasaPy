@@ -63,6 +63,20 @@ Item {
 """
 
 
+_KEPTERULET_FAJLOK = (
+    "PhotoViewerPhotoArea.qml",
+    "PhotoViewerStraightenGrid.qml",
+    "PhotoViewerTiltToolBar.qml",
+    "PhotoViewerElotteImage.qml",
+    "PhotoViewerFotoImage.qml",
+    "PhotoViewerGpuFinetune.qml",
+    "PhotoViewerPaintMaskArea.qml",
+    "PhotoViewerNeutralPickArea.qml",
+    "PhotoViewerEffectColorPickArea.qml",
+    "PhotoViewerRetouchArea.qml",
+)
+
+
 @pytest.fixture
 def sav(qt_app):
     import picasapy.app.application as app_module
@@ -181,10 +195,11 @@ class TestForras:
 
     @property
     def eszkoz_sav(self):
-        return (
-            Path(__file__).resolve().parents[2]
-            / "src/picasapy/app/qml/PicasaPy/PhotoViewerPhotoArea.qml"
-        ).read_text(encoding="utf-8")
+        return "\n".join(
+            (Path(__file__).resolve().parents[2]
+             / "src/picasapy/app/qml/PicasaPy" / f).read_text(encoding="utf-8")
+            for f in _KEPTERULET_FAJLOK
+        )
 
     def test_a_dontes_csuszkaja_mar_nem_a_bal_panel_alatt_all(self):
         """A csúszka a sávba költözött: a nézőben nem maradhat egy másik,
