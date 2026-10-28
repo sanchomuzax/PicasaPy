@@ -126,17 +126,17 @@ class TestPagingMemory:
     def test_previous_photo_stays_cached_for_back_paging(
         self, controller, provider, tmp_path, monkeypatch
     ):
-        from picasapy.app import edit_preview
+        from picasapy.app import edit_preview_source
 
         calls = []
-        original = edit_preview._decode_source
+        original = edit_preview_source._decode_source
 
         #: #819: a dekóder `full_res` kapcsolót is kap
         def counting_decode(path, **kulcsszavak):
             calls.append(path)
             return original(path, **kulcsszavak)
 
-        monkeypatch.setattr(edit_preview, "_decode_source", counting_decode)
+        monkeypatch.setattr(edit_preview_source, "_decode_source", counting_decode)
         first = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
         second = make_jpeg(tmp_path / "IMG_0002.jpg", size=(8, 6))
         controller.beginEdit("1", str(first))
@@ -2116,7 +2116,7 @@ class TestRedeyeTool:
         self, controller, tmp_path, monkeypatch
     ):
         """A hibás YuNet-pontot az észlelés forrásánál kell eldobni, ne a mentés bukjon."""
-        from picasapy.app import edit_preview
+        from picasapy.app import edit_preview_redeye
         from picasapy.faces.detector import FaceDetection, FaceLandmarks
         from picasapy.faces.redeye import detect_eye_circles
 
@@ -2144,7 +2144,7 @@ class TestRedeyeTool:
 
         detector = DetectorWithInvalidEyePoint()
         monkeypatch.setattr(
-            edit_preview,
+            edit_preview_redeye,
             "detect_eye_circles",
             lambda image: detect_eye_circles(image, detector),
         )
@@ -2196,10 +2196,10 @@ class TestRedeyeTool:
         """A sikerüzenet a TÉNYLEGESEN talált foltokból jön."""
         import numpy as np
         from PIL import Image
-        from picasapy.app import edit_preview
+        from picasapy.app import edit_preview_redeye
 
         # Ez a próba a hiányzó detektor régi, teljes képes visszaesését fedi.
-        monkeypatch.setattr(edit_preview, "detect_eye_circles", lambda _image: None)
+        monkeypatch.setattr(edit_preview_redeye, "detect_eye_circles", lambda _image: None)
 
         array = np.full((60, 60, 3), 120, dtype=np.uint8)
         array[20:30, 10:20] = (220, 40, 40)

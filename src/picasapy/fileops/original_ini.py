@@ -145,7 +145,7 @@ class IniSectionCopy:
             Ha nem, a visszavétel a MOST keletkezett, üresre fogyott fájlt
             el is takarítja (#2511 2. fele) — enélkül a célmappában egy
             `.picasa.ini`-t tartalmazó eredeti-mappa maradt, amit a
-            `originals._remove_if_empty` nem tud törölni, és a legacy
+            `originals_move._remove_if_empty` nem tud törölni, és a legacy
             `Originals/` esetben ez LÁTHATÓ mappa.
     """
 

@@ -9,8 +9,8 @@ constant-disabled	src/picasapy/app/qml/PicasaPy/EmailChoiceDialog.qml:141:enable
 constant-disabled	src/picasapy/app/qml/PicasaPy/EmailChoiceDialog.qml:277:enabled=false	A Change User a nem elérhető Google-fiókos küldéshez tartozik; a ToolTip ezt kimondja.
 constant-disabled	src/picasapy/app/qml/PicasaPy/ImportSourcePickerPanel.qml:158:enabled=false	Picasa Web Albums feltöltés: a szolgáltatás megszűnt, ezt a forráskomment jelöli.
 constant-disabled	src/picasapy/app/qml/PicasaPy/ImportSourcePickerPanel.qml:189:enabled=false	Csak online album-szinkron beállítása; a Picasa Web Albums szolgáltatás nincs támogatva.
-constant-disabled	src/picasapy/app/qml/PicasaPy/LightboxHeader.qml:271:enabled=false	A „Sync to Web” helyőrző funkció nélkül (#423; a forráskomment szerint későbbi funkció).
-constant-disabled	src/picasapy/app/qml/PicasaPy/LightboxHeader.qml:597:enabled=false	Online feltöltéshez tartozó gomb; az online szolgáltatás nincs bekötve.
+constant-disabled	src/picasapy/app/qml/PicasaPy/LightboxHeaderTitle.qml:201:enabled=false	A „Sync to Web” helyőrző funkció nélkül (#423; a forráskomment szerint későbbi funkció).
+constant-disabled	src/picasapy/app/qml/PicasaPy/LightboxHeaderButtons.qml:271:enabled=false	Online feltöltéshez tartozó gomb; az online szolgáltatás nincs bekötve.
 constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabEmail.qml:107:enabled=false	Külön funkciójegy-jelölt: a Google-fiókos levélküldő út helyőrző (#2432); külön integráció kell hozzá.
 constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabEmail.qml:280:enabled=false	Külön funkciójegy Windowsra: a picasa-fen-dialogs.md 3.11 HTML-es levélként írja le az Outlook-only opciót.
 constant-disabled	src/picasapy/app/qml/PicasaPy/OptionsTabGeneral.qml:234:enabled=false	Eredeti beállítás, de nincs PicasaPy-telemetria; önálló, adatküldést igénylő funkció.

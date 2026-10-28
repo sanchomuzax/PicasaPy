@@ -16,6 +16,7 @@ tényleg látszik-e a mért képponton.
 
 from __future__ import annotations
 
+from tests.support.fejlec_forras import fejlec_forras
 import picasapy.app.application as app_module
 from PySide6.QtCore import QObject, QUrl
 from PySide6.QtQml import QQmlComponent
@@ -148,9 +149,7 @@ class TestSugo:
         """A buboréksúgó csatolt tulajdonság — a QML-objektumról nem
         olvasható ki `property()`-vel, ezért a FORRÁST méri. Amit ez nem
         mér: hogy a súgó a képernyőn tényleg megjelenik-e."""
-        forras = (
-            app_module._APP_DIR / "qml" / "PicasaPy" / "LightboxHeader.qml"
-        ).read_text(encoding="utf-8")
+        forras = fejlec_forras()
         assert (
             'ToolTip.text: qsTr("Show only suggestions (when toggled on)")'
             in forras
