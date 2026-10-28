@@ -35,25 +35,24 @@ function next() {
         viewer.masodikIndex = cel
     else
         viewer.currentIndex = cel
+}
 function handleReturnPressed() {
-        if (viewer.textEntryHasFocus)
-            return
-        // #4500: a kikapcsolt SingleClickExit az állóképes előnézetben
-        // Enterrel lép vissza a könyvtárba. Az aktív eszközök saját Enter-
-        // útját (pl. sorozat-vágás), a videót és a kettős nézetet meghagyjuk.
-        if (!viewer.singleClickExitEnabled
-                && !viewer.isCurrentVideo
-                && viewer.layoutMode === "1up"
-                && !editorPanel.modeToolActive
-                && !editorPanel.tiltActive
-                && !editorPanel.paramPanelActive
-                && !viewer.facesEditMode) {
-            viewer.kerBezaras()
-            return
-        }
-        viewer.next()
+    if (viewer.textEntryHasFocus)
+        return
+    // #4500: a kikapcsolt SingleClickExit az állóképes előnézetben
+    // Enterrel lép vissza a könyvtárba. Az aktív eszközök saját Enter-
+    // útját (pl. sorozat-vágás), a videót és a kettős nézetet meghagyjuk.
+    if (!viewer.singleClickExitEnabled
+            && !viewer.isCurrentVideo
+            && viewer.layoutMode === "1up"
+            && !editorPanel.modeToolActive
+            && !editorPanel.tiltActive
+            && !editorPanel.paramPanelActive
+            && !viewer.facesEditMode) {
+        viewer.kerBezaras()
+        return
     }
-
+    viewer.next()
 }
 function previous() {
     viewer.stopCtrlF9AutoAdvance()
