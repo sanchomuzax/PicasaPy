@@ -178,7 +178,7 @@ ELOFORDULASOK = {
         "Search for items with this tag",
         "Add this tag to entire selection",
     ],
-    "PicasaPy/LightboxHeader.qml": ["Sync to Web"],
+    "PicasaPy/LightboxHeaderTitle.qml": ["Sync to Web"],
     "PicasaPy/EditorParamPanel.qml": ["Feather", "Color Preservation"],
     "PicasaPy/EditorTextPanel.qml": [
         "Left justify text", "Center justify text", "Right justify text"],
@@ -590,7 +590,7 @@ def test_a_nyelvvaltas_kerdese_a_hivatalos_angolt_mondja() -> None:
     """A kérdés a `CGeneralPrefsPage::LangChange` szövege — „Picasa”-val,
     ahogy a többi átvett hivatalos kérdés is (pl. `RedEye::AutoFixedMessage`)."""
     minta = 'qsTr("' + NYELVVALTAS_KERDES.replace("\n", "\\n") + '")'
-    for fajl in ("Main.qml", "PicasaPy/OptionsTabGeneral.qml"):
+    for fajl in ("PicasaPy/MainDialogs.qml", "PicasaPy/OptionsTabGeneral.qml"):
         forras = (QML / fajl).read_text(encoding="utf-8")
         assert minta in forras, f"{fajl}: hiányzik a {minta}"
         assert "PicasaPy user" not in forras, f"{fajl}: a régi fogalmazás még él"

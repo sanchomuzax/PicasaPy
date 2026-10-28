@@ -34,6 +34,7 @@ _TOOLBAR = (
     / "src/picasapy/app/qml/PicasaPy/MainToolbar.qml"
 )
 _MAIN = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml/Main.qml"
+_MAIN_TOOLBAR = _TOOLBAR.with_name("MainWindowToolbar.qml")
 
 
 class TestAGombLETEZIK:
@@ -71,8 +72,9 @@ class TestAGombLETEZIK:
 class TestKulonEszkozlistasUt:
     def test_a_toolbar_es_a_fajl_menu_kulon_utvonalat_hasznal(self):
         """A toolbar üres albumot készít; a Fájl menü kijelöléses út marad."""
+        toolbar = _MAIN_TOOLBAR.read_text(encoding="utf-8")
         fo = _MAIN.read_text(encoding="utf-8")
-        toolbar_route = fo.split("// #5812:", 1)[1].split("// #1421:", 1)[0]
+        toolbar_route = toolbar.split("// #5812:", 1)[1].split("// #1421:", 1)[0]
         assert "openNewAlbumProperties(" in toolbar_route
         assert "openNewAlbum(window.selectedRows())" not in toolbar_route
         assert "onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(" in fo

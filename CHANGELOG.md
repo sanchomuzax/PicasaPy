@@ -7,6 +7,25 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.273] - 2026-10-28
+
+- A kollázs mentését kezelő modul kisebb részekre bomlott; a mentés, a piszkozat és a projektmegnyitás viselkedése változatlan (#6113).
+- A fénytábla fejlécének felépítése önálló QML-komponensekre bomlott, a felület változatlan maradt (#6104).
+- A weboldal-exportálás párbeszédablakának belső részei önálló QML-komponensekbe kerültek, a megjelenés és működés változatlan (#6105).
+- Az eredeti fájlok megőrzését kezelő modul kisebb részekre bomlott, a működés változatlan. (#6110).
+- A szerkesztési előnézet belső képszolgáltatója kisebb modulokra bomlott, a megjelenő kép változatlan maradt (#6114).
+- A memóriakorlátos helyi tesztek és szkriptek mostantól a `picasapy-hatter.slice` szeletben futnak (#6117).
+- Javítottuk a Létrehozás párbeszédek render-tesztjének képmemória-kezelését és a képkocka betöltésére várását (#6121).
+
+## [0.9.272] - 2026-10-28
+
+- A Létrehozás menü párbeszédablakai belső QML-komponensekre bomlottak, a felület változatlan maradt (#6051).
+- A Nyomtatás párbeszédablak belső QML-felépítése karbantarthatóbb lett; megjelenése és működése változatlan (#6073).
+- Az Importálás párbeszédablak különálló QML-komponensekre bontása változatlan felülettel (#6083).
+- Megbízhatóbb lett a képtálca és a mappapanel képponttesztje (#6085).
+- A fotónéző képterületének belső QML-szerkezete önálló komponensekre bomlott, a látható működés változatlan (#6090).
+- A diavetítés belső részei önálló komponensekbe kerültek, a megjelenés és működés változatlan maradt. (#6102).
+
 ## [0.9.271] - 2026-10-28
 
 - A képernyőkép-mérő ugyanazon a kódon minden rögzítésnél ugyanazt a képet adja (a késve frissülő szerkesztő-előnézetet is kivárja). (#6044).

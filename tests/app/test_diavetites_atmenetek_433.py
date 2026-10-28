@@ -25,6 +25,7 @@ _PREVIOUS_IMAGE = (_QML_DIR / "PicasaPy" / "SlideshowPreviousImage.qml").read_te
 _VEIL = (_QML_DIR / "PicasaPy" / "SlideshowVeil.qml").read_text(encoding="utf-8")
 _CURRENT_IMAGE = (_QML_DIR / "PicasaPy" / "SlideshowCurrentImage.qml").read_text(encoding="utf-8")
 _MAIN = (_QML_DIR / "Main.qml").read_text(encoding="utf-8")
+_MAIN_SLIDESHOW = (_QML_DIR / "PicasaPy" / "MainSlideshow.qml").read_text(encoding="utf-8")
 
 ATMENETEK = (
     "cut",
@@ -155,7 +156,7 @@ class TestAValasztoAVezerlosavban:
     def test_a_valaszto_NEM_ir_kozvetlenul_beallitast(self):
         """A gazda dönti el, hova kerül — a `starToggled` mintája."""
         assert "signal transitionPicked(string kulcs)" in _VIEW
-        assert "onTransitionPicked:" in _MAIN
+        assert "onTransitionPicked:" in _MAIN_SLIDESHOW
 
     def test_a_feliratmod_gombja_korbejar(self):
         kezd = _CONTROLS.index('objectName: "slideshowCaptionModeButton"')
@@ -164,10 +165,10 @@ class TestAValasztoAVezerlosavban:
         assert "captionModePicked" in blokk
 
     def test_a_gazda_a_MEGORZOTT_erteket_koti_be(self):
-        assert "slideshow.screensaverMode ? controller.screensaverEffect" in _MAIN
-        assert ": controller.slideshowTransition" in _MAIN
-        assert "controller.screensaverShowCaptions ? \"caption\" : \"none\"" in _MAIN
-        assert ": controller.slideshowCaptionMode" in _MAIN
+        assert "slideshow.screensaverMode ? controller.screensaverEffect" in _MAIN_SLIDESHOW
+        assert ": controller.slideshowTransition" in _MAIN_SLIDESHOW
+        assert "controller.screensaverShowCaptions ? \"caption\" : \"none\"" in _MAIN_SLIDESHOW
+        assert ": controller.slideshowCaptionMode" in _MAIN_SLIDESHOW
 
 
 class TestAzAtmenetMotorja:
