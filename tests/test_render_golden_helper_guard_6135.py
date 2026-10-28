@@ -15,6 +15,9 @@ _KOTELEZO_TESZTEK = (
     "test_unnamed_faces_view_rendered_6077.py",
     "test_main_toolbar_components_6103.py",
 )
+#: A rögzített betűre még át nem állt teszt -> a jegy, amely átállítja.
+#: A közös szövegsegédet ezek is kötelesek használni.
+_BETU_ATALLAS_HATRA = {"test_tray_bar_render_6050.py": "#6148"}
 
 
 def _pixel_golden_tesztek() -> list[tuple[Path, str]]:
@@ -80,7 +83,8 @@ def test_minden_golden_render_teszt_kozos_segedet_hasznal():
             )
             for csomopont in ast.walk(fa)
         )
-        if not helper_nevek or not helper_hasznalat or not rogzitett_betu_fixture:
+        betu_rendben = rogzitett_betu_fixture or fajl.name in _BETU_ATALLAS_HATRA
+        if not helper_nevek or not helper_hasznalat or not betu_rendben:
             hianyos.append(fajl.name)
 
     assert not hianyos, (

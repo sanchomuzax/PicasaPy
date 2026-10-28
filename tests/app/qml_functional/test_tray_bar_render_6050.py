@@ -318,7 +318,6 @@ def rogzitett_datum(monkeypatch):
 def test_a_talca_fobb_allapotai_keppontra_megmaradnak(
     ablakmagassag_eltolas,
     rogzitett_datum,
-    rogzitett_betu,
     qml_app,
     qt_app,
     tmp_path,
