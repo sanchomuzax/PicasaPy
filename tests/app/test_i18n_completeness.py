@@ -153,9 +153,14 @@ def _extract_with_lupdate(tmp_path: Path) -> ET.Element:
     scratch_ts = tmp_path / "picasapy_hu.scratch.ts"
     scratch_ts.write_text(_TS_PATH.read_text(encoding="utf-8"), encoding="utf-8")
 
-    files = [str(p) for p in _source_files()]
+    # A fájllista a parancssor helyett listafájlba megy: a Windows
+    # parancssor-korlátja (WinError 206) a több száz útvonalat nem bírja.
+    lista = tmp_path / "forrasok.lst"
+    lista.write_text(
+        "\n".join(str(p) for p in _source_files()) + "\n", encoding="utf-8"
+    )
     result = subprocess.run(
-        [lupdate, *files, "-ts", str(scratch_ts), "-silent"],
+        [lupdate, f"@{lista}", "-ts", str(scratch_ts), "-silent"],
         capture_output=True,
         text=True, encoding="utf-8", errors="replace",
         timeout=60,

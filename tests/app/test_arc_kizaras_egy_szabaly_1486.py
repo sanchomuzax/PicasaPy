@@ -128,7 +128,8 @@ class TestAKivonasMAGA_is_mukodik:
         """A vezérlő ne írja újra a szabályt — a `scanner/exclude.py` az
         igazságforrás."""
         vezerlo = (
-            Path(picasapy.app.__file__).parent / "library_controller.py"
+            Path(picasapy.app.__file__).parent
+            / "library_controller_folders.py"
         ).read_text(encoding="utf-8")
         assert "is_excluded(" in vezerlo
 
