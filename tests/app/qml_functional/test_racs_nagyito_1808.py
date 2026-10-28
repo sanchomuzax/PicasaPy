@@ -22,7 +22,7 @@ import picasapy.app
 
 _FEED = (
     Path(picasapy.app.__file__).parent
-    / "qml" / "PicasaPy" / "LightboxFeed.qml"
+    / "qml" / "PicasaPy" / "LightboxFeedGroup.qml"
 ).read_text(encoding="utf-8")
 _TOOLBAR = (
     Path(picasapy.app.__file__).parent
@@ -84,7 +84,7 @@ class TestANagyitoReteg:
 
     def test_CSAK_bekapcsolva_el(self):
         blokk = _blokk(_FEED, 'objectName: "feedLoupeArea"')
-        assert "grid.appWindow.loupeActive === true" in blokk
+        assert "feed.appWindow.loupeActive === true" in blokk
 
     def test_elengedesre_ELTUNIK(self):
         blokk = _blokk(_FEED, 'objectName: "feedLoupeArea"')

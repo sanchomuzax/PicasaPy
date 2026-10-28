@@ -91,7 +91,7 @@ class TestAzUzenetLETEZIK:
 
         forras = (
             Path(picasapy.app.__file__).parent
-            / "qml" / "PicasaPy" / "LightboxFeed.qml"
+            / "qml" / "PicasaPy" / "LightboxFeedEmptyState.qml"
         ).read_text(encoding="utf-8")
         assert 'qsTr("No photos found")' in forras
 
@@ -135,7 +135,7 @@ class TestAzUzenetAKKOR_LATSZIK_AMIKOR_KELL:
         window, _c, _e = qml_app
         forras = (
             Path(__import__("picasapy.app", fromlist=["app"]).__file__).parent
-            / "qml" / "PicasaPy" / "LightboxFeed.qml"
+            / "qml" / "PicasaPy" / "LightboxFeedEmptyState.qml"
         ).read_text(encoding="utf-8")
         blokk = blokk_horgonyra(forras, "gridEmptyText")
         assert "isWorking" in blokk, (

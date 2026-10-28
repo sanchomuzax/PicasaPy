@@ -197,7 +197,7 @@ class TestASavAMutatoAlattMarad:
     """
 
     def test_az_idozito_a_lebegest_KERDEZI(self) -> None:
-        forras = (_QML / "PicasaPy" / "SlideshowView.qml").read_text(
+        forras = (_QML / "PicasaPy" / "SlideshowControls.qml").read_text(
             encoding="utf-8"
         )
         sor = [s for s in forras.splitlines() if "onTriggered" in s and "controlsBar.shown = false" in s]
@@ -209,7 +209,7 @@ class TestASavAMutatoAlattMarad:
 
     def test_a_lebeges_vege_UJRAINDITJA_az_elrejtest(self) -> None:
         """A sav ne maradjon kint orokre, ha a mutato elhagyja."""
-        forras = (_QML / "PicasaPy" / "SlideshowView.qml").read_text(
+        forras = (_QML / "PicasaPy" / "SlideshowControls.qml").read_text(
             encoding="utf-8"
         )
         assert "onHoveredChanged" in forras and "hideTimer.restart()" in forras

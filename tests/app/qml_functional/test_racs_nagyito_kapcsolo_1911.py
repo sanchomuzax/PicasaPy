@@ -42,7 +42,7 @@ _TRAYBAR = (
 
 #: a rács oldali réteg forrása — a lencse alakját és áttűnését ez írja le
 _FEED = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "LightboxFeed.qml"
+    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "LightboxFeedGroup.qml"
 ).read_text(encoding="utf-8")
 
 
