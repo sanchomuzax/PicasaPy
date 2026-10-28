@@ -47,7 +47,7 @@ def _pixelek(kep: QImage) -> np.ndarray:
     adat = np.frombuffer(rgba.constBits(), dtype=np.uint8)
     return adat.reshape(rgba.height(), rgba.bytesPerLine())[:, : rgba.width() * 4].reshape(
         rgba.height(), rgba.width(), 4
-    )
+    ).copy()
 
 
 def _szovegteruletek_kimaszkolasa(ablak, ervenyes: np.ndarray) -> None:
