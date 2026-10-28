@@ -12090,13 +12090,13 @@ picasapy-origin-key: stringres:uploadmgr::minutes</extracomment>
             <source>Display Time</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: oneuptext:Text(oneup/tpslabel);tooltips:Text(editoneup/tpslabel);tooltips:Text(oneup/tpslabel)</extracomment>
-            <translation type="unfinished" />
+            <translation>Thời gian hiển thị</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/SlideshowControls.qml" />
             <source>Exit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Thoát</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/SlideshowControls.qml" />

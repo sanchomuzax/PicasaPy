@@ -12097,7 +12097,7 @@ picasapy-origin-key: oneuptext:Text(oneup/tpslabel);tooltips:Text(editoneup/tpsl
             <location filename="../qml/PicasaPy/SlideshowControls.qml" />
             <source>Exit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>종료</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/SlideshowControls.qml" />

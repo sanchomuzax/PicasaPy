@@ -12104,13 +12104,13 @@ picasapy-origin-key: stringres:uploadmgr::minutes</extracomment>
             <source>Display Time</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: oneuptext:Text(oneup/tpslabel);tooltips:Text(editoneup/tpslabel);tooltips:Text(oneup/tpslabel)</extracomment>
-            <translation type="unfinished" />
+            <translation>Durata visualizzazione</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/SlideshowControls.qml" />
             <source>Exit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Esci</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/SlideshowControls.qml" />
@@ -12131,7 +12131,7 @@ picasapy-origin-key: stringres:OneUpUI::second</extracomment>
             <source>seconds</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:OneUpUI::second;stringres:OneUpUI::seconds;stringres:uploadmgr::seconds</extracomment>
-            <translation type="unfinished" />
+            <translation>secondi</translation>
         </message>
     </context>
     <context>
