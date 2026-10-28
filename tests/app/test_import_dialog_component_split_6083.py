@@ -14,9 +14,9 @@ import picasapy.app
 _QML = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
 _TS = Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"
 _COMPONENTS = (
-    "ImportSourceDialogSourcePanel",
-    "ImportSourceDialogPreview",
-    "ImportSourceDialogDestinationPanel",
+    "ImportSourcePickerPanel",
+    "ImportSourcePreview",
+    "ImportSourceDestinationPanel",
 )
 _BASELINE_QSTR_COUNT = 52
 _BASELINE_QSTR_SHA256 = (
@@ -229,3 +229,13 @@ def test_a_parbeszed_gyokerenek_meglevo_qml_feluletetuletei_megmaradnak():
     assert all(signature in host for signature in api), (
         "eltűnt vagy átneveződött meglévő párbeszédfelületi elem"
     )
+
+
+def test_a_panelek_neve_nem_parbeszed() -> None:
+    """A főmenü-bejáró a típusnévben lévő `dialog` szóról ismeri fel a nyitott
+    párbeszédet; egy ilyen nevű, mindig látható panelt bezáratlan ablaknak
+    vélne, és mindegyikre kivárná a teljes időkorlátot."""
+    qmldir = (_QML / "qmldir").read_text(encoding="utf-8")
+    for nev in ("ImportSourcePickerPanel", "ImportSourcePreview", "ImportSourceDestinationPanel"):
+        assert f"internal {nev} {nev}.qml" in qmldir
+    assert "internal ImportSourceDialog" not in qmldir

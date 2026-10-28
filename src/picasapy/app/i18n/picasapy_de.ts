@@ -13421,112 +13421,112 @@ picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
         </message>
     </context>
     <context>
-        <name>ImportSourceDialogSourcePanel</name>
+        <name>ImportSourcePickerPanel</name>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="166" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="166" />
             <source>Options</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
             <translation>Optionen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="167" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="167" />
             <source>Online options</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button);headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
             <translation>Online-Optionen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="157" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="157" />
             <source>Upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Hochladen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="159" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="159" />
             <source>Upload to Picasa Web Albums...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
             <translation>In &amp;Picasa-Webalben hochladen...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="188" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="188" />
             <source>Sync starred photos only</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
             <translation>Nur markierte Fotos synchronisieren</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="267" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="267" />
             <source>View the previous Photo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Vorheriges Foto anzeigen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="279" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="279" />
             <source>View the next Photo</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nächstes Foto anzeigen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="15" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="15" />
             <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Bilder und Videos aus einem anderen Ordner (z. B. einer eingebundenen Kamera oder Speicherkarte) in Ihre Bibliothek importieren.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="28" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="28" />
             <source>Source:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Quelle:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="63" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="63" />
             <source>Removable drives</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Wechseldatenträger</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="38" />
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="38" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="38" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="38" />
             <source>(none selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>(keiner ausgewählt)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="79" />
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="79" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="79" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="79" />
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
             <translation>Durchsuchen…</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="230" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="230" />
             <source>%1 pictures/videos found</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 Bilder/Videos gefunden</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="241" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="241" />
             <source>No pictures or videos found in this folder.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>In diesem Ordner wurden keine Bilder oder Videos gefunden.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="143" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="143" />
             <source>Exclude Duplicates</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Duplikate ausschließen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="197" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="197" />
             <source>Exclude photos that are already imported into PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Fotos ausschließen, die bereits in PicasaPy importiert wurden</translation>
         </message>
         <message numerus="yes">
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="204" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="204" />
             <source>%n of those are duplicates already in PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>
@@ -13535,200 +13535,200 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             </translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="253" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="253" />
             <source>Exclude All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Alle ausschließen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="258" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="258" />
             <source>Include All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Alle einschließen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="88" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="88" />
             <source>Folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ordner...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="93" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="93" />
             <source>Files...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Dateien...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="107" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="107" />
             <source>File types:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</extracomment>
             <translation>Dateitypen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="116" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="116" />
             <source>Picture and Movie Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Bild- und Filmdateien</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="117" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="117" />
             <source>Picture Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
             <translation>Bilddateien</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="118" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="118" />
             <source>All Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <translation>Alle Dateien</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="51" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="51" />
             <source>Recent sources</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Zuletzt verwendete Quellen</translation>
         </message>
     </context>
     <context>
-        <name>ImportSourceDialogPreview</name>
+        <name>ImportSourcePreview</name>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogPreview.qml" line="122" />
+            <location filename="../qml/PicasaPy/ImportSourcePreview.qml" line="122" />
             <source>Include</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Einschließen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogPreview.qml" line="122" />
+            <location filename="../qml/PicasaPy/ImportSourcePreview.qml" line="122" />
             <source>Exclude</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ausschließen</translation>
         </message>
     </context>
     <context>
-        <name>ImportSourceDialogDestinationPanel</name>
+        <name>ImportSourceDestinationPanel</name>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="26" />
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="26" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="26" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="26" />
             <source>(none selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>(keiner ausgewählt)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="98" />
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="98" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="98" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="98" />
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
             <translation>Durchsuchen…</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="16" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="16" />
             <source>Destination:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IPTC::Destination</extracomment>
             <translation>Ziel</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="139" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="139" />
             <source>Enter new folder title or choose existing folder to continue</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
             <translation>Zum Fortfahren neuen Ordnertitel eingeben oder bestehenden Ordner auswählen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="111" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="111" />
             <source>Enter Folder Title</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:iCAcquireUI::SubFolder</extracomment>
             <translation>Ordnertitel eingeben</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="144" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="144" />
             <source>Date Taken (YYYY-MM-DD)</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
             <translation>Aufnahmedatum (JJJJ-MM-TT)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="153" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="153" />
             <source>%1 (Today)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 (Heute)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="162" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="162" />
             <source>After Copying:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extracomment>
             <translation>Nach dem Kopieren:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="173" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="173" />
             <source>Leave card alone</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Speicherkarte unverändert lassen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="180" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="180" />
             <source>Delete only copied photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nur kopierte Fotos löschen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="187" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="187" />
             <source>Delete everything on card</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Alle Dateien auf der Speicherkarte löschen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="229" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="229" />
             <source>%1 / %2 imported</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 / %2 importiert</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="240" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="240" />
             <source>Done: %1 imported, %2 failed</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Fertig: %1 importiert, %2 fehlgeschlagen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="253" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="253" />
             <source>Import</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
             <translation>Importieren</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="264" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="264" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
             <translation>Schließen</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="224" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="224" />
             <source>%1 / %2 imported at %3/sec</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 / %2 importiert mit %3/s</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="59" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="59" />
             <source>Recent destinations</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Zuletzt verwendete Ziele</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="76" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="76" />
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Originalgröße</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="77" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="77" />
             <source>%1 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 Pixel</translation>

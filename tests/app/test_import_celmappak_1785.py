@@ -36,7 +36,7 @@ from tests.support.qml_blokk import blokk_horgonyra
 
 _DIALOG = (
     Path(picasapy.app.__file__).parent
-    / "qml" / "PicasaPy" / "ImportSourceDialogDestinationPanel.qml"
+    / "qml" / "PicasaPy" / "ImportSourceDestinationPanel.qml"
 ).read_text(encoding="utf-8")
 
 

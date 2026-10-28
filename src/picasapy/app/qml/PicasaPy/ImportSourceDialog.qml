@@ -299,17 +299,17 @@ Window {
         anchors.margins: 10
         spacing: 8
 
-        ImportSourceDialogSourcePanel {
+        ImportSourcePickerPanel {
             id: sourcePanel
             hostWindow: importSourceWindow
             sourceFolderDialog: sourceFolderDialog
             sourceFilesDialog: sourceFilesDialog
         }
-        ImportSourceDialogPreview {
+        ImportSourcePreview {
             id: previewPanel
             hostWindow: importSourceWindow
         }
-        ImportSourceDialogDestinationPanel {
+        ImportSourceDestinationPanel {
             hostWindow: importSourceWindow
             folderDialog: destFolderDialog
         }
