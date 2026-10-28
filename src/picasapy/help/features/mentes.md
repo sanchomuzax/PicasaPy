@@ -15,9 +15,16 @@ mentett szerkesztés**, ahogy az eredeti Picasában. Különben a menütétel
 és a képek fölötti fejléc **Mentés** gombja szürke, és a Ctrl+S sem
 csinál semmit.
 
-A program **biztonsági másolatot készít** a fájlokról, és ezt a
-megerősítő ablakban ki is írja. A másolat az eredeti mappában marad, egy
-külön almappában, így később még visszaléphetsz.
+A mentés előtt a program megkérdezi: **Lemezre menti a
+módosításokat?** Alatta jelzi, hogy **biztonsági másolatot készít** a
+fájlról (vagy fájlokról). A **Mentés** gomb ment, a **Mégse** semmit nem
+változtat. Ha a **Ne kérdezzen újra.** jelölőt bejelölöd, és a
+**Mentés** gombra kattintasz, a program a továbbiakban nem kérdez rá; a
+**Mégse** gombnál a jelölő nem számít.
+
+A biztonsági másolat az eredeti mappában marad, egy külön almappában, így
+később még visszaléphetsz. A másolat megőrzi az eredeti fájl módosítási
+dátumát is.
 
 Ez a megőrzött eredeti **együtt mozog a képpel**: ha átnevezed,
 áthelyezed vagy lemásolod a fotót, a másolata is odakerül, és a

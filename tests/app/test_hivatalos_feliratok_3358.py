@@ -195,7 +195,7 @@ ELOFORDULASOK = {
         "Sorting face data, %1%", "Loading faces for %1 files...",
         ", %1 files unchecked."],
     "PicasaPy/PicasaCreateMenu.qml": ["From Faces in Selection..."],
-    "PicasaPy/SlideshowView.qml": ["Display Time", "seconds"],
+    "PicasaPy/SlideshowControls.qml": ["Display Time", "seconds"],
     "PicasaPy/VideoTrimSlider.qml": ["Start Point", "End Point"],
     # #3575
     "PicasaPy/CollageCreateDialog.qml": ["Frame Mosaic"],

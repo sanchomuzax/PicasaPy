@@ -161,6 +161,28 @@ def _var_stabil_ertekre(
     raise RuntimeError(f"Időtúllépés: nem stabil a(z) {leiras}.")
 
 
+def _var_illesztett_nagyitasra(
+    alkalmazas: Any, viewer: Any, zoom_slider: Any, allapot: str
+) -> tuple[float, float, float]:
+    """Megvárja, hogy az illesztett zoom és a tálca csúszkája összhangba kerüljön."""
+    nagyitas = _var_stabil_ertekre(
+        alkalmazas,
+        lambda: (
+            float(viewer.property("zoomValue")),
+            float(zoom_slider.property("value")),
+            float(zoom_slider.property("visualPosition")),
+        ),
+        f"a(z) {allapot} illesztett nagyításának szinkronizálása",
+        _ALLAPOT_HATARIDO_MP,
+    )
+    if nagyitas != (0.0, 0.0, 0.0):
+        raise RuntimeError(
+            f"A(z) {allapot!r} állapotban a zoomFit után nem illesztett "
+            f"nagyítás stabilizálódott: {nagyitas}. Ez termékhiba."
+        )
+    return nagyitas
+
+
 def _minta_kepek(lib: Path) -> None:
     """Képeket, almappát, albumot és személyalbumot készít a méréshez."""
     from support.jpeg_factory import make_minta_jpeg
@@ -213,6 +235,16 @@ def _kep_bajtok(kep: Any) -> bytes:
     return bytes(rgba.constBits())
 
 
+def _hatter_dolgozik() -> bool:
+    """Fut-e nyilvántartott háttérmunka (pl. az `editpreview` renderje, #6078).
+
+    A nézőkép végleges kockáját háttérszál számolja; a lassabb CI-gépen ez a
+    stabil-kocka ablakon túl érkezett, és két rögzítés 16 képpontban eltért."""
+    from picasapy.app.worker_thread import running_background_workers
+
+    return bool(running_background_workers())
+
+
 def _stabil_ablakkepernyo(ablak: Any, alkalmazas: Any, allapot: str) -> Any:
     """Határidővel vár tíz változatlan QImage-kockára.
 
@@ -233,7 +265,11 @@ def _stabil_ablakkepernyo(ablak: Any, alkalmazas: Any, allapot: str) -> Any:
     while time.monotonic() < vege:
         alkalmazas.processEvents()
         kep = ablak.grabWindow()
-        if kep.isNull():
+        if _hatter_dolgozik():
+            # futó render alatt a kép még változhat: a számlálás újraindul
+            elozo = None
+            azonos = 0
+        elif kep.isNull():
             azonos = 0
         else:
             bajtok = _kep_bajtok(kep)
@@ -736,6 +772,8 @@ def _allapot_beallitasa(
 
     if not QMetaObject.invokeMethod(viewer, "zoomFit"):
         raise RuntimeError("A fotónéző illesztett nagyítása nem állítható be.")
+    zoom = _elem(ablak, "zoomSlider")
+    _var_illesztett_nagyitasra(alkalmazas, viewer, zoom, allapot.nev)
     drawer = _elem(ablak, "viewerLeftDrawer")
     drawer_width = float(
         _var_stabil_ertekre(
@@ -752,7 +790,6 @@ def _allapot_beallitasa(
 
     area = _elem(ablak, "viewerPhotoArea")
     image = _elem(ablak, "viewerImage")
-    zoom = _elem(ablak, "zoomSlider")
 
     def _nezo_geometria():
         elemek = (area, image)
