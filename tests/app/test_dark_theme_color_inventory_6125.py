@@ -167,7 +167,7 @@ def test_audited_surfaces_use_paired_theme_tokens():
             "Theme.searchClearBg": 1,
             "Theme.panelSelectionText": 1,
         },
-        "../Main.qml": {
+        "MainLibraryCanvas.qml": {  # #6136: a Main.qml-ből kiemelt könyvtárvászon
             "Theme.filterResultsBg": 1,
             "Theme.filterNoticeBg": 2,
         },
