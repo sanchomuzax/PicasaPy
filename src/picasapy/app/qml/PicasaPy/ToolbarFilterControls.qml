@@ -318,6 +318,11 @@ import QtQuick.Window
                                 - parentOrigin.y
                         }
                         source: "icons/geo-pin.svg"
+                        // az SVG a kirajzolt méretben raszterizálódik: a 24 px-es
+                        // kép futásidejű kicsinyítését a CI raszterezője másképp
+                        // simította, mint a helyi gép (#6103)
+                        sourceSize.width: height
+                        sourceSize.height: height
                         fillMode: Image.PreserveAspectFit
                         opacity: parent.aktiv
                                  ? 1.0
