@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.277] - 2026-10-28
+
+- A fő eszköztár szűrővezérlői külön QML-komponensbe kerültek (#6103).
+- A dátumcsúszka fogantyúja képpontra igazodik a fő eszköztáron (#6127).
+
 ## [0.9.276] - 2026-10-28
 
 - A fotónéző belső részei önálló komponensekbe kerültek, változatlan megjelenítéssel. (#6109).
