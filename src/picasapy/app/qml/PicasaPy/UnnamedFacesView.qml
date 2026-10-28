@@ -240,7 +240,7 @@ ColumnLayout {
                       ? qsTr("Ignored people") : qsTr("Unnamed people")
                 font.family: "Georgia"
                 font.pixelSize: 24
-                color: "#68564f"
+                color: Theme.unnamedGroupLabel
             }
         }
         Item { Layout.fillWidth: true }
@@ -331,8 +331,8 @@ ColumnLayout {
             placeholderText: qsTr("Add a name")
             // #5214: az eredetiben (job-183) fehér, keretes mező, mint a csempéé
             background: Rectangle {
-                color: "#ffffff"
-                border.color: "#8a8a8a"
+                color: Theme.controlBase
+                border.color: Theme.inputBorder
                 border.width: 1
             }
             // #422: jobbklikk-menü (Picasa `Address`)
@@ -432,8 +432,8 @@ ColumnLayout {
         focus: true
         closePolicy: Popup.NoAutoClose
         background: Rectangle {
-            color: "#606060"
-            border.color: "#999999"
+            color: Theme.unnamedWelcomeBg
+            border.color: Theme.unnamedWelcomeBorder
             border.width: 1
             radius: 6
         }
@@ -450,7 +450,7 @@ ColumnLayout {
                 text: qsTr("Welcome to the Unnamed people album! ")
                 font.pixelSize: Theme.fontSize
                 font.bold: true
-                color: "#ffffff"
+                color: Theme.panelSelectionText
             }
             Text {
                 objectName: "unnamedWelcomeBody"
@@ -476,7 +476,7 @@ ColumnLayout {
                     + "about this feature.")
                 font.pixelSize: Theme.fontSize - 2
                 font.bold: true
-                color: "#ffffff"
+                color: Theme.panelSelectionText
             }
             RowLayout {
                 Layout.fillWidth: true
@@ -492,11 +492,11 @@ ColumnLayout {
                         verticalAlignment: Text.AlignVCenter
                         font.pixelSize: Theme.fontSize - 4
                         font.bold: true
-                        color: "#ffffff"
+                        color: Theme.panelSelectionText
                     }
                     background: Rectangle {
                         color: "transparent"
-                        border.color: "#dddddd"
+                        border.color: Theme.unnamedWelcomeButtonBorder
                         border.width: 1
                         radius: 6
                     }
@@ -520,11 +520,11 @@ ColumnLayout {
                         verticalAlignment: Text.AlignVCenter
                         font.pixelSize: Theme.fontSize - 4
                         font.bold: true
-                        color: "#ffffff"
+                        color: Theme.panelSelectionText
                     }
                     background: Rectangle {
                         color: "transparent"
-                        border.color: "#dddddd"
+                        border.color: Theme.unnamedWelcomeButtonBorder
                         border.width: 1
                         radius: 6
                     }

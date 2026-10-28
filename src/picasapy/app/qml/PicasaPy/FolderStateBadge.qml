@@ -56,7 +56,7 @@ Item {
             width: Math.max(2, badge.size * 0.18)
             height: Math.max(2, badge.size * 0.30)
             radius: width / 2
-            color: "#ffffff"
+            color: Theme.panelSelectionText
             x: badge.size * 0.26
             y: badge.size * 0.45
             rotation: -45
@@ -66,7 +66,7 @@ Item {
             width: Math.max(2, badge.size * 0.18)
             height: Math.max(3, badge.size * 0.55)
             radius: width / 2
-            color: "#ffffff"
+            color: Theme.panelSelectionText
             x: badge.size * 0.52
             y: badge.size * 0.20
             rotation: 45

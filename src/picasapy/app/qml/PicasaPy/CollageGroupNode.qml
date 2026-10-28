@@ -79,6 +79,6 @@ Rectangle {
 
     color: "transparent"
     border.width: 2
-    border.color: "#f85e0f"
+    border.color: Theme.collageGroupBorder
     antialiasing: true
 }

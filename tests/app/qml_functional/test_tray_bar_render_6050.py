@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import math
 import os
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -184,6 +185,11 @@ def _rogzit_es_osszevet(window, allapot: str, qt_app, menu=None) -> None:
         f"{allapot}: a kivágás magassága {aktualis.height()} px, "
         f"a referencia {elvart.height()} px"
     )
+    if not sys.platform.startswith("linux"):
+        # A Linuxon rögzített képpont-referenciát más rendszer raszterezője
+        # nem tudja bitre egyezően kirajzolni (#6150); ott a fenti méret-őr
+        # fut, a képpont-összevetés Linuxon. A gépfüggetlen rajzolás: #6148.
+        return
     szelesseg = min(aktualis.width(), elvart.width())
     magassag = min(aktualis.height(), elvart.height())
     aktualis_pixelek = _kepadat(aktualis)[:magassag, :szelesseg]

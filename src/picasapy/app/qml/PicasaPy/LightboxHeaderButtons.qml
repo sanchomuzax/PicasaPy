@@ -26,7 +26,8 @@ Item {
         anchors.verticalCenterOffset:
             header.personAlbumHeaderMode ? -5 : 0
         width: 26; height: 22; radius: 3
-        color: headerPlayHover.hovered ? "#f0f0ee" : "#ffffff"
+        color: headerPlayHover.hovered ? Theme.headerPlayButtonHoverBg
+                                        : Theme.headerPlayButtonBg
         border.color: Theme.chromeBorder
         Text {
             anchors.centerIn: parent

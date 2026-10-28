@@ -141,7 +141,7 @@ ColumnLayout {
                             y: 5
                             x: 5 + index * (suggestionTicks.width - 10)
                                 / (suggestionTickRepeater.count - 1)
-                            color: "#c4c4c4"
+                            color: Theme.optionsSliderTick
                         }
                     }
                 }
@@ -225,7 +225,7 @@ ColumnLayout {
                             y: 5
                             x: 5 + index * (clusterTicks.width - 10)
                                 / (clusterTickRepeater.count - 1)
-                            color: "#c4c4c4"
+                            color: Theme.optionsSliderTick
                         }
                     }
                 }
