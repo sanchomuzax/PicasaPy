@@ -93,7 +93,7 @@ def test_large_image_detection_is_scaled_and_eye_circles_return_to_full_image():
 
 
 def test_auto_result_keeps_normalized_eye_circles(provider, monkeypatch, tmp_path) -> None:
-    from picasapy.app import edit_preview
+    from picasapy.app import edit_preview_redeye
 
     image = _image_with_two_eyes_and_red_dress()
     monkeypatch.setattr(
@@ -106,7 +106,7 @@ def test_auto_result_keeps_normalized_eye_circles(provider, monkeypatch, tmp_pat
         "_render_cached",
         lambda _key, source, _ops: source,
     )
-    monkeypatch.setattr(edit_preview, "detect_eye_circles", lambda _image: (
+    monkeypatch.setattr(edit_preview_redeye, "detect_eye_circles", lambda _image: (
         EyeCircle(20, 20, 8), EyeCircle(40, 20, 8)
     ))
 
@@ -121,7 +121,7 @@ def test_auto_result_keeps_normalized_eye_circles(provider, monkeypatch, tmp_pat
 def test_auto_result_with_size_returns_rendered_detection_dimensions(
     provider, monkeypatch, tmp_path
 ) -> None:
-    from picasapy.app import edit_preview
+    from picasapy.app import edit_preview_redeye
 
     image = _image_with_two_eyes_and_red_dress()
     monkeypatch.setattr(
@@ -135,7 +135,7 @@ def test_auto_result_with_size_returns_rendered_detection_dimensions(
         lambda _key, source, _ops: source,
     )
     monkeypatch.setattr(
-        edit_preview,
+        edit_preview_redeye,
         "detect_eye_circles",
         lambda _image: (EyeCircle(20, 20, 8),),
     )
@@ -156,7 +156,7 @@ def test_auto_result_with_size_returns_rendered_detection_dimensions(
 def test_feedback_uses_whole_image_fallback_when_model_is_missing(
     provider, monkeypatch, tmp_path
 ) -> None:
-    from picasapy.app import edit_preview
+    from picasapy.app import edit_preview_redeye
 
     image = _image_with_two_eyes_and_red_dress()
     monkeypatch.setattr(
@@ -169,7 +169,7 @@ def test_feedback_uses_whole_image_fallback_when_model_is_missing(
         "_render_cached",
         lambda _key, source, _ops: source,
     )
-    monkeypatch.setattr(edit_preview, "detect_eye_circles", lambda _image: None)
+    monkeypatch.setattr(edit_preview_redeye, "detect_eye_circles", lambda _image: None)
 
     count, circles = provider.redeye_auto_result(
         "photo", tmp_path / "photo.png", ()
