@@ -117,6 +117,9 @@ DedupDialog 1.0 DedupDialog.qml
 FaceScanDialog 1.0 FaceScanDialog.qml
 FirstRunLanguageDialog 1.0 FirstRunLanguageDialog.qml
 ImportSourceDialog 1.0 ImportSourceDialog.qml
+internal ImportSourceDialogSourcePanel ImportSourceDialogSourcePanel.qml
+internal ImportSourceDialogPreview ImportSourceDialogPreview.qml
+internal ImportSourceDialogDestinationPanel ImportSourceDialogDestinationPanel.qml
 AddFileDialog 1.0 AddFileDialog.qml
 TesztuzemNaploDialog 1.0 TesztuzemNaploDialog.qml
 ConfigureButtonsDialog 1.0 ConfigureButtonsDialog.qml

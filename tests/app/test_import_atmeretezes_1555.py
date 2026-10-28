@@ -44,7 +44,7 @@ _CTL = (
 ).read_text(encoding="utf-8")
 _DIALOG = (
     Path(picasapy.app.__file__).parent
-    / "qml" / "PicasaPy" / "ImportSourceDialog.qml"
+    / "qml" / "PicasaPy" / "ImportSourceDialogDestinationPanel.qml"
 ).read_text(encoding="utf-8")
 
 

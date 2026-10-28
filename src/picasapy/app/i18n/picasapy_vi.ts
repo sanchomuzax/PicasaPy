@@ -13325,152 +13325,16 @@ KHÔNG THỂ HOÀN TÁC.
     <context>
         <name>ImportSourceDialog</name>
         <message>
-            <source>Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
-            <translation>Tùy chọn</translation>
-        </message>
-        <message>
-            <source>Online options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button);headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
-            <translation>Tùy chọn trực tuyến</translation>
-        </message>
-        <message>
-            <source>Upload</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tải lên</translation>
-        </message>
-        <message>
-            <source>Upload to Picasa Web Albums...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>Tải lên &amp;Anbom Web Picasa...</translation>
-        </message>
-        <message>
-            <source>Sync starred photos only</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
-            <translation>Chỉ đồng bộ hóa ảnh có gắn dấu sao</translation>
-        </message>
-        <message>
-            <source>View the previous Photo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Xem ảnh trước</translation>
-        </message>
-        <message>
-            <source>View the next Photo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Xem ảnh tiếp theo</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="20" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="19" />
             <source>Import from Source</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nhập từ nguồn</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="122" />
-            <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nhập ảnh và video từ thư mục khác (ví dụ: máy ảnh hoặc thẻ nhớ đã được kết nối) vào thư viện.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="134" />
-            <source>Source:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nguồn:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="306" />
-            <source>Removable drives</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ổ đĩa di động</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="71" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="85" />
             <source>Removable Drive (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ổ đĩa di động (%1)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="144" />
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="245" />
-            <source>(none selected)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(chưa chọn)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="150" />
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="251" />
-            <source>Browse...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation>Duyệt...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="175" />
-            <source>%1 pictures/videos found</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tìm thấy %1 ảnh/video</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="186" />
-            <source>No pictures or videos found in this folder.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Không tìm thấy ảnh hoặc video trong thư mục này.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="200" />
-            <source>Exclude Duplicates</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Loại trừ mục trùng lặp</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
-            <source>Exclude photos that are already imported into PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Loại trừ ảnh đã nhập vào PicasaPy</translation>
-        </message>
-        <message numerus="yes">
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
-            <source>%n of those are duplicates already in PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>
-                <numerusform>Trong số đó, %n ảnh đã trùng lặp trong PicasaPy</numerusform>
-                <numerusform>Trong số đó, %n ảnh đã trùng lặp trong PicasaPy</numerusform>
-            </translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="265" />
-            <source>Exclude All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Loại trừ tất cả</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="270" />
-            <source>Include All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Bao gồm tất cả</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
-            <source>Include</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Bao gồm</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
-            <source>Exclude</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Loại trừ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="235" />
-            <source>Destination:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IPTC::Destination</extracomment>
-            <translation>Đích</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="260" />
@@ -13479,59 +13343,7 @@ picasapy-origin-key: stringres:IPTC::Destination</extracomment>
             <translation>Mẫu thư mục:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="778" />
-            <source>Enter new folder title or choose existing folder to continue</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
-            <translation>Nhập tiêu đề thư mục mới hoặc chọn thư mục hiện có để tiếp tục</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="376" />
-            <source>Enter Folder Title</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:iCAcquireUI::SubFolder</extracomment>
-            <translation>Nhập tiêu đề thư mục</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="392" />
-            <source>Date Taken (YYYY-MM-DD)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
-            <translation>Ngày Chụp (Ngày-Tháng-Năm)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="399" />
-            <source>%1 (Today)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 (Hôm nay)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="408" />
-            <source>After Copying:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extracomment>
-            <translation>Sau khi Sao chép:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="419" />
-            <source>Leave card alone</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Giữ nguyên thẻ nhớ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="426" />
-            <source>Delete only copied photos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Chỉ xóa ảnh đã sao chép</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="433" />
-            <source>Delete everything on card</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Xóa mọi thứ trên thẻ nhớ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="115" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="249" />
             <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Bạn có chắc muốn xóa các tệp đã nhập khỏi thẻ nhớ không? KHÔNG THỂ HOÀN TÁC.</translation>
@@ -13549,111 +13361,360 @@ picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extraco
             <translation>Di chuyển thay vì sao chép (tệp nguồn sẽ bị xóa)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="466" />
-            <source>%1 / %2 imported</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Đã nhập %1 / %2</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="477" />
-            <source>Done: %1 imported, %2 failed</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Hoàn tất: đã nhập %1, %2 thất bại</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="490" />
-            <source>Import</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
-            <translation>Nhập</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="499" />
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Đóng</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="334" />
             <source>Import Files/Folder</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::importfilestitle</extracomment>
             <translation>Nhập tệp/thư mục</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="360" />
-            <source>Folder...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Thư mục...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="366" />
-            <source>Files...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tệp...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="321" />
             <source>Choose source folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Chọn thư mục nguồn...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="516" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="362" />
             <source>Choose destination folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Chọn thư mục đích...</translation>
         </message>
         <message>
-            <source>%1 / %2 imported at %3/sec</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Đã nhập %1 / %2 với tốc độ %3/giây</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="143" />
             <source>bytes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>byte</translation>
         </message>
         <message>
-            <source>File types:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</extracomment>
-            <translation>Loại tệp</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="350" />
             <source>Picture and Movie Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Tệp ảnh và phim</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="352" />
             <source>Picture Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
             <translation>Tệp ảnh</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="353" />
+            <source>All Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
+            <translation>Tất cả tệp</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImportSourceDialogSourcePanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="166" />
+            <source>Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
+            <translation>Tùy chọn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="167" />
+            <source>Online options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button);headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
+            <translation>Tùy chọn trực tuyến</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="157" />
+            <source>Upload</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tải lên</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="159" />
+            <source>Upload to Picasa Web Albums...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
+            <translation>Tải lên &amp;Anbom Web Picasa...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="188" />
+            <source>Sync starred photos only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
+            <translation>Chỉ đồng bộ hóa ảnh có gắn dấu sao</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="267" />
+            <source>View the previous Photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Xem ảnh trước</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="279" />
+            <source>View the next Photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Xem ảnh tiếp theo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="15" />
+            <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nhập ảnh và video từ thư mục khác (ví dụ: máy ảnh hoặc thẻ nhớ đã được kết nối) vào thư viện.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="28" />
+            <source>Source:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nguồn:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="63" />
+            <source>Removable drives</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ổ đĩa di động</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="38" />
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="38" />
+            <source>(none selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(chưa chọn)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="79" />
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="79" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Duyệt...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="230" />
+            <source>%1 pictures/videos found</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tìm thấy %1 ảnh/video</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="241" />
+            <source>No pictures or videos found in this folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Không tìm thấy ảnh hoặc video trong thư mục này.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="143" />
+            <source>Exclude Duplicates</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Loại trừ mục trùng lặp</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="197" />
+            <source>Exclude photos that are already imported into PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Loại trừ ảnh đã nhập vào PicasaPy</translation>
+        </message>
+        <message numerus="yes">
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="204" />
+            <source>%n of those are duplicates already in PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>
+                <numerusform>Trong số đó, %n ảnh đã trùng lặp trong PicasaPy</numerusform>
+                <numerusform>Trong số đó, %n ảnh đã trùng lặp trong PicasaPy</numerusform>
+            </translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="253" />
+            <source>Exclude All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Loại trừ tất cả</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="258" />
+            <source>Include All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Bao gồm tất cả</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="88" />
+            <source>Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Thư mục...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="93" />
+            <source>Files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tệp...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="107" />
+            <source>File types:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</extracomment>
+            <translation>Loại tệp</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="116" />
+            <source>Picture and Movie Files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tệp ảnh và phim</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="117" />
+            <source>Picture Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
+            <translation>Tệp ảnh</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="118" />
             <source>All Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <translation>Tất cả tệp</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogSourcePanel.qml" line="51" />
             <source>Recent sources</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nguồn gần đây</translation>
         </message>
+    </context>
+    <context>
+        <name>ImportSourceDialogPreview</name>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogPreview.qml" line="122" />
+            <source>Include</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Bao gồm</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogPreview.qml" line="122" />
+            <source>Exclude</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Loại trừ</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImportSourceDialogDestinationPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="26" />
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="26" />
+            <source>(none selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(chưa chọn)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="98" />
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="98" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Duyệt...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="16" />
+            <source>Destination:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IPTC::Destination</extracomment>
+            <translation>Đích</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="139" />
+            <source>Enter new folder title or choose existing folder to continue</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
+            <translation>Nhập tiêu đề thư mục mới hoặc chọn thư mục hiện có để tiếp tục</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="111" />
+            <source>Enter Folder Title</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:iCAcquireUI::SubFolder</extracomment>
+            <translation>Nhập tiêu đề thư mục</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="144" />
+            <source>Date Taken (YYYY-MM-DD)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
+            <translation>Ngày Chụp (Ngày-Tháng-Năm)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="153" />
+            <source>%1 (Today)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 (Hôm nay)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="162" />
+            <source>After Copying:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extracomment>
+            <translation>Sau khi Sao chép:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="173" />
+            <source>Leave card alone</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Giữ nguyên thẻ nhớ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="180" />
+            <source>Delete only copied photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Chỉ xóa ảnh đã sao chép</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="187" />
+            <source>Delete everything on card</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Xóa mọi thứ trên thẻ nhớ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="229" />
+            <source>%1 / %2 imported</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Đã nhập %1 / %2</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="240" />
+            <source>Done: %1 imported, %2 failed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hoàn tất: đã nhập %1, %2 thất bại</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="253" />
+            <source>Import</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
+            <translation>Nhập</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="264" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Đóng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="224" />
+            <source>%1 / %2 imported at %3/sec</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Đã nhập %1 / %2 với tốc độ %3/giây</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="59" />
             <source>Recent destinations</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Đích gần đây</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="76" />
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Kích thước Ban đầu</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialogDestinationPanel.qml" line="77" />
             <source>%1 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 pixel</translation>

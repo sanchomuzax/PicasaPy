@@ -36,7 +36,7 @@ from tests.support.qml_blokk import blokk_horgonyra
 
 _DIALOG = (
     Path(picasapy.app.__file__).parent
-    / "qml" / "PicasaPy" / "ImportSourceDialog.qml"
+    / "qml" / "PicasaPy" / "ImportSourceDialogDestinationPanel.qml"
 ).read_text(encoding="utf-8")
 
 
@@ -195,7 +195,7 @@ class TestAFelulet:
         blokk = blokk_horgonyra(
             _DIALOG, 'objectName: "importSourceRecentDestBox"'
         )
-        assert "onActivated: importSourceWindow.destFolder" in blokk
+        assert "onActivated: hostWindow.destFolder" in blokk
 
     def test_a_Tallozas_gomb_MEGMARAD(self):
         """A harmadik szakasz (`Acquire::ChooseFolder`) nem tűnhet el."""
