@@ -215,9 +215,17 @@ class TestBekotes:
         """A fejléc a képfolyamon át a gazdaablak `personFaceZoom` /
         `setPersonFaceZoom` párjához jut — a szűrő mintájára."""
         qml = app_module._APP_DIR / "qml"
-        feed = (qml / "PicasaPy" / "LightboxFeed.qml").read_text(encoding="utf-8")
+        feed_dir = qml / "PicasaPy"
+        feed = "\n".join(
+            (feed_dir / name).read_text(encoding="utf-8")
+            for name in (
+                "LightboxFeed.qml",
+                "LightboxFeedGroup.qml",
+                "LightboxFeedPersonHeader.qml",
+            )
+        )
         main = (qml / "Main.qml").read_text(encoding="utf-8")
-        assert "grid.appWindow.personFaceZoom" in feed
-        assert "grid.appWindow.setPersonFaceZoom" in feed
+        assert "feed.appWindow.personFaceZoom" in feed
+        assert "feed.appWindow.setPersonFaceZoom" in feed
         assert "controller.setPersonFaceZoom" in main
         assert "controller.personFaceZoom" in main

@@ -136,7 +136,7 @@ class TestAzEjtesiTerulet:
             Path(picasapy.app.__file__).parent
             / "qml"
             / "PicasaPy"
-            / "LightboxFeed.qml"
+            / "LightboxFeedGroup.qml"
         ).read_text(encoding="utf-8")
         kezd = forras.index('objectName: "feedReorderDropArea"')
         blokk = forras[max(0, kezd - 200):kezd]

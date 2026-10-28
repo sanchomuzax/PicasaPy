@@ -49,9 +49,15 @@ from support.varakozas import hibaturo_feltetel, var_feltetelre
 _HEADER = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "LightboxHeader.qml"
 ).read_text(encoding="utf-8")
-_FEED = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "LightboxFeed.qml"
-).read_text(encoding="utf-8")
+_FEED_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+_FEED = "\n".join(
+    (_FEED_DIR / name).read_text(encoding="utf-8")
+    for name in (
+        "LightboxFeed.qml",
+        "LightboxFeedGroup.qml",
+        "LightboxFeedPersonHeader.qml",
+    )
+)
 
 
 def _walk(item: QQuickItem):
