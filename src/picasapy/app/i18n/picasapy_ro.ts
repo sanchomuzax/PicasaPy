@@ -9431,19 +9431,6 @@ Schimbarea va fi aplicată la următoarea pornire a aplicaţiei.</translation>
     <context>
         <name>MainToolbar</name>
         <message>
-            <location filename="../qml/PicasaPy/MainToolbar.qml" />
-            <source>Show starred photos only</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(searchcontainer/starsearch)</extracomment>
-            <translation>Doresc să se afişeze numai fotografiile cu stea</translation>
-        </message>
-        <message>
-            <source>Filter by date range</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(searchcontainer/timecontainer_label)</extracomment>
-            <translation>Filtraţi după intervalul de date</translation>
-        </message>
-        <message>
             <source>Show only photos with faces</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(searchcontainer/facesearch)</extracomment>
@@ -9454,16 +9441,6 @@ picasapy-origin-key: tooltips:Tooltip(searchcontainer/facesearch)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(thumbui/importbutton)</extracomment>
             <translation>Preluaţi fotografii de la un aparat foto, de la un scaner sau de pe un alt dispozitiv media</translation>
-        </message>
-        <message>
-            <source>Show movies only</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Afişaţi numai filmele</translation>
-        </message>
-        <message>
-            <source>Show only photos with geotag</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Afişaţi numai fotografiile cu geoetichetă</translation>
         </message>
         <message>
             <source>Clear your search</source>
@@ -9477,13 +9454,6 @@ picasapy-origin-key: tooltips:Tooltip(searchcontainer/searchclr)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
             <translation>Importaţi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MainToolbar.qml" line="46" />
-            <source>Filters</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_FILTERS;tooltips:Label(searchcontainer/filter_label)</extracomment>
-            <translation>Filtre</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="143" />
@@ -9565,6 +9535,50 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/folderviewpopup)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMoviePanelPopup::title;stringres:CanonCaptureMoviePanelPopup::title;tooltips:Label(panelroot/capturemovietab)</extracomment>
             <translation>Capturaţi</translation>
+        </message>
+    </context>
+    <context>
+        <name>ToolbarFilterControls</name>
+        <message>
+            <location filename="../qml/PicasaPy/ToolbarFilterControls.qml" />
+            <source>Show starred photos only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(searchcontainer/starsearch)</extracomment>
+            <translation>Doresc să se afişeze numai fotografiile cu stea</translation>
+        </message>
+        <message>
+            <source>Filter by date range</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(searchcontainer/timecontainer_label)</extracomment>
+            <translation>Filtraţi după intervalul de date</translation>
+        </message>
+        <message>
+            <source>Show only photos with faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(searchcontainer/facesearch)</extracomment>
+            <translation>Afişaţi numai fotografiile care au chipuri</translation>
+        </message>
+        <message>
+            <source>Show movies only</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Afişaţi numai filmele</translation>
+        </message>
+        <message>
+            <source>Show only photos with geotag</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Afişaţi numai fotografiile cu geoetichetă</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ToolbarFilterControls.qml" line="46" />
+            <source>Filters</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_FILTERS;tooltips:Label(searchcontainer/filter_label)</extracomment>
+            <translation>Filtre</translation>
+        </message>
+        <message>
+            <source>Show duplicate files only</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Afişaţi numai fişierele duplicate</translation>
         </message>
     </context>
     <context>
