@@ -1,4 +1,4 @@
-"""A Windows tesztlábat PR-on a kiválasztott fájlokra is futtatjuk (#4922)."""
+"""A Windows tesztlábat PR-on kihagyjuk, mainen és éjjel megtartjuk (#6122)."""
 from pathlib import Path
 
 CI = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
@@ -13,15 +13,12 @@ def _blokk(nev: str) -> str:
     return szoveg[eleje: vege if vege != -1 else None]
 
 
-def test_a_windowsos_darabok_pr_on_a_kivalasztott_fajllistat_futtatjak():
+def test_a_windowsos_darabok_pr_on_kimaradnak():
     blokk = _blokk("darabok-windows")
 
-    assert (
-        "github.event_name != 'pull_request' || "
-        "needs.valtozas.outputs.windows_darabszam != '0'"
-    ) in blokk
-    assert "needs.valtozas.outputs.windows_darabok" in blokk
-    assert "needs.valtozas.outputs.windows_darabszam" in blokk
+    assert "if: ${{ github.event_name != 'pull_request' &&" in blokk
+    assert "github.event_name != 'push'" not in blokk
+    assert "github.event_name != 'schedule'" not in blokk
 
 
 def test_a_windows_osszesito_pr_on_is_jelzi_a_darabok_bukasat():
@@ -31,11 +28,15 @@ def test_a_windows_osszesito_pr_on_is_jelzi_a_darabok_bukasat():
     assert "needs.darabok-windows.result" in blokk
 
 
-def test_a_windowsos_darabok_a_main_pushon_futnak():
-    """Az ütemezett futást a GitHub nem indította el (2026-10-10), így a
-    futásidő-tábla windowsos mérés nélkül maradt — a main-pushon futnia kell."""
+def test_a_windowsos_darabok_a_main_pushon_es_ejjel_futnak():
+    """A main push és az ütemezett esemény továbbra is elindítja a Windows-lábat."""
     blokk = _blokk("darabok-windows")
+    workflow = CI.read_text(encoding="utf-8")
+
     assert "github.event_name != 'push'" not in blokk
+    assert "github.event_name != 'schedule'" not in blokk
+    assert "\n  push:\n    branches: [main]\n" in workflow
+    assert "\n  schedule:\n    - cron:" in workflow
 
 
 def test_a_windows_pr_laba_a_windows_erzekeny_szurot_hivja():

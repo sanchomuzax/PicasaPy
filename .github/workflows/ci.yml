@@ -120,17 +120,17 @@ jobs:
       darabok: ${{ needs.valtozas.outputs.darabok }}
       darabszam: ${{ needs.valtozas.outputs.darabszam }}
 
-  # #4922: PR-en csak a kiválasztott, Windows-érzékeny tesztek futnak ezen a
-  # lábon; main-pushon és kézi/ütemezett futáskor továbbra is a teljes lista.
+  # #6122: PR-en a Windows tesztlábat kihagyjuk; main-pushon, kézi és
+  # ütemezett futáskor továbbra is elindul, hogy a Windows-hibák kiderüljenek.
   # Külön mátrixszáma van, ezért kevés windowsos próba kevés futtatót foglal.
   darabok-windows:
     needs: valtozas
     # #187: kézi indításkor a `platform` bemenet szűr (ubuntu esetén kimarad).
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.platform != 'ubuntu') && needs.valtozas.outputs.pr_docs_only != 'true' && (github.event_name != 'pull_request' || needs.valtozas.outputs.windows_darabszam != '0') }}
+    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.platform != 'ubuntu') && needs.valtozas.outputs.pr_docs_only != 'true' && needs.valtozas.outputs.windows_darabszam != '0' }}
     # #187: main-pushon egy újabb commit megszakítja a régebbi, még futó
-    # windowsos futást. Minden más eseményre egyedi csoport jár (a run_id),
-    # így a PR, az ütemezett és a kézi futás nem ütközik, a viselkedésük
-    # változatlan. Az ubuntu-láb ebből nincs kizárva, minden commiton lefut.
+    # windowsos futást. Az ütemezett és a kézi futás egyedi csoportot kap;
+    # a PR-eseményhez tartozó Windows-job kimarad. Az ubuntu-láb ebből nincs
+    # kizárva, minden commiton lefut.
     concurrency:
       group: ci-windows-${{ github.event_name == 'push' && 'main' || github.run_id }}
       cancel-in-progress: ${{ github.event_name == 'push' }}
