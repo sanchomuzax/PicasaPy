@@ -155,7 +155,7 @@ Rectangle {
                     width: tagList.width
                     height: 22
                     radius: 3
-                    color: rowHover.hovered ? "#ffffff" : "transparent"
+                    color: rowHover.hovered ? Theme.contentPanel : "transparent"
                     border.color: rowHover.hovered
                                   ? Theme.chromeBorder : "transparent"
                     RowLayout {
