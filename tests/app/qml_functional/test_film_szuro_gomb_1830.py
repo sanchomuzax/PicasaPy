@@ -18,7 +18,7 @@ from tests.support.qml_blokk import blokk_horgonyra
 
 _TOOLBAR = (
     Path(__file__).resolve().parents[3]
-    / "src/picasapy/app/qml/PicasaPy/MainToolbar.qml"
+    / "src/picasapy/app/qml/PicasaPy/ToolbarFilterControls.qml"
 )
 
 
