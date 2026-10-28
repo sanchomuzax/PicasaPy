@@ -7901,11 +7901,6 @@ picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/moresug)</extraco
             <translation>Scade o singură dată pragul de recunoaştere, astfel încât să fie sugerate mai multe nume. Setarea salvată rămâne neschimbată.</translation>
         </message>
         <message>
-            <source>%1?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1?</translation>
-        </message>
-        <message>
             <source>Ignore</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: peoplepanel_text:Label(peoplepanel/ignore);stringres:peoplepanel::ignore</extracomment>
@@ -8005,6 +8000,38 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbu
             <source>Assign a name to all of the selected faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Atribuiţi un nume tuturor chipurilor selectate</translation>
+        </message>
+    </context>
+    <context>
+        <name>UnnamedFacesViewGrid</name>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesViewGrid.qml" />
+            <source>%1?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesViewGrid.qml" />
+            <source>Add a name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbumSelectionNode::addname;stringres:PeoplePanel::AddAName;stringres:peoplepanel::addaname;unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/addname)</extracomment>
+            <translation>Adăugaţi un nume</translation>
+        </message>
+    </context>
+    <context>
+        <name>UnnamedFacesViewIgnoredGroups</name>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesViewIgnoredGroups.qml" />
+            <source>%1?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesViewIgnoredGroups.qml" />
+            <source>Add a name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbumSelectionNode::addname;stringres:PeoplePanel::AddAName;stringres:peoplepanel::addaname;unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/addname)</extracomment>
+            <translation>Adăugaţi un nume</translation>
         </message>
     </context>
     <context>
