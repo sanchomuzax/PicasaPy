@@ -96,17 +96,17 @@ editController.hasRetouch ELDÖNTVE (#1487) — a felület SZÁNDÉKOSAN mást m
 editController.hasFinetune ELDÖNTVE (#1487) — ugyanaz, mint a `hasRetouch`: a „van finomhangolás” állapotot a felület nem külön jelzőn mutatja (undoLabel #465, nyitott-eszköz kiemelés #116). ⚠️ Az `EditorPanel.qml` deklarált hozzá egy tükör-property-t, amit SENKI nem állított be és senki nem olvasott — az a holt tükör a #1487-ben TÖRÖLVE. A vezérlő property-je marad, a finomhangolás-próbák ezen át olvassák az állapotot.
 startupStatus.busy ELDÖNTVE (#1487) — a nyitóképernyő SZÁNDÉKOSAN a saját `busy: !root.ready` alakját számolja (`SplashScreen.qml:42`): egyetlen forrásból (`ready`) vezeti le, így nem lehet a kettő ellentmondásban. A property marad, mert a `report`/`finish` (mindkettő BELSŐ) ugyanennek az objektumnak az indítási API-ja, és a próbák innen olvassák az állapotot.
 controller.collapseFolderIntoTray MÉRVE — #1919: a token RÉTEGE kész (modell + vezérlő + nézet + fordítás), a MEGJELENÍTÉS KAPCSOLÓJA szándékosan nincs bekötve. Az eredetiben nem parancs kapcsolja, hanem egy minden frissítéskor újraértékelt állapot-delegátus (`0x00572ba4` → `0x00563530`): akkor látszik, ha van mappa-/album-kijelölés, az nem üres, és a FÉNYKÉP-kijelölés üres. A mi mappa-kijelölésünk a megnyitott mappa, ami NEM az eredeti `CAlbumSelectionNode`-ja, ezért az automatikus megjelenítés átírná a tálca mindennapi kinézetét — az a tulajdonos szeme elé tartozó vizuális kör. A szabály szó szerint le van írva a `with_album_token` docstringjében. A #1919 emiatt NYITVA marad.
-# -- #6109: a PhotoViewer gazda-aliasán át használt második szerkesztőelőnézet --
+# -- #6109: a PhotoViewer gazda-álnevén át használt második szerkesztőelőnézet --
 # A PhotoViewerEditWorkflow és a PhotoViewerGeometryActions a gyökér
 # `masodikEditCtl` property-jét (`viewer.masodikEditCtl`) használja. Az
 # elemző a komponenshatáron nem követi ezt a hostViewer-aliasláncot, ezért
 # tévesen az egész `secondPreview` kontextusobjektumot elérhetetlennek látja.
-secondPreview.beginEdit FELVÁLTVA — a PhotoViewerEditWorkflow.qml kétképes szerkesztés indításakor a viewer.masodikEditCtl aliasán át hívja.
-secondPreview.beginEditInMemory FELVÁLTVA — a PhotoViewerEditWorkflow.qml memóriabeli előnézetet ugyanazon viewer.masodikEditCtl aliasán át indít.
-secondPreview.chainValue FELVÁLTVA — a PhotoViewerEditWorkflow.qml a második szerkesztési láncot a viewer.masodikEditCtl aliasán olvassa.
-secondPreview.endEdit FELVÁLTVA — a PhotoViewerEditWorkflow.qml a második szerkesztési állapot lezárásakor a viewer.masodikEditCtl aliasán hívja.
-secondPreview.persistChain FELVÁLTVA — a PhotoViewerEditWorkflow.qml a második szerkesztési láncot a viewer.masodikEditCtl aliasán menti.
-secondPreview.previewSource FELVÁLTVA — a PhotoViewerGeometryActions.qml és a PhotoViewerElotteImage.qml a második előnézetet viewer.masodikEditCtl aliasán olvassa.
+secondPreview.beginEdit FELVÁLTVA - a PhotoViewerEditWorkflow.qml kétképes szerkesztés indításakor a viewer.masodikEditCtl álnevén át hívja.
+secondPreview.beginEditInMemory FELVÁLTVA - a PhotoViewerEditWorkflow.qml memóriabeli előnézetet ugyanazon viewer.masodikEditCtl álnevén át indít.
+secondPreview.chainValue FELVÁLTVA - a PhotoViewerEditWorkflow.qml a második szerkesztési láncot a viewer.masodikEditCtl álnevén olvassa.
+secondPreview.endEdit FELVÁLTVA - a PhotoViewerEditWorkflow.qml a második szerkesztési állapot lezárásakor a viewer.masodikEditCtl álnevén hívja.
+secondPreview.persistChain FELVÁLTVA - a PhotoViewerEditWorkflow.qml a második szerkesztési láncot a viewer.masodikEditCtl álnevén menti.
+secondPreview.previewSource FELVÁLTVA - a PhotoViewerGeometryActions.qml és a PhotoViewerElotteImage.qml a második előnézetet viewer.masodikEditCtl álnevén olvassa.
 # -- Osztály-szintű kivételek ---------------------------------------------
 # Ide az az osztály kerül, aminek VAN `@Slot`/`@Property` tagja, de EGYETLEN
 # kontextus-objektum sem éri el (se regisztrálva, se mixinként örökölve).
