@@ -7745,7 +7745,7 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbu
             <location filename="../qml/PicasaPy/UnnamedFacesViewGrid.qml" />
             <source>%1?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1؟</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesViewGrid.qml" />
@@ -7761,7 +7761,7 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbu
             <location filename="../qml/PicasaPy/UnnamedFacesViewIgnoredGroups.qml" />
             <source>%1?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>%1؟</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesViewIgnoredGroups.qml" />
