@@ -173,6 +173,7 @@ PrintOptionsPanel 1.0 PrintOptionsPanel.qml
 PublishPanel 1.0 PublishPanel.qml
 GiftCdHost 1.0 GiftCdHost.qml
 UnnamedFacesView 1.0 UnnamedFacesView.qml
+ToolbarFilterControls 1.0 ToolbarFilterControls.qml
 ToolTile 1.0 ToolTile.qml
 PanelButton 1.0 PanelButton.qml
 TextColorSwatches 1.0 TextColorSwatches.qml
