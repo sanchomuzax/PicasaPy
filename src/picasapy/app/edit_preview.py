@@ -13,7 +13,6 @@ azonosító az URL első (kérdőjel előtti) része.
 
 from __future__ import annotations
 
-import functools
 import threading
 from collections import OrderedDict
 from collections.abc import Callable
@@ -21,146 +20,54 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QColorSpace, QImage, QImageReader
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickImageProvider
 
-from picasapy.cvimage import scale_down
-from picasapy.faces.redeye import detect_eye_circles
 from picasapy.ini import PhotoCropReader
 from picasapy.ini.filters import FilterOp
-from picasapy.ini.rect64 import decode_rect64
-from picasapy.lazy_cv2 import cv2
-from picasapy.rawdecode import dekodol_nyerset, nyers_hosszabb_el, nyers_utvonal
-from picasapy.render import apply_filters, count_redeye_spots, normalize_crop_ops
-from picasapy.render.chain_report import validate_and_clamp_op
-from picasapy.render.chain_geometry import AZONOSSAG, Matrix, TartalomHely, _szorzat
-from picasapy.render.elonezeti_arany import elonezeti_arany, gyors_elonezet_aktiv
-from picasapy.render.op_geometry import LancHelyzet, invertal, op_geometria
-from picasapy.render.registry import chain_flags
+from picasapy.render import apply_filters, normalize_crop_ops
+from picasapy.render.chain_geometry import TartalomHely
 from picasapy.render.display_modes import (
     apply_display_mode,
     display_mode_changes_pixels,
 )
+from picasapy.render.elonezeti_arany import elonezeti_arany
+from picasapy.render.op_geometry import LancHelyzet
+from picasapy.render.registry import chain_flags
 from picasapy.render.text_fonts import DEFAULT_FAMILY
 from picasapy.render.text_overlay import apply_text_overlay
 from picasapy.scanner import PICASA_INI_NAME
 
+from .edit_preview_cache import EditPreviewCacheMixin, _LRU_CAPACITY
+from .edit_preview_redeye import (
+    EditPreviewRedeyeMixin,
+    _OUTLINE_MAX_PX as _OUTLINE_MAX_PX,
+    _REDEYE_DETECTION_SPLIT as _REDEYE_DETECTION_SPLIT,
+    _normalize_redeye_ops as _normalize_redeye_ops,
+    _outline_px as _outline_px,
+    _post_ops_geometry as _post_ops_geometry,
+    count_redeye_spots as count_redeye_spots,
+    detect_eye_circles as detect_eye_circles,
+)
+from .edit_preview_source import (
+    _MAX_PREVIEW_EDGE as _MAX_PREVIEW_EDGE,
+    _decode_source as _decode_source,
+    _elonezeti_arany as _elonezeti_arany,
+    _lut_array_to_qimage as _lut_array_to_qimage,
+    _megjelenitendo as _megjelenitendo,
+    _nyers_forras as _nyers_forras,
+    _qimage_to_rgb_array as _qimage_to_rgb_array,
+    _rgb_array_to_qimage as _rgb_array_to_qimage,
+    _srgb_be as _srgb_be,
+    _teljes_hosszabb_el as _teljes_hosszabb_el,
+)
 from .histogram_helper import EMPTY_HISTOGRAM, compute_rgb_histogram
 
 # #151/7: a placeholder-szürke egyetlen helyen (thumbnail_provider) definiált
 from .thumbnail_provider import PLACEHOLDER_COLOR as _PLACEHOLDER_COLOR
 
 _PLACEHOLDER_SIZE = 16
-_MAX_PREVIEW_EDGE = 2560
-# LRU-kapacitás (#128): lapozáskor a beginEdit új id-vel regisztrál, endEdit
-# nélkül — evikció híján a dekódolt források (~10–30 MB/kép) képenként
-# halmozódnának. Két elem elég: az aktuális + az előző kép, így az
-# előre-hátra lapozás újradekód nélkül gyors marad, a régebbiek felszabadulnak.
-_LRU_CAPACITY = 2
-_REDEYE_DETECTION_SPLIT = FilterOp("__redeye_detection_split__", ())
-
-
-#: #2271: a körvonalvastagság `[0, 1]`-ből képpontba. A felső határ a
-#: KORÁBBI csúszka maximuma (8 képpont) — így a megjelenés nem ugrik meg
-#: a mértékegység-váltástól. ⚠️ Ez KÖZELÍTÉS: az eredeti `[0, 1]` →
-#: képpont képlete nincs megmérve (a jegy a TÁROLÁST mérte ki, a
-#: rajzolást nem). Ha egyszer megmérjük, csak ez az egy szám változik.
-_OUTLINE_MAX_PX = 8
-
-
-def _outline_px(vastagsag: float) -> int:
-    """A `[0, 1]`-es körvonalvastagság képpontban, rajzoláshoz."""
-    return max(0, round(float(vastagsag) * _OUTLINE_MAX_PX))
-
-
-def _normalize_redeye_ops(
-    crop_reader: PhotoCropReader,
-    path: Path,
-    ops: tuple[FilterOp, ...],
-    post_ops: tuple[FilterOp, ...],
-    crop: str | None,
-    crop_ini_readable: bool | None,
-) -> tuple[tuple[FilterOp, ...], tuple[FilterOp, ...]]:
-    """A redeye előtti és utáni láncrész a renderrel azonos crop64-et kapja."""
-    if crop_ini_readable is None:
-        crop, crop_ini_readable = crop_reader.read(
-            path.parent / PICASA_INI_NAME, path.name
-        )
-    normalized = normalize_crop_ops(
-        (*ops, _REDEYE_DETECTION_SPLIT, *post_ops),
-        crop,
-        crop_ini_readable=crop_ini_readable,
-        warning_key=str(path),
-    )
-    split_index = normalized.index(_REDEYE_DETECTION_SPLIT)
-    return normalized[:split_index], normalized[split_index + 1 :]
-
-
-def _post_ops_geometry(
-    ops: tuple[FilterOp, ...],
-    width: int,
-    height: int,
-    position: LancHelyzet,
-) -> tuple[int, int, Matrix]:
-    """A végső méretet és affin leképezést számolja, képszűrők futtatása nélkül."""
-    original_matrix = position.eredeti_matrix
-    initial_matrix = original_matrix
-    original_width = position.eredeti_szelesseg
-    original_height = position.eredeti_magassag
-    crop_ops = [op for op in ops if op.name == "crop64"]
-    last_crop = crop_ops[-1] if crop_ops else None
-
-    for op in ops:
-        if op.name == "crop64":
-            if op is not last_crop or len(op.params) < 2:
-                continue
-            try:
-                rect = decode_rect64(op.params[1])
-                (a, b, c), (d, e, f) = original_matrix
-                corners = (
-                    (
-                        a * (rect.left * original_width)
-                        + b * (rect.top * original_height)
-                        + c,
-                        d * (rect.left * original_width)
-                        + e * (rect.top * original_height)
-                        + f,
-                    ),
-                    (
-                        a * (rect.right * original_width)
-                        + b * (rect.bottom * original_height)
-                        + c,
-                        d * (rect.right * original_width)
-                        + e * (rect.bottom * original_height)
-                        + f,
-                    ),
-                )
-                left = max(0, min(round(min(x for x, _ in corners)), width))
-                right = max(0, min(round(max(x for x, _ in corners)), width))
-                top = max(0, min(round(min(y for _, y in corners)), height))
-                bottom = max(0, min(round(max(y for _, y in corners)), height))
-                if right <= left or bottom <= top:
-                    continue
-            except (IndexError, ValueError, ZeroDivisionError):
-                continue
-            crop_matrix: Matrix = (
-                (1.0, 0.0, float(-left)),
-                (0.0, 1.0, float(-top)),
-            )
-            original_matrix = _szorzat(crop_matrix, original_matrix)
-            width, height = right - left, bottom - top
-            continue
-
-        try:
-            validated_op, _warnings = validate_and_clamp_op(op)
-            step = op_geometria(validated_op, width, height)
-        except (IndexError, TypeError, ValueError, ZeroDivisionError):
-            continue
-        original_matrix = _szorzat(step.matrix, original_matrix)
-        width, height = step.szelesseg, step.magassag
-
-    return width, height, _szorzat(original_matrix, invertal(initial_matrix))
 
 
 @dataclass(frozen=True)
@@ -203,7 +110,7 @@ class TextOverlaySpec:
     align: str = "left"
 
 
-class EditPreviewProvider(QQuickImageProvider):
+class EditPreviewProvider(EditPreviewCacheMixin, EditPreviewRedeyeMixin, QQuickImageProvider):
     """`image://editpreview/<photo_id>?rev=<n>` — élő szerkesztési előnézet."""
 
     def __init__(self) -> None:
@@ -439,9 +346,7 @@ class EditPreviewProvider(QQuickImageProvider):
         # #3377: a lánc a kicsinyítés arányával fut — a keret vastagsága így
         # a mentett képpel arányos marad (az eredeti `imageWidth /
         # fullResImageWidth` tényezője).
-        with elonezeti_arany(
-            _elonezeti_arany(path, mtime, source_array, teljes_felbontas)
-        ):
+        with elonezeti_arany(_elonezeti_arany(path, mtime, source_array, teljes_felbontas)):
             result_array, elhelyezes = self._futtasd_a_lancot(
                 key, source_array, ops, shared_cache, paint_strokes
             )
@@ -535,10 +440,7 @@ class EditPreviewProvider(QQuickImageProvider):
             prefix = self._gpu_prefix_images.get(key)
             lut = self._gpu_lut_images.get(key)
             return (
-                prefix is not None
-                and not prefix.isNull()
-                and lut is not None
-                and not lut.isNull()
+                prefix is not None and not prefix.isNull() and lut is not None and not lut.isNull()
             )
 
     def unregister(self, photo_id: str) -> None:
@@ -610,102 +512,6 @@ class EditPreviewProvider(QQuickImageProvider):
             mtime = None
         return self._resolve_source(str(photo_id), Path(path), mtime, shared_cache=True)
 
-    def redeye_auto_result(
-        self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]
-    ) -> tuple[int, tuple[tuple[float, float, float], ...] | None]:
-        """Az Auto gomb régi, képméret nélküli eredményformátuma (#4261)."""
-        count, circles, *_geometry = self.redeye_auto_result_with_size(
-            photo_id, path, ops
-        )
-        return count, circles
-
-    def redeye_auto_result_with_size(
-        self,
-        photo_id: str,
-        path: Path,
-        ops: tuple[FilterOp, ...],
-        post_ops: tuple[FilterOp, ...] = (),
-        crop: str | None = None,
-        crop_ini_readable: bool | None = None,
-    ) -> tuple[
-        int,
-        tuple[tuple[float, float, float], ...] | None,
-        tuple[int, int] | None,
-        tuple[int, int] | None,
-        Matrix,
-    ]:
-        """Az Auto gomb találatszáma és normalizált YuNet-szemkörei (#4261).
-
-        Az `ops` a láncban a `redeye` beszúrási pontjáig tart (új rétegnél
-        a teljes lánc) — így a körök ugyanabban a képméretben értendők,
-        amelyen a renderben alkalmazódnak. A visszaadott méret és leképezés
-        a kereteket a végső előnézetre vetíti, ha a mentett vörösszem-réteg
-        után geometriai művelet (például vágás) következik.
-        A detektálás itt, az app-oldalon történik; a visszaadott körök az
-        `eye64` FilterOp-paraméterbe kerülnek, így a render sávnak nem kell
-        modellt vagy `faces` csomagot ismernie. Modell nélkül `None` a
-        körlista, ilyenkor a `redeye` teljes képes útja marad a tartalék.
-
-        A GUI-szálról hívandó (a `_sources`/prefix gyorsítótárat használja,
-        ld. `_resolve_source` #546-os megjegyzését). Ha a forrás nem
-        dekódolható, üres köröket és méret nélküli geometriai adatot ad.
-        """
-        key = str(photo_id)
-        path = Path(path)
-        detection_ops, post_ops = _normalize_redeye_ops(
-            self._crop_reader,
-            path,
-            tuple(ops),
-            tuple(post_ops),
-            crop,
-            crop_ini_readable,
-        )
-        try:
-            mtime = path.stat().st_mtime
-        except OSError:
-            mtime = None
-        source_array = self._resolve_source(key, path, mtime, shared_cache=True)
-        if source_array is None:
-            return 0, (), None, None, AZONOSSAG
-        rendered, _placement, input_position = self._render_cached_jelentes(
-            key, source_array, detection_ops
-        )
-        if rendered is None:
-            return 0, (), None, None, AZONOSSAG
-        height, width = rendered.shape[:2]
-        image_size = (int(width), int(height))
-        if input_position is None:
-            input_position = LancHelyzet.kezdo(width, height)
-        display_width, display_height, eye_to_display = _post_ops_geometry(
-            post_ops, width, height, input_position
-        )
-        display_size = (display_width, display_height)
-        detected = detect_eye_circles(rendered)
-        pixel_circles = (
-            None
-            if detected is None
-            else tuple(
-                (circle.x, circle.y, circle.radius)
-                for circle in detected
-            )
-        )
-        count = count_redeye_spots(rendered, eye_circles=pixel_circles)
-        if detected is None:
-            return count, None, image_size, display_size, eye_to_display
-        scale = float(min(width, height))
-        normalized = tuple(
-            (circle.x / width, circle.y / height, circle.radius / scale)
-            for circle in detected
-            if circle.radius > 0
-        )
-        return count, normalized, image_size, display_size, eye_to_display
-
-    def redeye_spot_count(
-        self, photo_id: str, path: Path, ops: tuple[FilterOp, ...]
-    ) -> int:
-        """Kompatibilitási burkoló a találatszámot kérő hívóknak."""
-        return self.redeye_auto_result(photo_id, path, ops)[0]
-
     def histogram_for(self, photo_id: str) -> dict:
         """Az utoljára renderelt előnézet RGB-hisztogramja (#25), vagy üres
         hisztogram, ha a fotó nincs (már) regisztrálva."""
@@ -733,229 +539,7 @@ class EditPreviewProvider(QQuickImageProvider):
         while len(store) > _LRU_CAPACITY:
             store.popitem(last=False)
 
-    def _futtasd_a_lancot(
-        self,
-        key: str,
-        source_array: np.ndarray | None,
-        ops: tuple[FilterOp, ...],
-        shared_cache: bool,
-        paint_strokes: tuple,
-    ) -> tuple[np.ndarray | None, TartalomHely | None]:
-        """A lánc a `_register_impl` három ágán (#3377-ben kiemelve)."""
-        # lánc-prefix gyorsítótár (#140): interakció közben csak az utolsó
-        # op fut. A háttér-úton (#546) nincs gyorsítótár — cserébe nincs
-        # megosztott állapot sem, amit sorosítani kellene.
-        #: #3166: a keret-elhelyezés a render JELENTÉSÉBŐL jön — abból a
-        #: hívásból, amelyik a kereteket tényleg alkalmazta (mind a három
-        #: ágon: festett maszk, gyorsítótár, közvetlen).
-        elhelyezes = None
-        from .paint_mask import maszk_vonasokbol, van_mentett_ecsetvonas
-
-        if (
-            (paint_strokes or van_mentett_ecsetvonas(ops))
-            and source_array is not None
-            and ops
-        ):
-            # #1908: festett ecset-maszk esetén a lánc-prefix gyorsítótár
-            # KIMARAD. A maszk nem csak az utolsó opra hat (a festhető effekt
-            # bárhol állhat a láncban), a prefix viszont épp azt tartja
-            # változatlannak — a gyorsítótár tehát elavult képet adna. A
-            # festés nem csúszka-húzás: egy vonás után egy teljes lánc
-            # elfut, és ez a helyes, nem a gyors.
-            maszk = maszk_vonasokbol(
-                paint_strokes,
-                source_array.shape[0],
-                source_array.shape[1],
-                filters=ops,
-            )
-            jelentes = apply_filters(source_array, tuple(ops), paint_mask=maszk)
-            result_array = jelentes.image
-            elhelyezes = jelentes.content_placement
-        elif shared_cache:
-            result_array, elhelyezes, _helyzet = self._render_cached_jelentes(
-                key, source_array, tuple(ops)
-            )
-        elif source_array is None or not ops:
-            result_array = source_array
-        else:
-            jelentes = apply_filters(source_array, tuple(ops))
-            result_array = jelentes.image
-            elhelyezes = jelentes.content_placement
-        return result_array, elhelyezes
-
-    def _resolve_source(
-        self,
-        key: str,
-        path: Path,
-        mtime: float | None,
-        shared_cache: bool,
-        full_res: bool = False,
-    ) -> np.ndarray | None:
-        """A dekódolt forráskép — a GUI-úton gyorsítótárazva, háttéren nem.
-
-        #546: a `_sources` LRU-t KIZÁRÓLAG a GUI-szál írja. A háttér-render
-        inkább újra dekódol (ez a lassú effektek mellett elhanyagolható),
-        cserébe a két szál között nincs megosztott, zárral védendő állapot.
-        """
-        if not shared_cache:
-            return _decode_source(path, full_res=full_res, color_managed=self.color_management)
-        cached = self._sources.get(key)
-        #: #819: a kicsinyített és a teljes felbontású forrás NEM cserélhető
-        #: fel — a negyedik mező mondja meg, melyik van a gyorsítótárban.
-        if (
-            cached is not None
-            and cached[0] == path
-            and cached[1] == mtime
-            and (len(cached) < 4 or cached[3] == full_res)
-        ):
-            source_array = cached[2]
-        else:
-            source_array = _decode_source(
-                path, full_res=full_res, color_managed=self.color_management
-            )
-        # LRU-frissítés (#128): az aktuális kulcs a sor végére kerül, és a
-        # kapacitáson túli legrégebbi bejegyzések felszabadulnak — az
-        # előző kép még bent marad (gyors visszalapozás), a régebbiek nem.
-        # A forrás-referencia (source_array) azonossága megmarad, így a
-        # lánc-prefix gyorsítótár (#140) találata a re-store után is érvényes.
-        self._sources[key] = (path, mtime, source_array, full_res)
-        self._sources.move_to_end(key)
-        while len(self._sources) > _LRU_CAPACITY:
-            self._sources.popitem(last=False)
-        return source_array
-
     # -- lánc-prefix gyorsítótár (#140) ------------------------------------
-
-    def _render_cached_jelentes(
-        self,
-        key: str,
-        source_array: np.ndarray | None,
-        ops: tuple[FilterOp, ...],
-    ) -> tuple[np.ndarray | None, TartalomHely | None, LancHelyzet | None]:
-        """Renderelés lánc-prefix gyorsítótárral: interakció közben (azonos
-        prefix, csak az utolsó op paramétere változik) csak az utolsó op fut.
-
-        A visszaadott RGB-tömb a hisztogram (#25) és a QImage-konverzió közös
-        forrása — így a hisztogram mindig a TÉNYLEGESEN megjelenített képet
-        tükrözi, nem egy külön újraszámolt változatot.
-
-        #301: hibás/idegen lánc-bejegyzésnél az apply_filters saját maga esik
-        vissza a szűretlen köztes eredményre (kivétel nem szökik ki innen),
-        a #73-elv (részleges előnézet a placeholder helyett) így is teljesül."""
-        if source_array is None:
-            return None, None, None
-        if not ops:
-            height, width = source_array.shape[:2]
-            return source_array, None, LancHelyzet.kezdo(width, height)
-        if any(op.name.casefold() in {"grain", "grain2"} for op in ops):
-            # A szemcsemag sorszáma a teljes renderláncban értendő. A
-            # prefix-cache kettévágása a záró grainnek újra 0-t adna, ezért
-            # szemcsét tartalmazó láncnál egyben renderelünk.
-            jelentes = apply_filters(source_array, ops)
-            return jelentes.image, jelentes.content_placement, jelentes.helyzet
-        # #3229: a lánc MÁR NEM rendez át — az `apply_filters` az ops
-        # sorrendjében fut, és a `crop64` koordinátáit a leképezés vezeti át.
-        # Ezért a prefix egyszerűen a lánc eleje, és a kettévágott futtatás
-        # ugyanazt adja, mint az egészben futtatott. (A #3169 itt 18,2
-        # átlagos eltérést mért a régi, halasztó ágon: a prefixbe került keret
-        # után az utolsó op ARRA futott rá. A halasztás megszűnésével ez a
-        # csapda is megszűnt — őr: `test_lanc_sorrend_elesben_3229.py`.)
-        prefix_array, prefix_helyzet, prefix_alpha = self._cached_prefix(
-            key, source_array, ops[:-1]
-        )
-        # #3166 + #3229: a keret-elhelyezés a FORRÁS helyét mondja meg a
-        # kimenetben, tehát a TELJES láncra értendő — a záró hívás ezért
-        # megkapja a prefix koordináta-állapotát (`bejovo`), különben a
-        # prefixben lefutott vágás/keret elveszne belőle.
-        jelentes = apply_filters(
-            prefix_array,
-            ops[-1:],
-            bejovo=prefix_helyzet,
-            input_alpha=prefix_alpha,
-        )
-        return jelentes.image, jelentes.content_placement, jelentes.helyzet
-
-    def _render_cached(
-        self,
-        key: str,
-        source_array: np.ndarray | None,
-        ops: tuple[FilterOp, ...],
-    ) -> np.ndarray | None:
-        """Csak a kép — azoknak a hívóknak, akiknek a keret-elhelyezés
-        (#3166) nem kell (pl. a vörösszem-számolás)."""
-        return self._render_cached_jelentes(key, source_array, ops)[0]
-
-    def _cached_prefix(
-        self,
-        key: str,
-        source_array: np.ndarray,
-        prefix_ops: tuple[FilterOp, ...],
-    ) -> tuple[np.ndarray, LancHelyzet, int]:
-        """Az utolsó op ELŐTTI köztes eredmény, gyorsítótárból ha lehet.
-
-        A találat feltétele: azonos fotó-kulcs, azonos prefix-lánc és
-        ugyanaz a (referencia szerint azonos) dekódolt forrás — a
-        forrás-cache frissülésekor a prefix automatikusan érvénytelen.
-
-        A köztes KÉP mellett a lánc koordináta-állapotát is visszaadja
-        (#3229): a folytatásnak tudnia kell, hogy a kapott kép már nem az
-        eredeti — a `crop64` koordinátái arra vonatkoznak (#330), és a
-        keret-elhelyezés is a forrás helyét mondja meg a kimenetben. Az
-        alfaállapot (#5299) a Polaroid folytatásához kell."""
-        cached = self._prefix_cache
-        gyors = gyors_elonezet_aktiv()
-        if (
-            cached is not None
-            and cached[0] == key
-            and cached[1] == prefix_ops
-            and cached[2] is source_array
-            and cached[5] == gyors
-        ):
-            return cached[3], cached[4], cached[6]
-        if prefix_ops:
-            jelentes = apply_filters(source_array, prefix_ops)
-            prefix_array = jelentes.image
-            helyzet = jelentes.helyzet
-            alpha = jelentes.alpha
-        else:
-            prefix_array = source_array
-            magassag, szelesseg = source_array.shape[:2]
-            helyzet = LancHelyzet.kezdo(szelesseg, magassag)
-            alpha = 255
-        self._prefix_cache = (key, prefix_ops, source_array, prefix_array, helyzet, gyors, alpha)
-        return prefix_array, helyzet, alpha
-
-    def _cached_gpu_prefix(
-        self,
-        key: str,
-        source_array: np.ndarray,
-        prefix_ops: tuple[FilterOp, ...],
-    ) -> np.ndarray:
-        """A GPU-előnézet (#22) prefix-je, KÜLÖN gyorsítótár-rekeszben.
-
-        Ugyanaz a találat-logika, mint `_cached_prefix`-nél, de saját
-        `_gpu_prefix_cache` rekesszel — ld. a rekesz mellé írt docsztringet
-        a cache-csörgés elkerüléséről. A gyakori esetben (finetune2 a lánc
-        VÉGén, `prefix_ops == ops[:-1]`) ez a hívás olcsó: a tömb-tartalom
-        MEGEGYEZIK a `_cached_prefix`-ben az imént kiszámolttal, csak a
-        referencia más — az `apply_filters` itt is lefut, de a KÖVETKEZŐ,
-        AZONOS prefixű hívásnál már ez a rekesz is talál."""
-        cached = self._gpu_prefix_cache
-        gyors = gyors_elonezet_aktiv()
-        if (
-            cached is not None
-            and cached[0] == key
-            and cached[1] == prefix_ops
-            and cached[2] is source_array
-            and cached[4] == gyors
-        ):
-            return cached[3]
-        if prefix_ops:
-            prefix_array, _skipped = apply_filters(source_array, prefix_ops)
-        else:
-            prefix_array = source_array
-        self._gpu_prefix_cache = (key, prefix_ops, source_array, prefix_array, gyors)
-        return prefix_array
 
     def requestImage(self, photo_id, size, requested_size):
         # az URL-ben ?rev=<szám> cache-buster jöhet — az id az első rész.
@@ -985,9 +569,7 @@ class EditPreviewProvider(QQuickImageProvider):
         # kép null marad, a Qt pedig minden ilyen kérésnél kiírja, hogy
         # „QImage::scaleWidth: Image is a null image". Ártalmatlan, de
         # elfedi a valódi hibákat a naplóban.
-        jelol = not (is_gpu_prefix or is_gpu_lut) and display_mode_changes_pixels(
-            display_mode
-        )
+        jelol = not (is_gpu_prefix or is_gpu_lut) and display_mode_changes_pixels(display_mode)
         if requested_size is not None and not image.isNull():
             width, height = requested_size.width(), requested_size.height()
             # #3800 (GPU-előtag), #3819 (fő fotó): a befoglaló dobozba
@@ -1028,170 +610,10 @@ class EditPreviewProvider(QQuickImageProvider):
 def _belefer(image: QImage, width: int, height: int) -> bool:
     """A kép a kért (`0` = korlátlan) dobozba már méretezés nélkül is
     belefér (#3800)."""
-    return (width <= 0 or image.width() <= width) and (
-        height <= 0 or image.height() <= height
-    )
-
-
-@functools.lru_cache(maxsize=64)
-def _teljes_hosszabb_el(path: str, mtime: float | None) -> int | None:
-    """A forrás TELJES felbontású hosszabb éle — csak a fejlécből (#3377).
-
-    Az `mtime` a gyorsítótár-kulcs része: a lecserélt fájl új méretét adja.
-    `None`, ha a méret nem olvasható."""
-    if nyers_utvonal(path):
-        return nyers_hosszabb_el(Path(path))
-    meret = QImageReader(path).size()
-    if not meret.isValid():
-        return None
-    return max(meret.width(), meret.height()) or None
-
-
-def _elonezeti_arany(
-    path: Path, mtime: float | None, source: np.ndarray | None, teljes_felbontas: bool
-) -> float:
-    """A munkavászon és a teljes felbontású kép aránya (#3377).
-
-    Az eredeti a keret két vastagságát ezzel szorozza (`imageWidth /
-    fullResImageWidth`). Teljes felbontású dekódnál, és ha a méret nem
-    állapítható meg, 1 — ilyenkor a keret a mai, teljes felbontású
-    viselkedést adja."""
-    if teljes_felbontas or source is None:
-        return 1.0
-    teljes = _teljes_hosszabb_el(str(path), mtime)
-    if not teljes:
-        return 1.0
-    return min(1.0, max(source.shape[0], source.shape[1]) / teljes)
-
-
-def _decode_source(
-    path: Path, *, full_res: bool = False, color_managed: bool = False
-) -> np.ndarray | None:
-    """A forráskép dekódolása RGB numpy tömbbé, előnézet-felbontásra korlátozva.
-
-    QImageReader + autoTransform: az EXIF-orientációt a betöltés alkalmazza —
-    a néző natív Image-e is így tesz (autoTransform: true). A dekód mérete
-    korlátozott: az előnézethez elég, és a GUI-szálon futó renderelés így
-    nagy képnél is gyors marad. `None`, ha a kép nem olvasható be.
-
-    #819: `full_res=True` esetén a korlát ELMARAD. A szűrő-regiszter 19
-    szűrőre `fullres` jelzőt ad — ezek csak teljes felbontáson adnak helyes
-    eredményt, tehát a kicsinyített forráson futtatva a felhasználó MÁST
-    látna, mint amit a mentett kép tartalmaz. A megjelenített előnézet
-    ettől függetlenül a korlátra kicsinyül (`_kicsinyitsd_a_megjelenitendot`).
-
-    #1725: `color_managed=True` esetén a képbe **beágyazott ICC-profil**
-    érvényesül — a kép sRGB-be alakul (`QImage.convertToColorSpace`). Ez az
-    eredeti `Színkezelés használata` kapcsolójának mért jelentése: littleCMS
-    szabványos ICC-átalakítása, nem saját színtan (spec 5.12). Profil nélküli
-    vagy már sRGB képen ez no-op, a kikapcsolt állapot pedig — ahogy a
-    binárisban is — semmit nem tesz."""
-    if nyers_utvonal(path):
-        return _nyers_forras(path, full_res=full_res)
-    reader = QImageReader(str(path))
-    reader.setAutoTransform(True)
-    native = reader.size()
-    if native.isValid() and not full_res:
-        longest = max(native.width(), native.height())
-        if longest > _MAX_PREVIEW_EDGE:
-            scale = _MAX_PREVIEW_EDGE / longest
-            reader.setScaledSize(
-                QSize(round(native.width() * scale), round(native.height() * scale))
-            )
-    source = reader.read()
-    if source.isNull():
-        return None
-    if color_managed:
-        source = _srgb_be(source)
-    return _qimage_to_rgb_array(source)
-
-
-def _nyers_forras(path: Path, *, full_res: bool) -> np.ndarray | None:
-    """Nyers (RAW) forrás → RGB tömb, az előnézet-korláttal (#528).
-
-    A `QImageReader`-nek nincs nyers beolvasója, tehát a nyers fájl ezen az
-    úton is külön dekódolót kíván (`picasapy.rawdecode`, LibRaw).
-
-    Két dolog szándékosan MARAD EL itt:
-
-    * **EXIF-orientáció** — a LibRaw a nyers fájl saját `flip` mezőjét már a
-      demozaikolás közben alkalmazza, tehát a `setAutoTransform` megfelelője
-      megvan; másodszor forgatni hiba lenne.
-    * **ICC-átalakítás** (`color_managed`) — a LibRaw kimenete alapból sRGB,
-      nincs mit átalakítani. A nyers fájlban nincs beégetett színtér, ezért a
-      #1725 kapcsolójának itt nincs mit érvényesítenie.
-    """
-    bgr = dekodol_nyerset(path)
-    if bgr is None:
-        return None
-    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-    if full_res:
-        return rgb
-    return scale_down(rgb, _MAX_PREVIEW_EDGE)
-
-
-def _srgb_be(kep: QImage) -> QImage:
-    """A beágyazott profillal jelölt kép sRGB-be alakítva (#1725).
-
-    Profil nélküli vagy már sRGB képnél változatlanul adja vissza — az
-    átalakítás így sosem „talál ki" színteret oda, ahol nincs.
-    """
-    szinter = kep.colorSpace()
-    srgb = QColorSpace(QColorSpace.NamedColorSpace.SRgb)
-    if not szinter.isValid() or szinter == srgb:
-        return kep
-    atalakitott = kep.copy()
-    atalakitott.convertToColorSpace(srgb)
-    return atalakitott
-
-
-def _megjelenitendo(tomb: np.ndarray, teljes_felbontas: bool) -> np.ndarray:
-    """A MEGJELENÍTENDŐ kép — a teljes felbontású render kicsinyítve (#819).
-
-    A `fullres` szűrők a teljes felbontású forráson futnak, de a felületre
-    kikerülő előnézet ettől nem lehet nagyobb: a néző úgyis kicsinyítve
-    mutatja, a nagy `QImage` viszont a memóriát és a rajzolást terheli
-    (egy 3200×2400-as RGB kép ~23 MB)."""
-    if not teljes_felbontas:
-        return tomb
-    magas, szeles = tomb.shape[0], tomb.shape[1]
-    leghosszabb = max(szeles, magas)
-    if leghosszabb <= _MAX_PREVIEW_EDGE:
-        return tomb
-    arany = _MAX_PREVIEW_EDGE / leghosszabb
-    from picasapy.render.glimmer_ops import resize_image
-
-    return resize_image(tomb, max(1, round(szeles * arany)), max(1, round(magas * arany)))
+    return (width <= 0 or image.width() <= width) and (height <= 0 or image.height() <= height)
 
 
 def _placeholder() -> QImage:
     image = QImage(_PLACEHOLDER_SIZE, _PLACEHOLDER_SIZE, QImage.Format.Format_RGB32)
     image.fill(_PLACEHOLDER_COLOR)
     return image
-
-
-def _qimage_to_rgb_array(image: QImage) -> np.ndarray:
-    """QImage → RGB uint8 (H, W, 3) numpy tömb, a bufferre hivatkozás nélkül
-    (a `.copy()` a QImage megszűnése után is biztonságos marad)."""
-    converted = image.convertToFormat(QImage.Format.Format_RGB888)
-    width, height = converted.width(), converted.height()
-    stride = converted.bytesPerLine()
-    buffer = bytes(converted.constBits())
-    raw = np.frombuffer(buffer, dtype=np.uint8).reshape((height, stride))
-    return raw[:, : width * 3].reshape((height, width, 3)).copy()
-
-
-def _rgb_array_to_qimage(array: np.ndarray) -> QImage:
-    """RGB uint8 (H, W, 3) numpy tömb → QImage (a numpy-puffer másolatával)."""
-    contiguous = np.ascontiguousarray(array)
-    height, width = contiguous.shape[:2]
-    stride = width * 3
-    image = QImage(contiguous.data, width, height, stride, QImage.Format.Format_RGB888)
-    return image.copy()
-
-
-def _lut_array_to_qimage(lut: np.ndarray) -> QImage:
-    """`(256, 3)` uint8 finetune2-LUT → 256×1 RGB8 `QImage` (#22) — a
-    `GpuPointFilterPreview.qml` ezt tölti be `lutItem`-ként és mintavételezi
-    csatornánként a shaderben (ld. `gpu_point_pipeline` modul-docsztring)."""
-    return _rgb_array_to_qimage(lut[np.newaxis, :, :])

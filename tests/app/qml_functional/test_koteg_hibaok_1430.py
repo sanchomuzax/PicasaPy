@@ -44,7 +44,7 @@ def _eredeti(mappa, nev: str, tartalom: bytes) -> None:
 def test_a_koteg_hibaoka_megjelenik_az_osszegzo_parbeszeden(
     qml_app, tmp_path, monkeypatch
 ):
-    from picasapy.fileops import originals as originals_module
+    from picasapy.fileops import originals_move as originals_module
 
     window, _controller, engine = qml_app
     fileops = engine.rootContext().contextProperty("fileOpsController")

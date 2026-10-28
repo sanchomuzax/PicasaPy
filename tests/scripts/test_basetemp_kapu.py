@@ -23,7 +23,8 @@ _spec.loader.exec_module(kapu)
 
 
 _PLAFON_ELOTAG = (
-    "systemd-run --user --scope -q -p MemoryMax=2400M -p MemorySwapMax=0 -- "
+    "systemd-run --user --scope --slice=picasapy-hatter.slice -q "
+    "-p MemoryMax=2400M -p MemorySwapMax=0 -- "
 )
 
 BLOKKOLANDO = [
@@ -182,7 +183,7 @@ def test_a_mappa_uzenete_megnevezi_a_MERT_karot(monkeypatch, capsys):
 # 898 → 1401 MiB-ra nőtt. Sem ez a kapu (mappa-alakot néz), sem a foglalási
 # korlát (#2532, csak teljes futásokra) nem foghatta meg.
 
-_PLAFON = ("systemd-run --user --scope -q "
+_PLAFON = ("systemd-run --user --scope --slice=picasapy-hatter.slice -q "
            "-p MemoryMax=2400M -p MemorySwapMax=0 -- ")
 
 
@@ -194,6 +195,25 @@ def test_egyetlen_app_fajl_plafon_nelkul_blokkol():
 
 def test_plafonnal_atmegy():
     cmd = _PLAFON + "python3 -m pytest tests/app/qml_functional/test_x.py -q --basetemp=/tmp/bt"
+    assert kapu.blokkolando(cmd) is None
+
+
+def test_systemd_plafon_szelet_nelkul_blokkol():
+    cmd = (
+        "systemd-run --user --scope -q -p MemoryMax=2400M "
+        "-p MemorySwapMax=0 -- python3 -m pytest "
+        "tests/app/qml_functional/test_x.py -q --basetemp=/tmp/bt"
+    )
+    indok = kapu.blokkolando(cmd) or ""
+    assert "picasapy-hatter.slice" in indok, indok
+
+
+def test_systemd_plafon_a_hatter_szeletben_atmegy():
+    cmd = (
+        "systemd-run --user --scope --slice=picasapy-hatter.slice -q "
+        "-p MemoryMax=2400M -p MemorySwapMax=0 -- python3 -m pytest "
+        "tests/app/qml_functional/test_x.py -q --basetemp=/tmp/bt"
+    )
     assert kapu.blokkolando(cmd) is None
 
 
@@ -221,6 +241,16 @@ def test_a_felemas_plafon_nem_szamit_plafonnak():
     assert "MEMÓRIAPLAFON" in (kapu.blokkolando(cmd) or "")
 
 
+def test_a_hibas_szelet_nem_szamit_plafonnak():
+    cmd = (
+        "systemd-run --user --scope --slice=app.slice -q "
+        "-p MemoryMax=2400M -p MemorySwapMax=0 -- python3 -m pytest "
+        "tests/app/qml_functional/test_x.py -q --basetemp=/tmp/bt"
+    )
+    indok = kapu.blokkolando(cmd) or ""
+    assert "picasapy-hatter.slice" in indok, indok
+
+
 def test_az_uzenet_megnevezi_a_mert_karot(monkeypatch, capsys):
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"tool_input": {
         "command": "pytest tests/app/qml_functional/test_x.py --basetemp=/tmp/bt"}})))
@@ -228,6 +258,7 @@ def test_az_uzenet_megnevezi_a_mert_karot(monkeypatch, capsys):
     hiba = capsys.readouterr().err
     assert "earlyoom" in hiba
     assert "MemoryMax" in hiba, "a kapu nem mondja meg, HOGYAN indítsa helyesen"
+    assert "--slice=picasapy-hatter.slice" in hiba
 
 
 # --- #2752: ad-hoc szkript plafon nélkül --------------------------------
@@ -380,8 +411,11 @@ def test_szonda_busz_nelkul_hamis(monkeypatch):
 
 def test_szonda_mukodo_scope_igaz(monkeypatch):
     monkeypatch.setattr(kapu, "_which", lambda _: "/usr/bin/systemd-run")
-    monkeypatch.setattr(kapu, "_run", lambda *a, **k: _Eredmeny(0))
+    hivasok = []
+    monkeypatch.setattr(
+        kapu, "_run", lambda *a, **k: hivasok.append(a) or _Eredmeny(0))
     assert kapu._systemd_scope_elerheto() is True
+    assert "--slice=picasapy-hatter.slice" in hivasok[0][0]
 
 
 def test_szonda_binaris_nelkul_hamis(monkeypatch):

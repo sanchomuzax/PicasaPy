@@ -29,7 +29,7 @@ import hashlib
 from pathlib import Path
 
 from picasapy.edit import ORIGINALS_DIR_NAME
-from picasapy.fileops import originals as originals_modul
+from picasapy.fileops import originals_cache as originals_modul
 from picasapy.fileops.batch import RENAME, conflicting_names, move_photos
 from picasapy.fileops.originals import listing_cache, originals_slot_free
 

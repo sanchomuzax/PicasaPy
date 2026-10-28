@@ -163,7 +163,7 @@ def _free_name(path: Path, dest_folder: Path) -> str:
     Ezen a ponton ez helyes: a felhasználó az „átnevezés" házirendet
     választotta, tehát a pótnév a kívánt válasz — az idegen fájlhoz nem
     nyúlunk, a kép és a kísérői a szabad néven költöznek. A „mi van útban" magyarázó üzenet
-    (`originals._occupied_message`) azoké az utaké marad, ahol a nevet a
+    (`originals_messages._occupied_message`) azoké az utaké marad, ahol a nevet a
     felhasználó adta meg (F2, másolás, egyfájlos mozgatás).
 
     #2510: az eredeti-hely vizsgálata itt is a `_conflicts` kapuját

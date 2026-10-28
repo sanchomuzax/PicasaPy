@@ -429,69 +429,9 @@ picasapy-origin-key: stringres:ytPrinter::unnamedalbum</extracomment>
     <context>
         <name>PrintDialog</name>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Border and Text Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(printpanel/captionoptionslabel)</extracomment>
-            <translation>Apmaļu un teksta opcijas</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Configure borders and text for Photos to be printed</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracomment>
-            <translation>Konfigurējiet drukājamo fotoattēlu apmales un tekstu</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Help</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Palīdzība</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Normal</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
-            <translation>Parasts</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Optimized</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Optimizēts</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Printer Setup</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
-            <translation>Printera iestatīšana</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>A printer must be installed in order to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
-            <translation>Lai varētu drukāt, ir jābūt instalētam printerim.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Open printer setup controls for the selected printer</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
-            <translation>Atveriet printera iestatījumu vadīklas atlasītajam printerim</translation>
-        </message>
-        <message>
             <source>Review</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Pārskatīt</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Daži jūsu attēli ir pārāk mazi, lai tos kvalitatīvi izdrukātu. Varat tos noņemt, tomēr izdrukāt vai atcelt un mainīt drukas izmēru.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
@@ -500,69 +440,10 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
             <translation>Zema kvalitāte: %1</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Remove Selected Items</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: reviewprint:reviewprint/remove.title</extracomment>
-            <translation>Atlasīto noņemšana</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Remove Low Quality Pictures</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: reviewprint:reviewprint/removeall.title</extracomment>
-            <translation>Zemas kvalitātes attēlu noņemšana</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>All of your pictures are ready to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::ready</extracomment>
-            <translation>Visi attēli ir gatavi drukāšanai.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>There are no pictures left to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::noneleft</extracomment>
-            <translation>Vairs nav attēlu, ko drukāt.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>OK</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>Labi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atcelt</translation>
-        </message>
-        <message>
             <source>Make sure your photos are ready to print</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Tooltip(printpanel/reviewnowbutton2)</extracomment>
             <translation>Pārliecinieties, vai jūsu fotoattēli ir gatavi drukāšanai</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Best quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Labākā kvalitāte (%1 pikseļi collā)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Good quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Laba kvalitāte (%1 pikseļi collā)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Bad quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Slikta kvalitāte (%1 pikseļi collā)</translation>
         </message>
         <message>
             <source>These pictures are below %1 pixels/inch at the selected print size:</source>
@@ -573,16 +454,6 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Toolt
             <source>%1 pixels/inch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 pikseļi collā</translation>
-        </message>
-        <message>
-            <source>%1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 / %2</translation>
-        </message>
-        <message>
-            <source>Print size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Drukas izmērs:</translation>
         </message>
         <message>
             <source>CD Cover Size</source>
@@ -729,109 +600,15 @@ picasapy-origin-key: stringres:ThumbUIPrint::ReadyPrompt</extracomment>
             <translation>Izvēlieties mērķa failu.</translation>
         </message>
         <message>
-            <source>These pictures could not be printed: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Šos attēlus nevarēja izdrukāt: %1</translation>
-        </message>
-        <message numerus="yes">
-            <source>Pictures to print: %1 (%n page(s))</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>
-                <numerusform>Drukājamie attēli: %1 (%n lapa)</numerusform>
-                <numerusform>Drukājamie attēli: %1 (%n lapas)</numerusform>
-                <numerusform>Drukājamie attēli: %1 (%n lapas)</numerusform>
-            </translation>
-        </message>
-        <message>
             <source>Contact Sheet</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
             <translation>Sīktēls</translation>
         </message>
         <message>
-            <source>Columns:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kolonnas:</translation>
-        </message>
-        <message>
-            <source>Printer:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Printeris:</translation>
-        </message>
-        <message>
             <source>Print to a PDF file...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Drukāt PDF failā...</translation>
-        </message>
-        <message>
-            <source>(not selected)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(nav atlasīts)</translation>
-        </message>
-        <message>
-            <source>Browse...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation>Pārlūkot...</translation>
-        </message>
-        <message>
-            <source>Fit to page:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ietilpināt lapā:</translation>
-        </message>
-        <message>
-            <source>Whole picture</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Viss attēls</translation>
-        </message>
-        <message>
-            <source>Fill the page (crop)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Aizpildīt lapu (apgriezt)</translation>
-        </message>
-        <message>
-            <source>Orientation:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
-            <translation>Orientācija</translation>
-        </message>
-        <message>
-            <source>Automatic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Automātiski</translation>
-        </message>
-        <message>
-            <source>Portrait</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
-            <translation>Portrets</translation>
-        </message>
-        <message>
-            <source>Landscape</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
-            <translation>Ainava</translation>
-        </message>
-        <message>
-            <source>Finished: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pabeigts: %1</translation>
-        </message>
-        <message>
-            <source>Printing: %1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Drukāšana: %1 / %2</translation>
-        </message>
-        <message>
-            <source>Print</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Drukāt</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Aizvērt</translation>
         </message>
         <message>
             <source>PDF documents (*.pdf)</source>
@@ -848,26 +625,286 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Pievienojiet vēl vienu drukājamā fotoattēla kopiju</translation>
         </message>
+    </context>
+    <context>
+        <name>PrintPreviewPanel</name>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>This will remove all of your pictures and cancel printing. Would you like to continue?</source>
+            <source>%1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 / %2</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintSelectionPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>A printer must be installed in order to print.</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::removedall</extracomment>
-            <translation>Tādējādi tiks noņemti visi jūsu attēli un atcelta drukāšana. Vai vēlaties turpināt?</translation>
+picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
+            <translation>Lai varētu drukāt, ir jābūt instalētam printerim.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>Normal</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
+            <translation>Parasts</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>Optimized</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Optimizēts</translation>
+        </message>
+        <message numerus="yes">
+            <source>Pictures to print: %1 (%n page(s))</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>
+                <numerusform>Drukājamie attēli: %1 (%n lapa)</numerusform>
+                <numerusform>Drukājamie attēli: %1 (%n lapas)</numerusform>
+                <numerusform>Drukājamie attēli: %1 (%n lapas)</numerusform>
+            </translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintSettingsPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSettingsPanel.qml" />
+            <source>Border and Text Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(printpanel/captionoptionslabel)</extracomment>
+            <translation>Apmaļu un teksta opcijas</translation>
+        </message>
+        <message>
+            <source>Columns:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kolonnas:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSettingsPanel.qml" />
+            <source>Configure borders and text for Photos to be printed</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracomment>
+            <translation>Konfigurējiet drukājamo fotoattēlu apmales un tekstu</translation>
+        </message>
+        <message>
+            <source>Print size:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Drukas izmērs:</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintPrinterPanel</name>
+        <message>
+            <source>(not selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(nav atlasīts)</translation>
+        </message>
+        <message>
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Pārlūkot...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintPrinterPanel.qml" />
+            <source>Open printer setup controls for the selected printer</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
+            <translation>Atveriet printera iestatījumu vadīklas atlasītajam printerim</translation>
+        </message>
+        <message>
+            <source>Print to a PDF file...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Drukāt PDF failā...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintPrinterPanel.qml" />
+            <source>Printer Setup</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
+            <translation>Printera iestatīšana</translation>
+        </message>
+        <message>
+            <source>Printer:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Printeris:</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintFitPanel</name>
+        <message>
+            <source>Automatic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Automātiski</translation>
+        </message>
+        <message>
+            <source>Fill the page (crop)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aizpildīt lapu (apgriezt)</translation>
+        </message>
+        <message>
+            <source>Fit to page:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ietilpināt lapā:</translation>
+        </message>
+        <message>
+            <source>Landscape</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
+            <translation>Ainava</translation>
+        </message>
+        <message>
+            <source>Orientation:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
+            <translation>Orientācija</translation>
+        </message>
+        <message>
+            <source>Portrait</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
+            <translation>Portrets</translation>
+        </message>
+        <message>
+            <source>Whole picture</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Viss attēls</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintStatusPanel</name>
+        <message>
+            <source>Finished: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pabeigts: %1</translation>
+        </message>
+        <message>
+            <source>Printing: %1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Drukāšana: %1 / %2</translation>
+        </message>
+        <message>
+            <source>These pictures could not be printed: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Šos attēlus nevarēja izdrukāt: %1</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintButtonRow</name>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Aizvērt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintButtonRow.qml" />
+            <source>Help</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Palīdzība</translation>
+        </message>
+        <message>
+            <source>Print</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Drukāt</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintReviewPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>All of your pictures are ready to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::ready</extracomment>
+            <translation>Visi attēli ir gatavi drukāšanai.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Bad quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Slikta kvalitāte (%1 pikseļi collā)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Best quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Labākā kvalitāte (%1 pikseļi collā)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atcelt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Good quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Laba kvalitāte (%1 pikseļi collā)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>Labi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Remove Low Quality Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: reviewprint:reviewprint/removeall.title</extracomment>
+            <translation>Zemas kvalitātes attēlu noņemšana</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Remove Selected Items</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: reviewprint:reviewprint/remove.title</extracomment>
+            <translation>Atlasīto noņemšana</translation>
+        </message>
+        <message>
+            <source>Review</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pārskatīt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Daži jūsu attēli ir pārāk mazi, lai tos kvalitatīvi izdrukātu. Varat tos noņemt, tomēr izdrukāt vai atcelt un mainīt drukas izmēru.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>There are no pictures left to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::noneleft</extracomment>
+            <translation>Vairs nav attēlu, ko drukāt.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintRemoveAllDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
+            <source>Don't Remove</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::removedallnobutton</extracomment>
+            <translation>Nenoņemt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
             <source>Remove and Cancel</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CPrintDlg::removedallyesbutton</extracomment>
             <translation>Noņemt un atcelt</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Don't Remove</source>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
+            <source>This will remove all of your pictures and cancel printing. Would you like to continue?</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::removedallnobutton</extracomment>
-            <translation>Nenoņemt</translation>
+picasapy-origin-key: stringres:CPrintDlg::removedall</extracomment>
+            <translation>Tādējādi tiks noņemti visi jūsu attēli un atcelta drukāšana. Vai vēlaties turpināt?</translation>
         </message>
     </context>
     <context>
@@ -2051,12 +2088,6 @@ picasapy-origin-key: webexport:webexport/labelgroup15.title</extracomment>
             <translation>Saglabāt šeit:</translation>
         </message>
         <message>
-            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: webexport:webexport/label20.title</extracomment>
-            <translation>Lai skatītu piemēru, noklikšķiniet uz veidnes nosaukuma. Kad esat atlasījis, noklikšķiniet uz Eksportēt.</translation>
-        </message>
-        <message>
             <source>Export</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: webexport:webexport/button29.title</extracomment>
@@ -2169,12 +2200,6 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <translation>Izvēlieties mērķa mapi...</translation>
         </message>
         <message>
-            <source>Template:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extracomment>
-            <translation>Veidne:</translation>
-        </message>
-        <message>
             <source>Export pictures at:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: webexport:webexport/labelgroup2.title</extracomment>
@@ -2229,16 +2254,6 @@ picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.ti
             <translation>Visa filma</translation>
         </message>
         <message>
-            <source>PicasaPy is generating the web page.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>PicasaPy veido tīmekļa lapu.</translation>
-        </message>
-        <message>
-            <source>Web page generated: %1 file(s) in %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tīmekļa lapa izveidota: %1 faili mapē %2</translation>
-        </message>
-        <message>
             <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Izveidot</translation>
@@ -2265,76 +2280,124 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
 picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
             <translation>notiek publicēšana...</translation>
         </message>
+    </context>
+    <context>
+        <name>WebExportTemplatePane</name>
         <message>
+            <location filename="../qml/PicasaPy/WebExportTemplatePane.qml" line="39" />
+            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/label20.title</extracomment>
+            <translation>Lai skatītu piemēru, noklikšķiniet uz veidnes nosaukuma. Kad esat atlasījis, noklikšķiniet uz Eksportēt.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportTemplatePane.qml" line="104" />
+            <source>Template:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extracomment>
+            <translation>Veidne:</translation>
+        </message>
+    </context>
+    <context>
+        <name>WebExportStatusPane</name>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="39" />
+            <source>PicasaPy is generating the web page.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>PicasaPy veido tīmekļa lapu.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="69" />
             <source>Published %1 file(s) to %2.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Uz %2 publicēti %1 faili.</translation>
         </message>
         <message>
-            <source>Manage FTP Accounts</source>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="71" />
+            <source>Web page generated: %1 file(s) in %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pārvaldīt FTP kontus</translation>
+            <translation>Tīmekļa lapa izveidota: %1 faili mapē %2</translation>
         </message>
+    </context>
+    <context>
+        <name>FtpAccountDialog</name>
         <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="77" />
             <source>Account name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Konta nosaukums:</translation>
         </message>
         <message>
-            <source>FTP server:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>FTP serveris:</translation>
-        </message>
-        <message>
-            <source>Username:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
-            <translation>Lietotājvārds:</translation>
-        </message>
-        <message>
-            <source>Password:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
-            <translation>Parole:</translation>
-        </message>
-        <message>
-            <source>Remote folder:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Attālā mape:</translation>
-        </message>
-        <message>
-            <source>Leave blank to keep the saved password.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atstājiet tukšu, lai saglabātu iepriekšējo paroli.</translation>
-        </message>
-        <message>
-            <source>The account could not be deleted.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kontu neizdevās izdzēst.</translation>
-        </message>
-        <message>
-            <source>New</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: buzzupload_text:Label(buzzupload/newalbum2);upload_text:Label(upload/newalbum2)</extracomment>
-            <translation>Jauns</translation>
-        </message>
-        <message>
-            <source>Delete</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_Delete</extracomment>
-            <translation>Dzēšana</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="144" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:il_Cancel</extracomment>
             <translation>Atcelt</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="137" />
+            <source>Delete</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Delete</extracomment>
+            <translation>Dzēšana</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="84" />
+            <source>FTP server:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>FTP serveris:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="118" />
+            <source>Leave blank to keep the saved password.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atstājiet tukšu, lai saglabātu iepriekšējo paroli.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="9" />
+            <source>Manage FTP Accounts</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pārvaldīt FTP kontus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="132" />
+            <source>New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: upload_text:Label(upload/newalbum2)</extracomment>
+            <translation>Jauns</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="98" />
+            <source>Password:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
+            <translation>Parole:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="106" />
+            <source>Remote folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Attālā mape:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="149" />
             <source>Save</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
             <translation>Saglabāt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="68" />
+            <source>The account could not be deleted.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kontu neizdevās izdzēst.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="91" />
+            <source>Username:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
+            <translation>Lietotājvārds:</translation>
         </message>
     </context>
     <context>
@@ -5043,954 +5106,1181 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
         </message>
     </context>
     <context>
-        <name>CreateDialogs</name>
+        <name>CollageCreateDialog</name>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Get More...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
-            <translation>Iegūt vēl...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Get more clips from Photo Library</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
-            <translation>Iegūstiet citus klipus no fotoattēlu bibliotēkas</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Clips (%d)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::clips_title</extracomment>
-            <translation>Klipi (%d)</translation>
-        </message>
-        <message>
-            <source>Poster Settings</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/window1.title</extracomment>
-            <translation>Plakāta iestatījumi</translation>
-        </message>
-        <message>
-            <source>Tip: if you don't want to trim, crop your picture to the same size as the paper.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/label2.title</extracomment>
-            <translation>Padoms. Ja nevēlaties apcirpt, apgrieziet attēlu atbilstoši papīra lielumam.</translation>
-        </message>
-        <message>
-            <source>Poster size:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/labelgroup3.title</extracomment>
-            <translation>Plakāta izmēri:</translation>
-        </message>
-        <message>
-            <source>200%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item5.title</extracomment>
-            <translation>200%</translation>
-        </message>
-        <message>
-            <source>300%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item6.title</extracomment>
-            <translation>300%</translation>
-        </message>
-        <message>
-            <source>400%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item7.title</extracomment>
-            <translation>400%</translation>
-        </message>
-        <message>
-            <source>500%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item8.title</extracomment>
-            <translation>500%</translation>
-        </message>
-        <message>
-            <source>600%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item9.title</extracomment>
-            <translation>600%</translation>
-        </message>
-        <message>
-            <source>700%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item10.title</extracomment>
-            <translation>700%</translation>
-        </message>
-        <message>
-            <source>800%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item11.title</extracomment>
-            <translation>800%</translation>
-        </message>
-        <message>
-            <source>900%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item12.title</extracomment>
-            <translation>900%</translation>
-        </message>
-        <message>
-            <source>1000%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item13.title</extracomment>
-            <translation>1000%</translation>
-        </message>
-        <message>
-            <source>Paper size:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/labelgroup14.title</extracomment>
-            <translation>Papīra izmēri:</translation>
-        </message>
-        <message>
-            <source>4x6</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
-            <translation>4 x 6</translation>
-        </message>
-        <message>
-            <source>8.5x11</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:FullPage;stringres:CPosterDlg::size2</extracomment>
-            <translation>8,5 x 11</translation>
-        </message>
-        <message>
-            <source>10x15</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:10x15m</extracomment>
-            <translation>10 x 15</translation>
-        </message>
-        <message>
-            <source>20x25</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::Crop20x25m</extracomment>
-            <translation>20 x 25</translation>
-        </message>
-        <message>
-            <source>Overlap tiles</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/overlap.title</extracomment>
-            <translation>Mozaīkotu attēlu pārklājums</translation>
-        </message>
-        <message>
-            <source>OK</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>Labi</translation>
-        </message>
-        <message>
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atcelt</translation>
-        </message>
-        <message>
-            <source>Poster tiles saved.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Plakāta daļas saglabātas.</translation>
-        </message>
-        <message>
-            <source>The poster tiles could not be created.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Neizdevās izveidot plakāta daļas.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="266" />
-            <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Neizdevās atrast %1 attēlus, tāpēc tie netiks rādīti. (Trūkstošie faili, iespējams, ir pārvietoti, pārdēvēti vai izdzēsti.)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="24" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="23" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="163" />
             <source>Picture Collage...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
             <translation>&amp;Attēlu kolāža...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="44" />
-            <source>%1 pictures selected.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atlasīti %1 attēli.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="52" />
-            <source>Collage type:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kolāžas veids:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
-            <source>Picture Grid</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::ePictureGrid</extracomment>
-            <translation>Attēlu režģis</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="77" />
-            <source>Mosaic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mozaīka</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
-            <source>Grid</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Režģis</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="79" />
-            <source>Multiple Exposure</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
-            <translation>Multiekspozīcija</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="85" />
-            <source>Picture borders:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/borders_label)</extracomment>
-            <translation>Attēlu apmales</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>None</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
-            <translation>Nav</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>White Border</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Border::ID_COLLAGE_BORDER_1;stringres:collage::whiteborder_dname</extracomment>
-            <translation>Balta apmale</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>Polaroid</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
-            <translation>Polaroid</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="55" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="68" />
             <source>Select pictures in the library first, or put them in the Picture Tray.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Vispirms atlasiet attēlus bibliotēkā vai pievienojiet tos fotoattēlu joslai.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="121" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="76" />
+            <source>%1 pictures selected.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atlasīti %1 attēli.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="95" />
             <source>Scramble Collage</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/rand_placement-label)</extracomment>
             <translation>Izkaisīta kolāža</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
-            <source>Contact Sheet</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
-            <translation>Sīktēls</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
-            <source>Frame Mosaic</source>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="105" />
+            <source>Collage type:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ierāmēta mozaīka</translation>
+            <translation>Kolāžas veids:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="114" />
             <source>Picture Pile</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::ePicturePile</extracomment>
             <translation>Fotoattēlu kaudzīte</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="69" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="114" />
+            <source>Mosaic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mozaīka</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="115" />
+            <source>Frame Mosaic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ierāmēta mozaīka</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="115" />
+            <source>Grid</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Režģis</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="116" />
+            <source>Contact Sheet</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
+            <translation>Sīktēls</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="116" />
+            <source>Multiple Exposure</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
+            <translation>Multiekspozīcija</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="123" />
+            <source>Picture borders:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/borders_label)</extracomment>
+            <translation>Attēlu apmales</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
+            <translation>Nav</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>White Border</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Border::ID_COLLAGE_BORDER_1;stringres:collage::whiteborder_dname</extracomment>
+            <translation>Balta apmale</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>Polaroid</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
+            <translation>Polaroid</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="139" />
             <source>Target file:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
             <translation>Mērķa fails</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="149" />
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>(nav atlasīts)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="83" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="154" />
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
             <translation>Pārlūkot...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="166" />
             <source>JPEG images (*.jpg)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>JPEG attēli (*.jpg)</translation>
         </message>
+    </context>
+    <context>
+        <name>CreateDialogs</name>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="98" />
-            <source>Movie</source>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="124" />
+            <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Filma</translation>
+            <translation>Neizdevās atrast %1 attēlus, tāpēc tie netiks rādīti. (Trūkstošie faili, iespējams, ir pārvietoti, pārdēvēti vai izdzēsti.)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="130" />
-            <source>Video size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Video izmērs:</translation>
-        </message>
-        <message>
-            <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Filmas attēli un to laika iestatījumi tiek ņemti no projekta faila; izmēra sākotnējā vērtība ir noklusētā.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="146" />
-            <source>Seconds per picture:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Sekundes uz attēlu:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="185" />
-            <source>MP4 videos (*.mp4)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>MP4 video (*.mp4)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="202" />
-            <source>Creating movie: %1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Filmas izveide: %1 / %2</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="226" />
-            <source>Create</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Izveidot</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="247" />
-            <source>Collage saved: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kolāža saglabāta: %1</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="248" />
-            <source>%1 pictures used.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Izmantoti %1 attēli.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="240" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="127" />
             <source>%1 pictures were skipped.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Izlaisti %1 attēli.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="254" />
-            <source>The collage could not be created.</source>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="149" />
+            <source>Collage saved: %1</source>
+            <extracomment>A kollázs elkészült — az összegző párbeszéd megnyitása.
+picasapy-origin: picasapy</extracomment>
+            <translation>Kolāža saglabāta: %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="150" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="174" />
+            <source>%1 pictures used.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Izmantoti %1 attēli.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="158" />
+            <source>The collage could not be created.</source>
+            <extracomment>A kollázs nem készült el.
+picasapy-origin: picasapy</extracomment>
             <translation>Neizdevās izveidot kolāžu.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="264" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="173" />
             <source>Movie saved: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Filma saglabāta: %1</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Replace Existing or Create New?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
-            <translation>Vai aizstāt esošo vai izveidot jaunu?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Replace Existing</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
-            <translation>Aizstāt esošo</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Create New</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
-            <translation>Izveidot jaunu</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="271" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="183" />
             <source>The movie could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Neizdevās izveidot filmu.</translation>
         </message>
         <message>
-            <source>Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
-            <translation>Teksts</translation>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="189" />
+            <source>Poster tiles saved.</source>
+            <extracomment>#4268: a poszterlapok a forráskép mellett készültek el.
+picasapy-origin: picasapy</extracomment>
+            <translation>Plakāta daļas saglabātas.</translation>
         </message>
         <message>
-            <source>Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab2)</extracomment>
-            <translation>Slaids</translation>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="197" />
+            <source>The poster tiles could not be created.</source>
+            <extracomment>#4268: a poszterlapok írási hibája a párbeszédben jelenik meg.
+picasapy-origin: picasapy</extracomment>
+            <translation>Neizdevās izveidot plakāta daļas.</translation>
         </message>
+    </context>
+    <context>
+        <name>CreateResultDialog</name>
         <message>
-            <source>Clips</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab3)</extracomment>
-            <translation>Klipi</translation>
-        </message>
-        <message>
-            <source>Sizes</source>
+            <location filename="../qml/PicasaPy/CreateResultDialog.qml" line="10" />
+            <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Izmēri</translation>
+            <translation>Izveidot</translation>
         </message>
+    </context>
+    <context>
+        <name>MovieMakerDialog</name>
         <message>
-            <source>Dimensions</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Izmēri</translation>
-        </message>
-        <message>
-            <source>Transition style:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</extracomment>
-            <translation>Pārejas stils</translation>
-        </message>
-        <message>
-            <source>Cut</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Griezums</translation>
-        </message>
-        <message>
-            <source>Dissolve</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolve</extracomment>
-            <translation>Izšķīdināt</translation>
-        </message>
-        <message>
-            <source>Dissolve through black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolveblack</extracomment>
-            <translation>Izšķīdināt melnā</translation>
-        </message>
-        <message>
-            <source>Dissolve through white</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
-            <translation>Izšķīdināt baltā</translation>
-        </message>
-        <message>
-            <source>Wipe - left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
-            <translation>Noslaucīt: pa kreisi</translation>
-        </message>
-        <message>
-            <source>Wipe</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Aizslaucīšana</translation>
-        </message>
-        <message>
-            <source>Wipe - top</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
-            <translation>Noslaucīt: augšā</translation>
-        </message>
-        <message>
-            <source>Wipe - bottom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
-            <translation>Noslaucīt: apakšā</translation>
-        </message>
-        <message>
-            <source>Wipe - up left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
-            <translation>Noslaucīt: augšup pa kreisi</translation>
-        </message>
-        <message>
-            <source>Wipe - up right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
-            <translation>Noslaucīt: augšup pa labi</translation>
-        </message>
-        <message>
-            <source>Wipe - down left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
-            <translation>Noslaucīt: lejup pa kreisi</translation>
-        </message>
-        <message>
-            <source>Wipe - down right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
-            <translation>Noslaucīt:- lejup pa labi</translation>
-        </message>
-        <message>
-            <source>Push - left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
-            <translation>Bīdīt: pa kreisi</translation>
-        </message>
-        <message>
-            <source>Push</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
-            <translation>Bīdīt</translation>
-        </message>
-        <message>
-            <source>Push - top</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
-            <translation>Bīdīt: augšā</translation>
-        </message>
-        <message>
-            <source>Push - bottom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
-            <translation>Bīdīt: apakšā</translation>
-        </message>
-        <message>
-            <source>Circle - inwards</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
-            <translation>Aplis: uz iekšu</translation>
-        </message>
-        <message>
-            <source>Circle</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
-            <translation>Aplis</translation>
-        </message>
-        <message>
-            <source>Pan and Zoom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
-            <translation>Pārvietot un tālummainīt</translation>
-        </message>
-        <message>
-            <source>Pan and Zoom - face</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
-            <translation>Pārvietot un tālummainīt: seja</translation>
-        </message>
-        <message>
-            <source>Time Lapse</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
-            <translation>Laika beigas</translation>
-        </message>
-        <message>
-            <source>Rectangle</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
-            <translation>Taisnstūris</translation>
-        </message>
-        <message>
-            <source>Overlap</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transitionslider_label)</extracomment>
-            <translation>Pārklājums</translation>
-        </message>
-        <message>
-            <source>Slide Duration:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_label)</extracomment>
-            <translation>Slaida ilgums</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>%1 Sec</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 sek.</translation>
-        </message>
-        <message>
-            <source>Audio:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
-            <translation>Audio ieraksts:</translation>
-        </message>
-        <message>
-            <source>Audio Track:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
-            <translation>Audio ieraksts:</translation>
-        </message>
-        <message>
-            <source>No audio selected</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nav atlasīts audio fails</translation>
-        </message>
-        <message>
-            <source>Load…</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
-            <translation>Ielādēt…</translation>
-        </message>
-        <message>
-            <source>Clear</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Notīrīt</translation>
-        </message>
-        <message>
-            <source>Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
-            <translation>Opcijas</translation>
-        </message>
-        <message>
-            <source>Truncate audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption0</extracomment>
-            <translation>Saīsināt audio</translation>
-        </message>
-        <message>
-            <source>Fit photos into audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption1</extracomment>
-            <translation>Pielāgot fotoattēlus skaņai</translation>
-        </message>
-        <message>
-            <source>Loop photos to match audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption2</extracomment>
-            <translation>Veidot fotoattēlu ciklu atbilstoši skaņai</translation>
-        </message>
-        <message>
-            <source>Show Captions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label);makemoviepaneltext:Label(makemoviepanel/show_captions_label);stringres:Slingshot::ID_SHOW_CAPTIONS</extracomment>
-            <translation>Rādīt uzrakstus</translation>
-        </message>
-        <message>
-            <source>Show Dates</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::show_dates_label</extracomment>
-            <translation>Rādīt datumus</translation>
-        </message>
-        <message>
-            <source>Full frame photo crop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/crop_to_fit_label)</extracomment>
-            <translation>Pilnkadra fotoattēla apgriešana</translation>
-        </message>
-        <message>
-            <source>Remove Low Resolution Faces</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/remove_low_res_faces_label)</extracomment>
-            <translation>Noņemt sejas ar zemu izšķirtspēju</translation>
-        </message>
-        <message>
-            <source>Best Transitions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/smart_order_label)</extracomment>
-            <translation>Labākās pārejas</translation>
-        </message>
-        <message>
-            <source>Album Order</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)</extracomment>
-            <translation>Albumu secība</translation>
-        </message>
-        <message>
-            <source>Chronological</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Hronoloģiski</translation>
-        </message>
-        <message>
-            <source>Ordering of Slides:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/ordering_header_label)</extracomment>
-            <translation>Slaidu izkārtojums:</translation>
-        </message>
-        <message>
-            <source>Total Photos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/lengthslider_label)</extracomment>
-            <translation>Kopējais fotoattēlu skaits</translation>
-        </message>
-        <message>
-            <source>Don't filter by time taken</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);stringres:CMakeMoviePanel::movieburstzero</extracomment>
-            <translation>Nefiltrēt pēc uzņemšanas laika</translation>
-        </message>
-        <message>
-            <source>Remove Photos Taken Within %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Noņemt fotoattēlus, kas uzņemti pēdējo %1 laikā</translation>
-        </message>
-        <message>
-            <source>Back to selected slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/rewind)</extracomment>
-            <translation>Atgriezties pie atlasītā slaida</translation>
-        </message>
-        <message>
-            <source>Text slide:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
-            <translation>Teksta slaids</translation>
-        </message>
-        <message>
-            <source>Font:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Fonts:</translation>
-        </message>
-        <message>
-            <source>Size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Izmērs:</translation>
-        </message>
-        <message>
-            <source>Style:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Label(edittextpanel/style_label);makemoviepaneltext:Label(makemoviepanel/style_label)</extracomment>
-            <translation>Stils:</translation>
-        </message>
-        <message>
-            <source>Centered</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Centered</extracomment>
-            <translation>Centrā</translation>
-        </message>
-        <message>
-            <source>I'm Feeling Lucky</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Man veicas</translation>
-        </message>
-        <message>
-            <source>Caption</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Uzraksts</translation>
-        </message>
-        <message>
-            <source>Caption - Classic</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle3</extracomment>
-            <translation>Uzraksts: klasisks</translation>
-        </message>
-        <message>
-            <source>Gradient - Black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle4</extracomment>
-            <translation>Gradients: melns</translation>
-        </message>
-        <message>
-            <source>Gradient - White</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle5</extracomment>
-            <translation>Gradients: balts</translation>
-        </message>
-        <message>
-            <source>Transparent - Black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle6</extracomment>
-            <translation>Caurspīdīgs: melns</translation>
-        </message>
-        <message>
-            <source>Transparent - White</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle7</extracomment>
-            <translation>Caurspīdīgs: balts</translation>
-        </message>
-        <message>
-            <source>Scrolling Credits</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle8</extracomment>
-            <translation>Slīdošie titri ar filmas veidotāju vārdiem</translation>
-        </message>
-        <message>
-            <source>Music Video - Left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle9</extracomment>
-            <translation>Mūzikas videoklips: pa kreisi</translation>
-        </message>
-        <message>
-            <source>Music Video - Right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle10</extracomment>
-            <translation>Mūzikas videoklips: pa labi</translation>
-        </message>
-        <message>
-            <source>Caption - Typewriter</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
-            <translation>Uzraksts: rakstāmmašīna</translation>
-        </message>
-        <message>
-            <source>Bold</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/bold);makemoviepaneltext:Tooltip(makemoviepanel/bold);stringres:CTitleDialog::fontBold</extracomment>
-            <translation>Treknraksts</translation>
-        </message>
-        <message>
-            <source>Italic</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepaneltext:Tooltip(makemoviepanel/italic);stringres:CTitleDialog::fontItalic</extracomment>
-            <translation>Slīpraksts</translation>
-        </message>
-        <message>
-            <source>Automatic Outline</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Automātiska kontūra</translation>
-        </message>
-        <message>
-            <source>Automatic Outline (like movie subtitles)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/outline)</extracomment>
-            <translation>Automātisks izkārtojums (kā filmu subtitri)</translation>
-        </message>
-        <message>
-            <source>Text color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
-            <translation>Teksta krāsa</translation>
-        </message>
-        <message>
-            <source>Background color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
-            <translation>Fona krāsa</translation>
-        </message>
-        <message>
-            <source>Insert Text Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/insert_slide)</extracomment>
-            <translation>Pievienojiet jaunu teksta slaidu</translation>
-        </message>
-        <message>
-            <source>Remove Selected Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
-            <translation>Noņemiet atlasīto slaidu</translation>
-        </message>
-        <message>
-            <source>Remove the selected slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
-            <translation>Noņemiet atlasīto slaidu</translation>
-        </message>
-        <message>
-            <source>Add selected clips</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pievienot atlasītos klipus</translation>
-        </message>
-        <message>
-            <source>Remove selected clip</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Noņemt atlasīto klipu</translation>
-        </message>
-        <message>
-            <source>Add the selected clip(s) to the end of the movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addtomovie)</extracomment>
-            <translation>Pievienojiet atlasītos klipus filmas beigās</translation>
-        </message>
-        <message>
-            <source>Remove the selected clip(s) from the tray</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</extracomment>
-            <translation>Noņemiet atlasītos klipus no krātuves</translation>
-        </message>
-        <message>
-            <source>Play selected clip only</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atskaņot tikai atlasīto klipu</translation>
-        </message>
-        <message>
-            <source>Preview</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
-            <translation>Priekšskatījums</translation>
-        </message>
-        <message>
-            <source>Pause</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pauzēt</translation>
-        </message>
-        <message>
-            <source>Show actual movie size (don't stretch)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(video_control_bar2/1to1)</extracomment>
-            <translation>Rādiet faktisko filmas lielumu (neizvēršot)</translation>
-        </message>
-        <message>
-            <source>Play full screen</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Tooltip(video_control_bar2/fullscreen)</extracomment>
-            <translation>Demonstrējiet pilnekrāna režīmā</translation>
-        </message>
-        <message>
-            <source>Please Confirm...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Lūdzu, apstipriniet...</translation>
-        </message>
-        <message>
-            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tiks izveidota jauna filma, noņemot visus pievienotos teksta slaidus. Vai turpināt?</translation>
-        </message>
-        <message>
-            <source>Recompute</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pārrēķināt</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Aizvērt</translation>
-        </message>
-        <message>
-            <source>Create Movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:buttonlabel:{606D1C6D-36E6-4dce-AFCA-A0EE575A6162}</extracomment>
-            <translation>Izveidot filmu</translation>
-        </message>
-        <message>
-            <source>Audio files</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Audio faili</translation>
-        </message>
-        <message>
-            <source>Music files (*.mp3, *.wma)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
-            <translation>Mūzikas faili (*.mp3, *.wma)</translation>
-        </message>
-        <message>
-            <source>Music files (*.mp3, *.m4a)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
-            <translation>Mūzikas faili (*.mp3, *.m4a)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="119" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="363" />
             <source>Text Slide</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
             <translation>Teksta slaids</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="385" />
             <source>%1     %2x%3 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1     %2 × %3 pikseļi</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="387" />
             <source>(%1 of %2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>(%1 no %2)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="519" />
+            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tiks izveidota jauna filma, noņemot visus pievienotos teksta slaidus. Vai turpināt?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="640" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Aizvērt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="647" />
+            <source>Create Movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:buttonlabel:{606D1C6D-36E6-4dce-AFCA-A0EE575A6162}</extracomment>
+            <translation>Izveidot filmu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="797" />
+            <source>Please Confirm...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Lūdzu, apstipriniet...</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerDialogs</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="23" />
+            <source>Replace Existing or Create New?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
+            <translation>Vai aizstāt esošo vai izveidot jaunu?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="32" />
+            <source>Replace Existing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
+            <translation>Aizstāt esošo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="41" />
+            <source>Create New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
+            <translation>Izveidot jaunu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="49" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atcelt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="70" />
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="113" />
+            <source>Movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Filma</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="73" />
+            <source>MP4 videos (*.mp4)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>MP4 video (*.mp4)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="80" />
+            <source>Audio files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Audio faili</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="84" />
+            <source>Music files (*.mp3, *.wma)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
+            <translation>Mūzikas faili (*.mp3, *.wma)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="85" />
+            <source>Music files (*.mp3, *.m4a)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
+            <translation>Mūzikas faili (*.mp3, *.m4a)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="96" />
+            <source>Text color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
+            <translation>Teksta krāsa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="103" />
+            <source>Background color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
+            <translation>Fona krāsa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="123" />
+            <source>Creating movie: %1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Filmas izveide: %1 / %2</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerFilmstrip</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="38" />
+            <source>Add selected clips</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pievienot atlasītos klipus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="50" />
+            <source>Remove selected clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Noņemt atlasīto klipu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="104" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Teksta slaids</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerOptions</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="22" />
+            <source>Dimensions</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Izmēri</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="51" />
+            <source>Show Captions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label);makemoviepaneltext:Label(makemoviepanel/show_captions_label);stringres:Slingshot::ID_SHOW_CAPTIONS</extracomment>
+            <translation>Rādīt uzrakstus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="69" />
+            <source>Full frame photo crop</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/crop_to_fit_label)</extracomment>
+            <translation>Pilnkadra fotoattēla apgriešana</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="84" />
+            <source>Show Dates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::show_dates_label</extracomment>
+            <translation>Rādīt datumus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="96" />
+            <source>Remove Low Resolution Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/remove_low_res_faces_label)</extracomment>
+            <translation>Noņemt sejas ar zemu izšķirtspēju</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="111" />
+            <source>Ordering of Slides:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/ordering_header_label)</extracomment>
+            <translation>Slaidu izkārtojums:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="117" />
+            <source>Best Transitions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/smart_order_label)</extracomment>
+            <translation>Labākās pārejas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="125" />
+            <source>Album Order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)</extracomment>
+            <translation>Albumu secība</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="134" />
+            <source>Chronological</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hronoloģiski</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="152" />
+            <source>Total Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/lengthslider_label)</extracomment>
+            <translation>Kopējais fotoattēlu skaits</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="174" />
+            <source>Don't filter by time taken</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);stringres:CMakeMoviePanel::movieburstzero</extracomment>
+            <translation>Nefiltrēt pēc uzņemšanas laika</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="175" />
+            <source>Remove Photos Taken Within %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Noņemt fotoattēlus, kas uzņemti pēdējo %1 laikā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="210" />
+            <source>Get More...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
+            <translation>Iegūt vēl...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="212" />
+            <source>Get more clips from Photo Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
+            <translation>Iegūstiet citus klipus no fotoattēlu bibliotēkas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="219" />
+            <source>Recompute</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pārrēķināt</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerPreview</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="155" />
+            <source>Pause</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pauzēt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="155" />
+            <source>Preview</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
+            <translation>Priekšskatījums</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="220" />
+            <source>Show actual movie size (don't stretch)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(video_control_bar2/1to1)</extracomment>
+            <translation>Rādiet faktisko filmas lielumu (neizvēršot)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="234" />
+            <source>Play full screen</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Tooltip(video_control_bar2/fullscreen)</extracomment>
+            <translation>Demonstrējiet pilnekrāna režīmā</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerSlideLogic</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="20" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="43" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="56" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="74" />
+            <source>Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
+            <translation>Teksts</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerTabs</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="61" />
+            <source>Movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Filma</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="62" />
+            <source>Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab2)</extracomment>
+            <translation>Slaids</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="67" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="142" />
+            <source>Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
+            <translation>Opcijas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="68" />
+            <source>Clips (%d)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::clips_title</extracomment>
+            <translation>Klipi (%d)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="96" />
+            <source>Audio Track:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
+            <translation>Audio ieraksts:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="107" />
+            <source>None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
+            <translation>Nav</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="116" />
+            <source>Load…</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
+            <translation>Ielādēt…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="123" />
+            <source>Clear</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Notīrīt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="154" />
+            <source>Truncate audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption0</extracomment>
+            <translation>Saīsināt audio</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="154" />
+            <source>Fit photos into audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption1</extracomment>
+            <translation>Pielāgot fotoattēlus skaņai</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="155" />
+            <source>Loop photos to match audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption2</extracomment>
+            <translation>Veidot fotoattēlu ciklu atbilstoši skaņai</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="160" />
+            <source>Transition style:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</extracomment>
+            <translation>Pārejas stils</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="169" />
+            <source>Cut</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Griezums</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="169" />
+            <source>Dissolve</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolve</extracomment>
+            <translation>Izšķīdināt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="170" />
+            <source>Dissolve through black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolveblack</extracomment>
+            <translation>Izšķīdināt melnā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="170" />
+            <source>Dissolve through white</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
+            <translation>Izšķīdināt baltā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
+            <translation>Noslaucīt: pa kreisi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aizslaucīšana</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
+            <translation>Noslaucīt: augšā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="172" />
+            <source>Wipe - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
+            <translation>Noslaucīt: apakšā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="172" />
+            <source>Wipe - up left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
+            <translation>Noslaucīt: augšup pa kreisi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="173" />
+            <source>Wipe - up right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
+            <translation>Noslaucīt: augšup pa labi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="173" />
+            <source>Wipe - down left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
+            <translation>Noslaucīt: lejup pa kreisi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Wipe - down right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
+            <translation>Noslaucīt:- lejup pa labi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Push - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
+            <translation>Bīdīt: pa kreisi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Push</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
+            <translation>Bīdīt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="175" />
+            <source>Push - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
+            <translation>Bīdīt: augšā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="175" />
+            <source>Push - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
+            <translation>Bīdīt: apakšā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="176" />
+            <source>Circle - inwards</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
+            <translation>Aplis: uz iekšu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="176" />
+            <source>Circle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
+            <translation>Aplis</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="177" />
+            <source>Pan and Zoom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
+            <translation>Pārvietot un tālummainīt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="177" />
+            <source>Pan and Zoom - face</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
+            <translation>Pārvietot un tālummainīt: seja</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="178" />
+            <source>Time Lapse</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
+            <translation>Laika beigas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="178" />
+            <source>Rectangle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
+            <translation>Taisnstūris</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="198" />
+            <source>Slide Duration:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_label)</extracomment>
+            <translation>Slaida ilgums</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="203" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="244" />
+            <source>%1 Sec</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 sek.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="239" />
+            <source>Overlap</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transitionslider_label)</extracomment>
+            <translation>Pārklājums</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="279" />
+            <source>Target file:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
+            <translation>Mērķa fails</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="285" />
+            <source>(not selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(nav atlasīts)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="290" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Pārlūkot...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="297" />
+            <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Filmas attēli un to laika iestatījumi tiek ņemti no projekta faila; izmēra sākotnējā vērtība ir noklusētā.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="307" />
+            <source>%1 pictures selected.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atlasīti %1 attēli.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="313" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="315" />
+            <source>Back to selected slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/rewind)</extracomment>
+            <translation>Atgriezties pie atlasītā slaida</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="336" />
+            <source>Text slide:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Teksta slaids</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="341" />
+            <source>Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
+            <translation>Teksts</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="347" />
+            <source>Font:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fonts:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="357" />
+            <source>Size:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Izmērs:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="371" />
+            <source>Style:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Label(edittextpanel/style_label);makemoviepaneltext:Label(makemoviepanel/style_label)</extracomment>
+            <translation>Stils:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>Centered</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Centered</extracomment>
+            <translation>Centrā</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>I'm Feeling Lucky</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Man veicas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>Caption</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Uzraksts</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="378" />
+            <source>Caption - Classic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle3</extracomment>
+            <translation>Uzraksts: klasisks</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="378" />
+            <source>Gradient - Black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle4</extracomment>
+            <translation>Gradients: melns</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="379" />
+            <source>Gradient - White</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle5</extracomment>
+            <translation>Gradients: balts</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="379" />
+            <source>Transparent - Black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle6</extracomment>
+            <translation>Caurspīdīgs: melns</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="380" />
+            <source>Transparent - White</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle7</extracomment>
+            <translation>Caurspīdīgs: balts</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="380" />
+            <source>Scrolling Credits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle8</extracomment>
+            <translation>Slīdošie titri ar filmas veidotāju vārdiem</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="381" />
+            <source>Music Video - Left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle9</extracomment>
+            <translation>Mūzikas videoklips: pa kreisi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="381" />
+            <source>Music Video - Right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle10</extracomment>
+            <translation>Mūzikas videoklips: pa labi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="382" />
+            <source>Caption - Typewriter</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
+            <translation>Uzraksts: rakstāmmašīna</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="390" />
+            <source>Bold</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/bold);makemoviepaneltext:Tooltip(makemoviepanel/bold);stringres:CTitleDialog::fontBold</extracomment>
+            <translation>Treknraksts</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="396" />
+            <source>Italic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepaneltext:Tooltip(makemoviepanel/italic);stringres:CTitleDialog::fontItalic</extracomment>
+            <translation>Slīpraksts</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="404" />
+            <source>Automatic Outline</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Automātiska kontūra</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="406" />
+            <source>Automatic Outline (like movie subtitles)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/outline)</extracomment>
+            <translation>Automātisks izkārtojums (kā filmu subtitri)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="414" />
+            <source>Text color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
+            <translation>Teksta krāsa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="431" />
+            <source>Background color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
+            <translation>Fona krāsa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="436" />
+            <source>Insert Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/insert_slide)</extracomment>
+            <translation>Pievienojiet jaunu teksta slaidu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="443" />
+            <source>Remove Selected Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
+            <translation>Noņemiet atlasīto slaidu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="445" />
+            <source>Remove the selected slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
+            <translation>Noņemiet atlasīto slaidu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="474" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Teksta slaids</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="541" />
+            <source>Get More...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
+            <translation>Iegūt vēl...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="543" />
+            <source>Get more clips from Photo Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
+            <translation>Iegūstiet citus klipus no fotoattēlu bibliotēkas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="557" />
+            <source>Recompute</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pārrēķināt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="566" />
+            <source>Add selected clips</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pievienot atlasītos klipus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="569" />
+            <source>Add the selected clip(s) to the end of the movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addtomovie)</extracomment>
+            <translation>Pievienojiet atlasītos klipus filmas beigās</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="576" />
+            <source>Remove selected clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Noņemt atlasīto klipu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="579" />
+            <source>Remove the selected clip(s) from the tray</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</extracomment>
+            <translation>Noņemiet atlasītos klipus no krātuves</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="588" />
+            <source>Play selected clip only</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atskaņot tikai atlasīto klipu</translation>
+        </message>
+    </context>
+    <context>
+        <name>PosterCreateDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="11" />
+            <source>Poster Settings</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/window1.title</extracomment>
+            <translation>Plakāta iestatījumi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="29" />
+            <source>4x6</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
+            <translation>4 x 6</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="30" />
+            <source>8.5x11</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:FullPage;stringres:CPosterDlg::size2</extracomment>
+            <translation>8,5 x 11</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="31" />
+            <source>10x15</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:10x15m</extracomment>
+            <translation>10 x 15</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="32" />
+            <source>20x25</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::Crop20x25m</extracomment>
+            <translation>20 x 25</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="69" />
+            <source>Tip: if you don't want to trim, crop your picture to the same size as the paper.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/label2.title</extracomment>
+            <translation>Padoms. Ja nevēlaties apcirpt, apgrieziet attēlu atbilstoši papīra lielumam.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="79" />
+            <source>Poster size:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/labelgroup3.title</extracomment>
+            <translation>Plakāta izmēri:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>200%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item5.title</extracomment>
+            <translation>200%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>300%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item6.title</extracomment>
+            <translation>300%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>400%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item7.title</extracomment>
+            <translation>400%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>500%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item8.title</extracomment>
+            <translation>500%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>600%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item9.title</extracomment>
+            <translation>600%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>700%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item10.title</extracomment>
+            <translation>700%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>800%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item11.title</extracomment>
+            <translation>800%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>900%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item12.title</extracomment>
+            <translation>900%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>1000%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item13.title</extracomment>
+            <translation>1000%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="97" />
+            <source>Paper size:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/labelgroup14.title</extracomment>
+            <translation>Papīra izmēri:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="113" />
+            <source>Overlap tiles</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/overlap.title</extracomment>
+            <translation>Mozaīkotu attēlu pārklājums</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="122" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>Labi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="128" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atcelt</translation>
         </message>
     </context>
     <context>
@@ -8080,23 +8370,59 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/select_none);stringres:
         </message>
     </context>
     <context>
-        <name>LightboxHeader</name>
+        <name>LightboxHeaderTitle</name>
         <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" />
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="123" />
+            <source>View zoomed in to the face</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/face_zoom)</extracomment>
+            <translation>Skatiet tuvinātu seju</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="151" />
+            <source>View zoomed out to the full picture</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/picture_zoom)</extracomment>
+            <translation>Skatiet tālināti līdz pilnam attēlam</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="194" />
+            <source>Sync to Web</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: headerpaneltext:Label(headerpanel/sync_label);stringres:SyncLabel::Off</extracomment>
+            <translation>Sinhronizācija ar tīmekli</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="175" />
+            <source>Remove</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Noņemt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="1" />
+            <source>SYNC</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>SINHRONIZĀCIJA</translation>
+        </message>
+    </context>
+    <context>
+        <name>LightboxHeaderButtons</name>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderButtons.qml" />
             <source>Create Movie Presentation</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_movie);headerpaneltext:Tooltip(headerpanel/create_movie)</extracomment>
             <translation>Izveidojiet filmas prezentāciju</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" />
+            <location filename="../qml/PicasaPy/LightboxHeaderButtons.qml" />
             <source>Create Face Movie</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_face_movie)</extracomment>
             <translation>Izveidojiet seju filmu</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="571" />
+            <location filename="../qml/PicasaPy/LightboxHeaderButtons.qml" line="238" />
             <source>Set as People Album Thumbnail</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/set_thumbnail)</extracomment>
@@ -8109,110 +8435,10 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/play);headerpan
             <translation>Demonstrējiet pilnekrāna slaidrādi</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Show only suggestions (when toggled on)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/sug_filter)</extracomment>
-            <translation>Rādiet tikai ieteikumus (ja pārslēgts)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>View zoomed in to the face</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/face_zoom)</extracomment>
-            <translation>Skatiet tuvinātu seju</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>View zoomed out to the full picture</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/picture_zoom)</extracomment>
-            <translation>Skatiet tālināti līdz pilnam attēlam</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Sync to Web</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: headerpaneltext:Label(headerpanel/sync_label);stringres:SyncLabel::Off</extracomment>
-            <translation>Sinhronizācija ar tīmekli</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Find more suggestions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/moresug)</extracomment>
-            <translation>Atrast citus ieteikumus</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Lower the recognition threshold to get more suggestions</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Samaziniet atpazīšanas slieksni, lai saņemtu vairāk ieteikumu</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Confirm all</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/confirmsug)</extracomment>
-            <translation>Apstiprināt visu</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Confirm all suggestions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsug)</extracomment>
-            <translation>Apstipriniet visus ieteikumus</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Remove</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Noņemt</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Remove all suggestions</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Noņemt visus ieteikumus</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Confirm</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Apstiprināt</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Confirm selected suggestions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsel)</extracomment>
-            <translation>Apstipriniet atlasītos ieteikumus</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Remove selected suggestions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/removesel)</extracomment>
-            <translation>Noņemiet atlasītos ieteikumus</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="30" />
-            <source>SYNC</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>SINHRONIZĀCIJA</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="68" />
+            <location filename="../qml/PicasaPy/LightboxHeaderButtons.qml" line="270" />
             <source>Upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Augšupielādēt</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="111" />
-            <source>Add a description</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTextEditNode::addcaption</extracomment>
-            <translation>Pievienot aprakstu</translation>
         </message>
         <message>
             <source>Save</source>
@@ -8237,6 +8463,85 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_collage)
         </message>
     </context>
     <context>
+        <name>LightboxHeaderSuggestionRow</name>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="70" />
+            <source>Show only suggestions (when toggled on)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/sug_filter)</extracomment>
+            <translation>Rādiet tikai ieteikumus (ja pārslēgts)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="156" />
+            <source>Find more suggestions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/moresug)</extracomment>
+            <translation>Atrast citus ieteikumus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="159" />
+            <source>Lower the recognition threshold to get more suggestions</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Samaziniet atpazīšanas slieksni, lai saņemtu vairāk ieteikumu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="107" />
+            <source>Confirm all</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/confirmsug)</extracomment>
+            <translation>Apstiprināt visu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="113" />
+            <source>Confirm all suggestions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsug)</extracomment>
+            <translation>Apstipriniet visus ieteikumus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="128" />
+            <source>Remove</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Noņemt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="135" />
+            <source>Remove all suggestions</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Noņemt visus ieteikumus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="106" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Apstiprināt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="112" />
+            <source>Confirm selected suggestions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsel)</extracomment>
+            <translation>Apstipriniet atlasītos ieteikumus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="134" />
+            <source>Remove selected suggestions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/removesel)</extracomment>
+            <translation>Noņemiet atlasītos ieteikumus</translation>
+        </message>
+    </context>
+    <context>
+        <name>LightboxHeaderDescription</name>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderDescription.qml" line="45" />
+            <source>Add a description</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTextEditNode::addcaption</extracomment>
+            <translation>Pievienot aprakstu</translation>
+        </message>
+    </context>
+    <context>
         <name>Main</name>
         <message>
             <location filename="../qml/Main.qml" />
@@ -8257,59 +8562,6 @@ picasapy-origin-key: stringres:IBackgroundNotify::canceltitle</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>Vai vēlaties atcelt šo darbību?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Move photo here?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pārvietot fotoattēlu šeit?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Move %d photos here?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pārvietot %d fotoattēlus šeit?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Put photo here?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Novietot fotoattēlu šeit?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Put %d photos here?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Novietot %d fotoattēlus šeit?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>(OK)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(Labi)</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>You have a fairly large number of items selected.
-
-Are you sure you want to apply this tag to all %d items?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atlasīts diezgan daudz vienumu.
-
-Vai tiešām vēlaties pievienot šo atzīmi visiem %d vienumiem?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>OK</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>Labi</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atcelt</translation>
         </message>
         <message>
             <source>Properties</source>
@@ -8358,26 +8610,6 @@ picasapy-origin-key: stringres:CUploadManagerThread::cancel</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(initialscan/ok-label);stringres:il_BurnPanel::InsertNext::1;stringres:il_ContinueButton;uploadmgr:Label(uploadmgr/resume)</extracomment>
             <translation>Turpināt</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Confirm</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Apstiprināt</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>Remove Edits</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
-            <translation>Noņemt labojumus</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>No</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: confirm:confirm/no.title</extracomment>
-            <translation>Nē</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -8446,12 +8678,6 @@ picasapy-origin-key: stringres:CAlbumState::addsearchprompt</extracomment>
             <translation>Nevienam attēlam nav šīs atzīmes.</translation>
         </message>
         <message>
-            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
-            <translation>Tādējādi tiks izveidots albums ar vairāk nekā 1000 attēliem. Vai vēlaties turpināt?</translation>
-        </message>
-        <message>
             <source>Create Album</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
@@ -8482,47 +8708,6 @@ picasapy-origin-key: stringres:eMenuTools::ID_SAVESEARCH</extracomment>
             <source>The password does not match. The hidden folders stay hidden.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Parole nesakrīt. Slēptās mapes paliek slēptas.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="1076" />
-            <source>Change Location</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mainīt atrašanās vietu</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="1087" />
-            <source>You have more than a few items selected.
-
-Are you sure you want to change the location of all %1 items?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atlasīts diezgan daudz vienumu.
-
-Vai tiešām vēlaties mainīt visu %1 vienumu atrašanās vietu?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="1112" />
-            <source>You have more than a few items selected.
-
-Are you sure you want to clear the locations for all %1 items?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atlasīts diezgan daudz vienumu.
-
-Vai tiešām vēlaties dzēst visu %1 vienumu atrašanās vietas?</translation>
-        </message>
-        <message>
-            <source>Clear Geotags</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
-            <translation>Notīrīt ģeogrāfiskās atzīmes</translation>
-        </message>
-        <message>
-            <source>You are about to erase all geographic location information (i.e., latitude and longitude) from the selected photos.
-
-OK to proceed?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>No atlasītajiem fotoattēliem tiks dzēsta visa ģeogrāfiskās atrašanās vietas informācija (t.i., platums un garums).
-
-Vai turpināt?</translation>
         </message>
         <message>
             <source>Preparing attachments...</source>
@@ -8690,30 +8875,6 @@ picasapy-origin: picasapy</extracomment>
             </translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" />
-            <source>Red eye fixes have been applied to %1.
-If you remove all edits, your red eye fixes cannot be recovered with redo. 
-Are you sure you want to remove the fixes forever?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Sarkano acu efekta labojumi tika lietoti šim attēlam: %1.
-Ja noņemsiet visus labojumus, sarkano acu labojumus vairs nevarēs atkārtot.
-Vai tiešām vēlaties tos noņemt uz visiem laikiem?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>This will remove all edits you have made to ALL of the selected pictures.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE</extracomment>
-            <translation>Tādējādi tiks noņemti visi labojumi, ko veicāt VISIEM atlasītajiem attēliem. Vai vēlaties turpināt?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>This will remove all edits you have made to the current picture.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CONFIRMREVERT</extracomment>
-            <translation>Tādējādi tiks noņemti visi labojumi, ko veicāt pašreizējam attēlam. Vai vēlaties turpināt?</translation>
-        </message>
-        <message>
             <source>&amp;File</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuFile</extracomment>
@@ -8814,22 +8975,6 @@ picasapy-origin-key: stringres:IDS_FILTERS;tooltips:Label(searchcontainer/filter
             <source>Verzió és build</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Versija un būvējums</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="441" />
-            <source>Back to View All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atpakaļ uz visu attēlu skatu</translation>
-        </message>
-        <message>
-            <source>Duplicate Files</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Dublēti faili</translation>
-        </message>
-        <message>
-            <source>Looking for duplicate files...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Notiek dublikātu meklēšana...</translation>
         </message>
         <message>
             <source>Rename...</source>
@@ -9017,32 +9162,6 @@ Would you like to hide the files on disk?</source>
 Vai vēlaties paslēpt failus diskā?</translation>
         </message>
         <message>
-            <source>Similarity Search Results</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
-            <translation>Līdzību meklēšanas rezultāti</translation>
-        </message>
-        <message>
-            <source>Clear Sample</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Notīrīt paraugu</translation>
-        </message>
-        <message>
-            <source>Updating similarity database (will be fast next time)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
-            <translation>Līdzību datu bāzes atjaunināšana (nākamreiz tas notiks ātrāk)</translation>
-        </message>
-        <message>
-            <source>Change the language PicasaPy uses?
-
-It will change the next time PicasaPy is opened.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vai mainīt valodu, ko lieto PicasaPy?
-
-Izmaiņas stāsies spēkā, nākamreiz palaižot PicasaPy.</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>Movie Maker</source>
             <extracomment>picasapy-origin: picasa
@@ -9074,6 +9193,212 @@ picasapy-origin-key: stringres:ThumbUI::HiddenPassword::NoButton</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
             <translation>Vairs nejautāt.</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="2328" />
+            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
+            <translation>Tādējādi tiks izveidots albums ar vairāk nekā 1000 attēliem. Vai vēlaties turpināt?</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3284" />
+            <source>Back to View All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atpakaļ uz visu attēlu skatu</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3370" />
+            <source>Duplicate Files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Dublēti faili</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3394" />
+            <source>Looking for duplicate files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Notiek dublikātu meklēšana...</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3333" />
+            <source>Similarity Search Results</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
+            <translation>Līdzību meklēšanas rezultāti</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3351" />
+            <source>Clear Sample</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Notīrīt paraugu</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="3419" />
+            <source>Updating similarity database (will be fast next time)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
+            <translation>Līdzību datu bāzes atjaunināšana (nākamreiz tas notiks ātrāk)</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="2743" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Apstiprināt</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainDialogs</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="180" />
+            <source>Move photo here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pārvietot fotoattēlu šeit?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="184" />
+            <source>Move %d photos here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pārvietot %d fotoattēlus šeit?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="181" />
+            <source>Put photo here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Novietot fotoattēlu šeit?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="185" />
+            <source>Put %d photos here?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Novietot %d fotoattēlus šeit?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="208" />
+            <source>(OK)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(Labi)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="73" />
+            <source>You have a fairly large number of items selected.
+
+Are you sure you want to apply this tag to all %d items?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atlasīts diezgan daudz vienumu.
+
+Vai tiešām vēlaties pievienot šo atzīmi visiem %d vienumiem?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="99" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>Labi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="105" />
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="214" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atcelt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="269" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Apstiprināt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="339" />
+            <source>Remove Edits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
+            <translation>Noņemt labojumus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="347" />
+            <source>No</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirm:confirm/no.title</extracomment>
+            <translation>Nē</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="133" />
+            <source>Change Location</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mainīt atrašanās vietu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="145" />
+            <source>You have more than a few items selected.
+
+Are you sure you want to change the location of all %1 items?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atlasīts diezgan daudz vienumu.
+
+Vai tiešām vēlaties mainīt visu %1 vienumu atrašanās vietu?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="247" />
+            <source>You have more than a few items selected.
+
+Are you sure you want to clear the locations for all %1 items?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atlasīts diezgan daudz vienumu.
+
+Vai tiešām vēlaties dzēst visu %1 vienumu atrašanās vietas?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="36" />
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="234" />
+            <source>Clear Geotags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuTools::ID_PICTURE_GEOUNTAG</extracomment>
+            <translation>Notīrīt ģeogrāfiskās atzīmes</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="42" />
+            <source>You are about to erase all geographic location information (i.e., latitude and longitude) from the selected photos.
+
+OK to proceed?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>No atlasītajiem fotoattēliem tiks dzēsta visa ģeogrāfiskās atrašanās vietas informācija (t.i., platums un garums).
+
+Vai turpināt?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="307" />
+            <source>Red eye fixes have been applied to %1.
+If you remove all edits, your red eye fixes cannot be recovered with redo. 
+Are you sure you want to remove the fixes forever?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sarkano acu efekta labojumi tika lietoti šim attēlam: %1.
+Ja noņemsiet visus labojumus, sarkano acu labojumus vairs nevarēs atkārtot.
+Vai tiešām vēlaties tos noņemt uz visiem laikiem?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="299" />
+            <source>This will remove all edits you have made to ALL of the selected pictures.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE</extracomment>
+            <translation>Tādējādi tiks noņemti visi labojumi, ko veicāt VISIEM atlasītajiem attēliem. Vai vēlaties turpināt?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="297" />
+            <source>This will remove all edits you have made to the current picture.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRMREVERT</extracomment>
+            <translation>Tādējādi tiks noņemti visi labojumi, ko veicāt pašreizējam attēlam. Vai vēlaties turpināt?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" line="372" />
+            <source>Change the language PicasaPy uses?
+
+It will change the next time PicasaPy is opened.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vai mainīt valodu, ko lieto PicasaPy?
+
+Izmaiņas stāsies spēkā, nākamreiz palaižot PicasaPy.</translation>
         </message>
     </context>
     <context>
@@ -13304,153 +13629,16 @@ Vai tiešām vēlaties noņemt VISUS FAILUS?
     <context>
         <name>ImportSourceDialog</name>
         <message>
-            <source>Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
-            <translation>Opcijas</translation>
-        </message>
-        <message>
-            <source>Online options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button);headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
-            <translation>Tiešsaistes opcijas</translation>
-        </message>
-        <message>
-            <source>Upload</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Augšupielādēt</translation>
-        </message>
-        <message>
-            <source>Upload to Picasa Web Albums...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>Augšupielādēt &amp;Picasa tīmekļa albumos...</translation>
-        </message>
-        <message>
-            <source>Sync starred photos only</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
-            <translation>Sinhronizēt tikai fotoattēlus, kuri atzīmēti ar zvaigznīti</translation>
-        </message>
-        <message>
-            <source>View the previous Photo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Skatīt iepriekšējo fotoattēlu</translation>
-        </message>
-        <message>
-            <source>View the next Photo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Skatīt nākamo fotoattēlu</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="20" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="19" />
             <source>Import from Source</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Importēt no avota</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="122" />
-            <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Importējiet attēlus un video no citas mapes (piemēram, pievienotas kameras vai atmiņas kartes) savā bibliotēkā.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="134" />
-            <source>Source:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Avots:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="306" />
-            <source>Removable drives</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Noņemamie diski</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="71" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="85" />
             <source>Removable Drive (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Noņemamais disks (%1)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="144" />
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="245" />
-            <source>(none selected)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(nav atlasīts)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="150" />
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="251" />
-            <source>Browse...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation>Pārlūkot...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="175" />
-            <source>%1 pictures/videos found</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atrasti %1 attēli/video</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="186" />
-            <source>No pictures or videos found in this folder.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Šajā mapē nav atrasts neviens attēls vai video.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="200" />
-            <source>Exclude Duplicates</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Neiekļaut dublikātus</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
-            <source>Exclude photos that are already imported into PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Neiekļaut fotoattēlus, kas jau ir importēti programmā PicasaPy</translation>
-        </message>
-        <message numerus="yes">
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
-            <source>%n of those are duplicates already in PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>
-                <numerusform>%n no tiem jau ir dublikāti programmā PicasaPy</numerusform>
-                <numerusform>%n no tiem jau ir dublikāti programmā PicasaPy</numerusform>
-                <numerusform>%n no tiem jau ir dublikāti programmā PicasaPy</numerusform>
-            </translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="265" />
-            <source>Exclude All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Neiekļaut visus</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="270" />
-            <source>Include All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Iekļaut visus</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
-            <source>Include</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Iekļaut</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
-            <source>Exclude</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Neiekļaut</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="235" />
-            <source>Destination:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IPTC::Destination</extracomment>
-            <translation>Galamērķis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="260" />
@@ -13459,59 +13647,7 @@ picasapy-origin-key: stringres:IPTC::Destination</extracomment>
             <translation>Mapes veidne:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="778" />
-            <source>Enter new folder title or choose existing folder to continue</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
-            <translation>Lai turpinātu, ievadiet jaunu mapes nosaukumu vai izvēlieties esošu mapi</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="376" />
-            <source>Enter Folder Title</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:iCAcquireUI::SubFolder</extracomment>
-            <translation>Ievadīt mapes nosaukumu</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="392" />
-            <source>Date Taken (YYYY-MM-DD)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
-            <translation>Uzņemšanas datums (GGGG-MM-DD)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="399" />
-            <source>%1 (Today)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 (šodien)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="408" />
-            <source>After Copying:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extracomment>
-            <translation>Pēc kopēšanas:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="419" />
-            <source>Leave card alone</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Atstāt atmiņas karti neaizskartu</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="426" />
-            <source>Delete only copied photos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Dzēst tikai nokopētos fotoattēlus</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="433" />
-            <source>Delete everything on card</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Dzēst visu atmiņas kartē</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="115" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="249" />
             <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Vai tiešām vēlaties noņemt importētos failus no atmiņas kartes? ŠO DARBĪBU NEVAR ATSAUKT.</translation>
@@ -13529,111 +13665,361 @@ picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extraco
             <translation>Pārvietot kopēšanas vietā (avota faili tiks dzēsti)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="466" />
-            <source>%1 / %2 imported</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Importēti %1 / %2</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="477" />
-            <source>Done: %1 imported, %2 failed</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pabeigts: importēti %1, neizdevās %2</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="490" />
-            <source>Import</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
-            <translation>Importēt</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="499" />
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Aizvērt</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="334" />
             <source>Import Files/Folder</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::importfilestitle</extracomment>
             <translation>Failu/mapes importēšana</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="360" />
-            <source>Folder...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mape...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="366" />
-            <source>Files...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Faili...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="321" />
             <source>Choose source folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Izvēlieties avota mapi...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="516" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="362" />
             <source>Choose destination folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Izvēlieties mērķa mapi...</translation>
         </message>
         <message>
-            <source>%1 / %2 imported at %3/sec</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Importēti %1 / %2 ar ātrumu %3/s</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="143" />
             <source>bytes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>baiti</translation>
         </message>
         <message>
-            <source>File types:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</extracomment>
-            <translation>Failu veidi</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="350" />
             <source>Picture and Movie Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Attēlu un filmu faili</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="352" />
             <source>Picture Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
             <translation>Attēlu faili</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="353" />
+            <source>All Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
+            <translation>Visi faili</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImportSourcePickerPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="166" />
+            <source>Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
+            <translation>Opcijas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="167" />
+            <source>Online options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button);headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
+            <translation>Tiešsaistes opcijas</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="157" />
+            <source>Upload</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Augšupielādēt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="159" />
+            <source>Upload to Picasa Web Albums...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
+            <translation>Augšupielādēt &amp;Picasa tīmekļa albumos...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="188" />
+            <source>Sync starred photos only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
+            <translation>Sinhronizēt tikai fotoattēlus, kuri atzīmēti ar zvaigznīti</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="267" />
+            <source>View the previous Photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Skatīt iepriekšējo fotoattēlu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="279" />
+            <source>View the next Photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Skatīt nākamo fotoattēlu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="15" />
+            <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Importējiet attēlus un video no citas mapes (piemēram, pievienotas kameras vai atmiņas kartes) savā bibliotēkā.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="28" />
+            <source>Source:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Avots:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="63" />
+            <source>Removable drives</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Noņemamie diski</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="38" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="38" />
+            <source>(none selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(nav atlasīts)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="79" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="79" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Pārlūkot...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="230" />
+            <source>%1 pictures/videos found</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atrasti %1 attēli/video</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="241" />
+            <source>No pictures or videos found in this folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Šajā mapē nav atrasts neviens attēls vai video.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="143" />
+            <source>Exclude Duplicates</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Neiekļaut dublikātus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="197" />
+            <source>Exclude photos that are already imported into PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Neiekļaut fotoattēlus, kas jau ir importēti programmā PicasaPy</translation>
+        </message>
+        <message numerus="yes">
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="204" />
+            <source>%n of those are duplicates already in PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>
+                <numerusform>%n no tiem jau ir dublikāti programmā PicasaPy</numerusform>
+                <numerusform>%n no tiem jau ir dublikāti programmā PicasaPy</numerusform>
+                <numerusform>%n no tiem jau ir dublikāti programmā PicasaPy</numerusform>
+            </translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="253" />
+            <source>Exclude All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Neiekļaut visus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="258" />
+            <source>Include All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Iekļaut visus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="88" />
+            <source>Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mape...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="93" />
+            <source>Files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Faili...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="107" />
+            <source>File types:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</extracomment>
+            <translation>Failu veidi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="116" />
+            <source>Picture and Movie Files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Attēlu un filmu faili</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="117" />
+            <source>Picture Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
+            <translation>Attēlu faili</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="118" />
             <source>All Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <translation>Visi faili</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="51" />
             <source>Recent sources</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nesen izmantotie avoti</translation>
         </message>
+    </context>
+    <context>
+        <name>ImportSourcePreview</name>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourcePreview.qml" line="122" />
+            <source>Include</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Iekļaut</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePreview.qml" line="122" />
+            <source>Exclude</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Neiekļaut</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImportSourceDestinationPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="26" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="26" />
+            <source>(none selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(nav atlasīts)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="98" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="98" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Pārlūkot...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="16" />
+            <source>Destination:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IPTC::Destination</extracomment>
+            <translation>Galamērķis</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="139" />
+            <source>Enter new folder title or choose existing folder to continue</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
+            <translation>Lai turpinātu, ievadiet jaunu mapes nosaukumu vai izvēlieties esošu mapi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="111" />
+            <source>Enter Folder Title</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:iCAcquireUI::SubFolder</extracomment>
+            <translation>Ievadīt mapes nosaukumu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="144" />
+            <source>Date Taken (YYYY-MM-DD)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
+            <translation>Uzņemšanas datums (GGGG-MM-DD)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="153" />
+            <source>%1 (Today)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 (šodien)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="162" />
+            <source>After Copying:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extracomment>
+            <translation>Pēc kopēšanas:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="173" />
+            <source>Leave card alone</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atstāt atmiņas karti neaizskartu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="180" />
+            <source>Delete only copied photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Dzēst tikai nokopētos fotoattēlus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="187" />
+            <source>Delete everything on card</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Dzēst visu atmiņas kartē</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="229" />
+            <source>%1 / %2 imported</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Importēti %1 / %2</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="240" />
+            <source>Done: %1 imported, %2 failed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pabeigts: importēti %1, neizdevās %2</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="253" />
+            <source>Import</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
+            <translation>Importēt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="264" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Aizvērt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="224" />
+            <source>%1 / %2 imported at %3/sec</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Importēti %1 / %2 ar ātrumu %3/s</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="59" />
             <source>Recent destinations</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nesen izmantotie mērķi</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="76" />
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Oriģinālais izmērs</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="77" />
             <source>%1 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 pikseļi</translation>

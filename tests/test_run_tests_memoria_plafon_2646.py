@@ -38,6 +38,7 @@ class TestMemoriaBurok:
         monkeypatch.setattr(rt, "_platform", lambda: "linux")
         b = rt._memoria_burok()
         assert b[0] == "systemd-run"
+        assert "--slice=picasapy-hatter.slice" in b, "nem a háttérszeletben fut"
         assert any(t.startswith("MemoryMax=") for t in b), "nincs plafon"
         assert "MemorySwapMax=0" in b, (
             "swap nélkül a folyamat nem hal meg, csak fojtja a gépet")

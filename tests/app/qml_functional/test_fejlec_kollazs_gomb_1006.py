@@ -39,6 +39,7 @@ from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 import picasapy.app
+from tests.support.fejlec_forras import fejlec_forras
 from tests.support.qml_blokk import (
     blokk_horgony_utan,
     blokk_horgonyra,
@@ -46,9 +47,7 @@ from tests.support.qml_blokk import (
 )
 from support.varakozas import hibaturo_feltetel, var_feltetelre
 
-_HEADER = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "LightboxHeader.qml"
-).read_text(encoding="utf-8")
+_HEADER = fejlec_forras()
 _FEED_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
 _FEED = "\n".join(
     (_FEED_DIR / name).read_text(encoding="utf-8")

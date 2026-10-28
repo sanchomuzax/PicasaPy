@@ -35,9 +35,13 @@ _MENU = menu_sources()
 _PLACES = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "PlacesPanel.qml"
 ).read_text(encoding="utf-8")
-_MAIN = (
-    Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
-).read_text(encoding="utf-8")
+_QML = Path(picasapy.app.__file__).parent / "qml"
+# A megerősítő ablak a `MainDialogs.qml`-be került (#5955); a jelzés kezelője
+# a `Main.qml`-ben maradt.
+_MAIN = "\n".join(
+    (_QML / nev).read_text(encoding="utf-8")
+    for nev in ("Main.qml", "PicasaPy/MainDialogs.qml")
+)
 
 
 class TestAMenupont:

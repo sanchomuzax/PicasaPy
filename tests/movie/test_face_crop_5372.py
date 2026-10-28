@@ -5,6 +5,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from tests.support.create_dialogs_components_6051 import create_dialogs_source_text
+
 
 @pytest.mark.parametrize(
     "viewport, source, cropfit, face, vart_bitek, egesz_rect",
@@ -204,8 +206,6 @@ def test_az_arcfilm_beallitasa_es_mxf_projektje_megorzi_a_kivagast():
 
 
 def test_a_filmdialog_atadja_az_arcfilm_modot_az_exportnak():
-    qml = Path("src/picasapy/app/qml/PicasaPy/CreateDialogs.qml").read_text(
-        encoding="utf-8"
-    )
+    qml = create_dialogs_source_text()
 
     assert "faceMovie: movieDialog.personMovieMode" in qml
