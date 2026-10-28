@@ -73,7 +73,7 @@ Column {
                 width: 12
                 text: root.hasChildren ? (root.expanded ? "▾" : "▸") : ""
                 font.pixelSize: Theme.fontSize - 2
-                color: root.isSelected ? "#ffffff" : Theme.folderArrow
+                color: root.isSelected ? Theme.panelSelectionText : Theme.folderArrow
                 z: 1
                 MouseArea {
                     anchors.fill: parent
@@ -95,7 +95,7 @@ Column {
                 folderState: root.manager ? root.manager.stateFor(root.path) : "none"
                 faceExcluded: root.manager
                               ? root.manager.facesExcludedFor(root.path) : false
-                tint: root.isSelected ? "#ffffff" : Theme.selectionBlue
+                tint: root.isSelected ? Theme.panelSelectionText : Theme.selectionBlue
             }
 
             FolderIcon { size: 13; anchors.verticalCenter: parent.verticalCenter }
@@ -103,7 +103,7 @@ Column {
             Text {
                 text: root.name
                 font.pixelSize: Theme.fontSize
-                color: root.isSelected ? "#ffffff" : Theme.ink
+                color: root.isSelected ? Theme.panelSelectionText : Theme.ink
             }
         }
 

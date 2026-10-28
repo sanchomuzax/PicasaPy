@@ -144,7 +144,7 @@ Item {
         visible: media.error !== MediaPlayer.NoError
         anchors.centerIn: viewport
         text: qsTr("Unable to play this video.")
-        color: "#e8e8e8"
+        color: Theme.mediaOverlayText
         font.pixelSize: Theme.fontSize
     }
 
@@ -237,14 +237,14 @@ Item {
                 }
                 Text {
                     objectName: "videoTimeLabel"
-                    color: "#e8e8e8"
+                    color: Theme.mediaOverlayText
                     font.pixelSize: Theme.fontSize
                     text: player.formatTime(media.position) + " / "
                           + player.formatTime(media.duration)
                 }
                 Text {
                     text: "🔊"
-                    color: "#e8e8e8"
+                    color: Theme.mediaOverlayText
                     font.pixelSize: Theme.fontSize
                 }
                 PicasaSlider {

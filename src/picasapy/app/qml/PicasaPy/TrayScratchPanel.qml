@@ -420,10 +420,9 @@ Item {
             anchors.centerIn: parent
             text: qsTr("Selection")
             // #2179: a respackből MÉRVE — `thumbui/scratchlabel`
-            // (13,480)–(218,499), szín `#C3C3C3`. A `Theme`
-            // `placeholderText`-je (`#8f8b83`) sötétebb ennél, és más
-            // helyeken is használatban van, ezért itt a mért érték áll.
-            color: "#C3C3C3"
+            // (13,480)–(218,499), szín `#C3C3C3`; a párosított Theme-token
+            // világos értéke változatlan, sötét témában olvashatóbb.
+            color: Theme.trayScratchLabel
             // `m_displayfont14` = 14 pt (`docs/specs/picasa-hisztogram.md`,
             // ugyanaz a betűcsalád), és a felirat mért magassága 19
             // képpont — a kettő egybevág.

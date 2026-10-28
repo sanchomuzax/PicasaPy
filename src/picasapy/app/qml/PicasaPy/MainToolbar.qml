@@ -230,7 +230,7 @@ Rectangle {
                 property bool lenyomasra: true
                 width: 30; height: 22; radius: 2
                 readonly property bool aktiv: !toolbar.treeViewActive
-                color: aktiv ? "#ffffff" : "transparent"
+                color: aktiv ? Theme.contentPanel : "transparent"
                 border.width: aktiv ? 1 : 0
                 border.color: Theme.selectionBlue
                 Text {
@@ -257,7 +257,7 @@ Rectangle {
                 property bool lenyomasra: true
                 width: 30; height: 22; radius: 2
                 readonly property bool aktiv: toolbar.treeViewActive
-                color: aktiv ? "#ffffff" : "transparent"
+                color: aktiv ? Theme.contentPanel : "transparent"
                 border.width: aktiv ? 1 : 0
                 border.color: Theme.selectionBlue
                 Text {
@@ -291,7 +291,7 @@ Rectangle {
             // #3603: fix bal-felső horgony — x 225, y 9 (`thumbui.tre:421`).
             x: 225; y: 9
             width: 22; height: 22; radius: 2
-            color: folderViewPopupHover.hovered ? "#ffffff" : "transparent"
+            color: folderViewPopupHover.hovered ? Theme.contentPanel : "transparent"
             border.width: folderViewPopupHover.hovered ? 1 : 0
             border.color: Theme.selectionBlue
             Text {
@@ -321,7 +321,7 @@ Rectangle {
             enabled: toolbar.captureControllerAvailable
             x: 252; y: 9
             width: 22; height: 22; radius: 2
-            color: cameraCaptureHover.hovered ? "#ffffff" : "transparent"
+            color: cameraCaptureHover.hovered ? Theme.contentPanel : "transparent"
             border.width: cameraCaptureHover.hovered ? 1 : 0
             border.color: Theme.selectionBlue
             Text {
@@ -522,10 +522,10 @@ Rectangle {
                     objectName: "searchClear"
                     visible: searchField.text.length > 0
                     width: 14; height: 14; radius: 7
-                    color: searchClearHover.hovered ? "#c94b3d" : "#b0b0b0"
+                    color: searchClearHover.hovered ? "#c94b3d" : Theme.searchClearBg
                     Text {
                         anchors.centerIn: parent
-                        text: "✕"; color: "white"; font.pixelSize: 8
+                        text: "✕"; color: Theme.panelSelectionText; font.pixelSize: 8
                         font.bold: true
                     }
                     //: #839: a `searchcontainer.tre` `clearsearch` gombjának

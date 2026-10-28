@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Window
+import PicasaPy
 
 // A Picasa Időrendje önálló, teljes képernyős bemutatóablak. A kártya mérete
 // a job-217 1280x1024-es felvételén mért 600x480 px, ezért nem skálázódik az
@@ -245,8 +246,9 @@ Window {
         Rectangle {
             anchors.fill: parent
             // A job-217 képkockán a panel alapja szürke; a fotók a kötegben
-            // jelennek meg, nem teljes felületű háttérképként.
-            color: "#8a888b"
+            // jelennek meg, nem teljes felületű háttérképként. Világoson a
+            // mért alap marad, sötét témán a panel tokenje veszi át a helyét.
+            color: Theme.dark ? Theme.panelBg : "#8a888b"
         }
 
         Canvas {
@@ -566,11 +568,20 @@ Window {
             width: panel.width
             height: 38
             gradient: Gradient {
-                GradientStop { position: 0.0; color: "#efefef" }
-                GradientStop { position: 0.45; color: "#d6d6d6" }
-                GradientStop { position: 1.0; color: "#b8b8b8" }
+                GradientStop {
+                    position: 0.0
+                    color: Theme.dark ? Theme.chromeBg : "#efefef"
+                }
+                GradientStop {
+                    position: 0.45
+                    color: Theme.dark ? Theme.chromeBg : "#d6d6d6"
+                }
+                GradientStop {
+                    position: 1.0
+                    color: Theme.dark ? Theme.chromeBg : "#b8b8b8"
+                }
             }
-            border.color: "#8d8d8d"
+            border.color: Theme.dark ? Theme.chromeBorder : "#8d8d8d"
             border.width: 1
         }
 
@@ -584,14 +595,17 @@ Window {
             padding: 0
             background: Rectangle {
                 radius: 4
-                color: timelineExitButton.down ? "#bfc7d4" : "#e8e8e8"
-                border.color: "#777777"
+                color: timelineExitButton.down
+                    ? (Theme.dark ? Theme.selectionBlue : "#bfc7d4")
+                    : Theme.buttonBg
+                border.color: Theme.dark ? Theme.chromeBorder : "#777777"
             }
             contentItem: Canvas {
+                id: timelineExitIcon
                 onPaint: {
                     var c = getContext("2d")
-                    c.strokeStyle = "#142348"
-                    c.fillStyle = "#142348"
+                    c.strokeStyle = Theme.dark ? Theme.ink : "#142348"
+                    c.fillStyle = Theme.dark ? Theme.ink : "#142348"
                     c.lineWidth = 1.5
                     c.strokeRect(4, 8, 4, 4)
                     c.strokeRect(10, 8, 4, 4)
@@ -620,13 +634,16 @@ Window {
             padding: 0
             background: Rectangle {
                 radius: 15
-                color: timelineLeftButton.down ? "#bec6d2" : "#e8e8e8"
-                border.color: "#777777"
+                color: timelineLeftButton.down
+                    ? (Theme.dark ? Theme.selectionBlue : "#bec6d2")
+                    : Theme.buttonBg
+                border.color: Theme.dark ? Theme.chromeBorder : "#777777"
             }
             contentItem: Canvas {
+                id: timelineLeftIcon
                 onPaint: {
                     var c = getContext("2d")
-                    c.fillStyle = "#142348"
+                    c.fillStyle = Theme.dark ? Theme.ink : "#142348"
                     c.beginPath()
                     c.moveTo(7, height / 2)
                     c.lineTo(17, 6)
@@ -650,14 +667,17 @@ Window {
             padding: 0
             background: Rectangle {
                 radius: 4
-                color: timelinePlayButton.down ? "#bec6d2" : "#e8e8e8"
-                border.color: "#777777"
+                color: timelinePlayButton.down
+                    ? (Theme.dark ? Theme.selectionBlue : "#bec6d2")
+                    : Theme.buttonBg
+                border.color: Theme.dark ? Theme.chromeBorder : "#777777"
             }
             contentItem: Canvas {
+                id: timelinePlayIcon
                 onPaint: {
                     var c = getContext("2d")
-                    c.fillStyle = "#142348"
-                    c.strokeStyle = "#142348"
+                    c.fillStyle = Theme.dark ? Theme.ink : "#142348"
+                    c.strokeStyle = Theme.dark ? Theme.ink : "#142348"
                     c.lineWidth = 1
                     c.strokeRect(5, 8, 14, 14)
                     c.beginPath()
@@ -689,13 +709,16 @@ Window {
             padding: 0
             background: Rectangle {
                 radius: 15
-                color: timelineRightButton.down ? "#bec6d2" : "#e8e8e8"
-                border.color: "#777777"
+                color: timelineRightButton.down
+                    ? (Theme.dark ? Theme.selectionBlue : "#bec6d2")
+                    : Theme.buttonBg
+                border.color: Theme.dark ? Theme.chromeBorder : "#777777"
             }
             contentItem: Canvas {
+                id: timelineRightIcon
                 onPaint: {
                     var c = getContext("2d")
-                    c.fillStyle = "#142348"
+                    c.fillStyle = Theme.dark ? Theme.ink : "#142348"
                     c.beginPath()
                     c.moveTo(23, height / 2)
                     c.lineTo(13, 6)
@@ -719,7 +742,7 @@ Window {
                 var collection = show.collectionAt(show.currentIndex)
                 return collection ? collection.firstDateLabel : ""
             }
-            color: "#3b3b3b"
+            color: Theme.dark ? Theme.ink : "#3b3b3b"
             font.pixelSize: 10
         }
 
@@ -737,7 +760,7 @@ Window {
                 y: 14
                 width: parent.width
                 height: 1
-                color: "#969696"
+                color: Theme.dark ? Theme.textGray : "#969696"
             }
 
             Repeater {
@@ -753,7 +776,7 @@ Window {
                     height: 10
                     radius: 4
                     visible: modelData.draw
-                    color: "#142348"
+                    color: Theme.dark ? Theme.ink : "#142348"
                 }
             }
 
@@ -772,10 +795,16 @@ Window {
                       - sliderArea.x
                     : 0
                 gradient: Gradient {
-                    GradientStop { position: 0.0; color: "#ffffff" }
-                    GradientStop { position: 1.0; color: "#7f9997" }
+                    GradientStop {
+                        position: 0.0
+                        color: Theme.dark ? Theme.shadeLight : "#ffffff"
+                    }
+                    GradientStop {
+                        position: 1.0
+                        color: Theme.dark ? Theme.chromeBorder : "#7f9997"
+                    }
                 }
-                border.color: "#858585"
+                border.color: Theme.dark ? Theme.chromeBorder : "#858585"
                 border.width: 1
             }
 
@@ -805,8 +834,18 @@ Window {
                 var collection = show.collectionAt(show.currentIndex)
                 return collection ? collection.lastDateLabel : ""
             }
-            color: "#3b3b3b"
+            color: Theme.dark ? Theme.ink : "#3b3b3b"
             font.pixelSize: 10
+        }
+    }
+
+    Connections {
+        target: Theme
+        function onDarkChanged() {
+            timelineExitIcon.requestPaint()
+            timelineLeftIcon.requestPaint()
+            timelinePlayIcon.requestPaint()
+            timelineRightIcon.requestPaint()
         }
     }
 }

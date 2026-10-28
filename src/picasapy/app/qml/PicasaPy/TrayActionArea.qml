@@ -84,7 +84,7 @@ Item {
                         verticalAlignment: Text.AlignVCenter
                         text: trayUploadBtn.text
                         font: trayUploadBtn.font
-                        color: "white"
+                        color: Theme.panelSelectionText
                         wrapMode: Text.Wrap
                         elide: Text.ElideNone
                         fontSizeMode: Text.Fit

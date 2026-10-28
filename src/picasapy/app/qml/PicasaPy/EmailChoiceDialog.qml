@@ -473,7 +473,7 @@ Dialog {
                             contentItem: Label {
                                 objectName: "emailComposeSend"
                                 text: qsTr("Send")
-                                color: "white"
+                                color: Theme.panelSelectionText
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                             }
