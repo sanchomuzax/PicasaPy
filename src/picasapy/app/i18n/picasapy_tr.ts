@@ -8289,23 +8289,59 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/select_none);stringres:
         </message>
     </context>
     <context>
-        <name>LightboxHeader</name>
+        <name>LightboxHeaderTitle</name>
         <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" />
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="123" />
+            <source>View zoomed in to the face</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/face_zoom)</extracomment>
+            <translation>Yüze yakınlaştırarak görüntüle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="151" />
+            <source>View zoomed out to the full picture</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/picture_zoom)</extracomment>
+            <translation>Tam resme uzaklaşarak görüntüle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="194" />
+            <source>Sync to Web</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: headerpaneltext:Label(headerpanel/sync_label);stringres:SyncLabel::Off</extracomment>
+            <translation>Web'e Eşitle</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="175" />
+            <source>Remove</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kaldır</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="1" />
+            <source>SYNC</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>EŞİTLE</translation>
+        </message>
+    </context>
+    <context>
+        <name>LightboxHeaderButtons</name>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderButtons.qml" />
             <source>Create Movie Presentation</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_movie);headerpaneltext:Tooltip(headerpanel/create_movie)</extracomment>
             <translation>Film Sunumu Oluştur</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" />
+            <location filename="../qml/PicasaPy/LightboxHeaderButtons.qml" />
             <source>Create Face Movie</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_face_movie)</extracomment>
             <translation>Yüz Filmi Oluştur</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="571" />
+            <location filename="../qml/PicasaPy/LightboxHeaderButtons.qml" line="238" />
             <source>Set as People Album Thumbnail</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/set_thumbnail)</extracomment>
@@ -8318,110 +8354,10 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/play);headerpan
             <translation>Slayt Gösterisini Tam Ekran Oynat</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Show only suggestions (when toggled on)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/sug_filter)</extracomment>
-            <translation>Yalnızca önerileri göster (açıldığında)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>View zoomed in to the face</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/face_zoom)</extracomment>
-            <translation>Yüze yakınlaştırarak görüntüle</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>View zoomed out to the full picture</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/picture_zoom)</extracomment>
-            <translation>Tam resme uzaklaşarak görüntüle</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Sync to Web</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: headerpaneltext:Label(headerpanel/sync_label);stringres:SyncLabel::Off</extracomment>
-            <translation>Web'e Eşitle</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Find more suggestions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/moresug)</extracomment>
-            <translation>Daha fazla öneri bul</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Lower the recognition threshold to get more suggestions</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Daha fazla öneri almak için tanıma eşiğini düşürün</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Confirm all</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/confirmsug)</extracomment>
-            <translation>Tümünü onayla</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Confirm all suggestions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsug)</extracomment>
-            <translation>Tüm önerileri onayla</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Remove</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kaldır</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Remove all suggestions</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tüm önerileri kaldır</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Confirm</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Onayla</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Confirm selected suggestions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsel)</extracomment>
-            <translation>Seçilen önerileri onayla</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Remove selected suggestions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/removesel)</extracomment>
-            <translation>Seçilen önerileri kaldır</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="30" />
-            <source>SYNC</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>EŞİTLE</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="68" />
+            <location filename="../qml/PicasaPy/LightboxHeaderButtons.qml" line="270" />
             <source>Upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Yükle</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="111" />
-            <source>Add a description</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTextEditNode::addcaption</extracomment>
-            <translation>Açıklama ekle</translation>
         </message>
         <message>
             <source>Save</source>
@@ -8443,6 +8379,85 @@ picasapy-origin-key: stringres:CTextEditNode::addcaption</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_collage);headerpaneltext:Tooltip(headerpanel/create_collage)</extracomment>
             <translation>Fotoğraf Kolajı Oluştur</translation>
+        </message>
+    </context>
+    <context>
+        <name>LightboxHeaderSuggestionRow</name>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="70" />
+            <source>Show only suggestions (when toggled on)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/sug_filter)</extracomment>
+            <translation>Yalnızca önerileri göster (açıldığında)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="156" />
+            <source>Find more suggestions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/moresug)</extracomment>
+            <translation>Daha fazla öneri bul</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="159" />
+            <source>Lower the recognition threshold to get more suggestions</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Daha fazla öneri almak için tanıma eşiğini düşürün</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="107" />
+            <source>Confirm all</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/confirmsug)</extracomment>
+            <translation>Tümünü onayla</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="113" />
+            <source>Confirm all suggestions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsug)</extracomment>
+            <translation>Tüm önerileri onayla</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="128" />
+            <source>Remove</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kaldır</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="135" />
+            <source>Remove all suggestions</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tüm önerileri kaldır</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="106" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Onayla</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="112" />
+            <source>Confirm selected suggestions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsel)</extracomment>
+            <translation>Seçilen önerileri onayla</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="134" />
+            <source>Remove selected suggestions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/removesel)</extracomment>
+            <translation>Seçilen önerileri kaldır</translation>
+        </message>
+    </context>
+    <context>
+        <name>LightboxHeaderDescription</name>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderDescription.qml" line="45" />
+            <source>Add a description</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTextEditNode::addcaption</extracomment>
+            <translation>Açıklama ekle</translation>
         </message>
     </context>
     <context>

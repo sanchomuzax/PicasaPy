@@ -178,7 +178,7 @@ ELOFORDULASOK = {
         "Search for items with this tag",
         "Add this tag to entire selection",
     ],
-    "PicasaPy/LightboxHeader.qml": ["Sync to Web"],
+    "PicasaPy/LightboxHeaderTitle.qml": ["Sync to Web"],
     "PicasaPy/EditorParamPanel.qml": ["Feather", "Color Preservation"],
     "PicasaPy/EditorTextPanel.qml": [
         "Left justify text", "Center justify text", "Right justify text"],
