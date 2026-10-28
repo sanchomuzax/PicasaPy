@@ -62,6 +62,8 @@ internal SlideshowPreviousImage SlideshowPreviousImage.qml
 internal SlideshowCurrentImage SlideshowCurrentImage.qml
 internal SlideshowVeil SlideshowVeil.qml
 internal SlideshowPreloadImage SlideshowPreloadImage.qml
+internal SlideshowMusic SlideshowMusic.qml
+internal SlideshowModelSync SlideshowModelSync.qml
 SlideshowView 1.0 SlideshowView.qml
 ScreensaverDialog 1.0 ScreensaverDialog.qml
 PhotoViewerSettingsDialog 1.0 PhotoViewerSettingsDialog.qml
