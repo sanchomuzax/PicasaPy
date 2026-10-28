@@ -23,9 +23,11 @@ from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 REPO = Path(__file__).resolve().parents[3]
 CONTROL = REPO / "packaging" / "debian" / "control.template"
 
-_QML = (
-    Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "PrintDialog.qml"
-).read_text(encoding="utf-8")
+_QML_DIR = Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
+_QML = "\n".join(
+    (_QML_DIR / nev).read_text(encoding="utf-8")
+    for nev in ("PrintDialog.qml", "PrintSelectionPanel.qml")
+)
 
 NINCS_NYOMTATO = "printNoPrinterText"
 FORRAS = "A printer must be installed in order to print."

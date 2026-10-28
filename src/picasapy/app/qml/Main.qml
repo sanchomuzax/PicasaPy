@@ -815,7 +815,7 @@ ApplicationWindow {
             controller.addKeywordToRows(rows, keyword)
             return
         }
-        bulkTagConfirmLoader.ensure().askFor(rows, keyword)
+        mainDialogs.bulkTagConfirmLoader.ensure().askFor(rows, keyword)
     }
 
     // a kijelölt képek abszolút útvonalai (#15/#16) — a fájlműveletek a
@@ -2184,7 +2184,7 @@ ApplicationWindow {
         onUnhideRequested: window.unhideHiddenSelection()
         onWriteXmpFacesDialogRequested:
             xmpFacesWriteDialog.ensure().openFor(window.photoActionRows())
-        onResetFacesRequested: resetFacesForPaths(window.photoActionPaths())
+        onResetFacesRequested: window.resetFacesForPaths(window.photoActionPaths())
         // #4335: a fájlban tárolt állapotot a Picture menü nyitásakor
         // frissítjük, mert az index nem jelzi a `textactive=` változását.
         onTextOverlayStatesRefreshRequested: {
@@ -2353,7 +2353,7 @@ ApplicationWindow {
         onEarthViewRequested: exportDialogs.ensure().openGoogleEarth(true)
         //: #1404: a menüpont is a MEGERŐSÍTÉSEN át töröl
         onClearGeotagRequested:
-            clearGeotagDialog.ensure().openFor(window.photoActionRows())
+            mainDialogs.clearGeotagDialog.ensure().openFor(window.photoActionRows())
         // #5396: egy és több kijelölt képnél is a mért `rename.fen`-dialógus
         // nyílik; a forrásfájl kiterjesztését és előnézetét az kezeli.
         onRenameRequested: fileOpsDialogs.ensure().openRenameMany(window.photoActionRows())
@@ -2519,377 +2519,19 @@ ApplicationWindow {
         // #465 3. pont: „Undo All Edits" — megerősítéssel, a kijelölt
         // kép(ek) TELJES szerkesztési lánca törlődik (`clearAllEffectsMany`,
         // ugyanaz a kötegelt undo-verem mint a `applyEffectMany`-nál).
-        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openForLibrary(
+        onUndoAllEditsRequested: mainDialogs.undoAllEditsDialog.ensure().openForLibrary(
             window.photoActionRows())
         // #3555: nyelvváltás — a menütétel csak jelez (a `ConfirmDialog` nem
         // fér el a MenuBar gyermekeként), a kérdés és a `setLanguage`-hívás
         // itt fut ki.
         onLanguageConfirmRequested: function (code) {
-            languageConfirmDialog.ensure().askFor(code)
+            mainDialogs.languageConfirmDialog.ensure().askFor(code)
         }
     }
 
-    // #5836: a mért eredeti cím és a két gomb kell, ezért ez nem a közös
-    // pipás/Mégse-vel működő ConfirmDialog-komponens.
-    // #1404: a geocímke-törlés MEGERŐSÍTÉSE. Az eredeti `ClearGeoTag::warn`
-    // szövegével, szó szerint — nem átfogalmazva.
-    //
-    // ⚠️ Ez nem stílusdöntés: a törlés VISSZAFORDÍTHATATLAN (a `geotag`
-    // kulcs kikerül a `.picasa.ini`-ből), és eddig kérdés NÉLKÜL futott le
-    // a Helyek panel gombjáról. Mindkét belépési pont — a menüpont és a
-    // panel gombja — ezen az EGY párbeszéden megy át.
-    //: #1612: halasztva — a geocímke-törlés megerősítése csak a menüpont/panel útján kell
-    DeferredDialog {
-        id: clearGeotagDialog
-        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
-        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
-        objectName: "clearGeotagDialogLoader"
+    MainDialogs {
+        id: mainDialogs
         anchors.fill: parent
-        sourceComponent: Component {
-            ConfirmDialog {
-                objectName: "clearGeotagConfirm"
-                namePrefix: "clearGeotag"
-                title: qsTr("Clear Geotags")
-                property var rows: []
-                function openFor(rowList) {
-                    if (!rowList || rowList.length === 0) return
-                    rows = rowList
-                    //: `ClearGeoTag::warn` — az eredeti szövege
-                    ask("clearGeotag", qsTr(
-                        "You are about to erase all geographic location information"
-                        + " (i.e., latitude and longitude) from the selected photos."
-                        + "\n\nOK to proceed?"))
-                }
-                onConfirmed: controller.clearGeotagRows(rows)
-            }
-        }
-    }
-
-    // #4271: a CThumbUI::keyword_warning_fmt csak 30 kijelölt kép fölött
-    // kérdez. Mégse esetén nincs címkézés; OK esetén a megnyitáskori
-    // kijelölés pillanatfelvételére írunk.
-    DeferredDialog {
-        id: bulkTagConfirmLoader
-        objectName: "bulkTagConfirmDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            Dialog {
-                id: bulkTagConfirmDialog
-                objectName: "bulkTagConfirmDialog"
-                modal: true
-                focus: true
-                anchors.centerIn: Overlay.overlay
-                property var rows: []
-                property string keyword: ""
-                property string message: ""
-
-                function askFor(rowList, tag) {
-                    rows = rowList.slice()
-                    keyword = tag
-                    message = qsTr(
-                        "You have a fairly large number of items selected.\n\n"
-                        + "Are you sure you want to apply this tag to all %d items?"
-                    ).replace("%d", String(rowList.length))
-                    open()
-                }
-
-                onAccepted: {
-                    if (controller) controller.addKeywordToRows(rows, keyword)
-                }
-
-                contentItem: ColumnLayout {
-                    spacing: 12
-                    Text {
-                        objectName: "bulkTagConfirmMessage"
-                        Layout.preferredWidth: 320
-                        text: bulkTagConfirmDialog.message
-                        wrapMode: Text.WordWrap
-                        font.pixelSize: Theme.fontSize
-                        color: Theme.ink
-                    }
-                    RowLayout {
-                        Layout.alignment: Qt.AlignRight
-                        spacing: 8
-                        PicasaButton {
-                            objectName: "bulkTagConfirmOkButton"
-                            text: qsTr("OK")
-                            accent: Theme.picasaGreen
-                            onClicked: bulkTagConfirmDialog.accept()
-                        }
-                        PicasaButton {
-                            objectName: "bulkTagConfirmCancelButton"
-                            text: qsTr("Cancel")
-                            onClicked: bulkTagConfirmDialog.reject()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // #2013: a Helyek PANEL saját két megerősítése. Az eredetiben ez KÉT
-    // KÜLÖN erőforrás a menüparancsétól (`ClearGeoTag::warn`) — más
-    // küszöbbel és más számmal:
-    //
-    //   hely MEGVÁLTOZTATÁSA  > 20 KIJELÖLT elem   (0x00652585, cmp ebx,0x14)
-    //   hely TÖRLÉSE          >  5 GEOCÍMKÉZETT    (0x006527ad, cmp esi,5)
-    //
-    // A küszöb alatt az eredeti NEM kérdez — ezért itt sem kérdezünk.
-    //: #1612: halasztva — a helyváltoztatás megerősítése (küszöb fölött) csak a panel/menü útján kell
-    DeferredDialog {
-        id: setGeotagDialog
-        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
-        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
-        objectName: "setGeotagDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            ConfirmDialog {
-                objectName: "setGeotagConfirm"
-                namePrefix: "setGeotag"
-                title: qsTr("Change Location")
-                property var rows: []
-                property real lat: 0
-                property real lon: 0
-                function futtasd(rowList, latitude, longitude) {
-                    if (!rowList || rowList.length === 0) return
-                    if (rowList.length <= controller.geoChangeConfirmThreshold) {
-                        controller.setGeotagRows(rowList, latitude, longitude)
-                        return
-                    }
-                    rows = rowList; lat = latitude; lon = longitude
-                    //: `GeoPanel::geotag_warning_change` — az eredeti szövege
-                    ask("setGeotag", qsTr(
-                        "You have more than a few items selected."
-                        + "\n\nAre you sure you want to change the location of all"
-                        + " %1 items?").arg(rowList.length))
-                }
-                onConfirmed: controller.setGeotagRows(rows, lat, lon)
-            }
-        }
-    }
-
-    // A térképre ejtés az eredeti Picasa szerint mindig külön megerősítést
-    // kér; az elfogadás ugyanazt az INI-író utat hívja, mint a panel helye.
-    DeferredDialog {
-        id: dropGeotagDialog
-        objectName: "dropGeotagDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            Dialog {
-                id: dialog
-                objectName: "dropGeotagConfirm"
-                modal: true
-                focus: true
-                anchors.centerIn: parent ? Overlay.overlay : undefined
-                property var rows: []
-                property real latitude: 0
-                property real longitude: 0
-                property string message: ""
-
-                function futtasd(rowList, lat, lon) {
-                    if (!rowList || rowList.length === 0) return
-                    rows = rowList.slice()
-                    latitude = lat
-                    longitude = lon
-                    var moving = controller.geotaggedCount(rows) > 0
-                    if (rows.length === 1) {
-                        message = moving ? qsTr("Move photo here?")
-                                         : qsTr("Put photo here?")
-                    } else {
-                        var template = moving
-                            ? qsTr("Move %d photos here?")
-                            : qsTr("Put %d photos here?")
-                        message = template.replace("%d", String(rows.length))
-                    }
-                    open()
-                }
-
-                onAccepted: controller.setGeotagRows(rows, latitude, longitude)
-
-                ColumnLayout {
-                    spacing: 12
-                    Text {
-                        objectName: "dropGeotagMessage"
-                        Layout.preferredWidth: 320
-                        text: dialog.message
-                        wrapMode: Text.WordWrap
-                        font.pixelSize: Theme.fontSize
-                        color: Theme.ink
-                    }
-                    RowLayout {
-                        Layout.alignment: Qt.AlignRight
-                        spacing: 8
-                        PicasaButton {
-                            objectName: "dropGeotagYesButton"
-                            text: qsTr("(OK)")
-                            accent: Theme.picasaGreen
-                            onClicked: dialog.accept()
-                        }
-                        PicasaButton {
-                            objectName: "dropGeotagCancelButton"
-                            text: qsTr("Cancel")
-                            onClicked: dialog.reject()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    //: #1612: halasztva — a Helyek panel törlés-megerősítése csak onnan nyílik
-    DeferredDialog {
-        id: panelClearGeotagDialog
-        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
-        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
-        objectName: "panelClearGeotagDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            ConfirmDialog {
-                objectName: "panelClearGeotagConfirm"
-                namePrefix: "panelClearGeotag"
-                title: qsTr("Clear Geotags")
-                property var rows: []
-                function futtasd(rowList) {
-                    if (!rowList || rowList.length === 0) return
-                    //: ⚠️ a küszöb a GEOCÍMKÉZETT elemek száma, nem a kijelölésé:
-                    //: 100 kijelöltből 3 geocímkézettnél az eredeti nem kérdez.
-                    var geos = controller.geotaggedCount(rowList)
-                    if (geos <= controller.geoClearConfirmThreshold) {
-                        controller.clearGeotagRows(rowList)
-                        return
-                    }
-                    rows = rowList
-                    //: `GeoPanel::geotag_warning_clear` — az eredeti szövege
-                    ask("panelClearGeotag", qsTr(
-                        "You have more than a few items selected."
-                        + "\n\nAre you sure you want to clear the locations for all"
-                        + " %1 items?").arg(geos))
-                }
-                onConfirmed: controller.clearGeotagRows(rows)
-            }
-        }
-    }
-
-    //: #1612: halasztva — a „minden szerkesztés visszavonása" megerősítése csak a menüpontból nyílik
-    DeferredDialog {
-        id: undoAllEditsDialog
-        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
-        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
-        objectName: "undoAllEditsDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            Dialog {
-                id: undoAllEditsConfirmDialog
-                objectName: "undoAllEditsDialog"
-                //: Az eredeti cím: `ytApp::ConfirmTitle`.
-                title: qsTr("Confirm")
-                modal: true
-                focus: true
-                anchors.centerIn: parent ? Overlay.overlay : undefined
-                property var rows: []
-                property string message: ""
-                // #465: az eredeti Picasa KÉT külön szöveget használ egy, illetve
-                // több képre (IDS_CONFIRMREVERT / IDS_CONFIRMREVERT_MULTIPLE) — a
-                // többesszámúban a „MINDEGYIK" nagybetűs. Ha a kijelölésben van
-                // vörösszem-javítás, az eredeti KÜLÖN is figyelmeztet rá
-                // (IDS_CONFIRM_REDEYE_REVERT): az régió-adat, és a törléssel
-                // véglegesen elvész.
-                // Az egyparaméteres openFor szerződését megtartjuk: a néző és
-                // a #3573 régi őre is ezt hívja, a könyvtári menük külön kérik
-                // a mért többes szöveget.
-                function openFor(rowList) {
-                    openWithText(rowList, false)
-                }
-                function openForLibrary(rowList) {
-                    openWithText(rowList, true)
-                }
-                function openWithText(rowList, useMultipleText) {
-                    if (rowList.length === 0) return
-                    rows = rowList
-                    //: `IDS_CONFIRMREVERT` / `IDS_CONFIRMREVERT_MULTIPLE` —
-                    //: az eredeti szövege, a záró kérdéssel együtt (#3573)
-                    var singlePicture = rowList.length === 1 && !useMultipleText
-                    var text = singlePicture
-                        ? qsTr("This will remove all edits you have made to the"
-                               + " current picture.  Do you want to continue?")
-                        : qsTr("This will remove all edits you have made to ALL of"
-                               + " the selected pictures.  Do you want to continue?")
-                    // #3573: az eredeti a képet NÉVVEL mondja; több
-                    // vörösszemes kép esetén a nevek vesszővel sorakoznak
-                    var redeyeNames = controller.redeyeNamesInSelection(rowList)
-                    if (redeyeNames.length > 0)
-                        //: `IDS_CONFIRM_REDEYE_REVERT` — az eredeti szövege a
-                        //: sortörésekkel; %1 a kép neve (#3573)
-                        text += "\n\n" + qsTr("Red eye fixes have been applied to %1.\n"
-                                              + "If you remove all edits, your red eye"
-                                              + " fixes cannot be recovered with redo. \n"
-                                              + "Are you sure you want to remove the"
-                                              + " fixes forever?")
-                                              .arg(redeyeNames.join(", "))
-                    // A job-254 útján a könyvtárnézet egyetlen kijelölése is
-                    // ezt a többes szöveget és minden alkalommal megerősítést kér.
-                    message = text
-                    open()
-                }
-                onAccepted: controller.clearAllEffectsMany(rows)
-
-                ColumnLayout {
-                    spacing: 12
-
-                    Text {
-                        objectName: "undoAllEditsMessageLabel"
-                        Layout.preferredWidth: 320
-                        text: undoAllEditsConfirmDialog.message
-                        wrapMode: Text.WordWrap
-                        font.pixelSize: Theme.fontSize
-                        color: Theme.ink
-                    }
-
-                    RowLayout {
-                        Layout.alignment: Qt.AlignRight
-                        spacing: 8
-
-                        PicasaButton {
-                            objectName: "undoAllEditsYesButton"
-                            //: `IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON`.
-                            text: qsTr("Remove Edits")
-                            accent: Theme.picasaGreen
-                            focus: true
-                            onClicked: undoAllEditsConfirmDialog.accept()
-                        }
-                        PicasaButton {
-                            objectName: "undoAllEditsNoButton"
-                            //: Az eredeti `confirm:confirm/no.title` felirata.
-                            text: qsTr("No")
-                            onClicked: undoAllEditsConfirmDialog.reject()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // #3555: a nyelvváltás megerősítése — az Eszközök → Nyelv menüből jön
-    // (`bar.languageConfirmRequested`, ld. fent). A szöveg a hivatalos
-    // `CGeneralPrefsPage::LangChange`. A `settingKey` üres: ez a
-    // választás sosem nyomható el a „Ne kérdezze újra" jelölővel — minden
-    // váltás legalább egy kattintást kér, ahogy az eredeti is teszi.
-    DeferredDialog {
-        id: languageConfirmDialog
-        objectName: "menuLanguageConfirmDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            ConfirmDialog {
-                objectName: "menuLanguageConfirmDialog"
-                namePrefix: "menuLanguageConfirm"
-                property string candidateCode: ""
-                function askFor(code) {
-                    candidateCode = code
-                    ask("", qsTr("Change the language PicasaPy uses?\n\nIt will change the next time PicasaPy is opened."))
-                }
-                onConfirmed: if (controller) controller.setLanguage(candidateCode)
-            }
-        }
     }
 
     // #17: Elrejtés/Megjelenítés a kijelölésre; elrejtés után a kijelölést
@@ -3175,80 +2817,17 @@ ApplicationWindow {
             discoveryController.discoverAtStartup()
     }
 
-    // Eszköztár: Importálás | (szűrők középen) | kereső jobbra
-    header: MainToolbar {
+    // Eszköztár: a fejléc önálló komponens, változatlan ablakfejlécként.
+    header: MainWindowToolbar {
         id: toolbar
-        objectName: "mainToolbar"
-        // #741/4: a nézőben (és így a szerkesztőben) NINCS alkalmazás-szintű
-        // eszköztár. A binárisban a szerkesztő felső 40 képpontos sávjában
-        // egyetlen elem van, az `editpanel/albumview` („Vissza a
-        // könyvtárhoz", 122 × 22) — az nálunk már megvan a
-        // `PhotoViewer.qml`-ben. Az Importálás+kereső sáv itt csak lefelé
-        // tolta az egész panelt, és ezzel a mért geometria sem jöhetett ki.
-        // A tulajdonosi döntés (`docs/decisions/szerkeszto-bal-panel.md`):
-        // a felület PONTOSAN az eredetit kövesse.
-        //
-        // #1026: az eszközsáv a KÖNYVTÁR panelének gyereke (`thumbui.tre`:
-        // `importbutton`/`sbutton`/`timelinebutton`/`globalmode`) — a
-        // projekt-lapon a panellel EGYÜTT tűnik el, nem külön szabályból.
-        visible: !window.viewerOpen && window.libraryFrameVisible
-        searchSuggestionsVisible: searchSuggestionsBox.visible
-        onSearchSuggestionKeyPressed: function(key) {
-            if (key === Qt.Key_Down)
-                searchSuggestionsBox.moveSelection(1)
-            else if (key === Qt.Key_Up)
-                searchSuggestionsBox.moveSelection(-1)
-            else if (key === Qt.Key_Return || key === Qt.Key_Enter)
-                searchSuggestionsBox.chooseSelected()
-            else if (key === Qt.Key_Escape)
-                searchSuggestionsBox.dismiss()
-        }
-        onSearchEdited: function(text) {
-            window.clearSelection()
-            controller.search(text)
-            suggestionsTimer.restart()
-        }
-        onSearchCleared: {
-            window.clearSelection()
-            controller.search("")
-            searchSuggestionsBox.suggestions = []
-        }
-        // #23: az "Import" gomb az Import forrásból ablakot nyitja
-        onImportRequested: importSourceDialog.open()
-        // #5812: az eszköztár az Album Properties ablakot nyitja.
-        // #5835: mappa nélküli nézetben a kijelölt vagy fókuszban levő kép
-        // mappáját adja át; a többi albumút külön él.
-        onNewAlbumRequested:
-            fileOpsDialogs.ensure().openNewAlbumProperties(
-                window.newAlbumFolderPath())
-        // #1421: az eszköztár `timelinebutton`-ja UGYANAZT a váltást
-        // végzi, mint a Nézet ▸ Időrend és a Ctrl+5.
-        // #1421: a nézetváltó pár UGYANAZT a vezérlőt hívja, mint a
-        // Nézet ▸ Mappanézet almenü (#1454) — egy állapot, két felület.
-        //: #1956: KÉT őr kell, mert KÉT külön hiba fenyeget:
-        //:   `typeof …`  — a NÉV nincs regisztrálva (pl. szűkített
-        //:                 teszt-összeállítás) ⇒ ReferenceError;
-        //:   `&& x`      — a név megvan, de az ÉRTÉKE `null` az engine
-        //:                 fel-/leépítése közben ⇒ TypeError. A `typeof`
-        //:                 EZT NEM fogja: `typeof null === "object"`.
-        //: A korábbi alak csak az elsőt fogta, ezért volt tele minden
-        //: QML-futás „Cannot read property 'treeView' of null"-lal.
-        treeViewActive: (typeof folderHierarchyController !== "undefined"
-                         && folderHierarchyController)
-                        ? (folderHierarchyController.treeView === true)
-                        : false
-        onFlatViewRequested: if (typeof folderHierarchyController !== "undefined"
-                                 && folderHierarchyController)
-                                 folderHierarchyController.setTreeView(false)
-        onTreeViewRequested: if (typeof folderHierarchyController !== "undefined"
-                                 && folderHierarchyController)
-                                 folderHierarchyController.setTreeView(true)
-        //: #1421: a ▾ gomb a menüsor MEGLÉVŐ Mappanézet-almenüjét nyitja —
-        //: nincs második menüdefiníció (a tételek pipái így sem tudnak
-        //: szétcsúszni a két belépési pont között).
-        onFolderViewMenuRequested: function (anchorItem) {
-            picasaMenuBar.openFolderViewMenu(anchorItem)
-        }
+        hostWindow: window
+        hostRefs: ({
+            searchSuggestionsBox: searchSuggestionsBox,
+            suggestionsTimer: suggestionsTimer,
+            picasaMenuBar: picasaMenuBar,
+            importSourceDialog: importSourceDialog,
+            fileOpsDialogs: fileOpsDialogs
+        })
     }
 
     // Kereső-javaslatok (#7): gépelés után rövid szünettel (debounce)
@@ -3299,75 +2878,10 @@ ApplicationWindow {
         }
     }
 
-    // #8: diavetítés-réteg — minden más felett, csak vetítés alatt látszik
-    SlideshowView {
+    // #8: a diavetítés a főablak önálló vetítési rétege.
+    MainSlideshow {
         id: slideshow
-        objectName: "slideshowView"
-        anchors.fill: parent
-        bigSlideshow2: controller ? controller.bigSlideshow2 : true
-        screenDepth: controller ? controller.slideshowScreenDepth : 0
-        timelineSlideshow: window.timelineSlideshowActive
-        panZoomRectanglesProvider: function(
-            sourceWidth, sourceHeight, viewWidth, viewHeight
-        ) {
-            return controller
-                ? controller.slideshowPanZoomRectangles(
-                      sourceWidth, sourceHeight, viewWidth, viewHeight)
-                : []
-        }
-        z: 100
-        // #305: null-őr
-        photosModel: !controller ? null
-            : slideshow.screensaverMode ? controller.screensaverPhotos
-            : window.timelineSlideshowActive ? window.timelineSlideshowModel
-            : controller.photos
-        // #1640: a megjelenítési mód a vetített képre is hat — a kötés innen
-        // adja át, hogy a dia URL-je módváltáskor újraértékelődjön
-        displayMode: controller ? controller.displayMode : ""
-        //: #433: a vetítés-beállítások MEGŐRZÖTTEK — a választó a
-        //: vezérlőbe ír, a kötés innen olvassa vissza.
-        transitionKind: !controller ? "dissolve"
-            : slideshow.screensaverMode ? controller.screensaverEffect
-            : controller.slideshowTransition
-        transitionMs: controller ? controller.slideshowTransitionMs : 700
-        captionMode: !controller ? "caption"
-            : slideshow.screensaverMode
-                ? (controller.screensaverShowCaptions ? "caption" : "none")
-                : controller.slideshowCaptionMode
-        //: #2992: a diaidő (`SlideshowEffectTime`) — a sáv ± gombjai a
-        //: vezérlőbe írnak, a kötés innen olvassa vissza.
-        seconds: !controller ? 3
-            : slideshow.screensaverMode ? controller.screensaverSeconds
-            : controller.slideshowSeconds
-        // #4320: a képernyővédő saját ciklusát megtartja; az ismétlés és a
-        // zene a Beállítások Diavetítés füléről vezérli a normál vetítést.
-        loop: !controller || slideshow.screensaverMode
-            ? true : controller.slideshowLoop
-        musicEnabled: !!controller && !slideshow.screensaverMode
-            && controller.slideshowMusicEnabled
-        musicTrackUrls: !controller || slideshow.screensaverMode
-            ? [] : controller.slideshowMusicTrackUrls
-        onTransitionPicked: function (kulcs) {
-            controller.setSlideshowTransition(kulcs)
-        }
-        onCaptionModePicked: function (mod) {
-            controller.setSlideshowCaptionMode(mod)
-        }
-        onSecondsChosen: function (masodperc) {
-            controller.setSlideshowSeconds(masodperc)
-        }
-        // #5653: ugyanaz az Időrend-belépés, mint a Nézet menüben; a vetítés
-        // bezárása előbb lefuttatja az exitSlideshow visszaállítását.
-        onTimelineRequested: {
-            slideshow.stop()
-            window.toggleTimeline()
-        }
-        onClosed: window.exitSlideshow()
-        onStarToggled: function(index) { controller.toggleStar(index) }
-        onRotateRequested: function(index, delta) {
-            if (delta > 0) controller.rotateRight(index)
-            else controller.rotateLeft(index)
-        }
+        hostWindow: window
     }
 
     PhotoViewer {
@@ -3382,7 +2896,7 @@ ApplicationWindow {
         onSaveRequested: function(row) { saveDialogs.ensure().openSave([row]) }
         onRevertRequested: function(row) { saveDialogs.ensure().openRevert([row]) }
         onUndoAllEditsRequested: function(row) {
-            undoAllEditsDialog.ensure().openFor([row])
+            mainDialogs.undoAllEditsDialog.ensure().openFor([row])
         }
         onResetFacesRequested: resetFacesForPaths(
             controller && photoViewer.aktivSor >= 0
@@ -3391,9 +2905,9 @@ ApplicationWindow {
         // élnek, ld. PhotoViewer.qml). A Helyek-panel két írási művelete
         // UGYANAZON a megerősítésen megy át, mint a könyvtár-nézetben —
         // egy parancs, egy út.
-        onClearGeotagRequested: (rows) => panelClearGeotagDialog.ensure().futtasd(rows)
-        onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.ensure().futtasd(rows, la, lo)
-        onDropGeotagRequested: (rows, la, lo) => dropGeotagDialog.ensure().futtasd(rows, la, lo)
+        onClearGeotagRequested: (rows) => mainDialogs.panelClearGeotagDialog.ensure().futtasd(rows)
+        onSetGeotagRequested: (rows, la, lo) => mainDialogs.setGeotagDialog.ensure().futtasd(rows, la, lo)
+        onDropGeotagRequested: (rows, la, lo) => mainDialogs.dropGeotagDialog.ensure().futtasd(rows, la, lo)
         // #2566: a fiók két KIVEZETŐ parancsa. Mindkettő a könyvtár rácsát
         // cseréli le, amit a néző eltakarna — ezért előbb ZÁRUL a néző.
         // Nem az `onClosed` útján: az `resyncFolderOfRow`-t hív, ami épp a
@@ -3460,6 +2974,7 @@ ApplicationWindow {
         deleteRemovesFromAlbum: picasaMenuBar.deleteRemovesFromAlbum
         onDeleteRequested: picasaMenuBar.activateDeleteCommand()
     }
+
 
     // #5770: a Picasa Időrend külön teljes képernyős ablak, saját vezérlőkkel.
     TimelineView {
@@ -4216,9 +3731,9 @@ ApplicationWindow {
         //: elem fölött kérdez) — az eredetiben ez külön erőforrás a
         //: menüparancsétól (`ClearGeoTag::warn`), ami feltétel nélkül
         //: kérdez. A menüpont változatlanul azon megy át.
-        onClearGeotagRequested: (rows) => panelClearGeotagDialog.ensure().futtasd(rows)
-        onSetGeotagRequested: (rows, la, lo) => setGeotagDialog.ensure().futtasd(rows, la, lo)
-        onPhotosDroppedRequested: (rows, la, lo) => dropGeotagDialog.ensure().futtasd(rows, la, lo)
+        onClearGeotagRequested: (rows) => mainDialogs.panelClearGeotagDialog.ensure().futtasd(rows)
+        onSetGeotagRequested: (rows, la, lo) => mainDialogs.setGeotagDialog.ensure().futtasd(rows, la, lo)
+        onPhotosDroppedRequested: (rows, la, lo) => mainDialogs.dropGeotagDialog.ensure().futtasd(rows, la, lo)
         visible: window.placesPanelOpen
         anchors.fill: parent
         appWindow: window
@@ -5000,7 +4515,7 @@ ApplicationWindow {
             ? controller.hasSavedBackup(window.selectedRows()) : false
         onSaveRequested: saveDialogs.ensure().openSave(window.selectedRows())
         onRevertRequested: saveDialogs.ensure().openRevert(window.selectedRows())
-        onUndoAllEditsRequested: undoAllEditsDialog.ensure().openForLibrary(
+        onUndoAllEditsRequested: mainDialogs.undoAllEditsDialog.ensure().openForLibrary(
             window.selectedRows())
         onResetFacesRequested: resetFacesForPaths(window.selectedPaths())
         onHideToggleRequested: window.toggleHiddenSelection()

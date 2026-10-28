@@ -179,7 +179,7 @@ class TestVisszagorgetesUtanTakaritas:
     """
 
     def test_a_bukott_masolas_nem_hagy_eredeti_mappat(self, tmp_path, monkeypatch):
-        from picasapy.fileops import originals as originals_modul
+        from picasapy.fileops import originals_copy as originals_modul
 
         forras, cel = tmp_path / "A", tmp_path / "B"
         _kep(forras, "a.jpg")

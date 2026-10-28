@@ -36,6 +36,7 @@ def ask_startup_language_prompt(
         app.installTranslator(translator)
 
     engine = QQmlApplicationEngine()
+    engine.addImportPath(str(_APP_DIR / "qml"))  # PicasaStyle (#6097)
     loop = QEventLoop()
     answer: list[bool] = []
     window = None

@@ -59,12 +59,10 @@ _QML = Path(picasapy.app.__file__).parent / "qml"
 ALAPALLAPOT: frozenset[str] = frozenset(
     {
         "AboutDialog.qml",
-        "CreateDialogs.qml",
         "FolderManagerDialog.qml",
         "FolderPane.qml",
         "LightboxFeed.qml",
         "MainToolbar.qml",
-        "OptionsDialog.qml",
         "OptionsTabGeneral.qml",
         "PhotoViewer.qml",
         "PicasaImportDialog.qml",
@@ -87,7 +85,7 @@ HARDVERFUGGO_KOMPONENSEK: frozenset[str] = frozenset(
 
 
 def _hibas_komponensek(qt_app) -> dict[str, list[str]]:
-    """Fájlnév → a `ReferenceError`-ok, vezérlő NÉLKÜLI felépítéskor."""
+    """A hiba forrásfájlja → ReferenceError-ok vezérlő nélküli felépítéskor."""
     uzenetek: list[str] = []
     korabbi = qInstallMessageHandler(
         lambda tipus, kontextus, uzenet: uzenetek.append(uzenet)
@@ -102,15 +100,21 @@ def _hibas_komponensek(qt_app) -> dict[str, list[str]]:
             motor.addImportPath(str(_QML))
             komponens = QQmlComponent(motor, QUrl.fromLocalFile(str(fajl)))
             elem = komponens.create()
-            hibak = sorted(
-                {
-                    re.sub(r".*ReferenceError: ", "", uzenet)
-                    for uzenet in uzenetek
-                    if "ReferenceError" in uzenet
-                }
-            )
-            if hibak:
-                talalat[fajl.name] = hibak
+            for uzenet in uzenetek:
+                if "ReferenceError" not in uzenet:
+                    continue
+                # A QML a tényleges hibaforrást írja ki. Ezzel egy új
+                # burkoló nem kapja meg egy már ismert gyermek hibáját.
+                forras = re.search(
+                    r"([^/\\]+\.qml):\d+: ReferenceError: (.*)", uzenet
+                )
+                hibazo_fajl = forras.group(1) if forras else fajl.name
+                hiba = forras.group(2) if forras else re.sub(
+                    r".*ReferenceError: ", "", uzenet
+                )
+                hibak = talalat.setdefault(hibazo_fajl, [])
+                if hiba not in hibak:
+                    hibak.append(hiba)
             if elem is not None:
                 elem.deleteLater()
             motor.deleteLater()

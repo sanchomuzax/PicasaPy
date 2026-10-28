@@ -7,6 +7,41 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.273] - 2026-10-28
+
+- A kollázs mentését kezelő modul kisebb részekre bomlott; a mentés, a piszkozat és a projektmegnyitás viselkedése változatlan (#6113).
+- A fénytábla fejlécének felépítése önálló QML-komponensekre bomlott, a felület változatlan maradt (#6104).
+- A weboldal-exportálás párbeszédablakának belső részei önálló QML-komponensekbe kerültek, a megjelenés és működés változatlan (#6105).
+- Az eredeti fájlok megőrzését kezelő modul kisebb részekre bomlott, a működés változatlan. (#6110).
+- A szerkesztési előnézet belső képszolgáltatója kisebb modulokra bomlott, a megjelenő kép változatlan maradt (#6114).
+- A memóriakorlátos helyi tesztek és szkriptek mostantól a `picasapy-hatter.slice` szeletben futnak (#6117).
+- Javítottuk a Létrehozás párbeszédek render-tesztjének képmemória-kezelését és a képkocka betöltésére várását (#6121).
+
+## [0.9.272] - 2026-10-28
+
+- A Létrehozás menü párbeszédablakai belső QML-komponensekre bomlottak, a felület változatlan maradt (#6051).
+- A Nyomtatás párbeszédablak belső QML-felépítése karbantarthatóbb lett; megjelenése és működése változatlan (#6073).
+- Az Importálás párbeszédablak különálló QML-komponensekre bontása változatlan felülettel (#6083).
+- Megbízhatóbb lett a képtálca és a mappapanel képponttesztje (#6085).
+- A fotónéző képterületének belső QML-szerkezete önálló komponensekre bomlott, a látható működés változatlan (#6090).
+- A diavetítés belső részei önálló komponensekbe kerültek, a megjelenés és működés változatlan maradt. (#6102).
+
+## [0.9.271] - 2026-10-28
+
+- A képernyőkép-mérő ugyanazon a kódon minden rögzítésnél ugyanazt a képet adja (a késve frissülő szerkesztő-előnézetet is kivárja). (#6044).
+- A képtálca belső QML-szerkezete önálló komponensekre bomlott (#6050).
+- A nyomtatási vezérlő belső szerkezete a későbbi karbantartás érdekében áttekinthetőbb lett (#6057).
+- Induláskor és az Opciók elfogadásakor elmenti a tényleges beállításokat, megőrizve a korábbi értékeket (#6067).
+- A térkép betöltésjelzője saját rajzú ikon lett, a kiegyenesítő rács pedig a saját rajzoló szkriptünkből készül; a README kimondja, hogy a PicasaPy független a Google-től (#6068).
+- A diavetítés belső szerkezete külön QML-komponensekre bomlott, változatlan megjelenéssel és működéssel (#6074).
+- A képrács felépítése különálló QML-komponensekre bomlott, a felület változatlan maradt (#6076).
+- A képernyőkép-mérő a nézőkép háttérben számolt végleges kockáját is megvárja, így a lassabb gépen sem tér el két rögzítés (#6078).
+- A képernyőkép-mérő megvárja a nagyítás értékének stabilizálódását a rögzítés előtt (#6081).
+- A mappafigyelő leállítása megvárja a már futó esemény-visszahívásokat, mielőtt elengedné a vezérlőt (#6087).
+- A QML-betöltési idő mérőszkriptje rögzített nyelvvel indítja a programot, így a főablak betöltését méri, nem a nyelvfelajánló ablakét (#6095).
+- Nem angol rendszeren az első indításkor újra megjelenik a rendszer nyelvét felajánló ablak; eddig csendben elmaradt (#6097).
+- Belső: a mappafigyelő tesztje modulszintű időzítő-fogantyút cserél a globális threading.Timer helyett (#6099).
+
 ## [0.9.270] - 2026-10-27
 
 - A képpontos képernyőkép-tesztek Windowson indokkal kimaradnak, mert a referencia Linuxon készül (#6058).

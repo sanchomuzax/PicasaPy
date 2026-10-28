@@ -86,6 +86,11 @@ def _lathato_dialogusok(ablak):
             for resz in ("loader", "buttonbox", "deferreddialog", "dialogs")
         ):
             continue
+        # #6051: egy komponens gyökér-Itemje (pl. `CollageCreateDialog`) a
+        # nevében hordja a „dialog" szót, de nem párbeszédablak, és mindig
+        # látható; csak a Popup/Dialog és az ablakos párbeszéd számít.
+        if isinstance(elem, QQuickItem):
+            continue
         if elem.property("opened") is True or elem.property("visible") is True:
             talalatok.append(elem)
     return talalatok

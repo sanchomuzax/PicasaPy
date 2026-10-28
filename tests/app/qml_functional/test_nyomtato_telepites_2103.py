@@ -25,9 +25,11 @@ from PySide6.QtCore import QMetaObject, QObject, Qt
 from tests.support.qml_blokk import blokk_horgonyra
 from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
-_QML = (
-    Path(app_csomag.__file__).parent / "qml" / "PicasaPy" / "PrintDialog.qml"
-).read_text(encoding="utf-8")
+_QML_DIR = Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
+_QML = "\n".join(
+    (_QML_DIR / nev).read_text(encoding="utf-8")
+    for nev in ("PrintDialog.qml", "PrintPrinterPanel.qml")
+)
 #: A forrás-őrökhöz: a QML a hosszú szövegeket tördelheti, a keresett minta
 #: viszont egy sor. A sortörés nem tartalmi különbség.
 _TS = (

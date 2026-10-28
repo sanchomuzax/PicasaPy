@@ -1,55 +1,54 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 
-// Indexkép-csoport fejléce — dizajnkézikönyv 08 + #423 (a Picasa saját
+// Indexkép-csoport fejléce - dizajnkézikönyv 08 + #423 (a Picasa saját
 // `headerpanel.tre` respack-forrása szerinti tipográfia és elrendezés):
 //   - cím: Georgia 20pt, a fejléc bal szélétől 50px behúzva (a mappa-ikon
-//     UTÁN), jobbról a fejléc szélétől 20px-re levágva — hosszú névnél
+//     UTÁN), jobbról a fejléc szélétől 20px-re levágva - hosszú névnél
 //     halványuló kifutással, NEM "…"-tal;
 //   - dátumsor: Georgia 14pt, ugyanaz a 50px-es bal behúzás;
 //   - jobb-felső sarok: „Szinkronizálás az internettel" felirat + kapcsoló
-//     (letiltott, funkció nélkül — csak az elrendezés része).
+//     (letiltott, funkció nélkül - csak az elrendezés része).
 ColumnLayout {
     id: header
     property string folderName: ""
     property string dateText: ""
     property string description: ""
     signal descriptionEdited(string text)
-    // zöld ▸: a mappa diavetítése (#8) — a bekötés a Main.qml-ben
+    // zöld ▸: a mappa diavetítése (#8) - a bekötés a Main.qml-ben
     signal playRequested()
-    // #422: a mappa-kontextusmenü HARMADIK megnyitási pontja — a felmérés
+    // #422: a mappa-kontextusmenü HARMADIK megnyitási pontja - a felmérés
     // szerint a fejlécre jobbklikkelve UGYANAZ a 15 tételes menü jön elő,
     // mint a rács üres területén és a bal panel mappa-során
     signal contextMenuRequested()
 
     //: #1823: a fejléc-gombok DARABSZÁMOT írnak ki. A bináris erőforrásai
-    //: minden fejléc-gombot két alakban tartanak — `albumbutton_save` és
-    //: `albumbutton_save%d` —, vagyis üres kijelölésnél a szám nélküli,
+    //: minden fejléc-gombot két alakban tartanak - `albumbutton_save` és
+    //: `albumbutton_save%d` -, vagyis üres kijelölésnél a szám nélküli,
     //: kijelölésnél a számos felirat megy ki.
     //:
     //: ⚠️ A `play` gombra ez NEM igaz: a mért listában (`save`, `sstar`,
     //: `sall`, `album`, `cd`, `menu`, `pubaction`) nincs `play%d`. A
-    //: diavetítés ezért ikon marad, szám nélkül — a jegy „a play is"
+    //: diavetítés ezért ikon marad, szám nélkül - a jegy „a play is"
     //: mondata a mérésnek mond ellent.
     property int selectedCount: 0
     // #5883: csak akkor menthetők a kijelöltek, ha valamelyik képen van
     // mentetlen szerkesztési lánc.
     property bool hasPendingEdits: false
 
-    //: „Szerkesztések mentése lemezre" (`save_edits`) — a kijelölt képek
+    //: „Szerkesztések mentése lemezre" (`save_edits`) - a kijelölt képek
     //: szerkesztéseit a FÁJLBA írja. A művelet maga a #444 mentés-
     //: párbeszédéé; ez a gomb csak egy újabb belépési pont hozzá.
     signal saveEditsRequested()
 
-    //: „Csillagozottak kijelölése" (`select_star`) — ugyanaz a parancs,
+    //: „Csillagozottak kijelölése" (`select_star`) - ugyanaz a parancs,
     //: mint a menüsávban; itt is a jelenlegi mappára hat (#1145).
     signal selectStarredRequested()
     //: #1006: kollázs a fejléc csoportjából. Az eredetiben NÉGY belépési
     //: pont van; nálunk kettő működött (Létrehozás menü, kimeneti sáv), a
     //: két fejléc-gomb hiányzott.
     signal collageRequested()
-    //: #4539: a mappa-fejléc film-gombja — ugyanaz a csoport-kép halmaz,
+    //: #4539: a mappa-fejléc film-gombja - ugyanaz a csoport-kép halmaz,
     //: mint a kollázsnál (a fejléc SAJÁT csoportjának képei).
     signal movieRequested()
     //: A két `faceheaderpanel` filmgomb ugyanazt a meglévő Filmkészítőt
@@ -68,34 +67,34 @@ ColumnLayout {
     property string personAvatarUrl: ""
     property bool personAlbumRemoveEnabled: false
     property bool personAlbumThumbnailEnabled: false
-    //: hány MÉG EL NEM DÖNTÖTT javaslat tartozik ehhez a személyhez —
+    //: hány MÉG EL NEM DÖNTÖTT javaslat tartozik ehhez a személyhez -
     //: a gazda tölti a vezérlő `personSuggestionCount`-jából
     property int suggestionCount: 0
-    //: a rács KIJELÖLÉSÉN ülő, e személyre szóló függő javaslatok száma —
+    //: a rács KIJELÖLÉSÉN ülő, e személyre szóló függő javaslatok száma -
     //: a gazda tölti. Ha nem nulla, a két gomb a kijelöltekre hat
     //: (`confirmsel`, `removesel`), különben az összesre (`confirmsug`).
     property int selectedSuggestionCount: 0
     readonly property bool kijeloltJavaslatHatokor:
         header.selectedSuggestionCount > 0
-    //: `confirmsug` / `confirmsel` — a javaslatok jóváhagyása; a hatókört
+    //: `confirmsug` / `confirmsel` - a javaslatok jóváhagyása; a hatókört
     //: a gazda a kijelölésből dönti el
     signal confirmSuggestionsRequested()
-    //: `selectsug` — a jelenlegi személy függő javaslatait tartalmazó képek
+    //: `selectsug` - a jelenlegi személy függő javaslatait tartalmazó képek
     //: kijelölése a rácsban
     signal selectSuggestionsRequested()
-    //: `removesel` — a javaslatok elvetése (a kijelöltek, vagy ha nincs
+    //: `removesel` - a javaslatok elvetése (a kijelöltek, vagy ha nincs
     //: kijelölt javaslat, mind)
     signal removeSuggestionsRequested()
-    //: `moresug` — a felismerési lépcső lazítása, hogy több javaslat jöjjön
+    //: `moresug` - a felismerési lépcső lazítása, hogy több javaslat jöjjön
     signal moreSuggestionsRequested()
     signal setPersonThumbnailRequested()
-    //: `sug_filter` — a javaslat-szűrő állása (a gazda vezérlőjéből)
+    //: `sug_filter` - a javaslat-szűrő állása (a gazda vezérlőjéből)
     property bool suggestionsOnly: false
-    //: `sug_filter` — a szűrő átkapcsolása; az új állapotot adja át
+    //: `sug_filter` - a szűrő átkapcsolása; az új állapotot adja át
     signal suggestionsOnlyToggled(bool csak)
 
     //: #2187: az arc ↔ teljes kép nagyításváltó (`face_zoom` ↔
-    //: `picture_zoom`) állása — a gazda vezérlőjéből
+    //: `picture_zoom`) állása - a gazda vezérlőjéből
     property bool faceZoom: false
     //: a váltó átkapcsolása; az új állapotot adja át (igaz = arc)
     signal faceZoomToggled(bool arc)
@@ -105,7 +104,7 @@ ColumnLayout {
     readonly property bool javaslatokLatszanak:
         header.personName !== "" && header.suggestionCount > 0
 
-    //: #2187: a javaslat-szűrő akkor van kint, ha van mit szűrni —
+    //: #2187: a javaslat-szűrő akkor van kint, ha van mit szűrni -
     //: VAGY ha már be van kapcsolva. A második fél nem díszítés: ha az
     //: utolsó javaslatot jóváhagyjuk, a darabszám nullára esik, és a
     //: gomb eltűnése bent hagyná a rácsot az üres, szűrt nézetben,
@@ -115,8 +114,8 @@ ColumnLayout {
         && (header.suggestionCount > 0 || header.suggestionsOnly)
 
     //: #2187: a `moresug` a jóváhagyás-pár TELJES helyét foglalja el
-    //: (mérve: `confirmsug` (348,55)–(436,82), `removesel` (439,55)–(527,82),
-    //: `moresug` (348,55)–(527,82)) — tehát akkor látszik, amikor nincs mit
+    //: (mérve: `confirmsug` (348,55)-(436,82), `removesel` (439,55)-(527,82),
+    //: `moresug` (348,55)-(527,82)) - tehát akkor látszik, amikor nincs mit
     //: jóváhagyni. A két állapot kizárja egymást.
     readonly property bool tovabbiJavaslatLatszik:
         header.personName !== "" && header.suggestionCount === 0
@@ -136,200 +135,8 @@ ColumnLayout {
     }
     spacing: 3
 
-    // -- címsor: mappa-ikon + cím (50px behúzás) + jobb-felső szinkron-kapcsoló --
-    Item {
-        id: titleRow
-        Layout.fillWidth: true
-        implicitHeight: header.personAlbumHeaderMode
-            ? 86 : (header.personAlbumFolderMode
-                ? 22 : Math.max(titleClip.height, syncRow.implicitHeight) + 4)
-
-        FolderIcon {
-            id: folderIcon
-            visible: !header.personAlbumHeaderMode
-            size: header.personAlbumFolderMode ? 30 : 20
-            anchors.left: parent.left
-            anchors.leftMargin: header.personAlbumFolderMode ? 12 : 8
-            anchors.verticalCenter: titleClip.verticalCenter
-        }
-
-        // a cím levágó/halványító konténere: bal szél 50px, jobb szél a
-        // fejléc szélétől 20px-re (a szinkron-sor előtt) — a `#423`
-        // respack-kényszer (`album_title`, `album_title_clip`) tükre
-        Item {
-            id: titleClip
-            objectName: "folderTitleClip"
-            visible: !header.personAlbumHeaderMode
-            x: 50
-            y: 2
-            width: Math.max(
-                0, titleRow.width - 50 - 20 - syncRow.implicitWidth - 8
-                   - (nagyitasSor.visible ? nagyitasSor.width + 8 : 0))
-            height: titleText.implicitHeight
-            clip: true
-
-            Text {
-                id: titleText
-                objectName: "folderTitleText"
-                text: header.folderName
-                color: Theme.folderTitle
-                font.family: "Georgia"
-                font.pointSize: header.personAlbumFolderMode ? 14 : 20
-                font.weight: Font.DemiBold
-            }
-
-            // halványuló kifutás hosszú mappanévnél — NEM "…" (a Picasa
-            // eredeti `title_fade0/1` rétegeinek tükre)
-            Rectangle {
-                objectName: "folderTitleFade"
-                visible: titleText.implicitWidth > titleClip.width
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                width: 24
-                gradient: Gradient {
-                    orientation: Gradient.Horizontal
-                    GradientStop {
-                        position: 0.0
-                        color: Qt.rgba(
-                            Theme.lightboxBg.r, Theme.lightboxBg.g,
-                            Theme.lightboxBg.b, 0.0)
-                    }
-                    GradientStop { position: 1.0; color: Theme.lightboxBg }
-                }
-            }
-        }
-
-        Image {
-            objectName: "personAlbumAvatar"
-            readonly property bool imageReady: status === Image.Ready
-            visible: header.personAlbumHeaderMode
-            source: header.personAvatarUrl
-            x: 12; y: 8
-            width: 59; height: 71
-            sourceSize.width: 59; sourceSize.height: 71
-            fillMode: Image.PreserveAspectFit
-            asynchronous: Qt.platform.pluginName !== "offscreen"
-        }
-
-        Text {
-            objectName: "personAlbumName"
-            visible: header.personAlbumHeaderMode
-            x: 80; y: 8
-            text: header.personName
-            color: Theme.folderTitle
-            font.pixelSize: 18
-            elide: Text.ElideRight
-            width: Math.max(0, titleRow.width - x - 110)
-        }
-
-        //: #2187: az arc ↔ teljes kép nagyításváltó — MÉRT `zoom_container`
-        //: (457,4)–(527,25): két 35 × 21-es gomb hézag nélkül, a fejléc
-        //: JOBB FELSŐ sarkában. Nálunk ott a szinkron-sor ül, ezért elé
-        //: kerül. Váltópár, nem kapcsoló: a már érvényes állapot gombja
-        //: nem kér semmit.
-        Row {
-            id: nagyitasSor
-            objectName: "headerZoomContainer"
-            visible: header.personName !== ""
-            anchors.right: header.personAlbumHeaderMode
-                ? parent.right : syncRow.left
-            anchors.rightMargin: header.personAlbumHeaderMode ? 13 : 8
-            y: header.personAlbumHeaderMode
-                ? 6 : Math.max(0, (syncRow.height - height) / 2)
-            spacing: 0
-
-            PicasaButton {
-                id: arcNagyitasGomb
-                objectName: "headerFaceZoomButton"
-                visible: nagyitasSor.visible
-                width: 35; height: 21
-                checkable: true
-                checked: header.faceZoom
-                //: MÉRT súgó (`faceheaderpaneltext.tre:68`): „View zoomed in
-                //: to the face" — magyarul „Megjelenítés az arcra közelítve"
-                ToolTip.text: qsTr("View zoomed in to the face")
-                ToolTip.visible: hovered
-                ToolTip.delay: Theme.tooltipDelay
-                //: a kötést a kattintás UTÁN vissza kell állítani (#1468)
-                onClicked: {
-                    if (!header.faceZoom)
-                        header.faceZoomToggled(true)
-                    checked = Qt.binding(function () { return header.faceZoom })
-                }
-                contentItem: Item {
-                    Image {
-                        source: "icons/faces-badge.svg"
-                        width: 14; height: 14
-                        sourceSize.width: 14; sourceSize.height: 14
-                        fillMode: Image.PreserveAspectFit
-                        anchors.centerIn: parent
-                    }
-                }
-            }
-            PicasaButton {
-                id: kepNagyitasGomb
-                objectName: "headerPictureZoomButton"
-                visible: nagyitasSor.visible
-                width: 35; height: 21
-                checkable: true
-                checked: !header.faceZoom
-                //: MÉRT súgó: „View zoomed out to the full picture" —
-                //: magyarul „Megjelenítés a teljes képre távolítva"
-                ToolTip.text: qsTr("View zoomed out to the full picture")
-                ToolTip.visible: hovered
-                ToolTip.delay: Theme.tooltipDelay
-                onClicked: {
-                    if (header.faceZoom)
-                        header.faceZoomToggled(false)
-                    checked = Qt.binding(function () { return !header.faceZoom })
-                }
-                contentItem: Item {
-                    Image {
-                        source: "icons/zoom-fit.svg"
-                        width: 14; height: 14
-                        sourceSize.width: 14; sourceSize.height: 14
-                        fillMode: Image.PreserveAspectFit
-                        anchors.centerIn: parent
-                    }
-                }
-            }
-        }
-
-        PicasaButton {
-            objectName: "headerRemovePersonButton"
-            visible: header.personAlbumHeaderMode
-            enabled: header.personAlbumRemoveEnabled
-            text: qsTr("Remove")
-            width: 88; height: 27
-            x: titleRow.width - width - 15
-            y: 58
-            onClicked: header.removePersonAlbumRequested()
-        }
-
-        // jobb-felső: „Szinkronizálás az internettel" + kapcsoló — csak
-        // elrendezés, letiltott (#423: funkció nélkül, funkció majd később)
-        Row {
-            id: syncRow
-            objectName: "folderSyncRow"
-            visible: !header.personAlbumHeaderMode
-            anchors.right: parent.right
-            anchors.top: parent.top
-            spacing: 4
-            Text {
-                objectName: "folderSyncLabel"
-                anchors.verticalCenter: parent.verticalCenter
-                text: qsTr("Sync to Web")
-                font.pixelSize: 10
-                color: Theme.textGray
-            }
-            Switch {
-                objectName: "folderSyncSwitch"
-                anchors.verticalCenter: parent.verticalCenter
-                enabled: false
-                checked: false
-            }
-        }
+    LightboxHeaderTitle {
+        header: header
     }
 
     Text {
@@ -342,552 +149,17 @@ ColumnLayout {
         Layout.leftMargin: 50
     }
 
-    Item {
-        id: gombSor
-        Layout.leftMargin: header.personAlbumHeaderMode ? 80
-            : (header.personAlbumFolderMode ? 12 : 28)
-        Layout.topMargin: header.personAlbumHeaderMode ? -31
-            : (header.personAlbumFolderMode ? -5 : 4)
-        Layout.fillWidth: true
-        //: a legmagasabb gomb (a kollázs 27) — a sor magassága ennyi
-        Layout.preferredHeight: 27
-        implicitHeight: 27
-
-        Rectangle {
-            id: playGomb
-            objectName: "headerPlayButton"
-            visible: header.gombLathato(objectName)
-            x: header.gombX(objectName)
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.verticalCenterOffset:
-                header.personAlbumHeaderMode ? -5 : 0
-            width: 26; height: 22; radius: 3
-            color: headerPlayHover.hovered ? "#f0f0ee" : "#ffffff"
-            border.color: Theme.chromeBorder
-            Text {
-                anchors.centerIn: parent
-                text: "▸"; color: Theme.picasaGreen; font.pixelSize: 13
-            }
-            HoverHandler { id: headerPlayHover }
-            ToolTip.text: qsTr("Play Fullscreen Slideshow")
-            ToolTip.visible: headerPlayHover.hovered
-            ToolTip.delay: Theme.tooltipDelay
-            //: #885: `headerpanel/play` — LENYOMÁSRA indul a diavetítés
-            //: (`Property mousedown 1`). A `TapHandler` a felengedést
-            //: jelzi, ezért a lenyomás-átmenetre kötjük; a `pressed`
-            //: visszaváltása nem sülhet el másodszor.
-            TapHandler {
-                onPressedChanged: if (pressed) header.playRequested()
-            }
-        }
-        // #1823: eddig ez egy néma díszcsempe volt — se neve, se
-        // kezelője. Most a mért `select_star` gomb: a jelenlegi mappa
-        // csillagozott képeit jelöli ki.
-        PicasaButton {
-            id: csillagGomb
-            objectName: "headerSelectStarredButton"
-            visible: header.gombLathato(objectName)
-            x: header.gombX(objectName)
-            anchors.verticalCenter: parent.verticalCenter
-            height: 22
-            //: #885: LENYOMÁSRA sül el — `headerpanel/select_star`
-            //: mért `mousedown`-ja. Kijelölést vált, nem művelet.
-            lenyomasra: true
-            text: header.feliratSzammal("☆")
-            Layout.preferredHeight: 22
-            ToolTip.text: qsTr("Select starred photos")
-            ToolTip.visible: hovered
-            ToolTip.delay: Theme.tooltipDelay
-            onClicked: header.selectStarredRequested()
-        }
-        // #1823: „szerkesztések mentése lemezre" (`save_edits`) — a
-        // fejlécről eddig teljesen hiányzott, pedig a művelet megvan
-        // (#444). Üres kijelölésnél tiltott: a mentés a KIJELÖLTEKRE hat.
-        PicasaButton {
-            id: mentesGomb
-            objectName: "headerSaveEditsButton"
-            visible: header.gombLathato(objectName)
-            x: header.gombX(objectName)
-            anchors.verticalCenter: parent.verticalCenter
-            height: 22
-            text: header.feliratSzammal(qsTr("Save"))
-            enabled: header.selectedCount > 0 && header.hasPendingEdits
-            Layout.preferredHeight: 22
-            ToolTip.text: qsTr("Save edited photos to disk")
-            ToolTip.visible: hovered
-            ToolTip.delay: Theme.tooltipDelay
-            onClicked: header.saveEditsRequested()
-        }
-        // #1006: `headerpanel/create_collage` — MÉRT 29 × 27
-        // (`picasa-create-features.md` 1.10.5).
-        //
-        // ⚠️ Az eredetiben KÉT panel van: a mappa-fejléc
-        // (`headerpanel`) és az ARC-fejléc (`faceheaderpanel`), mindkettőn
-        // ugyanez a gomb. A mi felületünkön a személy képei UGYANEBBEN a
-        // rácsban, ugyanezzel a fejléccel jelennek meg — nincs külön
-        // arc-fejléc. Ez az egy gomb tehát mindkét belépési pontot
-        // lefedi; külön arc-fejlécet építeni olyan felületet hozna létre,
-        // ami nálunk nem létezik.
-        //
-        // #2187: ez a döntés maradt — az arc-fejléc SAJÁT vezérlői (a
-        // javaslat-munkafolyamat) ezért ugyanebbe a fejlécbe kerültek, a
-        // `personName` módjába, nem külön panelbe.
-        PicasaButton {
-            id: kollazsGomb
-            objectName: "headerCollageButton"
-            visible: header.gombLathato(objectName)
-            x: header.gombX(objectName)
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.verticalCenterOffset:
-                header.personAlbumHeaderMode ? -5 : 0
-            //: #885: LENYOMÁSRA sül el — `headerpanel/create_collage`
-            //: mért `mousedown`-ja. ⚠️ Nem mond ellent a jegy
-            //: táblázatának: ez a gomb a kollázs-PANELT NYITJA MEG
-            //: (nézetváltás), a „Kollázs létrehozása" művelet-gomb
-            //: a panelen belül marad felengedésre.
-            lenyomasra: true
-            width: 29; height: 27
-            ToolTip.text: qsTr("Create Photo Collage")
-            ToolTip.visible: hovered
-            ToolTip.delay: Theme.tooltipDelay
-            onClicked: header.collageRequested()
-            contentItem: Item {
-                Image {
-                    objectName: "headerCollageIcon"
-                    source: "icons/collage.svg"
-                    width: 16; height: 16
-                    sourceSize.width: 16; sourceSize.height: 16
-                    fillMode: Image.PreserveAspectFit
-                    anchors.centerIn: parent
-                }
-            }
-        }
-        //: #4539: a mappa-fejléc film-gombja. Az eredeti referencia-
-        //: képernyőképén (`2026-07-17 20 54 38.png`) a kollázs UTÁN, alapból
-        //: látszik: ▸ · [+kép] · [+film] · ☆ · mentés · Feltöltés ▾. A
-        //: `headerpanel/create_movie` mért tulajdonsága `mousedown 1` —
-        //: ugyanúgy LENYOMÁSRA sül el, mint a kollázs.
-        //:
-        //: Nem testreszabható elem (mint a Feltöltés): a sor UTÁN áll, és a
-        //: `gombSorVege`-hez igazodik. Így egy régi, mentett gombsor nem
-        //: rejti el, és a sorrend (kollázs → film) megmarad, ha a kollázs
-        //: látszik. Mappa-nézetben él; a személy-album a saját film-gombjait
-        //: használja (#4212).
-        PicasaButton {
-            id: mappaFilmGomb
-            objectName: "headerMovieButton"
-            visible: header.personName === ""
-            x: header.gombSorVege
-            anchors.verticalCenter: parent.verticalCenter
-            lenyomasra: true
-            width: 29; height: 27
-            ToolTip.text: qsTr("Create Movie Presentation")
-            ToolTip.visible: hovered
-            ToolTip.delay: Theme.tooltipDelay
-            onClicked: header.movieRequested()
-            contentItem: Item {
-                Image {
-                    objectName: "headerMovieIcon"
-                    source: "icons/movie.svg"
-                    width: 16; height: 16
-                    sourceSize.width: 16; sourceSize.height: 16
-                    fillMode: Image.PreserveAspectFit
-                    anchors.centerIn: parent
-                }
-            }
-        }
-        //: #4212: a `faceheaderpanel/create_movie` gombja. A személy-album
-        //: külön fejlécpanelje nálunk a LightboxHeader személy-módja; a
-        //: két filmgomb a meglévő Filmkészítőt nyitja meg az album összes
-        //: képével, közös felbontás-beállítással.
-        PicasaButton {
-            id: szemelyFilmGomb
-            objectName: "faceHeaderMovieButton"
-            x: header.gombSorVege
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.verticalCenterOffset:
-                header.personAlbumHeaderMode ? -5 : 0
-            visible: header.personName !== ""
-            width: 29; height: 27
-            hoverEnabled: true
-            ToolTip.text: qsTr("Create Movie Presentation")
-            ToolTip.visible: hovered
-            ToolTip.delay: Theme.tooltipDelay
-            onClicked: header.personMovieRequested()
-            contentItem: Item {
-                Image {
-                    source: "icons/movie.svg"
-                    width: 16; height: 16
-                    sourceSize.width: 16; sourceSize.height: 16
-                    fillMode: Image.PreserveAspectFit
-                    anchors.centerIn: parent
-                }
-            }
-        }
-        //: #4212: `faceheaderpanel/create_face_movie` — ugyanaz a
-        //: személyalbum-képforrás és Filmkészítő, mint a szomszédos Movie
-        //: gombnál; külön filmfelbontást nem tárolunk.
-        PicasaButton {
-            id: szemelyArcfilmGomb
-            objectName: "faceHeaderFaceMovieButton"
-            x: szemelyFilmGomb.x + szemelyFilmGomb.width
-               + header.personHeaderExtraGap
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.verticalCenterOffset:
-                header.personAlbumHeaderMode ? -5 : 0
-            visible: header.personName !== ""
-            width: 29; height: 27
-            hoverEnabled: true
-            ToolTip.text: qsTr("Create Face Movie")
-            ToolTip.visible: hovered
-            ToolTip.delay: Theme.tooltipDelay
-            onClicked: header.personMovieRequested()
-            contentItem: Item {
-                Image {
-                    source: "icons/movie.svg"
-                    width: 16; height: 16
-                    sourceSize.width: 16; sourceSize.height: 16
-                    fillMode: Image.PreserveAspectFit
-                    anchors.centerIn: parent
-                }
-                Image {
-                    source: "icons/faces-badge.svg"
-                    width: 9; height: 9
-                    sourceSize.width: 9; sourceSize.height: 9
-                    fillMode: Image.PreserveAspectFit
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                }
-            }
-        }
-        PicasaButton {
-            id: szemelyAlbumkepGomb
-            objectName: "headerSetPersonThumbnailButton"
-            x: szemelyArcfilmGomb.x + szemelyArcfilmGomb.width
-               + header.personHeaderExtraGap
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.verticalCenterOffset:
-                header.personAlbumHeaderMode ? -5 : 0
-            visible: header.personAlbumHeaderMode
-            width: 29; height: 27
-            enabled: header.personAlbumThumbnailEnabled
-            ToolTip.text: qsTr("Set as People Album Thumbnail")
-            ToolTip.visible: hovered
-            ToolTip.delay: Theme.tooltipDelay
-            onClicked: header.setPersonThumbnailRequested()
-            contentItem: Item {
-                Image {
-                    source: "icons/person-silhouette.svg"
-                    width: 15; height: 15
-                    sourceSize.width: 15; sourceSize.height: 15
-                    fillMode: Image.PreserveAspectFit
-                    anchors.centerIn: parent
-                }
-            }
-        }
-        // #2187: a javaslat-munkafolyamat két vezérlője. MÉRT méret
-        // mindkettőn 88 × 27 (`respack.yt`); az eredetiben a
-        // `confirmsug` és a `confirmsel` UGYANAZON a téglalapon
-        // váltakozik — a mérés szerint ugyanaz a kezelő (`0x00602640`),
-        // egyetlen logikai argumentummal (`push 1` = mind, `push 0` = a
-        // kijelöltek).
-        //
-        // Nálunk a váltás feltétele: van-e a kijelölésen e személyre
-        // szóló függő javaslat (`kijeloltJavaslatHatokor`).
-        //: #1792: a nem testreszabható elemek a négy gomb UTÁN állnak —
-        //: a `gombSorVege` a testreszabott sor jobb széle.
-        //: #2187: `sug_filter` — MÉRT méret 29 × 27, és a mért helye a
-        //: jóváhagyás-pár BAL oldala ((316,55) vs. (348,55)). A hézag
-        //: nálunk a ház szokása (`gombKoz`), nem az eredeti 3 képpontja:
-        //: a fejléc minden gombja így áll egymás mellett (#1792).
-        PicasaButton {
-            id: javaslatKijeloloGomb
-            objectName: "headerSelectSuggestionsButton"
-            x: header.szemelyGombSorVege
-            anchors.verticalCenter: parent.verticalCenter
-            visible: header.javaslatokLatszanak
-            width: 29; height: 27
-            hoverEnabled: true
-            onClicked: header.selectSuggestionsRequested()
-            contentItem: Item {
-                Image {
-                    objectName: "headerSelectSuggestionsIcon"
-                    source: "icons/collage-check.svg"
-                    width: 16; height: 16
-                    sourceSize.width: 16; sourceSize.height: 16
-                    fillMode: Image.PreserveAspectFit
-                    anchors.centerIn: parent
-                }
-            }
-        }
-        PicasaButton {
-            id: javaslatSzuroGomb
-            objectName: "headerSuggestionFilterButton"
-            x: javaslatKijeloloGomb.visible
-                ? javaslatKijeloloGomb.x + javaslatKijeloloGomb.width
-                  + header.gombKoz
-                : header.szemelyGombSorVege
-            anchors.verticalCenter: parent.verticalCenter
-            visible: header.javaslatSzuroLatszik
-            width: 29; height: 27
-            checkable: true
-            checked: header.suggestionsOnly
-            //: MÉRT súgó (`faceheaderpaneltext.tre:35`): „Show only
-            //: suggestions (when toggled on)"
-            ToolTip.text: qsTr("Show only suggestions (when toggled on)")
-            ToolTip.visible: hovered
-            ToolTip.delay: Theme.tooltipDelay
-            //: a kötést a kattintás UTÁN vissza kell állítani, különben a
-            //: gomb a saját, belső állapotát mutatná a vezérlőé helyett
-            //: (#1468 rádió-csapda)
-            onClicked: {
-                header.suggestionsOnlyToggled(!header.suggestionsOnly)
-                checked = Qt.binding(function () {
-                    return header.suggestionsOnly
-                })
-            }
-            contentItem: Item {
-                Image {
-                    objectName: "headerSuggestionFilterIcon"
-                    source: "icons/face-suggestion-badge.svg"
-                    width: 16; height: 16
-                    sourceSize.width: 16; sourceSize.height: 16
-                    fillMode: Image.PreserveAspectFit
-                    anchors.centerIn: parent
-                }
-            }
-        }
-        PicasaButton {
-            id: jovahagyGomb
-            objectName: "headerConfirmSuggestionsButton"
-            x: javaslatSzuroGomb.visible
-                ? javaslatSzuroGomb.x + javaslatSzuroGomb.width + header.gombKoz
-                : header.szemelyGombSorVege
-            anchors.verticalCenter: parent.verticalCenter
-            visible: header.javaslatokLatszanak
-            //: MÉRT feliratok (`faceheaderpaneltext.tre:44`): „Confirm all"
-            //: — magyarul „Az összes jóváhagyása" —, a kijelölt hatókörben
-            //: „Confirm" („Jóváhagyás"). A darabszám a fejléc-gombok
-            //: szokása szerint zárójelben (#1823).
-            text: header.kijeloltJavaslatHatokor
-                ? qsTr("Confirm")
-                : qsTr("Confirm all") + " (" + header.suggestionCount + ")"
-            width: 88; height: 27
-            //: MÉRT súgók: „Confirm all suggestions" / „Confirm selected
-            //: suggestions"
-            property string sugoSzoveg: header.kijeloltJavaslatHatokor
-                ? qsTr("Confirm selected suggestions")
-                : qsTr("Confirm all suggestions")
-            ToolTip.text: sugoSzoveg
-            ToolTip.visible: hovered
-            ToolTip.delay: Theme.tooltipDelay
-            onClicked: header.confirmSuggestionsRequested()
-        }
-        PicasaButton {
-            id: elvetGomb
-            objectName: "headerRemoveSuggestionsButton"
-            x: jovahagyGomb.visible
-                ? jovahagyGomb.x + jovahagyGomb.width + header.gombKoz
-                : header.szemelyGombSorVege
-            anchors.verticalCenter: parent.verticalCenter
-            visible: header.javaslatokLatszanak
-            //: MÉRT felirat (`faceheaderpaneltext.tre:50`): „Remove"
-            text: qsTr("Remove")
-            width: 88; height: 27
-            //: MÉRT súgó: „Remove selected suggestions". Kijelölt javaslat
-            //: nélkül a gomb nálunk az összesre hat, és a súgó is ezt
-            //: mondja — különben mást ígérne, mint amit a gomb tesz.
-            property string sugoSzoveg: header.kijeloltJavaslatHatokor
-                ? qsTr("Remove selected suggestions")
-                : qsTr("Remove all suggestions")
-            ToolTip.text: sugoSzoveg
-            ToolTip.visible: hovered
-            ToolTip.delay: Theme.tooltipDelay
-            onClicked: header.removeSuggestionsRequested()
-        }
-        //: #2187: „További javaslatok keresése" — a `moresug` mért helyén és
-        //: méretében (179 × 27, a jóváhagyás-pár teljes sávja). A művelet a
-        //: `FaceScanController.moreSuggestions()`: a javaslat-lépcsőt tízzel
-        //: lazítja, és a beállítást SZÁNDÉKOSAN nem írja vissza — az eredeti
-        //: `moresug` kezelője (`0x00602890`) sem írja.
-        PicasaButton {
-            id: tovabbiJavaslatGomb
-            objectName: "headerMoreSuggestionsButton"
-            x: javaslatSzuroGomb.visible
-                ? javaslatSzuroGomb.x + javaslatSzuroGomb.width + header.gombKoz
-                : header.szemelyGombSorVege
-            anchors.verticalCenter: parent.verticalCenter
-            visible: header.tovabbiJavaslatLatszik
-            //: MÉRT felirat (`faceheaderpaneltext.tre:53`): „Find more
-            //: suggestions" — magyarul „További javaslatok keresése".
-            text: qsTr("Find more suggestions")
-            width: 179; height: 27
-            //: MÉRT súgó ugyanonnan
-            ToolTip.text: qsTr("Lower the recognition threshold to get more suggestions")
-            ToolTip.visible: hovered
-            ToolTip.delay: Theme.tooltipDelay
-            onClicked: header.moreSuggestionsRequested()
-        }
-        PicasaButton {
-            id: feltoltesGomb
-            objectName: "headerUploadButton"
-            //: #2187: a feltöltés a javaslat-vezérlők UTÁN áll — akármelyik
-            //: állapot van érvényben (jóváhagyás-pár VAGY „További
-            //: javaslatok"); a kettő kizárja egymást.
-            x: elvetGomb.visible
-                ? elvetGomb.x + elvetGomb.width + header.gombKoz
-                : (jovahagyGomb.visible
-                    ? jovahagyGomb.x + jovahagyGomb.width + header.gombKoz
-                    : (tovabbiJavaslatGomb.visible
-                        ? tovabbiJavaslatGomb.x + tovabbiJavaslatGomb.width
-                          + header.gombKoz
-                        : header.szemelyGombSorVege))
-            anchors.verticalCenter: parent.verticalCenter
-            visible: !header.personAlbumHeaderMode
-            height: 22
-            text: header.feliratSzammal(qsTr("Upload")) + " ▾"
-            enabled: false
-            Layout.preferredHeight: 22
-        }
+    LightboxHeaderButtons {
+        header: header
     }
 
-    // szerkeszthető leírás-sor — Esc/elfogadás után Qt.binding()-gel újra
-    // be kell kötni, ahogy a PhotoViewer captionField-je is (a gépeléskor
-    // a Qt eltávolítja a deklaratív kötést a text property-ről). A
-    // placeholder-szöveg a mezőre fedve jelenik meg, amíg üres.
-    Item {
-        Layout.leftMargin: header.personAlbumFolderMode ? 24 : 28
-        Layout.topMargin: header.personAlbumFolderMode ? 22 : 6
-        Layout.fillWidth: true
-        visible: !header.personAlbumHeaderMode
-        implicitHeight: descriptionField.implicitHeight
-
-        TextInput {
-            id: descriptionField
-            objectName: "folderDescriptionField"
-            anchors.left: parent.left
-            anchors.right: parent.right
-            text: header.description
-            color: Theme.folderDate
-            font.pixelSize: Theme.fontSize + 1
-            selectByMouse: true
-
-            function rebind() {
-                text = Qt.binding(function () { return header.description })
-            }
-
-            onAccepted: {
-                header.descriptionEdited(text)
-                rebind()
-                focus = false
-            }
-            Keys.onEscapePressed: (event) => {
-                rebind()
-                focus = false
-                event.accepted = true
-            }
-        }
-        Text {
-            anchors.left: parent.left
-            text: qsTr("Add a description")
-            color: Theme.addDescription
-            font.pixelSize: Theme.fontSize + 1
-            font.italic: true
-            visible: descriptionField.text.length === 0 && !descriptionField.activeFocus
-        }
+    LightboxHeaderDescription {
+        header: header
     }
 
-    // #1792: a testreszabott gombsor segédei.
-    //
-    // ⚠️ SZÁNDÉKOSAN a gombok UTÁN állnak. A `headerCollageButton` fölötti
-    // indoklást egy őr olvassa (#1006), és az a horgony ELSŐ előfordulását
-    // keresi — ha a név itt, feljebb is szerepelne, az őr a fájl fejlécét
-    // vizsgálná, és némán mást mérne, mint amit állít.
-    //: #1792: a testreszabott gombsor — a `gombsav` híd tölti (az
-    //: eredetiben a `Preferences\Buttons\UserConfig` és `…\Exclude`
-    //: tárolta). Ha a híd nincs (önálló komponens-teszt), a teljes,
-    //: alapértelmezett készlet jön — a fejléc próbái így változatlanul
-    //: minden gombot megtalálnak.
-    readonly property var gombSorrend:
-        header.personAlbumHeaderMode
-            ? ["headerPlayButton", "headerCollageButton"]
-            : ((typeof gombsav !== "undefined" && gombsav && gombsav.sorrend)
-            ? gombsav.sorrend
-            : ["headerPlayButton", "headerSelectStarredButton",
-               "headerSaveEditsButton", "headerCollageButton"])
-
-    //: Látszik-e ez a gomb? A készleten KÍVÜLI gomb (feltöltés,
-    //: javaslat-vezérlők) nem testreszabható, az mindig a saját
-    //: feltételét követi.
-    function gombLathato(nev) {
-        return header.gombSorrend.indexOf(nev) >= 0
-    }
-
-    //: #1792: a gomb HELYE a sorban — ebből lesz a megjelenítési
-    //: sorrend. ⚠️ `RowLayout`-tal ez nem megoldható: az a gyerekeit a
-    //: DEKLARÁCIÓ sorrendjében rakja ki. `Repeater`-rel sem: annak a
-    //: delegáltjait a `findChild` nem találja meg, és a fejléc gombjaira
-    //: épülő próbák pont azon a néven szólítják meg őket. Ezért marad a
-    //: négy gomb a helyén, és a VÍZSZINTES pozíciót számoljuk.
-    function gombX(nev, sajatSzelesseg) {
-        if (header.personAlbumHeaderMode) {
-            if (nev === "headerPlayButton") return 0
-            if (nev === "headerCollageButton") return 36
-            return 0
-        }
-        var helye = header.gombSorrend.indexOf(nev)
-        if (helye < 0)
-            return 0
-        var x = 0
-        for (var i = 0; i < helye; ++i)
-            x += header.gombSzelessege(header.gombSorrend[i]) + header.gombKoz
-        return x
-    }
-
-    //: a gombok közti hézag — a korábbi `RowLayout` `spacing`-je
+    //: a gombok közti hézag - a korábbi `RowLayout` `spacing`-je
     readonly property int gombKoz: 6
     readonly property int personHeaderExtraGap:
         header.personAlbumHeaderMode ? 2 : header.gombKoz
-
-    //: a testreszabott gombsor jobb széle (a további elemek innen
-    //: folytatódnak)
-    readonly property real gombSorVege: {
-        if (header.personAlbumHeaderMode)
-            return 70
-        var x = 0
-        for (var i = 0; i < header.gombSorrend.length; ++i)
-            x += header.gombSzelessege(header.gombSorrend[i]) + header.gombKoz
-        return x
-    }
-
-    //: A személy-album saját filmgombjai után folytatódik a javaslat-sor.
-    //: Mappa nézetben a testreszabott sor és a mappa film-gombja (#4539)
-    //: után folytatódik a Feltöltés.
-    readonly property real szemelyGombSorVege: header.personName !== ""
-        ? (header.personAlbumHeaderMode
-            ? szemelyAlbumkepGomb.x + szemelyAlbumkepGomb.width
-              + header.personHeaderExtraGap
-            : szemelyArcfilmGomb.x + szemelyArcfilmGomb.width
-              + header.gombKoz)
-        : mappaFilmGomb.x + mappaFilmGomb.width + header.gombKoz
-
-    //: A gomb szélessége a sorrend-számításhoz. A `play` és a kollázs
-    //: MÉRT, fix méretű; a másik kettő felirat-függő, azt az elemtől
-    //: kérdezzük.
-    function gombSzelessege(nev) {
-        var elem = header.gombElem(nev)
-        return elem ? elem.width : 0
-    }
-
-    //: azonosító → elem, a szélesség-lekérdezéshez
-    function gombElem(nev) {
-        switch (nev) {
-        case "headerPlayButton": return playGomb
-        case "headerSelectStarredButton": return csillagGomb
-        case "headerSaveEditsButton": return mentesGomb
-        case "headerCollageButton": return kollazsGomb
-        }
-        return null
-    }
 
 }

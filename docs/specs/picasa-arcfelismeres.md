@@ -6711,6 +6711,48 @@ Az alábbi címek a helyi, SHA-256 `da370693b59d89e7d48646d9617f5f595e371f8e1828
 
 **Módosított fájl:** `docs/specs/picasa-arcfelismeres.md` (54.3/d: a gyűjteményelem pointerének és visszautasítási ágának közvetlen címzett útja, a parserrel ellenőrzött `red.cfg`-határ, az archívum kibontás nélküli ellenőrzése és a 7-8. pont nyitott mérései).
 
+### 54.3/e 2026-10-28 - a `+0x1c` segédútja nem adja meg az effektív küszöböt
+
+**Hatókör.** A hashazonos helyi Red.dll `0x10103670` függvényét a Red-indexben megadott 302 bájtos tartományon belül Capstone-nal és `llvm-objdump`-bal olvastam. A teljes `.text`-et nem pásztáztam. A helyi `Picasa3.exe` PE-verziója `3.9.141.259` (SHA-256: `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`); a mellette levő `plugins/Red.dll` SHA-256-a `da370693b59d89e7d48646d9617f5f595e371f8e1828cb1aa9f12530a17c8233`, azonos a Red-index `meta.json` hashével. A Red-index átadási riportja ezt a DLL-t helyi Picasa 3.7 telepítésből származóként azonosítja. A Picasa3.exe verziója és a DLL együttállása nem bizonyítja, hogy ez a DLL töltődött be egy tiszta Picasa 3.9 futásban; a Red.dll PE-erőforrásában nincs `VS_FIXEDFILEINFO`.
+
+| Állítás | Bizonyíték | Bizonyítottság |
+|---|---|---|
+| A `0x10104290` a Red-index RTTI-jében a `vsi_FaceViewDetector` vtable egyik metódusa. A meglévő Ghidra-kimenet szerint a stream-kezelő függvény mindkét fő ágának végén meghívja a `0x10103670` segédet; ez a függvény a `+0x58` gyűjtemény elemeit járja be, és minden aktuális elem `+0x1c` floatját olvassa. | bináris (`0x10104290`, `0x10103670`; `2026-10-26-5185-red-weak.txt`; Red-index `rtti`, `functions`, `xrefs`) | megerősített a hashazonos DLL hívási és mező-hozzáférési útjára |
+| A `0x10103670` az aktuális elem `+0x1c` értékét a `0x101e99d8` címen tárolt nyolc bájttal hasonlítja össze. A bájtok `00 3d 91 60 e4 58 e1 c3`, IEEE-754 binary64-ként `-1.0e19`. A segéd összehasonlításának szemantikai neve ebből nem állapítható meg. | bináris (`0x101036d8`-`0x101036e9`, `0x101e99d8`; Capstone és `llvm-objdump`; nyers konstans dekódolása) | feltételes: a két visszafejtő eszköz egyezik a helyi DLL utasításairól, de a segéd magas szintű célja nincs megfejtve |
+| A `RELprec_442.rlt;CNVprec_442.emd;vrd_104.cfg` sztring (`0x101aad94`) `0x10001170`-ből a `0x10178d00` `_strncpy` függvénynek kerül átadásra másolásként (célpuffer, forrás-karakterlánc, hossz). Ez az út önmagában nem bizonyít fájlmegnyitást vagy `classifier arr` betöltést; a célpuffer későbbi felhasználása **NINCS MEG**. | bináris (`0x10001170`-`0x10001189`, `0x10178d00`; Red-index `string_xrefs`, `functions`, `xrefs`; Capstone és `llvm-objdump`) | megerősített a másolási hívásra; a későbbi felhasználás nyitott |
+| A `0x10103870` detektor-útja a kiszámított pontszámot közvetlenül az aktuális gyűjteményelem `+0x1c` floatjához hasonlítja (`0x10103c10`-`0x10103c1e`). A `-1.0e19` konstans a külön `0x10103670` segédben áll; nem ez a `0x10103870` összehasonlítás operandusa, és nem mondja meg a streamből betöltött mező értékét. | bináris (`0x10103870`; Ghidra `2026-10-23-sor-279-281-red.txt` és `2026-10-26-2026-10-26-ghidra-sor-282-304-red.txt`; célzott Capstone; `0x10103670`) | megerősített a helyi DLL két külön operandusútjára; az effektív runtime érték nyitott |
+| A J8 műveletenkénti `contacts.xml` / `.picasa.ini` / db3-diffhez az elérhető mérőarchívumban nincs eredeti profil. | mérés (`meroadat.tar`: 944 tag, 15 `.picasa.ini`; a taglistában nincs `contacts.xml`, `backup.xml`, db3 vagy eredeti Picasa-profil) | megerősített az archívum tartalmára, nem az eredeti Picasa viselkedésére |
+
+**Eredeti | Nálunk | Teendő.**
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| A hashazonos helyi Red.dll `runOnOneWindow` útja a gyűjteményelem(ek) `+0x1c` floatját használja küszöb-összevetéshez; a stream tényleges forrása, a betöltött floatértékek és a tiszta 3.9-es futásban betöltött DLL **NINCS MEG**. A külön segédben szereplő `-1.0e19` konstans nem azonos a detektor összehasonlító operandusával. | A PicasaPy forrásában a YuNet-detektor alapértelmezett `score_threshold` értéke `0.9` (`src/picasapy/faces/detector.py:42,181`); ez külön kódút, forrásolvasat, nem futásidejű mérés és nem helyettesíti a Red.dll mezőjét (54.3/c). | J7: tiszta Picasa 3.9 futásban rögzítsd a tényleges Red.dll hashét és a betöltött modellstreamet/floatértékeket, az indítási és kihagyási feltételekkel, bemeneti mérettel és címkézett képkészlet eredményével. J8: készíts kontrollált eredeti profilon fájl/hash/időbélyeg-diffet a felsorolt névadási, elfogadási/elutasítási, mellőzési, törlési, kilépési és újraindítási műveletekről. |
+
+**A két független út és bizonyítottság.** **A út:** a célzott Capstone-olvasat a Red-indexből vett függvényméreten belül követi a `0x10103670` gyűjteménybejárását, a `+0x1c` olvasást és a `0x101e99d8` hivatkozást; a nyers nyolc bájt IEEE-754 dekódolása adja a konstans pontos értékét. **B út:** a külön `llvm-objdump`-olvasat ugyanezt az utasítássorozatot adja, a Ghidra-kimenet pedig a `0x10104290` stream-kezelő hívási helyét, a Red-index RTTI-je pedig annak `vsi_FaceViewDetector` besorolását ellenőrzi. A két út egyezik a helyi DLL statikus mezőútján; egyik sem azonosít futásidejű fájlforrást vagy betöltött küszöböt. A helyi DLL kódjának állítása megerősített, a tiszta Picasa 3.9 runtime-ra való átvitele és a numerikus küszöb nyitott.
+
+**Cáfoló kísérlet.** Megpróbáltam a `0x101e99d8` `-1.0e19` konstansát az effektív arcfelismerési küszöbnek tekinteni. A `0x10103870` Ghidra- és utasításszintű olvasata a pontszámot az aktuális elem `+0x1c` mezőjéhez hasonlítja; a `-1.0e19` konstans egy külön, a `0x10104290` stream-kezelőből hívott `0x10103670` függvényben szerepel. Ez megcáfolja, hogy a konstans a `runOnOneWindow` közvetlen összehasonlító operandusa volna, de nem adja meg az elem betöltött értékét. A cáfolatot a két visszafejtő eszköz, a Ghidra-kimenet, az RTTI és az indexelt hívási kapcsolat egymástól külön ellenőrizte.
+
+**A modellnév-sztring cáfoló ellenőrzése.** Azt próbáltam megcáfolni, hogy a `0x101aad94`-ben levő `RELprec_442.rlt;CNVprec_442.emd;vrd_104.cfg` sztring közvetlenül azonosítja a betöltött osztályozó-adatfolyamot. A `0x10001170` utasításai a sztringcímet a `0x10178d00` `_strncpy` függvénynek adják át másolásra; a Red-index sztring-xrefje ugyanezt a függvényt és a hívót köti össze. Ez cáfolja, hogy ez a hívás maga volna a fájlbetöltő, de nem zárja ki, hogy a másolt sztring később útvonal- vagy konfigurációs bemenetként szolgál. A célpuffer későbbi olvasója **NINCS MEG**.
+
+**Nyitott.** A `+0x1c` mező tényleges értéke és az azt adó `esm_InStream` fájl-/modellforrása **NINCS MEG**. A meglévő `2026-10-26-5185-red-weak.txt` a `0x10104290` célfüggvény mező-loaderjeit mutatja, de az upstream virtuális hívót és a stream nyitását nem. A pontos következő dekompilálási kérdés:
+
+`Ghidra-kör kell: 0x101d5160 - a vsi_FaceViewDetector vftábla adat-slotjának (a 0x10104290 célfüggvény címe) kódhivatkozóit keresd meg, és azonosítsd a sloton át közvetetten hívó kódcím(ek)et, a hívott objektum példányát, valamint az átadott esm_InStream fájl-/modellforrását. A 0x101d5160 adatcím, nem dekompilálható függvény; a meglévő dump a célfüggvényt dekompilálja, de a virtuális dispatch kódhelyét nem, a 0x101aad94 sztring útja pedig csak strncpy-másolásig ismert. [blokkoló]`
+
+J8-hoz az eredeti, vezérelt Colab-profilt kell felvenni; a most ellenőrzött `meroadat.tar` nem tartalmaz hozzá profilt. Így a #5185 7-8. pontja továbbra is részleges.
+
+### 54.3/f 2026-10-28 - a mentési kapu és a Red.dll vftábla-slot helyi újraellenőrzése
+
+**7. pont - statikus mentési út.** A Picasa3-index `xrefs` táblája a `0x0041ba40 → 0x00586bd0` közvetlen hívást adja. A `0x0041ba40` mérete 904 bájt; a címre korlátozott Capstone- és külön `llvm-objdump`-olvasat egyezően mutatja, hogy a függvény előbb a `#tmp\` mentési útvonalat dolgozza fel, majd a `[ebx+0x2c5c]` nemnulla ágon a `#contacts\` útvonalat állítja elő, a mező értékét ECX-ben átadja és meghívja a `0x00586bd0`-t (`0x0041bb4f`-`0x0041bb81`). A hívott függvény a `[edi+0x13c]` írási jelzőt vizsgálja (`0x00586c31`), és csak annak beállított ágában hívja a `0x00580110` XML-írót (`0x00586c49`). A `0x00586bd0` e kapuja Capstone-, `llvm-objdump`- és a meglévő Ghidra-kimenetben (`2026-10-22-ghidra-sor-197-200.txt`) is egyezik.
+
+**Korlát.** Ez a lánc bizonyítja, hogy a `contacts.xml` XML-írás a `[ebx+0x2c5c]` mező nemnulla értékéhez és a `+0x13c` írási jelzőhöz kapuzott mentési út része. Nem mutatja meg, hogy a névadás, a Choose, az Ignore, a People Manager OK/Mégse vagy a programbezárás közül melyik állítja be a jelzőt és mikor indítja a mentést; ezt J8 műveletenkénti eredeti profil-diffje dönti el. A profil-archívum vizsgálata: `meroadat.tar`, 944 tag (926 fájl, 18 könyvtár), 15 `.picasa.ini`, 0 `contacts.xml`, 0 `backup.xml`, 0 `.db3`, 0 `picasa3.db`; ezért ez a mérés J8-at nem helyettesíti.
+
+**8. pont - a `0x101d5160` cím természete.** A Red-index `rtti` sora a `vsi_FaceViewDetector` vftábláját `0x101d5150`-re teszi; a `data_symbols` a `0x101d5160` címet e tábla slotjaként jelöli. A hashazonos helyi Red.dll nyers PE-bájtjai ezen a címen `90 42 10 10`, ami little-endian `0x10104290`; a meglévő Ghidra-kimenet ugyaninnen `0x101d5160 DATA` hivatkozást mutat. A Red-index `functions` táblájában `0x101d5160`-hoz nincs függvénybejegyzés. Ezért a cím csak keresési horgony a vftábla-slot kódhivatkozásaihoz; maga a slot nem dekompilálható függvény.
+
+**A két független út.** **A út:** a Picasa3-index `xrefs`-e és a függvényméretekhez korlátozott Capstone-olvasat követi a mentési hívásláncot; a Red-index `rtti`/`data_symbols` táblái és a nyers DLL-slot bájtjai külön azonosítják a Red vftáblát és a `0x10104290` célcímet. **B út:** a `llvm-objdump` azonos utasításmenetet ad a két Picasa-mentőfüggvény és a Red-összevetések esetén; a meglévő Ghidra-kimenet megerősíti a writer-hívást és a `0x101d5160 DATA` hivatkozást. Az utak a statikus cím-/hívásútban egyeznek. A mentési ág a vizsgált Picasa3.exe-re, a Red-mezőút a hashazonos helyi Red.dll-re megerősített; a DLL tiszta Picasa 3.9-es futására való átvitele feltételes. Egyik út sem szolgáltat műveletenkénti mentési időt vagy a betöltött Red-threshold runtime értékét.
+
+**Cáfoló kísérlet.** Azt próbáltam alátámasztani, hogy a `0x101d5160` a virtuális hívó függvény címe. Ezt megcáfolja a Red-index: függvénybejegyzés nincs, viszont `data_symbols` a címet vftábla-slotnak nevezi; a nyers bájt `0x10104290` célfüggvényre mutat, a Ghidra-kimenet pedig `DATA` xrefet jelöl. A cáfoló út ezért ugyanazzal a címmel és bájtpontossággal ellenőrizhető. A tényleges közvetett hívó(k) és a streamfájl **NINCS MEG**; a fenti, pontosított Ghidra-kérdés nyitva marad.
+
 ## 55. #5184, helyi Codex-kutatói kör: a helyi archívum nem dönt N1/N3/N7-ről (2026-10-26)
 
 **Hatókör:** a mérőadat-archívum célzott ellenőrzése és az eddigi bináris-/Colab-leletek összevetése. Az eredeti Picasát ebben a körben nem futtattam; a helyi Wine futtató hiányzik. Az archívumból nem bontottam ki fotókat.
@@ -6879,3 +6921,63 @@ A független újralevezetés helyesbítette a 0x004985e0 elvetését: ez a máso
 A jobb oldali Name mező mindig az épp kijelölt személy nevét mutatja. **A People Manager listája egyszeres kijelölésű: a Ctrl és a Shift nem bővíti a kijelölést.** (A Név nélküliek nézet csempéinek többes kijelölése ettől független, azt a job-180 igazolja.)
 
 **PicasaPy:** a `PeopleManagerDialog.qml` egyetlen kijelölt kulcsot tart (`selectedKey`), a lista `currentIndex`-szel jelöl; ez egyezik az eredetivel. **N7 lezárva, eltérés nincs.**
+
+## 59. #5184, 2026-10-28: N1 és N3 továbbra is futásidejű mérésre vár
+
+**Vizsgálati határ.** A helyi `meroadat.tar` fejléc-leltára 926 fájlt mutatott: 15 INI, 5 TXT, 4 CSV, 900 JPG, 1 PNG és 1 RAW. Csak a 24 INI/TXT/CSV dokumentumtagot bontottam ki a munkafa `.bt/5184-meroadat/` könyvtárába; a JPG-ket nem bontottam ki és nem néztem meg. A 15 INI-ben a `faces=`, `]facealbum:`, `ffffffffffffffff` és `[Contacts2]` jelölők előfordulása egyaránt 0. Az öt TXT-ben és négy CSV-ben nincs arc-/személy-/Red-/YuNet-címkézés. Két `felismeri` szövegtalálat a mérőképek szerkesztési beállításainak Picasa általi felismeréséről szól, nem arcfelismerésről. Ez az archívum címkézett kontroll hiányát igazolja, nem azt, hogy a képek arctalanok. NAS-t nem olvastam.
+
+### 59.1 N1: a munkasor-jelző nem dönti el a fotó névállapotát
+
+| Állítás | Forrás | Eredmény |
+|---|---|---|
+| A `0x0047b020` a munkatétel `+0x10` byte-ját teszteli; nem nulla értéknél a `0x0048bd80` után visszatér. | bináris (`0x0047b020`, célzott Capstone; indexelt hívó `0x004987c0`) | megerősített a munkafüggvény ágára |
+| A `0x0049de00` a forrás `+0x10` byte-ját az új sorfej `+0x14` mezőjébe másolja; a sorfej `+0x04`-től induló munkatétel-adatához képest ez `+0x10`. | bináris (`0x0049de00`, célzott Capstone; indexelt hívók `0x0047b9f0`, `0x0047baf0`) | megerősített a másolási útjára |
+| A `0x004985e0` a forrás `+0x08` dwordját a kimenet `+0x10` dwordjára másolja; ez átfed a worker által vizsgált byte-tal. Az indexelt közvetlen hívók `0x00425f60`, `0x0045a9d0`, `0x00484820`. | bináris (`0x004985e0`, célzott Capstone; `xrefs`) | megerősített az átfedésre; a queue-hoz vezető indirekt adatkapcsolat nincs meg |
+| A jelző jelenti-e, hogy egy névvel ellátott fotón további ismeretlen arc maradt. | NINCS MEG | a kétarcú eredeti fotó név előtti és utáni futásidejű felvétele kell |
+
+**2026-10-28-i producer-ellenőrzés.** A `0x0047b9f0` a rekord `+0x10` byte-jára 1-et ír (`0x0047ba82`), a `0x0047baf0` ugyanoda 0-t (`0x0047bb7a`); mindkettő a `0x0049de00` sorépítőbe jut. Az utóbbi a forrás `+0x10` byte-ját az új csomópont payloadjának `+0x10` mezőjébe másolja, a `0x004987c0` pedig ezt a payloadot adja át a `0x0047b020` workernek. A producer-másoló-fogyasztó út megerősíti a flag 0/1 vezérlő szerepét, de nem nevezi meg a flag fotó- vagy arcnév szerinti jelentését; N1 ettől nyitott marad.
+
+**N1 eredménye: nyitott.** A bináris ismert részútja a munkatétel flagjét és ágát mutatja, de a flag fotónévhez kötése nincs bizonyítva. A helyi archívum nem ad névvel/arcokkal rögzített kontrollt. A következő méréshez ugyanazt a legalább kétarcú képet kell az eredetiben felvenni egy arc elnevezése előtt és után, a Név nélküliek listájával és a `.picasa.ini` érintett szakaszával.
+
+### 59.2 N3: az effektív Red-küszöb, bemeneti méret és összehasonlítható arány nincs meg
+
+| Állítás | Forrás | Eredmény |
+|---|---|---|
+| A helyi `Picasa3.exe` PE-verziója `3.9.141.259`. | bináris (PE `VS_FIXEDFILEINFO`; SHA-256 `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`) | pontos helyi fájlazonosság |
+| A mellette lévő `Red.dll` SHA-256-a `da370693b59d89e7d48646d9617f5f595e371f8e1828cb1aa9f12530a17c8233`; nincs PE fájlverzió-erőforrása, a meglévő forrásjelentése Picasa 3.7-et nevez meg. | bináris (`Red.dll`, PE + SHA-256; §54.2-54.3/c) | megerősített erre a helyi fájlra; nem bizonyítja a tiszta 3.9-es runtime DLL-jét |
+| A `0x10103870` a `classifier arr =` gyűjtemény aktuális elemének `+0x1c` floatját az összegzett értékkel hasonlítja össze; a küszöb alatti ág kilép. A `0x10108018` a mezőt `threshold =` címkével tölti be, a `0x10107eb1` ugyanezt a mezőt írja ki. | bináris (`0x10103870`, `0x101043f2`-`0x10104406`, `0x10108018`, `0x10107eb1`; független llvm-objdump, összhangban a §54.3/d Ghidra/Capstone olvasatával) | a helyi DLL-ben az array-elem mezőjének küszöbszerepe megerősített; a runtime modell példánya és a konkrét floatérték NINCS MEG |
+| A helyi `red.cfg` SHA-256-a `916d69fd9a412ea937b49f3b0b1401076193dc9be096b3af71921aeba6f51835`; az ismert parser ebből nem állítja elő a keresett osztályozó-adatfolyam példányt. | bináris adatfájl (SHA-256; §54.3/c) | a helyi fájlazonosság megerősített; a tényleges Picasa 3.9 modellstream NINCS MEG |
+| A helyi `red.cfg`/`Red.dll` elemzőleltára 19 525 objektumot tartalmaz 550 osztályregiszterből, a golden ellenőrzések zöldek; nincs `0x0041a004` (`vsi_WeakClassifier`) vagy `0x0041a005` (`vsi_FaceViewDetector`) osztályrekord. | mérés (`esm_parse.py`; §54.3/c fájlazonosságai) | a helyi fájlpár leltára; nem állapít meg futásidejű modellt vagy küszöbértéket |
+| Az eredeti Red ténylegesen használt küszöbe, detektor-bemenetének WxH-ja és az azonos címkézett képkészleten mért felismerési aránya. | NINCS MEG | tiszta Picasa 3.9 futás, Red.dll-azonosság és képenként rögzített Picasa/PicasaPy eredmény kell |
+
+A Picasa EXE `FRRecommendIncludeLimit=0,50` értéke a javaslatba-vételhez tartozik, nem bizonyított Red-detektorküszöb (§54.2). A PicasaPy `960 px / 0,9 YuNet` beállítása külön detektorhoz tartozik (§56.2); egyikből sem következtetek az eredeti küszöbére vagy felismerési arányára.
+
+**N3 eredménye: nyitott.** A 2026-10-28-i helyi binárisazonosság- és célzott diszasszemblálás nem adja meg a runtime értéket vagy az arányt. A `0x006cde50` címre szűrt olvasata a képrekord méretmezőinek ellenőrzése után indirekt `[esi+0x44]` hívást ad át; Red-küszöböt vagy futásidejű eredményt ez a függvény nem szolgáltat.
+
+### 59.3 Független utak és cáfoló kísérlet
+
+**A út - célzott Capstone + index-xref.** A Picasa EXE producer-másoló-worker sora (`0x0047b9f0`/`0x0047baf0` → `0x0049de00` → `0x0047b020`) a munkatétel 0/1 flagjét igazolja; az SQLite pozitív xrefjei az út közvetlen hívásait egyeztetik. A helyi Red.dll Capstone-olvasata az osztályozóelem `+0x1c` összehasonlítását és a mező streamútját rögzíti.
+
+**B út - vak újralevezetés nyers indexből + llvm-objdump.** A külön elemzés a Picasa-előállítók 1/0 írását (`0x0047ba82`, `0x0047bb7a`), a `0x0049de00` bájtmásolását és a `0x00498930`/`0x00498933` worker-hívást újra visszakövette; egyezik az A úttal abban, hogy ez vezérlőjelző, magas szintű név nélkül. A Red.dll-ben külön visszakövette a `classifier arr =` beolvasást, a 12 bájtos elemeket és az aktuális elem `+0x1c` mezőjének `threshold =` olvasását/írását; az összegzett float e mező alatti értéke a vizsgált lokális DLL-ben kilépő ágat választ. Ez a küszöbmező szerepét erősíti meg, nem a konkrét értéket vagy a Picasa 3.9-ben betöltött modellt.
+
+**Külön mérőadat-ellenőrzés.** Az archívum összes nem képi dokumentumtagjának közvetlen ellenőrzése nem talált arc-/személy-/detektor-címkézést, `faces=` sort vagy `[Contacts2]` kontrollt. A mérőadat útja ezért nem dönt N1/N3-ról. Az A és B statikus út egyezik az adatstruktúrák szerepében, de a kérdezett fotónév szerinti N1-viselkedést, tényleges 3.9-es Red-modellstreamet és címkézett felismerési arányt egyik sem méri meg.
+
+**Cáfoló kísérlet.** Megpróbáltam megcáfolni, hogy a helyi mérőadat nem tartalmaz megfelelő kontrollt: a tar összes INI/TXT/CSV tagját kibontottam a `.bt` alá, majd célzottan kerestem az arc/személy jelölőket és címkézést. A 15 INI négy jelölője 0 találatot adott; a TXT-kben talált két `felismeri` előfordulás teljes mondatát ellenőriztem, mindkettő szerkesztési beállítások mappamegnyitáskor történő Picasa-felismeréséről szólt, nem arcfelismerésről. A cáfoló eredményt ugyanazzal a mércével ellenőriztem a tagkiterjesztés-leltáron és az egyedi dokumentumtartalmakon. A JPG-ket nem vizsgáltam, ezért nem állítom, hogy azok arctalanok; címkézett eredeti/PicasaPy-kimenet nélkül viszont N3-arány nem számolható.
+
+### 59.4 A #5184 „Kész, ha” pontjainak állapota
+
+| Pont | Állapot | Bizonyíték |
+|---|---|---|
+| N1 - további ismeretlen arc megtalálása névvel ellátott fotón | ⛔ Nyitott | §59.1; eredeti kétarcú fotó név előtti/utáni felvétele hiányzik |
+| N3 - eredeti felismerési arány és Red-küszöb a 960 px / 0,9 YuNet-beállításhoz képest | ⛔ Nyitott | §59.2; effektív Red-érték, bemeneti WxH és azonos címkézett mérés NINCS MEG |
+| N4 - alapból látszó keret és név | ✅ | mérés (job-187; §36.3) |
+| N5 - személyszintű mellőzés és hatása | ✅ | mérés (job-222..226; §37.10-37.11) |
+| N6 - személy törlésének útja és hatása az arcokra | ✅ | mérés (job-222/224; §37.10); PicasaPy-javítás #5391 |
+| N7 - People Manager/Név nélküliek kijelölési modellje | ✅ | People Manager egyszeres kijelölése (job-325; §58); Név nélküliek többes kijelölése (job-180; §53.3) |
+| N8 - People Manager referencia-kép | ✅ | mérés (job-186, 24. kép; §36.3) |
+
+**Következtetés és fejlesztési döntés.** N4-N8 mérési/bizonyítéki pontjai lezártak; N1 és N3 azért marad nyitva, mert a helyi bináris nem adja meg a futásidejű kimenetet, a helyi archívumban pedig nincs hozzá címkézett kontroll. PicasaPy-eltérés nincs bizonyítva, ezért most nincs indokolt fejlesztői lista és új kutatási jegy. N1-hez a kétarcú név előtti/utáni eredeti felvétel; N3-hoz tiszta Picasa 3.9 Red.dll-hash, az effektív streamelt küszöb és a detektor tényleges bemeneti mérete, valamint ugyanazon címkézett képkészlet képenkénti Picasa/PicasaPy eredménye szükséges.
+
+**Meglévő, pontosított statikus nyitott tétel:** `Ghidra-kör kell: 0x10107d70 - a FaceViewDetector classifier-array tényleges elemtípusát/ClassId-ját kövesse a betöltött modellstreamig, és döntse el, hogy a bejárt elemek a vsi_WeakClassifier rekordjai-e.` A vak, `llvm-objdump`-pal végzett újralevezetés már igazolja az array útját, az elem `+0x1c` threshold mezőjének olvasását/írását és a küszöb alatti kilépést; ezért a korábbi kérdés e részét nem kell újra kérnie. A korábbi Ghidra-tárban a `0x10107d70` kimenetét nem találtam; csak az itt pontosított, megválaszolatlan elemtípus-kérdés maradna. Ez a statikus kérdés nem blokkolja a runtime méréshez szükséges tiszta Picasa 3.9 futást és modellstreamet, és önmagában sem adja meg a futáskor használt értéket vagy a felismerési arányt.
+
+**Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (59. szakasz: N1/N3 helyi bizonyítékhatárai, független utak, cáfoló próba és pontonkénti állapot); `docs/specs/00-index.md` (#5184 nyitott pontjainak frissítése, N7 lezárásával).

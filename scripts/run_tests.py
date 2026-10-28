@@ -178,7 +178,8 @@ def _systemd_scope_elerheto() -> bool:
         else:
             try:
                 _SCOPE_ELERHETO = _run(
-                    ["systemd-run", "--user", "--scope", "-q", "--", "true"],
+                    ["systemd-run", "--user", "--scope",
+                     "--slice=picasapy-hatter.slice", "-q", "--", "true"],
                     capture_output=True, timeout=15,
                 ).returncode == 0
             except (OSError, subprocess.SubprocessError):
@@ -205,7 +206,8 @@ def _memoria_burok() -> list[str]:
     if _NINCS_MEMORIA_KORLAT or not _platform().startswith("linux"):
         return []
     if _systemd_scope_elerheto():
-        return ["systemd-run", "--user", "--scope", "-q",
+        return ["systemd-run", "--user", "--scope",
+                "--slice=picasapy-hatter.slice", "-q",
                 "-p", f"MemoryMax={_MEMORIA_PLAFON}",
                 "-p", "MemorySwapMax=0", "--"]
     if _resource is None:

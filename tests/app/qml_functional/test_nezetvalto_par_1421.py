@@ -28,6 +28,8 @@ _TOOLBAR = (
     / "src/picasapy/app/qml/PicasaPy/MainToolbar.qml"
 )
 _MAIN = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml/Main.qml"
+#: A főablak eszköztár-bekötése 2026-10-28 óta (#5955) a `MainWindowToolbar.qml`-ben van.
+_MAIN_TOOLBAR = _TOOLBAR.with_name("MainWindowToolbar.qml")
 
 
 def _blokk(nev: str) -> str:
@@ -69,7 +71,9 @@ class TestAKizarolagossag:
 
     def test_ugyanazt_a_vezerlot_hivja_mint_a_menu(self):
         """Egy állapot, két felület — a Nézet ▸ Mappanézet ugyanezt állítja."""
-        fo = _MAIN.read_text(encoding="utf-8")
+        fo = _MAIN.read_text(encoding="utf-8") + _MAIN_TOOLBAR.read_text(
+            encoding="utf-8"
+        )
         assert "folderHierarchyController.setTreeView(false)" in fo
         assert "folderHierarchyController.setTreeView(true)" in fo
 
