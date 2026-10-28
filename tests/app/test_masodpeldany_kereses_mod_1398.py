@@ -33,7 +33,7 @@ _IMPORT = (
 ).read_text(encoding="utf-8")
 _IMPORT_QML = (
     Path(picasapy.app.__file__).parent
-    / "qml" / "PicasaPy" / "ImportSourceDialog.qml"
+    / "qml" / "PicasaPy" / "ImportSourcePickerPanel.qml"
 ).read_text(encoding="utf-8")
 _TS = (
     Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"

@@ -35,11 +35,32 @@ from pathlib import Path
 
 import pytest
 
-#: A kötelező tulajdonságok, amiket a párbeszéd-tárolók kérhetnek.
+#: Az új, külön QML-típusok kötelező tulajdonságai. A régi tárolóknál
+#: maradnak az általános próbaváltozatok; az új komponenseknél csak a saját
+#: tulajdonságaikat adjuk át, különben a próba nem létező `panel`-t ír rájuk.
+_KOTELEZO_VALTOZATOK = {
+    "CollageCreateDialog": (
+        "appWindow: ({ selectedIndexes: [] }); trayHasPictures: false; "
+        "collageKinds: []; collageBorders: []; collageBorderCapable: []",
+    ),
+    "MovieMakerDialog": (
+        "appWindow: ({}); movieDialogs: ({}); trayHasPictures: false",
+    ),
+    "MovieMakerDialogs": ("movieDialog: ({})",),
+    "MovieMakerFilmstrip": (
+        "movieDialog: ({}); tabs: ({}); previewPanel: ({ x: 0, width: 0 })",
+    ),
+    "MovieMakerOptions": ("movieDialog: ({}); pagesWidth: 0",),
+    "MovieMakerPreview": ("movieDialog: ({}); resizeTimer: ({})",),
+    "MovieMakerSlideLogic": ("movieDialog: ({}); tabs: ({})",),
+    "MovieMakerTabs": ("movieDialog: ({}); options: ({})",),
+}
+_ALTALANOS_VALTOZATOK = (
+    "", "appWindow: null", "panel: null", "appWindow: null; panel: null"
+)
 #: A menüforrásokat nem példányosítjuk párbeszéd-tárolóként: két belső
 #: menü csak kommentben említi a Dialog szót, és a modulon kívülről nem
 #: érhető el közvetlen QML-típusként.
-_KOTELEZO_VALTOZATOK = ("", "appWindow: null", "panel: null", "appWindow: null; panel: null")
 _NEM_PARBESZED_TAROLOK = frozenset({"PicasaFileMenu", "PicasaToolsMenu"})
 
 _GYEREK = textwrap.dedent(
@@ -54,12 +75,20 @@ _GYEREK = textwrap.dedent(
     import picasapy.app
 
     VALTOZATOK = %(valtozatok)r
+    ALTALANOS_VALTOZATOK = %(altalanos_valtozatok)r
 
     uzenetek = []
     qInstallMessageHandler(lambda t, ctx, msg: uzenetek.append(msg))
     app = QGuiApplication(sys.argv[:1])
     qml = Path(picasapy.app.__file__).parent / "qml"
-    nem_parbeszed_tarolok = %(kizaras)r
+    # A qmldir `internal` típusai a modulon kívülről nem példányosíthatók;
+    # ezek egy-egy tároló részei, és a tárolójukkal együtt épülnek fel (#6083).
+    belso = {
+        sor.split()[1]
+        for sor in (qml / "PicasaPy" / "qmldir").read_text(encoding="utf-8").splitlines()
+        if sor.startswith("internal ")
+    }
+    nem_parbeszed_tarolok = set(%(kizaras)r) | belso
     motor = QQmlEngine()
     motor.addImportPath(str(qml))
 
@@ -77,7 +106,7 @@ _GYEREK = textwrap.dedent(
         uzenetek.clear()
         ablak = None
         hiba = ""
-        for extra in VALTOZATOK:
+        for extra in VALTOZATOK.get(nev, ALTALANOS_VALTOZATOK):
             k = QQmlComponent(motor)
             k.setData((
                 "import QtQuick\\n"
@@ -118,6 +147,7 @@ _GYEREK = textwrap.dedent(
     '''
 ) % {
     "valtozatok": _KOTELEZO_VALTOZATOK,
+    "altalanos_valtozatok": _ALTALANOS_VALTOZATOK,
     "kizaras": tuple(_NEM_PARBESZED_TAROLOK),
 }
 

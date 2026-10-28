@@ -429,69 +429,9 @@ picasapy-origin-key: stringres:ytPrinter::unnamedalbum</extracomment>
     <context>
         <name>PrintDialog</name>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Border and Text Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(printpanel/captionoptionslabel)</extracomment>
-            <translation>Tùy chọn đường viền và văn bản</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Configure borders and text for Photos to be printed</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracomment>
-            <translation>Cấu hình đường viền và văn bản cho ảnh cần in</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Help</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Trợ giúp</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Normal</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
-            <translation>Bình thường</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Optimized</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tối ưu hóa</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Printer Setup</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
-            <translation>Cài đặt máy in</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>A printer must be installed in order to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
-            <translation>Phải cài đặt máy in để in.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Open printer setup controls for the selected printer</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
-            <translation>Mở các kiểm soát cài đặt máy in cho máy in được chọn</translation>
-        </message>
-        <message>
             <source>Review</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Xem lại</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Một số ảnh quá nhỏ nên chất lượng in sẽ không tốt. Bạn có thể xóa các ảnh này, vẫn in chúng hoặc hủy để thay đổi kích thước in.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
@@ -500,69 +440,10 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
             <translation>Chất lượng thấp: %1</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Remove Selected Items</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: reviewprint:reviewprint/remove.title</extracomment>
-            <translation>Xóa ảnh đã chọn</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Remove Low Quality Pictures</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: reviewprint:reviewprint/removeall.title</extracomment>
-            <translation>Xóa ảnh chất lượng thấp</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>All of your pictures are ready to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::ready</extracomment>
-            <translation>Tất cả ảnh đã sẵn sàng để in.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>There are no pictures left to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::noneleft</extracomment>
-            <translation>Không còn lại ảnh nào để in.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>OK</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>OK</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Hủy</translation>
-        </message>
-        <message>
             <source>Make sure your photos are ready to print</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Tooltip(printpanel/reviewnowbutton2)</extracomment>
             <translation>Bảo đảm ảnh của bạn đã sẵn sàng để in</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Best quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Chất lượng tốt nhất (%1 pixel/inch)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Good quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Chất lượng tốt (%1 pixel/inch)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Bad quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Chất lượng kém (%1 pixel/inch)</translation>
         </message>
         <message>
             <source>These pictures are below %1 pixels/inch at the selected print size:</source>
@@ -573,16 +454,6 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Toolt
             <source>%1 pixels/inch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 pixel/inch</translation>
-        </message>
-        <message>
-            <source>%1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 / %2</translation>
-        </message>
-        <message>
-            <source>Print size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kích thước in:</translation>
         </message>
         <message>
             <source>CD Cover Size</source>
@@ -729,107 +600,15 @@ picasapy-origin-key: stringres:ThumbUIPrint::ReadyPrompt</extracomment>
             <translation>Chọn tệp đích.</translation>
         </message>
         <message>
-            <source>These pictures could not be printed: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Không thể in các ảnh này: %1</translation>
-        </message>
-        <message numerus="yes">
-            <source>Pictures to print: %1 (%n page(s))</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>
-                <numerusform>Số ảnh cần in: %1 (%n trang)</numerusform>
-            </translation>
-        </message>
-        <message>
             <source>Contact Sheet</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
             <translation>Hình thu nhỏ</translation>
         </message>
         <message>
-            <source>Columns:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Số cột:</translation>
-        </message>
-        <message>
-            <source>Printer:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Máy in:</translation>
-        </message>
-        <message>
             <source>Print to a PDF file...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>In ra tệp PDF...</translation>
-        </message>
-        <message>
-            <source>(not selected)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(chưa chọn)</translation>
-        </message>
-        <message>
-            <source>Browse...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation>Duyệt...</translation>
-        </message>
-        <message>
-            <source>Fit to page:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vừa trang:</translation>
-        </message>
-        <message>
-            <source>Whole picture</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Toàn bộ ảnh</translation>
-        </message>
-        <message>
-            <source>Fill the page (crop)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Lấp đầy trang (cắt xén)</translation>
-        </message>
-        <message>
-            <source>Orientation:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
-            <translation>Định hướng</translation>
-        </message>
-        <message>
-            <source>Automatic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tự động</translation>
-        </message>
-        <message>
-            <source>Portrait</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
-            <translation>Chân dung</translation>
-        </message>
-        <message>
-            <source>Landscape</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
-            <translation>Phong cảnh</translation>
-        </message>
-        <message>
-            <source>Finished: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Đã hoàn tất: %1</translation>
-        </message>
-        <message>
-            <source>Printing: %1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Đang in: %1 / %2</translation>
-        </message>
-        <message>
-            <source>Print</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>In</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Đóng</translation>
         </message>
         <message>
             <source>PDF documents (*.pdf)</source>
@@ -846,26 +625,284 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Thêm một bản sao của mỗi ảnh cần in</translation>
         </message>
+    </context>
+    <context>
+        <name>PrintPreviewPanel</name>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>This will remove all of your pictures and cancel printing. Would you like to continue?</source>
+            <source>%1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 / %2</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintSelectionPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>A printer must be installed in order to print.</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::removedall</extracomment>
-            <translation>Điều này sẽ xóa tất cả ảnh của bạn và hủy việc in. Bạn có muốn tiếp tục không?</translation>
+picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
+            <translation>Phải cài đặt máy in để in.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>Normal</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
+            <translation>Bình thường</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>Optimized</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tối ưu hóa</translation>
+        </message>
+        <message numerus="yes">
+            <source>Pictures to print: %1 (%n page(s))</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>
+                <numerusform>Số ảnh cần in: %1 (%n trang)</numerusform>
+            </translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintSettingsPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSettingsPanel.qml" />
+            <source>Border and Text Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(printpanel/captionoptionslabel)</extracomment>
+            <translation>Tùy chọn đường viền và văn bản</translation>
+        </message>
+        <message>
+            <source>Columns:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Số cột:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSettingsPanel.qml" />
+            <source>Configure borders and text for Photos to be printed</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracomment>
+            <translation>Cấu hình đường viền và văn bản cho ảnh cần in</translation>
+        </message>
+        <message>
+            <source>Print size:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kích thước in:</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintPrinterPanel</name>
+        <message>
+            <source>(not selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(chưa chọn)</translation>
+        </message>
+        <message>
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Duyệt...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintPrinterPanel.qml" />
+            <source>Open printer setup controls for the selected printer</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
+            <translation>Mở các kiểm soát cài đặt máy in cho máy in được chọn</translation>
+        </message>
+        <message>
+            <source>Print to a PDF file...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>In ra tệp PDF...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintPrinterPanel.qml" />
+            <source>Printer Setup</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
+            <translation>Cài đặt máy in</translation>
+        </message>
+        <message>
+            <source>Printer:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Máy in:</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintFitPanel</name>
+        <message>
+            <source>Automatic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tự động</translation>
+        </message>
+        <message>
+            <source>Fill the page (crop)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Lấp đầy trang (cắt xén)</translation>
+        </message>
+        <message>
+            <source>Fit to page:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vừa trang:</translation>
+        </message>
+        <message>
+            <source>Landscape</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
+            <translation>Phong cảnh</translation>
+        </message>
+        <message>
+            <source>Orientation:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
+            <translation>Định hướng</translation>
+        </message>
+        <message>
+            <source>Portrait</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
+            <translation>Chân dung</translation>
+        </message>
+        <message>
+            <source>Whole picture</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Toàn bộ ảnh</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintStatusPanel</name>
+        <message>
+            <source>Finished: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Đã hoàn tất: %1</translation>
+        </message>
+        <message>
+            <source>Printing: %1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Đang in: %1 / %2</translation>
+        </message>
+        <message>
+            <source>These pictures could not be printed: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Không thể in các ảnh này: %1</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintButtonRow</name>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Đóng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintButtonRow.qml" />
+            <source>Help</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Trợ giúp</translation>
+        </message>
+        <message>
+            <source>Print</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>In</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintReviewPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>All of your pictures are ready to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::ready</extracomment>
+            <translation>Tất cả ảnh đã sẵn sàng để in.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Bad quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Chất lượng kém (%1 pixel/inch)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Best quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Chất lượng tốt nhất (%1 pixel/inch)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hủy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Good quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Chất lượng tốt (%1 pixel/inch)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Remove Low Quality Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: reviewprint:reviewprint/removeall.title</extracomment>
+            <translation>Xóa ảnh chất lượng thấp</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Remove Selected Items</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: reviewprint:reviewprint/remove.title</extracomment>
+            <translation>Xóa ảnh đã chọn</translation>
+        </message>
+        <message>
+            <source>Review</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Xem lại</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Một số ảnh quá nhỏ nên chất lượng in sẽ không tốt. Bạn có thể xóa các ảnh này, vẫn in chúng hoặc hủy để thay đổi kích thước in.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>There are no pictures left to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::noneleft</extracomment>
+            <translation>Không còn lại ảnh nào để in.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintRemoveAllDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
+            <source>Don't Remove</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::removedallnobutton</extracomment>
+            <translation>Không xóa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
             <source>Remove and Cancel</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CPrintDlg::removedallyesbutton</extracomment>
             <translation>Xóa và hủy</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Don't Remove</source>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
+            <source>This will remove all of your pictures and cancel printing. Would you like to continue?</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::removedallnobutton</extracomment>
-            <translation>Không xóa</translation>
+picasapy-origin-key: stringres:CPrintDlg::removedall</extracomment>
+            <translation>Điều này sẽ xóa tất cả ảnh của bạn và hủy việc in. Bạn có muốn tiếp tục không?</translation>
         </message>
     </context>
     <context>
@@ -5038,954 +5075,1181 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
         </message>
     </context>
     <context>
-        <name>CreateDialogs</name>
+        <name>CollageCreateDialog</name>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Get More...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
-            <translation>Tải Thêm...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Get more clips from Photo Library</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
-            <translation>Tải clip khác từ Thư viện Ảnh</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Clips (%d)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::clips_title</extracomment>
-            <translation>Clip (%d)</translation>
-        </message>
-        <message>
-            <source>Poster Settings</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/window1.title</extracomment>
-            <translation>Cài đặt Áp phích</translation>
-        </message>
-        <message>
-            <source>Tip: if you don't want to trim, crop your picture to the same size as the paper.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/label2.title</extracomment>
-            <translation>Mẹo: nếu bạn không muốn xén, cắt ảnh theo kích thước tương tự như tờ giấy.</translation>
-        </message>
-        <message>
-            <source>Poster size:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/labelgroup3.title</extracomment>
-            <translation>Kích thước áp phích:</translation>
-        </message>
-        <message>
-            <source>200%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item5.title</extracomment>
-            <translation>200%</translation>
-        </message>
-        <message>
-            <source>300%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item6.title</extracomment>
-            <translation>300%</translation>
-        </message>
-        <message>
-            <source>400%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item7.title</extracomment>
-            <translation>400%</translation>
-        </message>
-        <message>
-            <source>500%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item8.title</extracomment>
-            <translation>500%</translation>
-        </message>
-        <message>
-            <source>600%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item9.title</extracomment>
-            <translation>600%</translation>
-        </message>
-        <message>
-            <source>700%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item10.title</extracomment>
-            <translation>700%</translation>
-        </message>
-        <message>
-            <source>800%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item11.title</extracomment>
-            <translation>800%</translation>
-        </message>
-        <message>
-            <source>900%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item12.title</extracomment>
-            <translation>900%</translation>
-        </message>
-        <message>
-            <source>1000%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item13.title</extracomment>
-            <translation>1000%</translation>
-        </message>
-        <message>
-            <source>Paper size:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/labelgroup14.title</extracomment>
-            <translation>Kích thước giấy:</translation>
-        </message>
-        <message>
-            <source>4x6</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
-            <translation>4x6</translation>
-        </message>
-        <message>
-            <source>8.5x11</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:FullPage;stringres:CPosterDlg::size2</extracomment>
-            <translation>8.5x11</translation>
-        </message>
-        <message>
-            <source>10x15</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:10x15m</extracomment>
-            <translation>10 x 15</translation>
-        </message>
-        <message>
-            <source>20x25</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::Crop20x25m</extracomment>
-            <translation>20 x 25</translation>
-        </message>
-        <message>
-            <source>Overlap tiles</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/overlap.title</extracomment>
-            <translation>Xếp chồng các ảnh</translation>
-        </message>
-        <message>
-            <source>OK</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>OK</translation>
-        </message>
-        <message>
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Hủy</translation>
-        </message>
-        <message>
-            <source>Poster tiles saved.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Đã lưu các ô áp phích.</translation>
-        </message>
-        <message>
-            <source>The poster tiles could not be created.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Không thể tạo các ô áp phích.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="266" />
-            <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Không tìm thấy %1 ảnh nên sẽ không hiển thị. (Các tệp bị thiếu có thể đã được di chuyển, đổi tên hoặc xóa)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="24" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="23" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="163" />
             <source>Picture Collage...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
             <translation>Ả&amp;nh ghép...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="44" />
-            <source>%1 pictures selected.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Đã chọn %1 ảnh.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="52" />
-            <source>Collage type:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Loại ghép ảnh:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
-            <source>Picture Grid</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::ePictureGrid</extracomment>
-            <translation>Khung lưới Ảnh</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="77" />
-            <source>Mosaic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Khảm</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
-            <source>Grid</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Lưới</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="79" />
-            <source>Multiple Exposure</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
-            <translation>Ảnh Nhiều lớp</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="85" />
-            <source>Picture borders:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/borders_label)</extracomment>
-            <translation>Đường viền ảnh</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>None</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
-            <translation>Không</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>White Border</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Border::ID_COLLAGE_BORDER_1;stringres:collage::whiteborder_dname</extracomment>
-            <translation>Viền trắng</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>Polaroid</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
-            <translation>Polaroid</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="55" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="68" />
             <source>Select pictures in the library first, or put them in the Picture Tray.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Trước tiên, hãy chọn ảnh trong thư viện hoặc thêm ảnh vào Khay ảnh.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="121" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="76" />
+            <source>%1 pictures selected.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Đã chọn %1 ảnh.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="95" />
             <source>Scramble Collage</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/rand_placement-label)</extracomment>
             <translation>Thu thập ảnh ghép</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
-            <source>Contact Sheet</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
-            <translation>Hình thu nhỏ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
-            <source>Frame Mosaic</source>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="105" />
+            <source>Collage type:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Khảm có khung</translation>
+            <translation>Loại ghép ảnh:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="114" />
             <source>Picture Pile</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::ePicturePile</extracomment>
             <translation>Loạt dòng Ảnh</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="69" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="114" />
+            <source>Mosaic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Khảm</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="115" />
+            <source>Frame Mosaic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Khảm có khung</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="115" />
+            <source>Grid</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Lưới</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="116" />
+            <source>Contact Sheet</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
+            <translation>Hình thu nhỏ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="116" />
+            <source>Multiple Exposure</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
+            <translation>Ảnh Nhiều lớp</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="123" />
+            <source>Picture borders:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/borders_label)</extracomment>
+            <translation>Đường viền ảnh</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
+            <translation>Không</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>White Border</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Border::ID_COLLAGE_BORDER_1;stringres:collage::whiteborder_dname</extracomment>
+            <translation>Viền trắng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>Polaroid</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
+            <translation>Polaroid</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="139" />
             <source>Target file:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
             <translation>Tệp đích</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="149" />
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>(chưa chọn)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="83" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="154" />
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
             <translation>Duyệt...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="166" />
             <source>JPEG images (*.jpg)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ảnh JPEG (*.jpg)</translation>
         </message>
+    </context>
+    <context>
+        <name>CreateDialogs</name>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="98" />
-            <source>Movie</source>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="124" />
+            <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Phim</translation>
+            <translation>Không tìm thấy %1 ảnh nên sẽ không hiển thị. (Các tệp bị thiếu có thể đã được di chuyển, đổi tên hoặc xóa)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="130" />
-            <source>Video size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kích thước video:</translation>
-        </message>
-        <message>
-            <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ảnh và thời gian hiển thị trong phim được lấy từ tệp dự án; kích thước ban đầu là kích thước mặc định.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="146" />
-            <source>Seconds per picture:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Số giây hiển thị mỗi ảnh:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="185" />
-            <source>MP4 videos (*.mp4)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Video MP4 (*.mp4)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="202" />
-            <source>Creating movie: %1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Đang tạo phim: %1 / %2</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="226" />
-            <source>Create</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tạo</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="247" />
-            <source>Collage saved: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Đã lưu bản ghép ảnh: %1</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="248" />
-            <source>%1 pictures used.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Đã dùng %1 ảnh.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="240" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="127" />
             <source>%1 pictures were skipped.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Đã bỏ qua %1 ảnh.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="254" />
-            <source>The collage could not be created.</source>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="149" />
+            <source>Collage saved: %1</source>
+            <extracomment>A kollázs elkészült — az összegző párbeszéd megnyitása.
+picasapy-origin: picasapy</extracomment>
+            <translation>Đã lưu bản ghép ảnh: %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="150" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="174" />
+            <source>%1 pictures used.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Đã dùng %1 ảnh.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="158" />
+            <source>The collage could not be created.</source>
+            <extracomment>A kollázs nem készült el.
+picasapy-origin: picasapy</extracomment>
             <translation>Không thể tạo bản ghép ảnh.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="264" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="173" />
             <source>Movie saved: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Đã lưu phim: %1</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Replace Existing or Create New?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
-            <translation>Thay thế tiêu đề hiện có hoặc tạo mới?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Replace Existing</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
-            <translation>Thay thế ảnh ghép hiện có</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Create New</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
-            <translation>Tạo mới</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="271" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="183" />
             <source>The movie could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Không thể tạo phim.</translation>
         </message>
         <message>
-            <source>Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
-            <translation>Văn bản</translation>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="189" />
+            <source>Poster tiles saved.</source>
+            <extracomment>#4268: a poszterlapok a forráskép mellett készültek el.
+picasapy-origin: picasapy</extracomment>
+            <translation>Đã lưu các ô áp phích.</translation>
         </message>
         <message>
-            <source>Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab2)</extracomment>
-            <translation>Trình chiếu</translation>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="197" />
+            <source>The poster tiles could not be created.</source>
+            <extracomment>#4268: a poszterlapok írási hibája a párbeszédben jelenik meg.
+picasapy-origin: picasapy</extracomment>
+            <translation>Không thể tạo các ô áp phích.</translation>
         </message>
+    </context>
+    <context>
+        <name>CreateResultDialog</name>
         <message>
-            <source>Clips</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab3)</extracomment>
-            <translation>Đoạn phim</translation>
-        </message>
-        <message>
-            <source>Sizes</source>
+            <location filename="../qml/PicasaPy/CreateResultDialog.qml" line="10" />
+            <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kích thước</translation>
+            <translation>Tạo</translation>
         </message>
+    </context>
+    <context>
+        <name>MovieMakerDialog</name>
         <message>
-            <source>Dimensions</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kích thước</translation>
-        </message>
-        <message>
-            <source>Transition style:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</extracomment>
-            <translation>Kiểu chuyển đổi</translation>
-        </message>
-        <message>
-            <source>Cut</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Cắt</translation>
-        </message>
-        <message>
-            <source>Dissolve</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolve</extracomment>
-            <translation>Làm mờ</translation>
-        </message>
-        <message>
-            <source>Dissolve through black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolveblack</extracomment>
-            <translation>Hòa tan bằng màu đen</translation>
-        </message>
-        <message>
-            <source>Dissolve through white</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
-            <translation>Hoà tan nhờ màu trắng</translation>
-        </message>
-        <message>
-            <source>Wipe - left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
-            <translation>Xóa - bên trái</translation>
-        </message>
-        <message>
-            <source>Wipe</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Quét</translation>
-        </message>
-        <message>
-            <source>Wipe - top</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
-            <translation>Xóa - trên cùng</translation>
-        </message>
-        <message>
-            <source>Wipe - bottom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
-            <translation>Xóa - dưới cùng</translation>
-        </message>
-        <message>
-            <source>Wipe - up left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
-            <translation>Xóa - phía trên bên trái</translation>
-        </message>
-        <message>
-            <source>Wipe - up right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
-            <translation>Xóa - phía trên bên phải</translation>
-        </message>
-        <message>
-            <source>Wipe - down left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
-            <translation>Xóa - phía dưới bên trái</translation>
-        </message>
-        <message>
-            <source>Wipe - down right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
-            <translation>Xóa - phía dưới bên phải</translation>
-        </message>
-        <message>
-            <source>Push - left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
-            <translation>Ấn - bên trái</translation>
-        </message>
-        <message>
-            <source>Push</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
-            <translation>Ấn</translation>
-        </message>
-        <message>
-            <source>Push - top</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
-            <translation>Ấn - trên cùng</translation>
-        </message>
-        <message>
-            <source>Push - bottom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
-            <translation>Ấn - dưới cùng</translation>
-        </message>
-        <message>
-            <source>Circle - inwards</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
-            <translation>Vòng tròn - phía trong</translation>
-        </message>
-        <message>
-            <source>Circle</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
-            <translation>Vòng tròn</translation>
-        </message>
-        <message>
-            <source>Pan and Zoom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
-            <translation>Lia và thu phóng</translation>
-        </message>
-        <message>
-            <source>Pan and Zoom - face</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
-            <translation>Xoay và thu phóng - khuôn mặt</translation>
-        </message>
-        <message>
-            <source>Time Lapse</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
-            <translation>Khoảng thời gian Phát</translation>
-        </message>
-        <message>
-            <source>Rectangle</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
-            <translation>Hình chữ nhật</translation>
-        </message>
-        <message>
-            <source>Overlap</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transitionslider_label)</extracomment>
-            <translation>Xếp chồng</translation>
-        </message>
-        <message>
-            <source>Slide Duration:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_label)</extracomment>
-            <translation>Thời lượng trình chiếu</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>%1 Sec</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 giây</translation>
-        </message>
-        <message>
-            <source>Audio:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
-            <translation>Bài hát:</translation>
-        </message>
-        <message>
-            <source>Audio Track:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
-            <translation>Bài hát:</translation>
-        </message>
-        <message>
-            <source>No audio selected</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Chưa chọn âm thanh</translation>
-        </message>
-        <message>
-            <source>Load…</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
-            <translation>Tải…</translation>
-        </message>
-        <message>
-            <source>Clear</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Xóa</translation>
-        </message>
-        <message>
-            <source>Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
-            <translation>Tùy chọn</translation>
-        </message>
-        <message>
-            <source>Truncate audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption0</extracomment>
-            <translation>Cắt bớt âm thanh</translation>
-        </message>
-        <message>
-            <source>Fit photos into audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption1</extracomment>
-            <translation>Khớp ảnh với âm thanh</translation>
-        </message>
-        <message>
-            <source>Loop photos to match audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption2</extracomment>
-            <translation>Lặp lại ảnh cho khớp với âm thanh</translation>
-        </message>
-        <message>
-            <source>Show Captions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label);makemoviepaneltext:Label(makemoviepanel/show_captions_label);stringres:Slingshot::ID_SHOW_CAPTIONS</extracomment>
-            <translation>Hiển thị chú thích</translation>
-        </message>
-        <message>
-            <source>Show Dates</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::show_dates_label</extracomment>
-            <translation>Hiển thị ngày</translation>
-        </message>
-        <message>
-            <source>Full frame photo crop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/crop_to_fit_label)</extracomment>
-            <translation>Cắt ảnh có khung đầy đủ</translation>
-        </message>
-        <message>
-            <source>Remove Low Resolution Faces</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/remove_low_res_faces_label)</extracomment>
-            <translation>Xóa khuôn mặt có độ  phân giải thấp</translation>
-        </message>
-        <message>
-            <source>Best Transitions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/smart_order_label)</extracomment>
-            <translation>Chuyển tuyến tốt nhất</translation>
-        </message>
-        <message>
-            <source>Album Order</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)</extracomment>
-            <translation>Thứ tự album</translation>
-        </message>
-        <message>
-            <source>Chronological</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Theo trình tự thời gian</translation>
-        </message>
-        <message>
-            <source>Ordering of Slides:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/ordering_header_label)</extracomment>
-            <translation>Sắp thứ tự trang trình bày:</translation>
-        </message>
-        <message>
-            <source>Total Photos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/lengthslider_label)</extracomment>
-            <translation>Tổng số ảnh</translation>
-        </message>
-        <message>
-            <source>Don't filter by time taken</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);stringres:CMakeMoviePanel::movieburstzero</extracomment>
-            <translation>Không lọc theo thời gian chụp</translation>
-        </message>
-        <message>
-            <source>Remove Photos Taken Within %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Xóa ảnh được chụp trong khoảng %1</translation>
-        </message>
-        <message>
-            <source>Back to selected slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/rewind)</extracomment>
-            <translation>Quay lại trang trình bày đã chọn</translation>
-        </message>
-        <message>
-            <source>Text slide:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
-            <translation>Trang trình bày văn bản</translation>
-        </message>
-        <message>
-            <source>Font:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Phông chữ:</translation>
-        </message>
-        <message>
-            <source>Size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kích thước:</translation>
-        </message>
-        <message>
-            <source>Style:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Label(edittextpanel/style_label);makemoviepaneltext:Label(makemoviepanel/style_label)</extracomment>
-            <translation>Kiểu:</translation>
-        </message>
-        <message>
-            <source>Centered</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Centered</extracomment>
-            <translation>Đã căn giữa</translation>
-        </message>
-        <message>
-            <source>I'm Feeling Lucky</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tôi cảm thấy may mắn</translation>
-        </message>
-        <message>
-            <source>Caption</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Chú thích</translation>
-        </message>
-        <message>
-            <source>Caption - Classic</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle3</extracomment>
-            <translation>Chú thích - Kiểu cổ điển</translation>
-        </message>
-        <message>
-            <source>Gradient - Black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle4</extracomment>
-            <translation>Gradient - Đen</translation>
-        </message>
-        <message>
-            <source>Gradient - White</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle5</extracomment>
-            <translation>Gradient - Trắng</translation>
-        </message>
-        <message>
-            <source>Transparent - Black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle6</extracomment>
-            <translation>Trong suốt - Đen</translation>
-        </message>
-        <message>
-            <source>Transparent - White</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle7</extracomment>
-            <translation>Trong suốt - Trắng</translation>
-        </message>
-        <message>
-            <source>Scrolling Credits</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle8</extracomment>
-            <translation>Cuộn qua các Tín chỉ</translation>
-        </message>
-        <message>
-            <source>Music Video - Left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle9</extracomment>
-            <translation>Video Ca nhạc - Trái</translation>
-        </message>
-        <message>
-            <source>Music Video - Right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle10</extracomment>
-            <translation>Video Âm nhạc - Phải</translation>
-        </message>
-        <message>
-            <source>Caption - Typewriter</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
-            <translation>Chú thích - Máy chữ</translation>
-        </message>
-        <message>
-            <source>Bold</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/bold);makemoviepaneltext:Tooltip(makemoviepanel/bold);stringres:CTitleDialog::fontBold</extracomment>
-            <translation>Đậm</translation>
-        </message>
-        <message>
-            <source>Italic</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepaneltext:Tooltip(makemoviepanel/italic);stringres:CTitleDialog::fontItalic</extracomment>
-            <translation>Nghiêng</translation>
-        </message>
-        <message>
-            <source>Automatic Outline</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Đường viền tự động</translation>
-        </message>
-        <message>
-            <source>Automatic Outline (like movie subtitles)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/outline)</extracomment>
-            <translation>Tạo viền tự động (giống phụ đề phim)</translation>
-        </message>
-        <message>
-            <source>Text color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
-            <translation>Màu văn bản</translation>
-        </message>
-        <message>
-            <source>Background color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
-            <translation>Màu nền</translation>
-        </message>
-        <message>
-            <source>Insert Text Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/insert_slide)</extracomment>
-            <translation>Thêm trang trình bày văn bản mới</translation>
-        </message>
-        <message>
-            <source>Remove Selected Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
-            <translation>Xóa trang trình bày đã chọn</translation>
-        </message>
-        <message>
-            <source>Remove the selected slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
-            <translation>Xóa trang trình bày đã chọn</translation>
-        </message>
-        <message>
-            <source>Add selected clips</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Thêm đoạn phim đã chọn</translation>
-        </message>
-        <message>
-            <source>Remove selected clip</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Xóa đoạn phim đã chọn</translation>
-        </message>
-        <message>
-            <source>Add the selected clip(s) to the end of the movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addtomovie)</extracomment>
-            <translation>Thêm (các) clip đã chọn vào cuối phim</translation>
-        </message>
-        <message>
-            <source>Remove the selected clip(s) from the tray</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</extracomment>
-            <translation>Xóa (các) đoạn phim đã chọn khỏi khay</translation>
-        </message>
-        <message>
-            <source>Play selected clip only</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Chỉ phát đoạn phim đã chọn</translation>
-        </message>
-        <message>
-            <source>Preview</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
-            <translation>Xem trước</translation>
-        </message>
-        <message>
-            <source>Pause</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tạm dừng</translation>
-        </message>
-        <message>
-            <source>Show actual movie size (don't stretch)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(video_control_bar2/1to1)</extracomment>
-            <translation>Hiển thị kích thước thực của phim (không kéo giãn ảnh)</translation>
-        </message>
-        <message>
-            <source>Play full screen</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Tooltip(video_control_bar2/fullscreen)</extracomment>
-            <translation>Phát trên toàn màn hình</translation>
-        </message>
-        <message>
-            <source>Please Confirm...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Vui lòng xác nhận...</translation>
-        </message>
-        <message>
-            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Thao tác này sẽ tạo phim mới và xóa tất cả trang văn bản bạn đã thêm. Bạn có chắc chắn muốn tiếp tục không?</translation>
-        </message>
-        <message>
-            <source>Recompute</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tính toán lại</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Đóng</translation>
-        </message>
-        <message>
-            <source>Create Movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:buttonlabel:{606D1C6D-36E6-4dce-AFCA-A0EE575A6162}</extracomment>
-            <translation>Tạo phim</translation>
-        </message>
-        <message>
-            <source>Audio files</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tệp âm thanh</translation>
-        </message>
-        <message>
-            <source>Music files (*.mp3, *.wma)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
-            <translation>Tệp nhạc (*.mp3,*.wma)</translation>
-        </message>
-        <message>
-            <source>Music files (*.mp3, *.m4a)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
-            <translation>Tệp nhạc (*.mp3,*.m4a)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="119" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="363" />
             <source>Text Slide</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
             <translation>Trang trình bày văn bản</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="385" />
             <source>%1     %2x%3 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1     %2x%3 pixel</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="387" />
             <source>(%1 of %2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>(%1 / %2)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="519" />
+            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Thao tác này sẽ tạo phim mới và xóa tất cả trang văn bản bạn đã thêm. Bạn có chắc chắn muốn tiếp tục không?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="640" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Đóng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="647" />
+            <source>Create Movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:buttonlabel:{606D1C6D-36E6-4dce-AFCA-A0EE575A6162}</extracomment>
+            <translation>Tạo phim</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="797" />
+            <source>Please Confirm...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vui lòng xác nhận...</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerDialogs</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="23" />
+            <source>Replace Existing or Create New?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
+            <translation>Thay thế tiêu đề hiện có hoặc tạo mới?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="32" />
+            <source>Replace Existing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
+            <translation>Thay thế ảnh ghép hiện có</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="41" />
+            <source>Create New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
+            <translation>Tạo mới</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="49" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hủy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="70" />
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="113" />
+            <source>Movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Phim</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="73" />
+            <source>MP4 videos (*.mp4)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Video MP4 (*.mp4)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="80" />
+            <source>Audio files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tệp âm thanh</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="84" />
+            <source>Music files (*.mp3, *.wma)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
+            <translation>Tệp nhạc (*.mp3,*.wma)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="85" />
+            <source>Music files (*.mp3, *.m4a)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
+            <translation>Tệp nhạc (*.mp3,*.m4a)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="96" />
+            <source>Text color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
+            <translation>Màu văn bản</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="103" />
+            <source>Background color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
+            <translation>Màu nền</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="123" />
+            <source>Creating movie: %1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Đang tạo phim: %1 / %2</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerFilmstrip</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="38" />
+            <source>Add selected clips</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Thêm đoạn phim đã chọn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="50" />
+            <source>Remove selected clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Xóa đoạn phim đã chọn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="104" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Trang trình bày văn bản</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerOptions</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="22" />
+            <source>Dimensions</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kích thước</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="51" />
+            <source>Show Captions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label);makemoviepaneltext:Label(makemoviepanel/show_captions_label);stringres:Slingshot::ID_SHOW_CAPTIONS</extracomment>
+            <translation>Hiển thị chú thích</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="69" />
+            <source>Full frame photo crop</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/crop_to_fit_label)</extracomment>
+            <translation>Cắt ảnh có khung đầy đủ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="84" />
+            <source>Show Dates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::show_dates_label</extracomment>
+            <translation>Hiển thị ngày</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="96" />
+            <source>Remove Low Resolution Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/remove_low_res_faces_label)</extracomment>
+            <translation>Xóa khuôn mặt có độ  phân giải thấp</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="111" />
+            <source>Ordering of Slides:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/ordering_header_label)</extracomment>
+            <translation>Sắp thứ tự trang trình bày:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="117" />
+            <source>Best Transitions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/smart_order_label)</extracomment>
+            <translation>Chuyển tuyến tốt nhất</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="125" />
+            <source>Album Order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)</extracomment>
+            <translation>Thứ tự album</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="134" />
+            <source>Chronological</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Theo trình tự thời gian</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="152" />
+            <source>Total Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/lengthslider_label)</extracomment>
+            <translation>Tổng số ảnh</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="174" />
+            <source>Don't filter by time taken</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);stringres:CMakeMoviePanel::movieburstzero</extracomment>
+            <translation>Không lọc theo thời gian chụp</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="175" />
+            <source>Remove Photos Taken Within %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Xóa ảnh được chụp trong khoảng %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="210" />
+            <source>Get More...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
+            <translation>Tải Thêm...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="212" />
+            <source>Get more clips from Photo Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
+            <translation>Tải clip khác từ Thư viện Ảnh</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="219" />
+            <source>Recompute</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tính toán lại</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerPreview</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="155" />
+            <source>Pause</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tạm dừng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="155" />
+            <source>Preview</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
+            <translation>Xem trước</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="220" />
+            <source>Show actual movie size (don't stretch)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(video_control_bar2/1to1)</extracomment>
+            <translation>Hiển thị kích thước thực của phim (không kéo giãn ảnh)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="234" />
+            <source>Play full screen</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Tooltip(video_control_bar2/fullscreen)</extracomment>
+            <translation>Phát trên toàn màn hình</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerSlideLogic</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="20" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="43" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="56" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="74" />
+            <source>Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
+            <translation>Văn bản</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerTabs</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="61" />
+            <source>Movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Phim</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="62" />
+            <source>Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab2)</extracomment>
+            <translation>Trình chiếu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="67" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="142" />
+            <source>Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
+            <translation>Tùy chọn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="68" />
+            <source>Clips (%d)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::clips_title</extracomment>
+            <translation>Clip (%d)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="96" />
+            <source>Audio Track:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
+            <translation>Bài hát:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="107" />
+            <source>None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
+            <translation>Không</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="116" />
+            <source>Load…</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
+            <translation>Tải…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="123" />
+            <source>Clear</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Xóa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="154" />
+            <source>Truncate audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption0</extracomment>
+            <translation>Cắt bớt âm thanh</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="154" />
+            <source>Fit photos into audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption1</extracomment>
+            <translation>Khớp ảnh với âm thanh</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="155" />
+            <source>Loop photos to match audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption2</extracomment>
+            <translation>Lặp lại ảnh cho khớp với âm thanh</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="160" />
+            <source>Transition style:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</extracomment>
+            <translation>Kiểu chuyển đổi</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="169" />
+            <source>Cut</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Cắt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="169" />
+            <source>Dissolve</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolve</extracomment>
+            <translation>Làm mờ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="170" />
+            <source>Dissolve through black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolveblack</extracomment>
+            <translation>Hòa tan bằng màu đen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="170" />
+            <source>Dissolve through white</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
+            <translation>Hoà tan nhờ màu trắng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
+            <translation>Xóa - bên trái</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Quét</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
+            <translation>Xóa - trên cùng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="172" />
+            <source>Wipe - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
+            <translation>Xóa - dưới cùng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="172" />
+            <source>Wipe - up left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
+            <translation>Xóa - phía trên bên trái</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="173" />
+            <source>Wipe - up right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
+            <translation>Xóa - phía trên bên phải</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="173" />
+            <source>Wipe - down left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
+            <translation>Xóa - phía dưới bên trái</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Wipe - down right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
+            <translation>Xóa - phía dưới bên phải</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Push - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
+            <translation>Ấn - bên trái</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Push</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
+            <translation>Ấn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="175" />
+            <source>Push - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
+            <translation>Ấn - trên cùng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="175" />
+            <source>Push - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
+            <translation>Ấn - dưới cùng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="176" />
+            <source>Circle - inwards</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
+            <translation>Vòng tròn - phía trong</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="176" />
+            <source>Circle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
+            <translation>Vòng tròn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="177" />
+            <source>Pan and Zoom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
+            <translation>Lia và thu phóng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="177" />
+            <source>Pan and Zoom - face</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
+            <translation>Xoay và thu phóng - khuôn mặt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="178" />
+            <source>Time Lapse</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
+            <translation>Khoảng thời gian Phát</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="178" />
+            <source>Rectangle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
+            <translation>Hình chữ nhật</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="198" />
+            <source>Slide Duration:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_label)</extracomment>
+            <translation>Thời lượng trình chiếu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="203" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="244" />
+            <source>%1 Sec</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 giây</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="239" />
+            <source>Overlap</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transitionslider_label)</extracomment>
+            <translation>Xếp chồng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="279" />
+            <source>Target file:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
+            <translation>Tệp đích</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="285" />
+            <source>(not selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(chưa chọn)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="290" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Duyệt...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="297" />
+            <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ảnh và thời gian hiển thị trong phim được lấy từ tệp dự án; kích thước ban đầu là kích thước mặc định.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="307" />
+            <source>%1 pictures selected.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Đã chọn %1 ảnh.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="313" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="315" />
+            <source>Back to selected slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/rewind)</extracomment>
+            <translation>Quay lại trang trình bày đã chọn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="336" />
+            <source>Text slide:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Trang trình bày văn bản</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="341" />
+            <source>Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
+            <translation>Văn bản</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="347" />
+            <source>Font:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Phông chữ:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="357" />
+            <source>Size:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kích thước:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="371" />
+            <source>Style:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Label(edittextpanel/style_label);makemoviepaneltext:Label(makemoviepanel/style_label)</extracomment>
+            <translation>Kiểu:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>Centered</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Centered</extracomment>
+            <translation>Đã căn giữa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>I'm Feeling Lucky</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tôi cảm thấy may mắn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>Caption</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Chú thích</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="378" />
+            <source>Caption - Classic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle3</extracomment>
+            <translation>Chú thích - Kiểu cổ điển</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="378" />
+            <source>Gradient - Black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle4</extracomment>
+            <translation>Gradient - Đen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="379" />
+            <source>Gradient - White</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle5</extracomment>
+            <translation>Gradient - Trắng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="379" />
+            <source>Transparent - Black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle6</extracomment>
+            <translation>Trong suốt - Đen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="380" />
+            <source>Transparent - White</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle7</extracomment>
+            <translation>Trong suốt - Trắng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="380" />
+            <source>Scrolling Credits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle8</extracomment>
+            <translation>Cuộn qua các Tín chỉ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="381" />
+            <source>Music Video - Left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle9</extracomment>
+            <translation>Video Ca nhạc - Trái</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="381" />
+            <source>Music Video - Right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle10</extracomment>
+            <translation>Video Âm nhạc - Phải</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="382" />
+            <source>Caption - Typewriter</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
+            <translation>Chú thích - Máy chữ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="390" />
+            <source>Bold</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/bold);makemoviepaneltext:Tooltip(makemoviepanel/bold);stringres:CTitleDialog::fontBold</extracomment>
+            <translation>Đậm</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="396" />
+            <source>Italic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepaneltext:Tooltip(makemoviepanel/italic);stringres:CTitleDialog::fontItalic</extracomment>
+            <translation>Nghiêng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="404" />
+            <source>Automatic Outline</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Đường viền tự động</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="406" />
+            <source>Automatic Outline (like movie subtitles)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/outline)</extracomment>
+            <translation>Tạo viền tự động (giống phụ đề phim)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="414" />
+            <source>Text color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
+            <translation>Màu văn bản</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="431" />
+            <source>Background color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
+            <translation>Màu nền</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="436" />
+            <source>Insert Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/insert_slide)</extracomment>
+            <translation>Thêm trang trình bày văn bản mới</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="443" />
+            <source>Remove Selected Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
+            <translation>Xóa trang trình bày đã chọn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="445" />
+            <source>Remove the selected slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
+            <translation>Xóa trang trình bày đã chọn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="474" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Trang trình bày văn bản</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="541" />
+            <source>Get More...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
+            <translation>Tải Thêm...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="543" />
+            <source>Get more clips from Photo Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
+            <translation>Tải clip khác từ Thư viện Ảnh</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="557" />
+            <source>Recompute</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tính toán lại</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="566" />
+            <source>Add selected clips</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Thêm đoạn phim đã chọn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="569" />
+            <source>Add the selected clip(s) to the end of the movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addtomovie)</extracomment>
+            <translation>Thêm (các) clip đã chọn vào cuối phim</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="576" />
+            <source>Remove selected clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Xóa đoạn phim đã chọn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="579" />
+            <source>Remove the selected clip(s) from the tray</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</extracomment>
+            <translation>Xóa (các) đoạn phim đã chọn khỏi khay</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="588" />
+            <source>Play selected clip only</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Chỉ phát đoạn phim đã chọn</translation>
+        </message>
+    </context>
+    <context>
+        <name>PosterCreateDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="11" />
+            <source>Poster Settings</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/window1.title</extracomment>
+            <translation>Cài đặt Áp phích</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="29" />
+            <source>4x6</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
+            <translation>4x6</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="30" />
+            <source>8.5x11</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:FullPage;stringres:CPosterDlg::size2</extracomment>
+            <translation>8.5x11</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="31" />
+            <source>10x15</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:10x15m</extracomment>
+            <translation>10 x 15</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="32" />
+            <source>20x25</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::Crop20x25m</extracomment>
+            <translation>20 x 25</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="69" />
+            <source>Tip: if you don't want to trim, crop your picture to the same size as the paper.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/label2.title</extracomment>
+            <translation>Mẹo: nếu bạn không muốn xén, cắt ảnh theo kích thước tương tự như tờ giấy.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="79" />
+            <source>Poster size:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/labelgroup3.title</extracomment>
+            <translation>Kích thước áp phích:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>200%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item5.title</extracomment>
+            <translation>200%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>300%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item6.title</extracomment>
+            <translation>300%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>400%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item7.title</extracomment>
+            <translation>400%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>500%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item8.title</extracomment>
+            <translation>500%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>600%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item9.title</extracomment>
+            <translation>600%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>700%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item10.title</extracomment>
+            <translation>700%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>800%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item11.title</extracomment>
+            <translation>800%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>900%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item12.title</extracomment>
+            <translation>900%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>1000%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item13.title</extracomment>
+            <translation>1000%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="97" />
+            <source>Paper size:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/labelgroup14.title</extracomment>
+            <translation>Kích thước giấy:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="113" />
+            <source>Overlap tiles</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/overlap.title</extracomment>
+            <translation>Xếp chồng các ảnh</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="122" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="128" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hủy</translation>
         </message>
     </context>
     <context>
@@ -13351,152 +13615,16 @@ KHÔNG THỂ HOÀN TÁC.
     <context>
         <name>ImportSourceDialog</name>
         <message>
-            <source>Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
-            <translation>Tùy chọn</translation>
-        </message>
-        <message>
-            <source>Online options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button);headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
-            <translation>Tùy chọn trực tuyến</translation>
-        </message>
-        <message>
-            <source>Upload</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tải lên</translation>
-        </message>
-        <message>
-            <source>Upload to Picasa Web Albums...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>Tải lên &amp;Anbom Web Picasa...</translation>
-        </message>
-        <message>
-            <source>Sync starred photos only</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
-            <translation>Chỉ đồng bộ hóa ảnh có gắn dấu sao</translation>
-        </message>
-        <message>
-            <source>View the previous Photo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Xem ảnh trước</translation>
-        </message>
-        <message>
-            <source>View the next Photo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Xem ảnh tiếp theo</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="20" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="19" />
             <source>Import from Source</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nhập từ nguồn</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="122" />
-            <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nhập ảnh và video từ thư mục khác (ví dụ: máy ảnh hoặc thẻ nhớ đã được kết nối) vào thư viện.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="134" />
-            <source>Source:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nguồn:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="306" />
-            <source>Removable drives</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ổ đĩa di động</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="71" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="85" />
             <source>Removable Drive (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ổ đĩa di động (%1)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="144" />
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="245" />
-            <source>(none selected)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(chưa chọn)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="150" />
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="251" />
-            <source>Browse...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation>Duyệt...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="175" />
-            <source>%1 pictures/videos found</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tìm thấy %1 ảnh/video</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="186" />
-            <source>No pictures or videos found in this folder.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Không tìm thấy ảnh hoặc video trong thư mục này.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="200" />
-            <source>Exclude Duplicates</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Loại trừ mục trùng lặp</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
-            <source>Exclude photos that are already imported into PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Loại trừ ảnh đã nhập vào PicasaPy</translation>
-        </message>
-        <message numerus="yes">
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
-            <source>%n of those are duplicates already in PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>
-                <numerusform>Trong số đó, %n ảnh đã trùng lặp trong PicasaPy</numerusform>
-                <numerusform>Trong số đó, %n ảnh đã trùng lặp trong PicasaPy</numerusform>
-            </translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="265" />
-            <source>Exclude All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Loại trừ tất cả</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="270" />
-            <source>Include All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Bao gồm tất cả</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
-            <source>Include</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Bao gồm</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
-            <source>Exclude</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Loại trừ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="235" />
-            <source>Destination:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IPTC::Destination</extracomment>
-            <translation>Đích</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="260" />
@@ -13505,59 +13633,7 @@ picasapy-origin-key: stringres:IPTC::Destination</extracomment>
             <translation>Mẫu thư mục:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="778" />
-            <source>Enter new folder title or choose existing folder to continue</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
-            <translation>Nhập tiêu đề thư mục mới hoặc chọn thư mục hiện có để tiếp tục</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="376" />
-            <source>Enter Folder Title</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:iCAcquireUI::SubFolder</extracomment>
-            <translation>Nhập tiêu đề thư mục</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="392" />
-            <source>Date Taken (YYYY-MM-DD)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
-            <translation>Ngày Chụp (Ngày-Tháng-Năm)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="399" />
-            <source>%1 (Today)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 (Hôm nay)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="408" />
-            <source>After Copying:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extracomment>
-            <translation>Sau khi Sao chép:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="419" />
-            <source>Leave card alone</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Giữ nguyên thẻ nhớ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="426" />
-            <source>Delete only copied photos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Chỉ xóa ảnh đã sao chép</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="433" />
-            <source>Delete everything on card</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Xóa mọi thứ trên thẻ nhớ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="115" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="249" />
             <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Bạn có chắc muốn xóa các tệp đã nhập khỏi thẻ nhớ không? KHÔNG THỂ HOÀN TÁC.</translation>
@@ -13575,111 +13651,360 @@ picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extraco
             <translation>Di chuyển thay vì sao chép (tệp nguồn sẽ bị xóa)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="466" />
-            <source>%1 / %2 imported</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Đã nhập %1 / %2</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="477" />
-            <source>Done: %1 imported, %2 failed</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Hoàn tất: đã nhập %1, %2 thất bại</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="490" />
-            <source>Import</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
-            <translation>Nhập</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="499" />
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Đóng</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="334" />
             <source>Import Files/Folder</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::importfilestitle</extracomment>
             <translation>Nhập tệp/thư mục</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="360" />
-            <source>Folder...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Thư mục...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="366" />
-            <source>Files...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tệp...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="321" />
             <source>Choose source folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Chọn thư mục nguồn...</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="516" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="362" />
             <source>Choose destination folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Chọn thư mục đích...</translation>
         </message>
         <message>
-            <source>%1 / %2 imported at %3/sec</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Đã nhập %1 / %2 với tốc độ %3/giây</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="143" />
             <source>bytes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>byte</translation>
         </message>
         <message>
-            <source>File types:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</extracomment>
-            <translation>Loại tệp</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="350" />
             <source>Picture and Movie Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Tệp ảnh và phim</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="352" />
             <source>Picture Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
             <translation>Tệp ảnh</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="353" />
+            <source>All Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
+            <translation>Tất cả tệp</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImportSourcePickerPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="166" />
+            <source>Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
+            <translation>Tùy chọn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="167" />
+            <source>Online options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button);headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
+            <translation>Tùy chọn trực tuyến</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="157" />
+            <source>Upload</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tải lên</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="159" />
+            <source>Upload to Picasa Web Albums...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
+            <translation>Tải lên &amp;Anbom Web Picasa...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="188" />
+            <source>Sync starred photos only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
+            <translation>Chỉ đồng bộ hóa ảnh có gắn dấu sao</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="267" />
+            <source>View the previous Photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Xem ảnh trước</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="279" />
+            <source>View the next Photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Xem ảnh tiếp theo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="15" />
+            <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nhập ảnh và video từ thư mục khác (ví dụ: máy ảnh hoặc thẻ nhớ đã được kết nối) vào thư viện.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="28" />
+            <source>Source:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nguồn:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="63" />
+            <source>Removable drives</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ổ đĩa di động</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="38" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="38" />
+            <source>(none selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(chưa chọn)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="79" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="79" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Duyệt...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="230" />
+            <source>%1 pictures/videos found</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tìm thấy %1 ảnh/video</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="241" />
+            <source>No pictures or videos found in this folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Không tìm thấy ảnh hoặc video trong thư mục này.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="143" />
+            <source>Exclude Duplicates</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Loại trừ mục trùng lặp</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="197" />
+            <source>Exclude photos that are already imported into PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Loại trừ ảnh đã nhập vào PicasaPy</translation>
+        </message>
+        <message numerus="yes">
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="204" />
+            <source>%n of those are duplicates already in PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>
+                <numerusform>Trong số đó, %n ảnh đã trùng lặp trong PicasaPy</numerusform>
+                <numerusform>Trong số đó, %n ảnh đã trùng lặp trong PicasaPy</numerusform>
+            </translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="253" />
+            <source>Exclude All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Loại trừ tất cả</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="258" />
+            <source>Include All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Bao gồm tất cả</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="88" />
+            <source>Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Thư mục...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="93" />
+            <source>Files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tệp...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="107" />
+            <source>File types:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</extracomment>
+            <translation>Loại tệp</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="116" />
+            <source>Picture and Movie Files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tệp ảnh và phim</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="117" />
+            <source>Picture Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
+            <translation>Tệp ảnh</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="118" />
             <source>All Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <translation>Tất cả tệp</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="51" />
             <source>Recent sources</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nguồn gần đây</translation>
         </message>
+    </context>
+    <context>
+        <name>ImportSourcePreview</name>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourcePreview.qml" line="122" />
+            <source>Include</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Bao gồm</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePreview.qml" line="122" />
+            <source>Exclude</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Loại trừ</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImportSourceDestinationPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="26" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="26" />
+            <source>(none selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(chưa chọn)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="98" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="98" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Duyệt...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="16" />
+            <source>Destination:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IPTC::Destination</extracomment>
+            <translation>Đích</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="139" />
+            <source>Enter new folder title or choose existing folder to continue</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
+            <translation>Nhập tiêu đề thư mục mới hoặc chọn thư mục hiện có để tiếp tục</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="111" />
+            <source>Enter Folder Title</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:iCAcquireUI::SubFolder</extracomment>
+            <translation>Nhập tiêu đề thư mục</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="144" />
+            <source>Date Taken (YYYY-MM-DD)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
+            <translation>Ngày Chụp (Ngày-Tháng-Năm)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="153" />
+            <source>%1 (Today)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 (Hôm nay)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="162" />
+            <source>After Copying:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extracomment>
+            <translation>Sau khi Sao chép:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="173" />
+            <source>Leave card alone</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Giữ nguyên thẻ nhớ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="180" />
+            <source>Delete only copied photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Chỉ xóa ảnh đã sao chép</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="187" />
+            <source>Delete everything on card</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Xóa mọi thứ trên thẻ nhớ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="229" />
+            <source>%1 / %2 imported</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Đã nhập %1 / %2</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="240" />
+            <source>Done: %1 imported, %2 failed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hoàn tất: đã nhập %1, %2 thất bại</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="253" />
+            <source>Import</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
+            <translation>Nhập</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="264" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Đóng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="224" />
+            <source>%1 / %2 imported at %3/sec</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Đã nhập %1 / %2 với tốc độ %3/giây</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="59" />
             <source>Recent destinations</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Đích gần đây</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="76" />
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Kích thước Ban đầu</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="77" />
             <source>%1 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 pixel</translation>

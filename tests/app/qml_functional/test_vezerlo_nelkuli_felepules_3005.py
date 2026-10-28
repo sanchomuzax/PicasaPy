@@ -59,7 +59,6 @@ _QML = Path(picasapy.app.__file__).parent / "qml"
 ALAPALLAPOT: frozenset[str] = frozenset(
     {
         "AboutDialog.qml",
-        "CreateDialogs.qml",
         "FolderManagerDialog.qml",
         "FolderPane.qml",
         "LightboxFeed.qml",

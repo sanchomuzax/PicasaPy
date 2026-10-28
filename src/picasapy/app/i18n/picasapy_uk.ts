@@ -429,69 +429,9 @@ picasapy-origin-key: stringres:ytPrinter::unnamedalbum</extracomment>
     <context>
         <name>PrintDialog</name>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Border and Text Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(printpanel/captionoptionslabel)</extracomment>
-            <translation>Параметри полів і тексту</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Configure borders and text for Photos to be printed</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracomment>
-            <translation>Налаштувати поля і текст фотографій для друку</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Help</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Довідка</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Normal</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
-            <translation>Звичайний</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Optimized</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Оптимізований</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Printer Setup</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
-            <translation>Налаштування принтера</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>A printer must be installed in order to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
-            <translation>Для друку потрібно встановити принтер.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Open printer setup controls for the selected printer</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
-            <translation>Відкрити налаштування вибраного принтера</translation>
-        </message>
-        <message>
             <source>Review</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Перегляд</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Деякі фотографії замалі для якісного друку. Їх можна вилучити, надрукувати попри це або скасувати й змінити розмір друку.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
@@ -500,69 +440,10 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
             <translation>Низька якість: %1</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Remove Selected Items</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: reviewprint:reviewprint/remove.title</extracomment>
-            <translation>Видалити вибрані елементи</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Remove Low Quality Pictures</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: reviewprint:reviewprint/removeall.title</extracomment>
-            <translation>Видалити фотографії низької якості</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>All of your pictures are ready to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::ready</extracomment>
-            <translation>Усі фотографії готові для друку.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>There are no pictures left to print.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::noneleft</extracomment>
-            <translation>Не залишилося фотографій для друку.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>OK</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>OK</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Скасувати</translation>
-        </message>
-        <message>
             <source>Make sure your photos are ready to print</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Tooltip(printpanel/reviewnowbutton2)</extracomment>
             <translation>Упевніться, що фотографії готові до друку</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Best quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Найвища якість (%1 пікселів/дюйм)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Good quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Хороша якість (%1 пікселів/дюйм)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Bad quality (%1 pixels/inch)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Погана якість (%1 пікселів/дюйм)</translation>
         </message>
         <message>
             <source>These pictures are below %1 pixels/inch at the selected print size:</source>
@@ -573,16 +454,6 @@ picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Toolt
             <source>%1 pixels/inch</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 пікселів/дюйм</translation>
-        </message>
-        <message>
-            <source>%1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 / %2</translation>
-        </message>
-        <message>
-            <source>Print size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Розмір друку:</translation>
         </message>
         <message>
             <source>CD Cover Size</source>
@@ -729,109 +600,15 @@ picasapy-origin-key: stringres:ThumbUIPrint::ReadyPrompt</extracomment>
             <translation>Виберіть файл призначення.</translation>
         </message>
         <message>
-            <source>These pictures could not be printed: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Не вдалося надрукувати ці зображення: %1</translation>
-        </message>
-        <message numerus="yes">
-            <source>Pictures to print: %1 (%n page(s))</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>
-                <numerusform>Фотографій для друку: %1 (%n сторінка)</numerusform>
-                <numerusform>Фотографій для друку: %1 (%n сторінки)</numerusform>
-                <numerusform>Фотографій для друку: %1 (%n сторінок)</numerusform>
-            </translation>
-        </message>
-        <message>
             <source>Contact Sheet</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
             <translation>Контактний аркуш</translation>
         </message>
         <message>
-            <source>Columns:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Стовпці:</translation>
-        </message>
-        <message>
-            <source>Printer:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Принтер:</translation>
-        </message>
-        <message>
             <source>Print to a PDF file...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Друкувати у файл PDF…</translation>
-        </message>
-        <message>
-            <source>(not selected)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(не вибрано)</translation>
-        </message>
-        <message>
-            <source>Browse...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation>Огляд…</translation>
-        </message>
-        <message>
-            <source>Fit to page:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Підігнати до сторінки:</translation>
-        </message>
-        <message>
-            <source>Whole picture</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Усе зображення</translation>
-        </message>
-        <message>
-            <source>Fill the page (crop)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Заповнити сторінку (обрізати)</translation>
-        </message>
-        <message>
-            <source>Orientation:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
-            <translation>Орієнтація</translation>
-        </message>
-        <message>
-            <source>Automatic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Автоматично</translation>
-        </message>
-        <message>
-            <source>Portrait</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
-            <translation>Портрет</translation>
-        </message>
-        <message>
-            <source>Landscape</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
-            <translation>Пейзаж</translation>
-        </message>
-        <message>
-            <source>Finished: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Завершено: %1</translation>
-        </message>
-        <message>
-            <source>Printing: %1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Друк: %1 / %2</translation>
-        </message>
-        <message>
-            <source>Print</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Друкувати</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Закрити</translation>
         </message>
         <message>
             <source>PDF documents (*.pdf)</source>
@@ -848,26 +625,286 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Додати ще одну копію кожної фотографії для друку</translation>
         </message>
+    </context>
+    <context>
+        <name>PrintPreviewPanel</name>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>This will remove all of your pictures and cancel printing. Would you like to continue?</source>
+            <source>%1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 / %2</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintSelectionPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>A printer must be installed in order to print.</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::removedall</extracomment>
-            <translation>Це спричинить вилучення всіх фотографій і скасування друку.  Продовжити?</translation>
+picasapy-origin-key: stringres:IDS_MUST_INSTALL_PRINTER</extracomment>
+            <translation>Для друку потрібно встановити принтер.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>Normal</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTitleDialog::fontNormal</extracomment>
+            <translation>Звичайний</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSelectionPanel.qml" />
+            <source>Optimized</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Оптимізований</translation>
+        </message>
+        <message numerus="yes">
+            <source>Pictures to print: %1 (%n page(s))</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>
+                <numerusform>Фотографій для друку: %1 (%n сторінка)</numerusform>
+                <numerusform>Фотографій для друку: %1 (%n сторінки)</numerusform>
+                <numerusform>Фотографій для друку: %1 (%n сторінок)</numerusform>
+            </translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintSettingsPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSettingsPanel.qml" />
+            <source>Border and Text Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(printpanel/captionoptionslabel)</extracomment>
+            <translation>Параметри полів і тексту</translation>
+        </message>
+        <message>
+            <source>Columns:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Стовпці:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintSettingsPanel.qml" />
+            <source>Configure borders and text for Photos to be printed</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(printpanel/captionoptionsbutton)</extracomment>
+            <translation>Налаштувати поля і текст фотографій для друку</translation>
+        </message>
+        <message>
+            <source>Print size:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Розмір друку:</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintPrinterPanel</name>
+        <message>
+            <source>(not selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(не вибрано)</translation>
+        </message>
+        <message>
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Огляд…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintPrinterPanel.qml" />
+            <source>Open printer setup controls for the selected printer</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(printpanel/psetupbutton)</extracomment>
+            <translation>Відкрити налаштування вибраного принтера</translation>
+        </message>
+        <message>
+            <source>Print to a PDF file...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Друкувати у файл PDF…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintPrinterPanel.qml" />
+            <source>Printer Setup</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(printpanel/setuplabel)</extracomment>
+            <translation>Налаштування принтера</translation>
+        </message>
+        <message>
+            <source>Printer:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Принтер:</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintFitPanel</name>
+        <message>
+            <source>Automatic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Автоматично</translation>
+        </message>
+        <message>
+            <source>Fill the page (crop)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Заповнити сторінку (обрізати)</translation>
+        </message>
+        <message>
+            <source>Fit to page:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Підігнати до сторінки:</translation>
+        </message>
+        <message>
+            <source>Landscape</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Landscape</extracomment>
+            <translation>Пейзаж</translation>
+        </message>
+        <message>
+            <source>Orientation:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Orientation</extracomment>
+            <translation>Орієнтація</translation>
+        </message>
+        <message>
+            <source>Portrait</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Portrait</extracomment>
+            <translation>Портрет</translation>
+        </message>
+        <message>
+            <source>Whole picture</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Усе зображення</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintStatusPanel</name>
+        <message>
+            <source>Finished: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Завершено: %1</translation>
+        </message>
+        <message>
+            <source>Printing: %1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Друк: %1 / %2</translation>
+        </message>
+        <message>
+            <source>These pictures could not be printed: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Не вдалося надрукувати ці зображення: %1</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintButtonRow</name>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Закрити</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintButtonRow.qml" />
+            <source>Help</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Довідка</translation>
+        </message>
+        <message>
+            <source>Print</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Друкувати</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintReviewPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>All of your pictures are ready to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::ready</extracomment>
+            <translation>Усі фотографії готові для друку.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Bad quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Погана якість (%1 пікселів/дюйм)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Best quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Найвища якість (%1 пікселів/дюйм)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Скасувати</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Good quality (%1 pixels/inch)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Хороша якість (%1 пікселів/дюйм)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Remove Low Quality Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: reviewprint:reviewprint/removeall.title</extracomment>
+            <translation>Видалити фотографії низької якості</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Remove Selected Items</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: reviewprint:reviewprint/remove.title</extracomment>
+            <translation>Видалити вибрані елементи</translation>
+        </message>
+        <message>
+            <source>Review</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Перегляд</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>Some of your pictures are too small to print well.  You can remove these pictures, print them anyway, or cancel and change the print size.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Деякі фотографії замалі для якісного друку. Їх можна вилучити, надрукувати попри це або скасувати й змінити розмір друку.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintReviewPanel.qml" />
+            <source>There are no pictures left to print.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::noneleft</extracomment>
+            <translation>Не залишилося фотографій для друку.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintRemoveAllDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
+            <source>Don't Remove</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CPrintDlg::removedallnobutton</extracomment>
+            <translation>Не видаляти</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
             <source>Remove and Cancel</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CPrintDlg::removedallyesbutton</extracomment>
             <translation>Видалити та скасувати</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintDialog.qml" />
-            <source>Don't Remove</source>
+            <location filename="../qml/PicasaPy/PrintRemoveAllDialog.qml" />
+            <source>This will remove all of your pictures and cancel printing. Would you like to continue?</source>
             <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CPrintDlg::removedallnobutton</extracomment>
-            <translation>Не видаляти</translation>
+picasapy-origin-key: stringres:CPrintDlg::removedall</extracomment>
+            <translation>Це спричинить вилучення всіх фотографій і скасування друку.  Продовжити?</translation>
         </message>
     </context>
     <context>
@@ -5043,954 +5080,1181 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
         </message>
     </context>
     <context>
-        <name>CreateDialogs</name>
+        <name>CollageCreateDialog</name>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Get More...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
-            <translation>Отримати більше...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Get more clips from Photo Library</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
-            <translation>Отримати більше кліпів з бібліотеки фотографій</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Clips (%d)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::clips_title</extracomment>
-            <translation>Кліпи (%d)</translation>
-        </message>
-        <message>
-            <source>Poster Settings</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/window1.title</extracomment>
-            <translation>Налаштування плаката</translation>
-        </message>
-        <message>
-            <source>Tip: if you don't want to trim, crop your picture to the same size as the paper.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/label2.title</extracomment>
-            <translation>Порада: якщо ви не хочете обрізати зображення, зменште його розмір відповідно до розміру паперу.</translation>
-        </message>
-        <message>
-            <source>Poster size:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/labelgroup3.title</extracomment>
-            <translation>Розмір плаката:</translation>
-        </message>
-        <message>
-            <source>200%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item5.title</extracomment>
-            <translation>200%</translation>
-        </message>
-        <message>
-            <source>300%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item6.title</extracomment>
-            <translation>300%</translation>
-        </message>
-        <message>
-            <source>400%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item7.title</extracomment>
-            <translation>400%</translation>
-        </message>
-        <message>
-            <source>500%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item8.title</extracomment>
-            <translation>500%</translation>
-        </message>
-        <message>
-            <source>600%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item9.title</extracomment>
-            <translation>600%</translation>
-        </message>
-        <message>
-            <source>700%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item10.title</extracomment>
-            <translation>700%</translation>
-        </message>
-        <message>
-            <source>800%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item11.title</extracomment>
-            <translation>800%</translation>
-        </message>
-        <message>
-            <source>900%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item12.title</extracomment>
-            <translation>900%</translation>
-        </message>
-        <message>
-            <source>1000%</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/item13.title</extracomment>
-            <translation>1000%</translation>
-        </message>
-        <message>
-            <source>Paper size:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/labelgroup14.title</extracomment>
-            <translation>Розмір паперу:</translation>
-        </message>
-        <message>
-            <source>4x6</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
-            <translation>4x6</translation>
-        </message>
-        <message>
-            <source>8.5x11</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:FullPage;stringres:CPosterDlg::size2</extracomment>
-            <translation>8.5x11</translation>
-        </message>
-        <message>
-            <source>10x15</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:10x15m</extracomment>
-            <translation>10 x 15</translation>
-        </message>
-        <message>
-            <source>20x25</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::Crop20x25m</extracomment>
-            <translation>20 x 25</translation>
-        </message>
-        <message>
-            <source>Overlap tiles</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: poster:poster/overlap.title</extracomment>
-            <translation>Накласти мозаїку</translation>
-        </message>
-        <message>
-            <source>OK</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
-            <translation>OK</translation>
-        </message>
-        <message>
-            <source>Cancel</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Скасувати</translation>
-        </message>
-        <message>
-            <source>Poster tiles saved.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Плитки плаката збережено.</translation>
-        </message>
-        <message>
-            <source>The poster tiles could not be created.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Не вдалося створити плитки плаката.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="266" />
-            <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Не вдалося знайти %1 зображень, їх не буде показано. (Відсутні файли могли перемістити, перейменувати або видалити.)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="24" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="23" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="163" />
             <source>Picture Collage...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:eMenuCreate::ID_COLLAGEMAKER</extracomment>
             <translation>&amp;Колаж…</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="44" />
-            <source>%1 pictures selected.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Вибрано зображень: %1.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="52" />
-            <source>Collage type:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Тип колажу:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
-            <source>Picture Grid</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::ePictureGrid</extracomment>
-            <translation>Мережа фотографій</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="77" />
-            <source>Mosaic</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Мозаїка</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
-            <source>Grid</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Сітка</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="79" />
-            <source>Multiple Exposure</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
-            <translation>Мультиекспозиція</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="85" />
-            <source>Picture borders:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/borders_label)</extracomment>
-            <translation>Рамки зображення</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>None</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
-            <translation>Немає</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>White Border</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Border::ID_COLLAGE_BORDER_1;stringres:collage::whiteborder_dname</extracomment>
-            <translation>Біла рамка</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
-            <source>Polaroid</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
-            <translation>Поляроїд</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="55" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="68" />
             <source>Select pictures in the library first, or put them in the Picture Tray.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Спочатку виберіть зображення в бібліотеці або додайте їх до лотка фотографій.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="121" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="76" />
+            <source>%1 pictures selected.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Вибрано зображень: %1.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="95" />
             <source>Scramble Collage</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/rand_placement-label)</extracomment>
             <translation>Перемішати колаж</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="62" />
-            <source>Contact Sheet</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
-            <translation>Контактний аркуш</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
-            <source>Frame Mosaic</source>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="105" />
+            <source>Collage type:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Мозаїка з рамок</translation>
+            <translation>Тип колажу:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="63" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="114" />
             <source>Picture Pile</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CollageType::ePicturePile</extracomment>
             <translation>Купа фотографій</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="69" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="114" />
+            <source>Mosaic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Мозаїка</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="115" />
+            <source>Frame Mosaic</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Мозаїка з рамок</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="115" />
+            <source>Grid</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Сітка</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="116" />
+            <source>Contact Sheet</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
+            <translation>Контактний аркуш</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="116" />
+            <source>Multiple Exposure</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eMultiExposure</extracomment>
+            <translation>Мультиекспозиція</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="123" />
+            <source>Picture borders:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/borders_label)</extracomment>
+            <translation>Рамки зображення</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
+            <translation>Немає</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>White Border</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Border::ID_COLLAGE_BORDER_1;stringres:collage::whiteborder_dname</extracomment>
+            <translation>Біла рамка</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="131" />
+            <source>Polaroid</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_Polaroid_label0</extracomment>
+            <translation>Поляроїд</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="139" />
             <source>Target file:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
             <translation>Файл призначення</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="78" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="149" />
             <source>(not selected)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>(не вибрано)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="83" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="154" />
             <source>Browse...</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
             <translation>Огляд…</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="93" />
+            <location filename="../qml/PicasaPy/CollageCreateDialog.qml" line="166" />
             <source>JPEG images (*.jpg)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Зображення JPEG (*.jpg)</translation>
         </message>
+    </context>
+    <context>
+        <name>CreateDialogs</name>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="98" />
-            <source>Movie</source>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="124" />
+            <source>%1 picture(s) could not be found and will not be shown. (The missing files must have been moved, renamed or deleted)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Відео</translation>
+            <translation>Не вдалося знайти %1 зображень, їх не буде показано. (Відсутні файли могли перемістити, перейменувати або видалити.)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="130" />
-            <source>Video size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Розмір відео:</translation>
-        </message>
-        <message>
-            <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Зображення та тривалість показу у відео беруться з файлу проєкту; початковий розмір встановлено за замовчуванням.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="146" />
-            <source>Seconds per picture:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Тривалість показу кожного зображення (с):</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="185" />
-            <source>MP4 videos (*.mp4)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Відео MP4 (*.mp4)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="202" />
-            <source>Creating movie: %1 / %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Створення відео: %1 / %2</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="226" />
-            <source>Create</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Створити</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="247" />
-            <source>Collage saved: %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Колаж збережено: %1</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="248" />
-            <source>%1 pictures used.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Використано зображень: %1.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="240" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="127" />
             <source>%1 pictures were skipped.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Пропущено зображень: %1.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="254" />
-            <source>The collage could not be created.</source>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="149" />
+            <source>Collage saved: %1</source>
+            <extracomment>A kollázs elkészült — az összegző párbeszéd megnyitása.
+picasapy-origin: picasapy</extracomment>
+            <translation>Колаж збережено: %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="150" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="174" />
+            <source>%1 pictures used.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Використано зображень: %1.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="158" />
+            <source>The collage could not be created.</source>
+            <extracomment>A kollázs nem készült el.
+picasapy-origin: picasapy</extracomment>
             <translation>Не вдалося створити колаж.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="264" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="173" />
             <source>Movie saved: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Відео збережено: %1</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Replace Existing or Create New?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
-            <translation>Замінити існуючий чи створити новий?</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Replace Existing</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
-            <translation>Замінити існуючий</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>Create New</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
-            <translation>Створити</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="271" />
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="183" />
             <source>The movie could not be created.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Не вдалося створити відео.</translation>
         </message>
         <message>
-            <source>Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
-            <translation>Текст</translation>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="189" />
+            <source>Poster tiles saved.</source>
+            <extracomment>#4268: a poszterlapok a forráskép mellett készültek el.
+picasapy-origin: picasapy</extracomment>
+            <translation>Плитки плаката збережено.</translation>
         </message>
         <message>
-            <source>Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab2)</extracomment>
-            <translation>Слайд</translation>
+            <location filename="../qml/PicasaPy/CreateDialogs.qml" line="197" />
+            <source>The poster tiles could not be created.</source>
+            <extracomment>#4268: a poszterlapok írási hibája a párbeszédben jelenik meg.
+picasapy-origin: picasapy</extracomment>
+            <translation>Не вдалося створити плитки плаката.</translation>
         </message>
+    </context>
+    <context>
+        <name>CreateResultDialog</name>
         <message>
-            <source>Clips</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab3)</extracomment>
-            <translation>Кліпи</translation>
-        </message>
-        <message>
-            <source>Sizes</source>
+            <location filename="../qml/PicasaPy/CreateResultDialog.qml" line="10" />
+            <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Розміри</translation>
+            <translation>Створити</translation>
         </message>
+    </context>
+    <context>
+        <name>MovieMakerDialog</name>
         <message>
-            <source>Dimensions</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Розміри</translation>
-        </message>
-        <message>
-            <source>Transition style:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</extracomment>
-            <translation>Стиль переміщення</translation>
-        </message>
-        <message>
-            <source>Cut</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Різка зміна</translation>
-        </message>
-        <message>
-            <source>Dissolve</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolve</extracomment>
-            <translation>Наплив</translation>
-        </message>
-        <message>
-            <source>Dissolve through black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolveblack</extracomment>
-            <translation>Наплив із чорного</translation>
-        </message>
-        <message>
-            <source>Dissolve through white</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
-            <translation>Наплив із білого</translation>
-        </message>
-        <message>
-            <source>Wipe - left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
-            <translation>Стерти зліва</translation>
-        </message>
-        <message>
-            <source>Wipe</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Витирання</translation>
-        </message>
-        <message>
-            <source>Wipe - top</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
-            <translation>Стерти - вгорі</translation>
-        </message>
-        <message>
-            <source>Wipe - bottom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
-            <translation>Стерти - нижня частина</translation>
-        </message>
-        <message>
-            <source>Wipe - up left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
-            <translation>Стерти – верхня ліва частина</translation>
-        </message>
-        <message>
-            <source>Wipe - up right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
-            <translation>Стерти у верхній правій стороні</translation>
-        </message>
-        <message>
-            <source>Wipe - down left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
-            <translation>Стерти - нижня ліва частина</translation>
-        </message>
-        <message>
-            <source>Wipe - down right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
-            <translation>Стерти – нижня права частина</translation>
-        </message>
-        <message>
-            <source>Push - left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
-            <translation>Змістити - ліворуч</translation>
-        </message>
-        <message>
-            <source>Push</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
-            <translation>Змістити</translation>
-        </message>
-        <message>
-            <source>Push - top</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
-            <translation>Змістити - догори</translation>
-        </message>
-        <message>
-            <source>Push - bottom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
-            <translation>Змістити – донизу</translation>
-        </message>
-        <message>
-            <source>Circle - inwards</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
-            <translation>Обвести колом усередині</translation>
-        </message>
-        <message>
-            <source>Circle</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
-            <translation>Обвести колом</translation>
-        </message>
-        <message>
-            <source>Pan and Zoom</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
-            <translation>Зсув і масштабування</translation>
-        </message>
-        <message>
-            <source>Pan and Zoom - face</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
-            <translation>Зсув і масштабування - обличчя</translation>
-        </message>
-        <message>
-            <source>Time Lapse</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
-            <translation>Серійна зйомка з часовим інтервалом</translation>
-        </message>
-        <message>
-            <source>Rectangle</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
-            <translation>Прямокутник</translation>
-        </message>
-        <message>
-            <source>Overlap</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transitionslider_label)</extracomment>
-            <translation>Збіг</translation>
-        </message>
-        <message>
-            <source>Slide Duration:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_label)</extracomment>
-            <translation>Тривалість показу слайду</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
-            <source>%1 Sec</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 с</translation>
-        </message>
-        <message>
-            <source>Audio:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
-            <translation>Звукова доріжка:</translation>
-        </message>
-        <message>
-            <source>Audio Track:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
-            <translation>Звукова доріжка:</translation>
-        </message>
-        <message>
-            <source>No audio selected</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Аудіо не вибрано</translation>
-        </message>
-        <message>
-            <source>Load…</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
-            <translation>Завантаження...</translation>
-        </message>
-        <message>
-            <source>Clear</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Очистити</translation>
-        </message>
-        <message>
-            <source>Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
-            <translation>Параметри</translation>
-        </message>
-        <message>
-            <source>Truncate audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption0</extracomment>
-            <translation>Обрізати аудіо</translation>
-        </message>
-        <message>
-            <source>Fit photos into audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption1</extracomment>
-            <translation>Підігнати фотографії під аудіо</translation>
-        </message>
-        <message>
-            <source>Loop photos to match audio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::audiooption2</extracomment>
-            <translation>Відтворювати фотографії по колу</translation>
-        </message>
-        <message>
-            <source>Show Captions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label);makemoviepaneltext:Label(makemoviepanel/show_captions_label);stringres:Slingshot::ID_SHOW_CAPTIONS</extracomment>
-            <translation>Показати підписи</translation>
-        </message>
-        <message>
-            <source>Show Dates</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::show_dates_label</extracomment>
-            <translation>Показати дати</translation>
-        </message>
-        <message>
-            <source>Full frame photo crop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/crop_to_fit_label)</extracomment>
-            <translation>Обрізання фотографії повним фреймом</translation>
-        </message>
-        <message>
-            <source>Remove Low Resolution Faces</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/remove_low_res_faces_label)</extracomment>
-            <translation>Видалити обличчя з низькою роздільною здатністю</translation>
-        </message>
-        <message>
-            <source>Best Transitions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/smart_order_label)</extracomment>
-            <translation>Найкращі переходи</translation>
-        </message>
-        <message>
-            <source>Album Order</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)</extracomment>
-            <translation>Порядок альбомів</translation>
-        </message>
-        <message>
-            <source>Chronological</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>У хронологічному порядку</translation>
-        </message>
-        <message>
-            <source>Ordering of Slides:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/ordering_header_label)</extracomment>
-            <translation>Порядок слайдів:</translation>
-        </message>
-        <message>
-            <source>Total Photos</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/lengthslider_label)</extracomment>
-            <translation>Усього фотографій</translation>
-        </message>
-        <message>
-            <source>Don't filter by time taken</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);stringres:CMakeMoviePanel::movieburstzero</extracomment>
-            <translation>Не фільтрувати за часом створення знімка</translation>
-        </message>
-        <message>
-            <source>Remove Photos Taken Within %1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Вилучити фотографії, зроблені протягом %1</translation>
-        </message>
-        <message>
-            <source>Back to selected slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/rewind)</extracomment>
-            <translation>Назад до вибраного слайда</translation>
-        </message>
-        <message>
-            <source>Text slide:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
-            <translation>Текстовий слайд</translation>
-        </message>
-        <message>
-            <source>Font:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Шрифт:</translation>
-        </message>
-        <message>
-            <source>Size:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Розмір:</translation>
-        </message>
-        <message>
-            <source>Style:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Label(edittextpanel/style_label);makemoviepaneltext:Label(makemoviepanel/style_label)</extracomment>
-            <translation>Стиль:</translation>
-        </message>
-        <message>
-            <source>Centered</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Centered</extracomment>
-            <translation>По центру</translation>
-        </message>
-        <message>
-            <source>I'm Feeling Lucky</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Мені пощастить</translation>
-        </message>
-        <message>
-            <source>Caption</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Підпис</translation>
-        </message>
-        <message>
-            <source>Caption - Classic</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle3</extracomment>
-            <translation>Підпис - класичний</translation>
-        </message>
-        <message>
-            <source>Gradient - Black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle4</extracomment>
-            <translation>Відхилення - чорний</translation>
-        </message>
-        <message>
-            <source>Gradient - White</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle5</extracomment>
-            <translation>Відхилення – білий</translation>
-        </message>
-        <message>
-            <source>Transparent - Black</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle6</extracomment>
-            <translation>Прозорий - чорний</translation>
-        </message>
-        <message>
-            <source>Transparent - White</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle7</extracomment>
-            <translation>Прозорий - білий</translation>
-        </message>
-        <message>
-            <source>Scrolling Credits</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle8</extracomment>
-            <translation>Перегляд титрів</translation>
-        </message>
-        <message>
-            <source>Music Video - Left</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle9</extracomment>
-            <translation>Музичне відео - вліво</translation>
-        </message>
-        <message>
-            <source>Music Video - Right</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle10</extracomment>
-            <translation>Музичне відео - вправо</translation>
-        </message>
-        <message>
-            <source>Caption - Typewriter</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
-            <translation>Підпис - друкарська машинка</translation>
-        </message>
-        <message>
-            <source>Bold</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/bold);makemoviepaneltext:Tooltip(makemoviepanel/bold);stringres:CTitleDialog::fontBold</extracomment>
-            <translation>Жирний</translation>
-        </message>
-        <message>
-            <source>Italic</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepaneltext:Tooltip(makemoviepanel/italic);stringres:CTitleDialog::fontItalic</extracomment>
-            <translation>Курсив</translation>
-        </message>
-        <message>
-            <source>Automatic Outline</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Автоматичний контур</translation>
-        </message>
-        <message>
-            <source>Automatic Outline (like movie subtitles)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/outline)</extracomment>
-            <translation>Автоматично підкреслювати (наприклад, субтитри відеофайлу)</translation>
-        </message>
-        <message>
-            <source>Text color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
-            <translation>Колір тексту</translation>
-        </message>
-        <message>
-            <source>Background color</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
-            <translation>Колір тла</translation>
-        </message>
-        <message>
-            <source>Insert Text Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/insert_slide)</extracomment>
-            <translation>Додати новий текстовий слайд</translation>
-        </message>
-        <message>
-            <source>Remove Selected Slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
-            <translation>Видалити вибраний слайд</translation>
-        </message>
-        <message>
-            <source>Remove the selected slide</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
-            <translation>Видалити вибраний слайд</translation>
-        </message>
-        <message>
-            <source>Add selected clips</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Додати вибрані кліпи</translation>
-        </message>
-        <message>
-            <source>Remove selected clip</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Вилучити вибраний кліп</translation>
-        </message>
-        <message>
-            <source>Add the selected clip(s) to the end of the movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addtomovie)</extracomment>
-            <translation>Додати вибраний(і) кліп(и) в кінець фільму</translation>
-        </message>
-        <message>
-            <source>Remove the selected clip(s) from the tray</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</extracomment>
-            <translation>Видалити вибраний кліп(и) з кошика</translation>
-        </message>
-        <message>
-            <source>Play selected clip only</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Відтворювати лише вибраний кліп</translation>
-        </message>
-        <message>
-            <source>Preview</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
-            <translation>Попередній перегляд</translation>
-        </message>
-        <message>
-            <source>Pause</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Пауза</translation>
-        </message>
-        <message>
-            <source>Show actual movie size (don't stretch)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(video_control_bar2/1to1)</extracomment>
-            <translation>Показати розмір відео (не розтягувати)</translation>
-        </message>
-        <message>
-            <source>Play full screen</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Tooltip(video_control_bar2/fullscreen)</extracomment>
-            <translation>Відтворити в повноекранному режимі</translation>
-        </message>
-        <message>
-            <source>Please Confirm...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Підтвердіть…</translation>
-        </message>
-        <message>
-            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Буде створено нове відео без доданих вами текстових слайдів. Продовжити?</translation>
-        </message>
-        <message>
-            <source>Recompute</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Перерахувати</translation>
-        </message>
-        <message>
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Закрити</translation>
-        </message>
-        <message>
-            <source>Create Movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:buttonlabel:{606D1C6D-36E6-4dce-AFCA-A0EE575A6162}</extracomment>
-            <translation>Створити відео</translation>
-        </message>
-        <message>
-            <source>Audio files</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Аудіофайли</translation>
-        </message>
-        <message>
-            <source>Music files (*.mp3, *.wma)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
-            <translation>Музичні файли (*.mp3,*.wma)</translation>
-        </message>
-        <message>
-            <source>Music files (*.mp3, *.m4a)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
-            <translation>Музичні файли (*.mp3,*.m4a)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="119" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="363" />
             <source>Text Slide</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
             <translation>Текстовий слайд</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="385" />
             <source>%1     %2x%3 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1     %2×%3 пікселів</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/CreateDialogs.qml" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="387" />
             <source>(%1 of %2)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>(%1 з %2)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="519" />
+            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Буде створено нове відео без доданих вами текстових слайдів. Продовжити?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="640" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Закрити</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="647" />
+            <source>Create Movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:buttonlabel:{606D1C6D-36E6-4dce-AFCA-A0EE575A6162}</extracomment>
+            <translation>Створити відео</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="797" />
+            <source>Please Confirm...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Підтвердіть…</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerDialogs</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="23" />
+            <source>Replace Existing or Create New?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ConfirmTitle</extracomment>
+            <translation>Замінити існуючий чи створити новий?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="32" />
+            <source>Replace Existing</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonReplace</extracomment>
+            <translation>Замінити існуючий</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="41" />
+            <source>Create New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CCollageUI::ButtonCreateNew</extracomment>
+            <translation>Створити</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="49" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Скасувати</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="70" />
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="113" />
+            <source>Movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Відео</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="73" />
+            <source>MP4 videos (*.mp4)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Відео MP4 (*.mp4)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="80" />
+            <source>Audio files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Аудіофайли</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="84" />
+            <source>Music files (*.mp3, *.wma)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesWin</extracomment>
+            <translation>Музичні файли (*.mp3,*.wma)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="85" />
+            <source>Music files (*.mp3, *.m4a)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:MakeMoviePanel::AudioTypesMac</extracomment>
+            <translation>Музичні файли (*.mp3,*.m4a)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="96" />
+            <source>Text color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
+            <translation>Колір тексту</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="103" />
+            <source>Background color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
+            <translation>Колір тла</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerDialogs.qml" line="123" />
+            <source>Creating movie: %1 / %2</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Створення відео: %1 / %2</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerFilmstrip</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="38" />
+            <source>Add selected clips</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Додати вибрані кліпи</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="50" />
+            <source>Remove selected clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Вилучити вибраний кліп</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerFilmstrip.qml" line="104" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Текстовий слайд</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerOptions</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="22" />
+            <source>Dimensions</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Розміри</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="51" />
+            <source>Show Captions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/caption_checkbox_label);makemoviepaneltext:Label(makemoviepanel/show_captions_label);stringres:Slingshot::ID_SHOW_CAPTIONS</extracomment>
+            <translation>Показати підписи</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="69" />
+            <source>Full frame photo crop</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/crop_to_fit_label)</extracomment>
+            <translation>Обрізання фотографії повним фреймом</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="84" />
+            <source>Show Dates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::show_dates_label</extracomment>
+            <translation>Показати дати</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="96" />
+            <source>Remove Low Resolution Faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/remove_low_res_faces_label)</extracomment>
+            <translation>Видалити обличчя з низькою роздільною здатністю</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="111" />
+            <source>Ordering of Slides:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/ordering_header_label)</extracomment>
+            <translation>Порядок слайдів:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="117" />
+            <source>Best Transitions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/smart_order_label)</extracomment>
+            <translation>Найкращі переходи</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="125" />
+            <source>Album Order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/album_order_label)</extracomment>
+            <translation>Порядок альбомів</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="134" />
+            <source>Chronological</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>У хронологічному порядку</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="152" />
+            <source>Total Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/lengthslider_label)</extracomment>
+            <translation>Усього фотографій</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="174" />
+            <source>Don't filter by time taken</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/burstslider_label);stringres:CMakeMoviePanel::movieburstzero</extracomment>
+            <translation>Не фільтрувати за часом створення знімка</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="175" />
+            <source>Remove Photos Taken Within %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Вилучити фотографії, зроблені протягом %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="210" />
+            <source>Get More...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
+            <translation>Отримати більше...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="212" />
+            <source>Get more clips from Photo Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
+            <translation>Отримати більше кліпів з бібліотеки фотографій</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerOptions.qml" line="219" />
+            <source>Recompute</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Перерахувати</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerPreview</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="155" />
+            <source>Pause</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Пауза</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="155" />
+            <source>Preview</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text(acquirepanel/previewlabel);stringres:CRSSWebAlbums::PreviewPressed;tooltips:Label(editpanel/croppreview);tooltips:Label(editpanel/redeyepreview);tooltips:Label(printpanel/previewlabel)</extracomment>
+            <translation>Попередній перегляд</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="220" />
+            <source>Show actual movie size (don't stretch)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(video_control_bar2/1to1)</extracomment>
+            <translation>Показати розмір відео (не розтягувати)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreview.qml" line="234" />
+            <source>Play full screen</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(video_control_bar/moviemode1);tooltips:Tooltip(video_control_bar2/fullscreen)</extracomment>
+            <translation>Відтворити в повноекранному режимі</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerSlideLogic</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="20" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="43" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="56" />
+            <location filename="../qml/PicasaPy/MovieMakerSlideLogic.qml" line="74" />
+            <source>Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
+            <translation>Текст</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerTabs</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="61" />
+            <source>Movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Відео</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="62" />
+            <source>Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/tab2)</extracomment>
+            <translation>Слайд</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="67" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="142" />
+            <source>Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
+            <translation>Параметри</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="68" />
+            <source>Clips (%d)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::clips_title</extracomment>
+            <translation>Кліпи (%d)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="96" />
+            <source>Audio Track:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/audio_label)</extracomment>
+            <translation>Звукова доріжка:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="107" />
+            <source>None</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
+            <translation>Немає</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="116" />
+            <source>Load…</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/add_audio);stringres:YouTubeUpload::Loading;youtube:youtube/item8.title</extracomment>
+            <translation>Завантаження...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="123" />
+            <source>Clear</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Очистити</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="154" />
+            <source>Truncate audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption0</extracomment>
+            <translation>Обрізати аудіо</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="154" />
+            <source>Fit photos into audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption1</extracomment>
+            <translation>Підігнати фотографії під аудіо</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="155" />
+            <source>Loop photos to match audio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::audiooption2</extracomment>
+            <translation>Відтворювати фотографії по колу</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="160" />
+            <source>Transition style:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transtype_label)</extracomment>
+            <translation>Стиль переміщення</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="169" />
+            <source>Cut</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Різка зміна</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="169" />
+            <source>Dissolve</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolve</extracomment>
+            <translation>Наплив</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="170" />
+            <source>Dissolve through black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolveblack</extracomment>
+            <translation>Наплив із чорного</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="170" />
+            <source>Dissolve through white</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::dissolvewhite</extracomment>
+            <translation>Наплив із білого</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeleft</extracomment>
+            <translation>Стерти зліва</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Витирання</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="171" />
+            <source>Wipe - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipeup</extracomment>
+            <translation>Стерти - вгорі</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="172" />
+            <source>Wipe - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::wipedown</extracomment>
+            <translation>Стерти - нижня частина</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="172" />
+            <source>Wipe - up left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeul</extracomment>
+            <translation>Стерти – верхня ліва частина</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="173" />
+            <source>Wipe - up right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipeur</extracomment>
+            <translation>Стерти у верхній правій стороні</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="173" />
+            <source>Wipe - down left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedl</extracomment>
+            <translation>Стерти - нижня ліва частина</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Wipe - down right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::diagwipedr</extracomment>
+            <translation>Стерти – нижня права частина</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Push - left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushleft</extracomment>
+            <translation>Змістити - ліворуч</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="174" />
+            <source>Push</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::push;stringres:CTransitions::pushright</extracomment>
+            <translation>Змістити</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="175" />
+            <source>Push - top</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushtop</extracomment>
+            <translation>Змістити - догори</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="175" />
+            <source>Push - bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::pushdown</extracomment>
+            <translation>Змістити – донизу</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="176" />
+            <source>Circle - inwards</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::circlein</extracomment>
+            <translation>Обвести колом усередині</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="176" />
+            <source>Circle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::circle;stringres:CTransitions::circleout</extracomment>
+            <translation>Обвести колом</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="177" />
+            <source>Pan and Zoom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenburns</extracomment>
+            <translation>Зсув і масштабування</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="177" />
+            <source>Pan and Zoom - face</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::kenburnsaoi</extracomment>
+            <translation>Зсув і масштабування - обличчя</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="178" />
+            <source>Time Lapse</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTransitions::timelapse</extracomment>
+            <translation>Серійна зйомка з часовим інтервалом</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="178" />
+            <source>Rectangle</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThemePrefs::rect;stringres:CTransitions::rect</extracomment>
+            <translation>Прямокутник</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="198" />
+            <source>Slide Duration:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/durationslider_label)</extracomment>
+            <translation>Тривалість показу слайду</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="203" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="244" />
+            <source>%1 Sec</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 с</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="239" />
+            <source>Overlap</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/transitionslider_label)</extracomment>
+            <translation>Збіг</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="279" />
+            <source>Target file:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:RestoreApp::destheader</extracomment>
+            <translation>Файл призначення</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="285" />
+            <source>(not selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(не вибрано)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="290" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Огляд…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="297" />
+            <source>The movie's pictures and timing come from the project file; the size starts from the default.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Зображення та тривалість показу у відео беруться з файлу проєкту; початковий розмір встановлено за замовчуванням.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="307" />
+            <source>%1 pictures selected.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Вибрано зображень: %1.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="313" />
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="315" />
+            <source>Back to selected slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/rewind)</extracomment>
+            <translation>Назад до вибраного слайда</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="336" />
+            <source>Text slide:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Текстовий слайд</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="341" />
+            <source>Text</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
+            <translation>Текст</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="347" />
+            <source>Font:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Шрифт:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="357" />
+            <source>Size:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Розмір:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="371" />
+            <source>Style:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Label(edittextpanel/style_label);makemoviepaneltext:Label(makemoviepanel/style_label)</extracomment>
+            <translation>Стиль:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>Centered</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle0;stringres:EXIF::Centered</extracomment>
+            <translation>По центру</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>I'm Feeling Lucky</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Мені пощастить</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="377" />
+            <source>Caption</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Підпис</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="378" />
+            <source>Caption - Classic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle3</extracomment>
+            <translation>Підпис - класичний</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="378" />
+            <source>Gradient - Black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle4</extracomment>
+            <translation>Відхилення - чорний</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="379" />
+            <source>Gradient - White</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle5</extracomment>
+            <translation>Відхилення – білий</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="379" />
+            <source>Transparent - Black</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle6</extracomment>
+            <translation>Прозорий - чорний</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="380" />
+            <source>Transparent - White</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle7</extracomment>
+            <translation>Прозорий - білий</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="380" />
+            <source>Scrolling Credits</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle8</extracomment>
+            <translation>Перегляд титрів</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="381" />
+            <source>Music Video - Left</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle9</extracomment>
+            <translation>Музичне відео - вліво</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="381" />
+            <source>Music Video - Right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle10</extracomment>
+            <translation>Музичне відео - вправо</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="382" />
+            <source>Caption - Typewriter</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::textstyle11</extracomment>
+            <translation>Підпис - друкарська машинка</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="390" />
+            <source>Bold</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/bold);makemoviepaneltext:Tooltip(makemoviepanel/bold);stringres:CTitleDialog::fontBold</extracomment>
+            <translation>Жирний</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="396" />
+            <source>Italic</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: edittextpaneltext:Tooltip(edittextpanel/italic);makemoviepaneltext:Tooltip(makemoviepanel/italic);stringres:CTitleDialog::fontItalic</extracomment>
+            <translation>Курсив</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="404" />
+            <source>Automatic Outline</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Автоматичний контур</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="406" />
+            <source>Automatic Outline (like movie subtitles)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/outline)</extracomment>
+            <translation>Автоматично підкреслювати (наприклад, субтитри відеофайлу)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="414" />
+            <source>Text color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
+            <translation>Колір тексту</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="431" />
+            <source>Background color</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/back_color_label)</extracomment>
+            <translation>Колір тла</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="436" />
+            <source>Insert Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/insert_slide)</extracomment>
+            <translation>Додати новий текстовий слайд</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="443" />
+            <source>Remove Selected Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
+            <translation>Видалити вибраний слайд</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="445" />
+            <source>Remove the selected slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/remove_slide)</extracomment>
+            <translation>Видалити вибраний слайд</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="474" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>Текстовий слайд</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="541" />
+            <source>Get More...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/addclips)</extracomment>
+            <translation>Отримати більше...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="543" />
+            <source>Get more clips from Photo Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addclips)</extracomment>
+            <translation>Отримати більше кліпів з бібліотеки фотографій</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="557" />
+            <source>Recompute</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Перерахувати</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="566" />
+            <source>Add selected clips</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Додати вибрані кліпи</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="569" />
+            <source>Add the selected clip(s) to the end of the movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/addtomovie)</extracomment>
+            <translation>Додати вибраний(і) кліп(и) в кінець фільму</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="576" />
+            <source>Remove selected clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Вилучити вибраний кліп</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="579" />
+            <source>Remove the selected clip(s) from the tray</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Tooltip(makemoviepanel/deleteclips)</extracomment>
+            <translation>Видалити вибраний кліп(и) з кошика</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerTabs.qml" line="588" />
+            <source>Play selected clip only</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Відтворювати лише вибраний кліп</translation>
+        </message>
+    </context>
+    <context>
+        <name>PosterCreateDialog</name>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="11" />
+            <source>Poster Settings</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/window1.title</extracomment>
+            <translation>Налаштування плаката</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="29" />
+            <source>4x6</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x6;stringres:CPosterDlg::size1;stringres:ytPrintSizes::e4x6;tooltips:Label(printpanel/4x6button)</extracomment>
+            <translation>4x6</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="30" />
+            <source>8.5x11</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:FullPage;stringres:CPosterDlg::size2</extracomment>
+            <translation>8.5x11</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="31" />
+            <source>10x15</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:10x15m</extracomment>
+            <translation>10 x 15</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="32" />
+            <source>20x25</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::Crop20x25m</extracomment>
+            <translation>20 x 25</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="69" />
+            <source>Tip: if you don't want to trim, crop your picture to the same size as the paper.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/label2.title</extracomment>
+            <translation>Порада: якщо ви не хочете обрізати зображення, зменште його розмір відповідно до розміру паперу.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="79" />
+            <source>Poster size:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/labelgroup3.title</extracomment>
+            <translation>Розмір плаката:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>200%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item5.title</extracomment>
+            <translation>200%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>300%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item6.title</extracomment>
+            <translation>300%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="87" />
+            <source>400%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item7.title</extracomment>
+            <translation>400%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>500%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item8.title</extracomment>
+            <translation>500%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>600%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item9.title</extracomment>
+            <translation>600%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="88" />
+            <source>700%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item10.title</extracomment>
+            <translation>700%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>800%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item11.title</extracomment>
+            <translation>800%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>900%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item12.title</extracomment>
+            <translation>900%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="89" />
+            <source>1000%</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/item13.title</extracomment>
+            <translation>1000%</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="97" />
+            <source>Paper size:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/labelgroup14.title</extracomment>
+            <translation>Розмір паперу:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="113" />
+            <source>Overlap tiles</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: poster:poster/overlap.title</extracomment>
+            <translation>Накласти мозаїку</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="122" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PosterCreateDialog.qml" line="128" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Скасувати</translation>
         </message>
     </context>
     <context>
@@ -13378,153 +13642,16 @@ THIS CANNOT BE UNDONE.
     <context>
         <name>ImportSourceDialog</name>
         <message>
-            <source>Options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
-            <translation>Параметри</translation>
-        </message>
-        <message>
-            <source>Online options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button);headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
-            <translation>Параметри в режимі онлайн</translation>
-        </message>
-        <message>
-            <source>Upload</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Завантажити</translation>
-        </message>
-        <message>
-            <source>Upload to Picasa Web Albums...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
-            <translation>Завантажити до веб-альбомів &amp;Picasa...</translation>
-        </message>
-        <message>
-            <source>Sync starred photos only</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
-            <translation>Синхронізувати лише позначені зірочкою фотографії</translation>
-        </message>
-        <message>
-            <source>View the previous Photo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Переглянути попередню фотографію</translation>
-        </message>
-        <message>
-            <source>View the next Photo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Переглянути наступну фотографію</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="20" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="19" />
             <source>Import from Source</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Імпорт із джерела</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="122" />
-            <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Імпортуйте до бібліотеки зображення й відео з іншої папки (наприклад, підключеної камери або карти пам’яті).</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="134" />
-            <source>Source:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Джерело:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="306" />
-            <source>Removable drives</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Знімні диски</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="71" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="85" />
             <source>Removable Drive (%1)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Знімний диск (%1)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="144" />
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="245" />
-            <source>(none selected)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(не вибрано)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="150" />
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="251" />
-            <source>Browse...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
-            <translation>Огляд…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="175" />
-            <source>%1 pictures/videos found</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Знайдено фотографій/відео: %1</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="186" />
-            <source>No pictures or videos found in this folder.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>У цій папці не знайдено фотографій або відео.</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="200" />
-            <source>Exclude Duplicates</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Виключити дублікати</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="209" />
-            <source>Exclude photos that are already imported into PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Не імпортувати фотографії, які вже є в PicasaPy</translation>
-        </message>
-        <message numerus="yes">
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="216" />
-            <source>%n of those are duplicates already in PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>
-                <numerusform>%n із них уже є дублікатами в PicasaPy</numerusform>
-                <numerusform>%n із них уже є дублікатами в PicasaPy</numerusform>
-                <numerusform>%n із них уже є дублікатами в PicasaPy</numerusform>
-            </translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="265" />
-            <source>Exclude All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Виключити все</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="270" />
-            <source>Include All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Включити все</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
-            <source>Include</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Включити</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="320" />
-            <source>Exclude</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Виключити</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="235" />
-            <source>Destination:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IPTC::Destination</extracomment>
-            <translation>Місце призначення</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="260" />
@@ -13533,59 +13660,7 @@ picasapy-origin-key: stringres:IPTC::Destination</extracomment>
             <translation>Шаблон папки:</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="778" />
-            <source>Enter new folder title or choose existing folder to continue</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
-            <translation>Введіть нову назву папки або виберіть уже існуючу папку, щоб продовжити</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="376" />
-            <source>Enter Folder Title</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:iCAcquireUI::SubFolder</extracomment>
-            <translation>Ввести назву папки</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="392" />
-            <source>Date Taken (YYYY-MM-DD)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
-            <translation>Вибрана дата (дд.мм.рррр)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="399" />
-            <source>%1 (Today)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 (сьогодні)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="408" />
-            <source>After Copying:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extracomment>
-            <translation>Після копіювання:</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="419" />
-            <source>Leave card alone</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Не змінювати карту пам’яті</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="426" />
-            <source>Delete only copied photos</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Видалити лише скопійовані фотографії</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="433" />
-            <source>Delete everything on card</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Видалити все з карти пам’яті</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="115" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="249" />
             <source>Are you sure you want to remove the imported files from your card? THIS CANNOT BE UNDONE.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Видалити імпортовані файли з карти пам’яті? ЦЮ ДІЮ НЕ МОЖНА СКАСУВАТИ.</translation>
@@ -13603,111 +13678,361 @@ picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extraco
             <translation>Перемістити замість копіювання (вихідні файли буде видалено)</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="466" />
-            <source>%1 / %2 imported</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Імпортовано: %1 / %2</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="477" />
-            <source>Done: %1 imported, %2 failed</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Готово: імпортовано %1, помилок: %2</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="490" />
-            <source>Import</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
-            <translation>Імпортувати</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="499" />
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Закрити</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="334" />
             <source>Import Files/Folder</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::importfilestitle</extracomment>
             <translation>Імпорт файлів або папки</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="360" />
-            <source>Folder...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Папка…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="366" />
-            <source>Files...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Файли…</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="507" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="321" />
             <source>Choose source folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Вибрати вихідну папку…</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="516" />
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="362" />
             <source>Choose destination folder...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Вибрати папку призначення…</translation>
         </message>
         <message>
-            <source>%1 / %2 imported at %3/sec</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Імпортовано %1 / %2 зі швидкістю %3/с</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="143" />
             <source>bytes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>байтів</translation>
         </message>
         <message>
-            <source>File types:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</extracomment>
-            <translation>Типи файлів</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="350" />
             <source>Picture and Movie Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Файли зображень і відео</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="352" />
             <source>Picture Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
             <translation>Файли зображень</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDialog.qml" line="353" />
+            <source>All Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
+            <translation>Усі файли</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImportSourcePickerPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="166" />
+            <source>Options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/sync_options_button);makemoviepaneltext:Label(makemoviepanel/aoptions_label);options:options/window1.win_title;stringres:CMakeFaceMoviePanel::UnapliedChanges;stringres:CMakeMoviePanel::face_movie_tab3_label;stringres:IDS_OPTIONS</extracomment>
+            <translation>Параметри</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="167" />
+            <source>Online options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/sync_options_button);headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
+            <translation>Параметри в режимі онлайн</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="157" />
+            <source>Upload</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Завантажити</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="159" />
+            <source>Upload to Picasa Web Albums...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_UPLOAD_TO_LIGHTHOUSE</extracomment>
+            <translation>Завантажити до веб-альбомів &amp;Picasa...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="188" />
+            <source>Sync starred photos only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: confirmsync:confirmsync/starred.title;options:options/PWAStarred.title</extracomment>
+            <translation>Синхронізувати лише позначені зірочкою фотографії</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="267" />
+            <source>View the previous Photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Переглянути попередню фотографію</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="279" />
+            <source>View the next Photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Переглянути наступну фотографію</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="15" />
+            <source>Import pictures and videos from another folder (e.g. a mounted camera or memory card) into your library.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Імпортуйте до бібліотеки зображення й відео з іншої папки (наприклад, підключеної камери або карти пам’яті).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="28" />
+            <source>Source:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Джерело:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="63" />
+            <source>Removable drives</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Знімні диски</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="38" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="38" />
+            <source>(none selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(не вибрано)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="79" />
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="79" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Огляд…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="230" />
+            <source>%1 pictures/videos found</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Знайдено фотографій/відео: %1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="241" />
+            <source>No pictures or videos found in this folder.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>У цій папці не знайдено фотографій або відео.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="143" />
+            <source>Exclude Duplicates</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Виключити дублікати</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="197" />
+            <source>Exclude photos that are already imported into PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Не імпортувати фотографії, які вже є в PicasaPy</translation>
+        </message>
+        <message numerus="yes">
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="204" />
+            <source>%n of those are duplicates already in PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>
+                <numerusform>%n із них уже є дублікатами в PicasaPy</numerusform>
+                <numerusform>%n із них уже є дублікатами в PicasaPy</numerusform>
+                <numerusform>%n із них уже є дублікатами в PicasaPy</numerusform>
+            </translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="253" />
+            <source>Exclude All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Виключити все</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="258" />
+            <source>Include All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Включити все</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="88" />
+            <source>Folder...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Папка…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="93" />
+            <source>Files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Файли…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="107" />
+            <source>File types:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: options:options/tab59.title;stringres:IDS_FILETYPE_PREFS</extracomment>
+            <translation>Типи файлів</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="116" />
+            <source>Picture and Movie Files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Файли зображень і відео</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="117" />
+            <source>Picture Files</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAcquireUI::picsfilter;stringres:slingshot::imagefiles;stringres:uploaderx::imagefilter</extracomment>
+            <translation>Файли зображень</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="118" />
             <source>All Files</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CAcquireUI::allfilesfilter</extracomment>
             <translation>Усі файли</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourcePickerPanel.qml" line="51" />
             <source>Recent sources</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Останні джерела</translation>
         </message>
+    </context>
+    <context>
+        <name>ImportSourcePreview</name>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourcePreview.qml" line="122" />
+            <source>Include</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Включити</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourcePreview.qml" line="122" />
+            <source>Exclude</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Виключити</translation>
+        </message>
+    </context>
+    <context>
+        <name>ImportSourceDestinationPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="26" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="26" />
+            <source>(none selected)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(не вибрано)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="98" />
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="98" />
+            <source>Browse...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
+            <translation>Огляд…</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="16" />
+            <source>Destination:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IPTC::Destination</extracomment>
+            <translation>Місце призначення</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="139" />
+            <source>Enter new folder title or choose existing folder to continue</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Text1(acquirepanel/importtiptext)</extracomment>
+            <translation>Введіть нову назву папки або виберіть уже існуючу папку, щоб продовжити</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="111" />
+            <source>Enter Folder Title</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:iCAcquireUI::SubFolder</extracomment>
+            <translation>Ввести назву папки</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="144" />
+            <source>Date Taken (YYYY-MM-DD)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:iCAcquireUI::AutoDate</extracomment>
+            <translation>Вибрана дата (дд.мм.рррр)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="153" />
+            <source>%1 (Today)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 (сьогодні)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="162" />
+            <source>After Copying:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Label(acquirepanel/delete_label)</extracomment>
+            <translation>Після копіювання:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="173" />
+            <source>Leave card alone</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Не змінювати карту пам’яті</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="180" />
+            <source>Delete only copied photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Видалити лише скопійовані фотографії</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="187" />
+            <source>Delete everything on card</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Видалити все з карти пам’яті</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="229" />
+            <source>%1 / %2 imported</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Імпортовано: %1 / %2</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="240" />
+            <source>Done: %1 imported, %2 failed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Готово: імпортовано %1, помилок: %2</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="253" />
+            <source>Import</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
+            <translation>Імпортувати</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="264" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
+            <translation>Закрити</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="224" />
+            <source>%1 / %2 imported at %3/sec</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Імпортовано %1 / %2 зі швидкістю %3/с</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="59" />
             <source>Recent destinations</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Останні місця призначення</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="76" />
             <source>Original size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Оригінальний розмір</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/ImportSourceDestinationPanel.qml" line="77" />
             <source>%1 pixels</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 пікселів</translation>

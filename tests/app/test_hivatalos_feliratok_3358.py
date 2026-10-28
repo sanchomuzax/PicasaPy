@@ -198,11 +198,11 @@ ELOFORDULASOK = {
     "PicasaPy/SlideshowControls.qml": ["Display Time", "seconds"],
     "PicasaPy/VideoTrimSlider.qml": ["Start Point", "End Point"],
     # #3575
-    "PicasaPy/CreateDialogs.qml": ["Frame Mosaic"],
+    "PicasaPy/CollageCreateDialog.qml": ["Frame Mosaic"],
     "PicasaPy/FolderPropertiesDialog.qml": [
         "Description (optional):", "Place taken (optional):",
         "Use music for Slideshow and Movie presentation:"],
-    "PicasaPy/ImportSourceDialog.qml": [
+    "PicasaPy/ImportSourceDestinationPanel.qml": [
         "Enter Folder Title", "Date Taken (YYYY-MM-DD)", "%1 (Today)",
         "Enter new folder title or choose existing folder to continue"],
     "PicasaPy/MoveDatabaseDialog.qml": [
