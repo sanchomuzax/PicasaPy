@@ -311,19 +311,19 @@ PicasaPy/PicasaScrollBar.qml	Next album	segedszoveg	"Az album-navigáció ""köv
 PicasaPy/PicasaScrollBar.qml	Previous album	segedszoveg	"Az album-navigáció ""előző"" nyílgombjának felirata; feltehetően ikon-gomb hozzáférhetőségi neve, nincs hozzá talált hivatalos szöveges forrás."		
 PicasaPy/PlacesPanel.qml	Right-click the map to place the selected pictures.	segedszoveg	Saját súgószöveg a térképre kattintás módjáról; a geopanel/geo_info elem (ui-leltar.csv) üres felirat-mezővel szerepel, tehát az eredeti nem ír ki ide szöveget.		
 PicasaPy/PlacesPanel.qml	The map component (QtLocation) is not available. Geotags can still be edited.	segedszoveg	A QtLocation térkép-modul hiányára figyelmeztető saját szöveg; ez a helyzet az eredetiben nem állhat elő.		
-PicasaPy/PrintDialog.qml	(not selected)	segedszoveg	Nincs kivalasztott celfajl allapotjelzo; nincs talalhato eredeti megfelelo.		
-PicasaPy/PrintDialog.qml	Browse...	segedszoveg	'Tallozas...' gomb - natív OS fajlvalaszto, nincs Picasa-authoralt sztring rea, ugyanaz az indoklas mint a tobbi Browse... elofordulasnal.		
+PicasaPy/PrintPrinterPanel.qml	(not selected)	segedszoveg	Nincs kivalasztott celfajl allapotjelzo; nincs talalhato eredeti megfelelo.		
+PicasaPy/PrintPrinterPanel.qml	Browse...	segedszoveg	'Tallozas...' gomb - natív OS fajlvalaszto, nincs Picasa-authoralt sztring rea, ugyanaz az indoklas mint a tobbi Browse... elofordulasnal.		
 PicasaPy/PrintDialog.qml	Choose the target file.	segedszoveg	Celfajl-valaszto dialogus utasitasa (PDF-be nyomtatasnal); nincs talalhato eredeti megfelelo - az eredetiben ezt a natív OS nyomtato-dialogus adta.		
-PicasaPy/PrintDialog.qml	Columns:	segedszoveg	Oszlopszam mezo felirata; nincs talalhato eredeti megfelelo.		
+PicasaPy/PrintSettingsPanel.qml	Columns:	segedszoveg	Oszlopszam mezo felirata; nincs talalhato eredeti megfelelo.		
 PicasaPy/PrintDialog.qml	Copies of each picture:	segedszoveg	Peldanyszam mezo felirata; nincs talalhato eredeti megfelelo.		
-PicasaPy/PrintDialog.qml	Fill the page (crop)	segedszoveg	Oldalhoz igazitas opcioja (kivagas); nincs talalhato eredeti megfelelo.		
-PicasaPy/PrintDialog.qml	Fit to page:	segedszoveg	Oldalhoz igazitas mezo felirata; nincs talalhato eredeti megfelelo.		
+PicasaPy/PrintFitPanel.qml	Fill the page (crop)	segedszoveg	Oldalhoz igazitas opcioja (kivagas); nincs talalhato eredeti megfelelo.		
+PicasaPy/PrintFitPanel.qml	Fit to page:	segedszoveg	Oldalhoz igazitas mezo felirata; nincs talalhato eredeti megfelelo.		
 PicasaPy/PrintDialog.qml	No pictures to print.	segedszoveg	Ures kijeloles hibauzenete nyomtataskor; nincs talalhato eredeti megfelelo.		
 PicasaPy/PrintDialog.qml	PDF documents (*.pdf)	segedszoveg	Fajltipus-szuro a PDF mentes dialogusban; nincs talalhato eredeti megfelelo (natív fajl-dialogus szurője lett volna eredetileg).		
-PicasaPy/PrintDialog.qml	Print size:	segedszoveg	Nyomtatasi meret mezo felirata; nincs talalhato eredeti megfelelo.		
+PicasaPy/PrintSettingsPanel.qml	Print size:	segedszoveg	Nyomtatasi meret mezo felirata; nincs talalhato eredeti megfelelo.		
 PicasaPy/PrintDialog.qml	Print to a PDF file...	segedszoveg	PDF-be nyomtatas gomb felirata; nincs talalhato eredeti megfelelo.		
 PicasaPy/PrintDialog.qml	Printing is unavailable: the Qt print support 	segedszoveg	Sajat hibauzenet: a Qt nyomtatas-tamogatas hianya; ez technikai/platform-fuggo helyzet, ami az eredetiben (natív Windows nyomtatas) nem all elo.		
-PicasaPy/PrintDialog.qml	Whole picture	segedszoveg	Oldalhoz igazitas opcioja; nincs talalhato eredeti megfelelo.		
+PicasaPy/PrintFitPanel.qml	Whole picture	segedszoveg	Oldalhoz igazitas opcioja; nincs talalhato eredeti megfelelo.		
 PicasaPy/PropertiesPanel.qml	Select a picture to see its properties.	segedszoveg	Üres-állapot súgószöveg, ha nincs kiválasztott kép; az eredetiben ez egy állandó fejlécű oldalpanel (rightdrawerpanel, 'Metaadatok' címmel), üres-állapot szövegre nincs bizonyíték.		
 PicasaPy/PublishPanel.qml	CD Name	mero-vakfolt	Az angol és a magyar is betűre egyezik a publish/label_cdname hivatalos szövegével.	publish/label_cdname	CD Name
 PicasaPy/PublishPanel.qml	Erase Media	mero-vakfolt	Az angol és a magyar is betűre egyezik a publish/label_optionbox2 hivatalos szövegével.	publish/label_optionbox2	Erase Media
