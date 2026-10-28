@@ -11,7 +11,7 @@ RowLayout {
              || viewer.placesOpen || viewer.peopleOpen
     Layout.fillHeight: true
 
-    // #192: Tulajdonságok-panel jobb oldalt — ugyanaz a buta
+    // #192: Tulajdonságok-panel jobb oldalt - ugyanaz a buta
     // komponens, mint a könyvtár-nézetben (Main.qml), a nézett
     // kép adataival; a bezárás a közös kapcsolót állítja le
     PropertiesPanel {
@@ -50,13 +50,13 @@ RowLayout {
     //: `peoplePanelClose`, `tagInput` …), amit a példányosítás
     //: helyén nem lehet felülírni. Mohó példányosítással a
     //: `findChild` a nézőbeli MÁSODPÉLDÁNYT találná meg a
-    //: könyvtárbeli helyett — a `test_qml_places.py` két őre
+    //: könyvtárbeli helyett - a `test_qml_places.py` két őre
     //: azonnal el is bukott rá, mielőtt `Loader`-be került.
     //: Csukott néző mellett így egyetlen példány van, a könyvtáré.
     //:
     //: ⚠️ A `viewer.visible` NEM elhagyható: a fiók lapját a
     //: KÖNYVTÁRBAN is át lehet kapcsolni, és a `tagsOpen` akkor is
-    //: igaz — a néző példánya enélkül a könyvtár-nézetben is
+    //: igaz - a néző példánya enélkül a könyvtár-nézetben is
     //: felépülne.
     Loader {
         objectName: "viewerTagsPanelLoader"
@@ -97,7 +97,7 @@ RowLayout {
                         viewer.drawerRows, keyword)
             }
             //: a találatok a KÖNYVTÁR rácsán jelennek meg, amit a
-            //: néző eltakarna — ezért a gazda zárja a nézőt, és
+            //: néző eltakarna - ezért a gazda zárja a nézőt, és
             //: ő keres
             onFindTaggedRequested: function(keyword) {
                 viewer.findTaggedRequested(keyword)
@@ -119,7 +119,7 @@ RowLayout {
             //: a geocímkézés a NÉZETT képre hat, nem a rács
             //: kijelölésére (ld. `drawerRows`)
             targetRows: viewer.drawerRows
-            //: a térkép-jelölőre kattintva a néző lép oda — a
+            //: a térkép-jelölőre kattintva a néző lép oda - a
             //: könyvtárban ugyanez a jel a rács kijelölését mozgatja
             onPhotoActivated: function(row) { viewer.show(row) }
             onMarkerSearchRequested: function(rows) {
@@ -201,7 +201,7 @@ RowLayout {
             //: (az eredetiben az `editpanel/preview` látszik)
             editorView: true
             manualAddActive: viewer.facesEditMode
-            //: a személy albuma a KÖNYVTÁR rácsán nyílik — a gazda
+            //: a személy albuma a KÖNYVTÁR rácsán nyílik - a gazda
             //: zárja a nézőt, és ő vált (ld. `findTaggedRequested`)
             onPersonChosen: function(name) { viewer.personChosen(name) }
             onManualAddRequested: viewer.beginManualFaceAdd()

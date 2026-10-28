@@ -27,11 +27,11 @@ Item {
     property alias previousPreloadImage: elotoltoElozo
     property alias hostViewerPanArea: viewerPanArea
 
-        //: #3663: a „Kijelölve” jelvény — a KÉPEN KÍVÜL, a szürke
+        //: #3663: a „Kijelölve” jelvény - a KÉPEN KÍVÜL, a szürke
         //: margóban, a fókuszban lévő fél mellett, az osztó felőli
         //: oldalon (mérve: `docs/specs/ui-audit-editor.md` 3/b.3,
-        //: élőben újramérve a `Colab EN 33`–`35` referenciákon).
-        //: A #3013 a `photoArea` GYEREKEként, a `photo` ELÉ tette —
+        //: élőben újramérve a `Colab EN 33`-`35` referenciákon).
+        //: A #3013 a `photoArea` GYEREKEként, a `photo` ELÉ tette -
         //: ezért időnként a kép ALÁ került (a `photo` később
         //: rajzolódott rá), és a `photoArea` `clip: true`-ja levágta
         //: volna, ha a margóba lógna. Itt, a `photoArea` UTÁN,
@@ -41,7 +41,7 @@ Item {
             objectName: "viewerFocusBadge"
             visible: viewer.layoutMode !== "1up"
             //: #3663: MÉRT méret (`Colab EN 33`, 1280×1024): 86×26,
-            //: enyhén lekerekített — NEM kapszula (a #3013 `height/2`
+            //: enyhén lekerekített - NEM kapszula (a #3013 `height/2`
             //: sugara azt adott).
             width: viewer.jelvenySzel
             height: viewer.jelvenyMag
@@ -50,7 +50,7 @@ Item {
 
             //: #3663: a helyet a KIRAJZOLT kép téglalapjából
             //: számoljuk (`paintedWidth`/`paintedHeight`), NEM a
-            //: befoglaló `photoElotte`/`photo` dobozból — az utóbbi
+            //: befoglaló `photoElotte`/`photo` dobozból - az utóbbi
             //: a `photoArea` felét kapja, de a kép azon belül
             //: KÖZÉPRE igazítva, letterboxolva jelenik meg
             //: (`PreserveAspectFit`), tehát a doboz éle és a kép
@@ -62,13 +62,13 @@ Item {
             //: ⚠️ a `fokuszKep.x`/`.y` a SAJÁT felének keretéhez
             //: (`fokuszKeret`), az pedig a `photoArea`-hoz KÉPEST
             //: helyi (a `photo`/`photoElotte` a `photoArea` GYEREKE),
-            //: a jelvény viszont a `photoArea` TESTVÉRE — tehát a
+            //: a jelvény viszont a `photoArea` TESTVÉRE - tehát a
             //: KÖZÖS szülőhöz képesti koordinátához a `photoArea`
             //: saját eltolását is hozzá kell adni. Enélkül a jelvény
             //: pontosan a `photoArea` margójával (itt 14 px) tér el
-            //: a várt helytől — ez okozta az első verzió 14 px-es
+            //: a várt helytől - ez okozta az első verzió 14 px-es
             //: eltérését minden mért esetben.
-            //: #3741: a KÉPERNYŐN látszó méret — 90°/270°-os
+            //: #3741: a KÉPERNYŐN látszó méret - 90°/270°-os
             //: forgatásnál (`iniSteps` páratlan) a kirajzolt
             //: szélesség és magasság helyet cserél.
             readonly property bool forgatott: fokuszKep.iniSteps % 2 !== 0
@@ -84,7 +84,7 @@ Item {
             readonly property real kepLent: kepFent + kepMag
 
             //: #3663: a `Colab EN 33`/`34` (vízszintes) és `35`
-            //: (függőleges) referenciákon mért rés — mindkét
+            //: (függőleges) referenciákon mért rés - mindkét
             //: elrendezésben ugyanaz a két állandó adja vissza a
             //: mért 60/62/27/61/26 px-es réseket: a KÉPEK SÍKJÁVAL
             //: PÁRHUZAMOS tengelyen (vízszintesben az osztó felé,
@@ -100,8 +100,8 @@ Item {
                    ? kepJobb - parhuzamosRes - width
                    : kepBal + parhuzamosRes)
             //: #3756: a helyét a két fél illesztése tartja fenn
-            //: (`viewer.illesztesiDoboz`) — álló képnél felül, széles
-            //: képnél függőlegesen balra —, így a jelvény a kép arányától
+            //: (`viewer.illesztesiDoboz`) - álló képnél felül, széles
+            //: képnél függőlegesen balra -, így a jelvény a kép arányától
             //: függetlenül a mért résen áll, és nem takarja sem a felső
             //: sávot, sem a bal panelt, sem a képet.
             y: viewer.fuggolegesElrendezes
@@ -129,8 +129,8 @@ Item {
             objectName: "viewerPanArea"
             // #4078: a `photoArea` belső rétegében a pásztázó a
             // képek fölött, a Kiegyenesítés sávja (z=20) alatt áll.
-            // Így a képen húzás — kettős nézetben a képi TapHandler
-            // fölött is — továbbra is pásztáz, a sáv pedig megkapja
+            // Így a képen húzás - kettős nézetben a képi TapHandler
+            // fölött is - továbbra is pásztáz, a sáv pedig megkapja
             // a saját kattintásait és csúszkahúzását.
             parent: photoArea
             anchors.fill: parent
@@ -322,13 +322,13 @@ Item {
             onCloseRequested: viewer.zoomNavigatorDismissed = true
         }
 
-        // #1072 — `editpanel/render_now` („Létrehozás"): a PISZKOZAT
+        // #1072 - `editpanel/render_now` („Létrehozás"): a PISZKOZAT
         // külön befejező lépése. A `projectutils::draft_collage`
         // szövege erre a gombra hivatkozik: a megosztás és a
         // nyomtatás feltétele, hogy a felhasználó megnyomja.
         //
         // A HELYE mért, nem választott (spec 4.3, `editpanel.tre`):
-        // az `overlay_group` gyereke, tehát a kép FÖLÖTTI réteg —
+        // az `overlay_group` gyereke, tehát a kép FÖLÖTTI réteg -
         // a bélyegképen nincs rajta, csak a JPEG-be égetett
         // „PISZKOZAT" felirat. Vízszintesen középen (`m_centerX`),
         // függőlegesen a saját közepe a szülő 87,5%-án
@@ -336,7 +336,7 @@ Item {
         //
         // ⚠️ Renderelés közben az eredeti ugyanide teszi a
         // „Folyamatban..." feliratot (`editpanel/in_progress_label`)
-        // — a kettő EGYMÁS HELYÉRE lép, ezért egyetlen elem
+        // - a kettő EGYMÁS HELYÉRE lép, ezért egyetlen elem
         // felirata változik, nem két külön gomb.
         PicasaButton {
             id: piszkozatLetrehozas
@@ -360,7 +360,7 @@ Item {
 
         // #2564: a nagyítás-hármas (illesztés · 1:1 · csúszka) ELKERÜLT
         // innen az ALSÓ ESZKÖZSÁVBA (`TrayBar.qml`,
-        // `trayViewerZoomRow`) — mérve az `editpanel.tre:1288–1324`
+        // `trayViewerZoomRow`) - mérve az `editpanel.tre:1288-1324`
         // horgonyai és a `respack.yt` x-tartományai szerint az
         // eredetiben a könyvtár nagyító + bélyegkép-csúszka
         // párjának a HELYÉN ül, nem a fotó fölött lebegve.
@@ -374,7 +374,7 @@ Item {
             id: facesBar
             objectName: "viewerFacesBar"
             //: VÁLTOZATLAN feltétel: ugyanaz, ami a korábbi
-            //: `zoomBar`-t vezérelte — videón nincs arc-keret,
+            //: `zoomBar`-t vezérelte - videón nincs arc-keret,
             //: vágás közben pedig a fotó fölötti réteg tiszta.
             visible: !viewer.quickViewerMode
                      && viewer.photoOverlaysUsable
@@ -382,7 +382,7 @@ Item {
             anchors.rightMargin: 4
             //: #2565: a felirat-sáv FÖLÉ, nem rá. A sáv a fotó
             //: alján végigfut (mérve), és a lebegő doboz eddig
-            //: eltakarta a sáv jobb szélén ülő kukát — a kirajzolt
+            //: eltakarta a sáv jobb szélén ülő kukát - a kirajzolt
             //: képen látszott, számolásból nem derült volna ki.
             anchors.bottom: captionBar.visible
                             ? captionBar.top : parent.bottom
@@ -408,7 +408,7 @@ Item {
                     onClicked: viewer.toggleFaces()
                 }
                 // #26 (2. kör): arc-SZERKESZTŐ mód be/ki
-                // (Shift+F billentyűvel egyenértékű) — videónál
+                // (Shift+F billentyűvel egyenértékű) - videónál
                 // nincs értelme, ott letiltjuk.
                 PicasaButton {
                     objectName: "facesEditToggleButton"
@@ -424,7 +424,7 @@ Item {
                 }
             }
         }
-        // szerkeszthető felirat-sor — a model.revision referencia
+        // szerkeszthető felirat-sor - a model.revision referencia
         // miatt a kötés modell-frissítésnél (pl. mentés után)
         // újraértékelődik, ahogy a forgatás-kötés is (lásd fent).
         // Gépeléskor a Qt eltávolítja a deklaratív kötést a text
@@ -433,21 +433,21 @@ Item {
         // mező a következő navigáláskor nem frissülne.
         // #1816: a felirat-sáv KÉT vezérlője. Az eredetiben a
         // `captionbutton` („Show/Hide Caption") és a `captiontrash`
-        // („Delete this caption") — a `0x0057bb50` kezelő a
+        // („Delete this caption") - a `0x0057bb50` kezelő a
         // `captionbutton` · `caption` · `captiontrash` hármast
         // EGYÜTT kezeli.
         //
         // ⚠️ A jegy KÉT belépési pontot ír elő (`editpanel/` és
         // `editoneup/captionbutton`). Nálunk a szerkesztő panel a
         // NÉZŐN BELÜL él (`EditorPanel` ugyanebben a fájlban), tehát
-        // ez az EGY sáv mindkét állapotot kiszolgálja — mérve, nem
+        // ez az EGY sáv mindkét állapotot kiszolgálja - mérve, nem
         // feltételezve: a sáv `visible`-je csak a vágásra és a
         // videóra érzékeny, a szerkesztő nyitottságára nem.
         // #2565 + #2587: a KÉPALÁÍRÁS-SÁV. A mérce a tulajdonos NÉGY
         // felvétele (`research/felirat-ki-bekapcsolva/`, 1920 × 1080,
         // Picasa 3 és PicasaPy, felirat BE és KI állapotban).
         //
-        // A `.tre` kényszerei (`editpanel.tre:1238–1266`):
+        // A `.tre` kényszerei (`editpanel.tre:1238-1266`):
         //   `captionbutton`  `XConstraint 0, 0, 3`   `Y 1, 1, -3`
         //   `caption`        `X 0, 0, 25` … `1, 1, -24`
         //   `captiontrash`   `XConstraint 1, 1, -3`  `Y 1, 1, -3`
@@ -455,7 +455,7 @@ Item {
         //     (`predraw 1`), teljes szélességben.
         //
         // ⚠️ A `captionbutton` `hidetarget`-je a `caption` és a
-        // `captiontrash` — **magát a gombot nem**. A felvételen ez
+        // `captiontrash` - **magát a gombot nem**. A felvételen ez
         // pontosan így látszik: kikapcsolt feliratnál a SÁV eltűnik,
         // a kapcsoló viszont OTT MARAD a kép bal alsó sarkában.
         // Ezért ül a gomb a fotó-terület rétegén, nem a sávban.
@@ -469,7 +469,7 @@ Item {
             height: 21
             visible: viewer.captionVisible && !viewer.quickViewerMode
 
-            //: `captionbase` + `captionbasetop` — a sáv saját
+            //: `captionbase` + `captionbasetop` - a sáv saját
             //: háttere. MÉRVE: a felvételen `#c6c6c6`, vagyis a
             //: KRÓM világosszürkéje, nem a fotó-terület szürkéje és
             //: nem sötét. Sötét témában a króm sötét párja.
@@ -484,7 +484,7 @@ Item {
                 id: captionField
                 objectName: "captionField"
                 //: `caption`: a két gomb KÖZÖTT, a sáv teljes
-                //: maradékán — az eredetin a felirat a sáv
+                //: maradékán - az eredetin a felirat a sáv
                 //: közepén áll, FÉLKÖVÉREN és sötéten.
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -522,7 +522,7 @@ Item {
                 }
             }
 
-            //: A felszólítás a SÁVBAN áll, a felirat helyén — az
+            //: A felszólítás a SÁVBAN áll, a felirat helyén - az
             //: eredetin („Készítsen képaláírást!") ugyanott, ahol a
             //: kész felirat lenne (a `235707.jpg` felvételen
             //: közvetlenül összevethető).
@@ -546,7 +546,7 @@ Item {
                 implicitWidth: 17
                 implicitHeight: 13
                 text: "✕"
-                //: `captiontrash` — az eredeti buboréksúgója
+                //: `captiontrash` - az eredeti buboréksúgója
                 ToolTip.text: qsTr("Delete this caption")
                 ToolTip.visible: hovered
                 ToolTip.delay: Theme.tooltipDelay
@@ -567,7 +567,7 @@ Item {
                 // újragépelhető. A projekt #459-es elve a
                 // megerősítést a lemezt érintő, visszafordíthatatlan
                 // műveletekre tartja fenn. (Az eredetiről ez NINCS
-                // mérve — saját döntés.)
+                // mérve - saját döntés.)
                 onClicked: {
                     controller.setCaption(viewer._kijeloltSort(), "")
                     captionField.rebind()
@@ -579,15 +579,15 @@ Item {
         // a sáv állapotától FÜGGETLENÜL. A `.tre` szerint a
         // `captionbutton` `hidetarget`-je csak a `caption` és a
         // `captiontrash`; a felvételen kikapcsolt feliratnál is ott
-        // áll a kis világos négyzet — ez az EGYETLEN út vissza.
+        // áll a kis világos négyzet - ez az EGYETLEN út vissza.
         //
         // MÉRT geometria (`picasa3-felirat-*.jpg`, mindkét állapotban
-        // AZONOS): a fehér doboz x 287…303, y 910…922 — vagyis
+        // AZONOS): a fehér doboz x 287…303, y 910…922 - vagyis
         // **17 × 13**, a fotó-terület bal szélétől 1 képponttal, a
         // sáv függőleges közepén.
         //
         // KÉT ÁLLAPOT (`editoneup/caption_icon` és
-        // `caption_yesicon`, `oneup.tre:112–124`): bekapcsolt
+        // `caption_yesicon`, `oneup.tre:112-124`): bekapcsolt
         // feliratnál a dobozban két vízszintes vonal, kikapcsoltnál
         // ÜRES a doboz. A felvételen pontosan ez látszik.
         Rectangle {
@@ -608,7 +608,7 @@ Item {
             border.color: viewer.captionVisible
                           ? Theme.captionToggleBorder : "transparent"
 
-            //: `caption_icon`: két vízszintes vonal — CSAK bekapcsolt
+            //: `caption_icon`: két vízszintes vonal - CSAK bekapcsolt
             //: feliratnál (a kikapcsolt állapot doboza üres).
             Column {
                 anchors.centerIn: parent
@@ -630,7 +630,7 @@ Item {
             MouseArea {
                 id: egerTerulet
                 anchors.fill: parent
-                //: a MÉRT doboz 17 × 13 — kicsi a kényelmes
+                //: a MÉRT doboz 17 × 13 - kicsi a kényelmes
                 //: találathoz, ezért az érzékeny terület nagyobb, a
                 //: RAJZ viszont a mért méretű marad
                 anchors.margins: -5
@@ -640,7 +640,7 @@ Item {
         }
 
 
-        // elő-betöltés: a szomszédok már dekódolva, mire lépsz —
+        // elő-betöltés: a szomszédok már dekódolva, mire lépsz -
         // a #84 óta a mappán belüli szomszéd (folderNeighbor), nem
         // a nyers currentIndex±1, hogy ne a szomszéd mappa képét
         // töltsük elő feleslegesen a mappahatárnál

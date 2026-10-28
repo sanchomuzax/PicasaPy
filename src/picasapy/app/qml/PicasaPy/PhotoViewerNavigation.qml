@@ -21,7 +21,7 @@ QtObject {
 
 // A lapozás a #84 óta a modell mappán-belüli lépését használja: a
 // rács (feed) nézet mappaátlépő listáin (csillag-szűrő, keresés) sem
-// ugorhatunk át a szomszéd mappába — a folderNeighbor a saját mappa
+// ugorhatunk át a szomszéd mappába - a folderNeighbor a saját mappa
 // határán a jelenlegi indexet adja vissza, tehát nem lép tovább. #4525:
 // kettős nézetben a „Kijelölve” oldalt léptetjük, a másik sort hagyjuk.
 function next() {
@@ -90,7 +90,7 @@ function wheelStep(delta) {
 function urlAt(index) {
     return photosModel ? photosModel.fileUrlAt(index) : ""
 }
-// elő-betöltéshez: videót NEM adunk az Image-nek (#14) — a képként
+// elő-betöltéshez: videót NEM adunk az Image-nek (#14) - a képként
 // dekódolás hibát logolna, a videó elő-betöltése nem a mi dolgunk
 function preloadUrlAt(index) {
     if (!photosModel || photosModel.isVideoAt(index)) return ""

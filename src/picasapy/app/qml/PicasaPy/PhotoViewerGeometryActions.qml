@@ -24,11 +24,11 @@ function illesztesiDoboz(keretSzel, keretMag, arany) {
     return teljes
 }
 
-//: #3877: a `photo`/`photoElotte`/az elő-betöltők textúra-plafonja —
+//: #3877: a `photo`/`photoElotte`/az elő-betöltők textúra-plafonja -
 //: ld. `SlideshowView.qml` `texturaEl` (#3832), ugyanaz a V3D-korlát.
 readonly property int texturaEl: 2560
 
-//: #3877: a kép `sourceSize`-a — a két betöltési út MÁST kér.
+//: #3877: a kép `sourceSize`-a - a két betöltési út MÁST kér.
 //:
 //: - Szolgáltatós út (`image://…`): az állandó `texturaEl`-doboz, mint
 //:   a `gpuPrefixImage`-é (#3800). A szolgáltató magától csak kicsinyít
@@ -40,7 +40,7 @@ readonly property int texturaEl: 2560
 //: - Nyers `file://` út: a Qt fájlbetöltője a kért méretre FELNAGYÍT
 //:   (mérve valódi GPU-n: 1440×2560 és 3000×5333 is 2560×4551), ezért a
 //:   VALÓDI méretből (`pixelWidthAt`/`pixelHeightAt`, #2492) a dobozba
-//:   illő, legfeljebb natív méret kell — a fájlban TÁROLT tájolásban
+//:   illő, legfeljebb natív méret kell - a fájlban TÁROLT tájolásban
 //:   (`pixelSidesSwappedAt`), mert a Qt a kért méretet arra alkalmazza.
 //:   Ugyanaz, mint a `SlideshowView.qml` `forrasMeret`-je (#3832).
 function forrasMeret(index, url) {
@@ -70,11 +70,11 @@ function forrasMeret(index, url) {
     return Qt.size(w, h)
 }
 
-//: #3877: a forrás és a forrásméret EGYÜTT, egyetlen betöltéssel — a
+//: #3877: a forrás és a forrásméret EGYÜTT, egyetlen betöltéssel - a
 //: `SlideshowView.qml` `_betolt`-jának mintája (#3832). A Qt az `Image`
 //: `source`-ának ÉS `sourceSize`-ának MINDEN változására tölt; két külön
 //: kötésnél lépéskor mindkettő átfordul, és a kép egyszer a rossz párral
-//: is betöltődik (mérve: lépésenként elemenként 2–3 kérés, köztük egy
+//: is betöltődik (mérve: lépésenként elemenként 2-3 kérés, köztük egy
 //: 640×400-as kép 1440×2560-nal kérve → 4096×2560). Méretváltáskor
 //: ezért a forrás előbb kiürül (üres forrásra a Qt nem tölt), a méret
 //: beáll, és csak utána jön az új forrás.
@@ -82,7 +82,7 @@ function forrasMeret(index, url) {
 //: Az elemek `betoltes`-pár változását a `Qt.callLater` fogja össze egy
 //: írássá, a kör végén. Mérve: kettős nézetre váltáskor a `photo` párja
 //: még a `onLayoutModeChanged` ELŐTT kiértékelődik, amikor a második
-//: rekesz előnézete üres — így egyetlen körön belül előbb a nyers fájlt,
+//: rekesz előnézete üres - így egyetlen körön belül előbb a nyers fájlt,
 //: aztán a szolgáltató helyőrzőjét, végül a kész képet kérte (3 kérés).
 function _betoltesekIrasa() {
     viewer._betolt(photoElotte, photoElotte.betoltes)
@@ -106,7 +106,7 @@ function _betolt(kep, par) {
 }
 
 //: #3877: a (forrás, méret) pár EGY kiértékelésben, ugyanabból a sorból
-//: — a kötött `abMasikSor`/`isCurrentVideo` helyett a friss függvényt
+//: - a kötött `abMasikSor`/`isCurrentVideo` helyett a friss függvényt
 //: és a modellt kérdezzük (#218), különben a pár egyik fele a régi, a
 //: másik az új képé lehetne.
 function _par(sor, url) {
@@ -120,7 +120,7 @@ function _videoE() {
 }
 //: #3187/#3773: a `photo` a `sor` (az `abMasikSor`) fotóját mutatja. A
 //: FŐ vezérlő a KIJELÖLT oldalt szerkeszti, tehát egy képes módban (itt
-//: `sor === currentIndex`) és jobb fókusznál a FŐ vezérlő képe jön — a
+//: `sor === currentIndex`) és jobb fókusznál a FŐ vezérlő képe jön - a
 //: hozzárendelés a fókusszal cserél. Nyitott szerkesztésnél a
 //: `filters=` láncot alkalmazó `editpreview` szolgáltató rendereli
 //: (`?rev=` cache-buster), egyébként a nyers fájl jön.
@@ -143,7 +143,7 @@ function _elotoltoPar(irany) {
 //: #3014: a ténylegesen megjelenített másik kép sora. AB módon kívül
 //: mindig a jelenlegi kép (az „aa" mód ugyanazt mutatja kétszer).
 //: #3773: a számítás FÜGGVÉNY (`_abMasikSort`), mert a kijelölt és a
-//: második sort az imperatív kezelők is ebből számolják — a kötött
+//: második sort az imperatív kezelők is ebből számolják - a kötött
 //: property ott még a RÉGI értéket adhatja (#218).
 readonly property int abMasikSor: viewer._abMasikSort()
 
@@ -163,10 +163,10 @@ readonly property string zoomMode:
 property real panX: 0
 property real panY: 0
 
-//: #2564: „a fotón értelmezett vezérlők használhatók-e" — EGY helyen
+//: #2564: „a fotón értelmezett vezérlők használhatók-e" - EGY helyen
 //: kimondva. Eddig a lebegő `zoomBar` `visible`-je hordozta ezt a
 //: szabályt; a nagyítás-hármas azóta az ALSÓ ESZKÖZSÁVBAN ül
-//: (`TrayBar.qml`), az arc-gombok pedig itt maradtak — a feltételt
+//: (`TrayBar.qml`), az arc-gombok pedig itt maradtak - a feltételt
 //: ezért a néző GYÖKERÉRŐL kell kiadni, hogy ne íródjon meg kétszer
 //: (#1486 osztálya). A két ág változatlan: videón nincs mit nagyítani
 //: és nincs arc-keret, vágás közben pedig a kép 1:1-re áll vissza.
@@ -226,7 +226,7 @@ function forceFitForFilter(filterName) {
         viewer.zoomFit()
 }
 
-//: #2492: a kép VALÓDI képpont-mérete a modellből — a `revision`
+//: #2492: a kép VALÓDI képpont-mérete a modellből - a `revision`
 //: referencia miatt képváltáskor és mentés után is újraértékelődik.
 readonly property int valodiSzelesseg: viewer.photosModel
     ? (viewer.photosModel.revision,
@@ -239,19 +239,19 @@ function actualZoomFactor() {
     // mondja: „Display Photo at actual size".
     //
     // ⚠️ #2492: KORÁBBAN `photo.sourceSize.width / photo.paintedWidth`
-    // állt itt — HIBÁSAN. A Qt olvasáskor a BEÁLLÍTOTT `sourceSize`-t
+    // állt itt - HIBÁSAN. A Qt olvasáskor a BEÁLLÍTOTT `sourceSize`-t
     // adja vissza, ez az elem pedig 2560-as plafont kap
     // (`sourceSize.width: 2560` lent). Így a képlet a valódi mérettől
     // FÜGGETLENÜL 2560-cal számolt: egy 896 képpont széles képnél
-    // ~3,7-es arányt az 1,28 helyett — mérve a tulajdonos
-    // képernyőmentésén 3–4-szeres túlnagyítás.
+    // ~3,7-es arányt az 1,28 helyett - mérve a tulajdonos
+    // képernyőmentésén 3-4-szeres túlnagyítás.
     //
     // Invariáns (#3760): a `paintedWidth` a fájl SZÉLESSÉGÉVEL
-    // arányos, a `.picasa.ini` forgatásától függetlenül — a
+    // arányos, a `.picasa.ini` forgatásától függetlenül - a
     // `PreserveAspectFit` a forgatatlan raszter arányával illeszt, a
     // `rotation:` csak utána forgatja a kész dobozt. Ezért az arány
     // forgatott képnél is `valodiSzelesseg / paintedWidth`.
-    //: #3741: a fókuszban lévő fél képe — kettős nézetben bal
+    //: #3741: a fókuszban lévő fél képe - kettős nézetben bal
     //: fókusznál a `photoElotte`.
     var kep = photoArea.fokuszKep
     if (kep.paintedWidth <= 0)
@@ -260,17 +260,17 @@ function actualZoomFactor() {
         return viewer.valodiSzelesseg / kep.paintedWidth
     // Tartalék, ha az index nem tud méretet adni (frissen felvett kép,
     // vagy olvashatatlan fejléc): a BETÖLTÖTT raszter mérete. Ez a
-    // `sourceSize`-plafon miatt legfeljebb kisebb lehet a valódinál —
+    // `sourceSize`-plafon miatt legfeljebb kisebb lehet a valódinál -
     // tehát a nagyítás legrosszabb esetben kevesebb, sosem több.
     // NEM a `sourceSize`: az a beállított plafont adná vissza.
     return kep.implicitWidth > 0
         ? kep.implicitWidth / kep.paintedWidth : 1
 }
 
-//: A MÉRT leképezés (`0x00a601cf`–`0x00a60221`), két folytonos ágon:
+//: A MÉRT leképezés (`0x00a601cf`-`0x00a60221`), két folytonos ágon:
 //:
-//:   0 ≤ v < 0,5 :  1 + (2^(2v) − 1) · (r − 1)
-//:   0,5 ≤ v ≤ 1 :  r · 2^(4·(v − 0,5))
+//:   0 ≤ v < 0,5 :  1 + (2^(2v) - 1) · (r - 1)
+//:   0,5 ≤ v ≤ 1 :  r · 2^(4·(v - 0,5))
 //:
 //: Rögzített pontok: v=0 → 1 (illesztés), v=0,5 → r (100 %),
 //: v=1 → 4r (400 %). A felső fél negyedenként pontosan duplázódik.
@@ -302,7 +302,7 @@ function zoomFit() {
 function zoomActual() { setZoomValue(viewer.zoomDetent) }
 
 //: #2492: a léptető út a 0,5-ös beakadással. Ha az érték MÁR pontosan
-//: a detenten áll, a lépés elmozdítja (`0x005d1383` — ugyanabban a
+//: a detenten áll, a lépés elmozdítja (`0x005d1383` - ugyanabban a
 //: lépésben nem mozdul el, tehát a következő lépés viszi tovább).
 function lepjZoom(delta) {
     var regi = viewer.zoomValue
@@ -313,11 +313,11 @@ function lepjZoom(delta) {
     setZoomValue(uj)
 }
 
-//: az egérgörgő egy „kattanása" (120 egység) a csúszka 1/20-a — a
+//: az egérgörgő egy „kattanása" (120 egység) a csúszka 1/20-a - a
 //: lépésköz a MI választásunk, a beakadás és a vágás a mért.
 function wheelZoom(delta) { lepjZoom((delta / 120) * 0.05) }
 // a kép széle ne szakadjon el a látótértől pásztázáskor
-//: #3741: a fókuszban lévő fél képét és a SAJÁT felét nézi — egy képen
+//: #3741: a fókuszban lévő fél képét és a SAJÁT felét nézi - egy képen
 //: ez a teljes `photoArea`, kettős nézetben a kép fele.
 function clampPan() {
     var kep = photoArea.fokuszKep
@@ -362,8 +362,8 @@ function selectMenuEffect(name) {
     return false
 }
 
-// Vágás alkalmazása a kijelölésből. advance=true: Enter-flow —
-// következő kép, vágó-mód megtartva; false: Alkalmaz gomb — a panel
+// Vágás alkalmazása a kijelölésből. advance=true: Enter-flow -
+// következő kép, vágó-mód megtartva; false: Alkalmaz gomb - a panel
 // visszaáll az eszközrácsra (Picasa-viselkedés).
 function applyCrop(advance) {
     if (!cropOverlay.hasSelection) {
