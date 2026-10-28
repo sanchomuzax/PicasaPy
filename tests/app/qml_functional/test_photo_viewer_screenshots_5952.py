@@ -269,7 +269,9 @@ def test_two_consecutive_captures_are_pixel_identical_in_all_states(
     )
 
     sorok = result.stdout.splitlines()
-    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.returncode == 0, (
+        result.stdout + result.stderr + _elteres_reszletei(before, after, sorok)
+    )
     assert len(sorok) == len(ALLAPOTOK)
     assert all(sor.endswith(": 0 eltérő képpont") for sor in sorok), (
         result.stdout + _elteres_reszletei(before, after, sorok)
