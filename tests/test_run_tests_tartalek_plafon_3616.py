@@ -52,7 +52,9 @@ class TestBuszVan:
         monkeypatch.setattr(rt, "_which", lambda _: "/usr/bin/systemd-run")
         monkeypatch.setattr(rt, "_systemd_scope_elerheto", lambda: True)
         b = rt._memoria_burok()
-        assert b[:4] == ["systemd-run", "--user", "--scope", "-q"]
+        assert b[:4] == [
+            "systemd-run", "--user", "--scope", "--slice=picasapy-hatter.slice"]
+        assert "-q" in b
         assert f"MemoryMax={rt._MEMORIA_PLAFON}" in b
         assert "MemorySwapMax=0" in b
         assert b[-1] == "--"
@@ -161,6 +163,7 @@ class TestSzondazas:
         for _ in range(3):
             rt._systemd_scope_elerheto()
         assert len(hivasok) == 1
+        assert "--slice=picasapy-hatter.slice" in hivasok[0][0]
 
 
 class TestMertekegyseg:
