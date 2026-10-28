@@ -15,14 +15,14 @@ def test_stop_megvarja_a_mar_futo_callbacket(monkeypatch):
 
     from picasapy.scanner import watcher as watcher_module
 
-    timer_alaposztaly = threading.Timer
+    timer_alaposztaly = watcher_module._Timer
 
     class FigyeltTimer(timer_alaposztaly):
         def join(self, *args, **kwargs):
             timer_join_elindult.set()
             return super().join(*args, **kwargs)
 
-    monkeypatch.setattr(watcher_module.threading, "Timer", FigyeltTimer)
+    monkeypatch.setattr(watcher_module, "_Timer", FigyeltTimer)
 
     def callback(_mappak):
         callback_elindult.set()
