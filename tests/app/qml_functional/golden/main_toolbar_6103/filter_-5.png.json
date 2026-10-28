@@ -1,0 +1,284 @@
+{
+  "named_items": {
+    "mainToolbar#0": [
+      0.0,
+      0.0,
+      1024.0,
+      35.0
+    ],
+    "toolbarImportButton#0": [
+      6.0,
+      9.0,
+      111.0,
+      22.0
+    ],
+    "toolbarNewAlbumButton#0": [
+      124.0,
+      9.0,
+      29.0,
+      22.0
+    ],
+    "toolbarFolderViewToggle#0": [
+      160.0,
+      9.0,
+      60.0,
+      22.0
+    ],
+    "toolbarFlatViewButton#0": [
+      160.0,
+      9.0,
+      30.0,
+      22.0
+    ],
+    "toolbarTreeViewButton#0": [
+      190.0,
+      9.0,
+      30.0,
+      22.0
+    ],
+    "toolbarFolderViewPopupButton#0": [
+      225.0,
+      9.0,
+      22.0,
+      22.0
+    ],
+    "toolbarWebcamCaptureButton#0": [
+      252.0,
+      9.0,
+      22.0,
+      22.0
+    ],
+    "captureMoviePanelLoader#0": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "toolbarFilterZone#0": [
+      407.6,
+      3.0,
+      199.0,
+      29.0
+    ],
+    "searchgroup#0": [
+      407.6,
+      12.0,
+      199.0,
+      20.0
+    ],
+    "starFilterButton#0": [
+      407.6,
+      12.0,
+      22.0,
+      20.0
+    ],
+    "faceFilter#0": [
+      432.6,
+      12.0,
+      22.0,
+      20.0
+    ],
+    "movieFilter#0": [
+      457.6,
+      12.0,
+      22.0,
+      20.0
+    ],
+    "geoFilter#0": [
+      482.6,
+      12.0,
+      22.0,
+      20.0
+    ],
+    "geoFilterBackground#0": [
+      482.6,
+      12.0,
+      22.0,
+      20.0
+    ],
+    "geoFilterIcon#0": [
+      485.6,
+      15.0,
+      16.0,
+      14.0
+    ],
+    "dateRangeFilterSlider#0": [
+      517.0,
+      12.0,
+      90.0,
+      20.0
+    ],
+    "toolbarSearchBox#0": [
+      647.6,
+      7.0,
+      329.4,
+      24.0
+    ],
+    "searchFieldContextArea#0": [
+      670.6,
+      11.0,
+      300.0,
+      17.0
+    ]
+  },
+  "text_items": {
+    "Import#0": {
+      "text": "Import",
+      "center": [
+        61.5,
+        20.0
+      ]
+    },
+    "＋#0": {
+      "text": "＋",
+      "center": [
+        138.5,
+        20.0
+      ]
+    },
+    "▤#0": {
+      "text": "▤",
+      "center": [
+        174.664,
+        19.5
+      ]
+    },
+    "⊞#0": {
+      "text": "⊞",
+      "center": [
+        205.023,
+        19.5
+      ]
+    },
+    "▾#0": {
+      "text": "▾",
+      "center": [
+        236.008,
+        19.5
+      ]
+    },
+    "panelroot/capturemovietab#0": {
+      "text": "◉",
+      "center": [
+        262.664,
+        20.0
+      ]
+    },
+    "toolbarFiltersLabel#0": {
+      "text": "Filters",
+      "center": [
+        507.514,
+        7.5
+      ]
+    },
+    "starFilterGlyph#0": {
+      "text": "★",
+      "center": [
+        418.42,
+        22.0
+      ]
+    },
+    "faceFilterGlyph#0": {
+      "text": "☺",
+      "center": [
+        443.373,
+        22.0
+      ]
+    },
+    "movieFilterGlyph#0": {
+      "text": "▶",
+      "center": [
+        468.327,
+        21.5
+      ]
+    },
+    "Search#0": {
+      "text": "Search",
+      "center": [
+        689.577,
+        19.5
+      ]
+    },
+    "versionLabel#0": {
+      "text": "v0.9.274",
+      "center": [
+        1002.547,
+        17.5
+      ]
+    }
+  },
+  "text_boxes": [
+    [
+      9,
+      7,
+      105,
+      26
+    ],
+    [
+      130,
+      9,
+      17,
+      22
+    ],
+    [
+      167,
+      9,
+      15,
+      21
+    ],
+    [
+      198,
+      9,
+      14,
+      21
+    ],
+    [
+      231,
+      9,
+      10,
+      21
+    ],
+    [
+      255,
+      9,
+      15,
+      22
+    ],
+    [
+      489,
+      -3,
+      38,
+      21
+    ],
+    [
+      411,
+      11,
+      16,
+      22
+    ],
+    [
+      435,
+      11,
+      18,
+      22
+    ],
+    [
+      462,
+      12,
+      13,
+      19
+    ],
+    [
+      669,
+      9,
+      42,
+      21
+    ],
+    [
+      983,
+      9,
+      39,
+      17
+    ]
+  ]
+}

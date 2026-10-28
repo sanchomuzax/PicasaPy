@@ -9431,19 +9431,6 @@ Zmiana zacznie obowiązywać po ponownym uruchomieniu programu PicasaPy.</transl
     <context>
         <name>MainToolbar</name>
         <message>
-            <location filename="../qml/PicasaPy/MainToolbar.qml" />
-            <source>Show starred photos only</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(searchcontainer/starsearch)</extracomment>
-            <translation>Pokaż tylko zdjęcia oznaczone gwiazdką</translation>
-        </message>
-        <message>
-            <source>Filter by date range</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(searchcontainer/timecontainer_label)</extracomment>
-            <translation>Filtruj według zakresu dat</translation>
-        </message>
-        <message>
             <source>Show only photos with faces</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(searchcontainer/facesearch)</extracomment>
@@ -9454,16 +9441,6 @@ picasapy-origin-key: tooltips:Tooltip(searchcontainer/facesearch)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Tooltip(thumbui/importbutton)</extracomment>
             <translation>Pobierz zdjęcia z aparatu, skanera lub innego nośnika</translation>
-        </message>
-        <message>
-            <source>Show movies only</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pokaż tylko filmy</translation>
-        </message>
-        <message>
-            <source>Show only photos with geotag</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pokaż tylko zdjęcia z geotagiem</translation>
         </message>
         <message>
             <source>Clear your search</source>
@@ -9477,13 +9454,6 @@ picasapy-origin-key: tooltips:Tooltip(searchcontainer/searchclr)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: gpuploader_manage_devices:gpuploader_manage_devices/attached_actions_label.title;tooltips:Label(panelroot/acquiretab);tooltips:Label(thumbui/importbutton)</extracomment>
             <translation>Importuj</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MainToolbar.qml" line="46" />
-            <source>Filters</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_FILTERS;tooltips:Label(searchcontainer/filter_label)</extracomment>
-            <translation>Filtry</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainToolbar.qml" line="143" />
@@ -9565,6 +9535,50 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/folderviewpopup)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMoviePanelPopup::title;stringres:CanonCaptureMoviePanelPopup::title;tooltips:Label(panelroot/capturemovietab)</extracomment>
             <translation>Przechwyć</translation>
+        </message>
+    </context>
+    <context>
+        <name>ToolbarFilterControls</name>
+        <message>
+            <location filename="../qml/PicasaPy/ToolbarFilterControls.qml" />
+            <source>Show starred photos only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(searchcontainer/starsearch)</extracomment>
+            <translation>Pokaż tylko zdjęcia oznaczone gwiazdką</translation>
+        </message>
+        <message>
+            <source>Filter by date range</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(searchcontainer/timecontainer_label)</extracomment>
+            <translation>Filtruj według zakresu dat</translation>
+        </message>
+        <message>
+            <source>Show only photos with faces</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(searchcontainer/facesearch)</extracomment>
+            <translation>Pokaż tylko zdjęcia z twarzami</translation>
+        </message>
+        <message>
+            <source>Show movies only</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pokaż tylko filmy</translation>
+        </message>
+        <message>
+            <source>Show only photos with geotag</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pokaż tylko zdjęcia z geotagiem</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/ToolbarFilterControls.qml" line="46" />
+            <source>Filters</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_FILTERS;tooltips:Label(searchcontainer/filter_label)</extracomment>
+            <translation>Filtry</translation>
+        </message>
+        <message>
+            <source>Show duplicate files only</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pokaż tylko zduplikowane pliki</translation>
         </message>
     </context>
     <context>
