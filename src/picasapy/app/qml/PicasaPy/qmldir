@@ -26,6 +26,14 @@ LightboxHeaderButtons 1.0 LightboxHeaderButtons.qml
 LightboxHeaderSuggestionRow 1.0 LightboxHeaderSuggestionRow.qml
 LightboxHeaderDescription 1.0 LightboxHeaderDescription.qml
 PhotoViewer 1.0 PhotoViewer.qml
+PhotoViewerNavigation 1.0 PhotoViewerNavigation.qml
+PhotoViewerEditWorkflow 1.0 PhotoViewerEditWorkflow.qml
+PhotoViewerGeometryActions 1.0 PhotoViewerGeometryActions.qml
+PhotoViewerTopBar 1.0 PhotoViewerTopBar.qml
+PhotoViewerContextActions 1.0 PhotoViewerContextActions.qml
+PhotoViewerQuickToolbar 1.0 PhotoViewerQuickToolbar.qml
+PhotoViewerRightPanels 1.0 PhotoViewerRightPanels.qml
+PhotoViewerOverlayControls 1.0 PhotoViewerOverlayControls.qml
 PhotoViewerFilmstrip 1.0 PhotoViewerFilmstrip.qml
 PhotoViewerEditorPanel 1.0 PhotoViewerEditorPanel.qml
 ZoomNavigator 1.0 ZoomNavigator.qml
@@ -205,6 +213,8 @@ PrintOptionsPanel 1.0 PrintOptionsPanel.qml
 PublishPanel 1.0 PublishPanel.qml
 GiftCdHost 1.0 GiftCdHost.qml
 UnnamedFacesView 1.0 UnnamedFacesView.qml
+internal UnnamedFacesViewGrid UnnamedFacesViewGrid.qml
+internal UnnamedFacesViewIgnoredGroups UnnamedFacesViewIgnoredGroups.qml
 ToolTile 1.0 ToolTile.qml
 PanelButton 1.0 PanelButton.qml
 TextColorSwatches 1.0 TextColorSwatches.qml

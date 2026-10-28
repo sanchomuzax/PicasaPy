@@ -7883,11 +7883,6 @@ picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/moresug)</extraco
             <translation>Abaisse une fois le seuil de reconnaissance afin de proposer davantage de noms. Le réglage enregistré reste inchangé.</translation>
         </message>
         <message>
-            <source>%1?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1 ?</translation>
-        </message>
-        <message>
             <source>Ignore</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: peoplepanel_text:Label(peoplepanel/ignore);stringres:peoplepanel::ignore</extracomment>
@@ -7987,6 +7982,38 @@ picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbu
             <source>Assign a name to all of the selected faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Attribuer un nom à tous les visages sélectionnés</translation>
+        </message>
+    </context>
+    <context>
+        <name>UnnamedFacesViewGrid</name>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesViewGrid.qml" />
+            <source>%1?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 ?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesViewGrid.qml" />
+            <source>Add a name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbumSelectionNode::addname;stringres:PeoplePanel::AddAName;stringres:peoplepanel::addaname;unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/addname)</extracomment>
+            <translation>Ajouter un nom</translation>
+        </message>
+    </context>
+    <context>
+        <name>UnnamedFacesViewIgnoredGroups</name>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesViewIgnoredGroups.qml" />
+            <source>%1?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 ?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesViewIgnoredGroups.qml" />
+            <source>Add a name</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: peoplepanel_text:Label(peoplepanel/addname);stringres:CAlbumSelectionNode::addname;stringres:PeoplePanel::AddAName;stringres:peoplepanel::addaname;unknownfaceheaderpaneltext:Label(unknownfaceheaderpanel/addname)</extracomment>
+            <translation>Ajouter un nom</translation>
         </message>
     </context>
     <context>
@@ -9938,425 +9965,371 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
         </message>
     </context>
     <context>
-        <name>PhotoViewer</name>
+        <name>PhotoViewerContextActions</name>
         <message>
-            <source>Show only one picture</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/only_1up_toggle)</extracomment>
-            <translation>Afficher une seule image</translation>
-        </message>
-        <message>
-            <source>Show the same picture twice</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/aa_2up_toggle)</extracomment>
-            <translation>Afficher deux fois la même image</translation>
-        </message>
-        <message>
-            <source>Show two different pictures</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/ab_2up_toggle)</extracomment>
-            <translation>Afficher deux images différentes</translation>
-        </message>
-        <message>
-            <source>Switch focus between the pictures</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/swap_2up_focus)</extracomment>
-            <translation>Modifier l'image sur laquelle porte la mise au point</translation>
-        </message>
-        <message>
-            <source>Switch between horizontal and vertical layout</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/swap_2up_layout)</extracomment>
-            <translation>Basculer entre l'affichage horizontal et l'affichage vertical</translation>
-        </message>
-        <message>
-            <source>Selected</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:ImageFilters::Selected;tooltips:Label(editpanel/selection_label);tooltips:Label(editpanel/selection_label_zoom)</extracomment>
-            <translation>Sélectionné</translation>
-        </message>
-        <message>
-            <source>Show/Hide Caption</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Afficher/masquer la légende</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
-            <source>Show/Hide Edit Controls</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/toggle_left_drawer)</extracomment>
-            <translation>Afficher/masquer les commandes de modification</translation>
-        </message>
-        <message>
-            <source>Delete this caption</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Supprimer cette légende</translation>
-        </message>
-        <message>
-            <source>Create Now</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Créer maintenant</translation>
-        </message>
-        <message>
-            <source>In Progress...</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(editpanel/in_progress_label)</extracomment>
-            <translation>En cours...</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="299" />
-            <source>Back to Library</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/albumview)</extracomment>
-            <translation>Retour à la Photothèque</translation>
-        </message>
-        <message>
-            <source>Edit in PicasaPy</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
-            <translation>Retoucher dans PicasaPy</translation>
-        </message>
-        <message>
-            <source>Launch PicasaPy</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Lancer PicasaPy</translation>
-        </message>
-        <message>
-            <source>Zoom In</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Zoom</extracomment>
-            <translation>Zoom</translation>
-        </message>
-        <message>
-            <source>Zoom Out</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zoom arrière</translation>
-        </message>
-        <message>
-            <source>Play Slideshow</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Lancer le diaporama</translation>
-        </message>
-        <message>
-            <source>Previous Photo</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/previousbutton)</extracomment>
-            <translation>Photo précédente</translation>
-        </message>
-        <message>
-            <source>Next Photo</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/nextbutton)</extracomment>
-            <translation>Photo suivante</translation>
-        </message>
-        <message>
-            <source>Rotate counter-clockwise</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/rotateleft)</extracomment>
-            <translation>Rotation vers la gauche</translation>
-        </message>
-        <message>
-            <source>Rotate clockwise</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/rotateright)</extracomment>
-            <translation>Rotation vers la droite</translation>
-        </message>
-        <message>
-            <source>Star</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Étoile</translation>
-        </message>
-        <message>
-            <source>Zoom to 1:1</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zoom 1:1</translation>
-        </message>
-        <message>
-            <source>Add/Remove Star</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(thumbui/startoggle)</extracomment>
-            <translation>Ajouter/supprimer un favori</translation>
-        </message>
-        <message>
-            <source>Click to see more options</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(outputlayout/morebutton)</extracomment>
-            <translation>Cliquez ici pour découvrir d'autres options.</translation>
-        </message>
-        <message>
-            <source>More Options</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Plus d'options</translation>
-        </message>
-        <message>
-            <source>Quick Upload</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD</extracomment>
-            <translation>Transfert rapide</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="306" />
-            <source>Play</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(editpanel/sbutton)</extracomment>
-            <translation>Lecture</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="106" />
-            <source>Crop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_CROP_LABEL;stringres:filter_crop64_label0;stringres:filter_crop_label0;tooltips:Label(editpanel/crop)</extracomment>
-            <translation>Recadrer</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="107" />
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="460" />
-            <source>Straighten</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_tilt_label0;tooltips:Label(editpanel/horizonadjust)</extracomment>
-            <translation>Redresser</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="108" />
-            <source>Redeye</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:IDS_REDEYE_LABEL;stringres:filter_redeye_label0;tooltips:Label(editpanel/redeye)</extracomment>
-            <translation>Yeux rouges</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="109" />
-            <source>I'm Feeling Lucky</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>J'ai de la chance</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="110" />
-            <source>Auto Contrast</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Contraste automatique</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="111" />
-            <source>Auto Color</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Couleur automatique</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="112" />
-            <source>Fine Tuning</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_finetune2_label0;stringres:filter_finetune_label0</extracomment>
-            <translation>Réglages</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="114" />
-            <source>Sepia</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Sépia</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="115" />
-            <source>B&amp;W</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Noir et blanc</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="116" />
-            <source>Warmify</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Réchauffer les couleurs</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="117" />
-            <source>Film Grain</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Grain de film</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="118" />
-            <source>Tint</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_PicnikTint_label0</extracomment>
-            <translation>Coloration</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="119" />
-            <source>Saturation</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:EXIF::Saturation;stringres:filter_sat_label0</extracomment>
-            <translation>Saturation</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="120" />
-            <source>Soft Focus</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_radblur_label0</extracomment>
-            <translation>Flou artistique</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="121" />
-            <source>Glow</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:ImageFilters::Blur1;stringres:filter_glow2_label0</extracomment>
-            <translation>Halo</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="122" />
-            <source>Filtered B&amp;W</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CDesaturateFilter::name;stringres:filter_ansel_label0</extracomment>
-            <translation>N&amp;B filtré</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="123" />
-            <source>Focal Saturation</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_radsat_label0</extracomment>
-            <translation>N&amp;B partiel</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="124" />
-            <source>Graduated Tint</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_dir_tint_label0</extracomment>
-            <translation>Dégradé sup.</translation>
-        </message>
-        <message>
-            <source>Retouch</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::TouchUp;tooltips:Label(editpanel/retouch)</extracomment>
-            <translation>Retoucher</translation>
-        </message>
-        <message>
-            <source>Text</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CMakeMoviePanel::sampletext;stringres:ytImageMetadata::Text;tooltips:Label(editpanel/edittext)</extracomment>
-            <translation>Texte</translation>
-        </message>
-        <message>
-            <source>Fill Light</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill_label0;stringres:filter_finetune2_label1;stringres:filter_finetune_label1;stringres:filter_triple2_label1;stringres:filter_triple3_label1;stringres:filter_triple_label3;tooltips:Label(editpanel/filllightlabel)</extracomment>
-            <translation>Éclairage d'appoint</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="396" />
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="398" />
-            <source>Undo</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Annuler</translation>
-        </message>
-        <message>
-            <source>Undo: Crop</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Annuler : recadrage</translation>
-        </message>
-        <message>
-            <source>Redo: Crop</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Rétablir : recadrage</translation>
-        </message>
-        <message>
-            <source>Histogram and camera information</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Text(nerdview/nvhead)</extracomment>
-            <translation>Histogramme et infos sur l'appareil photo</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="704" />
-            <source>Show Faces</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Afficher les visages</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="769" />
-            <source>Make a caption!</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ajouter une légende !</translation>
-        </message>
-        <message>
-            <source>Edit Faces</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Modifier les visages</translation>
-        </message>
-        <message>
-            <source>Edit Collage</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(editpanel/editcollage)</extracomment>
-            <translation>Modifier le montage</translation>
-        </message>
-        <message>
-            <source>Edit the collage from which this image was created</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/editcollage)</extracomment>
-            <translation>Modifier le montage à partir duquel cette image a été créée</translation>
-        </message>
-        <message>
-            <source>Edit Movie</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Label(editpanel/editslideshow)</extracomment>
-            <translation>Retoucher un film</translation>
-        </message>
-        <message>
-            <source>Edit the movie presentation</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/editslideshow)</extracomment>
-            <translation>Modifier la présentation de ce film</translation>
-        </message>
-        <message>
-            <source>Start slideshow</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Démarrer le diaporama</translation>
-        </message>
-        <message>
-            <source>Previous picture</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:WebExport::template3</extracomment>
-            <translation>Photo précédente</translation>
-        </message>
-        <message>
-            <source>Next picture</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:WebExport::template4</extracomment>
-            <translation>Photo suivante</translation>
-        </message>
-        <message>
-            <source>Render the final collage from this draft</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Créer le montage final à partir de cette ébauche</translation>
-        </message>
-        <message>
-            <source>Fit Photo inside viewing area</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/fit)</extracomment>
-            <translation>Ajuster la taille de la photo à la zone d'affichage</translation>
-        </message>
-        <message>
-            <source>Display Photo at actual size</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/1to1)</extracomment>
-            <translation>Afficher la photo à sa taille réelle</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" line="0" />
-            <source>Return to organized thumbnails</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thumbui/albumview)</extracomment>
-            <translation>Retour aux vignettes organisées</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <location filename="../qml/PicasaPy/PhotoViewerContextActions.qml" line="63" />
             <source>Remove Edits</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:IDS_CONFIRMREVERT_MULTIPLE_YES_BUTTON;stringres:IDS_CONFIRMREVERT_YES_BUTTON</extracomment>
             <translation>Supprimer les modifications</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PhotoViewer.qml" />
+            <location filename="../qml/PicasaPy/PhotoViewerContextActions.qml" line="66" />
             <source>Remove all movie edits?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::UndomovieEdits</extracomment>
             <translation>Voulez-vous supprimer toutes les modifications apportées au film ?</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerContextActions.qml" line="204" />
+            <source>Undo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Annuler</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerOverlayControls</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="116" />
+            <source>Selected</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ImageFilters::Selected;tooltips:Label(editpanel/selection_label);tooltips:Label(editpanel/selection_label_zoom)</extracomment>
+            <translation>Sélectionné</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="346" />
+            <source>In Progress...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(editpanel/in_progress_label)</extracomment>
+            <translation>En cours...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="346" />
+            <source>Create Now</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Créer maintenant</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="354" />
+            <source>Render the final collage from this draft</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Créer le montage final à partir de cette ébauche</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="406" />
+            <source>Show Faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Afficher les visages</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="421" />
+            <source>Edit Faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Modifier les visages</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="532" />
+            <source>Make a caption!</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ajouter une légende !</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="550" />
+            <source>Delete this caption</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Supprimer cette légende</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="627" />
+            <source>Show/Hide Caption</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Afficher/masquer la légende</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerOverlayControls.qml" line="683" />
+            <source>Show/Hide Edit Controls</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/toggle_left_drawer)</extracomment>
+            <translation>Afficher/masquer les commandes de modification</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerQuickToolbar</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="22" />
+            <source>Zoom In</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Zoom</extracomment>
+            <translation>Zoom</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="35" />
+            <source>Zoom Out</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zoom arrière</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="47" />
+            <source>Zoom to 1:1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zoom 1:1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="58" />
+            <source>Edit in PicasaPy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
+            <translation>Retoucher dans PicasaPy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="59" />
+            <source>Launch PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Lancer PicasaPy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="82" />
+            <source>Previous Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/previousbutton)</extracomment>
+            <translation>Photo précédente</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="100" />
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="101" />
+            <source>Play Slideshow</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Lancer le diaporama</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="116" />
+            <source>Next Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/nextbutton)</extracomment>
+            <translation>Photo suivante</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="133" />
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="134" />
+            <source>Quick Upload</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD</extracomment>
+            <translation>Transfert rapide</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="150" />
+            <source>Rotate counter-clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateleft)</extracomment>
+            <translation>Rotation vers la gauche</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="167" />
+            <source>Rotate clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateright)</extracomment>
+            <translation>Rotation vers la droite</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="184" />
+            <source>Star</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Étoile</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="207" />
+            <source>More Options</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Plus d'options</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerQuickToolbar.qml" line="208" />
+            <source>Click to see more options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(outputlayout/morebutton)</extracomment>
+            <translation>Cliquez ici pour découvrir d'autres options.</translation>
+        </message>
+    </context>
+    <context>
+        <name>PhotoViewerTopBar</name>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="45" />
+            <source>Zoom In</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:EXIF::Zoom</extracomment>
+            <translation>Zoom</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="54" />
+            <source>Zoom Out</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zoom arrière</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="63" />
+            <source>Zoom to 1:1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zoom 1:1</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="81" />
+            <source>Edit in PicasaPy</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Slingshot::ID_FILE_EDIT</extracomment>
+            <translation>Retoucher dans PicasaPy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="81" />
+            <source>Back to Library</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(editpanel/albumview);tooltips:Label(thumbui/albumview)</extracomment>
+            <translation>Retour à la Photothèque</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="84" />
+            <source>Launch PicasaPy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Lancer PicasaPy</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="85" />
+            <source>Return to organized thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/albumview);tooltips:Tooltip(thumbui/albumview)</extracomment>
+            <translation>Retour aux vignettes organisées</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="114" />
+            <source>Edit Collage</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(editpanel/editcollage)</extracomment>
+            <translation>Modifier le montage</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="117" />
+            <source>Edit the collage from which this image was created</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/editcollage)</extracomment>
+            <translation>Modifier le montage à partir duquel cette image a été créée</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="140" />
+            <source>Edit Movie</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(editpanel/editslideshow)</extracomment>
+            <translation>Retoucher un film</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="143" />
+            <source>Edit the movie presentation</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/editslideshow)</extracomment>
+            <translation>Modifier la présentation de ce film</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="198" />
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="245" />
+            <source>Play</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Label(editpanel/sbutton)</extracomment>
+            <translation>Lecture</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="200" />
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="247" />
+            <source>Play Slideshow</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Lancer le diaporama</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="238" />
+            <source>Previous Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/previousbutton)</extracomment>
+            <translation>Photo précédente</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="296" />
+            <source>Next Photo</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: acquirepanel_text:Tooltip(acquirepanel/nextbutton)</extracomment>
+            <translation>Photo suivante</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="309" />
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="310" />
+            <source>Quick Upload</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:OneUp::ID_QUICKUPLOAD</extracomment>
+            <translation>Transfert rapide</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="325" />
+            <source>Rotate counter-clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateleft)</extracomment>
+            <translation>Rotation vers la gauche</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="342" />
+            <source>Rotate clockwise</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(thumbui/rotateright)</extracomment>
+            <translation>Rotation vers la droite</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="359" />
+            <source>Star</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Étoile</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="382" />
+            <source>More Options</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Plus d'options</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="383" />
+            <source>Click to see more options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(outputlayout/morebutton)</extracomment>
+            <translation>Cliquez ici pour découvrir d'autres options.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="434" />
+            <source>Show only one picture</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/only_1up_toggle)</extracomment>
+            <translation>Afficher une seule image</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="452" />
+            <source>Show two different pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/ab_2up_toggle)</extracomment>
+            <translation>Afficher deux images différentes</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="462" />
+            <source>Show the same picture twice</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/aa_2up_toggle)</extracomment>
+            <translation>Afficher deux fois la même image</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="484" />
+            <source>Switch focus between the pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/swap_2up_focus)</extracomment>
+            <translation>Modifier l'image sur laquelle porte la mise au point</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PhotoViewerTopBar.qml" line="509" />
+            <source>Switch between horizontal and vertical layout</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(editpanel/swap_2up_layout)</extracomment>
+            <translation>Basculer entre l'affichage horizontal et l'affichage vertical</translation>
         </message>
     </context>
     <context>

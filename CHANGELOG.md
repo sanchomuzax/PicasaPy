@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.276] - 2026-10-28
+
+- A fotónéző belső részei önálló komponensekbe kerültek, változatlan megjelenítéssel. (#6109).
+
+## [0.9.275] - 2026-10-28
+
+- A Névtelen arcok nézete kisebb QML-komponensekre bomlott, változatlan megjelenéssel. (#6077).
+
+## [0.9.274] - 2026-10-28
+
+- A főablak párbeszédablakai, eszköztára és diavetítése külön QML-komponensekbe kerültek, a felület változatlan maradt (#5955).
+- A képernyőkép-mérő a főablaki elrendezés és a látható bélyegképek stabilizálódása után rögzíti a képet (#6078).
+- A PR-ek CI-futása kihagyja a windowsos tesztdarabokat; a main push és az éjszakai futás továbbra is elindítja őket. (#6122).
+
 ## [0.9.273] - 2026-10-28
 
 - A kollázs mentését kezelő modul kisebb részekre bomlott; a mentés, a piszkozat és a projektmegnyitás viselkedése változatlan (#6113).

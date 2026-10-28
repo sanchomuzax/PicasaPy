@@ -33,7 +33,7 @@ SUGOK = [
      "Ide kattintva és az egérmutatót a fotókra húzva kinagyíthatja a részleteket"),
     ("MainToolbar.qml", "toolbarFolderViewPopupButton", "MainToolbar",
      "View options", "Megjelenítési beállítások"),
-    ("PhotoViewer.qml", "viewerBackButton", "PhotoViewer",
+    ("PhotoViewerTopBar.qml", "viewerBackButton", "PhotoViewerTopBar",
      "Return to organized thumbnails", "Vissza a rendezett indexképekhez"),
     ("TraySingleActionBar.qml", "traySingleActionClose", "TraySingleActionBar",
      'Cancel "Get more"', 'A "Továbbiak" művelet megszakítása'),
