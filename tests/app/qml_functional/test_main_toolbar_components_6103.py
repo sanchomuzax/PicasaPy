@@ -23,6 +23,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QSignalSpy, QTest
+from tests.support.qml_blokk import blokk_horgonyra
 
 _KOMPONENS = "ToolbarFilterControls"
 _ALLAPOTOK = ("default", "selection", "filter", "narrow")
@@ -304,7 +305,61 @@ def test_pixel_osszehasonlito_kihagyja_a_megadott_dobozt_es_semmi_mast():
     )[0] == 1
 
 
-def _assert_toolbar_referenciaegyezes(
+def _save_failure_images(
+    captured: QImage,
+    reference: QImage,
+    allapot: str,
+    magassag_elteres: int,
+) -> None:
+    """A CI által mért képet, goldent és piros differenciaképet menti."""
+    kimeneti_mappa = os.environ.get("PICASAPY_RENDER_FAILURE_DIR")
+    if not kimeneti_mappa:
+        return
+    kimenet = Path(kimeneti_mappa) / "main-toolbar-6103"
+    kimenet.mkdir(parents=True, exist_ok=True)
+    alapnev = f"{allapot}_{magassag_elteres:+d}"
+    assert captured.save(str(kimenet / f"{alapnev}_captured.png"), "PNG")
+    if reference.isNull():
+        return
+    assert reference.save(str(kimenet / f"{alapnev}_reference.png"), "PNG")
+
+    diff = QImage(
+        max(captured.width(), reference.width()),
+        max(captured.height(), reference.height()),
+        QImage.Format.Format_ARGB32,
+    )
+    diff.fill(0x00000000)
+    for y in range(diff.height()):
+        for x in range(diff.width()):
+            if (
+                x >= captured.width()
+                or y >= captured.height()
+                or x >= reference.width()
+                or y >= reference.height()
+                or captured.pixel(x, y) != reference.pixel(x, y)
+            ):
+                diff.setPixel(x, y, 0xFFFF2020)
+    assert diff.save(str(kimenet / f"{alapnev}_diff.png"), "PNG")
+
+
+def test_save_failure_images_writes_capture_reference_and_diff(tmp_path, monkeypatch):
+    monkeypatch.setenv("PICASAPY_RENDER_FAILURE_DIR", str(tmp_path))
+    captured = QImage(2, 2, QImage.Format.Format_ARGB32)
+    captured.fill(0xFF000000)
+    reference = QImage(2, 2, QImage.Format.Format_ARGB32)
+    reference.fill(0xFFFFFFFF)
+
+    _save_failure_images(captured, reference, "default", 0)
+
+    kimenet = tmp_path / "main-toolbar-6103"
+    assert (kimenet / "default_+0_captured.png").is_file()
+    assert (kimenet / "default_+0_reference.png").is_file()
+    diff = QImage(str(kimenet / "default_+0_diff.png"))
+    assert not diff.isNull()
+    assert diff.pixelColor(0, 0).name() == "#ff2020"
+
+
+def _assert_toolbar_referenciaegyezes_belso(
     kep: QImage,
     elrendezes: dict[str, object],
     allapot: str,
@@ -376,6 +431,31 @@ def _assert_toolbar_referenciaegyezes(
     )
 
 
+def _assert_toolbar_referenciaegyezes(
+    kep: QImage,
+    elrendezes: dict[str, object],
+    allapot: str,
+    magassag_elteres: int,
+) -> None:
+    try:
+        _assert_toolbar_referenciaegyezes_belso(
+            kep, elrendezes, allapot, magassag_elteres
+        )
+    except AssertionError:
+        referencia = (
+            Path(__file__).parent
+            / "golden" / "main_toolbar_6103"
+            / f"{allapot}_{magassag_elteres:+d}.png"
+        )
+        _save_failure_images(
+            kep,
+            QImage(str(referencia)),
+            allapot,
+            magassag_elteres,
+        )
+        raise
+
+
 def test_toolbar_qml_components_stay_below_800_lines():
     qml_dir = _qml_mappa()
     main_toolbar = qml_dir / "MainToolbar.qml"
@@ -388,6 +468,17 @@ def test_toolbar_qml_components_stay_below_800_lines():
     assert f"{_KOMPONENS} 1.0 {_KOMPONENS}.qml" in (
         qml_dir.joinpath("qmldir").read_text(encoding="utf-8")
     )
+
+
+def test_geo_icon_vertical_position_snaps_to_scene_device_pixel():
+    source = (
+        _qml_mappa() / "ToolbarFilterControls.qml"
+    ).read_text(encoding="utf-8")
+    geo_icon = blokk_horgonyra(source, 'objectName: "geoFilterIcon"')
+    assert "anchors.topMargin:" in geo_icon
+    assert "mapToItem(null, 0, 0)" in geo_icon
+    assert "devicePixelRatio" in geo_icon
+    assert "Math.round" in geo_icon
 
 
 @pytest.mark.parametrize(("allapot", "magassag_elteres"), _KEPEK)
@@ -460,6 +551,27 @@ def test_toolbar_allapot_kepe_rogzitheto(
     )
     assert not toolbar_kep.isNull(), f"üres toolbar-kép: {allapot}"
     assert not masodik_toolbar_kep.isNull(), f"üres második toolbar-kép: {allapot}"
+    geo_icon = toolbar.findChild(QObject, "geoFilterIcon")
+    assert isinstance(geo_icon, QQuickItem), "a geoFilterIcon nem található"
+    geo_origin = geo_icon.mapToScene(QPointF(0, 0))
+    dpr = window.devicePixelRatio()
+    fizikai_y = geo_origin.y() * dpr
+    if not math.isclose(fizikai_y, round(fizikai_y), abs_tol=1e-6):
+        referencia = (
+            Path(__file__).parent
+            / "golden" / "main_toolbar_6103"
+            / f"{allapot}_{magassag_elteres:+d}.png"
+        )
+        _save_failure_images(
+            toolbar_kep,
+            QImage(str(referencia)),
+            allapot,
+            magassag_elteres,
+        )
+    assert math.isclose(fizikai_y, round(fizikai_y), abs_tol=1e-6), (
+        "a geoFilterIcon függőleges jelenetkoordinátája részpixeles: "
+        f"({geo_origin.x():.3f}, {geo_origin.y():.3f}), DPR={dpr}"
+    )
 
     elrendezes = _toolbar_elrendezes(toolbar)
     eltero_kockapontok, elteres_helyei = _nem_szoveg_elteresek(
@@ -467,6 +579,18 @@ def test_toolbar_allapot_kepe_rogzitheto(
         masodik_toolbar_kep,
         [*elrendezes["text_boxes"], *elrendezes["text_boxes"]],
     )
+    if eltero_kockapontok:
+        referencia = (
+            Path(__file__).parent
+            / "golden" / "main_toolbar_6103"
+            / f"{allapot}_{magassag_elteres:+d}.png"
+        )
+        _save_failure_images(
+            toolbar_kep,
+            QImage(str(referencia)),
+            allapot,
+            magassag_elteres,
+        )
     assert eltero_kockapontok == 0, (
         f"a két egymás utáni {allapot} kép eltér: "
         f"{eltero_kockapontok} nem-szöveg képpont, első helyek: {elteres_helyei}"

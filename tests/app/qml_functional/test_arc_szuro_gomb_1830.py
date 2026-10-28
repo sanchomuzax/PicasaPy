@@ -18,9 +18,11 @@ from pathlib import Path
 import picasapy.app
 from tests.support.qml_blokk import blokk_horgonyra
 
-_QML = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "MainToolbar.qml"
-).read_text(encoding="utf-8")
+_QML_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+_QML = "\n".join(
+    (_QML_DIR / nev).read_text(encoding="utf-8")
+    for nev in ("MainToolbar.qml", "ToolbarFilterControls.qml")
+)
 
 
 def _blokk() -> str:

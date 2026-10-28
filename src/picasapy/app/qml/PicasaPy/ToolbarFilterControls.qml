@@ -81,7 +81,8 @@ import QtQuick.Window
                     // #1572: a `!== undefined` a hiányzó TULAJDONSÁGRA véd — a próbák
                     // stub-vezérlőjén nincs rajta. Az őr: scripts/qml_undefined_or.py
                     readonly property bool ctlFilterActive:
-                        (controller && controller.viewModeName !== undefined)
+                        (typeof controller !== "undefined" && controller
+                         && controller.viewModeName !== undefined)
                             ? controller.viewModeName === "starred" : false
                     objectName: "starFilterButton"
                     width: 22; height: 20; radius: 2
@@ -108,7 +109,9 @@ import QtQuick.Window
                     HoverHandler { id: starFilter }
                     TapHandler {
                         //: #885: lenyomásra, nem felengedésre
-                        onPressedChanged: if (pressed) {
+                        onPressedChanged: if (pressed
+                                              && typeof controller !== "undefined"
+                                              && controller) {
                             parent.ctlFilterActive
                                 ? controller.clearFilter()
                                 : controller.showStarred()
@@ -135,7 +138,8 @@ import QtQuick.Window
                     // kit ismerünk fel, hanem hogy van-e bejelölt arc.
                     width: 22; height: 20
                     readonly property bool aktiv:
-                        (controller && controller.viewModeName !== undefined)
+                        (typeof controller !== "undefined" && controller
+                         && controller.viewModeName !== undefined)
                             ? controller.viewModeName === "faces" : false
                     Rectangle {
                         anchors.fill: parent
@@ -161,7 +165,9 @@ import QtQuick.Window
                     HoverHandler { id: faceFilterHover }
                     TapHandler {
                         //: #885: lenyomásra, nem felengedésre
-                        onPressedChanged: if (pressed) {
+                        onPressedChanged: if (pressed
+                                              && typeof controller !== "undefined"
+                                              && controller) {
                             parent.aktiv
                                 ? controller.clearFilter()
                                 : controller.showFacesOnly()
@@ -175,7 +181,8 @@ import QtQuick.Window
                     property bool lenyomasra: true
                     width: 22; height: 20
                     readonly property bool aktiv:
-                        (controller && controller.viewModeName !== undefined)
+                        (typeof controller !== "undefined" && controller
+                         && controller.viewModeName !== undefined)
                             ? controller.viewModeName === "videos" : false
                     Rectangle {
                         anchors.fill: parent
@@ -201,7 +208,9 @@ import QtQuick.Window
                     HoverHandler { id: movieFilterHover }
                     TapHandler {
                         //: #885: lenyomásra, nem felengedésre
-                        onPressedChanged: if (pressed) {
+                        onPressedChanged: if (pressed
+                                              && typeof controller !== "undefined"
+                                              && controller) {
                             parent.aktiv
                                 ? controller.clearFilter()
                                 : controller.showVideosOnly()
@@ -220,7 +229,8 @@ import QtQuick.Window
                     property bool lenyomasra: true
                     width: 22; height: 20
                     readonly property bool aktiv:
-                        (controller && controller.viewModeName !== undefined)
+                        (typeof controller !== "undefined" && controller
+                         && controller.viewModeName !== undefined)
                             ? controller.viewModeName === "dupes" : false
                     visible: aktiv
                     Rectangle {
@@ -249,7 +259,9 @@ import QtQuick.Window
                         // KÖZÖS út a menüparanccsal (#1398): az eredetiben a
                         // kapcsoló és az `ID_DUPES` bitre ugyanazt hívja.
                         //: #885: lenyomásra, nem felengedésre
-                        onPressedChanged: if (pressed) {
+                        onPressedChanged: if (pressed
+                                              && typeof controller !== "undefined"
+                                              && controller) {
                             parent.aktiv
                                 ? controller.clearFilter()
                                 : controller.showDuplicateFiles()
@@ -263,12 +275,15 @@ import QtQuick.Window
                     property bool lenyomasra: true
                     width: 22; height: 20
                     readonly property bool ctlHasGeo:
-                        controller ? controller.geoMarkerCount > 0 : false
+                        typeof controller !== "undefined" && controller
+                            ? controller.geoMarkerCount > 0 : false
                     readonly property bool ctlCanShowGeo:
-                        ctlHasGeo || (controller && controller.filterActive !== undefined
+                        ctlHasGeo || (typeof controller !== "undefined" && controller
+                                      && controller.filterActive !== undefined
                                       ? controller.filterActive : false)
                     readonly property bool aktiv:
-                        (controller && controller.viewModeName !== undefined)
+                        (typeof controller !== "undefined" && controller
+                         && controller.viewModeName !== undefined)
                             ? controller.viewModeName === "geo" : false
                     Rectangle {
                         objectName: "geoFilterBackground"
@@ -288,6 +303,20 @@ import QtQuick.Window
                         objectName: "geoFilterIcon"
                         anchors.fill: parent
                         anchors.margins: 3
+                        // A főablak magasságától függően a fejléc scene-Y-ja
+                        // fél fizikai képpontra eshet. Az SVG-t a jelenet
+                        // koordinátájában igazítjuk; az X marad a mért,
+                        // szélességarányos pozícióban.
+                        anchors.topMargin: {
+                            var hostWindow = parent.Window.window
+                            if (!hostWindow)
+                                return 3
+                            var parentOrigin = parent.mapToItem(null, 0, 0)
+                            var dpr = hostWindow.devicePixelRatio > 0
+                                ? hostWindow.devicePixelRatio : 1
+                            return Math.round((parentOrigin.y + 3) * dpr) / dpr
+                                - parentOrigin.y
+                        }
                         source: "icons/geo-pin.svg"
                         fillMode: Image.PreserveAspectFit
                         opacity: parent.aktiv
@@ -302,7 +331,9 @@ import QtQuick.Window
                     TapHandler {
                         enabled: parent.ctlCanShowGeo
                         //: #885: lenyomásra, nem felengedésre
-                        onPressedChanged: if (pressed) {
+                        onPressedChanged: if (pressed
+                                              && typeof controller !== "undefined"
+                                              && controller) {
                             parent.aktiv
                                 ? controller.clearFilter()
                                 : controller.showGeotagged()
@@ -376,13 +407,15 @@ import QtQuick.Window
                         //: a csúszka mozgatása KÖZBEN nem kérdezünk le: a
                         //: `moved` az elengedésre/lépésre szól, a `valueChanged`
                         //: minden képpontnyi vonszolásra lekérdezné az indexet
-                        onMoved: if (controller) controller.setAgeFilter(value)
+                        onMoved: if (typeof controller !== "undefined" && controller)
+                                     controller.setAgeFilter(value)
                     }
                 }
                 Connections {
-                    target: controller
+                    target: typeof controller !== "undefined" ? controller : null
                     function onStatusChanged() {
-                        if (controller && controller.viewModeName !== "age")
+                        if (typeof controller !== "undefined" && controller
+                            && controller.viewModeName !== "age")
                             ageFilterSlider.value = 0.0
                     }
                 }

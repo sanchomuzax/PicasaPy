@@ -28,16 +28,11 @@ from __future__ import annotations
 from pathlib import Path
 
 import picasapy.app
+from tests.support.qml_blokk import blokk_horgonyra
 
-_SAV = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "MainToolbar.qml"
-)
-
-#: A sávon egymás után álló, TOP-SZINTŰ elemek — a blokk-határhoz.
-FELSO_SZINTU = (
-    "faceFilter", "movieFilter", "dupeFilter", "geoFilter",
-    "searchClear", "toolbarFiltersLabel",
-)
+_QML_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+_SAV = _QML_DIR / "ToolbarFilterControls.qml"
+_MAIN_TOOLBAR = _QML_DIR / "MainToolbar.qml"
 
 #: A szűrő-ikonok objectName-je + a súgó angol szövege (a `searchcontainer.tre`
 #: `hottip` sorai szerint).
@@ -49,28 +44,18 @@ SZUROK = {
 }
 
 
+def _forras(nev: str) -> str:
+    """A bontott komponensek közül visszaadja azt, amelyik az elemet birtokolja."""
+    horgony = f'objectName: "{nev}"'
+    for fajl in (_SAV, _MAIN_TOOLBAR):
+        forras = fajl.read_text(encoding="utf-8")
+        if horgony in forras:
+            return forras
+    raise AssertionError(f"a horgony nincs egyik eszköztár-komponensben sem: {horgony}")
+
+
 def _blokk(nev: str) -> str:
-    """Egy elem forrásrészlete az `objectName`-jétől a KÖVETKEZŐ elemig.
-
-    ⚠️ Két zsákutca, hogy a következő olvasó ne fussa újra:
-
-    * **fix karakterablak** (pl. 1800): az elemek hossza a kommentekkel
-      együtt erősen szór, és a `faceFilter` súgóját már nem érte el — úgy
-      nézett ki, mintha hiányozna;
-    * **a következő `objectName:`**: a beágyazott elemeknek (pl.
-      `geoFilterIcon`) SAJÁT `objectName`-jük van, tehát a határ a saját
-      elemen belülre esett.
-
-    A határ ezért a következő TOP-SZINTŰ elem neve, névsorból."""
-    forras = _SAV.read_text(encoding="utf-8")
-    kezd = forras.index(f'objectName: "{nev}"')
-    hatarok = [
-        forras.find(f'objectName: "{mas}"', kezd + 20)
-        for mas in FELSO_SZINTU
-        if mas != nev
-    ]
-    hatarok = [h for h in hatarok if h > 0]
-    return forras[kezd:] if not hatarok else forras[kezd : min(hatarok)]
+    return blokk_horgonyra(_forras(nev), f'objectName: "{nev}"')
 
 
 #: #839: a súgó HELYE mérve — a `searchcontainer.tre` HAT elemre adja
