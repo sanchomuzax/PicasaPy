@@ -2088,12 +2088,6 @@ picasapy-origin-key: webexport:webexport/labelgroup15.title</extracomment>
             <translation>Зберегти до:</translation>
         </message>
         <message>
-            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: webexport:webexport/label20.title</extracomment>
-            <translation>Щоб переглянути приклад, натисніть назву шаблону. Зробивши вибір, натисніть "Експортувати".</translation>
-        </message>
-        <message>
             <source>Export</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: webexport:webexport/button29.title</extracomment>
@@ -2206,12 +2200,6 @@ picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpupl
             <translation>Вибрати папку призначення…</translation>
         </message>
         <message>
-            <source>Template:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extracomment>
-            <translation>Шаблон:</translation>
-        </message>
-        <message>
             <source>Export pictures at:</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: webexport:webexport/labelgroup2.title</extracomment>
@@ -2266,16 +2254,6 @@ picasapy-origin-key: options:options/radio56.title;webexport:webexport/item12.ti
             <translation>Відео повністю</translation>
         </message>
         <message>
-            <source>PicasaPy is generating the web page.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>PicasaPy створює вебсторінку.</translation>
-        </message>
-        <message>
-            <source>Web page generated: %1 file(s) in %2</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Вебсторінку створено: %1 файлів у %2</translation>
-        </message>
-        <message>
             <source>Create</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Створити</translation>
@@ -2302,76 +2280,124 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpu
 picasapy-origin-key: stringres:CRSSPrefs::updating</extracomment>
             <translation>публікування...</translation>
         </message>
+    </context>
+    <context>
+        <name>WebExportTemplatePane</name>
         <message>
+            <location filename="../qml/PicasaPy/WebExportTemplatePane.qml" line="39" />
+            <source>Click a Template Name to view an example.  When you have made your selection, click Export.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: webexport:webexport/label20.title</extracomment>
+            <translation>Щоб переглянути приклад, натисніть назву шаблону. Зробивши вибір, натисніть "Експортувати".</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportTemplatePane.qml" line="104" />
+            <source>Template:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/templatetext)</extracomment>
+            <translation>Шаблон:</translation>
+        </message>
+    </context>
+    <context>
+        <name>WebExportStatusPane</name>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="39" />
+            <source>PicasaPy is generating the web page.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>PicasaPy створює вебсторінку.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="69" />
             <source>Published %1 file(s) to %2.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>%1 файл(ів) опубліковано в %2.</translation>
         </message>
         <message>
-            <source>Manage FTP Accounts</source>
+            <location filename="../qml/PicasaPy/WebExportStatusPane.qml" line="71" />
+            <source>Web page generated: %1 file(s) in %2</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Керування обліковими записами FTP</translation>
+            <translation>Вебсторінку створено: %1 файлів у %2</translation>
         </message>
+    </context>
+    <context>
+        <name>FtpAccountDialog</name>
         <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="77" />
             <source>Account name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Назва облікового запису:</translation>
         </message>
         <message>
-            <source>FTP server:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>FTP-сервер:</translation>
-        </message>
-        <message>
-            <source>Username:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
-            <translation>Ім'я користувача:</translation>
-        </message>
-        <message>
-            <source>Password:</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
-            <translation>Пароль:</translation>
-        </message>
-        <message>
-            <source>Remote folder:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Віддалена папка:</translation>
-        </message>
-        <message>
-            <source>Leave blank to keep the saved password.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Залиште порожнім, щоб зберегти поточний пароль.</translation>
-        </message>
-        <message>
-            <source>The account could not be deleted.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Не вдалося видалити обліковий запис.</translation>
-        </message>
-        <message>
-            <source>New</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: upload_text:Label(upload/newalbum2)</extracomment>
-            <translation>Новий</translation>
-        </message>
-        <message>
-            <source>Delete</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:il_Delete</extracomment>
-            <translation>Видалити</translation>
-        </message>
-        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="144" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:il_Cancel</extracomment>
             <translation>Скасувати</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="137" />
+            <source>Delete</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Delete</extracomment>
+            <translation>Видалити</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="84" />
+            <source>FTP server:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>FTP-сервер:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="118" />
+            <source>Leave blank to keep the saved password.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Залиште порожнім, щоб зберегти поточний пароль.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="9" />
+            <source>Manage FTP Accounts</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Керування обліковими записами FTP</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="132" />
+            <source>New</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: upload_text:Label(upload/newalbum2)</extracomment>
+            <translation>Новий</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="98" />
+            <source>Password:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/passwordtxt)</extracomment>
+            <translation>Пароль:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="106" />
+            <source>Remote folder:</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Віддалена папка:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="149" />
             <source>Save</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CFilterStackUI::save</extracomment>
             <translation>Зберегти</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="68" />
+            <source>The account could not be deleted.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Не вдалося видалити обліковий запис.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FtpAccountDialog.qml" line="91" />
+            <source>Username:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: login_text:Label(login/usernametxt)</extracomment>
+            <translation>Ім'я користувача:</translation>
         </message>
     </context>
     <context>
@@ -8344,23 +8370,59 @@ picasapy-origin-key: collagepaneltext:Label(collagepanel/select_none);stringres:
         </message>
     </context>
     <context>
-        <name>LightboxHeader</name>
+        <name>LightboxHeaderTitle</name>
         <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" />
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="123" />
+            <source>View zoomed in to the face</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/face_zoom)</extracomment>
+            <translation>Масштабувати до обличчя</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="151" />
+            <source>View zoomed out to the full picture</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/picture_zoom)</extracomment>
+            <translation>Переглянути в режимі оригінального розміру</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="194" />
+            <source>Sync to Web</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: headerpaneltext:Label(headerpanel/sync_label);stringres:SyncLabel::Off</extracomment>
+            <translation>Синхронізувати з Інтернетом</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="175" />
+            <source>Remove</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Вилучити</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderTitle.qml" line="1" />
+            <source>SYNC</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>СИНХРОНІЗАЦІЯ</translation>
+        </message>
+    </context>
+    <context>
+        <name>LightboxHeaderButtons</name>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderButtons.qml" />
             <source>Create Movie Presentation</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_movie);headerpaneltext:Tooltip(headerpanel/create_movie)</extracomment>
             <translation>Створити презентацію відеофайлу</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" />
+            <location filename="../qml/PicasaPy/LightboxHeaderButtons.qml" />
             <source>Create Face Movie</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_face_movie)</extracomment>
             <translation>Створити фільм з обличчям</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="571" />
+            <location filename="../qml/PicasaPy/LightboxHeaderButtons.qml" line="238" />
             <source>Set as People Album Thumbnail</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/set_thumbnail)</extracomment>
@@ -8373,110 +8435,10 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/play);headerpan
             <translation>Відтворити слайд-шоу розміром на весь екран</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Show only suggestions (when toggled on)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/sug_filter)</extracomment>
-            <translation>Показати лише пропозиції (після підключення)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>View zoomed in to the face</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/face_zoom)</extracomment>
-            <translation>Масштабувати до обличчя</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>View zoomed out to the full picture</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/picture_zoom)</extracomment>
-            <translation>Переглянути в режимі оригінального розміру</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Sync to Web</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: headerpaneltext:Label(headerpanel/sync_label);stringres:SyncLabel::Off</extracomment>
-            <translation>Синхронізувати з Інтернетом</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Find more suggestions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/moresug)</extracomment>
-            <translation>Пошук пропозицій</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Lower the recognition threshold to get more suggestions</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Знизити поріг розпізнавання, щоб отримати більше пропозицій</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Confirm all</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/confirmsug)</extracomment>
-            <translation>Підтвердити всі</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Confirm all suggestions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsug)</extracomment>
-            <translation>Підтвердити всі пропозиції</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Remove</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Вилучити</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Remove all suggestions</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Вилучити всі пропозиції</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Confirm</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Підтвердити</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Confirm selected suggestions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsel)</extracomment>
-            <translation>Підтвердити вибрані пропозиції</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="0" />
-            <source>Remove selected suggestions</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/removesel)</extracomment>
-            <translation>Видалити вибрані пропозиції</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="30" />
-            <source>SYNC</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>СИНХРОНІЗАЦІЯ</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="68" />
+            <location filename="../qml/PicasaPy/LightboxHeaderButtons.qml" line="270" />
             <source>Upload</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Завантажити</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/LightboxHeader.qml" line="111" />
-            <source>Add a description</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CTextEditNode::addcaption</extracomment>
-            <translation>Додати опис</translation>
         </message>
         <message>
             <source>Save</source>
@@ -8498,6 +8460,85 @@ picasapy-origin-key: stringres:CTextEditNode::addcaption</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/create_collage);headerpaneltext:Tooltip(headerpanel/create_collage)</extracomment>
             <translation>Створити фотоколаж</translation>
+        </message>
+    </context>
+    <context>
+        <name>LightboxHeaderSuggestionRow</name>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="70" />
+            <source>Show only suggestions (when toggled on)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/sug_filter)</extracomment>
+            <translation>Показати лише пропозиції (після підключення)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="156" />
+            <source>Find more suggestions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/moresug)</extracomment>
+            <translation>Пошук пропозицій</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="159" />
+            <source>Lower the recognition threshold to get more suggestions</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Знизити поріг розпізнавання, щоб отримати більше пропозицій</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="107" />
+            <source>Confirm all</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Label(faceheaderpanel/confirmsug)</extracomment>
+            <translation>Підтвердити всі</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="113" />
+            <source>Confirm all suggestions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsug)</extracomment>
+            <translation>Підтвердити всі пропозиції</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="128" />
+            <source>Remove</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Вилучити</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="135" />
+            <source>Remove all suggestions</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Вилучити всі пропозиції</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="106" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Підтвердити</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="112" />
+            <source>Confirm selected suggestions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/confirmsel)</extracomment>
+            <translation>Підтвердити вибрані пропозиції</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderSuggestionRow.qml" line="134" />
+            <source>Remove selected suggestions</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/removesel)</extracomment>
+            <translation>Видалити вибрані пропозиції</translation>
+        </message>
+    </context>
+    <context>
+        <name>LightboxHeaderDescription</name>
+        <message>
+            <location filename="../qml/PicasaPy/LightboxHeaderDescription.qml" line="45" />
+            <source>Add a description</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CTextEditNode::addcaption</extracomment>
+            <translation>Додати опис</translation>
         </message>
     </context>
     <context>

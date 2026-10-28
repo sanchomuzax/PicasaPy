@@ -131,11 +131,11 @@ class TestSourceCaching:
     minden hívásnál megismételni."""
 
     def test_repeated_register_decodes_source_once(self, qt_app, tmp_path, monkeypatch):
-        from picasapy.app import edit_preview
+        from picasapy.app import edit_preview_source
         from picasapy.ini.filters import FilterOp
 
         calls = []
-        original = edit_preview._decode_source
+        original = edit_preview_source._decode_source
 
         #: #819: a dekóder `full_res` kapcsolót is kap — a `fullres`
         #: szűrőknél a korlát elmarad. A számláló továbbadja.
@@ -143,7 +143,7 @@ class TestSourceCaching:
             calls.append(path)
             return original(path, **kulcsszavak)
 
-        monkeypatch.setattr(edit_preview, "_decode_source", counting_decode)
+        monkeypatch.setattr(edit_preview_source, "_decode_source", counting_decode)
         provider = _make_provider()
         photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
         op = FilterOp("tilt", ("1", "0.100000", "0.000000"))
@@ -153,10 +153,10 @@ class TestSourceCaching:
         assert len(calls) == 1
 
     def test_different_photo_id_decodes_again(self, qt_app, tmp_path, monkeypatch):
-        from picasapy.app import edit_preview
+        from picasapy.app import edit_preview_source
 
         calls = []
-        original = edit_preview._decode_source
+        original = edit_preview_source._decode_source
 
         #: #819: a dekóder `full_res` kapcsolót is kap — a `fullres`
         #: szűrőknél a korlát elmarad. A számláló továbbadja.
@@ -164,7 +164,7 @@ class TestSourceCaching:
             calls.append(path)
             return original(path, **kulcsszavak)
 
-        monkeypatch.setattr(edit_preview, "_decode_source", counting_decode)
+        monkeypatch.setattr(edit_preview_source, "_decode_source", counting_decode)
         provider = _make_provider()
         photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
         provider.register("1", photo, ())
@@ -172,10 +172,10 @@ class TestSourceCaching:
         assert len(calls) == 2
 
     def test_unregister_clears_source_cache(self, qt_app, tmp_path, monkeypatch):
-        from picasapy.app import edit_preview
+        from picasapy.app import edit_preview_source
 
         calls = []
-        original = edit_preview._decode_source
+        original = edit_preview_source._decode_source
 
         #: #819: a dekóder `full_res` kapcsolót is kap — a `fullres`
         #: szűrőknél a korlát elmarad. A számláló továbbadja.
@@ -183,7 +183,7 @@ class TestSourceCaching:
             calls.append(path)
             return original(path, **kulcsszavak)
 
-        monkeypatch.setattr(edit_preview, "_decode_source", counting_decode)
+        monkeypatch.setattr(edit_preview_source, "_decode_source", counting_decode)
         provider = _make_provider()
         photo = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
         provider.register("1", photo, ())
@@ -199,10 +199,10 @@ class TestPrefixCache:
 
     @staticmethod
     def _counting_apply_filters(monkeypatch):
-        from picasapy.app import edit_preview
+        from picasapy.app import edit_preview_cache
 
         calls: list[tuple] = []
-        original = edit_preview.apply_filters
+        original = edit_preview_cache.apply_filters
 
         def counting(image, ops, **kwargs):
             # a `bejovo` (#3229) átmegy: a záró hívás a prefix
@@ -210,7 +210,7 @@ class TestPrefixCache:
             calls.append(tuple(ops))
             return original(image, ops, **kwargs)
 
-        monkeypatch.setattr(edit_preview, "apply_filters", counting)
+        monkeypatch.setattr(edit_preview_cache, "apply_filters", counting)
         return calls
 
     @staticmethod

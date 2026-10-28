@@ -20,6 +20,7 @@ from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 import picasapy.app.application as app_module
+from tests.support.fejlec_forras import fejlec_forras
 from tests.support.varakozas import var_feltetelre
 from picasapy.lazy_cv2 import cv2
 from picasapy.ini import parse_document, update_document
@@ -559,8 +560,6 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
 
 
 def test_a_szovegek_eredeti_angol_qstr_forrasai_megmaradnak():
-    qml = (
-        app_module._APP_DIR / "qml" / "PicasaPy" / "LightboxHeader.qml"
-    ).read_text(encoding="utf-8")
+    qml = fejlec_forras()
     assert 'ToolTip.text: qsTr("Create Movie Presentation")' in qml
     assert 'ToolTip.text: qsTr("Create Face Movie")' in qml

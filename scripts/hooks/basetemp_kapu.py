@@ -127,6 +127,8 @@ _NEHEZ_IMPORT = re.compile(
 
 _PLAFON_JELE = "systemd-run"
 _PLAFON_KAPCSOLO = "MemoryMax="
+_HATTER_SZELET = "picasapy-hatter.slice"
+_HATTER_SZELET_KAPCSOLO = f"--slice={_HATTER_SZELET}"
 
 #: #3616: a TARTALÉK plafon busz nélküli gépen (felhős konténer). Csak ott
 #: számít plafonnak, ahol a `systemd-run --user --scope` nem működik — a
@@ -236,7 +238,8 @@ def _systemd_scope_elerheto() -> bool:
         return False
     try:
         return _run(
-            [_PLAFON_JELE, "--user", "--scope", "-q", "--", "true"],
+            [_PLAFON_JELE, "--user", "--scope", _HATTER_SZELET_KAPCSOLO,
+             "-q", "--", "true"],
             capture_output=True, timeout=10,
         ).returncode == 0
     except (OSError, subprocess.SubprocessError):
@@ -244,17 +247,31 @@ def _systemd_scope_elerheto() -> bool:
 
 
 def _van_plafon(tokenek: list[str]) -> bool:
-    """Igaz, ha a szakasz memóriaplafon alatt indítja a pytestet.
+    """Igaz, ha a szakasz a védett memóriaplafon alá teszi a futást.
 
     #3616: busz nélküli gépen a `prlimit --as=…` is plafon (kimondott
-    tartalék); ahol a scope működik, ott nem elég.
+    tartalék); ahol a scope működik, ott nem elég. A systemd scope-nak a
+    `picasapy-hatter.slice`-ban kell lennie, különben a közös gépmemóriát és
+    swapot továbbra is terheli.
     """
-    if (any(t == _PLAFON_JELE or t.endswith("/" + _PLAFON_JELE)
-            for t in tokenek)
-            and any(_PLAFON_KAPCSOLO in t for t in tokenek)):
-        return True
+    systemd_run = any(t == _PLAFON_JELE or t.endswith("/" + _PLAFON_JELE)
+                      for t in tokenek)
+    if systemd_run:
+        return (any(_PLAFON_KAPCSOLO in t for t in tokenek)
+                and _HATTER_SZELET_KAPCSOLO in tokenek)
     tartalek = any(_TARTALEK_AS.match(k) for k in _prlimit_kapcsolok(tokenek))
     return tartalek and not _systemd_scope_elerheto()
+
+
+def _plafon_hiany(tokenek: list[str]) -> str:
+    """Hibaok-részlet, amely a hiányzó systemd-szeletet név szerint jelzi."""
+    systemd_run = any(t == _PLAFON_JELE or t.endswith("/" + _PLAFON_JELE)
+                      for t in tokenek)
+    van_memoriaplafon = any(_PLAFON_KAPCSOLO in t for t in tokenek)
+    if (systemd_run and van_memoriaplafon
+            and _HATTER_SZELET_KAPCSOLO not in tokenek):
+        return f"a kötelező `{_HATTER_SZELET_KAPCSOLO}` kapcsoló nélkül"
+    return "MEMÓRIAPLAFON nélkül"
 
 
 def _prlimit_kapcsolok(tokenek: list[str]) -> list[str]:
@@ -299,7 +316,7 @@ def blokkolando(cmd: str) -> str | None:
         # #2752: ad-hoc szkript plafon nélkül — pytesttől függetlenül
         szkript = _adhoc_szkript(tokenek)
         if szkript is not None and not _van_plafon(tokenek):
-            return f"ad-hoc szkript (`{szkript}`) MEMÓRIAPLAFON nélkül"
+            return f"ad-hoc szkript (`{szkript}`) {_plafon_hiany(tokenek)}"
         if not _pytest_hivas(tokenek):
             continue
         if any(k in _ARTALMATLAN_KAPCSOLO for k in tokenek):
@@ -310,7 +327,7 @@ def blokkolando(cmd: str) -> str | None:
         if not any(k == "--basetemp" or k.startswith("--basetemp=") for k in tokenek):
             return "pytest-hívás közös `--basetemp` nélkül"
         if _app_cel(tokenek) and not _van_plafon(tokenek):
-            return "`tests/app` alatti pytest MEMÓRIAPLAFON nélkül"
+            return f"`tests/app` alatti pytest {_plafon_hiany(tokenek)}"
     # #2752: heredoc/stdin alak — csak nehéz importtal, és csak plafon nélkül
     if _NEHEZ_IMPORT.search(cmd):
         for tokenek in _szakaszok(cmd):
@@ -360,7 +377,7 @@ def main() -> int:
         "másodperc alatt 898-ról 1401 MiB-ra nőtt.\n"
         "\n"
         "Plafon alatt így indítsd (a túllépő EGYEDÜL hal meg, exit 137):\n"
-        "    systemd-run --user --scope -q \\\n"
+        "    systemd-run --user --scope --slice=picasapy-hatter.slice -q \\\n"
         "        -p MemoryMax=2400M -p MemorySwapMax=0 -- \\\n"
         "        python3 -m pytest <egy fájl>.py -q --basetemp=\"$BT\"\n"
         "\n"
