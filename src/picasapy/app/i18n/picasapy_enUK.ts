@@ -8874,19 +8874,19 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
             <location filename="../qml/Main.qml" line="3284" />
             <source>Back to View All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Back to View All</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" line="3370" />
             <source>Duplicate Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Duplicate Files</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" line="3394" />
             <source>Looking for duplicate files...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Looking for duplicate files...</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" line="3333" />
@@ -8899,7 +8899,7 @@ picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
             <location filename="../qml/Main.qml" line="3351" />
             <source>Clear Sample</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Clear Sample</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" line="3419" />
