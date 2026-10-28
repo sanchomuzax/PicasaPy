@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import math
 import os
 from pathlib import Path
@@ -176,10 +177,50 @@ def _image_status(image: QQuickItem | None) -> str:
     return "Unknown" if failed else str(value)
 
 
-def _text_free_pixels(view: QQuickItem, width: int, height: int) -> np.ndarray:
-    valid = np.ones((height, width), dtype=bool)
+_TEXT_CLASSES = ("QQuickText", "QQuickTextInput", "QQuickTextEdit")
+
+
+def _is_text_item(item: QQuickItem) -> bool:
+    # a stílusos TextField osztályneve QML-típusnév (pl. „TextField_QMLTYPE_3"),
+    # a helyőrzője QQuickPlaceholderText: az öröklés dönt, nem a név eleje
+    return any(item.inherits(name) for name in _TEXT_CLASSES)
+
+
+def _face_image_rects(view: QQuickItem) -> dict[str, list[float]]:
+    """Az arcképek scene-téglalapja: ezt a teszt pontosan összeveti."""
+    rects = {}
     for item in _walk_items(view):
-        if not item.metaObject().className().startswith("QQuickText"):
+        name = item.objectName()
+        if not name.startswith("faceImage_") or not item.isVisible():
+            continue
+        point = item.mapToScene(QPointF(0, 0))
+        rects[name] = [
+            round(point.x(), 3),
+            round(point.y(), 3),
+            round(item.width(), 3),
+            round(item.height(), 3),
+        ]
+    return rects
+
+
+def _text_free_pixels(view: QQuickItem, width: int, height: int) -> np.ndarray:
+    """A feliratok és az arcképek belseje nélküli képpontok.
+
+    Az arckép belsejét a szoftveres raszterező mipmap-mintavétele gépenként
+    másképp rajzolja (a CI-n az átméretezett kép egyes oszlopai térnek el).
+    A kép HELYÉT és MÉRETÉT a `_face_image_rects` pontosan összeveti, a
+    kerete, a kijelölés és minden körülötte lévő képpont pedig itt marad.
+    """
+    valid = np.ones((height, width), dtype=bool)
+    for left, top, item_width, item_height in _face_image_rects(view).values():
+        x0 = max(0, math.ceil(left) + 1)
+        y0 = max(0, math.ceil(top) + 1)
+        x1 = min(width, math.floor(left + item_width) - 1)
+        y1 = min(height, math.floor(top + item_height) - 1)
+        if x0 < x1 and y0 < y1:
+            valid[y0:y1, x0:x1] = False
+    for item in _walk_items(view):
+        if not _is_text_item(item):
             continue
         if not item.isVisible() or item.width() <= 0 or item.height() <= 0:
             continue
@@ -238,10 +279,20 @@ def _capture_and_compare(
     assert image.save(str(output), "PNG")
 
     reference = _GOLDEN_DIR / f"{state}_{height_offset:+d}.png"
+    geometry_file = _GOLDEN_DIR / f"{state}_{height_offset:+d}.json"
     if os.environ.get("PICASAPY_6077_RECORD") == "1":
         _GOLDEN_DIR.mkdir(parents=True, exist_ok=True)
         assert image.save(str(reference), "PNG")
+        geometry_file.write_text(
+            json.dumps(_face_image_rects(view), indent=1, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
         return
+
+    expected_geometry = json.loads(geometry_file.read_text(encoding="utf-8"))
+    assert _face_image_rects(view) == expected_geometry, (
+        f"{state}: az arcképek helye vagy mérete eltér a bontás előttitől"
+    )
 
     expected = QImage(str(reference))
     assert not expected.isNull(), f"hiányzik a bontás előtti referencia: {reference}"
