@@ -43,7 +43,8 @@ class TestTheSourceInventory:
         icons = [f for f in source_data_files() if "/icons/" in f]
 
         assert len(icons) >= 20, "az ikonkészletet nem találja a leltár"
-        assert all(f.endswith(".svg") for f in icons)
+        # #6140: a gépfüggetlen eszköztár-tű és csúszka-árnyék előre raszterezett PNG.
+        assert all(f.endswith((".svg", ".png")) for f in icons)
 
     def test_it_finds_the_webexport_templates(self):
         """A másik áldozat: a webexport sablonjai."""
