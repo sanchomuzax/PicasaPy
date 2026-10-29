@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.279] - 2026-10-29
+
+- A backuphash-teszt várakozása az ini cseréje közbeni jogosultsági hibát még-nem-késznek veszi (#6156).
+- A sötét téma most több felületen helyesen jeleníti meg a gombokat, jelzéseket, mezőket és médialejátszó-vezérlőket (#6125).
+- A képpontos QML-ellenőrzések rögzített betűt és közös szövegelem-felismerést használnak. (#6135).
+- Az Emberek-vezérlő belső részei kisebb modulokra bomlottak, a működés változatlan maradt (#6145).
+- A kollázs- és filmkészítés vezérlőrészei külön modulokba kerültek, változatlan működéssel (#6146).
+
 ## [0.9.278] - 2026-10-28
 
 - A fordítás-teljességi teszt listafájlban adja át a forrásokat a lupdate-nek (#6142).
