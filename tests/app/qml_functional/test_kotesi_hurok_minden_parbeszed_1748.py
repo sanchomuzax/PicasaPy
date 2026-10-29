@@ -54,7 +54,10 @@ _KOTELEZO_VALTOZATOK = {
         "movieDialog: ({}); tabs: ({}); previewPanel: ({ x: 0, width: 0 })",
     ),
     "MovieMakerOptions": ("movieDialog: ({}); pagesWidth: 0",),
-    "MovieMakerPreview": ("movieDialog: ({}); resizeTimer: ({})",),
+    "MovieMakerPreview": (
+        "movieDialog: ({}); resizeTimer: ({}); "
+        "moviePreviewMusicLoader: ({}); moviePreviewTransition: ({})",
+    ),
     "MovieMakerPreviewLogic": (
         "movieDialog: ({}); tabs: ({}); previewComponent: ({}); previewTimer: ({}); "
         "transition: ({}); transitionFallbackTimer: ({}); itemsRefreshTimer: ({}); frameTimer: ({})",

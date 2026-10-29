@@ -274,6 +274,8 @@ Item {
             id: moviePreviewComponent
             anchors.fill: parent
             movieDialog: movieDialog
+            moviePreviewMusicLoader: moviePreviewRuntime.musicLoader
+            moviePreviewTransition: moviePreviewRuntime.transition
             resizeTimer: moviePreviewRuntime.resizeTimer
             moviePreviewTimer: moviePreviewRuntime.previewTimer
         }

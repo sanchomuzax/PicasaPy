@@ -5,7 +5,6 @@ Item {
     required property var movieDialog
     required property var tabs
     visible: false
-    enabled: false
     width: 0
     height: 0
 
