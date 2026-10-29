@@ -1,39 +1,13 @@
-"""A Picasa `filters=` lánc gyakori-javítás műveletei numpy/OpenCV képeken.
+"""A Picasa `filters=` lánc műveleteinek régi import-homlokzata.
 
-Minden függvény TISZTA: RGB `uint8` numpy tömböt (H, W, 3 alakú) kap, és
-ÚJ tömböt ad vissza — a bemenetet sosem mutálja (immutabilitás).
-
-Az `autolight` (Auto Contrast), `autocolor` (Auto Colour) és `enhance` (Jó
-napom van) mindhárom a #535/#540 mérésekben megfejtett, hisztogram-
-darabszám alapú lineáris szinthúzás egy-egy változata — de HÁROM KÜLÖN
-modell (#540, 12-12 referencia-képpáron mérve):
-
-- `autolight`: KÖZÖS (mindhárom csatornán azonos) vágás — nincs
-  fehéregyensúly-hatása. A közös vágópont a csatornánkénti pontok UNIÓJA,
-  a TELJES kép hisztogramjából (#539, `0x008f80c0` → `0x00a4bfd0`).
-- `autocolor`: csatornánként KÜLÖN vágás, de a csatornák egy KÖZÖS
-  (a csatornánkénti vágópontok átlagából számolt) kimeneti tartományra
-  simulnak — nem nyújtja mindegyiket önállóan 0..255-re (az a modell
-  a mérésen jóval rosszabbul illeszkedett, ld. #540).
-- `enhance` ("Jó napom van") és `autocontrast`: csatornánkénti vágás a kép
-  90% × 90%-os, vízszintesen BALRA IGAZÍTOTT ablakáról (#721,
-  `_analysis_region`), majd a vágópontok KEVERÉSE a közös `[loMin, hiMax]`
-  felé. A keverés arányát a hívó adja: az `enhance` 0,30-at
-  (`0x008f8840`), az `autocontrast` 1,0-et (`0x008f89d0`) — a kettő tehát
-  KÜLÖN szűrő, nem azonos (#721, `0x009db610` utasításszintű olvasata).
-
-A vágópont-keresés és a leképezés mindkét úton a natív algoritmus szerint
-történik: darabszám-küszöb (`_levels_clip_threshold`), a natív keresőciklus
-(`_native_clip_points`) és a natív fixpontos átvitel (`_native_levels_lut`).
+A képműveletek implementációi kisebb modulokban vannak; a régi importútvonal
+és az `ops._channel_histograms` patch-pont változatlanul elérhető.
 """
 
 from __future__ import annotations
-
 import math
-
 from picasapy.lazy_cv2 import cv2
 import numpy as np
-
 from picasapy.ini.rect64 import Rect64
 from picasapy.render.autocolor_matrix import (
     apply_autocolor_matrix,
@@ -48,147 +22,11 @@ from picasapy.render.curves import (
 )
 from picasapy.render.fixpontos_mintavevo import fixpontos_bilinearis
 
-_REDEYE_DOMINANCE_RATIO = 1.67
-_REDEYE_LOCAL_SIGMA_FACTOR = 1.5
-_REDEYE_CONTEXT_RADIUS_FACTOR = 2.5
-_REDEYE_MIN_ROUNDNESS = 0.6
-_REDEYE_MIN_FILL = 0.5
-#: A `count_redeye_spots` zajszűrése: ennél kevesebb ÖSSZEFÜGGŐ pixelből
-#: álló folt nem számít külön „szemnek". Szándékosan ABSZOLÚT (nem a
-#: képmérethez arányosított) küszöb: a szűrendő jelenség — a JPEG-tömörítés
-#: néhány pixeles vörös szórványa — szintén abszolút méretű, egy arányos
-#: küszöb pedig nagy képen a távolabbi arcok valódi pupilláit is kidobná.
-_REDEYE_MIN_SPOT_PIXELS = 6
-
-#: A szinthúzás vágási ARÁNYA: a képpontszám fél százaléka, MINDKÉT végén
-#: azonosan (#539). A natív kód két helyen mondja ki ugyanezt: a
-#: `FUN_00a4be40` a hívási helyről kapott `0.005f` konstanssal
-#: (`0x3ba3d70a`), a `0x009db610` pedig egész osztásként, `/200`-zal.
-_LEVELS_CLIP_RATIO = 0.005
-
 _validate_image = validate_image
 
-
-def _rect_to_pixels(rect: Rect64, width: int, height: int) -> tuple[int, int, int, int]:
-    """Relatív [0..1] Rect64 → pixel-koordináták (left, top, right, bottom)."""
-    left = round(rect.left * width)
-    top = round(rect.top * height)
-    right = round(rect.right * width)
-    bottom = round(rect.bottom * height)
-    return left, top, right, bottom
-
-
-def apply_crop(image: np.ndarray, rect: Rect64) -> np.ndarray:
-    """Kivágás a relatív [0..1] `rect` koordináták alapján, pixelre pontosan.
-
-    Üres (nulla szélességű/magasságú) kivágásnál ValueError.
-    """
-    _validate_image(image)
-    height, width = image.shape[:2]
-    left, top, right, bottom = _rect_to_pixels(rect, width, height)
-    if right <= left or bottom <= top:
-        raise ValueError(
-            f"Üres kivágás: rect={rect} -> pixel=({left}, {top}, {right}, {bottom})"
-        )
-    return image[top:bottom, left:right].copy()
-
-
-def tilt_scale(width: int, height: int, angle: float) -> float:
-    """A Kiegyenesítés natív skálája (`0x0090a720`, #3846).
-
-    A két sarkot, `(W/2, H/2)`-t és `(W/2, −H/2)`-t `R(θ)`-val elforgatja, és
-    `s = min(1, min_sarok(W/2 / |x′|, H/2 / |y′|))` — ekkora kicsinyítésű
-    forrásablak fér el a forgatott képen, tehát a kimenetben nincs üres sarok.
-    Fekvő képnél ez `1 / (cos θ + (W/H)·sin θ)`. `angle` radiánban.
-    """
-    if width <= 0 or height <= 0:
-        raise ValueError(f"A méretek pozitívak kell legyenek: {width}x{height}")
-    cos_a, sin_a = math.cos(angle), math.sin(angle)
-    fel_w, fel_h = width / 2.0, height / 2.0
-    skala = 1.0
-    for sarok_y in (fel_h, -fel_h):
-        x_r = cos_a * fel_w - sin_a * sarok_y
-        y_r = sin_a * fel_w + cos_a * sarok_y
-        if x_r != 0.0:
-            skala = min(skala, fel_w / abs(x_r))
-        if y_r != 0.0:
-            skala = min(skala, fel_h / abs(y_r))
-    return skala
-
-
-def tilt_matrix(width: int, height: int, angle: float) -> tuple[float, ...]:
-    """A Kiegyenesítés cél → forrás mátrixa (`0x0090a720`, #3846).
-
-    `M = T(W/2, H/2) · R(θ) · S(s) · T(−W/2, −H/2)`, `R = [[c, −s_θ], [s_θ,
-    c]]`, `s = tilt_scale(...)`. KÉPPONTKÖZEPES koordinátában értendő: a cél
-    `(x + 0,5, y + 0,5)` pontját vetíti a forrásba (a `fixpontos_bilinearis`
-    konvenciója) — a középpont `W/2`, `H/2`, egész felezés nélkül. Az OpenCV
-    egész-képpont konvenciója ugyanezzel a középponttal fél képpontot tolt.
-    Kimenet: `(m0, m1, m2, m3, m4, m5)`, `u = m0·x + m1·y + m2`.
-    """
-    skala = tilt_scale(width, height, angle)
-    cos_s, sin_s = math.cos(angle) * skala, math.sin(angle) * skala
-    kozep_x, kozep_y = width / 2.0, height / 2.0
-    return (
-        cos_s, -sin_s, kozep_x - cos_s * kozep_x + sin_s * kozep_y,
-        sin_s, cos_s, kozep_y - sin_s * kozep_x - cos_s * kozep_y,
-    )
-
-
-def apply_tilt(image: np.ndarray, angle: float, *, gyors: bool = False) -> np.ndarray:
-    """Kiegyenesítés: forgatás a kép közepe körül a natív úton (#3846).
-
-    `angle` radiánban (a lánc a Picasa `p` paraméterét `θ = p · 0,2`-vel
-    váltja át). A mátrix a `tilt_matrix`, a skála a `tilt_scale` — a
-    kitöltéshez szükséges kicsinyítést maga számolja, kívülről NEM kap
-    skálát (a natív út a szűrő 2. paraméterét nem olvassa). A mintavevő a
-    Polaroid forgatásával közös 16.16 fixpontos, 8 bites súlyú bilineáris
-    (`0x009e7060`); a perem egy képpontos sávjában a szélső képpont
-    ismétlődik. A kimenet mérete a bemenetéé.
-
-    `gyors=True` (#3846): CSAK a csúszka-húzás közbeni élő előnézetnek.
-    Ugyanaz a képpontközepes mátrix, de `cv2.INTER_LINEAR` a mintavevő —
-    a 684-es készleten ΔE 0,28 a natív 0,24 helyett (a régi út 0,92 volt),
-    viszont ~a régi OpenCV-út sebességével fut.
-    """
-    _validate_image(image)
-    height, width = image.shape[:2]
-    matrix = tilt_matrix(width, height, angle)
-    if gyors:
-        m0, m1, m2, m3, m4, m5 = matrix
-        # képpontközepes → képpont-index: G = T(−0,5) · M · T(0,5)
-        index_matrix = np.array(
-            [[m0, m1, m2 + 0.5 * (m0 + m1) - 0.5], [m3, m4, m5 + 0.5 * (m3 + m4) - 0.5]]
-        )
-        return cv2.warpAffine(
-            image,
-            index_matrix,
-            (width, height),
-            flags=cv2.INTER_LINEAR | cv2.WARP_INVERSE_MAP,
-            borderMode=cv2.BORDER_REPLICATE,
-        )
-    return fixpontos_bilinearis(image, matrix, width, height, (0, 0, 0))
-
-
-def _levels_clip_threshold(pixel_count: int) -> int:
-    """A vágási DARABSZÁM-küszöb: `round(N · 0,005)`, de legalább 1 (#539).
-
-    `N` a MINTAVÉTELEZETT képpontszám: a natív kód a hisztogramot `lépés`
-    ritkítással is építheti, ilyenkor `N = W·H / lépés²`. Teljes felbontású
-    hisztogramnál `lépés = 1`, tehát `N = W·H`. A küszöb így a képmérettel
-    skálázódik — nem abszolút darabszám és nem is percentilis.
-
-    (A két natív helyen a kerekítés csak árnyalatnyit tér el: a
-    `FUN_00a4be40` `roundf`-ol, a `0x009db610` egészben oszt `200`-zal —
-    egyetlen darabnyi különbség, ezért egy közös segédet használunk.)
-    """
-    return max(1, int(round(pixel_count * _LEVELS_CLIP_RATIO)))
-
-
 #: A `calcHist` float32 rekeszekbe számol, ami 2^24 fölött már nem pontos
-#: egész — egy sáv legfeljebb ennyi képpont, a sávok összege int64.
+#: egész — a sávok összege int64.
 _HISZTOGRAM_SAV_KEPPONT = (1 << 24) - 1
-
 
 def _channel_histograms(image: np.ndarray) -> np.ndarray:
     """A három csatorna 256 rekeszes hisztogramja, `(3, 256)` int64 (#22).
@@ -210,526 +48,79 @@ def _channel_histograms(image: np.ndarray) -> np.ndarray:
                 osszeg[csatorna] += darab.reshape(-1).astype(np.int64)
     return osszeg
 
-
-def _native_clip_points(histogram: np.ndarray, threshold: int) -> tuple[int, int]:
-    """Fekete-/fehérpont a natív ciklusokkal, BETŰ SZERINT (#539).
-
-    ```c
-    i = 0;   sum = 0;  do { sum += hist[i]; i++; } while (i <= 255 && sum < kuszob);
-    lo = i - 1;
-    i = 255; sum = 0;  do { sum += hist[i]; i--; } while (i >= 0  && sum < kuszob);
-    hi = i + 1;
-    ```
-
-    A ciklus a léptetés UTÁN ellenőriz, ezért a `−1` / `+1`: a vágópont AZ a
-    szint, amelyiknél a kumulált darabszám ELÉRI a küszöböt. Ha az egész
-    hisztogram kevesebb a küszöbnél, a ciklus a `break`-re fut: `lo = 255`,
-    `hi = 0`. A pár tehát lehet fordított is (`hi <= lo`) — a hívó dolga
-    eldönteni, mit kezd vele; itt nem szépítjük meg.
-    """
-    low = int(np.searchsorted(np.cumsum(histogram), threshold))
-    high_from_top = int(np.searchsorted(np.cumsum(histogram[::-1]), threshold))
-    return min(low, 255), 255 - min(high_from_top, 255)
-
-
-def _native_levels_lut(low: int, high: int, max_out: int = 255) -> np.ndarray:
-    """A natív szinthúzó átvitel 256 elemű LUT-ként — FIXPONTOSAN (#539).
-
-    A `0x009db610` egész aritmetikával dolgozik, nem lebegőponttal:
-
-    ```c
-    gain = (max << 16) / (hi - lo);            // egész osztás, lefelé kerekít
-    ki   = ((be - lo) * gain) >> 16;           // aritmetikai eltolás
-    ki   = min(max, max(0, ki));
-    ```
-
-    Két következménye van, ami bájtra számít: a felezőpont lefelé kerekedik
-    (a lebegőpontos `rint` fölfelé vinné), és `lo = 0`, `hi = 255` esetén a
-    gain pontosan 65536, tehát a leképezés **bájtra azonosság**.
-
-    Degenerált (`hi <= lo`) párnál azonosságot adunk vissza. A natív kód
-    ilyenkor 0 gaint számol (fekete képet ad) — ez a szinthúzás értelmét
-    vesztett határesete, amit szándékosan nem veszünk át.
-    """
-    if high <= low:
-        return lut_ramp()
-    gain = (max_out << 16) // (high - low)
-    values = ((np.arange(256, dtype=np.int64) - low) * gain) >> 16
-    return np.clip(values, 0, max_out).astype(np.float64)
-
-
-def _union_black_white_point(image: np.ndarray) -> tuple[int, int]:
-    """Az `autolight` GLOBÁLIS vágópontja: a csatornánkénti vágópontok
-    UNIÓJA (#539, `FUN_00a4bfd0`).
-
-    ```c
-    lo = min(lo_R, lo_G, lo_B);   hi = max(hi_R, hi_G, hi_B);
-    ```
-
-    A hisztogram itt a TELJES képről készül (a hívott `FUN_00a4be40` a
-    képméretet és a lépésközt kapja, elemzési peremet nem — szemben a
-    csatornánként vágó `0x009db610`-zel). Ezt a 12 referencia-páron a mérés
-    is megerősíti: teljes képpel 0,41, a középső 90%-kal 0,76 az átlagos
-    eltérés.
-    """
-    height, width = image.shape[:2]
-    threshold = _levels_clip_threshold(height * width)
-    histograms = _channel_histograms(image)
-    points = [
-        _native_clip_points(histograms[channel], threshold) for channel in range(3)
-    ]
-    return min(point[0] for point in points), max(point[1] for point in points)
-
-
-def apply_autolight(image: np.ndarray) -> np.ndarray:
-    """Auto Contrast — KÖZÖS (mindhárom csatornára azonos) lineáris
-    szinthúzás (#540), a natív vágópontokkal (#539).
-
-    A közös `lo`/`hi` a csatornánkénti, darabszám-küszöbös vágópontok
-    UNIÓJA (`_union_black_white_point`), a leképezés pedig a natív
-    fixpontos átvitel. Mivel egyetlen `lo`/`hi` fut mindhárom csatornán,
-    a műveletnek nincs fehéregyensúly-hatása — ez különbözteti meg a
-    csatornánként vágó Auto Colourtól.
-
-    **Azonosság-eset:** ha a kép már kihasználja a teljes tartományt
-    (`lo == 0` és `hi == 255`), a kimenet bájtra azonos a bemenettel.
-
-    Mért átlagos eltérés a valódi Picasa-kimenettől a `referencia/
-    autocontrast/` 12 képpárján: **0,41** (a korábbi, összeöntött
-    hisztogramú közelítés 0,62; az érintetlen kép 7,49).
-    """
-    _validate_image(image)
-    low, high = _union_black_white_point(image)
-    if high <= low or (low == 0 and high == 255):
-        return image.copy()
-    # pontonkénti lineáris széthúzás → 256 elemű LUT (#140): képméret-független
-    return apply_lut(image, _native_levels_lut(low, high))
-
-
-#: A natív CSATORNÁNKÉNTI elemzés nem a teljes képet nézi: az ablak
-#: 90% × 90% méretű (`0x009db610`, #576 dekompiláció). Keretes, vignettált
-#: vagy sötét szélű képnél ez érdemben más fekete-/fehérpontot ad, mint a
-#: teljes képes elemzés.
-_LEVELS_MARGIN_PERCENT = 5
-
-
-def _analysis_region(image: np.ndarray) -> np.ndarray:
-    """A hisztogram-elemzés ablaka: 90% magas, 90% széles — de BALRA IGAZÍTVA.
-
-    A natív ciklus (`0x009db610`) függőlegesen tényleg beljebb kezd, a
-    VÍZSZINTES eltolás viszont hiányzik belőle: a sor-mutatót a peremmel
-    lépteti, a soron BELÜL viszont a 0. oszlopról indul, és a vízszintes
-    peremet csak a képpontok DARABSZÁMÁHOZ használja:
-
-    ```c
-    uVar12 = (W * 5) / 100;   uVar10 = (W * 95) / 100;   // csak a darabhoz
-    pbVar11 = base + stride * ((H * 5) / 100) * 4;       // sor-eltolás: megvan
-    do {
-      iVar8  = uVar10 - uVar12;   // 0,9·W képpont…
-      pbVar2 = pbVar11;           // …de a sor ELEJÉRŐL, nem a peremtől
-    ```
-
-    Az ablak tehát `[0 .. 0,9·W)`: a bal perem BENNE van, a jobb 10% marad
-    ki. Ez a Picasa saját, elejtett eltolása, nem a mi egyszerűsítésünk —
-    a #721 két, egymástól független oldalról igazolja:
-
-    1. **A #685 szürke rámpája.** A Picasa `enhance`-e ott 6,5-nél vág
-       feketét, miközben a rámpa (az ugyanott mért `autolight` szerint)
-       4,5-től indul — vagyis a rámpa hosszának ~1%-ánál. Egy KÖZÉPRE
-       igazított 90%-os ablak az 5%-nál kezdődik, tehát ezt geometriailag
-       nem tudja kiadni; a mi mérésünk pontosan ott, **18,4**-nél vágott.
-       A fehér végén ugyanez fordítva: a Picasa 235,4-nél vág (az ablak a
-       világos oldalon rövidebb), mi 240,4-nél.
-    2. **A `referencia/imfeellucky/` 12 valódi Picasa-képpárja.** Négy
-       ablak-változatot végigmérve a valódi kimenethez vett átlagos
-       csatorna-eltérés: balra igazított **2,48**, középre igazított 2,61,
-       teljes kép 2,68, bal felső sarok 2,74 (az érintetlen kép 10,35).
-       A balra igazított a legjobb — és ez a dekompilátum betű szerinti
-       olvasata is.
-    """
-    height, width = image.shape[:2]
-    margin = _LEVELS_MARGIN_PERCENT
-    top = height * margin // 100
-    bottom = height * (100 - margin) // 100
-    columns = width * (100 - margin) // 100 - width * margin // 100
-    return image[top:bottom, 0:columns]
-
-
-def _channel_black_white_points(
-    image: np.ndarray,
-) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
-    """Csatornánkénti fekete-/fehérpont a natív algoritmus szerint (#539).
-
-    A `0x009db610` geometriája: a hisztogram a kép 90% × 90%-os,
-    vízszintesen BALRA IGAZÍTOTT ablakáról készül (`_analysis_region`), a
-    vágási küszöb viszont a TELJES kép képpontszámának 0,5%-a, mindkét
-    végén azonosan (a natív kódban `(W·H)/200`).
-    """
-    height, width = image.shape[:2]
-    threshold = _levels_clip_threshold(height * width)
-    region = _analysis_region(image)
-    histograms = _channel_histograms(region)
-    points = tuple(
-        _native_clip_points(histograms[channel], threshold) for channel in range(3)
-    )
-    return points[0], points[1], points[2]
-
-
-#: Az Auto Colour „semleges pixel"-szűrője (#541): csak azok a képpontok
-#: számítanak bele a fehéregyensúlyba, ahol a telítettség
-#: (`(max−min)/max`) ez alatt marad. A `referencia/autocolor/` 12 képén
-#: mért optimum — a hiba 0,36-nál 2,89, 0,40-nél **2,35**, 0,44-nél 2,53,
-#: 0,8-nál már 8,3 (ott a telített képrészletek elhúzzák a becslést).
-_AUTOCOLOR_MAX_SATURATION = 0.40
-
-#: A túl sötét képpontok kizárása: ott a csatorna-arányok a JPEG-zajtól
-#: bizonytalanok. A pontos érték alig számít (0/15/30/60 mellett a hiba
-#: 2,37 / 2,36 / 2,35 / 2,34), ezért a középső, józan értéket használjuk.
-_AUTOCOLOR_MIN_LEVEL = 30.0
-
-#: Ennyi semleges képpont alatt nincs mire alapozni a becslést — a kép
-#: változatlan marad.
-_AUTOCOLOR_MIN_PIXELS = 1000
-
-
-def autocolor_gains(image: np.ndarray) -> tuple[float, float, float]:
-    """Az Auto Colour csatorna-erősítései (#541).
-
-    A SEMLEGES képpontokra (telítettség < `_AUTOCOLOR_MAX_SATURATION`,
-    világosság > `_AUTOCOLOR_MIN_LEVEL`) számolt szürkevilág-becslés: a
-    három csatorna átlaga a saját átlagához viszonyítva. Ezek a képpontok
-    az eredetiben is szürkék lennének, tehát az eltérésük tiszta
-    színinger — a telített képrészletek (virág, égbolt) viszont nem, ezért
-    maradnak ki.
-    """
-    values = image.astype(np.float32)
-    maximum = values.max(axis=2)
-    minimum = values.min(axis=2)
-    saturation = (maximum - minimum) / np.maximum(maximum, 1.0)
-    mask = (saturation < _AUTOCOLOR_MAX_SATURATION) & (maximum > _AUTOCOLOR_MIN_LEVEL)
-    if int(mask.sum()) < _AUTOCOLOR_MIN_PIXELS:
-        return (1.0, 1.0, 1.0)
-    channel_means = np.array(
-        [float(values[..., channel][mask].mean()) for channel in range(3)]
-    )
-    if float(channel_means.min()) <= 0.0:
-        return (1.0, 1.0, 1.0)
-    gains = channel_means.mean() / channel_means
-    return (float(gains[0]), float(gains[1]), float(gains[2]))
-
-
-def apply_autocolor(image: np.ndarray) -> np.ndarray:
-    """Auto Colour — `M · diag(g) · M⁻¹` SZÍNMÁTRIX (#759).
-
-    **A #541-es, csatornánkénti modell le lett váltva.** A natív alkalmazó
-    (`0x0090eda0`) egy 3×3-as mátrixszal szoroz 16.16 fixpontban, amibe a
-    becsült erősítések a mátrix TERÉBEN épülnek be — ezért nem ment 2,35
-    alá semmilyen csatornánkénti közelítés: hiányoztak a kereszt-tagok.
-
-    A részletek, a mérés és a két csapda (float32; a csonkoló egész-osztás)
-    a `picasapy.render.autocolor_matrix` modul-docstringjében. Mért átlagos
-    csatorna-eltérés a 12 golden páron:
-
-        érintetlen kép ............................ 5,287
-        a korábbi modellünk (#541) ................ 2,352
-        EZ a modell ............................... 0,614
-
-    A 0,614 a JPEG-újratömörítés zajszintje (~0,69) ALATT van.
-
-    **Azonosság-eset:** semleges becslésnél (`kR = kB = 128`) a mátrix
-    pontosan az egységmátrix, tehát a kimenet bájtra a bemenet. A korábbi
-    modell ezt NEM tudta: egy semleges mérőképen 0,812-nyit elmozdított,
-    pedig a Picasa hozzá sem nyúlt.
-    """
-    _validate_image(image)
-    red_gain, blue_gain = estimate_illuminant(image)
-    matrix = autocolor_matrix_16_16(red_gain, 128, blue_gain)
-    if np.array_equal(matrix, np.diag([65536, 65536, 65536])):
-        return image.copy()
-    return apply_autocolor_matrix(image, matrix)
-
-_ENHANCE_BLEND = 0.30
-_AUTOCONTRAST_BLEND = 1.0
-_CAREFUL_BLACK_SCALE = 0.5
-_CAREFUL_MAX_OUT = 252
-
-def _blend_clip_points(
-    points: tuple[tuple[int, int], ...],
-    blend: float,
-    careful: bool,
-) -> tuple[tuple[int, int], ...]:
-    """A csatornánkénti vágópontokat a KÖZÖS érték felé keveri (#721).
-
-    A natív `0x009db610` (`0x009db876`–`0x009db935`) betű szerint:
-
-    ```c
-    hiMax = max(hi_R, hi_G, hi_B);
-    loMin = min(lo_R*skala, lo_G*skala, lo_B*skala);   // skala: 1,0 vagy 0,5
-    hi_ch' = hi_ch + keveres * (hiMax - hi_ch);
-    lo_ch' = lo_ch + keveres * (loMin - lo_ch);
-    ```
-
-    `keverés = 0` → tiszta csatornánkénti · `keverés = 1` → teljesen közös.
-
-    A kevert pontok floatok, a rájuk épülő gain viszont fixpontos egész
-    (`_native_levels_lut`), tehát valahol egész-konverzió történik. A C
-    `float → int` cast CSONKOL, és a 12 referencia-páron ez mérhetően a
-    legjobb is: csonkolással **0,572**, kerekítéssel 0,727 az átlagos
-    csatorna-eltérés (float tartományból számolt gainnel 0,624).
-    """
-    scale = _CAREFUL_BLACK_SCALE if careful else 1.0
-    high_max = max(high for _, high in points)
-    low_min = min(low * scale for low, _ in points)
-    return tuple(
-        (
-            int(low + blend * (low_min - low)),
-            int(high + blend * (high_max - high)),
-        )
-        for low, high in points
-    )
-
-
-def apply_channel_levels_stretch(
-    image: np.ndarray,
-    blend: float = _ENHANCE_BLEND,
-    careful: bool = False,
-) -> np.ndarray:
-    """Lineáris szinthúzás a natív `0x009db610` szerint — KEVERT vágóponttal.
-
-    A vágópontok csatornánként készülnek (`_channel_black_white_points`), de
-    a függvény nem itt áll meg: a `blend` arányban a KÖZÖS `[loMin, hiMax]`
-    tartomány felé húzza őket (`_blend_clip_points`, #721). A hívó adja meg
-    az arányt — az `enhance` 0,30-at, az `autocontrast` 1,0-et. A leképezés a
-    natív fixpontos átvitel (`_native_levels_lut`).
-
-    A `careful` a `CarefulEnhance` beállítás ága: felezett feketepontok a
-    közös minimum képzése előtt, és 252-es kimeneti korlát. A valódi
-    Picasa-exportunk NEM ezzel készült (a 12 páron 2,366 kontra 0,572),
-    ezért az alapértelmezés `False` — a beállítás a felhasználó gépén él,
-    nem az ini-ben.
-
-    **Azonosság-eset:** ha egy csatorna kevert `lo`/`hi`-je `0`/`255`, a
-    natív fixpontos átvitel pontosan 65536-os gaint ad, tehát a kimenet
-    bájtra azonos a bemenettel.
-
-    Mért átlagos csatorna-eltérés a `referencia/imfeellucky/` 12 valódi
-    Picasa-képpárján: **0,572** — a #721 előtti kód (keverés nélkül, de a
-    `_MIN_STRETCH_SPAN = 58` korláttal) 2,480, az érintetlen kép 10,346.
-    A 0,30 MÉRT optimum is: 0,25-nél 0,795, 0,30-nál 0,572, 0,35-nél
-    0,884 — vagyis a visszafejtett konstanst a mérés önállóan megerősíti.
-
-    #721: a korábbi `_MIN_STRETCH_SPAN = 58` korlát ITT SZŰNT MEG. Az az
-    58 nem a natív kód korlátja volt, hanem épp ennek a keverésnek a
-    lenyomata: a „Utopic Unicorn" két szűk csatornáján a kevert tartomány
-    **58,7** és **58,7** (a Picasából mért 58,1 és 59,2), a zöld kevert
-    pontjai `18,0…76,7` (mérve `18,2…76,3`). A keveréssel a korlát a 12
-    páron EGYETLEN csatornán sem lépne működésbe (visszatéve mind a 12 kép
-    kimenete bájtra azonos), a kiugró képé pedig 13,035-ről 0,521-re esik.
-    """
-    _validate_image(image)
-    points = _blend_clip_points(_channel_black_white_points(image), blend, careful)
-    max_out = _CAREFUL_MAX_OUT if careful else 255
-    luts = [_native_levels_lut(low, high, max_out) for low, high in points]
-    return apply_channel_luts(image, (luts[0], luts[1], luts[2]))
-
-
-def apply_enhance(image: np.ndarray) -> np.ndarray:
-    """„Jó napom van" (I'm Feeling Lucky) — `0x008f8840` → `0x009db610`.
-
-    Hisztogram-darabszám alapú lineáris szinthúzás, a vágópontokat **30%-ban
-    a közös érték felé keverve** (#721): a hívó a `-1,0` jelzőt adja át,
-    amire a natív függvény a `0,30`-as alapértéket használja. Nincs benne
-    gamma, S-görbe, helyi kontraszt vagy külön árnyék-/csúcsfény-emelés
-    (#535).
-
-    A `CarefulEnhance` bool ágat itt nem kapcsoljuk be — a beállítás a
-    felhasználó gépén él, nem az ini-ben, és a referencia-exportunk is a
-    kikapcsolt ággal készült (ld. `apply_channel_levels_stretch`).
-    """
-    _validate_image(image)
-    return apply_channel_levels_stretch(image, _ENHANCE_BLEND)
-
-
-def apply_autocontrast(image: np.ndarray) -> np.ndarray:
-    """`autocontrast` („Automatikus kontraszt") — `0x008f89d0` → `0x009db610`.
-
-    Ugyanaz a natív szinthúzó, mint az `enhance`-é, de a hívó **`1,0`**
-    keverést ad át (`fld1`, `0x008f89fd`) és fixen 0 boolt (`push 0`,
-    `0x008f8a03`). A vágópont tehát TELJESEN közös (`[loMin, hiMax]`),
-    vagyis — az `enhance`-szel ellentétben — a művelet **nem mozdítja el a
-    fehéregyensúlyt**, csak a kontrasztot húzza szét (#721).
-
-    A két szűrő a #685 szürke rámpáján azonos kimenetet adott — ott
-    `lo_ch = loMin` és `hi_ch = hiMax`, tehát a keverés elvileg sem
-    látszhat. Színes képen viszont eltérnek.
-    """
-    _validate_image(image)
-    return apply_channel_levels_stretch(image, _AUTOCONTRAST_BLEND)
-
-
-def apply_redeye(
-    image: np.ndarray,
-    regions: tuple[Rect64, ...] = (),
-    *,
-    eye_circles: tuple[tuple[float, float, float], ...] | None = None,
-) -> np.ndarray:
-    """Mért Picasa-küszöbbel javít, opcionálisan csak a YuNet szemköreiben.
-
-    `eye_circles is None` a modell nélküli tartalék: a kézi téglalapokon,
-    vagy kézi régió híján a teljes képen fut. Üres tuple modell által
-    igazolt nulla arctalálat, ezért kézi régió híján semmit nem módosít.
-    A színfeltétel a #720 mérése szerinti `R / max(G, B) > 1.67`, a három
-    csatorna kimenete pedig keményen `min(G, B)`.
-    """
-    _validate_image(image)
-    height, width = image.shape[:2]
-    result = image.copy()
-
-    manual_mask = np.zeros((height, width), dtype=bool)
-    for rect in regions:
-        left, top, right, bottom = _rect_to_pixels(rect, width, height)
-        manual_mask[max(top, 0) : max(bottom, 0), max(left, 0) : max(right, 0)] = True
-
-    if eye_circles is None:
-        red_eye_mask = (
-            manual_mask & _redeye_pixel_mask(image)
-            if regions
-            else _redeye_pixel_mask(image)
-        )
-    else:
-        red_eye_mask = _eye_red_pixel_mask(image, eye_circles)
-        red_eye_mask |= manual_mask & _redeye_pixel_mask(image)
-    green = image[..., 1].astype(np.uint8)
-    blue = image[..., 2].astype(np.uint8)
-    neutral = np.minimum(green, blue)
-    result[red_eye_mask] = neutral[red_eye_mask, None]
-    return result
-
-
-def _redeye_pixel_mask(image: np.ndarray) -> np.ndarray:
-    """A vörösszem-színküszöb bool maszkja (ld. `apply_redeye` docsztring)."""
-    red = image[..., 0].astype(np.float32)
-    strongest_other = np.maximum(image[..., 1], image[..., 2]).astype(np.float32)
-    return red > (_REDEYE_DOMINANCE_RATIO * strongest_other)
-
-
-def _eye_circle_mask(
-    height: int,
-    width: int,
-    eye_circles: tuple[tuple[float, float, float], ...],
-) -> np.ndarray:
-    """A YuNet-pontok körül a képpontokat a szemtávolságból számolt sugárral jelöli."""
-    yy, xx = np.ogrid[:height, :width]
-    mask = np.zeros((height, width), dtype=bool)
-    for x, y, circle_radius in eye_circles:
-        radius = max(0.0, float(circle_radius))
-        if radius == 0:
-            continue
-        mask |= (xx - float(x)) ** 2 + (yy - float(y)) ** 2 <= radius**2
-    return mask
-
-
-def _eye_red_pixel_mask(
-    image: np.ndarray,
-    eye_circles: tuple[tuple[float, float, float], ...],
-) -> np.ndarray:
-    """YCbCr-jelöltmaszk a szemkörökön belül, alakszűréssel és mért aránnyal.
-
-    A maszk zárása csak a jelöltfoltok alakvizsgálatához szolgál; a kimenet
-    továbbra is a nyers, arányfeltételt teljesítő képpontokat cseréli, nem
-    fest ki teljes korongot a mérten pixelpontos Picasa-viselkedés helyett.
-    """
-    height, width = image.shape[:2]
-    eye_mask = _eye_circle_mask(height, width, eye_circles)
-    if not eye_mask.any():
-        return eye_mask
-    red_candidates = eye_mask & _redeye_pixel_mask(image)
-    if not red_candidates.any():
-        return red_candidates
-
-    ycrcb = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
-    cr = ycrcb[..., 1].astype(np.float32)
-    kernel = np.ones((3, 3), dtype=np.uint8)
-    selected = np.zeros((height, width), dtype=bool)
-    for x, y, circle_radius in eye_circles:
-        radius = max(0.0, float(circle_radius))
-        if radius == 0:
-            continue
-        left = max(0, int(np.floor(x - radius)))
-        top = max(0, int(np.floor(y - radius)))
-        right = min(width, int(np.ceil(x + radius)) + 1)
-        bottom = min(height, int(np.ceil(y + radius)) + 1)
-        context_radius = radius * _REDEYE_CONTEXT_RADIUS_FACTOR
-        context_left = max(0, int(np.floor(x - context_radius)))
-        context_top = max(0, int(np.floor(y - context_radius)))
-        context_right = min(width, int(np.ceil(x + context_radius)) + 1)
-        context_bottom = min(height, int(np.ceil(y + context_radius)) + 1)
-        if (
-            right <= left
-            or bottom <= top
-            or context_right <= context_left
-            or context_bottom <= context_top
-        ):
-            continue
-        local_eye = eye_mask[top:bottom, left:right]
-        local_cr = cr[top:bottom, left:right]
-        context_cr = cr[context_top:context_bottom, context_left:context_right]
-        values = context_cr.ravel()
-        if values.size == 0:
-            continue
-        threshold = float(values.mean() + _REDEYE_LOCAL_SIGMA_FACTOR * values.std())
-        candidates = (
-            red_candidates[top:bottom, left:right]
-            & local_eye
-            & (local_cr > threshold)
-        ).astype(np.uint8)
-        closed = cv2.morphologyEx(candidates, cv2.MORPH_CLOSE, kernel)
-        contours, _ = cv2.findContours(
-            closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
-        for contour in contours:
-            area = float(cv2.contourArea(contour))
-            perimeter = float(cv2.arcLength(contour, True))
-            x, y, box_width, box_height = cv2.boundingRect(contour)
-            if not box_width or not box_height or not perimeter:
-                continue
-            roundness = 4.0 * np.pi * area / (perimeter * perimeter)
-            fill = area / (box_width * box_height)
-            if roundness < _REDEYE_MIN_ROUNDNESS or fill < _REDEYE_MIN_FILL:
-                continue
-            component = np.zeros_like(candidates)
-            cv2.drawContours(component, [contour], -1, 1, thickness=cv2.FILLED)
-            selected[top:bottom, left:right] |= (candidates != 0) & (component != 0)
-    return selected
-
-
-def count_redeye_spots(
-    image: np.ndarray,
-    *,
-    eye_circles: tuple[tuple[float, float, float], ...] | None = None,
-) -> int:
-    """Hány KÜLÖNÁLLÓ vörösszem-folt van a képen (#445).
-
-    `eye_circles=None` a modell nélküli teljes képes tartalék; a tuple a
-    YuNet-szemkörökön belüli összefüggő komponenseket számolja. A
-    `_REDEYE_MIN_SPOT_PIXELS`-nél kisebb, jellemzően zaj- vagy tömörítési
-    eredetű foltok kimaradnak. Csak a felhasználói
-    visszajelzéshez („Picasa has found and corrected red eye(s)") kell — a
-    javítás maga továbbra is pixel-maszkkal dolgozik, nem foltonként.
-    """
-    _validate_image(image)
-    pixel_mask = (
-        _redeye_pixel_mask(image)
-        if eye_circles is None
-        else _eye_red_pixel_mask(image, eye_circles)
-    )
-    mask = pixel_mask.astype(np.uint8)
-    count, _, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
-    # a 0. komponens a háttér (a maszkon kívüli pixelek) — kihagyva
-    return int(
-        sum(
-            1
-            for i in range(1, count)
-            if stats[i, cv2.CC_STAT_AREA] >= _REDEYE_MIN_SPOT_PIXELS
-        )
-    )
+# A szétbontott modulok importja a régi patch-pont definíciója UTÁN történik:
+# az elemzőmodul az `ops._channel_histograms` függvényt használja.
+from picasapy.render.ops_geometry import (  # noqa: E402, F401
+    _rect_to_pixels,
+    apply_crop,
+    apply_tilt,
+    tilt_matrix,
+    tilt_scale,
+)
+from picasapy.render.ops_levels_analysis import (  # noqa: E402, F401
+    _AUTOCOLOR_MAX_SATURATION,
+    _AUTOCOLOR_MIN_LEVEL,
+    _AUTOCOLOR_MIN_PIXELS,
+    _CAREFUL_BLACK_SCALE,
+    _LEVELS_CLIP_RATIO,
+    _LEVELS_MARGIN_PERCENT,
+    _analysis_region,
+    _blend_clip_points,
+    _channel_black_white_points,
+    _levels_clip_threshold,
+    _native_clip_points,
+    _native_levels_lut,
+    _union_black_white_point,
+    autocolor_gains,
+)
+from picasapy.render.ops_levels import (  # noqa: E402, F401
+    _AUTOCONTRAST_BLEND,
+    _CAREFUL_MAX_OUT,
+    _ENHANCE_BLEND,
+    apply_autocolor,
+    apply_autocontrast,
+    apply_autolight,
+    apply_channel_levels_stretch,
+    apply_enhance,
+)
+from picasapy.render.ops_redeye import (  # noqa: E402, F401
+    _REDEYE_CONTEXT_RADIUS_FACTOR,
+    _REDEYE_DOMINANCE_RATIO,
+    _REDEYE_LOCAL_SIGMA_FACTOR,
+    _REDEYE_MIN_FILL,
+    _REDEYE_MIN_ROUNDNESS,
+    _REDEYE_MIN_SPOT_PIXELS,
+    _eye_circle_mask,
+    _eye_red_pixel_mask,
+    _redeye_pixel_mask,
+    apply_redeye,
+    count_redeye_spots,
+)
+
+__all__ = (
+    "annotations",
+    "Rect64",
+    "apply_autocolor",
+    "apply_autocolor_matrix",
+    "apply_autocontrast",
+    "apply_autolight",
+    "apply_channel_levels_stretch",
+    "apply_channel_luts",
+    "apply_crop",
+    "apply_enhance",
+    "apply_lut",
+    "apply_redeye",
+    "apply_tilt",
+    "autocolor_gains",
+    "autocolor_matrix_16_16",
+    "count_redeye_spots",
+    "cv2",
+    "estimate_illuminant",
+    "fixpontos_bilinearis",
+    "lut_ramp",
+    "math",
+    "np",
+    "tilt_matrix",
+    "tilt_scale",
+    "validate_image",
+)
