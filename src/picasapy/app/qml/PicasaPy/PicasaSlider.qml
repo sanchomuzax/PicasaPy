@@ -255,11 +255,10 @@ Slider {
         readonly property real arnyekJobb: 2
         readonly property real arnyekAlul: 3
 
-        // #6140: a szokásos 14×14-es, 7 px sugarú árnyék alfa-rasztere a
-        // három alábbi Rectangle aktuális rajzából készült. A raszter
-        // megőrzi a helyi élsimítást Qt-verziótól és renderelőtől
-        // függetlenül; más fogantyúméret vagy sugár az eredeti QML-rajzot
-        // használja.
+        // #6140: a 14×14-es, 7 px sugarú árnyék alfa-rasztere a három
+        // alábbi Rectangle aktuális rajzából készült. A fix pixelek miatt
+        // Qt-verziótól és renderelőtől független. Más fogantyúméret vagy
+        // sugár az eredeti QML-rajzot használja.
         readonly property bool _rogzitettAlapArnyek:
             width === 14 && height === 14 && control.handleRadius === 7
 

@@ -295,11 +295,10 @@ import QtQuick.Window
                                   ? Theme.szuroHatterRamutat : "transparent")
                         border.width: 0
                     }
-                    // #361/#6140: a helyjelölő-tű külön raszteres képe a
-                    // korábbi "⚲" unicode-glif helyett. A raszter a helyi
-                    // SVG-rajzolatból készült, így a Qt SVG-rasterizálója nem
-                    // változtatja meg gépenként a képpontjait. A hover/inaktív
-                    // állapotot opacity vezérli.
+                    // #361/#6140: külön raszter a helyjelölő-tűhöz; a fix
+                    // képpontok miatt a Qt SVG-rasterizálója nem változtatja
+                    // meg gépenként a formáját. A hover/inaktív állapotot az
+                    // opacity vezérli.
                     Image {
                         objectName: "geoFilterIcon"
                         anchors.fill: parent

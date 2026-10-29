@@ -481,7 +481,6 @@ def test_geo_icon_vertical_position_snaps_to_scene_device_pixel():
 
 
 def test_pixel_guard_stays_active_in_ci(monkeypatch):
-    monkeypatch.setattr(sys, "platform", "linux")
     monkeypatch.setenv("CI", "true")
     referencia = Path(__file__).parent / "golden" / "main_toolbar_6103"
     kep = QImage(str(referencia / "default_+0.png"))
@@ -514,6 +513,13 @@ def test_toolbar_uses_fixed_raster_assets_for_variable_renderers():
     assert (qml_dir / "icons" / "toolbar-slider-shadow-14x14.png").is_file()
 
 
+@pytest.mark.skipif(
+    not sys.platform.startswith("linux"),
+    reason=(
+        "a pixel-referencia az Ubuntu Linux CI-n készül; más platformon a Qt "
+        "raszterezése eltér"
+    ),
+)
 @pytest.mark.parametrize(("allapot", "magassag_elteres"), _KEPEK)
 def test_toolbar_allapot_kepe_rogzitheto(
     qml_app, qt_app, tmp_path, allapot: str, magassag_elteres: int
