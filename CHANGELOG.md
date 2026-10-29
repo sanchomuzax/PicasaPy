@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.282] - 2026-10-29
+
+- A szerkesztés mentési kódja kisebb, átlátható modulokra bomlott, a működése változatlan maradt (#6168).
+- A diavetítés-film készítőjének belső felépítése kisebb, megnevezett modulokra bomlott (#6173).
+
 ## [0.9.281] - 2026-10-29
 
 - Az importforrás-vezérlő állapota és pásztázása külön modulba került, változatlan működéssel (#6162).
