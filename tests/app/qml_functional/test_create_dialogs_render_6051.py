@@ -282,6 +282,20 @@ def _felulet_meretek_800_sor_alatt() -> None:
     assert hosszak and all(hossz <= 800 for hossz in hosszak.values()), hosszak
 
 
+def _filmkeszito_meretek_400_sor_alatt() -> None:
+    fajlok = tuple(
+        _QML / nev
+        for nev in (
+            "MovieMakerDialog.qml",
+            "MovieMakerActions.qml",
+            "MovieMakerPreviewLogic.qml",
+            "MovieMakerPreviewRuntime.qml",
+        )
+    )
+    hosszak = {fajl.name: len(fajl.read_text(encoding="utf-8").splitlines()) for fajl in fajlok}
+    assert hosszak and all(hossz < 400 for hossz in hosszak.values()), hosszak
+
+
 def test_create_dialog_kepei_rendezett_felveteli_datummal_toltodnek(qml_app):
     """A renderképet az óra és a fájlrendszer létrehozási sorrendje ne változtassa."""
     _ablak, vezerlo, _engine = qml_app
@@ -494,3 +508,8 @@ def test_create_dialogs_render_bontas_elott_rogzitett_referenciakkal(
 def test_create_dialogs_es_reszei_legfeljebb_800_sorosak():
     """A #5951 korlátját őrzi: minden létrehozás-komponens legfeljebb 800 sor."""
     _felulet_meretek_800_sor_alatt()
+
+
+def test_filmkeszito_komponensei_400_sor_alatt_maradnak():
+    """A #6205 őrzi, hogy a filmkészítő minden kiemelt része 400 sor alatti."""
+    _filmkeszito_meretek_400_sor_alatt()

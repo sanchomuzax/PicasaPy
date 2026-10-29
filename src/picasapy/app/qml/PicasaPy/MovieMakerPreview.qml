@@ -8,6 +8,8 @@ Item {
     id: root
     anchors.fill: parent
     required property var movieDialog
+    required property var moviePreviewMusicLoader
+    required property var moviePreviewTransition
     required property var resizeTimer
     property var moviePreviewTimer: null
     property alias previewPanel: moviePreviewPanel
@@ -69,7 +71,7 @@ Item {
                     anchors.fill: moviePreviewFrameBox
                     z: 0
                     visible: !movieDialog.previewTransitionServiceAvailable
-                        && moviePreviewTransition.running
+                        && root.moviePreviewTransition.running
                         && movieDialog.previewFromIndex >= 0
                     photoSources: movieDialog.movieClipSources
                     slides: movieDialog.movieSlides
@@ -211,8 +213,8 @@ Item {
                     if (typeof controller !== "undefined" && controller
                             && controller.setMovieVolume)
                         controller.setMovieVolume(Math.round(value))
-                    if (moviePreviewMusicLoader.item)
-                        moviePreviewMusicLoader.item.volume = value / 1000
+                    if (root.moviePreviewMusicLoader.item)
+                        root.moviePreviewMusicLoader.item.volume = value / 1000
                 }
             }
             PicasaButton {
