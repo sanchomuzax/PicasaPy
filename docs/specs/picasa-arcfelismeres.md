@@ -19,7 +19,7 @@ Minden cím a `Picasa3.exe` 3.9.141.259 betöltési címe (VA). Horgonyjegy:
 
 ## A specifikáció felosztása
 
-A működés leírása a §§0–18-at tartalmazza. A részletes kutatási körök naplója a [§§19–53-as kutatási naplón](picasa-arcfelismeres-kutatasi-naplo.md), a 2026. októberi folytatás pedig a [§§54–60-as naplón](picasa-arcfelismeres-kutatasi-naplo-2026-10.md) olvasható. A számozás az eredeti specifikációból változatlanul megmaradt.
+A működés leírása a §§0-18-at tartalmazza. A részletes kutatási körök naplója a [§§19-53-as kutatási naplón](picasa-arcfelismeres-kutatasi-naplo.md), a 2026. októberi folytatás pedig a [§§54-60-as naplón](picasa-arcfelismeres-kutatasi-naplo-2026-10.md) olvasható. A számozás az eredeti specifikációból változatlanul megmaradt.
 
 ## 0. A funkció három, egymástól FÜGGETLEN rétege
 

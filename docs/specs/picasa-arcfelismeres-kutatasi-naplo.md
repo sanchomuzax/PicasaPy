@@ -1,6 +1,6 @@
-# Arcfelismerés — kutatási napló (§§19–53)
+# Arcfelismerés - kutatási napló (§§19-53)
 
-Ez a lap a korábbi `picasa-arcfelismeres.md` 19–53. szakaszainak kutatási naplóját tartalmazza. A működés leírása a [fő specifikációban](picasa-arcfelismeres.md), a 2026. októberi folytatás a [külön naplólapon](picasa-arcfelismeres-kutatasi-naplo-2026-10.md) található.
+Ez a lap a korábbi `picasa-arcfelismeres.md` 19-53. szakaszainak kutatási naplóját tartalmazza. A működés leírása a [fő specifikációban](picasa-arcfelismeres.md), a 2026. októberi folytatás a [külön naplólapon](picasa-arcfelismeres-kutatasi-naplo-2026-10.md) található.
 
 ---
 

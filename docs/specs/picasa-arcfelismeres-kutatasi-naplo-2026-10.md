@@ -1,6 +1,6 @@
-# Arcfelismerés — kutatási napló (2026. október, §§54–60)
+# Arcfelismerés - kutatási napló (2026. október, §§54-60)
 
-Ez a lap a 2026. október 23–29. közötti kutatási köröket és utánkövetést tartalmazza. Az összefoglaló a [fő specifikációban](picasa-arcfelismeres.md), az előző napló a [§§19–53-as kutatási naplón](picasa-arcfelismeres-kutatasi-naplo.md) olvasható.
+Ez a lap a 2026. október 23-29. közötti kutatási köröket és utánkövetést tartalmazza. Az összefoglaló a [fő specifikációban](picasa-arcfelismeres.md), az előző napló a [§§19-53-as kutatási naplón](picasa-arcfelismeres-kutatasi-naplo.md) olvasható.
 
 ---
 
