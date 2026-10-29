@@ -234,9 +234,13 @@ class TestABekotes:
     def test_a_frissites_NEM_dobja_vissza_a_mappaba(self):
         """A #1830 tanulsága: nézet-mód ág nélkül egy frissítés némán
         visszavinné a felhasználót."""
-        ctl = (
-            Path(picasapy.app.__file__).parent / "controller.py"
-        ).read_text(encoding="utf-8")
+        controller_dir = Path(picasapy.app.__file__).parent
+        controller_files = [controller_dir / "controller.py"] + sorted(
+            controller_dir.glob("controller_*.py")
+        )
+        ctl = "\n".join(
+            path.read_text(encoding="utf-8") for path in controller_files
+        )
         assert 'elif mode == "similar":' in ctl
 
 

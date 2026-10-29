@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from PySide6.QtCore import Slot
-from picasapy.ini import update_document
 from picasapy.scanner import PICASA_INI_NAME
 from .photo_ops_controller import _WRITE_ERRORS
 
@@ -47,8 +46,12 @@ class AppControllerFolderDescriptionMixin:
         # `photoOpFailed` a `syncFailed`-en át a `Main.qml` `errorBanner`-be
         # fut be); a gyorstárat és a jelzéseket csak SIKERES írás után
         # frissítjük, hogy a felület se hazudjon (#2497 tanulsága).
+        # A controller.update_document patch-pontját a bontás előtt is a
+        # controller modul adta; a modulon át hívás megtartja ezt a seamet.
+        from . import controller as controller_module
+
         try:
-            update_document(ini_path, mutate, backup=True)
+            controller_module.update_document(ini_path, mutate, backup=True)
         except _WRITE_ERRORS as error:
             self.jelentsdAzIrasiHibat(error)
             return
