@@ -129,6 +129,7 @@ class _RacsElem:
         self.nev = nev
         self.ertekek = ertekek
         self.gyerekek = gyerekek or []
+        self.property_reads: dict[str, list[object]] = {}
 
     def objectName(self) -> str:
         return self.nev
@@ -143,7 +144,8 @@ class _RacsElem:
         ertek = self.ertekek[nev]
         if isinstance(ertek, list):
             index = min(self.alkalmazas.esemenyciklusok - 1, len(ertek) - 1)
-            return ertek[index]
+            ertek = ertek[index]
+        self.property_reads.setdefault(nev, []).append(ertek)
         return ertek
 
     def mapToItem(self, _cel: _RacsElem, _pont: QPointF) -> QPointF:
@@ -178,6 +180,7 @@ def test_splitter_allapot_elott_megvarja_a_stabil_layoutot_es_kesz_racskepeket()
             "paintedWidth": [0.0, 0.0, 0.0, 0.0, 128.0, 128.0, 128.0],
             "paintedHeight": [0.0, 0.0, 0.0, 0.0, 80.0, 80.0, 80.0],
             "source": "image://thumbs/1",
+            "status": 1,
         },
     )
     grid = _RacsElem(
@@ -200,6 +203,55 @@ def test_splitter_allapot_elott_megvarja_a_stabil_layoutot_es_kesz_racskepeket()
     )
 
     assert alkalmazas.esemenyciklusok >= 7
+
+
+def test_splitter_allapot_megvarja_a_lathato_belyegkepek_betolteset() -> None:
+    alkalmazas = _Alkalmazas()
+    split = _RacsElem(
+        alkalmazas,
+        "mainSplit",
+        {"x": 0.0, "y": 40.0, "width": 1024.0, "height": 660.0},
+    )
+    pane = _RacsElem(
+        alkalmazas,
+        "folderPane",
+        {"x": 0.0, "y": 40.0, "width": 240.0, "height": 660.0},
+    )
+    image = _RacsElem(
+        alkalmazas,
+        "thumbImage",
+        {
+            "x": 36.0,
+            "y": 100.0,
+            "width": 128.0,
+            "height": 128.0,
+            "paintedWidth": 128.0,
+            "paintedHeight": 80.0,
+            "source": "image://thumbs/1",
+            "status": [2, 2, 2, 1, 1, 1],
+        },
+    )
+    grid = _RacsElem(
+        alkalmazas,
+        "photoGrid",
+        {
+            "x": 240.0,
+            "y": 40.0,
+            "width": 784.0,
+            "height": 660.0,
+            "contentY": 0.0,
+            "contentHeight": 660.0,
+            "count": 2,
+        },
+        [image],
+    )
+
+    screenshot_script._var_foablak_racsra(
+        alkalmazas, "mainSplit-max", split, pane, grid
+    )
+
+    assert image.property_reads["status"][-3:] == [1, 1, 1]
+    assert alkalmazas.esemenyciklusok >= 6
 
 
 def test_compare_pixelhiba_eseten_kiirja_a_ket_csuszka_festesi_allapotot(
