@@ -121,11 +121,10 @@ class TestABekotes:
     """
 
     def test_a_wire_fileops_a_torlesre_a_sort_IS_kiveszi(self):
-        from pathlib import Path
+        from support.app_forras import indito_forras
 
-        import picasapy.app.application as app
-
-        forras = Path(app.__file__).read_text(encoding="utf-8")
+        # #6155: a bekötés az application_services.py-ba költözött
+        forras = indito_forras()
         assert "removeDeletedRow" in forras, (
             "a törlés-jelzés nem veszi ki a sort — a #1227 lánca hiányzik"
         )
