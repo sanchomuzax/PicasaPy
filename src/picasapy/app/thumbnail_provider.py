@@ -7,6 +7,10 @@ dolgozik — az OpenCV a dekódolás alatt elengedi a GIL-t, így RPi5-ön a
 aktuális fotókat; az albumon kívüli arc-csempék azonosítóját a szolgáltató
 szükség esetén az indexből oldja fel.
 
+A cache, a pool-feladatok, a kérés-ütemezés, a regiszter és a render-mag
+külön, belső modulokban él. A nyilvános importútvonal és az itt importált
+régi nevek változatlanul használhatók.
+
 Szálkezelés (#53 GIL↔Qt deadlock-osztály): a pool-szálakon KIZÁRÓLAG
 érték-típusú Qt-objektum (QImage) készül, QObject nem; a kész képet a
 QQuickImageResponse.finished jelzi. A busy-számláló jelzése queued
@@ -17,19 +21,12 @@ mint élettartam-biztos — egy már megsemmisített válaszon a `finished`
 kibocsátása use-after-free, és a folyamat összeomlik (mért SIGSEGV).
 A válasz C++ oldalát a QML-motor kezeli: a saját olvasószálán hozza
 létre, és ott is semmisíti meg, amikor végzett vele. A PySide viszont
-a Python-oldali referenciaszámot is figyeli (a válasz `ownedByPython`
-marad azután is, hogy visszaadtuk a motornak) — ha tehát az utolsó
-Python-hivatkozás előbb esik ki, mint ahogy a motor végez, akkor a
-PYTHON húzza ki a motor alól az objektumot, miközben az még nyers
-mutatót tart rá. Márpedig az egyetlen Python-hivatkozást eddig a
-pool-feladat tartotta, amit a QThreadPool a `run()` után azonnal
-eldob. Ezért a provider maga tart erős hivatkozást minden élő válaszra,
-és csak a `destroyed` jelzésre — vagyis miután a motor ténylegesen
-elengedte — ejti el.
+a Python-oldali referenciaszámot is figyeli — ezért a provider maga tart
+erős hivatkozást minden élő válaszra, és csak a `destroyed` jelzésre
+engedi el.
 
-Hibatűrés (#66): a renderből kivétel SOHA nem szökhet ki — az elszökő
-kivétel a kérést némán megölné, és a rácson random üres/beragadt cellák
-maradnának. Hiba esetén placeholder megy vissza, a részletek a logba.
+Hibatűrés (#66): a renderből kivétel SOHA nem szökhet ki — hiba esetén
+placeholder megy vissza, a részletek a logba.
 """
 
 from __future__ import annotations
@@ -40,59 +37,60 @@ import os
 import threading
 import time
 import zlib
+from collections import deque
 from collections.abc import Iterable
-from collections import OrderedDict, deque
 from pathlib import Path
 
-import shiboken6
-from PySide6.QtCore import QRunnable, QThreadPool, Signal
-from PySide6.QtGui import QImage, QTransform
-from PySide6.QtQuick import (
-    QQuickAsyncImageProvider,
-    QQuickImageResponse,
-    QQuickTextureFactory,
-)
+from PySide6.QtCore import QThreadPool, Signal
+from PySide6.QtGui import QImage
+from PySide6.QtQuick import QQuickAsyncImageProvider
 
 from picasapy.cvimage import read_image_bytes
 from picasapy.edit.session import EditSession
-from picasapy.index import PhotoRecord, open_index, photo_by_id
+from picasapy.index import PhotoRecord
 from picasapy.ini import PhotoCropReader
 from picasapy.ini.filters import serialize_filters
-from picasapy.render.flip import FLIP_HORIZONTAL, FLIP_VERTICAL
-from picasapy.scanner import PICASA_INI_NAME
 from picasapy.thumbs import ThumbnailCache
-from .display_mode_paint import (
-    apply_display_mode_to_qimage,
-    display_mode_from_thumb_id,
-)
 from .arc_nagyitas_forras import arc_eredetibol
-from .arc_nagyitas_url import arc_from_thumb_id, arcra_vag, szukseges_hosszabb_el
-from .thumb_level_url import szint_from_thumb_id
+from .thumbnail_provider_constants import (
+    _MAX_RENDER_THREADS,
+    _OPS_CACHE_CAPACITY,
+)
+from .thumbnail_provider_constants import PLACEHOLDER_COLOR as PLACEHOLDER_COLOR
+from .thumbnail_provider_constants import (
+    _FILTERED_MEMO_CAPACITY as _FILTERED_MEMO_CAPACITY,
+    _PREFETCH_QUEUE_CAPACITY as _PREFETCH_QUEUE_CAPACITY,
+    _PREFETCH_THUMB_PRIORITY as _PREFETCH_THUMB_PRIORITY,
+    _VISIBLE_THUMB_PRIORITY as _VISIBLE_THUMB_PRIORITY,
+)
+from .thumbnail_provider_cache import _FilteredThumbMemo  # noqa: F401
+from .thumbnail_provider_jobs import (
+    _PrefetchJob,  # noqa: F401
+    _ThumbJob,  # noqa: F401
+    _ThumbResponse,  # noqa: F401
+    _placeholder,  # noqa: F401
+)
+from .thumbnail_provider_registry import (
+    _photo_for_render as _registry_photo_for_render,
+    _photo_record as _registry_photo_record,
+    _register_additional_photos,
+    _register_photos,
+    _unregister_additional_photos,
+)
+from .thumbnail_provider_requests import (
+    _live_response_count,
+    _prefetch_images,
+    _release_response,
+    _request_image_response,
+    _run_prefetch_job,
+)
+from .thumbnail_provider_render import (
+    _arc_forras as _render_arc_forras,
+    _render as _render_thumbnail,
+    _render_szinten as _render_szinten_impl,
+    _request_image as _request_image_impl,
+)
 from .worker_thread import register_pool_owner
-
-# #151/7: közös konstans — az edit-előnézet provider is ezt importálja,
-# hogy a placeholder-szürke egyetlen helyen legyen definiálva.
-PLACEHOLDER_COLOR = 0xFFE8E8E8
-
-# A generáló pool mérete: a 4 mag a mért optimum (rpi5-image-libs.md,
-# ~3× gyorsulás 1 szálhoz képest); több szál RPi5-ön már nem segít.
-_MAX_RENDER_THREADS = 4
-
-# #142: az értelmezett filters-láncok cache-korlátja — kulcs a nyers
-# filters= sztring (az azonos láncú képek osztoznak az eredményen);
-# túlcsordulásnál a cache egyszerűen ürül, a következő render újraépíti.
-_OPS_CACHE_CAPACITY = 4096
-
-# A szűrt-thumb memóriacache bejegyzés-korlátja: 256 px-es JPEG-ből
-# dekódolt QImage ~256 KB, a korlát így legfeljebb ~32 MB — egy mappányi
-# szerkesztett kép görgetéséhez bőven elég, memóriában mégis szerény.
-_FILTERED_MEMO_CAPACITY = 128
-
-# A látható Image-kérések kerüljenek a háttér-előtöltések elé a közös
-# pool-sorban. A QThreadPool a nagyobb számú prioritást futtatja előbb.
-_VISIBLE_THUMB_PRIORITY = 1
-_PREFETCH_THUMB_PRIORITY = -1
-_PREFETCH_QUEUE_CAPACITY = 256
 
 _log = logging.getLogger(__name__)
 
@@ -117,168 +115,23 @@ def _chain_crc(ops: tuple) -> int:
     return zlib.crc32(serialize_filters(ops).encode("utf-8"))
 
 
-class _FilteredThumbMemo:
-    """Második cache-szint a szűrt bélyegképeknek (#144): kulcs a forrás
-    azonosítói + filters CRC + aktuális crop + rotate, érték a KÉSZ (szűrt,
-    forgatott) QImage. Találatnál se a filters-lánc, se a lemez-dekód, se a
-    forgatás nem fut újra. LRU-kilakoltatás, szál-biztos (a pool több szála
-    is olvassa/írja)."""
-
-    def __init__(self, capacity: int = _FILTERED_MEMO_CAPACITY):
-        self._capacity = capacity
-        self._items: OrderedDict[tuple, QImage] = OrderedDict()
-        self._lock = threading.Lock()
-
-    def get(self, key: tuple) -> QImage | None:
-        with self._lock:
-            image = self._items.get(key)
-            if image is None:
-                return None
-            self._items.move_to_end(key)
-            # sekély (copy-on-write) másolat: a hívó felé kiadott példány
-            # független a cache-belitől, a pixeladat mégis közös
-            return QImage(image)
-
-    def clear(self) -> None:
-        """A rekesz ürítése (#598) — a kézi gyorsítótár-ürítés hívja."""
-        with self._lock:
-            self._items.clear()
-
-    def put(self, key: tuple, image: QImage) -> None:
-        with self._lock:
-            self._items[key] = QImage(image)
-            self._items.move_to_end(key)
-            while len(self._items) > self._capacity:
-                self._items.popitem(last=False)
+#: A frissen írt cache-fájl olvasásának újrapróbái (#5553).
+_CACHE_OLVASAS_VARAKOZASOK = (0.05, 0.1, 0.2)
+_alszik = time.sleep
 
 
-class _ThumbResponse(QQuickImageResponse):
-    """Egy aszinkron thumbnail-kérés eredménye.
-
-    A képet a pool-szál készíti el és adja át (`_finish`), és a `finished`
-    jelzés is ONNAN megy ki.
-
-    ⚠️ Itt korábban az állt, hogy a kibocsátás a válasz saját szálára van
-    átütemezve, mert különben a motor „a kibocsátás belsejében" törölné az
-    objektumot. **Ez a modell HAMIS** — független átnézés mutatta ki, a Qt
-    forrására hivatkozva: a Qt 6.8 a `finished`-et egy
-    `ReaderThreadExecutionEnforcer`-hez köti, tehát a más szálról érkező
-    jelzés magától queued lesz, és a `textureFactory()` meg a
-    `deleteLater()` az image-reader szálon fut. A pool-szálról való
-    kibocsátás **támogatott** működés; a hivatalos Qt-példa is így csinálja.
-
-    Az átütemezést ezért visszavontuk (#1457) — nem azért, mert veszélyes,
-    hanem mert fölösleges volt, és időzítést változtatott egy olyan
-    hibakeresés közben, ahol ez félrevisz.
-
-    A zár, amit itt tartunk, NEM a `QImage` hivatkozásszámlálóját védi (az
-    atomikus), hanem a `cancel` és a befejezés **állapotát** tartja
-    konzisztensen: lemondott válaszba ne írjunk képet, és a `_done` jelző
-    a képpel együtt álljon be.
-
-    Az itteni zár azt a két útvonalat választja szét, amelyik egyszerre
-    nyúlna a válaszhoz: a pool-szál lezárását (`_finish`) és a motor
-    lemondását (`cancel`, a motor szálán)."""
-
-    def __init__(self):
-        super().__init__()
-        self._image = QImage()
-        self._done = threading.Event()  # tesztek várakozásához
-        self._lock = threading.Lock()
-        self._cancelled = False
-
-    def cancel(self) -> None:
-        """A motor jelzi, hogy a válaszra már nincs szüksége (a QML-elem
-        eltűnt, a modell újraépült). A zár alatt beállított jelző után a
-        `_finish` már nem ír képet a válaszba — fölösleges munka lenne."""
-        with self._lock:
-            self._cancelled = True
-            self._done.set()
-
-    def _finish(self, image: QImage) -> None:
-        """A pool-szál lezárja a választ. A zár a `cancel`-lel szemben véd,
-        a `shiboken6.isValid` pedig a már megszűnt C++ oldal ellen: egy
-        elszabadult `finished.emit()` ott SIGSEGV-vel járna (#1457)."""
-        with self._lock:
-            if not shiboken6.isValid(self):
-                # a motor már elpusztította a választ — nincs mit lezárni,
-                # és nincs kinek jeleznünk; a várakozókat elengedjük
-                self._done.set()
-                return
-            if not self._cancelled:
-                self._image = image
-            self._done.set()
-            # ⚠️ #1457 — A JELZÉS ITT, A POOL-SZÁLRÓL MEGY KI.
-            #
-            # Készült egy változat, amely ezt a válasz saját szálára
-            # ütemezte át (`QMetaObject.invokeMethod` + `QueuedConnection`),
-            # hogy a kibocsátás és a motor `deleteLater`-e egy szálra
-            # kerüljön. Az ötlet védhető, DE a CI-ben ezután egy MÁSIK
-            # tesztfájl kezdett összeomlani (`test_collage_panel_wiring_985`),
-            # miközben a főág ugyanott zöld volt — és a bukást helyben,
-            # terhelés alatt, nyolc körben SEM sikerült reprodukálni.
-            #
-            # Bizonyítatlan gyanúval nem viszünk be időzítést változtató
-            # módosítást: az átütemezés kikerült, a jegy (#1457) nyitva
-            # marad rá. Az itt maradó védelmek — a zár, a `cancel`, az
-            # élő válaszok nyilvántartása — NEM változtatnak időzítést,
-            # és mindegyiket külön őr méri.
-            self.finished.emit()
-
-
-    def textureFactory(self) -> QQuickTextureFactory:
-        """A kész kép átadása a motornak — a MOTOR szálán hívódik.
-
-        ⚠️ A zár nem formalitás. A `_finish` a POOL-szálon írja a
-        `self._image`-et, ezt a metódust viszont a motor a SAJÁT szálán
-        hívja. A `QImage` implicit megosztású: a másolat a
-        hivatkozásszámlálót lépteti, nem a képpontokat másolja. Ha az írás
-        és az olvasás átfedi egymást, a számláló sérül — és a hiba nem ott
-        csattan, ahol keletkezett, hanem egy későbbi felszabadításnál,
-        látszólag véletlenszerű helyen (#1457).
-
-        A `_finish` és a `cancel` már ugyanezt a zárat használja; ez a
-        harmadik út, amelyik ugyanahhoz a mezőhöz nyúl."""
-        with self._lock:
-            image = self._image
-        return QQuickTextureFactory.textureFactoryForImage(image)
-
-
-class _ThumbJob(QRunnable):
-    """Pool-feladat: a szinkron render futtatása, majd a válasz lezárása.
-    Kivétel innen sem szökhet ki (a render maga is hibatűrő)."""
-
-    def __init__(self, provider: "ThumbnailProvider", photo_id: str,
-                 response: _ThumbResponse):
-        super().__init__()
-        self._provider = provider
-        self._photo_id = photo_id
-        self._response = response
-
-    def run(self) -> None:  # pool-szálon fut
-        try:
-            image = self._provider.requestImage(self._photo_id, None, None)
-        except Exception:  # noqa: BLE001 — védőháló, elvileg elérhetetlen
-            _log.exception("thumbnail-job hiba: %s", self._photo_id)
-            image = _placeholder()
-        self._response._finish(image)
-
-
-class _PrefetchJob(QRunnable):
-    """Egy alacsony prioritású bélyegkép a cache felmelegítéséhez."""
-
-    def __init__(self, provider: "ThumbnailProvider"):
-        super().__init__()
-        self._provider = provider
-
-    def run(self) -> None:
-        self._provider._run_prefetch_job()
-
-
-def _placeholder() -> QImage:
-    image = QImage(16, 16, QImage.Format.Format_RGB32)
-    image.fill(PLACEHOLDER_COLOR)
-    return image
+def _olvass_cache_kepet(thumb: Path) -> QImage:
+    """A cache-elt bélyegkép a Python fájl-API-n át beolvasva (#5542),
+    átmeneti hibánál rövid várakozással újrapróbálva (#5553)."""
+    for varakozas in (*_CACHE_OLVASAS_VARAKOZASOK, None):
+        payload = read_image_bytes(thumb)
+        if payload is not None:
+            image = QImage.fromData(payload.tobytes())
+            if not image.isNull():
+                return image
+        if varakozas is not None:
+            _alszik(varakozas)
+    return QImage()
 
 
 class ThumbnailProvider(QQuickAsyncImageProvider):
@@ -354,9 +207,7 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         a filters= lánc parse-a LUSTA, először requestImage-kor fut (és az
         eredmény lánconként cache-elődik), így 50k fotó regisztrálása is
         olcsó marad."""
-        updated = {str(photo.id): photo for photo in photos}
-        with self._registry_lock:
-            self._registry = updated
+        return _register_photos(self, photos)
 
     def register_additional_photos(self, photos: tuple[PhotoRecord, ...]) -> None:
         """#23: fotók hozzáadása a MEGLÉVŐ regisztráció mellé (nem cseréli
@@ -376,30 +227,20 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
           * `-8_000_000_000_000_000` körül: parancssoros gyorsnézegető
             (#5762; a kiszámítható QML-számábrázolási tartományban).
         Új hívó ide vegyen fel magának új sávot."""
-        extra = {str(photo.id): photo for photo in photos}
-        with self._registry_lock:
-            self._registry = {**self._registry, **extra}
+        return _register_additional_photos(self, photos)
 
     def photo_record(self, photo_id: str) -> PhotoRecord | None:
         """A regisztrált fotó rekordja (#338 effekt-bélyegképek): a
         szerkesztőpanel effekt-gombjainak bélyegkép-providere (
         `effect_thumbnails.py`) ebből olvassa ki az útvonalat — nem kell
         neki saját, párhuzamos fotó-regisztrációt vezetnie."""
-        return self._registry.get(str(photo_id))
+        return _registry_photo_record(self, photo_id)
 
     def unregister_additional_photos(self, ids: tuple[str, ...]) -> None:
         """A `register_additional_photos`-szal felvett bejegyzések
         eltávolítása (pl. új szkennelés előtt vagy a dialógus zárásakor) —
         a valódi könyvtár bejegyzéseit nem érinti."""
-        if not ids:
-            return
-        excluded = set(ids)
-        with self._registry_lock:
-            self._registry = {
-                key: value
-                for key, value in self._registry.items()
-                if key not in excluded
-            }
+        return _unregister_additional_photos(self, ids)
 
     def _photo_for_render(self, photo_id: str) -> PhotoRecord | None:
         """Az album-regisztrációból, majd szükség esetén az indexből old fel.
@@ -409,29 +250,7 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         szálai között. Az indexből talált rekordot immutábilis szótárcserével
         jegyzi meg a következő kéréshez.
         """
-        key = photo_id.split("?", 1)[0]
-        photo = self._registry.get(key)
-        if photo is not None or self._index_path is None:
-            return photo
-        try:
-            index_id = int(key)
-        except ValueError:
-            return None
-
-        with open_index(self._index_path) as conn:
-            photo = photo_by_id(conn, index_id)
-        if photo is None:
-            return None
-
-        with self._registry_lock:
-            # Egy közben érkezett album-regisztráció vagy másik feloldó
-            # friss rekordja elsőbbséget élvezzen.
-            current = self._registry
-            existing = current.get(key)
-            if existing is not None:
-                return existing
-            self._registry = {**current, key: photo}
-        return photo
+        return _registry_photo_for_render(self, photo_id)
 
     def _resolved_ops(self, photo: PhotoRecord) -> tuple[tuple, int]:
         """A kép (ops, crc32) párja lusta parse-szal (#142) — az azonos
@@ -479,21 +298,7 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
 
         A válasz #1457 óta bekerül a provider nyilvántartásába is, és csak
         a motor általi megszüntetéskor (`destroyed`) kerül ki onnan."""
-        response = _ThumbResponse()
-        token = next(self._response_tokens)
-        with self._live_lock:
-            self._live_responses[token] = response
-        # A kötés SZÁNDÉKOSAN nem zárja magába a választ (csak a tokent),
-        # különben a nyilvántartás sosem ürülne. A `destroyed` átadja a
-        # megszűnő objektumot is — azt eldobjuk (`*_`): ilyenkor a C++
-        # oldal már érvénytelen, hozzányúlni tilos.
-        response.destroyed.connect(
-            lambda *_, token=token: self._release_response(token)
-        )
-        self._pool.start(
-            _ThumbJob(self, photo_id, response), _VISIBLE_THUMB_PRIORITY
-        )
-        return response
+        return _request_image_response(self, photo_id, requested_size)
 
     def prefetch_images(self, photo_ids: Iterable[str]) -> int:
         """A megadott bélyegkép-azonosítók alacsony prioritású előtöltése.
@@ -503,82 +308,21 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         egy kép idejére foglal; a látható kérések közben a Qt magasabb
         prioritással előzik meg a sorban álló előtöltéseket.
         """
-        uj_azonositok: list[str] = []
-        prefix = "image://thumbs/"
-        for value in photo_ids:
-            photo_id = str(value or "").strip()
-            if photo_id.startswith(prefix):
-                photo_id = photo_id[len(prefix):]
-            if photo_id:
-                uj_azonositok.append(photo_id)
-        if not uj_azonositok:
-            return 0
-
-        indit = False
-        hozzaadott = 0
-        with self._prefetch_lock:
-            uj_sor = []
-            for photo_id in uj_azonositok:
-                if photo_id in self._prefetch_pending:
-                    continue
-                self._prefetch_pending.add(photo_id)
-                uj_sor.append(photo_id)
-            # A friss görgetési cél kerüljön a régebbi, még sorban álló
-            # tartomány elé, de annak eredeti sorrendjét őrizze meg.
-            for photo_id in reversed(uj_sor):
-                self._prefetch_queue.appendleft(photo_id)
-            hozzaadott = len(uj_sor)
-            queue_capacity = max(_PREFETCH_QUEUE_CAPACITY, hozzaadott)
-            while len(self._prefetch_queue) > queue_capacity:
-                eldobott = self._prefetch_queue.pop()
-                self._prefetch_pending.discard(eldobott)
-            if self._prefetch_queue and not self._prefetch_scheduled:
-                self._prefetch_scheduled = True
-                indit = True
-        if indit:
-            self._pool.start(
-                _PrefetchJob(self), _PREFETCH_THUMB_PRIORITY
-            )
-        return hozzaadott
+        return _prefetch_images(self, photo_ids)
 
     def _run_prefetch_job(self) -> None:
         """Egy cache-felmelegítő munka; a következő csak a befejezés után indul."""
-        with self._prefetch_lock:
-            if not self._prefetch_queue:
-                self._prefetch_scheduled = False
-                return
-            photo_id = self._prefetch_queue.popleft()
-        try:
-            # Előtöltéskor nincs képernyő-válasz és nem jelezzük a felületnek
-            # látható betöltésként. A render-mag ugyanazokat a gyorsítótárakat
-            # tölti, amelyeket a rendes requestImage is használ.
-            image = self._render(photo_id)
-            if image.isNull():
-                _log.debug("thumbnail előtöltése sikertelen: %s", photo_id)
-        except Exception:  # noqa: BLE001 — háttérfeladat nem szakíthatja meg a görgetést
-            _log.exception("thumbnail-előtöltési hiba: %s", photo_id)
-        finally:
-            with self._prefetch_lock:
-                self._prefetch_pending.discard(photo_id)
-                van_kovetkezo = bool(self._prefetch_queue)
-                if not van_kovetkezo:
-                    self._prefetch_scheduled = False
-            if van_kovetkezo:
-                self._pool.start(
-                    _PrefetchJob(self), _PREFETCH_THUMB_PRIORITY
-                )
+        return _run_prefetch_job(self)
 
     def _release_response(self, token: int) -> None:
         """A motor elpusztította a választ — elengedhetjük a hivatkozást."""
-        with self._live_lock:
-            self._live_responses.pop(token, None)
+        return _release_response(self, token)
 
     def live_response_count(self) -> int:
         """A nyilvántartott (a motor által még el nem engedett) válaszok
         száma — a #1457 őr-tesztek ebből látják, hogy a nyilvántartás
         ürül, azaz nem szivárog."""
-        with self._live_lock:
-            return len(self._live_responses)
+        return _live_response_count(self)
 
     def wait_for_done(self, msecs: int = 10_000) -> bool:
         """Minden folyamatban lévő pool-feladat bevárása (tesztekhez)."""
@@ -587,54 +331,7 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
     def requestImage(self, photo_id, size, requested_size):
         """Szinkron render-mag (a pool-feladat és a tesztek hívják) —
         a korábbi szinkron provider változatlan szerződésével."""
-        # a jelzés a lock ALATT megy ki: így az értékek kibocsátási sorrendje
-        # a számláló sorrendjét követi (queued kézbesítésnél is), és a busy
-        # nem ragadhat be egy megcserélődött 1→0 pár miatt
-        with self._active_lock:
-            self._active += 1
-            self.activeCountChanged.emit(self._active)
-        try:
-            try:
-                image = self._render(photo_id)
-            except Exception:
-                _log.exception("thumbnail-render hiba: %s", photo_id)
-                image = QImage()
-            if image.isNull():
-                image = _placeholder()
-            else:
-                #: #2187: az arc-nagyítás (`&fz=`) a gyorstárak UTÁN vág — a
-                #: `_render` gyorstárai (lemez, `_FilteredThumbMemo`) a
-                #: teljes képet tartják. Cimke nélkül ez egyetlen
-                #: sztring-próba: a rendes út nem változik.
-                arc = arc_from_thumb_id(photo_id)
-                if arc is not None:
-                    image = arcra_vag(self._arc_forras(photo_id, image, arc), arc)
-            # Megjelenítési mód (#1596) — a render-mag UTÁN, a gyorstárakat
-            # ÉRINTETLENÜL hagyva.
-            #
-            # A sorrend a jegy lényege: a `_render` írja a lemezes
-            # bélyegképet és a `_FilteredThumbMemo` rekeszét. Ha a festés
-            # ELŐBB futna, a mód BELEÉGNE a tárolt bélyegképbe — kikapcsolva
-            # is festve maradna a kép, és a webexport/kollázs is a képernyő
-            # figyelmeztető színét vinné tovább. A mód megjelenítési
-            # átalakító, nem a bélyegkép tartalma.
-            #
-            # A mód magából az URL-ből jön (`&d=<mód>`), nem a szolgáltató
-            # állapotából: így az URL egyértelműen meghatározza a
-            # képpontokat, és egy gyors módváltás nem tud rossz módú képet
-            # beragasztani a Qt URL-kulcsú gyorstárába. Ld.
-            # `display_mode_paint` modul-docstring.
-            image = apply_display_mode_to_qimage(
-                image, display_mode_from_thumb_id(photo_id)
-            )
-            if size is not None:
-                size.setWidth(image.width())
-                size.setHeight(image.height())
-            return image
-        finally:
-            with self._active_lock:
-                self._active -= 1
-                self.activeCountChanged.emit(self._active)
+        return _request_image_impl(self, photo_id, size, requested_size)
 
     def _arc_forras(self, photo_id: str, image: QImage, arc: tuple) -> QImage:
         """Az arc-vágás forrásképe (#2187): akkora, hogy a kivágott négyzet
@@ -644,146 +341,14 @@ class ThumbnailProvider(QQuickAsyncImageProvider):
         nagyobb szintje; az eredeti fájl (`arc_eredetibol`). Szerkesztett
         képnél az eredeti fájl a `filters=` láncot nem hordozza, ezért ott a
         felső szint a határ."""
-        cella = szint_from_thumb_id(photo_id) or self.top_level
-        hosszabb = szukseges_hosszabb_el(image.width(), image.height(), arc, cella)
-        if hosszabb is None:
-            return image
-        jelenlegi = max(image.width(), image.height())
-        for szint in self._cache.levels:
-            if jelenlegi < szint and szint >= hosszabb:
-                return self._render_szinten(photo_id, szint) or image
-        photo = self._photo_for_render(photo_id)
-        if photo is not None and not self._resolved_ops(photo)[0]:
-            eredeti = arc_eredetibol(
-                Path(photo.folder_path) / photo.name,
-                hosszabb,
-                photo.rotate_steps,
-                int(getattr(photo, "flip_flags", 0) or 0),
-            )
-            if eredeti is not None and not eredeti.isNull():
-                return eredeti
-        if jelenlegi < self.top_level:
-            return self._render_szinten(photo_id, self.top_level) or image
-        return image
+        return _render_arc_forras(self, photo_id, image, arc, arc_eredetibol)
 
     def _render_szinten(self, photo_id: str, szint: int) -> QImage | None:
         """A `_render` a megadott szinten (az URL `&sz=` cimkéjét cseréljük);
         `None`, ha nem készült el."""
-        alap, _, query = photo_id.partition("?")
-        parameterek = [
-            p for p in query.split("&") if p and not p.startswith("sz=")
-        ]
-        kep = self._render(f"{alap}?{'&'.join([*parameterek, f'sz={szint}'])}")
-        return None if kep.isNull() else kep
+        return _render_szinten_impl(self, photo_id, szint)
 
     def _render(self, photo_id: str) -> QImage:
         """A kész (szerkesztett, forgatott) thumbnail; null-QImage, ha a
         forrás nem dekódolható — a hívó ebből csinál placeholdert."""
-        # az URL-ben ?r=<lépés> cache-buster jöhet — az id az első rész
-        photo = self._photo_for_render(photo_id)
-        if photo is None:
-            return QImage()
-        path = Path(photo.folder_path) / photo.name
-        mtime_ns, size_bytes = photo.mtime_ns, photo.size
-        rotate = photo.rotate_steps
-        #: #2902: a tükrözés a forgatás párja — ugyanúgy nem-destruktív, és
-        #: ugyanúgy a KÉSZ kis bélyegképen történik.
-        flip = int(getattr(photo, "flip_flags", 0) or 0)
-        ops, chain_crc = self._resolved_ops(photo)
-        crop, crop_ini_readable = (
-            self._crop_reader.read(path.parent / PICASA_INI_NAME, photo.name)
-            if ops
-            else (None, True)
-        )
-        # #144: szűrt képnél előbb a memóriacache — találatnál a filters-
-        # lánc, a lemez-dekód és a forgatás is kimarad. A crop kulcs is a
-        # kulcs része, mert az nem szerepel a PhotoRecord indexrekordjában.
-        memo_key = (
-            str(path),
-            mtime_ns,
-            size_bytes,
-            chain_crc,
-            crop,
-            crop_ini_readable,
-            rotate,
-            flip,
-        )
-        if ops:
-            cached = self._memo.get(memo_key)
-            if cached is not None:
-                return cached
-        # szerkesztő-lánc (filters=) a bélyegképen is (#59): a szűrt bélyegkép
-        # a #163 óta NAGY bázison készül és külön cache-fájlba kerül — a
-        # vágott kép így éles marad, nem a kész kis thumbnailt vágjuk tovább
-        # (ami felnagyítva homályos lenne). A forgatás lentebb, a kész kis
-        # bélyegképen történik (veszteségmentes 90°-os lépés).
-        #: #598: a SZINT az URL-ből jön (`&sz=`), nem a szolgáltató
-        #: állapotából — ugyanaz az elv, mint a megjelenítési módnál: az URL
-        #: egyértelműen meghatározza a képpontokat, így a Qt URL-kulcsú
-        #: gyorstárába nem ragadhat be más szintű kép.
-        szint = szint_from_thumb_id(photo_id)
-        def kesz_thumb():
-            if ops:
-                return self._cache.get_or_create_edited(
-                    path,
-                    mtime_ns,
-                    size_bytes,
-                    ops,
-                    szint,
-                    crop=crop,
-                    crop_ini_readable=crop_ini_readable,
-                )
-            return self._cache.get_or_create(path, mtime_ns, size_bytes, szint)
-
-        thumb = kesz_thumb()
-        if thumb is None:
-            _log.warning("thumbnail nem készült el: %s", path)
-            self.brokenImageDetected.emit(str(photo.id))
-            return QImage()
-        image = _olvass_cache_kepet(thumb)
-        if image.isNull():
-            # A cache-fájl olvashatatlansága nem a fotó sérülése (#5553): a
-            # bélyegkép a forrásból újraírható. Sérültfotó-jelzés csak akkor
-            # megy, ha a forrásból sem készül bélyegkép.
-            thumb.unlink(missing_ok=True)
-            thumb = kesz_thumb()
-            if thumb is None:
-                _log.warning("thumbnail nem készült el: %s", path)
-                self.brokenImageDetected.emit(str(photo.id))
-                return QImage()
-            image = _olvass_cache_kepet(thumb)
-        if image.isNull():
-            _log.warning("cache-elt thumbnail nem olvasható: %s", thumb)
-            return image
-        if rotate:
-            # nem-destruktív ini-forgatás (a cache-elt thumb forgatatlan)
-            image = image.transformed(QTransform().rotate(90 * rotate))
-        if flip:
-            # #2902: a `QImage.mirrored` maga is új képet ad — a gyorstárban
-            # tükrözetlen bélyegkép marad, ahogy a forgatásnál is
-            image = image.mirrored(bool(flip & FLIP_HORIZONTAL),
-                                   bool(flip & FLIP_VERTICAL))
-        if ops:
-            self._memo.put(memo_key, image)
-        return image
-
-
-#: A frissen írt cache-fájl olvasásának újrapróbái (#5553): a Windows CI-n
-#: a fájl rövid ideig olvashatatlan lehet az írás után.
-_CACHE_OLVASAS_VARAKOZASOK = (0.05, 0.1, 0.2)
-# modulszintű fogantyú, hogy a teszt ne a globális time.sleep-et írja át (#1375)
-_alszik = time.sleep
-
-
-def _olvass_cache_kepet(thumb: Path) -> QImage:
-    """A cache-elt bélyegkép a Python fájl-API-n át beolvasva (#5542),
-    átmeneti hibánál rövid várakozással újrapróbálva (#5553)."""
-    for varakozas in (*_CACHE_OLVASAS_VARAKOZASOK, None):
-        payload = read_image_bytes(thumb)
-        if payload is not None:
-            image = QImage.fromData(payload.tobytes())
-            if not image.isNull():
-                return image
-        if varakozas is not None:
-            _alszik(varakozas)
-    return QImage()
+        return _render_thumbnail(self, photo_id, _olvass_cache_kepet)
