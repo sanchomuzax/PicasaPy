@@ -29,7 +29,12 @@ _DUPE = (
 #: hostWindow/hostController, ezt a főablak nevére (window/controller) hozzuk.
 _MAIN = "\n".join(
     (Path(picasapy.app.__file__).parent / "qml" / ut).read_text(encoding="utf-8")
-    for ut in ("Main.qml", "PicasaPy/MainLibraryCanvas.qml", "PicasaPy/MainRightDrawer.qml")
+    for ut in (
+        "Main.qml",
+        "PicasaPy/MainLibraryCanvas.qml",
+        "PicasaPy/MainRightDrawer.qml",
+        "PicasaPy/MainFolderPane.qml",
+    )
 ).replace("hostController.", "controller.").replace("hostWindow.", "window.")
 _MENU = menu_component_source("PicasaToolsMenu.qml")
 _IMPORT = (

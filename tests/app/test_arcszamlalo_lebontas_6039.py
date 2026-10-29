@@ -22,7 +22,11 @@ FOABLAK_CSALAD = (
     QML_MAPPA / "Main.qml",
     QML_MAPPA / "PicasaPy" / "MainRightDrawer.qml",
     QML_MAPPA / "PicasaPy" / "MainLibraryCanvas.qml",
+    QML_MAPPA / "PicasaPy" / "MainFolderPane.qml",
 )
+FOABLAK_FORRAS = "\n".join(
+    fajl.read_text(encoding="utf-8") for fajl in FOABLAK_CSALAD
+).replace("hostFaceScanController.", "faceScanController.")
 
 
 @pytest.mark.parametrize(
@@ -36,4 +40,4 @@ FOABLAK_CSALAD = (
 )
 def test_az_arcszamlalo_kotesnek_van_tartaleka(kotes: str) -> None:
     """# rontás-kontroll: a `?? x` nélkül a kötés undefined-ot írna int-be."""
-    assert any(kotes in f.read_text(encoding="utf-8") for f in FOABLAK_CSALAD)
+    assert kotes in FOABLAK_FORRAS
