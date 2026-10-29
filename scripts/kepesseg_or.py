@@ -406,7 +406,220 @@ def _regisztraciok(application_py: Path) -> dict[str, str | None]:
             jeloltek[qml_nev] = ertek.func.id
         else:
             jeloltek[qml_nev] = None
+    jeloltek.update(_segedmodul_regisztraciok(application_py.parent, list(jeloltek)))
     return jeloltek
+
+
+def _segedmodul_regisztraciok(
+    app_gyoker: Path, setter_nevek: list[str]
+) -> dict[str, str | None]:
+    """Az `application_startup_*.py`-ban létrehozott QML-hidak feloldása.
+
+    Az indító részekre bontása után a QML-nevek regisztrációja az
+    `application_startup_qml.py`-ban áll, és az értékeket az előző
+    előkészítő lépések adják át az állapotobjektumon. Kövessük ezeket a
+    helyi és `state.<név>` hozzárendeléseket, hogy a képességőr továbbra is
+    ugyanazokat a QML-ből elérhető osztályokat vizsgálja.
+    """
+    fak: list[tuple[Path, ast.Module]] = []
+    for path in sorted(app_gyoker.glob("application*.py")):
+        if path.name == "application.py":
+            continue
+        try:
+            fak.append((path, ast.parse(path.read_text(encoding="utf-8"))))
+        except (OSError, SyntaxError):
+            continue
+
+    factory_osztalyok: dict[str, str] = {}
+    application_path = app_gyoker / "application.py"
+    if application_path.is_file():
+        try:
+            application_tree = ast.parse(application_path.read_text(encoding="utf-8"))
+        except (OSError, SyntaxError):
+            application_tree = ast.Module(body=[], type_ignores=[])
+
+        for function in application_tree.body:
+            if not isinstance(function, ast.FunctionDef | ast.AsyncFunctionDef):
+                continue
+            locals_: dict[str, str] = {}
+            for node in ast.walk(function):
+                if not isinstance(node, ast.Assign):
+                    continue
+                if not isinstance(node.value, ast.Call):
+                    continue
+                call = node.value
+                if (
+                    isinstance(call.func, ast.Attribute)
+                    and call.func.attr == "_lazy_app_symbol"
+                    and call.args
+                    and isinstance(call.args[0], ast.Constant)
+                    and isinstance(call.args[0].value, str)
+                ):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name):
+                            locals_[target.id] = call.args[0].value
+
+            def returned_class(expr: ast.expr) -> str | None:
+                if isinstance(expr, ast.IfExp):
+                    return returned_class(expr.body)
+                if not isinstance(expr, ast.Call):
+                    return None
+                if isinstance(expr.func, ast.Name):
+                    return locals_.get(expr.func.id, expr.func.id)
+                if isinstance(expr.func, ast.Attribute):
+                    if (
+                        expr.func.attr == "_lazy_app_symbol"
+                        and expr.args
+                        and isinstance(expr.args[0], ast.Constant)
+                        and isinstance(expr.args[0].value, str)
+                    ):
+                        return expr.args[0].value
+                    return factory_osztalyok.get(expr.func.attr)
+                if isinstance(expr.func, ast.Call):
+                    inner = expr.func
+                    if (
+                        isinstance(inner.func, ast.Attribute)
+                        and inner.func.attr == "_lazy_app_symbol"
+                        and inner.args
+                        and isinstance(inner.args[0], ast.Constant)
+                        and isinstance(inner.args[0].value, str)
+                    ):
+                        return inner.args[0].value
+                    if isinstance(inner.func, ast.Name):
+                        return locals_.get(inner.func.id, inner.func.id)
+                return None
+
+            for node in ast.walk(function):
+                if isinstance(node, ast.Return) and node.value is not None:
+                    candidate = returned_class(node.value)
+                    if candidate:
+                        factory_osztalyok[function.name] = candidate
+                        break
+
+    def osztaly_hivasa(expr: ast.expr) -> str | None:
+        if not isinstance(expr, ast.Call):
+            return None
+        if isinstance(expr.func, ast.Call):
+            factory = expr.func
+            if (
+                isinstance(factory.func, ast.Attribute)
+                and factory.func.attr == "_lazy_app_symbol"
+                and factory.args
+                and isinstance(factory.args[0], ast.Constant)
+                and isinstance(factory.args[0].value, str)
+            ):
+                return factory.args[0].value
+            return osztaly_hivasa(factory)
+        if isinstance(expr.func, ast.Name):
+            return expr.func.id
+        if isinstance(expr.func, ast.Attribute):
+            return factory_osztalyok.get(expr.func.attr, expr.func.attr)
+        return None
+
+    state_osztalyok: dict[str, str] = {}
+
+    def helyi_osztalyok(function: ast.FunctionDef | ast.AsyncFunctionDef) -> dict[str, str]:
+        locals_: dict[str, str] = {}
+
+        def osztaly_kifejezes(expr: ast.expr) -> str | None:
+            if isinstance(expr, ast.Name):
+                return locals_.get(expr.id)
+            if isinstance(expr, ast.Attribute) and isinstance(expr.value, ast.Name):
+                if expr.value.id == "state":
+                    return state_osztalyok.get(expr.attr)
+            return osztaly_hivasa(expr)
+
+        for _ in range(4):
+            for node in ast.walk(function):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name):
+                            candidate = osztaly_kifejezes(node.value)
+                            if candidate:
+                                locals_[target.id] = candidate
+                        elif (
+                            isinstance(target, ast.Attribute)
+                            and isinstance(target.value, ast.Name)
+                            and target.value.id == "state"
+                        ):
+                            candidate = osztaly_kifejezes(node.value)
+                            if candidate:
+                                state_osztalyok[target.attr] = candidate
+                elif isinstance(node, ast.AnnAssign):
+                    if isinstance(node.target, ast.Name) and node.value is not None:
+                        candidate = osztaly_kifejezes(node.value)
+                        if candidate:
+                            locals_[node.target.id] = candidate
+        return locals_
+
+    # Az állapot mezői több indítási lépés között mennek tovább; ismételjük
+    # az egyszerű hozzárendelések feloldását, míg új mező már nem kerül elő.
+    for _ in range(len(fak) + 1):
+        before = len(state_osztalyok)
+        for _path, tree in fak:
+            for function in ast.walk(tree):
+                if isinstance(function, ast.FunctionDef | ast.AsyncFunctionDef):
+                    helyi_osztalyok(function)
+        if len(state_osztalyok) == before:
+            break
+
+    result: dict[str, str | None] = {}
+    qml_hidak: list[tuple[str, str | None]] = []
+    for path, tree in fak:
+        for function in ast.walk(tree):
+            if not isinstance(function, ast.FunctionDef | ast.AsyncFunctionDef):
+                continue
+            locals_ = helyi_osztalyok(function)
+            for argument in [*function.args.args, *function.args.kwonlyargs]:
+                annotation = argument.annotation
+                if isinstance(annotation, ast.Name):
+                    locals_.setdefault(argument.arg, annotation.id)
+                elif isinstance(annotation, ast.Constant) and isinstance(annotation.value, str):
+                    locals_.setdefault(argument.arg, annotation.value)
+            for node in ast.walk(function):
+                if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+                    continue
+                if node.func.attr == "_register_qml_context_property":
+                    if (
+                        len(node.args) < 3
+                        or not isinstance(node.args[1], ast.Constant)
+                        or not isinstance(node.args[1].value, str)
+                    ):
+                        continue
+                    qml_name = node.args[1].value
+                    value = node.args[2]
+                    qml_hidak.append((qml_name, locals_.get(value.id) if isinstance(value, ast.Name) else osztaly_hivasa(value)))
+                elif (
+                    node.func.attr == "setContextProperty"
+                    and len(node.args) == 2
+                    and isinstance(node.args[0], ast.Constant)
+                    and isinstance(node.args[0].value, str)
+                ):
+                    qml_name = node.args[0].value
+                    value = node.args[1]
+                else:
+                    continue
+                candidate = (
+                    locals_.get(value.id)
+                    if isinstance(value, ast.Name)
+                    else osztaly_hivasa(value)
+                )
+                if node.func.attr == "setContextProperty":
+                    result[qml_name] = candidate
+
+    # A fő QML-kontextus az `application.py` regisztrációs tábláján keresztül
+    # megy. A két listát pozíció szerint kötjük össze: így az őr a régi
+    # névlistán végzett szándékos mutációt is észleli, miközben a helperből
+    # veszi a tényleges objektum osztályát.
+    for index, (helper_name, candidate) in enumerate(qml_hidak):
+        if index < len(setter_nevek):
+            registered_name = setter_nevek[index]
+            result[registered_name] = candidate
+            if helper_name != registered_name:
+                result[helper_name] = None
+        else:
+            result[helper_name] = candidate
+    return result
 
 
 def _orokolt_tagok(
