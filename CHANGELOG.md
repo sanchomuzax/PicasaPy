@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.288] - 2026-10-29
+
+- A főablak hibajelzéseinek belső felépítése külön komponensbe került, változatlan működéssel és feliratokkal (#6136).
+- Az exportálás kisebb belső modulokra bomlott, a létrejövő fájlok és a meglévő importok változatlanok maradtak (#6193).
+
 ## [0.9.287] - 2026-10-29
 
 - A kimeneti újraolvasás tesztje a háttér-szinkron előtt és után szemetet gyűjt (#6197).
