@@ -1448,7 +1448,7 @@ Az eseménylánc: a `0x005d9cc0` parancs-diszpécser az
 albumcél-listát, majd a `0x00664130`-at hívja a menüsorok feldolgozására
 (`0x005fe2bc`; Ghidra-kimenet: `2026-10-21-idorend-31.txt`,
 `2026-10-29-koteg-33.txt`). A `0x00664130` végigjárja a bemenő sorokat,
-majd a `0x00664e31–0x00664e3b` utasításokkal hozzáfűzi a
+majd a `0x00664e31-0x00664e3b` utasításokkal hozzáfűzi a
 `New Album...` sort, tehát az a bemenő sorok után kerül.
 
 A három jegyben felsorolt függvény közül tehát a `0x005fe130` viszi a
@@ -1460,10 +1460,10 @@ hívja sem a `0x005fe130`-at, sem a `0x00664130`-at.
 Az `0x00664130` `0x00664d87`-en teszteli a bemenő sor `+8` mezőjének
 `0x10` bitjét. Az igaz ág a kapcsolódó rekord állapotát módosítja
 (`0x00664de8`, `0x00664df5`, `0x00664dfc`); a hamis ág egy másik
-rekordjelzőt töröl (`0x00664e08–0x00664e0b`). A függvény a `--` sztringet
+rekordjelzőt töröl (`0x00664e08-0x00664e0b`). A függvény a `--` sztringet
 (`0x00ca2d58`) az új tömb foglalásakor, az alaphelyek inicializálására
-írja ki (`0x00664fb0–0x00664fd9`), majd a már aktív bemenő sorokat külön
-átmásolja (`0x00665007–0x00665056`). Ez nem bizonyítja, hogy a `--` aktív,
+írja ki (`0x00664fb0-0x00664fd9`), majd a már aktív bemenő sorokat külön
+átmásolja (`0x00665007-0x00665056`). Ez nem bizonyítja, hogy a `--` aktív,
 látható elválasztóként kerül a menübe; a `0x10` bit renderelési jelentése
 sem dőlt el.
 
@@ -1476,7 +1476,7 @@ menüsorrend bizonyítéka: a job-255 mérése ennek a fordítottját mutatja.
 |---|---|
 | Egy kijelölt kép, saját album nélkül | **Screensaver → Starred Photos → New Album...** - a jegyben közölt `picasa-colab-jobs` job-255, 8. kép mérése. A nyers képkocka nem volt a helyi `meroadat.tar`-ban. |
 | Egy saját albummal | **Screensaver → Starred Photos → Untitled → New Album...**, elválasztó nélkül - job-259 mérés. Ez a mért egyalbumos eset; több saját album egymás közötti sorrendje külön nem volt mérve. |
-| Elválasztó | A job-259 egyalbumos menüjében nincs elválasztó. A `--` tömbfoglalási alapértékként jelenik meg (`0x00664fb0–0x00664fd9`), ezért a bináris ezen részéből nem állítható, hogy látható elválasztó-sort adna a menühöz. |
+| Elválasztó | A job-259 egyalbumos menüjében nincs elválasztó. A `--` tömbfoglalási alapértékként jelenik meg (`0x00664fb0-0x00664fd9`), ezért a bináris ezen részéből nem állítható, hogy látható elválasztó-sort adna a menühöz. |
 
 **Bizonyítottság: feltételes.** A bináris út megmutatja a diszpécsert,
 kattintáskezelőt, albumcél-listát és a `New Album...` hozzáfűzését; a
@@ -1541,4 +1541,4 @@ megvan, az engedélyezési út viszont nem zárult le. A közvetlen
 `thumbui/addtobuttcon` xrefek között a `0x005683a0` állapotbeállító-hívást
 tartalmaz, de a függvény teljes dekompilálása nincs meg:
 
-- `Ghidra-kör kell: 0x005683a0 — a thumbui/addtobuttcon vezérlő +0x20e állapotának feltétele; függ-e a kép-kijelöléstől, a tálca tartalmától vagy az albumok számától? [blokkoló]`
+- `Ghidra-kör kell: 0x005683a0 - a thumbui/addtobuttcon vezérlő +0x20e állapotának feltétele; függ-e a kép-kijelöléstől, a tálca tartalmától vagy az albumok számától? [blokkoló]`
