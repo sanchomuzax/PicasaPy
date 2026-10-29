@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.284] - 2026-10-29
+
+- A fájlművelet-vezérlő kisebb, megnevezett részekre bomlott, változatlan működéssel (#6174).
+- Az Időrend nézetének vizuális panelje önálló QML-komponensbe került, változatlan képpel és működéssel (#6176).
+
 ## [0.9.283] - 2026-10-29
 
 - A főablak könyvtárnézete és jobb oldali fiókja önálló QML-komponensbe került, változatlan működéssel (#6136).
