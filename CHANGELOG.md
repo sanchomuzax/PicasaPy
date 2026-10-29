@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.289] - 2026-10-29
+
+- A fő eszköztár földrajzi ikonja és dátumcsúszkájának árnyéka egységesebben jelenik meg (#6140).
+
 ## [0.9.288] - 2026-10-29
 
 - A főablak hibajelzéseinek belső felépítése külön komponensbe került, változatlan működéssel és feliratokkal (#6136).
