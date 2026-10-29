@@ -10,6 +10,8 @@ import "selection.js" as Selection
 // = kijelölés-logika) — itt csak az állapot és a bekötés marad.
 ApplicationWindow {
     id: window
+    // A kivont komponens mellett a főablak korábbi QML-neve megmarad.
+    property alias shortcutSave: mainKeyboardShortcuts.shortcutSave
     property alias errorBanner: mainErrorBanner
     property alias errorBannerText: mainErrorBanner.messageText
     width: 1280

@@ -16,6 +16,9 @@ Item {
     required property var hostSlideshow
     required property var hostTrayBar
 
+    // A régi Main.qml-azonosító továbbra is elérhető a főablakban.
+    property alias shortcutSave: shortcutSaveObject
+
 
     // #2054: a súgó billentyűi. Az F1 a MÉRT eredeti gyorsbillentyű (a
     // `SHORTCUTS.xml`-ben a *Help Contents and Index* `VK_F1`, módosító
@@ -205,7 +208,8 @@ Item {
     // (a menü-audit teszt épp ezt kéri számon). Kijelölés nélkül nem tesz
     // semmit: a `openSave` üres listára visszatér.
     Shortcut {
-        id: shortcutSave
+        id: shortcutSaveObject
+        objectName: "shortcutSave"
         sequence: "Ctrl+S"
         enabled: !hostWindow._szovegmezoneVanFokusz
                  && hostWindow.muveletiCelbanVanMentetlenSzerkesztes
@@ -414,7 +418,7 @@ Item {
         {
             title: hostPicasaMenuBar.keyboardShortcutGroupTitles.file,
             sequences: hostPicasaMenuBar.keyboardShortcutSequences.file.concat([
-                shortcutSave.sequence, shortcutRename.sequence,
+                shortcutSaveObject.sequence, shortcutRename.sequence,
                 shortcutExportSelection.sequence, shortcutDeleteFromDiskGrid.sequence,
                 shortcutOpenInEditor.sequence, shortcutEmail.sequence
             ])
