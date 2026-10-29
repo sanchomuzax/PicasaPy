@@ -46,6 +46,10 @@ Rectangle {
     readonly property real undoRowBottom: globalUndoRow.y + globalUndoRow.height
 
     // 0–4: eredeti fülek; 5–6: saját fülek (#1187).
+    // SAJÁT FUNKCIÓ (#1187): a szerkesztő 7 fülből csak 5 (0-4. index) van meg
+    // az eredeti Picasában; az 5. (#422) és a 6. (#571) index a MI hozzáadásunk. A
+    // bináris-egyezés erre a két fülre NEM vonatkozik: hogy az eredetiben
+    // nincs ilyen fül, nem hiba. Lista: docs/decisions/vedett-sajat-funkciok.md
     property int activeTab: 0
 
     property alias cropActive: toolsState.cropActive
