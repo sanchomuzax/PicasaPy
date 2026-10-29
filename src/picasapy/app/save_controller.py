@@ -1,7 +1,7 @@
 """Mentés a lemezre / Visszaállítás / Utolsó mentés visszavonása (#444).
 
 A nem-destruktív modell magja (`picasapy.edit.save`) régóta megvan és
-tesztelt — de a felületen **nem volt elérhető**: a Fájl menü „Mentés",
+tesztelt - de a felületen **nem volt elérhető**: a Fájl menü „Mentés",
 „Visszaállítás" pontjai helyfoglalók voltak. Ez a szelet köti be őket.
 
 A Picasa NÉGY külön műveletet ismer (a jegy szerint, a bináris
@@ -9,13 +9,13 @@ sztringjeiből):
 
 | művelet | mire hat |
 |---|---|
-| **Mentés** | a lemezen lévő fájlra — előtte biztonsági másolat készül |
-| **Visszaállítás** | a lemezen lévő fájlra — az eredeti jön vissza, a szerkesztések ELVESZNEK |
-| **Utolsó mentés visszavonása** | csak az utolsó lemezre írásra — a szerkesztések MEGMARADNAK |
+| **Mentés** | a lemezen lévő fájlra - előtte biztonsági másolat készül |
+| **Visszaállítás** | a lemezen lévő fájlra - az eredeti jön vissza, a szerkesztések ELVESZNEK |
+| **Utolsó mentés visszavonása** | csak az utolsó lemezre írásra - a szerkesztések MEGMARADNAK |
 | **Összes szerkesztés visszavonása** | csak a `filters=` láncra (ez a #465-ben már megvan) |
 
 **A #484-es rangsor kiemelt pontja:** a mentés **véglegesen eldobja** azt a
-láncelemet, amit nem tudunk renderelni — a beégetett képbe az nem kerül
+láncelemet, amit nem tudunk renderelni - a beégetett képbe az nem kerül
 bele. A teljes lánc az eredeti-mappa ini-jében megmarad az „Undo Save"
 művelethez. Ezért a mentés előtt a hívó a
 `unrenderableFiltersIn()`-nel megkérdezheti, van-e ilyen, és
@@ -24,6 +24,10 @@ effektek" fülön (#571) ma is látszanak olyan nevek, amikhez nincs
 renderelőnk, és egy régi `.picasa.ini` bármikor hozhat ilyet.
 """
 
+
+# A régi importútvonal (`from picasapy.app.save_controller import ...`) marad
+# érvényes: a nevek itt vannak akkor is, ha ez a modul maga nem használja őket.
+# ruff: noqa: F401
 from __future__ import annotations
 
 import logging
@@ -50,9 +54,17 @@ from picasapy.scanner import PICASA_INI_NAME
 from .paint_mask import maszk_vonasokbol, van_mentett_ecsetvonas
 from .save_error_kind import save_error_code, save_error_kind
 from .worker_thread import BackgroundWorkerMixin
+from .save_as_copy import SaveCopyMixin
+from .save_errors import _FAILED_DETAILS_LIMIT, _SAVE_ERRORS, SaveErrorMixin
+from .save_feedback import SaveFeedbackMixin
+from .save_progress import SaveProgressMixin
+from .save_render import _CROP_READER, _render_for_save
+from .save_restore import SaveRestoreMixin
+from .save_rows import SaveRowsMixin
+
 
 def _konyvtar_tartalma(konyvtar: Path) -> list[Path]:
-    """Az eredeti-mappa egyszeri listázása — külön függvény, hogy a teszt
+    """Az eredeti-mappa egyszeri listázása - külön függvény, hogy a teszt
     MEGSZÁMOLHASSA (#1146), a globális `Path.glob` átírása nélkül (#1375).
 
     A `monkeypatch.setattr(Path, "glob", figyelo)` alak a `pathlib.Path`
@@ -61,358 +73,36 @@ def _konyvtar_tartalma(konyvtar: Path) -> list[Path]:
     is csak erről a vezérlőről szólna."""
     return list(konyvtar.glob("*"))
 
-#: A mentés kezelt hibái: a fájlrendszeré, a kódolásé, a párhuzamos
-#: ini-íróé és a magé — egyik sem szökhet ki a QML felé kivételként.
-_SAVE_ERRORS = (OSError, ValueError, SaveError, IniSaveError, IniConflictError)
 
-#: Ennyi hibás fájl nevét/okát mutatjuk az összegzésben (az export
-#: `_EXPORT_FAILED_DETAILS_LIMIT` mintája) — tömeges hibánál a teljes lista
-#: inkább zavaró, mint hasznos.
-_FAILED_DETAILS_LIMIT = 5
-_CROP_READER = PhotoCropReader()
+class SaveMixin(
+    SaveFeedbackMixin,
+    SaveProgressMixin,
+    SaveErrorMixin,
+    SaveRowsMixin,
+    SaveCopyMixin,
+    SaveRestoreMixin,
+    BackgroundWorkerMixin,
+):
+    """A Fájl menü mentés-műveletei a kijelölt képekre.
 
-
-def _render_for_save(
-    path: Path,
-    rotate_steps: int,
-    filters: str,
-    flip_flags: int = 0,
-    paint_strokes: tuple = (),
-) -> np.ndarray:
-    """A képfájl a szerkesztésekkel BEÉGETVE, OpenCV BGR-ben.
-
-    A forgatás, a tükrözés (#2902) és a `filters=` lánc ugyanazon a
-    renderelő-úton megy, mint az exportnál — a mentett fájl és a rácsban
-    látott kép így egyezik.
-
-    `paint_strokes`: a szerkesztő munkamenetében élő festés vonásai (#3462).
-    A vonások a FORGATATLAN forrás terében vannak (az előnézet ott futtatja a
-    láncot), ezért a maszk a forrás méretén épül, és a képpel azonos módon
-    tükröződik és fordul.
+    A részek a `save_*.py` modulokban élnek; ez az osztály köti össze őket, és
+    ezt a nevet importálja a `controller.py`.
     """
-    # ⛔ #3120: ez az EGYETLEN képbetöltő hely, amit SZÁNDÉKOSAN nem
-    # kötöttünk át a nyerset is ismerő `cvimage.dekodolj_forrast`-ra.
-    #
-    # A mentés a képet a SAJÁT HELYÉRE írja vissza (az eredetit a
-    # `.picasaoriginals`-ba téve). Nyers fájlnál ez nem megy: DNG/CR2/NEF
-    # írása nincs az OpenCV-ben, tehát az átkötés a legjobb esetben néma
-    # hibát, a legrosszabban SÉRÜLT FÁJLT adna a felhasználó nyers képe
-    # helyén. Ma ehelyett a dekódolás áll meg — a fájl érintetlen marad.
-    #
-    # Amit az eredeti tesz (a szerkesztést JPEG-ként a nyers MELLÉ menti),
-    # az a jegy szerint MÉRENDŐ, nem kitalálandó. Amíg nincs mérve, a
-    # biztonságos viselkedés a hibaüzenet.
-    #
-    # Őr: `tests/test_nyers_kozos_dekoder_3120.py::TestAMentesNEMIrRaNyerset`
-    payload = read_image_bytes(path)
-    if payload is None:
-        raise ValueError(f"Üres vagy nem olvasható fájl: {path}")
-    image = cv2.imdecode(payload, cv2.IMREAD_COLOR)
-    if image is None:
-        raise ValueError(f"Nem dekódolható kép: {path}")
-    # #3065: ELŐBB a tükrözés, UTÁNA a forgatás — a mért sorrend (ld. az
-    # `export/exporter.py` azonos megjegyzését és a `render/flip.py`
-    # modul-docstringjét).
-    ops = EditSession.from_value(filters).ops
-    maszk = (
-        maszk_vonasokbol(
-            paint_strokes,
-            image.shape[0],
-            image.shape[1],
-            filters=ops,
-        )
-        if paint_strokes or van_mentett_ecsetvonas(ops)
-        else None
-    )
-    image = apply_flip(image, flip_flags)
-    steps = int(rotate_steps or 0) % 4
-    for _ in range(steps):
-        image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
-    crop, crop_ini_readable = _CROP_READER.read(
-        path.parent / PICASA_INI_NAME, path.name
-    )
-    ops = normalize_crop_ops(
-        ops,
-        crop,
-        crop_ini_readable=crop_ini_readable,
-        warning_key=str(path),
-    )
-    if not ops:
-        return image
-    if maszk is not None:
-        maszk = apply_flip(maszk, flip_flags)
-        for _ in range(steps):
-            maszk = cv2.rotate(maszk, cv2.ROTATE_90_CLOCKWISE)
-    rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    rendered, _skipped = apply_filters(rgb, ops, paint_mask=maszk)
-    return cv2.cvtColor(rendered, cv2.COLOR_RGB2BGR)
-
-
-class SaveMixin(BackgroundWorkerMixin):
-    """A Fájl menü mentés-műveletei a kijelölt képekre."""
-
-    #: #3462: a szerkesztő festésének vonásai útvonal szerint — az
-    #: `application.py` köti be (`set_paint_strokes_provider`). Bekötés nélkül
-    #: a mentés maszk nélkül renderel, ahogy eddig.
-    _paint_strokes_provider = None
-
-    def set_paint_strokes_provider(self, szolgaltato) -> None:
-        """A `Path -> tuple[Vonas, ...]` szolgáltató bekötése (#3462)."""
-        self._paint_strokes_provider = szolgaltato
-
-    def _festes_vonasai(self, path: Path) -> tuple:
-        """A képhez a munkamenetben élő festés vonásai — a FŐ szálon kell
-        kiolvasni, a háttér-mentés már csak a kész sorozatot kapja."""
-        szolgaltato = self._paint_strokes_provider
-        if szolgaltato is None:
-            return ()
-        return tuple(szolgaltato(path) or ())
-
-    #: (sikeres, sikertelen) — a művelet végén EGY összegzés
-    saveFinished = Signal(int, int)
-    revertFinished = Signal(int, int)
-    undoSaveFinished = Signal(int, int)
-    diskOperationSucceededPaths = Signal(list)
-    #: az első néhány sikertelen fájl "név: ok" alakban
-    saveFailedDetails = Signal(list)
-
-    # ── #1527 ─────────────────────────────────────────────────────────
-    #: „Másolat mentése" / „Mentés másként…" vége: (sikeres, sikertelen)
-    saveCopyFinished = Signal(int, int)
-
-    # ── #1566 ─────────────────────────────────────────────────────────
-    #: A másolat-mentés FELÜLETI visszajelzése: (hány sikerült, az utolsó
-    #: célfájl útja). A lebegő értesítősáv (#1129) fogadja.
-    #:
-    #: Miért KÜLÖN jelzés, és nem a `saveCopyFinished` bővítése:
-    #:
-    #: 1. A `saveCopyFinished(int, int)` szignatúráját két beolvadt jegy
-    #:    kötései és tesztjei rögzítik (#1527 menüpont-tesztjei, #1539
-    #:    újraolvasás-kötése) — a bővítése azokat törné.
-    #: 2. A sávnak a darabszámon felül a CÉLÚTVONAL is kell, különben a
-    #:    cella kattintása néma no-op: a `NotifierCell` a hasznos adat
-    #:    MAPPÁJÁRA navigál. Épp ez a jegy tétje — a „Mentés másként…"
-    #:    bárhova írhat, és ott a fájlnak a rácsban sem marad nyoma.
-    #:
-    #: Ugyanaz az alak, mint a kollázsnál: a gépies befejezés-jelzés és a
-    #: felhasználónak szóló, ÚTVONALAT vivő jelzés
-    #: (`collageDesktopBackgroundReady`) ott is két külön jelzés.
-    saveCopyReady = Signal(int, str)
-
-    #: a HÁROM hivatalos hibaág: (ág, fájlnév, hibakód). Az ág-azonosítók
-    #: a `save_error_kind.py`-ban; a SZÖVEGET a `SaveDialogs.qml` adja,
-    #: mert a hivatalos feliratok fordítható erőforrások.
-    saveErrorOccurred = Signal(str, str, int)
-    #: a fájl-visszaállítás hivatalos, általános lemezhiba-üzenete (#5268)
-    revertErrorOccurred = Signal()
-    #: a lebegő folyamat-panel állapota változott
-    saveProgressChanged = Signal()
-    #: háttérszálból jövő haladás — Qt sorolja a GUI-szálra
-    _saveProgressTick = Signal(int, int, int)  # (kész, összes, aktív?)
-
-    def _ensure_disk_operation_feedback_wired(self) -> None:
-        """A három lemezművelet végén a GUI-szál frissítse a nézetet."""
-        if getattr(self, "_disk_operation_feedback_wired", False):
-            return
-        self._disk_operation_feedback_wired = True
-        self.diskOperationSucceededPaths.connect(
-            self._refresh_editors_for_disk_operation
-        )
-        self.saveFinished.connect(self._on_disk_operation_finished)
-        self.revertFinished.connect(self._on_disk_operation_finished)
-        self.undoSaveFinished.connect(self._on_disk_operation_finished)
-
-    @Slot(list)
-    def _refresh_editors_for_disk_operation(self, paths: list[str]) -> None:
-        """A sikeresen módosított, éppen nyitott képek munkamenetét újratölti.
-
-        A mentés/visszaállítás az ini-láncot is megváltoztatja, miközben a
-        néző szerkesztője külön, memóriában tartott munkamenetet használ. A
-        könyvtármodell frissítése önmagában nem érvényteleníti ezt az
-        előnézetet, így a felhasználó továbbra is a lemezművelet előtti
-        állapotot látná. Csak a ténylegesen módosított útvonalhoz tartozó,
-        lemezről dolgozó szerkesztőket indítjuk újra; az „aa" mód memóriás
-        második felét érintetlenül hagyjuk.
-        """
-        def normalizal(utvonal: str | Path) -> str:
-            return os.path.normcase(
-                os.path.normpath(str(Path(utvonal).resolve(strict=False)))
-            )
-
-        modosultak = {normalizal(path) for path in paths}
-        if not modosultak:
-            return
-        for editor in getattr(self, "_edit_controllers", ()):
-            utvonal = getattr(editor, "_image_path", None)
-            foto_id = getattr(editor, "_photo_id", "")
-            if (
-                utvonal is None
-                or not foto_id
-                or getattr(editor, "_memory_only", False)
-                or normalizal(utvonal) not in modosultak
-            ):
-                continue
-            editor.beginEdit(foto_id, str(utvonal))
-
-    #: #5206: a megőrzött eredetik léte változhatott (a „Visszaállítás" tétel)
-    savedBackupChanged = Signal()
-    _saved_backup_revision = 0
-
-    @Property(int, notify=savedBackupChanged)
-    def savedBackupRevision(self) -> int:  # noqa: N802 - QML-stílus
-        """Léptetett számláló: egy befejezett mentés vagy visszaállítás után nő.
-
-        A `hasSavedBackup` a lemezt nézi, a QML-kötés a Python-hívást nem
-        látja. A kötés ezt a számlálót olvassa, így a befejezés után
-        újraértékelődik (#5206).
-        """
-        return self._saved_backup_revision
-
-    @Slot(int, int)
-    def _on_disk_operation_finished(self, done: int, failed: int) -> None:
-        """A jelzés után az aktuális nézetet a friss indexhez igazítja."""
-        if done > 0 or failed > 0:
-            self._refresh_view()
-            self._saved_backup_revision += 1
-            self.savedBackupChanged.emit()
-
-    def _resync_disk_operation_folders(self, paths: list[Path]) -> None:
-        """A sikeresen módosított képek mappáit indexelje újra egyszer."""
-        folders = sorted({str(path.parent) for path in paths})
-        if not folders:
-            return
-        from picasapy.index import open_index
-
-        try:
-            with open_index(self._db_path) as conn:
-                for folder in folders:
-                    self._sync_tree(conn, folder)
-        except Exception as error:  # noqa: BLE001 — az írás már sikerült
-            logging.getLogger(__name__).exception(
-                "a mentés utáni indexfrissítés nem sikerült"
-            )
-            self.syncFailed.emit(str(error))
-
-    def _ensure_save_progress(self) -> None:
-        """Lusta állapot-inicializálás (a `BatchEffectMixin` mintája)."""
-        if getattr(self, "_save_progress_wired", False):
-            return
-        self._save_progress_wired = True
-        self._save_progress_done = 0
-        self._save_progress_total = 0
-        self._save_progress_active = False
-        self._save_progress_reverting = False
-        self._saveProgressTick.connect(self._on_save_progress_tick)
-        # ⚠️ A fájl kiírása MÉG NEM láthatóság: a másolat addig nem jelenik
-        # meg a rácsban, amíg az index nem tud róla, a `selectFolder` pedig
-        # kizárólag az indexből olvas.
-        #
-        # #1539: az INDEX helyessége innentől NEM ezen a kötésen múlik. A
-        # célmappát a `_save_copies` workere jelenti be fájlonként
-        # (`noteOutputWritten`), a TÉNYLEGES célútvonallal.
-        #
-        # Miért kellett ez: a lenti kötés a LÁTOTT mappát olvassa újra. A
-        # „Másolat mentése" mellett az történetesen a célmappa is, tehát
-        # véletlenül jó volt — a #1527-tel érkezett „Mentés másként…"
-        # viszont a fájlválasztóból BÁRHOVA mutathat, és ott a program a
-        # rossz mappát frissítette. Mérve (figyelő nélkül): a más mappába
-        # mentett másolat 25 s alatt sem jelent meg.
-        #
-        # A kötés mégis MEGMARAD, két okból: ez frissíti a felhasználó által
-        # ÉPP NÉZETT mappa nézetét a művelet végén (a #1527 szándéka), és ez
-        # a `saveCopyFinished` egyetlen fogyasztója — QML-oldali kezelője
-        # NINCS, tehát elhagyva néma jelzés lenne belőle (#1003). Hogy a
-        # befejezésnek van-e FELÜLETI visszajelzése, az önálló kérdés.
-        self._ensure_output_resync_wired()
-        poll = getattr(self, "_poll_current_folder", None)
-        if poll is not None:
-            self.saveCopyFinished.connect(lambda _done, _failed: poll())
-
-    def _on_save_progress_tick(self, done: int, total: int, active: int) -> None:
-        self._save_progress_done = done
-        self._save_progress_total = total
-        self._save_progress_active = bool(active)
-        if not active:
-            self._save_progress_reverting = False
-        self.saveProgressChanged.emit()
-
-    @Property(bool, notify=saveProgressChanged)
-    def saveProgressActive(self) -> bool:  # noqa: N802 — QML-stílus
-        """Látszódjon-e a mentés folyamat-panelje."""
-        self._ensure_save_progress()
-        return self._save_progress_active
-
-    @Property(int, notify=saveProgressChanged)
-    def saveProgressFileCount(self) -> int:  # noqa: N802 — QML-stílus
-        """Hány fájlt ment a futó művelet — ettől függ, hogy a felület az
-        egyes vagy a többes számú hivatalos mondatot mutatja
-        (`progfile` / `progfiles`)."""
-        self._ensure_save_progress()
-        return self._save_progress_total
-
-    @Property(bool, notify=saveProgressChanged)
-    def saveProgressIsReverting(self) -> bool:  # noqa: N802 — QML-stílus
-        """A közös folyamatjelző a fájl-visszaállítás szövegét mutassa-e."""
-        self._ensure_save_progress()
-        return self._save_progress_reverting
-
-    @Property(float, notify=saveProgressChanged)
-    def saveProgressPercent(self) -> float:  # noqa: N802 — QML-stílus
-        """A készültség százalékban.
-
-        ⚠️ A hivatalos formátum `%.1f%%` — EGY tizedesjegy (a #1527 jegy
-        „századpontos" megfogalmazása a `%.1f`-fel nem egyezik; a
-        formátumsztring az erősebb bizonyíték, azt követjük). A
-        kerekítést a felület végzi, itt a nyers arány áll."""
-        self._ensure_save_progress()
-        if self._save_progress_total <= 0:
-            return 0.0
-        return 100.0 * self._save_progress_done / self._save_progress_total
-
-    def _report_save_error(self, error: BaseException, path: Path) -> None:
-        """Egy mentés-hiba besorolása és felküldése a felületnek."""
-        self.saveErrorOccurred.emit(
-            save_error_kind(error), path.name, save_error_code(error)
-        )
-
-    def _selected_records(self, rows):
-        photos = self._photos.photos
-        return [
-            photos[int(r)] for r in rows if 0 <= int(r) < len(photos)
-        ]
-
-    @Slot(list, result=list)
-    def unrenderableFiltersIn(self, rows) -> list:  # noqa: N802 — QML-stílus
-        """A kijelölésben szereplő, ÁLTALUNK NEM RENDERELHETŐ szűrőnevek.
-
-        A mentés beégeti a láncot a fájlba: amit nem tudunk renderelni, az a
-        beégetett képből kimarad, de a könyvelési lánc az eredeti-mappa
-        ini-jében megmarad az „Undo Save” művelethez. A felület ezért a mentés előtt
-        rákérdezhet (#444/#484).
-
-        Ábécésorrendben, ismétlés nélkül; üres lista = nincs miért kérdezni.
-        """
-        names = set()
-        for record in self._selected_records(rows):
-            for op in EditSession.from_value(record.filters).ops:
-                if not can_render_filter(op.name):
-                    names.add(op.name.casefold())
-        return sorted(names)
 
     @Slot(list, result=bool)
-    def hasSavedBackup(self, rows) -> bool:  # noqa: N802 — QML-stílus
+    def hasSavedBackup(self, rows) -> bool:  # noqa: N802 - QML-stílus
         """Van-e a kijelölésben olyan kép, amit MÁR mentettünk egyszer.
 
         Ettől függ, hogy a „Visszaállítás" és az „Utolsó mentés
         visszavonása" egyáltalán értelmes-e (mentetlen képnél nincs mit
-        visszaállítani) — a menü ezzel tiltja a pontjait. A mentés-előtti
+        visszaállítani) - a menü ezzel tiltja a pontjait. A mentés-előtti
         másolat KÉT mappanév alatt lehet (`.picasaoriginals`, `Originals`);
         ld. `picasapy.edit.save` „Két mappanév" szakaszát (#1425).
         """
         from picasapy.edit.save import ORIGINALS_DIR_NAMES
 
         # ⚠️ #1146: MAPPÁNKÉNT nézünk a lemezre, nem képenként. A régi ág
-        # soronként hívott `is_dir()`-t ÉS `glob()`-ot — 2 002 soros
+        # soronként hívott `is_dir()`-t ÉS `glob()`-ot - 2 002 soros
         # kijelölésnél 10 010 `stat()` EGYETLEN billentyűleütésre. A
         # tulajdonos gyűjteménye hálózati megosztáson van, ahol minden
         # `stat()` egy hálózati kör: ott ez nem lassulás, hanem fagyás.
@@ -420,7 +110,7 @@ class SaveMixin(BackgroundWorkerMixin):
         # Egy mappa eredeti-mappáit elég EGYSZER kilistázni; a tőnevek
         # halmazából utána memóriából válaszolunk.
         #
-        # #1425: MINDKÉT mappanevet nézzük — a mai `.picasaoriginals`-t és a
+        # #1425: MINDKÉT mappanevet nézzük - a mai `.picasaoriginals`-t és a
         # 2009 előtti, látható `Originals`-t. A régi név a tulajdonos
         # gyűjteményében 127 mappában előfordul; enélkül a „Visszaállítás"
         # menütétel ott szürke maradna, magyarázat nélkül.
@@ -443,331 +133,30 @@ class SaveMixin(BackgroundWorkerMixin):
         return False
 
     @Slot(list)
-    def saveRowsToDisk(self, rows) -> None:  # noqa: N802 — QML-stílus
+    def saveRowsToDisk(self, rows) -> None:  # noqa: N802 - QML-stílus
         """„Mentés" (Ctrl+S): a szerkesztések BEÉGETÉSE a fájlokba.
 
         Minden mentés előtt biztonsági másolat készül (az eredeti a
         `.picasaoriginals`-ba, plusz mentésenként egy sorszámozott
         pillanatkép az „Utolsó mentés visszavonása" számára).
+
+        A `save_edited` itt, ezen a modulon át kapja meg a háttérszál: a
+        tesztek így pótolhatják (#4440).
         """
-        self._ensure_disk_operation_feedback_wired()
-        records = [
-            (Path(r.folder_path) / r.name, int(r.rotate_steps or 0),
-             r.filters or "", int(getattr(r, "flip_flags", 0) or 0),
-             self._festes_vonasai(Path(r.folder_path) / r.name))
-            for r in self._selected_records(rows)
-        ]
-        if not records:
-            self.saveFinished.emit(0, 0)
-            return
-        self._ensure_save_progress()
-        self._saveProgressTick.emit(0, len(records), 1)
-
-        def worker():
-            done, failed, details = 0, 0, []
-            naplo: list[tuple[str, str]] = []
-            successful_paths: list[Path] = []
-            # #1527: ágonként EGY üzenet. Az eredeti sem sorolja fel a
-            # fájlokat: három külön mondata van, és a lemezhiba-ágon az
-            # ELSŐ érintett fájl neve + a hibakód jelenik meg.
-            jelentett_agak: set[str] = set()
-            for index, (path, rotate_steps, filters, flip, vonasok) in enumerate(records):
-                try:
-                    rendered = _render_for_save(
-                        path, rotate_steps, filters, flip, paint_strokes=vonasok
-                    )
-                    save_edited(path, rendered, EditSession.from_value(filters))
-                except _SAVE_ERRORS as error:
-                    failed += 1
-                    if len(details) < _FAILED_DETAILS_LIMIT:
-                        details.append(f"{path.name}: {error}")
-                    ag = save_error_kind(error)
-                    if ag not in jelentett_agak:
-                        jelentett_agak.add(ag)
-                        self._report_save_error(error, path)
-                else:
-                    done += 1
-                    successful_paths.append(path)
-                    # #750: a sikeres mentés ÜRES lánccal jelent a naplónak,
-                    # ami ott a bejegyzés TÖRLÉSÉT jelenti. Ld. a
-                    # `_record_saved_state` docstringjében.
-                    naplo.append((str(path), ""))
-                self._saveProgressTick.emit(index + 1, len(records), 1)
-            self._record_saved_state(naplo)
-            self._resync_disk_operation_folders(successful_paths)
-            self.diskOperationSucceededPaths.emit(
-                [str(path) for path in successful_paths]
-            )
-            self._saveProgressTick.emit(len(records), len(records), 0)
-            # #1527: a MENTÉS ága innentől a besorolt, hivatalos üzenetet
-            # adja (`saveErrorOccurred`), nem a nyers „név: ok" listát —
-            # az eredetiben is három konkrét mondat áll, nem felsorolás.
-            # A `details` a naplónak marad, hogy a bukás oka ne vesszen el.
-            if details:
-                logging.getLogger(__name__).warning(
-                    "mentés-hibák (#1527): %s", "; ".join(details)
-                )
-            self.saveFinished.emit(done, failed)
-
-        self._start_background(worker, name="picasapy-save")
-
-    # ── #1527: „Másolat mentése" és „Mentés másként…" ────────────────
-    #
-    # A két parancs a MÉRÉS szerint ugyanaz a művelet, egyetlen
-    # kapcsolóval (a bináris `0x005e6a20` bájt-paramétere) — ld.
-    # `picasapy.edit.save_copy` modul-docstringjét. Nálunk ez a kapcsoló
-    # az, hogy a hívó ad-e célútvonalat:
-    #
-    #   * `saveCopyRows(rows)`  — nem ad ⇒ a mért `-001` minta,
-    #     kérdés nélkül, TÖBB képre is (a menüpont felirata ellipszis
-    #     nélküli: `Save a Cop&y`).
-    #   * `saveRowAs(row, url)` — ad ⇒ a fájlválasztóból jött út, EGY
-    #     képre (`Save &As...`, ellipszissel).
-
-    @Slot(int, result=str)
-    def suggestedCopyUrl(self, row) -> str:  # noqa: N802 — QML-stílus
-        """A „Mentés másként…" fájlválasztójának alapértelmezett célja.
-
-        A mért `-001` mintát ajánljuk fel: a felhasználó átírhatja, de a
-        felkínált név sosem a forrásé — az eredeti is elutasítaná
-        (`IDS_CANT_SAVE_TO_SAME`)."""
-        records = self._selected_records([row])
-        if not records:
-            return ""
-        record = records[0]
-        return QUrl.fromLocalFile(
-            str(next_copy_path(Path(record.folder_path) / record.name))
-        ).toString()
+        self._start_row_save(rows, save_edited)
 
     @Slot(list)
-    def saveCopyRows(self, rows) -> None:  # noqa: N802 — QML-stílus
-        """„Másolat mentése": a szerkesztések beégetve ÚJ fájlba.
-
-        A forrás — se a képe, se az ini-bejegyzése — nem változik."""
-        self._save_copies(self._selected_records(rows), target=None)
-
-    @Slot(int, str)
-    def saveRowAs(self, row, target_url: str) -> None:  # noqa: N802 — QML-stílus
-        """„Mentés másként…": a felhasználó választotta célútvonalra."""
-        cel = QUrl(target_url).toLocalFile() if target_url else ""
-        if not cel:
-            # A fájlválasztó megszakítása NEM hiba — de a hívó (és a
-            # teszt) a befejezés-jelzésre vár, némán nem térhetünk vissza.
-            self.saveCopyFinished.emit(0, 0)
-            return
-        self._save_copies(self._selected_records([row]), target=Path(cel))
-
-    def _save_copies(self, records, *, target: Path | None) -> None:
-        """A másolat-mentés közös háttérszálas útja."""
-        items = [
-            (Path(r.folder_path) / r.name, int(r.rotate_steps or 0),
-             r.filters or "", int(getattr(r, "flip_flags", 0) or 0),
-             self._festes_vonasai(Path(r.folder_path) / r.name))
-            for r in records
-        ]
-        if not items:
-            self.saveCopyFinished.emit(0, 0)
-            return
-        self._ensure_save_progress()
-        self._saveProgressTick.emit(0, len(items), 1)
-
-        def worker():
-            done, failed = 0, 0
-            # #1566: az UTOLSÓ ténylegesen kiírt célfájl — ez lesz az
-            # értesítés kattintási célja. Több képnél a mappájuk közös (a
-            # `-001` minta a forrás mellé ír), a „Mentés másként…" pedig
-            # eleve EGY képre hat, tehát az utolsó út mindig jó mappára
-            # mutat.
-            utolso_cel = ""
-            jelentett_agak: set[str] = set()
-            # #1648: (másolat útja, a FORRÁS származás-kulcsa) párok. Egyben
-            # megy be az indexbe a ciklus UTÁN — képenként külön kapcsolatot
-            # nyitni fölösleges lemezmunka lenne.
-            orokolt_kulcsok: list[tuple[str, int]] = []
-            for index, (path, rotate_steps, filters, flip, vonasok) in enumerate(items):
-                try:
-                    rendered = _render_for_save(
-                        path, rotate_steps, filters, flip, paint_strokes=vonasok
-                    )
-                    eredmeny = save_copy(
-                        path,
-                        rendered,
-                        EditSession.from_value(filters),
-                        target_path=target,
-                    )
-                except (*_SAVE_ERRORS, FileNameCollisionError) as error:
-                    failed += 1
-                    ag = save_error_kind(error)
-                    if ag not in jelentett_agak:
-                        jelentett_agak.add(ag)
-                        self._report_save_error(error, target or path)
-                else:
-                    done += 1
-                    utolso_cel = str(eredmeny.target_path)
-                    if eredmeny.inherited_origin_key is not None:
-                        orokolt_kulcsok.append(
-                            (utolso_cel, eredmeny.inherited_origin_key)
-                        )
-                    # #1539: a TÉNYLEGES célút megy be, nem a látott mappa
-                    self.noteOutputWritten(utolso_cel)
-                self._saveProgressTick.emit(index + 1, len(items), 1)
-            self._saveProgressTick.emit(len(items), len(items), 0)
-            self._orokit_szarmazas_kulcsokat(orokolt_kulcsok)
-            # #1566: a FELÜLETI visszajelzés ELŐBB megy ki, mint a gépies
-            # befejezés-jelzés. Mindkettő a GUI-szálra sorolódik, sorrendben
-            # — így a `saveCopyFinished`-re váró hívó (és teszt) számára az
-            # értesítés már kézbesítve van, nem versenyeznek.
-            self.saveCopyReady.emit(done, utolso_cel)
-            self.saveCopyFinished.emit(done, failed)
-
-        self._start_background(worker, name="picasapy-save-copy")
-
-    def _orokit_szarmazas_kulcsokat(
-        self, parok: list[tuple[str, int]]
-    ) -> None:
-        """#1648: a másolatok a FORRÁS `originfast` kulcsát öröklik.
-
-        A mező **származást** azonosít, nem tartalmat: a valódi Picasa a
-        „Másolat mentése" kimenetének a forrás értékét adja, akkor is, ha a
-        szerkesztés bele van égetve (mérve a tulajdonos élő adatbázisán,
-        `docs/specs/picasa-tartalomkulcs.md`). A tárolás az indexé.
-
-        Hiba esetén CSAK naplózunk: az öröklés kényelmi nyilvántartás, a
-        felhasználó fájljai már a lemezen vannak, és a mentés sikere nem
-        múlhat az indexen. A hívó a háttérszálon van, ahol egy kiszökő
-        kivétel a szálat vinné el.
-        """
-        if not parok:
-            return
-        from picasapy.index import open_index
-        from picasapy.index.origin import inherit_origin_key
-
-        try:
-            with open_index(self._db_path) as conn:
-                for ut, kulcs in parok:
-                    inherit_origin_key(conn, ut, kulcs)
-        except Exception:  # noqa: BLE001 — ld. a docstringet
-            logging.getLogger(__name__).exception(
-                "A másolatok származás-kulcsának öröklése nem sikerült (%d db)",
-                len(parok),
-            )
-
-    @Slot(list)
-    def revertRowsToOriginal(self, rows) -> None:  # noqa: N802 — QML-stílus
+    def revertRowsToOriginal(self, rows) -> None:  # noqa: N802 - QML-stílus
         """„Visszaállítás": az eredeti visszamásolása a biztonsági
-        mentésből — a szerkesztések ELVESZNEK (a felület ezért kérdez rá az
+        mentésből - a szerkesztések ELVESZNEK (a felület ezért kérdez rá az
         eredeti szövegével)."""
         self._run_restore(
             rows, revert, self.revertFinished, show_restore_progress=True
         )
 
     @Slot(list)
-    def undoLastSave(self, rows) -> None:  # noqa: N802 — QML-stílus
+    def undoLastSave(self, rows) -> None:  # noqa: N802 - QML-stílus
         """„Utolsó mentés visszavonása": a legutóbbi lemezre írás előtti
-        állapot jön vissza, de a **szerkesztések megmaradnak** — ez a Picasa
+        állapot jön vissza, de a **szerkesztések megmaradnak** - ez a Picasa
         köztes fokozata a Mentés és a Visszaállítás között."""
         self._run_restore(rows, undo_save, self.undoSaveFinished)
-
-    def _record_saved_state(self, items) -> None:
-        """A mentés-műveletek utáni ini-állapot átvezetése a #644-es naplóra.
-
-        ## Miért kell (a hamis riasztás ugyanolyan kár, mint a néma veszteség)
-
-        A napló azt őrzi, MI milyen `filters=` láncot írtunk ki utoljára, és
-        a nézet feltöltésekor riaszt, ha az eltűnt. A mentés viszont MAGA
-        veszi el a `filters=`-t: a láncot a pixelekbe égeti, a kulcsot törli,
-        az eredeti-mappa ini-jébe teszi (`edit/save.py`). Ha a naplót nem
-        vezetnénk át, a mentés utáni ELSŐ nézetfrissítés minden mentett képre
-        azt állítaná, hogy „a szerkesztésed eltűnt" — a felhasználó pedig egy
-        kattintással vissza is írhatná a láncot `filters=`-be, ami a már
-        beégetett effektet MÁSODSZOR is ráfuttatná. Az átvezetés tehát nem
-        kényelmi kérdés, hanem adatvédelem.
-
-        ## A `redo=` NEM kerül a naplóba láncként (#750 döntés)
-
-        Kézenfekvő lenne a `redo=` értékét is védeni — mégsem tesszük, két
-        okból, és mindkettő a kár irányáról szól:
-
-        1. **A detektor a `filters=`-t nézi.** A `detect_lost_edits` az index
-           `filters=` mezőihez hasonlít; mentés után az minden mentett képnél
-           üres. Egy `redo=`-t őrző bejegyzés így ÖRÖKKÉ veszteséget jelezne
-           — a védelem zajjá válna, és a felhasználó megtanulná elhessegetni.
-        2. **A helyreállítás célkulcsa rossz volna.** A
-           `restoreOverwrittenEdit` a `filters=`-be ír vissza. Egy beégetett
-           láncot oda visszatéve dupla-szerkesztés keletkezne (#297) — az
-           eredménye ROSSZABB, mint a `redo=` elvesztése, amiből legfeljebb
-           az „Utolsó mentés visszavonása" kényelme vész el, a pixelek nem: a
-           mentés előtti bájtok a `.picasaoriginals` sorszámozott
-           pillanatképében megvannak.
-
-        A `redo=` az újra-listát jelenti. Régi PicasaPy-mentéseknél még ott
-        maradhat a korábbi mentéslánc, de az új mentéseknél a lánc az
-        eredeti-mappa ini-jébe kerül; a `redo=` újra-lista írása külön
-        szerkesztési funkció.
-
-        Az „Utolsó mentés visszavonása" ellenben VISSZAÍRJA a láncot
-        `filters=`-be: onnantól megint van mit védeni, ezért ott a
-        visszakapott láncot naplózzuk.
-        """
-        if items:
-            self.recordSavedChains(items)
-
-    def _run_restore(
-        self, rows, operation, finished_signal, *, show_restore_progress=False
-    ) -> None:
-        self._ensure_disk_operation_feedback_wired()
-        paths = [
-            Path(r.folder_path) / r.name for r in self._selected_records(rows)
-        ]
-        if not paths:
-            finished_signal.emit(0, 0)
-            return
-
-        if show_restore_progress:
-            self._ensure_save_progress()
-            self._save_progress_reverting = True
-            self._saveProgressTick.emit(0, len(paths), 1)
-
-        def worker():
-            done, failed, details = 0, 0, []
-            disk_error_occurred = False
-            naplo: list[tuple[str, str]] = []
-            successful_paths: list[Path] = []
-            for index, path in enumerate(paths):
-                try:
-                    result = operation(path)
-                except _SAVE_ERRORS as error:
-                    failed += 1
-                    if save_error_kind(error) == "disk":
-                        disk_error_occurred = True
-                    if len(details) < _FAILED_DETAILS_LIMIT:
-                        details.append(f"{path.name}: {error}")
-                else:
-                    done += 1
-                    successful_paths.append(path)
-                    # #750: az „Utolsó mentés visszavonása" a visszaadott
-                    # láncot `filters=`-be írja (`restored_filters`),
-                    # onnantól megint van mit védeni. A „Visszaállítás"
-                    # minden szerkesztés-könyvelést töröl, ott az üres lánc
-                    # (a `getattr` alapértéke) törli a bejegyzést.
-                    naplo.append((str(path), getattr(result, "restored_filters", "")))
-                if show_restore_progress:
-                    self._saveProgressTick.emit(index + 1, len(paths), 1)
-            self._record_saved_state(naplo)
-            self._resync_disk_operation_folders(successful_paths)
-            self.diskOperationSucceededPaths.emit(
-                [str(path) for path in successful_paths]
-            )
-            if details:
-                if show_restore_progress and disk_error_occurred:
-                    logging.getLogger(__name__).warning(
-                        "visszaállítási hibák (#5268): %s", "; ".join(details)
-                    )
-                    self.revertErrorOccurred.emit()
-                else:
-                    self.saveFailedDetails.emit(details)
-            if show_restore_progress:
-                self._saveProgressTick.emit(len(paths), len(paths), 0)
-            finished_signal.emit(done, failed)
-
-        self._start_background(worker, name="picasapy-save-restore")

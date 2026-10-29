@@ -9162,13 +9162,6 @@ picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
             <translation>Nicht mehr fragen</translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" line="2328" />
-            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
-            <translation>Hiermit wird ein Album mit über 1000 Bildern erstellt. Möchten Sie fortfahren?</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" line="2743" />
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -19640,6 +19633,16 @@ picasapy-origin: picasa</extracomment>
             <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Dieser Ordner ist derzeit nicht verfügbar (z. B. weil ein Laufwerk oder eine Netzwerkfreigabe getrennt ist). Seine Fotos bleiben in der Datenbank und die Miniaturansichten werden aus dem Cache geladen, aber die Originaldateien können derzeit nicht geöffnet oder bearbeitet werden.</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainMenuBar</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainMenuBar.qml" line="208" />
+            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
+            <translation>Hiermit wird ein Album mit über 1000 Bildern erstellt. Möchten Sie fortfahren?</translation>
         </message>
     </context>
 </TS>

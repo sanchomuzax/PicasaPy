@@ -20,6 +20,7 @@ _MENU_COMPONENTS = (
     "PicasaToolsMenu",
     "PicasaHelpMenu",
     "PicasaFolderViewMenu",
+    "MainMenuBar",
 )
 _HOST_IDS = {
     "PicasaFileMenu": "menuFile",
@@ -49,7 +50,10 @@ def test_a_felso_menuk_sorrendben_kulon_komponensek():
     assert (_QML / "PicasaFolderViewMenu.qml").is_file()
     qmldir = (_QML / "qmldir").read_text(encoding="utf-8")
     for tipus in _MENU_COMPONENTS:
-        assert f"internal {tipus} {tipus}.qml" in qmldir
+        if tipus == "MainMenuBar":
+            assert "MainMenuBar 1.0 MainMenuBar.qml" in qmldir
+        else:
+            assert f"internal {tipus} {tipus}.qml" in qmldir
 
 
 def test_egyik_menufajl_sem_haladja_meg_a_800_sort():
