@@ -1805,8 +1805,10 @@ ApplicationWindow {
         id: picasaMenuBar
         hostWindow: window
         hostController: controller
-        hostFileOpsController: fileOpsController
-        hostPassportController: passportController
+        hostFileOpsController: typeof fileOpsController !== "undefined"
+            ? fileOpsController : null
+        hostPassportController: typeof passportController !== "undefined"
+            ? passportController : null
         hostAboutDialog: aboutDialog
         hostAddFileDialog: addFileDialog
         hostBackupHost: backupHost
