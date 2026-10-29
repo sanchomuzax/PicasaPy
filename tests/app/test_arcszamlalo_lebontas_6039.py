@@ -23,6 +23,7 @@ FOABLAK_CSALAD = (
     QML_MAPPA / "PicasaPy" / "MainRightDrawer.qml",
     QML_MAPPA / "PicasaPy" / "MainLibraryCanvas.qml",
     QML_MAPPA / "PicasaPy" / "MainFolderPane.qml",
+    QML_MAPPA / "PicasaPy" / "MainErrorBanner.qml",
 )
 FOABLAK_FORRAS = "\n".join(
     fajl.read_text(encoding="utf-8") for fajl in FOABLAK_CSALAD

@@ -67,6 +67,11 @@ _KOTELEZO_VALTOZATOK = {
         "hostCollectionPasswordDialog: ({}); hostFileOpsController: null; "
         "hostFaceScanController: null; hostFolderHierarchyController: null",
     ),
+    # #6136: a hibasáv a főablak vezérlő-, párbeszéd- és időzítőobjektumait várja.
+    "MainErrorBanner": (
+        "hostController: ({}); hostTestLogDialog: ({}); hostBrokenPhotoDialog: ({}); "
+        "hostBrokenPhotoBatchTimer: ({})",
+    ),
 }
 _ALTALANOS_VALTOZATOK = (
     "", "appWindow: null", "panel: null", "appWindow: null; panel: null"

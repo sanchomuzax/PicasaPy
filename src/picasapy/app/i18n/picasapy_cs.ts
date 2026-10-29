@@ -8646,16 +8646,6 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <translation>Opravdu chcete přidat všechny vybrané fotky z alba?</translation>
         </message>
         <message>
-            <source>The desktop background is set (%1).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pozadí plochy bylo nastaveno (%1).</translation>
-        </message>
-        <message>
-            <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Fotka je připravena v umístění %1, ale pozadí plochy se nepodařilo nastavit automaticky.</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>The selected screensaver sources contain no available pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8668,24 +8658,9 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <translation>Do spořiče obrazovky bylo přidáno %1 fotek.</translation>
         </message>
         <message>
-            <source>Cancelled writing face tags (%1 file(s) written).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zápis jmenovek k obličejům byl zrušen (%1 souborů zapsáno).</translation>
-        </message>
-        <message>
             <source>Face data could not be written to XMP: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Data o obličejích se do XMP nepodařilo zapsat: %1</translation>
-        </message>
-        <message>
-            <source>Face data written to %1 file(s); %2 skipped.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Data o obličejích zapsána do %1 souborů; %2 přeskočeno.</translation>
-        </message>
-        <message>
-            <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Data o obličejích zapsána do %1 souborů; %2 přeskočeno. První problém: %3</translation>
         </message>
         <message>
             <source>Add search tag</source>
@@ -8743,12 +8718,6 @@ picasapy-origin-key: stringres:CChooseEmailDialog::infoprepare</extracomment>
             <translation>Příprava příloh…</translation>
         </message>
         <message>
-            <source>Stop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/stop);stringres:CCaptureMovieDialog::stop</extracomment>
-            <translation>Zastavit</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>Collage</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8772,36 +8741,6 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
             <translation>UPOZORNĚNÍ: Touto akcí se SMAŽOU veškerá alba osob a všechny obličeje se přesunou do alba pro nepojmenované uživatele. Může přitom dojít k ODEBRÁNÍ jmenovek také v synchronizovaných webových albech. Opravdu chcete pokračovat?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tato složka je momentálně nedostupná (například kvůli odpojenému disku nebo síťovému sdílení). Její fotky zůstávají v databázi a miniatury se načítají z mezipaměti, ale původní soubory teď nelze otevřít ani upravovat.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Složku se nepodařilo znovu zobrazit, protože nelze zapsat její soubor .picasa.ini. Složka zůstane skrytá.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Složku nelze znovu zobrazit, dokud není dostupná (například když je disk odpojený). Zůstane skrytá.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Složka je skrytá, ale nepodařilo se ji označit pro Picasu (soubor .picasa.ini nelze zapsat).</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Skrytou složku nelze přesunout do sbírky. Nejprve ji znovu zobrazte.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -9151,13 +9090,6 @@ picasapy-origin-key: tooltips:Label(panelroot/picasatab);tooltips:Label(thumbui/
             <source>A modern, open Picasa successor.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Moderní otevřený nástupce Picasy.</translation>
-        </message>
-        <message>
-            <location filename="Main.qml" line="967" />
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Zavřít</translation>
         </message>
         <message>
             <location filename="Main.qml" line="1022" />
@@ -19624,6 +19556,83 @@ Opravdu chcete úpravy vrátit zpět?</translation>
             <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Popisek nahradí napsaný text. (Tuto operaci nelze vrátit zpět.)</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainErrorBanner</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="146" />
+            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Skrytou složku nelze přesunout do sbírky. Nejprve ji znovu zobrazte.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="174" />
+            <source>Cancelled writing face tags (%1 file(s) written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zápis jmenovek k obličejům byl zrušen (%1 souborů zapsáno).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="67" />
+            <source>Close</source>
+            <extracomment>        picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)
+picasapy-origin: picasa</extracomment>
+            <translation>Zavřít</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="182" />
+            <source>Face data written to %1 file(s); %2 skipped.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Data o obličejích zapsána do %1 souborů; %2 přeskočeno.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="179" />
+            <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Data o obličejích zapsána do %1 souborů; %2 přeskočeno. První problém: %3</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="58" />
+            <source>Stop</source>
+            <extracomment>        picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/stop);stringres:CCaptureMovieDialog::stop
+picasapy-origin: picasa</extracomment>
+            <translation>Zastavit</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="163" />
+            <source>The desktop background is set (%1).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pozadí plochy bylo nastaveno (%1).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="140" />
+            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Složku nelze znovu zobrazit, dokud není dostupná (například když je disk odpojený). Zůstane skrytá.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="149" />
+            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Složku se nepodařilo znovu zobrazit, protože nelze zapsat její soubor .picasa.ini. Složka zůstane skrytá.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="143" />
+            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Složka je skrytá, ale nepodařilo se ji označit pro Picasu (soubor .picasa.ini nelze zapsat).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="170" />
+            <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fotka je připravena v umístění %1, ale pozadí plochy se nepodařilo nastavit automaticky.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="131" />
+            <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tato složka je momentálně nedostupná (například kvůli odpojenému disku nebo síťovému sdílení). Její fotky zůstávají v databázi a miniatury se načítají z mezipaměti, ale původní soubory teď nelze otevřít ani upravovat.</translation>
         </message>
     </context>
 </TS>

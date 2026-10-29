@@ -8637,16 +8637,6 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <translation>האם אתה בטוח שברצונך להוסיף את כל התמונות מהאלבום שנבחר?</translation>
         </message>
         <message>
-            <source>The desktop background is set (%1).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>רקע שולחן העבודה הוגדר (%1).</translation>
-        </message>
-        <message>
-            <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>התמונה מוכנה ב-%1, אך לא ניתן להגדיר אותה אוטומטית כרקע שולחן העבודה.</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>The selected screensaver sources contain no available pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8659,24 +8649,9 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <translation>נוספו %1 תמונות לשומר המסך.</translation>
         </message>
         <message>
-            <source>Cancelled writing face tags (%1 file(s) written).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>כתיבת תגי הפנים בוטלה (%1 קבצים נכתבו).</translation>
-        </message>
-        <message>
             <source>Face data could not be written to XMP: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>לא ניתן לכתוב נתוני פנים ל-XMP: %1</translation>
-        </message>
-        <message>
-            <source>Face data written to %1 file(s); %2 skipped.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>נתוני פנים נכתבו ל-%1 קבצים; %2 דולגו.</translation>
-        </message>
-        <message>
-            <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>נתוני פנים נכתבו ל-%1 קבצים; %2 דולגו. התקלה הראשונה: %3</translation>
         </message>
         <message>
             <source>Add search tag</source>
@@ -8734,12 +8709,6 @@ picasapy-origin-key: stringres:CChooseEmailDialog::infoprepare</extracomment>
             <translation>מכין קבצים מצורפים...</translation>
         </message>
         <message>
-            <source>Stop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/stop);stringres:CCaptureMovieDialog::stop</extracomment>
-            <translation>עצור</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>Collage</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8763,36 +8732,6 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
             <translation>אזהרה! פעולה זו תמחק את כל אלבומי האנשים ותעביר את כל הפנים לאלבום 'ללא שם'. הפעולה עלולה להסיר תגי תמונה גם באלבומי אינטרנט מסונכרנים. האם אתה בטוח שברצונך להמשיך?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>התיקייה הזו אינה זמינה כרגע (לדוגמה, כונן או שיתוף רשת מנותקים). התמונות שלה נשארות במסד הנתונים, והתמונות הממוזערות מוצגות מהמטמון, אך כרגע לא ניתן לפתוח או לערוך את הקבצים המקוריים.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>לא ניתן להציג את התיקייה שוב כי אי אפשר לכתוב לקובץ .picasa.ini שלה. התיקייה נשארת מוסתרת.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>לא ניתן להציג את התיקייה שוב כל עוד היא אינה זמינה (למשל, כונן מנותק). היא תישאר מוסתרת.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>התיקייה מוסתרת, אך לא ניתן לסמן אותה עבור Picasa (אי אפשר לכתוב לקובץ .picasa.ini).</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>לא ניתן להעביר תיקייה מוסתרת לאוסף. בטל תחילה את הסתרתה.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -9138,13 +9077,6 @@ picasapy-origin-key: tooltips:Label(panelroot/picasatab);tooltips:Label(thumbui/
             <source>A modern, open Picasa successor.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>יורשת מודרנית ופתוחה של Picasa.</translation>
-        </message>
-        <message>
-            <location filename="Main.qml" line="967" />
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>סגור</translation>
         </message>
         <message>
             <location filename="Main.qml" line="1022" />
@@ -19610,6 +19542,83 @@ Are you sure you want to undo?</source>
             <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>הכיתוב יחליף את הטקסט שהקלדת. אי אפשר לבטל פעולה זו.</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainErrorBanner</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="146" />
+            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>לא ניתן להעביר תיקייה מוסתרת לאוסף. בטל תחילה את הסתרתה.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="174" />
+            <source>Cancelled writing face tags (%1 file(s) written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>כתיבת תגי הפנים בוטלה (%1 קבצים נכתבו).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="67" />
+            <source>Close</source>
+            <extracomment>        picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)
+picasapy-origin: picasa</extracomment>
+            <translation>סגור</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="182" />
+            <source>Face data written to %1 file(s); %2 skipped.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>נתוני פנים נכתבו ל-%1 קבצים; %2 דולגו.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="179" />
+            <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>נתוני פנים נכתבו ל-%1 קבצים; %2 דולגו. התקלה הראשונה: %3</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="58" />
+            <source>Stop</source>
+            <extracomment>        picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/stop);stringres:CCaptureMovieDialog::stop
+picasapy-origin: picasa</extracomment>
+            <translation>עצור</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="163" />
+            <source>The desktop background is set (%1).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>רקע שולחן העבודה הוגדר (%1).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="140" />
+            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>לא ניתן להציג את התיקייה שוב כל עוד היא אינה זמינה (למשל, כונן מנותק). היא תישאר מוסתרת.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="149" />
+            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>לא ניתן להציג את התיקייה שוב כי אי אפשר לכתוב לקובץ .picasa.ini שלה. התיקייה נשארת מוסתרת.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="143" />
+            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>התיקייה מוסתרת, אך לא ניתן לסמן אותה עבור Picasa (אי אפשר לכתוב לקובץ .picasa.ini).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="170" />
+            <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>התמונה מוכנה ב-%1, אך לא ניתן להגדיר אותה אוטומטית כרקע שולחן העבודה.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="131" />
+            <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>התיקייה הזו אינה זמינה כרגע (לדוגמה, כונן או שיתוף רשת מנותקים). התמונות שלה נשארות במסד הנתונים, והתמונות הממוזערות מוצגות מהמטמון, אך כרגע לא ניתן לפתוח או לערוך את הקבצים המקוריים.</translation>
         </message>
     </context>
 </TS>

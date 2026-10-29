@@ -8628,16 +8628,6 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <translation>선택한 앨범의 이미지를 모두 추가하시겠습니까?</translation>
         </message>
         <message>
-            <source>The desktop background is set (%1).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>바탕 화면 배경을 설정했습니다 (%1).</translation>
-        </message>
-        <message>
-            <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>사진은 %1에 준비되었지만 바탕 화면 배경을 자동으로 설정하지 못했습니다.</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>The selected screensaver sources contain no available pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8650,24 +8640,9 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <translation>화면 보호기에 사진 %1장을 추가했습니다.</translation>
         </message>
         <message>
-            <source>Cancelled writing face tags (%1 file(s) written).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>얼굴 태그 쓰기가 취소되었습니다 (파일 %1개 기록됨).</translation>
-        </message>
-        <message>
             <source>Face data could not be written to XMP: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>XMP에 얼굴 정보를 쓸 수 없습니다: %1</translation>
-        </message>
-        <message>
-            <source>Face data written to %1 file(s); %2 skipped.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>얼굴 정보를 파일 %1개에 썼습니다. %2개는 건너뜀.</translation>
-        </message>
-        <message>
-            <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>얼굴 정보를 파일 %1개에 기록했고 %2개는 건너뛰었습니다. 첫 번째 문제: %3</translation>
         </message>
         <message>
             <source>Add search tag</source>
@@ -8725,12 +8700,6 @@ picasapy-origin-key: stringres:CChooseEmailDialog::infoprepare</extracomment>
             <translation>첨부파일을 준비하는 중입니다...</translation>
         </message>
         <message>
-            <source>Stop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/stop);stringres:CCaptureMovieDialog::stop</extracomment>
-            <translation>중지</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>Collage</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8754,36 +8723,6 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
             <translation>경고: 이 작업을 수행하면 모든 인물 앨범이 삭제되고 모든 얼굴이 이름 없는 앨범으로 이동합니다. 동기화된 웹앨범에서 이름 태그가 삭제될 수도 있습니다. 계속하시겠습니까?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>이 폴더는 현재 사용할 수 없습니다 (예: 드라이브 연결이 끊겼거나 네트워크 공유가 끊김). 사진은 데이터베이스에 남고 미리보기 이미지는 캐시에서 표시되지만, 지금은 원본 파일을 열거나 편집할 수 없습니다.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>.picasa.ini 파일을 쓸 수 없어 폴더를 다시 표시할 수 없습니다. 폴더는 숨겨진 상태로 유지됩니다.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>폴더를 사용할 수 없어 다시 표시할 수 없습니다 (예: 드라이브 연결이 끊김). 폴더는 숨겨진 상태로 유지됩니다.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>폴더를 숨겼지만 Picasa에 표시할 수 없습니다 (.picasa.ini 파일을 쓸 수 없습니다).</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>숨김 폴더는 컬렉션으로 이동할 수 없습니다. 먼저 숨김을 해제하세요.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -9125,13 +9064,6 @@ picasapy-origin-key: tooltips:Label(panelroot/picasatab);tooltips:Label(thumbui/
             <source>A modern, open Picasa successor.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>현대적이고 개방형인 Picasa 후속 프로그램.</translation>
-        </message>
-        <message>
-            <location filename="Main.qml" line="967" />
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>닫기</translation>
         </message>
         <message>
             <location filename="Main.qml" line="1022" />
@@ -19597,6 +19529,83 @@ Are you sure you want to undo?</source>
             <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>설명이 입력한 텍스트를 대체합니다. (이 작업은 실행 취소할 수 없습니다)</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainErrorBanner</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="146" />
+            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>숨김 폴더는 컬렉션으로 이동할 수 없습니다. 먼저 숨김을 해제하세요.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="174" />
+            <source>Cancelled writing face tags (%1 file(s) written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>얼굴 태그 쓰기가 취소되었습니다 (파일 %1개 기록됨).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="67" />
+            <source>Close</source>
+            <extracomment>        picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)
+picasapy-origin: picasa</extracomment>
+            <translation>닫기</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="182" />
+            <source>Face data written to %1 file(s); %2 skipped.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>얼굴 정보를 파일 %1개에 썼습니다. %2개는 건너뜀.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="179" />
+            <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>얼굴 정보를 파일 %1개에 기록했고 %2개는 건너뛰었습니다. 첫 번째 문제: %3</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="58" />
+            <source>Stop</source>
+            <extracomment>        picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/stop);stringres:CCaptureMovieDialog::stop
+picasapy-origin: picasa</extracomment>
+            <translation>중지</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="163" />
+            <source>The desktop background is set (%1).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>바탕 화면 배경을 설정했습니다 (%1).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="140" />
+            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>폴더를 사용할 수 없어 다시 표시할 수 없습니다 (예: 드라이브 연결이 끊김). 폴더는 숨겨진 상태로 유지됩니다.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="149" />
+            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>.picasa.ini 파일을 쓸 수 없어 폴더를 다시 표시할 수 없습니다. 폴더는 숨겨진 상태로 유지됩니다.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="143" />
+            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>폴더를 숨겼지만 Picasa에 표시할 수 없습니다 (.picasa.ini 파일을 쓸 수 없습니다).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="170" />
+            <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>사진은 %1에 준비되었지만 바탕 화면 배경을 자동으로 설정하지 못했습니다.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="131" />
+            <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>이 폴더는 현재 사용할 수 없습니다 (예: 드라이브 연결이 끊겼거나 네트워크 공유가 끊김). 사진은 데이터베이스에 남고 미리보기 이미지는 캐시에서 표시되지만, 지금은 원본 파일을 열거나 편집할 수 없습니다.</translation>
         </message>
     </context>
 </TS>

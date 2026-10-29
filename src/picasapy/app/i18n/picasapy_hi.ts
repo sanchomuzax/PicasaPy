@@ -8628,16 +8628,6 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <translation>क्या आप वाकई सभी चयनित एल्बम छवियों को जोड़ना चाहते हैं?</translation>
         </message>
         <message>
-            <source>The desktop background is set (%1).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>डेस्कटॉप पृष्ठभूमि सेट है (%1).</translation>
-        </message>
-        <message>
-            <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>तस्वीर %1 पर तैयार है, लेकिन डेस्कटॉप पृष्ठभूमि अपने आप सेट नहीं हो सकी.</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>The selected screensaver sources contain no available pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8650,24 +8640,9 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <translation>स्क्रीनसेवर में %1 तस्वीरें जोड़ी गईं.</translation>
         </message>
         <message>
-            <source>Cancelled writing face tags (%1 file(s) written).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>चेहरों के टैग लिखना रद्द किया गया (%1 फ़ाइलें लिखी गईं).</translation>
-        </message>
-        <message>
             <source>Face data could not be written to XMP: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>चेहरों का डेटा XMP में नहीं लिखा जा सका: %1</translation>
-        </message>
-        <message>
-            <source>Face data written to %1 file(s); %2 skipped.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>चेहरों का डेटा %1 फ़ाइलों में लिखा गया; %2 छोड़ दी गईं.</translation>
-        </message>
-        <message>
-            <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>चेहरों का डेटा %1 फ़ाइलों में लिखा गया; %2 छोड़ दी गईं. पहली समस्या: %3</translation>
         </message>
         <message>
             <source>Add search tag</source>
@@ -8725,12 +8700,6 @@ picasapy-origin-key: stringres:CChooseEmailDialog::infoprepare</extracomment>
             <translation>अटैचमेंट तैयार किए जा रहे हैं...</translation>
         </message>
         <message>
-            <source>Stop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/stop);stringres:CCaptureMovieDialog::stop</extracomment>
-            <translation>रोकें</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>Collage</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8754,36 +8723,6 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
             <translation>चेतावनी! यह सभी लोगों के एल्बम हटा देगा और सभी चेहरों को अनामित एल्बम में ले जाएगा. यह समन्वयित किए गए वेब एल्बम पर मौजूद नाम टैग भी निकाल सकता है. क्या आप ऐसा करना चाहते हैं?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>यह फ़ोल्डर अभी उपलब्ध नहीं है (उदाहरण के लिए, ड्राइव या नेटवर्क शेयर डिस्कनेक्ट है). इसकी तस्वीरें डेटाबेस में बनी रहेंगी और थंबनेल कैश से आएंगे, लेकिन मूल फ़ाइलें अभी खोली या संपादित नहीं की जा सकतीं.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>फ़ोल्डर फिर से नहीं दिखाया जा सका क्योंकि उसकी .picasa.ini फ़ाइल लिखी नहीं जा सकती. फ़ोल्डर छिपा रहेगा.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>फ़ोल्डर अनुपलब्ध होने पर (उदाहरण के लिए, ड्राइव डिस्कनेक्ट होने पर) उसे फिर से नहीं दिखाया जा सकता. वह छिपा रहेगा.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>फ़ोल्डर छिपा है, लेकिन उसे Picasa के लिए चिह्नित नहीं किया जा सका (.picasa.ini फ़ाइल लिखी नहीं जा सकती).</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>छिपे हुए फ़ोल्डर को संग्रह में नहीं ले जाया जा सकता. पहले उसे दिखाएं.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -9125,13 +9064,6 @@ picasapy-origin-key: tooltips:Label(panelroot/picasatab);tooltips:Label(thumbui/
             <source>A modern, open Picasa successor.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Picasa का आधुनिक, मुक्त उत्तराधिकारी.</translation>
-        </message>
-        <message>
-            <location filename="Main.qml" line="967" />
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>बंद करें</translation>
         </message>
         <message>
             <location filename="Main.qml" line="1022" />
@@ -19597,6 +19529,83 @@ Are you sure you want to undo?</source>
             <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>कैप्शन आपके लिखे लेख की जगह लेगा. (यह कार्रवाई पूर्ववत नहीं की जा सकती)</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainErrorBanner</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="146" />
+            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>छिपे हुए फ़ोल्डर को संग्रह में नहीं ले जाया जा सकता. पहले उसे दिखाएं.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="174" />
+            <source>Cancelled writing face tags (%1 file(s) written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>चेहरों के टैग लिखना रद्द किया गया (%1 फ़ाइलें लिखी गईं).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="67" />
+            <source>Close</source>
+            <extracomment>        picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)
+picasapy-origin: picasa</extracomment>
+            <translation>बंद करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="182" />
+            <source>Face data written to %1 file(s); %2 skipped.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>चेहरों का डेटा %1 फ़ाइलों में लिखा गया; %2 छोड़ दी गईं.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="179" />
+            <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>चेहरों का डेटा %1 फ़ाइलों में लिखा गया; %2 छोड़ दी गईं. पहली समस्या: %3</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="58" />
+            <source>Stop</source>
+            <extracomment>        picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/stop);stringres:CCaptureMovieDialog::stop
+picasapy-origin: picasa</extracomment>
+            <translation>रोकें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="163" />
+            <source>The desktop background is set (%1).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>डेस्कटॉप पृष्ठभूमि सेट है (%1).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="140" />
+            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>फ़ोल्डर अनुपलब्ध होने पर (उदाहरण के लिए, ड्राइव डिस्कनेक्ट होने पर) उसे फिर से नहीं दिखाया जा सकता. वह छिपा रहेगा.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="149" />
+            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>फ़ोल्डर फिर से नहीं दिखाया जा सका क्योंकि उसकी .picasa.ini फ़ाइल लिखी नहीं जा सकती. फ़ोल्डर छिपा रहेगा.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="143" />
+            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>फ़ोल्डर छिपा है, लेकिन उसे Picasa के लिए चिह्नित नहीं किया जा सका (.picasa.ini फ़ाइल लिखी नहीं जा सकती).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="170" />
+            <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>तस्वीर %1 पर तैयार है, लेकिन डेस्कटॉप पृष्ठभूमि अपने आप सेट नहीं हो सकी.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="131" />
+            <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>यह फ़ोल्डर अभी उपलब्ध नहीं है (उदाहरण के लिए, ड्राइव या नेटवर्क शेयर डिस्कनेक्ट है). इसकी तस्वीरें डेटाबेस में बनी रहेंगी और थंबनेल कैश से आएंगे, लेकिन मूल फ़ाइलें अभी खोली या संपादित नहीं की जा सकतीं.</translation>
         </message>
     </context>
 </TS>
