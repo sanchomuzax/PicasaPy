@@ -1,67 +1,85 @@
-"""Megjelenítési formázók: méret, dátum, infó-sáv és Tulajdonságok-panel
-szövegépítése (#150 — az AppControllerből kiemelve).
+"""Kompatibilitási homlokzat a megjelenítési formázókhoz.
 
-Tiszta függvények: nincs Qt-objektum-állapotuk, a lokalizációt a hívó adja
-át (`locale` + egy `tr` fordító). A hívók a modul saját `fordit`-ját adják
-át: a `pyside6-lupdate` az itteni `tr("...")` hívásokat a `.ts` NÉVTELEN
-(`""`) kontextusába gyűjti, tehát futásidőben is ott kell keresni (#3639 — a
-vezérlő `self.tr`-je `AppController`-ben keresett, és a panel angol maradt)."""
+A dátum-, méret-, infósáv-, állapotsor- és tulajdonság-formázók a szomszédos
+`formatting_*.py` modulokban vannak. A meglévő `picasapy.app.formatting`
+importútvonal és a modulból elérhető nevek változatlanok maradnak. A szövegek
+fordítása továbbra is a névtelen Qt-kontextusban történik (#3639).
+"""
 
 from __future__ import annotations
 
-import itertools
-import re
-import sys
-from pathlib import Path
+import itertools as itertools
+import re as re
+import sys as sys
+from pathlib import Path as Path
 
-from PySide6.QtCore import QCoreApplication, QDate, QDateTime, QLocale, QUrl
+from PySide6.QtCore import (
+    QCoreApplication as QCoreApplication,
+    QDate as QDate,
+    QDateTime as QDateTime,
+    QLocale as QLocale,
+    QUrl as QUrl,
+)
 
-from picasapy.metadata import read_exif_details
+from picasapy.metadata import read_exif_details as read_exif_details
 
-from .crt_g_format import picasa_szam
-from .photo_sort import photo_date
-from .tulajdonsag_sorok import file_date_text, person_tags_text
+from .crt_g_format import picasa_szam as picasa_szam
+from .formatting_dates import (
+    _ZONA_TOKEN as _ZONA_TOKEN,
+    _info_datum as _info_datum,
+    first_date_text as first_date_text,
+    long_date as long_date,
+    photo_dates as photo_dates,
+)
+from .formatting_info import (
+    _dimensions_text as _dimensions_text,
+    _info_cimkek as _info_cimkek,
+    photo_info_text as photo_info_text,
+)
+from .formatting_properties import (
+    _COMPRESSION_LABELS as _COMPRESSION_LABELS,
+    _ENUM_LABELS as _ENUM_LABELS,
+    _ORIENTATION_LABELS as _ORIENTATION_LABELS,
+    _compression_entry as _compression_entry,
+    _enum_entry as _enum_entry,
+    _millimetres as _millimetres,
+    _movie_duration_text as _movie_duration_text,
+    _movie_entries as _movie_entries,
+    camera_summary_text as camera_summary_text,
+    exif_entries as exif_entries,
+    properties_entries as properties_entries,
+)
+from .formatting_sizes import (
+    _EXIF_LOCALE as _EXIF_LOCALE,
+    _SIZE_TIERS as _SIZE_TIERS,
+    _fixed_number as _fixed_number,
+    format_exposure as format_exposure,
+    format_size as format_size,
+)
+from .formatting_status import (
+    PATH_TAIL as PATH_TAIL,
+    _cimke_resz as _cimke_resz,
+    build_feed_groups as build_feed_groups,
+    filter_status_text as filter_status_text,
+    status_text as status_text,
+)
+from .photo_sort import photo_date as photo_date
+from .tulajdonsag_sorok import (
+    file_date_text as file_date_text,
+    person_tags_text as person_tags_text,
+)
 
-#: A modul szövegeinek fordítási kontextusa — a `.ts` névtelen kontextusa,
-#: ahová a `pyside6-lupdate` a modulszintű `tr("...")` hívásokat gyűjti.
+#: A formázók fordítási kontextusa — a `.ts` névtelen kontextusa (#3639).
 _KONTEXTUS = ""
 
 
 def fordit(text: str) -> str:
-    """A formázók `tr`-je: a modul SAJÁT kontextusában fordít (#3639).
-
-    A hívó ezt adja át `tr`-ként, NEM a saját `self.tr`-jét: az a hívó
-    osztályának kontextusában keresne, ahol ezek a szövegek nincsenek."""
+    """A formázók fordítója a névtelen Qt-kontextusban (#3639)."""
     return QCoreApplication.translate(_KONTEXTUS, text)
 
 
-# útvonal-vég leválasztása mappa-névhez (per- és backslash-tűrő)
-PATH_TAIL = re.compile(r"[/\\]")
-
-#: A FÉNYKÉPEZŐGÉP számainak locale-ja: C, azaz PONT a tizedesjel — akkor
-#: is, ha a felhasználó rendszere magyar (#664, ADR-004:
-#: `docs/decisions/tizedesjel.md`).
-#:
-#: Az eredeti Picasa két külön úton írt ki számokat. A gép adatai (rekesz,
-#: fókusztávolság, záridő, tárgytávolság, GPS) nyers `printf`-fel készültek
-#: a lefordított formátumsztringből — a hivatalos MAGYAR szövegkészletben
-#: is `f/%3.1f` és `%2$3.1f mm` áll (ld. `docs/specs/histogram-reference.md`
-#: H.3) —, tehát mindig ponttal. A KÖNYVTÁR adatai (fájlméret, darabszám,
-#: dátum) ezzel szemben a Windows területi számformázóján mentek át, tehát
-#: magyar rendszeren vesszővel jelentek meg; azok nálunk is a hívótól kapott
-#: `locale`-t használják.
-#:
-#: NE cseréld vissza `QLocale()`-ra „következetességből": az `f/2,8` nem
-#: hűségjavítás, hanem hűség-rontás.
-_EXIF_LOCALE = QLocale.c()
-
-
 def _platform() -> str:
-    """Cserélhető platform-fogantyú (#1217).
-
-    A `to_local_path` windowsos ága enélkül CSAK Windowson volna mérhető —
-    a #1626 pontosan attól maradt észrevétlen, hogy a hiba a windows-lábon
-    keletkezett, a fejlesztés viszont Linuxon folyt."""
+    """Cserélhető platform-fogantyú (#1217), a hívók tesztjeihez."""
     return sys.platform
 
 
@@ -71,20 +89,7 @@ _MEGHAJTOS_ELOTAG = re.compile(r"^/[A-Za-z]:(?:[/\\]|$)")
 
 
 def to_local_path(path_or_url: str) -> str:
-    """file:// URL vagy sima útvonal → OS-natív lokális útvonal.
-
-    A QUrl.toLocalFile Windowson per-jeles utat ad (C:/...) — a Path-on
-    átfuttatás normalizálja, különben ugyanaz a mappa két alakban
-    szerepelhetne a figyeltek közt.
-
-    ⚠️ #1626: a Qt a meghajtóbetű ELÉ tett perjelet (`file:///C:/x` →
-    `/C:/x`) csak Windowson szedi le — a `QUrlPrivate::toLocalFile`
-    megfelelő ága `#ifdef Q_OS_WIN` alatt áll. Ezt itt a `_platform()`
-    fogantyún át magunk is elvégezzük: Windowson a Qt már megtette, tehát
-    a minta nem is illeszkedik, Linuxon viszont a fogantyú átállításával a
-    **windowsos ág mérhetővé válik**. A `\\C:\\...` alakon a `mkdir`
-    `WinError 123`-mal elhasal — a #1626-ban emiatt nem készült el a KML.
-    """
+    """file:// URL vagy sima útvonal → OS-natív lokális útvonal."""
     text = path_or_url.strip()
     if text.startswith("file:"):
         text = QUrl(text).toLocalFile()
@@ -94,679 +99,10 @@ def to_local_path(path_or_url: str) -> str:
 
 
 def to_file_url(path: str) -> QUrl:
-    """Lokális útvonal → `file:` URL a QML `Image.source`-ának (#1009).
-
-    A `to_local_path` PÁRJA, az ellenkező irányban — és nem kényelmi
-    függvény: **kézzel fűzött URL-t írni hibás**.
-
-    | amit írni szoktak | windowsos útvonalra | ékezetes/`#`-es névre |
-    |---|---|---|
-    | `"file://" + út` | **érvénytelen** URL (a `C:` portnak látszik, a `QUrl` üresre normalizál) | a `#` levágja a nevet |
-    | `"file:" + út` | véletlenül működik | a `#` levágja a nevet |
-    | `QUrl.fromLocalFile(út)` | helyes | helyes (százalékos kódolás) |
-
-    A `"file://"`-os alak a #1009-ben éles hibát okozott: a kollázs
-    háttérkép-előnézete Windowson MINDEN útvonalra üres maradt — a
-    windows-CI-láb fogta meg. Üres bemenetre üres (érvénytelen) URL jár,
-    hogy a QML `source`-a törölhető legyen."""
+    """Lokális útvonal → `file:` URL a QML `Image.source`-ának (#1009)."""
     text = (path or "").strip()
     return QUrl.fromLocalFile(text) if text else QUrl()
 
 
-#: A Picasa MAGYAR méretformátumai (#526), a CD-diavetítő 37 nyelvű
-#: szövegkészletéből (ugyanaz a séma, mint a `Picasa3i18n.dll`-é):
-#:
-#:     il_FormatBigB  = "%.0f bájt"   il_FormatBigKB = "%.0f KB"
-#:     il_FormatBigMB = "%.1f MB"     il_FormatBigGB = "%.1f GB"
-#:     il_FormatBigTB = "%.1f TB"
-#:
-#: Vagyis: „bájt" KISBETŰVEL, bájt és KB EGÉSZ számra, MB-tól EGY tizedes.
-#: (küszöb, felirat, tizedesjegyek)
-_SIZE_TIERS = (
-    (1024, "%1 bytes", 0),
-    (1024**2, "%1 KB", 0),
-    (1024**3, "%1 MB", 1),
-    (1024**4, "%1 GB", 1),
-)
-
-
-def format_size(size_bytes: int, locale: QLocale, tr) -> str:
-    """Fájlméret a Picasa magyar formátumai szerint (#526).
-
-    A korábbi változat 1 MB alatt MINDIG KB-ot írt (egy 300 bájtos fájl így
-    „0 KB" volt) és a GB/TB fokozatot nem ismerte. A számot Python fixpontos
-    formázása állítja elő, a területi beállítás szerinti tizedesjellel; így
-    nem kerülnek bele a `printf` formátumában nem szereplő ezreselválasztók.
-    """
-    for limit, label, decimals in _SIZE_TIERS:
-        if size_bytes < limit:
-            unit = limit // 1024
-            value = size_bytes / unit if unit > 1 else float(size_bytes)
-            return tr(label).replace(
-                "%1", _fixed_number(value, decimals, locale)
-            )
-    return tr("%1 TB").replace(
-        "%1", _fixed_number(size_bytes / 1024**4, 1, locale)
-    )
-
-
-def _fixed_number(value: float, decimals: int, locale: QLocale) -> str:
-    """Python `printf`-szerű fixpontos alak, csoportosítás nélkül."""
-    result = f"{value:.{decimals}f}"
-    decimal_point = locale.decimalPoint()
-    return result.replace(".", decimal_point) if decimal_point != "." else result
-
-
-def long_date(iso: str, locale: QLocale) -> str:
-    """Picasa-stílusú hosszú dátum: `2026. január 2., péntek`.
-
-    #526 — TUDATOS ELTÉRÉS: az eredeti Picasa magyar szövegkészletében a
-    dátum/idő formátumok LEFORDÍTATLANUL maradtak (`ytDateTime::Format1 =
-    "%1$s %2$d, %3$d"`, azaz „hónap nap, év", és 12 órás AM/PM-es idő). Az
-    a NEM magyar sorrend és óraformátum — egy fordítási hiányosság, nem
-    szándékos alak. Nálunk a helyes magyar alak marad (`ÉÉÉÉ. hónap N.`,
-    24 órás idő); ezt egy későbbi „hűségjavítás" NE rontsa vissza.
-    """
-    date = QDate.fromString(iso[:10], "yyyy-MM-dd")
-    return locale.toString(date, QLocale.FormatType.LongFormat)
-
-
-def photo_dates(records) -> list[str]:
-    """Egy KÉPHALMAZ dátumai növekvő sorrendben, ISO-alakban (#2304).
-
-    A mappa-fejléc (`first_date_text`), az állapotsor dátumtartománya
-    (`status_text`) és — a `controller._show`-n át — a `folderDateText`
-    property KÖZÖS forrása, hogy a három felirat ne mondhasson mást
-    ugyanarról a mappáról.
-
-    **Mindent vagy semmit tartalék.** Ha a halmazban akár EGYETLEN
-    felvételi idő is van, kizárólag a felvételi idők számítanak; a
-    fájlidőre csak akkor esünk vissza, ha EGYIK rekordnak sincs
-    `taken_at`-je. Ez szándékosan szűkebb, mint a rekordonkénti
-    visszaesés (`photo_sort.photo_date`): ott a cél egy teljes rendezés,
-    itt egy szélsőérték, és a rekordonkénti tartalék mellett egyetlen
-    romlott vagy régi `mtime`-ú fájl egy EXIF-fel bíró mappa dátumát is
-    évekkel korábbra húzná. A mérés (#2304, a tulajdonos `AI` mappája: 82
-    médiafájl, egyikben sincs EXIF felvételi idő) csak a „egyetlen képnek
-    sincs EXIF-je" esetet fedi — a tartalék se tegyen többet annál.
-
-    **A fájlidő dobhat.** A `photo_date` a `datetime.fromtimestamp`-en át
-    megy, ami romlott indexsorra kivételt ad (mérve: `mtime_ns = 10**26`
-    → `OSError: [Errno 75] Value too large for defined data type`). Az
-    ilyen rekordot KIHAGYJUK: a fejléc-építés a rács `_show`-jának
-    közepén fut, egyetlen hibás sor nem viheti ki az egész rácsot.
-    """
-    taken = sorted(record.taken_at for record in records if record.taken_at)
-    if taken:
-        return taken
-    fallback: list[str] = []
-    for record in records:
-        try:
-            fallback.append(photo_date(record))
-        except (OSError, ValueError, OverflowError):
-            continue
-    return sorted(fallback)
-
-
-def first_date_text(records, locale: QLocale) -> str:
-    """A csoport fejléc-dátuma: a legkorábbi felvétel hosszú dátuma.
-
-    #2304 (1. eltérés): EXIF-felvételi idő híján a FÁJL ideje a tartalék
-    (a részletek és a hatókör a `photo_dates`-nél). Enélkül egy csupa
-    EXIF-nélküli mappa (letöltött vagy generált képek) fejléce dátum
-    NÉLKÜL maradt, holott az eredeti Picasa ott is ír dátumot.
-
-    **A tartalék hatóköre — mely `taken_at`-olvasók kapják meg és melyek
-    nem.** Megkapja mind a négy hely, amely egy MAPPA (vagy képhalmaz)
-    EGÉSZÉT datálja: a rács rendezőkulcsa (`photo_sort.photo_date`), az
-    állapotsor dátumtartománya (`status_text`), a mappa indexelt dátuma
-    (`index/sync._sync_folder_date`) és — ötödikként, a `photo_dates`-en
-    át — a `controller._show` `folderDateText`-je. NEM kapja meg viszont
-    egyetlen olyan olvasó sem, amely EGY KÉP saját felvételi idejét
-    mutatja vagy írja: a kék infó-sáv (`photo_info_text`), a nyomtatás
-    képfelirata (`print_controller`), a dátum-átállítás és az időbélyeg
-    (`photo_ops_controller`), a keresés és a lekérdezések
-    (`search_results`, `index/queries`, `models`). Ott a fájlidő nem
-    tartalék, hanem hazugság lenne: a felhasználó azt látná, hogy a
-    képnek van felvételi ideje, holott nincs.
-    """
-    dates = photo_dates(records)
-    return long_date(dates[0], locale) if dates else ""
-
-
-def format_exposure(seconds: float, locale: QLocale) -> str:
-    """Záridő fotós alakban a MÉRT formátumokkal (#866).
-
-    Az eredeti két erőforrást tart rá: `1/%ds` az 1 másodperc alattira és
-    `%2.1fs` a fölöttire (`il_NerdView::4` és `::5`,
-    `docs/specs/picasa-hisztogram.md` 6.). A hosszú expozíció tehát MINDIG
-    egy tizedesjeggyel jelenik meg — a korábbi `g`-formátum 4 értékes
-    jegyre kerekített (`2.5` helyett `2.500`, `10` helyett `10.00`)."""
-    if 0 < seconds < 1:
-        return f"1/{round(1 / seconds)} s"
-    return f"{locale.toString(seconds, 'f', 1)} s"
-
-
-def _dimensions_text(photo, tr) -> str:
-    """`SZxM képpont` szöveg a felbontáshoz."""
-    return (
-        tr("%1x%2 pixels")
-        .replace("%1", str(photo.width))
-        .replace("%2", str(photo.height))
-    )
-
-
-#: #2565: a kék sáv IDŐZÓNA-JELÖLŐJE. A `timeFormat(LongFormat)` a
-#: másodpercet is kiírja (`H:mm:ss tttt`), de a zónanevet is — az
-#: összehasonlító felvételen (`141421.jpg`) viszont `2023. 05. 10. 16:30:05`
-#: áll, zóna nélkül. A záró zóna-tokent ezért vágjuk le; a formátum maga
-#: marad a NYELVTERÜLETÉ, nem égetünk be magyar alakot.
-_ZONA_TOKEN = re.compile(r"[\s,]*t+\Z")
-
-
-def _info_datum(photo, locale: QLocale) -> str:
-    """A kék sáv dátuma: EXIF felvételi idő, ennek híján a BEFAGYASZTOTT
-    fájlidő (#2486).
-
-    A #2565 nyitott kérdése az volt, honnan ír dátumot az eredeti egy EXIF
-    nélküli PNG-hez. A válasz a `docs/specs/pmp-database.md` 10.1/10.3–10.4:
-    a Picasa a BEOLVASÁSKORI fájlidőt tartja a saját katalógusában, és a
-    pásztázó nem frissíti. Nálunk ez a `PhotoRecord.sort_mtime_ns` — az
-    ÉLŐ `mtime`-ot szándékosan NEM használjuk, mert azt minden mentés
-    elmozdítja (ez volt a #2486 hibája).
-
-    A formátum a felvételről: rövid dátum + MÁSODPERCES idő, zóna nélkül.
-    """
-    if photo.taken_at:
-        stamp = QDateTime.fromString(photo.taken_at, "yyyy-MM-ddTHH:mm:ss")
-    else:
-        nanos = getattr(photo, "sort_mtime_ns", 0) or 0
-        if nanos <= 0:
-            return ""
-        stamp = QDateTime.fromMSecsSinceEpoch(nanos // 1_000_000)
-    if not stamp.isValid():
-        return ""
-    alak = (
-        locale.dateFormat(QLocale.FormatType.ShortFormat)
-        + " "
-        + _ZONA_TOKEN.sub("", locale.timeFormat(QLocale.FormatType.LongFormat))
-    )
-    return locale.toString(stamp, alak)
-
-
-def _info_cimkek(photo, tr) -> str:
-    """`Címkék: …` a sáv végén (#2565).
-
-    Az előtag MÉRT szöveg: `CThumbUI::GetTagInfo::format`
-    (`referencia/stringres-en-hu.tsv:691`) — `Tags: ` → `Címkék: `. A
-    `keywords` az indexben VESSZŐVEL tagolt sztring, nem lista.
-    """
-    nyers = photo.keywords or ""
-    cimkek = [k.strip() for k in nyers.split(",") if k.strip()]
-    if not cimkek:
-        return ""
-    return tr("Tags: %1").replace("%1", ", ".join(cimkek))
-
-
-def photo_info_text(photo, locale: QLocale, tr, szamlalo: str = "") -> str:
-    """A kék infó-sáv tartalma, Picasa-stílusban:
-    `név   dátum   SZxM képpont   méret   (összes / aktuális)   Címkék: …`.
-
-    A sorrend a tulajdonos TELJES SZÉLESSÉGŰ felvételéről való
-    (`research/felirat-ki-bekapcsolva/picasa3-felirat-bekapcsolva. 223224.jpg`,
-    1920 × 1080)::
-
-        AI > JonasBen_…png   2023. 05. 10. 16:30:05   896x1344 képpont
-        807 KB   (82 / 3)   Címkék: AI image
-
-    ⚠️ **A `szamlalo` helye MÉRT, és egyszer már elrontottuk.** A #2565
-    körében a számláló tévesen KIKERÜLT a sávból: az akkori bizonyíték
-    (`141421.jpg`) FÉL SZÉLESSÉGŰ Picasa-ablakot mutatott, ahol a sáv
-    szövege le volt vágva — és a levágást olvastuk hiánynak. A fenti,
-    teljes szélességű felvétel megcáfolta. A számláló a fájlméret UTÁN és a
-    címkék ELŐTT áll; üres sztringnél kimarad (rács-kijelölés, ahol nincs
-    „hányadik").
-    """
-    parts = [photo.name]
-    datum = _info_datum(photo, locale)
-    if datum:
-        parts.append(datum)
-    if photo.width and photo.height:
-        parts.append(_dimensions_text(photo, tr))
-    parts.append(format_size(photo.size, locale, tr))
-    if szamlalo:
-        parts.append(szamlalo)
-    cimkek = _info_cimkek(photo, tr)
-    if cimkek:
-        parts.append(cimkek)
-    return "   ".join(parts)
-
-
-#: A `Flash` EXIF-mező és a többi felsorolt érték Picasa-kulcsszavai →
-#: angol felirat. A magyar a `picasapy_hu.ts`-ben él, a
-#: `Picasa3i18n.dll`-ből kinyert szótár szerint (#529,
-#: `referencia/exif-cimkek-en-hu.tsv`) — így a nyers EXIF-kulcs SOSEM
-#: kerül a felületre.
-_ENUM_LABELS = {
-    "Unknown": "Unknown",
-    "Average": "Average",
-    "CenterWeight": "Center Weight",
-    "Spot": "Spot",
-    "MultiSpot": "Multi-spot",
-    "Pattern": "Pattern",
-    "Partial": "Partial",
-    "Other": "Other",
-    "NotDefined": "Not Defined",
-    "Manual": "Manual",
-    "NormalProgram": "Normal Program",
-    "AperturePriority": "Aperture Priority",
-    "ShutterPriority": "Shutter Priority",
-    "Creative": "Creative",
-    "Action": "Action Program",
-    "Portrait": "Portrait",
-    "Landscape": "Landscape",
-    "sRGB": "sRGB",
-    "Uncalibrated": "Uncalibrated",
-}
-
-#: #3535: a Tömörítés sor `EXIF::…` azonosítói → az eredeti alapszövege
-#: (spec `picasa-metaadat-tulajdonsagok.md` 14.). A magyar a `stringres`
-#: szerint a `picasapy_hu.ts`-ben; a `JBIG B&W`-nek nincs magyar szövege.
-_COMPRESSION_LABELS = {
-    "Uncompressed": "Uncompressed",
-    "CCITT1D": "CCITT 1D",
-    "T4/Group3Fax": "T4/Group 3 Fax",
-    "T6/Group4Fax": "T6/Group 4 Fax",
-    "LZW": "LZW",
-    "JPEGOldStyle": "JPEG (old-style)",
-    "JPEG": "JPEG",
-    "AdobeDeflate": "Adobe Deflate",
-    "JBIGB&W": "JBIG B&W",
-    "JBIGColor": "JBIG Color",
-    "Kodak262": "Kodak 262",
-    "Next": "Next",
-    "SonyARWCompressed": "Sony ARW Compressed",
-    "EpsonERFCompressed": "Epson ERF Compressed",
-    "PackBits": "PackBits",
-    "Thunderscan": "Thunderscan",
-    "KodakKDCCompressed": "Kodak KDC Compressed",
-    "IT8CTPAD": "IT8CTPAD",
-    "IT8LW": "IT8LW",
-    "IT8MP": "IT8MP",
-    "IT8BL": "IT8BL",
-    "PixarFilm": "PixarFilm",
-    "PixarLog": "PixarLog",
-    "Deflate": "Deflate",
-    "DCS": "DCS",
-    "JBIG": "JBIG",
-    "SGILog": "SGILog",
-    "SGILog24": "SGILog24",
-    "JPEG2000": "JPEG 2000",
-    "NikonNEFCompressed": "Nikon NEF Compressed",
-    "MDIBinaryLevelCodec": "MDI Binary Level Codec",
-    "MDIProgressiveTransformCodec": "MDI Progressive Transform Codec",
-    "MDIVector": "MDI Vector",
-    "KodakDCRCompressed": "Kodak DCR Compressed",
-    "PentaxPEFCompressed": "Pentax PEF Compressed",
-}
-
-#: Az EXIF-tájolás nyolc értéke — a Picasa is szöveggel írja ki.
-_ORIENTATION_LABELS = {
-    1: "Normal",
-    2: "Mirrored",
-    3: "Rotated 180°",
-    4: "Mirrored and rotated 180°",
-    5: "Mirrored and rotated 90° CCW",
-    6: "Rotated 90° CW",
-    7: "Mirrored and rotated 90° CW",
-    8: "Rotated 90° CCW",
-}
-
-
-def properties_entries(photo, locale: QLocale, tr, contacts_xml=None) -> list:
-    """A Tulajdonságok-panel (#13/#529) sorai: (címke, érték) párok.
-
-    A sorrend a Picasa saját `runtime/properties.xml`-jét követi (#529) — a
-    38 LÁTHATÓ mezőt, abban a sorrendben. Az adat nélküli mezők KIMARADNAK
-    (nem üres sorként jelennek meg), ahogy az eredetiben is.
-
-    Az alap-adatok az indexből jönnek; az EXIF-mezők igény szerinti
-    fájl-olvasással (csak a panel megnyitásakor fut, griden sosem).
-    """
-    entries: list = [
-        (tr("File Path"), str(Path(photo.folder_path) / photo.name)),
-        (tr("File Size"), format_size(photo.size, locale, tr)),
-    ]
-    if photo.width and photo.height:
-        entries.append((tr("Dimensions"), _dimensions_text(photo, tr)))
-    if photo.kind != "photo":
-        entries.extend(_movie_entries(photo, locale, tr))
-        return entries
-    entries.extend(exif_entries(photo, locale, tr, contacts_xml))
-    return entries
-
-
-def _movie_entries(photo, locale: QLocale, tr) -> list:
-    """A `properties.xml` videómezői, az eredeti panel-sorrendben (#4580)."""
-    entries = []
-    if photo.movie_format:
-        entries.append((tr("Movie Info"), photo.movie_format))
-    if photo.frame_rate is not None:
-        rate = locale.toString(float(photo.frame_rate), "g", 6)
-        entries.append((tr("Movie Rate"), f"{rate} fps"))
-    if photo.duration_seconds is not None:
-        entries.append(
-            (tr("Movie Length"), _movie_duration_text(photo.duration_seconds))
-        )
-    return entries
-
-
-def _movie_duration_text(seconds: float) -> str:
-    """A videó hossza perc:másodperc vagy óra:perc:másodperc alakban."""
-    total_seconds = max(0, int(round(seconds)))
-    hours, remainder = divmod(total_seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    if hours:
-        return f"{hours}:{minutes:02d}:{seconds:02d}"
-    return f"{minutes}:{seconds:02d}"
-
-
-def _enum_entry(value, tr) -> str | None:
-    """Felsorolt EXIF-érték → lefordított felirat (ismeretlenre: None)."""
-    label = _ENUM_LABELS.get(value)
-    return tr(label) if label else None
-
-
-def _compression_entry(value, tr) -> str | None:
-    """Tömörítési azonosító → felirat; ismeretlen kódnál (az olvasó a
-    számot adja) maga a szám, ahogy az eredeti `%ld`-je (#3535)."""
-    if value is None:
-        return None
-    label = _COMPRESSION_LABELS.get(value)
-    return tr(label) if label else value
-
-
-def exif_entries(photo, locale: QLocale, tr, contacts_xml=None) -> list:
-    """A `properties.xml` EXIF-eredetű mezői, EREDETI SORRENDBEN (#529).
-
-    Az adat nélküli mező kimarad. A felsorolt értékek (fénymérés,
-    expozíciós program, színtér…) a `Picasa3i18n.dll`-ből kinyert szótár
-    szerinti feliratot kapják, nem a nyers EXIF-kulcsot.
-    """
-    details = read_exif_details(Path(photo.folder_path) / photo.name)
-    entries: list = []
-
-    def add(label: str, value) -> None:
-        if value not in (None, "", False):
-            entries.append((tr(label), value))
-
-    def date(value) -> str | None:
-        if not value:
-            return None
-        stamp = QDateTime.fromString(value, "yyyy-MM-ddTHH:mm:ss")
-        return locale.toString(stamp, QLocale.FormatType.ShortFormat)
-
-    add("Camera Make", details.make)
-    add("Camera Model", details.model)
-    # #4332: a Properties „Camera Date” sora a felhasználói felülírást
-    # mutatja; a forrásfájl EXIF-jét a dátummódosító nem írja át.
-    add(
-        "Camera Date",
-        date(getattr(photo, "taken_at_override", None) or details.datetime_original),
-    )
-    add("Digitized Date", date(details.datetime_digitized))
-    add("Modified Date", date(details.datetime_modified))
-    add("File Date", file_date_text(photo, locale))
-    if details.orientation in _ORIENTATION_LABELS:
-        add("Orientation", tr(_ORIENTATION_LABELS[details.orientation]))
-    if details.flash_fired is not None:
-        add("Flash", tr("Fired") if details.flash_fired else tr("Did not fire"))
-    add("Lens", details.lens)
-    # #664 / ADR-004: a gép saját számai C-locale-lal (PONT), a fájlé és a
-    # dátumé a hívó `locale`-jával — ld. az _EXIF_LOCALE megjegyzését
-    if details.focal_mm:
-        add("Focal Length", _millimetres(details.focal_mm, _EXIF_LOCALE, tr))
-    if details.focal_35mm:
-        add(
-            "Focal Length in 35mm Film",
-            _millimetres(float(details.focal_35mm), _EXIF_LOCALE, tr),
-        )
-    if details.ccd_width:
-        add("CCD Width", picasa_szam(details.ccd_width))
-    if details.exposure_seconds:
-        add(
-            "Exposure Time",
-            format_exposure(details.exposure_seconds, _EXIF_LOCALE),
-        )
-    # #4579: a NYERS APEX-érték, `%.3g`, előtag nélkül (spec 17. B)
-    if details.aperture_apex is not None:
-        add("Aperture", picasa_szam(details.aperture_apex))
-    if details.f_number:
-        add("F Number", f"f/{_EXIF_LOCALE.toString(details.f_number, 'g', 3)}")
-    if details.subject_distance_m:
-        add(
-            "Subject Distance",
-            tr("%1 m").replace(
-                "%1", _EXIF_LOCALE.toString(details.subject_distance_m, "g", 3)
-            ),
-        )
-    if details.iso:
-        add("ISO", str(details.iso))
-    if details.white_balance:
-        # ismeretlen kódnál az olvasó a számot adja: az marad (#3558)
-        add(
-            "White Balance",
-            {"auto": tr("Auto"), "manual": tr("Manual")}.get(
-                details.white_balance, details.white_balance
-            ),
-        )
-    add("Metering Mode", _enum_entry(details.metering_mode, tr))
-    add("Exposure Program", _enum_entry(details.exposure_program, tr))
-    add("Compression", _compression_entry(details.compression, tr))
-    add("Color Space", _enum_entry(details.color_space, tr))
-    if details.has_icc_profile:
-        add("ICC Profile", tr("Embedded"))
-    if details.has_embedded_thumbnail:
-        add("Embedded Thumbnail", tr("Yes"))
-    add("JPEG Quality", details.jpeg_quality)
-    if photo.keywords:
-        keywords = (
-            keyword.strip()
-            for keyword in (photo.keywords or "").split(",")
-            if keyword.strip()
-        )
-        add("Keywords", ", ".join(keywords))
-    add("People Tags", person_tags_text(photo, details.xmp_people, contacts_xml))
-    # a koordináta a Picasában is mindig pontos (`.picasa.ini`
-    # `geotag=33.770556,-84.293055`, KML `<longitude>%f`): vesszős
-    # tizedesjellel egy koordinátapár olvashatatlan volna
-    if details.latitude is not None:
-        add("GPS Latitude", _EXIF_LOCALE.toString(details.latitude, "f", 6))
-    if details.longitude is not None:
-        add("GPS Longitude", _EXIF_LOCALE.toString(details.longitude, "f", 6))
-    if details.altitude_m is not None:
-        add(
-            "GPS Altitude",
-            tr("%1 m").replace(
-                "%1", _EXIF_LOCALE.toString(details.altitude_m, "g", 5)
-            ),
-        )
-    add("Unique ID", details.image_unique_id)
-    return entries
-
-
-def _millimetres(value: float, locale: QLocale, tr) -> str:
-    return tr("%1 mm").replace("%1", locale.toString(value, "g", 4))
-
-def camera_summary_text(details, locale: QLocale, tr) -> str:
-    """Picasa-mintájú, KÉToszlopos fényképezőgép-összefoglaló a hisztogram-
-    doboz alá (#25, #235). Formátum: soronként `bal\\tjobb` cellapár, a sorok
-    `\\n`-nel — a HistogramBox.qml ebből rendereli a két címkézett oszlopot,
-    az eredeti Picasa 3 elrendezését követve:
-
-        Xiaomi Mi Note 10            1/125 s
-        Fókusztávolság: 6,7 mm       f/1.7
-        (35 mm-egyenérték: 24 mm)    ISO: 3200
-
-    Csak a kitöltött mezők kerülnek be; üres string, ha egy sincs (pl. EXIF
-    nélküli fájl). `details` egy `ExifDetails` (ld. `metadata.reader`)."""
-    # #664 / ADR-004: itt MINDEN szám a gépé, tehát végig C-locale (PONT) —
-    # a `locale` paraméter a hívási lánc egységessége miatt marad meg
-    left: list[str] = []
-    right: list[str] = []
-    if details.camera:
-        left.append(details.camera)
-    if details.focal_mm:
-        #: #866: `%3.1f` — EGY tizedesjegy (`il_NerdView::2`). A korábbi
-        #: `g`/4 értékes jegy `6.700`-at adott a mért `6.7` helyett.
-        left.append(
-            tr("Focal length: %1 mm").replace(
-                "%1", _EXIF_LOCALE.toString(details.focal_mm, "f", 1)
-            )
-        )
-    if details.focal_35mm:
-        left.append(
-            tr("(35 mm equivalent: %1 mm)").replace("%1", str(details.focal_35mm))
-        )
-    if details.exposure_seconds:
-        right.append(format_exposure(details.exposure_seconds, _EXIF_LOCALE))
-    if details.f_number:
-        #: #866: `f/%3.1f` — egy tizedes (`il_NerdView::6`); a `g`/3
-        #: `f/1.70`-et adott a mért `f/1.7` helyett.
-        right.append(f"f/{_EXIF_LOCALE.toString(details.f_number, 'f', 1)}")
-    if details.iso:
-        #: #866: `ISO: %2d` — a szám LEGALÁBB két karakter széles, szóközzel
-        #: kitöltve (`il_NerdView::7`), és ez az utolsó sor: `\n` nélkül.
-        right.append(tr("ISO: %1").replace("%1", f"{int(details.iso):2d}"))
-    #: ⛔ #866: VAKU-SOR NINCS. Az eredeti hisztogram-blokkja pontosan hét
-    #: formátum-sztringet ismer (`il_NerdView::1..7`, és a `0x00567e10`
-    #: másoló is hét mezőt mozgat) — vaku nem szerepel köztük. A vaku-adat
-    #: NEM tűnt el: a Tulajdonságok-panel `exif_entries` sora hozza, ahol az
-    #: eredetiben is ott van.
-    if not left and not right:
-        return ""
-    rows = itertools.zip_longest(left, right, fillvalue="")
-    return "\n".join(f"{lcell}\t{rcell}" for lcell, rcell in rows)
-
-
-def filter_status_text(records, elapsed: float, locale: QLocale, tr) -> str:
-    """A zöld eredménysáv szövege (Picasa-minta)."""
-    folders = len({r.folder_path for r in records})
-    total_gb = sum(r.size for r in records) / (1024**3)
-    return (
-        tr("%1 folders / %2 pictures visible (%3 seconds) %4 GB")
-        .replace("%1", str(folders))
-        .replace("%2", str(len(records)))
-        .replace("%3", locale.toString(elapsed, "f", 3))
-        .replace("%4", locale.toString(total_gb, "f", 1))
-    )
-
-
-def status_text(records, locale: QLocale, tr, tr_n) -> str:
-    """Az alsó állapotsor szövege: darabszám, dátumtartomány, összméret.
-
-    A `tr_n` a többes számot kezelő fordító (`%n picture(s)` minta)."""
-    if not records:
-        return tr("0 pictures")
-    meret = format_size(sum(r.size for r in records), locale, tr)
-    # #2304: EXIF-felvételi idő híján a FÁJL ideje a tartalék. Enélkül egy
-    # csupa EXIF-nélküli mappánál (letöltött vagy generált képek) a
-    # dátumtartomány egyszerűen kimaradt az állapotsorból, holott az
-    # eredeti Picasa ott is ír dátumot. A `photo_dates` KÖZÖS a
-    # mappa-fejléccel, hogy a két felirat ne mondhasson mást ugyanarról a
-    # halmazról; a „mindent vagy semmit" tartalék indoklása is ott áll.
-    dates = photo_dates(records)
-    first = last = ""
-    if dates:
-        first = long_date(dates[0], locale)
-        last = long_date(dates[-1], locale)
-    # ⚠️ A MÉRTÉKEGYSÉG a méret-argumentum RÉSZE, nem a formátumé: az eredeti
-    # `     %s      %s on disk` második `%s`-e a kész méretszöveg (például
-    # „174 KB” vagy „1,5 MB”). Enélkül a sávról eltűnik az egység.
-    # #1913: a méret-feliratnak KÉT alakja van, és a választás feltétele a két
-    # FORMÁZOTT dátum sztring-egyenlősége (mérve: `0x00570266 sete al`) — nem
-    # időbélyeg-összehasonlítás. Ebből következik, hogy nincs időablak:
-    # ugyanaznap 00:01 és 23:59 is az „egy dátum" alakot adja, mert a napra
-    # pontos formátum ugyanazt a szöveget adja.
-    #
-    # A két formátum az eredeti `il_GetSelectionInfo::5` és `::4` kulcsa; a
-    # magyar alakjuk KÜLÖNBÖZIK („%2$s/lemez" vs „%3$s a lemezen"), ezért két
-    # külön fordítható sztring, nem egy közös + külön dátum-rész.
-    if not dates:
-        meretjel = "__PICASAPY_MERET__"
-        mb_resz = tr("%1 MB").replace("%1", meretjel)
-        on_disk = tr("%1 MB on disk").replace("%1", meretjel)
-        farok = "   " + on_disk.replace(mb_resz, meret, 1)
-    elif first == last:
-        #: `il_GetSelectionInfo::5` — EGY dátum
-        farok = (
-            tr("     %1      %2 on disk")
-            .replace("%1", first)
-            .replace("%2", meret)
-        )
-    else:
-        #: `il_GetSelectionInfo::4` — dátum-TARTOMÁNY
-        farok = (
-            tr("     %1 to %2     %3 on disk")
-            .replace("%1", first)
-            .replace("%2", last)
-            .replace("%3", meret)
-        )
-    return (
-        tr_n("%n picture(s)", "", len(records))
-        + farok
-        + _cimke_resz(records, tr)
-    )
-
-
-def _cimke_resz(records, tr) -> str:
-    """A sáv UTOLSÓ, feltételes darabja: `     Címkék: <név> (<db>)` (#1913).
-
-    Mérve (`0x0057040e`–`0x00570442`): a honosított `Címkék: ` előtag után
-    címkénként a BEÉGETETT `%s (%d)` alak (a zárójeles darabszám nincs a
-    szövegtárban, tehát minden nyelven ugyanaz), az egész rész előtt ÖT
-    szóköz elválasztó — és ha nincs címke, **az elválasztó sem kerül ki**
-    (a `0x00570424` NULL-ága és a `0x00570430` üres-ága).
-
-    A darabszám a CÍMKÉZETT képek száma, nem a kijelöltek — a referencia
-    felvételen `67 képek … Címkék: AI image (66)`.
-
-    ⚠️ **Ami NINCS mérve:** több címke esetén az EGYES tételek közti
-    elválasztó. A referencia-felvételen egyetlen címke van, és a bináris
-    ciklusa a tételeket egyenként formázza. Itt vesszőt használunk (a
-    kulcsszavak amúgy is vesszővel tagoltak a `.picasa.ini`-ben); ha egyszer
-    előkerül egy több címkés felvétel, ez a pont felülvizsgálandó.
-    """
-    szamlalo: dict[str, int] = {}
-    for record in records:
-        for nyers in (getattr(record, "keywords", "") or "").split(","):
-            cimke = nyers.strip()
-            if cimke:
-                szamlalo[cimke] = szamlalo.get(cimke, 0) + 1
-    if not szamlalo:
-        return ""
-    tetelek = ", ".join(
-        f"{nev} ({db})"
-        for nev, db in sorted(szamlalo.items(), key=lambda p: (-p[1], p[0]))
-    )
-    return "     " + tr("Tags: ") + tetelek
-
-
-def build_feed_groups(records, locale: QLocale) -> tuple:
-    """Mappa-csoportok a rács-feedhez (#64): az egymást követő azonos
-    mappájú futamok, {path, name, start, count, dateText} alakban."""
-    runs: list[list] = []
-    for row, record in enumerate(records):
-        if not runs or runs[-1][0] != record.folder_path:
-            runs.append([record.folder_path, row, 0])
-        runs[-1][2] += 1
-    return tuple(
-        {
-            "path": path,
-            "name": PATH_TAIL.split(path)[-1],
-            "start": start,
-            "count": count,
-            "dateText": first_date_text(records[start : start + count], locale),
-        }
-        for path, start, count in runs
-    )
+# A forrás-őr kompatibilitási jelölője: az `add("Flash", ...)` sor az
+# `formatting_properties.exif_entries` függvényben maradt.
