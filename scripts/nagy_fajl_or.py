@@ -43,6 +43,10 @@ KUSZOB = 1_000_000
 
 #: Szándékosan a repóban tartott, küszöb fölötti fájlok — útvonal → indok.
 KIVETELEK: dict[str, str] = {
+    "docs/specs/picasa-arcfelismeres.md": (
+        "átmeneti: a spec 1 MB fölé nőtt, a bontása a #6211 (a bontás után a "
+        "kivétel kikerül)"
+    ),
     "docs/assets/notebooklm-infografika.png": (
         "a projekt kutatási infografikája, a README-ből hivatkozva (5,2 MB)"
     ),
