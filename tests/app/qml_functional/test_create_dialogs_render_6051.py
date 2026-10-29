@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import math
+import time
 from pathlib import Path
 
 import numpy as np
 import pytest
-from PySide6.QtCore import QCoreApplication, QObject, QPoint, QPointF, Qt
+from PySide6.QtCore import QCoreApplication, QLocale, QObject, QPoint, QPointF, Qt
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickItem, QQuickWindow
+from PySide6.QtTest import QSignalSpy
 
 from support.jpeg_factory import make_jpeg
 from tests.app.qml_functional.conftest import _build_qml_app
@@ -153,7 +155,7 @@ def _kulon_ablak_terulete_az_ablakban(ablak, kepek):
     return bal, felso, jobb, also
 
 
-def _ablakkepek(qt_app, foor):
+def _ablakkepek(qt_app, foor, foor_kep: QImage | None = None):
     """A fő QQuickWindow-t és az összes látható popupablakot is felveszi."""
     ablakok = [ablak for ablak in qt_app.allWindows() if ablak.isVisible()]
     ablakok.sort(key=lambda ablak: (ablak is not foor, ablak.title(), ablak.metaObject().className()))
@@ -164,12 +166,95 @@ def _ablakkepek(qt_app, foor):
         else:
             nev = f"felugro-{index}-{ablak.title() or ablak.metaObject().className()}"
         if isinstance(ablak, QQuickWindow):
-            kep = ablak.grabWindow()
+            kep = (
+                foor_kep
+                if ablak is foor and foor_kep is not None
+                else ablak.grabWindow()
+            )
         else:
             kep = qt_app.primaryScreen().grabWindow(int(ablak.winId())).toImage()
         assert not kep.isNull(), f"üres felvétel: {nev}"
         kepek[nev] = (ablak, kep)
     return kepek
+
+
+def _exif_datum_megjelenik(vezerlo, ablak) -> bool:
+    """A fejléc és az állapotsor már a próbakép EXIF-dátumát mutatja-e."""
+    from picasapy.app.formatting import long_date
+
+    rekordok = vezerlo.photos.photos
+    vart_rekordok = list(_RENDEZETT_FELVETELI_IDOK)
+    if [(rekord.name, rekord.taken_at) for rekord in rekordok] != vart_rekordok:
+        return False
+
+    vart_datum = long_date(vart_rekordok[1][1], QLocale())
+    csoportok = vezerlo.feedGroups
+    if len(csoportok) != 1 or csoportok[0].get("dateText") != vart_datum:
+        return False
+
+    feliratok = [
+        elem
+        for elem in _vizualis_elemek(ablak.contentItem())
+        if elem.objectName() == "folderDateText" and elem.isVisible()
+    ]
+    return (
+        any(elem.property("text") == vart_datum for elem in feliratok)
+        and vart_datum in vezerlo.statusText
+    )
+
+
+def _varj_foablak_kepstabilizalodasara(ablak, qt_app) -> QImage:
+    """Három egymás utáni, újrarajzolt képkockán várja ki a stabil kimenetet."""
+    hatarido = time.monotonic() + 3.0
+    elozo_pixelek = None
+    azonos_kockak = 0
+
+    while True:
+        maradek = hatarido - time.monotonic()
+        assert maradek > 0, "a főablak renderképe nem stabilizálódott 3 s alatt"
+
+        kirajzolt = QSignalSpy(ablak.frameSwapped)
+        ablak.requestUpdate()
+        assert var_feltetelre(
+            qt_app,
+            hibaturo_feltetel(lambda spy=kirajzolt: spy.count() > 0),
+            min(0.5, maradek),
+        ), "a főablak nem rajzolt új képkockát 3 s alatt"
+
+        kep = ablak.grabWindow()
+        assert not kep.isNull(), "üres főablak-képkocka"
+        pixelek = _pixelek(kep)
+        if elozo_pixelek is not None and np.array_equal(elozo_pixelek, pixelek):
+            azonos_kockak += 1
+            if azonos_kockak >= 2:
+                return kep
+        else:
+            azonos_kockak = 0
+        elozo_pixelek = pixelek
+
+
+def _foablak_kep_6140_fogantyumaszkkal(ablak, qt_app) -> QImage:
+    """A #6140 árnyék-ingadozását a két érintett fogantyú geometriáján zárja ki.
+
+    A nyers, látható fogantyús kép marad a referencia-összevetésé. A
+    bájtra összehasonlított `.tmp` felvétel csak a két QML-fogantyú
+    eltüntetésével készül; így a maszk pontosan az objektumok saját rajzolt
+    területére korlátozódik, a párbeszéd pixeltűrése változatlan.
+    """
+    fogantyuk = []
+    for nev in ("dateRangeFilterSlider", "traySizeSlider"):
+        csuszka = ablak.findChild(QObject, nev)
+        assert csuszka is not None, f"nem található a #6140-hez tartozó csúszka: {nev}"
+        fogantyu = csuszka.property("handle")
+        assert isinstance(fogantyu, QQuickItem), f"hiányzik a csúszka fogantyúja: {nev}"
+        fogantyuk.append((fogantyu, fogantyu.isVisible()))
+    try:
+        for fogantyu, _lathato in fogantyuk:
+            fogantyu.setVisible(False)
+        return _varj_foablak_kepstabilizalodasara(ablak, qt_app)
+    finally:
+        for fogantyu, lathato in fogantyuk:
+            fogantyu.setVisible(lathato)
 
 
 def _parbeszed(gyoker, nev: str):
@@ -203,17 +288,12 @@ def test_create_dialog_kepei_rendezett_felveteli_datummal_toltodnek(qml_app):
     )
 
 
-@pytest.mark.xfail(
-    reason="#6124: a referenciák a fejlesztői gépen készültek, a CI-n "
-    "párbeszédenként 5-7000 képpont eltér (a bontás előtti kódon is)",
-    strict=False,
-)
 @pytest.mark.parametrize("ablakmagassag_delta", [-5, 0, 5])
 def test_create_dialogs_render_bontas_elott_rogzitett_referenciakkal(
     ablakmagassag_delta, qml_app, qt_app
 ):
     """Mind a 13 megnyitható állapot kirajzolódik az eredeti kód referenciájára."""
-    ablak, _vezerlo, _engine = qml_app
+    ablak, vezerlo, _engine = qml_app
     ablak.show()
     assert var_feltetelre(
         qt_app,
@@ -235,6 +315,14 @@ def test_create_dialogs_render_bontas_elott_rogzitett_referenciakkal(
     )
     ablak.setProperty("selectedIndexes", [0, 1])
     ablak.setProperty("selectedIndex", 0)
+    assert var_feltetelre(
+        qt_app,
+        hibaturo_feltetel(lambda: _exif_datum_megjelenik(vezerlo, ablak)),
+        5.0,
+    ), (
+        "a főablak nem frissült a próbaképek EXIF-dátumára: "
+        f"statusText={vezerlo.statusText!r}, feedGroups={vezerlo.feedGroups!r}"
+    )
 
     kimenet = Path.cwd() / ".tmp" / "create-dialogs-6051" / f"{ablakmagassag_delta:+d}"
     kimenet.mkdir(parents=True, exist_ok=True)
@@ -299,14 +387,27 @@ def test_create_dialogs_render_bontas_elott_rogzitett_referenciakkal(
                 ), "a film helyi előnézeti képe nem töltődött be"
         assert var_feltetelre(
             qt_app,
-            hibaturo_feltetel(lambda: bool(_ablakkepek(qt_app, ablak))),
+            hibaturo_feltetel(
+                lambda: any(
+                    lathato_ablak is ablak and lathato_ablak.isVisible()
+                    for lathato_ablak in qt_app.allWindows()
+                )
+            ),
             5.0,
+        ), "a főablak nem látható a párbeszéd megnyitása után"
+        stabil_foablak_kep = _varj_foablak_kepstabilizalodasara(ablak, qt_app)
+        aktualis_kepek = _ablakkepek(
+            qt_app, ablak, foor_kep=stabil_foablak_kep
         )
-        aktualis_kepek = _ablakkepek(qt_app, ablak)
         allapot_kimenet = kimenet / nev
         allapot_kimenet.mkdir(parents=True, exist_ok=True)
         for kepnev, (felvetelablak, aktualis) in aktualis_kepek.items():
-            assert aktualis.save(str(allapot_kimenet / f"{kepnev}.png"))
+            kimeneti_kep = (
+                _foablak_kep_6140_fogantyumaszkkal(ablak, qt_app)
+                if kepnev == "foablak"
+                else aktualis
+            )
+            assert kimeneti_kep.save(str(allapot_kimenet / f"{kepnev}.png"))
             referencia_fajl = (
                 _ARANY / f"{ablakmagassag_delta:+d}" / nev / f"{kepnev}.png"
             )
