@@ -46,7 +46,7 @@ def test_az_index_hivatkozik_mindharom_lapra():
     ):
         assert f"[{nev}]({nev})" in index
     assert (
-        "[kutatási napló 35.7–35.11 szakaszát]"
+        "[kutatási napló 35.7-35.11 szakaszát]"
         "(picasa-arcfelismeres-kutatasi-naplo.md)"
     ) in index
 
