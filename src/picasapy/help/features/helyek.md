@@ -44,8 +44,8 @@ megy.
 ### Betöltés és internetkapcsolat
 
 A térkép csempéit a program az internetről tölti le. Amíg a térkép
-betöltődik, a panelen „Térkép betöltése..." áll, alatta az eredeti
-Picasa betöltésjelző képe. Ha nincs
+betöltődik, a panelen „Térkép betöltése..." áll, alatta egy
+betöltésjelző kép. Ha nincs
 internetkapcsolat, és a térkép nem tud betöltődni, ezt írja ki: „A PicasaPy
 nem tudta inicializálni a Google Térképet. Ellenőrizze, hogy van-e
 internetkapcsolat." (A felirat az eredeti Picasáé.)

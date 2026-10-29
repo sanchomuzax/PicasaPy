@@ -4,6 +4,23 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-29
+
+**Megjelenés**
+
+- A **Nézet ▸ Sötét téma** most a felület egészén sötét színekkel
+  rajzol: a gombok, jelzések, beviteli mezők, az idővonal, a címkepanel
+  és a videolejátszó vezérlői is a sötét témához igazodnak. Lásd
+  [Beállítások](features/beallitasok.md).
+- A Helyek panel térképének betöltése közben saját rajzú
+  betöltésjelző látszik. Lásd [Helyek](features/helyek.md).
+
+**Nyelv**
+
+- Nem angol nyelvű számítógépen az első indításkor ismét megjelenik az
+  ablak, amely felajánlja a rendszer nyelvét. Eddig ez a kérdés csendben
+  elmaradt. Lásd [Első lépések](getting-started.md).
+
 ## 2026-10-28
 
 **Feltöltés**
