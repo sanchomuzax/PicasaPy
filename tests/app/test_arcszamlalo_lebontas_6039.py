@@ -20,10 +20,7 @@ QML_MAPPA = Path(__file__).resolve().parents[2] / "src" / "picasapy" / "app" / "
 #: a főablak és a kiemelt komponensei közül bárhol lehetnek.
 FOABLAK_CSALAD = (
     QML_MAPPA / "Main.qml",
-    QML_MAPPA / "PicasaPy" / "MainRightDrawer.qml",
-    QML_MAPPA / "PicasaPy" / "MainLibraryCanvas.qml",
-    QML_MAPPA / "PicasaPy" / "MainFolderPane.qml",
-    QML_MAPPA / "PicasaPy" / "MainErrorBanner.qml",
+    *sorted((QML_MAPPA / "PicasaPy").glob("Main*.qml")),
 )
 FOABLAK_FORRAS = "\n".join(
     fajl.read_text(encoding="utf-8") for fajl in FOABLAK_CSALAD

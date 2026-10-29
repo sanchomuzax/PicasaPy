@@ -135,6 +135,13 @@ _KOTELEZO_VALTOZATOK = {
         "hostSaveDialogs: ({}); hostSlideshow: ({ visible: false }); "
         "hostTrayBar: ({ keyboardShortcutSequences: [] })",
     ),
+    # #6136: a személyalbum-műveletek állapota kötelező gazdaobjektumokat kap.
+    "MainPeopleAlbumState": (
+        "hostWindow: ({ selectedIndexes: [], selectedIndex: -1, "
+        "selectedRows: function() { return [] }, peopleFaceRevision: 0 }); "
+        "hostController: null; hostFaceScanController: null; "
+        "hostRemovePeopleFacesDialog: ({}); hostCreateDialogs: ({})",
+    ),
     # #6136: a felső menüsor bekötése külön komponens; valamennyi
     # testvér-objektumot a főablak kötelező tulajdonságként adja át.
     "MainMenuBar": (

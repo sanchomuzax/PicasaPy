@@ -32,9 +32,14 @@ from PySide6.QtQml import QQmlComponent
 
 _KEEP_ALIVE: list = []
 
-_MAIN = (
-    Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
-).read_text(encoding="utf-8")
+_QML_DIR = Path(picasapy.app.__file__).parent / "qml"
+_MAIN = "\n".join(
+    path.read_text(encoding="utf-8")
+    for path in (
+        _QML_DIR / "Main.qml",
+        *sorted((_QML_DIR / "PicasaPy").glob("Main*.qml")),
+    )
+)
 _FEED_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
 _FEED = "\n".join(
     (_FEED_DIR / name).read_text(encoding="utf-8")
