@@ -8646,16 +8646,6 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <translation>Czy na pewno chcesz dodać wszystkie zdjęcia z wybranego albumu?</translation>
         </message>
         <message>
-            <source>The desktop background is set (%1).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ustawiono tapetę (%1).</translation>
-        </message>
-        <message>
-            <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zdjęcie jest gotowe w lokalizacji %1, ale nie udało się automatycznie ustawić go jako tapety.</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>The selected screensaver sources contain no available pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8668,24 +8658,9 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <translation>Dodano zdjęć do wygaszacza ekranu: %1.</translation>
         </message>
         <message>
-            <source>Cancelled writing face tags (%1 file(s) written).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Anulowano zapisywanie tagów twarzy (zapisano plików: %1).</translation>
-        </message>
-        <message>
             <source>Face data could not be written to XMP: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nie udało się zapisać danych twarzy w XMP: %1</translation>
-        </message>
-        <message>
-            <source>Face data written to %1 file(s); %2 skipped.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zapisano dane twarzy w plikach: %1; pominięto: %2.</translation>
-        </message>
-        <message>
-            <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Zapisano dane twarzy w plikach: %1; pominięto: %2. Pierwszy problem: %3</translation>
         </message>
         <message>
             <source>Add search tag</source>
@@ -8743,12 +8718,6 @@ picasapy-origin-key: stringres:CChooseEmailDialog::infoprepare</extracomment>
             <translation>Przygotowywanie załączników...</translation>
         </message>
         <message>
-            <source>Stop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/stop);stringres:CCaptureMovieDialog::stop</extracomment>
-            <translation>Zatrzymaj</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>Collage</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8772,36 +8741,6 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
             <translation>OSTRZEŻENIE! Ta czynność spowoduje USUNIĘCIE wszystkich albumów osób i przeniesienie wszystkich twarzy do albumu osób bez nazw. Może ona także spowodować USUNIĘCIE tagów ze zsynchronizowanych albumów internetowych. Czy na pewno chcesz ją wykonać?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ten folder jest obecnie niedostępny (na przykład z powodu odłączonego dysku lub udziału sieciowego). Jego zdjęcia pozostają w bazie danych, a miniatury są pobierane z pamięci podręcznej, ale nie można teraz otwierać ani edytować oryginalnych plików.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nie udało się ponownie wyświetlić folderu, ponieważ nie można zapisać w nim pliku .picasa.ini. Folder pozostaje ukryty.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Nie można ponownie wyświetlić folderu, gdy jest niedostępny (na przykład z powodu odłączonego dysku). Pozostaje ukryty.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Folder jest ukryty, ale nie udało się oznaczyć go dla Picasy (nie można zapisać pliku .picasa.ini).</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ukrytego folderu nie można przenieść do kolekcji. Najpierw go odkryj.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -9151,13 +9090,6 @@ picasapy-origin-key: tooltips:Label(panelroot/picasatab);tooltips:Label(thumbui/
             <source>A modern, open Picasa successor.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Nowoczesny, otwarty następca Picasy.</translation>
-        </message>
-        <message>
-            <location filename="Main.qml" line="967" />
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Zamknij</translation>
         </message>
         <message>
             <location filename="Main.qml" line="1022" />
@@ -19624,6 +19556,83 @@ Czy na pewno chcesz cofnąć?</translation>
             <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Podpis zastąpi wpisany tekst. Tej operacji nie można cofnąć.</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainErrorBanner</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="146" />
+            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ukrytego folderu nie można przenieść do kolekcji. Najpierw go odkryj.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="174" />
+            <source>Cancelled writing face tags (%1 file(s) written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Anulowano zapisywanie tagów twarzy (zapisano plików: %1).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="67" />
+            <source>Close</source>
+            <extracomment>        picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)
+picasapy-origin: picasa</extracomment>
+            <translation>Zamknij</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="182" />
+            <source>Face data written to %1 file(s); %2 skipped.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zapisano dane twarzy w plikach: %1; pominięto: %2.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="179" />
+            <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zapisano dane twarzy w plikach: %1; pominięto: %2. Pierwszy problem: %3</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="58" />
+            <source>Stop</source>
+            <extracomment>        picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/stop);stringres:CCaptureMovieDialog::stop
+picasapy-origin: picasa</extracomment>
+            <translation>Zatrzymaj</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="163" />
+            <source>The desktop background is set (%1).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ustawiono tapetę (%1).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="140" />
+            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nie można ponownie wyświetlić folderu, gdy jest niedostępny (na przykład z powodu odłączonego dysku). Pozostaje ukryty.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="149" />
+            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nie udało się ponownie wyświetlić folderu, ponieważ nie można zapisać w nim pliku .picasa.ini. Folder pozostaje ukryty.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="143" />
+            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Folder jest ukryty, ale nie udało się oznaczyć go dla Picasy (nie można zapisać pliku .picasa.ini).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="170" />
+            <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zdjęcie jest gotowe w lokalizacji %1, ale nie udało się automatycznie ustawić go jako tapety.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="131" />
+            <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ten folder jest obecnie niedostępny (na przykład z powodu odłączonego dysku lub udziału sieciowego). Jego zdjęcia pozostają w bazie danych, a miniatury są pobierane z pamięci podręcznej, ale nie można teraz otwierać ani edytować oryginalnych plików.</translation>
         </message>
     </context>
 </TS>
