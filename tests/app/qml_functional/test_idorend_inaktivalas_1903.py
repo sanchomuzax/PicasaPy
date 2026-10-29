@@ -38,9 +38,9 @@ _MENU = (
     Path(picasapy.app.__file__).parent
     / "qml" / "PicasaPy" / "PicasaViewMenu.qml"
 ).read_text(encoding="utf-8").replace("&", "")
-_MAIN = (
-    Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
-).read_text(encoding="utf-8")
+_QML_DIR = Path(picasapy.app.__file__).parent / "qml"
+_MAIN_FAMILY = (_QML_DIR / "Main.qml", *sorted((_QML_DIR / "PicasaPy").glob("Main*.qml")))
+_MAIN = "\n".join(path.read_text(encoding="utf-8") for path in _MAIN_FAMILY)
 
 
 class TestAFejlecGomb:
@@ -75,8 +75,8 @@ class TestABillentyu:
         blokk = blokk_horgonyra(_MAIN, 'sequence: "Ctrl+5"')
         # aktív, de a néző, a vetítés és a szövegmező-fókusz alatt nem sül el
         assert "enabled: false" not in blokk
-        for feltetel in ("!window.viewerOpen", "!slideshow.visible",
-                         "!window._szovegmezoneVanFokusz"):
+        for feltetel in ("!hostWindow.viewerOpen", "!hostSlideshow.visible",
+                         "!hostWindow._szovegmezoneVanFokusz"):
             assert feltetel in blokk
 
 
