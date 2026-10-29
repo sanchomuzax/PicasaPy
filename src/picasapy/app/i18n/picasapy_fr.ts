@@ -9370,19 +9370,19 @@ La modification prendra effet au prochain lancement de PicasaPy.</translation>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="54" />
             <source>Back to View All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Retour à tout afficher</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="140" />
             <source>Duplicate Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Fichiers en double</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="164" />
             <source>Looking for duplicate files...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Recherche des fichiers en double...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="103" />
@@ -9395,7 +9395,7 @@ picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="121" />
             <source>Clear Sample</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Effacer l'échantillon</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="189" />

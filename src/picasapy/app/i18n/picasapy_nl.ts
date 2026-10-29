@@ -9370,19 +9370,19 @@ De wijziging gaat in wanneer PicasaPy de volgende keer wordt geopend.</translati
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="54" />
             <source>Back to View All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Terug naar overzicht</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="140" />
             <source>Duplicate Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Dubbele bestanden</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="164" />
             <source>Looking for duplicate files...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Zoeken naar dubbele bestanden...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="103" />
@@ -9395,7 +9395,7 @@ picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="121" />
             <source>Clear Sample</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Voorbeeld wissen</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="189" />

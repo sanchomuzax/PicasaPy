@@ -9396,19 +9396,19 @@ Promjena će stupiti na snagu pri sljedećem pokretanju aplikacije PicasaPy.</tr
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="54" />
             <source>Back to View All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Natrag na prikaz svega</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="140" />
             <source>Duplicate Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Duplicirane datoteke</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="164" />
             <source>Looking for duplicate files...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Traženje dupliciranih datoteka...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="103" />
@@ -9421,7 +9421,7 @@ picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="121" />
             <source>Clear Sample</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Očisti uzorak</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="189" />

@@ -9396,19 +9396,19 @@ Ji pasikeis kitą kartą paleidus „PicasaPy“.</translation>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="54" />
             <source>Back to View All</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Atgal į parinktį „Rodyti viską“</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="140" />
             <source>Duplicate Files</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pasikartojantys failai</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="164" />
             <source>Looking for duplicate files...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ieškoma pasikartojančių failų...</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="103" />
@@ -9421,7 +9421,7 @@ picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="121" />
             <source>Clear Sample</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Išvalyti pavyzdį</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="189" />
