@@ -60,6 +60,13 @@ _KOTELEZO_VALTOZATOK = {
         "hostPhotoViewer: ({}); hostMainSplit: ({}); "
         "hostMainLibraryCanvas: ({ unnamedFacesView: ({}) }); hostMainDialogs: ({})",
     ),
+    # #6136: a FolderPane főablakbeli bekötése önálló, kötelező gazda-propokat kér.
+    "MainFolderPane": (
+        "hostWindow: ({}); hostController: null; hostToolbar: ({}); "
+        "hostBackupHost: ({}); hostFileOpsDialogs: ({}); "
+        "hostCollectionPasswordDialog: ({}); hostFileOpsController: null; "
+        "hostFaceScanController: null; hostFolderHierarchyController: null",
+    ),
 }
 _ALTALANOS_VALTOZATOK = (
     "", "appWindow: null", "panel: null", "appWindow: null; panel: null"

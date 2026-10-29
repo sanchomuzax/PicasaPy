@@ -55,6 +55,8 @@ AlbumUgroGomb 1.0 AlbumUgroGomb.qml
 PicasaScrollBar 1.0 PicasaScrollBar.qml
 PicasaSlider 1.0 PicasaSlider.qml
 EditorPanel 1.0 EditorPanel.qml
+internal EditorPanelTabs EditorPanelTabs.qml
+internal EditorPanelOverlays EditorPanelOverlays.qml
 DocumentTabStrip 1.0 DocumentTabStrip.qml
 DocumentTab 1.0 DocumentTab.qml
 CropOverlay 1.0 CropOverlay.qml
@@ -86,6 +88,7 @@ AaUtkozesDialog 1.0 AaUtkozesDialog.qml
 EndEditModalityDialog 1.0 EndEditModalityDialog.qml
 RightDrawer 1.0 RightDrawer.qml
 MainRightDrawer 1.0 MainRightDrawer.qml
+MainFolderPane 1.0 MainFolderPane.qml
 DrawerHeaderButton 1.0 DrawerHeaderButton.qml
 TagsPanel 1.0 TagsPanel.qml
 KeywordsDialog 1.0 KeywordsDialog.qml
