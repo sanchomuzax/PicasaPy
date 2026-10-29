@@ -104,6 +104,27 @@ def _mix_retouch_gradients(
     return source_gradient + weight * (target_gradient - source_gradient)
 
 
+def _mixed_gradient_divergence(
+    source_patch: np.ndarray,
+    target_patch: np.ndarray,
+    distance: np.ndarray,
+    radius: float,
+) -> np.ndarray:
+    """A négy irányított gradienst a pixelközéppont súlyával összegzi."""
+    divergence = np.zeros_like(source_patch, dtype=np.float64)
+    for dy, dx in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+        shift = (-dy, -dx)
+        source_neighbour = np.roll(source_patch, shift, axis=(0, 1))
+        target_neighbour = np.roll(target_patch, shift, axis=(0, 1))
+        divergence += _mix_retouch_gradients(
+            source_patch - source_neighbour,
+            target_patch - target_neighbour,
+            distance,
+            radius,
+        )
+    return divergence
+
+
 def _poisson_operator(values: np.ndarray, active: np.ndarray) -> np.ndarray:
     """A maszkbeli 4-neighbor diszkrét Laplace-operátora."""
     neighbours = (
@@ -215,20 +236,15 @@ def _apply_single_patch(result: np.ndarray, patch: RetouchPatch) -> None:
     if not active.any():
         return
 
-    divergence = np.zeros_like(source_patch, dtype=np.float64)
+    pixel_distance = np.hypot(offset_x, offset_y)
+    divergence = _mixed_gradient_divergence(
+        source_patch, target_patch, pixel_distance, radius
+    )
     right_hand_side = np.zeros_like(source_patch, dtype=np.float64)
     for dy, dx in ((-1, 0), (1, 0), (0, -1), (0, 1)):
         shift = (-dy, -dx)
-        source_neighbour = np.roll(source_patch, shift, axis=(0, 1))
         target_neighbour = np.roll(target_patch, shift, axis=(0, 1))
         neighbour_active = np.roll(active, shift, axis=(0, 1))
-        edge_distance = np.hypot(offset_x + dx / 2, offset_y + dy / 2)
-        divergence += _mix_retouch_gradients(
-            source_patch - source_neighbour,
-            target_patch - target_neighbour,
-            edge_distance,
-            radius,
-        )
         boundary = active & ~neighbour_active
         right_hand_side += target_neighbour * boundary[..., None]
 

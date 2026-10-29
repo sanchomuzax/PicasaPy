@@ -65,6 +65,24 @@ def _two_tone_image(width: int = 40, height: int = 30) -> np.ndarray:
     return image
 
 
+def test_iranyitott_gradiens_a_pixelkozep_sulyat_hasznalja() -> None:
+    """A bináris egy pixelben számolt súlyt használ mind a négy élhez."""
+    # rontás-kontroll: picasapy.render.retouch._GRADIENT_BLEND_START = 0.0 → 1 failed
+    from picasapy.render.retouch import _mixed_gradient_divergence
+
+    offsets = np.arange(-2, 3, dtype=np.float64)
+    offset_y, offset_x = np.meshgrid(offsets, offsets, indexing="ij")
+    source = np.zeros((5, 5, 3), dtype=np.float64)
+    target = np.repeat((offset_x**2)[..., None], 3, axis=2)
+    distance = np.hypot(offset_x, offset_y)
+
+    divergence = _mixed_gradient_divergence(source, target, distance, radius=3.0)
+
+    # Ennél a pixelnél d=1, a=1, így a középponti súly 0 és mindhárom
+    # csatorna divergenciája 0. Az élfelezőn vett súly ettől eltérne.
+    np.testing.assert_array_equal(divergence[2, 3], np.zeros(3))
+
+
 class TestApplyRetouchPatches:
     """#445: `apply_retouch_patches` — irányított klónozás (cél+forrás+sugár)."""
 
