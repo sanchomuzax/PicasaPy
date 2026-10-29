@@ -7015,7 +7015,7 @@ A Picasa EXE `FRRecommendIncludeLimit=0,50` értéke a javaslatba-vételhez tart
 
 ### 60.2 Független utak és cáfoló kísérlet
 
-**A út - Ghidra-kimenet.** A `FUN_10107d70` dekompilált törzse közvetlenül mutatja a `+0x1c` helperhívását mindkét serializációs ágban. **B út - vak PE-ellenőrzés.** A hashazonos helyi DLL vftábla-slotja `0x10107d70`-re mutat, a TypeDescriptor pedig `vsi_WeakClassifier` nevet tartalmaz. A két út egyezik a lokális DLL szerializáló-metódusának osztály- és mezőútjában; együtt sem bizonyítják a tiszta Picasa 3.9 ténylegesen betöltött példányát vagy értékét.
+**A út - Ghidra-kimenet.** A `FUN_10107d70` dekompilált törzse közvetlenül mutatja a `+0x1c` mező átadását a segédfüggvénynek mindkét szerializációs ágban. **B út - vak PE-ellenőrzés.** A hashazonos helyi DLL vftábla-slotja `0x10107d70`-re mutat, a TypeDescriptor pedig `vsi_WeakClassifier` nevet tartalmaz. A két út egyezik a lokális DLL szerializáló-metódusának osztály- és mezőútjában; együtt sem bizonyítják a tiszta Picasa 3.9 ténylegesen betöltött példányát vagy értékét.
 
 Az N1/N3 kérdésre két, ettől független helyi út nem adott futásidejű eredményt: a bináris/statikus út mező- és vezérlési adatokat tár fel, a külön mérőarchívum-dokumentumleltár pedig nem tartalmaz felismerési kontrollt. Ezek csak a helyi bizonyítékhiányt erősítik meg, nem az eredeti program viselkedését.
 
