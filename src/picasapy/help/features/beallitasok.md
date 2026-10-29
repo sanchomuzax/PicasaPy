@@ -267,6 +267,9 @@ jelölőnégyzettel:
 **Nézet ▸ Sötét téma** ki- és bekapcsolható. A választás megmarad a
 következő indításig.
 
+Bekapcsolva a felület egésze sötét színekkel rajzol: a gombok, a
+beviteli mezők, az idővonal, a címkepanel és a videolejátszó vezérlői is.
+
 ## Megjelenítési mód
 
 A **Nézet ▸ Megjelenítési mód** almenüben a képernyőhöz igazítható a
