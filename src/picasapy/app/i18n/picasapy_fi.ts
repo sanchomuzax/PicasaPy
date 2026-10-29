@@ -8637,16 +8637,6 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <translation>Haluatko varmasti lisätä valitun albumin kaikki kuvat?</translation>
         </message>
         <message>
-            <source>The desktop background is set (%1).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Työpöydän taustakuva asetettiin (%1).</translation>
-        </message>
-        <message>
-            <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kuva on valmis sijainnissa %1, mutta työpöydän taustakuvaa ei voitu asettaa automaattisesti.</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>The selected screensaver sources contain no available pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8659,24 +8649,9 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <translation>Näytönsäästäjään lisättiin %1 kuvaa.</translation>
         </message>
         <message>
-            <source>Cancelled writing face tags (%1 file(s) written).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kasvotunnisteiden kirjoittaminen peruutettiin (%1 tiedostoa kirjoitettu).</translation>
-        </message>
-        <message>
             <source>Face data could not be written to XMP: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Kasvotietoja ei voitu kirjoittaa XMP:hen: %1</translation>
-        </message>
-        <message>
-            <source>Face data written to %1 file(s); %2 skipped.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kasvotiedot kirjoitettiin %1 tiedostoon; %2 ohitettiin.</translation>
-        </message>
-        <message>
-            <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kasvotiedot kirjoitettiin %1 tiedostoon; %2 ohitettiin. Ensimmäinen ongelma: %3</translation>
         </message>
         <message>
             <source>Add search tag</source>
@@ -8734,12 +8709,6 @@ picasapy-origin-key: stringres:CChooseEmailDialog::infoprepare</extracomment>
             <translation>Valmistellaan liitteitä…</translation>
         </message>
         <message>
-            <source>Stop</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/stop);stringres:CCaptureMovieDialog::stop</extracomment>
-            <translation>Pysäytä</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" />
             <source>Collage</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8763,36 +8732,6 @@ picasapy-origin-key: stringres:AlbumPhoto::ID_PICTURE_RESET_FACES;stringres:eMen
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::ResetAllFaces</extracomment>
             <translation>VAROITUS! Tämä POISTAA kaikki henkilöalbumit ja siirtää kaikki kasvot nimeämättömään albumiin. Tämä saattaa myös POISTAA nimitagit synkronoiduista verkkoalbumeista. Haluatko jatkaa?</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tämä kansio ei ole tällä hetkellä käytettävissä (esimerkiksi aseman tai verkkojaon yhteys on katkennut). Sen kuvat säilyvät tietokannassa ja pikkukuvat näytetään välimuistista, mutta alkuperäisiä tiedostoja ei voi juuri nyt avata tai muokata.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kansiota ei voitu näyttää uudelleen, koska sen .picasa.ini-tiedostoa ei voi kirjoittaa. Kansio pysyy piilotettuna.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kansiota ei voi näyttää uudelleen, kun se ei ole käytettävissä (esimerkiksi aseman yhteys on katkennut). Se pysyy piilotettuna.</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Kansio on piilotettu, mutta sitä ei voitu merkitä Picasaan (.picasa.ini-tiedostoa ei voi kirjoittaa).</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" />
-            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Piilotettua kansiota ei voi siirtää luokkaan. Näytä kansio ensin.</translation>
         </message>
         <message>
             <location filename="../qml/Main.qml" />
@@ -9138,13 +9077,6 @@ picasapy-origin-key: tooltips:Label(panelroot/picasatab);tooltips:Label(thumbui/
             <source>A modern, open Picasa successor.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Moderni, avoimen lähdekoodin seuraaja Picasalle.</translation>
-        </message>
-        <message>
-            <location filename="Main.qml" line="967" />
-            <source>Close</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
-            <translation>Sulje</translation>
         </message>
         <message>
             <location filename="Main.qml" line="1022" />
@@ -19610,6 +19542,83 @@ Haluatko varmasti kumota muutoksen?</translation>
             <source>The caption will replace the text you have typed. (This operation is not undoable)</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Kuvateksti korvaa kirjoittamasi tekstin. Tätä toimintoa ei voi kumota.</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainErrorBanner</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="146" />
+            <source>A hidden folder cannot be moved into a collection. Unhide it first.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Piilotettua kansiota ei voi siirtää luokkaan. Näytä kansio ensin.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="174" />
+            <source>Cancelled writing face tags (%1 file(s) written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kasvotunnisteiden kirjoittaminen peruutettiin (%1 tiedostoa kirjoitettu).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="67" />
+            <source>Close</source>
+            <extracomment>        picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)
+picasapy-origin: picasa</extracomment>
+            <translation>Sulje</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="182" />
+            <source>Face data written to %1 file(s); %2 skipped.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kasvotiedot kirjoitettiin %1 tiedostoon; %2 ohitettiin.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="179" />
+            <source>Face data written to %1 file(s); %2 skipped. First problem: %3</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kasvotiedot kirjoitettiin %1 tiedostoon; %2 ohitettiin. Ensimmäinen ongelma: %3</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="58" />
+            <source>Stop</source>
+            <extracomment>        picasapy-origin-key: capturemoviepanelpopup_text:Label(capturemoviepanelpopup/stop);stringres:CCaptureMovieDialog::stop
+picasapy-origin: picasa</extracomment>
+            <translation>Pysäytä</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="163" />
+            <source>The desktop background is set (%1).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Työpöydän taustakuva asetettiin (%1).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="140" />
+            <source>The folder cannot be shown again while it is unavailable (for example a disconnected drive). It stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kansiota ei voi näyttää uudelleen, kun se ei ole käytettävissä (esimerkiksi aseman yhteys on katkennut). Se pysyy piilotettuna.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="149" />
+            <source>The folder could not be shown again because its .picasa.ini file cannot be written. The folder stays hidden.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kansiota ei voitu näyttää uudelleen, koska sen .picasa.ini-tiedostoa ei voi kirjoittaa. Kansio pysyy piilotettuna.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="143" />
+            <source>The folder is hidden, but it could not be marked for Picasa (the .picasa.ini file cannot be written).</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kansio on piilotettu, mutta sitä ei voitu merkitä Picasaan (.picasa.ini-tiedostoa ei voi kirjoittaa).</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="170" />
+            <source>The picture is ready at %1, but the desktop background could not be set automatically.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kuva on valmis sijainnissa %1, mutta työpöydän taustakuvaa ei voitu asettaa automaattisesti.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainErrorBanner.qml" line="131" />
+            <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tämä kansio ei ole tällä hetkellä käytettävissä (esimerkiksi aseman tai verkkojaon yhteys on katkennut). Sen kuvat säilyvät tietokannassa ja pikkukuvat näytetään välimuistista, mutta alkuperäisiä tiedostoja ei voi juuri nyt avata tai muokata.</translation>
         </message>
     </context>
 </TS>
