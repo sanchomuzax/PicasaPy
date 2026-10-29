@@ -86,6 +86,7 @@ AaUtkozesDialog 1.0 AaUtkozesDialog.qml
 EndEditModalityDialog 1.0 EndEditModalityDialog.qml
 RightDrawer 1.0 RightDrawer.qml
 MainRightDrawer 1.0 MainRightDrawer.qml
+MainFolderPane 1.0 MainFolderPane.qml
 DrawerHeaderButton 1.0 DrawerHeaderButton.qml
 TagsPanel 1.0 TagsPanel.qml
 KeywordsDialog 1.0 KeywordsDialog.qml

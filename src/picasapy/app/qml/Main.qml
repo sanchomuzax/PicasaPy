@@ -3076,7 +3076,7 @@ ApplicationWindow {
             }
         }
 
-        FolderPane {
+        MainFolderPane {
             id: folderPane
             objectName: "folderPane"
             // #305: null-őr — a controller a leépítéskor átmenetileg null
@@ -3092,157 +3092,18 @@ ApplicationWindow {
             //: ilyenkor kiszámíthatatlanul viselkedne.
             SplitView.maximumWidth: Math.max(240, mainSplit.width - 240)
 
-            // A húzott szélesség mentése — késleltetve, hogy a húzás közbeni
-            // pixelenkénti változás ne írja folyamatosan a QSettings-t.
-            onWidthChanged: folderPaneWidthSaver.restart()
-
-            Timer {
-                id: folderPaneWidthSaver
-                interval: 400
-                onTriggered: {
-                    if (controller && folderPane.width > 0) {
-                        controller.setFolderPaneWidth(Math.round(folderPane.width))
-                    }
-                }
-            }
-            // #305: null-őr — a controller a QML-engine leépítésekor
-            // átmenetileg null lehet, amikor ezek a kötések utoljára
-            // kiértékelődnek
-            foldersModel: controller ? controller.folders : null
-            // #702: a bal hasáb hierarchikus (fa) mappanézete. A `typeof`-őr
-            // NEM elhagyható: a hasábot vezérlő nélkül betöltő próbáknál egy
-            // őrizetlen hivatkozás QML-szkripthibát dobna.
-            // #1454: a nézetmódot (Egyszerű / Fa) is ez a vezérlő tartja — a
-            // `FolderPane.treeViewMode` alapértelmezésben rá kötődik, ezért
-            // itt NEM szabad felülírni (korábban `false` volt beégetve, és a
-            // menü bekötése után is a lapos listán ragadt volna a hasáb).
-            hierarchyController: (typeof folderHierarchyController !== "undefined")
-                                 ? folderHierarchyController : null
-            selectedPath: controller ? controller.currentFolder : ""
-            starredActive: controller ? controller.filterActive : false
-            searchActive: controller ? controller.searchActive : false
-            searchQuery: controller ? controller.searchQuery : ""
-            searchResultCount: controller ? controller.searchResultCount : 0
-            albumsModel: controller ? controller.albums : []
-            selectedAlbumToken: controller ? controller.currentAlbumToken : ""
-            // #26 (3. lépcső): az Emberek gyűjtemény + a „Névtelenek" sor
-            peopleModel: controller ? controller.people : []
-            selectedPersonName: controller ? controller.currentPersonName : ""
-            unnamedFaceCount: (typeof faceScanController !== "undefined" && faceScanController)
-                               ? (faceScanController.unnamedCount ?? 0) : 0
-            unnamedFacesActive: window.unnamedFacesOpen
-                                && window.facesAlbumMode === "unnamed"
-            // #449: a háttér-beolvasás haladása az albumlistában
-            faceScanPercent: (typeof faceScanController !== "undefined" && faceScanController)
-                              ? (faceScanController.scanPercent ?? -1) : -1
-            onFolderChosen: function(path) {
-                window.clearSelection()
-                window.unnamedFacesOpen = false
-                if (toolbar.searchText.trim().length > 0) {
-                    // #45: aktív keresésnél a szűrés megmarad, a
-                    // találatok a mappára szűkülnek (Picasa-viselkedés)
-                    controller.selectFolderKeepSearch(path)
-                } else {
-                    toolbar.clearSearch()
-                    controller.selectFolder(path)
-                }
-            }
-            // #5704: a beépített és a felhasználói gyűjtemény jelszókezelése.
-            onHiddenPasswordRequested:
-                collectionPasswordDialog.ensure().openForHiddenCollection()
-            onCollectionPasswordRequested: function (collectionName) {
-                collectionPasswordDialog.ensure().openForCollection(
-                    collectionName)
-            }
-            onStarredChosen: {
-                toolbar.clearSearch()
-                window.clearSelection()
-                window.unnamedFacesOpen = false
-                controller.showStarredAlbum()
-            }
-            onAlbumChosen: function(token) {
-                if (!controller) return
-                toolbar.clearSearch()
-                window.clearSelection()
-                window.unnamedFacesOpen = false
-                controller.showAlbum(token)
-            }
-            onPersonChosen: function(name) {
-                if (!controller) return
-                toolbar.clearSearch()
-                window.clearSelection()
-                window.unnamedFacesOpen = false
-                controller.showPerson(name)
-            }
-            onUnnamedFacesChosen: {
-                toolbar.clearSearch()
-                window.clearSelection()
-                window.facesAlbumMode = "unnamed"
-                window.unnamedFacesOpen = true
-            }
-            // #26: a „Mellőzött emberek" album — ugyanaz a nézet, más
-            // tartalommal és művelettel (a mellőzés visszavonása)
-            onIgnoredFacesChosen: {
-                toolbar.clearSearch()
-                window.clearSelection()
-                window.facesAlbumMode = "ignored"
-                window.unnamedFacesOpen = true
-            }
-            // #457: „Exportált képek" — a Projektek gyűjtemény alatt
-            exportedFolders: controller ? controller.exportedFolders : []
-            // #1029: a Projektek gyűjtemény mappái (P2category)
-            projectFolders: controller ? controller.projectFolders : []
-            ignoredFaceCount: (typeof faceScanController !== "undefined" && faceScanController)
-                               ? (controller ? controller.photos.revision : 0,
-                                  faceScanController.ignoredCount ?? 0)
-                               : 0
-            ignoredFacesActive: window.unnamedFacesOpen
-                                && window.facesAlbumMode === "ignored"
-            // #455: fogd-és-vidd — a húzott KIJELÖLÉS kerül albumba. Az új
-            // album ugyanazt a névkérő párbeszédet kapja, mint a menüből
-            // indított (Fájl → Új album), hogy ne legyen két, kicsit
-            // másképp viselkedő út ugyanarra.
-            onNewAlbumPhotosDropped: function(rows) {
-                if (rows && rows.length > 0)
-                    fileOpsDialogs.ensure().openNewAlbum(rows)
-            }
-            onPhotosDroppedOnAlbum: function(token, rows) {
-                if (controller && rows && rows.length > 0)
-                    controller.addRowsToAlbum(rows, token)
-            }
-            // #5007: a rácsból mappára húzott kijelölés áthelyezése. A
-            // DropArea a forrássorokat még a célmappa megnyitása előtt
-            // pillanatfelvételként adja át; a fájlokat és a .picasa.ini-t a
-            // FileOpsController meglévő kötegelt útja mozgatja.
-            onPhotosDroppedOnFolder: function(path, rows) {
-                if (!controller || !fileOpsController || !path
-                        || !rows || rows.length === 0)
-                    return
-                var paths = []
-                for (var i = 0; i < rows.length; ++i) {
-                    var photoPath = controller.photos.filePathAt(
-                        Number(rows[i]))
-                    if (photoPath.length > 0) paths.push(photoPath)
-                }
-                if (paths.length > 0
-                        && fileOpsController.destinationFolderExists(path))
-                    fileOpsController.movePhotos(paths, path, "rename")
-            }
-            onFolderDroppedOnFolder: function(sourcePath, targetPath) {
-                if (fileOpsController && sourcePath && targetPath)
-                    fileOpsController.moveFolder(sourcePath, targetPath)
-            }
-            // #3681: a mentés-panel közös szűrő-szerződése (ld.
-            // `FolderPane.qml`) — amíg a mentés-panel LÁTSZIK, a hasáb a
-            // MÉG EL NEM MENTETT mappákra szűkül, pipával. A `visible`
-            // (nem a `nyitva`) a mérce: nézegető, időrend vagy másik lap
-            // közben a panel nem látszik, a hasábnak sincs mit szűrnie.
-            mentesSzuroAktiv: backupHost.visible
-            mentesMentetlenMappak: backupHost.mentetlenek
-            mentesPipaltMappak: backupHost.pipaltMappak
-            mentesToltodnek: backupHost.mappakToltodnek
-            mentesVanKeszlet: backupHost.kivalasztott >= 0
-            onMentesPipaldKert: function (mappa, be) { backupHost.pipald(mappa, be) }
+            hostWindow: window
+            hostController: controller
+            hostToolbar: toolbar
+            hostBackupHost: backupHost
+            hostFileOpsDialogs: fileOpsDialogs
+            hostCollectionPasswordDialog: collectionPasswordDialog
+            hostFileOpsController: typeof fileOpsController !== "undefined"
+                ? fileOpsController : null
+            hostFaceScanController: typeof faceScanController !== "undefined"
+                ? faceScanController : null
+            hostFolderHierarchyController: typeof folderHierarchyController !== "undefined"
+                ? folderHierarchyController : null
         }
 
         MainLibraryCanvas {

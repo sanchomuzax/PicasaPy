@@ -29,7 +29,12 @@ _SIM = (
 #: főablak komponenscsaládját olvassa.
 _MAIN = "\n".join(
     (Path(picasapy.app.__file__).parent / "qml" / ut).read_text(encoding="utf-8")
-    for ut in ("Main.qml", "PicasaPy/MainLibraryCanvas.qml", "PicasaPy/MainRightDrawer.qml")
+    for ut in (
+        "Main.qml",
+        "PicasaPy/MainLibraryCanvas.qml",
+        "PicasaPy/MainRightDrawer.qml",
+        "PicasaPy/MainFolderPane.qml",
+    )
 )
 _MENU = (
     Path(picasapy.app.__file__).parent
