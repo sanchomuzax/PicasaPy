@@ -413,13 +413,6 @@ def _assert_toolbar_referenciaegyezes_belso(
             for a, b in zip(vart["center"], mostani["center"], strict=True)
         ), f"{nev} feliratközepe 2 px-nél jobban eltolódott"
 
-    if not sys.platform.startswith("linux") or os.environ.get("CI"):
-        # A helyben rögzített képpont-referenciát más gép rasterizálója
-        # nem tudja bitre egyezően kirajzolni (a CI-n az SVG-tű árnyalata
-        # ±1-gyel, a csúszkafogantyú árnyéka erősebben eltér, #6140); ott a
-        # fenti geometria- és felirat-őr fut, a helyi Linuxon pedig a teljes,
-        # maszkolt pixel-őr.
-        return
     assert abs(kep.width() - elotte.width()) <= 3
     assert abs(kep.height() - elotte.height()) <= 3
     dobozok = [
@@ -487,6 +480,46 @@ def test_geo_icon_vertical_position_snaps_to_scene_device_pixel():
     assert "Math.round" in geo_icon
 
 
+def test_pixel_guard_stays_active_in_ci(monkeypatch):
+    monkeypatch.setenv("CI", "true")
+    referencia = Path(__file__).parent / "golden" / "main_toolbar_6103"
+    kep = QImage(str(referencia / "default_+0.png"))
+    elrendezes = json.loads(
+        (referencia / "default_+0.png.json").read_text(encoding="utf-8")
+    )
+    assert not kep.isNull()
+    eltero_kep = QImage(kep)
+    x, y = 0, 0
+    eltero_kep.setPixel(
+        x,
+        y,
+        0xFFFF00FF if kep.pixel(x, y) != 0xFFFF00FF else 0xFF00FFFF,
+    )
+
+    with pytest.raises(AssertionError, match="eltérő nem-szöveg képpont"):
+        _assert_toolbar_referenciaegyezes_belso(
+            eltero_kep, elrendezes, "default", 0
+        )
+
+
+def test_toolbar_uses_fixed_raster_assets_for_variable_renderers():
+    qml_dir = _qml_mappa()
+    toolbar = (qml_dir / "ToolbarFilterControls.qml").read_text(encoding="utf-8")
+    slider = (qml_dir / "PicasaSlider.qml").read_text(encoding="utf-8")
+    assert 'source: "icons/geo-pin-toolbar.png"' in toolbar
+    assert 'source: "icons/toolbar-slider-shadow-14x14.png"' in slider
+    assert "_rogzitettAlapArnyek" in slider
+    assert (qml_dir / "icons" / "geo-pin-toolbar.png").is_file()
+    assert (qml_dir / "icons" / "toolbar-slider-shadow-14x14.png").is_file()
+
+
+@pytest.mark.skipif(
+    not sys.platform.startswith("linux"),
+    reason=(
+        "a pixel-referencia az Ubuntu Linux CI-n készül; más platformon a Qt "
+        "raszterezése eltér"
+    ),
+)
 @pytest.mark.parametrize(("allapot", "magassag_elteres"), _KEPEK)
 def test_toolbar_allapot_kepe_rogzitheto(
     qml_app, qt_app, tmp_path, allapot: str, magassag_elteres: int
