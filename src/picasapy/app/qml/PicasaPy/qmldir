@@ -9,6 +9,7 @@ ThumbDelegate 1.0 ThumbDelegate.qml
 PicasaMenuBar 1.0 PicasaMenuBar.qml
 MainDialogs 1.0 MainDialogs.qml
 MainErrorBanner 1.0 MainErrorBanner.qml
+MainPeopleAlbumState 1.0 MainPeopleAlbumState.qml
 MainMenuBar 1.0 MainMenuBar.qml
 internal PicasaFileMenu PicasaFileMenu.qml
 internal PicasaEditMenu PicasaEditMenu.qml

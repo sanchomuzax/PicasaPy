@@ -6,8 +6,9 @@ import "selection.js" as Selection
 
 // Főablak (#150 után): a nagy nézet-blokkok külön komponensekben élnek
 // (LightboxFeed = könyvtár-feed, MainToolbar = felső sáv, TrayBar = alsó
-// sáv, FileOpsDialogs/ExportDialogs/AboutDialog = dialógusok, selection.js
-// = kijelölés-logika) — itt csak az állapot és a bekötés marad.
+// sáv, MainPeopleAlbumState = személyalbum-műveletek,
+// FileOpsDialogs/ExportDialogs/AboutDialog = dialógusok, selection.js =
+// kijelölés-logika) — itt csak az állapot és a bekötés marad.
 ApplicationWindow {
     id: window
     // A kivont komponens mellett a főablak korábbi QML-neve megmarad.
@@ -1043,219 +1044,61 @@ ApplicationWindow {
         window.selectedIndexes = rows
         window.selectedIndex = rows.length > 0 ? rows[0] : -1
     }
-    //: #2187: a személy-album javaslat-munkafolyamata. A fejléc a
-    //: nevet és a darabszámot innen kapja, a két gombja pedig ezeket a
-    //: függvényeket hívja — a képfolyam nem ismeri az arc-vezérlőt.
-    //:
-    //: A darabszám a nézet váltásakor (`personViewChanged`) és a saját
-    //: műveleteink után frissül; a `_javaslatRevizio` az a horgony, amit
-    //: a kötés újraértékel.
-    property int _javaslatRevizio: 0
+    // A személyalbum-javaslatok állapota külön komponensben él. A régi
+    // főablak-tulajdonságok és függvények továbbra is nyilvánosak.
+    MainPeopleAlbumState {
+        id: mainPeopleAlbumState
+        hostWindow: window
+        hostController: controller
+        hostFaceScanController: typeof faceScanController !== "undefined"
+            ? faceScanController : null
+        hostRemovePeopleFacesDialog: removePeopleFacesDialog
+        hostCreateDialogs: createDialogs
+    }
+    property alias _javaslatRevizio: mainPeopleAlbumState._javaslatRevizio
     readonly property string personAlbumName:
-        controller && controller.currentPersonName
-            ? controller.currentPersonName : ""
-    readonly property string personAlbumAvatarUrl: {
-        if (!controller || window.personAlbumName === "") return ""
-        var people = controller.people || []
-        for (var i = 0; i < people.length; ++i) {
-            if (String(people[i].name).toLocaleLowerCase()
-                    === window.personAlbumName.toLocaleLowerCase())
-                return String(people[i].headerThumbUrl
-                              || people[i].thumbUrl || "")
-        }
-        return ""
-    }
-    readonly property bool personAlbumCanRemoveSelection: {
-        if (!controller || window.personAlbumName === "") return false
-        var rows = window.selectedRows()
-        if (rows.length === 0) return false
-        if (window.personSelectedSuggestionIds.length > 0) return true
-        var people = controller.peopleOfRows(rows)
-        for (var i = 0; i < people.length; ++i) {
-            if (String(people[i].name).toLocaleLowerCase()
-                    === window.personAlbumName.toLocaleLowerCase())
-                return true
-        }
-        return false
-    }
-    readonly property bool personAlbumCanSetThumbnail: {
-        if (!controller || window.personAlbumName === "") return false
-        var rows = window.selectedRows()
-        for (var i = 0; i < rows.length; ++i) {
-            var photoId = Number(controller.photos.idAt(Number(rows[i])))
-            if (controller.canSetPersonThumbnail(
-                    photoId, window.personAlbumName)) return true
-        }
-        return false
-    }
+        mainPeopleAlbumState.personAlbumName
+    readonly property string personAlbumAvatarUrl:
+        mainPeopleAlbumState.personAlbumAvatarUrl
+    readonly property bool personAlbumCanRemoveSelection:
+        mainPeopleAlbumState.personAlbumCanRemoveSelection
+    readonly property bool personAlbumCanSetThumbnail:
+        mainPeopleAlbumState.personAlbumCanSetThumbnail
+    readonly property int personSuggestionCount:
+        mainPeopleAlbumState.personSuggestionCount
+    readonly property var personSelectedSuggestionIds:
+        mainPeopleAlbumState.personSelectedSuggestionIds
+    readonly property bool personSuggestionsOnly:
+        mainPeopleAlbumState.personSuggestionsOnly
+    readonly property bool personFaceZoom: mainPeopleAlbumState.personFaceZoom
     function removePersonAlbumSelection() {
-        if (!controller || !window.personAlbumCanRemoveSelection) return
-        if (window.personSelectedSuggestionIds.length > 0) {
-            window.removePersonSuggestions()
-            return
-        }
-        removePeopleFacesDialog.ensure().openFor(
-            window.selectedRows(), window.personAlbumName)
+        mainPeopleAlbumState.removePersonAlbumSelection()
     }
     function setPersonAlbumThumbnailFromSelection() {
-        if (!controller || !window.personAlbumCanSetThumbnail) return
-        var rows = window.selectedRows()
-        for (var i = 0; i < rows.length; ++i) {
-            var photoId = Number(controller.photos.idAt(Number(rows[i])))
-            if (controller.setPersonThumbnail(
-                    photoId, window.personAlbumName)) {
-                window.peopleFaceRevision++
-                return
-            }
-        }
+        mainPeopleAlbumState.setPersonAlbumThumbnailFromSelection()
     }
-    // #4391: a People-filmet a személyalbum-modell nem üres albumai adják,
-    // annak tárolt sorrendjében; nem csak az éppen nyitott album sorai.
-    function openPersonAlbumMovie() {
-        if (!controller || window.personAlbumName === "") return
-        window.openPeopleAlbumsMovie()
-    }
-    // #4633: ID_FACESRANDOM ugyanazt a már meglévő, #4391-es forráslistát
-    // használja, de a Létrehozás menüből személyalbum nézet nélkül is indul.
-    function openPeopleAlbumsMovie() {
-        if (!controller) return
-        var forrasok = controller.personMovieSourceUrls()
-        if (forrasok.length === 0) return
-        createDialogs.ensure().openMovieForSources(forrasok)
-    }
-    readonly property int personSuggestionCount: {
-        window._javaslatRevizio
-        if (!window._faceScanController || window.personAlbumName === "")
-            return 0
-        return window._faceScanController.personSuggestionCount(
-            window.personAlbumName)
-    }
-    //: #4588: a `selectsug` a jelenlegi személy függő javaslatait
-    //: tartalmazó fotósorokat jelöli ki. A meglévő jóváhagyás és eltávolítás
-    //: ezután a kijelölt fotókon levő, e személyhez tartozó arcokra szűkít.
+    function openPersonAlbumMovie() { mainPeopleAlbumState.openPersonAlbumMovie() }
+    function openPeopleAlbumsMovie() { mainPeopleAlbumState.openPeopleAlbumsMovie() }
     function selectPersonSuggestions() {
-        if (!window._faceScanController || window.personAlbumName === ""
-                || !controller || !controller.photos)
-            return
-        var utak = window._faceScanController.personSuggestionPaths(
-            window.personAlbumName)
-        var javaslatSorok = ({})
-        for (var j = 0; j < utak.length; ++j) {
-            // A vezérlő Path-sztringje Windowson natív `\\` elválasztót
-            // tartalmazhat, míg a PhotoGridModel.filePathAt `/`-t ad.
-            // Az útvonal-azonosítást a modell platformfüggő rowOfPath API-ja
-            // végzi, ne QML-ben hasonlítsuk össze a nyers szövegeket.
-            var sor = Number(controller.photos.rowOfPath(String(utak[j])))
-            if (sor >= 0)
-                javaslatSorok[sor] = true
-        }
-        var sorok = []
-        var darab = Number(controller.photos.rowCount())
-        for (var i = 0; i < darab; ++i) {
-            if (javaslatSorok[i])
-                sorok.push(i)
-        }
-        window.selectedIndexes = sorok
-        window.selectedIndex = sorok.length > 0 ? sorok[0] : -1
-    }
-    //: #2187: a kijelölt hatókör (`confirmsel`, `removesel`) — a
-    //: KIJELÖLT fotókon ülő, e személyre szóló függő javaslatok arcai. A
-    //: rács sora a fotó, a művelet arcokra hat; a leképezést a vezérlő
-    //: végzi. Üres lista = nincs kijelölt javaslat, a gombok az összesre
-    //: hatnak.
-    readonly property var personSelectedSuggestionIds: {
-        window._javaslatRevizio
-        var sorok = window.selectedIndexes
-        if (!window._faceScanController || window.personAlbumName === ""
-                || !sorok || sorok.length === 0)
-            return []
-        var utak = []
-        for (var k = 0; k < sorok.length; ++k) {
-            var ut = controller.photos.filePathAt(Number(sorok[k]))
-            if (ut !== "")
-                utak.push(ut)
-        }
-        return window._faceScanController.personSuggestionIdsForPaths(
-            window.personAlbumName, utak)
+        mainPeopleAlbumState.selectPersonSuggestions()
     }
     function confirmPersonSuggestions() {
-        if (!window._faceScanController || window.personAlbumName === "")
-            return
-        var arcok = window.personSelectedSuggestionIds
-        if (arcok.length > 0)
-            window._faceScanController.confirmPersonSuggestions(
-                window.personAlbumName, arcok)
-        else
-            window._faceScanController.confirmPersonSuggestions(
-                window.personAlbumName)
-        window._javaslatFrissult()
+        mainPeopleAlbumState.confirmPersonSuggestions()
     }
     function removePersonSuggestions() {
-        if (!window._faceScanController || window.personAlbumName === "")
-            return
-        var arcok = window.personSelectedSuggestionIds
-        if (arcok.length > 0)
-            window._faceScanController.removePersonSuggestions(
-                window.personAlbumName, arcok)
-        else
-            window._faceScanController.removePersonSuggestions(
-                window.personAlbumName)
-        window._javaslatFrissult()
-    }
-    //: #2187: `sug_filter` — a javaslat-szűrő állása és átkapcsolása. Az
-    //: állapotot a vezérlő tartja (nézetváltáskor magától kikapcsol),
-    //: a `_javaslatRevizio` itt is a kötés horgonya.
-    readonly property bool personSuggestionsOnly: {
-        window._javaslatRevizio
-        return controller && controller.personSuggestionsOnly !== undefined
-            ? controller.personSuggestionsOnly : false
+        mainPeopleAlbumState.removePersonSuggestions()
     }
     function setPersonSuggestionsOnly(csak) {
-        if (!controller || !controller.setPersonSuggestionsOnly)
-            return
-        controller.setPersonSuggestionsOnly(csak)
-        window._javaslatRevizio += 1
-    }
-    //: #2187: az arc ↔ teljes kép nagyításváltó (`face_zoom` ↔
-    //: `picture_zoom`) — a szűrő mintájára: az állást a vezérlő tartja, a
-    //: `_javaslatRevizio` a kötés horgonya.
-    readonly property bool personFaceZoom: {
-        window._javaslatRevizio
-        return controller && controller.personFaceZoom !== undefined
-            ? controller.personFaceZoom : false
+        mainPeopleAlbumState.setPersonSuggestionsOnly(csak)
     }
     function setPersonFaceZoom(arc) {
-        if (!controller || !controller.setPersonFaceZoom)
-            return
-        controller.setPersonFaceZoom(arc)
-        window._javaslatRevizio += 1
+        mainPeopleAlbumState.setPersonFaceZoom(arc)
     }
-    //: #2187: „További javaslatok keresése" (`moresug`). A vezérlő a
-    //: javaslat-lépcsőt tízzel lazítja, és a beállítást NEM írja vissza —
-    //: az eredeti kezelője (`0x00602890`) sem. A személy-album nevére itt
-    //: nincs szükség: a lazítás az EGÉSZ készletre újraszámol, ahogy a
-    //: mért kezelő is.
     function findMoreSuggestions() {
-        if (!window._faceScanController)
-            return
-        window._faceScanController.moreSuggestions()
-        window._javaslatFrissult()
+        mainPeopleAlbumState.findMoreSuggestions()
     }
-    //: a darabszám újraszámolása + az album újratöltése: a jóváhagyott
-    //: arcok ettől kerülnek be a személy képei közé
     function _javaslatFrissult() {
-        //: #2187: `refreshPersonAlbum` és nem `showPerson` — az
-        //: újratöltés megtartja a javaslat-szűrő állását, a `showPerson`
-        //: viszont új albumot nyit, és kikapcsolja.
-        if (controller && window.personAlbumName !== "") {
-            if (controller.refreshPersonAlbum)
-                controller.refreshPersonAlbum()
-            else
-                controller.showPerson(window.personAlbumName)
-        }
-        //: a horgony az újratöltés UTÁN lép: a kijelölt javaslatok
-        //: listája már az új rács soraiból számolódik újra
-        window._javaslatRevizio += 1
+        mainPeopleAlbumState._javaslatFrissult()
     }
 
     //: #1823: „szerkesztések mentése lemezre" a mappa-fejlécről. A
