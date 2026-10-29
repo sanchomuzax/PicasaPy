@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.281] - 2026-10-29
+
+- Az importforrás-vezérlő állapota és pásztázása külön modulba került, változatlan működéssel (#6162).
+- A kollázs renderelőjének belső részei kisebb modulokba kerültek, a képkimenet változatlan maradt (#6163).
+
+## [0.9.280] - 2026-10-29
+
+- A képtálca vezérlője kisebb, külön felelősségű részekre bomlik változatlan működéssel (#6153).
+- A könyvtárlisták modellkódja kisebb, megnevezett modulokba került (#6154).
+- A képernyőkép-mérő megvárja az osztósáv utáni látható bélyegképek betöltését (#6158).
+
 ## [0.9.279] - 2026-10-29
 
 - A backuphash-teszt várakozása az ini cseréje közbeni jogosultsági hibát még-nem-késznek veszi (#6156).
