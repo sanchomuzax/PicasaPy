@@ -255,9 +255,27 @@ Slider {
         readonly property real arnyekJobb: 2
         readonly property real arnyekAlul: 3
 
+        // #6140: a 14×14-es, 7 px sugarú árnyék alfa-rasztere a három
+        // alábbi Rectangle aktuális rajzából készült. A fix pixelek miatt
+        // Qt-verziótól és renderelőtől független. Más fogantyúméret vagy
+        // sugár az eredeti QML-rajzot használja.
+        readonly property bool _rogzitettAlapArnyek:
+            width === 14 && height === 14 && control.handleRadius === 7
+
+        Image {
+            anchors.fill: parent
+            source: "icons/toolbar-slider-shadow-14x14.png"
+            sourceSize.width: width
+            sourceSize.height: height
+            fillMode: Image.Stretch
+            smooth: false
+            visible: fogantyu._rogzitettAlapArnyek
+        }
+
         Repeater {
             model: 3
             Rectangle {
+                visible: !fogantyu._rogzitettAlapArnyek
                 x: index + 1 > fogantyu.arnyekJobb ? fogantyu.arnyekJobb : index + 1
                 y: index + 1 > fogantyu.arnyekAlul ? fogantyu.arnyekAlul : index + 1
                 width: rajz.width
