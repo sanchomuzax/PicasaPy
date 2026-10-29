@@ -45,24 +45,33 @@ _MAX_FEJEZET = 200
 _REJTETT_ELOTAG = "."
 
 
-def sugo_mappa() -> Path:
-    """A súgó mappája a csomagon belül."""
-    return Path(__file__).parent / "help"
+def sugo_mappa(language: str = "hu") -> Path:
+    """A kiválasztott súgónyelv mappája a csomagon belül.
+
+    A magyar felület a történeti gyökérfát használja. Minden más nyelv az
+    angol fákat választja; hiányzó angol lap esetén nincs magyar visszaesés.
+    """
+    root = Path(__file__).parent / "help"
+    return root if (language or "").casefold() == "hu" else root / "en"
 
 
-def fejezetek() -> list[str]:
+def fejezetek(language: str = "hu") -> list[str]:
     """A fejezetek a súgó mappájához képesti útvonalként, a FŐOLDALLAL elöl.
 
     A főoldal a tartalomjegyzék, ezért nem ábécérendben áll: az nyílik
     meg elsőként, tehát az első helye rögzített.
     """
-    mappa = sugo_mappa()
+    mappa = sugo_mappa(language)
     if not mappa.is_dir():
         return []
     nevek = sorted(
         ut.relative_to(mappa).as_posix()
         for ut in mappa.rglob("*.md")
         if not ut.name.startswith(_REJTETT_ELOTAG)
+        and not (
+            (language or "").casefold() == "hu"
+            and ut.relative_to(mappa).parts[0] == "en"
+        )
     )
     if FOOLDAL in nevek:
         nevek.remove(FOOLDAL)
@@ -70,7 +79,7 @@ def fejezetek() -> list[str]:
     return nevek
 
 
-def _feloldott(nev: str) -> Path | None:
+def _feloldott(nev: str, language: str = "hu") -> Path | None:
     """A fejezetnév biztonságos feloldása a súgó mappáján BELÜL.
 
     A fejezetnév a felületről jön (`helpTopic` tulajdonság, keresési
@@ -78,7 +87,7 @@ def _feloldott(nev: str) -> Path | None:
     (`../../`) ki lehetne lépni a csomagból. A feloldás után ezért
     ellenőrizzük, hogy tényleg a mappán belül maradtunk.
     """
-    mappa = sugo_mappa().resolve()
+    mappa = sugo_mappa(language).resolve()
     try:
         jelolt = (mappa / nev).resolve()
         jelolt.relative_to(mappa)
@@ -94,7 +103,9 @@ def _feloldott(nev: str) -> Path | None:
 _KULSO_SEMAK = ("http://", "https://", "mailto:", "ftp://", "file://")
 
 
-def hivatkozas_celja(honnan: str, cel: str) -> str | None:
+def hivatkozas_celja(
+    honnan: str, cel: str, language: str = "hu"
+) -> str | None:
     """Egy Markdown-hivatkozás célja fejezetnévként — vagy `None`.
 
     A súgó lapjai egymásra **relatívan** hivatkoznak (`features/konyvtar.md`
@@ -120,7 +131,7 @@ def hivatkozas_celja(honnan: str, cel: str) -> str | None:
     if not tiszta:
         return None
 
-    mappa = sugo_mappa().resolve()
+    mappa = sugo_mappa(language).resolve()
     szulo = (mappa / honnan).parent
     try:
         jelolt = (szulo / tiszta).resolve()
@@ -132,9 +143,9 @@ def hivatkozas_celja(honnan: str, cel: str) -> str | None:
     return viszonylagos.as_posix()
 
 
-def fejezet_szovege(nev: str) -> str | None:
+def fejezet_szovege(nev: str, language: str = "hu") -> str | None:
     """Egy fejezet nyers Markdown-szövege; ismeretlen névre `None`."""
-    ut = _feloldott(nev)
+    ut = _feloldott(nev, language)
     if ut is None:
         return None
     try:
@@ -143,7 +154,7 @@ def fejezet_szovege(nev: str) -> str | None:
         return None
 
 
-def kereses(kifejezes: str) -> list[dict[str, str]]:
+def kereses(kifejezes: str, language: str = "hu") -> list[dict[str, str]]:
     """Szöveges keresés a súgóban.
 
     Args:
@@ -161,10 +172,10 @@ def kereses(kifejezes: str) -> list[dict[str, str]]:
         return []
 
     talalatok: list[dict[str, object]] = []
-    for nev in fejezetek():
+    for nev in fejezetek(language):
         if len(talalatok) >= _MAX_FEJEZET:
             break
-        szoveg = fejezet_szovege(nev) or ""
+        szoveg = fejezet_szovege(nev, language) or ""
         kicsi = szoveg.casefold()
         elso = kicsi.find(minta)
         if elso < 0:

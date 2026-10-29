@@ -48,8 +48,8 @@ class HelpMixin(QObject):
         önmagában nem olvasható a felhasználónak.
         """
         tetelek = []
-        for nev in fejezetek():
-            szoveg = fejezet_szovege(nev) or ""
+        for nev in fejezetek(self.language):
+            szoveg = fejezet_szovege(nev, self.language) or ""
             cim = next(
                 (s[2:].strip() for s in szoveg.splitlines() if s.startswith("# ")),
                 nev,
@@ -64,7 +64,7 @@ class HelpMixin(QObject):
         Üres szöveget adunk vissza, nem hibát: a súgó megnyitása sosem
         buktathatja el a programot, és a néző a főoldalra tud esni.
         """
-        return fejezet_szovege(nev) or ""
+        return fejezet_szovege(nev, self.language) or ""
 
     @Slot(str, str, result=str)
     def helpResolveLink(self, honnan: str, cel: str) -> str:
@@ -76,12 +76,12 @@ class HelpMixin(QObject):
         nem létezik, vagy kilépne a súgó mappájából: a felület ilyenkor
         egyszerűen nem lép sehova (#2212).
         """
-        return hivatkozas_celja(honnan, cel) or ""
+        return hivatkozas_celja(honnan, cel, self.language) or ""
 
     @Slot(str, result="QVariantList")
     def helpSearch(self, kifejezes: str) -> list[dict[str, str]]:
         """Szöveges keresés; találatonként `{fejezet, cim, reszlet}`."""
-        return kereses(kifejezes)
+        return kereses(kifejezes, self.language)
 
 
 __all__ = ["HelpMixin"]
