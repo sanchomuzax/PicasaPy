@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.287] - 2026-10-29
+
+- A kimeneti újraolvasás tesztje a háttér-szinkron előtt és után szemetet gyűjt (#6197).
+- A Red.dll arcdetektor-osztályának gyárága és vtábla-slotja a specifikációban (#5185).
 ## [0.9.286] - 2026-10-29
 
 - A Létrehozás render-referenciája csak Linuxon fut (#6190).
