@@ -14,8 +14,6 @@ from picasapy.app.models import _thumb_url
 
 class _TraySignalsMixin:
     heldChanged = Signal()
-    #: #2039: a tálca SAJÁT kijelölése változott (nem a rácsé).
-    traySelectionChanged = Signal()
     #: #5976: Google Photos hitelesítés és tálcafeltöltés állapota.
     googlePhotosChanged = Signal()
     photosUploadChanged = Signal()
@@ -27,7 +25,6 @@ class _TraySignalsMixin:
 
 
 heldChanged = _TraySignalsMixin.heldChanged
-traySelectionChanged = _TraySignalsMixin.traySelectionChanged
 googlePhotosChanged = _TraySignalsMixin.googlePhotosChanged
 photosUploadChanged = _TraySignalsMixin.photosUploadChanged
 googlePhotosProgressReported = _TraySignalsMixin.googlePhotosProgressReported
@@ -38,6 +35,9 @@ googlePhotosAuthResultReported = _TraySignalsMixin.googlePhotosAuthResultReporte
 
 class TrayStateMixin(_TraySignalsMixin):
     """A képtálca képeinek állapotát és nézeti API-ját adja."""
+
+    #: #2039: a tálca SAJÁT kijelölése változott (nem a rácsé).
+    traySelectionChanged = Signal()
 
     @Slot("QVariant", result=str)
     def fileUriList(self, paths) -> str:  # noqa: N802 — QML API

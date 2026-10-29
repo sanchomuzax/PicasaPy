@@ -84,37 +84,37 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
         self._ensure_google_photos_wired()
         return self.googlePhotosSignedIn and self.heldCount > 0 and not self._photos_upload_running
 
-    @Property(bool, notify=photosUploadChanged)
+    @Property(bool, notify=_TraySignalsMixin.photosUploadChanged)
     def photosUploadRunning(self) -> bool:
         self._ensure_google_photos_wired()
         return self._photos_upload_running
 
-    @Property(str, notify=photosUploadChanged)
+    @Property(str, notify=_TraySignalsMixin.photosUploadChanged)
     def photosUploadPhase(self) -> str:
         self._ensure_google_photos_wired()
         return self._photos_upload_phase
 
-    @Property(int, notify=photosUploadChanged)
+    @Property(int, notify=_TraySignalsMixin.photosUploadChanged)
     def photosUploadDone(self) -> int:
         self._ensure_google_photos_wired()
         return self._photos_upload_done
 
-    @Property(int, notify=photosUploadChanged)
+    @Property(int, notify=_TraySignalsMixin.photosUploadChanged)
     def photosUploadTotal(self) -> int:
         self._ensure_google_photos_wired()
         return self._photos_upload_total
 
-    @Property(str, notify=photosUploadChanged)
+    @Property(str, notify=_TraySignalsMixin.photosUploadChanged)
     def photosUploadCurrentName(self) -> str:
         self._ensure_google_photos_wired()
         return self._photos_upload_current_name
 
-    @Property(str, notify=photosUploadChanged)
+    @Property(str, notify=_TraySignalsMixin.photosUploadChanged)
     def photosUploadError(self) -> str:
         self._ensure_google_photos_wired()
         return self._photos_upload_error
 
-    @Property(bool, notify=photosUploadChanged)
+    @Property(bool, notify=_TraySignalsMixin.photosUploadChanged)
     def photosUploadFinished(self) -> bool:
         self._ensure_google_photos_wired()
         return self._photos_upload_finished
