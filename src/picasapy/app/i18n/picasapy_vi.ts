@@ -9202,44 +9202,6 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
             <translation>Điều này sẽ tạo một album với hơn 1000 hình. Bạn có muốn tiếp tục không?</translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" line="3284" />
-            <source>Back to View All</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Quay lại Xem tất cả</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3370" />
-            <source>Duplicate Files</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tệp trùng lặp</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3394" />
-            <source>Looking for duplicate files...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Đang tìm tệp trùng lặp...</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3333" />
-            <source>Similarity Search Results</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
-            <translation>Kết quả Tìm kiếm Tương tự</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3351" />
-            <source>Clear Sample</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Xóa mẫu</translation>
-        </message>
-        <message>
-            <location filename="../qml/Main.qml" line="3419" />
-            <source>Updating similarity database (will be fast next time)</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
-            <translation>Đang cập nhật cơ sở dữ liệu tương tự (lần sau sẽ nhanh)</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" line="2743" />
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -9399,6 +9361,47 @@ It will change the next time PicasaPy is opened.</source>
             <translation>Thay đổi ngôn ngữ PicasaPy đang sử dụng?
 
 Thay đổi sẽ có hiệu lực vào lần mở PicasaPy tiếp theo.</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainLibraryCanvas</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="54" />
+            <source>Back to View All</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Quay lại Xem tất cả</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="140" />
+            <source>Duplicate Files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tệp trùng lặp</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="164" />
+            <source>Looking for duplicate files...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Đang tìm tệp trùng lặp...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="103" />
+            <source>Similarity Search Results</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CAlbumState::SimSearchResults</extracomment>
+            <translation>Kết quả Tìm kiếm Tương tự</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="121" />
+            <source>Clear Sample</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Xóa mẫu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainLibraryCanvas.qml" line="189" />
+            <source>Updating similarity database (will be fast next time)</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CSimSearch::updating</extracomment>
+            <translation>Đang cập nhật cơ sở dữ liệu tương tự (lần sau sẽ nhanh)</translation>
         </message>
     </context>
     <context>

@@ -23,7 +23,7 @@ használtuk `mipmap` nélkül, és **kettőn** mipmappal:
 
 | mipmappal | mipmap nélkül |
 |---|---|
-| `ThumbDelegate.qml` (#83), `TimelineView.qml` | `DedupDialog`, `ImportSourceDialog`, `UnnamedFacesView`, `CollageClipsTab`, `PhotoViewer` (filmszalag), `TrayBar` (tálca) |
+| `ThumbDelegate.qml` (#83), `TimelinePanel.qml` | `DedupDialog`, `ImportSourceDialog`, `UnnamedFacesView`, `CollageClipsTab`, `PhotoViewer` (filmszalag), `TrayBar` (tálca) |
 
 ⇒ Elég a rácsot és a tálcát egyszerre látni, és a váltás megtörténik.
 

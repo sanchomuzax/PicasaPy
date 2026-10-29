@@ -55,6 +55,8 @@ AlbumUgroGomb 1.0 AlbumUgroGomb.qml
 PicasaScrollBar 1.0 PicasaScrollBar.qml
 PicasaSlider 1.0 PicasaSlider.qml
 EditorPanel 1.0 EditorPanel.qml
+internal EditorPanelTabs EditorPanelTabs.qml
+internal EditorPanelOverlays EditorPanelOverlays.qml
 DocumentTabStrip 1.0 DocumentTabStrip.qml
 DocumentTab 1.0 DocumentTab.qml
 CropOverlay 1.0 CropOverlay.qml
@@ -85,6 +87,8 @@ LayoutSegment 1.0 LayoutSegment.qml
 AaUtkozesDialog 1.0 AaUtkozesDialog.qml
 EndEditModalityDialog 1.0 EndEditModalityDialog.qml
 RightDrawer 1.0 RightDrawer.qml
+MainRightDrawer 1.0 MainRightDrawer.qml
+MainFolderPane 1.0 MainFolderPane.qml
 DrawerHeaderButton 1.0 DrawerHeaderButton.qml
 TagsPanel 1.0 TagsPanel.qml
 KeywordsDialog 1.0 KeywordsDialog.qml
@@ -151,6 +155,7 @@ PicasaImportDialog 1.0 PicasaImportDialog.qml
 ImportDropArea 1.0 ImportDropArea.qml
 HistogramBox 1.0 HistogramBox.qml
 SplashScreen 1.0 SplashScreen.qml
+internal TimelinePanel TimelinePanel.qml
 TimelineView 1.0 TimelineView.qml
 DedupDialog 1.0 DedupDialog.qml
 FaceScanDialog 1.0 FaceScanDialog.qml
@@ -273,6 +278,7 @@ PhotoViewerLeftDrawer 1.0 PhotoViewerLeftDrawer.qml
 PhotoViewerPhotoArea 1.0 PhotoViewerPhotoArea.qml
 MainSlideshow 1.0 MainSlideshow.qml
 MainWindowToolbar 1.0 MainWindowToolbar.qml
+MainLibraryCanvas 1.0 MainLibraryCanvas.qml
 PhotoViewerStraightenGrid 1.0 PhotoViewerStraightenGrid.qml
 PhotoViewerTiltToolBar 1.0 PhotoViewerTiltToolBar.qml
 PhotoViewerElotteImage 1.0 PhotoViewerElotteImage.qml

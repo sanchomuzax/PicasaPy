@@ -54,6 +54,19 @@ _KOTELEZO_VALTOZATOK = {
     "MovieMakerPreview": ("movieDialog: ({}); resizeTimer: ({})",),
     "MovieMakerSlideLogic": ("movieDialog: ({}); tabs: ({})",),
     "MovieMakerTabs": ("movieDialog: ({}); options: ({})",),
+    # #6136: a főablak jobb oldali fiókja kötelező gazda-tulajdonságokat kér
+    "MainRightDrawer": (
+        "hostWindow: ({}); hostController: null; hostToolbar: ({}); "
+        "hostPhotoViewer: ({}); hostMainSplit: ({}); "
+        "hostMainLibraryCanvas: ({ unnamedFacesView: ({}) }); hostMainDialogs: ({})",
+    ),
+    # #6136: a FolderPane főablakbeli bekötése önálló, kötelező gazda-propokat kér.
+    "MainFolderPane": (
+        "hostWindow: ({}); hostController: null; hostToolbar: ({}); "
+        "hostBackupHost: ({}); hostFileOpsDialogs: ({}); "
+        "hostCollectionPasswordDialog: ({}); hostFileOpsController: null; "
+        "hostFaceScanController: null; hostFolderHierarchyController: null",
+    ),
 }
 _ALTALANOS_VALTOZATOK = (
     "", "appWindow: null", "panel: null", "appWindow: null; panel: null"

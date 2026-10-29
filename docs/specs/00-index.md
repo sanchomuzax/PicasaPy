@@ -48,6 +48,8 @@ kérdés).
 
 ### [picasa-arcfelismeres.md](picasa-arcfelismeres.md) - #5184/#5185: a Picasa 3.9 névvel jelölt képen kihagy-e további arcot, mi a Red.dll effektív küszöbe és mért aránya, hogyan viselkedik a People Manager kijelölése, és teljes-e a személy-/arcfolyamat eredeti felmérése? Nyitott: #5184 N1/N3 eredeti futásidejű mérése; N7 lezárva, a People Manager egyszeres kijelölésű (§58). #5185 J2-J8 felvételek, a `contacts.xml`/`.picasa.ini`/db3 műveleti írási ideje és a Red modellstreamből betöltött érték (35., 53-59. szakasz).
 
+**Aktuális #5184 állapot (2026-10-29, §60):** N1 és N3 továbbra is nyitott, mert nincs eredeti futásidejű kontroll vagy azonos címkézett felismerési mérés. A `0x10107d70` helyi Ghidra-kimenete és a hashazonos Red.dll RTTI/vftábla-adata egyezik a `vsi_WeakClassifier` szerializáló `+0x1c` mezőútján; ez nem adja meg a Picasa 3.9-ben futó értéket vagy arányt. N4-N8 lezárt; PicasaPy-eltérés nem bizonyított. Részletek: 60. szakasz.
+
 ### [picasa-kepernyokep-rogzites.md](picasa-kepernyokep-rogzites.md): #5608: Print Screen-lekérdezés, a rejtett kapcsoló alapértéke és szálindítási kapuja, dátum-idős BMP-kimenet, mappabesorolás és értesítés; többmonitoros kiterjedés, kurzor, accelerator-/menü-út, azonnali indexelés és kattintási cél nyitott
 
 ### [ui-audit-editor.md](ui-audit-editor.md) - #5466: az `AutoPlayMovies` rejtett `Preferences`-kulcs, alapértéke `1`; egyik hivatkozófüggvény sem írja, kapcsoló és felirat nincs az eredetiben

@@ -128,6 +128,13 @@ _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
         "None of the selected pictures could be printed: %1",
     ): "PrintController",
     ("PrintControllerOutputMixin", "Invalid print settings: %1"): "PrintController",
+    # #6174: a fájlművelet-vezérlő mixinjei futásidőben a FileOpsController
+    # fordítási kontextusát használják (a `self` az övé).
+    ("FileOpsControllerMoveMixin", "Choose a destination folder first."): "FileOpsController",
+    ("FileOpsControllerMoveMixin", "Select at least one picture first."): "FileOpsController",
+    ("FileOpsControllerOpenMixin", "The system default application could not open %1/%2 selected files."): "FileOpsController",
+    ("FileOpsControllerOpenMixin", "This picture has no preserved original on disk."): "FileOpsController",
+    ("FileOpsControllerOpenMixin", "Unable to open application"): "FileOpsController",
     # #6146: a kollázs- és filmkészítés műveletei futásidőben az
     # AppController fordítási kontextusát használják (a `self` az övé).
     ("CollageCreationOperations", "No pictures are selected."): "AppController",

@@ -7,6 +7,54 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.286] - 2026-10-29
+
+- A Létrehozás render-referenciája csak Linuxon fut (#6190).
+- A Red.dll vsi_WeakClassifier szerializáló mezőútja a specifikációban (#5184).
+- A tálca render-tesztje a rögzített betűvel mér, az őr kivétele megszűnik (#6148).
+- A Létrehozás render-ellenőrzése megvárja az EXIF-adatok és képkockák stabilizálódását (#6124).
+- A főablak mappafa-panelje önálló QML-komponensbe került, változatlan képpel (#6136).
+- A szerkesztőpanel belső részei önálló QML-komponensekbe kerültek. (#6177).
+- A renderlánc kisebb, megnevezett modulokra bomlott, változatlan képkimenettel (#6185).
+
+## [0.9.285] - 2026-10-29
+
+- A Red.dll arcfelismerési küszöbének statikus útja a specifikációban (#5185).
+## [0.9.284] - 2026-10-29
+
+- A fájlművelet-vezérlő kisebb, megnevezett részekre bomlott, változatlan működéssel (#6174).
+- Az Időrend nézetének vizuális panelje önálló QML-komponensbe került, változatlan képpel és működéssel (#6176).
+
+## [0.9.283] - 2026-10-29
+
+- A főablak könyvtárnézete és jobb oldali fiókja önálló QML-komponensbe került, változatlan működéssel (#6136).
+- Az alkalmazás indítója kisebb, megnevezett modulokra bomlott, változatlan működéssel (#6155).
+- A kollázsvezérlő vászon- és klipműveletei külön modulba kerültek, a működés változatlan maradt (#6169).
+
+## [0.9.282] - 2026-10-29
+
+- A szerkesztés mentési kódja kisebb, átlátható modulokra bomlott, a működése változatlan maradt (#6168).
+- A diavetítés-film készítőjének belső felépítése kisebb, megnevezett modulokra bomlott (#6173).
+
+## [0.9.281] - 2026-10-29
+
+- Az importforrás-vezérlő állapota és pásztázása külön modulba került, változatlan működéssel (#6162).
+- A kollázs renderelőjének belső részei kisebb modulokba kerültek, a képkimenet változatlan maradt (#6163).
+
+## [0.9.280] - 2026-10-29
+
+- A képtálca vezérlője kisebb, külön felelősségű részekre bomlik változatlan működéssel (#6153).
+- A könyvtárlisták modellkódja kisebb, megnevezett modulokba került (#6154).
+- A képernyőkép-mérő megvárja az osztósáv utáni látható bélyegképek betöltését (#6158).
+
+## [0.9.279] - 2026-10-29
+
+- A backuphash-teszt várakozása az ini cseréje közbeni jogosultsági hibát még-nem-késznek veszi (#6156).
+- A sötét téma most több felületen helyesen jeleníti meg a gombokat, jelzéseket, mezőket és médialejátszó-vezérlőket (#6125).
+- A képpontos QML-ellenőrzések rögzített betűt és közös szövegelem-felismerést használnak. (#6135).
+- Az Emberek-vezérlő belső részei kisebb modulokra bomlottak, a működés változatlan maradt (#6145).
+- A kollázs- és filmkészítés vezérlőrészei külön modulokba kerültek, változatlan működéssel (#6146).
+
 ## [0.9.278] - 2026-10-28
 
 - A fordítás-teljességi teszt listafájlban adja át a forrásokat a lupdate-nek (#6142).

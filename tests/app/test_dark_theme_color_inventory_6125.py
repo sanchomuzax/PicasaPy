@@ -80,6 +80,10 @@ REMAINING_FIXED_LIGHT_COLORS: dict[str, tuple[int, str]] = {
         "A lejátszásjel a videó-bélyegképre kerül.",
     ),
     "src/picasapy/app/qml/PicasaPy/TimelineView.qml": (
+        0,
+        "Az idővonalablak fekete háttere; a vizuális panel a külön komponensben van.",
+    ),
+    "src/picasapy/app/qml/PicasaPy/TimelinePanel.qml": (
         5,
         "Fotóköteg-papír és a fényképre rajzolt idővonal-feliratok.",
     ),
@@ -167,7 +171,7 @@ def test_audited_surfaces_use_paired_theme_tokens():
             "Theme.searchClearBg": 1,
             "Theme.panelSelectionText": 1,
         },
-        "../Main.qml": {
+        "MainLibraryCanvas.qml": {  # #6136: a Main.qml-ből kiemelt könyvtárvászon
             "Theme.filterResultsBg": 1,
             "Theme.filterNoticeBg": 2,
         },
