@@ -151,6 +151,7 @@ PicasaImportDialog 1.0 PicasaImportDialog.qml
 ImportDropArea 1.0 ImportDropArea.qml
 HistogramBox 1.0 HistogramBox.qml
 SplashScreen 1.0 SplashScreen.qml
+internal TimelinePanel TimelinePanel.qml
 TimelineView 1.0 TimelineView.qml
 DedupDialog 1.0 DedupDialog.qml
 FaceScanDialog 1.0 FaceScanDialog.qml
