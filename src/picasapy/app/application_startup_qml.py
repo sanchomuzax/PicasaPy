@@ -102,42 +102,42 @@ def _startup_step_register_qml_context(state):
         settings=QSettings("PicasaPy", "PicasaPy"), parent=app
     )
     app.aboutToQuit.connect(screen_capture_controller.shutdown)
-    _app._register_qml_context_property(engine, 'controller', controller)
-    _app._register_qml_context_property(engine, 'screenCaptureController', screen_capture_controller)
-    _app._register_qml_context_property(engine, 'cameraCaptureController', camera_capture_controller)
-    _app._register_qml_context_property(engine, 'editController', edit_controller)
-    _app._register_qml_context_property(engine, 'secondPreview', second_preview)
-    _app._register_qml_context_property(engine, 'fileOpsController', fileops_controller)
-    _app._register_qml_context_property(engine, 'confirmSettings', confirm_settings)
-    _app._register_qml_context_property(engine, 'gombsav', gombsav)
-    _app._register_qml_context_property(engine, 'discoveryController', discovery_controller)
-    _app._register_qml_context_property(engine, 'dropImportController', drop_import_controller)
-    _app._register_qml_context_property(engine, 'folderTreeController', folder_tree_controller)
-    _app._register_qml_context_property(engine, 'folderHierarchyController', folder_hierarchy_controller)
-    _app._register_qml_context_property(engine, 'timelineController', timeline_controller)
-    _app._register_qml_context_property(engine, 'backupController', backup_controller)
-    _app._register_qml_context_property(engine, 'dedupController', dedup_controller)
+    engine.rootContext().setContextProperty("controller", controller)
+    engine.rootContext().setContextProperty("screenCaptureController", screen_capture_controller)
+    engine.rootContext().setContextProperty("cameraCaptureController", camera_capture_controller)
+    engine.rootContext().setContextProperty("editController", edit_controller)
+    engine.rootContext().setContextProperty("secondPreview", second_preview)
+    engine.rootContext().setContextProperty("fileOpsController", fileops_controller)
+    engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
+    engine.rootContext().setContextProperty("gombsav", gombsav)
+    engine.rootContext().setContextProperty("discoveryController", discovery_controller)
+    engine.rootContext().setContextProperty("dropImportController", drop_import_controller)
+    engine.rootContext().setContextProperty("folderTreeController", folder_tree_controller)
+    engine.rootContext().setContextProperty("folderHierarchyController", folder_hierarchy_controller)
+    engine.rootContext().setContextProperty("timelineController", timeline_controller)
+    engine.rootContext().setContextProperty("backupController", backup_controller)
+    engine.rootContext().setContextProperty("dedupController", dedup_controller)
     # #1066 — az „E-Mail" beállításfül és a webexportálás párbeszéde
-    _app._register_qml_context_property(engine, 'emailController', email_controller)
-    _app._register_qml_context_property(engine, 'webExportController', web_export_controller)
+    engine.rootContext().setContextProperty("emailController", email_controller)
+    engine.rootContext().setContextProperty("webExportController", web_export_controller)
     # #1472: a nyomtatás-párbeszéd hídja (`PrintDialog.qml`)
-    _app._register_qml_context_property(engine, 'printController', print_controller)
+    engine.rootContext().setContextProperty("printController", print_controller)
     # #1401: az Útlevélkép — arcfelismerés + kivágás háttérszálon; a kivágott
     # képet a `Main.qml` a MEGLÉVŐ nyomtatási nézetnek adja
     # (`PrintDialog.openForPassport` → `printController.setPassportSource`).
     PassportPhotoController = _app._lazy_app_symbol("PassportPhotoController")
     passport_controller = PassportPhotoController(photo_source=_lathato_fotok)
-    _app._register_qml_context_property(engine, 'passportController', passport_controller)
+    engine.rootContext().setContextProperty("passportController", passport_controller)
     # #368: adatbázis-áthelyezés — a MoveDatabaseDialog.qml hídja
     RelocateController = _app._lazy_app_symbol("RelocateController")
     relocate_controller = RelocateController(data_dir / "index.db", cache_dir / "thumbs", config_dir)
-    _app._register_qml_context_property(engine, 'relocateController', relocate_controller)
+    engine.rootContext().setContextProperty("relocateController", relocate_controller)
     # #449: adatbázis-tömörítés — a CompactDatabaseDialog.qml hídja
     CompactController = _app._lazy_app_symbol("CompactController")
     compact_controller = CompactController(
         data_dir / "index.db", writer_queue=controller._index_iro_sor
     )
-    _app._register_qml_context_property(engine, 'compactController', compact_controller)
+    engine.rootContext().setContextProperty("compactController", compact_controller)
     # #3132: a db3-import belépési pontja (`Eszközök ▸ Import a Picasából…`).
     # A mag a #3002/#3184 óta kész; eddig semmi nem hívta a `src/` alól.
     PicasaImportController = _app._lazy_app_symbol("PicasaImportController")
@@ -148,20 +148,20 @@ def _startup_step_register_qml_context(state):
     picasa_import_controller.importFinished.connect(controller._reload_after_sync)
     # #4591: az átvett videódátumok után a rács/mappalista újratöltése
     picasa_import_controller.datesApplied.connect(controller._reload_after_sync)
-    _app._register_qml_context_property(engine, 'picasaImportController', picasa_import_controller)
+    engine.rootContext().setContextProperty("picasaImportController", picasa_import_controller)
     # #4597: a Picasában beállított rejtett-jelszó átvétele (csak ha nálunk
     # még nincs) — sorba állított hívás, hogy a fő szálon fusson.
     picasa_import_controller.hiddenPasswordFound.connect(
         controller.adoptHiddenPasswordHash, Qt.ConnectionType.QueuedConnection
     )
-    _app._register_qml_context_property(engine, 'importSourceController', import_source_controller)
+    engine.rootContext().setContextProperty("importSourceController", import_source_controller)
     # #147/#4572: a néző arc-keret overlay-jének hídja — a
     # faces=/Contacts2 az ini-ből, a névtelen felismerések az indexből jönnek.
     # A helyi változóban tartás megakadályozza, hogy a Python GC a
     # context property mögül idő előtt eltüntesse a QObject-et.
     FacesHelper = _app._lazy_app_symbol("FacesHelper")
     faces_helper = FacesHelper(data_dir / "index.db")
-    _app._register_qml_context_property(engine, 'facesHelper', faces_helper)
+    engine.rootContext().setContextProperty("facesHelper", faces_helper)
     # #26 (3. lépcső): a SAJÁT arcfelismerés bekötése — a `FaceScanController`
     # (1–2. lépcső) eddig sehol nem volt elérve a QML-ből. A `faces_helper`
     # átadása a tömeges névadáshoz kell (`assignNameToFaces` a MEGLÉVŐ
@@ -184,17 +184,17 @@ def _startup_step_register_qml_context(state):
         print_controller=print_controller,
         face_scan_controller=face_scan_controller,
     )
-    _app._register_qml_context_property(engine, 'faceScanController', face_scan_controller)
+    engine.rootContext().setContextProperty("faceScanController", face_scan_controller)
     face_scan_controller.unnamedCountChanged.connect(
         controller._invalidate_people_manager_contacts_cache
     )
     controller.syncFinished.connect(face_scan_controller.scanNewFaces)
     # Verzió + build a fejlécben (jobb felső sarok): pontosan látsszon,
     # melyik commit fut — ld. version.version_string().
-    _app._register_qml_context_property(engine, 'appVersion', version_string())
+    engine.rootContext().setContextProperty("appVersion", version_string())
     # Indítóképernyő (#189): a Main.qml legfelső rétegén ülő SplashScreen
     # ebből a hídból kapja az állapotot, és a finish()-re magától eltűnik.
-    _app._register_qml_context_property(engine, 'startupStatus', startup_status)
+    engine.rootContext().setContextProperty("startupStatus", startup_status)
     timeline.mark("vezérlők regisztrálása a QML-kontextusban")
     progress_log.mark("QML-kontextus és vezérlők regisztrálva")
 

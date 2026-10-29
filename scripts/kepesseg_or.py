@@ -581,17 +581,7 @@ def _segedmodul_regisztraciok(
             for node in ast.walk(function):
                 if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
                     continue
-                if node.func.attr == "_register_qml_context_property":
-                    if (
-                        len(node.args) < 3
-                        or not isinstance(node.args[1], ast.Constant)
-                        or not isinstance(node.args[1].value, str)
-                    ):
-                        continue
-                    qml_name = node.args[1].value
-                    value = node.args[2]
-                    qml_hidak.append((qml_name, locals_.get(value.id) if isinstance(value, ast.Name) else osztaly_hivasa(value)))
-                elif (
+                if (
                     node.func.attr == "setContextProperty"
                     and len(node.args) == 2
                     and isinstance(node.args[0], ast.Constant)

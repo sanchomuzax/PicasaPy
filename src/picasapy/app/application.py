@@ -438,41 +438,6 @@ def _create_folder_cover_provider(data_dir, thumb_cache):
     )
 
 
-_QML_CONTEXT_PROPERTY_SETTERS = {
-    'controller': lambda context, value: context.setContextProperty('controller', value),
-    'screenCaptureController': lambda context, value: context.setContextProperty('screenCaptureController', value),
-    'cameraCaptureController': lambda context, value: context.setContextProperty('cameraCaptureController', value),
-    'editController': lambda context, value: context.setContextProperty('editController', value),
-    'secondPreview': lambda context, value: context.setContextProperty('secondPreview', value),
-    'fileOpsController': lambda context, value: context.setContextProperty('fileOpsController', value),
-    'confirmSettings': lambda context, value: context.setContextProperty('confirmSettings', value),
-    'gombsav': lambda context, value: context.setContextProperty('gombsav', value),
-    'discoveryController': lambda context, value: context.setContextProperty('discoveryController', value),
-    'dropImportController': lambda context, value: context.setContextProperty('dropImportController', value),
-    'folderTreeController': lambda context, value: context.setContextProperty('folderTreeController', value),
-    'folderHierarchyController': lambda context, value: context.setContextProperty('folderHierarchyController', value),
-    'timelineController': lambda context, value: context.setContextProperty('timelineController', value),
-    'backupController': lambda context, value: context.setContextProperty('backupController', value),
-    'dedupController': lambda context, value: context.setContextProperty('dedupController', value),
-    'emailController': lambda context, value: context.setContextProperty('emailController', value),
-    'webExportController': lambda context, value: context.setContextProperty('webExportController', value),
-    'printController': lambda context, value: context.setContextProperty('printController', value),
-    'passportController': lambda context, value: context.setContextProperty('passportController', value),
-    'relocateController': lambda context, value: context.setContextProperty('relocateController', value),
-    'compactController': lambda context, value: context.setContextProperty('compactController', value),
-    'picasaImportController': lambda context, value: context.setContextProperty('picasaImportController', value),
-    'importSourceController': lambda context, value: context.setContextProperty('importSourceController', value),
-    'facesHelper': lambda context, value: context.setContextProperty('facesHelper', value),
-    'faceScanController': lambda context, value: context.setContextProperty('faceScanController', value),
-    'appVersion': lambda context, value: context.setContextProperty('appVersion', value),
-    'startupStatus': lambda context, value: context.setContextProperty('startupStatus', value),
-}
-
-
-def _register_qml_context_property(engine, name, value):
-    _QML_CONTEXT_PROPERTY_SETTERS[name](engine.rootContext(), value)
-
-
 def _startup_step_smoke_test(state) -> None:
     print("onellenorzes: a felulet felepult", flush=True)
     state.screen_capture_controller.shutdown()
