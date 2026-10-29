@@ -2,8 +2,38 @@
 
 from __future__ import annotations
 
-# ruff: noqa: F821
-# These function bodies are rebound into application.py's shared namespace.
+import logging
+import sqlite3
+import sys
+
+import PySide6
+from PySide6.QtCore import QCoreApplication, QSettings, Qt, qVersion
+from PySide6.QtGui import QGuiApplication, QIcon
+
+from picasapy.index import open_index
+from picasapy.scanner import read_exclude_folders
+from . import application as _app
+from .application_data import (
+    _exclude_folders_path,
+    _fuggo_koltozes_indulaskor,
+    _offer_error_log,
+    _onjavito_kollazsmappa,
+    _watched_folders_path,
+    allitsd_be_a_stilust,
+)
+from .application_platform import (
+    _force_qml_dialogs,
+    _install_desktop_entry,
+    _install_ui_font,
+    _set_windows_app_id,
+    _window_icon_path,
+)
+from .application_services import _install_translator
+from .error_log import error_log_path, install_error_log, rotate_if_large
+from .platform_check import hianyzo_wayland_bovitmeny
+from .platform_storage import StorageAlreadyRunning, StorageMigrationError
+from .startup_diagnostics import runtime_version_messages, write_console
+from .startup_status import StartupStatus
 
 def _startup_step_log_and_qt_setup(state):
     argv = state.argv
@@ -15,7 +45,7 @@ def _startup_step_log_and_qt_setup(state):
         progress_log.mark(message)
 
     progress_log.mark("Korai indulási hibanapló útvonalának feloldása elkezdődött")
-    early_error_log = error_log_path(_data_dir())
+    early_error_log = error_log_path(_app._data_dir())
     rotate_if_large(early_error_log)
     progress_log.install(early_error_log)
     progress_log.mark("Korai indulási hibanapló elérhető")
@@ -174,11 +204,11 @@ def _startup_step_prepare_index_and_main_controller(state):
     startup_status.report(QCoreApplication.translate("startup", "Loading photo library…"))
     timeline.mark("index előkészítése — utómunka")
     progress_log.mark("Index utómunkája elkezdődött")
-    thumb_cache = _create_thumbnail_cache(app, cache_dir)
-    provider = _lazy_app_symbol("ThumbnailProvider")(
+    thumb_cache = _app._create_thumbnail_cache(app, cache_dir)
+    provider = _app._lazy_app_symbol("ThumbnailProvider")(
         thumb_cache, index_path=data_dir / "index.db"
     )
-    AppController = _lazy_app_symbol("AppController")
+    AppController = _app._lazy_app_symbol("AppController")
     controller = AppController(
         data_dir / "index.db",
         roots,

@@ -2,8 +2,14 @@
 
 from __future__ import annotations
 
-# ruff: noqa: F821
-# These function bodies are rebound into application.py's shared namespace.
+from PySide6.QtCore import QSettings, Qt
+from PySide6.QtQml import QQmlApplicationEngine
+
+from picasapy.version import version_string
+from . import application as _app
+from . import display_photo_provider
+from .color_palette import ColorPaletteProvider
+from .option_settings import initialize_option_settings
 
 def _startup_step_create_qml_engine(state):
     controller = state.controller
@@ -51,9 +57,9 @@ def _startup_step_create_qml_engine(state):
     # `lambda`-val hívott őrök nem látták.
     # #4876: a borító a rács bélyegkép-tárából jön — meleg tárral az eredeti
     # fotót nem dekódoljuk újra minden indításkor.
-    folder_cover_provider = _create_folder_cover_provider(data_dir, thumb_cache)
+    folder_cover_provider = _app._create_folder_cover_provider(data_dir, thumb_cache)
     engine.addImageProvider("foldercover", folder_cover_provider)
-    engine.addImportPath(str(_APP_DIR / "qml"))
+    engine.addImportPath(str(_app._APP_DIR / "qml"))
     # #1653: idáig tart a motor felállítása (konstruktor + kép-szolgáltatók
     # + import-útvonal); innentől már csak kontextus-bekötés következik.
     timeline.mark("QML-motor létrehozása és import-útvonalak")
@@ -91,50 +97,50 @@ def _startup_step_register_qml_context(state):
     _lathato_fotok = state._lathato_fotok
     web_export_controller = state.web_export_controller
 
-    ScreenCaptureController = _lazy_app_symbol("ScreenCaptureController")
+    ScreenCaptureController = _app._lazy_app_symbol("ScreenCaptureController")
     screen_capture_controller = ScreenCaptureController(
         settings=QSettings("PicasaPy", "PicasaPy"), parent=app
     )
     app.aboutToQuit.connect(screen_capture_controller.shutdown)
-    _register_qml_context_property(engine, 'controller', controller)
-    _register_qml_context_property(engine, 'screenCaptureController', screen_capture_controller)
-    _register_qml_context_property(engine, 'cameraCaptureController', camera_capture_controller)
-    _register_qml_context_property(engine, 'editController', edit_controller)
-    _register_qml_context_property(engine, 'secondPreview', second_preview)
-    _register_qml_context_property(engine, 'fileOpsController', fileops_controller)
-    _register_qml_context_property(engine, 'confirmSettings', confirm_settings)
-    _register_qml_context_property(engine, 'gombsav', gombsav)
-    _register_qml_context_property(engine, 'discoveryController', discovery_controller)
-    _register_qml_context_property(engine, 'dropImportController', drop_import_controller)
-    _register_qml_context_property(engine, 'folderTreeController', folder_tree_controller)
-    _register_qml_context_property(engine, 'folderHierarchyController', folder_hierarchy_controller)
-    _register_qml_context_property(engine, 'timelineController', timeline_controller)
-    _register_qml_context_property(engine, 'backupController', backup_controller)
-    _register_qml_context_property(engine, 'dedupController', dedup_controller)
+    _app._register_qml_context_property(engine, 'controller', controller)
+    _app._register_qml_context_property(engine, 'screenCaptureController', screen_capture_controller)
+    _app._register_qml_context_property(engine, 'cameraCaptureController', camera_capture_controller)
+    _app._register_qml_context_property(engine, 'editController', edit_controller)
+    _app._register_qml_context_property(engine, 'secondPreview', second_preview)
+    _app._register_qml_context_property(engine, 'fileOpsController', fileops_controller)
+    _app._register_qml_context_property(engine, 'confirmSettings', confirm_settings)
+    _app._register_qml_context_property(engine, 'gombsav', gombsav)
+    _app._register_qml_context_property(engine, 'discoveryController', discovery_controller)
+    _app._register_qml_context_property(engine, 'dropImportController', drop_import_controller)
+    _app._register_qml_context_property(engine, 'folderTreeController', folder_tree_controller)
+    _app._register_qml_context_property(engine, 'folderHierarchyController', folder_hierarchy_controller)
+    _app._register_qml_context_property(engine, 'timelineController', timeline_controller)
+    _app._register_qml_context_property(engine, 'backupController', backup_controller)
+    _app._register_qml_context_property(engine, 'dedupController', dedup_controller)
     # #1066 — az „E-Mail" beállításfül és a webexportálás párbeszéde
-    _register_qml_context_property(engine, 'emailController', email_controller)
-    _register_qml_context_property(engine, 'webExportController', web_export_controller)
+    _app._register_qml_context_property(engine, 'emailController', email_controller)
+    _app._register_qml_context_property(engine, 'webExportController', web_export_controller)
     # #1472: a nyomtatás-párbeszéd hídja (`PrintDialog.qml`)
-    _register_qml_context_property(engine, 'printController', print_controller)
+    _app._register_qml_context_property(engine, 'printController', print_controller)
     # #1401: az Útlevélkép — arcfelismerés + kivágás háttérszálon; a kivágott
     # képet a `Main.qml` a MEGLÉVŐ nyomtatási nézetnek adja
     # (`PrintDialog.openForPassport` → `printController.setPassportSource`).
-    PassportPhotoController = _lazy_app_symbol("PassportPhotoController")
+    PassportPhotoController = _app._lazy_app_symbol("PassportPhotoController")
     passport_controller = PassportPhotoController(photo_source=_lathato_fotok)
-    _register_qml_context_property(engine, 'passportController', passport_controller)
+    _app._register_qml_context_property(engine, 'passportController', passport_controller)
     # #368: adatbázis-áthelyezés — a MoveDatabaseDialog.qml hídja
-    RelocateController = _lazy_app_symbol("RelocateController")
+    RelocateController = _app._lazy_app_symbol("RelocateController")
     relocate_controller = RelocateController(data_dir / "index.db", cache_dir / "thumbs", config_dir)
-    _register_qml_context_property(engine, 'relocateController', relocate_controller)
+    _app._register_qml_context_property(engine, 'relocateController', relocate_controller)
     # #449: adatbázis-tömörítés — a CompactDatabaseDialog.qml hídja
-    CompactController = _lazy_app_symbol("CompactController")
+    CompactController = _app._lazy_app_symbol("CompactController")
     compact_controller = CompactController(
         data_dir / "index.db", writer_queue=controller._index_iro_sor
     )
-    _register_qml_context_property(engine, 'compactController', compact_controller)
+    _app._register_qml_context_property(engine, 'compactController', compact_controller)
     # #3132: a db3-import belépési pontja (`Eszközök ▸ Import a Picasából…`).
     # A mag a #3002/#3184 óta kész; eddig semmi nem hívta a `src/` alól.
-    PicasaImportController = _lazy_app_symbol("PicasaImportController")
+    PicasaImportController = _app._lazy_app_symbol("PicasaImportController")
     picasa_import_controller = PicasaImportController(
         index_path=data_dir / "index.db",
         writer_queue=controller._index_iro_sor,
@@ -142,25 +148,25 @@ def _startup_step_register_qml_context(state):
     picasa_import_controller.importFinished.connect(controller._reload_after_sync)
     # #4591: az átvett videódátumok után a rács/mappalista újratöltése
     picasa_import_controller.datesApplied.connect(controller._reload_after_sync)
-    _register_qml_context_property(engine, 'picasaImportController', picasa_import_controller)
+    _app._register_qml_context_property(engine, 'picasaImportController', picasa_import_controller)
     # #4597: a Picasában beállított rejtett-jelszó átvétele (csak ha nálunk
     # még nincs) — sorba állított hívás, hogy a fő szálon fusson.
     picasa_import_controller.hiddenPasswordFound.connect(
         controller.adoptHiddenPasswordHash, Qt.ConnectionType.QueuedConnection
     )
-    _register_qml_context_property(engine, 'importSourceController', import_source_controller)
+    _app._register_qml_context_property(engine, 'importSourceController', import_source_controller)
     # #147/#4572: a néző arc-keret overlay-jének hídja — a
     # faces=/Contacts2 az ini-ből, a névtelen felismerések az indexből jönnek.
     # A helyi változóban tartás megakadályozza, hogy a Python GC a
     # context property mögül idő előtt eltüntesse a QObject-et.
-    FacesHelper = _lazy_app_symbol("FacesHelper")
+    FacesHelper = _app._lazy_app_symbol("FacesHelper")
     faces_helper = FacesHelper(data_dir / "index.db")
-    _register_qml_context_property(engine, 'facesHelper', faces_helper)
+    _app._register_qml_context_property(engine, 'facesHelper', faces_helper)
     # #26 (3. lépcső): a SAJÁT arcfelismerés bekötése — a `FaceScanController`
     # (1–2. lépcső) eddig sehol nem volt elérve a QML-ből. A `faces_helper`
     # átadása a tömeges névadáshoz kell (`assignNameToFaces` a MEGLÉVŐ
     # `FacesHelper.addFace()` úton ír, ld. `face_scan_controller.py`).
-    FaceScanController = _lazy_app_symbol("FaceScanController")
+    FaceScanController = _app._lazy_app_symbol("FaceScanController")
     face_scan_controller = FaceScanController(
         data_dir / "index.db",
         faces_helper=faces_helper,
@@ -178,17 +184,17 @@ def _startup_step_register_qml_context(state):
         print_controller=print_controller,
         face_scan_controller=face_scan_controller,
     )
-    _register_qml_context_property(engine, 'faceScanController', face_scan_controller)
+    _app._register_qml_context_property(engine, 'faceScanController', face_scan_controller)
     face_scan_controller.unnamedCountChanged.connect(
         controller._invalidate_people_manager_contacts_cache
     )
     controller.syncFinished.connect(face_scan_controller.scanNewFaces)
     # Verzió + build a fejlécben (jobb felső sarok): pontosan látsszon,
     # melyik commit fut — ld. version.version_string().
-    _register_qml_context_property(engine, 'appVersion', version_string())
+    _app._register_qml_context_property(engine, 'appVersion', version_string())
     # Indítóképernyő (#189): a Main.qml legfelső rétegén ülő SplashScreen
     # ebből a hídból kapja az állapotot, és a finish()-re magától eltűnik.
-    _register_qml_context_property(engine, 'startupStatus', startup_status)
+    _app._register_qml_context_property(engine, 'startupStatus', startup_status)
     timeline.mark("vezérlők regisztrálása a QML-kontextusban")
     progress_log.mark("QML-kontextus és vezérlők regisztrálva")
 
@@ -207,7 +213,7 @@ def _startup_step_load_qml(state):
 
     progress_log.mark("Main.qml betöltése elkezdődött")
     with timeline.phase("QML betöltése (Main.qml)"):
-        engine.load(str(_APP_DIR / "qml" / "Main.qml"))
+        engine.load(str(_app._APP_DIR / "qml" / "Main.qml"))
     if not engine.rootObjects():
         progress_log.mark("Main.qml betöltése sikertelen: nem jött létre főablak")
         screen_capture_controller.shutdown()
@@ -218,7 +224,7 @@ def _startup_step_load_qml(state):
 
 def _startup_step_screensaver(argv: list[str]) -> int | None:
     """A képernyővédő belépője a normál bootstrap előtt (#4613)."""
-    if KEPERNYOVEDO_KAPCSOLO not in argv:
+    if _app.KEPERNYOVEDO_KAPCSOLO not in argv:
         return None
     # lustán töltve: a normál indulás importlánca ne hízzon (#1653)
     from . import screensaver_mode
@@ -226,9 +232,3 @@ def _startup_step_screensaver(argv: list[str]) -> int | None:
     _kepernyovedo, argv = screensaver_mode.argv_kepernyovedo(argv)
     return screensaver_mode.run_screensaver(argv)
 
-def _startup_step_smoke_test(state) -> None:
-    print("onellenorzes: a felulet felepult", flush=True)
-    state.screen_capture_controller.shutdown()
-    state.controller.shutdown()
-    state.edit_controller.cancelPendingPreview()
-    state.edit_controller.waitForBackgroundWorkers(2.0)

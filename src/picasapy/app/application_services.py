@@ -2,16 +2,53 @@
 
 from __future__ import annotations
 
-# ruff: noqa: F821
-# These function bodies are rebound into application.py's shared namespace.
-
+import logging
+import os
+import sqlite3
+import sys
 import time
+from collections.abc import Mapping
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from PySide6.QtCore import QLibraryInfo, QLocale, QSettings, QTranslator
+from PySide6.QtGui import QGuiApplication
+
+from picasapy.index import open_index
+from picasapy.perf import start_startup_timeline
+from picasapy.perf.logwriter import session_header
+from picasapy.perf.tesztuzem import (
+    argv_kapcsolo_nelkul,
+    argv_tesztuzem,
+    irj_indulasi_naplot,
+    konyvtar_merete,
+    naplo_szovege,
+    tarolo_tipusa,
+    tesztuzem_bekapcsolva,
+)
+from picasapy.version import version_string
+from . import application as _app
+from .i18n_build import forditsd
+from .language_controller import (
+    DEFAULT_LANGUAGE,
+    LANGUAGE_KEY,
+    coerce_language,
+    resolve_first_run_language,
+    resolve_startup_language,
+)
+
+if TYPE_CHECKING:
+    from .controller import AppController
+    from .dedup_controller import DedupController
+    from .fileops_controller import FileOpsController
 
 def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
     """Fájlműveletek utáni index-frissítés (#15): a sikeres átnevezés/
     áthelyezés/másolás/törlés után az érintett mappák célzott resyncje, hogy
     a rács (és a .picasa.ini-t követő szekció) azonnal a valós állapotot
     mutassa."""
+
+    from .application_platform import _watched_folder_of
 
     def refresh(*paths: str) -> None:
         seen: set[str] = set()
@@ -110,7 +147,7 @@ def _startup_language(
         settings = QSettings("PicasaPy", "PicasaPy")
     selected = resolve_first_run_language(
         settings,
-        lambda system_language: _ask_first_run_language(
+        lambda system_language: _app._ask_first_run_language(
             system_language, timeout_ms=prompt_timeout_ms
         ),
     )
@@ -141,7 +178,7 @@ def _install_translator(app: QGuiApplication, language: str | None = None) -> QT
     Az angol katalógus azonos fordításokat tartalmaz, de a forrásszövegek
     maguk angolok — ezért ott nem telepítünk fordítót.
     """
-    code = coerce_language(language) if language else _startup_language()
+    code = coerce_language(language) if language else _app._startup_language()
     # #4881: a Quick Controls párbeszédeinek szabványos gombjai (OK, Mégse…)
     # az alapértelmezett QLocale-ból töltik a Qt saját fordítását — enélkül a
     # rendszer nyelvén jelennének meg a választott felületi nyelv helyett.
@@ -152,9 +189,9 @@ def _install_translator(app: QGuiApplication, language: str | None = None) -> QT
         return None
     _install_qt_translator(app)
     # #4817: forrásból indítva a `.qm` itt készül el a `.ts`-ből
-    forditsd(_I18N_DIR / f"picasapy_{code}.ts")
+    forditsd(_app._I18N_DIR / f"picasapy_{code}.ts")
     translator = QTranslator(app)
-    if translator.load(f"picasapy_{code}", str(_I18N_DIR)):
+    if translator.load(f"picasapy_{code}", str(_app._I18N_DIR)):
         app.installTranslator(translator)
         return translator
     return None
@@ -171,7 +208,7 @@ def _indexelt_kepszamok(data_dir: Path) -> tuple[int, ...]:
         with open_index(data_dir / "index.db") as conn:
             return tuple(
                 int(count)
-                for _name, _path, count, *_rest in _lazy_app_symbol(
+                for _name, _path, count, *_rest in _app._lazy_app_symbol(
                     "sorted_folder_rows"
                 )(conn)
             )
@@ -219,11 +256,11 @@ def _jelentsd_az_idovonalat(timeline, kepszamok=None, vedett_gyokerek=None) -> N
             # KÖNYVTÁR van. ⚠️ Csak a típus, sosem az útvonal.
             tarolo={
                 "a program helye": tarolo_tipusa(Path(__file__).resolve()),
-                "a könyvtár helye": tarolo_tipusa(_data_dir()),
+                "a könyvtár helye": tarolo_tipusa(_app._data_dir()),
             },
         )
         print(szoveg, file=sys.stderr)
-        target = irj_indulasi_naplot(szoveg, default_log_dir())
+        target = irj_indulasi_naplot(szoveg, _app.default_log_dir())
         if target is not None:
             print(f"Az indulási napló ide került: {target}", file=sys.stderr)
     except Exception:  # noqa: BLE001 - a diagnosztika sosem viheti el az appot
@@ -269,14 +306,14 @@ def _indulasi_idovonal(
 
 def argv_onellenorzes(argv: list[str]) -> tuple[bool, list[str]]:
     """`(kérték-e, a kapcsoló nélküli argumentumlista)`."""
-    kert = _ONELLENORZES_KAPCSOLO in argv
+    kert = _app._ONELLENORZES_KAPCSOLO in argv
     if not kert:
         return False, list(argv)
-    return True, [elem for elem in argv if elem != _ONELLENORZES_KAPCSOLO]
+    return True, [elem for elem in argv if elem != _app._ONELLENORZES_KAPCSOLO]
 
 def argv_indulasellenorzes(argv: list[str]) -> tuple[bool, list[str]]:
     """A teljes, ablakmegjelenítésig futó Windows-CI füstpróba kapcsolója."""
-    kert = _INDULAS_ELLENORZES_KAPCSOLO in argv
+    kert = _app._INDULAS_ELLENORZES_KAPCSOLO in argv
     if not kert:
         return False, list(argv)
-    return True, [elem for elem in argv if elem != _INDULAS_ELLENORZES_KAPCSOLO]
+    return True, [elem for elem in argv if elem != _app._INDULAS_ELLENORZES_KAPCSOLO]

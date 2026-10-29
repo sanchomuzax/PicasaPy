@@ -2,8 +2,46 @@
 
 from __future__ import annotations
 
-# ruff: noqa: F821
-# These function bodies are rebound into application.py's shared namespace.
+import logging
+import math
+import sys
+from collections.abc import Callable, Mapping
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from PySide6.QtCore import QCoreApplication, QEventLoop, QLockFile, QSettings, Qt
+from PySide6.QtGui import QGuiApplication
+from PySide6.QtQml import QQmlApplicationEngine
+from PySide6.QtQuickControls2 import QQuickStyle
+
+from picasapy.index import open_index
+from picasapy.index.sync import sync_folder
+from picasapy.scanner import (
+    EXCLUDE_FOLDERS_NAME,
+    WATCHED_FOLDERS_NAME,
+    find_exclude_folders_file,
+    find_watched_folders_file,
+    read_watched_folders,
+)
+from . import application as _app
+from . import display_photo_provider
+from .data_location import read_data_root, read_pending_root
+from .exported_folders import (
+    EXPORTED_FOLDERS_SETTINGS_KEY,
+    existing_exported_folders,
+    registered_exported_folders,
+)
+from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
+from .platform_storage import (
+    StorageBootstrap,
+    StoragePaths,
+    bootstrap_storage,
+    default_storage_paths,
+)
+from .startup_relocate import IndulasiKoltozo, KoltozesEredmeny, KoltozesHid
+
+if TYPE_CHECKING:
+    from .screensaver_mode import ScreensaverRunBridge
 
 def _platform() -> str:
     """A futó platform — külön függvény, hogy a teszt helyettesíthesse (#1217).
@@ -27,7 +65,7 @@ def _thumbnail_cache_size(device_pixel_ratio: float) -> int:
     képernyőhöz igazítjuk.
     """
     ratio = max(device_pixel_ratio, 1.0)
-    return math.ceil(_GRID_MAX_THUMB_PX * ratio)
+    return math.ceil(_app._GRID_MAX_THUMB_PX * ratio)
 
 def _screen_device_pixel_ratio(app: QGuiApplication) -> float:
     """A elsődleges képernyő devicePixelRatio-ja; hiányzó képernyőnél 1.0."""
@@ -56,8 +94,8 @@ def _onjavito_kollazsmappa(conn, settings: QSettings) -> None:
     indulást —, de NAPLÓZVA: a #1075 másik fele éppen az volt, hogy a néma
     ág miatt vakon álltunk."""
     try:
-        collage_output = _lazy_app_symbol("collage_output")
-        collage_prefs = _lazy_app_symbol("collage_prefs")
+        collage_output = _app._lazy_app_symbol("collage_output")
+        collage_prefs = _app._lazy_app_symbol("collage_prefs")
 
         mappa = collage_output.output_dir(settings.value(collage_prefs.OUTPUT_DIR_KEY))
         if not mappa.is_dir():
@@ -180,8 +218,8 @@ def _kollazs_gyoker(settings: QSettings) -> tuple[str, ...]:
     kollázsmappa sorai sem eshetnek ki emiatt.
     """
     try:
-        collage_output = _lazy_app_symbol("collage_output")
-        collage_prefs = _lazy_app_symbol("collage_prefs")
+        collage_output = _app._lazy_app_symbol("collage_output")
+        collage_prefs = _app._lazy_app_symbol("collage_prefs")
 
         return (str(collage_output.output_dir(settings.value(collage_prefs.OUTPUT_DIR_KEY))),)
     except Exception:  # noqa: BLE001 — a takarítás soha nem hiúsulhat meg tőle
@@ -217,7 +255,7 @@ def _data_dir(platform: str | None = None) -> Path:
     alapértelmezést; ilyenkor a cache-cel EGYESÍTVE ugyanazt a mappát
     adja vissza, mint `_cache_dir()` (ld. ott)."""
     active_platform = sys.platform if platform is None else platform
-    override = read_data_root(_config_dir(platform=active_platform))
+    override = read_data_root(_app._config_dir(platform=active_platform))
     if override is not None:
         return override
     return default_storage_paths(active_platform).data
@@ -228,7 +266,7 @@ def _cache_dir(platform: str | None = None) -> Path:
     mappa" elv teljesüljön (a hívó ide illeszti a "thumbs" alkönyvtárat,
     ld. `run()`)."""
     active_platform = sys.platform if platform is None else platform
-    override = read_data_root(_config_dir(platform=active_platform))
+    override = read_data_root(_app._config_dir(platform=active_platform))
     if override is not None:
         return override
     return default_storage_paths(active_platform).cache
@@ -267,9 +305,9 @@ def load_screensaver_window(
         display_photo_provider.PROVIDER_NAME,
         display_photo_provider.DisplayPhotoProvider(),
     )
-    engine.addImportPath(str(_APP_DIR / "qml"))
+    engine.addImportPath(str(_app._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("saver", saver)
-    engine.load(str(_APP_DIR / "qml" / "ScreensaverWindow.qml"))
+    engine.load(str(_app._APP_DIR / "qml" / "ScreensaverWindow.qml"))
     roots = engine.rootObjects()
     return roots[0] if roots else None
 
@@ -285,7 +323,7 @@ def _fuggo_koltozes_indulaskor() -> KoltozesEredmeny:
 
     Szándék nélkül a függvény semmit nem tesz (ablak sem jön létre).
     """
-    config_dir = _config_dir()
+    config_dir = _app._config_dir()
     cel = read_pending_root(config_dir)
     if cel is None:
         return KoltozesEredmeny()
@@ -293,9 +331,9 @@ def _fuggo_koltozes_indulaskor() -> KoltozesEredmeny:
     koltozes_hid = KoltozesHid(cel)
     indulasi_koltozo = IndulasiKoltozo(koltozes_hid)
     engine = QQmlApplicationEngine()
-    engine.addImportPath(str(_APP_DIR / "qml"))
+    engine.addImportPath(str(_app._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("koltozes", koltozes_hid)
-    engine.load(str(_APP_DIR / "qml" / "StartupRelocateWindow.qml"))
+    engine.load(str(_app._APP_DIR / "qml" / "StartupRelocateWindow.qml"))
 
     # a munka HÁTTÉRSZÁLON fut (nyilvántartva, #430/#438/#988), közben ez a
     # hurok tartja életben a haladásjelző ablakot
@@ -333,7 +371,7 @@ def _watched_folders_path() -> Path:
     (#145): élesben (pl. importált/áthozott konfig-könyvtárban) kisbetűs
     néven is előfordulhat. Ha nincs ilyen fájl, a kanonikus nevet adja
     vissza (ide fog írni a `write_watched_folders`)."""
-    config_dir = _config_dir()
+    config_dir = _app._config_dir()
     return find_watched_folders_file(config_dir) or (config_dir / WATCHED_FOLDERS_NAME)
 
 def _exclude_folders_path() -> Path:
@@ -342,7 +380,7 @@ def _exclude_folders_path() -> Path:
     a figyelt-mappa hármastól (Scan Always/Once/Remove) FÜGGETLEN
     kapcsoló: az arcfelismerésből kizárt mappák (ld.
     `library_controller.py`)."""
-    config_dir = _config_dir()
+    config_dir = _app._config_dir()
     return find_exclude_folders_file(config_dir) or (config_dir / EXCLUDE_FOLDERS_NAME)
 
 def _resolve_roots(argv: list[str]) -> tuple[str, ...]:

@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
-# ruff: noqa: F821
-# These function bodies are rebound into application.py's shared namespace.
-
+import os
+import shutil
+import subprocess
 import sys
+from pathlib import Path
 
-from .application import _SPLASH_MIN_VISIBLE_MS
+from PySide6.QtCore import QCoreApplication
+from PySide6.QtGui import QFontDatabase, QGuiApplication
+
+from picasapy.render.text_fonts import clear_family_cache
+from ._application_constants import _SPLASH_MIN_VISIBLE_MS
+from . import application as _app
+from .platform_storage import MigrationNotice
+from .startup_status import StartupStatus
 
 def _force_qml_dialogs(platform: str = sys.platform) -> bool:
     """Kényszerítsük-e a saját (nem natív) QML-dialógusokat.
@@ -28,8 +36,8 @@ def _install_ui_font(app: QGuiApplication) -> None:
     Picasa-arányos.
     """
     families: list[str] = []
-    for name in _UI_FONT_FILES:
-        path = _APP_DIR / "assets" / "fonts" / name
+    for name in _app._UI_FONT_FILES:
+        path = _app._APP_DIR / "assets" / "fonts" / name
         if not path.is_file():
             continue
         font_id = QFontDatabase.addApplicationFont(str(path))
@@ -38,10 +46,10 @@ def _install_ui_font(app: QGuiApplication) -> None:
     # #4964: a betű-regisztráció megváltoztatta a családlistát, a korábbi
     # lenyíló-gyorsítótár már nem stimmel
     clear_family_cache()
-    if _UI_FONT_FAMILY not in families:
+    if _app._UI_FONT_FAMILY not in families:
         return
     font = app.font()
-    font.setFamily(_UI_FONT_FAMILY)
+    font.setFamily(_app._UI_FONT_FAMILY)
     app.setFont(font)
 
 def _set_windows_app_id() -> None:
@@ -55,11 +63,13 @@ def _set_windows_app_id() -> None:
     A hívás a QGuiApplication indítása ELŐTT kell történjen, hogy a taskbar-
     ikon azonnal helyesen jelenjen meg.
     """
-    if _platform() != "win32":
+    if _app._platform() != "win32":
         return  # Csak Windowson van értelme
 
     try:
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("PicasaPy.PicasaPy")
+        _app.ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            "PicasaPy.PicasaPy"
+        )
     except (AttributeError, OSError):
         # AttributeError: régi Windows-verzió vagy hiányzó API
         # OSError: nem admin-felhasználó vagy rendszer-hiba — csendben kimarad
@@ -96,8 +106,8 @@ def _window_icon_path(platform: str = sys.platform) -> Path:
     PNG-skálázással — az hol késleltetve, hol egyáltalán nem jelent meg),
     máshol a 256 px-es PNG."""
     if platform == "win32":
-        return _APP_DIR / "assets" / "icon.ico"
-    return _APP_DIR / "assets" / "icon.png"
+        return _app._APP_DIR / "assets" / "icon.ico"
+    return _app._APP_DIR / "assets" / "icon.png"
 
 def _install_desktop_entry() -> None:
     """Asztali bejegyzés + ikon telepítése (~/.local/share) — Waylanden a
@@ -106,7 +116,7 @@ def _install_desktop_entry() -> None:
 
     base = Path(os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share")))
     icon_target = base / "icons" / "hicolor" / "256x256" / "apps" / "picasapy.png"
-    icon_source = _APP_DIR / "assets" / "icon.png"
+    icon_source = _app._APP_DIR / "assets" / "icon.png"
     launcher = Path(__file__).resolve().parents[3] / "picasapy"
     exec_line = str(launcher) if launcher.exists() else "picasapy"
     desktop_text = (
@@ -126,7 +136,7 @@ def _install_desktop_entry() -> None:
         if not icon_target.exists() or icon_target.read_bytes() != icon_source.read_bytes():
             icon_target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(icon_source, icon_target)
-            _refresh_icon_cache(base / "icons" / "hicolor")
+            _app._refresh_icon_cache(base / "icons" / "hicolor")
         if (
             not desktop_target.exists()
             or desktop_target.read_text(encoding="utf-8") != desktop_text
@@ -140,11 +150,11 @@ def _refresh_icon_cache(icons_dir: Path) -> None:
     """A hicolor icon-theme.cache frissítése ikoncsere után — enélkül a
     tálca a cache-elt régi ikont mutatja, amíg kézzel nem frissítik (#35).
     Best-effort: ahol nincs gtk-update-icon-cache (pl. Windows), kimarad."""
-    tool = _which("gtk-update-icon-cache")
+    tool = _app._which("gtk-update-icon-cache")
     if tool is None:
         return
     try:
-        _run(
+        _app._run(
             [tool, "-f", "--ignore-theme-index", str(icons_dir)],
             check=False,
             capture_output=True,

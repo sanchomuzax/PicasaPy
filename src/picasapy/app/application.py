@@ -6,21 +6,18 @@ Könyvtár-gyökerek: parancssori argumentumok, vagy a Picasa-paritású
 
 from __future__ import annotations
 
-# ruff: noqa: F401, F821
-# Imports remain public through this legacy module and supply the shared globals
-# used by functions re-exported from the named application helper modules.
 from typing import TYPE_CHECKING
 
-import ctypes
+import ctypes as ctypes
 import importlib
 import logging
-import math
-import os
-import sqlite3
-import sys
+import math as math
+import os as os
+import sqlite3 as sqlite3
+import sys as sys
 import threading
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable as Callable, Mapping as Mapping
 from pathlib import Path
 from types import FunctionType as _FunctionType
 from types import SimpleNamespace as _SimpleNamespace
@@ -28,96 +25,102 @@ from types import SimpleNamespace as _SimpleNamespace
 import shutil
 import subprocess
 
-import PySide6
+import PySide6 as PySide6
 from PySide6.QtCore import (
     QCoreApplication,
-    QEventLoop,
-    QLocale,
-    QLibraryInfo,
-    QLockFile,
+    QEventLoop as QEventLoop,
+    QLocale as QLocale,
+    QLibraryInfo as QLibraryInfo,
+    QLockFile as QLockFile,
     QObject,
     QSettings,
     Qt,
     QTimer,
-    QTranslator,
-    qVersion,
+    QTranslator as QTranslator,
+    qVersion as qVersion,
 )
-from PySide6.QtGui import QFontDatabase, QGuiApplication, QIcon
-from PySide6.QtQml import QQmlApplicationEngine
-from PySide6.QtQuickControls2 import QQuickStyle
+from PySide6.QtGui import QFontDatabase as QFontDatabase, QGuiApplication as QGuiApplication, QIcon as QIcon
+from PySide6.QtQml import QQmlApplicationEngine as QQmlApplicationEngine
+from PySide6.QtQuickControls2 import QQuickStyle as QQuickStyle
 
 from picasapy.index import open_index, prune_foreign_folders
-from picasapy.index.sync import sync_folder
-from picasapy.perf import default_log_dir, start_startup_timeline
-from picasapy.perf.logwriter import session_header
+from picasapy.index.sync import sync_folder as sync_folder
+from picasapy.perf import default_log_dir as default_log_dir, start_startup_timeline as start_startup_timeline
+from picasapy.perf.logwriter import session_header as session_header
 from picasapy.perf.tesztuzem import (
-    argv_kapcsolo_nelkul,
-    argv_tesztuzem,
-    irj_indulasi_naplot,
-    konyvtar_merete,
-    naplo_szovege,
-    tarolo_tipusa,
-    tesztuzem_bekapcsolva,
+    argv_kapcsolo_nelkul as argv_kapcsolo_nelkul,
+    argv_tesztuzem as argv_tesztuzem,
+    irj_indulasi_naplot as irj_indulasi_naplot,
+    konyvtar_merete as konyvtar_merete,
+    naplo_szovege as naplo_szovege,
+    tarolo_tipusa as tarolo_tipusa,
+    tesztuzem_bekapcsolva as tesztuzem_bekapcsolva,
 )
-from picasapy.render.text_fonts import clear_family_cache
+from picasapy.render.text_fonts import clear_family_cache as clear_family_cache
 from picasapy.scanner import (
-    EXCLUDE_FOLDERS_NAME,
-    WATCHED_FOLDERS_NAME,
-    find_exclude_folders_file,
-    find_watched_folders_file,
-    read_exclude_folders,
-    read_watched_folders,
+    EXCLUDE_FOLDERS_NAME as EXCLUDE_FOLDERS_NAME,
+    WATCHED_FOLDERS_NAME as WATCHED_FOLDERS_NAME,
+    find_exclude_folders_file as find_exclude_folders_file,
+    find_watched_folders_file as find_watched_folders_file,
+    read_exclude_folders as read_exclude_folders,
+    read_watched_folders as read_watched_folders,
 )
 from picasapy.thumbs import ThumbnailCache
-from picasapy.version import version_string
-from .color_palette import ColorPaletteProvider
+from picasapy.version import version_string as version_string
+from .color_palette import ColorPaletteProvider as ColorPaletteProvider
 from .folder_cover_provider import FolderCoverProvider, borito_belyegkepe
-from .data_location import read_data_root, read_pending_root
-from . import display_photo_provider
-from .error_log import error_log_path, install_error_log, rotate_if_large
+from .data_location import read_data_root as read_data_root, read_pending_root as read_pending_root
+from . import display_photo_provider as display_photo_provider
+from .error_log import error_log_path as error_log_path, install_error_log as install_error_log, rotate_if_large as rotate_if_large
 from .exported_folders import (
-    EXPORTED_FOLDERS_SETTINGS_KEY,
-    existing_exported_folders,
-    registered_exported_folders,
+    EXPORTED_FOLDERS_SETTINGS_KEY as EXPORTED_FOLDERS_SETTINGS_KEY,
+    existing_exported_folders as existing_exported_folders,
+    registered_exported_folders as registered_exported_folders,
 )
 from .startup_relocate import (
-    IndulasiKoltozo,
-    KoltozesEredmeny,
-    KoltozesHid,
+    IndulasiKoltozo as IndulasiKoltozo,
+    KoltozesEredmeny as KoltozesEredmeny,
+    KoltozesHid as KoltozesHid,
 )
-from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
+from .filetype_preferences import enabled_filetypes as enabled_filetypes
 from .option_settings import (
-    initialize_option_settings,
+    initialize_option_settings as initialize_option_settings,
 )
-from .i18n_build import forditsd
+from .i18n_build import forditsd as forditsd
 from .language_controller import (
-    DEFAULT_LANGUAGE,
-    LANGUAGE_KEY,
-    coerce_language,
-    resolve_first_run_language,
-    resolve_startup_language,
+    DEFAULT_LANGUAGE as DEFAULT_LANGUAGE,
+    LANGUAGE_KEY as LANGUAGE_KEY,
+    coerce_language as coerce_language,
+    resolve_first_run_language as resolve_first_run_language,
+    resolve_startup_language as resolve_startup_language,
 )
 from .startup_language_prompt import (
-    ask_startup_language_prompt as _ask_first_run_language,
+    ask_startup_language_prompt as ask_startup_language_prompt,
 )
-from .platform_check import hianyzo_wayland_bovitmeny
+from .platform_check import hianyzo_wayland_bovitmeny as hianyzo_wayland_bovitmeny
 from .platform_storage import (
-    MigrationNotice,
-    StorageAlreadyRunning,
-    StorageBootstrap,
-    StorageMigrationError,
-    StoragePaths,
-    bootstrap_storage,
-    default_storage_paths,
+    MigrationNotice as MigrationNotice,
+    StorageAlreadyRunning as StorageAlreadyRunning,
+    StorageBootstrap as StorageBootstrap,
+    StorageMigrationError as StorageMigrationError,
+    StoragePaths as StoragePaths,
+    bootstrap_storage as bootstrap_storage,
+    default_storage_paths as default_storage_paths,
 )
-from .startup_status import StartupStatus
-from .startup_maintenance import StartupMaintenance, StartupMaintenanceStep
+from .startup_status import StartupStatus as StartupStatus
+from .startup_maintenance import StartupMaintenance as StartupMaintenance, StartupMaintenanceStep
 from .startup_diagnostics import (
     StartupProgressLog,
-    runtime_version_messages,
+    runtime_version_messages as runtime_version_messages,
     write_console,
 )
 from .window_geometry import virtual_desktop_rect, wire_window_geometry
+from ._application_constants import _SPLASH_MIN_VISIBLE_MS as _SPLASH_MIN_VISIBLE_MS
+
+load_enabled_filetypes = enabled_filetypes
+del enabled_filetypes
+_ask_first_run_language = ask_startup_language_prompt
+del ask_startup_language_prompt
 
 
 _LAZY_APP_SYMBOLS = {
@@ -198,8 +201,8 @@ _APPLICATION_HELPERS_LOADED = False
 def _ensure_application_helpers() -> None:
     """A külön modulok függvényeit a régi modulnévtérbe exportálja.
 
-    A függvényobjektumok globális szótára az `application` marad, ezért az
-    itt beállított monkeypatch-célpontok a kiemelt kód számára is láthatók.
+    Az eredeti függvényobjektum marad a segédmodul globális szótárával;
+    az `application`-beli alias őrzi a régi importútvonalat.
     """
     global _APPLICATION_HELPERS_LOADED
     if _APPLICATION_HELPERS_LOADED:
@@ -209,16 +212,8 @@ def _ensure_application_helpers() -> None:
         for name, value in vars(helper).items():
             if not isinstance(value, _FunctionType) or value.__module__ != helper.__name__:
                 continue
-            exported = _FunctionType(
-                value.__code__, globals(), value.__name__, value.__defaults__, value.__closure__
-            )
-            exported.__kwdefaults__ = value.__kwdefaults__
-            exported.__annotations__ = value.__annotations__
-            exported.__dict__.update(value.__dict__)
-            exported.__doc__ = value.__doc__
-            exported.__module__ = __name__
-            exported.__qualname__ = value.__qualname__
-            globals()[name] = exported
+            value.__module__ = __name__
+            globals()[name] = value
     _APPLICATION_HELPERS_LOADED = True
 
 
@@ -310,10 +305,37 @@ class _StartupSmokeProbe(QObject):
 
 
 if TYPE_CHECKING:
-    from .controller import AppController
-    from .dedup_controller import DedupController
-    from .fileops_controller import FileOpsController
-    from .screensaver_mode import ScreensaverRunBridge
+    from .application_data import (
+        _bootstrap_storage,
+        _exportcelok_visszavetele,
+        _resolve_roots,
+        _screen_device_pixel_ratio,
+        _takaritas_gyokerei,
+        _thumbnail_cache_size,
+    )
+    from .application_platform import _remaining_splash_ms, _start_initial_scan
+    from .application_services import (
+        _indexelt_kepszamok,
+        _indulasi_idovonal,
+        _jelentsd_az_idovonalat,
+        argv_indulasellenorzes,
+        argv_onellenorzes,
+    )
+    from .application_startup_controllers import (
+        _startup_step_create_edit_and_file_controllers,
+        _startup_step_create_library_controllers,
+    )
+    from .application_startup_prepare import (
+        _startup_step_log_and_qt_setup,
+        _startup_step_prepare_index_and_main_controller,
+        _startup_step_prepare_storage,
+    )
+    from .application_startup_qml import (
+        _startup_step_create_qml_engine,
+        _startup_step_load_qml,
+        _startup_step_register_qml_context,
+        _startup_step_screensaver,
+    )
 
 # a `screensaver_idle.SCREENSAVER_FLAG` másolata — az import nélkül olvasható
 # (#1653); az egyezést a #4613 tesztje őrzi
@@ -343,8 +365,6 @@ _UI_FONT_FAMILY = "Open Sans"
 
 # #240: a splash minimális megjelenítési ideje — az első képkockától
 # számítva legalább ennyi ideig látszik, gyors betöltésnél is.
-_SPLASH_MIN_VISIBLE_MS = 1500
-
 _ONELLENORZES_KAPCSOLO = "--onellenorzes"
 _INDULAS_ELLENORZES_KAPCSOLO = "--indulasellenorzes"
 
@@ -451,6 +471,14 @@ _QML_CONTEXT_PROPERTY_SETTERS = {
 
 def _register_qml_context_property(engine, name, value):
     _QML_CONTEXT_PROPERTY_SETTERS[name](engine.rootContext(), value)
+
+
+def _startup_step_smoke_test(state) -> None:
+    print("onellenorzes: a felulet felepult", flush=True)
+    state.screen_capture_controller.shutdown()
+    state.controller.shutdown()
+    state.edit_controller.cancelPendingPreview()
+    state.edit_controller.waitForBackgroundWorkers(2.0)
 
 
 def run(argv: list[str], *, entry_at: float | None = None) -> int:
