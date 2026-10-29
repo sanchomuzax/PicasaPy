@@ -8,6 +8,7 @@ _GYOKER = Path(__file__).resolve().parents[1]
 _MAIN = _GYOKER / "src/picasapy/app/qml/Main.qml"
 _SPLIT = _GYOKER / "src/picasapy/app/qml/PicasaPy/MainSplit.qml"
 _MENU_BAR = _GYOKER / "src/picasapy/app/qml/PicasaPy/MainMenuBar.qml"
+_QML_DIR = _GYOKER / "src/picasapy/app/qml"
 _QMLDIR = _GYOKER / "src/picasapy/app/qml/PicasaPy/qmldir"
 
 
@@ -21,15 +22,35 @@ def test_main_split_inline_marad_a_kepazonossaghoz():
     assert not _SPLIT.exists()
 
 
-def test_foablak_menubar_inline_marad_a_kepazonossaghoz():
+def test_foablak_menubar_kulon_komponensben_marad_a_neveivel():
     main = _MAIN.read_text(encoding="utf-8")
+    component = _MENU_BAR.read_text(encoding="utf-8") if _MENU_BAR.exists() else ""
     qmldir = _QMLDIR.read_text(encoding="utf-8")
+    main_family = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (
+            _QML_DIR / "Main.qml",
+            *sorted((_QML_DIR / "PicasaPy").glob("Main*.qml")),
+        )
+    )
 
     assert re.search(
-        r"^    menuBar: PicasaMenuBar\s*\{",
+        r"^    menuBar: MainMenuBar\s*\{\s*id: picasaMenuBar",
         main,
         re.MULTILINE,
     )
     assert "id: picasaMenuBar" in main
-    assert not re.search(r"^MainMenuBar\s", qmldir, re.MULTILINE)
-    assert not _MENU_BAR.exists()
+    assert _MENU_BAR.is_file()
+    assert len(component.splitlines()) < 800
+    assert "MainMenuBar 1.0 MainMenuBar.qml" in qmldir
+    for name in (
+        "hostWindow",
+        "hostController",
+        "hostToolbar",
+        "hostPhotoViewer",
+        "hostFileOpsController",
+    ):
+        assert re.search(rf"required\s+property\s+var\s+{name}\b", component)
+        assert re.search(rf"\b{name}\s*:\s*", main)
+    assert "onTimelineRequested: hostWindow.toggleTimeline()" in main_family
+    assert "onLanguageConfirmRequested" in main_family

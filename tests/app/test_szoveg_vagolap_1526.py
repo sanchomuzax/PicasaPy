@@ -15,20 +15,15 @@ próba AZT méri, amit feltennénk / amit olvasnánk.
 
 from __future__ import annotations
 
-from pathlib import Path
-
-import picasapy.app
 import pytest
 from PySide6.QtCore import QSettings
 
 from support.jpeg_factory import make_jpeg
 from tests.support.qt_wait import wait_for_photo_op
-from support.menubar_components_6016 import menu_sources
+from support.menubar_components_6016 import main_sources, menu_sources
 
 _MENU = menu_sources()
-_MAIN = (
-    Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
-).read_text(encoding="utf-8")
+_MAIN = main_sources()
 
 
 @pytest.fixture

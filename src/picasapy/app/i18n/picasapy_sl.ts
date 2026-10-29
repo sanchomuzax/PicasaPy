@@ -9188,13 +9188,6 @@ picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
             <translation>Ne sprašuj ponovno.</translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" line="2328" />
-            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
-            <translation>Album, ki bo ustvarjen, bo imel več kot 1000 slik. Ali želite nadaljevati?</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" line="2743" />
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -19668,6 +19661,16 @@ picasapy-origin: picasa</extracomment>
             <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ta mapa trenutno ni na voljo (na primer zaradi odklopljenega pogona ali omrežne skupne rabe). Njene fotografije ostanejo v zbirki podatkov, sličice pa se prikažejo iz predpomnilnika, vendar izvirnih datotek trenutno ni mogoče odpreti ali urejati.</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainMenuBar</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainMenuBar.qml" line="208" />
+            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
+            <translation>Album, ki bo ustvarjen, bo imel več kot 1000 slik. Ali želite nadaljevati?</translation>
         </message>
     </context>
 </TS>

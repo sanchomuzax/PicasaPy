@@ -5,7 +5,9 @@ from pathlib import Path
 import picasapy.app
 
 _MENU_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+_QML_DIR = _MENU_DIR.parent
 _MENU_FILES = (
+    "MainMenuBar.qml",
     "PicasaMenuBar.qml",
     "PicasaFileMenu.qml",
     "PicasaEditMenu.qml",
@@ -29,3 +31,9 @@ def menu_sources() -> str:
 def menu_component_source(name: str) -> str:
     """Egy menükomponens QML-forrása."""
     return (_MENU_DIR / name).read_text(encoding="utf-8")
+
+
+def main_sources() -> str:
+    """A főablak forráscsaládja a külön Main-komponensekkel együtt."""
+    files = [_QML_DIR / "Main.qml", *_MENU_DIR.glob("Main*.qml")]
+    return "\n".join(path.read_text(encoding="utf-8") for path in files)

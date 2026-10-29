@@ -9149,13 +9149,6 @@ picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
             <translation>ไม่ต้องถามฉันอีก</translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" line="2328" />
-            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
-            <translation>จะสร้างอัลบั้มที่มีรูปภาพมากกว่า 1000 ภาพ  คุณต้องการดำเนินการต่อหรือไม่</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" line="2743" />
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -19627,6 +19620,16 @@ picasapy-origin: picasa</extracomment>
             <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>โฟลเดอร์นี้ยังไม่พร้อมใช้งาน (เช่น ไดรฟ์หรือโฟลเดอร์เครือข่ายถูกตัดการเชื่อมต่อ) รูปภาพยังอยู่ในฐานข้อมูลและใช้ภาพขนาดย่อจากแคช แต่ขณะนี้เปิดหรือแก้ไขไฟล์ต้นฉบับไม่ได้</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainMenuBar</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainMenuBar.qml" line="208" />
+            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
+            <translation>จะสร้างอัลบั้มที่มีรูปภาพมากกว่า 1000 ภาพ  คุณต้องการดำเนินการต่อหรือไม่</translation>
         </message>
     </context>
 </TS>

@@ -18,7 +18,7 @@ import picasapy.app
 import pytest
 from PySide6.QtCore import QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
-from support.menubar_components_6016 import menu_sources
+from support.menubar_components_6016 import main_sources, menu_sources
 
 _QML = Path(picasapy.app.__file__).parent / "qml"
 _MENU = menu_sources()
@@ -74,8 +74,14 @@ class TestAMenupont:
 
     def test_a_menupont_a_panelt_nyitja(self):
         """#3504: a menü már NEM a régi (törölt) `BackupDialog`-ot nyitja."""
-        main = (_QML / "Main.qml").read_text(encoding="utf-8")
-        assert "onBackupRequested: backupHost.nyisd()" in main
+        main = main_sources()
+        assert any(
+            alak in main
+            for alak in (
+                "onBackupRequested: backupHost.nyisd()",
+                "onBackupRequested: hostBackupHost.nyisd()",
+            )
+        )
         assert "backupDialog" not in main
 
 
