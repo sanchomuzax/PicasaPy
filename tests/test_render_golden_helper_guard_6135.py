@@ -17,7 +17,7 @@ _KOTELEZO_TESZTEK = (
 )
 #: A rögzített betűre még át nem állt teszt -> a jegy, amely átállítja.
 #: A közös szövegsegédet ezek is kötelesek használni.
-_BETU_ATALLAS_HATRA = {"test_tray_bar_render_6050.py": "#6148"}
+_BETU_ATALLAS_HATRA: dict[str, str] = {}
 
 
 def _pixel_golden_tesztek() -> list[tuple[Path, str]]:
