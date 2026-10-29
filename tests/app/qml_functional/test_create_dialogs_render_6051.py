@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import os
 import time
 from pathlib import Path
 
@@ -408,6 +409,17 @@ def test_create_dialogs_render_bontas_elott_rogzitett_referenciakkal(
                 else aktualis
             )
             assert kimeneti_kep.save(str(allapot_kimenet / f"{kepnev}.png"))
+            # #6124: a CI-n felvett (a referenciával azonos módon maszkolt) kép a
+            # hibakép-artefaktumba is megy, hogy a referenciát a CI
+            # környezetében lehessen rögzíteni.
+            hibakep_mappa = os.environ.get("PICASAPY_RENDER_FAILURE_DIR")
+            if hibakep_mappa and not kepnev.startswith("felugro-"):
+                cel = (
+                    Path(hibakep_mappa) / "create-dialogs-6051"
+                    / f"{ablakmagassag_delta:+d}" / nev
+                )
+                cel.mkdir(parents=True, exist_ok=True)
+                assert kimeneti_kep.save(str(cel / f"{kepnev}.png"))
             referencia_fajl = (
                 _ARANY / f"{ablakmagassag_delta:+d}" / nev / f"{kepnev}.png"
             )
