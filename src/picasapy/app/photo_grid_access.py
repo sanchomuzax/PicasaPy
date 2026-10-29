@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from urllib.parse import quote
 
-from PySide6.QtCore import QUrl, Slot
+from PySide6.QtCore import QUrl
 
 from picasapy.metadata import megjelenitett_meret
 from picasapy.paths import path_key
@@ -16,7 +16,6 @@ from .model_helpers import _felbontas, _has_edits
 
 
 class PhotoGridAccess:
-    @Slot(int, result=str)
     def thumbUrlAt(self, row: int) -> str:
         """Thumbnail-URL a kijelölés-tálca miniatűrjeihez."""
         if not 0 <= row < len(self._photos):
@@ -24,7 +23,6 @@ class PhotoGridAccess:
         photo = self._photos[row]
         return self._sor_url(photo)
 
-    @Slot(int, result="QVariantMap")
     def itemAt(self, row: int) -> dict:
         """Egy sor teljes rács-adata a feed-delegate-nek (#64) — a
         csoportokra bontott rács Repeater-e nem modell-szerepekből köt,
@@ -58,17 +56,14 @@ class PhotoGridAccess:
             "hasFaceSuggestion": photo.unnamed_face_count > 0,
         }
 
-    @Slot(int, result=bool)
     def starAt(self, row: int) -> bool:
         """A sor csillag-állapota (a tálca ★ gombjának színezéséhez)."""
         return 0 <= row < len(self._photos) and self._photos[row].star
 
-    @Slot(int, result=bool)
     def isVideoAt(self, row: int) -> bool:
         """Videó-e a sor (#14) — a néző erre vált lejátszó-nézetre."""
         return 0 <= row < len(self._photos) and self._photos[row].kind == "video"
 
-    @Slot(int, result="QVariantMap")
     def movieTrimAt(self, row: int) -> dict:
         """A sor videó-VÁGÁSPONTJAI ezredmásodpercben (#1838).
 
@@ -89,7 +84,6 @@ class PhotoGridAccess:
             "end": -1 if veg is None else veg,
         }
 
-    @Slot(int, result=str)
     def captionAt(self, row: int) -> str:
         """A sor felirata (üres, ha nincs vagy az index érvénytelen) — a
         néző szerkeszthető felirat-mezőjének."""
@@ -97,7 +91,6 @@ class PhotoGridAccess:
             return ""
         return self._photos[row].caption or ""
 
-    @Slot(int, result=str)
     def fileUrlAt(self, row: int) -> str:
         """A kép file:// URL-je a nézőnek; üres, ha az index érvénytelen."""
         if not 0 <= row < len(self._photos):
@@ -105,8 +98,6 @@ class PhotoGridAccess:
         photo = self._photos[row]
         return QUrl.fromLocalFile(f"{photo.folder_path}/{photo.name}").toString()
 
-    @Slot(int, str, result=str)
-    @Slot(int, result=str)
     def displayUrlAt(self, row: int, mode: str = "") -> str:
         """A kép URL-je a DIAVETÍTÉSNEK — a megjelenítési móddal (#1640).
 
@@ -151,7 +142,6 @@ class PhotoGridAccess:
             photo.width, photo.height, getattr(photo, "orientation", None)
         )
 
-    @Slot(int, result=int)
     def pixelWidthAt(self, row: int) -> int:
         """A kép VALÓDI képpont-szélessége (0, ha ismeretlen) — #2492.
 
@@ -168,7 +158,6 @@ class PhotoGridAccess:
             return 0
         return int(self._megjelenitett(row)[0] or 0)
 
-    @Slot(int, result=int)
     def pixelHeightAt(self, row: int) -> int:
         """A kép VALÓDI képpont-magassága (0, ha ismeretlen) — #2492.
 
@@ -180,7 +169,6 @@ class PhotoGridAccess:
             return 0
         return int(self._megjelenitett(row)[1] or 0)
 
-    @Slot(int, result=bool)
     def pixelSidesSwappedAt(self, row: int) -> bool:
         """Az EXIF-orientáció felcseréli-e a kép oldalait (5–8 állás) — #3832.
 
@@ -195,21 +183,18 @@ class PhotoGridAccess:
         allas = getattr(self._photos[row], "orientation", None)
         return megjelenitett_meret(1, 2, allas) == (2, 1)
 
-    @Slot(int, result=str)
     def idAt(self, row: int) -> str:
         """A sor fotó-azonosítója — az EditController/editpreview kulcsa."""
         if not 0 <= row < len(self._photos):
             return ""
         return str(self._photos[row].id)
 
-    @Slot(int, result=int)
     def rowOfId(self, photo_id: int) -> int:
         """A fotó sor-indexe id alapján (#135): a QML ezzel képezi újra a
         kijelölést háttér-frissítés (reset) után — -1, ha a fotó már nincs
         a jelen nézetben (törölve/kiszűrve)."""
         return self.row_of_id(photo_id)
 
-    @Slot(str, result=int)
     def rowOfPath(self, path: str) -> int:
         """A kép sor-indexe ABSZOLÚT ÚTVONAL alapján; -1, ha nincs a nézetben.
 
@@ -237,7 +222,6 @@ class PhotoGridAccess:
                 return i
         return -1
 
-    @Slot(int, result=str)
     def filePathAt(self, row: int) -> str:
         """A kép abszolút útvonala (EditController.beginEdit-hez); üres, ha
         az index érvénytelen."""

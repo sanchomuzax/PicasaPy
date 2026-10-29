@@ -5,17 +5,15 @@ from __future__ import annotations
 import sqlite3
 from collections.abc import Iterable
 
-from PySide6.QtCore import Property, QAbstractListModel, QModelIndex, Qt, Signal, Slot
+from PySide6.QtCore import Property, QAbstractListModel, Qt, Signal, Slot
 
 from picasapy.index.hidden_scope import show_hidden_folders
 from picasapy.paths import flat_key
 
 from .model_helpers import (
-    REJTETT_MAPPAK_FEJLEC,
     _PATH_SEPARATORS,
     _ROOT_INDEX,
     _descending,
-    _folder_year,
     _rejtett_csomopont,
     _sort_key,
     _with_year_separators,

@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QUrl, Slot
+from PySide6.QtCore import Qt, QUrl
 
 from .model_helpers import _ROOT_INDEX, _felbontas
 
 
 class PhotoGridNavigation:
-    @Slot(int, int, result=int)
     def folderNeighbor(self, row: int, delta: int) -> int:
         """A `row` sortól `delta` lépés a SAJÁT mappáján belül (#84).
 
@@ -38,7 +37,6 @@ class PhotoGridNavigation:
             result = candidate
         return result
 
-    @Slot(int, result="QVariantList")
     def folderRowRange(self, row: int) -> list:
         """A `row` sort tartalmazó MAPPA folytonos sortartománya: `[kezdet,
         darab]` (#1905).
@@ -88,7 +86,6 @@ class PhotoGridNavigation:
             bounds.append((start, len(self._photos) - start))
         return tuple(bounds)
 
-    @Slot(int, result="QVariantList")
     def groupRange(self, row: int) -> list:
         """A sorhoz tartozó mappa-csoport [első, utolsó] sorindexe (#1219).
 
@@ -104,7 +101,6 @@ class PhotoGridNavigation:
                 return [start, start + count - 1]
         return []
 
-    @Slot(int, str, int, result=int)
     def navigate(self, row: int, direction: str, columns: int) -> int:
         """Kurzor-léptetés célsora a rács-feedben (#77).
 

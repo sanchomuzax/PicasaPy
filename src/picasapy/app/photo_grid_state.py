@@ -4,13 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QModelIndex, Slot
+from PySide6.QtCore import QModelIndex
 
 from picasapy.index import PhotoRecord
-from picasapy.ini.movie_trim import trim_from_filters
 
-from .display_mode_paint import current_display_mode_suffix, display_mode_url_suffix
-from .model_helpers import _felbontas, _has_edits, _thumb_url
+from .model_helpers import _thumb_url
 from .photo_sort import DEFAULT_SORT_MODE, sort_folder_blocks
 
 
@@ -282,10 +280,8 @@ class PhotoGridState:
         index = self.index(row, 0)
         self.dataChanged.emit(index, index)
 
-    @Slot(int, result=int)
     def rotateAt(self, row: int) -> int:
         """A sor nem-destruktív forgatási lépésszáma (0–3) a nézőnek."""
         if not 0 <= row < len(self._photos):
             return 0
         return self._photos[row].rotate_steps
-
