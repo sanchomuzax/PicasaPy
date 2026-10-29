@@ -151,8 +151,18 @@ def test_a_gomb_MERT_merete_elo_elemen(qml_app) -> None:
 
 def test_a_hivas_a_vezerlo_slotjara_megy() -> None:
     """A Main.qml hídja a mért vezérlőt hívja, nem saját logikát."""
-    forras = (QML / "Main.qml").read_text(encoding="utf-8")
+    forras = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (
+            QML / "Main.qml",
+            *sorted((QML / "PicasaPy").glob("Main*.qml")),
+        )
+    )
     assert "function findMoreSuggestions()" in forras
-    kezd = forras.index("function findMoreSuggestions()")
-    blokk = forras[kezd:kezd + 700]
-    assert "_faceScanController.moreSuggestions()" in blokk
+    komponens = (QML / "PicasaPy" / "MainPeopleAlbumState.qml").read_text(
+        encoding="utf-8"
+    )
+    assert (
+        "hostFaceScanController.moreSuggestions()" in komponens
+        or "_faceScanController.moreSuggestions()" in komponens
+    )

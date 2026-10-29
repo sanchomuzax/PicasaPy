@@ -18,6 +18,7 @@ import pytest
 from PySide6.QtCore import Property, QObject, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 from tests.support.qml_blokk import blokk_horgony_utan
+from tests.support.editor_panel_family import editor_panel_family_source
 
 _KEEPALIVE = []
 
@@ -25,10 +26,11 @@ _ICONS_DIR = (
     Path(__file__).resolve().parents[3]
     / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "icons"
 )
-_QML_SOURCE = (
+_QML_DIR = (
     Path(__file__).resolve().parents[3]
-    / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "EditorPanel.qml"
-).read_text(encoding="utf-8")
+    / "src" / "picasapy" / "app" / "qml" / "PicasaPy"
+)
+_QML_SOURCE = editor_panel_family_source(_QML_DIR)
 _VIEWER_QML_SOURCE = (
     Path(__file__).resolve().parents[3]
     / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "PhotoViewer.qml"

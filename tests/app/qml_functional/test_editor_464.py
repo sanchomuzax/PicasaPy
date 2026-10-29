@@ -22,6 +22,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtCore import QObject, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
+from tests.support.editor_panel_family import editor_panel_family_source
 
 _KEEPALIVE = []
 
@@ -33,10 +34,7 @@ _QML_DIR = (
     Path(__file__).resolve().parents[3]
     / "src" / "picasapy" / "app" / "qml" / "PicasaPy"
 )
-_QML_SOURCE = "\n".join(
-    (_QML_DIR / name).read_text(encoding="utf-8")
-    for name in ("EditorPanel.qml", "EditorTabCommonFixes.qml")
-)
+_QML_SOURCE = editor_panel_family_source(_QML_DIR)
 
 _ICONS_DIR = (
     Path(__file__).resolve().parents[3]
