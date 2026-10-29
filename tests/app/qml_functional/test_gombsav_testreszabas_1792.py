@@ -98,11 +98,14 @@ class TestAMenutetel:
         assert "configureButtonsRequested()" in menu
 
     def test_a_gazda_megnyitja(self):
-        fo = (
-            Path(app_module.__file__).parent / "qml" / "Main.qml"
+        # #6136: a menüsor bekötése a MainMenuBar komponensbe költözött
+        menusav = (
+            Path(app_module.__file__).parent / "qml" / "PicasaPy" / "MainMenuBar.qml"
         ).read_text(encoding="utf-8")
 
-        assert "onConfigureButtonsRequested: configureButtonsDialog.open()" in fo
+        assert (
+            "onConfigureButtonsRequested: hostConfigureButtonsDialog.open()" in menusav
+        )
 
 
 class TestAFejlecKoveti:

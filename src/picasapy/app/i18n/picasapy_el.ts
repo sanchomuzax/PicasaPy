@@ -4130,6 +4130,36 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
+            <source>Close crop to faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Περικοπή κοντά στα πρόσωπα</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" />
+            <source>Compose around faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Σύνθεση γύρω από τα πρόσωπα</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" />
+            <source>Crop by color</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Περικοπή με βάση το χρώμα</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" />
+            <source>Crop by detail</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Περικοπή με βάση τη λεπτομέρεια</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" />
+            <source>Crop by horizon</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Περικοπή με βάση τον ορίζοντα</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>More Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Περισσότερα εφέ</translation>
@@ -4153,16 +4183,79 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
             <translation>Επανάληψη</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" line="97" />
+            <source>Manual</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</extracomment>
+            <translation>Με το χέρι</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" line="98" />
+            <source>Current ratio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
+            <translation>Τρέχουσα αναλογία</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" line="638" />
+            <source>%1$d x %2$d</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
+            <translation>%1$d x %2$d</translation>
+        </message>
+        <message>
             <source>Current display</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:CurrentDisplay</extracomment>
             <translation>Τρέχουσα εμφάνιση</translation>
         </message>
         <message>
+            <source>Small print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description</extracomment>
+            <translation>Μικρού μεγέθους εκτύπωση</translation>
+        </message>
+        <message>
+            <source>Large print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description</extracomment>
+            <translation>Εκτύπωση μεγάλου μεγέθους</translation>
+        </message>
+        <message>
             <source>Letter paper</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList::FullPage:Description</extracomment>
             <translation>χαρτί τύπου Letter</translation>
+        </message>
+        <message>
+            <source>Standard screen</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x4:Description</extracomment>
+            <translation>Τυπική οθόνη</translation>
+        </message>
+        <message>
+            <source>Widescreen monitor</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:16x10:Description</extracomment>
+            <translation>Οθόνη ευρείας οθόνης</translation>
+        </message>
+        <message>
+            <source>Widescreen Photo Frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:5x3</extracomment>
+            <translation>Πλαίσιο φωτογραφίας ευρείας οθόνης</translation>
+        </message>
+        <message>
+            <source>CD Cover</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
+            <translation>Εξώφυλλο CD</translation>
+        </message>
+        <message>
+            <source>Full page</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
+            <translation>Πλήρης σελίδα</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="104" />
@@ -4181,6 +4274,13 @@ picasapy-origin-key: stringres:AspectRatioList::FullPage:Description</extracomme
             <source>Square: CD cover</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Τετράγωνο: εξώφυλλο CD</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" line="371" />
+            <source>Square</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
+            <translation>Τετράγωνο</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="1714" />
@@ -9049,17 +9149,18 @@ picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
             <translation>Να μην εμφανιστεί ξανά η ερώτηση.</translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" line="2328" />
-            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
-            <translation>Θα δημιουργηθεί ένα λεύκωμα με περισσότερες από 1000 εικόνες.  Θέλετε να συνεχίσετε;</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" line="2743" />
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Επιβεβαίωση</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="2328" />
+            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
+            <extracomment>    picasapy-origin-key: stringres:CThumbUI::SaveSearchBig
+picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
+            <translation>Θα δημιουργηθεί ένα λεύκωμα με περισσότερες από 1000 εικόνες.  Θέλετε να συνεχίσετε;</translation>
         </message>
     </context>
     <context>
@@ -19530,104 +19631,125 @@ picasapy-origin: picasa</extracomment>
         </message>
     </context>
     <context>
+        <name>MainMenuBar</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainMenuBar.qml" line="208" />
+            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
+            <translation>Θα δημιουργηθεί ένα λεύκωμα με περισσότερες από 1000 εικόνες.  Θέλετε να συνεχίσετε;</translation>
+        </message>
+    </context>
+    <context>
         <name>EditorPanelCropState</name>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Close crop to faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Περικοπή κοντά στα πρόσωπα</translation>
+            <translation type="unfinished" />
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Compose around faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Σύνθεση γύρω από τα πρόσωπα</translation>
+            <translation type="unfinished" />
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Περικοπή με βάση το χρώμα</translation>
+            <translation type="unfinished" />
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by detail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Περικοπή με βάση τη λεπτομέρεια</translation>
+            <translation type="unfinished" />
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by horizon</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Περικοπή με βάση τον ορίζοντα</translation>
+            <translation type="unfinished" />
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="97" />
             <source>Manual</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</extracomment>
             <translation>Με το χέρι</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="98" />
             <source>Current ratio</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:CurrentRatio
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
             <translation>Τρέχουσα αναλογία</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="638" />
             <source>%1$d x %2$d</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
             <translation>%1$d x %2$d</translation>
         </message>
         <message>
             <source>Small print</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description</extracomment>
             <translation>Μικρού μεγέθους εκτύπωση</translation>
         </message>
         <message>
             <source>Large print</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description</extracomment>
             <translation>Εκτύπωση μεγάλου μεγέθους</translation>
         </message>
         <message>
             <source>Standard screen</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:4x4:Description
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:4x4:Description</extracomment>
             <translation>Τυπική οθόνη</translation>
         </message>
         <message>
             <source>Widescreen monitor</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:16x10:Description
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:16x10:Description</extracomment>
             <translation>Οθόνη ευρείας οθόνης</translation>
         </message>
         <message>
             <source>Widescreen Photo Frame</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:5x3
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:5x3</extracomment>
             <translation>Πλαίσιο φωτογραφίας ευρείας οθόνης</translation>
         </message>
         <message>
             <source>CD Cover</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:SquareDescription
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
             <translation>Εξώφυλλο CD</translation>
         </message>
         <message>
             <source>Full page</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
-            <translation>Πλήρης σελίδα</translation>
+            <translation type="unfinished" />
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="371" />
             <source>Square</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:Square
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>Τετράγωνο</translation>
         </message>

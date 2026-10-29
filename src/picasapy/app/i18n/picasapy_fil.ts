@@ -4130,6 +4130,36 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
+            <source>Close crop to faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>I-crop nang dikit sa mga mukha</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" />
+            <source>Compose around faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Buuin ang komposisyon sa palibot ng mga mukha</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" />
+            <source>Crop by color</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>I-crop ayon sa kulay</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" />
+            <source>Crop by detail</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>I-crop ayon sa detalye</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" />
+            <source>Crop by horizon</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>I-crop ayon sa abot-tanaw</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>More Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Higit pang mga Effect</translation>
@@ -4153,16 +4183,79 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
             <translation>I-redo</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" line="97" />
+            <source>Manual</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</extracomment>
+            <translation>Mano-mano</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" line="98" />
+            <source>Current ratio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
+            <translation>Kasalukuyang ratio</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" line="638" />
+            <source>%1$d x %2$d</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
+            <translation>%1$d x %2$d</translation>
+        </message>
+        <message>
             <source>Current display</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:CurrentDisplay</extracomment>
             <translation>Kasalukuyang ipinapakita</translation>
         </message>
         <message>
+            <source>Small print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description</extracomment>
+            <translation>Maliit na print</translation>
+        </message>
+        <message>
+            <source>Large print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description</extracomment>
+            <translation>Malaking print</translation>
+        </message>
+        <message>
             <source>Letter paper</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList::FullPage:Description</extracomment>
             <translation>Papel ng sulat</translation>
+        </message>
+        <message>
+            <source>Standard screen</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x4:Description</extracomment>
+            <translation>Pamantayang screen</translation>
+        </message>
+        <message>
+            <source>Widescreen monitor</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:16x10:Description</extracomment>
+            <translation>Widescreen na monitor</translation>
+        </message>
+        <message>
+            <source>Widescreen Photo Frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:5x3</extracomment>
+            <translation>Widescreen na Frame ng Larawan</translation>
+        </message>
+        <message>
+            <source>CD Cover</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
+            <translation>Takip ng CD</translation>
+        </message>
+        <message>
+            <source>Full page</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
+            <translation>Buong pahina</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="104" />
@@ -4181,6 +4274,13 @@ picasapy-origin-key: stringres:AspectRatioList::FullPage:Description</extracomme
             <source>Square: CD cover</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Parisukat: Pabalat ng CD</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanel.qml" line="371" />
+            <source>Square</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
+            <translation>Parisukat</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="1714" />
@@ -9049,17 +9149,18 @@ picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
             <translation>Huwag na akong tatanungin ulit.</translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" line="2328" />
-            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
-            <translation>Lilikha ito ng isang album na may higit sa 1000 na mga larawan.  Gusto mong magpatuloy?</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" line="2743" />
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Kumpirmahin</translation>
+        </message>
+        <message>
+            <location filename="../qml/Main.qml" line="2328" />
+            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
+            <extracomment>    picasapy-origin-key: stringres:CThumbUI::SaveSearchBig
+picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
+            <translation>Lilikha ito ng isang album na may higit sa 1000 na mga larawan.  Gusto mong magpatuloy?</translation>
         </message>
     </context>
     <context>
@@ -19530,104 +19631,125 @@ picasapy-origin: picasa</extracomment>
         </message>
     </context>
     <context>
+        <name>MainMenuBar</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainMenuBar.qml" line="208" />
+            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
+            <translation>Lilikha ito ng isang album na may higit sa 1000 na mga larawan.  Gusto mong magpatuloy?</translation>
+        </message>
+    </context>
+    <context>
         <name>EditorPanelCropState</name>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Close crop to faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>I-crop nang dikit sa mga mukha</translation>
+            <translation type="unfinished" />
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Compose around faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Buuin ang komposisyon sa palibot ng mga mukha</translation>
+            <translation type="unfinished" />
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>I-crop ayon sa kulay</translation>
+            <translation type="unfinished" />
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by detail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>I-crop ayon sa detalye</translation>
+            <translation type="unfinished" />
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by horizon</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>I-crop ayon sa abot-tanaw</translation>
+            <translation type="unfinished" />
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="97" />
             <source>Manual</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</extracomment>
             <translation>Mano-mano</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="98" />
             <source>Current ratio</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:CurrentRatio
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
             <translation>Kasalukuyang ratio</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="638" />
             <source>%1$d x %2$d</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
             <translation>%1$d x %2$d</translation>
         </message>
         <message>
             <source>Small print</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description</extracomment>
             <translation>Maliit na print</translation>
         </message>
         <message>
             <source>Large print</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description</extracomment>
             <translation>Malaking print</translation>
         </message>
         <message>
             <source>Standard screen</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:4x4:Description
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:4x4:Description</extracomment>
             <translation>Pamantayang screen</translation>
         </message>
         <message>
             <source>Widescreen monitor</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:16x10:Description
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:16x10:Description</extracomment>
             <translation>Widescreen na monitor</translation>
         </message>
         <message>
             <source>Widescreen Photo Frame</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:5x3
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:5x3</extracomment>
             <translation>Widescreen na Frame ng Larawan</translation>
         </message>
         <message>
             <source>CD Cover</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:SquareDescription
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
             <translation>Takip ng CD</translation>
         </message>
         <message>
             <source>Full page</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
-            <translation>Buong pahina</translation>
+            <translation type="unfinished" />
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="371" />
             <source>Square</source>
-            <extracomment>picasapy-origin: picasa
+            <extracomment>    picasapy-origin-key: stringres:AspectRatioList:Square
+picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>Parisukat</translation>
         </message>

@@ -19,18 +19,13 @@ A jegy külön kiköti: az eredeti sem üzen. A szürke tétel maga az üzenet.
 
 from __future__ import annotations
 
-from pathlib import Path
-
-import picasapy.app
 import pytest
 
 from tests.support.qml_blokk import blokk_horgonyra
-from support.menubar_components_6016 import menu_sources
+from support.menubar_components_6016 import main_sources, menu_sources
 
 _MENU = menu_sources()
-_MAIN = (
-    Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
-).read_text(encoding="utf-8")
+_MAIN = main_sources()
 
 #: A két belépési pont — az eredetiben UGYANAZ a parancsazonosító.
 KET_BELEPES = ("menuFileAddFolder", "menuToolsFolderManager")
@@ -63,7 +58,13 @@ class TestAKapu:
     def test_a_gazdaablak_BEKOTI(self):
         """A #1153 osztálya: az állapot ott van, de senki nem tölti fel —
         akkor a kapu sosem zárna."""
-        assert "editorActive: window.viewerOpen" in _MAIN
+        assert any(
+            alak in _MAIN
+            for alak in (
+                "editorActive: window.viewerOpen",
+                "editorActive: hostWindow.viewerOpen",
+            )
+        )
 
 
 class TestNincsHibauzenet:
