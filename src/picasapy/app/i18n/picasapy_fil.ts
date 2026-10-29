@@ -429,21 +429,10 @@ picasapy-origin-key: stringres:ytPrinter::unnamedalbum</extracomment>
     <context>
         <name>PrintDialog</name>
         <message>
-            <source>Review</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Suriin</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/PrintDialog.qml" />
             <source>Low Quality: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Mababang kalidad: %1</translation>
-        </message>
-        <message>
-            <source>Make sure your photos are ready to print</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Tooltip(printpanel/reviewnowbutton2)</extracomment>
-            <translation>Siguraduhin mo na ang iyong mga larawan ay handa nang i-print</translation>
         </message>
         <message>
             <source>These pictures are below %1 pixels/inch at the selected print size:</source>
@@ -552,6 +541,41 @@ picasapy-origin-key: stringres:ytPrintSizes::eWallet;tooltips:Label(printpanel/w
             <translation>Wallet</translation>
         </message>
         <message>
+            <source>Print...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>I-print...</translation>
+        </message>
+        <message>
+            <source>Contact Sheet</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
+            <translation>Thumbnail</translation>
+        </message>
+        <message>
+            <source>Print to a PDF file...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>I-print sa PDF file...</translation>
+        </message>
+        <message>
+            <source>PDF documents (*.pdf)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mga PDF document (*.pdf)</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintDialogContent</name>
+        <message>
+            <source>Review</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Suriin</translation>
+        </message>
+        <message>
+            <source>Make sure your photos are ready to print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Tooltip(printpanel/reviewnowbutton);tooltips:Tooltip(printpanel/reviewnowbutton2)</extracomment>
+            <translation>Siguraduhin mo na ang iyong mga larawan ay handa nang i-print</translation>
+        </message>
+        <message>
             <source>Smallest picture: %1 pixels/inch.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Pinakamaliit na larawan: %1 pixel/pulgada.</translation>
@@ -580,10 +604,18 @@ picasapy-origin-key: stringres:ThumbUIPrint::ReadyPrompt</extracomment>
             <translation>Handa ka nang mag-print.</translation>
         </message>
         <message>
-            <source>Print...</source>
+            <source>Copies of each picture:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>I-print...</translation>
+            <translation>Mga kopya ng bawat larawan:</translation>
         </message>
+        <message>
+            <source>Add another copy of each Photo to be printed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Magdagdag ng isa pang kopya ng bawat larawang ipi-print</translation>
+        </message>
+    </context>
+    <context>
+        <name>PrintDialogLogic</name>
         <message>
             <source>Printing is unavailable: the Qt print support module is missing. On Debian/Ubuntu you can install it with: sudo apt install python3-pyside6.qtprintsupport</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -598,32 +630,6 @@ picasapy-origin-key: stringres:ThumbUIPrint::ReadyPrompt</extracomment>
             <source>Choose the target file.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Piliin ang target na file.</translation>
-        </message>
-        <message>
-            <source>Contact Sheet</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CollageType::eContactSheet;stringres:WebExport::template6;stringres:buttonlabel:{BB850B65-96B6-4e41-A2AE-77DE38A82D24};stringres:ytPrintSizes::eContact</extracomment>
-            <translation>Thumbnail</translation>
-        </message>
-        <message>
-            <source>Print to a PDF file...</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>I-print sa PDF file...</translation>
-        </message>
-        <message>
-            <source>PDF documents (*.pdf)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mga PDF document (*.pdf)</translation>
-        </message>
-        <message>
-            <source>Copies of each picture:</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Mga kopya ng bawat larawan:</translation>
-        </message>
-        <message>
-            <source>Add another copy of each Photo to be printed</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Magdagdag ng isa pang kopya ng bawat larawang ipi-print</translation>
         </message>
     </context>
     <context>
@@ -906,175 +912,178 @@ picasapy-origin-key: stringres:CPrintDlg::removedall</extracomment>
         </message>
     </context>
     <context>
-        <name>PrintOptionsPanel</name>
+        <name>PrintOptionsFields</name>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Border and text options</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Mga Opsyon ng Border at Teksto</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Close</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/cancelbutton-label);gpuploader_file_errors:gpuploader_file_errors/cancel.title;instructionpanel_text:Label(instructionpanel/close);makemoviepaneltext:Label(makemoviepanel/cancel);stringres:EXIF::Close;uploadallinstructionpanel_text:Label(uploadallinstructionpanel/close)</extracomment>
             <translation>Isara</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Sorry, but these options cannot be used when printing contact sheets.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: printoptionstext:Label(printoptions/disabled_label)</extracomment>
             <translation>Paumanhin, ngunit ang mga pagpipilian na ito ay hindi magagamit kapag nagpi-print ng mga contact sheet.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Captions</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: printoptionstext:Label(printoptions/caption_label)</extracomment>
             <translation>Mga Caption</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>No text</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: printoptionstext:Label(printoptions/usenotext_label)</extracomment>
             <translation>Walang teksto</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Caption</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Caption</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Filename</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Pangalan ng file</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Exif information</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: printoptionstext:Label(printoptions/useexif_label)</extracomment>
             <translation>Exif na impormasyon</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Below image</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: printoptionstext:Label(printoptions/textbelowimage_label)</extracomment>
             <translation>Sa ibaba ng larawan</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>On image</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: printoptionstext:Label(printoptions/textonimage_label)</extracomment>
             <translation>Sa larawan</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>On border</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: printoptionstext:Label(printoptions/textonborder_label)</extracomment>
             <translation>Nasa border</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Font</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Font</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Size</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Laki</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Wrap text</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: printoptionstext:Label(printoptions/wrap_checkbox_label)</extracomment>
             <translation>I-wrap ang teksto</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Border</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: printoptionstext:Label(printoptions/border_label);stringres:filter_Border_label0</extracomment>
             <translation>Border</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Border width</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: printoptionstext:Label(printoptions/border_size_label)</extracomment>
             <translation>Lapad ng border</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>None</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/min_spacing_label);printoptionstext:Label(printoptions/border_none_label);stringres:Border::ID_COLLAGE_BORDER_0;stringres:CAcquireUI::devnone;stringres:CMakeMoviePanel::None;stringres:EXIF::None;stringres:collage::noborder_dname</extracomment>
             <translation>Wala</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Max.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: collagepaneltext:Label(collagepanel/max_spacing_label);printoptionstext:Label(printoptions/border_max_label)</extracomment>
             <translation>Max.</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Bottom only</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: printoptionstext:Label(printoptions/bottomonly_checkbox_label)</extracomment>
             <translation>Sa ilalim lamang</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Even width border</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: printoptionstext:Label(printoptions/evenwidth_checkbox_label)</extracomment>
             <translation>Even ang lapad ng border</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Text color</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/text_color_label);printoptionstext:Label(printoptions/caption_color_label)</extracomment>
             <translation>Kulay ng teksto</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Border color</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: printoptionstext:Label(printoptions/border_color_label)</extracomment>
             <translation>Kulay ng border</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Cancel</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Kanselahin</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>Apply</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ilapat</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/PrintOptionsPanel.qml" />
+            <location filename="../qml/PicasaPy/PrintOptionsFields.qml" />
             <source>OK</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_errors/ok.title;buttonmgr_text:Label(buttonmgr/ok);cdchoose:cdchoose/button10.title;contactmgr:contactmgr/ok.title;customaspectratio:customaspectratio/ok.title;foldermgr_text:Label(foldermgr/ok-label);gpuploader_about:gpuploader_about/okbutton.title;gpuploader_advoptions:gpuploader_advoptions/okbutton.title;gpuploader_options:gpuploader_options/okbutton.title;gpuploader_prefs:gpuploader_prefs/okbutton.title;imageproperties:imageproperties/button19.title;importweb:importweb/ok.title;input:input/button6.title;offsettime:offsettime/ok.title;options:options/button189.title;poster:poster/button18.title;printoptionstext:Label(printoptions/ok);quicktagconfig_text:Label(quicktagconfig/ok-label);resexport:win32:3;reviewprint:reviewprint/button14.title;stringres:ContactManagerDlg::OK;stringres:ContactManagerDlg::Ok;stringres:LighthouseUpdate:OK;stringres:il_OKButton;tooltips:Label(publish/replicate_go)</extracomment>
             <translation>OK</translation>
         </message>
+    </context>
+    <context>
+        <name>PrintOptionsPanel</name>
     </context>
     <context>
         <name>EmailController</name>

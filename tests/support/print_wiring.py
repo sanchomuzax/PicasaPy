@@ -14,6 +14,19 @@ saját `skipif`-jükkel maradnak ki.
 
 from __future__ import annotations
 
+from pathlib import Path
+
+
+def print_qml_family_text() -> str:
+    """A nyomtatási párbeszéd QML-családjának teljes forrásszövege."""
+    import picasapy.app
+
+    qml_dir = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+    return "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted(qml_dir.glob("Print*.qml"))
+    )
+
 
 def wire_print(engine, photo_source, settings=None):
     """A vezérlő létrehozása és regisztrálása — az `application.py` tükre.

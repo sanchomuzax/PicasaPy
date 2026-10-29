@@ -9,18 +9,12 @@ gyenge pont — a lánc egyik vége kész, a másik nincs bekötve.
 from __future__ import annotations
 
 
-from pathlib import Path
-
-import picasapy.app as app_csomag
 from PySide6.QtCore import QMetaObject, QObject, Qt
 from tests.support.qml_blokk import blokk_horgonyra
+from tests.support.print_wiring import print_qml_family_text
 from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
-_QML_DIR = Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
-_QML = "\n".join(
-    (_QML_DIR / nev).read_text(encoding="utf-8")
-    for nev in ("PrintDialog.qml", "PrintPrinterPanel.qml")
-)
+_QML = print_qml_family_text()
 
 MEZO = "printPaperInfoText"
 

@@ -65,6 +65,28 @@ _KOTELEZO_VALTOZATOK = {
     "MovieMakerPreviewRuntime": ("movieDialog: ({}); tabs: ({})",),
     "MovieMakerSlideLogic": ("movieDialog: ({}); tabs: ({})",),
     "MovieMakerTabs": ("movieDialog: ({}); options: ({})",),
+    # #6216: a nyomtatási nézet és állapotobjektum kötelező gazdát kap.
+    "PrintDialogContent": (
+        "hostWindow: ({ quality: ({ ready: true, total: 0, small: 0 }), "
+        "rows: [], copies: 1, keretMargo: 12, contactSheet: false, "
+        "printCtl: null, reviewList: [], reviewOpen: false, printSize: '', "
+        "printSizeIds: [], printSizeLabels: [], printSizeOptions: [], "
+        "printSizePresetIds: [], orientation: '', fitMode: '', "
+        "optimizedPrintMode: false, passport: false, contactColumns: 4, "
+        "pdfSelected: true, pdfTarget: '', printerName: '', printerIndex: 0, "
+        "printers: [], printDonePages: 0, printTotalPages: 0, "
+        "printPageCount: 0, previewPage: 0, previewPageCount: 0, "
+        "previewSource: '', lastError: '', lastResult: '', lastSkipped: [], "
+        "papiradat: '', frissitsdAzElonezetet: function() {} }); "
+        "hostWindowHelp: ({}); hostOptionsPanel: ({}); "
+        "hostPdfTargetDialog: ({}); hostReviewPanel: ({ currentIndex: -1 })",
+    ),
+    "PrintDialogLogic": (
+        "hostWindow: ({}); printController: null; "
+        "settingsPanel: ({ sizeBox: ({}) }); "
+        "reviewPanel: ({ currentIndex: -1 }); "
+        "removeAllDialog: ({ open: function() {} }); optionsPanel: ({})",
+    ),
     # #6136: a főablak jobb oldali fiókja kötelező gazda-tulajdonságokat kér
     "MainRightDrawer": (
         "hostWindow: ({}); hostController: null; hostToolbar: ({}); "
@@ -139,7 +161,7 @@ _GYEREK = textwrap.dedent(
 
     tarolok = sorted(
         p.stem for p in (qml / "PicasaPy").glob("*.qml")
-        if "Dialog" in p.read_text(encoding="utf-8")
+        if ("Dialog" in p.read_text(encoding="utf-8") or p.stem in VALTOZATOK)
         and p.stem not in nem_parbeszed_tarolok
     )
     hosszu = ("Unable to save all files due to a disk error. "

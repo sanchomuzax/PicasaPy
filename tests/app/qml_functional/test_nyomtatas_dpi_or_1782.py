@@ -20,15 +20,13 @@ from PySide6.QtQml import QQmlExpression, qmlContext
 
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import varj_feltetelre
+from tests.support.print_wiring import print_qml_family_text
 
 _QML_DIR = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml/PicasaPy"
 
 
 def _forras() -> str:
-    return "\n".join(
-        (_QML_DIR / nev).read_text(encoding="utf-8")
-        for nev in ("PrintDialog.qml", "PrintSettingsPanel.qml")
-    )
+    return print_qml_family_text()
 
 
 class TestAFeluletenMegvan:

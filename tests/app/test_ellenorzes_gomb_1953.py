@@ -28,8 +28,6 @@ gomb csak egy újabb néma vezérlő lenne.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 from PySide6.QtCore import QSettings
 
@@ -121,12 +119,9 @@ class TestAKifogasoltKepekListaja:
 class TestAGombAQMLben:
     @staticmethod
     def _dialogus() -> str:
-        import picasapy.app
+        from tests.support.print_wiring import print_qml_family_text
 
-        return (
-            Path(picasapy.app.__file__).parent
-            / "qml" / "PicasaPy" / "PrintDialog.qml"
-        ).read_text(encoding="utf-8")
+        return print_qml_family_text()
 
     def test_van_ellenorzes_gomb(self):
         assert 'objectName: "printReviewButton"' in self._dialogus()

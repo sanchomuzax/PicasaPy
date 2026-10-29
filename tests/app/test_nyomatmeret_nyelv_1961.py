@@ -214,14 +214,9 @@ class TestAFeliratokAQMLben:
         Csak a blokkot olvassuk, hogy egy kommentben szereplő azonosító
         ne számítson találatnak."""
         import re
-        from pathlib import Path
+        from tests.support.print_wiring import print_qml_family_text
 
-        import picasapy.app
-
-        forras = (
-            Path(picasapy.app.__file__).parent
-            / "qml" / "PicasaPy" / "PrintDialog.qml"
-        ).read_text(encoding="utf-8")
+        forras = print_qml_family_text()
         kezdet = forras.index("printSizeLabelById")
         blokk = forras[kezdet : forras.index("})", kezdet)]
         return dict(re.findall(r'"(\w+)":\s*qsTr\("([^"]+)"\)', blokk))

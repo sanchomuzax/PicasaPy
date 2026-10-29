@@ -31,6 +31,7 @@ from PySide6.QtGui import QGuiApplication, QImage
 
 from support.jpeg_factory import make_jpeg
 from tests.support.qml_blokk import blokk_horgonyra, hivas_argumentumai
+from tests.support.print_wiring import print_qml_family_text
 
 try:
     from picasapy.app.print_controller import PrintController
@@ -45,12 +46,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 _QML_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
-_DIALOG = "\n".join(
-    (_QML_DIR / nev).read_text(encoding="utf-8")
-    for nev in (
-        "PrintDialog.qml", "PrintSettingsPanel.qml", "PrintPreviewPanel.qml"
-    )
-)
+_DIALOG = print_qml_family_text()
 
 
 @pytest.fixture(scope="module")
@@ -319,18 +315,18 @@ class TestAFelulet:
         assert 'objectName: "printCopiesMinusButton"' in _DIALOG
 
     def test_a_minusz_egy_ALATT_tiltott(self):
-        assert "enabled: printWindow.copies > 1" in blokk_horgonyra(
+        assert "enabled: hostWindow.copies > 1" in blokk_horgonyra(
             _DIALOG, 'objectName: "printCopiesMinusButton"'
         )
 
     def test_a_peldanyszam_ELJUT_a_nyomtatasig(self):
         """A #1153 osztálya: a gomb állít egy számot, amit senki nem visz
         tovább."""
-        assert "printWindow.orientation, printWindow.copies)" in _DIALOG
+        assert "hostWindow.fitMode, hostWindow.orientation, hostWindow.copies)" in _DIALOG
         # ⚠️ #2540: a határ a hívás ZÁRÓJELPÁRJA. Rögzített ablakkal a
         # SZOMSZÉD hívás (`renderContactSheetPdf`) argumentumai is
         # belelógtak — egy oda átadott érték is „bizonyította" volna.
-        assert "printWindow.copies" in hivas_argumentumai(
+        assert "hostWindow.copies" in hivas_argumentumai(
             _DIALOG, "renderPrintPreviewPdf"
         )
 

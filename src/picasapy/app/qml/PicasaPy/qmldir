@@ -209,6 +209,8 @@ WebExportTemplatePane 1.0 WebExportTemplatePane.qml
 WebExportStatusPane 1.0 WebExportStatusPane.qml
 FtpAccountDialog 1.0 FtpAccountDialog.qml
 PrintDialog 1.0 PrintDialog.qml
+PrintDialogContent 1.0 PrintDialogContent.qml
+PrintDialogLogic 1.0 PrintDialogLogic.qml
 PrintSelectionPanel 1.0 PrintSelectionPanel.qml
 PrintSettingsPanel 1.0 PrintSettingsPanel.qml
 PrintPreviewPanel 1.0 PrintPreviewPanel.qml
@@ -219,6 +221,7 @@ PrintButtonRow 1.0 PrintButtonRow.qml
 PrintReviewPanel 1.0 PrintReviewPanel.qml
 PrintRemoveAllDialog 1.0 PrintRemoveAllDialog.qml
 PrintOptionsPanel 1.0 PrintOptionsPanel.qml
+PrintOptionsFields 1.0 PrintOptionsFields.qml
 PublishPanel 1.0 PublishPanel.qml
 GiftCdHost 1.0 GiftCdHost.qml
 UnnamedFacesView 1.0 UnnamedFacesView.qml
