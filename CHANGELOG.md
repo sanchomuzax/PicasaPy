@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.296] - 2026-10-30
+
+- A személyalbum javaslatainak kezelése külön QML-komponensbe került, a felület változatlan maradt (#6136).
+- A képszerkesztő panel részei külön komponensekbe kerültek, változatlan működéssel. (#6225).
+
 ## [0.9.295] - 2026-10-30
 
 - A mentési vezérlő kisebb, megnevezett részekre bomlott (mentési sor, visszajelzés, hibák, másolat-mentés, visszaállítás), változatlan működéssel (#6228).
