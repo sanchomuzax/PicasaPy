@@ -96,7 +96,7 @@ class TestPrintOptionsPanel:
         assert _child(panel, "printOptionCaptionLabel").property("text") == (
             "Képfeliratok"
         )
-        assert QCoreApplication.translate("PrintOptionsPanel", "Captions") == (
+        assert QCoreApplication.translate("PrintOptionsFields", "Captions") == (
             "Képfeliratok"
         )
         assert [

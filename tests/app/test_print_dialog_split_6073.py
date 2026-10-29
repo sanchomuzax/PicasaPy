@@ -10,8 +10,12 @@ import picasapy.app
 
 _QML_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
 _RESZEK = (
+    "PrintDialogContent.qml",
+    "PrintDialogLogic.qml",
     "PrintSelectionPanel.qml",
     "PrintSettingsPanel.qml",
+    "PrintOptionsPanel.qml",
+    "PrintOptionsFields.qml",
     "PrintPreviewPanel.qml",
     "PrintPrinterPanel.qml",
     "PrintFitPanel.qml",
@@ -96,6 +100,20 @@ def test_a_parbeszed_reszei_kulon_fajlban_es_800_sor_alatt_vannak() -> None:
     }
     tul_hosszu = {nev: sor for nev, sor in hosszak.items() if sor > 800}
     assert not tul_hosszu, f"800 sornál hosszabb nyomtatási QML-részek: {tul_hosszu}"
+
+    qmldir = (_QML_DIR / "qmldir").read_text(encoding="utf-8")
+    for nev in _RESZEK:
+        tipus = nev.removesuffix(".qml")
+        assert f"{tipus} 1.0 {nev}" in qmldir, f"a {tipus} nincs regisztrálva a qmldir-ben"
+
+
+def test_minden_nyomtatasi_qml_resz_400_sor_alatt_van() -> None:
+    hosszak = {
+        nev: len((_QML_DIR / nev).read_text(encoding="utf-8").splitlines())
+        for nev in ("PrintDialog.qml", *_RESZEK)
+    }
+    tul_hosszu = {nev: sor for nev, sor in hosszak.items() if sor >= 400}
+    assert not tul_hosszu, f"400 soros korlátot elérő nyomtatási QML-részek: {tul_hosszu}"
 
 
 def test_a_parbeszed_hasznalja_a_kulon_komponenseket() -> None:
