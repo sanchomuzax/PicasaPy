@@ -261,7 +261,7 @@ _EDIT_BASE_CAP = 2048
 # hanem újragenerálódnak az új bázismérettel. Csak a #163 SZERKESZTETT
 # (`filters=` láncos) bélyegképeket érinti — a sima `get_or_create` út
 # (a könyvtár nagy része) változatlan, nem kell újragenerálódnia.
-_EDIT_CACHE_VERSION = 12
+_EDIT_CACHE_VERSION = 13
 # 3 (#3472): a keret két vastagsága a bázis és a teljes kép arányában
 # skálázódik — a korábbi, túl vastag keretes bélyegképek újragenerálódnak.
 # 4 (#3827): a belső ragyogás (Vignetta, Matt, Múzeumi matt, Lomo, Holga,
@@ -293,6 +293,8 @@ _EDIT_CACHE_VERSION = 12
 # 12 (#3958): a Lomo és a Holga körmaszkja 16 bites pozícióval, egész
 # koordinátával és megálló-táblával számol — az érintett szerkesztett
 # bélyegképek újragenerálódnak.
+# 13 (#6009): a retus Poisson-útja az eredeti radiális vegyes gradienst
+# használja — a korábbi szerkesztett retus-előnézetek újragenerálódnak.
 
 
 def _edit_base_size(target_size: int) -> int:

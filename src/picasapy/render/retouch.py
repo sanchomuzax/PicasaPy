@@ -6,9 +6,10 @@ Két, egymás utáni PicasaPy-saját megközelítés él egymás mellett:
   kitöltés) a megjelölt téglalap-régiókon. Csak visszamenőleges olvasáshoz/
   renderhez maradt meg (korábban PicasaPy-jal mentett `.picasa.ini`-khez).
 - **v2 — `apply_retouch_patches`** (#445, #4544): irányított **Poisson-
-  gyógyítás** — a forrás körének gradiensei kerülnek a célkörbe, a cél
-  eredeti határértékeivel. A `job-151` Colab-mérés lineáris szürke
-  átmenetén a cél legfeljebb 1–2 szinttel térhet el az eredeti képtől.
+  gyógyítás** — a forrás- és célgradiens a #6009-ben feltárt radiális
+  smoothstep szerint vált egymásba; a kör peremén a cél eredeti pixelértékei
+  rögzülnek. A `job-151` Colab-mérés lineáris szürke átmenetén a cél
+  legfeljebb 1–2 szinttel térhet el az eredeti képtől.
 
 Nyers Colab-golden kép nem található a helyi mérőcsomagban; a v2 tesztjei a
 feladatbriefben rögzített `job-151` számszerű viselkedéséhez mérnek.
@@ -71,67 +72,91 @@ def _patch_radius_px(patch: RetouchPatch, width: int, height: int) -> int:
     return max(1, round(patch.radius * min(width, height)))
 
 
-def _jacobi_clone_fallback(
-    result: np.ndarray,
-    source_patch: np.ndarray,
-    clone_mask: np.ndarray,
-    target_x: int,
-    target_y: int,
-    radius: int,
-    x0: int,
-    y0: int,
-    x1: int,
-    y1: int,
-) -> None:
-    """Kis/fallback Poisson-folt: a kör pereme Dirichlet-határfeltétel."""
-    patch_y = np.arange(y0, y1) - target_y + radius
-    patch_x = np.arange(x0, x1) - target_x + radius
-    local_source = source_patch[patch_y[:, None], patch_x[None, :]].astype(np.float32)
-    local_mask = clone_mask[patch_y[:, None], patch_x[None, :]] != 0
-    if not local_mask.any():
-        return
+_GRADIENT_BLEND_START = 0.5
 
-    # Csak a négy szomszédjával együtt a folton belül maradó pixeleket
-    # oldjuk meg. A kör pereme és a képszél eredeti célpixeleket rögzít.
-    interior = local_mask.copy()
-    interior[1:, :] &= local_mask[:-1, :]
-    interior[:-1, :] &= local_mask[1:, :]
-    interior[:, 1:] &= local_mask[:, :-1]
-    interior[:, :-1] &= local_mask[:, 1:]
-    if y0 == 0:
-        interior[0, :] = False
-    if y1 == result.shape[0]:
-        interior[-1, :] = False
-    if x0 == 0:
-        interior[:, 0] = False
-    if x1 == result.shape[1]:
-        interior[:, -1] = False
-    if not interior.any():
-        return
 
-    solution = result[y0:y1, x0:x1].astype(np.float32)
-    source_neighbors = (
-        np.roll(local_source, 1, axis=0)
-        + np.roll(local_source, -1, axis=0)
-        + np.roll(local_source, 1, axis=1)
-        + np.roll(local_source, -1, axis=1)
+def _retouch_gradient_weight(
+    distance: float | np.ndarray, radius: float
+) -> np.ndarray:
+    """A bináris smoothstep súlya: belül forrás-, a kör peremén célgradiens."""
+    radial_limit = min(0.9 * radius, radius - 1.0)
+    start = _GRADIENT_BLEND_START * radial_limit
+    distances = np.asarray(distance, dtype=np.float64)
+    weight = np.where(distances >= radial_limit, 1.0, 0.0)
+    if radial_limit > start:
+        t = (distances - start) / (radial_limit - start)
+        smoothstep = t * t * (3.0 - 2.0 * t)
+        between = (distances > start) & (distances < radial_limit)
+        weight = np.where(between, smoothstep, weight)
+    return np.where(distances <= start, 0.0, weight)
+
+
+def _mix_retouch_gradients(
+    source_gradient: np.ndarray,
+    target_gradient: np.ndarray,
+    distance: float | np.ndarray,
+    radius: float,
+) -> np.ndarray:
+    """Egy él forrás- és célgradiensét keveri a bináris radiális súllyal."""
+    weight = _retouch_gradient_weight(distance, radius)
+    if weight.ndim == source_gradient.ndim - 1:
+        weight = weight[..., None]
+    return source_gradient + weight * (target_gradient - source_gradient)
+
+
+def _poisson_operator(values: np.ndarray, active: np.ndarray) -> np.ndarray:
+    """A maszkbeli 4-neighbor diszkrét Laplace-operátora."""
+    neighbours = (
+        np.roll(values, 1, axis=0)
+        + np.roll(values, -1, axis=0)
+        + np.roll(values, 1, axis=1)
+        + np.roll(values, -1, axis=1)
     )
-    source_divergence = 4.0 * local_source - source_neighbors
-    for _ in range(96):
-        neighbors = (
-            np.roll(solution, 1, axis=0)
-            + np.roll(solution, -1, axis=0)
-            + np.roll(solution, 1, axis=1)
-            + np.roll(solution, -1, axis=1)
+    return (4.0 * values - neighbours) * active[..., None]
+
+
+def _solve_poisson(
+    right_hand_side: np.ndarray,
+    initial: np.ndarray,
+    active: np.ndarray,
+    radius: int,
+) -> np.ndarray:
+    """Dirichlet-határú Poisson-rendszer megoldása csatornánként CG-vel."""
+    solution = initial.astype(np.float64) * active[..., None]
+    residual = (
+        right_hand_side - _poisson_operator(solution, active)
+    ) * active[..., None]
+    direction = residual.copy()
+    residual_norm = np.sum(residual * residual, axis=(0, 1))
+    initial_norm = residual_norm.copy()
+    if float(np.max(initial_norm)) <= 1e-20:
+        return solution
+
+    for _ in range(min(2048, max(64, radius * 16))):
+        applied = _poisson_operator(direction, active)
+        denominator = np.sum(direction * applied, axis=(0, 1))
+        alpha = np.divide(
+            residual_norm,
+            denominator,
+            out=np.zeros_like(residual_norm),
+            where=denominator > 1e-20,
         )
-        updated = (neighbors + source_divergence) * 0.25
-        difference = float(np.max(np.abs(updated[interior] - solution[interior])))
-        solution[interior] = updated[interior]
-        if difference < 0.01:
+        solution += direction * alpha[None, None, :]
+        residual -= applied * alpha[None, None, :]
+        next_norm = np.sum(residual * residual, axis=(0, 1))
+        if np.all(next_norm <= initial_norm * 1e-10):
             break
-    result[y0:y1, x0:x1][interior] = np.clip(
-        np.rint(solution[interior]), 0, 255
-    ).astype(np.uint8)
+        beta = np.divide(
+            next_norm,
+            residual_norm,
+            out=np.zeros_like(next_norm),
+            where=residual_norm > 1e-20,
+        )
+        direction = (residual + direction * beta[None, None, :]) * active[
+            ..., None
+        ]
+        residual_norm = next_norm
+    return solution
 
 
 def _apply_single_patch(result: np.ndarray, patch: RetouchPatch) -> None:
@@ -142,98 +167,87 @@ def _apply_single_patch(result: np.ndarray, patch: RetouchPatch) -> None:
     target_y = round(patch.target_y * height)
     source_x = round(patch.source_x * width)
     source_y = round(patch.source_y * height)
-    y0, y1 = max(0, target_y - radius), min(height, target_y + radius + 1)
-    x0, x1 = max(0, target_x - radius), min(width, target_x + radius + 1)
-    if y1 <= y0 or x1 <= x0:
+    if (
+        target_x + radius < 0
+        or target_x - radius >= width
+        or target_y + radius < 0
+        or target_y - radius >= height
+        or source_x + radius < 0
+        or source_x - radius >= width
+        or source_y + radius < 0
+        or source_y - radius >= height
+    ):
         return
 
-    offsets = np.arange(-radius, radius + 1)
-    source_yy, source_xx = np.meshgrid(
-        source_y + offsets, source_x + offsets, indexing="ij"
-    )
-    circle_mask = offsets[:, None] ** 2 + offsets[None, :] ** 2 <= radius**2
-    clone_mask = (
-        circle_mask
-        & (source_yy >= 0)
-        & (source_yy < height)
-        & (source_xx >= 0)
-        & (source_xx < width)
-    ).astype(np.uint8) * 255
-    if not clone_mask.any():
-        return
-
-    # A forrás és a cél is kap peremet, így a teljes kör-ROI a képszélen sem
-    # fut ki az OpenCV seamlessClone által elvárt képtartományból. A forrás
-    # tükrözött kiterjesztése csak olvasási segéd; a maszk kizárja a képen
-    # kívüli forráspixeleket.
-    pad = radius + 4
+    # One padding pixel supplies every four-neighbor gradient at the circular
+    # boundary. Reflection is only used for sampling; active pixels stay
+    # clipped to the actual source and target images.
+    pad = radius + 1
     border = cv2.BORDER_REFLECT_101 if min(width, height) > 1 else cv2.BORDER_REPLICATE
-    source_padded = cv2.copyMakeBorder(result, pad, pad, pad, pad, border)
-    source_patch = source_padded[
-        source_y + pad - radius : source_y + pad + radius + 1,
-        source_x + pad - radius : source_x + pad + radius + 1,
-    ]
-    local_target = result[y0:y1, x0:x1]
-    target_padded = cv2.copyMakeBorder(local_target, pad, pad, pad, pad, border)
-    clone_center = (target_x - x0 + pad, target_y - y0 + pad)
+    padded = cv2.copyMakeBorder(result, pad, pad, pad, pad, border)
+    extent = radius + 1
 
-    # A seamlessClone egypixeles körnél OpenCV-hibával leáll; annak egyetlen
-    # lehetséges belső pixele közvetlenül megoldható a diszkrét Poisson-
-    # egyenletből, a négy cél-szomszédot rögzítve.
-    if radius == 1:
-        if 0 < target_x < width - 1 and 0 < target_y < height - 1:
-            source_center = source_patch[1, 1].astype(np.float32)
-            source_around = (
-                source_patch[0, 1].astype(np.float32)
-                + source_patch[2, 1].astype(np.float32)
-                + source_patch[1, 0].astype(np.float32)
-                + source_patch[1, 2].astype(np.float32)
-            )
-            target_around = (
-                result[target_y - 1, target_x].astype(np.float32)
-                + result[target_y + 1, target_x].astype(np.float32)
-                + result[target_y, target_x - 1].astype(np.float32)
-                + result[target_y, target_x + 1].astype(np.float32)
-            )
-            healed = (target_around + 4.0 * source_center - source_around) * 0.25
-            result[target_y, target_x] = np.clip(np.rint(healed), 0, 255).astype(np.uint8)
+    def sample(center_x: int, center_y: int) -> np.ndarray:
+        return padded[
+            center_y + pad - extent : center_y + pad + extent + 1,
+            center_x + pad - extent : center_x + pad + extent + 1,
+        ]
+
+    source_patch = sample(source_x, source_y).astype(np.float64)
+    target_patch = sample(target_x, target_y).astype(np.float64)
+    offsets = np.arange(-extent, extent + 1)
+    offset_y, offset_x = np.meshgrid(offsets, offsets, indexing="ij")
+    target_xs = target_x + offset_x
+    target_ys = target_y + offset_y
+    source_xs = source_x + offset_x
+    source_ys = source_y + offset_y
+    active = (
+        (offset_x**2 + offset_y**2 <= radius**2)
+        & (target_xs >= 0)
+        & (target_xs < width)
+        & (target_ys >= 0)
+        & (target_ys < height)
+        & (source_xs >= 0)
+        & (source_xs < width)
+        & (source_ys >= 0)
+        & (source_ys < height)
+    )
+    if not active.any():
         return
 
-    try:
-        cloned = cv2.seamlessClone(
-            cv2.cvtColor(source_patch, cv2.COLOR_RGB2BGR),
-            cv2.cvtColor(target_padded, cv2.COLOR_RGB2BGR),
-            clone_mask,
-            clone_center,
-            cv2.NORMAL_CLONE,
-        )
-        cloned_rgb = cv2.cvtColor(cloned, cv2.COLOR_BGR2RGB)
-        result[y0:y1, x0:x1] = cloned_rgb[
-            pad : pad + (y1 - y0), pad : pad + (x1 - x0)
-        ]
-    except cv2.error:
-        _jacobi_clone_fallback(
-            result,
-            source_patch,
-            clone_mask,
-            target_x,
-            target_y,
+    divergence = np.zeros_like(source_patch, dtype=np.float64)
+    right_hand_side = np.zeros_like(source_patch, dtype=np.float64)
+    for dy, dx in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+        shift = (-dy, -dx)
+        source_neighbour = np.roll(source_patch, shift, axis=(0, 1))
+        target_neighbour = np.roll(target_patch, shift, axis=(0, 1))
+        neighbour_active = np.roll(active, shift, axis=(0, 1))
+        edge_distance = np.hypot(offset_x + dx / 2, offset_y + dy / 2)
+        divergence += _mix_retouch_gradients(
+            source_patch - source_neighbour,
+            target_patch - target_neighbour,
+            edge_distance,
             radius,
-            x0,
-            y0,
-            x1,
-            y1,
         )
+        boundary = active & ~neighbour_active
+        right_hand_side += target_neighbour * boundary[..., None]
+
+    right_hand_side = (right_hand_side + divergence) * active[..., None]
+    solution = _solve_poisson(right_hand_side, target_patch, active, radius)
+    rows, columns = np.nonzero(active)
+    healed = np.clip(np.rint(solution[rows, columns]), 0, 255).astype(np.uint8)
+    result[target_ys[rows, columns], target_xs[rows, columns]] = healed
 
 
 def apply_retouch_patches(image: np.ndarray, patches: tuple[RetouchPatch, ...] = ()) -> np.ndarray:
     """Irányított Poisson-gyógyítás (#4544) a megadott foltokkal.
 
-    A forráskör gradiens-tartománya kerül át a célkörre, a kör határán a
-    cél eredeti pixelértékeit rögzítve. Így a forrás textúrája átjön, de a
-    célkör tónusa a környezetbe illeszkedik. A kör azonos sugara követi a
-    Picasa súgószövege szerinti munkamenetet (cél kijelölése, forrás
-    mozgatása, véglegesítés).
+    A forrás- és célkör szomszédos pixelei közti gradiensek a #6009 szerinti
+    radiális smoothstep súllyal keverednek (s=0.5,
+    R=min(0.9*r, r-1)). A kör határán a cél eredeti pixelértékei adják a
+    Dirichlet-feltételt, így a forrás textúrája a cél tónusába simul. A kör
+    azonos sugara követi a Picasa súgószövege szerinti munkamenetet (cél
+    kijelölése, forrás mozgatása, véglegesítés).
     A foltok a megadott SORRENDBEN, egymásra épülve alkalmazódnak (a
     későbbi foltok a korábbiak által már módosított tartalmat is
     forrásként használhatják — „lather, rinse, repeat"). A bemenet
