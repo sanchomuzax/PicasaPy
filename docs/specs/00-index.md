@@ -1455,7 +1455,7 @@ album") és a közös szülőjük, a `thumbui/albumsback` — egy **album-szűk�
 keresés üres állapota**, amit a kódból kivettek, a felületleíróban viszont
 bennmaradt. Jegy: **#2027**.
 
-### [picasa-keptalca.md](picasa-keptalca.md) - #5838 (24., 2026-10-29): a `0x005fe130` hívja a menüsorfeldolgozó `0x00664130`-at, amely a `New Album...` sort a bemenet végére fűzi; job-255/259: nulla album → Screensaver, Starred Photos, New Album...; egy album → Screensaver, Starred Photos, Untitled, New Album..., elválasztó nélkül. A `--` tömbfoglalási alapérték, a `+8` `0x10` bit rekordállapotot frissít, vizuális jelentése nyitott. Az eredeti gombengedélyezés NINCS MEG; célzott Ghidra-kör: `0x005683a0`.
+### [picasa-keptalca.md](picasa-keptalca.md) - #5838 (24., 2026-10-29): a `0x005fe130` hívja a menüsor-feldolgozó `0x00664130`-at, amely a `New Album...` sort a bemenet végére fűzi; job-255/259: nulla album → Screensaver, Starred Photos, New Album...; egy album → Screensaver, Starred Photos, Untitled, New Album..., elválasztó nélkül. A `--` tömbfoglalási alapérték, a `+8` `0x10` bit rekordállapotot frissít, vizuális jelentése nyitott. Az eredeti gombengedélyezés NINCS MEG; célzott Ghidra-kör: `0x005683a0`.
 
 ⭐ **2026-09-03 (20. szakasz) — a mappa-token TELJESEN feltárva, és a #1919
 egyik elfogadási feltétele MEGDŐLT.** A tokent **nem parancs** teszi a
