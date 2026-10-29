@@ -17,19 +17,15 @@ függvény **beszédes kivétellel** áll meg, nem ír fél fájlt — a hívó
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from functools import lru_cache
 import os
 from pathlib import Path
-import re
-import shutil
-import subprocess
 import tempfile
 from typing import NamedTuple
 
 from picasapy.lazy_cv2 import cv2
 import numpy as np
-from PIL import Image, ImageColor, ImageDraw, ImageFont
+from PIL import ImageFont
 
 from picasapy.cvimage import dekodolj_forrast
 from picasapy.ini import IniDocument, load_or_empty, parse_faces
@@ -37,18 +33,38 @@ from picasapy.scanner import PICASA_INI_NAME
 
 from .burst import capture_groups, hog_descriptor, select_chain
 from .face_crop import face_is_usable, rect64_to_pixel_rect, render_face_crop
+from . import slideshow_audio as _audio
+from . import slideshow_frames as _frames
+from . import slideshow_text as _text
+from . import slideshow_transitions as _transitions
 
 # A kodek-négyes: MP4 konténer, széles körben elérhető OpenCV-ben.
 _FOURCC = "mp4v"
 
 _TRANSITION_TYPES = frozenset(
     {
-        "cut", "dissolve", "dissolveblack", "dissolvewhite",
-        "wipeleft", "wiperight", "wipeup", "wipedown",
-        "diagwipeul", "diagwipeur", "diagwipedl", "diagwipedr",
-        "pushleft", "pushright", "pushtop", "pushdown",
-        "circlein", "circleout", "kenburns", "kenburnsaoi",
-        "timelapse", "rect",
+        "cut",
+        "dissolve",
+        "dissolveblack",
+        "dissolvewhite",
+        "wipeleft",
+        "wiperight",
+        "wipeup",
+        "wipedown",
+        "diagwipeul",
+        "diagwipeur",
+        "diagwipedl",
+        "diagwipedr",
+        "pushleft",
+        "pushright",
+        "pushtop",
+        "pushdown",
+        "circlein",
+        "circleout",
+        "kenburns",
+        "kenburnsaoi",
+        "timelapse",
+        "rect",
     }
 )
 
@@ -87,9 +103,7 @@ class MovieSettings:
         if not 1 <= self.fps <= 60:
             raise ValueError(f"Érvénytelen képkocka-sebesség: {self.fps}")
         if self.seconds_per_photo <= 0:
-            raise ValueError(
-                f"Érvénytelen képenkénti idő: {self.seconds_per_photo}"
-            )
+            raise ValueError(f"Érvénytelen képenkénti idő: {self.seconds_per_photo}")
         if self.transition_seconds < 0:
             raise ValueError(f"Érvénytelen áttűnés: {self.transition_seconds}")
         if self.transition_seconds >= self.seconds_per_photo:
@@ -132,61 +146,6 @@ class MovieReport:
 _DEFAULT_SETTINGS = MovieSettings()
 
 
-def letterbox(
-    image: np.ndarray,
-    width: int,
-    height: int,
-    background: tuple[int, int, int] = (0, 0, 0),
-) -> np.ndarray:
-    """A kép arányos beillesztése a vászonra, középre, háttérrel kitöltve."""
-    if width < 1 or height < 1:
-        raise ValueError(f"Érvénytelen vászon: {width}×{height}")
-    src_h, src_w = image.shape[:2]
-    if src_h < 1 or src_w < 1:
-        raise ValueError("Üres kép")
-    scale = min(width / src_w, height / src_h)
-    new_w = max(1, min(width, round(src_w * scale)))
-    new_h = max(1, min(height, round(src_h * scale)))
-    interpolation = cv2.INTER_AREA if scale < 1 else cv2.INTER_LINEAR
-    resized = cv2.resize(image, (new_w, new_h), interpolation=interpolation)
-    canvas = np.full(
-        (height, width, 3), np.array(background, dtype=np.uint8), dtype=np.uint8
-    )
-    x0 = (width - new_w) // 2
-    y0 = (height - new_h) // 2
-    canvas[y0 : y0 + new_h, x0 : x0 + new_w] = resized
-    return canvas
-
-
-def crop_to_fit(
-    image: np.ndarray,
-    width: int,
-    height: int,
-) -> np.ndarray:
-    """A fotó kitölti a képkockát; a középre eső szélek levágódnak."""
-    if width < 1 or height < 1:
-        raise ValueError(f"Érvénytelen vászon: {width}×{height}")
-    src_h, src_w = image.shape[:2]
-    if src_h < 1 or src_w < 1:
-        raise ValueError("Üres kép")
-    scale = max(width / src_w, height / src_h)
-    new_w = max(width, round(src_w * scale))
-    new_h = max(height, round(src_h * scale))
-    resized = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_AREA)
-    x0 = (new_w - width) // 2
-    y0 = (new_h - height) // 2
-    return resized[y0 : y0 + height, x0 : x0 + width]
-
-
-def _decode(source: Path) -> np.ndarray:
-    #: #3120: a KÖZÖS belépőn megy — a `cv2.imdecode`-nak nincs nyers
-    #: dekódere, tehát a RAW fájlokra némán `None`-t adott.
-    image = dekodolj_forrast(source)
-    if image is None:
-        raise ValueError("nem dekódolható kép")
-    return image
-
-
 def decode_photo(source: Path, goal: int | None = None) -> np.ndarray:
     """A slideshow fotódekódoló publikus belépője.
 
@@ -201,101 +160,6 @@ def decode_photo(source: Path, goal: int | None = None) -> np.ndarray:
     return image
 
 
-def _atmeneti_kocka(
-    kilepo: np.ndarray, erkezo: np.ndarray, tipus: str, arany: float
-) -> np.ndarray:
-    """Egy áttűnés képkockája a kiválasztott Picasa-típus alapján.
-
-    A teljes 22-es készletet a spec szerinti kulcsokkal kezeljük. Az eredeti
-    program effekt-görbéi nem részei a 2.1-es leírásnak; itt a típus neve
-    szerinti, kiszámítható geometriai változat készül.
-    """
-    p = min(1.0, max(0.0, arany))
-    if tipus == "cut":
-        return erkezo
-    if tipus in {"dissolve", "timelapse"}:
-        if tipus == "timelapse":
-            p = round(p * 6) / 6
-        return cv2.addWeighted(kilepo, 1.0 - p, erkezo, p, 0.0)
-    if tipus in {"dissolveblack", "dissolvewhite"}:
-        alapszin = 0 if tipus == "dissolveblack" else 255
-        koztes = np.full_like(kilepo, alapszin)
-        if p < 0.5:
-            return cv2.addWeighted(kilepo, 1.0 - p * 2, koztes, p * 2, 0.0)
-        return cv2.addWeighted(koztes, 1.0 - (p - 0.5) * 2, erkezo, (p - 0.5) * 2, 0.0)
-
-    magassag, szelesseg = kilepo.shape[:2]
-    if tipus in {"pushleft", "pushright", "pushtop", "pushdown"}:
-        out = np.empty_like(kilepo)
-        if tipus == "pushleft":
-            offset = round(szelesseg * p)
-            out[:, : szelesseg - offset] = kilepo[:, offset:]
-            out[:, szelesseg - offset :] = erkezo[:, :offset]
-        elif tipus == "pushright":
-            offset = round(szelesseg * p)
-            out[:, offset:] = kilepo[:, : szelesseg - offset]
-            out[:, :offset] = erkezo[:, szelesseg - offset :]
-        elif tipus == "pushtop":
-            offset = round(magassag * p)
-            out[: magassag - offset, :] = kilepo[offset:, :]
-            out[magassag - offset :, :] = erkezo[:offset, :]
-        else:
-            offset = round(magassag * p)
-            out[offset:, :] = kilepo[: magassag - offset, :]
-            out[:offset, :] = erkezo[magassag - offset :, :]
-        return out
-
-    if tipus in {"kenburns", "kenburnsaoi"}:
-        # Az arc fókuszpontja nem része a jelenlegi fotóadat-modellnek; a
-        # középpontos pásztázás mindkét Ken Burns-változatnál stabil alap.
-        scale = 1.12 - 0.12 * p
-        uj_w = max(1, round(szelesseg * scale))
-        uj_h = max(1, round(magassag * scale))
-        nagy = cv2.resize(erkezo, (uj_w, uj_h), interpolation=cv2.INTER_LINEAR)
-        x0 = max(0, (uj_w - szelesseg) // 2)
-        y0 = max(0, (uj_h - magassag) // 2)
-        mozgatott = nagy[y0 : y0 + magassag, x0 : x0 + szelesseg]
-        return cv2.addWeighted(kilepo, 1.0 - p, mozgatott, p, 0.0)
-
-    if tipus in {
-        "wipeleft", "wiperight", "wipeup", "wipedown",
-        "diagwipeul", "diagwipeur", "diagwipedl", "diagwipedr",
-        "circlein", "circleout", "rect",
-    }:
-        xn, yn = _atmenet_koordinatak(magassag, szelesseg)
-        if tipus == "wipeleft":
-            maszk = xn[None, :] < p
-        elif tipus == "wiperight":
-            maszk = xn[None, :] >= 1.0 - p
-        elif tipus == "wipeup":
-            maszk = yn[:, None] >= 1.0 - p
-        elif tipus == "wipedown":
-            maszk = yn[:, None] < p
-        elif tipus == "diagwipeul":
-            maszk = xn[None, :] + yn[:, None] < 2.0 * p
-        elif tipus == "diagwipeur":
-            maszk = (1.0 - xn[None, :]) + yn[:, None] < 2.0 * p
-        elif tipus == "diagwipedl":
-            maszk = xn[None, :] + (1.0 - yn[:, None]) < 2.0 * p
-        elif tipus == "diagwipedr":
-            maszk = (1.0 - xn[None, :]) + (1.0 - yn[:, None]) < 2.0 * p
-        elif tipus in {"circlein", "circleout"}:
-            tav = np.sqrt(
-                ((xn[None, :] - 0.5) * 2) ** 2
-                + ((yn[:, None] - 0.5) * 2) ** 2
-            )
-            maszk = tav <= p * np.sqrt(2)
-            if tipus == "circleout":
-                maszk = ~maszk
-        else:
-            maszk = (np.abs(xn[None, :] - 0.5) <= p * 0.5) & (
-                np.abs(yn[:, None] - 0.5) <= p * 0.5
-            )
-        return np.where(maszk[..., None], erkezo, kilepo)
-
-    return erkezo
-
-
 def transition_frame(
     outgoing: np.ndarray,
     incoming: np.ndarray,
@@ -304,74 +168,6 @@ def transition_frame(
 ) -> np.ndarray:
     """A kész film és az előnézet közös átmeneti képkockája."""
     return _atmeneti_kocka(outgoing, incoming, transition, progress)
-
-
-@lru_cache(maxsize=8)
-def _atmenet_koordinatak(magassag: int, szelesseg: int) -> tuple[np.ndarray, np.ndarray]:
-    """A maszkok normalizált sor- és oszlopkoordinátái méret szerint cache-elve."""
-    # A korábbi np.mgrid-képlet float64 koordinátákat adott; a körmaszk
-    # határán a float32 2–4 pixellel eltérő exportot eredményezett.
-    xn = (np.arange(szelesseg, dtype=np.float64) + 0.5) / max(1, szelesseg)
-    yn = (np.arange(magassag, dtype=np.float64) + 0.5) / max(1, magassag)
-    xn.setflags(write=False)
-    yn.setflags(write=False)
-    return xn, yn
-
-
-def _ffmpeg_exe() -> str | None:
-    """FFmpeg útvonal: beágyazott kerék, majd a rendszer PATH-ja."""
-    try:
-        import imageio_ffmpeg
-
-        return imageio_ffmpeg.get_ffmpeg_exe()
-    except (ImportError, RuntimeError):
-        return shutil.which("ffmpeg")
-
-
-def _hang_hossza(ffmpeg: str, hang: Path) -> float:
-    """A hangsáv hosszát az FFmpeg bemeneti fejlécéből olvassa ki."""
-    if not hang.is_file():
-        raise FileNotFoundError(f"A kiválasztott hangsáv nem található: {hang}")
-    eredmeny = subprocess.run(
-        [ffmpeg, "-i", str(hang), "-f", "null", "-"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    talalat = re.search(
-        r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", eredmeny.stderr
-    )
-    if talalat is None:
-        raise RuntimeError("A hangsáv időtartamát nem sikerült beolvasni.")
-    ora, perc, masodperc = talalat.groups()
-    return int(ora) * 3600 + int(perc) * 60 + float(masodperc)
-
-
-def _hanggal_osszeilleszt(
-    ffmpeg: str, video: Path, hang: Path, cel: Path, mod: int
-) -> None:
-    """A kész képsávhoz AAC hangsávot illeszt, a választott három mód egyikével."""
-    handle, atmeneti_cel = tempfile.mkstemp(
-        prefix=f".{cel.stem}-", suffix=cel.suffix or ".mp4", dir=cel.parent
-    )
-    os.close(handle)
-    try:
-        parancs = [ffmpeg, "-y"]
-        if mod == 2:
-            parancs.extend(["-stream_loop", "-1"])
-        parancs.extend(
-            [
-                "-i", str(video), "-i", str(hang),
-                "-map", "0:v:0", "-map", "1:a:0",
-                "-c:v", "copy", "-c:a", "aac", "-shortest", atmeneti_cel,
-            ]
-        )
-        eredmeny = subprocess.run(parancs, capture_output=True, text=True, check=False)
-        if eredmeny.returncode:
-            raise RuntimeError("A hangsávot nem sikerült a filmhez illeszteni.")
-        os.replace(atmeneti_cel, cel)
-    finally:
-        Path(atmeneti_cel).unlink(missing_ok=True)
 
 
 @lru_cache(maxsize=256)
@@ -409,127 +205,6 @@ class _Vaszon(NamedTuple):
     height: int
 
 
-def _szovegdia(
-    slide: dict[str, object],
-    settings: MovieSettings | _Vaszon,
-    skala: float = 1.0,
-    *,
-    ido: float | None = None,
-) -> np.ndarray:
-    """Képkockát készít a Szöveg fülön felvett dia beállításaiból.
-
-    A `settings` már a TÉNYLEGES vászonméretet hordozza; a `skala` (a teljes
-    filmmérethez képesti arány, export: 1.0) a betűméretet és a margót
-    arányosan igazítja (a körvonal legalább 1 px), hogy a kis kocka ugyanazt mutassa kicsiben.
-    """
-    def szin(ertek: object, tartalek: str) -> tuple[int, int, int]:
-        try:
-            return ImageColor.getrgb(str(ertek))[:3]
-        except (ValueError, TypeError):
-            return ImageColor.getrgb(tartalek)
-
-    hatter = szin(slide.get("backgroundColor"), "#000000")
-    betuszín = szin(slide.get("textColor"), "#ffffff")
-    kep = Image.new("RGB", (settings.width, settings.height), hatter)
-    rajz = ImageDraw.Draw(kep, "RGBA")
-    meret = max(8, int(slide.get("size", 16)))
-    if skala != 1.0:
-        meret = max(1, round(meret * skala))
-    betu = str(slide.get("font", "DejaVuSans"))
-    fontfajlok = [betu, f"{betu}.ttf"]
-    if slide.get("italic"):
-        fontfajlok.append("DejaVuSans-Oblique.ttf")
-    if slide.get("bold"):
-        fontfajlok.append("DejaVuSans-Bold.ttf")
-    fontfajlok.append("DejaVuSans.ttf")
-    font = _betu_betoltese(tuple(fontfajlok), meret)
-
-    szoveg = str(slide.get("text", ""))
-    if not szoveg:
-        return cv2.cvtColor(np.asarray(kep), cv2.COLOR_RGB2BGR)
-    stilus = int(slide.get("style", 0))
-    if skala == 1.0:
-        marg = max(16, settings.width // 18)
-    else:
-        marg = max(1, round(max(16, round(settings.width / skala) // 18) * skala))
-    keret = rajz.multiline_textbbox((0, 0), szoveg, font=font)
-    szoveg_szeles = keret[2] - keret[0]
-    szoveg_magas = keret[3] - keret[1]
-    if stilus in (2, 3, 11):
-        x = max(marg, (settings.width - szoveg_szeles) // 2)
-        y = settings.height - szoveg_magas - marg
-    elif stilus == 9:
-        x, y = marg, (settings.height - szoveg_magas) // 2
-    elif stilus == 10:
-        x, y = settings.width - szoveg_szeles - marg, (settings.height - szoveg_magas) // 2
-    else:
-        x, y = (settings.width - szoveg_szeles) // 2, (settings.height - szoveg_magas) // 2
-
-    rajzolando_szoveg = szoveg
-    alfa = 255
-    if ido is not None and stilus in (1, 8, 11):
-        # A felületről létrehozott MXF-dia blacktime és extra időeltolása 0.
-        # Az időtengely a helyi filmrenderelésé: kockaindex / fps.
-        kezdet = 0.0
-        if stilus == 8:
-            idotartam = settings.seconds_per_photo
-        else:
-            idotartam = settings.transition_seconds
-            if idotartam == 0:
-                idotartam = settings.seconds_per_photo / 3
-        if idotartam > 0:
-            arany = max(0.0, min(1.0, (ido + 0.02 - kezdet) / idotartam))
-            simitott = 3 * arany**2 - 2 * arany**3
-            if stilus == 1:
-                # A TextFadeMove X-eltolása 0-ról -M-re tart; M a saját
-                # render geometriájából számolt szövegdoboz-balél.
-                x = round(x - simitott * x)
-                alfa = round(255 * arany)
-            elif stilus == 8:
-                # B a vászon alsó éle, A a középre igazított szövegdoboz.
-                also = settings.height
-                kozep = 0.5 * (settings.height - szoveg_magas)
-                y = round(also + simitott * (kozep - also))
-            else:
-                # A timeline a szöveg UTF-8 bájthosszát lépteti. Csak a
-                # teljes karakterek rajzolhatók, a fél UTF-8 karakter nem.
-                hossz = len(szoveg.encode("utf-8"))
-                bajtlimit = max(1, int(hossz * arany + 0.5))
-                lathato = []
-                felhasznalt = 0
-                for karakter in szoveg:
-                    karakterbajtok = len(karakter.encode("utf-8"))
-                    if felhasznalt + karakterbajtok > bajtlimit:
-                        break
-                    lathato.append(karakter)
-                    felhasznalt += karakterbajtok
-                rajzolando_szoveg = "".join(lathato)
-                if not rajzolando_szoveg:
-                    return cv2.cvtColor(np.asarray(kep), cv2.COLOR_RGB2BGR)
-
-    if stilus in (4, 5, 6, 7):
-        sav = (0, 0, 0, 180) if stilus in (4, 6) else (255, 255, 255, 180)
-        rajz.rectangle((0, y - marg // 2, settings.width, y + szoveg_magas + marg // 2), fill=sav)
-        betuszín = (255, 255, 255) if stilus in (4, 6) else (0, 0, 0)
-    kontur = bool(slide.get("outline")) or stilus in (3, 11)
-    kitoltes = (*betuszín, alfa) if alfa < 255 else betuszín
-    kontur_szin = (0, 0, 0) if betuszín != (0, 0, 0) else (255, 255, 255)
-    kontur_kitoltes = (*kontur_szin, alfa) if alfa < 255 else kontur_szin
-    szoveg_reteg = Image.new("RGBA", kep.size, (0, 0, 0, 0)) if alfa < 255 else None
-    szoveg_rajz = ImageDraw.Draw(szoveg_reteg) if szoveg_reteg is not None else rajz
-    szoveg_rajz.multiline_text(
-        (x, y),
-        rajzolando_szoveg,
-        font=font,
-        fill=kitoltes,
-        stroke_width=max(1, meret // 18) if kontur or slide.get("bold") else 0,
-        stroke_fill=kontur_kitoltes,
-    )
-    if szoveg_reteg is not None:
-        kep = Image.alpha_composite(kep.convert("RGBA"), szoveg_reteg).convert("RGB")
-    return cv2.cvtColor(np.asarray(kep), cv2.COLOR_RGB2BGR)
-
-
 def render_text_slide(
     slide: dict[str, object],
     settings: MovieSettings,
@@ -546,20 +221,40 @@ def render_text_slide(
     return _szovegdia(slide, _Vaszon(width, height), width / settings.width)
 
 
-def _picasa_caption(
-    path: Path, documents: dict[Path, IniDocument | None]
-) -> str:
-    """A kép `.picasa.ini`-beli felirata, az adott filmhez cache-elve."""
-    ini_path = path.parent / PICASA_INI_NAME
-    if ini_path not in documents:
-        try:
-            documents[ini_path] = load_or_empty(ini_path)
-        except OSError:
-            # A felirat metaadat; olvasási hiba esetén az EXIF-tartalék marad.
-            documents[ini_path] = None
-    document = documents[ini_path]
-    section = document.section(path.name) if document is not None else None
-    return (section.get("caption") or "").strip() if section is not None else ""
+# A régi importútvonal és a tesztek monkeypatch-célpontjai változatlanok.
+letterbox = _transitions.letterbox
+crop_to_fit = _transitions.crop_to_fit
+_atmenet_koordinatak = _transitions._atmenet_koordinatak
+_ffmpeg_exe = _audio._ffmpeg_exe
+_hang_hossza = _audio._hang_hossza
+_hanggal_osszeilleszt = _audio._hanggal_osszeilleszt
+_capture_timestamp = _frames._capture_timestamp
+
+
+def _decode(source: Path) -> np.ndarray:
+    return _transitions._decode(source)
+
+
+def _atmeneti_kocka(kilepo: np.ndarray, erkezo: np.ndarray, tipus: str, arany: float) -> np.ndarray:
+    return _transitions._atmeneti_kocka(
+        kilepo, erkezo, tipus, arany, koordinatak=_atmenet_koordinatak
+    )
+
+
+def _szovegdia(
+    slide: dict[str, object],
+    settings: MovieSettings | _Vaszon,
+    skala: float = 1.0,
+    *,
+    ido: float | None = None,
+) -> np.ndarray:
+    return _text.render_text_frame(slide, settings, skala, ido=ido, font_loader=_betu_betoltese)
+
+
+def _picasa_caption(path: Path, documents: dict[Path, IniDocument | None]) -> str:
+    return _frames.picasa_caption_core(
+        path, documents, ini_name=PICASA_INI_NAME, loader=load_or_empty
+    )
 
 
 def _picasa_face_rectangles(
@@ -567,26 +262,15 @@ def _picasa_face_rectangles(
     image: np.ndarray,
     documents: dict[Path, IniDocument | None],
 ) -> tuple[tuple[np.float32, np.float32, np.float32, np.float32], ...]:
-    """A fotó Picasa-féle rect64 arcait forrásképpontokra alakítja."""
-    ini_path = path.parent / PICASA_INI_NAME
-    if ini_path not in documents:
-        try:
-            documents[ini_path] = load_or_empty(ini_path)
-        except OSError:
-            documents[ini_path] = None
-    document = documents[ini_path]
-    section = document.section(path.name) if document is not None else None
-    if section is None:
-        return ()
-    height, width = image.shape[:2]
-    result = []
-    for face in parse_faces(section.get("faces") or ""):
-        if face.is_ignored:
-            continue
-        rectangle = rect64_to_pixel_rect(face.rect, width, height)
-        if rectangle[2] > rectangle[0] and rectangle[3] > rectangle[1]:
-            result.append(rectangle)
-    return tuple(result)
+    return _frames.picasa_face_rectangles_core(
+        path,
+        image,
+        documents,
+        ini_name=PICASA_INI_NAME,
+        loader=load_or_empty,
+        parse_faces_fn=parse_faces,
+        rect64_to_pixel_rect_fn=rect64_to_pixel_rect,
+    )
 
 
 def _prepare_face_frame(
@@ -596,83 +280,22 @@ def _prepare_face_frame(
     settings: MovieSettings,
     ini_docs: dict[Path, IniDocument | None],
 ) -> np.ndarray:
-    """A dekódolt fotót a megadott arcra keretezi és feliratozza."""
-    frame = render_face_crop(
+    return _frames.prepare_face_frame_core(
+        path,
         image,
         rectangle,
-        (settings.width, settings.height),
-        cropfit=settings.cropfit,
-        background=settings.background,
+        settings,
+        ini_docs,
+        render_face_crop_fn=render_face_crop,
+        caption_fn=_picasa_caption,
+        annotate_fn=_fotofelirat,
     )
-    caption = _picasa_caption(path, ini_docs) if settings.show_captions else ""
-    return _fotofelirat(frame, path, settings, caption)
-
-
-def _capture_timestamp(path: Path) -> float | None:
-    """A kép készítési ideje EXIF-ből, ennek hiányában fájlidőből."""
-    try:
-        with Image.open(path) as photo:
-            exif = photo.getexif()
-            exif_values = exif
-            try:
-                exif_values = exif.get_ifd(34665) or exif
-            except (AttributeError, KeyError, TypeError):
-                pass
-            raw_date = str(exif_values.get(36867) or exif.get(306) or "")
-            if raw_date:
-                return datetime.strptime(raw_date, "%Y:%m:%d %H:%M:%S").timestamp()
-    except (OSError, ValueError, TypeError):
-        pass
-    try:
-        return path.stat().st_mtime
-    except OSError:
-        return None
 
 
 def _fotofelirat(
-    frame: np.ndarray,
-    path: Path,
-    settings: MovieSettings,
-    picasa_caption: str = "",
+    frame: np.ndarray, path: Path, settings: MovieSettings, picasa_caption: str = ""
 ) -> np.ndarray:
-    """Az elérhető EXIF-feliratot/dátumot diszkrét alsó sávban mutatja."""
-    if not settings.show_captions and not settings.show_dates:
-        return frame
-    caption = picasa_caption
-    date = ""
-    try:
-        with Image.open(path) as photo:
-            exif = photo.getexif()
-            if not caption:
-                caption = str(exif.get(270, "") or "").strip()
-            exif_values = exif
-            try:
-                exif_values = exif.get_ifd(34665) or exif
-            except (AttributeError, KeyError, TypeError):
-                pass
-            raw_date = str(exif_values.get(36867) or exif.get(306) or "")
-            if raw_date:
-                date = raw_date.replace(":", "-", 2)
-    except (OSError, ValueError):
-        pass
-    if settings.show_dates and not date:
-        try:
-            date = datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%d")
-        except OSError:
-            date = ""
-    sorok = [s for s in (caption if settings.show_captions else "", date if settings.show_dates else "") if s]
-    if not sorok:
-        return frame
-    image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-    draw = ImageDraw.Draw(image, "RGBA")
-    font = ImageFont.load_default()
-    pad = max(6, settings.width // 80)
-    box = draw.multiline_textbbox((0, 0), "\n".join(sorok), font=font, spacing=2)
-    band_h = box[3] - box[1] + 2 * pad
-    y0 = settings.height - band_h
-    draw.rectangle((0, y0, settings.width, settings.height), fill=(0, 0, 0, 180))
-    draw.multiline_text((pad, y0 + pad), "\n".join(sorok), font=font, fill="white", spacing=2)
-    return cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
+    return _frames.fotofelirat_core(frame, path, settings, picasa_caption)
 
 
 def prepare_photo_frame(
@@ -682,25 +305,16 @@ def prepare_photo_frame(
     *,
     decoder=None,
 ) -> np.ndarray:
-    """Dekódolja és a filmvászonra készíti a fotót.
-
-    Az export és az élő előnézet ugyanazt a vágást/letterboxot, hátteret,
-    feliratot és dátumsávot használja. A `decoder` csak a kis felbontású
-    előnézeti dekódert cseréli be; exportkor a teljes képkocka készül.
-    """
-    photo_path = Path(path)
-    image = (decoder or _decode)(photo_path)
-    frame = (
-        crop_to_fit(image, settings.width, settings.height)
-        if settings.cropfit
-        else letterbox(
-            image, settings.width, settings.height, settings.background
-        )
+    return _frames.prepare_photo_frame_core(
+        path,
+        settings,
+        ini_docs,
+        decoder=decoder or _decode,
+        crop_to_fit_fn=crop_to_fit,
+        letterbox_fn=letterbox,
+        caption_fn=_picasa_caption,
+        annotate_fn=_fotofelirat,
     )
-    caption = (
-        _picasa_caption(photo_path, ini_docs) if settings.show_captions else ""
-    )
-    return _fotofelirat(frame, photo_path, settings, caption)
 
 
 def export_movie(
@@ -760,9 +374,7 @@ def export_movie(
                     ):
                         continue
                     try:
-                        frame = _prepare_face_frame(
-                            path, image, rectangle, settings, ini_documents
-                        )
+                        frame = _prepare_face_frame(path, image, rectangle, settings, ini_documents)
                     except ValueError:
                         continue
                     pixel_rectangle = tuple(int(value) for value in rectangle)
@@ -772,9 +384,7 @@ def export_movie(
                 if face_count:
                     continue
                 skipped.append(path)
-                reasons.append(
-                    "a képen nincs a beállításnak megfelelő arc-téglalap"
-                )
+                reasons.append("a képen nincs a beállításnak megfelelő arc-téglalap")
                 continue
             frame = prepare_photo_frame(path, settings, ini_documents)
         except (ValueError, OSError) as error:
@@ -859,9 +469,7 @@ def export_movie(
         (settings.width, settings.height),
     )
     if not writer.isOpened():
-        raise RuntimeError(
-            "A videó nem hozható létre: a rendszeren nincs elérhető MP4-kodek."
-        )
+        raise RuntimeError("A videó nem hozható létre: a rendszeren nincs elérhető MP4-kodek.")
     try:
         hold = settings.frames_per_photo - settings.transition_frames
         holds = [hold] * len(decoded)
@@ -886,9 +494,9 @@ def export_movie(
                         if text_slide is not None
                         else frame
                     )
-                    writer.write(_atmeneti_kocka(
-                        previous, incoming, settings.transition_type, weight
-                    ))
+                    writer.write(
+                        _atmeneti_kocka(previous, incoming, settings.transition_type, weight)
+                    )
                     frames_written += 1
             for local_frame in range(holds[index]):
                 kocka = (
