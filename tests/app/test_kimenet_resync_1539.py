@@ -41,6 +41,7 @@ nem szól — az első oszlop tehát nem garancia, hanem szerencse.
 
 from __future__ import annotations
 
+import gc
 import time
 
 import pytest
@@ -184,6 +185,9 @@ class TestAKimenetMegjelenikAFigyeloNelkul:
             settings=settings,
             watched_file=tmp_path / "WatchedFolders.txt",
         )
+        # #6197 (a #4896 mintája): az előző teszt vezérlőjének ciklikus
+        # maradékát a háttér-szinkron indulása előtt véglegesítjük.
+        gc.collect()
         ctl.start()
         assert _var(qt_app, lambda: not ctl._sync_running), (
             "#2408: a szinkron nem állt le időben — a teszt hiányos "
@@ -203,6 +207,7 @@ class TestAKimenetMegjelenikAFigyeloNelkul:
         yield ctl, library
         ctl.shutdown()
         assert ctl.waitForBackgroundWorkers(30.0), "háttérszál nem állt le"
+        gc.collect()
 
     def test_a_duplikatumok_mappaba_mozgatott_kep_megjelenik(self, egyseg, qt_app):
         from picasapy.app import application
