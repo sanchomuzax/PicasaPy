@@ -538,13 +538,17 @@ def test_rossz_kontextusnevvel_a_tagok_halottnak_latszanak(tmp_path: Path) -> No
     kereső ettől meg se rezzenne.
     """
     gyoker = _valodi_masolat(tmp_path)
-    alkalmazas = gyoker / "application.py"
-    alkalmazas.write_text(
-        alkalmazas.read_text(encoding="utf-8").replace(
-            'setContextProperty("editController"', 'setContextProperty("szerkesztoVezerlo"'
-        ),
-        encoding="utf-8",
-    )
+    # #6155: a regisztráció az indító valamelyik moduljában áll
+    for alkalmazas in sorted(gyoker.glob("application*.py")):
+        szoveg = alkalmazas.read_text(encoding="utf-8")
+        if 'setContextProperty("editController"' in szoveg:
+            alkalmazas.write_text(
+                szoveg.replace(
+                    'setContextProperty("editController"',
+                    'setContextProperty("szerkesztoVezerlo"',
+                ),
+                encoding="utf-8",
+            )
     eredeti = or_.elemez(VALODI_APP)
     romlott = or_.elemez(gyoker)
     eredeti_edit = {tag.kulcs for tag in eredeti.szakadasok if tag.kontextus == "editController"}

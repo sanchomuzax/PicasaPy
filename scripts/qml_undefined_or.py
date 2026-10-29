@@ -249,12 +249,18 @@ def _sztringtelen(kifejezes: str) -> str:
 
 
 def kontextus_nevek(application_py: Path) -> set[str]:
-    """A `setContextProperty("név", …)` hívásokkal regisztrált QML-nevek."""
+    """A `setContextProperty("név", …)` hívásokkal regisztrált QML-nevek.
+
+    #6155: az indító több modulra bomlik (`application_*.py`), a regisztráció
+    a testvérmodulokban is állhat; a mappában mindet átnézzük.
+    """
     if not application_py.is_file():
         return set()
-    fa = ast.parse(application_py.read_text(encoding="utf-8"))
+    fajlok = [application_py, *sorted(application_py.parent.glob("application_*.py"))]
     nevek: set[str] = set()
-    for csomopont in ast.walk(fa):
+    for csomopont in (
+        cs for f in fajlok for cs in ast.walk(ast.parse(f.read_text(encoding="utf-8")))
+    ):
         if (
             isinstance(csomopont, ast.Call)
             and isinstance(csomopont.func, ast.Attribute)

@@ -67,9 +67,10 @@ def _qml_gyoker() -> Path:
 
 
 def _regisztralt_nevek() -> set[str]:
-    forras = (Path(picasapy.app.__file__).parent / "application.py").read_text(
-        encoding="utf-8"
-    )
+    from support.app_forras import indito_forras
+
+    # #6155: a regisztráció az application_startup_qml.py-ba költözött
+    forras = indito_forras()
     return set(
         re.findall(r'setContextProperty\(\s*"([A-Za-z_]\w*)"', forras)
     )
