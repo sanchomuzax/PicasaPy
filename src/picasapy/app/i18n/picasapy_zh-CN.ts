@@ -4130,36 +4130,6 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Close crop to faces</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>裁剪至头像</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Compose around faces</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>围绕头像构图</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Crop by color</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>按颜色裁剪</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Crop by detail</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>按细节裁剪</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Crop by horizon</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>按地平线裁剪</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>More Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>更多效果</translation>
@@ -4183,79 +4153,16 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
             <translation>重做</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="97" />
-            <source>Manual</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</extracomment>
-            <translation>手动</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="98" />
-            <source>Current ratio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
-            <translation>当前比例</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="638" />
-            <source>%1$d x %2$d</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
-            <translation>%1$d x %2$d</translation>
-        </message>
-        <message>
             <source>Current display</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:CurrentDisplay</extracomment>
             <translation>当前显示</translation>
         </message>
         <message>
-            <source>Small print</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description</extracomment>
-            <translation>小型打印</translation>
-        </message>
-        <message>
-            <source>Large print</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description</extracomment>
-            <translation>大型打印</translation>
-        </message>
-        <message>
             <source>Letter paper</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList::FullPage:Description</extracomment>
             <translation>信纸</translation>
-        </message>
-        <message>
-            <source>Standard screen</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x4:Description</extracomment>
-            <translation>标准屏幕</translation>
-        </message>
-        <message>
-            <source>Widescreen monitor</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:16x10:Description</extracomment>
-            <translation>宽屏幕监视器</translation>
-        </message>
-        <message>
-            <source>Widescreen Photo Frame</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:5x3</extracomment>
-            <translation>宽屏相框</translation>
-        </message>
-        <message>
-            <source>CD Cover</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
-            <translation>CD 封面</translation>
-        </message>
-        <message>
-            <source>Full page</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
-            <translation>整页显示</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="104" />
@@ -4274,13 +4181,6 @@ picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Labe
             <source>Square: CD cover</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>正方形：CD 封面</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="371" />
-            <source>Square</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
-            <translation>正方形</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="1714" />
@@ -19627,6 +19527,109 @@ picasapy-origin: picasa</extracomment>
             <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>此文件夹目前不可用（例如驱动器或网络共享已断开）。其中的照片仍保留在数据库中，缩略图使用缓存中的版本，但现在无法打开或编辑原始文件。</translation>
+        </message>
+    </context>
+    <context>
+        <name>EditorPanelCropState</name>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Close crop to faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>裁剪至头像</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Compose around faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>围绕头像构图</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Crop by color</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>按颜色裁剪</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Crop by detail</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>按细节裁剪</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Crop by horizon</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>按地平线裁剪</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="97" />
+            <source>Manual</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</extracomment>
+            <translation>手动</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="98" />
+            <source>Current ratio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
+            <translation>当前比例</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="638" />
+            <source>%1$d x %2$d</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
+            <translation>%1$d x %2$d</translation>
+        </message>
+        <message>
+            <source>Small print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description</extracomment>
+            <translation>小型打印</translation>
+        </message>
+        <message>
+            <source>Large print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description</extracomment>
+            <translation>大型打印</translation>
+        </message>
+        <message>
+            <source>Standard screen</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x4:Description</extracomment>
+            <translation>标准屏幕</translation>
+        </message>
+        <message>
+            <source>Widescreen monitor</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:16x10:Description</extracomment>
+            <translation>宽屏幕监视器</translation>
+        </message>
+        <message>
+            <source>Widescreen Photo Frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:5x3</extracomment>
+            <translation>宽屏相框</translation>
+        </message>
+        <message>
+            <source>CD Cover</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
+            <translation>CD 封面</translation>
+        </message>
+        <message>
+            <source>Full page</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
+            <translation>整页显示</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="371" />
+            <source>Square</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
+            <translation>正方形</translation>
         </message>
     </context>
 </TS>

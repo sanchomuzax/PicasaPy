@@ -4132,36 +4132,6 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Close crop to faces</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Retalla a prop de les cares</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Compose around faces</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Compon al voltant de les cares</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Crop by color</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Retalla segons el color</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Crop by detail</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Retalla segons els detalls</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Crop by horizon</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Retalla segons l'horitzó</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>More Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Més efectes</translation>
@@ -4185,79 +4155,16 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
             <translation>Refés</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="97" />
-            <source>Manual</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</extracomment>
-            <translation>Manual</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="98" />
-            <source>Current ratio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
-            <translation>Ràtio actual</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="638" />
-            <source>%1$d x %2$d</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
-            <translation>%1$d x %2$d</translation>
-        </message>
-        <message>
             <source>Current display</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:CurrentDisplay</extracomment>
             <translation>Reproducció actual</translation>
         </message>
         <message>
-            <source>Small print</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description</extracomment>
-            <translation>Imatge petita</translation>
-        </message>
-        <message>
-            <source>Large print</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description</extracomment>
-            <translation>Impressió gran</translation>
-        </message>
-        <message>
             <source>Letter paper</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList::FullPage:Description</extracomment>
             <translation>Paper de carta</translation>
-        </message>
-        <message>
-            <source>Standard screen</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x4:Description</extracomment>
-            <translation>Pantalla estàndard</translation>
-        </message>
-        <message>
-            <source>Widescreen monitor</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:16x10:Description</extracomment>
-            <translation>Monitor panoràmic</translation>
-        </message>
-        <message>
-            <source>Widescreen Photo Frame</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:5x3</extracomment>
-            <translation>Marc de foto panoràmica</translation>
-        </message>
-        <message>
-            <source>CD Cover</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
-            <translation>Caràtula de CD</translation>
-        </message>
-        <message>
-            <source>Full page</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
-            <translation>Pàgina completa</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="104" />
@@ -4276,13 +4183,6 @@ picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Labe
             <source>Square: CD cover</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Quadrat: coberta de CD</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="371" />
-            <source>Square</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
-            <translation>Quadrat</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="1714" />
@@ -19640,6 +19540,109 @@ picasapy-origin: picasa</extracomment>
             <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Aquesta carpeta no està disponible ara mateix (per exemple, perquè una unitat o una ubicació de xarxa està desconnectada). Les seves fotos continuen a la base de dades i les miniatures es carreguen de la memòria cau, però ara no es poden obrir ni editar els fitxers originals.</translation>
+        </message>
+    </context>
+    <context>
+        <name>EditorPanelCropState</name>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Close crop to faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Retalla a prop de les cares</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Compose around faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Compon al voltant de les cares</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Crop by color</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Retalla segons el color</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Crop by detail</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Retalla segons els detalls</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Crop by horizon</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Retalla segons l'horitzó</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="97" />
+            <source>Manual</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</extracomment>
+            <translation>Manual</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="98" />
+            <source>Current ratio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
+            <translation>Ràtio actual</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="638" />
+            <source>%1$d x %2$d</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
+            <translation>%1$d x %2$d</translation>
+        </message>
+        <message>
+            <source>Small print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description</extracomment>
+            <translation>Imatge petita</translation>
+        </message>
+        <message>
+            <source>Large print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description</extracomment>
+            <translation>Impressió gran</translation>
+        </message>
+        <message>
+            <source>Standard screen</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x4:Description</extracomment>
+            <translation>Pantalla estàndard</translation>
+        </message>
+        <message>
+            <source>Widescreen monitor</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:16x10:Description</extracomment>
+            <translation>Monitor panoràmic</translation>
+        </message>
+        <message>
+            <source>Widescreen Photo Frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:5x3</extracomment>
+            <translation>Marc de foto panoràmica</translation>
+        </message>
+        <message>
+            <source>CD Cover</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
+            <translation>Caràtula de CD</translation>
+        </message>
+        <message>
+            <source>Full page</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
+            <translation>Pàgina completa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="371" />
+            <source>Square</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
+            <translation>Quadrat</translation>
         </message>
     </context>
 </TS>

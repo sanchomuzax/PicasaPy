@@ -4134,36 +4134,6 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Close crop to faces</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Apkirpti pagal veidus</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Compose around faces</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Komponuoti pagal veidus</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Crop by color</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Apkirpti pagal spalvą</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Crop by detail</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Apkirpti pagal detales</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Crop by horizon</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Apkirpti pagal horizontą</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>More Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Daugiau efektų</translation>
@@ -4187,79 +4157,16 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
             <translation>Grąžinti</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="97" />
-            <source>Manual</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</extracomment>
-            <translation>Laisvai</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="98" />
-            <source>Current ratio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
-            <translation>Dabartinis santykis</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="638" />
-            <source>%1$d x %2$d</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
-            <translation>%1$d x %2$d</translation>
-        </message>
-        <message>
             <source>Current display</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:CurrentDisplay</extracomment>
             <translation>Dabartinis ekranas</translation>
         </message>
         <message>
-            <source>Small print</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description</extracomment>
-            <translation>Mažas spaudinys</translation>
-        </message>
-        <message>
-            <source>Large print</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description</extracomment>
-            <translation>Didelis spaudinys</translation>
-        </message>
-        <message>
             <source>Letter paper</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList::FullPage:Description</extracomment>
             <translation>„Letter“ popierius</translation>
-        </message>
-        <message>
-            <source>Standard screen</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x4:Description</extracomment>
-            <translation>Standartinis ekranas</translation>
-        </message>
-        <message>
-            <source>Widescreen monitor</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:16x10:Description</extracomment>
-            <translation>Plačiaekranis monitorius</translation>
-        </message>
-        <message>
-            <source>Widescreen Photo Frame</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:5x3</extracomment>
-            <translation>Plačiaformatės nuotraukos rėmelis</translation>
-        </message>
-        <message>
-            <source>CD Cover</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
-            <translation>CD viršelis</translation>
-        </message>
-        <message>
-            <source>Full page</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
-            <translation>Visas puslapis</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="104" />
@@ -4278,13 +4185,6 @@ picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Labe
             <source>Square: CD cover</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Kvadratas: CD viršelis</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="371" />
-            <source>Square</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
-            <translation>Kvadratas</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="1714" />
@@ -19654,6 +19554,109 @@ picasapy-origin: picasa</extracomment>
             <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Šis aplankas šiuo metu nepasiekiamas (pavyzdžiui, atjungtas diskas arba tinklo išteklius). Jo nuotraukos lieka duomenų bazėje, o miniatiūros rodomos iš talpyklos, tačiau originalių failų šiuo metu negalima atverti ar redaguoti.</translation>
+        </message>
+    </context>
+    <context>
+        <name>EditorPanelCropState</name>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Close crop to faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Apkirpti pagal veidus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Compose around faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Komponuoti pagal veidus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Crop by color</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Apkirpti pagal spalvą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Crop by detail</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Apkirpti pagal detales</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Crop by horizon</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Apkirpti pagal horizontą</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="97" />
+            <source>Manual</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</extracomment>
+            <translation>Laisvai</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="98" />
+            <source>Current ratio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
+            <translation>Dabartinis santykis</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="638" />
+            <source>%1$d x %2$d</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
+            <translation>%1$d x %2$d</translation>
+        </message>
+        <message>
+            <source>Small print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description</extracomment>
+            <translation>Mažas spaudinys</translation>
+        </message>
+        <message>
+            <source>Large print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description</extracomment>
+            <translation>Didelis spaudinys</translation>
+        </message>
+        <message>
+            <source>Standard screen</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x4:Description</extracomment>
+            <translation>Standartinis ekranas</translation>
+        </message>
+        <message>
+            <source>Widescreen monitor</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:16x10:Description</extracomment>
+            <translation>Plačiaekranis monitorius</translation>
+        </message>
+        <message>
+            <source>Widescreen Photo Frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:5x3</extracomment>
+            <translation>Plačiaformatės nuotraukos rėmelis</translation>
+        </message>
+        <message>
+            <source>CD Cover</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
+            <translation>CD viršelis</translation>
+        </message>
+        <message>
+            <source>Full page</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
+            <translation>Visas puslapis</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="371" />
+            <source>Square</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
+            <translation>Kvadratas</translation>
         </message>
     </context>
 </TS>

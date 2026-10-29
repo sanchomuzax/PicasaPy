@@ -4130,36 +4130,6 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Close crop to faces</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>चेहरों के आसपास क्रॉप करें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Compose around faces</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>चेहरों के अनुसार संयोजित करें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Crop by color</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>रंग के अनुसार क्रॉप करें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Crop by detail</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>विवरण के अनुसार क्रॉप करें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
-            <source>Crop by horizon</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>क्षितिज के अनुसार क्रॉप करें</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" />
             <source>More Effects</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>और प्रभाव</translation>
@@ -4183,79 +4153,16 @@ picasapy-origin-key: stringres:filter_Comicize_label0</extracomment>
             <translation>फिर से करें</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="97" />
-            <source>Manual</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</extracomment>
-            <translation>मैन्युअल</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="98" />
-            <source>Current ratio</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
-            <translation>वर्तमान अनुपात</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="638" />
-            <source>%1$d x %2$d</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
-            <translation>%1$d x %2$d</translation>
-        </message>
-        <message>
             <source>Current display</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:CurrentDisplay</extracomment>
             <translation>मौजूदा प्रदर्शन</translation>
         </message>
         <message>
-            <source>Small print</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description</extracomment>
-            <translation>छोटा प्रिंट</translation>
-        </message>
-        <message>
-            <source>Large print</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description</extracomment>
-            <translation>बड़ा प्रिंट</translation>
-        </message>
-        <message>
             <source>Letter paper</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList::FullPage:Description</extracomment>
             <translation>लेटर पेपर</translation>
-        </message>
-        <message>
-            <source>Standard screen</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:4x4:Description</extracomment>
-            <translation>मानक स्क्रीन</translation>
-        </message>
-        <message>
-            <source>Widescreen monitor</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:16x10:Description</extracomment>
-            <translation>वाइडस्क्रीन मॉनीटर</translation>
-        </message>
-        <message>
-            <source>Widescreen Photo Frame</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:5x3</extracomment>
-            <translation>वाइडस्क्रीन फ़ोटो फ़्रेम</translation>
-        </message>
-        <message>
-            <source>CD Cover</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
-            <translation>CD कवर</translation>
-        </message>
-        <message>
-            <source>Full page</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
-            <translation>पूर्ण पृष्ठ</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="104" />
@@ -4274,13 +4181,6 @@ picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Labe
             <source>Square: CD cover</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>वर्ग: CD कवर</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/EditorPanel.qml" line="371" />
-            <source>Square</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
-            <translation>वर्ग</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanel.qml" line="1714" />
@@ -19627,6 +19527,109 @@ picasapy-origin: picasa</extracomment>
             <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>यह फ़ोल्डर अभी उपलब्ध नहीं है (उदाहरण के लिए, ड्राइव या नेटवर्क शेयर डिस्कनेक्ट है). इसकी तस्वीरें डेटाबेस में बनी रहेंगी और थंबनेल कैश से आएंगे, लेकिन मूल फ़ाइलें अभी खोली या संपादित नहीं की जा सकतीं.</translation>
+        </message>
+    </context>
+    <context>
+        <name>EditorPanelCropState</name>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Close crop to faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>चेहरों के आसपास क्रॉप करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Compose around faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>चेहरों के अनुसार संयोजित करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Crop by color</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>रंग के अनुसार क्रॉप करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Crop by detail</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>विवरण के अनुसार क्रॉप करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
+            <source>Crop by horizon</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>क्षितिज के अनुसार क्रॉप करें</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="97" />
+            <source>Manual</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</extracomment>
+            <translation>मैन्युअल</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="98" />
+            <source>Current ratio</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:CurrentRatio</extracomment>
+            <translation>वर्तमान अनुपात</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="638" />
+            <source>%1$d x %2$d</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRatioList:Format</extracomment>
+            <translation>%1$d x %2$d</translation>
+        </message>
+        <message>
+            <source>Small print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description</extracomment>
+            <translation>छोटा प्रिंट</translation>
+        </message>
+        <message>
+            <source>Large print</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description</extracomment>
+            <translation>बड़ा प्रिंट</translation>
+        </message>
+        <message>
+            <source>Standard screen</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:4x4:Description</extracomment>
+            <translation>मानक स्क्रीन</translation>
+        </message>
+        <message>
+            <source>Widescreen monitor</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:16x10:Description</extracomment>
+            <translation>वाइडस्क्रीन मॉनीटर</translation>
+        </message>
+        <message>
+            <source>Widescreen Photo Frame</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:5x3</extracomment>
+            <translation>वाइडस्क्रीन फ़ोटो फ़्रेम</translation>
+        </message>
+        <message>
+            <source>CD Cover</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
+            <translation>CD कवर</translation>
+        </message>
+        <message>
+            <source>Full page</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
+            <translation>पूर्ण पृष्ठ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="371" />
+            <source>Square</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
+            <translation>वर्ग</translation>
         </message>
     </context>
 </TS>
