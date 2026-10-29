@@ -25,17 +25,14 @@ from tests.support.py_blokk import fuggveny_torzs
 _SIM = (
     Path(picasapy.app.__file__).parent / "similarity_controller.py"
 ).read_text(encoding="utf-8")
-#: #6136: a főablak könyvtárnézete a MainLibraryCanvas.qml-be költözött; az őr a
-#: főablak komponenscsaládját olvassa.
+_QML_DIR = Path(picasapy.app.__file__).parent / "qml"
+_MAIN_COMPONENTS = sorted((_QML_DIR / "PicasaPy").glob("Main*.qml"))
+#: #6136: a forrásőrök a Main.qml és a teljes Main*.qml komponenscsalád
+#: szövegét vizsgálják; a host neveket a régi őrök számára normalizáljuk.
 _MAIN = "\n".join(
-    (Path(picasapy.app.__file__).parent / "qml" / ut).read_text(encoding="utf-8")
-    for ut in (
-        "Main.qml",
-        "PicasaPy/MainLibraryCanvas.qml",
-        "PicasaPy/MainRightDrawer.qml",
-        "PicasaPy/MainFolderPane.qml",
-    )
-)
+    path.read_text(encoding="utf-8")
+    for path in (_QML_DIR / "Main.qml", *_MAIN_COMPONENTS)
+).replace("hostWindow", "window").replace("hostController", "controller")
 _MENU = (
     Path(picasapy.app.__file__).parent
     / "qml" / "PicasaPy" / "PhotoContextMenu.qml"

@@ -288,7 +288,7 @@ class TestGyorsbillentyuk:
 
 class TestMukodoTetelekBillentyui:
     """#327: aminek a felirata billentyűt ígér ÉS a menüpont működik, ahhoz
-    tartozzon élő `Shortcut` — akár itt, akár a Main.qml globálisai közt.
+    tartozzon élő `Shortcut` — akár itt, akár a Main*.qml komponenscsaládban.
 
     A Qt a `Return` és az `Enter` billentyűt szinonimaként kezeli, a Picasa
     viszont „Enter"-t ír a menüben; a normalizálás ezt a kettőt vonja össze,
@@ -302,8 +302,11 @@ class TestMukodoTetelekBillentyui:
     def _live_sequences(self) -> set[str]:
         import re
 
-        main_qml = _MENU_QML.parent.parent / "Main.qml"
-        combined = _source() + main_qml.read_text(encoding="utf-8")
+        qml_dir = _MENU_QML.parent.parent
+        main_files = [qml_dir / "Main.qml", *sorted(qml_dir.joinpath("PicasaPy").glob("Main*.qml"))]
+        combined = _source() + "\n".join(
+            path.read_text(encoding="utf-8") for path in main_files
+        )
         return {
             self._normalise(seq)
             for seq in re.findall(r'sequence:\s*"([^"]+)"', combined)

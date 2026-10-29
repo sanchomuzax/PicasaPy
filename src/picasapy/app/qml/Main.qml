@@ -1376,130 +1376,22 @@ ApplicationWindow {
             }
         }
     }
-
-    // #2054: a súgó billentyűi. Az F1 a MÉRT eredeti gyorsbillentyű (a
-    // `SHORTCUTS.xml`-ben a *Help Contents and Index* `VK_F1`, módosító
-    // nélkül); a Shift+F1 a MIÉNK — az eredeti táblájában nincs, a
-    // súgó maga is új.
-    //: #2163: az eredeti könyvtárnézeti kezelője (`0x005e60d0`) 34
-    //: billentyűt kezel; ez a három a leképezhetők közül való.
-    Shortcut {
-        id: shortcutToggleRightDrawer
-        objectName: "toggleRightDrawerShortcut"
-        sequence: "Ctrl+0"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        //: `thumbui/toggle_right_drawer` (`0x005e6206`)
-        onActivated: window.billentsdAFiokot()
-    }
-    Shortcut {
-        id: shortcutSearch
-        objectName: "searchShortcut"
-        sequence: "Ctrl+F"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        //: `searchcontainer/searchbutton` (`0x005e63bb`) — az eredetiben a
-        //: keresőgombot kattintja; nálunk a keresőmező a gomb szerepét is
-        //: viszi, ezért oda megy a fókusz.
-        onActivated: window.fokuszAKeresore()
-    }
-    Shortcut {
-        id: shortcutSearchF3
-        objectName: "searchF3Shortcut"
-        sequence: "F3"
-        //: A keresősáv a nézőben nincs jelen (ld. `fokuszAKeresore`), ezért
-        //: az F3 a könyvtári őrön marad; diavetítés alatt nem fut.
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-                 && !window.slideshowRunning
-        //: #4600: `0x005e69a4` — módosító nélküli ág, ugyanaz a
-        //: `searchcontainer/searchbutton`, mint a `Ctrl+F`-é.
-        onActivated: window.fokuszAKeresore()
-    }
-    Shortcut {
-        id: shortcutStarToggle
-        objectName: "starToggleShortcut"
-        sequence: "F4"
-        //: A kezelő a könyvtárban ÉS a szerkesztőben közös (spec 10.11/10.13),
-        //: ezért a nézőben is él; a gomb saját őrét a `kapcsoldACsillagot` adja.
-        enabled: !window._szovegmezoneVanFokusz && !window.slideshowRunning
-        //: #4600: `0x005e696c` — a `thumbui/startoggle`-t kattintja, ha az
-        //: nem tiltott; a tálca gombja ugyanezt a kijelölést/nézőt követi.
-        onActivated: trayBar.kapcsoldACsillagot()
-    }
-    Shortcut {
-        id: shortcutRefreshCurrentFolder
-        objectName: "refreshCurrentFolderShortcut"
-        sequence: "F5"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-                 && documentTabStrip.libraryActive
-                 && controller && controller.currentFolder.length > 0
-        //: #4697: a mért eredeti F5-ág a mappa frissítési jelzőjét állítja
-        //: (`picasa-gyorsbillentyuk.md`, 10.10); az idle út utána frissíti
-        //: a listát. A mappapontos szinkron a lemez változásait is felveszi,
-        //: majd a syncFinished meglévő útja újratölti a nézetet és a
-        //: keresési állapotot. Ez nem teljes újraolvasás (`controller.rescan()`).
-        onActivated: controller.resyncFolder(controller.currentFolder)
-    }
-    Shortcut {
-        id: shortcutTagsPanelAlt
-        objectName: "tagsPanelAltShortcut"
-        sequence: "Ctrl+K"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        //: Az eredetiben UGYANAZ az ág, mint a `Ctrl+T`-é (`0x005e650e`).
-        onActivated: window.valtsFiokLapot("tags")
-    }
-    Shortcut {
-        id: shortcutEditView
-        objectName: "editViewShortcut"
-        sequence: "Ctrl+3"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        //: `thumbui/fullview` (`0x005e624f`) — Nézet ▸ Szerkesztési nézet
-        //: (`cmd 0x9c8f`) és Kép ▸ Megjelenítés és szerkesztés (`cmd 0x9ca0`)
-        //: ugyanezen a billentyűn (a lap 10.3 és a keymap 21. rekesze).
-        onActivated: window.nezdEsSzerkeszd()
-    }
-    Shortcut {
-        id: shortcutDuplicateSearch
-        objectName: "dupeSearchShortcut"
-        sequence: "Ctrl+F6"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        //: `searchoptions/dupesearch` (`0x005e62bb`) — ugyanaz a
-        //: másodpéldány-MÓD, amit a menüparancs kapcsol (#1398).
-        onActivated: window.masodpeldanyokMutatasa()
-    }
-    Shortcut {
-        id: shortcutFindSimilar
-        objectName: "findSimilarShortcut"
-        sequence: "Ctrl+F7"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        //: `searchoptions/loadsim` (`0x005e62e8`, azonosító `0x15`).
-        onActivated: window.keressHasonlot()
-    }
-    Shortcut {
-        id: shortcutClearSimilar
-        objectName: "clearSimilarShortcut"
-        sequence: "Ctrl+F8"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        //: `searchoptions/clearsim` (`0x005e631d`, azonosító `0x16`).
-        onActivated: window.torolAHasonlosagMintat()
-    }
-    Shortcut {
-        id: shortcutBatchBlackWhite
-        objectName: "batchBwShortcut"
-        sequence: "Ctrl+Shift+B"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        //: `0x005fe370(panel, "bw")` (`0x005e6370`) — a fekete-fehér szűrő a
-        //: KIJELÖLÉSRE. Az eredetiben ehhez nincs kiírt menütétel (keymap
-        //: 31.), a billentyű mégis él.
-        onActivated: window.kotegEffekt("bw")
-    }
-    Shortcut {
-        id: shortcutBatchEnhance
-        objectName: "batchEnhanceShortcut"
-        sequence: "Ctrl+Shift+E"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        //: `0x005fe370(panel, "enhance")` (`0x005e638b`) — a „Jó napom van"
-        //: (keymap 32.) a kijelölésre; ugyanaz az út, mint a
-        //: Köteg-szerkesztés menütételé.
-        onActivated: window.kotegEffekt("enhance")
+    // A főablak gyorsbillentyűi önálló komponensben (#6136).
+    MainKeyboardShortcuts {
+        id: mainKeyboardShortcuts
+        hostWindow: window
+        hostController: controller
+        hostDocumentTabStrip: documentTabStrip
+        hostExportDialogs: exportDialogs
+        hostFileOpsController: typeof fileOpsController !== "undefined"
+            ? fileOpsController : null
+        hostFileOpsDialogs: fileOpsDialogs
+        hostHelpDialog: helpDialog
+        hostPhotoViewer: photoViewer
+        hostPicasaMenuBar: picasaMenuBar
+        hostSaveDialogs: saveDialogs
+        hostSlideshow: slideshow
+        hostTrayBar: trayBar
     }
 
     //: #3544: amíg egy külön ablakos párbeszéd látszik, a főablak két
@@ -1511,30 +1403,6 @@ ApplicationWindow {
     readonly property bool _kulonAblakosParbeszedNyitva:
         [folderManager, importSourceDialog, optionsDialog, webExportDialog,
          printDialog].some(function (d) { return d.item !== null && d.item.visible })
-    Shortcut {
-        id: shortcutHelp
-        objectName: "helpShortcut"
-        sequence: "F1"
-        enabled: !window._szovegmezoneVanFokusz
-                 && !window._kulonAblakosParbeszedNyitva
-        onActivated: helpDialog.ensure().nyisdMeg("")
-    }
-    Shortcut {
-        id: shortcutHelpContext
-        objectName: "helpContextShortcut"
-        sequence: "Shift+F1"
-        enabled: !window._szovegmezoneVanFokusz
-                 && !window._kulonAblakosParbeszedNyitva
-        //: A mutató alatti elem súgója. A leképezés a `helpTopic`
-        //: tulajdonságon át megy; ha a mutató alatt egyik ős sem
-        //: deklarál ilyet, a FŐOLDAL nyílik — néma kudarc nincs.
-        //:
-        //: #3463: amíg a főablak rétegében MODÁLIS párbeszéd áll nyitva, a
-        //: Qt ezt a gyorsbillentyűt letiltja — ezért a témát deklaráló
-        //: réteg-párbeszédek maguk is hordoznak egy Shift+F1-et, CSAK
-        //: nyitott állapotban, a SAJÁT fejezetükkel (`nyisdASugot`).
-        onActivated: window.nyisdASugot(window.helpTopicUnderCursor())
-    }
 
     //: #2054: a mutató helye a Shift+F1-hez. A `HoverHandler` a teljes
     //: ablakot lefedi, de NEM nyel el eseményt (`acceptedButtons: NoButton`),
@@ -1593,35 +1461,6 @@ ApplicationWindow {
             window.contentItem, window.helpCursor.x, window.helpCursor.y)
     }
 
-    Shortcut {
-        id: shortcutSelectAll
-        sequence: "Ctrl+A"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        onActivated: window.selectAll()
-    }
-    Shortcut {
-        id: shortcutClearSelection
-        sequence: "Ctrl+D"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        onActivated: window.clearSelection()
-    }
-    Shortcut {
-        id: shortcutInvertSelection
-        sequence: "Ctrl+I"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        onActivated: window.invertSelection()
-    }
-    // #444: „Mentés" — a Fájl menü ígéri a Ctrl+S-t, tehát élnie is kell
-    // (a menü-audit teszt épp ezt kéri számon). Kijelölés nélkül nem tesz
-    // semmit: a `openSave` üres listára visszatér.
-    Shortcut {
-        id: shortcutSave
-        sequence: "Ctrl+S"
-        enabled: !window._szovegmezoneVanFokusz
-                 && window.muveletiCelbanVanMentetlenSzerkesztes
-        onActivated: saveDialogs.ensure().openSave(window.photoActionRows())
-    }
-
     // #1526/#1571: a fájl-vágólap billentyűi — FÓKUSZ-ÉRZÉKENYEN.
     //
     // ⚠️ A kézenfekvő megoldás valódi regressziót okozna: egy sima
@@ -1640,30 +1479,6 @@ ApplicationWindow {
         && window.activeFocusItem.selectedText !== undefined
     readonly property bool _konyvtariGyorsbillentyuEngedelyezve:
         !window.viewerOpen && !window._szovegmezoneVanFokusz
-
-    Shortcut {
-        // A `StandardKey.Copy` linuxon ugyanez, de a menü-audit a
-        // szekvenciát SZÖVEGES alakban keresi — és joggal: a menü szó
-        // szerint Ctrl+C-t hirdet, tehát az ígéret is szó szerinti.
-        // (⚠️ A komment maga sem tartalmazhatja a keresett mintát: az
-        // első változatom épp ezzel vezette félre a mérést.)
-        id: shortcutCopyFiles
-        objectName: "shortcutCopyFiles"
-        sequence: "Ctrl+C"
-        enabled: !window._szovegmezoneVanFokusz
-                 && window.photoActionRows().length > 0
-        onActivated: fileOpsController.copyFilesToClipboard(
-            window.photoActionPaths())
-    }
-    Shortcut {
-        id: shortcutCutFiles
-        objectName: "shortcutCutFiles"
-        sequence: "Ctrl+X"
-        enabled: !window._szovegmezoneVanFokusz
-                 && window.photoActionRows().length > 0
-        onActivated: fileOpsController.cutFilesToClipboard(
-            window.photoActionPaths())
-    }
     //: #1406: `ID_SEARCHTOKEN` — a megadott címke tartalmából rendes album.
     //: A HÁROM szöveg mind a saját helyén: a menüfelirat a menüsorban, a cím
     //: és a felszólítás itt (mérve, `0x005d8330`).
@@ -1798,17 +1613,6 @@ ApplicationWindow {
         errorBannerText.text = qsTr("There are no files on the clipboard to paste.")
     }
 
-    Shortcut {
-        //: #1526: a Beillesztés billentyűje — ugyanaz a fókusz-kapu, mint a
-        //: másoláson: szövegmezőben a mezőé a billentyű (különben átnevezés
-        //: közben nem lehetne beilleszteni a szövegbe).
-        id: shortcutPasteFiles
-        objectName: "shortcutPasteFiles"
-        sequence: "Ctrl+V"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        onActivated: window.beillesztAVagolaprol()
-    }
-
     // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat.
     // Diavetítés közben (#8) a vetített kép a célpont, nem a rács-kijelölés.
     function rotateTargetRow() {
@@ -1831,24 +1635,6 @@ ApplicationWindow {
                 return false
         return true
     }
-    Shortcut {
-        id: shortcutRotateRight
-        sequence: "Ctrl+R"
-        enabled: !window._szovegmezoneVanFokusz
-        onActivated: {
-            var row = window.rotateTargetRow()
-            if (row >= 0) controller.rotateRight(row)
-        }
-    }
-    Shortcut {
-        id: shortcutRotateLeft
-        sequence: "Ctrl+Shift+R"
-        enabled: !window._szovegmezoneVanFokusz
-        onActivated: {
-            var row = window.rotateTargetRow()
-            if (row >= 0) controller.rotateLeft(row)
-        }
-    }
     //: #2902: tükrözés — az eredeti könyvtárnézeti kezelőjének két ága
     //: (`0x005e63d6` vízszintes, `0x005e6408` függőleges), a keymapben
     //: 35. *Flip Horizontal* / 36. *Flip Vertical*. MENÜPONT SZÁNDÉKOSAN
@@ -1860,49 +1646,6 @@ ApplicationWindow {
     function tukrozesiSorok() {
         if (window.viewerOpen) return [photoViewer._kijeloltSort()]
         return window.selectedRows()
-    }
-    Shortcut {
-        id: shortcutFlipHorizontal
-        objectName: "flipHorizontalShortcut"
-        sequence: "Ctrl+Shift+H"
-        enabled: !window._szovegmezoneVanFokusz
-        onActivated: controller.flipHorizontalMany(window.tukrozesiSorok())
-    }
-    Shortcut {
-        id: shortcutFlipVertical
-        objectName: "flipVerticalShortcut"
-        sequence: "Ctrl+Shift+V"
-        enabled: !window._szovegmezoneVanFokusz
-        onActivated: controller.flipVerticalMany(window.tukrozesiSorok())
-    }
-
-    // #8: Ctrl+4 — diavetítés (Picasa-billentyű)
-    Shortcut {
-        id: shortcutSlideshow
-        sequence: "Ctrl+4"
-        enabled: !window._szovegmezoneVanFokusz
-        onActivated: window.startSlideshow(-1)
-    }
-    // #12: Ctrl+T — Címkék-panel (Picasa-billentyű); a könyvtár-nézetben él
-    Shortcut {
-        id: shortcutTagsPanel
-        sequence: "Ctrl+T"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        onActivated: if (!window.viewerOpen)
-                         // #1773: a billentyű BILLENT (a menütétel nem) —
-                         // a Ctrl+T nyitja, és zárja is a fiókot
-                         window.tagsPanelOpen ? window.ureseidAFiokot()
-                                              : window.valtsFiokLapot("tags")
-    }
-    // #13: Alt+Enter — Tulajdonságok-panel (Picasa-billentyű)
-    Shortcut {
-        id: shortcutPropertiesPanel
-        sequence: "Alt+Return"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        onActivated: if (!window.viewerOpen)
-                         window.propertiesPanelOpen
-                             ? window.ureseidAFiokot()
-                             : window.valtsFiokLapot("properties")
     }
 
     // -- Időrend bemutató (#5770, Ctrl+5) ------------------------------------
@@ -1987,20 +1730,6 @@ ApplicationWindow {
             window.visibility = Window.FullScreen
         }
     }
-    Shortcut {
-        id: shortcutViewerFullscreen
-        objectName: "viewerFullscreenShortcut"
-        sequence: "F11"
-        enabled: window.viewerOpen && !slideshow.visible
-        onActivated: window.toggleViewerFullscreen()
-    }
-
-    // Az Időrend kijelölés nélkül is megnyitható.
-    Shortcut {
-        sequence: "Ctrl+5"
-        enabled: !window._szovegmezoneVanFokusz && !window.viewerOpen && !slideshow.visible
-        onActivated: window.toggleTimeline()
-    }
 
     // -- diavetítés (#8) ----------------------------------------------------
     // Indítás: viszonyítási pont a néző képe / a rács-kijelölés / az első
@@ -2053,53 +1782,6 @@ ApplicationWindow {
             }
         }
     }
-    // Picasa: F2 = átnevezés, Ctrl+Shift+S = exportálás mappába
-    Shortcut {
-        id: shortcutRename
-        sequence: "F2"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        onActivated: if (!window.viewerOpen && window.photoActionRows().length > 0)
-                         fileOpsDialogs.ensure().openRenameMany(
-                             window.photoActionRows())
-    }
-    Shortcut {
-        id: shortcutExportSelection
-        sequence: "Ctrl+Shift+S"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-        onActivated: if (!window.viewerOpen) exportDialogs.ensure().openForSelection()
-    }
-    // #422: a rács kontextusmenüje `Ctrl+Delete`-et hirdet a lemezről
-    // törléshez (spec 3.) — a billentyű eddig nem élt, csak a Fájl menü
-    // `Delete`-je (ld. ui-audit-menus.md). Mindkettő ugyanoda vezet.
-    Shortcut {
-        id: shortcutDeleteFromDiskGrid
-        objectName: "shortcutDeleteFromDiskGrid"
-        sequence: "Ctrl+Delete"
-        enabled: window._konyvtariGyorsbillentyuEngedelyezve
-                 && window.selectedRows().length > 0
-        // #1619: a `Ctrl+Delete` UGYANAZ a parancs (`0x9c9a`), csak másik
-        // belépő — ezért a #1608-ban készült KÖZÖS elágazáson megy át,
-        // nem másolt logikán. Albumban/Emberek-albumban eltávolít, nem
-        // lemezről töröl (spec 5.); mappában változatlanul töröl.
-        onActivated: picasaMenuBar.activateDeleteCommand()
-    }
-    // #422/#4621: a nézőben `Ctrl+Delete` (#1418; a puszta `Delete` nem
-    // töröl) — nézetfüggő: mappában lemezről töröl, albumban eltávolít
-    Shortcut {
-        id: shortcutDeleteFromDiskViewer
-        objectName: "shortcutDeleteFromDiskViewer"
-        // #1418: a nézőben (jobbklikk-menüs felület) `Ctrl+Delete` a helyes,
-        // nem a puszta `Delete` — a #1154 mérése szerint a `0x9c9a` parancs
-        // felület szerint válik szét: menüsávban `Delete`, helyi menükben
-        // `Ctrl+Delete`. A korábbi `Delete` a #422 azóta felülírt feltevése
-        // volt.
-        sequence: "Ctrl+Delete"
-        enabled: window.viewerOpen && !window._szovegmezoneVanFokusz
-                 && photoViewer._kijeloltSort() >= 0
-        // #4621: a nézőben is a KÖZÖS, nézetfüggő elágazáson megy át
-        // (albumból megnyitott képen eltávolít, nem lemezről töröl)
-        onActivated: picasaMenuBar.activateDeleteCommand()
-    }
 
     // #922: a képtálca tartalma ÁLLAPOTKÉNT, nem közvetlen kötésként. Egy
     // `controller.heldCount`-ra épülő kötés a `controller` null állapotában
@@ -2113,55 +1795,9 @@ ApplicationWindow {
             window.trayHasPictures = controller.heldCount > 0
         }
     }
-    // #4639: a Súgó ▸ Billentyűkódok listájának adatforrása a működő
-    // Shortcut-objektumok sequence tulajdonsága. Kötésváltozás után a súgó
-    // automatikusan az új értéket mutatja.
-    readonly property var keyboardShortcutGroups: [
-        {
-            title: picasaMenuBar.keyboardShortcutGroupTitles.file,
-            sequences: picasaMenuBar.keyboardShortcutSequences.file.concat([
-                shortcutSave.sequence, shortcutRename.sequence,
-                shortcutExportSelection.sequence, shortcutDeleteFromDiskGrid.sequence,
-                shortcutOpenInEditor.sequence, shortcutEmail.sequence
-            ])
-        },
-        {
-            title: picasaMenuBar.keyboardShortcutGroupTitles.edit,
-            sequences: [shortcutSelectAll.sequence, shortcutClearSelection.sequence,
-                shortcutInvertSelection.sequence, shortcutCopyFiles.sequence,
-                shortcutCutFiles.sequence, shortcutPasteFiles.sequence]
-        },
-        {
-            title: picasaMenuBar.keyboardShortcutGroupTitles.view,
-            sequences: picasaMenuBar.keyboardShortcutSequences.view.concat([
-                shortcutToggleRightDrawer.sequence, shortcutSearch.sequence,
-                shortcutSearchF3.sequence, shortcutStarToggle.sequence,
-                shortcutTagsPanelAlt.sequence, shortcutEditView.sequence,
-                shortcutDuplicateSearch.sequence, shortcutFindSimilar.sequence,
-                shortcutClearSimilar.sequence, shortcutSlideshow.sequence,
-                shortcutTagsPanel.sequence, shortcutPropertiesPanel.sequence,
-                shortcutViewerFullscreen.sequence
-            ]).concat(documentTabStrip.keyboardShortcutSequences)
-                .concat(photoViewer.keyboardShortcutSequences)
-        },
-        {
-            title: picasaMenuBar.keyboardShortcutGroupTitles.folder,
-            sequences: picasaMenuBar.keyboardShortcutSequences.folder.concat([
-                shortcutRefreshCurrentFolder.sequence
-            ])
-        },
-        {
-            title: picasaMenuBar.keyboardShortcutGroupTitles.picture,
-            sequences: [shortcutRotateRight.sequence, shortcutRotateLeft.sequence,
-                shortcutFlipHorizontal.sequence, shortcutFlipVertical.sequence,
-                shortcutBatchBlackWhite.sequence, shortcutBatchEnhance.sequence]
-                .concat(trayBar.keyboardShortcutSequences)
-        },
-        {
-            title: picasaMenuBar.keyboardShortcutGroupTitles.help,
-            sequences: [shortcutHelp.sequence, shortcutHelpContext.sequence]
-        }
-    ]
+    // A Súgó által használt főablak-tulajdonság neve változatlan.
+    readonly property alias keyboardShortcutGroups:
+        mainKeyboardShortcuts.keyboardShortcutGroups
 
     menuBar: PicasaMenuBar {
         textEntryHasFocus: window._szovegmezoneVanFokusz
@@ -2571,26 +2207,6 @@ ApplicationWindow {
         var paths = window.photoActionPaths()
         if (paths.length > 0)
             fileOpsController.openPhotosInDefaultEditor(paths)
-    }
-
-    Shortcut {
-        id: shortcutOpenInEditor
-        objectName: "openInEditorShortcut"
-        sequence: "Ctrl+Shift+O"
-        enabled: !!picasaMenuBar && picasaMenuBar.photoActionsEnabled
-                 && !window._szovegmezoneVanFokusz
-        onActivated: window.openSelectionInDefaultEditor()
-    }
-
-    // #4329: a billentyűnek ugyanaz a kijelölési kapuja és kezelője, mint a
-    // Fájl ▸ E-Mail menüpontnak.
-    Shortcut {
-        id: shortcutEmail
-        objectName: "emailShortcut"
-        sequence: "Ctrl+E"
-        enabled: !!picasaMenuBar && picasaMenuBar.photoActionsEnabled
-                 && !window._szovegmezoneVanFokusz
-        onActivated: picasaMenuBar.emailRequested()
     }
 
     // #1798: a küldési út két visszajelzése. A `mailChoiceRequested` a
