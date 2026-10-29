@@ -46,9 +46,11 @@ _FORRASOK = {
     "MoveDatabaseDialog": _MOVEDB,
 }
 
-_FILEOPS = (
-    Path(picasapy.app.__file__).parent / "fileops_controller.py"
-).read_text(encoding="utf-8")
+#: #6174: a fájlművelet-vezérlő mixinekre bomlott; az őr a családot olvassa.
+_FILEOPS = "\n".join(
+    ut.read_text(encoding="utf-8")
+    for ut in sorted(Path(picasapy.app.__file__).parent.glob("fileops_controller*.py"))
+)
 
 
 class TestAzAtalakitas:
