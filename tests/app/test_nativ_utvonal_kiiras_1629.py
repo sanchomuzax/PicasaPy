@@ -22,6 +22,7 @@ ez a fájl ezt teszi.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import picasapy.app
@@ -46,9 +47,11 @@ _FORRASOK = {
     "MoveDatabaseDialog": _MOVEDB,
 }
 
-_FILEOPS = (
-    Path(picasapy.app.__file__).parent / "fileops_controller.py"
-).read_text(encoding="utf-8")
+#: #6174: a fájlművelet-vezérlő mixinekre bomlott; az őr a családot olvassa.
+_FILEOPS = "\n".join(
+    ut.read_text(encoding="utf-8")
+    for ut in sorted(Path(picasapy.app.__file__).parent.glob("fileops_controller*.py"))
+)
 
 
 class TestAzAtalakitas:
@@ -100,7 +103,8 @@ class TestASlot:
         # is bukhatott — és fordítva, egy hosszabb indoklás kiszorította
         # volna a mért sort.
         blokk = fuggveny_torzs(_FILEOPS, "def toLocalPath(")
-        assert "return to_local_path(path_or_url)" in blokk
+        # #6174: a mixin a vezérlőmodulon át hívja (a tesztek ott foltozzák)
+        assert re.search(r"return (?:\w+\.)?to_local_path\(path_or_url\)", blokk)
         # Saját, kézi levágás NEM lehet benne — az lenne a másolás.
         assert "replace(" not in blokk
 
