@@ -178,327 +178,28 @@ Item {
                 ? movieTabsComponent.movieSeconds.value : 40) / 10)
     readonly property real previewDurationSeconds:
         previewSlideDurationSeconds * previewItemCount
-    function formatPreviewTime(seconds) {
-        var total = Math.max(0, Math.floor(seconds))
-        var hours = Math.floor(total / 3600)
-        var minutes = Math.floor(total / 60) % 60
-        var remainingSeconds = total % 60
-        function ketjegyu(value) {
-            return value < 10 ? "0" + value : String(value)
-        }
-        return ketjegyu(hours) + ":" + ketjegyu(minutes)
-                + ":" + ketjegyu(remainingSeconds)
-    }
-    function togglePreviewPlayback() {
-        if (!previewItemCount) {
-            moviePreviewTimer.stop()
-        } else if (moviePreviewTimer.running) {
-            moviePreviewTimer.stop()
-        } else {
-            setPreviewIndex(0)
-            moviePreviewTimer.start()
-        }
-    }
-    function setPreviewIndex(index) {
-        previewIndex = Math.max(0, Math.min(previewItemCount - 1, index))
-        previewSource = previewIndex < movieClipSources.length
-            ? movieClipSources[previewIndex] : ""
-        stopPreviewTransition()
-        previewFromIndex = -1
-        previewTransitionProgress = 1
-        previewAwaitingTransitionFrame = false
-        previewGenerationFloor = previewLatestRequestGeneration
-        moviePreviewTransitionFallbackTimer.stop()
-        requestPreviewFrame()
-        prefetchNextPreviewFrame()
-    }
-    function stopPreviewTransition() {
-        previewResettingTransition = true
-        moviePreviewTransition.stop()
-        previewResettingTransition = false
-    }
-    function refreshPreviewAfterItemsChanged() {
-        var itemCount = movieClipSources.length + movieSlides.length
-        stopPreviewTransition()
-        moviePreviewFrameTimer.stop()
-        moviePreviewTransitionFallbackTimer.stop()
-        previewAwaitingTransitionFrame = false
-        previewGenerationFloor = previewLatestRequestGeneration
-        previewFromIndex = -1
-        previewTransitionProgress = 1
-        if (itemCount < 1) {
-            previewIndex = 0
-            previewSource = ""
-            previewTransitionFrameSource = ""
-            return
-        }
-        previewIndex = Math.max(0, Math.min(itemCount - 1, previewIndex))
-        previewSource = previewIndex < movieClipSources.length
-            ? String(movieClipSources[previewIndex]) : ""
-        // Egy gépelés/szerkesztés több tételváltozást is jelez (#4852):
-        // a kérés rövid összevonás után, legfeljebb egyszer indul.
-        movieItemsRefreshTimer.restart()
-    }
-    function requestPreviewFrame() {
-        if (!movieDialog.visible || !previewTransitionServiceAvailable
-                || movieClipSources.length + movieSlides.length < 1
-                || moviePreviewComponent.previewViewport.width < 16
-                || moviePreviewComponent.previewViewport.height < 16)
-            return 0
-        var outgoingIndex = previewFromIndex >= 0
-            ? previewFromIndex : previewIndex
-        var outgoingSlide = outgoingIndex >= movieClipSources.length
-            ? movieSlides[outgoingIndex - movieClipSources.length] : null
-        var incomingSlide = previewIndex >= movieClipSources.length
-            ? movieSlides[previewIndex - movieClipSources.length] : null
-        var hostWindow = moviePreviewComponent.previewViewport.Window.window
-        var devicePixelRatio = hostWindow && hostWindow.devicePixelRatio > 0
-            ? hostWindow.devicePixelRatio : 1
-        var generation = Number(controller.requestMovieTransitionPreview(
-            outgoingIndex < movieClipSources.length
-                ? String(movieClipSources[outgoingIndex]) : "",
-            previewIndex < movieClipSources.length
-                ? String(movieClipSources[previewIndex]) : "",
-            previewTransitionKind,
-            previewTransitionProgress,
-            previewOutputWidth,
-            previewOutputHeight,
-            movieCropToFitEnabled,
-            movieShowCaptionsEnabled,
-            movieShowDatesEnabled,
-            outgoingSlide ? JSON.stringify(outgoingSlide) : "",
-            incomingSlide ? JSON.stringify(incomingSlide) : "",
-            previewActualSizeEnabled,
-            moviePreviewComponent.previewViewport.width,
-            moviePreviewComponent.previewViewport.height,
-            devicePixelRatio
-        ))
-        if (generation > previewLatestRequestGeneration)
-            previewLatestRequestGeneration = generation
-        return generation
-    }
-    function prefetchNextPreviewFrame() {
-        if (!movieDialog.visible || !previewTransitionServiceAvailable
-                || previewItemCount < 2
-                || typeof controller.prefetchMovieTransitionPreview !== "function")
-            return
-        var nextIndex = (previewIndex + 1) % previewItemCount
-        var nextSlide = nextIndex >= movieClipSources.length
-            ? movieSlides[nextIndex - movieClipSources.length] : null
-        var hostWindow = moviePreviewComponent.previewViewport.Window.window
-        var devicePixelRatio = hostWindow && hostWindow.devicePixelRatio > 0
-            ? hostWindow.devicePixelRatio : 1
-        controller.prefetchMovieTransitionPreview(
-            nextIndex < movieClipSources.length
-                ? String(movieClipSources[nextIndex]) : "",
-            nextSlide ? JSON.stringify(nextSlide) : "",
-            previewOutputWidth,
-            previewOutputHeight,
-            movieCropToFitEnabled,
-            movieShowCaptionsEnabled,
-            movieShowDatesEnabled,
-            previewActualSizeEnabled,
-            moviePreviewComponent.previewViewport.width,
-            moviePreviewComponent.previewViewport.height,
-            devicePixelRatio
-        )
-    }
-    function advancePreview() {
-        if (!previewItemCount) {
-            moviePreviewTimer.stop()
-            return
-        }
-        previewFromIndex = previewIndex
-        previewIndex = (previewIndex + 1) % previewItemCount
-        previewSource = previewIndex < movieClipSources.length
-            ? movieClipSources[previewIndex] : ""
-        if (previewTransitionKind === "cut") {
-            previewFromIndex = -1
-            previewTransitionProgress = 1
-            stopPreviewTransition()
-            requestPreviewFrame()
-            return
-        }
-        previewTransitionProgress = 0
-        previewAwaitingTransitionFrame = false
-        var generation = requestPreviewFrame()
-        if (generation > 0) {
-            previewAwaitingTransitionGeneration = generation
-            previewAwaitingTransitionFrame = true
-            moviePreviewTransitionFallbackTimer.restart()
-            return
-        }
-        moviePreviewTransition.restart()
-    }
-    function seekPreview(seconds) {
-        if (!previewItemCount) return
-        setPreviewIndex(Math.min(
-            previewItemCount - 1,
-            Math.max(0, Math.floor(seconds / previewSlideDurationSeconds)))
-        )
-    }
-    // A fotó mappájának neve az URL utolsó előtti eleme (a Picasa „mappa > fájl" alakja).
-    function movieFolderName(source) {
-        var parts = String(source).split("/")
-        if (parts.length < 2) return ""
-        try {
-            return decodeURIComponent(parts[parts.length - 2])
-        } catch (error) {
-            return parts[parts.length - 2]
-        }
-    }
-    function movieInfoText() {
-        var photoCount = movieClipSources.length
-        var total = photoCount + movieSlides.length
-        if (!total) return ""
-        var selected = movieTabsComponent.movieClipList.currentIndex
-        if (selected < photoCount) selected = previewIndex
-        var name, width, height, position
-        if (selected >= photoCount) {
-            var slideIndex = selected - photoCount
-            if (slideIndex < 0 || slideIndex >= movieSlides.length) return ""
-            name = qsTr("Text Slide")
-            var movieSize = sizeOptions[movieResolutionIndex]
-            width = movieSize[0]
-            height = movieSize[1]
-            position = photoCount + slideIndex + 1
-        } else {
-            var names = typeof controller !== "undefined" && controller && typeof controller.movieClipNames === "function"
-                ? controller.movieClipNames([movieClipSources[selected]]) : []
-            name = names.length ? names[0] : ""
-            var folder = movieFolderName(movieClipSources[selected])
-            if (folder.length) name = folder + " > " + name
-            var dimensions = typeof controller !== "undefined" && controller && typeof controller.moviePreviewImageSize === "function"
-                ? controller.moviePreviewImageSize(
-                    String(movieClipSources[selected])) : []
-            width = dimensions.length > 1 && dimensions[0] > 0
-                ? dimensions[0] : movieDialog.previewImageWidth
-            height = dimensions.length > 1 && dimensions[1] > 0
-                ? dimensions[1] : movieDialog.previewImageHeight
-            position = selected + 1
-        }
-        return qsTr("%1     %2x%3 pixels")
-                .arg(name).arg(width).arg(height)
-                + " " + qsTr("(%1 of %2)").arg(position).arg(total)
-    }
-    function selectMovieFilmstripItem(index) {
-        movieTabsComponent.movieClipList.currentIndex = index
-        if (index < movieClipSources.length) {
-            moviePreviewTimer.stop()
-            setPreviewIndex(index)
-            movieSlideSelection = []
-            movieSlideEditingIndex = -1
-            if (movieTabsComponent.movieSlideList.currentIndex >= 0)
-                movieTabsComponent.movieSlideList.currentIndex = -1
-        } else {
-            moviePreviewTimer.stop()
-            var slideIndex = index - movieClipSources.length
-            if (slideIndex < 0 || slideIndex >= movieSlides.length) return
-            movieSlideSelection = [slideIndex]
-            movieSlideEditingIndex = -1
-            movieTabsComponent.movieSlideList.currentIndex = slideIndex
-            setPreviewIndex(index)
-        }
-    }
-    function togglePreviewFullscreen() {
-        var hostWindow = moviePreviewComponent.previewPanel.Window.window
-        if (!hostWindow) return
-        if (previewOwnsFullscreen
-                && hostWindow.visibility === Window.FullScreen) {
-            hostWindow.visibility = previewWindowVisibilityBeforeFullscreen
-            previewOwnsFullscreen = false
-        } else if (hostWindow.visibility !== Window.FullScreen) {
-            previewWindowVisibilityBeforeFullscreen = hostWindow.visibility
-            hostWindow.visibility = Window.FullScreen
-            previewOwnsFullscreen = true
-        }
-    }
-    function restorePreviewFullscreen() {
-        var hostWindow = moviePreviewComponent.previewPanel.Window.window
-        if (previewOwnsFullscreen && hostWindow
-                && hostWindow.visibility === Window.FullScreen) {
-            hostWindow.visibility = previewWindowVisibilityBeforeFullscreen
-            previewOwnsFullscreen = false
-        }
-    }
-    function openForSelection() {
-        // #455: tartott képekkel a tálca a forrás — ilyenkor a
-        // rácsban nem is kell kijelölésnek lennie
-        openForRows(
-            movieDialog.appWindow.selectedIndexes,
-            movieDialog.trayHasPictures,
-            true)
-    }
-    function useFolderMusicAsDefault() {
-        if (audioFileFromFolderMusic) audioFile = ""
-        audioFileFromFolderMusic = false
-        if (!(typeof controller !== "undefined" && controller) || typeof controller.filmMusicForSources !== "function")
-            return
-        var configured = controller.filmMusicForSources(movieClipSources)
-        if (configured) {
-            audioFile = configured
-            audioFileFromFolderMusic = true
-        }
-    }
+    function formatPreviewTime(seconds) { return movieMakerPreviewLogic.formatPreviewTime(seconds) }
+    function togglePreviewPlayback() { movieMakerPreviewLogic.togglePreviewPlayback() }
+    function setPreviewIndex(index) { movieMakerPreviewLogic.setPreviewIndex(index) }
+    function stopPreviewTransition() { movieMakerPreviewLogic.stopPreviewTransition() }
+    function refreshPreviewAfterItemsChanged() { movieMakerPreviewLogic.refreshPreviewAfterItemsChanged() }
+    function requestPreviewFrame() { return movieMakerPreviewLogic.requestPreviewFrame() }
+    function prefetchNextPreviewFrame() { movieMakerPreviewLogic.prefetchNextPreviewFrame() }
+    function advancePreview() { movieMakerPreviewLogic.advancePreview() }
+    function seekPreview(seconds) { movieMakerPreviewLogic.seekPreview(seconds) }
+    function movieFolderName(source) { return movieMakerPreviewLogic.movieFolderName(source) }
+    function movieInfoText() { return movieMakerPreviewLogic.movieInfoText() }
+    function selectMovieFilmstripItem(index) { movieMakerPreviewLogic.selectMovieFilmstripItem(index) }
+    function togglePreviewFullscreen() { movieMakerPreviewLogic.togglePreviewFullscreen() }
+    function restorePreviewFullscreen() { movieMakerPreviewLogic.restorePreviewFullscreen() }
+    function openForSelection() { movieMakerActions.openForSelection() }
+    function useFolderMusicAsDefault() { movieMakerActions.useFolderMusicAsDefault() }
     function openForRows(rows, allowTray, preferTray) {
-        if ((!rows || rows.length === 0) && !allowTray) return
-        personMovieMode = false
-        applyDefaultSize()
-        movieClipIndexes = rows ? rows.slice(0) : []
-        movieClipSources = typeof controller !== "undefined" && controller
-            ? (preferTray ? controller.movieSourceUrls(movieClipIndexes)
-                : controller.selectedMovieSourceUrls(movieClipIndexes))
-            : []
-        useFolderMusicAsDefault()
-        movieInitialPhotoCount = movieClipSources.length
-        movieSlides = []
-        movieSlideSelection = []
-        movieSlideEditingIndex = -1
-        movieTabsComponent.movieClipList.currentIndex = -1
-        movieTabsComponent.movieSlideList.currentIndex = -1
-        loadTextSlide()
-        setPreviewIndex(0)
-        targetFile = ""
-        open()
+        movieMakerActions.openForRows(rows, allowTray, preferTray)
     }
-    function openForSources(sources) {
-        if (!sources || sources.length === 0) return
-        personMovieMode = true
-        applyDefaultSize()
-        movieClipIndexes = []
-        movieClipSources = sources.slice(0)
-        useFolderMusicAsDefault()
-        movieInitialPhotoCount = movieClipSources.length
-        movieSlides = []
-        movieSlideSelection = []
-        movieSlideEditingIndex = -1
-        movieTabsComponent.movieClipList.currentIndex = -1
-        movieTabsComponent.movieSlideList.currentIndex = -1
-        loadTextSlide()
-        setPreviewIndex(0)
-        targetFile = ""
-        open()
-    }
-    function selectedPictureCaption() {
-        if (!(typeof controller !== "undefined" && controller)
-                || !controller.photos || typeof controller.photos.captionAt !== "function")
-            return ""
-        var row = movieDialog.appWindow.selectedIndex
-        if (row < 0 && movieDialog.appWindow.selectedIndexes.length)
-            row = movieDialog.appWindow.selectedIndexes[0]
-        return row >= 0 ? controller.photos.captionAt(row) : ""
-    }
-    function openTitleDialog() {
-        movieDialog.movieDialogs.movieTitleDialog.openForCaption(selectedPictureCaption(), {
-            text: movieTabsComponent.movieSlideText.text,
-            font: movieTabsComponent.movieFontBox.currentText,
-            size: textSizes[movieTabsComponent.movieTextSizeBox.currentIndex],
-            style: movieTabsComponent.movieTextStyleBox.currentIndex,
-            bold: movieTabsComponent.movieBoldBox.checked,
-            italic: movieTabsComponent.movieItalicBox.checked,
-            outline: movieTabsComponent.movieOutlineBox.checked,
-        })
-    }
+    function openForSources(sources) { movieMakerActions.openForSources(sources) }
+    function selectedPictureCaption() { return movieMakerActions.selectedPictureCaption() }
+    function openTitleDialog() { movieMakerActions.openTitleDialog() }
         function addTextSlide(slide) { movieSlideLogic.addTextSlide(slide) }
         function loadTextSlide() { movieSlideLogic.loadTextSlide() }
         function updateSelectedTextSlide() { movieSlideLogic.updateSelectedTextSlide() }
@@ -507,94 +208,14 @@ Item {
         function moveTextSlides(targetIndex) { movieSlideLogic.moveTextSlides(targetIndex) }
         function editTextSlide(index) { movieSlideLogic.editTextSlide(index) }
         function updateSelectedText(text) { movieSlideLogic.updateSelectedText(text) }
-    function recomputeMovie() {
-        // #5668: az eredeti minden kézi újraszámolás előtt kérdez,
-        // akkor is, ha nincs eltávolítandó szövegdia.
-        movieRecomputeConfirm.ask(
-            "askapplyconfirm",
-            qsTr("This will generate a new movie removing all the text slides you added. Are you sure?")
-        )
-    }
-    function applyMovieRecompute() {
-        movieSlides = []
-        movieSlideSelection = []
-        movieSlideEditingIndex = -1
-        movieTabsComponent.movieClipList.currentIndex = -1
-        movieTabsComponent.movieSlideList.currentIndex = -1
-        loadTextSlide()
-        if (typeof controller !== "undefined" && controller)
-            movieClipSources = controller.movieSourceUrls(movieClipSources)
-        setPreviewIndex(0)
-        moviePreviewTimer.stop()
-        movieTabsComponent.movieTabs.currentIndex = 0
-    }
-    function addSelectedClips() {
-        if (!(typeof controller !== "undefined" && controller)) return
-        var sources = movieDialog.movieClipSources.slice(0)
-        controller.selectedMovieSourceUrls(
-            movieDialog.appWindow.selectedIndexes).forEach(function(url) {
-            if (sources.indexOf(url) < 0) sources.push(url)
-        })
-        movieDialog.movieClipSources = sources
-    }
-    function deleteSelectedClip() {
-        var selected = movieTabsComponent.movieClipList.currentIndex
-        if (selected < 0) return
-        if (selected >= movieDialog.movieClipSources.length) {
-            movieDialog.removeTextSlide()
-            return
-        }
-        var sources = movieDialog.movieClipSources.slice(0)
-        sources.splice(selected, 1)
-        movieDialog.movieClipSources = sources
-        movieTabsComponent.movieClipList.currentIndex = Math.min(
-            selected,
-            sources.length + movieDialog.movieSlides.length - 1)
-    }
-    function exportMovie() {
-        if (previousMoviePath.length > 0) {
-            movieDialog.movieDialogs.movieReplaceDialog.open()
-            return
-        }
-        startMovieExport()
-    }
-    function replacePreviousMovie() {
-        targetFile = previousMoviePath
-        startMovieExport()
-    }
-    function createNewMovie() {
-        targetFile = ""
-        startMovieExport()
-    }
-    function startMovieExport() {
-        if (!(typeof controller !== "undefined" && controller)) return
-        var meret = sizeOptions[movieResolutionIndex]
-        var sources = movieClipSources.slice(0)
-        if (movieTabsComponent.movieSoloClip.checked && sources.length) {
-            var selected = movieTabsComponent.movieClipList.currentIndex < 0
-                    || movieTabsComponent.movieClipList.currentIndex >= sources.length
-                ? 0 : movieTabsComponent.movieClipList.currentIndex
-            sources = [sources[selected]]
-        }
-        sources = sources.slice(0, movieUsedPhotoCount)
-        movieDialog.movieDialogs.movieProgressDialog.done = 0
-        movieDialog.movieDialogs.movieProgressDialog.total = sources.length
-                + movieSlides.length
-        movieDialog.movieDialogs.movieProgressDialog.open()
-        controller.exportMovie(
-            sources, targetFile, meret[1], movieTabsComponent.movieSeconds.value / 10.0,
-            meret[0], transitionKeys[transitionIndex], movieTabsComponent.movieOverlapSlider.value,
-            audioFile, audioOption, movieSlides, {
-                ordering: movieOrdering,
-                showcaptions: movieShowCaptionsEnabled,
-                showdates: movieShowDatesEnabled,
-                cropfit: movieCropToFitEnabled,
-                removelowresfaces: movieRemoveLowResFacesEnabled,
-                faceMovie: movieDialog.personMovieMode,
-                burstmodethresh: movieBurstThresholdSeconds,
-            })
-        close()
-    }
+    function recomputeMovie() { movieMakerActions.recomputeMovie() }
+    function applyMovieRecompute() { movieMakerActions.applyMovieRecompute() }
+    function addSelectedClips() { movieMakerActions.addSelectedClips() }
+    function deleteSelectedClip() { movieMakerActions.deleteSelectedClip() }
+    function exportMovie() { movieMakerActions.exportMovie() }
+    function replacePreviousMovie() { movieMakerActions.replacePreviousMovie() }
+    function createNewMovie() { movieMakerActions.createNewMovie() }
+    function startMovieExport() { movieMakerActions.startMovieExport() }
     onVisibleChanged: {
         if (visible) {
             forceActiveFocus()
@@ -603,11 +224,11 @@ Item {
             return
         }
         movieDialog.projektbolNyilt = false
-        movieItemsRefreshTimer.stop()
-        moviePreviewTimer.stop()
-        moviePreviewTransition.stop()
-        if (moviePreviewMusicLoader.item)
-            moviePreviewMusicLoader.item.stop()
+        moviePreviewRuntime.itemsRefreshTimer.stop()
+        moviePreviewRuntime.previewTimer.stop()
+        moviePreviewRuntime.transition.stop()
+        if (moviePreviewRuntime.musicLoader.item)
+            moviePreviewRuntime.musicLoader.item.stop()
         movieDialog.restorePreviewFullscreen()
     }
     Rectangle {
@@ -619,7 +240,7 @@ Item {
             anchors.fill: parent
             movieDialog: movieDialog
             options: movieOptionsComponent
-            moviePreviewTimer: moviePreviewTimer
+            moviePreviewTimer: moviePreviewRuntime.previewTimer
         }
         MovieMakerOptions {
             id: movieOptionsComponent
@@ -653,8 +274,8 @@ Item {
             id: moviePreviewComponent
             anchors.fill: parent
             movieDialog: movieDialog
-            resizeTimer: moviePreviewResizeTimer
-            moviePreviewTimer: moviePreviewTimer
+            resizeTimer: moviePreviewRuntime.resizeTimer
+            moviePreviewTimer: moviePreviewRuntime.previewTimer
         }
         MovieMakerFilmstrip {
             anchors.fill: parent
@@ -666,6 +287,24 @@ Item {
             id: movieSlideLogic
             movieDialog: movieDialog
             tabs: movieTabsComponent
+        }
+        MovieMakerPreviewLogic {
+            id: movieMakerPreviewLogic
+            movieDialog: movieDialog
+            tabs: movieTabsComponent
+            previewComponent: moviePreviewComponent
+            previewTimer: moviePreviewRuntime.previewTimer
+            transition: moviePreviewRuntime.transition
+            transitionFallbackTimer: moviePreviewRuntime.transitionFallbackTimer
+            itemsRefreshTimer: moviePreviewRuntime.itemsRefreshTimer
+            frameTimer: moviePreviewRuntime.frameTimer
+        }
+        MovieMakerActions {
+            id: movieMakerActions
+            movieDialog: movieDialog
+            tabs: movieTabsComponent
+            confirmDialog: movieRecomputeConfirm
+            previewTimer: moviePreviewRuntime.previewTimer
         }
 function jelezdAFilmAtmenetElonezetet(source, generation) {
     var readyGeneration = Number(generation)
@@ -679,116 +318,16 @@ function jelezdAFilmAtmenetElonezetet(source, generation) {
             && readyGeneration
                 === movieDialog.previewAwaitingTransitionGeneration) {
         movieDialog.previewAwaitingTransitionFrame = false
-        moviePreviewTransitionFallbackTimer.stop()
-        if (!moviePreviewTransition.running)
-            moviePreviewTransition.restart()
+        moviePreviewRuntime.transitionFallbackTimer.stop()
+        if (!moviePreviewRuntime.transition.running)
+            moviePreviewRuntime.transition.restart()
     }
 }
 
-Connections {
-    target: moviePreviewTransition
-    function onRunningChanged() {
-        if (movieDialog.previewResettingTransition) return
-        if (moviePreviewTransition.running) return
-        moviePreviewFrameTimer.stop()
-        movieDialog.requestPreviewFrame()
-    }
-}
-
-Timer {
-    id: moviePreviewTransitionFallbackTimer
-    objectName: "moviePreviewTransitionFallbackTimer"
-    interval: 100
-    repeat: false
-    onTriggered: {
-        if (!movieDialog.previewAwaitingTransitionFrame) return
-        movieDialog.previewAwaitingTransitionFrame = false
-        moviePreviewTransition.restart()
-    }
-}
-
-Timer {
-    id: movieItemsRefreshTimer
-    objectName: "movieItemsRefreshTimer"
-    interval: 120
-    repeat: false
-    onTriggered: {
-        movieDialog.requestPreviewFrame()
-        movieDialog.prefetchNextPreviewFrame()
-    }
-}
-
-Timer {
-    id: moviePreviewResizeTimer
-    objectName: "moviePreviewResizeTimer"
-    interval: 120
-    repeat: false
-    onTriggered: movieDialog.requestPreviewFrame()
-}
-
-Timer {
-    id: moviePreviewFrameTimer
-    objectName: "moviePreviewFrameTimer"
-    interval: Math.max(1, Math.round(1000 / movieDialog.previewFramesPerSecond))
-    repeat: true
-    running: moviePreviewTransition.running
-        && !moviePreviewTransition.paused
-        && !movieDialog.previewAwaitingTransitionFrame
-    onTriggered: movieDialog.requestPreviewFrame()
-}
-
-Timer {
-    id: moviePreviewTimer
-    objectName: "moviePreviewTimer"
-    interval: Math.max(
-        500,
-        (movieTabsComponent.movieSeconds && movieTabsComponent.movieSeconds.value !== undefined
-            ? movieTabsComponent.movieSeconds.value : 40) * 100)
-    repeat: true
-    onRunningChanged: {
-        if (!moviePreviewMusicLoader.item) return
-        if (running) moviePreviewMusicLoader.item.play()
-        else moviePreviewMusicLoader.item.pause()
-    }
-    onTriggered: movieDialog.advancePreview()
-}
-
-Loader {
-    id: moviePreviewMusicLoader
-    objectName: "moviePreviewMusicLoader"
-    active: movieDialog.visible && moviePreviewTimer.running
-        && movieDialog.audioFile.length > 0
-    source: active ? "MoviePreviewMusicPlayer.qml" : ""
-    property string audioSource: movieDialog.audioFile
-    property real outputVolume: movieDialog.previewAudioVolume
-    property bool loopMusic: movieDialog.audioOption === 2
-    onLoaded: {
-        item.source = audioSource
-        item.volume = outputVolume
-        item.loop = loopMusic
-        if (moviePreviewTimer.running) item.play()
-    }
-    onAudioSourceChanged: {
-        if (!item) return
-        item.source = audioSource
-        if (audioSource && moviePreviewTimer.running) item.play()
-        else if (!audioSource) item.stop()
-    }
-    onOutputVolumeChanged: if (item) item.volume = outputVolume
-    onLoopMusicChanged: if (item) item.loop = loopMusic
-}
-
-NumberAnimation {
-    id: moviePreviewTransition
-    objectName: "moviePreviewTransition"
-    target: movieDialog
-    property: "previewTransitionProgress"
-    from: 0
-    to: 1
-    duration: Math.max(
-        1,
-        (movieTabsComponent.movieOverlapSlider && movieTabsComponent.movieOverlapSlider.value !== undefined
-            ? movieTabsComponent.movieOverlapSlider.value : 0.5) * 1000)
+MovieMakerPreviewRuntime {
+    id: moviePreviewRuntime
+    movieDialog: movieDialog
+    tabs: movieTabsComponent
 }
 
 ConfirmDialog {

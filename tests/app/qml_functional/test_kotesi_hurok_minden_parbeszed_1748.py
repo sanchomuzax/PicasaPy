@@ -46,12 +46,20 @@ _KOTELEZO_VALTOZATOK = {
     "MovieMakerDialog": (
         "appWindow: ({}); movieDialogs: ({}); trayHasPictures: false",
     ),
+    "MovieMakerActions": (
+        "movieDialog: ({}); tabs: ({}); confirmDialog: ({}); previewTimer: ({})",
+    ),
     "MovieMakerDialogs": ("movieDialog: ({})",),
     "MovieMakerFilmstrip": (
         "movieDialog: ({}); tabs: ({}); previewPanel: ({ x: 0, width: 0 })",
     ),
     "MovieMakerOptions": ("movieDialog: ({}); pagesWidth: 0",),
     "MovieMakerPreview": ("movieDialog: ({}); resizeTimer: ({})",),
+    "MovieMakerPreviewLogic": (
+        "movieDialog: ({}); tabs: ({}); previewComponent: ({}); previewTimer: ({}); "
+        "transition: ({}); transitionFallbackTimer: ({}); itemsRefreshTimer: ({}); frameTimer: ({})",
+    ),
+    "MovieMakerPreviewRuntime": ("movieDialog: ({}); tabs: ({})",),
     "MovieMakerSlideLogic": ("movieDialog: ({}); tabs: ({})",),
     "MovieMakerTabs": ("movieDialog: ({}); options: ({})",),
     # #6136: a főablak jobb oldali fiókja kötelező gazda-tulajdonságokat kér
