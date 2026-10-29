@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.284] - 2026-10-29
+
+- A fájlművelet-vezérlő kisebb, megnevezett részekre bomlott, változatlan működéssel (#6174).
+- Az Időrend nézetének vizuális panelje önálló QML-komponensbe került, változatlan képpel és működéssel (#6176).
+
+## [0.9.283] - 2026-10-29
+
+- A főablak könyvtárnézete és jobb oldali fiókja önálló QML-komponensbe került, változatlan működéssel (#6136).
+- Az alkalmazás indítója kisebb, megnevezett modulokra bomlott, változatlan működéssel (#6155).
+- A kollázsvezérlő vászon- és klipműveletei külön modulba kerültek, a működés változatlan maradt (#6169).
+
 ## [0.9.282] - 2026-10-29
 
 - A szerkesztés mentési kódja kisebb, átlátható modulokra bomlott, a működése változatlan maradt (#6168).
