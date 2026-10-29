@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.294] - 2026-10-29
+
+- A főablak menüsorának bekötése külön QML-komponensbe került, változatlan megjelenéssel és működéssel (#6136).
+
 ## [0.9.293] - 2026-10-29
 
 - A Nyomtatás párbeszéd kisebb, önálló részekre bomlik, változatlan működéssel. (#6216).
