@@ -85,6 +85,7 @@ LayoutSegment 1.0 LayoutSegment.qml
 AaUtkozesDialog 1.0 AaUtkozesDialog.qml
 EndEditModalityDialog 1.0 EndEditModalityDialog.qml
 RightDrawer 1.0 RightDrawer.qml
+MainRightDrawer 1.0 MainRightDrawer.qml
 DrawerHeaderButton 1.0 DrawerHeaderButton.qml
 TagsPanel 1.0 TagsPanel.qml
 KeywordsDialog 1.0 KeywordsDialog.qml
@@ -273,6 +274,7 @@ PhotoViewerLeftDrawer 1.0 PhotoViewerLeftDrawer.qml
 PhotoViewerPhotoArea 1.0 PhotoViewerPhotoArea.qml
 MainSlideshow 1.0 MainSlideshow.qml
 MainWindowToolbar 1.0 MainWindowToolbar.qml
+MainLibraryCanvas 1.0 MainLibraryCanvas.qml
 PhotoViewerStraightenGrid 1.0 PhotoViewerStraightenGrid.qml
 PhotoViewerTiltToolBar 1.0 PhotoViewerTiltToolBar.qml
 PhotoViewerElotteImage 1.0 PhotoViewerElotteImage.qml

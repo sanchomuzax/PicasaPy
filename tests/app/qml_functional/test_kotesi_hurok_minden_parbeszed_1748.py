@@ -54,6 +54,12 @@ _KOTELEZO_VALTOZATOK = {
     "MovieMakerPreview": ("movieDialog: ({}); resizeTimer: ({})",),
     "MovieMakerSlideLogic": ("movieDialog: ({}); tabs: ({})",),
     "MovieMakerTabs": ("movieDialog: ({}); options: ({})",),
+    # #6136: a főablak jobb oldali fiókja kötelező gazda-tulajdonságokat kér
+    "MainRightDrawer": (
+        "hostWindow: ({}); hostController: null; hostToolbar: ({}); "
+        "hostPhotoViewer: ({}); hostMainSplit: ({}); "
+        "hostMainLibraryCanvas: ({ unnamedFacesView: ({}) }); hostMainDialogs: ({})",
+    ),
 }
 _ALTALANOS_VALTOZATOK = (
     "", "appWindow: null", "panel: null", "appWindow: null; panel: null"

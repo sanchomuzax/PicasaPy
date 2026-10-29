@@ -15,7 +15,14 @@ from pathlib import Path
 
 import pytest
 
-MAIN_QML = Path(__file__).resolve().parents[2] / "src" / "picasapy" / "app" / "qml" / "Main.qml"
+QML_MAPPA = Path(__file__).resolve().parents[2] / "src" / "picasapy" / "app" / "qml"
+#: #6136: a főablak fiókja és könyvtárnézete önálló komponensbe került; a kötések
+#: a főablak és a kiemelt komponensei közül bárhol lehetnek.
+FOABLAK_CSALAD = (
+    QML_MAPPA / "Main.qml",
+    QML_MAPPA / "PicasaPy" / "MainRightDrawer.qml",
+    QML_MAPPA / "PicasaPy" / "MainLibraryCanvas.qml",
+)
 
 
 @pytest.mark.parametrize(
@@ -24,9 +31,9 @@ MAIN_QML = Path(__file__).resolve().parents[2] / "src" / "picasapy" / "app" / "q
         "faceScanController.unnamedCount ?? 0",
         "faceScanController.scanPercent ?? -1",
         "faceScanController.ignoredCount ?? 0",
-        "window._faceScanController.sortingPercent ?? -1",
+        "_faceScanController.sortingPercent ?? -1",
     ],
 )
 def test_az_arcszamlalo_kotesnek_van_tartaleka(kotes: str) -> None:
     """# rontás-kontroll: a `?? x` nélkül a kötés undefined-ot írna int-be."""
-    assert kotes in MAIN_QML.read_text(encoding="utf-8")
+    assert any(kotes in f.read_text(encoding="utf-8") for f in FOABLAK_CSALAD)

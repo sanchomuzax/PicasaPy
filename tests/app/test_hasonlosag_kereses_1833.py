@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import re
 import picasapy.app
 import pytest
 from PySide6.QtCore import QSettings
@@ -24,9 +25,12 @@ from tests.support.py_blokk import fuggveny_torzs
 _SIM = (
     Path(picasapy.app.__file__).parent / "similarity_controller.py"
 ).read_text(encoding="utf-8")
-_MAIN = (
-    Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
-).read_text(encoding="utf-8")
+#: #6136: a főablak könyvtárnézete a MainLibraryCanvas.qml-be költözött; az őr a
+#: főablak komponenscsaládját olvassa.
+_MAIN = "\n".join(
+    (Path(picasapy.app.__file__).parent / "qml" / ut).read_text(encoding="utf-8")
+    for ut in ("Main.qml", "PicasaPy/MainLibraryCanvas.qml", "PicasaPy/MainRightDrawer.qml")
+)
 _MENU = (
     Path(picasapy.app.__file__).parent
     / "qml" / "PicasaPy" / "PhotoContextMenu.qml"
@@ -222,7 +226,8 @@ class TestABekotes:
 
     def test_az_epules_savja_ott_van(self):
         assert 'objectName: "similarityUpdatingBar"' in _MAIN
-        assert "controller.similarityUpdating" in _MAIN
+        # #6136: a kiemelt komponensben a vezérlő neve hostController
+        assert re.search(r"\b(?:controller|hostController)\.similarityUpdating", _MAIN)
 
     def test_a_frissites_NEM_dobja_vissza_a_mappaba(self):
         """A #1830 tanulsága: nézet-mód ág nélkül egy frissítés némán

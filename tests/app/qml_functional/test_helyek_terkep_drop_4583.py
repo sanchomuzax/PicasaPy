@@ -255,10 +255,11 @@ def test_a_valodi_terkep_droparea_a_pontbol_koordinatat_kepez():
     places_map = (
         app_qml / "PicasaPy" / "PlacesMap.qml"
     ).read_text(encoding="utf-8")
-    main_qml = (app_qml / "Main.qml").read_text(encoding="utf-8")
+    # #6136: a rács a MainLibraryCanvas.qml-be költözött, a gazdaablak ott hostWindow
+    main_qml = (app_qml / "PicasaPy" / "MainLibraryCanvas.qml").read_text(encoding="utf-8")
     assert "DropArea {" in places_map
     assert "map.toCoordinate" in places_map
     assert "photosDropped" in places_map
     assert "onDropped:" in places_map
     assert 'source.payload !== "photos"' in places_map
-    assert "dragRows: window.selectedIndexes" in main_qml
+    assert "dragRows: hostWindow.selectedIndexes" in main_qml
