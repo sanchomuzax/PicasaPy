@@ -7125,8 +7125,7 @@ csak azt írja, hogy az „arc” változat erősebben nagyít
 
 - `Ghidra-kör kell: 0x00812470 - honnan kerül a this+0x48 időzített sáv memóriájába a 0xf8 bájtos rekord, ki állítja be a +0x8-as régióazonosítót, és igazolható-e .picasa.ini faces= kapcsolat vagy többarcos kiválasztás? [blokkoló]`
 - `Ghidra-kör kell: 0x005e8a70 - a BigSlideshow2 hogyan köti a teljes képernyős renderelőt a ThumbUISlideShow::transition beállításhoz; eljut-e a kiválasztott átmenet a ytDoubleAffineAOITransitionNode osztályhoz? [blokkoló]`
-- `Ghidra-kör kell: 0x0076ed30 - a két négyfloatos AOI-paraméter melyik bemeneti kép célterületét állítja, és hogyan kerül ez a +0x414 / +0x438 interpolált képkockákra? [blokkoló]`
-- `Ghidra-kör kell: 0x0076eb40 - a +0x414 és +0x438 interpolált tömb melyik bemeneti képkockához tartozik, mi a t tartománya, és melyik a renderelt kezdő-/végállapot? [blokkoló]`
+- **Válasz (Ghidra-köteg 33, 2026-10-29; részleges).** A `0x0076ed30` az AOI-célmezőket (`this+0x4b0…+0x4bc`) előbb a `0x00cf3ed0`-n lévő `−1.0` sentinellel inicializálja (`fld [0xcf3ed0]`, `0x76ed46`; négy `fst` a mezőkbe, `0x76ed5c`–`0x76ed6e`). Az első négyfloatos jelöltet akkor írja be és adja a `0x0076ee50`-nek (`0x76edae`–`0x76edcd`), ha a négy mező nem mind `−1.0`; a második jelölt ugyanazokat a mezőket felülírja, és ismét meghívja a segédet (`0x76ee14`–`0x76ee33`), ha az sem négy `−1.0` értékből áll. A `0x0076eb40` a `this+0x414` és `this+0x438` tíz dwordos tömbjét külön interpolálja (`lea ecx,[ebx+0x414]`, `0x76eb6e`; `lea ecx,[ebx+0x438]`, `0x76ebbd`), az eredményeket pedig `rep movsd` másolja a `this+0x45c` és `this+0x484` mezőbe (10 dword, `0x76eb9b`–`0x76eba6`, `0x76ebd0`–`0x76ebdf`). A jelöltek képréteghez rendelése, a két kimenet bemeneti képkockához rendelése, a nyers `t` tartománya és a renderelt kezdő-/végállapot **NINCS MEG**; lásd 3.6. Forrás: Ghidra-köteg 33, `0x0076ed30`, `0x0076eb40`; helyi diszasszemblálás, a jelzett utasításcímek.
 
 **Bizonyítottság:** a név- és osztályregisztráció megerősített (regisztráló, statikus rekord és RTTI-vtáblák); a filmkészítő arc-lekérési út feltételes (utasításszintű olvasat, de az azonosító forrása nyitott); a vetítés teljes viselkedése nyitott. A `kenburnsaoi` tényleges, archoz tartó vetítési képkockáihoz renderelt ellenőrzés szükséges.
 
@@ -7185,7 +7184,8 @@ A 6. lépés a gyenge pont: a pin-példány létrehozását és a vtábla-hívá
 Kódból ismert, renderelt ellenőrzés nincs:
 
 - A célterület-mérés (`0x0076ee50`, 10/10 QEMU-egyezés, előző kör): érvényes `(x0,y0,x1,y1)` esetén `rne(x0−0.5, y0−0.5, x1+0.5, y1+0.5)`, majd a forrásméretre illesztés a `0x009b4b60` szerint, a kép határára tolva (méret-megtartással).
-- Az interpolátor (`0x0076eb40`, csak disasm, 10-12c szakasz): a `0x0076dd10`-et kétszer hívja, `(t+1)×0.5` és `t×0.5` paraméterrel; a paramétert `[0,1]`-re szorítja, és `u²×(3−2u)` simítást alkalmaz. A `+0x414` és `+0x438` tömbök hozzárendelése a kezdő/végképkockához **nyitott**.
+- **Interpolátor (`0x0076eb40`, Ghidra-köteg 33 + helyi diszasszemblálás).** A hívó a `this+0x2d0` nyers `t` mezőjét tölti be (`fld [edi+0x2d0]`, `0x76e892`) és átadja a `0x0076eb40`-nek (`call`, `0x76e89e`). Az interpolátor két paramétert képez: `(t+1)×0.5` és `t×0.5`; ezekkel külön meghívja a `0x0076dd10`-et, amely `[0,1]` közé korlátoz és `u²×(3−2u)` simítást alkalmaz. Az első bemenet a `this+0x414` tíz dwordja (`lea ecx,[ebx+0x414]`, `0x76eb6e`), kimenete `this+0x45c` (`rep movsd`, 10 dword, `0x76eb9b`–`0x76eba6`); a második a `this+0x438` (`0x76ebbd`), kimenete `this+0x484` (`0x76ebd0`–`0x76ebdf`). A nyers `t` futásidejű tartománya és a tömbök képkocka-/képréteg-jelentése **NINCS MEG**.
+- **AOI-jelöltek (`0x0076ed30`, Ghidra-köteg 33).** A konstruktor az AOI-célmezőt `0x00cf3ed0` (`−1.0`) sentinellel kezdi. Az első jelöltet akkor használja, ha a négy float nem mind `−1.0`; ha a második jelölt négy floatja sem mind `−1.0`, abból újraszámolja és felülírja ugyanazt a célmezőt. Azt, hogy az argumentumok melyik bemeneti képhez vagy a `+0x414`/`+0x438` tömbök melyikéhez tartoznak, a dekompilátum nem dönti el.
 - Nincs renderelt kezdő- és végkép. A jelenlegi `kenburns` QML-ág két kivágást interpolál, de ezek megfeleltetése az eredeti `+0x414` és `+0x438` tömböknek, valamint a Picasa képkockáinak **NINCS MEG** (`SlideshowView.qml:426-463`, `778-812`, `835-846`).
 
 Nem becsültem a képletet: a fenti két tömb és a `t` tartománya kimondottan nyitott.
@@ -7223,7 +7223,7 @@ A két út tehát nem ad egyező, végigkövethető láncot. Ez nem bizonyítja,
 - `Ghidra-kör kell: 0x008287b0 - mi a 0x0074e670 által használt interfész-vtábla-hívás konkrét célja, és milyen objektumot ad át a pin/AOI út következő szakaszának? [blokkoló]`
 - `Ghidra-kör kell: 0x00812470 - mi tölti fel a this+0x48 időzített sáv rekordjait, és ki állítja be a rekord +0x8 régióazonosítóját; van-e bizonyítható faces= adatút? [blokkoló]`
 - `Ghidra-kör kell: 0x00812aa0 - hogyan képeződik le pontosan a this+0x1a8 időzített rekord a this+0x7ec téglalapra, és melyik téglalap melyik átmeneti végállapothoz tartozik? [blokkoló]`
-- `Ghidra-kör kell: 0x0076e880 - a +0x414 és +0x438 tömbökből milyen bemeneti képkocka lesz, és hogyan jut el a két végállapot a renderelőhöz? [blokkoló]`
+- **Válasz (Ghidra-köteg 33, 2026-10-29; részleges).** A `0x0076e880` a `this+0x2d0`-ból olvassa a nyers `t`-t (`fld [edi+0x2d0]`, `0x76e892`), majd meghívja a `0x0076eb40`-et (`0x76e89e`). Ezután a `this+0x45c` és `this+0x484` kimeneti tömböt sorrendben a `0x0076e6e0`-nak (`0x76e9ff`) és a `0x00aa6180`-nak (`0x76ea43`) adja át; a Ghidra C-ben ezek az argumentumok `param_1+0x117` és `param_1+0x121` (`0x76e880` kivonat). A már létező `0x00aa6180` dekompilátuma a rajzolási ciklust mutatja, de nem nevezi meg a két tömb képrétegét vagy kezdő-/végállapotát. Ezek, valamint a teljes képernyős diavetítésig vezető kapcsolat **NINCS MEG**; a következő felvehető út a `BigSlideshow2` virtuális callback céljának feloldása (`0x008037e0`, lásd 4.5), majd a képkockák eredeti Picasán történő rögzítése.
 - Renderelt frame-pár vagy frame-sorozat, amely az arc nélküli és arcos dián a tényleges induló-/végállapotot igazolja: **NINCS MEG**. A célterület-mérés (3. kör) önmagában nem ilyen mérés.
 
 **Bizonyítottsági fok ebben a körben: nyitott.** Az egyedi függvényutasítások a fenti címeken olvashatók, de a `BigSlideshow2` → AOI kapcsolat, a `faces=` eredet és a renderelt mozgás nincs két független úttal megerősítve. Következésképp nincs átadható, eredeti Picasa-viselkedést leíró kezdő-/végképlet vagy küszöb.
@@ -7281,7 +7281,7 @@ Következő felvehető munka: célzottan feloldani a `0x00423300` callback adat�
 **Röviden.** (1) A választó két külön listából épül: a diavetítés hét elemet mutat (`0x00d342e8`), a filmkészítő tízet (`0x00d345e4`). Az arc-változat a filmben választható, a diavetítésben nincs a listában, és a mentett érték sem tudja elérni. (2) A „Pan and Zoom” célterületét nem arcadat adja: a kivágás helyét a `rand()` véletlen törtjei döntik el, az útban nincs arc-mező. (3) A `kenburnsaoi` a filmben arcjelöltekből számol célt; érvényes arcjelölt hiányában a sima Pan and Zoom véletlen illesztése marad. Az arcjelölt forrása (`faces=`?) ebben a körben nem igazolt.
 
 **Bizonyítottsági fok.**
-- Választólista (7 és 10 elem, a mentett érték 0-6 tartománya): **megerősített**. (A) A diavetítés lista-feltöltő ciklusa (`0x0075d9a0`-`0x0075db78`, `cmp eax, 0x1c`) a 7 elemű tömbön fut. (B) A Colab-felvétel (job-182) ugyanezt a hét elemet mutatta, ugyanebben a sorrendben. A diavetítés-sáv és a 7 elemű lista összerendelése a Colab-egyezésen alapul (feltételezés, nem közvetlen kódbizonyíték).
+- Választólista (hét átmenet, sorrend, címkék; külön tízelemű filmkészítő-lista): **megerősített a bináris választó-szerződésre**. (A) A `0x0075d810` beállítás-olvasó a `0x00d342e8` táblát indexeli, és a lista-feltöltő ciklus hét dwordot jár be (`0x0075d9a0`–`0x0075db78`, határ `0x1c`). (B) A `0x00771a10` átmenet-regisztráló az egyes belső ID-khez külön rendeli a kulcsot és a látható címkét; a `0x00613b50` filmkészítő ettől külön, tíz elemű `0x00d345e4` táblát jár be (`cmp ebp, 0xa`). A job-182 hozzászólás ugyanezt a hét feliratot jelenti, de a kép helyben nem hozzáférhető, ezért a screenshotot nem tekintettem önállóan újravizsgált mérésnek.
 - „Pan and Zoom” célterülete arcmentes (szerkesztő-előnézeti út): **megerősített**. (A) Utasításszintű lánc: gyár (csoport 1) → `0x0076e100` → `0x0076e4e0` → vtábla `+0x30` (`0x009e08b0`) → illesztés `0x0076d900`. (B) Az arc-mezőket (`+0x4b0…+0x4bc`) a kenburns-konstruktor (`0x0076e100`) nem írja; az arc-csomópont (`0x0076ed30`) csak a 0x0a csoport ágából hívódik. A B-rekord a `0x00760d50` lokális kitöltéséből származik, amely az `editpanel/previewclip` objektum `vtbl+0x30` kimenetét használja (a mezőleképezés részben követve).
 - A véletlen pozíció: **feltételes**. A `0x00c08221` azonosítása erős (MSVC LCG), a hívási helyek megvannak, de renderelt képkocka-sorozat nincs, és a mag (`srand`) nem igazolt.
 - Az arc-változat léte és viselkedése a filmben: **megerősített** a regisztrálóban, a rekordban, a gyárban és az arc-csomópontban; **nyitott** az arcjelölt forrása.
@@ -7296,8 +7296,9 @@ Következő felvehető munka: célzottan feloldani a `0x00423300` callback adat�
 | regisztráló: minden kulcsot szűrés nélkül vesz fel; a kenburnsaoi a `0x00771d46`-nál | bináris `0x00771a10`, `0x00771d46` |
 | rekord-lekérő: `0xd34188 + 16·i`, i ≥ 22 esetén 0 | bináris `0x00771d8e`-`0x00771d98` |
 | diavetítés-lista: `[0, 1, 2, 6, 9, 12, 15]` (7 dword), ciklus `eax += 4`, `cmp eax, 0x1c` | bináris `0x00d342e8`; `0x0075d9a0`, `0x0075db71`-`0x0075db78` |
+| ID→kulcs/felirat-regisztráció: `cut`/Cut, `kenburns`/Pan and Zoom, `dissolve`/Dissolve, `wiperight`/Wipe, `circleout`/Circle, `pushright`/Push, `rect`/Rectangle | bináris `0x00771a10`; sztringek `0xcb2d10`/`0xcb2ca0`, `0xcb2d24`/`0xcb2c84`, `0xcb2d3c`/`0xcb2c6c`, `0xcb2da4`/`0xcb2bf0`, `0xcb2dec`/`0xcb2bac`, `0xcb2e34`/`0xcb2b60`, `0xcb2e7c`/`0xca000c` |
 | filmkészítő-lista: `[0, 1, 2, 3, 4, 6, 9, 12, 20, 21]` (10 dword), ciklus `cmp ebp, 0xa` | bináris `0x00d345e4`; `0x00613c2d`, `0x00613dea`-`0x00613df1` |
-| diavetítés mentett értéke: kulcs `ThumbUISlideShow::transition`, szekció `Preferences`; a kiolvasás előtti kezdőérték 2 (Dissolve); az érték 0-6-ra szorul | bináris `0x00cb22b0`, `0x00c7eafc`, `0x0075d84f`, `0x0075d865`-`0x0075d872` |
+| diavetítés mentett értéke: kulcs `ThumbUISlideShow::transition`, szekció `Preferences`; az alapértelmezett listaindex 2 (Dissolve); a kiolvasott index 6 fölött 6-ra áll | bináris `0x00cb22b0`, `0x00c7eafc`, `0x0075d84f`, `0x0075d865`-`0x0075d872` |
 | a kiválasztott rekord csoportja és iránya → `0x00760b00` → `0x00760d50` (a `kind` a csoport) → gyár | bináris `0x0075d888`, `0x0075d8a3`, `0x00760ccc`, `0x00760eac` |
 | csoport 1 → `0x0076e100` (vtábla `0x00cb313c`); csoport 0x0a → `0x0076ed30` (vtábla `0x00cb320c`) | bináris `0x00771e97`, `0x00772286`, `0x0076e12e`, `0x0076ed4c` |
 | célszámítás `0x0076e4e0`; forráshatár: vtábla `+0x30` = `0x009e08b0`; illesztés `0x0076d900` | bináris `0x0076e4e0` (`0x0076e512`, `0x0076e551`); `0x00cb313c` + `0x30` |
@@ -7308,11 +7309,33 @@ Következő felvehető munka: célzottan feloldani a `0x00423300` callback adat�
 | `0x0076ee50` csak `0x0076ed30`-ból hívódik; `0x0076ed30` csak a gyár 0x0a ágából | xref: `0x0076ee50` ← `0x0076ed30` ← `0x00771e60` (`0x00772286`) |
 | film arc-ága: a `this+0x28c == 0x14` ágon `0x00813c50` az azonosítóhoz tartozó téglalapot adja; az azonosító forrása nyitott | bináris `0x00813330`, `0x00813c50` (4.1-4.2) |
 
+**Az eredeti diavetítés-választó pontos listája.** A táblázat első oszlopa a
+lista sorszáma (0-tól), a belső ID-t a `0x00d342e8` dwordjai adják; a kulcs és
+a felirat a `0x00771a10` regisztrálóhoz tartozik.
+
+| Sorszám | Belső ID | Kulcs | Eredeti felirat |
+|---:|---:|---|---|
+| 0 | 0 | `cut` | Cut |
+| 1 | 1 | `kenburns` | Pan and Zoom |
+| 2 | 2 | `dissolve` | Dissolve |
+| 3 | 6 | `wiperight` | Wipe |
+| 4 | 9 | `circleout` | Circle |
+| 5 | 12 | `pushright` | Push |
+| 6 | 15 | `rect` | Rectangle |
+
+Az alapértelmezett listaindex 2, tehát Dissolve. A filmkészítő táblájának 9.
+sorszámú eleme a 20-as `kenburnsaoi`; a diavetítés táblájában nincs 20-as
+ID. A `cmp eax, 6; ja` ellenőrzés miatt a Picasa eredeti mentett egész
+értékeinek kiválasztóindexe 0–6 közé kerül (6 fölött 6-ra áll), de ez nem a
+PicasaPy számára előírt fallback-szabály: a PicasaPy korábban mentett,
+ismeretlen kulcsának Dissolve-ra esése alkalmazásoldali kompatibilitási
+követelmény.
+
 **A két független út.** (A) Utasítás-lánc: gyár → konstruktor → illesztés, a `rand()` hívásokkal. (B) Adat- és hívási gráf: a két tábla, a választólista-ciklusok, a preview-rekord forrása és az arc-ág kizárólagossága. A két út a választólistában és az arc-ág kizárólagosságában egyezik. A véletlen mechanizmust az (A) út adja; a (B) út ettől független.
 
 **Cáfoló kísérlet.**
 1. „A diavetítés listája erőforrásból épül, a 7 elem csak a binárisban látszik." Cáfolat nem sikerült: a szűrést a kódban lévő ciklus végzi (`cmp eax, 0x1c`), a felirat-erőforrás mind a 22 kulcsot tartalmazza, és a Colab-felvétel is hét elemet mutatott.
-2. „A mentett érték a 7 elemen túlra is mutathat." Cáfolva: a `cmp eax, 6` / `ja` a 0-6 tartományra szorít.
+2. „A diavetítésben tárolt érték a `kenburnsaoi` (20) belső átmenet-ID-re mutathat, ezért a rejtett arc-változat kiválasztható.” Cáfolva: a selector a hét elemű `[0,1,2,6,9,12,15]` táblából épül, a tárolt értéket pedig listaindexként 6-ra korlátozza; a külön filmkészítő-táblában szerepel a 20-as ID. Ellenőrzés: a tábla adatolvasása és a selector ciklusa, illetve a regisztráló ID→kulcs/felirat-hozzárendelése ugyanazt az elkülönítést adja.
 3. „A kenburns B-rekordja (célméret) arcadatból jön." Nem cáfolható teljesen ebben a körben: a B-mezők leképezése részben követett. A forrás a previewclip befoglaló téglalapja (`vtbl+0x30`), nem arc.
 4. „A pásztázás nem véletlen, hanem konstans." Cáfolva: a `0x0076db5f`-`0x0076dbfb` szakaszban a rand-törtek adják a kivágás helyét; a `-1.0` sentinel csak az arc-jelöltnél jelenik meg.
 5. „A kenburnsaoi a teljes képernyős úton mégis elérhető." Nem zárható ki: a teljes képernyős út (`0x005e8a70` → `0x00423300`) nyitott (4.2). Ez a kör egyetlen gyenge pontja.
