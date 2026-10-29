@@ -78,6 +78,9 @@ def _valaszto_megnyitasa(window, qt_app, show, combo, controls, popup):
         lambda: controls.property("opacity") >= 0.99 and combo.isVisible(),
         masodperc=10.0,
     ), "a vezérlősáv és az átmenet-választó nem jelent meg teljesen"
+    # #6220: az aktiválás előtt érkező első kattintás elvész (CI); előbb aktív ablak
+    window.requestActivate()
+    assert QTest.qWaitForWindowActive(window, 5000), "az ablak nem lett aktív"
     pont = _kozep(combo)
     QTest.mouseMove(window, QPoint(round(pont.x()), round(pont.y())))
     qt_app.processEvents()
