@@ -6997,6 +6997,46 @@ A Picasa EXE `FRRecommendIncludeLimit=0,50` értéke a javaslatba-vételhez tart
 
 **Következtetés és fejlesztési döntés.** N4-N8 mérési/bizonyítéki pontjai lezártak; N1 és N3 azért marad nyitva, mert a helyi bináris nem adja meg a futásidejű kimenetet, a helyi archívumban pedig nincs hozzá címkézett kontroll. PicasaPy-eltérés nincs bizonyítva, ezért most nincs indokolt fejlesztői lista és új kutatási jegy. N1-hez a kétarcú név előtti/utáni eredeti felvétel; N3-hoz tiszta Picasa 3.9 Red.dll-hash, az effektív streamelt küszöb és a detektor tényleges bemeneti mérete, valamint ugyanazon címkézett képkészlet képenkénti Picasa/PicasaPy eredménye szükséges.
 
-**Meglévő, pontosított statikus nyitott tétel:** `Ghidra-kör kell: 0x10107d70 - a FaceViewDetector classifier-array tényleges elemtípusát/ClassId-ját kövesse a betöltött modellstreamig, és döntse el, hogy a bejárt elemek a vsi_WeakClassifier rekordjai-e.` A vak, `llvm-objdump`-pal végzett újralevezetés már igazolja az array útját, az elem `+0x1c` threshold mezőjének olvasását/írását és a küszöb alatti kilépést; ezért a korábbi kérdés e részét nem kell újra kérnie. A korábbi Ghidra-tárban a `0x10107d70` kimenetét nem találtam; csak az itt pontosított, megválaszolatlan elemtípus-kérdés maradna. Ez a statikus kérdés nem blokkolja a runtime méréshez szükséges tiszta Picasa 3.9 futást és modellstreamet, és önmagában sem adja meg a futáskor használt értéket vagy a felismerési arányt.
+**A `0x10107d70` kimenetének 2026-10-29-i pontosítása.** A Ghidra-kimenet most elérhető (`2026-10-29-5184-red-classifier.txt`): a `FUN_10107d70` törzse mindkét szerializációs ágban a `this+0x1c` mezőt adja a `FUN_1005c400` helpernek; a hivatkozó `0x101d58a4 DATA`. A hashazonos helyi Red.dll PE-adataiban a vftábla `0x101d5898`, a slot `+0x0c` célja `0x10107d70`, a RTTI TypeDescriptor neve `.?AVvsi_WeakClassifier@@`. A Ghidra-törzs és a PE RTTI/vftábla külön ellenőrzési útja egyezik abban, hogy ez a hashazonos DLL `vsi_WeakClassifier` szerializáló metódusa, amely a `+0x1c` mezőt viszi a helperhez. Ez **nem** bizonyítja, hogy a `FaceViewDetector` tényleges `classifier arr`-példányai ehhez az osztályhoz kötődnek, és nem adja meg a tiszta 3.9-es futásban betöltött értéket vagy a felismerési arányt. A régi, `0x10107d70`-re kért dekompilálás nem ismétlendő; a `0x101d5160` slot hívójára és modellstream-forrására vonatkozó, §54.3/g-ben már szereplő kérdés ettől különálló.
+
+## 60. #5184, 2026-10-29: a statikus Red-nyom pontosodott, N1/N3 futásidejű eredménye nyitott
+
+**Hatókör.** A korábbi helyi ellenőrzést a 2026-10-29-i Red.dll Ghidra-kimenettel, a hashazonos DLL nyers PE RTTI/vftábla-adataival, a PicasaPy forrásbeállításaival és a mérőarchívum dokumentumtagjaival vetettem össze. Az eredeti Picasa futásidejű N1/N3-mérését ez nem helyettesíti.
+
+### 60.1 Bizonyíték és határa
+
+| Állítás / keresett érték | Forrás | Eredmény |
+|---|---|---|
+| A `FUN_10107d70` a `this+0x1c` értéket mindkét szerializációs ágban a `FUN_1005c400` helpernek adja. | bináris (`0x10107d70`; Ghidra-kimenet, 2026-10-29) | a szerializáló mezőútja megvan |
+| A `0x10107d70` a hashazonos DLL `vsi_WeakClassifier` vftáblájának `+0x0c` slotja; a PE RTTI TypeDescriptor név `.?AVvsi_WeakClassifier@@`. | bináris (`0x101d5894`, `0x101d5898`, `0x101d58a4`, `0x1021ccc4`) | megerősített a lokális Red.dll osztály/slot azonosságára; a futó objektum azonosságát nem bizonyítja |
+| A keresett eredeti Red-küszöb és skála, tiszta Picasa 3.9 alatt betöltött DLL/modellstream, detektor bemeneti WxH-ja, valamint az azonos címkézett képkészlet felismerési aránya. | NINCS MEG | a szerializáló és a `+0x1c` mező statikus útja nem ad runtime számot vagy mérési eredményt |
+| Az eredetihez hasonlítható Red-küszöb/bemeneti méret/arány (a PicasaPy forrásbeállítása `960 px` és `0,9` YuNet-score küszöb; a scan kihagyja az `is_identified` arcot tartalmazó képet). | NINCS MEG (az eredeti Picasa értékére nincs adat; PicasaPy-forrás: `detector.py:42,49,178-210`; `face_scan_controller_scan_mixin.py:76-98,241-270`) | a helyi forrásérték nem eredeti Picasa-bizonyíték, azonos címkézett képkészletű futás kell |
+| N1: a névvel rendelkező, legalább kétarcú fotón az eredeti felajánlja-e a további ismeretlen arcot. | NINCS MEG | azonos eredeti fotó név előtti/utáni állapota, Név nélküliek-lista és `.picasa.ini` kimenet kell |
+
+### 60.2 Független utak és cáfoló kísérlet
+
+**A út - Ghidra-kimenet.** A `FUN_10107d70` dekompilált törzse közvetlenül mutatja a `+0x1c` mező átadását a segédfüggvénynek mindkét szerializációs ágban. **B út - vak PE-ellenőrzés.** A hashazonos helyi DLL vftábla-slotja `0x10107d70`-re mutat, a TypeDescriptor pedig `vsi_WeakClassifier` nevet tartalmaz. A két út egyezik a lokális DLL szerializáló-metódusának osztály- és mezőútjában; együtt sem bizonyítják a tiszta Picasa 3.9 ténylegesen betöltött példányát vagy értékét.
+
+Az N1/N3 kérdésre két, ettől független helyi út nem adott futásidejű eredményt: a bináris/statikus út mező- és vezérlési adatokat tár fel, a külön mérőarchívum-dokumentumleltár pedig nem tartalmaz felismerési kontrollt. Ezek csak a helyi bizonyítékhiányt erősítik meg, nem az eredeti program viselkedését.
+
+**Cáfoló kísérlet.** Megpróbáltam cáfolni, hogy a mérőarchívumban nincs N1/N3-kontroll: a teljes 944 tagos listát átnéztem, és a lehetséges kontrollokra szűrt 24 dokumentumtagot (`15 .ini`, `5 .txt`, `4 .csv`) bontottam ki a `.bt` alá. A négy INI-jelölő (`faces=`, `]facealbum:`, `ffffffffffffffff`, `[Contacts2]`) mind 0 találatot adott; a szöveges arc-/személy-/Red-/YuNet-címkézés sem adott találatot. A JPG-ket nem vizsgáltam, ezért azok arctartalmáról nem állítok semmit. A cáfoló ellenőrzés az archívum kontrollhiányát megerősíti, de nem teszi megfigyeltté az eredeti viselkedést.
+
+### 60.3 A #5184 „Kész, ha” pontjainak állapota
+
+| Pont | Állapot | Bizonyíték |
+|---|---|---|
+| N1 - az eredeti talál-e további ismeretlen arcot a névvel rendelkező fotón | ⛔ Nyitott | nincs név előtti/utáni eredeti futásidejű felvétel; §60.1 |
+| N3 - felismerési arány és Red-küszöb a PicasaPy 960 px / 0,9 beállításához képest | ⛔ Nyitott | a Red mező statikus útja ismert, az effektív érték, bemeneti WxH és azonos címkézett méréssorozat NINCS MEG; §60.1 |
+| N4 - alapból látszó keret és név | ✅ | job-187, §36.3 |
+| N5 - személyszintű mellőzés és hatása | ✅ | job-222..226, §37.10-37.11 |
+| N6 - személytörlés útja és hatása az arcokra | ✅ | job-222/224, §37.10; PicasaPy-javítás #5391 |
+| N7 - People Manager és Név nélküliek kijelölése | ✅ | People Manager: egyszeres kijelölés, job-325, §58; Név nélküliek: job-180, §53.3 |
+| N8 - People Manager referencia-képernyőkép | ✅ | job-186, 24. kép, §36.3 |
+
+**Következtetés és fejlesztési döntés.** N1 és N3 nyitott marad; N4-N8 korábbi bizonyítéka továbbra is lezárja azokat a pontokat. PicasaPy-eltérés nem bizonyított, ezért ebből a körből nem következik fejlesztői feladatlista vagy külön kutatási jegy. A jegy teljes lezárásához az N1 név előtti/utáni kétarcú eredeti felvétele és az N3 azonos címkézett képkészleten, tényleges Red.dll/modellstream-azonossággal, effektív mezőértékkel, bemeneti WxH-val és képenkénti eredménnyel végzett mérése kell.
+
+**Nyitott.** Futásidejű eredeti mérés kell N1-hez és N3-hoz. Új Ghidra-kört nem kérek: a `0x10107d70` kimenete már megvan, és a korábban §54.3/g-ben nyitva hagyott `0x101d5160` modellstream-/dispatch-kérdés nem adja meg önmagában a keresett futásidejű arányt vagy effektív értéket.
+
+**Módosított fájl:** `docs/specs/picasa-arcfelismeres.md` (az 59. szakasz 0x10107d70-re vonatkozó nyitott sorának pontosítása; új 60. szakasz: statikus Red-bizonyíték, N1/N3 határ, cáfoló próba és pontról pontra készültség).
 
 **Módosított fájlok:** `docs/specs/picasa-arcfelismeres.md` (59. szakasz: N1/N3 helyi bizonyítékhatárai, független utak, cáfoló próba és pontonkénti állapot); `docs/specs/00-index.md` (#5184 nyitott pontjainak frissítése, N7 lezárásával).
