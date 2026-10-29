@@ -276,6 +276,12 @@ def _parbeszed(gyoker, nev: str):
     return talalatok[0]
 
 
+def _felulet_meretek_800_sor_alatt() -> None:
+    fajlok = sorted(_QML.glob("*Create*.qml")) + sorted(_QML.glob("MovieMaker*.qml"))
+    hosszak = {fajl.name: len(fajl.read_text(encoding="utf-8").splitlines()) for fajl in fajlok}
+    assert hosszak and all(hossz <= 800 for hossz in hosszak.values()), hosszak
+
+
 def _filmkeszito_meretek_400_sor_alatt() -> None:
     fajlok = tuple(
         _QML / nev
@@ -497,6 +503,11 @@ def test_create_dialogs_render_bontas_elott_rogzitett_referenciakkal(
         f"{kimenet} könyvtárban vannak: {hianyzo}"
     )
     assert not elteresek, "Eltérő képpontok: " + "; ".join(elteresek)
+
+
+def test_create_dialogs_es_reszei_legfeljebb_800_sorosak():
+    """A #5951 korlátját őrzi: minden létrehozás-komponens legfeljebb 800 sor."""
+    _felulet_meretek_800_sor_alatt()
 
 
 def test_filmkeszito_komponensei_400_sor_alatt_maradnak():
