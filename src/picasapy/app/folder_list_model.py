@@ -8,6 +8,7 @@ from collections.abc import Iterable
 from PySide6.QtCore import Property, QAbstractListModel, QModelIndex, Qt, Signal, Slot
 
 from picasapy.index.hidden_scope import show_hidden_folders
+from picasapy.paths import flat_key
 
 from .model_helpers import (
     REJTETT_MAPPAK_FEJLEC,
@@ -282,4 +283,3 @@ class FolderListModel(QAbstractListModel):
             self.OfflineRole: b"offline",
             self.UnreadRole: b"unread",
         }
-
