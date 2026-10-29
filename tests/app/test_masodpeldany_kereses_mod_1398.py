@@ -19,7 +19,7 @@ from PySide6.QtCore import QSettings
 from picasapy.dedup.fastkey import FEJ_MERET
 from support.jpeg_factory import make_jpeg
 from tests.support.py_blokk import fuggveny_torzs
-from support.menubar_components_6016 import menu_component_source
+from support.menubar_components_6016 import main_sources, menu_component_source
 
 _DUPE = (
     Path(picasapy.app.__file__).parent / "dupe_search_controller.py"
@@ -27,15 +27,9 @@ _DUPE = (
 #: #6136: a könyvtárnézet a MainLibraryCanvas.qml-be költözött; az őr a
 #: főablak komponenscsaládját olvassa. A kiemelt komponensben a gazda neve
 #: hostWindow/hostController, ezt a főablak nevére (window/controller) hozzuk.
-_MAIN = "\n".join(
-    (Path(picasapy.app.__file__).parent / "qml" / ut).read_text(encoding="utf-8")
-    for ut in (
-        "Main.qml",
-        "PicasaPy/MainLibraryCanvas.qml",
-        "PicasaPy/MainRightDrawer.qml",
-        "PicasaPy/MainFolderPane.qml",
-    )
-).replace("hostController.", "controller.").replace("hostWindow.", "window.")
+_MAIN = main_sources().replace("hostController.", "controller.").replace(
+    "hostWindow.", "window."
+)
 _MENU = menu_component_source("PicasaToolsMenu.qml")
 _IMPORT = (
     Path(picasapy.app.__file__).parent / "import_source_controller.py"
@@ -228,7 +222,10 @@ class TestASajatFunkciok:
         tetel = _MENU[_MENU.index('objectName: "menuToolsDedupManager"') :][:400]
         assert "sajat: true" in tetel
         assert "dedupRequested()" in tetel
-        assert "dedupDialog.open()" in _MAIN
+        assert any(
+            alak in _MAIN
+            for alak in ("dedupDialog.open()", "hostDedupDialog.open()")
+        )
 
     def test_a_hasonlosag_kereses_NEM_menupont(self):
         """Az eredetiben a hasonlóság-keresés öt eleme kikommentezve — a

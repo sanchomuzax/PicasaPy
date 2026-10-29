@@ -53,7 +53,13 @@ class TestAFejlecGomb:
         assert "timelineActive" not in _TOOLBAR
 
     def test_a_gazdaablak_sem_koti_be(self):
-        assert "onTimelineRequested: window.toggleTimeline()" in _MAIN
+        assert any(
+            alak in _MAIN
+            for alak in (
+                "onTimelineRequested: window.toggleTimeline()",
+                "onTimelineRequested: hostWindow.toggleTimeline()",
+            )
+        )
         assert "timelineActive:" not in _MAIN
 
 

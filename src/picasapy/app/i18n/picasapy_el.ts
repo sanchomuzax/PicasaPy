@@ -9140,13 +9140,6 @@ picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
             <translation>Να μην εμφανιστεί ξανά η ερώτηση.</translation>
         </message>
         <message>
-            <location filename="../qml/Main.qml" line="2328" />
-            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
-            <extracomment>picasapy-origin: picasa
-picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
-            <translation>Θα δημιουργηθεί ένα λεύκωμα με περισσότερες από 1000 εικόνες.  Θέλετε να συνεχίσετε;</translation>
-        </message>
-        <message>
             <location filename="../qml/Main.qml" line="2743" />
             <source>Confirm</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -19618,6 +19611,16 @@ picasapy-origin: picasa</extracomment>
             <source>This folder is currently unavailable (for example a disconnected drive or network share). Its photos stay in the database and thumbnails come from the cache, but the original files cannot be opened or edited right now.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Αυτός ο φάκελος δεν είναι διαθέσιμος αυτή τη στιγμή (για παράδειγμα, έχει αποσυνδεθεί μια μονάδα ή ένα δικτυακό κοινόχρηστο στοιχείο). Οι φωτογραφίες του παραμένουν στη βάση δεδομένων και οι μικρογραφίες προέρχονται από την προσωρινή μνήμη, αλλά δεν είναι δυνατή αυτή τη στιγμή η πρόσβαση ή η επεξεργασία των αρχικών αρχείων.</translation>
+        </message>
+    </context>
+    <context>
+        <name>MainMenuBar</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainMenuBar.qml" line="208" />
+            <source>This will create an album with more than 1000 images.  Do you want to continue?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
+            <translation>Θα δημιουργηθεί ένα λεύκωμα με περισσότερες από 1000 εικόνες.  Θέλετε να συνεχίσετε;</translation>
         </message>
     </context>
 </TS>

@@ -1801,373 +1801,45 @@ ApplicationWindow {
     readonly property alias keyboardShortcutGroups:
         mainKeyboardShortcuts.keyboardShortcutGroups
 
-    menuBar: PicasaMenuBar {
-        textEntryHasFocus: window._szovegmezoneVanFokusz
-        searchOptionsOpen: toolbar.searchOptionsOpen
-        //: #2987: a vetítés alatt a menüsáv is eltűnik — enélkül a
-        //: contentItem nem kapja meg a teljes ablakot.
-        visible: !window.quickViewerLaunch
-                 && !window.slideshowRunning && !window.timelineOpen
-        // #1619: a rács `Ctrl+Delete`-je is ezen a példányon át ágazik el
+    menuBar: MainMenuBar {
         id: picasaMenuBar
-        //: #671: a Fájl ▸ Kilépés a KÖZÖS úton fut — ott dől el, kérdez-e
-        onExitRequested: window.kilepes()
-        // #4329: a felső Fájl ▸ E-Mail ugyanazt a küldési kaput hívja, mint
-        // a tálca emailRequested jelzése.
-        onEmailRequested: window.sendSelectionByEmail()
-        onSearchOptionsToggleRequested: toolbar.toggleSearchOptions()
-        onOpenInEditorRequested: window.openSelectionInDefaultEditor()
-        onViewAndEditRequested: window.nezdEsSzerkeszd()
-        // #4622: ugyanaz a kapuzott bezárás, amelyet a nézőből kilépő
-        // visszatérési műveletek használnak; az onClosed frissíti a rácsot.
-        onReturnToLibraryRequested: photoViewer.kerBezaras()
-        onTimelineRequested: window.toggleTimeline()
-        onUnhideRequested: window.unhideHiddenSelection()
-        onWriteXmpFacesDialogRequested:
-            xmpFacesWriteDialog.ensure().openFor(window.photoActionRows())
-        onResetFacesRequested: window.resetFacesForPaths(window.photoActionPaths())
-        // #4335: a fájlban tárolt állapotot a Picture menü nyitásakor
-        // frissítjük, mert az index nem jelzi a `textactive=` változását.
-        onTextOverlayStatesRefreshRequested: {
-            var rows = window.photoActionRows()
-            picasaMenuBar.textOverlayShowEnabled = controller
-                ? controller.hasTextOverlayStateInSelection(rows, false) : false
-            picasaMenuBar.textOverlayHideEnabled = controller
-                ? controller.hasTextOverlayStateInSelection(rows, true) : false
-        }
-        photoActionsEnabled: window.photoActionRows().length > 0
-        photoHasPendingEdits: window.muveletiCelbanVanMentetlenSzerkesztes
-        // #5882: a fotómodell revíziója frissíti ezt a kötést a hidden
-        // állapot változásakor; a kijelölés a könyvtár és a néző célpontját
-        // egyaránt lefedi.
-        hasHiddenPhotoSelection: {
-            if (!controller || !controller.photos) return false
-            var photos = controller.photos
-            var revision = photos.revision
-            if (revision < 0) return false
-            var rows = window.photoActionRows()
-            for (var i = 0; i < rows.length; ++i) {
-                var photo = photos.itemAt(Number(rows[i]))
-                if (photo && photo.hidden === true) return true
-            }
-            return false
-        }
-        libraryPhotoActionsEnabled: !window.viewerOpen
-                                    && window.selectedIndexes.length > 0
-        //: #1768: a Mappakezelő két belépési pontja szürke, amíg a
-        //: szerkesztő-előnézet él. Nálunk a szerkesztőpanel a nézőben
-        //: lakik, tehát a nyitott néző a megfelelője.
-        editorActive: window.viewerOpen
-        // #922: a kollázs/film a TÁLCA tartalmán is dolgozik (#455) —
-        // a menüpontnak ezért tálcával, kijelölés nélkül is élnie kell
-        createActionsEnabled: !window.viewerOpen
-                              && (window.selectedIndexes.length > 0
-                                  || window.trayHasPictures)
-        // #5704: a menüsor csak jelez; a gazda nyitja meg a beépített
-        // Rejtett mappák gyűjtemény jelszókezelőjét.
-        onHiddenUnlockRequested:
-            collectionPasswordDialog.ensure().openForHiddenCollection()
-        onHiddenPasswordRequested:
-            collectionPasswordDialog.ensure().openForHiddenCollection()
-        onRescanRequested: controller.rescan()
-        // #1526: a fájl-vágólap — a kijelölt képek fájljai kerülnek fel,
-        // így egy fájlkezelőbe közvetlenül beilleszthetők
-        onCopyFilesRequested: fileOpsController.copyFilesToClipboard(
-            window.photoActionPaths())
-        onCutFilesRequested: fileOpsController.cutFilesToClipboard(
-            window.photoActionPaths())
-        //: #1526: a Beillesztés célmappája a KIVÁLASZTOTT mappa. Ha a
-        //: vágólap közben kiürült (más program írta át), a művelet nem
-        //: indul el, és a sávon üzenetet adunk — némán nem tűnik el.
-        clipboardHasFiles: fileOpsController
-                           ? fileOpsController.clipboardHasFiles : false
-        // #5877: a text= réteg állapotát a .picasa.ini-ből olvassa;
-        // a textactive= láthatósága nem változtatja meg a réteg meglétét.
-        hasSelectedTextLayer: (controller
-                               && controller.hasTextLayerInSelection !== undefined)
-                              ? controller.hasTextLayerInSelection(
-                                    window.photoActionRows()) : false
-        hasTextLayerClipboard: (controller
-                                && controller.hasTextLayerClipboard !== undefined)
-                               ? controller.hasTextLayerClipboard : false
-        onCopyTextRequested: window.masoldASzovegreteget()
-        onPasteTextRequested: window.illeszdBeASzovegreteget()
-        onPasteFilesRequested: window.beillesztAVagolaprol()
-        // #1595: a Mappa menü négy tétele a MEGNYITOTT mappára hat. A
-        // párbeszédek és a megerősítések a bal hasábon élnek (ott van a
-        // mappa helyi menüje is), ezért onnan hívjuk: egy művelet, egy út.
-        onFolderMoveRequested: {
-            if (controller) folderPane.mozgatasMappara(controller.currentFolder)
-        }
-        onFolderDeleteRequested: {
-            if (controller) folderPane.torlesLomtarba(controller.currentFolder)
-        }
-        onFolderRemoveFromPicasaRequested: {
-            if (controller)
-                folderPane.eltavolitasAPicasabol(controller.currentFolder)
-        }
-        onFolderLocateRequested: {
-            if (controller && controller.currentFolder.length > 0)
-                fileOpsController.revealFolder(controller.currentFolder)
-        }
-        onAboutRequested: aboutDialog.open()
-        onConfigureButtonsRequested: configureButtonsDialog.open()
-        onConfigureScreensaverRequested: screensaverDialog.open()
-        onConfigurePhotoViewerRequested: photoViewerSettingsDialog.open()
-        onAddToScreensaverRequested: window.requestAddToScreensaver()
-        onThumbSizePreset: function(size) { window.thumbSize = size }
-        // #4623: a Nézet menü rádiócsoportja ebből számolja a pipát
-        thumbSize: window.thumbSize
-        // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — kijelöl,
-        // nem szűr (a Mappák panel „Csillagozott" nézete külön: onStarredChosen)
-        onSelectStarredRequested: window.selectStarred()
-        onSelectAllRequested: window.selectAll()
-        onClearSelectionRequested: window.clearSelection()
-        // #1686: UGYANAZ a belépő, amit a Ctrl+I és a mappahasáb helyi
-        // menüje is hív — nincs másolt logika.
-        onInvertSelectionRequested: window.invertSelection()
-        onFolderManagerRequested: folderManager.open()
-        onPeopleManagerRequested: {
-            if (peopleManagerLoader.active)
-                peopleManagerLoader.item.open()
-            else
-                peopleManagerLoader.active = true
-        }
-        onDedupRequested: dedupDialog.open()
-        //: #1398: a MÉRT parancs keresési MÓDOT kapcsol (`dupesearch`), nem
-        //: párbeszédet nyit — a kezelő-párbeszédhez a mód sávja vezet.
-        onDuplicateSearchRequested: if (controller) controller.showDuplicateFiles()
-        // #1473: Eszközök → Arcok keresése…
-        onFaceScanRequested: faceScanDialog.open()
-        //: #1399: a szín-keresés a KERESŐMEZŐBE ír, ahogy az eredeti
-        //: (`0x0065b7b0`) — a `color:` előtagot itt tesszük rá, mert a
-        //: keresőmotor ezt a tokent érti (`index/search_color.py`, #383).
-        onColorSearchRequested: (szin) => toolbar.keresesSzoveggel("color:" + szin)
-        canSaveSearch: controller ? controller.canSaveSearch : false
-        //: #1405: az eredeti CSAK 1000 találat FELETT kérdez (mérve,
-        //: `0x005d86a0`); alatta csendben létrejön az album. A megerősítés
-        //: gombja a mért „Create Album" felirat, nem Igen/Nem.
-        //: #1406: a bekérő párbeszéd halasztott (#1720) — a legtöbb
-        //: munkamenetben fel sem épül.
-        onShowTagAsAlbumRequested: showTagAsAlbumDialog.ensure().openEmpty()
-        //: #1775: a KIJELÖLÉS ELSŐ képe lesz a háttér — a parancs egy képre
-        //: szól (az eredeti is egyet tesz háttérképnek).
-        onWallpaperRequested: {
-            var sorok = window.photoActionRows()
-            if (sorok.length > 0)
-                controller.setPhotoAsDesktopBackground(sorok[0])
-        }
-        // #4268: a Picasa poszterpárbeszéde a kijelölés első képéből indul.
-        onPosterRequested: {
-            var paths = window.photoActionPaths()
-            if (paths.length > 0)
-                createDialogs.ensure().openPoster(String(paths[0]))
-        }
-        onSaveSearchRequested: {
-            if (controller.searchResultCount > 1000)
-                //: `CThumbUI::SaveSearchBig` — az eredeti szövege (#3573)
-                saveSearchDialog.ensure().ask("", qsTr(
-                    "This will create an album with more than 1000 images."
-                    + "  Do you want to continue?"))
-            else
-                window.mentsdAKeresest()
-        }
-        // #350: Eszközök → Beállítások…
-        onOptionsRequested: optionsDialog.open()
-        //: #2054
-        onHelpRequested: function (topic) { helpDialog.ensure().nyisdMeg(topic) }
-        // #4639: a billentyűk listája ugyanebben a helyi súgóban jelenik
-        // meg, és a kulcsokat a tényleges QML Shortcut-okból veszi.
-        onKeyboardShortcutsRequested: {
-            var sugo = helpDialog.ensure()
-            sugo.keyboardShortcutTitle = picasaMenuBar.keyboardShortcutsTitle
-            sugo.keyboardShortcutGroups = window.keyboardShortcutGroups
-            sugo.nyisdMeg("features/billentyuk.md")
-        }
-        // #351: Exportálás weboldalként
-        onWebExportRequested: webExportDialog.open()
-        // #5713: ugyanaz a webexport-párbeszéd FTP-közzétételi módban.
-        onFtpPublishRequested: webExportDialog.ensure().openFtp()
-        // #530: Google Earth-export — a folyamat az ExportDialogs-ban él
-        onEarthExportRequested: exportDialogs.ensure().openGoogleEarth()
-        // #1589: ugyanaz a párbeszéd, de a kiírás után MEGNYITJA a fájlt
-        onEarthViewRequested: exportDialogs.ensure().openGoogleEarth(true)
-        //: #1404: a menüpont is a MEGERŐSÍTÉSEN át töröl
-        onClearGeotagRequested:
-            mainDialogs.clearGeotagDialog.ensure().openFor(window.photoActionRows())
-        // #5396: egy és több kijelölt képnél is a mért `rename.fen`-dialógus
-        // nyílik; a forrásfájl kiterjesztését és előnézetét az kezeli.
-        onRenameRequested: fileOpsDialogs.ensure().openRenameMany(window.photoActionRows())
-        // #368: adatbázis-áthelyezés a Kísérleti menüből
-        onMoveDatabaseRequested: moveDatabaseDialog.open()
-        //: #3504: a kiadás-panel mentés-üzemmódja a könyvtár alján — a
-        //: korábbi külön ablak (`BackupDialog`) helyett, a `giftCdHost`
-        //: mintájára.
-        onBackupRequested: backupHost.nyisd()
-        // #449: adatbázis-tömörítés (`compacting.fen`)
-        onCompactDatabaseRequested: compactDatabaseDialog.open()
-        //: #1401: az Útlevélkép — a KIJELÖLÉS ELSŐ képére szól (az eredeti
-        //: is egyre), a `wallpaperRequested` mintájára.
-        onPassportPhotoRequested: {
-            var sorok = window.photoActionRows()
-            if (sorok.length > 0
-                    && typeof passportController !== "undefined" && passportController)
-                passportController.preparePassportPhoto(Number(sorok[0]))
-        }
-        // #3132: Import a Picasából — a db3 átvétele (SAJÁT funkció)
-        onPicasaDataImportRequested: picasaDataImportDialog.open()
-        // #936: a Létrehozás menü jelzésének NEM VOLT kezelője — a
-        // menüpont elsütötte a jelzést, és az a semmibe ment. Az
-        // egyetlen kezelő a képtálca sávján ült (`trayBar`), ezért
-        // onnan indítva működött, a menüből nem.
-        // #985: a menüpont mostantól a KOLLÁZS LAPOT nyitja meg, nem a
-        // korábbi modális párbeszédet (spec 3.2: „modálist nyit → a lapot
-        // nyitja meg"). A `CreateDialogs` kollázs-ága egyelőre a helyén
-        // marad — a leszerelése külön jegy.
-        onCollageRequested: window.openCollageTab()
-        onMovieRequested: createDialogs.ensure().openMovie()
-        onFaceMovieRequested: createDialogs.ensure().openFaceMovie()
-        onPeopleAlbumsMovieRequested: window.openPeopleAlbumsMovie()
-        //: #3503: a kiadás-panel Ajándék-CD üzemmódja a könyvtár alján
-        onGiftCdRequested: giftCdHost.nyisd()
-        onExportRequested: exportDialogs.ensure().openForSelection(
-            window.viewerOpen ? window.photoActionRows() : undefined)
-        // #1616: Fájl ▸ Új album… / Ctrl+N — UGYANAZT az `openNewAlbum`
-        // belépőt hívja, amit a rács helyi menüjének „Új album…" tétele is
-        // (a `PhotoContextMenu.onNewAlbumRequested` kötése lentebb, a
-        // helyi menü példányán)
-        onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.photoActionRows())
-        // #1615: Fájl ▸ Importálás forrása… / Ctrl+M — UGYANAZ a példány,
-        // amit az eszköztár „Import" gombja nyit (ld. `onImportRequested`)
-        onImportSourceRequested: importSourceDialog.open()
-        // #1633: Fájl ▸ Fájl felvétele a Picasába… / Ctrl+O
-        onAddFileRequested: addFileDialog.open()
-        // #1614: Fájl ▸ Áthelyezés új mappába… — a `moveToNewFolderDialog`
-        // csak a NEVET kéri, a kijelölés útvonalait a hívás pillanatában
-        // gyűjtjük (ugyanaz a minta, mint a `Move…`/`Törlés…` tételeknél).
-        onMoveToNewFolderRequested:
-            fileOpsDialogs.ensure().openMoveToNewFolder(window.photoActionPaths())
-        // #1472: Fájl ▸ Nyomtatás… / Ctrl+P — a nyomtatás-párbeszéd
-        onPrintRequested: window.openPrint()
-        // #1590: Mappa ▸ Bélyegképek nyomtatása… (Ctrl+Shift+P)
-        onPrintContactSheetRequested: window.openContactSheetPrint()
-        onLocateRequested: {
-            var p = controller.photos.filePathAt(window.photoActionIndex())
-            if (p.length > 0) fileOpsController.revealPhoto(p)
-        }
-        onDeleteRequested: fileOpsDialogs.ensure().openDelete(
-            window.viewerOpen ? window.photoActionPaths()
-                              : window.selectedPaths())
-        // #1608: a `Delete` NÉZETFÜGGŐ — albumban/Emberek-albumban nem
-        // lemezről töröl, csak kiveszi onnan (a helyi menü már meglévő
-        // útjaira vezet, ld. lentebb a PhotoContextMenu ugyanezen kezelőit)
-        currentAlbumToken: controller ? controller.currentAlbumToken : ""
-        currentPersonName: controller ? controller.currentPersonName : ""
-        // #3539: megerősítéssel — a "Remove from album without
-        // confirmation" beállítással elnyomható (`removeFromAlbumDialog`)
-        onRemoveFromAlbumRequested: {
-            if (controller) removeFromAlbumDialog.ensure().openFor(
-                window.photoActionRows(), controller.currentAlbumToken)
-        }
-        onRemoveFromPeopleAlbumRequested: {
-            if (controller) removePeopleFacesDialog.ensure().openFor(
-                window.photoActionRows(), controller.currentPersonName)
-        }
-        // #444: a nem-destruktív mentés három fokozata — a megerősítések és
-        // a nem renderelhető láncelem figyelmeztetése a SaveDialogs-ban.
-        // #5206: a befejezett mentés/visszaállítás léptetett számlálón át
-        // újraértékeli a kötést (a `hasSavedBackup` lemezt néz, a QML nem látja)
-        hasSavedBackup: controller
-            ? (controller.savedBackupRevision,
-               controller.hasSavedBackup(window.photoActionRows())) : false
-        // #4332: siker esetén a dátummódosítás az EXIF DateTimeOriginal
-        // mezőt írja; ha az EXIF-írás nem lehetséges, indexfelülírásra esik vissza.
-        onAdjustTimestampRequested:
-            createDialogs.ensure().openTimestamp(window.photoActionRows())
-        onSaveRequested: saveDialogs.ensure().openSave(window.photoActionRows())
-        onRevertRequested: saveDialogs.ensure().openRevert(window.photoActionRows())
-        // #1527: a mentés-család két új tagja
-        onSaveAsRequested: saveDialogs.ensure().openSaveAs(window.photoActionIndex())
-        onSaveCopyRequested: saveDialogs.ensure().openSaveCopy(window.photoActionRows())
-        onSlideshowRequested: window.startSlideshow(-1)
-        // #3460/#4630: a Mappa/Album menü a megnyitott hely leírását szerkeszti
-        currentFolder: controller ? controller.currentFolder : ""
-        onEditFolderDescriptionRequested: {
-            if (controller) {
-                if (controller.currentAlbumToken !== "")
-                    folderPane.openAlbumDescription(controller.currentAlbumToken)
-                else
-                    folderPane.openFolderDescription(controller.currentFolder)
-            }
-        }
-        tagsPanelOpen: window.tagsPanelOpen
-        onTagsPanelRequested: window.valtsFiokLapot("tags")
-        peoplePanelOpen: window.peoplePanelOpen
-        onPeoplePanelRequested: window.valtsFiokLapot("people")
-        placesPanelOpen: window.placesPanelOpen
-        onPlacesPanelRequested: window.valtsFiokLapot("places")
-        onHideToggleRequested: window.hideSelection()
-        propertiesPanelOpen: window.propertiesPanelOpen
-        onPropertiesPanelRequested: window.valtsFiokLapot("properties")
-        // #426: „Az összes effektus másolása/beillesztése" — a menü
-        // célképére, a rácsban pedig a kijelölésre hat
-        // (window.photoActionRows() a
-        // meglévő mintát követi, ld. toggleHiddenSelection). A
-        // `photo_ops_controller.PhotoOpsMixin`-t hívja, NEM a #152-es
-        // `effects_controller`-t (az a crop64-et is átvinné).
-        // #305: null-őr — ld. fenti Connections
-        hasAllEffectsClipboard: controller ? controller.hasAllEffectsClipboard : false
-        onCopyAllEffectsRequested: controller.copyAllEffects(window.photoActionRows())
-        onPasteAllEffectsRequested: controller.pasteAllEffects(window.photoActionRows())
-        // #1475: a két kötegelt visszavonás — a Szerkesztés menü élén álló
-        // tételek. Kijelölés-független: a köteg a SAJÁT, művelet idején
-        // rögzített képlistáját állítja vissza.
-        canUndoPasteAllEffects: controller ? controller.canUndoPasteAllEffects : false
-        canUndoBatchEdit: controller ? controller.canUndoBatchEdit : false
-        onUndoPasteAllEffectsRequested: controller.undoPasteAllEffects()
-        onUndoBatchEditRequested: controller.undoBatchEdit()
-        // #425: Kép ▸ Csoportos szerkesztés — a `batch_effect_controller.
-        // BatchEffectMixin`-t hívja, ugyanazon a rács-sorindex mintán
-        // a forgatás a MEGLÉVŐ (szinkron, gyors) rotateRightMany/
-        // rotateLeftMany úton fut, nem az applyEffectMany háttérszálán —
-        // a `filters=`-t bővítő 7 effekttől eltérően nem igényel ini-
-        // láncbővítést, csak a rotate= kulcs cseréjét (ld. PhotoOpsMixin).
-        // A köteg visszavonása a Szerkesztés menü „Csoportos szerkesztés
-        // visszavonása" tételén megy (#1475) — a forgatás NEM kerül a
-        // kötegelt undo-verembe, mert a rotate= külön kulcs.
-        onBatchApplyEffectRequested: (name) => {
-            if (window.viewerOpen) {
-                if (photoViewer.selectMenuEffect(name)) return
-                var row = window.photoActionIndex()
-                if (row < 0) return
-                if (name === "rotate_cw") controller.rotateRight(row)
-                else if (name === "rotate_ccw") controller.rotateLeft(row)
-                else controller.applyEffectMany([row], name)
-            } else if (name === "rotate_cw") {
-                controller.rotateRightMany(window.selectedRows())
-            } else if (name === "rotate_ccw") {
-                controller.rotateLeftMany(window.selectedRows())
-            } else {
-                controller.applyEffectMany(window.selectedRows(), name)
-            }
-        }
-        // #4335: mindkét parancs ugyanazt a kötegelt INI-utat használja,
-        // a különbség a kért végállapot.
-        onTextOverlayVisibilityRequested: (visible) => {
-            controller.setTextOverlayVisibleMany(
-                window.photoActionRows(), visible)
-        }
-        // #465 3. pont: „Undo All Edits" — megerősítéssel, a kijelölt
-        // kép(ek) TELJES szerkesztési lánca törlődik (`clearAllEffectsMany`,
-        // ugyanaz a kötegelt undo-verem mint a `applyEffectMany`-nál).
-        onUndoAllEditsRequested: mainDialogs.undoAllEditsDialog.ensure().openForLibrary(
-            window.photoActionRows())
-        // #3555: nyelvváltás — a menütétel csak jelez (a `ConfirmDialog` nem
-        // fér el a MenuBar gyermekeként), a kérdés és a `setLanguage`-hívás
-        // itt fut ki.
-        onLanguageConfirmRequested: function (code) {
-            mainDialogs.languageConfirmDialog.ensure().askFor(code)
-        }
+        hostWindow: window
+        hostController: controller
+        hostFileOpsController: fileOpsController
+        hostPassportController: passportController
+        hostAboutDialog: aboutDialog
+        hostAddFileDialog: addFileDialog
+        hostBackupHost: backupHost
+        hostCollectionPasswordDialog: collectionPasswordDialog
+        hostCompactDatabaseDialog: compactDatabaseDialog
+        hostConfigureButtonsDialog: configureButtonsDialog
+        hostCreateDialogs: createDialogs
+        hostDedupDialog: dedupDialog
+        hostExportDialogs: exportDialogs
+        hostFaceScanDialog: faceScanDialog
+        hostFileOpsDialogs: fileOpsDialogs
+        hostFolderManager: folderManager
+        hostFolderPane: folderPane
+        hostGiftCdHost: giftCdHost
+        hostHelpDialog: helpDialog
+        hostImportSourceDialog: importSourceDialog
+        hostMainDialogs: mainDialogs
+        hostMoveDatabaseDialog: moveDatabaseDialog
+        hostOptionsDialog: optionsDialog
+        hostPeopleManagerLoader: peopleManagerLoader
+        hostPhotoViewer: photoViewer
+        hostPhotoViewerSettingsDialog: photoViewerSettingsDialog
+        hostPicasaDataImportDialog: picasaDataImportDialog
+        hostRemoveFromAlbumDialog: removeFromAlbumDialog
+        hostRemovePeopleFacesDialog: removePeopleFacesDialog
+        hostSaveDialogs: saveDialogs
+        hostSaveSearchDialog: saveSearchDialog
+        hostScreensaverDialog: screensaverDialog
+        hostShowTagAsAlbumDialog: showTagAsAlbumDialog
+        hostToolbar: toolbar
+        hostTrayBar: trayBar
+        hostWebExportDialog: webExportDialog
+        hostXmpFacesWriteDialog: xmpFacesWriteDialog
     }
 
     MainDialogs {

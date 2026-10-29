@@ -19,10 +19,10 @@ from pathlib import Path
 
 import picasapy.app
 import pytest
-from support.menubar_components_6016 import menu_sources
+from support.menubar_components_6016 import main_sources, menu_sources
 
 _QML_DIR = Path(picasapy.app.__file__).parent / "qml"
-_MAIN = (_QML_DIR / "Main.qml").read_text(encoding="utf-8")
+_MAIN = main_sources()
 _MENU = menu_sources()
 
 
@@ -46,7 +46,13 @@ class TestAKilepesEgyHelyenDolEl:
         assert "signal exitRequested()" in _MENU
 
     def test_a_gazda_a_KOZOS_utra_koti(self):
-        assert "onExitRequested: window.kilepes()" in _MAIN
+        assert any(
+            alak in _MAIN
+            for alak in (
+                "onExitRequested: window.kilepes()",
+                "onExitRequested: hostWindow.kilepes()",
+            )
+        )
 
     def test_az_ablak_X_e_is_ugyanide_fut(self):
         """Ha csak a menü kérdezne, az „X" némán elvinné a futó munkát."""

@@ -99,6 +99,28 @@ _KOTELEZO_VALTOZATOK = {
         "hostSaveDialogs: ({}); hostSlideshow: ({ visible: false }); "
         "hostTrayBar: ({ keyboardShortcutSequences: [] })",
     ),
+    # #6136: a felső menüsor bekötése külön komponens; valamennyi
+    # testvér-objektumot a főablak kötelező tulajdonságként adja át.
+    "MainMenuBar": (
+        "hostWindow: ({}); hostController: null; hostFileOpsController: null; "
+        "hostPassportController: null; hostAboutDialog: ({}); "
+        "hostAddFileDialog: ({}); hostBackupHost: ({}); "
+        "hostCollectionPasswordDialog: ({}); hostCompactDatabaseDialog: ({}); "
+        "hostConfigureButtonsDialog: ({}); hostCreateDialogs: ({}); "
+        "hostDedupDialog: ({}); hostExportDialogs: ({}); "
+        "hostFaceScanDialog: ({}); hostFileOpsDialogs: ({}); "
+        "hostFolderManager: ({}); hostFolderPane: ({}); hostGiftCdHost: ({}); "
+        "hostHelpDialog: ({}); hostImportSourceDialog: ({}); "
+        "hostMainDialogs: ({}); hostMoveDatabaseDialog: ({}); "
+        "hostOptionsDialog: ({}); hostPeopleManagerLoader: ({}); "
+        "hostPhotoViewer: ({}); hostPhotoViewerSettingsDialog: ({}); "
+        "hostPicasaDataImportDialog: ({}); hostRemoveFromAlbumDialog: ({}); "
+        "hostRemovePeopleFacesDialog: ({}); hostSaveDialogs: ({}); "
+        "hostSaveSearchDialog: ({}); hostScreensaverDialog: ({}); "
+        "hostShowTagAsAlbumDialog: ({}); hostToolbar: ({}); "
+        "hostTrayBar: ({}); hostWebExportDialog: ({}); "
+        "hostXmpFacesWriteDialog: ({})",
+    ),
 }
 _ALTALANOS_VALTOZATOK = (
     "", "appWindow: null", "panel: null", "appWindow: null; panel: null"

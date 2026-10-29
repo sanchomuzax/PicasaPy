@@ -392,7 +392,13 @@ class TestQmlOldal:
         assert '"Red eye fixes have been applied to %1.\\n"' in forras
 
     def test_a_serult_fajl_uzenet_a_fajllistat_is_mondja(self) -> None:
-        forras = (QML / "Main.qml").read_text(encoding="utf-8")
+        forras = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in (
+                QML / "Main.qml",
+                *sorted((QML / "PicasaPy").glob("Main*.qml")),
+            )
+        )
         assert 'qsTr("PicasaPy had a problem loading this file(s)\\n")' in forras
         assert 'qsTr("\\nWould you like to hide the files on disk?")' in forras
         assert "pendingNames" in forras
