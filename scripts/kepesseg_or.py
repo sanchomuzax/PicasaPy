@@ -459,7 +459,9 @@ def _segedmodul_regisztraciok(
                         if isinstance(target, ast.Name):
                             locals_[target.id] = call.args[0].value
 
-            def returned_class(expr: ast.expr) -> str | None:
+            def returned_class(
+                expr: ast.expr, locals_: dict[str, str] = locals_
+            ) -> str | None:
                 if isinstance(expr, ast.IfExp):
                     return returned_class(expr.body)
                 if not isinstance(expr, ast.Call):
@@ -565,7 +567,7 @@ def _segedmodul_regisztraciok(
 
     result: dict[str, str | None] = {}
     qml_hidak: list[tuple[str, str | None]] = []
-    for path, tree in fak:
+    for _path, tree in fak:
         for function in ast.walk(tree):
             if not isinstance(function, ast.FunctionDef | ast.AsyncFunctionDef):
                 continue
