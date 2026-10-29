@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.293] - 2026-10-29
+
+- A Nyomtatás párbeszéd kisebb, önálló részekre bomlik, változatlan működéssel. (#6216).
+- A fotók indexképeinek megjelenítése változatlan maradt a háttérbeli átalakítás után (#6219).
+
 ## [0.9.292] - 2026-10-29
 
 - A főablak gyorsbillentyűi külön QML-komponensbe kerültek, változatlan megjelenéssel és működéssel (#6136).
