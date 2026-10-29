@@ -45,13 +45,14 @@ from pathlib import Path
 
 import picasapy.app as app_csomag
 from tests.support.qml_blokk import blokk_horgony_utan
+from tests.support.editor_panel_family import editor_panel_family_source
 
 _QML_DIR = Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
 _FULEK = {
     nev: (_QML_DIR / f"EditorEffectsTab{nev}.qml").read_text(encoding="utf-8")
     for nev in ("1", "2", "3", "4")
 }
-_PANEL = (_QML_DIR / "EditorPanel.qml").read_text(encoding="utf-8")
+_PANEL = editor_panel_family_source(_QML_DIR)
 #: ⚠️ #3220: a panel LOGIKÁJA külön fájlba került (a panel 1295 sorról
 #: 769-re fogyott). Az alábbi állítások változatlanok — csak azt kell
 #: tudniuk, hol keressék a függvény TÖRZSÉT. A kezelő-blokkok

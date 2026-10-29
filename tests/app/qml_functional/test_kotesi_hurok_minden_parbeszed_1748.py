@@ -87,6 +87,20 @@ _KOTELEZO_VALTOZATOK = {
         "reviewPanel: ({ currentIndex: -1 }); "
         "removeAllDialog: ({ open: function() {} }); optionsPanel: ({})",
     ),
+    # #6225: az EditorPanel belső állapot- és blur-komponensei a gazdájukat
+    # és a szükséges host objektumokat required property-ként kapják.
+    "EditorPanelCropState": (
+        "editorPanel: ({}); hostController: null; hostEditController: null",
+    ),
+    "EditorPanelEffectState": (
+        "editorPanel: ({}); hostEditController: null",
+    ),
+    "EditorPanelFinetuneState": ("editorPanel: ({})",),
+    "EditorPanelTextState": ("editorPanel: ({})",),
+    "EditorPanelToolsState": ("editorPanel: ({})",),
+    "EditorPanelBlurEffects": (
+        "editorPanel: ({}); tabs: null; tabArea: null; undoRow: null",
+    ),
     # #6136: a főablak jobb oldali fiókja kötelező gazda-tulajdonságokat kér
     "MainRightDrawer": (
         "hostWindow: ({}); hostController: null; hostToolbar: ({}); "
@@ -120,6 +134,13 @@ _KOTELEZO_VALTOZATOK = {
         "photoActionsEnabled: false }); "
         "hostSaveDialogs: ({}); hostSlideshow: ({ visible: false }); "
         "hostTrayBar: ({ keyboardShortcutSequences: [] })",
+    ),
+    # #6136: a személyalbum-műveletek állapota kötelező gazdaobjektumokat kap.
+    "MainPeopleAlbumState": (
+        "hostWindow: ({ selectedIndexes: [], selectedIndex: -1, "
+        "selectedRows: function() { return [] }, peopleFaceRevision: 0 }); "
+        "hostController: null; hostFaceScanController: null; "
+        "hostRemovePeopleFacesDialog: ({}); hostCreateDialogs: ({})",
     ),
     # #6136: a felső menüsor bekötése külön komponens; valamennyi
     # testvér-objektumot a főablak kötelező tulajdonságként adja át.

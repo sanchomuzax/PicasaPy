@@ -223,8 +223,20 @@ class TestBekotes:
                 "LightboxFeedPersonHeader.qml",
             )
         )
-        main = (qml / "Main.qml").read_text(encoding="utf-8")
+        main = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in (
+                qml / "Main.qml",
+                *sorted((qml / "PicasaPy").glob("Main*.qml")),
+            )
+        )
         assert "feed.appWindow.personFaceZoom" in feed
         assert "feed.appWindow.setPersonFaceZoom" in feed
-        assert "controller.setPersonFaceZoom" in main
-        assert "controller.personFaceZoom" in main
+        assert (
+            "controller.setPersonFaceZoom" in main
+            or "hostController.setPersonFaceZoom" in main
+        )
+        assert (
+            "controller.personFaceZoom" in main
+            or "hostController.personFaceZoom" in main
+        )

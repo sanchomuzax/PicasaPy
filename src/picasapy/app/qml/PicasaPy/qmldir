@@ -9,6 +9,7 @@ ThumbDelegate 1.0 ThumbDelegate.qml
 PicasaMenuBar 1.0 PicasaMenuBar.qml
 MainDialogs 1.0 MainDialogs.qml
 MainErrorBanner 1.0 MainErrorBanner.qml
+MainPeopleAlbumState 1.0 MainPeopleAlbumState.qml
 MainMenuBar 1.0 MainMenuBar.qml
 internal PicasaFileMenu PicasaFileMenu.qml
 internal PicasaEditMenu PicasaEditMenu.qml
@@ -59,6 +60,12 @@ PicasaSlider 1.0 PicasaSlider.qml
 EditorPanel 1.0 EditorPanel.qml
 internal EditorPanelTabs EditorPanelTabs.qml
 internal EditorPanelOverlays EditorPanelOverlays.qml
+internal EditorPanelCropState EditorPanelCropState.qml
+internal EditorPanelEffectState EditorPanelEffectState.qml
+internal EditorPanelFinetuneState EditorPanelFinetuneState.qml
+internal EditorPanelTextState EditorPanelTextState.qml
+internal EditorPanelToolsState EditorPanelToolsState.qml
+internal EditorPanelBlurEffects EditorPanelBlurEffects.qml
 DocumentTabStrip 1.0 DocumentTabStrip.qml
 DocumentTab 1.0 DocumentTab.qml
 CropOverlay 1.0 CropOverlay.qml
