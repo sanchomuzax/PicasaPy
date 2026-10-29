@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.286] - 2026-10-29
+
+- A Létrehozás render-referenciája csak Linuxon fut (#6190).
+- A Red.dll vsi_WeakClassifier szerializáló mezőútja a specifikációban (#5184).
+- A tálca render-tesztje a rögzített betűvel mér, az őr kivétele megszűnik (#6148).
+- A Létrehozás render-ellenőrzése megvárja az EXIF-adatok és képkockák stabilizálódását (#6124).
+- A főablak mappafa-panelje önálló QML-komponensbe került, változatlan képpel (#6136).
+- A szerkesztőpanel belső részei önálló QML-komponensekbe kerültek. (#6177).
+- A renderlánc kisebb, megnevezett modulokra bomlott, változatlan képkimenettel (#6185).
+
 ## [0.9.285] - 2026-10-29
 
 - A Red.dll arcfelismerési küszöbének statikus útja a specifikációban (#5185).
