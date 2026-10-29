@@ -19646,31 +19646,31 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Close crop to faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>顔に合わせてトリミング</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Compose around faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>顔を中心に構図を作成</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>色を基準にトリミング</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by detail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>細部を基準にトリミング</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by horizon</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>地平線に合わせてトリミング</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="97" />
@@ -19701,7 +19701,7 @@ picasapy-origin-key: stringres:AspectRatioList::CurrentAspect;stringres:AspectRa
             <extracomment>    picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description
 picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectRatioList:9x13:Description</extracomment>
-            <translation type="unfinished" />
+            <translation>L 版</translation>
         </message>
         <message>
             <source>Large print</source>

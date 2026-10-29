@@ -19646,31 +19646,31 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Close crop to faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Beskær tæt omkring ansigter</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Compose around faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Komponér omkring ansigter</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Beskær efter farve</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by detail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Beskær efter detaljer</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by horizon</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Beskær efter horisont</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="97" />
@@ -19743,7 +19743,7 @@ picasapy-origin-key: stringres:AspectRatioList:SquareDescription</extracomment>
             <extracomment>    picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)
 picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Label(printpanel/fullbutton)</extracomment>
-            <translation type="unfinished" />
+            <translation>FuldSide</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="371" />

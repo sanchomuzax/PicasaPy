@@ -19646,31 +19646,31 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Close crop to faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Beskjær tett rundt ansikter</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Compose around faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Komponer rundt ansikter</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Beskjær etter farge</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by detail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Beskjær etter detaljer</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by horizon</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Beskjær etter horisonten</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="97" />

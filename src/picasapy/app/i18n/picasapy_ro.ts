@@ -19673,31 +19673,31 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Close crop to faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Decupaţi strâns în jurul chipurilor</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Compose around faces</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Compuneţi în jurul chipurilor</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by color</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Decupaţi după culoare</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by detail</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Decupaţi după detalii</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" />
             <source>Crop by horizon</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Decupaţi după orizont</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorPanelCropState.qml" line="97" />
@@ -19735,7 +19735,7 @@ picasapy-origin-key: stringres:AspectRatioList:4x6:Description;stringres:AspectR
             <extracomment>    picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description
 picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:10x15:Description;stringres:AspectRatioList:5x7:Description</extracomment>
-            <translation type="unfinished" />
+            <translation>Print de dimensiune mare</translation>
         </message>
         <message>
             <source>Standard screen</source>
