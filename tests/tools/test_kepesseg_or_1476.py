@@ -765,7 +765,9 @@ def test_a_valodi_leltar_blokkban_nincs_osztaly_tagszam() -> None:
     szoveg = VALODI_LELTAR.read_text(encoding="utf-8")
     blokk = szoveg.split(or_.LELTAR_KEZDET)[1].split(or_.LELTAR_VEGE)[0]
     assert "PhotoGridModel" in blokk, "üresen igaz teszt: nincs árva osztály a lapon"
-    arva_sorok = [s for s in blokk.splitlines() if "app/models.py" in s]
+    # #6154: a PhotoGridModel az app/photo_grid_model.py-ba költözött; a sort
+    # az osztály nevéről ismerjük fel, nem a fájlnévről.
+    arva_sorok = [s for s in blokk.splitlines() if "`PhotoGridModel`" in s]
     assert arva_sorok, "üresen igaz teszt: nincs árvaosztály-sor"
     for sor in arva_sorok:
         assert not re.search(r"\|\s*\d+\s*\|", sor), f"tagszám került vissza: {sor}"
