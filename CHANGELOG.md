@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.292] - 2026-10-29
+
+- A főablak gyorsbillentyűi külön QML-komponensbe kerültek, változatlan megjelenéssel és működéssel (#6136).
+
 ## [0.9.291] - 2026-10-29
 
 - A filmkészítő párbeszéd külön QML-komponensekre bomlott, a felület változatlan maradt (#6205).

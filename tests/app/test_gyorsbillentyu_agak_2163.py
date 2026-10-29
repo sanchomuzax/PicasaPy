@@ -30,7 +30,11 @@ from support.menubar_components_6016 import menu_sources
 import picasapy.app
 
 _QML = Path(picasapy.app.__file__).parent / "qml"
-_MAIN = (_QML / "Main.qml").read_text(encoding="utf-8")
+_MAIN_COMPONENTS = sorted((_QML / "PicasaPy").glob("Main*.qml"))
+_MAIN = "\n".join(
+    path.read_text(encoding="utf-8")
+    for path in (_QML / "Main.qml", *_MAIN_COMPONENTS)
+).replace("hostWindow", "window").replace("hostController", "controller")
 _MENU = menu_sources()
 _TRAY = (_QML / "PicasaPy" / "TrayBar.qml").read_text(encoding="utf-8")
 

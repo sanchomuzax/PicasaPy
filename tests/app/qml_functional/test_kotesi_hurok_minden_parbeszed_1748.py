@@ -105,6 +105,22 @@ _KOTELEZO_VALTOZATOK = {
         "hostController: ({}); hostTestLogDialog: ({}); hostBrokenPhotoDialog: ({}); "
         "hostBrokenPhotoBatchTimer: ({})",
     ),
+    # #6136: a gyorsbillentyűk külön komponensbe kerültek; a 12 gazda-prop
+    # közül azok kapnak minimális alakot, amelyek felépítéskor kiolvasódnak.
+    "MainKeyboardShortcuts": (
+        "hostWindow: ({}); hostController: null; "
+        "hostDocumentTabStrip: ({ libraryActive: false, keyboardShortcutSequences: [] }); "
+        "hostExportDialogs: ({}); hostFileOpsController: null; "
+        "hostFileOpsDialogs: ({}); hostHelpDialog: ({}); "
+        "hostPhotoViewer: ({ keyboardShortcutSequences: [] }); "
+        "hostPicasaMenuBar: ({ "
+        "keyboardShortcutGroupTitles: ({ file: '', edit: '', view: '', "
+        "folder: '', picture: '', help: '' }), "
+        "keyboardShortcutSequences: ({ file: [], view: [], folder: [] }), "
+        "photoActionsEnabled: false }); "
+        "hostSaveDialogs: ({}); hostSlideshow: ({ visible: false }); "
+        "hostTrayBar: ({ keyboardShortcutSequences: [] })",
+    ),
 }
 _ALTALANOS_VALTOZATOK = (
     "", "appWindow: null", "panel: null", "appWindow: null; panel: null"
