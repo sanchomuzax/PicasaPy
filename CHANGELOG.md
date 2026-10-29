@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.290] - 2026-10-29
+
+- Az arcfelismerési spec átmeneti kivétel a nagyfájl-őrben (#6211).
+- A képernyőkép-eszköz rácsos állapotai a függő képkérések végét is megvárják (#6206).
+- A Red.dll stream-nyitó útja és egyetlen exportja a specifikációban (#5185).
 ## [0.9.289] - 2026-10-29
 
 - A fő eszköztár földrajzi ikonja és dátumcsúszkájának árnyéka egységesebben jelenik meg (#6140).
