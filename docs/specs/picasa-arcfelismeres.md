@@ -6753,7 +6753,7 @@ J8-hoz az eredeti, vezérelt Colab-profilt kell felvenni; a most ellenőrzött `
 
 **Cáfoló kísérlet.** Azt próbáltam alátámasztani, hogy a `0x101d5160` a virtuális hívó függvény címe. Ezt megcáfolja a Red-index: függvénybejegyzés nincs, viszont `data_symbols` a címet vftábla-slotnak nevezi; a nyers bájt `0x10104290` célfüggvényre mutat, a Ghidra-kimenet pedig `DATA` xrefet jelöl. A cáfoló út ezért ugyanazzal a címmel és bájtpontossággal ellenőrizhető. A tényleges közvetett hívó(k) és a streamfájl **NINCS MEG**; a fenti, pontosított Ghidra-kérdés nyitva marad.
 
-### 54.3/g 2026-10-29 – a `+0x1c` alapértéke és a küszöb alatti jelöltág
+### 54.3/g 2026-10-29 - a `+0x1c` alapértéke és a küszöb alatti jelöltág
 
 **Hatókör és azonossági korlát.** A helyi `plugins/Red.dll` SHA-256-a `da370693b59d89e7d48646d9617f5f595e371f8e1828cb1aa9f12530a17c8233`, és megegyezik a Red-indexelt DLL hashével; az index forrásriportja Picasa 3.7 telepítést jelöl. A teljes `.text` vizsgálata a kötelező darabolt `paszta.py` pásztázóval történt (`memoria_kapu()` elsőként; 586 658 dekódolt utasítás, 84,7 MiB csúcs RSS), majd a releváns helyekre külön Capstone-olvasat készült. Ez a bizonyíték a hashazonos helyi DLL statikus működésére szól, nem bizonyítja, hogy ez a DLL futott a tiszta Picasa 3.9 alatt.
 
