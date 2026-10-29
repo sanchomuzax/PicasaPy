@@ -15,7 +15,7 @@
 //
 // Ez NEM `.pragma library`: a QML-dokumentumba relatívan importált
 // JavaScript a KOMPONENS hatókörében fut, tehát látja a `panel` azonosítót,
-// a gyerekek id-jét (`finetunePanel`, `effectParamScroll`, …) és a
+// a gyerekek id-jét (`finetunePanel`, `panelTabs`, …) és a
 // kontextus-property-ket (`editController`) is. Mérve: egy próba-QML-ből
 // importált JS-ben a kontextus-property `number`-ként, az id `object`-ként
 // látszott. Ezért a függvények SZÓ SZERINT kerültek át.
@@ -176,12 +176,12 @@ function updateParamValue(index, value) {
     var values = panel.paramEffectValues.slice(0)
     values[index] = value
     panel.paramEffectValues = values
-    paramPreviewTimer.restart()
+    panelTabs.previewTimer.restart()
 }
 
 // Apply: a beállított értékekkel a láncra (undo + mentés), vissza a rácsra.
 function applyParamPanel() {
-    paramPreviewTimer.stop()
+    panelTabs.previewTimer.stop()
     if (panel.hasEffectController())
         editController.applyEffectWithParams(panel.paramEffectName,
                                               panel.paramEffectValues)
@@ -191,7 +191,7 @@ function applyParamPanel() {
 // Cancel: az előnézet elvetése (a mentett lánc marad érintetlen),
 // vissza a rácsra.
 function cancelParamPanel() {
-    paramPreviewTimer.stop()
+    panelTabs.previewTimer.stop()
     if (panel.hasEffectController())
         editController.discardEffectPreview()
     panel.closeParamPanel()
@@ -213,7 +213,7 @@ function closeParamPanel() {
 // került, az egyetlen hívója mellé; ez a vékony átjáró tartja meg a
 // panel-szintű felületet (a meglévő tesztek a panelen hívják).
 function paramLabel(key) {
-    return effectParamScroll.paramLabel(key)
+    return panelTabs.effectParamPanel.paramLabel(key)
 }
 
 // a négy csúszka aktuális értékét egyben küldi (élő előnézet)
@@ -342,7 +342,7 @@ function lathatoMagassag() {
 
 function fulTartalomMagassag() {
     var tallest = 0
-    var kids = tabArea.children
+    var kids = panelTabs.tabAreaItem.children
     for (var i = 0; i < kids.length; ++i) {
         if (!kids[i].visible)
             continue
