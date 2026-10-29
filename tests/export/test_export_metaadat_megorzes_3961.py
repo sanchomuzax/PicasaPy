@@ -553,16 +553,16 @@ class TestTiffHelyben:
 
 _TIFF_HELYBEN = Path(__file__).parents[2] / "src/picasapy/metadata/tiff_helyben.py"
 
-#: A gyermekfolyamat csak a (stdlib-es) modult tölti be, 1 GiB címtér-plafonnal:
-#: a régi sorrend (előbb foglal, aztán ellenőriz) itt `MemoryError`-ral hal meg,
-#: a gépet nem viszi el.
+#: A gyermekfolyamat csak a metadata/ modulait tölti be (a csomag `__init__`-je
+#: nélkül, stdlib-es), 1 GiB címtér-plafonnal: a régi sorrend (előbb foglal, aztán
+#: ellenőriz) itt `MemoryError`-ral hal meg, a gépet nem viszi el.
 _BOMBA = """
-import importlib.util, resource, struct, sys
+import importlib, resource, struct, sys, types
 resource.setrlimit(resource.RLIMIT_AS, (1 << 30, 1 << 30))
-spec = importlib.util.spec_from_file_location("th", sys.argv[1])
-th = importlib.util.module_from_spec(spec)
-sys.modules["th"] = th
-spec.loader.exec_module(th)
+for nev in ("picasapy", "picasapy.metadata"):
+    sys.modules[nev] = types.ModuleType(nev)
+sys.modules["picasapy.metadata"].__path__ = [sys.argv[1]]
+th = importlib.import_module("picasapy.metadata.tiff_helyben")
 tiff = (b"II*\\x00\\x08\\x00\\x00\\x00" + struct.pack("<H", 1)
         + struct.pack("<HHII", 0x0132, 2, 1_500_000_000, 26) + b"\\x00" * 4
         + b"2020:01:01 00:00:00\\x00")
@@ -585,6 +585,14 @@ def _th():
     return th
 
 
+def _iras():
+    """A `_cel_szabad` a helyben író részmodulban van (#6232): a foglalás-őrt itt kell
+    megkerülni, a belépési modulban a patch már nem érné el a hívót."""
+    from picasapy.metadata import tiff_iras
+
+    return tiff_iras
+
+
 def _datetime_valtozas(datum="2026:09:29 10:00:00"):
     th = _th()
     return [th.Valtozas("0th", 0x0132, th.ascii_ertek(datum))]
@@ -599,7 +607,7 @@ class TestSerultBlokk:
         import sys
 
         futas = subprocess.run(
-            [sys.executable, "-c", _BOMBA, str(_TIFF_HELYBEN)],
+            [sys.executable, "-c", _BOMBA, str(_TIFF_HELYBEN.parent)],
             capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60,
         )
         sor = next(
@@ -643,7 +651,7 @@ class TestSerultBlokk:
         """J1, második védvonal: ha a célkorlát kimaradna, a szerkezeti
         visszaolvasás `TiffHiba`-t ad (a hívó ilyenkor a forrást adja tovább)."""
         th = _th()
-        monkeypatch.setattr(th, "_cel_szabad", lambda *_a: True)
+        monkeypatch.setattr(_iras(), "_cel_szabad", lambda *_a: True)
         with pytest.raises(th.TiffHiba):
             th.frissitett_tiff(self._datetime_mutatoval(10), _datetime_valtozas())
 
@@ -679,7 +687,7 @@ class TestSerultBlokk:
 
     def test_onellenorzes_megfogja_az_elonezet_blokkvesztest(self, monkeypatch):
         th = _th()
-        monkeypatch.setattr(th, "_cel_szabad", lambda *_a: True)
+        monkeypatch.setattr(_iras(), "_cel_szabad", lambda *_a: True)
         with pytest.raises(th.TiffHiba):
             th.frissitett_tiff(
                 self._nullas_elonezettel(), _datetime_valtozas(), elonezet=lambda: b"\xff\xd8X"
@@ -841,7 +849,7 @@ class TestSerultBlokkHarmadik:
 
     def test_gps_tabla_onellenorzese_megfogja_az_irast(self, monkeypatch):
         th = _th()
-        monkeypatch.setattr(th, "_cel_szabad", lambda *_a, **_k: True)
+        monkeypatch.setattr(_iras(), "_cel_szabad", lambda *_a, **_k: True)
         tiff, _off, _hossz = _ifd0_gps_tiff()
         with pytest.raises(th.TiffHiba):
             th.frissitett_tiff(tiff, _datetime_valtozas())
@@ -854,7 +862,7 @@ class TestSerultBlokkHarmadik:
 
     def test_interop_tabla_onellenorzese_megfogja_az_irast(self, monkeypatch):
         th = _th()
-        monkeypatch.setattr(th, "_cel_szabad", lambda *_a, **_k: True)
+        monkeypatch.setattr(_iras(), "_cel_szabad", lambda *_a, **_k: True)
         tiff, _off, _hossz = _exif_interop_tiff()
         with pytest.raises(th.TiffHiba):
             th.frissitett_tiff(tiff, _datetime_valtozas())
@@ -876,7 +884,7 @@ class TestSerultBlokkHarmadik:
 
     def test_elonezet_onellenorzese_megfogja_az_irast(self, monkeypatch):
         th = _th()
-        monkeypatch.setattr(th, "_cel_szabad", lambda *_a, **_k: True)
+        monkeypatch.setattr(_iras(), "_cel_szabad", lambda *_a, **_k: True)
         tiff, _off, _kep = _elonezet_bajtjaiba_mutato_tiff()
         with pytest.raises(th.TiffHiba):
             th.frissitett_tiff(tiff, _datetime_valtozas())
