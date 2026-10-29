@@ -141,7 +141,10 @@ class TestAKetBelepesiPont:
         BELÜL él, tehát egy sáv szolgálja mindkettőt — de ezt mérni kell,
         nem feltételezni: a sáv `visible`-je nem hivatkozhat a szerkesztő
         nyitottságára."""
-        forras = (_QML_DIR / "PhotoViewer.qml").read_text(encoding="utf-8")
+        # #6109: a feliratsáv a néző fedővezérlő-komponensébe került.
+        forras = (_QML_DIR / "PhotoViewerOverlayControls.qml").read_text(
+            encoding="utf-8"
+        )
         blokk = blokk_horgonyra(forras, 'objectName: "captionBar"')
         assert "visible: viewer.captionVisible" in blokk, (
             "a felirat-sáv láthatósága nem csak a beállításon múlik"

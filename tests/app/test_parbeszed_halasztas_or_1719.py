@@ -65,9 +65,14 @@ from pathlib import Path
 
 from tests.support.qml_blokk import blokk_tartomanyok, kommentek_nelkul
 
-_MAIN = (
-    Path(__file__).resolve().parents[2] / "src/picasapy/app/qml/Main.qml"
-)
+_QML = Path(__file__).resolve().parents[2] / "src/picasapy/app/qml"
+_MAIN = _QML / "Main.qml"
+
+#: A főablak párbeszédei 2026-10-28 óta (#5955) a `MainDialogs.qml`-ben
+#: vannak; az őr mindkét fájlt olvassa, a tárolót magát pedig nem számolja
+#: párbeszédnek - a benne lévő tételeket egyenként ellenőrzi.
+_FORRASOK = (_MAIN, _QML / "PicasaPy" / "MainDialogs.qml")
+_TAROLOK = {"MainDialogs"}
 
 #: Azok a párbeszédek, amelyek SZÁNDÉKOSAN azonnal felépülnek, indoklással.
 #: Ami itt nincs benne és mégis közvetlenül épül fel, az hiba.
@@ -116,7 +121,9 @@ _PARBESZED = re.compile(r"(\w*Dialogs?)\s*\{")
 def _forras() -> str:
     """A `Main.qml` kommentek nélkül — a kommentben szereplő példa ne
     számítson példányosításnak (a projekt visszatérő csapdája)."""
-    return kommentek_nelkul(_MAIN.read_text(encoding="utf-8"))
+    return "\n".join(
+        kommentek_nelkul(f.read_text(encoding="utf-8")) for f in _FORRASOK
+    )
 
 
 def _deferred_tartomanyok(szoveg: str) -> list[tuple[int, int]]:
@@ -146,7 +153,7 @@ def _kozvetlenul_epulok() -> set[str]:
     ki: set[str] = set()
     for talalat in _PARBESZED.finditer(szoveg):
         nev = talalat.group(1)
-        if nev in ("DeferredDialog", "Dialog"):
+        if nev in ("DeferredDialog", "Dialog") or nev in _TAROLOK:
             continue
         hely = talalat.start()
         if not any(kezd < hely < veg for kezd, veg in tartomanyok):

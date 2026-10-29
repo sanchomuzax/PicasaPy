@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import math
 import os
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -22,11 +23,16 @@ from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QSignalSpy, QTest
 
+from picasapy.app import formatting
 from support.jpeg_factory import make_minta_jpeg
+from support.render_test_helpers import is_text_item
 from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
 _GOLDEN = Path(__file__).parent / "golden" / "tray_bar_6050"
+#: A goldenek rögzítésének napja (#6085). A fejléc a képek dátumát írja ki;
+#: a futás napjától függő szöveg hossza a goldenben kilógna a feliratmaszkból.
+_ROGZITETT_NAP = "2026-10-27"
 _ALLAPOTOK = (
     "ures",
     "keves_kijelolt",
@@ -55,7 +61,21 @@ def _kepadat(kep: QImage) -> np.ndarray:
     adat = np.frombuffer(rgba.constBits(), dtype=np.uint8)
     return adat.reshape(rgba.height(), sorhossz)[:, : rgba.width() * 4].reshape(
         rgba.height(), rgba.width(), 4
-    )
+    ).copy()
+
+
+def _hibakori_kepmentes(kep: QImage, allapot: str, ablakmagassag: int) -> None:
+    kimeneti_mappa = os.environ.get("PICASAPY_RENDER_FAILURE_DIR")
+    if not kimeneti_mappa:
+        return
+    kimenet = Path(kimeneti_mappa) / "tray"
+    kimenet.mkdir(parents=True, exist_ok=True)
+    assert kep.save(str(kimenet / f"{allapot}-{ablakmagassag}.png"), "PNG")
+
+
+def test_kepadat_a_qimage_elettartamatol_fuggetlen_tombot_ad():
+    kep = QImage(2, 2, QImage.Format.Format_RGBA8888)
+    assert _kepadat(kep).flags.owndata
 
 
 def _talca_kivagas(window, menu=None) -> tuple[QImage, int, int]:
@@ -105,9 +125,7 @@ def _talca_kivagas(window, menu=None) -> tuple[QImage, int, int]:
 def _szovegdobozok_maszkolasa(window, kep: QImage, bal: int, felso: int) -> np.ndarray:
     ervenyes = np.ones((kep.height(), kep.width()), dtype=bool)
     for objektum in window.findChildren(QObject):
-        if not objektum.metaObject().className().startswith("QQuickText"):
-            continue
-        if not isinstance(objektum, QQuickItem):
+        if not isinstance(objektum, QQuickItem) or not is_text_item(objektum):
             continue
         if not objektum.isVisible() or objektum.width() <= 0 or objektum.height() <= 0:
             continue
@@ -125,13 +143,27 @@ def _szovegdobozok_maszkolasa(window, kep: QImage, bal: int, felso: int) -> np.n
     return ervenyes
 
 
-def _kepet_rogzit_vagy_osszevet(window, allapot: str, qt_app, menu=None) -> None:
+def _kepet_rogzit_vagy_osszevet(
+    window, allapot: str, qt_app, menu=None, hibak: list[str] | None = None
+) -> None:
+    """Ha `hibak` lista, az eltérést gyűjti, és a menet a többi állapottal
+    folytatódik: a CI így minden állapot képét feltölti (#6085)."""
+    try:
+        _rogzit_es_osszevet(window, allapot, qt_app, menu)
+    except AssertionError as hiba:
+        if hibak is None:
+            raise
+        hibak.append(str(hiba))
+
+
+def _rogzit_es_osszevet(window, allapot: str, qt_app, menu=None) -> None:
     frissult = QSignalSpy(window.frameSwapped)
     window.update()
     assert _var(qt_app, lambda: frissult.count() > 0, _ROVID_UI_HATARIDO_MASODPERC), (
         f"a(z) {allapot} állapot nem rajzolódott ki határidőn belül"
     )
     aktualis, bal, felso = _talca_kivagas(window, menu)
+    _hibakori_kepmentes(aktualis, allapot, window.height())
 
     kimenet = Path.cwd() / ".tmp" / "tray-bar-6050" / allapot
     kimenet.mkdir(parents=True, exist_ok=True)
@@ -153,6 +185,11 @@ def _kepet_rogzit_vagy_osszevet(window, allapot: str, qt_app, menu=None) -> None
         f"{allapot}: a kivágás magassága {aktualis.height()} px, "
         f"a referencia {elvart.height()} px"
     )
+    if not sys.platform.startswith("linux"):
+        # A Linuxon rögzített képpont-referenciát más rendszer raszterezője
+        # nem tudja bitre egyezően kirajzolni (#6150); ott a fenti méret-őr
+        # fut, a képpont-összevetés Linuxon. A gépfüggetlen rajzolás: #6148.
+        return
     szelesseg = min(aktualis.width(), elvart.width())
     magassag = min(aktualis.height(), elvart.height())
     aktualis_pixelek = _kepadat(aktualis)[:magassag, :szelesseg]
@@ -203,6 +240,7 @@ def _fotok_feltoltese(controller, qt_app, tmp_path) -> None:
 
 
 def _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas: int) -> None:
+    hibak: list[str] = []
     window, controller, _engine = qml_app
     window.show()
     assert _var(qt_app, lambda: window.isExposed(), 10.0), "a főablak nem jelent meg"
@@ -217,12 +255,12 @@ def _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas: int) -> No
 
     assert controller.heldCount == 0
     _kijelol(window, qt_app, [])
-    _kepet_rogzit_vagy_osszevet(window, "ures", qt_app)
+    _kepet_rogzit_vagy_osszevet(window, "ures", qt_app, hibak=hibak)
 
     _fotok_feltoltese(controller, qt_app, tmp_path)
     _kijelol(window, qt_app, [0, 1, 2])
     assert _var(qt_app, lambda: controller.heldCount == 3, _MUTETI_HATARIDO_MASODPERC)
-    _kepet_rogzit_vagy_osszevet(window, "keves_kijelolt", qt_app)
+    _kepet_rogzit_vagy_osszevet(window, "keves_kijelolt", qt_app, hibak=hibak)
 
     hold = _elem(window, "trayHoldButton")
     _kattints(window, hold, qt_app)
@@ -235,7 +273,7 @@ def _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas: int) -> No
     )
     _kijelol(window, qt_app, [])
     assert _var(qt_app, lambda: controller.heldCount == 3, _MUTETI_HATARIDO_MASODPERC)
-    _kepet_rogzit_vagy_osszevet(window, "megtartott_kepek", qt_app)
+    _kepet_rogzit_vagy_osszevet(window, "megtartott_kepek", qt_app, hibak=hibak)
 
     album_gomb = _elem(window, "trayAddToButton")
     _kattints(window, album_gomb, qt_app)
@@ -248,7 +286,7 @@ def _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas: int) -> No
     ), (
         "a tálca albumválasztó menüje nem nyílt ki"
     )
-    _kepet_rogzit_vagy_osszevet(window, "album_lenyilo", qt_app, album_menu)
+    _kepet_rogzit_vagy_osszevet(window, "album_lenyilo", qt_app, album_menu, hibak)
     album_menu.close()
     assert _var(
         qt_app,
@@ -268,13 +306,28 @@ def _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas: int) -> No
     ), (
         "a tálca jobb gombos menüje nem nyílt ki"
     )
-    _kepet_rogzit_vagy_osszevet(window, "talca_helyi_menu", qt_app, helyi_menu)
+    _kepet_rogzit_vagy_osszevet(window, "talca_helyi_menu", qt_app, helyi_menu, hibak)
     helyi_menu.close()
+    assert not hibak, "\n".join(hibak)
+
+
+@pytest.fixture
+def rogzitett_datum(monkeypatch):
+    """A `qml_app` ELŐTT kell futnia: az induláskori fejléc is ezt használja."""
+    eredeti = formatting.long_date
+    monkeypatch.setattr(
+        formatting, "long_date", lambda _iso, locale: eredeti(_ROGZITETT_NAP, locale)
+    )
 
 
 @pytest.mark.parametrize("ablakmagassag_eltolas", _ABLAKMAGASSAG_ELTOLASOK)
 def test_a_talca_fobb_allapotai_keppontra_megmaradnak(
-    ablakmagassag_eltolas, qml_app, qt_app, tmp_path
+    ablakmagassag_eltolas,
+    rogzitett_datum,
+    rogzitett_betu,
+    qml_app,
+    qt_app,
+    tmp_path,
 ):
     """A rögzített tálcaállapotok `-5/0/+5` ablakmagasságnál is egyeznek."""
     _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas)

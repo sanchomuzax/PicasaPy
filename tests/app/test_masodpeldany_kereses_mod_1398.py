@@ -24,16 +24,25 @@ from support.menubar_components_6016 import menu_component_source
 _DUPE = (
     Path(picasapy.app.__file__).parent / "dupe_search_controller.py"
 ).read_text(encoding="utf-8")
-_MAIN = (
-    Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
-).read_text(encoding="utf-8")
+#: #6136: a könyvtárnézet a MainLibraryCanvas.qml-be költözött; az őr a
+#: főablak komponenscsaládját olvassa. A kiemelt komponensben a gazda neve
+#: hostWindow/hostController, ezt a főablak nevére (window/controller) hozzuk.
+_MAIN = "\n".join(
+    (Path(picasapy.app.__file__).parent / "qml" / ut).read_text(encoding="utf-8")
+    for ut in (
+        "Main.qml",
+        "PicasaPy/MainLibraryCanvas.qml",
+        "PicasaPy/MainRightDrawer.qml",
+        "PicasaPy/MainFolderPane.qml",
+    )
+).replace("hostController.", "controller.").replace("hostWindow.", "window.")
 _MENU = menu_component_source("PicasaToolsMenu.qml")
 _IMPORT = (
     Path(picasapy.app.__file__).parent / "import_source_controller.py"
 ).read_text(encoding="utf-8")
 _IMPORT_QML = (
     Path(picasapy.app.__file__).parent
-    / "qml" / "PicasaPy" / "ImportSourceDialog.qml"
+    / "qml" / "PicasaPy" / "ImportSourcePickerPanel.qml"
 ).read_text(encoding="utf-8")
 _TS = (
     Path(picasapy.app.__file__).parent / "i18n" / "picasapy_hu.ts"

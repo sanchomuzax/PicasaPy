@@ -161,11 +161,11 @@ NEM fájlútvonal-paraméteres) + `write_atomic` — pontosan az
 
 from __future__ import annotations
 
-import os
+import os as os
 from dataclasses import dataclass
 from pathlib import Path
 
-from picasapy.lazy_cv2 import cv2
+from picasapy.lazy_cv2 import cv2 as cv2
 import numpy as np
 
 from picasapy.edit.session import EditSession
@@ -174,15 +174,15 @@ from picasapy.ini import (
     IniConflictError,
     IniDocument,
     IniSaveError,
-    ini_source_path,
-    load_or_empty,
-    remove_ini_target_if_content_matches,
-    update_document,
-    with_backuphash,
+    ini_source_path as ini_source_path,
+    load_or_empty as load_or_empty,
+    remove_ini_target_if_content_matches as remove_ini_target_if_content_matches,
+    update_document as update_document,
+    with_backuphash as with_backuphash,
 )
-from picasapy.ini.moddate import moddate_from_timestamp_ns
+from picasapy.ini.moddate import moddate_from_timestamp_ns as moddate_from_timestamp_ns
 from picasapy.ini.names import INI_NAME
-from picasapy.ioutil import write_atomic
+from picasapy.ioutil import write_atomic as write_atomic
 
 #: Windowson a képfájlt egy olvasó (bélyegkép, néző) rövid ideig nyitva
 #: tarthatja, ilyenkor a csere `PermissionError`-ral (sharing violation)
@@ -191,13 +191,15 @@ _ZAR_UJRA = 8
 _ZAR_KESLELTETES = 0.05
 
 
+
+
+def _load_function(module_name: str, function_name: str):
+    """A mentési részmodult csak az első műveletkor tölti be."""
+    module = __import__(f"{__package__}.{module_name}", fromlist=(function_name,))
+    return getattr(module, function_name)
+
 def _kep_irasa(image_path: Path, payload: bytes) -> None:
-    write_atomic(
-        image_path,
-        payload,
-        lock_retries=_ZAR_UJRA,
-        lock_retry_delay=_ZAR_KESLELTETES,
-    )
+    return _load_function('save_storage', '_kep_irasa')(image_path, payload)
 
 #: A rejtett almappa neve, ahová az ÚJ mentéseink érintetlen eredetije kerül
 #: (spec + UX #3). Írni MINDIG ide írunk.
@@ -332,147 +334,7 @@ def save_edited(
             sikerült. A képfájl ilyenkor VISSZAÁLL a mentés előtti
             állapotra, hogy ne maradjon dupla-szerkesztés (#297).
     """
-    image_path = Path(image_path)
-    # #1425: a „szent" eredeti bármelyik ismert mappanév alatt ott lehet —
-    # ha van, azt tekintjük megőrzöttnek, és nem teszünk mellé másodikat.
-    existing_backup = find_original_backup(image_path)
-    backup_path = existing_backup or _backup_path_for(image_path)
-    filters_value = filters.to_value()
-    section = _section_name(image_path)
-    current_ini_path = image_path.parent / _INI_FILENAME
-    original_ini_path = backup_path.parent / _INI_FILENAME
-    # Minden ini-olvasás és visszaállítási állapotfelvétel a kép cseréje
-    # ELŐTT történjen: olvasási hiba esetén ne maradjon beégetett, de el nem
-    # könyvelt kép.
-    current_before = _photo_ini_values(
-        current_ini_path,
-        section,
-        (_FILTERS_KEY, _REDO_KEY, "backuphash", _MODDATE_KEY),
-    )
-    original_before = _photo_ini_values(
-        original_ini_path, section, (_FILTERS_KEY, _MODDATE_KEY)
-    )
-
-    # A (b) lépés ELŐTTI bájtok — ezekre kell visszaállni, ha a (c) elbukik
-    # (#297). Első mentésnél ez maga az eredeti (ugyanaz, ami a
-    # `.picasaoriginals`-ba kerül), ismételt mentésnél a KORÁBBI mentés
-    # renderelt tartalma.
-    source_stat = image_path.stat()
-    original_mtime_ns = source_stat.st_mtime_ns
-    moddate_value = moddate_from_timestamp_ns(original_mtime_ns)
-    bytes_before_write = image_path.read_bytes()
-
-    # (a) Az eredeti megőrzése — KIZÁRÓLAG ha még nincs korábbi mentésből
-    # (sem a mai, sem a 2009 előtti nevű mappában).
-    backup_created_now = existing_backup is None
-    backup_mtime_ns = (
-        original_mtime_ns if backup_created_now else backup_path.stat().st_mtime_ns
-    )
-    if backup_created_now:
-        write_atomic(backup_path, bytes_before_write, make_parents=True)
-
-    # (a2) #444: MENTÉSENKÉNTI, sorszámozott pillanatkép a mentés ELŐTTI
-    # bájtokról — ez teszi visszavonhatóvá az utolsó mentést a szerkesztések
-    # elvesztése nélkül (`undo_save`). A „szent" eredeti (fent) ettől
-    # függetlenül megmarad a Visszaállításhoz.
-    snapshots = _existing_snapshots(image_path)
-    next_number = (snapshots[-1][0] + 1) if snapshots else 1
-    # A foglalt sorszámokat átlépjük — MINDKÉT helyen nézve.
-    #
-    # #1449 (a régi hely): a `<név>.<N>` alak kétértelmű, ott állhat egy
-    # MÁSIK, önálló kép megőrzött eredetije (`a.jpg` pillanatképe és
-    # `a.1.jpg` eredetije azonos nevű). #2512 óta ODA MÁR NEM ÍRUNK, tehát
-    # felülírni nem tudnánk; a régi hely mégis számít, mert ugyanaz a
-    # sorszám nem létezhet kétszer, két különböző helyen — az `undo_save` a
-    # legnagyobb sorszámot veszi, és egyenlőségnél nem tudná eldönteni,
-    # melyik a frissebb (`_legacy_snapshot_path`).
-    #
-    # Az ÚJ helyen a vizsgálat egy korábbi mentés árváját fogja meg (pl. ha
-    # a kép azóta más nevet kapott és vissza).
-    while (
-        _snapshot_path(image_path, next_number).exists()
-        or _legacy_snapshot_path(image_path, next_number).exists()
-    ):
-        next_number += 1
-    write_atomic(
-        _snapshot_path(image_path, next_number), bytes_before_write, make_parents=True
-    )
-
-    # (b) A renderelt kép az eredeti HELYÉRE.
-    payload = _encode_image(image_path.suffix, rendered_image, jpeg_quality)
-    _kep_irasa(image_path, payload)
-
-    # (c) A lánc és a mentés előtti fájlidő az eredeti-mappa ini-jébe kerül,
-    # a #5810 szerinti backuphash pedig az aktuális mappa ini-jébe. Két ini
-    # frissítése nem atomikus, ezért a már sikeres írásokat visszagörgetjük,
-    # ha a következő lépés hibázik.
-    completed_ini_writes: list[tuple[Path, _PhotoIniSnapshot]] = []
-    try:
-        current_before.written_document = _update_ini_document(
-            image_path,
-            lambda document: with_backuphash(
-                document.with_removed(_section_name(image_path), _FILTERS_KEY)
-                .with_removed(_section_name(image_path), _REDO_KEY),
-                _section_name(image_path),
-            ),
-            rollback_snapshot=current_before,
-            section_name=section,
-        )
-        completed_ini_writes.append((current_ini_path, current_before))
-        original_before.written_document = _update_ini_path(
-            original_ini_path,
-            lambda document: (
-                document.with_value(
-                    _section_name(image_path), _FILTERS_KEY,
-                    filters_value, carried=True,
-                )
-                if filters_value
-                else document.with_removed(_section_name(image_path), _FILTERS_KEY)
-            ).with_value(
-                _section_name(image_path), _MODDATE_KEY, moddate_value, carried=True
-            ),
-            rollback_snapshot=original_before,
-            section_name=section,
-        )
-        completed_ini_writes.append((original_ini_path, original_before))
-        # Az eredeti-mappa ini-frissítése a #643 szerint megérinti a
-        # képfájlokat; a megőrzött eredeti másolatán ezt vissza kell állítani
-        # az előzőleg rögzített mtime-ra. Első mentésnél ez a forrásé, későbbi
-        # mentéseknél a változatlanul megőrzött eredetié.
-        os.utime(
-            backup_path,
-            ns=(backup_path.stat().st_atime_ns, backup_mtime_ns),
-        )
-    except _INI_WRITE_ERRORS as error:
-        rollback_errors = []
-        for ini_path, previous_state in reversed(completed_ini_writes):
-            try:
-                _restore_photo_ini_values(
-                    ini_path, section, previous_state
-                )
-            except _INI_WRITE_ERRORS as rollback_error:
-                rollback_errors.append(rollback_error)
-        image_restore_error = None
-        try:
-            _restore_image_or_raise(image_path, bytes_before_write, backup_path, error)
-        except SaveError as restore_error:
-            image_restore_error = restore_error
-        if rollback_errors or image_restore_error:
-            details = [str(item) for item in rollback_errors]
-            if image_restore_error is not None:
-                details.append(str(image_restore_error))
-            raise SaveError(
-                "A mentés meghiúsult, és a korábbi fájlállapot teljes "
-                f"visszaállítása sem sikerült: {'; '.join(details)}"
-            ) from error
-        raise
-
-    return SaveResult(
-        image_path=image_path,
-        original_backup_path=backup_path,
-        backup_created_now=backup_created_now,
-        filters_value=filters_value,
-    )
+    return _load_function('save_operations', 'save_edited')(image_path, rendered_image, filters, jpeg_quality=jpeg_quality)
 
 
 @dataclass(frozen=True)
@@ -508,99 +370,7 @@ def undo_save(image_path: str | Path) -> UndoSaveResult:
     Raises:
         SaveError: ha nincs visszavonható mentés (nincs pillanatkép).
     """
-    image_path = Path(image_path)
-    snapshots = _existing_snapshots(image_path)
-    if not snapshots:
-        raise SaveError(_nincs_visszavonhato_mentes(image_path))
-    number, snapshot = snapshots[-1]
-    del number
-
-    section = _section_name(image_path)
-    current_ini_path = image_path.parent / _INI_FILENAME
-    original_backup = find_original_backup(image_path)
-    original_ini_path = _original_ini_path(image_path, original_backup)
-    current_before = _photo_ini_values(
-        current_ini_path, section, (_FILTERS_KEY, _REDO_KEY, "backuphash", _MODDATE_KEY)
-    )
-    original_before = _photo_ini_values(
-        original_ini_path, section, (_FILTERS_KEY, _MODDATE_KEY)
-    )
-    current_section = current_before.document.section(section)
-    original_section = original_before.document.section(section)
-    original_filters = (
-        original_section.get(_FILTERS_KEY) if original_section is not None else None
-    )
-    original_moddate = (
-        original_section.get(_MODDATE_KEY) if original_section is not None else None
-    )
-    legacy_redo = (
-        current_section.get(_REDO_KEY) if current_section is not None else None
-    )
-    restored_filters = (original_filters or legacy_redo or "")
-
-    bytes_before = image_path.read_bytes()
-    _kep_irasa(image_path, snapshot.read_bytes())
-    completed_ini_writes: list[tuple[Path, _PhotoIniSnapshot]] = []
-    try:
-        def restore_current_metadata(document: IniDocument) -> IniDocument:
-            # #643: a `redo=`-ból VISSZAforgatott lánc, átvitt tartalom.
-            updated = (
-                document.with_value(section, _FILTERS_KEY, restored_filters, carried=True)
-                if restored_filters
-                else document.with_removed(section, _FILTERS_KEY)
-            ).with_removed(section, _REDO_KEY)
-            # A régi mentések eredeti ini-jében nincs feltétlenül moddate.
-            # Ilyenkor megőrizzük az aktuális ini esetleges értékét, és nem
-            # találunk ki újat. #2675: az `originhash`-t nem töröljük.
-            if original_moddate is not None:
-                updated = updated.with_value(
-                    section, _MODDATE_KEY, original_moddate, carried=True
-                )
-            return with_backuphash(updated, section)
-
-        current_before.written_document = _update_ini_document(
-            image_path,
-            restore_current_metadata,
-            rollback_snapshot=current_before,
-            section_name=section,
-        )
-        completed_ini_writes.append((current_ini_path, current_before))
-        if original_filters is not None:
-            original_before.written_document = _update_ini_path(
-                original_ini_path,
-                lambda doc: doc.with_removed(section, _FILTERS_KEY),
-                rollback_snapshot=original_before,
-                section_name=section,
-            )
-            completed_ini_writes.append((original_ini_path, original_before))
-    except _INI_WRITE_ERRORS as error:
-        rollback_errors = []
-        for ini_path, previous_state in reversed(completed_ini_writes):
-            try:
-                _restore_photo_ini_values(ini_path, section, previous_state)
-            except _INI_WRITE_ERRORS as rollback_error:
-                rollback_errors.append(rollback_error)
-        image_restore_error = None
-        try:
-            _restore_image_or_raise(image_path, bytes_before, snapshot, error)
-        except SaveError as restore_error:
-            image_restore_error = restore_error
-        if rollback_errors or image_restore_error:
-            details = [str(item) for item in rollback_errors]
-            if image_restore_error is not None:
-                details.append(str(image_restore_error))
-            raise SaveError(
-                "A visszavonás meghiúsult, és a korábbi fájlállapot teljes "
-                f"visszaállítása sem sikerült: {'; '.join(details)}"
-            ) from error
-        raise
-
-    snapshot.unlink(missing_ok=True)
-    return UndoSaveResult(
-        image_path=image_path,
-        restored_from=snapshot,
-        restored_filters=restored_filters,
-    )
+    return _load_function('save_operations', 'undo_save')(image_path)
 
 
 def revert(image_path: str | Path) -> RevertResult:
@@ -628,88 +398,7 @@ def revert(image_path: str | Path) -> RevertResult:
             üzenet a felhasználónak szól, és megnevezi mindkét mappát
             (`_missing_original_message`).
     """
-    image_path = Path(image_path)
-    backup_path = find_original_backup(image_path)
-    if backup_path is None:
-        raise SaveError(_missing_original_message(image_path))
-
-    section = _section_name(image_path)
-    current_ini_path = image_path.parent / _INI_FILENAME
-    original_ini_path = backup_path.parent / _INI_FILENAME
-    # Az ini előzetes olvasása a képfájl cseréje előtt történik. Így ha az
-    # ini olvashatatlan, a Visszaállítás még nem változtatta meg a képet.
-    current_before = _photo_ini_values(
-        current_ini_path, section, _EDIT_BOOKKEEPING_KEYS
-    )
-    original_before = _photo_ini_values(
-        original_ini_path, section, (_FILTERS_KEY,)
-    )
-    original_section = original_before.document.section(section)
-    original_filters = (
-        original_section.get(_FILTERS_KEY)
-        if original_section is not None
-        else None
-    )
-
-    # A visszaállítás ELŐTTI (szerkesztett) bájtok — ezekre kell visszaállni,
-    # ha az ini-kulcsok törlése elbukik (#297, fordított irányú rés). Ha a
-    # képfájl közben eltűnt, nincs mire visszaállni: ilyenkor a `revert`
-    # pótolja a fájlt, és hiba esetén ott is hagyja.
-    edited_bytes = image_path.read_bytes() if image_path.exists() else None
-
-    original_bytes = backup_path.read_bytes()
-    _kep_irasa(image_path, original_bytes)
-
-    completed_ini_writes: list[tuple[Path, _PhotoIniSnapshot]] = []
-
-    try:
-        current_before.written_document = _update_ini_document(
-            image_path,
-            lambda document: (
-                document.with_removed(section, _FILTERS_KEY).with_removed(
-                    section, _REDO_KEY
-                )
-            ),
-            rollback_snapshot=current_before,
-            section_name=section,
-        )
-        completed_ini_writes.append((current_ini_path, current_before))
-        if original_filters is not None:
-            original_before.written_document = _update_ini_path(
-                original_ini_path,
-                lambda document: document.with_removed(section, _FILTERS_KEY),
-                rollback_snapshot=original_before,
-                section_name=section,
-            )
-            completed_ini_writes.append((original_ini_path, original_before))
-    except _INI_WRITE_ERRORS as error:
-        rollback_errors = []
-        for ini_path, previous_state in reversed(completed_ini_writes):
-            try:
-                _restore_photo_ini_values(ini_path, section, previous_state)
-            except _INI_WRITE_ERRORS as rollback_error:
-                rollback_errors.append(rollback_error)
-        image_restore_error = None
-        if edited_bytes is not None:
-            try:
-                _restore_image_or_raise(image_path, edited_bytes, backup_path, error)
-            except SaveError as restore_error:
-                image_restore_error = restore_error
-        if rollback_errors or image_restore_error:
-            details = [str(item) for item in rollback_errors]
-            if image_restore_error is not None:
-                details.append(str(image_restore_error))
-            raise SaveError(
-                "A visszaállítás meghiúsult, és a korábbi fájlállapot teljes "
-                f"visszaállítása sem sikerült: {'; '.join(details)}"
-            ) from error
-        raise
-
-    return RevertResult(
-        image_path=image_path,
-        restored_from=backup_path,
-        removed_keys=_EDIT_BOOKKEEPING_KEYS,
-    )
+    return _load_function('save_operations', 'revert')(image_path)
 
 
 def _restore_image_or_raise(
@@ -722,17 +411,7 @@ def _restore_image_or_raise(
     elmentődött, a `.picasa.ini` nyilvántartása viszont nem követte — így
     tudja, hogy a kép a következő megnyitáskor kétszer szerkesztettnek
     látszhat, és hol keresse az eredetit."""
-    try:
-        _kep_irasa(image_path, payload)
-    except OSError as restore_error:
-        raise SaveError(
-            f"A kép elmentődött ({image_path}), de a .picasa.ini "
-            f"nyilvántartása nem frissült ({error}), és a kép mentés előtti "
-            f"állapotát sem sikerült visszaállítani ({restore_error}). A kép "
-            f"a következő megnyitáskor kétszer szerkesztettnek látszhat; az "
-            f"érintetlen eredeti itt található: {backup_path} "
-            f"(a(z) {ORIGINALS_DIR_NAME} mappában)."
-        ) from error
+    return _load_function('save_operations', '_restore_image_or_raise')(image_path, payload, backup_path, error)
 
 
 def find_original_backup(image_path: str | Path) -> Path | None:
@@ -747,12 +426,7 @@ def find_original_backup(image_path: str | Path) -> Path | None:
     szerint a tulajdonos gyűjteménye hálózati megosztáson él, ahol minden
     fölösleges könyvtárlistázás egy hálózati kör.
     """
-    image_path = Path(image_path)
-    for dir_name in ORIGINALS_DIR_NAMES:
-        candidate = image_path.parent / dir_name / image_path.name
-        if candidate.is_file():
-            return candidate
-    return None
+    return _load_function('save_storage', 'find_original_backup')(image_path)
 
 
 def _missing_original_message(image_path: Path) -> str:
@@ -763,15 +437,7 @@ def _missing_original_message(image_path: Path) -> str:
     kerestünk, HOL, és mikor működik egyáltalán a Visszaállítás. Belső
     függvénynevek nem szivároghatnak ki ide.
     """
-    mappak = " és ".join(f"„{name}”" for name in ORIGINALS_DIR_NAMES)
-    return (
-        f"Ehhez a képhez nincs megőrzött eredeti: {image_path.name}. "
-        f"A kép melletti {mappak} nevű almappák egyikében sem találtuk meg "
-        f"a mentés előtti változatát. A Visszaállítás csak olyan képnél "
-        f"működik, amelyről készült ilyen másolat — a PicasaPy és a Picasa "
-        f"is az első mentéskor készíti el. "
-        f"(Keresett hely: {image_path.parent})"
-    )
+    return _load_function('save_storage', '_missing_original_message')(image_path)
 
 
 def _backup_path_for(image_path: Path) -> Path:
@@ -780,7 +446,7 @@ def _backup_path_for(image_path: Path) -> Path:
     A régi, `Originals` mappát csak OLVASSUK (ld. `find_original_backup`) —
     a Picasa-korabeli, látható mappába nem írunk.
     """
-    return image_path.parent / ORIGINALS_DIR_NAME / image_path.name
+    return _load_function('save_storage', '_backup_path_for')(image_path)
 
 
 def _original_ini_path(image_path: Path, backup_path: Path | None = None) -> Path:
@@ -790,16 +456,7 @@ def _original_ini_path(image_path: Path, backup_path: Path | None = None) -> Pat
     előbb ugyanazt a fájlt keressük; ha hiányzik, a meglévő eredeti-mappa
     ini-jét választjuk, végül az új `.picasaoriginals` mappa az alapérték.
     """
-    if backup_path is None:
-        backup_path = find_original_backup(image_path)
-    if backup_path is not None:
-        return backup_path.parent / _INI_FILENAME
-
-    for directory_name in ORIGINALS_DIR_NAMES:
-        directory = image_path.parent / directory_name
-        if ini_source_path(directory / _INI_FILENAME) is not None:
-            return directory / _INI_FILENAME
-    return image_path.parent / ORIGINALS_DIR_NAME / _INI_FILENAME
+    return _load_function('save_storage', '_original_ini_path')(image_path, backup_path)
 
 
 def _snapshot_path(image_path: Path, number: int) -> Path:
@@ -817,8 +474,7 @@ def _snapshot_path(image_path: Path, number: int) -> Path:
     NÉVTERE" szakaszát), és a `find_original_backup` emiatt idegen
     bájtokat adott vissza.
     """
-    directory = image_path.parent / ORIGINALS_DIR_NAME / SNAPSHOT_DIR_NAME
-    return directory / f"{image_path.stem}.{number}{image_path.suffix}"
+    return _load_function('save_storage', '_snapshot_path')(image_path, number)
 
 
 def _legacy_snapshot_path(image_path: Path, number: int) -> Path:
@@ -831,8 +487,7 @@ def _legacy_snapshot_path(image_path: Path, number: int) -> Path:
     sorszámú példányt veszi, és egyenlőségnél nem tudná eldönteni, melyik
     a frissebb.
     """
-    directory = image_path.parent / ORIGINALS_DIR_NAME
-    return directory / f"{image_path.stem}.{number}{image_path.suffix}"
+    return _load_function('save_storage', '_legacy_snapshot_path')(image_path, number)
 
 
 def _existing_snapshots(image_path: Path) -> list[tuple[int, Path]]:
@@ -867,12 +522,7 @@ def _existing_snapshots(image_path: Path) -> list[tuple[int, Path]]:
 
     A késleltetett import szándékos: a `fileops` csomag maga is (lustán) ide
     nyúl a mappanevekért, a modulszintű import körbeérne."""
-    from picasapy.fileops.originals import snapshot_numbers
-
-    directory = image_path.parent / ORIGINALS_DIR_NAME
-    return sorted(
-        (szam, path) for szam, _, path in snapshot_numbers(directory, image_path)
-    )
+    return _load_function('save_storage', '_existing_snapshots')(image_path)
 
 
 def _nincs_visszavonhato_mentes(image_path: Path) -> str:
@@ -885,33 +535,13 @@ def _nincs_visszavonhato_mentes(image_path: Path) -> str:
     `undo_save` a felhasznált pillanatképet TÖRLI —, de az „üres vagy
     hiányzik" ilyenkor egyszerűen nem igaz, és a felhasználó nem tudja meg,
     mit tehetne (#1449 átnézés, 3. lelet)."""
-    from picasapy.fileops.originals import ambiguous_snapshot_names
-
-    directory = image_path.parent / ORIGINALS_DIR_NAME
-    ketertelmuek = ambiguous_snapshot_names(directory, image_path)
-    if not ketertelmuek:
-        return (
-            f"Nincs visszavonható mentés: {image_path.name} "
-            f"({ORIGINALS_DIR_NAME} üres vagy hiányzik)"
-        )
-    nevek = ", ".join(ketertelmuek)
-    return (
-        f"A legutóbbi mentést nem tudjuk visszavonni ennél a képnél: "
-        f"{image_path.name}. A(z) „{ORIGINALS_DIR_NAME}” mappában van hozzá "
-        f"illő fájl ({nevek}), de a képmappában UGYANEZEN a néven önálló kép "
-        f"is áll — így nem dönthető el, hogy az a kép mentés előtti "
-        f"állapota-e, vagy a másik kép megőrzött eredetije. Biztonságból "
-        f"békén hagyjuk: a visszavonás azt a fájlt törölné, és ha a másik "
-        f"képhez tartozik, annak a visszaútja veszne el. Ha vissza szeretné "
-        f"kapni a visszavonás lehetőségét, adjon a(z) {nevek} nevű képnek "
-        f"másik nevet."
-    )
+    return _load_function('save_storage', '_nincs_visszavonhato_mentes')(image_path)
 
 
 def _section_name(image_path: Path) -> str:
     """A `.picasa.ini`-beli szekciónév: a fájl neve, a spec `[<fájlnév.ext>]`
     szabálya szerint (ld. `picasa-ini-format.md`)."""
-    return image_path.name
+    return _load_function('save_ini', '_section_name')(image_path)
 
 
 def _update_ini_document(
@@ -926,12 +556,7 @@ def _update_ini_document(
     Kizárólag a round-trip réteget (`update_document`) hívja — soha nem ír
     közvetlenül fájlba —, hogy az ismeretlen kulcsok/szekciók bitre pontosan
     megmaradjanak (spec 2. írási szabálya)."""
-    return _update_ini_path(
-        image_path.parent / _INI_FILENAME,
-        mutate,
-        rollback_snapshot=rollback_snapshot,
-        section_name=section_name,
-    )
+    return _load_function('save_ini', '_update_ini_document')(image_path, mutate, rollback_snapshot=rollback_snapshot, section_name=section_name)
 
 
 def _update_ini_path(
@@ -942,52 +567,14 @@ def _update_ini_path(
     section_name: str | None = None,
 ) -> IniDocument:
     """Ütközésbiztos, atomikus ini-frissítés az `ini` round-trip API-n át."""
-    if rollback_snapshot is None:
-        return update_document(ini_path, mutate, backup=True)
-    if section_name is None:
-        raise ValueError("A visszagörgetéshez ini-szekciónév szükséges")
-
-    # Az update_document minden ütközésnél újra meghívja a tiszta mutátort,
-    # és a nyertes próbálkozás `mutated` objektumát adja vissza. Az azonos
-    # objektumhoz rögzítjük a tényleges előtti dokumentumot és forrást, hogy
-    # a kompenzáció ne az előzetes (esetleg elavult) olvasást írja vissza.
-    attempts: list[tuple[IniDocument, Path | None, IniDocument]] = []
-
-    def capture_attempt(document: IniDocument) -> IniDocument:
-        updated = mutate(document)
-        attempts.append((updated, ini_source_path(ini_path), document))
-        return updated
-
-    written = update_document(ini_path, capture_attempt, backup=True)
-    for candidate, source, before in reversed(attempts):
-        if candidate is written:
-            section = before.section(section_name)
-            rollback_snapshot.values = {
-                key: section.get(key) if section is not None else None
-                for key in rollback_snapshot.values
-            }
-            rollback_snapshot.document = before
-            rollback_snapshot.target_existed = source == ini_path
-            rollback_snapshot.written_document = written
-            return written
-    raise RuntimeError("Az ini-frissítés nyertes előállapota nem található")
+    return _load_function('save_ini', '_update_ini_path')(ini_path, mutate, rollback_snapshot=rollback_snapshot, section_name=section_name)
 
 
 def _photo_ini_values(
     ini_path: Path, section_name: str, keys: tuple[str, ...]
 ) -> _PhotoIniSnapshot:
     """Egy képszakasz érintett kulcsainak mentés előtti értékei."""
-    target_existed = ini_path.is_file()
-    document = load_or_empty(ini_path)
-    section = document.section(section_name)
-    return _PhotoIniSnapshot(
-        values={
-            key: section.get(key) if section is not None else None
-            for key in keys
-        },
-        document=document,
-        target_existed=target_existed,
-    )
+    return _load_function('save_ini', '_photo_ini_values')(ini_path, section_name, keys)
 
 
 def _restore_photo_ini_values(
@@ -998,72 +585,11 @@ def _restore_photo_ini_values(
     Csak azt a kulcsot állítja vissza, amely a kompenzáló írás óta is a mi
     kiírt értékünkön áll. A közben érkezett külső változást megőrzi.
     """
-
-    written_section = (
-        snapshot.written_document.section(section_name)
-        if snapshot.written_document is not None
-        else None
-    )
-
-    def mutate(document):
-        current_section = document.section(section_name)
-        for key, value in snapshot.values.items():
-            written_value = (
-                written_section.get(key) if written_section is not None else None
-            )
-            current_value = (
-                current_section.get(key) if current_section is not None else None
-            )
-            if current_value != written_value:
-                continue
-            if value is None:
-                document = document.with_removed(section_name, key)
-            else:
-                document = document.with_value(
-                    section_name,
-                    key,
-                    value,
-                    carried=key in (_FILTERS_KEY, _REDO_KEY),
-                )
-        return document
-
-    if snapshot.target_existed:
-        update_document(ini_path, mutate, backup=False)
-        return
-
-    # A mentés hozhatta létre a cél `.picasa.ini`-t (esetleg egy régi
-    # `Picasa.ini` forrásból kiindulva). Ha a sikeres írás óta bájtra pontosan
-    # változatlan maradt, törölhető a művelet előtti hiányállapot visszaállításához.
-    if snapshot.written_document is not None and remove_ini_target_if_content_matches(
-        ini_path, snapshot.written_document
-    ):
-        return
-    if not ini_path.is_file():
-        return
-
-    # Közben módosított célfájlnál nem törlünk: az érintett kulcsokat API-n
-    # át visszaállítjuk, az esetleges idegen sorokat pedig megőrizzük.
-    update_document(ini_path, mutate, backup=False)
+    return _load_function('save_ini', '_restore_photo_ini_values')(ini_path, section_name, snapshot)
 
 
 def _encode_image(suffix: str, image: np.ndarray, jpeg_quality: int) -> bytes:
     """A renderelt képmátrix kódolása a cél kiterjesztésének megfelelő
     formátumba — `cv2.imencode`-dal (memóriapuffer, nem fájlútvonal),
     accent-path-biztosan (MEMORY.md #190)."""
-    ext = suffix.lower() or ".jpg"
-    params: list[int] = []
-    if ext in (".jpg", ".jpeg"):
-        params = [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality]
-    # #1527: az OpenCV NEM mindig `ok=False`-szal jelez. Ismeretlen
-    # kiterjesztésnél `cv2.error`-t DOB („could not find encoder for the
-    # specified extension"), ami eddig NYERSEN szökött ki a mentésből — a
-    # `save_controller._SAVE_ERRORS` sem fogta, mert a `cv2.error` nem
-    # `OSError`/`ValueError`. Ez a hivatalos „fájlformázási hiba" ága
-    # (`CFileSaveThread:filesaveerr3`), tehát ide `SaveError` való.
-    try:
-        ok, encoded = cv2.imencode(ext, image, params)
-    except cv2.error as hiba:
-        raise SaveError(f"A renderelt kép nem kódolható ide: {ext!r}") from hiba
-    if not ok:
-        raise SaveError(f"A renderelt kép nem kódolható ide: {ext!r}")
-    return encoded.tobytes()
+    return _load_function('save_storage', '_encode_image')(suffix, image, jpeg_quality)

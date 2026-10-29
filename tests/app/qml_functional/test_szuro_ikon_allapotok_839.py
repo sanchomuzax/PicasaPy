@@ -44,7 +44,17 @@ szín-váltással pontosan visszaadják — nem kell bitképet szállítanunk.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import QObject
+
+import picasapy.app
+
+
+_FILTER_CONTROLS = (
+    Path(picasapy.app.__file__).parent
+    / "qml" / "PicasaPy" / "ToolbarFilterControls.qml"
+)
 
 
 #: a MÉRT tónusok (ld. a modul docstringjét)
@@ -119,14 +129,7 @@ class TestNincsTobbeKekAkcent:
     """Forrás-őr: a szűrő-sorban nem térhet vissza a kék jelölés."""
 
     def test_a_szuro_sor_nem_hivatkozik_a_selectionBlue_ra(self):
-        from pathlib import Path as _Path
-
-        import picasapy.app
-
-        forras = (
-            _Path(picasapy.app.__file__).parent
-            / "qml" / "PicasaPy" / "MainToolbar.qml"
-        ).read_text(encoding="utf-8")
+        forras = _FILTER_CONTROLS.read_text(encoding="utf-8")
         kezd = forras.index('id: filterIconsRow')
         veg = forras.index('objectName: "dateRangeFilterSlider"')
         blokk = forras[kezd:veg]

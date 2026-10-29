@@ -40,6 +40,7 @@ szerkesztő fülei ugyanott vannak.
 - [Nyomtatás](features/nyomtatas.md)
 - [Útlevélkép](features/utlevelkep.md)
 - [Küldés e-mailben](features/email.md)
+- [Feltöltés a Google Fotókba](features/google-fotok.md)
 - [Kollázs](features/kollazs.md)
 - [Poszter](features/poszter.md)
 - [Ajándék CD](features/ajandek-cd.md)

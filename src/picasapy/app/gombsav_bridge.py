@@ -62,6 +62,6 @@ class GombsavBridge(QObject):
 
 #: ⛔ Ami SZÁNDÉKOSAN nincs itt: „látszik-e ez a gomb", „hol áll a
 #: sorban" és „mi a felirata". Mindhármat a QML számolja a `sorrend`-ből
-#: (`LightboxHeader.gombLathato`/`gombX`, `ConfigureButtonsDialog.felirata`)
+#: (`LightboxHeaderButtons.gombLathato`/`gombX`, `ConfigureButtonsDialog.felirata`)
 #: — a feliratot ott is kell, mert `qsTr`-rel fordul. Egy híd-metódus,
 #: amit a felület nem hív, halott tag: a `kepesseg_or.py` jelzi is.

@@ -47,7 +47,7 @@ from pathlib import Path
 
 import picasapy.app
 import pytest
-from PySide6.QtCore import QUrl, qInstallMessageHandler
+from PySide6.QtCore import QCoreApplication, QEvent, QUrl, qInstallMessageHandler
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 
 _QML = Path(picasapy.app.__file__).parent / "qml"
@@ -59,12 +59,10 @@ _QML = Path(picasapy.app.__file__).parent / "qml"
 ALAPALLAPOT: frozenset[str] = frozenset(
     {
         "AboutDialog.qml",
-        "CreateDialogs.qml",
         "FolderManagerDialog.qml",
         "FolderPane.qml",
         "LightboxFeed.qml",
         "MainToolbar.qml",
-        "OptionsDialog.qml",
         "OptionsTabGeneral.qml",
         "PhotoViewer.qml",
         "PicasaImportDialog.qml",
@@ -86,37 +84,58 @@ HARDVERFUGGO_KOMPONENSEK: frozenset[str] = frozenset(
 )
 
 
-def _hibas_komponensek(qt_app) -> dict[str, list[str]]:
-    """Fájlnév → a `ReferenceError`-ok, vezérlő NÉLKÜLI felépítéskor."""
+def _hibas_felepulesek(qt_app, fajlok: list[Path]) -> dict[str, list[str]]:
+    """A megadott QML-fájlok ReferenceError-ai vezérlő nélküli felépítéskor."""
     uzenetek: list[str] = []
     korabbi = qInstallMessageHandler(
         lambda tipus, kontextus, uzenet: uzenetek.append(uzenet)
     )
     talalat: dict[str, list[str]] = {}
+    motor = QQmlEngine()
+    motor.addImportPath(str(_QML))
     try:
-        for fajl in sorted((_QML / "PicasaPy").glob("*.qml")):
-            if fajl.name in HARDVERFUGGO_KOMPONENSEK:
-                continue
+        for fajl in fajlok:
             uzenetek.clear()
-            motor = QQmlEngine()
-            motor.addImportPath(str(_QML))
             komponens = QQmlComponent(motor, QUrl.fromLocalFile(str(fajl)))
             elem = komponens.create()
-            hibak = sorted(
-                {
-                    re.sub(r".*ReferenceError: ", "", uzenet)
-                    for uzenet in uzenetek
-                    if "ReferenceError" in uzenet
-                }
-            )
-            if hibak:
-                talalat[fajl.name] = hibak
+            for uzenet in uzenetek:
+                if "ReferenceError" not in uzenet:
+                    continue
+                # A QML a tényleges hibaforrást írja ki. Ezzel egy új
+                # burkoló nem kapja meg egy már ismert gyermek hibáját.
+                forras = re.search(
+                    r"([^/\\]+\.qml):\d+: ReferenceError: (.*)", uzenet
+                )
+                hibazo_fajl = forras.group(1) if forras else fajl.name
+                hiba = forras.group(2) if forras else re.sub(
+                    r".*ReferenceError: ", "", uzenet
+                )
+                hibak = talalat.setdefault(hibazo_fajl, [])
+                if hiba not in hibak:
+                    hibak.append(hiba)
             if elem is not None:
                 elem.deleteLater()
-            motor.deleteLater()
+            komponens.deleteLater()
+            QCoreApplication.sendPostedEvents(
+                None, QEvent.Type.DeferredDelete
+            )
+            qt_app.processEvents()
     finally:
+        motor.deleteLater()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+        qt_app.processEvents()
         qInstallMessageHandler(korabbi)
     return talalat
+
+
+def _hibas_komponensek(qt_app) -> dict[str, list[str]]:
+    """A hiba forrásfájlja → ReferenceError-ok vezérlő nélküli felépítéskor."""
+    fajlok = [
+        fajl
+        for fajl in sorted((_QML / "PicasaPy").glob("*.qml"))
+        if fajl.name not in HARDVERFUGGO_KOMPONENSEK
+    ]
+    return _hibas_felepulesek(qt_app, fajlok)
 
 
 @pytest.fixture(scope="module")
@@ -148,3 +167,14 @@ class TestAFelepules:
     def test_a_mero_talalt_is_valamit(self, merés):
         """Pozitív kontroll: üres halmazon az őr semmit nem őrizne."""
         assert merés, "egyetlen komponenst sem sikerült felépíteni — a mérő vak"
+
+
+@pytest.mark.parametrize(
+    "fajl",
+    ("PhotoViewerEditWorkflow.qml", "PhotoViewerGeometryActions.qml"),
+)
+def test_a_fotonezo_uj_komponensei_vezérlő_nélkül_nem_hibáznak(qt_app, fajl):
+    """A kiszervezett elemek gazda nélkül se kapjanak hiányzó azonosítót."""
+    komponens = _QML / "PicasaPy" / fajl
+    hibak = _hibas_felepulesek(qt_app, [komponens])
+    assert not hibak, f"{fajl}: {', '.join(hibak.get(fajl, []))}"

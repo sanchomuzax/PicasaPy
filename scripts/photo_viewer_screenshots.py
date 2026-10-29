@@ -97,6 +97,7 @@ _AKTIV_FUL_OBJEKTUMOK = (
 )
 _KERET_SZIN = (255, 0, 255, 255)
 _STABIL_KOCKAK = 3
+_IMAGE_STATUS_READY = 1  # QtQuick.Image.Ready
 _STABIL_KEPKOCKAK = 10
 _STABIL_KEPKOCKAK_KOZTI_VARAKOZAS_MP = 0.02
 _ALAPNEZET_KEPKOCKAK_KOZTI_VARAKOZAS_MP = 0.05
@@ -161,6 +162,28 @@ def _var_stabil_ertekre(
     raise RuntimeError(f"Időtúllépés: nem stabil a(z) {leiras}.")
 
 
+def _var_illesztett_nagyitasra(
+    alkalmazas: Any, viewer: Any, zoom_slider: Any, allapot: str
+) -> tuple[float, float, float]:
+    """Megvárja, hogy az illesztett zoom és a tálca csúszkája összhangba kerüljön."""
+    nagyitas = _var_stabil_ertekre(
+        alkalmazas,
+        lambda: (
+            float(viewer.property("zoomValue")),
+            float(zoom_slider.property("value")),
+            float(zoom_slider.property("visualPosition")),
+        ),
+        f"a(z) {allapot} illesztett nagyításának szinkronizálása",
+        _ALLAPOT_HATARIDO_MP,
+    )
+    if nagyitas != (0.0, 0.0, 0.0):
+        raise RuntimeError(
+            f"A(z) {allapot!r} állapotban a zoomFit után nem illesztett "
+            f"nagyítás stabilizálódott: {nagyitas}. Ez termékhiba."
+        )
+    return nagyitas
+
+
 def _minta_kepek(lib: Path) -> None:
     """Képeket, almappát, albumot és személyalbumot készít a méréshez."""
     from support.jpeg_factory import make_minta_jpeg
@@ -213,6 +236,16 @@ def _kep_bajtok(kep: Any) -> bytes:
     return bytes(rgba.constBits())
 
 
+def _hatter_dolgozik() -> bool:
+    """Fut-e nyilvántartott háttérmunka (pl. az `editpreview` renderje, #6078).
+
+    A nézőkép végleges kockáját háttérszál számolja; a lassabb CI-gépen ez a
+    stabil-kocka ablakon túl érkezett, és két rögzítés 16 képpontban eltért."""
+    from picasapy.app.worker_thread import running_background_workers
+
+    return bool(running_background_workers())
+
+
 def _stabil_ablakkepernyo(ablak: Any, alkalmazas: Any, allapot: str) -> Any:
     """Határidővel vár tíz változatlan QImage-kockára.
 
@@ -233,7 +266,11 @@ def _stabil_ablakkepernyo(ablak: Any, alkalmazas: Any, allapot: str) -> Any:
     while time.monotonic() < vege:
         alkalmazas.processEvents()
         kep = ablak.grabWindow()
-        if kep.isNull():
+        if _hatter_dolgozik():
+            # futó render alatt a kép még változhat: a számlálás újraindul
+            elozo = None
+            azonos = 0
+        elif kep.isNull():
             azonos = 0
         else:
             bajtok = _kep_bajtok(kep)
@@ -253,6 +290,34 @@ def _objektum_lathato(elem: Any) -> bool:
     if callable(lathato_metodus):
         return bool(lathato_metodus())
     return bool(elem.property("visible"))
+
+
+def _kep_kesz_olvaso(elem: Any):
+    """A QML Image Ready állapotát olvasó, Qt-enumot nem konvertáló függvény."""
+    from PySide6.QtCore import QObject
+    from PySide6.QtQml import QQmlEngine, QQmlExpression
+
+    if isinstance(elem, QObject):
+        context = QQmlEngine.contextForObject(elem)
+        if context is not None:
+            # PySide nem regisztrál konvertert a QQuickImageBase::Status enumhoz.
+            # A QML-kifejezés ugyanazt az Image.Ready feltételt értékeli ki,
+            # amit a komponensben is használna a QML.
+            expression = QQmlExpression(context, elem, "status === Image.Ready")
+
+            def _kesz() -> bool:
+                ertek, ures = expression.evaluate()
+                if expression.hasError():
+                    raise RuntimeError(
+                        "A QML-képek betöltési állapota nem olvasható: "
+                        f"{expression.error().toString()}"
+                    )
+                return not ures and bool(ertek)
+
+            return _kesz
+
+    # Tesztekben a Qt enumot az Image.Ready rögzített 1-es értéke képviseli.
+    return lambda: int(elem.property("status")) == _IMAGE_STATUS_READY
 
 
 def _lathato_objektumok(ablak: Any, nevek: tuple[str, ...]) -> list[str]:
@@ -283,6 +348,14 @@ def _allapot_mentese(
     output: Path,
     reszletek: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    if nev in {"drop-geotag", "mainSplit-min", "mainSplit-max"}:
+        _var_foablak_racsra(
+            alkalmazas,
+            nev,
+            _elem(ablak, "mainSplit"),
+            _elem(ablak, "folderPane"),
+            _elem(ablak, "photoGrid"),
+        )
     lathato = _lathato_objektumok(ablak, objektumok)
     kep = _stabil_ablakkepernyo(ablak, alkalmazas, nev)
     fajl = f"{nev}.png"
@@ -302,6 +375,97 @@ def _allapot_mentese(
     if nev in {"main-library", "people-album"}:
         rekord["thumbnail_sampled_colors"] = _thumbnail_sampled_colors(ablak, kep)
     return rekord
+
+
+def _var_foablak_racsra(
+    alkalmazas: Any,
+    allapot: str,
+    main_split: Any,
+    folder_pane: Any,
+    photo_grid: Any,
+) -> None:
+    """Megvárja a splitter elrendezését és a látható rácsképek betöltését."""
+    from PySide6.QtCore import QPointF
+
+    vege = time.monotonic() + _ALLAPOT_HATARIDO_MP
+    elozo = None
+    azonos = 0
+    kep_kesz_olvasok = {}
+    while time.monotonic() < vege:
+        alkalmazas.processEvents()
+        elrendezes = tuple(
+            tuple(
+                round(float(elem.property(nev)), 3)
+                for nev in ("x", "y", "width", "height")
+            )
+            for elem in (main_split, folder_pane, photo_grid)
+        ) + (
+            tuple(
+                round(float(photo_grid.property(nev)), 3)
+                for nev in ("contentY", "contentHeight")
+            ),
+            int(photo_grid.property("count")),
+        )
+
+        varakozo = [photo_grid]
+        lathato_kepek = []
+        minden_kep_kesz = True
+        racs_szel = float(photo_grid.property("width"))
+        racs_mag = float(photo_grid.property("height"))
+        while varakozo:
+            elem = varakozo.pop()
+            varakozo.extend(elem.childItems())
+            if elem.objectName() != "thumbImage" or not _objektum_lathato(elem):
+                continue
+
+            hely = elem.mapToItem(photo_grid, QPointF(0, 0))
+            x, y = float(hely.x()), float(hely.y())
+            szel = float(elem.property("width"))
+            mag = float(elem.property("height"))
+            if x + szel <= 0 or y + mag <= 0 or x >= racs_szel or y >= racs_mag:
+                continue
+
+            festett_szel = float(elem.property("paintedWidth"))
+            festett_mag = float(elem.property("paintedHeight"))
+            kep_olvaso = kep_kesz_olvasok.get(id(elem))
+            if kep_olvaso is None:
+                kep_olvaso = _kep_kesz_olvaso(elem)
+                kep_kesz_olvasok[id(elem)] = kep_olvaso
+            kep_kesz = kep_olvaso()
+            if (
+                not kep_kesz
+                or festett_szel <= 0
+                or festett_mag <= 0
+            ):
+                minden_kep_kesz = False
+            lathato_kepek.append(
+                (
+                    str(elem.property("source")),
+                    kep_kesz,
+                    round(x, 3),
+                    round(y, 3),
+                    round(szel, 3),
+                    round(mag, 3),
+                    round(festett_szel, 3),
+                    round(festett_mag, 3),
+                )
+            )
+
+        pillanat = elrendezes, tuple(sorted(lathato_kepek))
+        if lathato_kepek and minden_kep_kesz:
+            azonos = azonos + 1 if pillanat == elozo else 1
+            if azonos >= _STABIL_KOCKAK:
+                return
+            elozo = pillanat
+        else:
+            elozo = None
+            azonos = 0
+        time.sleep(0.05)
+
+    raise RuntimeError(
+        f"Időtúllépés: a(z) {allapot!r} állapot főablaki elrendezése vagy "
+        "látható bélyegképrácsa nem stabilizálódott."
+    )
 
 
 def _thumbnail_sampled_colors(ablak: Any, kep: Any) -> int:
@@ -736,6 +900,8 @@ def _allapot_beallitasa(
 
     if not QMetaObject.invokeMethod(viewer, "zoomFit"):
         raise RuntimeError("A fotónéző illesztett nagyítása nem állítható be.")
+    zoom = _elem(ablak, "zoomSlider")
+    _var_illesztett_nagyitasra(alkalmazas, viewer, zoom, allapot.nev)
     drawer = _elem(ablak, "viewerLeftDrawer")
     drawer_width = float(
         _var_stabil_ertekre(
@@ -752,7 +918,6 @@ def _allapot_beallitasa(
 
     area = _elem(ablak, "viewerPhotoArea")
     image = _elem(ablak, "viewerImage")
-    zoom = _elem(ablak, "zoomSlider")
 
     def _nezo_geometria():
         elemek = (area, image)
@@ -781,6 +946,76 @@ def _teljes_kepernyo(ablak: Any) -> bool:
     return ablak.visibility() == QWindow.Visibility.FullScreen
 
 
+def _csuszka_festesi_allapota(csuszka: Any) -> dict[str, Any]:
+    """A zoomcsúszka és a fogantyú tényleges rajzolási állapotát írja le."""
+    from PySide6.QtCore import QObject
+    from PySide6.QtGui import QColor
+
+    def tulajdonsagok(elem: Any, nevek: tuple[str, ...]) -> dict[str, Any]:
+        meta = elem.metaObject()
+        adatok = {}
+        for nev in nevek:
+            if meta.indexOfProperty(nev) < 0:
+                continue
+            ertek = elem.property(nev)
+            if isinstance(ertek, QColor):
+                ertek = ertek.name(QColor.NameFormat.HexArgb)
+            elif isinstance(ertek, float):
+                ertek = round(ertek, 6)
+            adatok[nev] = ertek
+        return adatok
+
+    csuszka_nevek = (
+        "enabled",
+        "visible",
+        "pressed",
+        "hovered",
+        "activeFocus",
+        "value",
+        "visualPosition",
+        "opacity",
+    )
+    fogantyu_nevek = (
+        "x",
+        "y",
+        "width",
+        "height",
+        "visible",
+        "enabled",
+        "opacity",
+    )
+    festesi_nevek = (
+        "x",
+        "y",
+        "width",
+        "height",
+        "visible",
+        "enabled",
+        "opacity",
+        "color",
+        "topLeftRadius",
+        "topRightRadius",
+        "bottomLeftRadius",
+        "bottomRightRadius",
+    )
+    handle = csuszka.property("handle")
+    layers = []
+    if handle is not None:
+        for elem in handle.findChildren(QObject):
+            ertekek = tulajdonsagok(elem, festesi_nevek)
+            if "color" not in ertekek:
+                continue
+            tipus = elem.metaObject().className().split("_QML_", 1)[0]
+            layers.append({"type": tipus, "properties": ertekek})
+    return {
+        "slider": tulajdonsagok(csuszka, csuszka_nevek),
+        "handle": (
+            tulajdonsagok(handle, fogantyu_nevek) if handle is not None else None
+        ),
+        "layers": layers,
+    }
+
+
 def _nezo_geometria(ablak: Any) -> dict[str, Any]:
     from PySide6.QtCore import QPointF, QObject
 
@@ -804,6 +1039,8 @@ def _nezo_geometria(ablak: Any) -> dict[str, Any]:
             pont = elem.mapToScene(QPointF(0, 0))
             adat["scene_x"] = round(float(pont.x()), 6)
             adat["scene_y"] = round(float(pont.y()), 6)
+        if nev == "zoomSlider":
+            adat["paint_state"] = _csuszka_festesi_allapota(elem)
         adatok[nev] = adat
     return adatok
 
@@ -997,6 +1234,38 @@ def _osszehasonlitott_kep(elotte: Any, utana: Any) -> tuple[int, tuple[int, int,
     return darab, befoglalo, diff
 
 
+def _manifest_csuszka_festesi_allapota(mappa: Path, kepfajl: Path) -> Any:
+    manifest_ut = mappa / "manifest.json"
+    if not manifest_ut.is_file():
+        return None
+    try:
+        manifest = json.loads(manifest_ut.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    for allapot in manifest.get("states", []):
+        if allapot.get("file") == kepfajl.as_posix():
+            return (
+                allapot.get("viewer_geometry", {})
+                .get("zoomSlider", {})
+                .get("paint_state")
+            )
+    return None
+
+
+def _csuszka_festesi_kimenet(
+    before: Path, after: Path, kepfajl: Path
+) -> str:
+    festes = {
+        "előtte": _manifest_csuszka_festesi_allapota(before, kepfajl),
+        "utána": _manifest_csuszka_festesi_allapota(after, kepfajl),
+    }
+    if not any(festes.values()):
+        return ""
+    return "; zoomSlider festési állapotok: " + json.dumps(
+        festes, ensure_ascii=False, separators=(",", ":")
+    )
+
+
 def compare(before: Path, after: Path, diff_dir: Path) -> int:
     """Két PNG-mappát pontosan összevet, és a változó pixeleket kiemeli."""
     from PySide6.QtGui import QImage
@@ -1028,11 +1297,14 @@ def compare(before: Path, after: Path, diff_dir: Path) -> int:
                 raise OSError(f"Nem menthető a különbségkép: {diff_path}")
             assert bbox is not None
             x, y, bbox_szel, bbox_mag = bbox
+            festesi_allapot = _csuszka_festesi_kimenet(
+                before, after, relative
+            )
             print(
                 f"{relative.as_posix()}: {darab} eltérő képpont; "
                 f"befoglaló téglalap: x={x}, y={y}, "
                 f"szélesség={bbox_szel}, magasság={bbox_mag}; "
-                f"különbségkép: {diff_path}"
+                f"különbségkép: {diff_path}{festesi_allapot}"
             )
             hibak += darab
         else:

@@ -26,6 +26,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.support.fejlec_forras import fejlec_forras
 import picasapy.app
 import pytest
 from PySide6.QtCore import Qt, QUrl
@@ -327,9 +328,7 @@ FEJLEC_LENYOMASRA = [
 class TestAFejlecGombjai:
     @pytest.mark.parametrize("nev", FEJLEC_LENYOMASRA)
     def test_a_fejlec_gombjai_lenyomasra(self, nev):
-        forras = (_QML / "PicasaPy" / "LightboxHeader.qml").read_text(
-            encoding="utf-8"
-        )
+        forras = fejlec_forras()
         kezd = forras.index(f'objectName: "{nev}"')
         kovetkezo = forras.find("objectName:", kezd + 10)
         blokk = forras[kezd : kovetkezo if kovetkezo > 0 else len(forras)]
@@ -340,9 +339,7 @@ class TestAFejlecGombjai:
 
     def test_a_MENTES_marad_felengedesre(self):
         """Ellenpróba ugyanabból a fájlból: a `save_edits` művelet-gomb."""
-        forras = (_QML / "PicasaPy" / "LightboxHeader.qml").read_text(
-            encoding="utf-8"
-        )
+        forras = fejlec_forras()
         kezd = forras.index('objectName: "headerSaveEditsButton"')
         vege = forras.find("objectName:", kezd + 10)
         assert "lenyomasra" not in forras[kezd:vege], (
@@ -356,9 +353,7 @@ class TestAMenutNyitoEsLejatszo:
     rájuk, hanem a kezelő MEGVÁLASZTÁSA."""
 
     def test_a_lejatszo_gomb_lenyomasra(self):
-        forras = (_QML / "PicasaPy" / "LightboxHeader.qml").read_text(
-            encoding="utf-8"
-        )
+        forras = fejlec_forras()
         kezd = forras.index('objectName: "headerPlayButton"')
         blokk = forras[kezd : forras.index("PicasaButton {", kezd)]
         assert "onPressedChanged" in blokk and "playRequested" in blokk, (
@@ -388,9 +383,9 @@ class TestAMenutNyitoEsLejatszo:
 #:
 #: Ezek közül nálunk ma ezeknek van vezérlőjük:
 NORMALCURSOR_NALUNK = {
-    "headerCollageButton": "PicasaPy/LightboxHeader.qml",
-    "headerSelectStarredButton": "PicasaPy/LightboxHeader.qml",
-    "headerPlayButton": "PicasaPy/LightboxHeader.qml",
+    "headerCollageButton": "PicasaPy/LightboxHeaderButtons.qml",
+    "headerSelectStarredButton": "PicasaPy/LightboxHeaderButtons.qml",
+    "headerPlayButton": "PicasaPy/LightboxHeaderButtons.qml",
     "toolbarFolderViewPopupButton": "PicasaPy/MainToolbar.qml",
 }
 
@@ -535,7 +530,8 @@ class TestAzElrendezesValtok:
 
     def test_a_ket_SWAP_gomb_felengedesre_marad(self) -> None:
         """Mért kivétel: ezeken a `.tre`-ben nincs `mousedown`."""
-        forras = (_QML / "PicasaPy" / "PhotoViewer.qml").read_text(
+        # #6109: az elrendezés-váltók a néző felső sáv-komponensében élnek.
+        forras = (_QML / "PicasaPy" / "PhotoViewerTopBar.qml").read_text(
             encoding="utf-8"
         )
         for nev in ("viewerSwapFocus", "viewerSwapLayout"):
@@ -548,7 +544,8 @@ class TestAzElrendezesValtok:
 
     def test_a_HAROM_valto_nem_kapcsolja_ki(self) -> None:
         """Ellenpróba: a három elrendezés-váltón NINCS `lenyomasra: false`."""
-        forras = (_QML / "PicasaPy" / "PhotoViewer.qml").read_text(
+        # #6109: az elrendezés-váltók a néző felső sáv-komponensében élnek.
+        forras = (_QML / "PicasaPy" / "PhotoViewerTopBar.qml").read_text(
             encoding="utf-8"
         )
         for nev in ("viewerLayoutOnly1up", "viewerLayoutAb", "viewerLayoutAa"):

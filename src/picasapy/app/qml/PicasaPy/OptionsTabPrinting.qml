@@ -142,7 +142,7 @@ ColumnLayout {
         objectName: "optionsPrintSettingsDivider"
         Layout.fillWidth: true
         height: 1
-        color: "#a0a0a0"
+        color: Theme.settingsDivider
     }
 
     ColumnLayout {

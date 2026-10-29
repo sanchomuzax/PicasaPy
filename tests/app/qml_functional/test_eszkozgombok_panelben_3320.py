@@ -47,6 +47,20 @@ ESZKOZOK = {
 }
 
 
+_KEPTERULET_FAJLOK = (
+    "PhotoViewerPhotoArea.qml",
+    "PhotoViewerStraightenGrid.qml",
+    "PhotoViewerTiltToolBar.qml",
+    "PhotoViewerElotteImage.qml",
+    "PhotoViewerFotoImage.qml",
+    "PhotoViewerGpuFinetune.qml",
+    "PhotoViewerPaintMaskArea.qml",
+    "PhotoViewerNeutralPickArea.qml",
+    "PhotoViewerEffectColorPickArea.qml",
+    "PhotoViewerRetouchArea.qml",
+)
+
+
 @pytest.mark.parametrize("eszkoz", sorted(ESZKOZOK))
 def test_a_par_a_sajat_paneljeben_all(eszkoz: str) -> None:
     fajl, elotag = ESZKOZOK[eszkoz]
@@ -69,7 +83,7 @@ def test_a_par_a_panel_jelet_hasznalja(eszkoz: str) -> None:
 
 def test_a_sav_csak_a_kiegyenesitesnel_jelenik_meg() -> None:
     """A `tool_container` a `#---Straighen Overlay---` alatt él."""
-    forras = (QML / "PhotoViewerPhotoArea.qml").read_text(encoding="utf-8")
+    forras = "\n".join((QML / f).read_text(encoding="utf-8") for f in _KEPTERULET_FAJLOK)
     kezd = forras.index("EditorToolBar {")
     blokk = forras[kezd:kezd + 2600]
     tool = re.search(r"tool:\s*(.+?)\n\s*(?://|[a-zA-Z]+:)", blokk, re.S)
@@ -82,7 +96,7 @@ def test_a_sav_csak_a_kiegyenesitesnel_jelenik_meg() -> None:
 
 
 def test_a_sav_csak_a_kiegyenesites_gombjait_koti() -> None:
-    forras = (QML / "PhotoViewerPhotoArea.qml").read_text(encoding="utf-8")
+    forras = "\n".join((QML / f).read_text(encoding="utf-8") for f in _KEPTERULET_FAJLOK)
     kezd = forras.index("EditorToolBar {")
     blokk = forras[kezd:kezd + 4000]
     for jel in ("cropApplyRequested", "retouchApplyRequested",

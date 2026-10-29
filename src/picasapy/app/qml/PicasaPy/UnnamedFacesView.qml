@@ -240,7 +240,7 @@ ColumnLayout {
                       ? qsTr("Ignored people") : qsTr("Unnamed people")
                 font.family: "Georgia"
                 font.pixelSize: 24
-                color: "#68564f"
+                color: Theme.unnamedGroupLabel
             }
         }
         Item { Layout.fillWidth: true }
@@ -331,8 +331,8 @@ ColumnLayout {
             placeholderText: qsTr("Add a name")
             // #5214: az eredetiben (job-183) fehér, keretes mező, mint a csempéé
             background: Rectangle {
-                color: "#ffffff"
-                border.color: "#8a8a8a"
+                color: Theme.controlBase
+                border.color: Theme.inputBorder
                 border.width: 1
             }
             // #422: jobbklikk-menü (Picasa `Address`)
@@ -411,439 +411,12 @@ ColumnLayout {
         color: Theme.textDark
     }
 
-    GridView {
-        id: unnamedFacesGrid
-        objectName: "unnamedGroupsList"
-        visible: !root.ignoredMode
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-        clip: true
-        cellWidth: root.grouped ? 194 : 162
-        cellHeight: 198
-        readonly property int columns: Math.max(1, Math.floor(width / cellWidth))
-        height: Math.ceil(root.facesModel.length / columns) * cellHeight
-        model: root.facesModel
-        ScrollBar.vertical: PicasaScrollBar {}
-
-        delegate: Item {
-            id: faceCard
-            required property var modelData
-            objectName: "unnamedFaceCard_" + faceCard.modelData.faceId
-            property var nameSuggestions: []
-            property int selectedSuggestionIndex: -1
-            width: unnamedFacesGrid.cellWidth
-            height: unnamedFacesGrid.cellHeight
-
-            function refreshNameSuggestions() {
-                var needle = faceNameField.text.trim().toLocaleLowerCase()
-                if (!needle || typeof controller === "undefined" || !controller
-                        || !controller.nameSuggestions) {
-                    faceCard.nameSuggestions = []
-                    faceCard.selectedSuggestionIndex = -1
-                    return
-                }
-                faceCard.nameSuggestions = controller.nameSuggestions(needle)
-                faceCard.selectedSuggestionIndex = -1
-            }
-
-            // #5285: a névadás egy útja Enterre és a javaslat kattintására
-            // is: a mező kiürül, a javaslat-lista záródik
-            function submitName(name) {
-                faceNameField.text = ""
-                faceCard.nameSuggestions = []
-                faceCard.selectedSuggestionIndex = -1
-                root.nameSubmitted(faceCard.modelData.faceId, name)
-            }
-
-            function acceptSelectedSuggestion() {
-                var selectedIndex = faceCard.selectedSuggestionIndex
-                if (selectedIndex < 0 || selectedIndex >= faceCard.nameSuggestions.length)
-                    return false
-                faceCard.submitName(
-                    String(faceCard.nameSuggestions[selectedIndex].name || ""))
-                return true
-            }
-
-            Column {
-                width: 172
-                anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 2
-
-                Rectangle {
-                    id: faceTile
-                    objectName: "faceTile_" + faceCard.modelData.faceId
-                    width: root.grouped ? 146 : 120
-                    height: root.grouped ? 172 : 145
-                    x: root.grouped ? 0 : 13
-                    color: "transparent"
-                    border.width: 2
-                    border.color: root.selectedFaceIds[faceCard.modelData.faceId]
-                                  ? Theme.panelSelectionActive : "transparent"
-
-                    Image {
-                        objectName: "faceImage_" + faceCard.modelData.faceId
-                        anchors.fill: parent
-                        source: faceCard.modelData.thumbUrl
-                        smooth: true
-                        mipmap: true
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: root.toggleFace(faceCard.modelData.faceId)
-                    }
-
-                    Rectangle {
-                        objectName: "faceIgnoreX_" + faceCard.modelData.faceId
-                        visible: root.grouped
-                        anchors.top: parent.top
-                        anchors.right: parent.right
-                        anchors.margins: 2
-                        width: 13
-                        height: 13
-                        radius: 0
-                        color: "#ffffff"
-                        border.color: "#1b1b1b"
-                        border.width: 1
-                        Text {
-                            anchors.centerIn: parent
-                            text: "X"
-                            font.pixelSize: 8
-                            font.bold: true
-                            color: "#111111"
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            anchors.margins: -2
-                            onClicked: root.requestIgnore(
-                                [faceCard.modelData.faceId])
-                        }
-                    }
-
-                    Rectangle {
-                        objectName: "suggestionBar_" + faceCard.modelData.faceId
-                        visible: (faceCard.modelData.suggestedName || "") !== ""
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        anchors.margins: 3
-                        height: 20
-                        color: Theme.infoBar
-                        Row {
-                            anchors.fill: parent
-                            anchors.leftMargin: 4
-                            spacing: 4
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: parent.width - 22
-                                elide: Text.ElideRight
-                                text: qsTr("%1?").arg(
-                                    faceCard.modelData.suggestedName || "")
-                                font.pixelSize: Theme.fontSize - 1
-                                color: Theme.infoBarText
-                            }
-                            Text {
-                                objectName: "suggestionYes_"
-                                            + faceCard.modelData.faceId
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "✓"
-                                color: Theme.infoBarText
-                                MouseArea {
-                                    anchors.fill: parent
-                                    anchors.margins: -4
-                                    onClicked: root.acceptSuggestion(
-                                        faceCard.modelData.faceId)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                TextField {
-                    id: faceNameField
-                    objectName: "unnamedFaceNameField_"
-                                + faceCard.modelData.faceId
-                    visible: root.grouped
-                    width: 172
-                    height: 20
-                    x: (faceTile.width - width) / 2
-                    padding: 1
-                    horizontalAlignment: TextInput.AlignHCenter
-                    verticalAlignment: TextInput.AlignVCenter
-                    font.pixelSize: Theme.fontSize - 2
-                    placeholderText: qsTr("Add a name")
-                    background: Rectangle {
-                        color: "#ffffff"
-                        border.color: "#8a8a8a"
-                        border.width: 1
-                        radius: 0
-                    }
-                    TextFieldContextArea {}
-                    onAccepted: {
-                        if (faceCard.acceptSelectedSuggestion())
-                            return
-                        var name = text.trim()
-                        if (!name)
-                            return
-                        faceCard.submitName(name)
-                    }
-                    onTextEdited: faceCard.refreshNameSuggestions()
-                    Keys.onPressed: function(event) {
-                        var count = faceCard.nameSuggestions.length
-                        if (count === 0)
-                            return
-                        if (event.key === Qt.Key_Down) {
-                            faceCard.selectedSuggestionIndex = Math.min(
-                                count - 1,
-                                faceCard.selectedSuggestionIndex + 1
-                            )
-                            event.accepted = true
-                        } else if (event.key === Qt.Key_Up) {
-                            faceCard.selectedSuggestionIndex =
-                                faceCard.selectedSuggestionIndex < 0
-                                ? count - 1
-                                : Math.max(0, faceCard.selectedSuggestionIndex - 1)
-                            event.accepted = true
-                        }
-                    }
-                }
-            }
-
-            Popup {
-                id: nameSuggestionsPopup
-                objectName: "unnamedNameSuggestionPopup_"
-                            + faceCard.modelData.faceId
-                parent: Overlay.overlay
-                property var suggestions: faceCard.nameSuggestions
-                readonly property point rootPosition:
-                    root.mapToItem(parent, 0, 0)
-                readonly property real nameFieldX:
-                    rootPosition.x + unnamedFacesGrid.x
-                    - unnamedFacesGrid.contentX + faceCard.x
-                    + faceNameField.parent.x + faceNameField.x
-                readonly property real nameFieldY:
-                    rootPosition.y + unnamedFacesGrid.y
-                    - unnamedFacesGrid.contentY + faceCard.y
-                    + faceNameField.parent.y + faceNameField.y
-                x: nameFieldX + (faceNameField.width - width) / 2
-                y: nameFieldY + faceNameField.height
-                width: 212
-                height: Math.min(170, suggestions.length * 42 + 2)
-                visible: faceNameField.activeFocus
-                         && faceNameField.text.trim().length > 0
-                         && suggestions.length > 0
-                z: 1000
-                padding: 0
-                closePolicy: Popup.NoAutoClose
-
-                background: Rectangle {
-                    objectName: "unnamedNameSuggestions_"
-                                + faceCard.modelData.faceId
-                    color: "#ffffff"
-                    border.color: "#8a8a8a"
-                    border.width: 1
-                }
-
-                contentItem: ListView {
-                    anchors.fill: parent
-                    clip: true
-                    model: nameSuggestionsPopup.suggestions
-                    delegate: Item {
-                        required property var modelData
-                        required property int index
-                        objectName: "unnamedFaceSuggestion_"
-                                    + faceCard.modelData.faceId + "_" + index
-                        property string personName: String(modelData.name)
-                        property string thumbUrl: String(modelData.thumbUrl || "")
-                        width: ListView.view.width
-                        height: 40
-                        Rectangle {
-                            anchors.fill: parent
-                            color: "transparent"
-                            border.color: Theme.panelSelectionActive
-                            border.width: faceCard.selectedSuggestionIndex === index ? 1 : 0
-                        }
-                        Image {
-                            objectName: "unnamedFaceSuggestionImage_"
-                                        + faceCard.modelData.faceId + "_" + index
-                            anchors.left: parent.left
-                            anchors.leftMargin: 17
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 28
-                            height: 30
-                            source: parent.thumbUrl !== ""
-                                    ? parent.thumbUrl
-                                    : Qt.resolvedUrl(
-                                          "icons/person-silhouette.svg")
-                            fillMode: Image.PreserveAspectCrop
-                            smooth: true
-                            mipmap: true
-                            asynchronous: true
-                        }
-                        Text {
-                            anchors.left: parent.left
-                            anchors.leftMargin: 58
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: parent.width - 64
-                            text: parent.personName
-                            font.pixelSize: Theme.fontSize - 1
-                            color: Theme.textDark
-                            elide: Text.ElideRight
-                        }
-                        // #5285: a tételre kattintás a kattintott személy nevét
-                        // nevezi meg, ugyanazon az úton, mint az Enter
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: {
-                                faceCard.selectedSuggestionIndex = index
-                                faceCard.submitName(parent.personName)
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    UnnamedFacesViewGrid {
+        viewRoot: root
     }
 
-    ListView {
-        id: groupsList
-        objectName: "ignoredGroupsList"
-        visible: root.ignoredMode
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-        Layout.leftMargin: -15
-        clip: true
-        spacing: 12
-        model: root.groupsModel
-        ScrollBar.vertical: PicasaScrollBar {}
-
-        delegate: ColumnLayout {
-            id: groupDelegate
-            required property var modelData
-            width: groupsList.width
-            spacing: 4
-
-            Text {
-                visible: !root.ignoredMode
-                text: groupDelegate.modelData.label
-                font.pixelSize: Theme.fontSize
-                font.bold: true
-                color: Theme.textDark
-            }
-
-            GridView {
-                id: faceGrid
-                objectName: "ignoredFaceGrid"
-                Layout.fillWidth: true
-                interactive: false
-                cellWidth: 194
-                cellHeight: 198
-                readonly property int columns:
-                    Math.max(1, Math.floor(width / cellWidth))
-                height: Math.ceil(
-                    groupDelegate.modelData.faces.length
-                    / Math.max(1, columns)) * cellHeight
-                model: groupDelegate.modelData.faces
-
-                delegate: Item {
-                    id: ignoredFaceCard
-                    required property var modelData
-                    width: faceGrid.cellWidth
-                    height: faceGrid.cellHeight
-
-                    Column {
-                        width: 172
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        spacing: 2
-
-                        Rectangle {
-                            id: faceTile
-                            objectName: "faceTile_" + ignoredFaceCard.modelData.faceId
-                            width: 146
-                            height: 172
-                            x: (parent.width - width) / 2
-                            color: "transparent"
-                            border.width: 2
-                            border.color: root.selectedFaceIds[ignoredFaceCard.modelData.faceId]
-                                          ? Theme.panelSelectionActive : "transparent"
-
-                            Image {
-                                objectName: "ignoredFaceImage_"
-                                            + ignoredFaceCard.modelData.faceId
-                                anchors.fill: parent
-                                source: ignoredFaceCard.modelData.thumbUrl
-                                smooth: true
-                                mipmap: true
-                                fillMode: Image.PreserveAspectCrop
-                                asynchronous: true
-                            }
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: root.toggleFace(ignoredFaceCard.modelData.faceId)
-                            }
-
-                            // A mellőzött nézetben az eredeti sem mutatja a mellőző X-et.
-                            Rectangle {
-                                objectName: "faceIgnoreX_"
-                                            + ignoredFaceCard.modelData.faceId
-                                visible: false
-                                anchors.top: parent.top
-                                anchors.right: parent.right
-                                width: 18
-                                height: 18
-                                color: Theme.infoBar
-                            }
-
-                            Rectangle {
-                                objectName: "suggestionBar_"
-                                            + ignoredFaceCard.modelData.faceId
-                                visible: (ignoredFaceCard.modelData.suggestedName || "") !== ""
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.bottom: parent.bottom
-                                anchors.margins: 3
-                                height: 20
-                                color: Theme.infoBar
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: qsTr("%1?").arg(
-                                        ignoredFaceCard.modelData.suggestedName || "")
-                                    font.pixelSize: Theme.fontSize - 1
-                                    color: Theme.infoBarText
-                                }
-                            }
-                        }
-
-                        TextField {
-                            objectName: "ignoredFaceNameField_"
-                                        + ignoredFaceCard.modelData.faceId
-                            width: 172
-                            height: 20
-                            padding: 1
-                            horizontalAlignment: TextInput.AlignHCenter
-                            verticalAlignment: TextInput.AlignVCenter
-                            font.pixelSize: Theme.fontSize - 2
-                            placeholderText: qsTr("Add a name")
-                            background: Rectangle {
-                                color: "#ffffff"
-                                border.color: "#8a8a8a"
-                                border.width: 1
-                            }
-                            TextFieldContextArea {}
-                            onAccepted: {
-                                var cleanName = text.trim()
-                                if (!cleanName)
-                                    return
-                                text = ""
-                                root.nameSubmitted(
-                                    ignoredFaceCard.modelData.faceId, cleanName)
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    UnnamedFacesViewIgnoredGroups {
+        viewRoot: root
     }
 
     Popup {
@@ -859,8 +432,8 @@ ColumnLayout {
         focus: true
         closePolicy: Popup.NoAutoClose
         background: Rectangle {
-            color: "#606060"
-            border.color: "#999999"
+            color: Theme.unnamedWelcomeBg
+            border.color: Theme.unnamedWelcomeBorder
             border.width: 1
             radius: 6
         }
@@ -877,7 +450,7 @@ ColumnLayout {
                 text: qsTr("Welcome to the Unnamed people album! ")
                 font.pixelSize: Theme.fontSize
                 font.bold: true
-                color: "#ffffff"
+                color: Theme.panelSelectionText
             }
             Text {
                 objectName: "unnamedWelcomeBody"
@@ -903,7 +476,7 @@ ColumnLayout {
                     + "about this feature.")
                 font.pixelSize: Theme.fontSize - 2
                 font.bold: true
-                color: "#ffffff"
+                color: Theme.panelSelectionText
             }
             RowLayout {
                 Layout.fillWidth: true
@@ -919,11 +492,11 @@ ColumnLayout {
                         verticalAlignment: Text.AlignVCenter
                         font.pixelSize: Theme.fontSize - 4
                         font.bold: true
-                        color: "#ffffff"
+                        color: Theme.panelSelectionText
                     }
                     background: Rectangle {
                         color: "transparent"
-                        border.color: "#dddddd"
+                        border.color: Theme.unnamedWelcomeButtonBorder
                         border.width: 1
                         radius: 6
                     }
@@ -947,11 +520,11 @@ ColumnLayout {
                         verticalAlignment: Text.AlignVCenter
                         font.pixelSize: Theme.fontSize - 4
                         font.bold: true
-                        color: "#ffffff"
+                        color: Theme.panelSelectionText
                     }
                     background: Rectangle {
                         color: "transparent"
-                        border.color: "#dddddd"
+                        border.color: Theme.unnamedWelcomeButtonBorder
                         border.width: 1
                         radius: 6
                     }

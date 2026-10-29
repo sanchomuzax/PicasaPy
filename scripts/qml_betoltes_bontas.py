@@ -7,19 +7,19 @@ QML-profilere (`qmldbg_profiler`) ezen a gépen **nincs telepítve** (a
 Qt-bővítmények között nincs `qmltooling`), ezért ez a mérő a Qt nyilvános
 API-jával választja szét a két lépést:
 
-* **fordítás** — `QQmlComponent(engine, url, PreferSynchronous)`, amíg
+* **fordítás** - `QQmlComponent(engine, url, PreferSynchronous)`, amíg
   `Ready` lesz (a teljes típusfa betöltése, a Qt lemez-gyorsítótárával vagy
   anélkül);
-* **példányosítás** — `component.create(rootContext)` (a teljes fa
+* **példányosítás** - `component.create(rootContext)` (a teljes fa
   létrehozása a `Component.onCompleted` kezelőkkel együtt).
 
 A valódi `application.run()` fut (minden vezérlő, kontextus-tulajdonság és
 képszolgáltató a helyén); csak a `QQmlApplicationEngine.load` helyére kerül
-egy mérő, ami kiírja az eredményt és kilép — az ablak eseményciklusa el sem
+egy mérő, ami kiírja az eredményt és kilép - az ablak eseményciklusa el sem
 indul.
 
-**Három üzemmód:** `hideg` (üres gyorsítótár — az első indítás egy frissítés
-után), `meleg` (ugyanaz a gyorsítótár újra — minden további indítás) és
+**Három üzemmód:** `hideg` (üres gyorsítótár - az első indítás egy frissítés
+után), `meleg` (ugyanaz a gyorsítótár újra - minden további indítás) és
 `load` (az eredeti `engine.load` egyben, összevetésnek).
 
 ⚠️ Amit NEM mér: elemenkénti bontást (ahhoz a profiler-bővítmény kell), és a
@@ -70,14 +70,14 @@ def _gyermek(kimenet: str, mod: str) -> None:
         obj = comp.create(self.rootContext()) if comp.isReady() else None
         t2 = time.perf_counter()
         kiir({"forditas_ms": (t1 - t0) * 1000, "peldanyositas_ms": (t2 - t1) * 1000,
-              "letrejott": obj is not None,
+              "letrejott": obj is not None, "url": cim.toString(),
               "hibak": [e.toString() for e in comp.errors()][:5]})
 
     def egyben(self, url):
         t0 = time.perf_counter()
         eredeti(self, url)
         kiir({"load_ms": (time.perf_counter() - t0) * 1000,
-              "letrejott": bool(self.rootObjects())})
+              "letrejott": bool(self.rootObjects()), "url": str(url)})
 
     QQmlApplicationEngine.load = egyben if mod == "load" else bontva
     sys.path.insert(0, str(_SRC))
@@ -86,11 +86,21 @@ def _gyermek(kimenet: str, mod: str) -> None:
     sys.exit(application.run([sys.argv[0]]))
 
 
+def _gyermek_kornyezet(munka: Path, gyorstar: Path) -> dict:
+    """A gyermek környezete, rögzített nyelvvel (#6095).
+
+    Üres beállítás-mappával nem angol rendszeren az első induláskor a
+    rendszer-nyelv felajánló ablak (#4325) futna le, és a mérő az ő `load`-ját
+    mérné a `Main.qml` helyett. A `PICASAPY_LANG` ezt az ágat kihagyja."""
+    return dict(os.environ, QT_QPA_PLATFORM="offscreen", PYTHONPATH=str(_SRC),
+                PICASAPY_LANG="en",
+                XDG_DATA_HOME=str(munka / "data"), XDG_CONFIG_HOME=str(munka / "config"),
+                XDG_CACHE_HOME=str(gyorstar))
+
+
 def _futas(munka: Path, gyorstar: Path, mod: str, cimke: str) -> dict:
     kimenet = munka / f"{cimke}.json"
-    env = dict(os.environ, QT_QPA_PLATFORM="offscreen", PYTHONPATH=str(_SRC),
-               XDG_DATA_HOME=str(munka / "data"), XDG_CONFIG_HOME=str(munka / "config"),
-               XDG_CACHE_HOME=str(gyorstar))
+    env = _gyermek_kornyezet(munka, gyorstar)
     parancs = [sys.executable, __file__, "--gyermek", str(kimenet), mod]
     if sys.platform.startswith("linux"):
         parancs = _PLAFON + parancs

@@ -188,8 +188,11 @@ class TestGyorscimkeSugo4271:
             "Cancel": "Mégse",
         }
         for forras, magyar in feliratok.items():
+            # A tömeges címkézés megerősítése a gombjaival együtt 2026-10-28
+            # óta (#5955) a MainDialogs.qml-ben van, a qsTr-kontextusa ezért
+            # MainDialogs (korábban Main).
             contextus = (
-                "Main"
+                "MainDialogs"
                 if forras.startswith("You have a fairly large number")
                 or forras in {"OK", "Cancel"}
                 else "TagsPanel"

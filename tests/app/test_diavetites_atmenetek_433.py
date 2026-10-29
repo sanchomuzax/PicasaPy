@@ -20,7 +20,12 @@ from PySide6.QtCore import QSettings
 
 _QML_DIR = Path(picasapy.app.__file__).parent / "qml"
 _VIEW = (_QML_DIR / "PicasaPy" / "SlideshowView.qml").read_text(encoding="utf-8")
+_CONTROLS = (_QML_DIR / "PicasaPy" / "SlideshowControls.qml").read_text(encoding="utf-8")
+_PREVIOUS_IMAGE = (_QML_DIR / "PicasaPy" / "SlideshowPreviousImage.qml").read_text(encoding="utf-8")
+_VEIL = (_QML_DIR / "PicasaPy" / "SlideshowVeil.qml").read_text(encoding="utf-8")
+_CURRENT_IMAGE = (_QML_DIR / "PicasaPy" / "SlideshowCurrentImage.qml").read_text(encoding="utf-8")
 _MAIN = (_QML_DIR / "Main.qml").read_text(encoding="utf-8")
+_MAIN_SLIDESHOW = (_QML_DIR / "PicasaPy" / "MainSlideshow.qml").read_text(encoding="utf-8")
 
 ATMENETEK = (
     "cut",
@@ -134,7 +139,7 @@ class TestAMegorzottBeallitasok:
 
 class TestAValasztoAVezerlosavban:
     def test_a_valaszto_ott_van(self):
-        assert 'objectName: "slideshowTransitionBox"' in _VIEW
+        assert 'objectName: "slideshowTransitionBox"' in _CONTROLS
 
     def test_a_spec_szerinti_het_atmenetet_sorolja(self):
         """A választó a 4.3 szerinti hét tételes vetítési készletet sorolja
@@ -151,42 +156,42 @@ class TestAValasztoAVezerlosavban:
     def test_a_valaszto_NEM_ir_kozvetlenul_beallitast(self):
         """A gazda dönti el, hova kerül — a `starToggled` mintája."""
         assert "signal transitionPicked(string kulcs)" in _VIEW
-        assert "onTransitionPicked:" in _MAIN
+        assert "onTransitionPicked:" in _MAIN_SLIDESHOW
 
     def test_a_feliratmod_gombja_korbejar(self):
-        kezd = _VIEW.index('objectName: "slideshowCaptionModeButton"')
-        blokk = _VIEW[kezd : kezd + 500]
+        kezd = _CONTROLS.index('objectName: "slideshowCaptionModeButton"')
+        blokk = _CONTROLS[kezd : kezd + 500]
         assert "feliratModok.indexOf" in blokk
         assert "captionModePicked" in blokk
 
     def test_a_gazda_a_MEGORZOTT_erteket_koti_be(self):
-        assert "slideshow.screensaverMode ? controller.screensaverEffect" in _MAIN
-        assert ": controller.slideshowTransition" in _MAIN
-        assert "controller.screensaverShowCaptions ? \"caption\" : \"none\"" in _MAIN
-        assert ": controller.slideshowCaptionMode" in _MAIN
+        assert "slideshow.screensaverMode ? controller.screensaverEffect" in _MAIN_SLIDESHOW
+        assert ": controller.slideshowTransition" in _MAIN_SLIDESHOW
+        assert "controller.screensaverShowCaptions ? \"caption\" : \"none\"" in _MAIN_SLIDESHOW
+        assert ": controller.slideshowCaptionMode" in _MAIN_SLIDESHOW
 
 
 class TestAzAtmenetMotorja:
     def test_a_kimeno_dia_SAJAT_elem(self):
         """Áttűnéshez két kép kell — egyetlen `Image`-en nem megy."""
-        assert 'objectName: "slideshowPrevImage"' in _VIEW
+        assert 'objectName: "slideshowPrevImage"' in _PREVIOUS_IMAGE
 
     def test_a_fatyol_a_fekete_feher_attuneshez(self):
-        kezd = _VIEW.index('objectName: "slideshowVeil"')
-        assert 'color: "#000000"' in _VIEW[kezd : kezd + 300]
-        assert 'fatyol.color = show.transitionKind === "dissolvewhite"' in _VIEW
+        kezd = _VEIL.index('objectName: "slideshowVeil"')
+        assert 'color: "#000000"' in _VEIL[kezd : kezd + 300]
+        assert 'imageLayer.veil.color = show.transitionKind === "dissolvewhite"' in _VIEW
 
     def test_a_cut_NEM_animal(self):
         kezd = _VIEW.index("function _atmenetIndit(")
-        veg = _VIEW.index("SequentialAnimation {", kezd)
+        veg = _VIEW.index("\n    SlideshowImageLayer {", kezd)
         blokk = _VIEW[kezd:veg]
         assert 'show.transitionKind === "cut"' in blokk
-        assert "return" in blokk
+        assert blokk.index("return") < blokk.index("imageLayer.transitionAnimation.start()")
 
     def test_a_kenburns_a_DIA_idojehez_kotott(self):
         """A nagyítás a tartózkodás alatt fut, nem az átmenet alatt."""
-        kezd = _VIEW.index('objectName: "slideshowKenBurns"')
-        blokk = _VIEW[kezd : kezd + 400]
+        kezd = _CURRENT_IMAGE.index('objectName: "slideshowKenBurns"')
+        blokk = _CURRENT_IMAGE[kezd : kezd + 400]
         assert "show.intervalMs" in blokk
         assert "show.transitionMs" not in blokk
 

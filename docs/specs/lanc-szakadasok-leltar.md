@@ -100,7 +100,7 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 *minden érintetlen kódmozdulattól elavult — valódi szakadás nélkül.*
 *A fájlnév marad: tagnévvel együtt `grep -n`-nel pontos, és stabil.*
 
-**Felületről el nem ért vezérlő-tag: 28.**
+**Felületről el nem ért vezérlő-tag: 34.**
 
 | kontextus-objektum | tag | fajta | hely | indoklás |
 |---|---|---|---|---|
@@ -112,9 +112,9 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `controller` | `pasteEffects` | Slot | `app/effects_controller.py` | ELDÖNTVE (#1534) — a beillesztés; a felületé a KÖTEGELT pasteAllEffects; ADR-007 |
 | `controller` | `exportMovieFull` | Slot | `app/export_controller.py` | BELSŐ — a beállítást az export_controller.py:371 olvassa vissza |
 | `controller` | `setExportMovieFull` | Slot | `app/export_controller.py` | FELVÁLTVA — #1487 (döntés): a párbeszéd a TELJES beállítás-térképet adja át mentéskor (`ExportDialogs.qml:239`, `"movieFull"` kulcs), nem egyetlen setterrel ír. Az olvasója (`exportMovieFull`) már BELSŐ. |
-| `controller` | `removeWatchedFolder` | Slot | `app/library_controller.py` | FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből |
-| `controller` | `faceDetectionEnabledFor` | Slot | `app/library_controller.py` | FELVÁLTVA — a QML SAJÁT, olcsóbb tükrét számolja, és ez a #1486-ban ELDŐLT: a Python szabály minden hívásnál `Path(...).resolve()`-t futtat (fájlrendszer!), a mappafa jelvénye pedig soronként hívná. A két szabály nem csúszhat szét: tests/app/test_arc_kizaras_egy_szabaly_1486.py a QML függvényt QJSEngine-ben futtatja, és korpuszon veti össze a Pythonnal. |
-| `controller` | `collapseFolderIntoTray` | Slot | `app/tray_controller.py` | MÉRVE — #1919: a token RÉTEGE kész (modell + vezérlő + nézet + fordítás), a MEGJELENÍTÉS KAPCSOLÓJA szándékosan nincs bekötve. Az eredetiben nem parancs kapcsolja, hanem egy minden frissítéskor újraértékelt állapot-delegátus (`0x00572ba4` → `0x00563530`): akkor látszik, ha van mappa-/album-kijelölés, az nem üres, és a FÉNYKÉP-kijelölés üres. A mi mappa-kijelölésünk a megnyitott mappa, ami NEM az eredeti `CAlbumSelectionNode`-ja, ezért az automatikus megjelenítés átírná a tálca mindennapi kinézetét — az a tulajdonos szeme elé tartozó vizuális kör. A szabály szó szerint le van írva a `with_album_token` docstringjében. A #1919 emiatt NYITVA marad. |
+| `controller` | `removeWatchedFolder` | Slot | `app/library_controller_folders.py` | FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből |
+| `controller` | `faceDetectionEnabledFor` | Slot | `app/library_controller_folders.py` | FELVÁLTVA — a QML SAJÁT, olcsóbb tükrét számolja, és ez a #1486-ban ELDŐLT: a Python szabály minden hívásnál `Path(...).resolve()`-t futtat (fájlrendszer!), a mappafa jelvénye pedig soronként hívná. A két szabály nem csúszhat szét: tests/app/test_arc_kizaras_egy_szabaly_1486.py a QML függvényt QJSEngine-ben futtatja, és korpuszon veti össze a Pythonnal. |
+| `controller` | `collapseFolderIntoTray` | Slot | `app/tray_album_controller.py` | MÉRVE — #1919: a token RÉTEGE kész (modell + vezérlő + nézet + fordítás), a MEGJELENÍTÉS KAPCSOLÓJA szándékosan nincs bekötve. Az eredetiben nem parancs kapcsolja, hanem egy minden frissítéskor újraértékelt állapot-delegátus (`0x00572ba4` → `0x00563530`): akkor látszik, ha van mappa-/album-kijelölés, az nem üres, és a FÉNYKÉP-kijelölés üres. A mi mappa-kijelölésünk a megnyitott mappa, ami NEM az eredeti `CAlbumSelectionNode`-ja, ezért az automatikus megjelenítés átírná a tálca mindennapi kinézetét — az a tulajdonos szeme elé tartozó vizuális kör. A szabály szó szerint le van írva a `with_album_token` docstringjében. A #1919 emiatt NYITVA marad. |
 | `editController` | `hasFinetune` | Property | `app/edit_controller_effects_mixin.py` | ELDÖNTVE (#1487) — ugyanaz, mint a `hasRetouch`: a „van finomhangolás” állapotot a felület nem külön jelzőn mutatja (undoLabel #465, nyitott-eszköz kiemelés #116). ⚠️ Az `EditorPanel.qml` deklarált hozzá egy tükör-property-t, amit SENKI nem állított be és senki nem olvasott — az a holt tükör a #1487-ben TÖRÖLVE. A vezérlő property-je marad, a finomhangolás-próbák ezen át olvassák az állapotot. |
 | `editController` | `redoAction` | Property | `app/edit_controller_history_mixin.py` | BELSŐ — az edit_controller.py:892 ebből képzi a QML-nek szánt redoLabel-t |
 | `editController` | `revision` | Property | `app/edit_controller_preview_mixin.py` | MÉRVE — a QML a photos.revision-t köti; ez a szerkesztő SAJÁT változásszáma |
@@ -129,6 +129,12 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 | `screenCaptureController` | `isListening` | Property | `app/screen_capture.py` | BELSŐ - az alkalmazásfolyamat figyelőszál-állapota, a QML-nek nem kell megjelenítenie |
 | `screenCaptureController` | `setEnabled` | Slot | `app/screen_capture.py` | BELSŐ - a beállítás Python-API-ja a figyelő indításához/leállításához; a felületi beállításvezérlő nincs a #5639 hatókörében |
 | `screenCaptureController` | `shutdown` | Slot | `app/screen_capture.py` | BELSŐ - az application.py hívja az alkalmazás leállításakor |
+| `secondPreview` | `previewSource` | Property | `app/second_preview.py` | FELVÁLTVA - a PhotoViewerGeometryActions.qml és a PhotoViewerElotteImage.qml a második előnézetet viewer.masodikEditCtl álnevén olvassa. |
+| `secondPreview` | `beginEdit` | Slot | `app/second_preview.py` | FELVÁLTVA - a PhotoViewerEditWorkflow.qml kétképes szerkesztés indításakor a viewer.masodikEditCtl álnevén át hívja. |
+| `secondPreview` | `endEdit` | Slot | `app/second_preview.py` | FELVÁLTVA - a PhotoViewerEditWorkflow.qml a második szerkesztési állapot lezárásakor a viewer.masodikEditCtl álnevén hívja. |
+| `secondPreview` | `chainValue` | Property | `app/second_preview.py` | FELVÁLTVA - a PhotoViewerEditWorkflow.qml a második szerkesztési láncot a viewer.masodikEditCtl álnevén olvassa. |
+| `secondPreview` | `beginEditInMemory` | Slot | `app/second_preview.py` | FELVÁLTVA - a PhotoViewerEditWorkflow.qml memóriabeli előnézetet ugyanazon viewer.masodikEditCtl álnevén át indít. |
+| `secondPreview` | `persistChain` | Slot | `app/second_preview.py` | FELVÁLTVA - a PhotoViewerEditWorkflow.qml a második szerkesztési láncot a viewer.masodikEditCtl álnevén menti. |
 | `startupStatus` | `busy` | Property | `app/startup_status.py` | ELDÖNTVE (#1487) — a nyitóképernyő SZÁNDÉKOSAN a saját `busy: !root.ready` alakját számolja (`SplashScreen.qml:42`): egyetlen forrásból (`ready`) vezeti le, így nem lehet a kettő ellentmondásban. A property marad, mert a `report`/`finish` (mindkettő BELSŐ) ugyanennek az objektumnak az indítási API-ja, és a próbák innen olvassák az állapotot. |
 | `startupStatus` | `report` | Slot | `app/startup_status.py` | BELSŐ — az indítás lépéseit az application.py jelenti be |
 | `startupStatus` | `finish` | Slot | `app/startup_status.py` | BELSŐ — az indítás végét az application.py jelenti be |
@@ -137,8 +143,8 @@ azonos nevű tagja fedte el), és nem nézte a `startup_status.py`-t sem.
 
 | osztály | hely | indoklás |
 |---|---|---|
-| `FolderListModel` | `app/models.py` | BELSŐ — a QML a controller.folders tulajdonságon át kapja meg a modellt |
-| `PhotoGridModel` | `app/models.py` | BELSŐ — a QML a controller.photos tulajdonságon át kapja meg a modellt |
+| `FolderListModel` | `app/folder_list_model.py` | BELSŐ — a QML a controller.folders tulajdonságon át kapja meg a modellt |
+| `PhotoGridModel` | `app/photo_grid_model.py` | BELSŐ — a QML a controller.photos tulajdonságon át kapja meg a modellt |
 | `StartupMaintenance` | `app/startup_maintenance.py` | BELSŐ — az application.py belső indulási munkasora; a QML csak a fordított állapotüzenetet kapja |
 
 <!-- KEPESSEG_OR:VEGE -->

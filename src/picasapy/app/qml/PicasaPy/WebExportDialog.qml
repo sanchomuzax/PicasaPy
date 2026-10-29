@@ -468,184 +468,44 @@ Window {
             }
         }
 
-        // -- HTML-sablonlista és előnézet ------------------------------------
-        ColumnLayout {
-            objectName: "webExportHtmlTemplateSection"
+        WebExportTemplatePane {
+            id: webExportTemplatePane
             Layout.fillWidth: true
-            spacing: 2
-            enabled: !webExportWindow.exporting
-            visible: !webExportWindow.ftpMode
-            Text {
-                objectName: "webExportInstruction"
-                Layout.fillWidth: true
-                wrapMode: Text.WordWrap
-                //: picasapy-origin: picasa
-                //: picasapy-origin-key: webexport:webexport/label20.title
-                text: qsTr("Click a Template Name to view an example.  When you have made your selection, click Export.")
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
+            ftpMode: webExportWindow.ftpMode
+            exporting: webExportWindow.exporting
+            templates: webExportWindow.templates
+            htmlTemplateEntries: webExportWindow.htmlTemplateEntries
+            htmlTemplateIndex: webExportWindow.htmlTemplateIndex
+            templateIndex: webExportWindow.templateIndex
+            templatePreview: webExportWindow.templatePreview
+            templateDisplayName: function (template) {
+                return webExportWindow.templateDisplayName(template)
             }
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 12
-                ColumnLayout {
-                    Layout.preferredWidth: 340
-                    Layout.fillWidth: true
-                    spacing: 6
-                    ListView {
-                        id: templateList
-                        objectName: "webExportTemplateList"
-                        property real rowHeight: 34
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 7 * rowHeight
-                        clip: true
-                        model: webExportWindow.htmlTemplateEntries
-                        currentIndex: webExportWindow.htmlTemplateIndex
-                        delegate: ItemDelegate {
-                            required property var modelData
-                            required property int index
-                            width: templateList.width
-                            height: templateList.rowHeight
-                            text: webExportWindow.templateDisplayName(modelData)
-                            highlighted: ListView.isCurrentItem
-                            onClicked: {
-                                var selectedId = modelData.id
-                                for (var i = 0; i < webExportWindow.templates.length; ++i) {
-                                    if (webExportWindow.templates[i].id === selectedId) {
-                                        webExportWindow.templateIndex = i
-                                        break
-                                    }
-                                }
-                            }
-                        }
-                        ScrollBar.vertical: ScrollBar {
-                            policy: ScrollBar.AsNeeded
-                        }
-                    }
-                    Text {
-                        objectName: "webExportTemplateDescription"
-                        Layout.fillWidth: true
-                        wrapMode: Text.WordWrap
-                        text: webExportWindow.templateDescription(
-                            webExportWindow.templates[webExportWindow.templateIndex])
-                        font.pixelSize: Theme.fontSize - 1
-                        color: Theme.textGray
+            templateDescription: function (template) {
+                return webExportWindow.templateDescription(template)
+            }
+            onHtmlTemplateSelected: function (selectedId) {
+                for (var i = 0; i < webExportWindow.templates.length; ++i) {
+                    if (webExportWindow.templates[i].id === selectedId) {
+                        webExportWindow.templateIndex = i
+                        break
                     }
                 }
-                Image {
-                    objectName: "webExportTemplatePreview"
-                    source: webExportWindow.templatePreview
-                    visible: webExportWindow.templatePreview.toString().length > 0
-                    // A sablon saját csomagolt preview.svg állománya.
-                    sourceSize.width: 480
-                    sourceSize.height: 300
-                    fillMode: Image.PreserveAspectFit
-                    Layout.preferredWidth: 280
-                    Layout.preferredHeight: 175
-                    Layout.alignment: Qt.AlignTop
-                }
+            }
+            onFtpTemplateSelected: function (index) {
+                webExportWindow.templateIndex = index
             }
         }
 
-        // Az FTP-fiók választója marad a régi legördülő vezérlővel; a
-        // webes feltöltés útja és a kiválasztott sablonazonosító változatlan.
-        ColumnLayout {
-            objectName: "webExportFtpTemplateSection"
-            Layout.fillWidth: true
-            spacing: 2
-            enabled: !webExportWindow.exporting
-            visible: webExportWindow.ftpMode
-            Text {
-                text: qsTr("Template:")
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
-            }
-            PicasaComboBox {
-                id: templateBox
-                objectName: "webExportTemplateBox"
-                Layout.fillWidth: true
-                model: webExportWindow.templates.map(function(t) { return t.name })
-                currentIndex: webExportWindow.templateIndex
-                onActivated: webExportWindow.templateIndex = currentIndex
-            }
-            Image {
-                objectName: "webExportFtpTemplatePreview"
-                source: webExportWindow.templatePreview
-                visible: webExportWindow.templatePreview.toString().length > 0
-                sourceSize.width: 320
-                sourceSize.height: 200
-                fillMode: Image.PreserveAspectFit
-                Layout.preferredWidth: 160
-                Layout.preferredHeight: 100
-                Layout.topMargin: 4
-            }
-            Text {
-                objectName: "webExportFtpTemplateDescription"
-                Layout.fillWidth: true
-                wrapMode: Text.WordWrap
-                text: webExportWindow.templateIndex >= 0
-                      && webExportWindow.templateIndex < webExportWindow.templates.length
-                      ? webExportWindow.templates[webExportWindow.templateIndex].description : ""
-                font.pixelSize: Theme.fontSize - 1
-                color: Theme.textGray
-            }
-        }
-
-        Text {
-            objectName: "webExportErrorText"
-            visible: webExportWindow.lastError.length > 0
-            text: webExportWindow.lastError
-            color: Theme.brandRed
-            font.pixelSize: Theme.fontSize
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
-        }
-
-        // -- haladás-nézet --------------------------------------------------------
-        ColumnLayout {
-            Layout.fillWidth: true
-            visible: webExportWindow.exporting
-            spacing: 6
-            Text {
-                text: qsTr("PicasaPy is generating the web page.")
-                font.pixelSize: Theme.fontSize
-                color: Theme.ink
-            }
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 8
-                radius: 4
-                color: Theme.trackBg
-                border.color: Theme.chromeBorder
-                Rectangle {
-                    objectName: "webExportProgressFill"
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    radius: parent.radius
-                    color: Theme.picasaGreen
-                    width: webExportWindow.progressTotal > 0
-                           ? parent.width * webExportWindow.progressDone
-                                 / webExportWindow.progressTotal
-                           : 0
-                }
-            }
-        }
-
-        Text {
-            objectName: "webExportResultText"
-            visible: webExportWindow.ftpMode
-                     ? webExportWindow.lastFtpAccount.length > 0
-                     : webExportWindow.lastOutputFolder.length > 0
-            text: webExportWindow.ftpMode
-                  ? qsTr("Published %1 file(s) to %2.")
-                    .arg(webExportWindow.lastPageCount).arg(webExportWindow.lastFtpAccount)
-                  : qsTr("Web page generated: %1 file(s) in %2")
-                    .arg(webExportWindow.lastPageCount).arg(webExportWindow.lastOutputFolder)
-            color: Theme.picasaGreen
-            font.pixelSize: Theme.fontSize
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
+        WebExportStatusPane {
+            ftpMode: webExportWindow.ftpMode
+            exporting: webExportWindow.exporting
+            lastError: webExportWindow.lastError
+            lastOutputFolder: webExportWindow.lastOutputFolder
+            lastFtpAccount: webExportWindow.lastFtpAccount
+            progressDone: webExportWindow.progressDone
+            progressTotal: webExportWindow.progressTotal
+            lastPageCount: webExportWindow.lastPageCount
         }
 
         Item { Layout.fillHeight: true }
@@ -675,155 +535,9 @@ Window {
         }
     }
 
-    Dialog {
+    FtpAccountDialog {
         id: ftpAccountDialog
-        objectName: "ftpAccountDialog"
-        title: qsTr("Manage FTP Accounts")
-        modal: true
-        x: Math.max(0, (webExportWindow.width - width) / 2)
-        y: Math.max(0, (webExportWindow.height - height) / 2)
-        width: 390
-        standardButtons: Dialog.NoButton
-        property string editingId: ""
-        property string accountError: ""
-
-        function openFor(accountId) {
-            ftpAccountDialog.editingId = accountId || ""
-            ftpAccountDialog.accountError = ""
-            if (ftpAccountDialog.editingId.length > 0
-                    && typeof webExportController !== "undefined"
-                    && webExportController) {
-                var account = webExportController.ftpAccount(
-                    ftpAccountDialog.editingId)
-                accountNameField.text = account.name || ""
-                accountHostField.text = account.domain || ""
-                accountUserField.text = account.user || ""
-                accountRootField.text = account.root || "/"
-            } else {
-                ftpAccountDialog.beginNew()
-            }
-            accountPasswordField.text = ""
-            ftpAccountDialog.open()
-        }
-
-        function beginNew() {
-            ftpAccountDialog.editingId = ""
-            accountNameField.text = ""
-            accountHostField.text = ""
-            accountUserField.text = ""
-            accountRootField.text = "/"
-            accountPasswordField.text = ""
-            ftpAccountDialog.accountError = ""
-        }
-
-        function saveAccount() {
-            var result = webExportController.saveFtpAccount(
-                ftpAccountDialog.editingId,
-                accountNameField.text,
-                accountHostField.text,
-                accountUserField.text,
-                accountRootField.text,
-                accountPasswordField.text)
-            if (!result.ok) {
-                ftpAccountDialog.accountError = result.error
-                return
-            }
-            webExportController.selectFtpAccount(result.id)
-            webExportWindow.refreshFtpAccounts(result.id)
-            ftpAccountDialog.close()
-        }
-
-        function deleteAccount() {
-            if (ftpAccountDialog.editingId.length === 0) return
-            if (!webExportController.deleteFtpAccount(
-                    ftpAccountDialog.editingId)) {
-                ftpAccountDialog.accountError = qsTr("The account could not be deleted.")
-                return
-            }
-            ftpAccountDialog.beginNew()
-            webExportWindow.refreshFtpAccounts("")
-        }
-
-        contentItem: ColumnLayout {
-            spacing: 8
-            Label { text: qsTr("Account name:") }
-            TextField {
-                id: accountNameField
-                objectName: "ftpAccountNameField"
-                Layout.fillWidth: true
-                TextFieldContextArea {}
-            }
-            Label { text: qsTr("FTP server:") }
-            TextField {
-                id: accountHostField
-                objectName: "ftpAccountHostField"
-                Layout.fillWidth: true
-                TextFieldContextArea {}
-            }
-            Label { text: qsTr("Username:") }
-            TextField {
-                id: accountUserField
-                objectName: "ftpAccountUserField"
-                Layout.fillWidth: true
-                TextFieldContextArea {}
-            }
-            Label { text: qsTr("Password:") }
-            TextField {
-                id: accountPasswordField
-                objectName: "ftpAccountPasswordField"
-                Layout.fillWidth: true
-                echoMode: TextInput.Password
-                TextFieldContextArea {}
-            }
-            Label { text: qsTr("Remote folder:") }
-            TextField {
-                id: accountRootField
-                objectName: "ftpAccountRootField"
-                Layout.fillWidth: true
-                TextFieldContextArea {}
-            }
-            Label {
-                Layout.fillWidth: true
-                wrapMode: Text.WordWrap
-                color: Theme.textGray
-                text: ftpAccountDialog.editingId.length > 0
-                      ? qsTr("Leave blank to keep the saved password.") : ""
-            }
-            Text {
-                objectName: "ftpAccountErrorText"
-                visible: ftpAccountDialog.accountError.length > 0
-                text: ftpAccountDialog.accountError
-                color: Theme.brandRed
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-            }
-            RowLayout {
-                Layout.fillWidth: true
-                PicasaButton {
-                    objectName: "ftpAccountNewButton"
-                    text: qsTr("New")
-                    onClicked: ftpAccountDialog.beginNew()
-                }
-                PicasaButton {
-                    objectName: "ftpAccountDeleteButton"
-                    text: qsTr("Delete")
-                    enabled: ftpAccountDialog.editingId.length > 0
-                    onClicked: ftpAccountDialog.deleteAccount()
-                }
-                Item { Layout.fillWidth: true }
-                PicasaButton {
-                    objectName: "ftpAccountCancelButton"
-                    text: qsTr("Cancel")
-                    onClicked: ftpAccountDialog.close()
-                }
-                PicasaButton {
-                    objectName: "ftpAccountSaveButton"
-                    text: qsTr("Save")
-                    accent: Theme.picasaGreen
-                    onClicked: ftpAccountDialog.saveAccount()
-                }
-            }
-        }
+        ownerWindow: webExportWindow
     }
 
     FolderDialog {

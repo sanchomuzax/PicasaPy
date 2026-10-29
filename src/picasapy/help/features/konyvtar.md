@@ -547,6 +547,10 @@ férő gombok alatta, a gombra kattintva felnyíló függőleges oszlopban
 érhetők el. Az oszlopban ugyanúgy ikon és felirat áll, mint a sávban, és
 a tétel szürke, ha a hozzá tartozó gomb is az volna.
 
+A tálca zöld **Feltöltés a Google Fotókba** gombja a tálca összes képét
+feltölti a Google Fotókba, miután a Beállításokban bejelentkeztél. Lásd
+[Feltöltés a Google Fotókba](google-fotok.md).
+
 A kimeneti gombsorra jobbgombbal kattintva a **Gombok konfigurálása…**
 tétel ugyanazt az ablakot nyitja meg, mint az **Eszközök ▸ Gombok
 konfigurálása…** menüpont (lásd [Beállítások](beallitasok.md)).

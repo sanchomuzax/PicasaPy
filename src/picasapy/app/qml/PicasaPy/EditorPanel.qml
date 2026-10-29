@@ -68,7 +68,7 @@ Rectangle {
     // használja alsó korlátnak, amikor a képernyőhöz igazítja az ablak
     // minimumát — beégetett szám nélkül.
     readonly property real chromeHeight:
-        10 + tabBar.height + 6 + globalUndoRow.height + 10
+        10 + panelTabs.tabBarItem.height + 6 + globalUndoRow.height + 10
     implicitHeight: panel.chromeHeight + panel.mertTabPanelHeight
 
     //: #3220: a számítás a `editorpanel_logika.js`-ben (`lathatoMagassag`)
@@ -82,9 +82,10 @@ Rectangle {
     readonly property real tabContentHeight: Logika.fulTartalomMagassag()
 
     readonly property real tabAreaAvailable:
-        Math.max(0, globalUndoRow.y - 6 - tabArea.y)
+        Math.max(0, globalUndoRow.y - 6 - panelTabs.tabAreaItem.y)
     readonly property bool tabContentTruncated:
-        tabArea.visible && panel.tabContentHeight > panel.tabAreaAvailable + 0.5
+        panelTabs.tabAreaItem.visible
+            && panel.tabContentHeight > panel.tabAreaAvailable + 0.5
 
     // #641: a gombsor alja a panelen belül — az őr-teszt ebből számolja ki,
     // hogy a sor a néző LÁTHATÓ területén belül maradt-e. (A sor a panel
@@ -149,9 +150,7 @@ Rectangle {
     //: #3123: a kép fölötti eszköz-sáv ebből tudja, mikor alkalmazható a
     //: szöveg (a szövegmező a `EditorTextPanel`-ben él).
     readonly property bool textApplyEnabled:
-        //: #3220: a szöveg-panel a mód-eszközök fájljában él
-        modeToolScroll.szovegLap ? modeToolScroll.szovegLap.applyEngedve
-                                 : false
+        panelOverlays.textApplyEnabled
     // #450: a kép mentett felirata ("Copy Caption" gombhoz) — a hívó
     // (PhotoViewer) tölti a photosModel.captionAt()-ból; üresnél a gomb
     // tiltott. A hasTextOverlay ("Remove all existing text" gombhoz) a
@@ -694,95 +693,9 @@ Rectangle {
     // `currentColor` a controller mentett/piszkozat értékét tükrözi,
     // `colorPicked` viszi vissza a kattintást a hívóhoz.
 
-    // ---------------- fülsáv: Gyakori javítások / Finomhangolás / Effektek /
-    // 4. effekt-fül / 5. effekt-fül (#20, #328) — csak "tools" módban,
-    // vágásnál (cropColumn) nincs értelme. Öt egyenlő szélességű fül fér el
-    // a panel szélességében (Layout.fillWidth mindegyiken, ld. #328 4. pont).
-    EditorTabBar {
-        id: tabBar
-        objectName: "editTabBar"
-        panel: panel
-        visible: !panel.modeToolActive
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        // #741: a TARTALOM-OSZLOP a mért 276 képpont (x 3..279) — a
-        // korábbi 10-10 képpontos margó 260-at hagyott, ettől lett a
-        // fülsáv és minden alatta lévő rács keskenyebb az eredetinél.
-        // (`docs/specs/szerkeszto-panel-meretek.md` 1.)
-        anchors.leftMargin: 3
-        anchors.rightMargin: 1
-        anchors.topMargin: 10
-    }
-
-    //: #3220: a fülek önálló fájlba kerültek, a `editorpanel_logika.js`
-    //: viszont NÉVVEL hivatkozik kettőre — ez a két tükör tartja a
-    //: logikát változatlanul (a nevek szándékosan a RÉGIEK).
-    readonly property Item finetunePanel: tabArea.finomhangoloLap
-    readonly property Item fixesTab: tabArea.gyakoriLap
-
-    // ---------------- a FÜLEK közös területe (NEM görgethető) ----------
-    //
-    // A terület és a hét fül önálló fájlban él (#3220) — az indoklások
-    // (#422/#616/#628/#703) ott olvashatók (`EditorTabHost.qml`).
-    EditorTabHost {
-        id: tabArea
-        panel: panel
-        anchors.top: tabBar.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        // #741: a fülterület a fülsávval AZONOS 276 képpontos
-        // tartalom-oszlop (x 3..279)
-        anchors.leftMargin: 3
-        anchors.rightMargin: 1
-    }
-
-
-
-
-
-
-
-
-    // #616: a csúszkás alpanel a fülek görgethető területén KÍVÜL
-    // marad: maga is Flickable (saját vágással és görgetéssel), és egy
-    // Flickable implicit magassága 0 — becsomagolva nulla magasságot
-    // kapna, azaz eltűnne. A gombsorig érő horgony itt is megvan.
-    // ---------------- effekt-paraméter alpanel (#316) ----------------
-    // #496: a tartalom önálló fájlban (EditorParamPanel.qml).
-    EditorParamPanel {
-        id: effectParamScroll
-        objectName: "editorEffectParamScroll"
-        panel: panel
-        visible: !panel.modeToolActive && panel.paramPanelActive
-                 && !panel.paramPanelSuspended
-        anchors.top: tabBar.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: globalUndoRow.top
-        anchors.bottomMargin: 6
-    }
-
-    // #316: húzás közben az egyes csúszka-változásokat nem küldjük azonnal
-    // (élő előnézetenként) az editControllernek — kis késleltetéssel
-    // összefogjuk (a Main.qml folderPaneWidthSaver-mintája), de az Apply
-    // előtt az utolsó érték mindenképp átmegy (applyParamPanel közvetlenül
-    // a friss paramEffectValues-t küldi, nem a timertől függ).
-    Timer {
-        id: paramPreviewTimer
-        interval: 60
-        onTriggered: if (panel.hasEffectController())
-            editController.previewEffect(panel.paramEffectName,
-                                          panel.paramEffectValues)
-    }
-
-    // ---------------- mód-eszközök (vágás/retusálás/vörösszem/szöveg) ----
-    //
-    // A négy mód-panel és a görgethető keretük önálló fájlban él
-    // (#3220) — az indoklások (#778 és társai) ott olvashatók
-    // (`EditorModeTools.qml`).
-    EditorModeTools {
-        id: modeToolScroll
+    // A fülsáv, a hét fül és a paraméterpanel önálló layout-komponensben él.
+    EditorPanelTabs {
+        id: panelTabs
         panel: panel
         anchors.top: parent.top
         anchors.left: parent.left
@@ -790,29 +703,18 @@ Rectangle {
         anchors.bottom: globalUndoRow.top
         anchors.bottomMargin: 6
     }
+    readonly property Item finetunePanel: panelTabs.finetunePanel
+    readonly property Item fixesTab: panelTabs.fixesTab
 
-    // #448: "AddCustomAspectRatio" — szélesség × magasság + név bekérő; a
-    // hívó (fent, a "Add Custom Aspect Ratio…" sor) nyitja, a `created`
-    // jelre a controlleren át QSettings-be ír (CustomAspectRatiosMixin) és
-    // rögtön ki is választja az újonnan felvett arányt.
-    AddCustomAspectRatioDialog {
-        id: addCustomAspectRatioDialog
-        onCreated: (newWidth, newHeight, newName) => {
-            if (typeof controller === "undefined" || !controller) return
-            controller.addCustomAspectRatio(newWidth, newHeight, newName)
-            // az új tétel a lista VÉGÉN jelenik meg (a beépítettek után) —
-            // a customAspectRatios friss hosszából számolható az indexe
-            // (a hozzáadás óta +1 hosszú lista utolsó eleme)
-            panel.selectAspect(panel.aspectPresets.length
-                + panel.customAspectRatios.length - 1)
-        }
-    }
-
-    // ---------------- párbeszédek (#448, #459) ----------------
-    // #496: külön fájlban (EditorDialogs.qml).
-    EditorDialogs {
-        id: editorDialogs
+    // A mód-eszközök és párbeszédgazdák önálló komponensbe kerültek.
+    EditorPanelOverlays {
+        id: panelOverlays
         panel: panel
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: globalUndoRow.top
+        anchors.bottomMargin: 6
     }
 
     //: #2480: nyitva van-e a szerkesztő valamelyik MODÁLIS párbeszéde. A
@@ -820,8 +722,7 @@ Rectangle {
     //: az eredetiben ez a `editpanel/modaldialogblur` (`editpanel.tre:1362`),
     //: ami a `root` gyereke, tehát a TELJES szerkesztő fölé kerül, nem a bal
     //: panelen belülre.
-    readonly property bool modalDialogOpen:
-        editorDialogs.anyModalOpen || addCustomAspectRatioDialog.visible
+    readonly property bool modalDialogOpen: panelOverlays.modalDialogOpen
 
 
 
@@ -832,7 +733,7 @@ Rectangle {
     EditorUndoRow {
         id: globalUndoRow
         panel: panel
-        tabArea: tabArea
+        tabArea: panelTabs.tabAreaItem
         anchors.left: parent.left
         anchors.right: parent.right
         // #741: a MÉRT geometria — a két gomb x 7..139 és x 144..276
@@ -849,12 +750,16 @@ Rectangle {
     ShaderEffectSource {
         id: paramTabBlur
         objectName: "paramPanelTabBlur"
-        anchors.fill: tabArea
-        sourceItem: tabArea
-        sourceRect: Qt.rect(0, 0, tabArea.width, tabArea.height)
+        x: panelTabs.x + panelTabs.tabAreaItem.x
+        y: panelTabs.y + panelTabs.tabAreaItem.y
+        width: panelTabs.tabAreaItem.width
+        height: panelTabs.tabAreaItem.height
+        sourceItem: panelTabs.tabAreaItem
+        sourceRect: Qt.rect(0, 0, panelTabs.tabAreaItem.width,
+                            panelTabs.tabAreaItem.height)
         textureSize: Qt.size(
-            Math.max(1, Math.round(tabArea.width / 4)),
-            Math.max(1, Math.round(tabArea.height / 4)))
+            Math.max(1, Math.round(panelTabs.tabAreaItem.width / 4)),
+            Math.max(1, Math.round(panelTabs.tabAreaItem.height / 4)))
         live: panel.paramPanelContentBlurred
         smooth: true
         hideSource: panel.paramPanelContentBlurred

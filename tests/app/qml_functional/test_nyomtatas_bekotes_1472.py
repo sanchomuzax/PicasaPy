@@ -124,9 +124,10 @@ class TestRegisztracio:
     """
 
     def test_az_application_py_letrehozza_es_regisztralja_a_vezerlot(self):
-        forras = (
-            Path(picasapy.app.__file__).parent / "application.py"
-        ).read_text(encoding="utf-8")
+        from support.app_forras import indito_forras
+
+        # #6155: az indító több modulra bomlott; az őr a családot olvassa
+        forras = indito_forras()
 
         assert "PrintController(photo_source=" in forras, (
             "a termékkód nem hozza létre a PrintControllert"

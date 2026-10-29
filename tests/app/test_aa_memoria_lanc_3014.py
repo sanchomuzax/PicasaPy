@@ -103,11 +103,10 @@ class TestANaplo:
     def test_az_alkalmazas_a_masodik_rekeszt_is_naplozza(self):
         """A bekötés az `application.py`-ban él (a teljes indítás tesztben
         nem fut) — forrás-szintű őr."""
-        from pathlib import Path
+        from support.app_forras import indito_forras
 
-        import picasapy.app.application as alkalmazas
-
-        forras = Path(alkalmazas.__file__).read_text(encoding="utf-8")
+        # #6155: az indító több modulra bomlott; az őr a családot olvassa
+        forras = indito_forras()
         assert (
             "edit_controller_masodik.chainSaved.connect(controller.recordSavedChain)"
             in forras

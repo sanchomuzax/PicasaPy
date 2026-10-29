@@ -42,6 +42,10 @@ _TS = (
 _QML = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "HistogramBox.qml"
 ).read_text(encoding="utf-8")
+_QML_MAPPA = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+_HISTOGRAM_HOST = (_QML_MAPPA / "PhotoViewerLeftDrawer.qml").read_text(
+    encoding="utf-8"
+)
 
 
 def _forditasok() -> list[str]:
@@ -63,11 +67,16 @@ class TestAHivatalosAlak:
         )
 
     def test_MINDEN_elofordulas_a_hivatalos_alak(self):
-        """A `.ts` KÉT kontextusban is tartalmazza — mindkettőnek egyeznie
-        kell, különben a felület attól függ, melyik kontextus szólal meg."""
+        """Egyetlen aktív QML-hívás és fordítás maradjon; árva duplikátum ne."""
         forditasok = _forditasok()
-        assert len(forditasok) == 2, (
-            f"{len(forditasok)} fordítást találtam, mérve 2 volt"
+        assert _QML.count(f'qsTr("{FORRAS}")') == 1, (
+            "a hisztogram felirata eltűnt vagy megkettőződött a QML-ben"
+        )
+        assert _HISTOGRAM_HOST.count("HistogramBox {") == 1, (
+            "a nézőben a hisztogram komponens példányainak száma megváltozott"
+        )
+        assert len(forditasok) == 1, (
+            f"{len(forditasok)} fordítást találtam, az egyetlen aktív híváshoz 1 kell"
         )
         for forditas in forditasok:
             assert forditas.strip() == HIVATALOS, (

@@ -404,6 +404,33 @@ QtObject {
         readonly property color starYellow: "#f5c518"
         readonly property color textGray: tema.dark ? "#a29e96" : "#7a776f"
 
+        // ------- #6125: további, korábban rögzített felületi színek -------
+        // A világos értékek a lecserélt QML-literálokkal egyeznek, ezért a
+        // világos felület képpontja nem változik. A sötét párok új, semleges
+        // krómértékek; a fotóra rajzolt rétegek nem ezeket használják.
+        readonly property color inputBorder: tema.dark ? "#555555" : "#8a8a8a"
+        readonly property color searchClearBg: tema.dark ? "#555555" : "#b0b0b0"
+        readonly property color unnamedGroupLabel: tema.dark ? "#c6b9b4" : "#68564f"
+        readonly property color unnamedWelcomeBg: tema.dark ? "#303030" : "#606060"
+        readonly property color unnamedWelcomeBorder: tema.dark ? "#5a5a5a" : "#999999"
+        readonly property color unnamedWelcomeButtonBorder: tema.dark ? "#5a5a5a" : "#dddddd"
+        readonly property color headerPlayButtonBg: tema.dark ? "#3a3a3a" : "#ffffff"
+        readonly property color headerPlayButtonHoverBg: tema.dark ? "#4a4a4a" : "#f0f0ee"
+        readonly property color filterResultsBg: tema.dark ? "#3c6143" : "#5aa865"
+        readonly property color filterNoticeBg: tema.dark ? "#51462c" : "#f0e3b0"
+        readonly property color collageMissingBg: tema.dark ? "#454545" : "#c8c8c8"
+        readonly property color collageMissingBorder: tema.dark ? "#8a8a8a" : "#787878"
+        readonly property color collageMissingText: tema.dark ? "#c8c8c8" : "#787878"
+        readonly property color collageGroupBorder: tema.dark ? "#ff8a52" : "#f85e0f"
+        readonly property color collageSheetBorder: tema.dark ? "#555555" : "#9a9a9a"
+        readonly property color optionsSliderTick: tema.dark ? "#6d6d6d" : "#c4c4c4"
+        readonly property color settingsDivider: tema.dark ? "#555555" : "#a0a0a0"
+        readonly property color trayScratchLabel: tema.dark ? "#9c9c9c" : "#c3c3c3"
+        // A médialejátszó fölötti felirat nem app-króm: a képkockától
+        // függetlenül világos marad, ezért mindkét módban azonos token.
+        readonly property color mediaOverlayText: "#e8e8e8"
+        readonly property color mediaControlThumbBg: tema.dark ? "#686868" : "#d5d5d5"
+
         // ------- Qt Controls-paletta (Main.qml ablak-palettája) -------
         readonly property color controlBase: nyersTokenek.contentPanel        // beviteli mezők háttere
         readonly property color buttonBg: tema.dark ? "#3a3a3a" : "#e8e8e8"
@@ -645,6 +672,26 @@ QtObject {
     readonly property color captionBarText: tema._szin("captionBarText", nyersTokenek.captionBarText)
     readonly property color captionToggleBg: tema._szin("captionToggleBg", nyersTokenek.captionToggleBg)
     readonly property color captionToggleBorder: tema._szin("captionToggleBorder", nyersTokenek.captionToggleBorder)
+    readonly property color inputBorder: tema._szin("inputBorder", nyersTokenek.inputBorder)
+    readonly property color searchClearBg: tema._szin("searchClearBg", nyersTokenek.searchClearBg)
+    readonly property color unnamedGroupLabel: tema._szin("unnamedGroupLabel", nyersTokenek.unnamedGroupLabel)
+    readonly property color unnamedWelcomeBg: tema._szin("unnamedWelcomeBg", nyersTokenek.unnamedWelcomeBg)
+    readonly property color unnamedWelcomeBorder: tema._szin("unnamedWelcomeBorder", nyersTokenek.unnamedWelcomeBorder)
+    readonly property color unnamedWelcomeButtonBorder: tema._szin("unnamedWelcomeButtonBorder", nyersTokenek.unnamedWelcomeButtonBorder)
+    readonly property color headerPlayButtonBg: tema._szin("headerPlayButtonBg", nyersTokenek.headerPlayButtonBg)
+    readonly property color headerPlayButtonHoverBg: tema._szin("headerPlayButtonHoverBg", nyersTokenek.headerPlayButtonHoverBg)
+    readonly property color filterResultsBg: tema._szin("filterResultsBg", nyersTokenek.filterResultsBg)
+    readonly property color filterNoticeBg: tema._szin("filterNoticeBg", nyersTokenek.filterNoticeBg)
+    readonly property color collageMissingBg: tema._szin("collageMissingBg", nyersTokenek.collageMissingBg)
+    readonly property color collageMissingBorder: tema._szin("collageMissingBorder", nyersTokenek.collageMissingBorder)
+    readonly property color collageMissingText: tema._szin("collageMissingText", nyersTokenek.collageMissingText)
+    readonly property color collageGroupBorder: tema._szin("collageGroupBorder", nyersTokenek.collageGroupBorder)
+    readonly property color collageSheetBorder: tema._szin("collageSheetBorder", nyersTokenek.collageSheetBorder)
+    readonly property color optionsSliderTick: tema._szin("optionsSliderTick", nyersTokenek.optionsSliderTick)
+    readonly property color settingsDivider: tema._szin("settingsDivider", nyersTokenek.settingsDivider)
+    readonly property color trayScratchLabel: tema._szin("trayScratchLabel", nyersTokenek.trayScratchLabel)
+    readonly property color mediaOverlayText: tema._szin("mediaOverlayText", nyersTokenek.mediaOverlayText)
+    readonly property color mediaControlThumbBg: tema._szin("mediaControlThumbBg", nyersTokenek.mediaControlThumbBg)
     readonly property color sliderGroove: tema._szin("sliderGroove", nyersTokenek.sliderGroove)
     readonly property color sliderGrooveBorder: tema._szin("sliderGrooveBorder", nyersTokenek.sliderGrooveBorder)
     readonly property color sliderGrooveTick: tema._szin("sliderGrooveTick", nyersTokenek.sliderGrooveTick)

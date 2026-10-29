@@ -240,16 +240,16 @@ class TestASlotABEKOTESSEL_EGYUTT:
 
     def test_a_QML_be_is_koti(self):
         """A gomb és a jelzője a nézőben — enélkül a Slot polcon állna."""
-        from pathlib import Path
+        from tests.support.photo_viewer_components_6109 import (
+            photo_viewer_source_text,
+            photo_viewer_sources,
+        )
 
-        import picasapy.app as app_csomag
-
-        nezo = (
-            Path(app_csomag.__file__).parent
-            / "qml" / "PicasaPy" / "PhotoViewer.qml"
-        ).read_text(encoding="utf-8")
+        nezo = photo_viewer_source_text()
+        felso_sav = photo_viewer_sources()["PhotoViewerTopBar.qml"]
         assert "hasMovieProject(" in nezo
-        assert 'objectName: "viewerEditMovieButton"' in nezo
+        assert 'objectName: "viewerEditMovieButton"' in felso_sav
+        assert "viewer.currentIsSavedMovie" in felso_sav
 
     def test_a_lekerdezes_viszont_MEGVAN(self, tmp_path):
         from picasapy.movie.mxf import van_projektje

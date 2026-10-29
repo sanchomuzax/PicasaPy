@@ -55,45 +55,9 @@ Rectangle {
     property var musicTrackUrls: []
     property int _musicTrackIndex: 0
 
-    function _syncMusic() {
-        if (!show.visible || !show.playing || show.screensaverMode
-                || !show.musicEnabled || !show.musicTrackUrls
-                || show.musicTrackUrls.length === 0) {
-            musicPlayerLoader.active = false
-            return
-        }
-        musicPlayerLoader.active = true
-        var player = musicPlayerLoader.item
-        if (!player) return
-        if (show._musicTrackIndex < 0
-                || show._musicTrackIndex >= show.musicTrackUrls.length)
-            show._musicTrackIndex = 0
-        var target = show.musicTrackUrls[show._musicTrackIndex]
-        if (player.source !== target || !player.playing)
-            player.playTrack(target)
-    }
+    function _syncMusic() { slideshowMusic.sync() }
+    function _nextMusicTrack() { slideshowMusic.nextTrack() }
 
-    function _nextMusicTrack() {
-        if (!show.musicTrackUrls || show.musicTrackUrls.length === 0) {
-            show._syncMusic()
-            return
-        }
-        show._musicTrackIndex = (show._musicTrackIndex + 1)
-            % show.musicTrackUrls.length
-        show._syncMusic()
-    }
-
-    Loader {
-        id: musicPlayerLoader
-        objectName: "slideshowMusicPlayerLoader"
-        active: false
-        source: active ? "SlideshowMusicPlayer.qml" : ""
-        onLoaded: show._syncMusic()
-    }
-    Connections {
-        target: musicPlayerLoader.item
-        function onTrackEnded() { show._nextMusicTrack() }
-    }
     onMusicEnabledChanged: show._syncMusic()
     onMusicTrackUrlsChanged: {
         show._musicTrackIndex = 0
@@ -101,6 +65,11 @@ Rectangle {
     }
     onPlayingChanged: show._syncMusic()
     onScreensaverModeChanged: show._syncMusic()
+
+    SlideshowMusic {
+        id: slideshowMusic
+        slideshow: show
+    }
 
     //: #4856: a diavetítés átmenet-választója az eredeti hét elemét kínálja
     //: (`picasa-create-features.md` 4.3), ebben a sorrendben. A feliratok a
@@ -232,7 +201,7 @@ Rectangle {
     function start(index) {
         screensaverMode = false
         screensaverInputArmed = false
-        screensaverInputTimer.stop()
+        slideshowTiming.inputArmTimer.stop()
         var target = clampToPhoto(index)
         if (target < 0) return   // nincs vetíthető fotó
         currentIndex = target
@@ -248,7 +217,7 @@ Rectangle {
     function startScreensaver() {
         screensaverMode = true
         screensaverInputArmed = false
-        screensaverInputTimer.stop()
+        slideshowTiming.inputArmTimer.stop()
         var target = clampToPhoto(0)
         if (target < 0) {
             currentIndex = -1
@@ -259,16 +228,16 @@ Rectangle {
         show._kovetettUtFrissit()
         playing = true
         visible = true
-        controlsBar.shown = false
-        hideTimer.stop()
+        slideshowControls.controls.shown = false
+        slideshowControls.autoHideTimer.stop()
         forceActiveFocus()
-        screensaverInputTimer.start()
+        slideshowTiming.inputArmTimer.start()
     }
 
     function stop() {
         if (!visible) return
         var wasScreensaver = screensaverMode
-        screensaverInputTimer.stop()
+        slideshowTiming.inputArmTimer.stop()
         screensaverInputArmed = false
         playing = false
         visible = false
@@ -298,7 +267,7 @@ Rectangle {
     //: áttűnés kimenő képe az ELSŐ kép volt, pedig a MÁSODIKAT nézte.
     onCurrentIndexChanged: {
         show._kovetettUtFrissit()
-        var kimeno = slide.source
+        var kimeno = imageLayer.currentImage.source
         if (show.visible && kimeno !== "" && !show._resyncing)
             show._atmenetIndit(kimeno)
         show._diakBetolt()
@@ -318,8 +287,7 @@ Rectangle {
 
     //: #3881: a látott kép útvonala a JELEN indexből
     function _kovetettUtFrissit() {
-        show._currentFilePath = show.photosModel && show.currentIndex >= 0
-            ? show.photosModel.filePathAt(show.currentIndex) : ""
+        slideshowModelSync.kovetettUtFrissit()
     }
 
     //: #3881: a modell szerkezeti jelére (sortörlés, teljes reset — pl.
@@ -327,77 +295,36 @@ Rectangle {
     //: eltolódhatnak vagy átrendeződhetnek anélkül, hogy a nézett kép
     //: megváltozna. A `layoutChanged`-et a `PhotoGridModel` nem küldi (az
     //: átrendezés teljes reset), ezért arra nincs kezelő.
-    Connections {
-        target: show.photosModel
-        function onRowsRemoved(parent, first, last) {
-            show._sorokTorolve(first, last)
-        }
-        function onModelReset() { show._modellReset() }
+    SlideshowModelSync {
+        id: slideshowModelSync
+        slideshow: show
+        currentImage: imageLayer.currentImage
     }
 
     //: az index CSENDBEN (átmenet nélkül) áll a megadott sorra
     function _indexCsendben(index) {
-        show._resyncing = true
-        show.currentIndex = index
-        show._resyncing = false
+        slideshowModelSync.indexCsendben(index)
     }
 
     //: kiürült lista: nincs látott kép, tehát a kilépés se jelöljön ki
     //: nem létező sort (`exitSlideshow` a -1-et kihagyja)
     function _uresListaLeall() {
-        show._indexCsendben(-1)
-        show.stop()
+        slideshowModelSync.uresListaLeall()
     }
 
     //: a törlés a jel argumentumaiból dől el, a lista bejárása nélkül
     function _sorokTorolve(first, last) {
-        if (!show.visible || !show.photosModel) return
-        if (show.count() === 0) { show._uresListaLeall(); return }
-        var i = show.currentIndex
-        if (i < 0) return
-        if (last < i) {
-            show._indexCsendben(i - (last - first + 1))
-        } else if (first <= i) {
-            // a látott kép törlődött: a helyén a KÖVETKEZŐ áll, a lista
-            // végén — ahogy az `advance()` — körbe a 0. sor
-            show._kovetkezoreLep(first)
-        } else {
-            // későbbi sor: a látott kép marad, de a következő változhatott
-            show._diakBetolt()
-        }
+        slideshowModelSync.sorokTorolve(first, last)
     }
 
     //: teljes reset után a látott fájlt EGY Python-hívás keresi vissza
     function _modellReset() {
-        if (!show.visible || !show.photosModel) return
-        if (show.count() === 0) { show._uresListaLeall(); return }
-        if (show._currentFilePath === "") return
-        var sor = show.photosModel.rowOfPath(show._currentFilePath)
-        if (sor >= 0) {
-            if (sor !== show.currentIndex)
-                show._indexCsendben(sor)
-            else
-                show._diakBetolt()   // az elő-betöltő a friss következőt
-            return
-        }
-        show._kovetkezoreLep(show.currentIndex)
+        slideshowModelSync.modellReset()
     }
 
     //: a látott kép eltűnt; `jelolt` az a sor, ahol most a következő áll
     function _kovetkezoreLep(jelolt) {
-        var kezdo = jelolt >= 0 && jelolt < show.count() ? jelolt : 0
-        var kovetkezo = show.clampToPhoto(kezdo)
-        if (kovetkezo < 0) { show._uresListaLeall(); return }
-        if (kovetkezo !== show.currentIndex) {
-            show.currentIndex = kovetkezo
-            return
-        }
-        // a szám nem változott, de alatta más kép áll — azonos értékre az
-        // `onCurrentIndexChanged` nem fut le, ezért kézzel váltunk
-        var kimeno = slide.source
-        show._kovetettUtFrissit()
-        if (kimeno !== "") show._atmenetIndit(kimeno)
-        show._diakBetolt()
+        slideshowModelSync.kovetkezoreLep(jelolt)
     }
 
     //: a vetített kép URL-je (#1640: a mód VALÓDI argumentum), üres, ha
@@ -458,30 +385,31 @@ Rectangle {
     function _frissitKenBurns() {
         if (show.transitionKind === "kenburns" && show.visible
                 && show.currentIndex >= 0) {
-            slide.panZoomRectangles = show._panZoomRectanglesFor(show.currentIndex)
-            slide.panZoomProgress = 0
-            if (slide.panZoomRectangles.length === 2)
-                kenBurns.restart()
+            imageLayer.currentImage.panZoomRectangles =
+                show._panZoomRectanglesFor(show.currentIndex)
+            imageLayer.currentImage.panZoomProgress = 0
+            if (imageLayer.currentImage.panZoomRectangles.length === 2)
+                imageLayer.panZoomAnimation.restart()
             else
-                kenBurns.stop()
+                imageLayer.panZoomAnimation.stop()
         } else {
-            kenBurns.stop()
-            slide.panZoomRectangles = []
-            slide.panZoomProgress = 0
+            imageLayer.panZoomAnimation.stop()
+            imageLayer.currentImage.panZoomRectangles = []
+            imageLayer.currentImage.panZoomProgress = 0
         }
     }
 
     //: a dia és az elő-betöltő forrása — minden olyan változáskor, amitől a
     //: vetített kép függ (index, láthatóság, modell, megjelenítési mód)
     function _diakBetolt() {
-        show._betolt(slide, show._diaUrl(show.currentIndex),
+        show._betolt(imageLayer.currentImage, show._diaUrl(show.currentIndex),
                      show.forrasMeret(show.currentIndex))
         show._frissitKenBurns()
         var kovetkezo = show.visible && show.photosModel
             ? show.nextPhotoIndex(show.currentIndex, 1) : -1
         // #1640: az elő-betöltés is a mód-tudatos URL-t kérje — különben a
         // következő dia egy pillanatra a festetlen képet villantaná
-        show._betolt(elobetoltoSlide, show._diaUrl(kovetkezo),
+        show._betolt(imageLayer.preloadImage, show._diaUrl(kovetkezo),
                      show.forrasMeret(kovetkezo))
     }
 
@@ -505,15 +433,19 @@ Rectangle {
     //: A kötések itt MÉG a kimenő diáé (ugyanaz a lusta újraértékelés, amin
     //: a #3018 kimenő URL-je is múlik), ezért a dia élő értékeit másoljuk.
     function _geometriatAtvesz() {
-        elozoSlide.width = slide.width
-        elozoSlide.height = slide.height
-        elozoSlide.rotation = slide.rotation
-        elozoSlide.scale = slide.scale
-        elozoSlide.transitionOffsetX = slide.transitionOffsetX
-        elozoSlide.transitionOffsetY = slide.transitionOffsetY
-        elozoSlide.capturedPanZoomX = slide.x - slide.transitionOffsetX
-        elozoSlide.capturedPanZoomY = slide.y - slide.transitionOffsetY
-        elozoSlide.exactPanZoomGeometry = slide.panZoomActive
+        imageLayer.previousImage.width = imageLayer.currentImage.width
+        imageLayer.previousImage.height = imageLayer.currentImage.height
+        imageLayer.previousImage.rotation = imageLayer.currentImage.rotation
+        imageLayer.previousImage.scale = imageLayer.currentImage.scale
+        imageLayer.previousImage.transitionOffsetX = imageLayer.currentImage.transitionOffsetX
+        imageLayer.previousImage.transitionOffsetY = imageLayer.currentImage.transitionOffsetY
+        imageLayer.previousImage.capturedPanZoomX =
+            imageLayer.currentImage.x
+            - imageLayer.currentImage.transitionOffsetX
+        imageLayer.previousImage.capturedPanZoomY =
+            imageLayer.currentImage.y
+            - imageLayer.currentImage.transitionOffsetY
+        imageLayer.previousImage.exactPanZoomGeometry = imageLayer.currentImage.panZoomActive
     }
 
     function _atmenetIrany() {
@@ -547,149 +479,84 @@ Rectangle {
     }
 
     function _atmenetVege() {
-        elozoSlide.opacity = 0
-        elozoSlide.transitionOffsetX = 0
-        elozoSlide.transitionOffsetY = 0
-        slide.transitionOffsetX = 0
-        slide.transitionOffsetY = 0
+        imageLayer.previousImage.opacity = 0
+        imageLayer.previousImage.transitionOffsetX = 0
+        imageLayer.previousImage.transitionOffsetY = 0
+        imageLayer.currentImage.transitionOffsetX = 0
+        imageLayer.currentImage.transitionOffsetY = 0
         if (show.transitionKind !== "kenburns"
                 && show.transitionKind !== "kenburnsaoi")
-            slide.scale = 1
-        fatyol.opacity = 0
+            imageLayer.currentImage.scale = 1
+        imageLayer.veil.opacity = 0
     }
 
     function _atmenetIndit(elozoUrl) {
-        atmenetAnimacio.stop()
+        imageLayer.transitionAnimation.stop()
         show._geometriatAtvesz()
-        elozoSlide.transitionOffsetX = 0
-        elozoSlide.transitionOffsetY = 0
-        slide.transitionOffsetX = 0
-        slide.transitionOffsetY = 0
+        imageLayer.previousImage.transitionOffsetX = 0
+        imageLayer.previousImage.transitionOffsetY = 0
+        imageLayer.currentImage.transitionOffsetX = 0
+        imageLayer.currentImage.transitionOffsetY = 0
         //: a bejövő dia a saját mozgásának elejéről induljon: az előző dia
         //: geometriája a másolaton él tovább, a diát visszaállítjuk
-        slide.scale = 1.0
+        imageLayer.currentImage.scale = 1.0
         if (show.transitionKind === "kenburnsaoi")
-            kenBurnsFace.restart()
+            imageLayer.panZoomFaceAnimation.restart()
         if (show.transitionKind === "cut" || !elozoUrl) {
-            elozoSlide.opacity = 0
-            slide.opacity = 1
-            fatyol.opacity = 0
+            imageLayer.previousImage.opacity = 0
+            imageLayer.currentImage.opacity = 1
+            imageLayer.veil.opacity = 0
             return
         }
         //: #3832: a kimenő kép a SAJÁT forrásméretével (a dia még azt
         //: tartja) — ugyanaz a pár, tehát a Qt gyorstárából jön
-        show._betolt(elozoSlide, elozoUrl, slide.sourceSize)
-        elozoSlide.opacity = 1
+        show._betolt(
+            imageLayer.previousImage, elozoUrl, imageLayer.currentImage.sourceSize)
+        imageLayer.previousImage.opacity = 1
         var irany = show._atmenetIrany()
         if (show._beuszoKepMozog()) {
-            slide.transitionOffsetX = -irany.x
-            slide.transitionOffsetY = -irany.y
+            imageLayer.currentImage.transitionOffsetX = -irany.x
+            imageLayer.currentImage.transitionOffsetY = -irany.y
         }
         if (show.transitionKind.indexOf("wipe") >= 0) {
             // A kimenő kép irányba kicsúszik; az új kép közben fokozatosan
             // fedi fel az alatta maradó képet, hogy a wipe látható legyen.
-            slide.opacity = 0
+            imageLayer.currentImage.opacity = 0
         } else if (show.transitionKind === "circleout") {
-            slide.scale = 0.18
-            slide.opacity = 0
+            imageLayer.currentImage.scale = 0.18
+            imageLayer.currentImage.opacity = 0
         } else if (show.transitionKind === "rect") {
-            slide.scale = 0.72
-            slide.opacity = 0
+            imageLayer.currentImage.scale = 0.72
+            imageLayer.currentImage.opacity = 0
         } else if (show.transitionKind === "circlein") {
-            slide.scale = 1.2
-            slide.opacity = 0
+            imageLayer.currentImage.scale = 1.2
+            imageLayer.currentImage.opacity = 0
         } else if (show.transitionKind === "timelapse") {
-            slide.scale = 1.16
-            slide.opacity = 0
+            imageLayer.currentImage.scale = 1.16
+            imageLayer.currentImage.opacity = 0
         } else {
-            slide.opacity = show.transitionKind === "dissolve" ? 0 : 1
+            imageLayer.currentImage.opacity = show.transitionKind === "dissolve" ? 0 : 1
         }
-        fatyol.color = show.transitionKind === "dissolvewhite"
+        imageLayer.veil.color = show.transitionKind === "dissolvewhite"
             ? "#ffffff" : "#000000"
-        fatyol.opacity = 0
-        atmenetAnimacio.start()
+        imageLayer.veil.opacity = 0
+        imageLayer.transitionAnimation.start()
     }
 
-    SequentialAnimation {
-        id: atmenetAnimacio
-        objectName: "slideshowTransition"
-        //: a wipe a kimenő képet kicsúsztatja, a push mindkét képet mozgatja,
-        //: a kör/négyszög nagyítással nyit, az időgyorsítás rövid zoommal
-        //: vált. A dissolve és a színfátyol a korábbi átmenetet tartja.
-        ParallelAnimation {
-            NumberAnimation {
-                target: elozoSlide; property: "opacity"
-                to: show._kilepoKepMozog() ? 1 : 0
-                duration: show.transitionMs
-            }
-            NumberAnimation {
-                target: elozoSlide; property: "transitionOffsetX"
-                to: show._kilepoKepMozog() ? show._atmenetIrany().x : 0
-                duration: show.transitionMs
-            }
-            NumberAnimation {
-                target: elozoSlide; property: "transitionOffsetY"
-                to: show._kilepoKepMozog() ? show._atmenetIrany().y : 0
-                duration: show.transitionMs
-            }
-            NumberAnimation {
-                target: slide; property: "opacity"; to: 1
-                duration: show.transitionKind === "timelapse"
-                          ? show.transitionMs * 0.35 : show.transitionMs
-            }
-            NumberAnimation {
-                target: slide; property: "transitionOffsetX"; to: 0
-                duration: show.transitionMs
-            }
-            NumberAnimation {
-                target: slide; property: "transitionOffsetY"; to: 0
-                duration: show.transitionMs
-            }
-            NumberAnimation {
-                target: show.transitionKind === "kenburns"
-                        || show.transitionKind === "kenburnsaoi" ? null : slide
-                property: "scale"; to: 1
-                duration: show.transitionKind === "timelapse"
-                          ? show.transitionMs * 0.35
-                          : (show.transitionKind === "kenburns"
-                             || show.transitionKind === "kenburnsaoi" ? 1
-                                                                        : show.transitionMs)
-                easing.type: show.transitionKind === "timelapse"
-                             ? Easing.OutExpo : Easing.OutCubic
-            }
-            NumberAnimation {
-                target: fatyol; property: "opacity"
-                to: show.transitionKind === "dissolveblack"
-                        || show.transitionKind === "dissolvewhite" ? 1 : 0
-                duration: show.transitionKind === "dissolveblack"
-                          || show.transitionKind === "dissolvewhite"
-                          ? show.transitionMs / 2 : 1
-            }
-        }
-        NumberAnimation {
-            target: fatyol; property: "opacity"; to: 0
-            duration: show.transitionKind === "dissolveblack"
-                      || show.transitionKind === "dissolvewhite"
-                      ? show.transitionMs / 2 : 1
-        }
-        ScriptAction { script: show._atmenetVege() }
+    SlideshowImageLayer {
+        id: imageLayer
+        slideshow: show
+        previousImage: elozoSlide
+        currentImage: slide
+        veil: fatyol
+        preloadImage: elobetoltoSlide
+        panZoomAnimation: slide.panZoomAnimation
+        panZoomFaceAnimation: slide.panZoomFaceAnimation
     }
 
-    Timer {
-        id: stepTimer
-        objectName: "slideshowTimer"
-        interval: show.intervalMs
-        repeat: true
-        running: show.visible && show.playing
-        onTriggered: show.advance()
-    }
-
-    Timer {
-        id: screensaverInputTimer
-        objectName: "screensaverInputArmTimer"
-        interval: 250
-        onTriggered: if (show.visible && show.screensaverMode)
-                         show.screensaverInputArmed = true
+    SlideshowTiming {
+        id: slideshowTiming
+        slideshow: show
     }
 
     Keys.onEscapePressed: {
@@ -730,455 +597,25 @@ Rectangle {
         }
     }
 
-    //: #433: a KIMENŐ dia — az átmenet alatt ez halványul el. A fő kép
-    //: ALATT rajzolódik (előbb szerepel), tehát az áttűnés végén a bejövő
-    //: kép van fölül.
-    Image {
+    SlideshowPreviousImage {
         id: elozoSlide
-        objectName: "slideshowPrevImage"
-        property real transitionOffsetX: 0
-        property real transitionOffsetY: 0
-        property bool exactPanZoomGeometry: false
-        property real capturedPanZoomX: 0
-        property real capturedPanZoomY: 0
-        //: a méretet/elfordulást a váltáskor a `_geometriatAtvesz` írja —
-        //: ezek csak a kezdőértékek (első dia, még nincs mit másolni)
-        width: parent.width
-        height: parent.height
-        x: exactPanZoomGeometry
-           ? capturedPanZoomX + transitionOffsetX
-           : (parent.width - width) / 2 + transitionOffsetX
-        y: exactPanZoomGeometry
-           ? capturedPanZoomY + transitionOffsetY
-           : (parent.height - height) / 2 + transitionOffsetY
-        opacity: 0
-        fillMode: Image.PreserveAspectFit
-        asynchronous: false
-        autoTransform: true
-        //: #3832: a kimenő dia a KIMENŐ kép forrásméretét kapja (az
-        //: `_atmenetIndit` írja a forrással együtt) — ez csak a kezdőérték
-        sourceSize: show.forrasMeret(-1)
+        slideshow: show
     }
-
-    Image {
+    SlideshowCurrentImage {
         id: slide
-        objectName: "slideshowImage"
-        property real transitionOffsetX: 0
-        property real transitionOffsetY: 0
-        property var panZoomRectangles: []
-        property real panZoomProgress: 0
-        // az ini-forgatást a nézővel azonos módon követi (revision-kötés)
-        readonly property int iniSteps: show.photosModel
-            ? (show.photosModel.revision,
-               show.photosModel.rotateAt(show.currentIndex))
-            : 0
-        readonly property real forrasPixelSzelesseg: show.photosModel
-            && show.currentIndex >= 0
-            && typeof show.photosModel.pixelWidthAt === "function"
-            ? show.photosModel.pixelWidthAt(show.currentIndex) : 0
-        readonly property real forrasPixelMagassag: show.photosModel
-            && show.currentIndex >= 0
-            && typeof show.photosModel.pixelHeightAt === "function"
-            ? show.photosModel.pixelHeightAt(show.currentIndex) : 0
-        readonly property real forgatottPixelSzelesseg: iniSteps % 2
-            ? forrasPixelMagassag : forrasPixelSzelesseg
-        readonly property real forgatottPixelMagassag: iniSteps % 2
-            ? forrasPixelSzelesseg : forrasPixelMagassag
-        readonly property bool panZoomActive: show.transitionKind === "kenburns"
-            && panZoomRectangles && panZoomRectangles.length === 2
-            && forrasPixelSzelesseg > 0 && forrasPixelMagassag > 0
-        readonly property real panZoomX: panZoomActive
-            ? panZoomRectangles[0].x
-                + (panZoomRectangles[1].x - panZoomRectangles[0].x)
-                    * panZoomProgress : 0
-        readonly property real panZoomY: panZoomActive
-            ? panZoomRectangles[0].y
-                + (panZoomRectangles[1].y - panZoomRectangles[0].y)
-                    * panZoomProgress : 0
-        readonly property real panZoomWidth: panZoomActive
-            ? panZoomRectangles[0].width
-                + (panZoomRectangles[1].width - panZoomRectangles[0].width)
-                    * panZoomProgress : 1
-        readonly property real panZoomHeight: panZoomActive
-            ? panZoomRectangles[0].height
-                + (panZoomRectangles[1].height - panZoomRectangles[0].height)
-                    * panZoomProgress : 1
-        readonly property real panZoomScale: panZoomActive && panZoomWidth > 0
-            ? parent.width / panZoomWidth : 1
-        width: panZoomActive ? forrasPixelSzelesseg * panZoomScale
-                             : (iniSteps % 2 ? parent.height : parent.width)
-        height: panZoomActive ? forrasPixelMagassag * panZoomScale
-                              : (iniSteps % 2 ? parent.width : parent.height)
-        x: panZoomActive
-           ? -panZoomX * panZoomScale
-                + (forgatottPixelSzelesseg - forrasPixelSzelesseg)
-                    * panZoomScale / 2 + transitionOffsetX
-           : (parent.width - width) / 2 + transitionOffsetX
-        y: panZoomActive
-           ? -panZoomY * panZoomScale
-                + (forgatottPixelMagassag - forrasPixelMagassag)
-                    * panZoomScale / 2 + transitionOffsetY
-           : (parent.height - height) / 2 + transitionOffsetY
-        rotation: iniSteps * 90
-        // #1640: a megjelenítési mód (Projektor mód stb.) a NYERS fájl
-        // URL-jén nem látszik — a `displayUrlAt` aktív módnál a
-        // `displayphoto` szolgáltatóra vált, mód nélkül a sima file://-t adja
-        // vissza.
-        //
-        // ⚠️ A mód VALÓDI ARGUMENTUM, nem eldobott referencia. Az első
-        // változat `(controller.displayMode, …)` alakú vessző-kifejezés volt,
-        // és MÉRVE nem hozott létre kötés-függőséget: módváltás után a dia
-        // URL-je a nyers fájlé maradt, a mód némán elveszett.
-        //
-        // #3832: a `source`-ot és a `sourceSize`-t a `_diakBetolt` írja,
-        // EGYÜTT — két külön kötés lépésenként fölösleges betöltést okozott
-        // (ld. `_betolt`). A módváltást az `onDisplayModeChanged` követi.
-        fillMode: Image.PreserveAspectFit
-        asynchronous: Qt.platform.pluginName !== "offscreen"
-        autoTransform: true
-        //: #3832: a kép VALÓDI méretéből számolt, pontos forrásméret (ld.
-        //: `forrasMeret`); a `_diakBetolt` írja. Ez csak a kezdőérték.
-        sourceSize: show.forrasMeret(-1)
-
-        //: #5258: a képarányra illesztett képből számolt két kivágás között
-        //: pásztáz; a dia-idő alatt ér el a B téglalapig.
-        NumberAnimation on panZoomProgress {
-            id: kenBurns
-            objectName: "slideshowKenBurns"
-            running: show.visible
-                     && show.transitionKind === "kenburns"
-                     && show.currentIndex >= 0
-                     && slide.panZoomRectangles.length === 2
-            from: 0.0
-            to: 1.0
-            duration: Math.max(show.intervalMs, 1)
-        }
-        //: A képernyővédő arcos változata (`kenburnsaoi`) külön átmenet;
-        //: a #5258 csak a sima Pan and Zoom kivágásait cseréli le.
-        NumberAnimation on scale {
-            id: kenBurnsFace
-            objectName: "slideshowKenBurnsFace"
-            running: show.visible
-                     && show.transitionKind === "kenburnsaoi"
-                     && show.currentIndex >= 0
-            from: 1.0
-            to: 1.12
-            duration: Math.max(show.intervalMs, 1)
-        }
-        //: a nagyítás NEM ragadhat be: átmenet-váltáskor visszaáll
-        onScaleChanged: if (show.transitionKind !== "kenburns"
-                            && show.transitionKind !== "kenburnsaoi"
-                            && scale !== 1.0)
-                            scale = 1.0
+        slideshow: show
     }
-
-    //: #433: az áttűnés FÁTYLA (fekete vagy fehér) — a `dissolveblack` és a
-    //: `dissolvewhite` ezen megy át. A diák FÖLÖTT, a vezérlősáv ALATT.
-    Rectangle {
+    SlideshowVeil {
         id: fatyol
-        objectName: "slideshowVeil"
-        anchors.fill: parent
-        color: "#000000"
-        opacity: 0
-        visible: opacity > 0
     }
-
-    // elő-betöltés a következő fotóra (DoD): mire a timer lép, a kép
-    // már dekódolva van
-    Image {
+    SlideshowPreloadImage {
         id: elobetoltoSlide
-        objectName: "slideshowPreloadImage"
-        visible: false
-        // #1640 + #3832: a forrást és a forrásméretet a `_diakBetolt` írja
-        // — ugyanazt a párt, amit a dia kér majd erre a képre, így a lépéskor
-        // a Qt gyorstárából jön
-        //: #3832: a kitöltési mód is a gyorstár kulcsának része (a Qt a
-        //: betöltőnek átadja) — eltérő `fillMode`-dal az elő-betöltött kép
-        //: nem volt a diáé, és lépéskor újra dekódolódott (MÉRVE: minden
-        //: lépés kétszer kérte ugyanazt a képet a szolgáltatótól)
-        fillMode: Image.PreserveAspectFit
-        asynchronous: Qt.platform.pluginName !== "offscreen"
-        autoTransform: true
-        sourceSize: show.forrasMeret(-1)
+        slideshow: show
     }
 
-    // vezérlő-overlay: egérmozgásra jelenik meg, pár másodperc múlva
-    // magától eltűnik (Picasa-minta) — a vetítést nem takarja feleslegesen
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
-        acceptedButtons: show.screensaverMode ? Qt.AllButtons : Qt.NoButton
-        onPressed: if (show.screensaverMode && show.screensaverInputArmed)
-                       show.stop()
-        onPositionChanged: {
-            if (show.screensaverMode) {
-                if (show.screensaverInputArmed) show.stop()
-            } else {
-                controlsBar.shown = true
-                hideTimer.restart()
-            }
-        }
-    }
-    // #5649: az eredeti `oneup/auto2` teljes szélességű, 14 px magas
-    // kattintósávja a vetítő tetején. Ugyanazt a műveletet hívja, mint a
-    // lejátszás gomb; a `MouseArea` átlátszó, a képet nem takarja el.
-    MouseArea {
-        objectName: "slideshowAuto2Area"
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.top: parent.top
-        height: 14
-        acceptedButtons: Qt.LeftButton
-        onClicked: show.togglePause()
-    }
-    WheelHandler {
-        enabled: show.screensaverMode && show.screensaverInputArmed
-        onWheel: show.stop()
-    }
-    //: #433: a felirat vetítés közben (`captionmode`). A vezérlősáv fölött
-    //: ül, hogy a sáv megjelenése ne takarja el.
-    Text {
-        id: feliratSzoveg
-        objectName: "slideshowCaption"
-        visible: show.aktualisFelirat.length > 0
-        text: show.aktualisFelirat
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 72
-        width: parent.width - 96
-        horizontalAlignment: Text.AlignHCenter
-        wrapMode: Text.WordWrap
-        maximumLineCount: 2
-        elide: Text.ElideRight
-        color: "#ffffff"
-        font.pixelSize: Theme.fontSize + 4
-        style: Text.Outline
-        styleColor: "#000000"
+    SlideshowControls {
+        id: slideshowControls
+        slideshow: show
     }
 
-    Timer {
-        id: hideTimer
-        objectName: "slideshowHideTimer"
-        interval: 2500
-        //: #2992: a mutató alatt NEM rejtünk el. A lejáró időzítő így nem
-        //: kapja el a sávot épp akkor, amikor a felhasználó a gombot
-        //: célozza — az újraindítás a `slideshowControlsHover` dolga.
-        onTriggered: if (!savLebeges.hovered) controlsBar.shown = false
-    }
-
-    Rectangle {
-        id: controlsBar
-        objectName: "slideshowControls"
-        property bool shown: false
-
-        //: ⛔ #2992: a sávnak SAJÁT lebegés-figyelő kell.
-        //:
-        //: A megjelenítő `MouseArea` a teljes vetítőt fedi, a sáv viszont
-        //: UTÁNA van deklarálva, tehát takarja. Amíg a mutató a sávon áll,
-        //: a `MouseArea` nem kap `positionChanged`-et — a `hideTimer`
-        //: lejár, és a sáv **eltűnik a kéz alól**. A tulajdonos szava a
-        //: jegyben: „egérmozgatásra nem jelenik meg a kis lejátszó, ami az
-        //: eredetiben ott van, FIXEN" — az „ott van, fixen" épp ezt írja
-        //: le: az eredetiben a sáv nem szökik el a mutató elől.
-        HoverHandler {
-            id: savLebeges
-            objectName: "slideshowControlsHover"
-            //: amikor a mutató elhagyja a sávot, az elrejtés újraindul —
-            //: enélkül a sáv a vetítés végéig kint maradna
-            onHoveredChanged: if (!hovered) hideTimer.restart()
-        }
-        visible: !show.screensaverMode && opacity > 0
-        opacity: shown ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: 200 } }
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 24
-        width: controlsRow.width + 24
-        height: 40
-        radius: 6
-        color: "#2b2b2bd9"
-
-        Row {
-            id: controlsRow
-            anchors.centerIn: parent
-            spacing: 6
-            // egységes gombmagasság: a csillag nagyobb glifje (15px) ne
-            // növessze meg a saját gombját a többihez képest
-            readonly property int buttonHeight: 28
-
-            PicasaButton {
-                objectName: "slideshowExitButton"
-                text: "✕ " + qsTr("Exit")
-                height: controlsRow.buttonHeight
-                onClicked: show.stop()
-            }
-            //: #5541: az eredetiben a `oneup.tre` 75-81. sorában a ◀ és a ▶▶ gombon
-            //: `mousedown` van; a kezelőjük a `0x008032e0`. Ezért LENYOMÁSRA léptet,
-            //: nyomva tartva nem ismétel.
-            PicasaButton {
-                objectName: "slideshowTimelineButton"
-                text: qsTr("Timeline")
-                height: controlsRow.buttonHeight
-                visible: show.timelineButtonVisible
-                onClicked: show.timelineRequested()
-            }
-            PicasaButton {
-                objectName: "slideshowPrevButton"
-                text: "◀"; width: 34
-                height: controlsRow.buttonHeight
-                lenyomasra: true
-                onClicked: show.goBack()
-            }
-            PicasaButton {
-                objectName: "slideshowPlayButton"
-                text: show.playing ? "❚❚" : "▶"
-                width: 34
-                height: controlsRow.buttonHeight
-                onClicked: show.togglePause()
-            }
-            //: #5541: ld. fent, a ◀ gombnál.
-            PicasaButton {
-                objectName: "slideshowNextButton"
-                text: "▶▶"; width: 38
-                height: controlsRow.buttonHeight
-                lenyomasra: true
-                onClicked: show.advance()
-            }
-            PicasaButton {
-                objectName: "slideshowRotateLeftButton"
-                text: "↺"; width: 34
-                height: controlsRow.buttonHeight
-                onClicked: show.rotateCurrent(-1)
-            }
-            PicasaButton {
-                objectName: "slideshowRotateRightButton"
-                text: "↻"; width: 34
-                height: controlsRow.buttonHeight
-                onClicked: show.rotateCurrent(1)
-            }
-            //: #433: az ÁTMENET-választó a vezérlősávban — az eredetiben is
-            //: ott ül (`slideshowctrls/transtype`, a lebegő sáv alján).
-            PicasaComboBox {
-                objectName: "slideshowTransitionBox"
-                height: controlsRow.buttonHeight
-                width: 150
-                visible: !show.timelineButtonVisible
-                //: a lista a képernyő alján álló sáv fölé nyílik
-                popup.y: -popup.implicitHeight
-                model: show.atmenetek.map(function (a) { return a.nev })
-                currentIndex: {
-                    for (var i = 0; i < show.atmenetek.length; ++i)
-                        if (show.atmenetek[i].kulcs === show.transitionKind)
-                            return i
-                    return 0
-                }
-                onActivated: show.transitionPicked(
-                    show.atmenetek[currentIndex].kulcs)
-            }
-            //: #433: a feliratmód körbejáró gombja (felirat → fájlnév →
-            //: semmi). Az eredetiben a `captionmode` beállítás; a vetítés
-            //: közbeni váltás nálunk kényelmi többlet.
-            PicasaButton {
-                objectName: "slideshowCaptionModeButton"
-                width: 34
-                height: controlsRow.buttonHeight
-                text: show.captionMode === "caption" ? "T"
-                      : (show.captionMode === "filename" ? "F" : "—")
-                onClicked: {
-                    var i = show.feliratModok.indexOf(show.captionMode)
-                    show.captionModePicked(
-                        show.feliratModok[(i + 1) % show.feliratModok.length])
-                }
-            }
-            PicasaButton {
-                objectName: "slideshowStarButton"
-                width: 34
-                height: controlsRow.buttonHeight
-                onClicked: show.starCurrent()
-                contentItem: Text {
-                    text: "★"
-                    font.pixelSize: 15
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    color: show.photosModel
-                           && (show.photosModel.revision,
-                               show.photosModel.starAt(show.currentIndex))
-                           //: #3070: a diavetítés a hatókörön KÍVÜL van
-                           //: (11.7/3., NY-4), ezért a NYERS tokent olvassa —
-                           //: a megjelenítési mód a csillagot sem színezheti át
-                           ? Theme.nyers.starYellow : "#ffffff"
-                    style: Text.Outline
-                    styleColor: "#9a9a9a"
-                }
-            }
-
-            //: #2992: a DIAIDŐ-blokk — az eredeti sávján `tpslabel`
-            //: („Display Time"), `minusone`, `tps` (a szám) és `plusone`.
-            //: A tulajdonos jelezte, hogy nálunk nem volt állítható.
-            Row {
-                objectName: "slideshowTimeBlock"
-                spacing: 2
-                anchors.verticalCenter: parent.verticalCenter
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: qsTr("Display Time")
-                    color: "#ffffff"
-                    font.pixelSize: Theme.fontSize - 2
-                    rightPadding: 4
-                }
-                PicasaButton {
-                    objectName: "slideshowTimeMinus"
-                    width: 26
-                    height: controlsRow.buttonHeight
-                    text: "−"
-                    //: #2992: az eredeti `oneup/minusone`-ján ott a
-                    //: `Property setautorepeat 1` — a gomb NYOMVA TARTHATÓ
-                    //: (`picasa-create-features.md` 2/b). Enélkül 30 mp-re
-                    //: állítani 29 kattintás.
-                    //: ⚠️ Az ismétlés SEBESSÉGÉT a forrás nem adja meg (csak a
-                    //: jelzőt), ezért a Qt alapértelmezése marad — ez nem
-                    //: mért érték.
-                    autoRepeat: true
-                    enabled: show.seconds > 1
-                    onClicked: show.secondsChosen(show.seconds - 1)
-                }
-                Text {
-                    objectName: "slideshowTimeValue"
-                    anchors.verticalCenter: parent.verticalCenter
-                    //: #3574: a mért `oneup/tps` mező 48 képpont széles, de a
-                    //: kiírt „másodperc” szó abba csak olvashatatlanul apró
-                    //: betűvel férne — a mező a LEGSZÉLESEBB értékhez nő, hogy
-                    //: a számváltás ne rángassa a sort
-                    TextMetrics {
-                        id: diaidoMertek
-                        font: diaidoErtek.font
-                        text: "99 " + qsTr("seconds")
-                    }
-                    id: diaidoErtek
-                    width: Math.max(48, Math.ceil(diaidoMertek.width) + 4)
-                    horizontalAlignment: Text.AlignHCenter
-                    //: másodperc-jelölés a szám után (az eredeti `tps` mezője)
-                    //: #3574: `OneUpUI::Format` „%1$d %2$s” — a szó kiírva
-                    //: #5546: az eredeti `0x0080304c` `cmp esi, 1` után `OneUpUI::second` / `OneUpUI::seconds`
-                    text: show.seconds + " " + (show.seconds === 1 ? qsTr("second") : qsTr("seconds"))
-                    color: "#ffffff"
-                    font.pixelSize: Theme.fontSize - 2
-                }
-                PicasaButton {
-                    objectName: "slideshowTimePlus"
-                    width: 26
-                    height: controlsRow.buttonHeight
-                    text: "+"
-                    //: #2992: `oneup/plusone` - ugyanaz az auto-ismétlés,
-                    //: mint a párjánál (ld. ott az indoklást).
-                    autoRepeat: true
-                    //: #5544: a felső határ 20 (mérve). Ez a szám a
-                    //: `controller.py` SLIDESHOW_SECONDS_MAX konstansával
-                    //: egyezik; a vetítő nem lát vezérlőt, ezért nem onnan olvassa.
-                    enabled: show.seconds < 20
-                    onClicked: show.secondsChosen(show.seconds + 1)
-                }
-            }
-        }
-    }
 }

@@ -128,6 +128,23 @@ _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
         "None of the selected pictures could be printed: %1",
     ): "PrintController",
     ("PrintControllerOutputMixin", "Invalid print settings: %1"): "PrintController",
+    # #6174: a fájlművelet-vezérlő mixinjei futásidőben a FileOpsController
+    # fordítási kontextusát használják (a `self` az övé).
+    ("FileOpsControllerMoveMixin", "Choose a destination folder first."): "FileOpsController",
+    ("FileOpsControllerMoveMixin", "Select at least one picture first."): "FileOpsController",
+    ("FileOpsControllerOpenMixin", "The system default application could not open %1/%2 selected files."): "FileOpsController",
+    ("FileOpsControllerOpenMixin", "This picture has no preserved original on disk."): "FileOpsController",
+    ("FileOpsControllerOpenMixin", "Unable to open application"): "FileOpsController",
+    # #6146: a kollázs- és filmkészítés műveletei futásidőben az
+    # AppController fordítási kontextusát használják (a `self` az övé).
+    ("CollageCreationOperations", "No pictures are selected."): "AppController",
+    ("CollageCreationOperations", "No target file was chosen."): "AppController",
+    ("CollageCreationOperations", "None of the selected pictures could be read."): "AppController",
+    ("CollageCreationOperations", "Unknown collage type."): "AppController",
+    ("CollageCreationOperations", "Unknown picture frame."): "AppController",
+    ("MovieCreationOperations", "No pictures are selected."): "AppController",
+    ("MovieCreationOperations", "None of the selected pictures could be read."): "AppController",
+    ("MovieCreationOperations", "The movie folder could not be created."): "AppController",
 }
 
 
@@ -153,9 +170,14 @@ def _extract_with_lupdate(tmp_path: Path) -> ET.Element:
     scratch_ts = tmp_path / "picasapy_hu.scratch.ts"
     scratch_ts.write_text(_TS_PATH.read_text(encoding="utf-8"), encoding="utf-8")
 
-    files = [str(p) for p in _source_files()]
+    # A fájllista a parancssor helyett listafájlba megy: a Windows
+    # parancssor-korlátja (WinError 206) a több száz útvonalat nem bírja.
+    lista = tmp_path / "forrasok.lst"
+    lista.write_text(
+        "\n".join(str(p) for p in _source_files()) + "\n", encoding="utf-8"
+    )
     result = subprocess.run(
-        [lupdate, *files, "-ts", str(scratch_ts), "-silent"],
+        [lupdate, f"@{lista}", "-ts", str(scratch_ts), "-silent"],
         capture_output=True,
         text=True, encoding="utf-8", errors="replace",
         timeout=60,

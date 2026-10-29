@@ -30,16 +30,17 @@ from PySide6.QtTest import QTest
 
 import picasapy.app
 from tests.app.qml_functional.conftest import _build_qml_app
+from tests.support.fejlec_forras import fejlec_forras
 from tests.support.jpeg_factory import make_jpeg
 from tests.support.qml_blokk import blokk_horgony_utan
 from support.varakozas import hibaturo_feltetel, var_feltetelre
 
-_FEED = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "LightboxFeed.qml"
-).read_text(encoding="utf-8")
-_HEADER = (
-    Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "LightboxHeader.qml"
-).read_text(encoding="utf-8")
+_FEED_DIR = Path(picasapy.app.__file__).parent / "qml" / "PicasaPy"
+_FEED = "\n".join(
+    (_FEED_DIR / name).read_text(encoding="utf-8")
+    for name in ("LightboxFeed.qml", "LightboxFeedGroup.qml")
+)
+_HEADER = fejlec_forras()
 
 _MAPPA_KEPEI = ("elso.jpg", "masodik.jpg", "harmadik.jpg")
 

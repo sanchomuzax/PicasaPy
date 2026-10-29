@@ -345,7 +345,7 @@ class TestVisszagorgetesUzenete:
             allapot["odaut_kesz"] = True
             return eredeti_move(src, dst, *args, **kwargs)
 
-        monkeypatch.setattr("picasapy.fileops.originals._move", _fake)
+        monkeypatch.setattr("picasapy.fileops.originals_move._move", _fake)
 
     def test_bukott_visszagorgetes_nem_allitja_hogy_minden_rendben(
         self, tmp_path, monkeypatch
@@ -487,7 +487,7 @@ class TestUresMappaNemMaradHatra:
         def _mindig_bukik(src, dst, *args, **kwargs):  # noqa: ANN001
             raise OSError("a lemez megtelt")
 
-        monkeypatch.setattr("picasapy.fileops.originals._move", _mindig_bukik)
+        monkeypatch.setattr("picasapy.fileops.originals_move._move", _mindig_bukik)
 
         with pytest.raises(OSError):
             move_photo(photo, cel)
