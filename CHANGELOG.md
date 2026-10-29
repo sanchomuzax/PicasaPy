@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.285] - 2026-10-29
+
+- A Red.dll arcfelismerési küszöbének statikus útja a specifikációban (#5185).
 ## [0.9.284] - 2026-10-29
 
 - A fájlművelet-vezérlő kisebb, megnevezett részekre bomlott, változatlan működéssel (#6174).
