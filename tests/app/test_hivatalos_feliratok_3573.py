@@ -212,11 +212,11 @@ HIVATALOS = {
 #: szavak és a nyomtatási minőségsor szomszédjai, amelyek más kontextusban
 #: mást is jelenthetnek, ezért csak a saját kontextusukban kötjük meg őket
 KONTEXTUSOS = {
-    ("PrintDialog", "picture"): ("kép", "ThumbUIPrint::picture"),
-    ("PrintDialog", "pictures"): ("kép", "ThumbUIPrint::pictures"),
-    ("PrintDialog", "Smallest picture: %1 pixels/inch."): (
+    ("PrintDialogContent", "picture"): ("kép", "ThumbUIPrint::picture"),
+    ("PrintDialogContent", "pictures"): ("kép", "ThumbUIPrint::pictures"),
+    ("PrintDialogContent", "Smallest picture: %1 pixels/inch."): (
         "Legkisebb kép: %1 képpont/hüvelyk", "ThumbUIPrint::Smallest"),
-    ("PrintDialog", "You are ready to print."): (
+    ("PrintDialogContent", "You are ready to print."): (
         "Készen áll a nyomtatásra.", "ThumbUIPrint::ReadyPrompt"),
 }
 
@@ -380,7 +380,9 @@ class TestQmlOldal:
     sorrend) — ezt a `.ts` nem mutatja meg."""
 
     def test_a_nyomtatasi_sor_a_hivatalos_sorrendet_koveti(self) -> None:
-        forras = (QML / "PicasaPy" / "PrintDialog.qml").read_text(encoding="utf-8")
+        from tests.support.print_wiring import print_qml_family_text
+
+        forras = print_qml_family_text()
         assert 'qsTr("Please review before printing.\\n%1 small %2 found.")' in forras
         assert 'qsTr("picture")' in forras and 'qsTr("pictures")' in forras
         assert "small picture found." not in forras, (

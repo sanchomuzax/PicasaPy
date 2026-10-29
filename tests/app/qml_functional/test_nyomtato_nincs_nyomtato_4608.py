@@ -15,19 +15,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import picasapy.app as app_csomag
 import pytest
 from PySide6.QtCore import QMetaObject, QObject, QPointF, Qt
+from tests.support.print_wiring import print_qml_family_text
 from tests.support.varakozas import var_feltetelre, hibaturo_feltetel
 
 REPO = Path(__file__).resolve().parents[3]
 CONTROL = REPO / "packaging" / "debian" / "control.template"
 
-_QML_DIR = Path(app_csomag.__file__).parent / "qml" / "PicasaPy"
-_QML = "\n".join(
-    (_QML_DIR / nev).read_text(encoding="utf-8")
-    for nev in ("PrintDialog.qml", "PrintSelectionPanel.qml")
-)
+_QML = print_qml_family_text()
 
 NINCS_NYOMTATO = "printNoPrinterText"
 FORRAS = "A printer must be installed in order to print."

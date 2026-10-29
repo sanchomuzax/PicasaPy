@@ -5,7 +5,7 @@ nincs kérdés: csak az alacsony minőségűek törlődnek. Ha MINDEN kép
 alacsony minőségű, az eredeti megerősítést kér: az Igen törli a képeket
 és megszakítja a nyomtatást, a Nem nem változtat a listán.
 
-rontás-kontroll: PrintDialog.qml#removeLowQualityReviewPictures kérdés-ágát
+rontás-kontroll: PrintDialogLogic.qml#removeLowQualityReviewPictures kérdés-ágát
 kivéve a három minden-alacsony teszt PIROS (a kérdés nem jelenik meg).
 """
 
