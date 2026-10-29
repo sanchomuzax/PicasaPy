@@ -346,6 +346,7 @@ def _allapot_mentese(
     ablak: Any,
     alkalmazas: Any,
     output: Path,
+    belyegkep_szolgaltato: Any | None = None,
     reszletek: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if nev in {"drop-geotag", "mainSplit-min", "mainSplit-max"}:
@@ -355,6 +356,7 @@ def _allapot_mentese(
             _elem(ablak, "mainSplit"),
             _elem(ablak, "folderPane"),
             _elem(ablak, "photoGrid"),
+            belyegkep_szolgaltato=belyegkep_szolgaltato,
         )
     lathato = _lathato_objektumok(ablak, objektumok)
     kep = _stabil_ablakkepernyo(ablak, alkalmazas, nev)
@@ -383,8 +385,10 @@ def _var_foablak_racsra(
     main_split: Any,
     folder_pane: Any,
     photo_grid: Any,
+    *,
+    belyegkep_szolgaltato: Any | None = None,
 ) -> None:
-    """Megvárja a splitter elrendezését és a látható rácsképek betöltését."""
+    """A stabil geometriát, kész rácsképeket és lezárt kéréseket várja."""
     from PySide6.QtCore import QPointF
 
     vege = time.monotonic() + _ALLAPOT_HATARIDO_MP
@@ -451,8 +455,12 @@ def _var_foablak_racsra(
                 )
             )
 
-        pillanat = elrendezes, tuple(sorted(lathato_kepek))
-        if lathato_kepek and minden_kep_kesz:
+        minden_valasz_kesz = (
+            belyegkep_szolgaltato is None
+            or belyegkep_szolgaltato.live_response_count() == 0
+        )
+        pillanat = elrendezes, tuple(sorted(lathato_kepek)), minden_valasz_kesz
+        if lathato_kepek and minden_kep_kesz and minden_valasz_kesz:
             azonos = azonos + 1 if pillanat == elozo else 1
             if azonos >= _STABIL_KOCKAK:
                 return
@@ -464,7 +472,8 @@ def _var_foablak_racsra(
 
     raise RuntimeError(
         f"Időtúllépés: a(z) {allapot!r} állapot főablaki elrendezése vagy "
-        "látható bélyegképrácsa nem stabilizálódott."
+        "látható bélyegképrácsa, illetve a függő bélyegkép-válaszok nem "
+        "stabilizálódtak."
     )
 
 
@@ -766,6 +775,7 @@ def _foablak_allapotok(
             ablak=ablak,
             alkalmazas=alkalmazas,
             output=output,
+            belyegkep_szolgaltato=vezerlo._provider,
             reszletek={"selected_row_count": 1},
         )
     )
@@ -788,6 +798,7 @@ def _foablak_allapotok(
             ablak=ablak,
             alkalmazas=alkalmazas,
             output=output,
+            belyegkep_szolgaltato=vezerlo._provider,
             reszletek={
                 "folder_pane_width": float(pane.property("width")),
                 "main_split_width": float(split.property("width")),
@@ -808,6 +819,7 @@ def _foablak_allapotok(
             ablak=ablak,
             alkalmazas=alkalmazas,
             output=output,
+            belyegkep_szolgaltato=vezerlo._provider,
             reszletek={
                 "folder_pane_width": float(pane.property("width")),
                 "main_split_width": float(split.property("width")),
