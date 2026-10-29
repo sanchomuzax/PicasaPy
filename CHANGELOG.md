@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.295] - 2026-10-30
+
+- A mentési vezérlő kisebb, megnevezett részekre bomlott (mentési sor, visszajelzés, hibák, másolat-mentés, visszaállítás), változatlan működéssel (#6228).
+- A belső felületi formázók kisebb modulokba kerültek, a megjelenített eredmények változatlanok maradtak (#6231).
+- Az EXIF-blokk helyben frissítése kisebb, megnevezett részekre bomlott (olvasás és ellenőrzés, helyben írás, áthelyezés), változatlan kimenettel (#6232).
+
 ## [0.9.294] - 2026-10-29
 
 - A főablak menüsorának bekötése külön QML-komponensbe került, változatlan megjelenéssel és működéssel (#6136).
