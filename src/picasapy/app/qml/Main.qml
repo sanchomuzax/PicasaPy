@@ -105,6 +105,7 @@ ApplicationWindow {
     // tesztekben becserélhető legyen). A `controller: controller` sor ezért
     // önmagára kötne (kötési hurok) — ez az álnév oldja fel, egy helyen.
     readonly property var appController: controller
+    property alias peoplePanel: jobbFiok.peoplePanel
 
     property string pendingPeopleManagerPersonName: ""
     property int thumbSize: 144
@@ -3257,211 +3258,19 @@ ApplicationWindow {
 
     }
 
-    //: #754: EGY jobb fiók, közös fejléccel — a négy tartalom UGYANITT
-    //: vált. Eddig négy külön `SplitView`-cella volt, négy különböző
-    //: szélességgel (190 · 320 · 210 · 200); az eredetiben egyetlen,
-    //: 280 képpontos fiók van (`docs/specs/jobb-fiok-meretek.md`).
-    //:
-    //: #3037: a fiók NEM a `SplitView` cellája. Mérve: a `SplitView` a
-    //: kétállású szélességgel nem tud dolgozni — az első elrendezés után a
-    //: saját nyilvántartását tekinti hitelesnek, és a váltó hol a
-    //: növelést, hol a csökkentést nyelte el. Az eredeti sem osztó: a
-    //: `RIGHTDRAWEROFFSET -280` a tartalmat TOLJA el (`thumbui.tre:700`),
-    //: ezért a fiók a jobb szélhez horgonyzott, a `mainSplit` pedig
-    //: mellette ér véget.
-    RightDrawer {
+    MainRightDrawer {
         id: jobbFiok
-        //: #3035: a fiók ANIMÁLVA tolódik be és ki (`thumbui.tre:700`:
-        //: `varbutton RIGHTDRAWEROFFSET -280 0 1` — a harmadik érték az
-        //: animáció jelzője; az időtartam 0,4 s, `0x00cf4ce0`). A csukott
-        //: állapot NULLA széles, tehát a könyvtár visszakapja a helyet —
-        //: és mivel a `mainSplit` jobb széle a fiók bal éléhez van kötve,
-        //: a szerkesztő előnézete is EGYÜTT méreteződik vele, ahogy a mért
-        //: kapcsoló két elemet értesít (`editpanel/previewimage…`).
-        //: nyitáskor AZONNAL látszik (a tartalom nem késik), záráskor
-        //: pedig a kitolás végéig marad látható
-        visible: (window.activeDrawerTab !== "" || jobbFiok.width > 0)
-                 && mainSplit.visible
-        ablakSzelesseg: window.width
-        anchors.top: mainSplit.top
-        anchors.bottom: mainSplit.bottom
-        anchors.right: parent.right
-        width: window.activeDrawerTab !== "" ? jobbFiok.kivantSzelesseg : 0
-        Behavior on width {
-            NumberAnimation {
-                duration: jobbFiok.animacioMs
-                easing.type: Easing.InOutQuad
-            }
-        }
-        //: a négy felirat UGYANAZ a szöveg, mint a Nézet menü tételei
-        //: (#754) — a gyorsítót és a billentyű-tippet levágva
-        cim: window.activeDrawerTab === "properties" ? qsTr("Properties")
-             : window.activeDrawerTab === "tags" ? qsTr("Tags:")
-             : window.activeDrawerTab === "people" ? qsTr("People")
-             : window.activeDrawerTab === "places" ? qsTr("Places") : ""
-        onCloseRequested: window.ureseidAFiokot()
-
-    // Címkék-panel (#12): a fiók egyik lapja, Ctrl+T / Nézet → Címkék
-    TagsPanel {
-        objectName: "tagsPanel"
-        visible: window.tagsPanelOpen
-        anchors.fill: parent
-        hasSelection: window.selectedRows().length > 0
-        selectedPhotoName: {
-            var rows = window.selectedRows()
-            if (!controller || rows.length !== 1) return ""
-            var path = controller.photos.filePathAt(Number(rows[0]))
-            var separator = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"))
-            return path.substring(separator + 1)
-        }
-        wholeAlbumSelected: {
-            var rows = window.selectedRows()
-            return controller && rows.length > 1
-                   && rows.length === controller.photos.rowCount()
-        }
-        //: #2998: írásvédett elem a kijelölésben — a panel ELŐRE szól.
-        //: A `photos.revision` a kötés kiváltója, ahogy a `tags`-nél is;
-        //: a `!== undefined` a próbák stub-vezérlőjére véd (#1572).
-        readOnlySelection: (controller
-                            && controller.selectionReadOnly !== undefined)
-            ? (controller.photos.revision,
-               controller.selectionReadOnly(window.selectedRows()))
-            : false
-        // a photos.revision-nel együtt kötve: címke-írás után frissül
-        // #305: null-őr
-        tags: controller
-            ? (controller.photos.revision,
-               controller.keywordsOfRows(window.selectedRows()))
-            : []
-        onAddRequested: function(keyword) {
-            window.addTagToRows(window.selectedRows(), keyword)
-        }
-        onRemoveRequested: function(keyword) {
-            controller.removeKeywordFromRows(window.selectedRows(), keyword)
-        }
-        onCloseRequested: window.ureseidAFiokot()
-        // #422: a címke jobbklikk-menüje (Picasa `Tags` menüosztály)
-        onAddToSelectionRequested: function(keyword) {
-            window.addTagToRows(window.selectedRows(), keyword)
-        }
-        onFindTaggedRequested: function(keyword) {
-            if (controller) toolbar.keresesSzoveggel(keyword)
-        }
-    }
-
-    // Helyek-panel (#30): jobb oldali hasáb, Nézet → Helyek — a látszó
-    // képek helyei térképen, és a kijelölés geocímkézése
-    PlacesPanel {
-        objectName: "placesPanel"
-        //: #2013: a PANEL a saját, mért küszöbén megy át (5 GEOCÍMKÉZETT
-        //: elem fölött kérdez) — az eredetiben ez külön erőforrás a
-        //: menüparancsétól (`ClearGeoTag::warn`), ami feltétel nélkül
-        //: kérdez. A menüpont változatlanul azon megy át.
-        onClearGeotagRequested: (rows) => mainDialogs.panelClearGeotagDialog.ensure().futtasd(rows)
-        onSetGeotagRequested: (rows, la, lo) => mainDialogs.setGeotagDialog.ensure().futtasd(rows, la, lo)
-        onPhotosDroppedRequested: (rows, la, lo) => mainDialogs.dropGeotagDialog.ensure().futtasd(rows, la, lo)
-        visible: window.placesPanelOpen
-        anchors.fill: parent
-        appWindow: window
-        onCloseRequested: window.ureseidAFiokot()
-        onPhotoActivated: function(row) {
-            window.selectedIndexes = [row]
-            window.selectedIndex = row
-        }
-        onMarkerSearchRequested: function(rows) {
-            if (!rows || rows.length === 0) return
-            window.selectedIndexes = rows.slice(0)
-            window.selectedIndex = rows[0]
-        }
-    }
-
-    // Tulajdonságok-panel (#13): jobb oldali hasáb, Alt+Enter /
-    // Nézet → Tulajdonságok — csak olvasás
-    PropertiesPanel {
-        objectName: "propertiesPanel"
-        visible: window.propertiesPanelOpen
-        anchors.fill: parent
-        hasSelection: window.selectedIndex >= 0
-        appController: controller
-        selectedRows: window.selectedRows()
-        focusRow: window.selectedIndex
-        // a photos.revision-nel együtt kötve: modell-frissüléskor újraolvas
-        // #305: null-őr
-        entries: controller
-            ? (controller.photos.revision,
-               controller.propertiesOf(window.selectedIndex))
-            : []
-        onCloseRequested: window.ureseidAFiokot()
-        onEditTagsRequested: window.valtsFiokLapot("tags")
-    }
-
-    // Emberek-panel (#26): a jobb fiók negyedik panelje. EGY fejléc és
-    // EGY lista (#3566): a kijelölt képek nevesített emberei; a fejlécet
-    // a panel választja a spec 9/b fája szerint.
-    PeoplePanel {
-        id: peoplePanel
-        objectName: "peoplePanel"
-        visible: window.peoplePanelOpen
-        anchors.fill: parent
-        manualAddActive: window.viewerOpen && photoViewer.facesEditMode
-        headerRefreshKey: controller
-            ? [window.selectedRows().join(","),
-               window.unnamedFacesOpen
-                   ? mainLibraryCanvas.unnamedFacesView.selectedCount : 0,
-               window.unnamedFacesOpen ? window.peopleFaceRevision : 0,
-               window.unnamedFacesOpen, window.facesAlbumMode,
-               window.activeDrawerTab, window.viewerOpen, window.timelineOpen,
-               controller.searchActive, controller.currentPersonName,
-               mainLibraryCanvas.unnamedFacesView.grouped, window._selectionPending > 0]
-                  .join("|")
-            : ""
-        // #3585: a „Név nélküliek" albumban a kijelölés az arcoké, és a
-        // fejléc a csoportosítás-váltógombot követi
-        selectionCount: window.unnamedFacesOpen
-            ? mainLibraryCanvas.unnamedFacesView.selectedCount : window.selectedRows().length
-        faceScanController: window._faceScanController
-        // #4586: a háttér-arckeresés állapota (spec 9/b: betöltés, ellenőrizetlen
-        // fájlok, adatok rendezése)
-        // A kapu a KIJELÖLÉSRE vonatkozik: csak a még nem átvizsgált
-        // kijelölt képek számítanak (egy már átvizsgált képnél nincs betöltés).
-        loading: window._selectionPending > 0
-        uncheckedCount: window._selectionPending
-        sortingPercent: window._faceScanController
-            ? (window._faceScanController.sortingPercent ?? -1) : -1
-        folderSelected: controller ? controller.currentFolder.length > 0 : false
-        unnamedAlbumMode: window.unnamedFacesOpen
-        unnamedGrouped: mainLibraryCanvas.unnamedFacesView.grouped
-        // #4585: a Névtelenek GYŰJTEMÉNYE üres (az Ignored album nem ide tartozik)
-        unnamedCollectionEmpty: window.facesAlbumMode === "unnamed"
-                                && mainLibraryCanvas.unnamedFacesView.groupsModel.length === 0
-        // #3585: a Névtelenek-album nem vált nézetet a controllerben, így a
-        // `currentPersonName` az előző személyé marad — az albumban nincs
-        // „nézett személy", tehát a „Szintén" lista sem
-        currentPerson: controller && !window.unnamedFacesOpen
-            ? controller.currentPersonName : ""
-        // a photos.revision-nel együtt kötve: arc-írás után frissül
-        peopleHere: controller
-            ? (window.peopleFaceRevision, controller.photos.revision,
-               controller.peopleOfRows(window.selectedRows()))
-            : []
-        unnamedFacesHere: controller && !window.unnamedFacesOpen
-            ? (window.peopleFaceRevision, window.unnamedFaceRevision,
-               controller.photos.revision,
-               controller.unnamedFacesOfRows(window.selectedRows()))
-            : []
-        onPersonChosen: function(name) {
-            if (!controller) return
-            window.clearSelection()
-            window.unnamedFacesOpen = false
-            controller.showPerson(name)
-        }
-        onManualAddRequested: {
-            if (!window.viewerOpen) window.nezdEsSzerkeszd()
-            if (window.viewerOpen) photoViewer.beginManualFaceAdd()
-        }
-        onManualCancelRequested: photoViewer.cancelManualFaceAdd()
-        onCloseRequested: window.ureseidAFiokot()
-    }
+        hostWindow: window
+        hostController: controller
+        hostToolbar: toolbar
+        hostPhotoViewer: photoViewer
+        hostMainSplit: mainSplit
+        hostMainLibraryCanvas: mainLibraryCanvas
+        hostMainDialogs: mainDialogs
+        propertiesLabel: qsTr("Properties")
+        tagsLabel: qsTr("Tags:")
+        peopleLabel: qsTr("People")
+        placesLabel: qsTr("Places")
     }
 
     //: #3035: `m_fakehidden` (`thumbui.tre:696`) — NEM LÁTSZÓ, de
