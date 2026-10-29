@@ -59,6 +59,12 @@ PicasaSlider 1.0 PicasaSlider.qml
 EditorPanel 1.0 EditorPanel.qml
 internal EditorPanelTabs EditorPanelTabs.qml
 internal EditorPanelOverlays EditorPanelOverlays.qml
+internal EditorPanelCropState EditorPanelCropState.qml
+internal EditorPanelEffectState EditorPanelEffectState.qml
+internal EditorPanelFinetuneState EditorPanelFinetuneState.qml
+internal EditorPanelTextState EditorPanelTextState.qml
+internal EditorPanelToolsState EditorPanelToolsState.qml
+internal EditorPanelBlurEffects EditorPanelBlurEffects.qml
 DocumentTabStrip 1.0 DocumentTabStrip.qml
 DocumentTab 1.0 DocumentTab.qml
 CropOverlay 1.0 CropOverlay.qml
