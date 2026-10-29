@@ -129,9 +129,12 @@ CreateDialogs 1.0 CreateDialogs.qml
 PosterCreateDialog 1.0 PosterCreateDialog.qml
 CollageCreateDialog 1.0 CollageCreateDialog.qml
 MovieMakerDialog 1.0 MovieMakerDialog.qml
+MovieMakerActions 1.0 MovieMakerActions.qml
 MovieMakerTabs 1.0 MovieMakerTabs.qml
 MovieMakerOptions 1.0 MovieMakerOptions.qml
 MovieMakerPreview 1.0 MovieMakerPreview.qml
+MovieMakerPreviewLogic 1.0 MovieMakerPreviewLogic.qml
+MovieMakerPreviewRuntime 1.0 MovieMakerPreviewRuntime.qml
 MovieMakerFilmstrip 1.0 MovieMakerFilmstrip.qml
 MovieMakerSlideLogic 1.0 MovieMakerSlideLogic.qml
 MovieMakerDialogs 1.0 MovieMakerDialogs.qml

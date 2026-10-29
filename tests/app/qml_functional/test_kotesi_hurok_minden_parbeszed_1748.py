@@ -46,12 +46,23 @@ _KOTELEZO_VALTOZATOK = {
     "MovieMakerDialog": (
         "appWindow: ({}); movieDialogs: ({}); trayHasPictures: false",
     ),
+    "MovieMakerActions": (
+        "movieDialog: ({}); tabs: ({}); confirmDialog: ({}); previewTimer: ({})",
+    ),
     "MovieMakerDialogs": ("movieDialog: ({})",),
     "MovieMakerFilmstrip": (
         "movieDialog: ({}); tabs: ({}); previewPanel: ({ x: 0, width: 0 })",
     ),
     "MovieMakerOptions": ("movieDialog: ({}); pagesWidth: 0",),
-    "MovieMakerPreview": ("movieDialog: ({}); resizeTimer: ({})",),
+    "MovieMakerPreview": (
+        "movieDialog: ({}); resizeTimer: ({}); "
+        "moviePreviewMusicLoader: ({}); moviePreviewTransition: ({})",
+    ),
+    "MovieMakerPreviewLogic": (
+        "movieDialog: ({}); tabs: ({}); previewComponent: ({}); previewTimer: ({}); "
+        "transition: ({}); transitionFallbackTimer: ({}); itemsRefreshTimer: ({}); frameTimer: ({})",
+    ),
+    "MovieMakerPreviewRuntime": ("movieDialog: ({}); tabs: ({})",),
     "MovieMakerSlideLogic": ("movieDialog: ({}); tabs: ({})",),
     "MovieMakerTabs": ("movieDialog: ({}); options: ({})",),
     # #6216: a nyomtatási nézet és állapotobjektum kötelező gazdát kap.

@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.291] - 2026-10-29
+
+- A filmkészítő párbeszéd külön QML-komponensekre bomlott, a felület változatlan maradt (#6205).
+- Az arcfelismerési specifikáció külön kutatási naplólapokra bontva vált könnyebben áttekinthetővé. (#6211).
+
 ## [0.9.290] - 2026-10-29
 
 - Az arcfelismerési spec átmeneti kivétel a nagyfájl-őrben (#6211).

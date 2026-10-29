@@ -5313,30 +5313,11 @@ picasapy-origin: picasapy</extracomment>
     <context>
         <name>MovieMakerDialog</name>
         <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="119" />
-            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="363" />
+            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="124" />
             <source>Text Slide</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
             <translation>텍스트 슬라이드</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="385" />
-            <source>%1     %2x%3 pixels</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>%1     %2x%3 픽셀</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="387" />
-            <source>(%1 of %2)</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>(%1 / %2)</translation>
-        </message>
-        <message>
-            <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="519" />
-            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>새 동영상을 만들면 추가한 모든 텍스트 슬라이드가 제거됩니다. 계속하시겠습니까?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MovieMakerDialog.qml" line="640" />
@@ -5357,6 +5338,37 @@ picasapy-origin-key: makemoviepaneltext:Label(makemoviepanel/render);stringres:b
             <source>Please Confirm...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>확인해 주세요...</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerPreviewLogic</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreviewLogic.qml" line="197" />
+            <source>Text Slide</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CMakeMoviePanel::info2</extracomment>
+            <translation>텍스트 슬라이드</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreviewLogic.qml" line="217" />
+            <source>%1     %2x%3 pixels</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1     %2x%3 픽셀</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerPreviewLogic.qml" line="219" />
+            <source>(%1 of %2)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>(%1 / %2)</translation>
+        </message>
+    </context>
+    <context>
+        <name>MovieMakerActions</name>
+        <message>
+            <location filename="../qml/PicasaPy/MovieMakerActions.qml" line="95" />
+            <source>This will generate a new movie removing all the text slides you added. Are you sure?</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>새 동영상을 만들면 추가한 모든 텍스트 슬라이드가 제거됩니다. 계속하시겠습니까?</translation>
         </message>
     </context>
     <context>
