@@ -97,6 +97,7 @@ _AKTIV_FUL_OBJEKTUMOK = (
 )
 _KERET_SZIN = (255, 0, 255, 255)
 _STABIL_KOCKAK = 3
+_IMAGE_STATUS_READY = 1  # QtQuick.Image.Ready
 _STABIL_KEPKOCKAK = 10
 _STABIL_KEPKOCKAK_KOZTI_VARAKOZAS_MP = 0.02
 _ALAPNEZET_KEPKOCKAK_KOZTI_VARAKOZAS_MP = 0.05
@@ -291,6 +292,34 @@ def _objektum_lathato(elem: Any) -> bool:
     return bool(elem.property("visible"))
 
 
+def _kep_kesz_olvaso(elem: Any):
+    """A QML Image Ready állapotát olvasó, Qt-enumot nem konvertáló függvény."""
+    from PySide6.QtCore import QObject
+    from PySide6.QtQml import QQmlEngine, QQmlExpression
+
+    if isinstance(elem, QObject):
+        context = QQmlEngine.contextForObject(elem)
+        if context is not None:
+            # PySide nem regisztrál konvertert a QQuickImageBase::Status enumhoz.
+            # A QML-kifejezés ugyanazt az Image.Ready feltételt értékeli ki,
+            # amit a komponensben is használna a QML.
+            expression = QQmlExpression(context, elem, "status === Image.Ready")
+
+            def _kesz() -> bool:
+                ertek, ures = expression.evaluate()
+                if expression.hasError():
+                    raise RuntimeError(
+                        "A QML-képek betöltési állapota nem olvasható: "
+                        f"{expression.error().toString()}"
+                    )
+                return not ures and bool(ertek)
+
+            return _kesz
+
+    # Tesztekben a Qt enumot az Image.Ready rögzített 1-es értéke képviseli.
+    return lambda: int(elem.property("status")) == _IMAGE_STATUS_READY
+
+
 def _lathato_objektumok(ablak: Any, nevek: tuple[str, ...]) -> list[str]:
     from PySide6.QtCore import QObject
 
@@ -361,6 +390,7 @@ def _var_foablak_racsra(
     vege = time.monotonic() + _ALLAPOT_HATARIDO_MP
     elozo = None
     azonos = 0
+    kep_kesz_olvasok = {}
     while time.monotonic() < vege:
         alkalmazas.processEvents()
         elrendezes = tuple(
@@ -397,11 +427,21 @@ def _var_foablak_racsra(
 
             festett_szel = float(elem.property("paintedWidth"))
             festett_mag = float(elem.property("paintedHeight"))
-            if festett_szel <= 0 or festett_mag <= 0:
+            kep_olvaso = kep_kesz_olvasok.get(id(elem))
+            if kep_olvaso is None:
+                kep_olvaso = _kep_kesz_olvaso(elem)
+                kep_kesz_olvasok[id(elem)] = kep_olvaso
+            kep_kesz = kep_olvaso()
+            if (
+                not kep_kesz
+                or festett_szel <= 0
+                or festett_mag <= 0
+            ):
                 minden_kep_kesz = False
             lathato_kepek.append(
                 (
                     str(elem.property("source")),
+                    kep_kesz,
                     round(x, 3),
                     round(y, 3),
                     round(szel, 3),
