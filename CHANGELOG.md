@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.304] - 2026-10-30
+
+- A diavetítés életciklusa és a fotóalbum-műveletek önálló részekbe kerülnek, változatlan viselkedéssel (#6275).
+- Az Időrend ablaka és a szerkesztő effektmixinje önálló részekbe kerül, változatlan viselkedéssel (#6270).
+- Az Időrend állapota és ablaka önálló QML-komponensbe került, változatlan megjelenéssel és működéssel (#6136).
+- A diavetítés indítása, a képernyővédő-előnézet és a teljes képernyős váltás vezérlése a vetítés saját QML-komponensébe került, változatlan megjelenéssel és működéssel (#6136).
+- A szerkesztő effektkezelése kisebb modulokra bomlott, változatlan megjelenéssel és működéssel (#6267).
+- A biztonsági mentés vezérlője kisebb belső modulokra bomlott a meglévő felület megtartásával (#6271).
+- Az album-műveletek belső szerkezete kisebb modulokra bontva, változatlan működéssel (#6273).
+- Az importforrás-vezérlő belső részekre bontása változatlan működéssel (#6274).
+- Az üres album létrehozásakor a mappa `.picasa.ini` fájlja változatlan marad, az album pedig az első kép hozzáadásáig a profilban őrződik meg (#6278).
+
 ## [0.9.303] - 2026-10-30
 
 - A fotóírás belső felépítése kisebb részekre bomlott. (#6266).
