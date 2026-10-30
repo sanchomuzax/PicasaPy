@@ -12884,12 +12884,6 @@ picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenb
             <translation>PicasaPy · versió %1</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/SplashScreen.qml" line="162" />
-            <source>Please note: PicasaPy is still a work in progress. Not all effects of the original Picasa are implemented yet, so it is not yet fully compatible with the original version.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Tingues en compte que PicasaPy encara està en desenvolupament. Encara no s'han implementat tots els efectes del Picasa original, de manera que encara no és totalment compatible amb la versió original.</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/SplashScreen.qml" line="176" />
             <source>OK</source>
             <extracomment>picasapy-origin: picasa

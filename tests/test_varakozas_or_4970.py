@@ -50,7 +50,6 @@ KIVETEL: frozenset[str] = frozenset(
         "tests/app/test_exportcel_indexelese_1565.py",  # negatív: `assert not _var(..., 3.0)`
         "tests/app/test_kimenet_resync_1539.py",  # negatív: `assert not _var(..., 3.0)`
         "tests/app/test_mappa_athelyezes_resync_1538.py",  # fix idő: `_var(lambda: False, 0.5)`
-        "tests/app/test_qml_splash.py",  # negatív: `assert not _wait_until(..., timeout_ms=600)`
     }
 )
 # Kulcsszavas idők (`timeout_ms=`, `masodperc=` … hívásban). A pillanatnyi
@@ -60,7 +59,6 @@ KIVETEL_KULCSSZO: frozenset[str] = frozenset(
     {
         "tests/app/test_gorgetes_szinkronpont_3399.py",  # negatív: `_wait_for_scroll_settled(..., timeout_ms=120)` a „sosem indul el" ágon
         "tests/app/test_hangos_veszfek_1467.py",  # negatív: a vészfék lejártát mérik (`timeout_ms=120`, `=60` ×2)
-        "tests/app/test_qml_splash.py",  # negatív: `assert not _wait_until(..., timeout_ms=600)`
     }
 )
 KULCSSZO_NEVEK = frozenset({"timeout_ms", "timeout", "masodperc", "seconds", "ms"})
