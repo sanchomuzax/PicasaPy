@@ -5,7 +5,7 @@ items do nothing.
 
 Two general rules from the original Picasa apply:
 
-- Shortcuts do not run while you are typing. When a text field has focus -
+- Shortcuts do not run while you are typing. When a text field has focus - 
   for example, search, rename, or a caption - the key belongs to that field.
   `Ctrl+A` selects the field's text, the arrow keys move within it, and
   `Enter` or `Esc` acts on the field.
@@ -114,7 +114,7 @@ asks before closing it.
 
 When a slider has focus, `+` and `=` increase its value; `-` and `_`
 decrease it. Each key press changes the slider by 2% of its full range.
-This works on the sliders in the editor's third, fourth, and fifth tabs -
+This works on the sliders in the editor's third, fourth, and fifth tabs - 
 **Effects**, **Creative**, and **Artistic** - and on the **Straighten**
 slider. It does not work on sliders in other views.
 
