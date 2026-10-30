@@ -10,11 +10,12 @@ mint egy indexelt tábla lenne) — nagy könyvtárnál ez a réteg később
 séma-bővítéssel (`people`/`photo_people` tábla, az `albums`/`photo_albums`
 mintájára) válthatja a mostani, olvasáskor összesítő változatot.
 
-Az összesítés NÉV szerint történik, nem `person_id` szerint: a `[Contacts2]`
-„csak lokális" (docs/specs/picasa-ini-format.md) — ugyanaz a személy
-különböző mappák ini-jeiben eltérő id-t kaphat, de a nevet a Picasa
-egyformán írja ki. Azonosítatlan arc (`ffffffffffffffff` contact_id) nem
-számít bele.
+Az összesítés alapesetben NÉV szerint történik, mert a `[Contacts2]`
+„csak lokális" (docs/specs/picasa-ini-format.md): ugyanaz a személy
+különböző mappák ini-jeiben eltérő id-t kaphat. Ha ugyanahhoz a névhez
+több külön azonosító tartozik egy mappában vagy a központi tárban, a
+sorokat az azonosító is megkülönbözteti, hogy a művelet célpontja egyértelmű
+maradjon. Azonosítatlan arc (`ffffffffffffffff` contact_id) nem számít bele.
 """
 
 from __future__ import annotations
@@ -39,6 +40,7 @@ class PersonRecord:
     photo_count: int
     thumbnail_photo_id: int | None = None
     thumbnail_rect: tuple[float, float, float, float] | None = None
+    person_id: str | None = None
 
 
 #: Egy mappa arc-adata: (mappa, {person_id.casefold(): név}, {fájlnév: arcok}).
@@ -100,11 +102,22 @@ def people_in_index(
     `.picasa.ini`-ket nem kell kétszer végigolvasni. `None` esetén a
     viselkedés változatlan: maga söpör."""
     people: dict[str, dict] = {}
-    for folder_path, names, faces_by_file in (
+    people_by_id: dict[tuple[str, str], dict] = {}
+    visible_face_data = (
         _iter_face_data(conn, central_path)
         if face_data is None
         else _lathato_arcadat(conn, face_data)
-    ):
+    )
+    duplicate_names: set[str] = set()
+    for _folder_path, names, _faces_by_file in visible_face_data:
+        ids_by_name: dict[str, set[str]] = {}
+        for person_id, name in names.items():
+            ids_by_name.setdefault(name.casefold(), set()).add(person_id.casefold())
+        duplicate_names.update(
+            name for name, person_ids in ids_by_name.items() if len(person_ids) > 1
+        )
+
+    for folder_path, names, faces_by_file in visible_face_data:
         photo_ids = {
             row["name"].casefold(): row["id"]
             for row in conn.execute(
@@ -116,35 +129,70 @@ def people_in_index(
         }
         for filename, faces in faces_by_file.items():
             seen: set[str] = set()
+            seen_ids: set[str] = set()
             for face in faces:
                 name = _resolve_name(face, names)
-                if name is None or name in seen:
+                if name is None:
                     continue
-                seen.add(name)
-                record = people.setdefault(
-                    name,
-                    {
-                        "count": 0,
-                        "thumbnail_photo_id": None,
-                        "thumbnail_rect": None,
-                    },
-                )
-                record["count"] += 1
                 photo_id = photo_ids.get(filename.casefold())
+                folded_name = name.casefold()
+                if folded_name in duplicate_names:
+                    folded_id = face.contact_id.casefold()
+                    if folded_id in seen_ids:
+                        continue
+                    seen_ids.add(folded_id)
+                    record = people_by_id.setdefault(
+                        (folded_name, folded_id),
+                        {
+                            "name": name,
+                            "person_id": face.contact_id,
+                            "count": 0,
+                            "thumbnail_photo_id": None,
+                            "thumbnail_rect": None,
+                        },
+                    )
+                else:
+                    if folded_name in seen:
+                        continue
+                    seen.add(folded_name)
+                    record = people.setdefault(
+                        folded_name,
+                        {
+                            "name": name,
+                            "count": 0,
+                            "thumbnail_photo_id": None,
+                            "thumbnail_rect": None,
+                        },
+                    )
+                record["count"] += 1
                 if record["thumbnail_photo_id"] is None and photo_id is not None:
                     rect = face.rect
                     record["thumbnail_photo_id"] = photo_id
                     record["thumbnail_rect"] = (
                         rect.left, rect.top, rect.right, rect.bottom
                     )
-    return tuple(
+    rows = [
         PersonRecord(
-            name=name,
+            name=record["name"],
             photo_count=record["count"],
             thumbnail_photo_id=record["thumbnail_photo_id"],
             thumbnail_rect=record["thumbnail_rect"],
         )
-        for name, record in sorted(people.items(), key=lambda kv: kv[0].casefold())
+        for name, record in people.items()
+        if name not in duplicate_names
+    ]
+    rows.extend(
+        PersonRecord(
+            name=record["name"],
+            photo_count=record["count"],
+            thumbnail_photo_id=record["thumbnail_photo_id"],
+            thumbnail_rect=record["thumbnail_rect"],
+            person_id=record["person_id"],
+        )
+        for record in people_by_id.values()
+    )
+    return tuple(
+        sorted(rows, key=lambda person: (person.name.casefold(), person.person_id or ""))
     )
 
 

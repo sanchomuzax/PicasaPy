@@ -13,6 +13,8 @@ PicasaMenu {
 
     // a jobbklikkelt személy neve — a hívó állítja be popup() előtt
     property string personName: ""
+    // A névjegy azonosítója, ha azonos nevű albumok külön sorban szerepelnek.
+    property string personId: ""
 
     signal deleteRequested(string personName)
     signal editRequested(string personName)

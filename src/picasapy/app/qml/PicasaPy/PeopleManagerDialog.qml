@@ -19,6 +19,7 @@ Dialog {
     property var entries: []
     property var originalEntries: []
     property string selectedKey: ""
+    property string pendingPersonId: ""
     property var selectedContactIds: []
     property var selectedLocalContactIds: []
     property string selectedThumbUrl: ""
@@ -78,12 +79,14 @@ Dialog {
     function _copy(entry) {
         return {
             key: entry.key,
+            personId: entry.personId || "",
             name: entry.name,
             email: entry.email,
             thumbUrl: entry.thumbUrl || "",
             contactIds: entry.contactIds.slice(),
             localContactIds: entry.localContactIds.slice(),
             photoCount: entry.photoCount,
+            duplicateName: entry.duplicateName || false,
             isNew: entry.isNew
         }
     }
@@ -95,13 +98,16 @@ Dialog {
         var copied = []
         for (var i = 0; i < loaded.length; ++i) {
             copied.push({
-                key: "contact:" + loaded[i].name,
+                key: "contact:" + (loaded[i].duplicateName
+                    ? loaded[i].personId : loaded[i].name),
+                personId: loaded[i].personId || "",
                 name: loaded[i].name,
                 email: loaded[i].email,
                 thumbUrl: loaded[i].thumbUrl || "",
                 contactIds: loaded[i].contactIds,
                 localContactIds: loaded[i].localContactIds,
                 photoCount: loaded[i].photoCount,
+                duplicateName: loaded[i].duplicateName || false,
                 isNew: false
             })
         }
@@ -119,8 +125,12 @@ Dialog {
         contactList.currentIndex = -1
         if (initialSearch) {
             var target = copied.find(function(entry) {
-                return entry.name.toLocaleLowerCase()
-                    === initialSearch.toLocaleLowerCase()
+                return manager.pendingPersonId !== ""
+                    && entry.personId === manager.pendingPersonId
+            }) || copied.find(function(entry) {
+                return manager.pendingPersonId === ""
+                    && entry.name.toLocaleLowerCase()
+                        === initialSearch.toLocaleLowerCase()
             })
             if (target) {
                 manager.selectContact(target)
@@ -133,10 +143,12 @@ Dialog {
             manager.selectContact(copied[0])
         }
         manager.pendingPersonName = ""
+        manager.pendingPersonId = ""
     }
 
-    function openForPerson(name) {
+    function openForPerson(name, personId) {
         manager.pendingPersonName = String(name || "").trim()
+        manager.pendingPersonId = String(personId || "").trim()
         manager.open()
     }
 
@@ -186,12 +198,14 @@ Dialog {
         manager.nextDraftNumber += 1
         var entry = {
             key: "draft:" + manager.nextDraftNumber,
+            personId: "",
             name: draftName,
             email: "",
             thumbUrl: "",
             contactIds: [],
             localContactIds: [],
             photoCount: 0,
+            duplicateName: false,
             isNew: true
         }
         manager.entries = manager.entries.concat([entry])
@@ -366,12 +380,19 @@ Dialog {
                 return entry.key === original.key
             })
             if (!updated) {
-                changes.push({action: "delete", oldName: original.name})
+                changes.push({
+                    action: "delete",
+                    oldName: original.name,
+                    person_id: original.personId,
+                    contact_ids: original.localContactIds
+                })
             } else if (updated.name.trim() !== original.name
                        || updated.email !== original.email) {
                 changes.push({
                     action: "update",
                     oldName: original.name,
+                    person_id: original.personId,
+                    contact_ids: original.localContactIds,
                     name: updated.name.trim(),
                     email: updated.email.trim()
                 })
@@ -450,7 +471,9 @@ Dialog {
                     delegate: ItemDelegate {
                         required property var modelData
                         required property int index
-                        objectName: "peopleManagerContact_" + modelData.name
+                        objectName: "peopleManagerContact_"
+                            + (modelData.duplicateName
+                                ? modelData.personId : modelData.name)
                         width: ListView.view.width
                         height: ListView.view.height / 17
                         text: modelData.name

@@ -92,11 +92,14 @@ Item {
         id: peopleAlbumContextMenu
         onDeleteRequested: function(name) {
             peopleAlbumDeleteConfirmation.personName = name
+            peopleAlbumDeleteConfirmation.personId =
+                peopleAlbumContextMenu.personId
             peopleAlbumDeleteConfirmation.open()
         }
         onEditRequested: function(name) {
             if (folderPane.appWindow && folderPane.appWindow.openPeopleManagerForPerson)
-                folderPane.appWindow.openPeopleManagerForPerson(name)
+                folderPane.appWindow.openPeopleManagerForPerson(
+                    name, peopleAlbumContextMenu.personId)
         }
         onSelectAllRequested:
             if (folderPane.appWindow && folderPane.appWindow.selectAll) folderPane.appWindow.selectAll()
@@ -121,6 +124,7 @@ Item {
         focus: true
         title: qsTr("Remove People")
         property string personName: ""
+        property string personId: ""
         // #1599/#1748: rögzített szélesség, különben a tördelő felirat és a
         // Dialog egymás szélességéből számolna (kötési hurok)
         implicitWidth: 380 + leftPadding + rightPadding
@@ -178,7 +182,11 @@ Item {
         onAccepted: {
             if (controller)
                 controller.savePeopleManagerChanges([
-                    {action: "remove_album", oldName: peopleAlbumDeleteConfirmation.personName}
+                    {
+                        action: "remove_album",
+                        oldName: peopleAlbumDeleteConfirmation.personName,
+                        person_id: peopleAlbumDeleteConfirmation.personId
+                    }
                 ])
         }
     }

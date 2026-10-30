@@ -178,6 +178,7 @@ ApplicationWindow {
     property alias peoplePanel: mainWindowWorkspace.exportPeoplePanel
 
     property string pendingPeopleManagerPersonName: ""
+    property string pendingPeopleManagerPersonId: ""
     property int thumbSize: 144
     //: #598: a cellaméret átadása a bélyegkép-tárnak — a SZINTET (72 · 144 ·
     //: a maximum) a tár választja ki belőle. A csúszka húzása nem kér újra
@@ -579,8 +580,8 @@ ApplicationWindow {
     function toggleHiddenSelection() { mainWindowCommands.toggleHiddenSelection() }
     function sendSelectionByEmail() { mainWindowCommands.sendSelectionByEmail() }
     function openSelectionInDefaultEditor() { mainWindowCommands.openSelectionInDefaultEditor() }
-    function openPeopleManagerForPerson(name) {
-        mainWindowCommands.openPeopleManagerForPerson(name)
+    function openPeopleManagerForPerson(name, personId) {
+        mainWindowCommands.openPeopleManagerForPerson(name, personId)
     }
 
     menuBar: MainMenuBar {
