@@ -21,10 +21,11 @@ from PySide6.QtCore import QObject
 def _forras() -> str:
     from pathlib import Path
 
-    return (
-        Path(__file__).resolve().parents[3]
-        / "src/picasapy/app/qml/Main.qml"
-    ).read_text(encoding="utf-8")
+    qml = Path(__file__).resolve().parents[3] / "src/picasapy/app/qml"
+    return "\n".join(
+        fajl.read_text(encoding="utf-8")
+        for fajl in (qml / "Main.qml", *sorted((qml / "PicasaPy").glob("Main*.qml")))
+    )
 
 
 class TestABekotesLetezik:

@@ -2083,84 +2083,19 @@ ApplicationWindow {
         onNyitvaChanged: if (nyitva) giftCdHost.nyitva = false
     }
 
-    // alsó sáv: infó-sáv + kijelölés-tálca (TrayBar.qml, #150)
-    footer: TrayBar {
+    // alsó sáv: infó-sáv + kijelölés-tálca (MainTrayBar → TrayBar, #150)
+    footer: MainTrayBar {
         id: trayBar
         objectName: "trayBar"
-        width: parent ? parent.width : 0
-        // #1026: az alsó tálca- és kimeneti sáv a KÖNYVTÁR panelének
-        // gyereke (`thumbui/bottombevel_base` + `outputlayout.tre`), tehát a
-        // projekt-lapon a panellel együtt tűnik el — a felszabaduló sávot a
-        // vászon kapja meg.
-        visible: window.libraryFrameVisible && !window.quickViewerLaunch
-        appWindow: window
-        onPhotosDroppedOnTray: function(rows) {
-            if (controller && rows && rows.length > 0)
-                controller.holdRows(rows)
-        }
-        // #4637: a testreszabható alsó kimeneti gombsor közös helyi menüje.
-        onConfigureButtonsContextMenuRequested: function(anchorItem, x, y) {
-            window.openConfigureButtonsContextMenu(anchorItem, x, y)
-        }
-        //: #3756: a `currentIndex` MINDIG a jobb/alsó félé (ld.
-        //: `PhotoViewer.qml` `photo` `source`-a) — kettős nézetben bal
-        //: fókusznál a sávnak a KIJELÖLT (`aktivSor`) képet kell mutatnia.
-        viewerIndex: photoViewer.aktivSor
-        // #2564: a szerkesztő nagyítás-hármasa az ALSÓ SÁVBAN ül (mérve),
-        // de a nagyítás állapota a nézőé — az állapot ide jön, a művelet
-        // jelzésként megy vissza. Enélkül a tálcának ismernie kellene a
-        // néző belsejét.
-        viewerZoomValue: photoViewer.zoomValue
-        viewerZoomAvailable: window.viewerOpen && photoViewer.photoOverlaysUsable
-        onZoomFitRequested: photoViewer.zoomFit()
-        onZoomActualRequested: photoViewer.zoomActual()
-        onZoomValueRequested: (ertek) => photoViewer.setZoomValue(ertek)
-        onExportRequested: exportDialogs.ensure().openForSelection()
-        // #1917: a tálca helyi menüjének öt ÖRÖKÖLT tétele. Ugyanazokra a
-        // vezérlőkre megy, mint a rács helyi menüjének párja — a tálca
-        // kijelölésén, mert a menü a tálcára hat.
-        //: #2163: EGY belépő — a `Ctrl+3` ugyanezt a függvényt hívja.
-        onViewAndEditRequested: window.nezdEsSzerkeszd()
-        onTrayRotateRightRequested: controller.rotateRightMany(window.selectedRows())
-        onTrayRotateLeftRequested: controller.rotateLeftMany(window.selectedRows())
-        onTrayLocateRequested: {
-            var sorok = window.selectedRows()
-            if (sorok.length === 0) return
-            var ut = controller.photos.filePathAt(sorok[0])
-            if (ut.length > 0) fileOpsController.revealPhoto(ut)
-        }
-        onTrayPropertiesRequested: window.valtsFiokLapot("properties")
-        // #1472: a tálca „Nyomtatás" gombja — a jelzésnek eddig SEHOL nem
-        // volt kezelője, a gomb kattintható volt, és nem történt semmi
-        onPrintRequested: window.openPrint()
-        // #361: kollázs/film a tálca ikonjairól is; #985: a kollázs innen is
-        // a LAPOT nyitja (spec 3.2) — egy belépési út, nem kettő
-        onCollageRequested: window.openCollageTab()
-        onMovieRequested: createDialogs.ensure().openMovie()
-        //: #1939: a klip-gyűjtő mód üzenetsávjának „Vissza" gombja. A
-        //: MŰVELET ugyanaz, ami korábban a lebegő gombé volt: a mód
-        //: jelzője lekerül, és a projekt lapja lesz az aktív.
-        onBackToCollageRequested: {
-            window.backToCollagePrompted = false
-            documentTabStrip.activateTab(window.collageTabId)
-        }
-        onBackToMovieMakerRequested: window.returnToMovieMaker()
-        // #1798: a tálca „E-Mail" gombja engedélyezve volt és kattintható,
-        // a jelzését viszont SEHOL nem fogta el senki — a testvérei
-        // (Kollázs, Exportálás, Nyomtatás) mind be voltak kötve. Ez volt a
-        // valódi oka annak, hogy a Beállítások e-mail-módja némának
-        // látszott: az egész küldési út néma volt.
-        onEmailRequested: window.sendSelectionByEmail()
-        onAddSelectedToScreensaverRequested: window.requestAddToScreensaver()
-        onStarSelectedPhotosRequested: {
-            if (controller)
-                controller.toggleStarMany(window.photoActionRows())
-        }
-        onNewAlbumWithSelectionRequested: {
-            fileOpsDialogs.ensure().openNewAlbumProperties(
-                controller ? controller.currentFolder : "",
-                window.photoActionRows())
-        }
+        hostWindow: window
+        hostController: controller
+        hostPhotoViewer: photoViewer
+        hostExportDialogs: exportDialogs
+        hostCreateDialogs: createDialogs
+        hostFileOpsDialogs: fileOpsDialogs
+        hostFileOpsController: typeof fileOpsController !== "undefined"
+            ? fileOpsController : null
+        hostDocumentTabStrip: documentTabStrip
     }
 
     // -- fájlműveletek (#15): kontextusmenü + dialógusok --------------------

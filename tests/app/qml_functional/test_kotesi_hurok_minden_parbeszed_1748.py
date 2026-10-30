@@ -107,6 +107,13 @@ _KOTELEZO_VALTOZATOK = {
         "hostPhotoViewer: ({}); hostMainSplit: ({}); "
         "hostMainLibraryCanvas: ({ unnamedFacesView: ({}) }); hostMainDialogs: ({})",
     ),
+    # #6136: az alsó sáv kötelező főablaki gazdaobjektumokat kap.
+    "MainTrayBar": (
+        "hostWindow: ({}); hostController: null; hostPhotoViewer: ({}); "
+        "hostExportDialogs: ({}); hostCreateDialogs: ({}); "
+        "hostFileOpsDialogs: ({}); hostFileOpsController: null; "
+        "hostDocumentTabStrip: ({})",
+    ),
     # #6136: a FolderPane főablakbeli bekötése önálló, kötelező gazda-propokat kér.
     "MainFolderPane": (
         "hostWindow: ({}); hostController: null; hostToolbar: ({}); "
