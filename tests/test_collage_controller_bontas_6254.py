@@ -118,7 +118,7 @@ def _method_source_hashes() -> dict[str, str]:
     hashes: dict[str, str] = {}
     paths = [_APP / "collage_controller.py", *(_APP / name for name in _UJ_MODULOK)]
     for path in paths:
-        raw = path.read_bytes()
+        raw = path.read_bytes().replace(b"\r\n", b"\n")  # windowsos checkout: CRLF (#6260)
         lines = raw.splitlines(keepends=True)
         tree = ast.parse(raw.decode("utf-8"), filename=str(path))
         for cls in tree.body:

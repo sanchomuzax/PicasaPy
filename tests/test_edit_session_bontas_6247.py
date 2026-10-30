@@ -91,7 +91,7 @@ def _forraslenyomatok() -> dict[str, str]:
     eredmeny: dict[str, str] = {}
     fajlok = (_EDIT / "session.py", *(_EDIT / nev for nev in _MODULOK))
     for fajl in fajlok:
-        forras = fajl.read_bytes()
+        forras = fajl.read_bytes().replace(b"\r\n", b"\n")  # windowsos checkout: CRLF (#6260)
         fa = ast.parse(forras.decode("utf-8"), filename=str(fajl))
         for csomopont in fa.body:
             if isinstance(csomopont, ast.ClassDef):

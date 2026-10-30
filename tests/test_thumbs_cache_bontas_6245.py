@@ -71,7 +71,7 @@ _MOZGATOTT_FORRASOK = {
 
 
 def _fuggveny_forras_hash(utvonal: Path, osztalynev: str | None, nev: str) -> str:
-    nyers = utvonal.read_bytes()
+    nyers = utvonal.read_bytes().replace(b"\r\n", b"\n")  # windowsos checkout: CRLF (#6260)
     sorok = nyers.splitlines(keepends=True)
     fa = ast.parse(nyers.decode("utf-8"))
     jeloltek: list[ast.FunctionDef | ast.AsyncFunctionDef] = []
