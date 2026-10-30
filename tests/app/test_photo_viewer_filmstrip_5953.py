@@ -45,14 +45,20 @@ def test_zoom_allapot_az_uj_aliasfelulet_elott_epul_fel() -> None:
     sorrendet a PhotoViewer komponenshatárának bevezetése után is.
     """
     viewer = (QML / "PhotoViewer.qml").read_text(encoding="utf-8")
-    main = (GYOKER / "src/picasapy/app/qml/Main.qml").read_text(encoding="utf-8")
+    qml_root = GYOKER / "src/picasapy/app/qml"
+    main_family = "\n".join(
+        fajl.read_text(encoding="utf-8")
+        for fajl in (qml_root / "Main.qml", *sorted(
+            (qml_root / "PicasaPy").glob("Main*.qml")
+        ))
+    )
     tray_top_row = (QML / "TrayTopRow.qml").read_text(encoding="utf-8")
 
     # #6234: a szerkesztőpanel aliasa a PhotoViewerLayout.qml-en át jön.
     assert viewer.index("property real zoomValue: 0") < viewer.index(
         "property alias editorPanel: viewerLayout.editorPanel"
     )
-    assert "viewerZoomValue: photoViewer.zoomValue" in main
+    assert "viewerZoomValue: hostPhotoViewer.zoomValue" in main_family
     # #6050: a csúszka a TrayTopRow komponensbe került; a stabil
     # értékforrás továbbra is a TrayBar gyökértulajdonsága.
     assert "value: trayRoot.viewerZoomValue" in tray_top_row
