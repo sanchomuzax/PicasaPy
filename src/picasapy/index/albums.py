@@ -8,7 +8,9 @@ Az azonosító mindig a **token**: ugyanaz az album több mappa ini-jében is
 szerepel (a Picasa minden érintett mappába kiírja a definíciót), és a
 tagság is átnyúlhat mappákon. Az `albums` tábla ezért DEFINÍCIÓNKÉNT tárol
 (mappa, token) — a hasábnak szánt lista itt vonja össze őket tokenre, a
-nevet és a dátumot a legbővebb definícióból véve.
+nevet és a dátumot a legbővebb definícióból véve. A még tag nélküli,
+PicasaPy-ban létrehozott albumok külön profil-index táblában maradnak addig,
+amíg az első tagságuk be nem kerül az ini-be (#6278).
 """
 
 from __future__ import annotations
@@ -30,6 +32,80 @@ class AlbumRecord:
     photo_count: int
 
 
+@dataclass(frozen=True)
+class PendingEmptyAlbum:
+    """Üres album az ini-be írás előtti, tartós helyi tárból (#6278)."""
+
+    token: str
+    folder_path: str
+    name: str | None
+    date: str | None
+    location: str | None
+    description: str | None
+    use_music: bool
+    music_file: str
+
+
+def _store_empty_album(
+    conn: sqlite3.Connection,
+    *,
+    token: str,
+    folder_path: str,
+    name: str | None,
+    date: str,
+    location: str,
+    description: str,
+    use_music: bool,
+    music_file: str,
+) -> None:
+    """Eltárol egy tag nélküli albumot az indexben, ini-írás nélkül."""
+    conn.execute(
+        "INSERT INTO local_empty_albums"
+        " (token, folder_path, name, date, location, description, use_music, music_file)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            token,
+            folder_path,
+            name,
+            date,
+            location,
+            description,
+            int(use_music),
+            music_file,
+        ),
+    )
+    conn.commit()
+
+
+def _pending_empty_album(
+    conn: sqlite3.Connection, token: str
+) -> PendingEmptyAlbum | None:
+    """A még ini-be nem materializált album mezői, ha vannak."""
+    row = conn.execute(
+        "SELECT token, folder_path, name, date, location, description,"
+        " use_music, music_file FROM local_empty_albums WHERE token = ?",
+        (token,),
+    ).fetchone()
+    if row is None:
+        return None
+    return PendingEmptyAlbum(
+        token=row["token"],
+        folder_path=row["folder_path"],
+        name=row["name"],
+        date=row["date"],
+        location=row["location"],
+        description=row["description"],
+        use_music=bool(row["use_music"]),
+        music_file=row["music_file"],
+    )
+
+
+def _remove_empty_album(conn: sqlite3.Connection, token: str) -> None:
+    """Kivezeti a függő sort, ha a definíció már az ini-ben él."""
+    conn.execute("DELETE FROM local_empty_albums WHERE token = ?", (token,))
+    conn.commit()
+
+
 def albums_in_index(conn: sqlite3.Connection) -> tuple[AlbumRecord, ...]:
     """Az összes ismert album, NÉV szerint rendezve (kis-nagybetű-tűrően).
 
@@ -49,7 +125,11 @@ def albums_in_index(conn: sqlite3.Connection) -> tuple[AlbumRecord, ...]:
                    AND {visible_folder_sql(conn)}
                  WHERE pa.token = a.token)
                    AS n
-        FROM albums a
+        FROM (
+            SELECT token, name, date FROM albums
+            UNION ALL
+            SELECT token, name, date FROM local_empty_albums
+        ) AS a
         GROUP BY a.token
         ORDER BY (max(a.name) IS NULL), lower(max(a.name)), a.token
         """

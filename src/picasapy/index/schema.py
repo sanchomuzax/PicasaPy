@@ -8,7 +8,7 @@ A séma verzióját a user_version pragma tartja; a MIGRATIONS szótár vezet
 verzióról verzióra, adatvesztés nélkül.
 """
 
-SCHEMA_VERSION = 26
+SCHEMA_VERSION = 27
 
 # #294 — a duplikátum-kereső dHash-gyorsítótára. SZÁNDÉKOSAN külön tábla,
 # nem a `photos` bővítése:
@@ -204,6 +204,23 @@ CREATE TABLE IF NOT EXISTS photo_albums (
 );
 
 CREATE INDEX IF NOT EXISTS idx_photo_albums_token ON photo_albums(token);
+"""
+
+# #6278: a tag nélküli, PicasaPy-ban létrehozott albumot a profil-index
+# tartja életben. Nem kapcsolódik a `folders` sorhoz: a teljes mappaszinkron
+# újraépíti az ini-ből származó `albums` sorokat, az üres album viszont
+# addig marad itt, amíg az első tagság az ini-be nem kerül.
+_LOCAL_EMPTY_ALBUMS_DDL = """
+CREATE TABLE IF NOT EXISTS local_empty_albums (
+    token TEXT PRIMARY KEY,
+    folder_path TEXT NOT NULL,
+    name TEXT,
+    date TEXT,
+    location TEXT,
+    description TEXT,
+    use_music INTEGER NOT NULL DEFAULT 0,
+    music_file TEXT NOT NULL DEFAULT ''
+);
 """
 
 # #26 (1. lépcső): saját (YuNet) arc-detektálás találatai — SZÁNDÉKOSAN
@@ -486,6 +503,8 @@ CREATE INDEX IF NOT EXISTS idx_photos_video_metadata_missing
 
 {_ALBUMS_DDL}
 
+{_LOCAL_EMPTY_ALBUMS_DDL}
+
 {_FACE_DDL}
 
 {_FACE_EMBEDDING_DDL}
@@ -671,4 +690,7 @@ DELETE FROM folder_scan_state WHERE path IN (
     # #5744: az eredeti Picasa három hasonlósági jellemzőjének üres cache-e.
     # A meglévő dHash-sorok és -oszlop érintetlenek maradnak.
     25: _PHOTO_SIMILARITY_DDL,
+    # #6278: a PicasaPy-ban létrehozott, még tag nélküli albumok tartós
+    # tárhelye. A mappaszinkron nem törli, az első tagság írása vezeti ki.
+    26: _LOCAL_EMPTY_ALBUMS_DDL,
 }

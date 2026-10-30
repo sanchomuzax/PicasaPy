@@ -106,7 +106,7 @@ def test_v23_index_migrates_the_thumbnail_table(tmp_path):
 
     with open_index(db) as conn:
         # #5744: a három hasonlósági jellemző külön cache-táblája a v26.
-        assert SCHEMA_VERSION == 26
+        assert SCHEMA_VERSION == 27
         assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
         columns = {
             row["name"]

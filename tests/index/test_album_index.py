@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import pytest
 
-from picasapy.index import open_index, sync_tree
+from picasapy.index import SCHEMA_VERSION, open_index, sync_tree
 from picasapy.index.albums import album_photos, albums_in_index
 from support.jpeg_factory import make_jpeg
 
@@ -130,3 +130,36 @@ class TestResync:
                 )
         sync_tree(conn, library, incremental=False)
         assert _TOKEN_B not in {album.token for album in albums_in_index(conn)}
+
+
+def test_v26_migration_creates_persistent_empty_album_store(tmp_path):
+    db = tmp_path / "index.db"
+    with open_index(db) as conn:
+        conn.execute("DROP TABLE IF EXISTS local_empty_albums")
+        conn.execute("PRAGMA user_version=26")
+        conn.commit()
+
+    with open_index(db) as conn:
+        columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(local_empty_albums)")
+        }
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+        assert columns == {
+            "token",
+            "folder_path",
+            "name",
+            "date",
+            "location",
+            "description",
+            "use_music",
+            "music_file",
+        }
+        conn.execute(
+            "INSERT INTO local_empty_albums"
+            " (token, folder_path, name) VALUES (?, ?, ?)",
+            ("a" * 32, str(tmp_path), "Függő album"),
+        )
+        conn.commit()
+        albums = {album.token: album for album in albums_in_index(conn)}
+        assert albums["a" * 32].name == "Függő album"
+        assert albums["a" * 32].photo_count == 0
