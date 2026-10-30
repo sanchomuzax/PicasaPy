@@ -12,6 +12,7 @@ from PySide6.QtGui import QColor, QImage
 from PySide6.QtTest import QSignalSpy, QTest
 
 from tests.support.varakozas import var_feltetelre
+from tests.support.qt_wait import varj_ablakon_belulre
 from picasapy.index import open_index, sync_tree
 from picasapy.ini import load_document, update_document
 
@@ -36,6 +37,7 @@ def _item(root, name: str):
 
 def _click(window, item, qt_app):
     assert item.width() > 0 and item.height() > 0, "a kattintási cél mérete nulla"
+    varj_ablakon_belulre(window, item)
     point = item.mapToScene(item.boundingRect().center()).toPoint()
     QTest.mouseClick(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, point)
     qt_app.processEvents()
