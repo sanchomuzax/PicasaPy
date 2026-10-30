@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.299] - 2026-10-30
+
+- A fotók helyi menüje, a kijelölés állapota, a szerkesztési munkamenet és a megjelenítési módok önálló részekbe kerülnek (#6249).
+- A fotók helyi menüjének bekötése és a könyvtári kijelölés állapota önálló QML-komponensbe került, változatlan megjelenéssel és működéssel (#6136).
+- A szerkesztési munkamenet modulja kisebb részekre bomlik, változatlan viselkedéssel. (#6247).
+- A megjelenítési módok belső kódja kisebb modulokra bomlott, változatlan működéssel (#6248).
+
 ## [0.9.298] - 2026-10-30
 
 - A fotónéző, a képművelet- és a bélyegkép-gyorstár modul bomlik, a súgó a felület nyelvét követi (#6244).
