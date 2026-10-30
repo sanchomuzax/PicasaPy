@@ -67,7 +67,11 @@ class TestAVezerloAdja_A_Tartalmat:
 
     def test_a_kereses_talal(self, qml_app, qt_app):
         _window, controller, _e = qml_app
-        talalatok = controller.helpSearch("kollázs")
+        # A felületi nyelv határozza meg a súgó keresési tartalmát is.
+        # Az angol kiadás jelenleg a lefordított lapokra korlátozódik;
+        # az `internet` az angol főoldalon, a `kollázs` a magyar lapokon van.
+        kifejezes = "kollázs" if controller.language == "hu" else "internet"
+        talalatok = controller.helpSearch(kifejezes)
         assert talalatok and "reszlet" in talalatok[0]
 
 
