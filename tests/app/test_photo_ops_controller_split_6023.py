@@ -97,7 +97,7 @@ def test_controller_facade_preserves_qml_names_and_stays_below_800_lines():
     [
         ("setCaption", "photo_ops_write_mixin"),
         ("renamePreview", "photo_ops_rename_mixin"),
-        ("createAlbum", "photo_ops_album_mixin"),
+        ("createAlbum", "photo_ops_album_membership_mixin"),
         ("writeFacesToXmp", "photo_ops_xmp_mixin"),
         ("rotateRight", "photo_ops_transform_mixin"),
         ("copyAllEffects", "photo_ops_effect_clipboard_mixin"),
