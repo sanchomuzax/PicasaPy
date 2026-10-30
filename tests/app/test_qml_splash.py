@@ -73,7 +73,7 @@ class TestSplashScreen:
         assert 12 <= bar.property("height") <= 14
         assert sweep.property("visible") is True
 
-    def test_without_confirmation_closes_as_before(self, qml_app, qt_app):
+    def test_disappears_on_ready(self, qml_app, qt_app):
         _, _, _, engine = qml_app
         splash = _make_splash(engine)
         assert splash.property("visible") is True
