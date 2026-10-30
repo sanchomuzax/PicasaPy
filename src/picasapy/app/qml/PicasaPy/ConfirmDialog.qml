@@ -48,6 +48,11 @@ Dialog {
     // teszik a kezdeti fókuszt; az alapbeállítás a többi hívót változatlanul
     // hagyja.
     property bool focusCancelOnOpen: false
+    // #6283: az eredeti album-törlő ablakában (job-329) csak két gomb van,
+    // jelölőnégyzet nincs, és a fókusz a „No” gombon áll: Enterre elutasít.
+    property bool cancelVisible: true
+    property bool rememberVisible: true
+    property bool focusNoOnOpen: false
     // #5704: az opt-out a „No” ágon is menthető az eredeti rejtettjelszó-
     // ajánlatban. Más megerősítők változatlanul csak az „Yes” ágon mentenek.
     property bool rememberOnDenied: false
@@ -56,6 +61,19 @@ Dialog {
     onOpened: {
         if (root.focusCancelOnOpen)
             cancelButton.forceActiveFocus()
+        else if (root.focusNoOnOpen)
+            noButton.forceActiveFocus()
+    }
+
+    function _deny() {
+        if (root.rememberOnDenied && rememberCheck.checked
+                && root.decisionKey.length > 0
+                && typeof confirmSettings !== "undefined"
+                && confirmSettings) {
+            confirmSettings.setSuppressed(root.decisionKey, true)
+        }
+        root.close()
+        root.denied()
     }
 
     // Igen (accept) — akkor is kibocsátva, ha a dialógus meg sem nyílt,
@@ -105,6 +123,7 @@ Dialog {
             id: rememberCheck
             objectName: root.namePrefix + "RememberCheck"
             text: root.rememberText
+            visible: root.rememberVisible
         }
 
         RowLayout {
@@ -119,23 +138,18 @@ Dialog {
                 onClicked: root.accept()
             }
             PicasaButton {
+                id: noButton
                 objectName: root.namePrefix + "NoButton"
                 text: root.noText
-                onClicked: {
-                    if (root.rememberOnDenied && rememberCheck.checked
-                            && root.decisionKey.length > 0
-                            && typeof confirmSettings !== "undefined"
-                            && confirmSettings) {
-                        confirmSettings.setSuppressed(root.decisionKey, true)
-                    }
-                    root.close()
-                    root.denied()
-                }
+                Keys.onReturnPressed: root._deny()
+                Keys.onEnterPressed: root._deny()
+                onClicked: root._deny()
             }
             PicasaButton {
                 id: cancelButton
                 objectName: root.namePrefix + "CancelButton"
                 text: qsTr("Cancel")
+                visible: root.cancelVisible
                 focus: root.focusCancelOnOpen
                 Keys.priority: Keys.BeforeItem
                 Keys.onReturnPressed: function(event) {

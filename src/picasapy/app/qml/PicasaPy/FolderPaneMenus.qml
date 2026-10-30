@@ -75,6 +75,9 @@ Item {
         namePrefix: "deleteAlbum"
         title: qsTr("Delete Album")
         yesText: qsTr("Delete Album")
+        cancelVisible: false
+        rememberVisible: false
+        focusNoOnOpen: true
         property string pendingToken: ""
         onConfirmed: {
             if (controller && pendingToken)
