@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.306] - 2026-10-30
+
+- Az album törlésének megerősítő ablakában az eredetihez hasonlóan csak a Delete Album és a No gomb látszik, és Enterre az album megmarad (#6283).
+- A Rejtett mappák jelszóajánló ablakában az eredetihez hasonlóan csak az Add Password és a Don't Add Password gomb látszik, és Enterre a jelszóablak nyílik (#6287).
+
 ## [0.9.305] - 2026-10-30
 
 - A még üres album ismét törölhető, és a tulajdonságai (név, dátum, hely, leírás, zene) betölthetők és módosíthatók (#6281).
