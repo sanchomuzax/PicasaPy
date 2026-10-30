@@ -12,6 +12,7 @@ olvasásával — enélkül a függvény helyes maradhatna úgy is, hogy az Esc
 közben már nem is hívja meg.
 """
 
+import re
 from pathlib import Path
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
@@ -78,9 +79,15 @@ class TestEscapeBinding:
         viselkedés-tesztek attól még zöldek maradnának — ezért olvassuk a
         VALÓDI forrást.
         """
-        forras = _QML_PATH.read_text(encoding="utf-8")
-        assert (
-            "Keys.onEscapePressed: if (!viewer.textEntryHasFocus) "
-            "viewer.handleEscape()"
-        ) in forras
+        # #6234: a billentyűkezelés a PhotoViewerKeyboard.qml-be költözött, a
+        # gazdát `keyboard.hostViewer` néven éri el; a kötés tartalma ugyanaz.
+        forras = "\n".join(
+            (_QML_PATH.parent / nev).read_text(encoding="utf-8")
+            for nev in ("PhotoViewer.qml", "PhotoViewerKeyboard.qml")
+        )
+        assert re.search(
+            r"Keys\.onEscapePressed:\s*\{?\s*if \(!(?:viewer|keyboard\.hostViewer)"
+            r"\.textEntryHasFocus\)\s*(?:viewer|keyboard\.hostViewer)\.handleEscape\(\)",
+            forras,
+        )
         assert "function handleEscape()" in forras
