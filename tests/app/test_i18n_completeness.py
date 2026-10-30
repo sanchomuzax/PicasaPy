@@ -41,14 +41,6 @@ _TS_PATH = _I18N_DIR / "picasapy_hu.ts"
 # indokoltan, kötött/mixin `tr()`-hívás miatt a lupdate statikus elemzése
 # nem tudja levezetni a valódi kontextust — ld. a modul docstringjét.
 _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
-    ("CreateMixin", "No pictures are selected."): "AppController",
-    # #1977: a film célmappájának hibája — ugyanez a mixin-eset
-    ("CreateMixin", "The movie folder could not be created."): "AppController",
-    ("CreateMixin", "No target file was chosen."): "AppController",
-    ("CreateMixin", "Unknown collage type."): "AppController",
-    # #431: a képkeret-választó hibaszövege ugyanebbe a családba tartozik
-    ("CreateMixin", "Unknown picture frame."): "AppController",
-    ("CreateMixin", "None of the selected pictures could be read."): "AppController",
     # #459: az `ExportMixin` (export_controller.py) ugyanígy a mixin-
     # kontextus fölé kevert `AppController` — a lemezhely-ellenőrzés
     # hibaszövege futásidőben ott van lefordítva.
