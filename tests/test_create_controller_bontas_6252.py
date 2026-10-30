@@ -178,7 +178,7 @@ def _definicio_hashok() -> dict[str, set[str]]:
     hashes: dict[str, set[str]] = {}
     for filename in ("create_controller.py", *_UJ_MODULOK):
         fajl = _FORRAS / filename
-        source = fajl.read_bytes()
+        source = fajl.read_bytes().replace(b"\r\n", b"\n")  # windowsos checkout: CRLF (#6260)
         tree = ast.parse(source.decode("utf-8"), filename=str(fajl))
         for node in tree.body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):

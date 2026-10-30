@@ -103,7 +103,7 @@ def _definicio_hashok() -> dict[str, str]:
         utvonal = _FORRAS / nev
         if not utvonal.is_file():
             continue
-        forras = utvonal.read_bytes()
+        forras = utvonal.read_bytes().replace(b"\r\n", b"\n")  # windowsos checkout: CRLF (#6260)
         fa = ast.parse(forras.decode("utf-8"), filename=str(utvonal))
         for node in fa.body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):

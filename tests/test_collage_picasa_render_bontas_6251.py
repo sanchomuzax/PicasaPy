@@ -119,7 +119,7 @@ def _forraslenyomatok() -> dict[str, str]:
     for fajl in fajlok:
         if not fajl.is_file():
             continue
-        nyers = fajl.read_bytes()
+        nyers = fajl.read_bytes().replace(b"\r\n", b"\n")  # windowsos checkout: CRLF (#6260)
         sorok = nyers.splitlines(keepends=True)
         fa = ast.parse(nyers.decode("utf-8"), filename=str(fajl))
         for node in fa.body:
@@ -153,7 +153,7 @@ def test_a_bontas_megorizza_az_api_t_a_forrast_es_a_patchpontot(monkeypatch) -> 
     assert picasa_render.__all__ == _REGI_ALL
 
     for nev, modul in _MOZGATOTT.items():
-        nyers = (_COLLAGE / modul).read_bytes()
+        nyers = (_COLLAGE / modul).read_bytes().replace(b"\r\n", b"\n")  # windowsos checkout: CRLF (#6260)
         fa = ast.parse(nyers.decode("utf-8"), filename=modul)
         assert any(
             isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
