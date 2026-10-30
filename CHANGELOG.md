@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.301] - 2026-10-30
+
+- A tálca alsó sávjának bekötése önálló komponensbe kerül, változatlan képpel (#6258).
+- A képtálca alsó sávjának bekötése önálló QML-komponensbe került, változatlan megjelenéssel és működéssel (#6136).
+- A könyvtárszinkron belső részeit kisebb modulokra bontottuk a viselkedés változtatása nélkül (#6257).
+- A belső bontásőrök Windowson is helyesen mérik a forrásszöveg-lenyomatot (#6260).
+
 ## [0.9.300] - 2026-10-30
 
 - A kollázs-renderelő és a Létrehozás menü vezérlője kisebb részekre bomlik, változatlan viselkedéssel (#6255).
