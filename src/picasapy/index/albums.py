@@ -100,10 +100,43 @@ def _pending_empty_album(
     )
 
 
-def _remove_empty_album(conn: sqlite3.Connection, token: str) -> None:
-    """Kivezeti a függő sort, ha a definíció már az ini-ben él."""
-    conn.execute("DELETE FROM local_empty_albums WHERE token = ?", (token,))
+_EMPTY_ALBUM_FIELDS = frozenset(
+    {"name", "date", "location", "description", "use_music", "music_file"}
+)
+
+
+def _update_empty_album(conn: sqlite3.Connection, token: str, **fields) -> bool:
+    """A függő üres album megadott mezőinek frissítése (#6281).
+
+    Csak a `_EMPTY_ALBUM_FIELDS` nevei írhatók; a visszatérés megmondja,
+    létezett-e a sor.
+    """
+    unknown = set(fields) - _EMPTY_ALBUM_FIELDS
+    if unknown:
+        raise ValueError(f"ismeretlen albummező: {sorted(unknown)}")
+    if not fields:
+        return _pending_empty_album(conn, token) is not None
+    values = {
+        key: int(value) if key == "use_music" else value
+        for key, value in fields.items()
+    }
+    assignments = ", ".join(f"{key} = ?" for key in values)
+    cursor = conn.execute(
+        f"UPDATE local_empty_albums SET {assignments} WHERE token = ?",
+        (*values.values(), token),
+    )
     conn.commit()
+    return cursor.rowcount > 0
+
+
+def _remove_empty_album(conn: sqlite3.Connection, token: str) -> bool:
+    """Kivezeti a függő sort (az ini-be került vagy törölt albumnál).
+
+    Visszatérés: létezett-e a sor.
+    """
+    cursor = conn.execute("DELETE FROM local_empty_albums WHERE token = ?", (token,))
+    conn.commit()
+    return cursor.rowcount > 0
 
 
 def albums_in_index(conn: sqlite3.Connection) -> tuple[AlbumRecord, ...]:
