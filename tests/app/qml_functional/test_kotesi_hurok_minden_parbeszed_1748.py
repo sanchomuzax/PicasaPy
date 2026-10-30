@@ -150,6 +150,26 @@ _KOTELEZO_VALTOZATOK = {
         "hostController: null; hostFaceScanController: null; "
         "hostRemovePeopleFacesDialog: ({}); hostCreateDialogs: ({})",
     ),
+    # #6136: a főablak kijelöléskezelője a korábbi QML-neveket gazdán át éri el.
+    "MainLibrarySelectionState": (
+        "hostWindow: ({ selectedIndexes: [], selectedIndex: -1, "
+        "selectedRows: function() { return [] }, "
+        "photoActionRows: function() { return [] }, "
+        "vanMentetlenSzerkesztes: function() { return false }, "
+        "_folderOfRow: function() { return '' }, "
+        "_selectionInFolder: function() { return false }, "
+        "clearSelection: function() {}, "
+        "_currentGroup: function() { return null }, "
+        "_groupRows: function() { return [] }, "
+        "addPhotosToScreensaver: function() {} }); "
+        "hostController: null; "
+        "hostPhotoViewer: ({ _kijeloltSort: function() { return -1 }, "
+        "facesEditRevision: 0 }); "
+        "hostMainDialogs: ({}); hostPhotoContextMenu: ({}); "
+        "hostFolderPane: ({}); hostScreensaverAlbumConfirmLoader: ({}); "
+        "hostFaceScanDialog: ({}); hostFaceScanController: null; "
+        "screensaverAddedMessage: '%1'",
+    ),
     # #6136: a felső menüsor bekötése külön komponens; valamennyi
     # testvér-objektumot a főablak kötelező tulajdonságként adja át.
     "MainMenuBar": (

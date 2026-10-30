@@ -128,6 +128,7 @@ ApplicationWindow {
     // lookupja; az indexOf-os kötés O(cellák × kijelöltek) volt, ami
     // Ctrl+A-nál minden cellán végigjárta a teljes kijelölés-listát
     property var selectedSet: ({})
+    property alias _lastFolder: mainLibrarySelectionState._lastFolder
     onSelectedIndexesChanged: {
         var s = {}
         for (var k = 0; k < selectedIndexes.length; ++k)
@@ -437,344 +438,51 @@ ApplicationWindow {
         mainProjectTabs.openCollageNodeInEditor(path)
     }
 
-    // a kijelölt sorok listája (#12) — több-kijelölés, vagy ha az nincs,
-    // az utoljára kattintott kép
-    function selectedRows() {
-        return Selection.effectiveRows(
-            window.selectedIndexes, window.selectedIndex)
+    // A könyvtári kijelölés és műveletei külön komponensben élnek; a régi
+    // főablak-nevek és a fordítási kontextus változatlanul megmaradnak.
+    MainLibrarySelectionState {
+        id: mainLibrarySelectionState
+        hostWindow: window
+        hostController: typeof controller !== "undefined" ? controller : null
+        hostPhotoViewer: photoViewer
+        hostMainDialogs: mainDialogs
+        hostPhotoContextMenu: photoContextMenu
+        hostFolderPane: folderPane
+        hostScreensaverAlbumConfirmLoader: screensaverAlbumConfirmLoader
+        hostFaceScanDialog: faceScanDialog
+        hostFaceScanController: typeof faceScanController !== "undefined"
+            ? faceScanController : null
+        screensaverAddedMessage: qsTr("Added %1 pictures to Screensaver.")
     }
-
-    // #5883: a mentés csak akkor írja lemezre a kijelölést, ha valamelyik
-    // kép filters lánca eltér a lemezre mentett állapottól. A modell
-    // `hasEdits` mezője ezt a `.picasa.ini`-ben tárolt láncból adja; a
-    // `photos.revision` a QML-kötést a láncváltás után újraértékelteti.
-    function vanMentetlenSzerkesztes(sorok) {
-        if (!controller || !controller.photos || !sorok) return false
-        for (var i = 0; i < sorok.length; ++i) {
-            var foto = controller.photos.itemAt(Number(sorok[i]))
-            if (foto && foto.hasEdits === true) return true
-        }
-        return false
-    }
-
     readonly property bool kijelolesbenVanMentetlenSzerkesztes:
-        controller
-        ? (controller.photos.revision,
-           window.vanMentetlenSzerkesztes(window.selectedRows())) : false
+        mainLibrarySelectionState.kijelolesbenVanMentetlenSzerkesztes
     readonly property bool muveletiCelbanVanMentetlenSzerkesztes:
-        controller
-        ? (controller.photos.revision,
-           window.vanMentetlenSzerkesztes(window.photoActionRows())) : false
+        mainLibrarySelectionState.muveletiCelbanVanMentetlenSzerkesztes
 
-    // A fotóhoz kötött menük célpontja nézőben a szerkesztett oldal, a
-    // könyvtárban pedig a kijelölés. A kijelölés megmarad a néző mögött,
-    // ezért ott nem használható a menü célpontjának.
-    function photoActionRows() {
-        if (window.viewerOpen) {
-            var sor = Number(photoViewer._kijeloltSort())
-            return sor >= 0 ? [sor] : []
-        }
-        return window.selectedRows()
-    }
+    function selectedRows() { return mainLibrarySelectionState.selectedRows() }
+    function vanMentetlenSzerkesztes(sorok) { return mainLibrarySelectionState.vanMentetlenSzerkesztes(sorok) }
+    function photoActionRows() { return mainLibrarySelectionState.photoActionRows() }
+    function prepareRenameSelection(row, newName) { mainLibrarySelectionState.prepareRenameSelection(row, newName) }
+    function photoActionIndex() { return mainLibrarySelectionState.photoActionIndex() }
+    function photoActionPaths() { return mainLibrarySelectionState.photoActionPaths() }
+    function newAlbumFolderPath() { return mainLibrarySelectionState.newAlbumFolderPath() }
+    function addPhotosToScreensaver(paths) { mainLibrarySelectionState.addPhotosToScreensaver(paths) }
+    function requestAddToScreensaver() { mainLibrarySelectionState.requestAddToScreensaver() }
+    function addTagToRows(rowList, keyword) { mainLibrarySelectionState.addTagToRows(rowList, keyword) }
+    function selectedPaths() { return mainLibrarySelectionState.selectedPaths() }
+    function resetFacesForPaths(paths) { mainLibrarySelectionState.resetFacesForPaths(paths) }
+    function openPhotoContextMenu(index, item, x, y) { mainLibrarySelectionState.openPhotoContextMenu(index, item, x, y) }
+    function splitFolderHere() { mainLibrarySelectionState.splitFolderHere() }
+    function handleThumbClick(index, modifiers) { mainLibrarySelectionState.handleThumbClick(index, modifiers) }
+    function _folderOfRow(row) { return mainLibrarySelectionState._folderOfRow(row) }
+    function _selectionInFolder(path) { return mainLibrarySelectionState._selectionInFolder(path) }
+    function clearSelection() { mainLibrarySelectionState.clearSelection() }
+    function _currentGroup() { return mainLibrarySelectionState._currentGroup() }
+    function _groupRows() { return mainLibrarySelectionState._groupRows() }
+    function selectAll() { mainLibrarySelectionState.selectAll() }
+    function invertSelection() { mainLibrarySelectionState.invertSelection() }
+    function selectStarred() { mainLibrarySelectionState.selectStarred() }
 
-    function prepareRenameSelection(row, newName) {
-        if (!controller || !newName) return
-        var oldPath = controller.photos.filePathAt(Number(row))
-        var separator = oldPath.lastIndexOf("/")
-        if (separator < 0) return
-        _pendingRenamePhotoId = controller.photos.idAt(Number(row))
-        _pendingRenameTargetPath = oldPath.substring(0, separator + 1) + newName
-    }
-
-    function photoActionIndex() {
-        if (window.viewerOpen) return Number(photoViewer._kijeloltSort())
-        if (window.selectedIndex >= 0) return window.selectedIndex
-        var sorok = window.selectedRows()
-        return sorok.length > 0 ? Number(sorok[0]) : -1
-    }
-
-    function photoActionPaths() {
-        var rows = window.photoActionRows()
-        var paths = []
-        if (!controller) return paths
-        for (var k = 0; k < rows.length; ++k) {
-            var path = controller.photos.filePathAt(Number(rows[k]))
-            if (path.length > 0) paths.push(path)
-        }
-        return paths
-    }
-
-    // #5835: mappa nélküli nézetben a kijelölt vagy fókuszban levő kép
-    // mappája az üres album tárolási helye. Sima mappanézetben a #5812
-    // szerinti aktuális mappa marad az elsődleges cél.
-    function newAlbumFolderPath() {
-        if (!controller) return ""
-        if (controller.viewModeName === "folder" && controller.currentFolder)
-            return controller.currentFolder
-
-        var photoPath = ""
-        var paths = window.photoActionPaths()
-        if (paths.length > 0) {
-            photoPath = paths[0]
-        } else {
-            var row = window.photoActionIndex()
-            if (row >= 0 && controller.photos)
-                photoPath = controller.photos.filePathAt(row)
-        }
-        var separator = Math.max(
-            photoPath.lastIndexOf("/"), photoPath.lastIndexOf("\\")
-        )
-        return separator > 0 ? photoPath.substring(0, separator) : ""
-    }
-
-    function addPhotosToScreensaver(paths) {
-        var added = controller ? controller.addScreensaverPhotos(paths) : 0
-        errorBanner.notice = true
-        errorBannerText.text = qsTr("Added %1 pictures to Screensaver.")
-                .arg(added)
-    }
-
-    function requestAddToScreensaver() {
-        var paths = window.photoActionPaths()
-        if (controller && controller.currentAlbumToken !== "") {
-            screensaverAlbumConfirmLoader.ensure().openFor(paths)
-            return
-        }
-        window.addPhotosToScreensaver(paths)
-    }
-
-    // #4271: az eredeti megerősítési küszöb 30 fölött van; a kijelölést
-    // pillanatfelvételként adjuk át, hogy a párbeszéd alatt ne változzon a cél.
-    function addTagToRows(rowList, keyword) {
-        if (!controller || !rowList || rowList.length === 0) return
-        var rows = rowList.slice()
-        if (rows.length <= 30) {
-            controller.addKeywordToRows(rows, keyword)
-            return
-        }
-        mainDialogs.bulkTagConfirmLoader.ensure().askFor(rows, keyword)
-    }
-
-    // a kijelölt képek abszolút útvonalai (#15/#16) — a fájlműveletek a
-    // művelet ELŐTT gyűjtött útvonal-listán futnak, így a közben frissülő
-    // rács-indexek nem tévesztenek célt
-    function selectedPaths() {
-        var rows = window.selectedRows()
-        var paths = []
-        for (var k = 0; k < rows.length; ++k) {
-            var p = controller.photos.filePathAt(Number(rows[k]))
-            if (p.length > 0) paths.push(p)
-        }
-        return paths
-    }
-
-    function resetFacesForPaths(paths) {
-        if (!window._faceScanController || !paths || paths.length === 0)
-            return
-        if (window._faceScanController.resetFacesForPhotos(paths) > 0) {
-            if (controller) controller.refreshCollections()
-            photoViewer.facesEditRevision += 1
-            // A hiányzó modellről a meglévő Arckeresés ablak ad érthető
-            // okot és letöltési lehetőséget; reset után ne maradjon néma.
-            if (!window._faceScanController.isAvailable())
-                faceScanDialog.open()
-        }
-    }
-
-    // jobbklikk a rácson (#15): a klikkelt kép kerüljön kijelölésbe (ha még
-    // nincs benne), majd a kontextusmenü a kattintás helyén nyílik
-    function openPhotoContextMenu(index, item, x, y) {
-        if (window.selectedIndexes.indexOf(index) === -1) {
-            window.selectedIndexes = [index]
-            window.selectedIndex = index
-        }
-        window.fileOpTargetRow = index
-        photoContextMenu.popup(item, x, y)
-    }
-
-    // #4534: a mappacsoport aktuális rácssorrendjében a legelső kijelölt
-    // képtől a csoport végéig kijelöl, majd megnyitja a mappa tulajdonságait.
-    function splitFolderHere() {
-        if (!controller || controller.currentFolder === ""
-                || controller.currentAlbumToken !== ""
-                || controller.currentPersonName !== "")
-            return
-        var rows = window.selectedRows()
-        if (rows.length === 0) return
-        var currentFolder = controller.currentFolder
-        var first = -1
-        for (var i = 0; i < rows.length; ++i) {
-            var row = Number(rows[i])
-            var path = controller.photos.filePathAt(row)
-            if (path.substring(0, path.lastIndexOf("/")) === currentFolder
-                    && (first < 0 || row < first))
-                first = row
-        }
-        if (first < 0) return
-        var range = controller.photos.groupRange(first)
-        if (range.length !== 2) return
-        var paths = []
-        var selected = []
-        for (var row = first; row <= Number(range[1]); ++row) {
-            var imagePath = controller.photos.filePathAt(row)
-            if (imagePath.substring(0, imagePath.lastIndexOf("/"))
-                    !== currentFolder)
-                return
-            paths.push(imagePath)
-            selected.push(row)
-        }
-        if (paths.length === 0) return
-        var photo = controller.photos.itemAt(first)
-        var date = photo && photo.takenAt ? photo.takenAt.substring(0, 10) : ""
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return
-        window.selectedIndexes = selected
-        window.selectedIndex = first
-        folderPane.openSplitFolderHere(paths, date)
-    }
-
-    // Kijelölés-logika (Picasa): sima katt = egy kép; Ctrl = hozzávesz/
-    // elvesz; Shift = tartomány a horgonytól. (Számítás: selection.js)
-    function handleThumbClick(index, modifiers) {
-        var i = Number(index)
-        var mods = Number(modifiers)
-        if (mods & Qt.ControlModifier) {
-            window.selectedIndexes =
-                Selection.toggled(window.selectedIndexes, i)
-            window.selectedIndex = i
-        } else if ((mods & Qt.ShiftModifier) && window.selectedIndex >= 0) {
-            // #1219: a tartomány a HORGONY mappacsoportján belül marad —
-            // az eredetiben a tartomány-mag mindig egyetlen album
-            // kijelölés-csomópontján fut, nem tud mappahatárt átlépni.
-            var hatar = controller.photos.groupRange(window.selectedIndex)
-            var veg = i
-            if (hatar.length === 2)
-                veg = Math.max(hatar[0], Math.min(hatar[1], i))
-            window.selectedIndexes =
-                Selection.range(window.selectedIndex, veg)
-        } else {
-            window.selectedIndexes = [i]
-            window.selectedIndex = i
-        }
-    }
-    // ⚠️ #1145: MAPPAVÁLTÁSKOR a kijelölés törlődik.
-    //
-    // Az eredetiben az előző mappa kijelölés-csomópontját a program
-    // elengedi (`0x0056bc10` → `0x718a50`), és a helyére az újat teszi.
-    // Nálunk a kijelölés túlélte a váltást — így egy másik mappában
-    // végzett művelet (csillag, forgatás, törlés) a KORÁBBI mappa képeire
-    // hatott volna.
-    //
-    // A `currentFolder` a `statusChanged`-en jelez, ezért a mappa saját
-    // értékét figyeljük, nem a jelzést: így csak VALÓDI váltásra törlünk.
-    property string _lastFolder: ""
-    Connections {
-        target: controller
-        function onStatusChanged() {
-            var folder = controller ? controller.currentFolder : ""
-            if (folder === window._lastFolder) return
-            window._lastFolder = folder
-            // #1183: ha a kijelölés MÁR az új mappában van, akkor a váltást
-            // épp a rács fókusza okozta (a felhasználó ott kattintott) —
-            // nincs mit elengedni, az előző mappáé úgyis lecserélődött.
-            if (window._selectionInFolder(folder)) return
-            window.clearSelection()
-        }
-    }
-
-    // #1183: a fókuszsor mappája — a bal hasáb kiemelése ezt követi
-    function _folderOfRow(row) {
-        if (!controller || row < 0) return ""
-        var groups = controller.feedGroups
-        if (!groups) return ""
-        for (var i = 0; i < groups.length; ++i) {
-            var g = groups[i]
-            if (row >= g.start && row < g.start + g.count) return g.path
-        }
-        return ""
-    }
-
-    function _selectionInFolder(path) {
-        return path !== "" && window._folderOfRow(window.selectedIndex) === path
-    }
-
-    // A rács fókusza vezeti a jelenlegi mappát (az eredetiben `0x0056bc10`
-    // → `0x56b910`, „a jelenlegi album megváltozott"). Egy helyen kötjük be,
-    // így a kattintás, a nyilas léptetés és a programból állított fókusz is
-    // ugyanígy viselkedik.
-    onSelectedIndexChanged: {
-        var folder = window._folderOfRow(window.selectedIndex)
-        if (folder !== "" && controller) controller.focusFolder(folder)
-    }
-
-    function clearSelection() {
-        window.selectedIndexes = []
-        window.selectedIndex = -1
-    }
-    // ⚠️ #1145: a kijelölés hatóköre a JELENLEGI MAPPA, nem a teljes feed.
-    //
-    // Az eredetiben az „Az összes kijelölése" (`0x9cb8`) kezelője
-    // (`0x005e5070`) EGYETLEN kijelölés-csomóponton dolgozik, és az EGY
-    // mappához tartozik (`CSelectionNode + 0x3c0`). A Picasában
-    // egyáltalán nem létezik mappákon átnyúló kijelölés.
-    //
-    // Nálunk a Ctrl+A tízezres nagyságrendű sort jelölt ki — a tulajdonos
-    // ezt jelentette (#1184), és emiatt „majdnem lefagyott az app".
-    //
-    // A csoportot a jelenlegi kijelölés/fókusz sora dönti el; ha nincs
-    // ilyen, a jelenlegi mappa csoportja.
-    function _currentGroup() {
-        if (!controller) return null
-        var groups = controller.feedGroups
-        if (!groups || groups.length === 0) return null
-        var row = window.selectedIndex
-        if (row >= 0) {
-            for (var i = 0; i < groups.length; ++i) {
-                var g = groups[i]
-                if (row >= g.start && row < g.start + g.count) return g
-            }
-        }
-        var current = controller.currentFolder
-        for (var j = 0; j < groups.length; ++j)
-            if (groups[j].path === current) return groups[j]
-        return groups[0]
-    }
-
-    function _groupRows() {
-        var g = window._currentGroup()
-        if (!g) return Selection.allRows(controller.photos.rowCount())
-        var rows = []
-        for (var i = g.start; i < g.start + g.count; ++i) rows.push(i)
-        return rows
-    }
-
-    function selectAll() {
-        var range = window._groupRows()
-        window.selectedIndexes = range
-        if (range.length > 0) window.selectedIndex = range[0]
-    }
-    // #422: „Kiválasztás megfordítása" (Ctrl+I) — a mappa-kontextusmenü és
-    // a Szerkesztés menü tétele
-    function invertSelection() {
-        // #1145: a megfordítás is a jelenlegi mappán belül marad
-        var scope = window._groupRows()
-        var current = window.selectedIndexes
-        var rows = []
-        for (var i = 0; i < scope.length; ++i)
-            if (current.indexOf(scope[i]) === -1) rows.push(scope[i])
-        window.selectedIndexes = rows
-        window.selectedIndex = rows.length > 0 ? rows[0] : -1
-    }
-    // #426: „Csillagozottak kijelölése" (Szerkesztés menü) — a jelenlegi
-    // nézet csillagos képeit jelöli ki (NEM a Mappák panel nézet-szűrője).
-    function selectStarred() {
-        // #1145: a csillagozottak is a jelenlegi mappából
-        var scope = window._groupRows()
-        var rows = []
-        for (var i = 0; i < scope.length; ++i)
-            if (controller.photos.starAt(scope[i])) rows.push(scope[i])
-        window.selectedIndexes = rows
-        window.selectedIndex = rows.length > 0 ? rows[0] : -1
-    }
     // A személyalbum-javaslatok állapota külön komponensben él. A régi
     // főablak-tulajdonságok és függvények továbbra is nyilvánosak.
     MainPeopleAlbumState {
