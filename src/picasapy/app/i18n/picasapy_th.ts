@@ -12869,12 +12869,6 @@ picasapy-origin-key: stringres:CThemePrefs::panzoom;stringres:CTransitions::kenb
             <translation>PicasaPy · เวอร์ชัน %1</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/SplashScreen.qml" line="162" />
-            <source>Please note: PicasaPy is still a work in progress. Not all effects of the original Picasa are implemented yet, so it is not yet fully compatible with the original version.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>โปรดทราบ: PicasaPy ยังอยู่ระหว่างการพัฒนา เอฟเฟ็กต์ของ Picasa รุ่นดั้งเดิมยังทำงานได้ไม่ครบ จึงยังเข้ากันได้กับรุ่นดั้งเดิมไม่ทั้งหมด</translation>
-        </message>
-        <message>
             <location filename="../qml/PicasaPy/SplashScreen.qml" line="176" />
             <source>OK</source>
             <extracomment>picasapy-origin: picasa

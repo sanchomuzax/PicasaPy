@@ -276,12 +276,6 @@ class _StartupSmokeProbe(QObject):
     def _check(self) -> None:
         splash = self._window.findChild(QObject, "splashScreen")
         if self._startup_status.ready and splash is not None:
-            # A valódi indítás megerősítő üzenetet mutat. A füstpróba az OK
-            # műveletet végzi el, majd megvárja a QML átmenet végét.
-            if bool(splash.property("confirmationRequired")) and not bool(
-                splash.property("confirmed")
-            ):
-                splash.setProperty("confirmed", True)
             if (
                 self._sync_finished.is_set()
                 and self._window.isVisible()

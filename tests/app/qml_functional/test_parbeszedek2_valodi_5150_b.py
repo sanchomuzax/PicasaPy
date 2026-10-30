@@ -6,8 +6,7 @@ Az első fájl (`test_parbeszedek2_valodi_5150.py`) párja. Lefedve:
   `textMenuCut`, `textMenuPaste`, `textMenuDelete`, `textMenuUndo`. A `textMenuAutoComplete`
   csak a címzett-mezőn van: `test_email_autocomplete_context_menu_4636.py` fedi.
 - `HiddenPasswordDialog`: `hiddenPasswordModern`; `AdjustTimestampDialog`: `adjustTimestampRelative`.
-- `SaveDialogs`: `saveConfirmRememberCheck`; `SplashScreen`: `splashOkButton`;
-  `PublishPanel`: `publishDeleteBackupSet`.
+- `SaveDialogs`: `saveConfirmRememberCheck`; `PublishPanel`: `publishDeleteBackupSet`.
 
 Nincs itt: `publishUploadAllSize`, `publishUploadAllAccess` (nincs kezelőjük, a feltöltés
 online művelete megszűnt); `FaceScanDialog.faceScanDownloadCancelButton` (hálózat).
@@ -18,11 +17,8 @@ nincs `.emit()` a tesztelt vezérlőn.
 
 from __future__ import annotations
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPointF, QUrl, Qt
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPointF, Qt
 from PySide6.QtGui import QGuiApplication
-from PySide6.QtQml import QQmlComponent
-
-import picasapy.app.application as app_module
 from tests.support.qt_wait import wait_for_photo_op
 from tests.app.qml_functional._fomenu_4420_menu import _megnyit
 from tests.app.qml_functional._racs_helyimenuk_5150_helpers import (
@@ -417,41 +413,6 @@ def _gomb_szovege(dialog, szovegek: tuple[str, ...]):
         if elem.property("text") in szovegek and elem.isVisible():
             return elem
     raise AssertionError(f"a láblécen nincs gomb: {szovegek}")
-
-
-class TestIndulasiFigyelmeztetes:
-    def test_az_ok_valodi_kattintassal_bezarja_a_figyelmeztetest(
-        self, parbeszed_app, qt_app  # noqa: F811
-    ):
-        window, _controller, engine = parbeszed_app
-        komponens = QQmlComponent(
-            engine,
-            QUrl.fromLocalFile(
-                str(app_module._APP_DIR / "qml" / "PicasaPy" / "SplashScreen.qml")
-            ),
-        )
-        splash = komponens.createWithInitialProperties({
-            "version": "v0.0.0 (teszt)",
-            "statusText": "kész",
-            "ready": True,
-            "confirmationRequired": True,
-            "parent": window.contentItem(),
-        })
-        assert komponens.errors() == [], komponens.errors()
-        assert splash is not None
-        gomb = splash.findChild(QObject, "splashOkButton")
-        assert _varj(qt_app, lambda: gomb is not None and gomb.isVisible()), (
-            "a figyelmeztetés OK gombja nem látszik"
-        )
-
-        _klikk_ablakban(qt_app, window, gomb)
-
-        assert _varj(qt_app, lambda: splash.property("confirmed") is True), (
-            "az OK valódi kattintás nem erősítette meg a figyelmeztetést"
-        )
-        assert _varj(qt_app, lambda: splash.property("visible") is False), (
-            "az OK után a figyelmeztetés nem záródott be"
-        )
 
 
 class TestKeszletTorles:

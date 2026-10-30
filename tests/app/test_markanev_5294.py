@@ -54,7 +54,6 @@ KIVETEL = {
     "Picasa engine": "az eredeti Picasa motorja.",
     "successor": "az eredeti Picasa utódjaként írja le magát (névjegy).",
     "original Picasa": "az eredeti Picasa említése.",
-    "implemented yet": "a SplashScreen mondatának része: az eredeti Picasa effektjei.",
     "Adopt Picasa folders": "az eredeti Picasa által figyelt mappák átvétele.",
     "cannot open it": "az eredeti Picasa nem nyitja meg a rejtett mappát. KÉTES.",
     "marked for Picasa": "a .picasa.ini eredeti formátuma. KÉTES.",
