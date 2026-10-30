@@ -942,3 +942,21 @@ Nem mérhető: a Create a Gift CD és a Back Up Pictures a Wine alatt csak az
 „Unable to connect to Windows IMAPI2 CD Engine.” hibát adja. A Print, a
 Picture Collage, a Folder Manager és a People Manager nem külön ablak, hanem
 a főablak nézete; ezek tartalma nem ennek a körnek a tárgya.
+
+### 3. kör: nézetek és navigáció - 2026-10-30 (#6292, job-351 - job-353)
+
+Billentyűleütések egy kijelölt képpel, alapállapotból; minden lépés után
+képkocka.
+
+| Művelet | Eredeti | Nálunk | Eltérés |
+|---|---|---|---|
+| Ctrl+A / Ctrl+I / Ctrl+D | mindent kijelöl / megfordítja / törli a kijelölést, a tálca követi | egyezik | - |
+| Jobbra, Le, Home, End a rácsban | a kijelölés a szomszédra, az alatta lévőre, az elsőre, az utolsóra lép | egyezik | - |
+| Ctrl+1 / Ctrl+2 | kis / normál bélyegképek | egyezik | - |
+| Ctrl+T | megnyitja a Címkék panelt, a fókusz a „Type in a tag to add” mezőbe kerül; fókuszált mező mellett a második Ctrl+T nem zár, a rácsra kattintva újra ki-be kapcsol | a mező nem kapott fókuszt, a második Ctrl+T mindig zárt | #6301 (javítva) |
+| Alt+Enter | Tulajdonságok panel | egyezik | - |
+| Ctrl+3, nyilak, Escape | szerkesztő nézet, a nyilak lapoznak, az Escape visszavisz a könyvtárba | egyezik | - |
+
+Nem mérhető: az Időrend (Ctrl+5) és a diavetítés (Ctrl+4) a Wine alatt
+fekete képet ad. A Shift+kattintásos tartománykijelölést a végrehajtó lépés-
+készlete nem tudja előállítani (módosítóbillentyűs kattintás nincs benne).
