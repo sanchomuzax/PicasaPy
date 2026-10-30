@@ -178,8 +178,13 @@ class TestAJelzesnekVanFogadoja:
     def test_a_collageSaved_jelzesnek_van_kezeloje(self):
         import picasapy.app
 
-        main = (
-            Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
-        ).read_text(encoding="utf-8")
+        qml_dir = Path(picasapy.app.__file__).parent / "qml"
+        main = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in (
+                qml_dir / "Main.qml",
+                *sorted((qml_dir / "PicasaPy").glob("Main*.qml")),
+            )
+        )
 
         assert "onCollageSaved" in main
