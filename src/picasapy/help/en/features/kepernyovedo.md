@@ -52,8 +52,8 @@ effects, and timing as the preview. Any key press, mouse movement, or
 click exits the slideshow. The main PicasaPy window does not need to be
 running.
 
-This works on wlroots-based Wayland desktops — labwc (the Raspberry Pi
-OS default), sway, Wayfire, river, Hyprland, and niri — when `swayidle`
+This works on wlroots-based Wayland desktops - labwc (the Raspberry Pi
+OS default), sway, Wayfire, river, Hyprland, and niri - when `swayidle`
 is installed. It is included by default on Raspberry Pi OS; other
 systems may need the `swayidle` package. The checkbox is disabled on
 other desktop environments and explains why. GNOME, KDE, and X11

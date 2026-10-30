@@ -163,9 +163,9 @@ If no old Picasa data is found on the computer, the dialog reports it.
 ### Choose a Picasa data folder manually
 
 By default, leave the Picasa2 data-folder field empty and PicasaPy
-searches for the data itself. If the data is elsewhere — for example,
+searches for the data itself. If the data is elsewhere - for example,
 in a copied `Picasa2` folder or on a Windows drive accessed from Linux
-— enter or browse to that folder.
+- enter or browse to that folder.
 
 Because Picasa stored Windows paths, also map the old paths to the
 photos' current location:

@@ -14,7 +14,7 @@ available yet.
 
 ## Getting started
 
-- [Getting started](getting-started.md) — installation, launching the
+- [Getting started](getting-started.md) - installation, launching the
   application, and the main window
 
 ## Managing photos
@@ -63,4 +63,4 @@ available yet.
 - [Built-in help: search, navigation, and F1](features/sugo.md)
 - [Features not yet available](features/meg-nem-erheto-el.md)
 - [Frequently asked questions and error messages](faq.md)
-- [What's new? — user-facing change log](changelog-user.md)
+- [What's new? - user-facing change log](changelog-user.md)

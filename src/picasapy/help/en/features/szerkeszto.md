@@ -22,7 +22,7 @@ has seven tabs:
 | **More Effects** | Effects available in the engine but not in the original Picasa interface |
 | **Legacy Effects** | Filters carried over from older Picasa versions |
 
-A blue badge on tiles in tabs 3–7 marks one-click effects. See
+A blue badge on tiles in tabs 3-7 marks one-click effects. See
 [Effects](effektek.md) for the full list and details.
 
 The detailed list is available in [Effects](effektek.md).

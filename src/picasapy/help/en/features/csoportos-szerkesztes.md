@@ -6,7 +6,7 @@ Select several photos, then choose **Picture** ▸ **Batch Edit**. The
 operation you choose from the submenu is applied to every selected
 photo:
 
-- **Rename...** (F2) — rename the selected photos; see [File
+- **Rename...** (F2) - rename the selected photos; see [File
   operations](fajlmuveletek.md).
 - **Rotate Clockwise** and **Rotate Counterclockwise**.
 - **Auto Contrast**.

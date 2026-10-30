@@ -2,7 +2,7 @@
 
 By default, PicasaPy leaves your files untouched and stores edits in
 the `.picasa.ini` file beside the photos. To write your changes into a
-file — for example, to open or send the edited version elsewhere — use
+file - for example, to open or send the edited version elsewhere - use
 the commands described here.
 
 ## Save

@@ -22,7 +22,7 @@ system print service (CUPS).
 
 The dialog lets you set:
 
-- **Printer:** — choose an available printer. Select **Print to a PDF
+- **Printer:** - choose an available printer. Select **Print to a PDF
   file...** to save a PDF and enter its destination name.
 - **Printer Setup** opens the selected printer's own page setup for
   paper size, orientation, and margins. The printer saves those choices
@@ -56,7 +56,7 @@ picture-quality lines are hidden; they do not apply. A **Columns:** field
 appears instead. Printer, orientation, and fit remain available.
 
 A line below the printer name shows the paper, its dimensions in
-millimeters, and its orientation, for example `A4 — 210 × 297 mm,
+millimeters, and its orientation, for example `A4 - 210 × 297 mm,
 portrait`. It updates as soon as you close Printer Setup.
 
 The dialog shows how many pictures will be printed. Quality information
@@ -80,7 +80,7 @@ If a picture may print poorly, choose **Review** to see every picture,
 sorted from lowest quality, with its resolution and rating:
 
 - Best quality: at least 150 pixels per inch;
-- Good quality: 100–149 pixels per inch;
+- Good quality: 100-149 pixels per inch;
 - Poor quality: below 100 pixels per inch.
 
 You can remove selected pictures with **Remove Selected Items**, remove
@@ -127,10 +127,10 @@ to see the current page and total page count before printing.
 Choose **Border and Text Options** to set a border and caption for the
 printed picture:
 
-- Caption source — No text, Captions, File name, or Exif information;
-- caption position — below the picture, on the picture, or on the border;
+- Caption source - No text, Captions, File name, or Exif information;
+- caption position - below the picture, on the picture, or on the border;
 - font and size, plus **Wrap text**;
-- **Border** — None, Max., Bottom only, or **Even width border**;
+- **Border** - None, Max., Bottom only, or **Even width border**;
 - **Text color** and **Border color**.
 
 Choose **Apply** to update the preview. These choices are remembered.

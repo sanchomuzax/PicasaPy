@@ -1,14 +1,14 @@
 # Effects
 
-The effects are on tabs 3–7 of the editor. They are non-destructive: you
+The effects are on tabs 3-7 of the editor. They are non-destructive: you
 can undo them at any time, and they do not change the original file.
 
 For an effect with sliders, its controls appear in the panel after you
 select it. **Apply** commits the settings; **Cancel** discards them.
 
 Effects follow the original Picasa calculations. In this version,
-several effects — including **Neon**, **Lomo-ish**, **Local Contrast**,
-and **HDR-ish** — now look closer to the original. If a photo edited in
+several effects - including **Neon**, **Lomo-ish**, **Local Contrast**,
+and **HDR-ish** - now look closer to the original. If a photo edited in
 an older PicasaPy version looks slightly different with one of these
 effects, that is why; your saved settings have not changed.
 
@@ -26,7 +26,7 @@ did in the original Picasa. If the photo already has this effect, the
 panel opens with the last color used.
 
 The small tile preview shows the photo's current state. If you have
-already edited the photo — for example, made it black and white — the
+already edited the photo - for example, made it black and white - the
 tiles start from that version and add their own effect. After each time
 you select **Apply**, all previews update to show the new state. This
 lets you see the result before choosing an effect, rather than seeing
@@ -156,9 +156,9 @@ not apply blur. The original Picasa behaved the same way.
 
 ## Drag the focus point on the photo
 
-For effects centered on a point — **Soft Focus**, **Focal B&W**,
+For effects centered on a point - **Soft Focus**, **Focal B&W**,
 **Graduated Tint**, **Radial Tint**, **Focal Zoom**, and **Focal
-Pixelate** — you can also drag the center of the effect on the photo.
+Pixelate** - you can also drag the center of the effect on the photo.
 While the effect's slider panel is open, a white-ring marker shows the
 focus point and the pointer becomes a crosshair. Click or drag with the
 left mouse button to move the center. The marker jumps to that point,

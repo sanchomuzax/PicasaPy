@@ -95,8 +95,8 @@ the right to keep newer photos. The misleading hint is inherited from
 the original Picasa.
 
 The green bar shows the active limit, for example “Photos no more than
-9 weeks old”. PicasaPy chooses the unit — days, weeks, months, or years
-— based on the age.
+9 weeks old”. PicasaPy chooses the unit - days, weeks, months, or years
+- based on the age.
 
 Drag the slider fully left to turn the filter off. Switching to another
 view, such as a star filter, search, or another folder, resets it to

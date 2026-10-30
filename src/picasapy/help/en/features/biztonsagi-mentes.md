@@ -13,7 +13,7 @@ while the panel is open.
 
 ## What is included
 
-The backup starts with the full contents of your watched folders — the
+The backup starts with the full contents of your watched folders - the
 folders configured in [Folder Manager](mappakezelo.md). It does not depend
 on your selection or the folder currently displayed. The set's file filter
 and the folder checkboxes decide what is copied; see below.
@@ -46,7 +46,7 @@ copied.
 
 Choose **New Set...** and enter four values:
 
-- **Backup Set** — the name shown in the list. The field is filled in with
+- **Backup Set** - the name shown in the list. The field is filled in with
   the suggested name **My Backup Set**.
 - **Backup type:** determines the output:
   - **Disk-to-disk backup (for external and network drives)** copies the
@@ -57,9 +57,9 @@ Choose **New Set...** and enter four values:
   backups, PicasaPy chooses the location and shows it in the field: the
   `Picasa Backup\ISOs` folder inside your Pictures folder.
 - **Files:** selects what to include:
-  - **All file types** — photos, RAW files, and videos.
+  - **All file types** - photos, RAW files, and videos.
   - **All pictures (no movies)**.
-  - **Only JPEGs with camera data** — JPEG files that contain the camera's
+  - **Only JPEGs with camera data** - JPEG files that contain the camera's
     name. Screenshots and downloaded pictures are left out.
 
 The set form opens in a separate window titled **Backup Set**. Choose
@@ -107,9 +107,9 @@ you can keep using the application.
 
 Two messages can appear in place of the folder list:
 
-- **Create a Set or use an existing one** — no set is selected yet, so
+- **Create a Set or use an existing one** - no set is selected yet, so
   PicasaPy has nothing to compare against.
-- **All Files are backed up in this set** — every file in the set is already
+- **All Files are backed up in this set** - every file in the set is already
   backed up, so there is nothing to copy. The same message appears in the
   photo grid.
 
@@ -141,8 +141,8 @@ Stopping does not lose work. Files already copied are recorded, so the next
 run continues with the ones that are still missing.
 
 Only successfully copied files are recorded. If the backup stops on its
-own — for example, because the destination is full or the network
-connection is lost — the next run will copy the missing files.
+own - for example, because the destination is full or the network
+connection is lost - the next run will copy the missing files.
 
 ## Folder or disc image
 
@@ -207,9 +207,9 @@ Restoring runs in the background, so you can keep using PicasaPy.
 If something goes wrong, the error appears in red and the window stays open
 so you can fix it:
 
-- “Select both a backup source and a restore folder.” — one of the fields
+- “Select both a backup source and a restore folder.” - one of the fields
   is empty.
-- “The backup could not be restored: ...” — the explanation identifies the
+- “The backup could not be restored: ...” - the explanation identifies the
   problem, such as the selected folder or disc image not being a backup, or
   the backup containing no restorable photos.
 

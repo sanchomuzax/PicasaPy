@@ -1,7 +1,7 @@
 # Stars, captions, and tags
 
 All three are stored alongside the photos in `.picasa.ini`, so the image
-file itself is not changed — except that captions are also written into
+file itself is not changed - except that captions are also written into
 JPEG files (see below).
 
 If a folder has no `.picasa.ini`, the program can also read stars and

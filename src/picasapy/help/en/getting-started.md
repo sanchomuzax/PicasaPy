@@ -91,9 +91,9 @@ the window.
 On first launch, PicasaPy asks where it should look for photos. You can
 choose one of two options:
 
-- Scan only Documents, Pictures, and Desktop — quick, and enough for most
+- Scan only Documents, Pictures, and Desktop - quick, and enough for most
   people.
-- Scan the entire computer — useful if your photos are spread across several
+- Scan the entire computer - useful if your photos are spread across several
   drives and folders.
 
 If your computer is set to a language other than English and PicasaPy
@@ -119,7 +119,7 @@ From top to bottom:
 
 **File**, **Edit**, **View**, **Folder**, **Picture**, **Create**, **Tools**,
 and **Help**. A disabled item is either not
-implemented yet or unavailable in the current context — for example,
+implemented yet or unavailable in the current context - for example,
 because no photo is selected or because you are in the viewer. In the latter
 case, select a photo to enable the item. The
 [Features not yet available](features/meg-nem-erheto-el.md) chapter lists

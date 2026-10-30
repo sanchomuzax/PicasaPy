@@ -6,7 +6,7 @@ PicasaPy asks for confirmation before each operation.
 ## Open in another editor
 
 Use the command in the **File** menu to open the selected photos in your
-system's default application — the same one that opens when you
+system's default application - the same one that opens when you
 double-click a photo in the file manager. PicasaPy does not ask you to
 choose an editor. It opens a separate window for each selected file. If
 some files cannot be opened, a message reports how many failed. This

@@ -5,8 +5,8 @@ items do nothing.
 
 Two general rules from the original Picasa apply:
 
-- Shortcuts do not run while you are typing. When a text field has focus —
-  for example, search, rename, or a caption — the key belongs to that field.
+- Shortcuts do not run while you are typing. When a text field has focus -
+  for example, search, rename, or a caption - the key belongs to that field.
   `Ctrl+A` selects the field's text, the arrow keys move within it, and
   `Enter` or `Esc` acts on the field.
 - Library shortcuts work in the library. `Ctrl+A`, `Ctrl+D`, `Ctrl+I`, and
@@ -23,7 +23,7 @@ Two general rules from the original Picasa apply:
 | `Ctrl+S` | **Save** |
 | `Ctrl+Shift+S` | **Export Picture to Folder...** |
 | `Ctrl+P` | **Print...** |
-| `Ctrl+E` | **E-Mail...** — see [Email](email.md) |
+| `Ctrl+E` | **E-Mail...** - see [Email](email.md) |
 | `Ctrl+Shift+P` | **Print Contact Sheet...**, even when nothing is selected; it prints the open folder |
 | `Ctrl+Enter` | **Locate on Disk**; when nothing is selected, it opens the current folder in the file manager |
 | `F2` | **Rename...** |
@@ -88,8 +88,8 @@ select photos with a lasso.
 **Picture** ▸ **View and Edit**: it opens the selected photo in the viewer.
 The two menu items are enabled only when a photo is selected.
 
-`Ctrl+0` closes whichever right-hand panel is open — Tags, Places,
-Properties, or People — and restores that same panel when you open the
+`Ctrl+0` closes whichever right-hand panel is open - Tags, Places,
+Properties, or People - and restores that same panel when you open the
 drawer again.
 
 ## Tabs
@@ -114,8 +114,8 @@ asks before closing it.
 
 When a slider has focus, `+` and `=` increase its value; `-` and `_`
 decrease it. Each key press changes the slider by 2% of its full range.
-This works on the sliders in the editor's third, fourth, and fifth tabs —
-**Effects**, **Creative**, and **Artistic** — and on the **Straighten**
+This works on the sliders in the editor's third, fourth, and fifth tabs -
+**Effects**, **Creative**, and **Artistic** - and on the **Straighten**
 slider. It does not work on sliders in other views.
 
 ## While dragging a selection frame

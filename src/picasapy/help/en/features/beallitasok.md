@@ -178,12 +178,12 @@ are disabled and are not needed.
 
 Logging is available. Choose one of five levels from **Network log level:**
 
-- **Disable Logging** — no log is written.
-- **Log errors only** — only failed downloads are recorded.
-- **Minimal log information** (the default) — one short line per download.
-- **Detailed log information** — also records details of the response and
+- **Disable Logging** - no log is written.
+- **Log errors only** - only failed downloads are recorded.
+- **Minimal log information** (the default) - one short line per download.
+- **Detailed log information** - also records details of the response and
   any redirects.
-- **Log all network information** — also records the size of downloaded
+- **Log all network information** - also records the size of downloaded
   data.
 
 The selected level is saved for the next launch. The **Log:** field shows

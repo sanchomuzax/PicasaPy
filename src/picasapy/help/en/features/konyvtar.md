@@ -4,7 +4,7 @@ The left pane is a map of your library. It can contain four kinds of entries.
 
 Each kind has its own icon, so you can tell at a glance what you are looking at: a folder has a blue folder icon; a regular album has an orange book; **Starred photos** has a green book with a star; project folders created by the program (Collages, Movies, and Exported Pictures) have a purple book with a star; and a tag has a gray tag icon.
 
-The check mark at **View** ▸ **Library View** shows that the main window is displaying the library. This option is always on. Its counterpart, **View** ▸ **Edit View** (Ctrl+3), opens the selected picture (or the first one if several are selected) in the viewer, where you can edit it—see [Viewing photos](nezegetes.md). **Picture** ▸ **View and Edit** does the same. Both commands are disabled when no picture is selected. **View** ▸ **Show Edit Controls** shows or hides the editor panel on the left side of the viewer—see [The editor](szerkeszto.md). In Library View this command is disabled and unchecked, as in the original Picasa; it can only be changed in the open viewer.
+The check mark at **View** ▸ **Library View** shows that the main window is displaying the library. This option is always on. Its counterpart, **View** ▸ **Edit View** (Ctrl+3), opens the selected picture (or the first one if several are selected) in the viewer, where you can edit it-see [Viewing photos](nezegetes.md). **Picture** ▸ **View and Edit** does the same. Both commands are disabled when no picture is selected. **View** ▸ **Show Edit Controls** shows or hides the editor panel on the left side of the viewer-see [The editor](szerkeszto.md). In Library View this command is disabled and unchecked, as in the original Picasa; it can only be changed in the open viewer.
 
 ## Folders
 
@@ -12,13 +12,13 @@ The **Folders** group shows actual folders on disk. Renaming or moving one here 
 
 The pane has three display modes. Choose one from **View** ▸ **Folder View**:
 
-- **Flat Folder View** — a single flat list, with one row per folder.
-- **Tree View** — folders are nested according to their locations on disk.
-- **Simplified Tree View** — a tree that shows only the branches containing your watched folders. Folders outside those branches are hidden. Within a branch, levels that only lead to another folder and contain no pictures are combined so long paths fit on one row. This command sits at the very bottom of the menu, separated from the other two.
+- **Flat Folder View** - a single flat list, with one row per folder.
+- **Tree View** - folders are nested according to their locations on disk.
+- **Simplified Tree View** - a tree that shows only the branches containing your watched folders. Folders outside those branches are hidden. Within a branch, levels that only lead to another folder and contain no pictures are combined so long paths fit on one row. This command sits at the very bottom of the menu, separated from the other two.
 
 Two small view buttons on the toolbar switch between the first two modes. A ▾ button next to them opens the same menu as **View** ▸ **Folder View**, so the view, sorting, and thumbnail options can all be controlled in one place. The two entry points stay in sync. The ▾ button is hidden in a narrow window; every option remains available from the menu bar.
 
-After the sorting commands in this menu are three ways to sort the People list: **Sort People by Name**, **Sort People by Amount**, and **Sort People by Top 10**. A check mark shows which one is active. Below them, the **Shortcuts** submenu offers four destinations—**My Computer**, **Pictures**, **My Documents**, and **Desktop**—the same destinations shown at the top of the submenu (see “Where the tree starts” below).
+After the sorting commands in this menu are three ways to sort the People list: **Sort People by Name**, **Sort People by Amount**, and **Sort People by Top 10**. A check mark shows which one is active. Below them, the **Shortcuts** submenu offers four destinations-**My Computer**, **Pictures**, **My Documents**, and **Desktop**-the same destinations shown at the top of the submenu (see “Where the tree starts” below).
 
 In Tree View, right-clicking a folder row opens a menu based on the row. A folder that contains your own pictures (a real library folder) gets the full folder menu, as in the other views. A branch row that only leads to other folders and contains no pictures gets a shorter menu.
 
@@ -60,7 +60,7 @@ The empty pane's **Show Thumbnails in Library** command controls the same option
 
 ### Folder dates
 
-The folder date appears in the folder header in the grid. It comes from the earliest photo in that folder: first from the photo's EXIF capture time, and, if that is missing—as it can be for generated pictures—from the file time. This means the header is not left blank for pictures without a capture time, and sorting by date can place those folders correctly too.
+The folder date appears in the folder header in the grid. It comes from the earliest photo in that folder: first from the photo's EXIF capture time, and, if that is missing-as it can be for generated pictures-from the file time. This means the header is not left blank for pictures without a capture time, and sorting by date can place those folders correctly too.
 
 The program records the file time the first time it scans the picture and does not update it later. This is intentional: many things change a file's modification time, such as saving, copying, or using another program. Without a fixed value, the same picture could jump from the beginning of the grid to the end, and the date in the folder header could move. This does not affect pictures that have an EXIF capture time.
 
@@ -79,7 +79,7 @@ Album Properties opens in the same window (see below). The **Place taken (option
 
 ### Split a folder
 
-If pictures from two events are mixed in one folder—for example, a trip and then a birthday—you can split the folder in two. Select the picture that should start the new folder, right-click it, and choose **Split Folder Here...**.
+If pictures from two events are mixed in one folder-for example, a trip and then a birthday-you can split the folder in two. Select the picture that should start the new folder, right-click it, and choose **Split Folder Here...**.
 
 **Folder Properties** opens with the new folder's details. Its name is **Untitled**, and its date is the selected picture's date. You can change these and enter a location, description, or music. After you click **OK**, the program creates a new folder next to the current one, in the same parent folder, and moves every picture from the selected one to the end of the folder into it. If the name is already taken, the program adds a number (_1, _2, and so on). **Cancel** makes no changes.
 
@@ -93,7 +93,7 @@ Sorting can be changed in the middle of **View** ▸ **Folder View** or from the
 - **Sort by recent changes**
 - **Sort by Size**
 - **Sort by Name**
-- **Reverse sort** — this can be combined with any of the other choices.
+- **Reverse sort** - this can be combined with any of the other choices.
 
 ### Sorting pictures inside a folder
 
@@ -113,11 +113,11 @@ You can rearrange pictures with the mouse. Grab the selected pictures and drag t
 
 Manual order is saved next to the pictures, in the folder's <code>.picasa.ini</code>. It survives the next restart and can be carried to another computer with the folder. **Sort Folder By** ▸ **Manual order** restores the saved order in the grid.
 
-A drag always stays within one folder; you cannot sort pictures from several folders together. (Dragging a selection from the left pane onto another folder is a move, not a sort—see [File operations](fajlmuveletek.md).)
+A drag always stays within one folder; you cannot sort pictures from several folders together. (Dragging a selection from the left pane onto another folder is a move, not a sort-see [File operations](fajlmuveletek.md).)
 
 ### Jump to the next folder from the scrollbar
 
-At the top and bottom of the grid scrollbar there is a double arrow: **Previous album** and **Next album**. They jump to the previous or next header in the grid—that is, to the beginning of the previous or next folder or album—without scrolling through all the pictures. Hold either arrow down to repeat the jump.
+At the top and bottom of the grid scrollbar there is a double arrow: **Previous album** and **Next album**. They jump to the previous or next header in the grid-that is, to the beginning of the previous or next folder or album-without scrolling through all the pictures. Hold either arrow down to repeat the jump.
 
 ## Albums
 
@@ -197,7 +197,7 @@ The **Projects** group contains folders created by the program itself: Collages,
 
 ### Small pictures are hidden by default
 
-By default, the grid shows only larger pictures, as in the original Picasa. Very small pictures—such as an icon no longer than 200 pixels—or pictures with a very small area and an extremely narrow shape are hidden from the grid. Check this if a picture seems to have “disappeared” from a folder. It does not affect movies or entries without dimensions.
+By default, the grid shows only larger pictures, as in the original Picasa. Very small pictures-such as an icon no longer than 200 pixels-or pictures with a very small area and an extremely narrow shape are hidden from the grid. Check this if a picture seems to have “disappeared” from a folder. It does not affect movies or entries without dimensions.
 
 The **View** ▸ **Small Pictures** option also shows smaller pictures. With a check mark they are shown; without one (the default) they are not. The setting is remembered until the next time you start the program. It does not change the files; it only decides what appears in the grid.
 
@@ -211,7 +211,7 @@ You can drag pictures from the grid or the Picture Tray into another program, su
 
 ### The magnifier in the grid
 
-There is a small magnifier button to the left of the zoom slider on the Picture Tray (its tooltip says “Magnifier—drag over pictures”). When enabled, the button has a blue background. Drag while holding the mouse button over a picture in the grid and a small window appears under the pointer. It shows the picture at full resolution, at 1:1, so it has more detail than the thumbnail itself. A click alone does nothing; you have to drag. Use the same button to turn it off.
+There is a small magnifier button to the left of the zoom slider on the Picture Tray (its tooltip says “Magnifier-drag over pictures”). When enabled, the button has a blue background. Drag while holding the mouse button over a picture in the grid and a small window appears under the pointer. It shows the picture at full resolution, at 1:1, so it has more detail than the thumbnail itself. A click alone does nothing; you have to drag. Use the same button to turn it off.
 
 ### Quick preview with Ctrl+Alt
 
@@ -244,7 +244,7 @@ The same strip appears if you go to the library with **Get more...** on the **Mo
 
 ### When you click an album
 
-If you select an album in the left pane while no picture is selected, the tray shows one cover picture instead of thumbnails, along with the selection and picture count—for example, “Selected album—12 photos.” As soon as you select a picture, thumbnails take its place. In a People album, the tray also shows one picture: the person's portrait, with the number of pictures in the selected album. This does not apply to folders; their usual appearance does not change.
+If you select an album in the left pane while no picture is selected, the tray shows one cover picture instead of thumbnails, along with the selection and picture count-for example, “Selected album-12 photos.” As soon as you select a picture, thumbnails take its place. In a People album, the tray also shows one picture: the person's portrait, with the number of pictures in the selected album. This does not apply to folders; their usual appearance does not change.
 
 The tray has its own selection, independent of the grid. Click a picture in the tray to select it (a blue outline marks it); use Ctrl to add or remove one, and Shift to select a range. Selecting pictures in the grid does not clear the tray selection.
 
@@ -252,7 +252,7 @@ Right-click a picture in the tray to **View and Edit**, rotate it, **Locate on D
 
 The magnifier is at the right end of the tray. Click it, then drag over the pictures to see their details enlarged.
 
-The tray's output buttons—**Print**, **E-Mail**, **Export**, **Collage**, and **Movie**—do not all fit in a narrow window. In that case, a **Get more...** button appears at the end of the row, and buttons that do not fit are available in a vertical column when you click it. The column uses the same icons and labels as the row, and a command is disabled when its button is disabled.
+The tray's output buttons-**Print**, **E-Mail**, **Export**, **Collage**, and **Movie**-do not all fit in a narrow window. In that case, a **Get more...** button appears at the end of the row, and buttons that do not fit are available in a vertical column when you click it. The column uses the same icons and labels as the row, and a command is disabled when its button is disabled.
 
 The green **Upload to Google Photos** button on the tray uploads all the pictures in the tray after you sign in through Settings. See [Upload to Google Photos](google-fotok.md).
 
@@ -260,14 +260,14 @@ Right-click the output buttons and choose **Configure Buttons...** to open the s
 
 ## Changing picture dates
 
-If a picture has the wrong date—for example, the camera clock was set incorrectly—you can fix it. Select the pictures, then choose **Tools** ▸ **Adjust Date and Time...**. The **Adjust Photo Date - %1 items** window (or **Adjust Photo Date** for one picture) shows the first picture's thumbnail and its **Current photo date**. The date and time appear in two separate gray, read-only fields, as in the original Picasa. You can enter a **New photo date** (click the date to open a calendar) and a **New photo time**. Choose one of two modes:
+If a picture has the wrong date-for example, the camera clock was set incorrectly-you can fix it. Select the pictures, then choose **Tools** ▸ **Adjust Date and Time...**. The **Adjust Photo Date - %1 items** window (or **Adjust Photo Date** for one picture) shows the first picture's thumbnail and its **Current photo date**. The date and time appear in two separate gray, read-only fields, as in the original Picasa. You can enter a **New photo date** (click the date to open a calendar) and a **New photo time**. Choose one of two modes:
 
 - **Adjust all photo dates by the amount** adds the difference between the first picture's old and new dates to the time of every selected picture. The time differences between pictures are preserved.
 - **Set all photos to the same date and time** gives every picture the same date and time.
 
 **OK** saves the change. While dates are being written, the **Setting photo dates** window shows a spinning indicator. It closes by itself when the work is done. As in the original Picasa, the new capture date is written into the picture file's EXIF data. The file's on-disk timestamps (for example, its modification time) are not changed. The <code>.picasa.ini</code> file is not changed either. The program then rereads the folder, so the grid, date sorting, and **Properties** panel show the new date. Since it is in the file, other programs can see it too.
 
-Writing the EXIF date works for JPEG pictures. For files that cannot store a date—movies, pictures in other formats, or files that are write-protected—the program records the new date in its own catalog instead. PicasaPy shows and sorts by that date after a restart and folder rescan, but the file itself is unchanged, so other programs still see the old date.
+Writing the EXIF date works for JPEG pictures. For files that cannot store a date-movies, pictures in other formats, or files that are write-protected-the program records the new date in its own catalog instead. PicasaPy shows and sorts by that date after a restart and folder rescan, but the file itself is unchanged, so other programs still see the old date.
 
 ## The Properties panel
 
@@ -281,7 +281,7 @@ The order matches the original Picasa. If a value is not in the file, its row is
 
 ### The lens name
 
-If the picture contains XMP data—which most editing programs write to the file—and that data has a lens name, the program shows that name and does not look further. This is the same order used by the original Picasa.
+If the picture contains XMP data-which most editing programs write to the file-and that data has a lens name, the program shows that name and does not look further. This is the same order used by the original Picasa.
 
 Otherwise, most cameras do not write the lens name in plain language; they store only an identifier. For pictures from Canon and Nikon cameras, the program resolves that identifier and shows the real lens name in the **Lens** row, using the same list as the original Picasa. If an identifier matches several lenses, it chooses among them using the focal length and aperture.
 
@@ -338,9 +338,9 @@ If you enter the wrong password, the window stays open, says **Please provide a 
 
 PicasaPy detects three kinds of files in watched folders:
 
-- Photos — JPEG (.jpg, .jpeg, and .jpe), PNG, TIFF, BMP, GIF, PSD, TGA, and WebP.
-- Raw photos — common manufacturer extensions such as CR2, NEF, ARW, DNG, ORF, RAF, and RW2 (see below).
-- **Movies** — for example AVI, MOV, MP4, MKV, WMV, MPG, MPEG, 3GP, TS, M2V, OGG, and OGV.
+- Photos - JPEG (.jpg, .jpeg, and .jpe), PNG, TIFF, BMP, GIF, PSD, TGA, and WebP.
+- Raw photos - common manufacturer extensions such as CR2, NEF, ARW, DNG, ORF, RAF, and RW2 (see below).
+- **Movies** - for example AVI, MOV, MP4, MKV, WMV, MPG, MPEG, 3GP, TS, M2V, OGG, and OGV.
 
 Every other file, such as documents and audio recordings, remains invisible. The program does not index or change it.
 

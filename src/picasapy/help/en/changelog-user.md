@@ -40,7 +40,7 @@ A user-focused changelog: only changes you can see on screen. The detailed, deve
 
 ### Export
 
-- Templates 4–6 in Export as HTML Page (single-page) now show everything in one window: a scrollable thumbnail strip on the left and the large picture on the right. See [Export](features/exportalas.md).
+- Templates 4-6 in Export as HTML Page (single-page) now show everything in one window: a scrollable thumbnail strip on the left and the large picture on the right. See [Export](features/exportalas.md).
 
 ### Editing
 
@@ -492,7 +492,7 @@ A user-focused changelog: only changes you can see on screen. The detailed, deve
 
 ### Editing and effects
 
-- For effects that focus on a point—Soft Focus, Focal BW, Graduated Tint, Radial Tint, Focal Zoom, and Focal Pixelate—you can drag the focus point on the picture, and the Center sliders follow it. See [Effects](features/effektek.md).
+- For effects that focus on a point-Soft Focus, Focal BW, Graduated Tint, Radial Tint, Focal Zoom, and Focal Pixelate-you can drag the focus point on the picture, and the Center sliders follow it. See [Effects](features/effektek.md).
 - You can choose a color for **Tint** with **Tint Color**. The default is light blue, as in the original.
 - The **Pencil Sketch** panel has **Radius**, **Strength**, and **Fade** sliders.
 - New commands in **Picture** ▸ **Batch Edit**: **Sepia** and **BW**. See [Batch editing](features/csoportos-szerkesztes.md).
@@ -698,7 +698,7 @@ Face-data lines written to <code>.picasa.ini</code> now also match the original 
 ### Editor
 
 - **Focal Pixelate**, the Shift counterpart to Pixelate, now opens its own slider panel with **Strength**, **Radius**, **Edge Hardness**, and **Fade**, plus an Invert check box. You can drag the circle on the picture. Previously, it used only the program defaults.
-- Five sliders whose maximum depends on picture size—Focal Pixelate's **Radius**, Focal Zoom's **Focal Size**, the **Corner Radius** for Rounded Edges and Border, and Border's **Caption Height**—are now stored in <code>.picasa.ini</code> as a percentage of their range, as in the original Picasa. This makes edits from the original display correctly. If you set these sliders in an earlier version of PicasaPy, those pictures may look different; adjust the sliders again. See [Effects](features/effektek.md).
+- Five sliders whose maximum depends on picture size-Focal Pixelate's **Radius**, Focal Zoom's **Focal Size**, the **Corner Radius** for Rounded Edges and Border, and Border's **Caption Height**-are now stored in <code>.picasa.ini</code> as a percentage of their range, as in the original Picasa. This makes edits from the original display correctly. If you set these sliders in an earlier version of PicasaPy, those pictures may look different; adjust the sliders again. See [Effects](features/effektek.md).
 
 ### Effects matched to the original
 
@@ -714,7 +714,7 @@ The settings you already saved for these effects are unchanged; only the way the
 
 - The **Lens** row in the **Properties** panel now checks XMP data written to the picture first. Most editing programs store the lens name there. The camera identifier is resolved only if no name is present in the XMP data.
 - The **Compression** row now recognizes 36 formats instead of four, including compression types for raw files. It shows the number for an unknown code. **White balance** works the same way; previously the row disappeared when the camera stored an unusual code.
-- Some **Properties** values, such as **Orientation** and **Exposure Program**, appeared in English in the Hungarian interface—for example, “Normal” instead of “Normál.” This is fixed, as are the information strip and age filter labels. See [The Library](features/konyvtar.md).
+- Some **Properties** values, such as **Orientation** and **Exposure Program**, appeared in English in the Hungarian interface-for example, “Normal” instead of “Normál.” This is fixed, as are the information strip and age filter labels. See [The Library](features/konyvtar.md).
 
 ### Captions and messages
 
@@ -783,7 +783,7 @@ The settings you already saved for these effects are unchanged; only the way the
 ### Other
 
 - **Back to Library** in the viewer now has a tooltip that explains what it does.
-- Three more tooltips—the magnifier, the folder-view settings button, and the cancel button for “Get more”—now use the original Picasa wording.
+- Three more tooltips-the magnifier, the folder-view settings button, and the cancel button for “Get more”-now use the original Picasa wording.
 
 ## 2026-09-24
 
@@ -858,10 +858,10 @@ The settings you already saved for these effects are unchanged; only the way the
 
 ### In the viewer
 
-- **Show two different pictures** now works for comparing two photos side by side. A new button switches between horizontal and vertical layout, and every command—including editing and adding to an album—acts on the selected side.
+- **Show two different pictures** now works for comparing two photos side by side. A new button switches between horizontal and vertical layout, and every command-including editing and adding to an album-acts on the selected side.
 - You can now trim a video by setting its start and end points from the control bar, and restore the original trim. The video file itself is not changed; the trim points are saved in the same format used by the original Picasa.
 - You can save the current video frame as a JPEG in the Captured Videos folder, at the video's own resolution.
-- The slideshow control bar no longer disappears while you are using it, and the − and + buttons for slide time repeat while held down.
+- The slideshow control bar no longer disappears while you are using it, and the - and + buttons for slide time repeat while held down.
 
 ### Editing
 
@@ -919,14 +919,14 @@ The settings you already saved for these effects are unchanged; only the way the
 
 ### Editor
 
-- Effects that take a lot of calculation—Sharpen, Film Grain, Glow, Comicize, Drop Shadow, HDR-ish, Holga-ish, Lomo-ish, Neon, Orton-ish, Pencil Sketch, and Posterize—now calculate in the background while you drag a slider. The window does not freeze; the picture updates when the calculation finishes, and the blue bar at the bottom shows that work is in progress.
+- Effects that take a lot of calculation-Sharpen, Film Grain, Glow, Comicize, Drop Shadow, HDR-ish, Holga-ish, Lomo-ish, Neon, Orton-ish, Pencil Sketch, and Posterize-now calculate in the background while you drag a slider. The window does not freeze; the picture updates when the calculation finishes, and the blue bar at the bottom shows that work is in progress.
 - For effects that require full resolution, the preview is now made at the picture's original size before being reduced. You see the same result that will be saved.
 - **Neon** now has a color picker so you can choose the glow color. It used to have an “Intensity” slider that actually controlled the strength of the effect.
 - The two **Soft Focus** sliders now have accurate names: blur strength and effect strength. One was called “Radius” even though it changed something else. The tile is now named **Soften**; the help used to call it “Soft Focus” (translated from a different name).
 
 ### Collage
 
-- Snap rotation alignment—the small button row on the left and **Align Rotation** submenu—now works in every layout, not just Picture Pile. It used to be disabled for grid layouts. See [Collages](features/kollazs.md).
+- Snap rotation alignment-the small button row on the left and **Align Rotation** submenu-now works in every layout, not just Picture Pile. It used to be disabled for grid layouts. See [Collages](features/kollazs.md).
 
 ### Right-hand drawer
 
@@ -952,7 +952,7 @@ The settings you already saved for these effects are unchanged; only the way the
 
 - The slideshow now fills the whole window; the menu bar, toolbar, and Picture Tray disappear while it plays.
 - You can choose a transition in the control bar: Cut, Dissolve, Dissolve Through Black, Dissolve Through White, or **Pan and Zoom**.
-- Use the − and + buttons to set **Slide Duration:** from 1 to 30 seconds.
+- Use the - and + buttons to set **Slide Duration:** from 1 to 30 seconds.
 - A button cycles through three caption modes: show the caption, show the filename, or show neither.
 - The program remembers all three choices for the next slideshow.
 - A transition now shows the picture that was immediately before it, and the incoming picture inherits the outgoing slide's zoom and rotation.
@@ -1084,7 +1084,7 @@ The settings you already saved for these effects are unchanged; only the way the
 ### Collage
 
 - **Align Rotation** in the right-click menu is now disabled for layouts that do not rotate (Mosaic, Frame Mosaic, Grid, Contact Sheet, and Multiple Exposure). The menu used to offer four angles even though clicking them did nothing. The program's behavior has not changed; the menu now shows what is available.
-- In Picture Pile, pictures with white borders no longer exceed their allotted space. The border used to grow outward, making these pictures 5–10% too large. Polaroid frames and pictures without frames are unchanged.
+- In Picture Pile, pictures with white borders no longer exceed their allotted space. The border used to grow outward, making these pictures 5-10% too large. Polaroid frames and pictures without frames are unchanged.
 - Collages and movies made in the old Picasa now appear automatically after a few seconds. On a network drive, they used to take minutes because the program received no notification of changes made by another computer.
 
 ### Minor changes
@@ -1146,7 +1146,7 @@ The settings you already saved for these effects are unchanged; only the way the
 
 ### Viewer: zoom
 
-- The three zoom controls—Fit, **Display Photo at actual size**, and the slider—have moved to the bottom toolbar, before the panel buttons.
+- The three zoom controls-Fit, **Display Photo at actual size**, and the slider-have moved to the bottom toolbar, before the panel buttons.
 - **Display Photo at actual size** now uses the picture's real pixels. An internal limit used to allow zooming in three or four times too far.
 - The slider's center is exactly 100% and snaps there, making it easier to find. Its right edge is 400%.
 
@@ -1215,7 +1215,7 @@ The settings you already saved for these effects are unchanged; only the way the
 
 - `Ctrl+0` opens and closes the right-hand panel and remembers which tab was open. `Ctrl+F` moves to the search field; `Ctrl+K` opens the Tags panel.
 - `Ctrl+Tab`, `Ctrl+Shift+Tab`, `Ctrl+←`, and `Ctrl+→` move between tabs in a loop. `Ctrl+W` closes the current project tab.
-- On a slider, **+** or `=` increases the value; `−` or `_` decreases it.
+- On a slider, **+** or `=` increases the value; `-` or `_` decreases it.
 - Most menu commands now have an underlined letter, as in the original Hungarian Picasa. Press it with `Alt` to open the menu.
 
 ### Menus
@@ -1241,7 +1241,7 @@ The settings you already saved for these effects are unchanged; only the way the
 
 ### Left pane
 
-- The three view options—folder view, **Simplified Tree View**, and **Show Thumbnails in Library**—are now remembered until the next start. Previously, they reset every time you opened the program.
+- The three view options-folder view, **Simplified Tree View**, and **Show Thumbnails in Library**-are now remembered until the next start. Previously, they reset every time you opened the program.
 - With thumbnails on, folder rows now show a small stack of pictures from the folder instead of the yellow folder icon.
 - **Simplified Tree View** has moved to the bottom of **View** ▸ **Folder View**, as in the original Picasa.
 - Folder rows no longer stay empty when thumbnails are on.
@@ -1279,24 +1279,24 @@ The settings you already saved for these effects are unchanged; only the way the
 - Caption color now follows the background: dark gray on a light background and white on a dark one, so captions remain readable on a dark collage. Caption size and position now match the original Picasa too.
 - Moving the **Grid Spacing** slider no longer freezes the interface for Mosaic and Frame Mosaic. Rearranging happens after you stop moving the slider.
 
-## 2026-09-02 — first help release
+## 2026-09-02 - first help release
 
 This is the first complete version of the help. It describes the current state of the program, rather than one specific update (the 0.8 series).
 
 What PicasaPy can do today:
 
-- **Library** — watched folders, three folder views, albums, collections, projects, hidden pictures, and unavailable folders.
-- Viewing photos — single-picture viewer with comparison mode, slideshow, and video playback.
-- **Search** — by filename, caption, tag, or folder name; search by color (such as <code>color:blue</code>); four toolbar filters; and similar-picture search.
-- Organizing — stars, picture captions, tags, and quick tags.
-- **People** — face search and grouping, naming, ignored faces, and the People panel.
-- **Places** — map-based geotagging and Google Earth export.
-- Editor — seven tabs: common fixes, fine tuning, four effect tabs, and legacy effects. Crop, straighten, redeye, retouch, text tool, and histogram.
-- Batch work — batch editing, effect clipboard, and nondestructive rotation.
-- Saving — saving with backups, Save As, saving a copy, restoring, and undoing the last save.
-- Import and export — import from source, export to folder, create an HTML page, print to paper or PDF, print contact sheets, and send by email.
-- **Create** — collages with six layouts and movies.
-- Maintenance — duplicate finder, Folder Manager, moving and compacting the database.
-- Appearance — dark theme, display modes, and Hungarian and English languages.
+- **Library** - watched folders, three folder views, albums, collections, projects, hidden pictures, and unavailable folders.
+- Viewing photos - single-picture viewer with comparison mode, slideshow, and video playback.
+- **Search** - by filename, caption, tag, or folder name; search by color (such as <code>color:blue</code>); four toolbar filters; and similar-picture search.
+- Organizing - stars, picture captions, tags, and quick tags.
+- **People** - face search and grouping, naming, ignored faces, and the People panel.
+- **Places** - map-based geotagging and Google Earth export.
+- Editor - seven tabs: common fixes, fine tuning, four effect tabs, and legacy effects. Crop, straighten, redeye, retouch, text tool, and histogram.
+- Batch work - batch editing, effect clipboard, and nondestructive rotation.
+- Saving - saving with backups, Save As, saving a copy, restoring, and undoing the last save.
+- Import and export - import from source, export to folder, create an HTML page, print to paper or PDF, print contact sheets, and send by email.
+- **Create** - collages with six layouts and movies.
+- Maintenance - duplicate finder, Folder Manager, moving and compacting the database.
+- Appearance - dark theme, display modes, and Hungarian and English languages.
 
 See [Features not yet available](features/meg-nem-erheto-el.md) for a list of things PicasaPy cannot do yet.

@@ -87,5 +87,5 @@ The disc does not contain:
 ## Related topics
 
 - [The library and Photo Tray](konyvtar.md)
-- [Exporting to a folder](exportalas.md) — for copying out files only
-- [Backing up photos](biztonsagi-mentes.md) — for making an archive
+- [Exporting to a folder](exportalas.md) - for copying out files only
+- [Backing up photos](biztonsagi-mentes.md) - for making an archive
