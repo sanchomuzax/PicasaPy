@@ -203,8 +203,8 @@ thumbui/cdmode,megvan,PicasaPy/PicasaCreateMenu.qml:48;PicasaPy/GiftCdHost.qml:6
 thumbui/lightbox_esolo_button,nem-cel,binaris-regeszet-modszertan.md 19.,"Az album-szukitett kereses ures allapotanak Search All gombja. A Picasa3.exe NEM tartalmazza sem a nevet, sem a levelnevet, sem a feliratot, sem nevelloallito sablont; m_hidden, tehat kod nelkul nem jelenhet meg. Kivett funkcio maradvanya (#2027)."
 thumbui/lightbox_esolo_text,nem-cel,binaris-regeszet-modszertan.md 19.,Ugyanannak az ures allapotnak a No results found in this album felirata. Ugyanaz a negy negativ ellenorzes (#2027).
 thumbui/albumsback,nem-cel,binaris-regeszet-modszertan.md 19.,A ket fenti elem kozos szuloje. A neve sincs a binarisban; a gyerekei nelkul onmagaban nincs funkcioja (#2027).
-thumbui/hlistsizer,megvan,Main.qml:2294,A `mainSplit` két könyvtárhasáb közötti húzható elválasztója; a valós szélességváltozást a `test_folder_pane_width.py` ellenőrzi.
-thumbui/hlisthandle,megvan,Main.qml:2325,"A `folderPaneHandle` kirajzolt, húzható fogantyú a `SplitView` elválasztóján; a működését a `test_folder_pane_width.py` ellenőrzi."
+thumbui/hlistsizer,megvan,PicasaPy/MainWindowWorkspace.qml:180,A `mainSplit` két könyvtárhasáb közötti húzható elválasztója; a valós szélességváltozást a `test_folder_pane_width.py` ellenőrzi.
+thumbui/hlisthandle,megvan,PicasaPy/MainWindowWorkspace.qml:219,"A `folderPaneHandle` kirajzolt, húzható fogantyú a `SplitView` elválasztóján; a működését a `test_folder_pane_width.py` ellenőrzi."
 thumbui/acquirebutton,megvan,PicasaPy/MainToolbar.qml:119,Az eredeti elem képernyőn kívüli import-parancs-proxy; a felhasználói út a látható eszköztár-Import gombon és az `ImportSourceDialog` párbeszéden keresztül megvan.
 printpanel/photoindexbutton,megvan,PicasaPy/PrintSettingsPanel.qml;tests/app/qml_functional/test_nyomtatas_egyseges_meretlista_3712.py;tests/app/qml_functional/test_publish_sugok_4177.py,"Az `eContact` a nyomatméret-lista tétele; a valódi főablakban választható, magyarul „Indexképek” felirattal."
 editpanel/movietab,megvan,PicasaPy/PhotoViewerTopBar.qml:138,"Videó kiválasztásakor a fülsáv eltűnik, helyén a videó-panel áll (#4566, `VideoEditPanel.qml`); a szerkesztő-eszközök letiltva maradnak. A lejátszó kimenetét a `test_qml_video.py` ellenőrzi."
@@ -241,7 +241,7 @@ makemoviepanel/previewpanel,megvan,tests/app/qml_functional/test_film_panel_4125
 makemoviepanel/tabs,megvan,tests/app/qml_functional/test_film_panel_4125.py,A Mozgófilm / Dia / Klipek fülek valódi főablakból nyithatók (#4125).
 makemoviepanel/tabpanel1,megvan,tests/app/qml_functional/test_film_panel_4125.py,Az első fül a mozgófilm vezérlőit tartalmazza (#4125).
 makemoviepanel/tabpanel3,megvan,tests/app/qml_functional/test_film_panel_4125.py,A Klipek fül panelje (#4125).
-thumbui/editpanel,megvan,Main.qml:2294,A rejtett eredeti alap-panelnek nincs külön gombja; a PicasaPy könyvtárnézetének panelgyökere a `mainSplit` a `Main.qml`-ben.
+thumbui/editpanel,megvan,PicasaPy/MainWindowWorkspace.qml:180,A rejtett eredeti alap-panelnek nincs külön gombja; a PicasaPy könyvtárnézetének panelgyökere a `mainSplit` a `MainWindowWorkspace.qml`-ben.
 thumbui/listdetail,megvan,PicasaPy/LightboxFeed.qml:13,Az album tartalmi nézete a `LightboxFeed` listában jelenik meg; az eredeti rejtett alternatív állapot nem külön művelet.
 buttonmgr/browse,nem-cel,docs/specs/picasa-menu-parancsok-viselkedes.md,"A gombcsomag online keresése a picasa.smo szolgáltatásra mutat, amely megszűnt; a helyi párbeszéd nem telepít online gombcsomagot."
 buttonmgr/cancel,megvan,PicasaPy/ConfigureButtonsDialog.qml,A Dialog.Cancel szabványgomb a főablakból megnyitott párbeszédben látszik; a kimeneti teszt a Mégse feliratot ellenőrzi. Tesztek: tests/app/qml_functional/test_gombsav_testreszabas_1792.py.
