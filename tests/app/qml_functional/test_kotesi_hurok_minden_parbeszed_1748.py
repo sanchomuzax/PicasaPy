@@ -126,6 +126,10 @@ _KOTELEZO_VALTOZATOK = {
         "hostController: ({}); hostTestLogDialog: ({}); hostBrokenPhotoDialog: ({}); "
         "hostBrokenPhotoBatchTimer: ({})",
     ),
+    # #6136: a lebegő folyamatjelzők a vezérlőt és a megszakítási párbeszédet kapják.
+    "MainActivityPanels": (
+        "hostController: null; hostActivityCancelConfirm: ({ ask: function() {} })",
+    ),
     # #6136: a gyorsbillentyűk külön komponensbe kerültek; a 12 gazda-prop
     # közül azok kapnak minimális alakot, amelyek felépítéskor kiolvasódnak.
     "MainKeyboardShortcuts": (
