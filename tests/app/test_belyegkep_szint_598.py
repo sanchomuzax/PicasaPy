@@ -22,6 +22,9 @@ from picasapy.index.queries import PhotoRecord
 _QML = Path(picasapy.app.__file__).parent / "qml"
 _FUL = (_QML / "PicasaPy" / "OptionsTabGeneral.qml").read_text(encoding="utf-8")
 _MAIN = (_QML / "Main.qml").read_text(encoding="utf-8")
+_COMMANDS = (_QML / "PicasaPy" / "MainWindowCommands.qml").read_text(
+    encoding="utf-8"
+)
 
 
 def _foto(**extra) -> PhotoRecord:
@@ -125,7 +128,7 @@ class TestAFelulet:
     def test_a_racs_atadja_a_cellameretet(self):
         assert "controller.setThumbCellSize(thumbSize)" in _MAIN
         #: az induló fokozat is, különben a rács a felső szintről indulna
-        assert "controller.setThumbCellSize(window.thumbSize)" in _MAIN
+        assert "hostController.setThumbCellSize(hostWindow.thumbSize)" in _COMMANDS
 
     def test_a_cache_kapcsolo_kilepeskor_uritesre_kotott(self):
         kezd = _FUL.index('objectName: "optionsClearCacheFilesCheck"')

@@ -424,3 +424,16 @@ def varj_ablakon_belulre(
         return 0 <= kozep.x() < window.width() and 0 <= kozep.y() < window.height()
 
     return varj_feltetelre(qt_app, kozep_belul_van, masodperc)
+
+
+def varj_kattinthatora(window, item, masodperc: float = 5.0) -> None:
+    """Kattintás előtti őr: az elem közepe az ablakon BELÜL legyen (#6136).
+
+    Az animáltan nyíló fiók gombja a nyitás elején még az ablak jobb szélén
+    túl ül. Az ablakon kívüli kattintás csak véletlenül ért célba, és a
+    főablak komponensekre bontása után el is vész; a felhasználó a már
+    kinyílt fiókra kattint, a teszt is erre vár.
+    """
+    assert varj_ablakon_belulre(
+        QCoreApplication.instance(), window, item, masodperc
+    ), "az elem közepe határidőn belül sem került az ablakon belülre"

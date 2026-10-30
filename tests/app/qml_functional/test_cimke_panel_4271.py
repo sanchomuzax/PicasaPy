@@ -22,6 +22,7 @@ from PySide6.QtTest import QTest
 
 from picasapy.index import open_index, sync_tree
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import varj_kattinthatora
 from support.varakozas import var_feltetelre
 
 _KEEPALIVE = []
@@ -44,6 +45,7 @@ def _item(window, name: str):
 
 def _click(window, item, qt_app, modifiers=Qt.KeyboardModifier.NoModifier):
     assert item.width() > 0 and item.height() > 0, "a kattintási cél mérete nulla"
+    varj_kattinthatora(window, item)
     point = item.mapToScene(item.boundingRect().center()).toPoint()
     QTest.mouseClick(window, Qt.MouseButton.LeftButton, modifiers, point)
     qt_app.processEvents()

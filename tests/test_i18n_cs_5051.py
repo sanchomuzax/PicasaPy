@@ -36,6 +36,7 @@ _EXISTING_SHORTCUT_EXCEPTIONS = frozenset(
         ("BatchEditProgressPanel", "Batch Edit"),
         ("PublishPanel", "Choose folders & albums to back up"),
         ("Main", "Save search results"),
+        ("MainWindowCommands", "Save search results"),
         ("Main", "Reset Faces"),
         ("Main", "Export Picture to Folder..."),
         ("PhotoContextMenu", "Remove from People Album"),

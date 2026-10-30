@@ -23,6 +23,10 @@ from support.menubar_components_6016 import main_sources, menu_sources
 
 _QML_DIR = Path(picasapy.app.__file__).parent / "qml"
 _MAIN = main_sources()
+_COMMANDS = (
+    Path(__file__).resolve().parents[3]
+    / "src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml"
+).read_text(encoding="utf-8")
 _MENU = menu_sources()
 
 
@@ -65,31 +69,31 @@ class TestAKilepesEgyHelyenDolEl:
 
 class TestAKerdesFeltetele:
     def test_a_kilepes_a_HATTERMUNKAT_kerdezi(self):
-        kezd = _MAIN.index("function kilepes()")
-        blokk = _MAIN[kezd : kezd + 400]
-        assert "controller.backgroundWorkRunning()" in blokk
+        kezd = _COMMANDS.index("function kilepes()")
+        blokk = _COMMANDS[kezd : kezd + 400]
+        assert "hostController.backgroundWorkRunning()" in blokk
         assert "Qt.quit()" in blokk, "munka nélkül azonnal kilép"
 
     def test_a_null_or_ott_van(self):
         """#305: a leépülő motor is újraértékelheti a kötést."""
-        kezd = _MAIN.index("function kilepes()")
-        assert "controller &&" in _MAIN[kezd : kezd + 400]
+        kezd = _COMMANDS.index("function kilepes()")
+        assert "hostController &&" in _COMMANDS[kezd : kezd + 400]
 
     @pytest.mark.parametrize("felirat", ["Exit Now", "Keep Going"])
     def test_a_MERT_gombpar(self, felirat):
-        assert felirat in _MAIN
+        assert felirat in _COMMANDS
 
     def test_a_kerdes_NEM_elnyomhato(self):
         """A `decisionKey` üres: adatvesztéssel járó kérdést nem lehet
         „ne kérdezze újra"-val elhallgattatni."""
-        kezd = _MAIN.index("function askExit()")
-        assert 'ensure().ask("", qsTr(' in _MAIN[kezd : kezd + 500]
+        kezd = _COMMANDS.index("function askExit()")
+        assert 'ensure().ask("", qsTr(' in _COMMANDS[kezd : kezd + 500]
 
     def test_a_szoveg_KIMONDJA_hogy_nem_folytatodik(self):
         """Az eredeti azt ígéri, hogy a feltöltés legközelebb folytatódik —
         a mi háttérmunkánk NEM, tehát ezt nem fordíthatjuk le."""
-        assert "does not" in _MAIN and "resume later" in _MAIN
-        assert "resume next time" not in _MAIN
+        assert "does not" in _COMMANDS and "resume later" in _COMMANDS
+        assert "resume next time" not in _COMMANDS
 
 
 class TestAVezerloOldal:

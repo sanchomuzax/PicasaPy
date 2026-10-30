@@ -36,6 +36,12 @@ def _main_qml() -> str:
     return (QML / "Main.qml").read_text(encoding="utf-8")
 
 
+def _peripheral_layers_qml() -> str:
+    return (QML / "PicasaPy" / "MainWindowPeripheralLayers.qml").read_text(
+        encoding="utf-8"
+    )
+
+
 def _kodsorok(forras: str) -> list[str]:
     """A megjegyzés-sorok nélkül — a magyarázat nem hívás."""
     return [
@@ -96,7 +102,7 @@ class TestAKomponensMARAD:
         assert (QML / "PicasaPy" / "CollageDoneNotice.qml").is_file()
 
     def test_a_Main_qml_tovabbra_is_peldanyositja(self):
-        assert "CollageDoneNotice {" in _main_qml()
+        assert "CollageDoneNotice {" in _peripheral_layers_qml()
 
 
 class TestAFolyamatszoveg:

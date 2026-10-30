@@ -7,6 +7,7 @@ import re
 
 _QML_DIR = Path(__file__).resolve().parents[2] / "src/picasapy/app/qml"
 _MAIN = _QML_DIR / "Main.qml"
+_COMMANDS = _QML_DIR / "PicasaPy/MainWindowCommands.qml"
 _COMPONENT = _QML_DIR / "PicasaPy/MainKeyboardShortcuts.qml"
 _QMLDIR = _QML_DIR / "PicasaPy/qmldir"
 _PUBLIC_OBJECT_NAMES = {
@@ -87,14 +88,17 @@ def test_a_gyorsbillentyuk_komponense_regisztralt_es_800_sor_alatti():
 
 def test_a_foablak_megtartja_a_neveket_es_a_kotelezo_gazdakapcsolatokat():
     main = _MAIN.read_text(encoding="utf-8")
+    commands = _COMMANDS.read_text(encoding="utf-8")
     component = _COMPONENT.read_text(encoding="utf-8")
 
     assert re.search(
-        r"MainKeyboardShortcuts\s*\{\s*id:\s*mainKeyboardShortcuts", main, re.DOTALL
+        r"MainKeyboardShortcuts\s*\{\s*id:\s*mainKeyboardShortcuts",
+        commands,
+        re.DOTALL,
     )
     assert re.search(
         r"property alias keyboardShortcutGroups:\s*"
-        r"mainKeyboardShortcuts\.keyboardShortcutGroups",
+        r"mainWindowCommands\.keyboardShortcutGroups",
         main,
     )
     for name in (
@@ -111,9 +115,12 @@ def test_a_foablak_megtartja_a_neveket_es_a_kotelezo_gazdakapcsolatokat():
         "hostSlideshow",
         "hostTrayBar",
     ):
-        assert re.search(
-            rf"required\s+property\s+var\s+{name}\b", component
-        ), f"hiányzó kötelező gazdatulajdonság: {name}"
+        assert re.search(rf"required\s+property\s+var\s+{name}\b", component), (
+            f"hiányzó kötelező gazdatulajdonság: {name}"
+        )
+        assert re.search(rf"\b{name}:\s*", commands), (
+            f"a parancskomponens nem adja át a gazdát: {name}"
+        )
     assert "readonly property var keyboardShortcutGroups" in component
     assert "hostFileOpsController.copyFilesToClipboard" in component
     assert "hostFileOpsController.cutFilesToClipboard" in component

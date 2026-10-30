@@ -313,3 +313,9 @@ PhotoViewerPaintMaskArea 1.0 PhotoViewerPaintMaskArea.qml
 PhotoViewerNeutralPickArea 1.0 PhotoViewerNeutralPickArea.qml
 PhotoViewerEffectColorPickArea 1.0 PhotoViewerEffectColorPickArea.qml
 PhotoViewerRetouchArea 1.0 PhotoViewerRetouchArea.qml
+MainWindowDialogStack 1.0 MainWindowDialogStack.qml
+
+MainWindowCommands 1.0 MainWindowCommands.qml
+MainWindowWorkspace 1.0 MainWindowWorkspace.qml
+MainWindowPeripheralLayers 1.0 MainWindowPeripheralLayers.qml
+MainWindowLibraryActions 1.0 MainWindowLibraryActions.qml

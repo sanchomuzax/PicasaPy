@@ -12,9 +12,67 @@ import "selection.js" as Selection
 ApplicationWindow {
     id: window
     // A kivont komponens mellett a főablak korábbi QML-neve megmarad.
-    property alias shortcutSave: mainKeyboardShortcuts.shortcutSave
-    property alias errorBanner: mainErrorBanner
-    property alias errorBannerText: mainErrorBanner.messageText
+    property alias shortcutSave: mainWindowCommands.exportShortcutSave
+    property alias errorBanner: mainWindowPeripheralLayers.exportErrorBanner
+    property alias errorBannerText: mainWindowPeripheralLayers.exportErrorBannerText
+    property alias searchSuggestionsBox: mainWindowCommands.exportSearchSuggestionsBox
+    property alias suggestionsTimer: mainWindowCommands.exportSuggestionsTimer
+    property alias mainDialogs: mainWindowCommands.exportMainDialogs
+    property alias emailChoiceDialog: mainWindowCommands.exportEmailChoiceDialog
+    property alias openWithDialog: mainWindowCommands.exportOpenWithDialog
+    property alias folderManager: mainWindowCommands.exportFolderManager
+    property alias peopleManagerLoader: mainWindowCommands.exportPeopleManagerLoader
+    property alias dedupDialog: mainWindowCommands.exportDedupDialog
+    property alias faceScanDialog: mainWindowCommands.exportFaceScanDialog
+    property alias screensaverDialog: mainWindowCommands.exportScreensaverDialog
+    property alias screensaverAlbumConfirmLoader: mainWindowCommands.exportScreensaverAlbumConfirmLoader
+    property alias photoViewerSettingsDialog: mainWindowCommands.exportPhotoViewerSettingsDialog
+    property alias picasaImportDialog: mainWindowCommands.exportPicasaImportDialog
+    property alias importSourceDialog: mainWindowCommands.exportImportSourceDialog
+    property alias addFileDialog: mainWindowCommands.exportAddFileDialog
+    property alias tesztuzemNaploDialog: mainWindowCommands.exportTesztuzemNaploDialog
+    property alias documentTabStrip: mainWindowWorkspace.exportDocumentTabStrip
+    property alias folderPane: mainWindowWorkspace.exportFolderPane
+    property alias photoViewer: mainWindowWorkspace.exportPhotoViewer
+    property alias slideshow: mainWindowWorkspace.exportSlideshow
+    property alias utolsoFiokLap: mainWindowLibraryActions.utolsoFiokLap
+    property alias configureButtonsContextMenu: mainWindowCommands.exportConfigureButtonsContextMenu
+    property alias kilepesDialog: mainWindowCommands.exportKilepesDialog
+    property alias mainKeyboardShortcuts: mainWindowCommands.exportMainKeyboardShortcuts
+    property alias saveSearchDialog: mainWindowCommands.exportSaveSearchDialog
+    property alias showTagAsAlbumDialog: mainWindowCommands.exportShowTagAsAlbumDialog
+    property alias _pendingSelectedIds: mainWindowCommands._pendingSelectedIds
+    property alias _pendingAnchorId: mainWindowCommands._pendingAnchorId
+    readonly property alias _kulonAblakosParbeszedNyitva: mainWindowCommands._kulonAblakosParbeszedNyitva
+    property point helpCursor: Qt.point(-1, -1)
+    readonly property alias _szovegmezoneVanFokusz: mainWindowCommands._szovegmezoneVanFokusz
+    readonly property alias _konyvtariGyorsbillentyuEngedelyezve: mainWindowCommands._konyvtariGyorsbillentyuEngedelyezve
+    property alias trayHasPictures: mainWindowCommands.trayHasPictures
+    readonly property alias keyboardShortcutGroups: mainWindowCommands.keyboardShortcutGroups
+    property alias activityCancelConfirm: mainWindowPeripheralLayers.exportActivityCancelConfirm
+    property alias xmpFacesWriteDialog: mainWindowPeripheralLayers.exportXmpFacesWriteDialog
+    property alias brokenPhotoDialog: mainWindowPeripheralLayers.exportBrokenPhotoDialog
+    property alias brokenPhotoBatchTimer: mainWindowPeripheralLayers.exportBrokenPhotoBatchTimer
+    property alias removeFromAlbumDialog: mainWindowPeripheralLayers.exportRemoveFromAlbumDialog
+    property alias removePeopleFacesDialog: mainWindowPeripheralLayers.exportRemovePeopleFacesDialog
+    property alias moveToNewPersonDialog: mainWindowPeripheralLayers.exportMoveToNewPersonDialog
+    property alias initialScanDialog: mainWindowPeripheralLayers.exportInitialScanDialog
+    property alias collectionPasswordDialog: mainWindowPeripheralLayers.exportCollectionPasswordDialog
+    property alias hiddenPasswordOfferDialog: mainWindowPeripheralLayers.exportHiddenPasswordOfferDialog
+    property alias collageDraftDialog: mainWindowPeripheralLayers.exportCollageDraftDialog
+    property alias saveDialogs: mainWindowPeripheralLayers.exportSaveDialogs
+    property alias fileOpsDialogs: mainWindowPeripheralLayers.exportFileOpsDialogs
+    property alias exportDialogs: mainWindowPeripheralLayers.exportExportDialogs
+    property alias createDialogs: mainWindowPeripheralLayers.exportCreateDialogs
+    property alias helpDialog: mainWindowPeripheralLayers.exportHelpDialog
+    property alias configureButtonsDialog: mainWindowPeripheralLayers.exportConfigureButtonsDialog
+    property alias aboutDialog: mainWindowPeripheralLayers.exportAboutDialog
+    property alias optionsDialog: mainWindowPeripheralLayers.exportOptionsDialog
+    property alias webExportDialog: mainWindowPeripheralLayers.exportWebExportDialog
+    property alias printDialog: mainWindowPeripheralLayers.exportPrintDialog
+    property alias moveDatabaseDialog: mainWindowPeripheralLayers.exportMoveDatabaseDialog
+    property alias compactDatabaseDialog: mainWindowPeripheralLayers.exportCompactDatabaseDialog
+    property alias picasaDataImportDialog: mainWindowPeripheralLayers.exportPicasaDataImportDialog
     width: 1280
     height: 800
     // #641: az ablak nem mehet olyan kicsire, hogy a szerkesztő bal panelje
@@ -30,6 +88,13 @@ ApplicationWindow {
     // zsugorodik tovább. Az igény MÉRT (ld. `TrayBar.requiredWidth`),
     // és őr-teszt méri újra élőben.
     minimumWidth: trayBar.requiredWidth
+    //: A mutatókövető a főablak gyökerén marad, hogy a munkaterület fölötti
+    //: elemek fölött is megkapja a hover-eseményt, ahogy a bontás előtt.
+    HoverHandler {
+        objectName: "helpCursorTracker"
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onPointChanged: window.helpCursor = point.position
+    }
     visible: true
     //: #671: az ablak „X"-e UGYANAZT az utat járja, mint a Fájl ▸ Kilépés.
     //: Ha háttérmunka fut, a bezárást visszavonjuk, és a kérdés dönt;
@@ -110,7 +175,7 @@ ApplicationWindow {
     // tesztekben becserélhető legyen). A `controller: controller` sor ezért
     // önmagára kötne (kötési hurok) — ez az álnév oldja fel, egy helyen.
     readonly property var appController: controller
-    property alias peoplePanel: jobbFiok.peoplePanel
+    property alias peoplePanel: mainWindowWorkspace.exportPeoplePanel
 
     property string pendingPeopleManagerPersonName: ""
     property string pendingPeopleManagerPersonId: ""
@@ -164,9 +229,9 @@ ApplicationWindow {
         }
     }
     // Az eredeti főablaki állapotnevek az Időrend-komponensre mutatnak.
-    property alias timelineOpen: timelineView.timelineOpen
-    property alias timelineSlideshowActive: timelineView.timelineSlideshowActive
-    property alias timelineSlideshowModel: timelineView.timelineSlideshowModel
+    property alias timelineOpen: mainWindowWorkspace.exportTimelineOpen
+    property alias timelineSlideshowActive: mainWindowWorkspace.exportTimelineSlideshowActive
+    property alias timelineSlideshowModel: mainWindowWorkspace.exportTimelineSlideshowModel
     //: #1808: rács-nagyító be/ki. A rácsban a nagyító-réteg
     //: ELNYELI az egéreseményeket, tehát bekapcsolva a húzás nem
     //: jelöl ki — ez szándékos, ld. LightboxFeed.qml.
@@ -204,152 +269,27 @@ ApplicationWindow {
     readonly property bool peoplePanelOpen:
         window.activeDrawerTab === "people"
 
-    // #1773: a lapváltás EGYETLEN útja. Az aktív lapra kattintás
-    // SZÁNDÉKOSAN nem zár be: a bináris a vizsgált ágon feltétel nélkül
-    // 1-re állítja a saját gombját (a jegy „nyitott" pontja, ez az
-    // alapértelmezés). A fiók ürítése az `ureseidAFiokot()`.
-    function valtsFiokLapot(nev) {
-        window.activeDrawerTab = nev
-        if (nev !== "") window.utolsoFiokLap = nev
+    MainWindowLibraryActions {
+        id: mainWindowLibraryActions
+        hostWindow: window
+        hostController: typeof controller !== "undefined" ? controller : null
+        hostPhotoViewer: photoViewer
+        hostToolbar: toolbar
     }
-    function ureseidAFiokot() {
-        window.activeDrawerTab = ""
-    }
+    function valtsFiokLapot(nev) { mainWindowLibraryActions.valtsFiokLapot(nev) }
+    function ureseidAFiokot() { mainWindowLibraryActions.ureseidAFiokot() }
+    function fokuszAKeresore() { mainWindowLibraryActions.fokuszAKeresore() }
+    function openPhotoViewer(row) { mainWindowLibraryActions.openPhotoViewer(row) }
+    function startQuickViewer() { mainWindowLibraryActions.startQuickViewer() }
+    function nezdEsSzerkeszd() { mainWindowLibraryActions.nezdEsSzerkeszd() }
+    function hideSelection() { mainWindowLibraryActions.hideSelection() }
+    function unhideHiddenSelection() { mainWindowLibraryActions.unhideHiddenSelection() }
+    function masodpeldanyokMutatasa() { mainWindowLibraryActions.masodpeldanyokMutatasa() }
+    function torolAHasonlosagMintat() { mainWindowLibraryActions.torolAHasonlosagMintat() }
+    function keressHasonlot() { mainWindowLibraryActions.keressHasonlot() }
+    function kotegEffekt(nev) { mainWindowLibraryActions.kotegEffekt(nev) }
+    function billentsdAFiokot() { mainWindowLibraryActions.billentsdAFiokot() }
 
-    //: #2163: a `Ctrl+0` (`thumbui/toggle_right_drawer`, `0x005e6206`) a
-    //: jobb fiókot BILLENTI. Bezárás után újranyitva ugyanaz a lap jöjjön
-    //: vissza — enélkül a billentés fele-útja adatvesztésnek látszik: a
-    //: felhasználó a Címkéket zárta be, és az Emberek nyílna ki.
-    property string utolsoFiokLap: "tags"
-
-    //: #2163: a `Ctrl+F` a fejléc keresőmezőjére viszi a fókuszt. A
-    //: `header` a nézőben nincs jelen (ld. a `MainToolbar` bekötését),
-    //: ezért a null-őr nem formaság.
-    function fokuszAKeresore() {
-        if (toolbar && toolbar.fokuszAKeresore) toolbar.fokuszAKeresore()
-    }
-
-    //: #2163: a `Ctrl+3` (Szerkesztési nézet, `0x005e624f` →
-    //: `thumbui/fullview`) UGYANAZT teszi, mint a „Megjelenítés és
-    //: szerkesztés" parancs: a kijelölt képet a nézőben nyitja meg, ahol a
-    //: szerkesztő panel is ül. Egy belépő, több hívó — a tálca helyi
-    //: menüje (#1917) is ezt hívja.
-    // #4656: minden tényleges nézőnyitás ezt használja. A teljes képernyő
-    // vagy ablakos mód a mentett jelölőt követi; bezáráskor a korábbi
-    // ablakállapot áll vissza.
-    function openPhotoViewer(row) {
-        if (!window.viewerOpen) {
-            window.visibilityBeforeViewer = window.visibility
-            var fullscreenStartup = controller
-                && controller.viewerFullscreenStartup !== undefined
-                ? controller.viewerFullscreenStartup : true
-            window.visibility = fullscreenStartup
-                ? Window.FullScreen : Window.Windowed
-            window.viewerVisibilityManaged = true
-            window.viewerOpen = true
-        }
-        photoViewer.show(row)
-    }
-
-    // A közvetlen fájlargumentumos indulás ugyanazt a viewer-ablakmódot
-    // használja, mint a Photo Viewer beállítása. Külön függvényben van, hogy
-    // a rendes Component.onCompleted út és a QML-funkcióteszt is ezt hívja.
-    function startQuickViewer() {
-        if (!window.quickViewerLaunch) return
-        window.visibilityBeforeViewer = window.visibility
-        var fullscreenStartup = controller
-            && controller.viewerFullscreenStartup !== undefined
-            ? controller.viewerFullscreenStartup : true
-        window.visibility = fullscreenStartup
-            ? Window.FullScreen : Window.Windowed
-        window.viewerVisibilityManaged = true
-        window.viewerOpen = true
-        photoViewer.show(0)
-    }
-
-    function nezdEsSzerkeszd() {
-        if (window.viewerOpen) return
-        var sorok = window.selectedRows()
-        if (sorok.length === 0) return
-        window.openPhotoViewer(sorok[0])
-    }
-
-    // #4329: az önálló Kép ▸ Unhide parancs kizárólag a rejtett kijelölt
-    // képeket teszi láthatóvá. A toggleHiddenRows csak a rejtett sorokat
-    // kapja meg, ezért a vegyes kijelölés látható képei nem rejtődnek el.
-    // #4626: a Kép ▸ Hide mindig rejtve hagyja a kijelölést. A már rejtett
-    // sorokat kihagyjuk, így a váltó művelet csak látható képeket rejt el.
-    // A helyi menük külön megőrzik a Hide/Unhide váltó viselkedést.
-    function hideSelection() {
-        if (!controller) return
-        var rows = window.photoActionRows()
-        if (rows.length === 0) return
-        var visibleRows = []
-        for (var i = 0; i < rows.length; ++i) {
-            var row = Number(rows[i])
-            var photo = controller.photos.itemAt(row)
-            if (photo && photo.hidden !== true) visibleRows.push(row)
-        }
-        if (visibleRows.length > 0) controller.toggleHiddenRows(visibleRows)
-        if (!window.viewerOpen) window.clearSelection()
-    }
-
-    function unhideHiddenSelection() {
-        if (!controller) return
-        var rows = window.photoActionRows()
-        var hiddenRows = []
-        for (var i = 0; i < rows.length; ++i) {
-            var row = Number(rows[i])
-            var photo = controller.photos.itemAt(row)
-            if (photo && photo.hidden === true) hiddenRows.push(row)
-        }
-        if (hiddenRows.length === 0) return
-        controller.toggleHiddenRows(hiddenRows)
-        if (!window.viewerOpen) window.clearSelection()
-    }
-
-    //: #2163: a `Ctrl+F7` az eredetiben a `searchoptions/loadsim`-et
-    //: kattintja — a MINTA a jelenlegi kép, és a keresés a hozzá
-    //: hasonlókat adja (a mag a #1833-ban kész).
-    //: #2163: a `Ctrl+F6` a másodpéldány-módot kapcsolja (#1398). A
-    //: null-őr FÜGGVÉNYBEN áll, nem a `Shortcut` törzsében: a #1616 őre
-    //: egyetlen zárójel-szintet lát, az ágazó törzs láthatatlan neki.
-    function masodpeldanyokMutatasa() {
-        if (controller) controller.showDuplicateFiles()
-    }
-
-    //: #2163: a `clearsim` párja — ugyanezért függvény.
-    function torolAHasonlosagMintat() {
-        if (controller) controller.clearSimilarity()
-    }
-
-    function keressHasonlot() {
-        if (!controller) return
-        var sorok = window.selectedRows()
-        if (sorok.length === 0) return
-        controller.showSimilarTo(sorok[0])
-    }
-
-    //: #2163: a `Ctrl+Shift+B` és a `Ctrl+Shift+E` az eredetiben egyetlen
-    //: szűrő-alkalmazóba megy (`0x005fe370(panel, "bw"|"enhance")`), ami a
-    //: KIJELÖLÉSRE hat — nálunk ez a köteg-szerkesztés útja
-    //: (`applyEffectMany`), ugyanaz, amit az Kép ▸ Köteg-szerkesztés
-    //: menütételei hívnak. Nincs második ág.
-    function kotegEffekt(nev) {
-        if (!controller) return
-        var sorok = window.selectedRows()
-        if (sorok.length === 0) return
-        controller.applyEffectMany(sorok, nev)
-    }
-
-    function billentsdAFiokot() {
-        if (window.activeDrawerTab !== "") {
-            window.utolsoFiokLap = window.activeDrawerTab
-            window.ureseidAFiokot()
-        } else {
-            window.valtsFiokLapot(window.utolsoFiokLap)
-        }
-    }
     // #26 (3. lépcső): a „Névtelenek" nézet — a fő rács helyén jelenik
     // meg, amíg be van kapcsolva (ld. UnnamedFacesView.qml)
     property bool unnamedFacesOpen: false
@@ -448,7 +388,7 @@ ApplicationWindow {
         hostController: typeof controller !== "undefined" ? controller : null
         hostPhotoViewer: photoViewer
         hostMainDialogs: mainDialogs
-        hostPhotoContextMenu: photoContextMenu
+        hostPhotoContextMenu: mainWindowPeripheralLayers.exportPhotoContextMenu
         hostFolderPane: folderPane
         hostScreensaverAlbumConfirmLoader: screensaverAlbumConfirmLoader
         hostFaceScanDialog: faceScanDialog
@@ -596,382 +536,53 @@ ApplicationWindow {
         configureButtonsContextMenu.popup(anchorItem, x, y)
     }
 
-    // A helyi gombsor-menü az ApplicationWindow része, nem a PicasaMenuBaré:
-    // így a főmenü szerkezete és bejárási útvonalai változatlanok maradnak.
-    Menu {
-        id: configureButtonsContextMenu
-        objectName: "configureButtonsContextMenu"
-        MenuItem {
-            objectName: "configureButtonsContextMenuItem"
-            text: qsTr("Configure Buttons...")
-            onTriggered: picasaMenuBar.configureButtonsRequested()
-        }
-    }
-
-    // #135: a háttér-frissítés (5 perces rescan, watcher-jelzés) a
-    // rács-modellt teljesen resetelheti — beszúrt/eltűnt fájloknál a
-    // sor-indexek elcsúsznának, és a csillag/forgatás/elrejtés/export a
-    // FELHASZNÁLÓ által kijelölttől eltérő képre hatna. A resetet
-    // megelőzően elmentjük a kijelölt sorok fotó-id-it (a sor-index
-    // ekkor még a RÉGI adatot tükrözi), majd a reset után az id-k
-    // alapján képezzük újra a kijelölést — az eltűnt fotók kiesnek.
-    property var _pendingSelectedIds: []
-    property string _pendingAnchorId: ""
-    Connections {
-        // #305: engine-leépítéskor a `controller` context property null
-        // lehet, miközben ez a kötés újra kiértékelődik — null-őr kell.
-        target: controller ? controller.photos : null
-        function onModelAboutToBeReset() {
-            var ids = []
-            for (var k = 0; k < window.selectedIndexes.length; ++k) {
-                var id = controller.photos.idAt(Number(window.selectedIndexes[k]))
-                if (id.length > 0) ids.push(parseInt(id, 10))
-            }
-            window._pendingSelectedIds = ids
-            window._pendingAnchorId = window.selectedIndex >= 0
-                ? controller.photos.idAt(window.selectedIndex) : ""
-        }
-        function onModelReset() {
-            window.selectedIndexes = Selection.remapByIds(
-                window._pendingSelectedIds, controller.photos.rowOfId)
-            window.selectedIndex = window._pendingAnchorId.length > 0
-                ? controller.photos.rowOfId(parseInt(window._pendingAnchorId, 10))
-                : -1
-            // Az átnevezett fájl új útvonal miatt új adatbázis-id-t kaphat.
-            // Csak akkor helyettesítjük a régi azonosítót, ha az már eltűnt
-            // a modellből és az új útvonal megjelent; sikertelen átnevezésnél
-            // a régi ID-alapú állapot marad érvényben.
-            if (window._pendingRenamePhotoId.length > 0
-                    && window._pendingRenameTargetPath.length > 0) {
-                var ujSor = controller.photos.rowOfPath(
-                    window._pendingRenameTargetPath)
-                var regiId = parseInt(window._pendingRenamePhotoId, 10)
-                if (ujSor >= 0
-                        && controller.photos.rowOfId(regiId) < 0
-                        && window._pendingSelectedIds.indexOf(regiId) >= 0) {
-                    var ujKijeloles = window.selectedIndexes.slice()
-                    if (ujKijeloles.indexOf(ujSor) < 0)
-                        ujKijeloles.push(ujSor)
-                    ujKijeloles.sort(function (a, b) { return a - b })
-                    window.selectedIndexes = ujKijeloles
-                    if (window._pendingAnchorId === window._pendingRenamePhotoId)
-                        window.selectedIndex = ujSor
-                }
-                window._pendingRenamePhotoId = ""
-                window._pendingRenameTargetPath = ""
-            }
-        }
-    }
-    // A főablak gyorsbillentyűi önálló komponensben (#6136).
-    MainKeyboardShortcuts {
-        id: mainKeyboardShortcuts
+    MainWindowCommands {
+        id: mainWindowCommands
+        anchors.fill: parent
         hostWindow: window
-        hostController: controller
-        hostDocumentTabStrip: documentTabStrip
-        hostExportDialogs: exportDialogs
-        hostFileOpsController: typeof fileOpsController !== "undefined"
-            ? fileOpsController : null
-        hostFileOpsDialogs: fileOpsDialogs
-        hostHelpDialog: helpDialog
-        hostPhotoViewer: photoViewer
-        hostPicasaMenuBar: picasaMenuBar
-        hostSaveDialogs: saveDialogs
-        hostSlideshow: slideshow
-        hostTrayBar: trayBar
+        hostController: typeof controller !== "undefined" ? controller : null
+        hostRefs: ({
+            documentTabStrip: documentTabStrip,
+            photoViewer: photoViewer,
+            picasaMenuBar: picasaMenuBar,
+            slideshow: slideshow,
+            timelineView: mainWindowWorkspace.exportTimelineView,
+            toolbar: toolbar,
+            trayBar: trayBar
+        })
     }
-
-    //: #3544: amíg egy külön ablakos párbeszéd látszik, a főablak két
-    //: súgó-billentyűje HALLGAT. A Qt 6 az ablakszintű gyorsbillentyűt a
-    //: főablak TRANZIENS gyermekablakaiban is illeszti (és a főablak `active`-ja
-    //: is igaz marad), ott pedig a párbeszéd saját F1-e/Shift+F1-e
-    //: (`WindowHelp`) áll: a kettő kétértelmű, és MEGMÉRVE egyik sem sül el.
-    //: A párbeszédek alkalmazás-modálisak, a főablak addig úgysem kezelhető.
-    readonly property bool _kulonAblakosParbeszedNyitva:
-        [folderManager, importSourceDialog, optionsDialog, webExportDialog,
-         printDialog].some(function (d) { return d.item !== null && d.item.visible })
-
-    //: #2054: a mutató helye a Shift+F1-hez. A `HoverHandler` a teljes
-    //: ablakot lefedi, de NEM nyel el eseményt (`acceptedButtons: NoButton`),
-    //: tehát semmilyen meglévő vezérlőt nem zavar.
-    property point helpCursor: Qt.point(-1, -1)
-
-    HoverHandler {
-        objectName: "helpCursorTracker"
-        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-        onPointChanged: window.helpCursor = point.position
-    }
-
-    //: #2054: a mutató alatti elemtől FELFELÉ sétálunk a szülőláncon az
-    //: első olyan ősig, amelyik deklarál `helpTopic`-ot. Így nem kell
-    //: minden gombot felcímkézni: elég a panelekre és a párbeszédekre,
-    //: a többi öröklődik. Ha egyik sem deklarál, ÜRES jön vissza, és a
-    //: néző a főoldalt nyitja — néma kudarc nincs.
-    //:
-    //: #3463: a `childAt()` CSAK a közvetlen, legfelső gyermeket adja — az
-    //: pedig gyakran egy üres, az egész ablakot kitöltő réteg (pl. egy
-    //: halasztott párbeszéd `DeferredDialog`-betöltője), amelyben nincs
-    //: téma. A keresés ezért MÉLYSÉGI: felülről lefelé minden olyan látható
-    //: gyermeket kipróbál, amelyik a pontot tartalmazza, és a legmélyebb
-    //: témát adja; ha egy ág üres, az alatta fekvővel folytatja. A réteg
-    //: (`overlay`) párbeszédei NEM itt kapnak témát: amíg egy modális
-    //: párbeszéd nyitva van, a saját Shift+F1-e a saját fejezetét nyitja.
-    function _temaAPontban(elem, x, y) {
-        var gyerekek = elem.children
-        for (var i = gyerekek.length - 1; i >= 0; --i) {
-            var gyerek = gyerekek[i]
-            if (!gyerek.visible || gyerek.width <= 0 || gyerek.height <= 0)
-                continue
-            var pont = elem.mapToItem(gyerek, x, y)
-            if (!gyerek.contains(pont))
-                continue
-            var tema = window._temaAPontban(gyerek, pont.x, pont.y)
-            if (tema.length > 0)
-                return tema
-        }
-        if (elem.helpTopic !== undefined && String(elem.helpTopic).length > 0)
-            return String(elem.helpTopic)
-        return ""
-    }
-
-    //: #3463: a súgó megnyitása egy fejezettel — a modális
-    //: réteg-párbeszédek Shift+F1-e is ezt hívja (üres fejezet = főoldal).
-    function nyisdASugot(tema) {
-        helpDialog.ensure().nyisdMeg(tema)
-    }
-
-    function helpTopicUnderCursor() {
-        if (window.helpCursor.x < 0) return ""
-        //: a `helpCursor` a `contentItem` koordinátáiban áll (a
-        //: `HoverHandler` ott ül)
-        return window._temaAPontban(
-            window.contentItem, window.helpCursor.x, window.helpCursor.y)
-    }
-
-    // #1526/#1571: a fájl-vágólap billentyűi — FÓKUSZ-ÉRZÉKENYEN.
-    //
-    // ⚠️ A kézenfekvő megoldás valódi regressziót okozna: egy sima
-    // `WindowShortcut` a Ctrl+C-t ELVENNÉ a szövegmezőktől, tehát
-    // átnevezés, keresés vagy feliratszerkesztés közben a felhasználó nem
-    // tudná a beírt szöveget másolni. Ez rosszabb volna a mai állapotnál
-    // (#1571).
-    //
-    // A kapu: ha a fókusz szövegmezőn van, a billentyű a MEZŐÉ. A próba a
-    // `selectedText` tulajdonság megléte — ezt a `TextInput`/`TextEdit`
-    // (és minden rájuk épülő `TextField`/`TextArea`) hordozza, más elem
-    // nem. Így nem kell felsorolni a mezőtípusokat, és a jövőbeli
-    // mezőkre is magától áll.
-    readonly property bool _szovegmezoneVanFokusz:
-        window.activeFocusItem !== null
-        && window.activeFocusItem.selectedText !== undefined
-    readonly property bool _konyvtariGyorsbillentyuEngedelyezve:
-        !window.viewerOpen && !window._szovegmezoneVanFokusz
-    //: #1406: `ID_SEARCHTOKEN` — a megadott címke tartalmából rendes album.
-    //: A HÁROM szöveg mind a saját helyén: a menüfelirat a menüsorban, a cím
-    //: és a felszólítás itt (mérve, `0x005d8330`).
-    DeferredDialog {
-        id: showTagAsAlbumDialog
-        objectName: "showTagAsAlbumDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            NameInputDialog {
-                objectName: "showTagAsAlbumDialog"
-                //: `ThumbUI::addsearchtoken`
-                title: qsTr("Add search tag")
-                //: `CAlbumState::addsearchprompt`
-                prompt: qsTr("Please enter a tag to show as an album")
-                onAccepted: {
-                    if (controller.showTagAsAlbum(enteredName) === "") {
-                        errorBanner.notice = true
-                        errorBannerText.text = qsTr("No pictures have that tag.")
-                    }
-                }
-            }
-        }
-    }
-
-    //: #1405: a keresés mentése albumként — a menütétel és a megerősítés is
-    //: ezt hívja (egy hely, egy viselkedés).
-    function mentsdAKeresest() {
-        if (controller.saveSearchAsAlbum() === "") {
-            errorBanner.notice = true
-            errorBannerText.text = qsTr("The search results could not be saved as an album.")
-        }
-    }
-
-    //: #1405: a megerősítés CSAK 1000 találat felett nyílik, ezért halasztott
-    //: (#1720): a legtöbb munkamenetben fel sem épül.
-    DeferredDialog {
-        id: saveSearchDialog
-        objectName: "saveSearchDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            ConfirmDialog {
-                objectName: "saveSearchConfirm"
-                namePrefix: "saveSearch"
-                title: qsTr("Save search results")
-                //: `CThumbUI::SaveSearchBigBtn` — az eredeti gombfelirata NEM
-                //: „Igen", hanem a művelet megnevezése
-                yesText: qsTr("Create Album")
-                onConfirmed: window.mentsdAKeresest()
-            }
-        }
-    }
-
-    //: #3644: a néző elhagyása ELŐTT az „aa" mód kapuja dönt a két fél
-    //: szerkesztéséről (`PhotoViewer.aaKilepesKapu`, spec
-    //: `ui-audit-editor.md` 4/c.1). `true`: folytatható MOST; `false`: a
-    //: párbeszéd nyitva, a `folytatas` a VÁLASZ után fut, Mégsére elmarad.
-    //: Az eredeti a programzáráskor is kérdez (`SC_CLOSE` → `0x0057c4e0` →
-    //: `0x005e45c0` → `0x0056aad0`), és Mégsére nem zár be (`0x0057c59c`).
-    function aaKapu(folytatas) {
-        return !window.viewerOpen || photoViewer.aaKilepesKapu(folytatas)
-    }
-
-    //: #671 4. pont: a kilépés NEM kérdez — KIVÉVE, ha háttérmunka fut.
-    //: Az eredeti Picasa sem blokkolja a kilépést („Uploads will resume next
-    //: time"), de rákérdez; nálunk a háttérmunka NEM folytatódik legközelebb,
-    //: ezért a szöveg a mi valóságunkat mondja, nem az eredetit fordítja.
-    //:
-    //: Egy helyen fut: a Fájl ▸ Kilépés menütétel és az ablak „X"-e is ezt
-    //: hívja — különben az egyik út megkérdezné, a másik nem.
-    function kilepes() {
-        if (!window.aaKapu(window.kilepes)) return   // #3644
-        //: #305: null-őr — a leépülő motor is újraértékelheti a kötést
-        if (controller && controller.backgroundWorkRunning()) {
-            kilepesDialog.askExit()
-            return
-        }
-        Qt.quit()
-    }
-
-    //: #1720: halasztott — a legtöbb munkamenetben fel sem épül.
-    DeferredDialog {
-        id: kilepesDialog
-        objectName: "exitConfirmDialogLoader"
-        anchors.fill: parent
-        function askExit() {
-            //: a `decisionKey` SZÁNDÉKOSAN üres: az adatvesztéssel járó
-            //: kérdést nem lehet „ne kérdezze újra"-val elnyomni
-            ensure().ask("", qsTr(
-                "Background work is still running (export, web export or "
-                + "face scanning). If you exit now, it stops and does not "
-                + "resume later."))
-        }
-        sourceComponent: Component {
-            ConfirmDialog {
-                objectName: "exitConfirm"
-                namePrefix: "exit"
-                title: qsTr("Exit PicasaPy")
-                //: az eredeti gombpárja „Exit Now" / „Keep Going" — a
-                //: viselkedés (accept/deny) változatlan, csak a felirat
-                yesText: qsTr("Exit Now")
-                noText: qsTr("Keep Going")
-                onConfirmed: Qt.quit()
-            }
-        }
-    }
-
-    //: #1526: a beillesztés EGY helyen — a menütétel és a billentyű is ezt
-    //: hívja. (⚠️ A billentyű-őr a `Shortcut` törzsét egy szintig elemzi,
-    //: tehát ott nem lehet ágas kód: ha a logika a `Shortcut`-ba kerül, az
-    //: őr NEM LÁTJA meg a kötést, és a menütétel „néma hirdetőnek" látszik.)
-    // #5877: „Copy Text" - a kijelölés első képének Text eszközös rétege.
-    function masoldASzovegreteget() {
-        if (!controller) return
-        var sorok = window.photoActionRows()
-        if (sorok.length === 0) return
-        controller.copyTextLayer(sorok)
-    }
-
-    // #5877: „Paste Text" - a másolt Text eszközös réteg a kijelölés minden
-    // képére kerül; a kijelölt réteg pufferként is használható.
-    function illeszdBeASzovegreteget() {
-        if (!controller) return
-        var sorok = window.photoActionRows()
-        if (sorok.length === 0) return
-        controller.pasteTextLayer(sorok)
-    }
-
-    function beillesztAVagolaprol() {
-        if (fileOpsController.pasteFilesFromClipboard(controller.currentFolder))
-            return
-        errorBanner.notice = true
-        errorBannerText.text = qsTr("There are no files on the clipboard to paste.")
-    }
-
-    // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat.
-    // Diavetítés közben (#8) a vetített kép a célpont, nem a rács-kijelölés.
-    function rotateTargetRow() {
-        if (slideshow.visible) return slideshow.currentIndex
-        return trayBar.starTargetRow
-    }
-    // #103: csak-videó célpontnál a forgatás tiltott — a tálca ↺/↻
-    // gombjainak őre (a controller-slotok defenzíven szintén kihagyják
-    // a videókat, vegyes kijelölésnél csak a fotók forognak)
-    function rotateTargetsAllVideo() {
-        // #305: null-őr — a TrayBar `enabled:` kötése (ami ezt hívja)
-        // a QML-engine leépítésekor is újraértékelődhet
-        if (!controller) return false
-        var rows = window.viewerOpen
-            ? [photoViewer.currentIndex]
-            : window.selectedRows()
-        if (rows.length === 0) return false
-        for (var k = 0; k < rows.length; ++k)
-            if (!controller.photos.isVideoAt(Number(rows[k])))
-                return false
-        return true
-    }
-    //: #2902: tükrözés — az eredeti könyvtárnézeti kezelőjének két ága
-    //: (`0x005e63d6` vízszintes, `0x005e6408` függőleges), a keymapben
-    //: 35. *Flip Horizontal* / 36. *Flip Vertical*. MENÜPONT SZÁNDÉKOSAN
-    //: NINCS hozzá: a 3.9 menüiben sem volt, a funkció csak billentyűvel
-    //: érhető el (`docs/specs/picasa-gyorsbillentyuk.md` 10.3–10.4).
-    //:
-    //: A cél a KIJELÖLÉS (az eredeti ága is a panelre hat); nézőben a
-    //: megnyitott kép, a forgatás `rotateTargetRow` mintája szerint.
-    function tukrozesiSorok() {
-        if (window.viewerOpen) return [photoViewer._kijeloltSort()]
-        return window.selectedRows()
-    }
-
-    // Az Időrend főablaki belépői megőrzik az eddigi QML-neveket.
-    function timelineCollectionForId(collectionId) {
-        return timelineView.timelineCollectionForId(collectionId)
-    }
-    function selectTimelineCollection(collection) {
-        return timelineView.selectTimelineCollection(collection)
-    }
-    function closeTimeline() { timelineView.closeTimeline() }
-    function toggleTimeline() { timelineView.toggleTimeline() }
-    function startTimelineSlideshow(collectionId) {
-        timelineView.startTimelineSlideshow(collectionId)
-    }
-
-    // A teljes képernyős állapotot a vetítési komponens birtokolja; a régi
-    // főablaki QML-nevek megmaradnak a hívóknak és a teszteknek.
     property alias visibilityBeforeViewerFullscreen:
-        slideshow.visibilityBeforeViewerFullscreen
-    property alias visibilityBeforeSlideshow: slideshow.visibilityBeforeSlideshow
-    function toggleViewerFullscreen() { slideshow.toggleViewerFullscreen() }
-    function startSlideshow(fromIndex) { slideshow.startSlideshow(fromIndex) }
-    function startScreensaverPreview() { slideshow.startScreensaverPreview() }
-    function exitSlideshow() { slideshow.exitSlideshow() }
+        mainWindowWorkspace.exportVisibilityBeforeViewerFullscreen
+    property alias visibilityBeforeSlideshow:
+        mainWindowWorkspace.exportVisibilityBeforeSlideshow
 
-    // #922: a képtálca tartalma ÁLLAPOTKÉNT, nem közvetlen kötésként. Egy
-    // `controller.heldCount`-ra épülő kötés a `controller` null állapotában
-    // ki tud értékelődni ELŐSZÖR — olyankor a QML nem regisztrálja a
-    // függőséget, és a kötés soha többé nem frissül. Ez a `Connections`
-    // ettől független.
-    property bool trayHasPictures: false
-    Connections {
-        target: controller
-        function onHeldChanged() {
-            window.trayHasPictures = controller.heldCount > 0
-        }
+    function _temaAPontban(elem, x, y) { return mainWindowCommands._temaAPontban(elem, x, y) }
+    function nyisdASugot(tema) { mainWindowCommands.nyisdASugot(tema) }
+    function helpTopicUnderCursor() { return mainWindowCommands.helpTopicUnderCursor() }
+    function mentsdAKeresest() { mainWindowCommands.mentsdAKeresest() }
+    function aaKapu(folytatas) { return mainWindowCommands.aaKapu(folytatas) }
+    function kilepes() { mainWindowCommands.kilepes() }
+    function masoldASzovegreteget() { mainWindowCommands.masoldASzovegreteget() }
+    function illeszdBeASzovegreteget() { mainWindowCommands.illeszdBeASzovegreteget() }
+    function beillesztAVagolaprol() { mainWindowCommands.beillesztAVagolaprol() }
+    function rotateTargetRow() { return mainWindowCommands.rotateTargetRow() }
+    function rotateTargetsAllVideo() { return mainWindowCommands.rotateTargetsAllVideo() }
+    function tukrozesiSorok() { return mainWindowCommands.tukrozesiSorok() }
+    function timelineCollectionForId(collectionId) { return mainWindowCommands.timelineCollectionForId(collectionId) }
+    function selectTimelineCollection(collection) { mainWindowCommands.selectTimelineCollection(collection) }
+    function closeTimeline() { mainWindowCommands.closeTimeline() }
+    function toggleTimeline() { mainWindowCommands.toggleTimeline() }
+    function startTimelineSlideshow(collectionId) { mainWindowCommands.startTimelineSlideshow(collectionId) }
+    function toggleViewerFullscreen() { mainWindowCommands.toggleViewerFullscreen() }
+    function startSlideshow(fromIndex) { mainWindowCommands.startSlideshow(fromIndex) }
+    function startScreensaverPreview() { mainWindowCommands.startScreensaverPreview() }
+    function exitSlideshow() { mainWindowCommands.exitSlideshow() }
+    function toggleHiddenSelection() { mainWindowCommands.toggleHiddenSelection() }
+    function sendSelectionByEmail() { mainWindowCommands.sendSelectionByEmail() }
+    function openSelectionInDefaultEditor() { mainWindowCommands.openSelectionInDefaultEditor() }
+    function openPeopleManagerForPerson(name, personId) {
+        mainWindowCommands.openPeopleManagerForPerson(name, personId)
     }
-    // A Súgó által használt főablak-tulajdonság neve változatlan.
-    readonly property alias keyboardShortcutGroups:
-        mainKeyboardShortcuts.keyboardShortcutGroups
 
     menuBar: MainMenuBar {
         id: picasaMenuBar
@@ -983,7 +594,7 @@ ApplicationWindow {
             ? passportController : null
         hostAboutDialog: aboutDialog
         hostAddFileDialog: addFileDialog
-        hostBackupHost: backupHost
+        hostBackupHost: mainWindowPeripheralLayers.exportBackupHost
         hostCollectionPasswordDialog: collectionPasswordDialog
         hostCompactDatabaseDialog: compactDatabaseDialog
         hostConfigureButtonsDialog: configureButtonsDialog
@@ -994,7 +605,7 @@ ApplicationWindow {
         hostFileOpsDialogs: fileOpsDialogs
         hostFolderManager: folderManager
         hostFolderPane: folderPane
-        hostGiftCdHost: giftCdHost
+        hostGiftCdHost: mainWindowPeripheralLayers.exportGiftCdHost
         hostHelpDialog: helpDialog
         hostImportSourceDialog: importSourceDialog
         hostMainDialogs: mainDialogs
@@ -1016,277 +627,14 @@ ApplicationWindow {
         hostXmpFacesWriteDialog: xmpFacesWriteDialog
     }
 
-    MainDialogs {
-        id: mainDialogs
-        anchors.fill: parent
-    }
-
-    // #17: Elrejtés/Megjelenítés a kijelölésre; elrejtés után a kijelölést
-    // ürítjük — az elrejtett sorok kiesnek a rácsból, az indexek eltolódnak
-    function toggleHiddenSelection() {
-        var rows = window.photoActionRows()
-        if (rows.length === 0) return
-        controller.toggleHiddenRows(rows)
-        if (!window.viewerOpen) window.clearSelection()
-    }
-
-    // #1798: a kijelölés elküldése levélben. A tárgyat és a szöveget
-    // SZÁNDÉKOSAN nem kérjük be: az eredeti Picasa sem kérdez, a levelet a
-    // levelezőprogram szerkeszti meg — mi csak a csatolmányokkal nyitjuk meg.
-    function sendSelectionByEmail() {
-        if (typeof emailController === "undefined" || !emailController)
-            return
-        var sorok = window.photoActionRows()
-        if (sorok.length === 0)
-            return
-        var csatolmanyok = emailController.prepareAttachments(
-            sorok, sorok.length > 1)
-        if (csatolmanyok.length === 0)
-            return
-        // A `sendRows` a beállítás szerint vagy küld, vagy a
-        // `mailChoiceRequested`-del kérdést kér — a válasz lentebb.
-        emailController.sendRows(csatolmanyok, "", "")
-    }
-
-    // #4330: a Fájl menü és a Ctrl+Shift+O ugyanazt a kijelölés-pillanatképet
-    // adja a rendszer alapértelmezett fájlmegnyitójának.
-    function openSelectionInDefaultEditor() {
-        if (!fileOpsController) return
-        var paths = window.photoActionPaths()
-        if (paths.length > 0)
-            fileOpsController.openPhotosInDefaultEditor(paths)
-    }
-
-    // #1798: a küldési út két visszajelzése. A `mailChoiceRequested` a
-    // „minden küldéskor kérdezz" mód kérdése, az `emailFailed` a hibáé —
-    // ez utóbbinak eddig SEHOL nem volt kezelője, tehát a hibaüzenet
-    // („nincs levelezőprogram") némán elveszett.
-    //: #1407: a három rendszermappa-tétel (Képek / Dokumentumok / Asztal)
-    //: NEM gyökeret vált, hanem a teljes fára váltás UTÁN felfedi és
-    //: kijelöli a mappát (spec 4.5/b: `push "all"` mindhárom ágban). A
-    //: felfedés a hierarchia-vezérlő dolga, a KIJELÖLÉS a bekötőé — ezért
-    //: jön ide a jelzés.
-    //:
-    //: ⚠️ Feloldhatatlan mappánál a vezérlő NEM jelez (spec 4.6: visszaesés
-    //: a Sajátgép-gyökérre, nem hibaüzenet), tehát itt nincs hibaág.
-    Connections {
-        target: (typeof folderHierarchyController !== "undefined")
-                ? folderHierarchyController : null
-        function onRootFolderRevealed(utvonal) {
-            folderHierarchyController.revealPath(utvonal)
-            if (typeof controller !== "undefined" && controller)
-                controller.selectFolder(utvonal)
-        }
-    }
-
-    Connections {
-        target: (typeof emailController !== "undefined")
-                ? emailController : null
-        function onMailChoiceRequested(utvonalak, targy, szoveg) {
-            var parbeszed = emailChoiceDialog.ensure()
-            parbeszed.attachmentPaths = utvonalak
-            parbeszed.subject = targy
-            parbeszed.body = szoveg
-            parbeszed.open()
-        }
-        // #1798b: az előkészítés jelzése. A `sendSelectionByEmail()` a
-        // képeket a beállított méretre kicsinyíti, ami nagy fájloknál
-        // másodpercekig tart — jelzés nélkül úgy tűnik, nem történik semmi.
-        // A #459-es közös sávot használjuk, TÁJÉKOZTATÓ (borostyán)
-        // tónussal: ez nem hiba.
-        function onPreparingChanged(fut) {
-            errorBanner.notice = true
-            errorBannerText.text = fut
-                ? qsTr("Preparing attachments...")
-                : ""
-        }
-        function onEmailFailed(uzenet) {
-            // a #459-es közös hibasáv — a levelezős hibának eddig SEHOL
-            // nem volt kezelője, tehát némán elveszett
-            errorBanner.notice = false
-            errorBannerText.text = uzenet
-        }
-    }
-
-    DeferredDialog {
-        id: emailChoiceDialog
-        anchors.fill: parent
-        sourceComponent: Component {
-            EmailChoiceDialog {
-                objectName: "emailChoiceDialog"
-                onAccepted: emailController.sendWithDefaultClient(
-                    attachmentPaths, subject, body, rememberChoice)
-            }
-        }
-    }
-
-    // #4533: Társítás… — a fájltípushoz társított alkalmazások választója (Linux)
-    DeferredDialog {
-        id: openWithDialog
-        anchors.fill: parent
-        sourceComponent: Component {
-            OpenWithDialog {
-                objectName: "openWithDialog"
-                onAccepted: fileOpsController.openWithApp(photoPath, selectedAppId)
-            }
-        }
-    }
-
-    // #1720: halasztott példányosítás — a párbeszéd csak az első
-    // megnyitáskor épül fel (ld. `DeferredDialog.qml`).
-    DeferredDialog {
-        id: folderManager
-        anchors.fill: parent
-        sourceComponent: Component { FolderManagerDialog { } }
-    }
-
-    function openPeopleManagerForPerson(name, personId) {
-        var targetName = String(name || "").trim()
-        var targetPersonId = String(personId || "").trim()
-        if (peopleManagerLoader.status === Loader.Ready) {
-            peopleManagerLoader.item.openForPerson(targetName, targetPersonId)
-        } else {
-            window.pendingPeopleManagerPersonName = targetName
-            window.pendingPeopleManagerPersonId = targetPersonId
-            peopleManagerLoader.active = true
-        }
-    }
-
-    // #4334: a komponens csak az első menükattintásra töltődik be; a
-    // külön fájl miatt a forró Main.qml-ben csak a bekötés marad.
-    Loader {
-        id: peopleManagerLoader
-        objectName: "peopleManagerLoader"
-        active: false
-        source: Qt.resolvedUrl("PicasaPy/PeopleManagerDialog.qml")
-        onLoaded: {
-            item.controller = controller
-            var targetName = window.pendingPeopleManagerPersonName
-            var targetPersonId = window.pendingPeopleManagerPersonId
-            window.pendingPeopleManagerPersonName = ""
-            window.pendingPeopleManagerPersonId = ""
-            if (targetName.length > 0)
-                item.openForPerson(targetName, targetPersonId)
-            else
-                item.open()
-        }
-    }
-    // Duplikátum-kezelő (#287): a SAJÁT kezelő-párbeszéd. #1398 óta a
-    // másodpéldány-mód eredménysávjáról nyílik („Manage Duplicates..."), nem
-    // az Eszközök menüből — a mért menüparancs a keresési módot kapcsolja.
-    // #294: az appWindow-bekötés a „kijelölt képek" hatókörhöz kell — enélkül
-    // a dialógus a mappa-hatókörre esne vissza (integrátori bekötés).
-    DeferredDialog {
-        id: dedupDialog
-        anchors.fill: parent
-        sourceComponent: Component { DedupDialog { appWindow: window } }
-    }
-    // #1473: az arckeresés belépési pontja. A vezérlőt az ablak-szintű
-    // álnéven kapja (#1236) — az ablak maga NEM modális, a keresés alatt a
-    // felhasználó tovább dolgozhat (#449).
-    DeferredDialog {
-        id: faceScanDialog
-        anchors.fill: parent
-        sourceComponent: Component {
-            FaceScanDialog { faceScan: window._faceScanController }
-        }
-    }
-    DeferredDialog {
-        id: screensaverDialog
-        objectName: "screensaverDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            ScreensaverDialog {
-                saverController: controller
-                onPreviewRequested: window.startScreensaverPreview()
-            }
-        }
-    }
-    //: #4618: album-nézetben az eredeti rákérdez (`addtosaver::warning`);
-    //: halasztva (#1612), a közös megerősítő párbeszéddel
-    DeferredDialog {
-        id: screensaverAlbumConfirmLoader
-        objectName: "screensaverAlbumConfirmDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            ConfirmDialog {
-                namePrefix: "screensaverAlbumConfirm"
-                title: qsTr("Confirm")
-                property var pendingPaths: []
-                function openFor(paths) {
-                    pendingPaths = paths ? paths.slice() : []
-                    if (pendingPaths.length > 0)
-                        ask("", qsTr("Are you sure you want to add all of the"
-                                     + " selected album's images?"))
-                }
-                onConfirmed: window.addPhotosToScreensaver(pendingPaths)
-            }
-        }
-    }
-    DeferredDialog {
-        id: photoViewerSettingsDialog
-        anchors.fill: parent
-        sourceComponent: Component {
-            PhotoViewerSettingsDialog { viewerController: controller }
-        }
-    }
-    // #146: meglévő Picasa-telepítés átvétele — nyitása a Mappakezelő
-    // gombjából (discoveryController.dialogRequested) vagy induláskori
-    // automatikus felajánlásból (integrátori bekötés: picasaImportDialog.openAndDiscover())
-    PicasaImportDialog {
-        id: picasaImportDialog
-        //: #3463: modális réteg-párbeszéd — a főablak Shift+F1-ét a Qt
-        //: letiltja, amíg nyitva van
-        Shortcut {
-            sequence: "Shift+F1"
-            enabled: picasaImportDialog.opened
-                     && !window._szovegmezoneVanFokusz
-            onActivated: window.nyisdASugot(picasaImportDialog.helpTopic)
-        }
-    }
-    // Import forrásból (#23): az eszköztár "Import" gombja nyitja
-    DeferredDialog {
-        id: importSourceDialog
-        anchors.fill: parent
-        sourceComponent: Component { ImportSourceDialog { } }
-    }
-    // #1633: Fájl ▸ Fájl felvétele a Picasába… / Ctrl+O — natív fájlválasztó
-    AddFileDialog { id: addFileDialog }
-    // #1654: a tesztüzem naplójának „Mentés másként…" tartaléka —
-    // csak akkor nyílik meg, ha a NAS közös mappája nem érhető el
-    TesztuzemNaploDialog { id: tesztuzemNaploDialog }
-
     // első indítás: nincs még figyelt mappa → Mappakezelő felajánlása
     // #449: első indítás — az eredeti EGYETLEN kérdést tett fel (teljes gép
     // vs. Dokumentumok/Képek/Asztal), és nem nyitott mappalistát. Eddig
     // nálunk üres könyvtárnál rögtön a Mappakezelő nyílt ki: az egy fát és
     // egy jóval nagyobb döntést tett a felhasználó elé az első percben.
-    Component.onCompleted: {
-        if (controller && controller.attachHoverPreviewKeyState)
-            controller.attachHoverPreviewKeyState(window)
-        //: #598: a kezdő cellaméret átadása a bélyegkép-tárnak — enélkül az
-        //: induló rács a felső szintről dolgozna, pedig a 144-es fokozat a
-        //: kisebb szintből tízszer olcsóbban áll elő.
-        if (controller) controller.setThumbCellSize(window.thumbSize)
-        //: #3070: a megjelenítési mód kezdőállapota a felület színein
-        window.frissitsdAMegjelenitesiPalettat()
-        if (window.quickViewerLaunch) {
-            window.startQuickViewer()
-            return
-        }
-        initialScanDialog.openIfNeeded()
-        // #1051: ha az előző munkamenet piszkozatot hagyott, most kell
-        // felajánlani — enélkül a lemezen ragad, ahogy a tulajdonosé is
-        collageDraftDialog.openIfNeeded()
-        // #922: a képtálca kezdőállapota (a Connections innentől frissíti)
-        if (controller) window.trayHasPictures = controller.heldCount > 0
-        // #1622: NÉMA felderítés korábbi telepítésből származó adatra —
-        // az eredeti is magától megnézi (`0x00406770`, két `Windows.old`
-        // útvonal). Találat nélkül semmi nem történik; találatnál a
-        // PicasaImportDialog KÉRDEZ, mielőtt bármit átvennénk.
-        if (typeof discoveryController !== "undefined" && discoveryController)
-            discoveryController.discoverAtStartup()
-    }
+    Component.onCompleted: { mainWindowCommands.onWindowCompleted() }
+
+    function refreshSuggestions() { mainWindowCommands.refreshSuggestions() }
 
     // Eszköztár: a fejléc önálló komponens, változatlan ablakfejlécként.
     header: MainWindowToolbar {
@@ -1301,390 +649,20 @@ ApplicationWindow {
         })
     }
 
-    // Kereső-javaslatok (#7): gépelés után rövid szünettel (debounce)
-    // kérjük le, hogy NAS-on se fusson lekérdezés minden billentyűre.
-    // #1515: null-őr (#305 mintája). A 150 ms-os debounce miatt a hívás a
-    // gépeléstől ELVÁLIK: ha közben az ablak lebomlik, a `controller`
-    // kontextus-tulajdonság már null, és a hívás QML-szkripthibát dobna.
-    // Ez a felület egyetlen olyan pontja, ahol IDŐZÍTŐ hívja a
-    // controllert — a #1515 tesztje volt az első, amely a valódi
-    // (searchEdited → suggestionsTimer) úton ment végig, és kibukott.
-    function refreshSuggestions() {
-        if (!controller)
-            return
-        searchSuggestionsBox.suggestions =
-            controller.searchSuggestions(toolbar.searchText)
-    }
-    Timer {
-        id: suggestionsTimer
-        interval: 150
-        onTriggered: window.refreshSuggestions()
-    }
-    SearchSuggestions {
-        id: searchSuggestionsBox
-        objectName: "searchSuggestions"
-        parent: toolbar
-        z: 50
-        x: toolbar.searchBoxItem.x
-        y: toolbar.searchBoxItem.y + toolbar.searchBoxItem.height
-        width: toolbar.searchBoxItem.width
-        query: toolbar.searchText
-        // #1026: a keresődoboz a könyvtár keretének része, tehát a buborék
-        // sem úszhat rá a projekt-lapra (a beírt szöveg megmarad, ezért a
-        // hosszra kötött feltétel önmagában igazat adna)
-        visible: suggestions.length > 0 && toolbar.searchText.length > 0
-                 && !window.viewerOpen && window.libraryFrameVisible
-        onChosen: function(kind, name, param) {
-            if (kind === "folder") {
-                toolbar.clearSearch()
-                window.clearSelection()
-                controller.selectFolder(param)
-            } else if (kind === "album") {
-                toolbar.clearSearch()
-                window.clearSelection()
-                window.unnamedFacesOpen = false
-                controller.showAlbum(param)
-            }
-            suggestions = []
-        }
-    }
-
-    // #8: a diavetítés a főablak önálló vetítési rétege.
-    MainSlideshow {
-        id: slideshow
-        hostWindow: window
-        hostController: typeof controller !== "undefined" ? controller : null
-        hostPhotoViewer: photoViewer
-        hostErrorBanner: errorBanner
-        hostErrorBannerText: errorBannerText
-        noScreensaverPicturesMessage: qsTr(
-            "The selected screensaver sources contain no available pictures.")
-    }
-
-    PhotoViewer {
-        id: photoViewer
-        objectName: "photoViewer"
+    MainWindowWorkspace {
+        id: mainWindowWorkspace
         anchors.fill: parent
-        visible: window.viewerOpen
-        // #305: null-őr
-        photosModel: controller ? controller.photos : null
-        // #422: a mentés-parancsok a nézőből — ugyanazok a megerősítések,
-        // mint a rácsból (egy parancs, egy út)
-        onSaveRequested: function(row) { saveDialogs.ensure().openSave([row]) }
-        onRevertRequested: function(row) { saveDialogs.ensure().openRevert([row]) }
-        onUndoAllEditsRequested: function(row) {
-            mainDialogs.undoAllEditsDialog.ensure().openFor([row])
-        }
-        onResetFacesRequested: resetFacesForPaths(
-            controller && photoViewer.aktivSor >= 0
-                ? [controller.photos.filePathAt(photoViewer.aktivSor)] : [])
-        // #2566: a jobb fiók a nézőben is nyílik (a panelek a nézőn belül
-        // élnek, ld. PhotoViewer.qml). A Helyek-panel két írási művelete
-        // UGYANAZON a megerősítésen megy át, mint a könyvtár-nézetben —
-        // egy parancs, egy út.
-        onClearGeotagRequested: (rows) => mainDialogs.panelClearGeotagDialog.ensure().futtasd(rows)
-        onSetGeotagRequested: (rows, la, lo) => mainDialogs.setGeotagDialog.ensure().futtasd(rows, la, lo)
-        onDropGeotagRequested: (rows, la, lo) => mainDialogs.dropGeotagDialog.ensure().futtasd(rows, la, lo)
-        // #2566: a fiók két KIVEZETŐ parancsa. Mindkettő a könyvtár rácsát
-        // cseréli le, amit a néző eltakarna — ezért előbb ZÁRUL a néző.
-        // Nem az `onClosed` útján: az `resyncFolderOfRow`-t hív, ami épp a
-        // most beállított nézetet írná felül.
-        onFindTaggedRequested: function(keyword) {
-            if (!window.aaKapu(function () { photoViewer.findTaggedRequested(keyword) }))
-                return
-            window.viewerOpen = false
-            if (controller) controller.search(keyword)
-        }
-        onPersonChosen: function(name) {
-            if (!controller) return
-            if (!window.aaKapu(function () { photoViewer.personChosen(name) }))
-                return
-            window.viewerOpen = false
-            window.clearSelection()
-            window.unnamedFacesOpen = false
-            controller.showPerson(name)
-        }
-        onPlayRequested: window.startSlideshow(currentIndex)
-        onStarRequested: function(row) {
-            if (controller) controller.toggleStar(row)
-        }
-        onRotateRequested: function(row, delta) {
-            if (!controller) return
-            if (delta < 0) controller.rotateLeft(row)
-            else controller.rotateRight(row)
-        }
-        // #1002: a néző csak JELEZ — a panel feltöltése és a lapváltás
-        // a gazdáé, ugyanúgy, ahogy a `CollagePanel` jelzéseinél.
-        onEditCollageRequested: function(path) {
-            window.openSavedCollage(path)
-        }
-        //: #2114: a film forrásprojektje — a `.mxf` képeit kijelöljük, és
-        //: a filmkészítő párbeszéd a projekt diaidejével nyílik.
-        onEditMovieRequested: function(path) {
-            window.openSavedMovie(path)
-        }
-        onClosed: {
-            var quickViewWasActive = controller
-                && controller.quickViewActive === true
-            window.viewerOpen = false
-            if (quickViewWasActive) return
-            window.selectedIndex = currentIndex   // a rács kövesse a nézőt
-            window.selectedIndexes = [currentIndex]
-            // a szerkesztések (filters=) azonnal látsszanak a rácson —
-            // NAS-on a fájlfigyelő nem szól, nem várhatunk a rescanre (#59);
-            // a feedben (#64) a néző át is léphetett másik mappába, ezért a
-            // nézett kép mappáját frissítjük
-            // #173: a megnyitás előtti feed-pozíciót megőrizzük — a resync
-            // modellcseréje után NE a mappa elejére ugorjunk. A rögzítés a
-            // resync ELŐTT történik (a savedY még a megnyitáskori), az
-            // alkalmazás pedig a modellcsere UTÁN (Qt.callLater), illetve az
-            // onFeedChanged ágon.
-            mainLibraryCanvas.grid.beginRevealAfterViewer()
-            controller.resyncFolderOfRow(currentIndex)
-            Qt.callLater(mainLibraryCanvas.grid.applyRevealAfterViewer)
-        }
-        onCurrentIndexChanged: if (visible) window.selectedIndex = currentIndex
-        // #422: a néző kontextusmenüjének törlés-tétele — a megerősítő
-        // dialógusok itt élnek (a menü maga a PhotoViewer-ben)
-        // #4621: a néző saját `Ctrl+Delete`-je és a helyi menü tétele is a
-        // menüsáv KÖZÖS, nézetfüggő elágazásán megy át
-        deleteRemovesFromAlbum: picasaMenuBar.deleteRemovesFromAlbum
-        onDeleteRequested: picasaMenuBar.activateDeleteCommand()
-    }
-
-
-    // #5770: az Időrend állapota és ablaka a saját komponensében él.
-    MainTimeline {
-        id: timelineView
-        objectName: "timelineView"
-        transientParent: window
         hostWindow: window
         hostController: typeof controller !== "undefined" ? controller : null
-        hostTimelineController: typeof timelineController !== "undefined"
-            ? timelineController : null
-        hostToolbar: toolbar
-        hostSlideshow: slideshow
-    }
-
-    // #985: a dokumentum-fülsáv (#944) a tartalomterület TETEJÉN, az
-    // eszköztár alatt. Nyitott projekt-lap nélkül a magassága 0, tehát a mai
-    // elrendezés egyetlen képponttal sem csúszik el — ezt a
-    // `test_collage_panel_wiring_985.py` külön állítja.
-    DocumentTabStrip {
-        id: documentTabStrip
-        textEntryHasFocus: window._szovegmezoneVanFokusz
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-
-        projectTabs: window.openProjectTabs
-
-        // A néző és az Időrend a TELJES ablakot fedi; ilyenkor a sáv se ne
-        // látsszon, se ne foglaljon helyet (a komponens `height`-kötését
-        // ezért írjuk felül, nem csak a `visible`-t).
-        visible: documentTabStrip.hasProjectTabs
-                 && !window.viewerOpen && !window.timelineOpen
-        height: documentTabStrip.visible ? documentTabStrip.savMagassag : 0
-
-        onCloseAccepted: function(tabId, saveDraft) {
-            if (tabId === window.movieMakerTabId) {
-                window.movieMakerTabOpen = false
-                return
-            }
-            if (!controller || tabId !== window.collageTabId) return
-            // A háromgombos kérdés már eldőlt (#944); itt csak a
-            // következményt hajtjuk végre — a piszkozat a Kollázsok albumba
-            // megy (#949), majd a lap bezárul.
-            if (saveDraft) controller.saveCollageDraft()
-            controller.closeCollage()
-        }
-    }
-
-    SplitView {
-        id: mainSplit
-        objectName: "mainSplit"
-        // #985: a `anchors.fill: parent` négy horgonyra bomlik, hogy a
-        // tartalom a fülsáv ALATT kezdődjön. Üres sávnál a sáv magassága 0,
-        // tehát `documentTabStrip.bottom === parent.top` — a mai elrendezés
-        // képpontra ugyanaz marad.
-        anchors.top: documentTabStrip.bottom
-        anchors.left: parent.left
-        //: #3037: a fiók a jobb szélen ül, a könyvtár mellette ér véget —
-        //: ez a mért `RIGHTDRAWEROFFSET` viselkedés (a tartalom eltolása).
-        anchors.right: jobbFiok.visible ? jobbFiok.left : parent.right
-        //: #3503: nyitott Ajándék-CD panelnél a könyvtár a panel fölött ér
-        //: véget — a panel nem takarhatja el a képeket
-        //: #3504: ugyanez a mentés-panelre is vonatkozik
-        anchors.bottom: giftCdHost.visible ? giftCdHost.top
-                        : (backupHost.visible ? backupHost.top : parent.bottom)
-        // A Könyvtár lapjának tartalma. NEM `Loader.active`: a lap váltásakor
-        // a feed nem semmisülhet meg, különben elveszne a görgetési helye és
-        // a kijelölése (a #944 kimérte, a #985 tesztje állítja).
-        // #1026: a KERET közös kapcsolójára kötve (a `libraryFrameVisible`
-        // a `documentTabStrip.libraryActive`-ot hordozza) — így a könyvtár
-        // tartalma, az eszközsáv és az alsó sáv EGYSZERRE megy.
-        visible: !window.viewerOpen && !window.timelineOpen
-                 && window.libraryFrameVisible
-        orientation: Qt.Horizontal
-
-        // #322: látható, fogható elválasztó. A Fusion alap-fogantyúja olyan
-        // halvány, hogy a felhasználó meg sem találta — ez a delegate a
-        // Picasa vékony sávját adja, hover/húzás közben kiemelkedve, és a
-        // kurzort is átváltja, hogy a húzhatóság magától látsszon.
-        handle: Rectangle {
-            objectName: "folderPaneHandle"
-            implicitWidth: 6
-            implicitHeight: 6
-            color: SplitHandle.pressed
-                   ? Qt.darker(Theme.chromeBorder, 1.35)
-                   : (SplitHandle.hovered
-                      ? Qt.darker(Theme.chromeBorder, 1.15)
-                      : Theme.chromeBorder)
-
-            Behavior on color {
-                ColorAnimation { duration: 100 }
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                acceptedButtons: Qt.NoButton  // csak a kurzorért
-                cursorShape: Qt.SplitHCursor
-            }
-        }
-
-        MainFolderPane {
-            id: folderPane
-            objectName: "folderPane"
-            // #305: null-őr — a controller a leépítéskor átmenetileg null
-            SplitView.preferredWidth: controller ? controller.folderPaneWidth : 240
-            //: #2329: MÉRT korlátok. A legkisebb szélesség ugyanaz a szám,
-            //: mint az alapértelmezés (240) — a hasáb nem húzható alá.
-            SplitView.minimumWidth: 240
-            //: A felső korlát az eredetiben ABLAKFÜGGŐ: a főpanel
-            //: szélessége mínusz 240 (`0x009d9e21`–`0x009d9e50`). A fix 600
-            //: széles ablakon szűkebb volt az eredetinél, keskenyen pedig
-            //: tágabb. A `Math.max` azért kell, hogy nagyon keskeny
-            //: ablakon se csússzon a maximum a minimum ALÁ — a `SplitView`
-            //: ilyenkor kiszámíthatatlanul viselkedne.
-            SplitView.maximumWidth: Math.max(240, mainSplit.width - 240)
-
-            hostWindow: window
-            hostController: controller
-            hostToolbar: toolbar
-            hostBackupHost: backupHost
-            hostFileOpsDialogs: fileOpsDialogs
-            hostCollectionPasswordDialog: collectionPasswordDialog
-            hostFileOpsController: typeof fileOpsController !== "undefined"
-                ? fileOpsController : null
-            hostFaceScanController: typeof faceScanController !== "undefined"
-                ? faceScanController : null
-            hostFolderHierarchyController: typeof folderHierarchyController !== "undefined"
-                ? folderHierarchyController : null
-        }
-
-        MainLibraryCanvas {
-            id: mainLibraryCanvas
-            hostWindow: window
-            hostController: controller
-            hostToolbar: toolbar
-            hostSearchSuggestionsBox: searchSuggestionsBox
-            hostBackupHost: backupHost
-            hostRightDrawerHandle: jobbFiokFogo
-            hostPeoplePanel: peoplePanel
-        }
-
-    }
-
-    MainRightDrawer {
-        id: jobbFiok
-        hostWindow: window
-        hostController: controller
-        hostToolbar: toolbar
-        hostPhotoViewer: photoViewer
-        hostMainSplit: mainSplit
-        hostMainLibraryCanvas: mainLibraryCanvas
-        hostMainDialogs: mainDialogs
-        propertiesLabel: qsTr("Properties")
-        tagsLabel: qsTr("Tags:")
-        peopleLabel: qsTr("People")
-        placesLabel: qsTr("Places")
-    }
-
-    //: #3035: `m_fakehidden` (`thumbui.tre:696`) — NEM LÁTSZÓ, de
-    //: kattintható sáv a fiók szélén, ami billenti a fiókot. Csukott
-    //: fióknál is ott van: ez a MÁSIK belépési pont a Nézet menü mellett.
-    Rectangle {
-        id: jobbFiokFogo
-        objectName: "toggle_right_drawer"
-        //: a `kattints()` a próbáké is: a vezérlőre kattintunk, nem a
-        //: kezelő metódusát hívjuk
-        function kattints() { window.billentsdAFiokot() }
-        visible: mainSplit.visible
-        opacity: 0
-        width: 6
-        anchors.top: mainSplit.top
-        anchors.bottom: mainSplit.bottom
-        anchors.right: jobbFiok.visible ? jobbFiok.left : parent.right
-        color: "transparent"
-        TapHandler { onTapped: jobbFiokFogo.kattints() }
-    }
-
-    // #985: a Kollázs LAP tartalma — a Könyvtár lapjának TESTVÉRE, ugyanazon
-    // a helyen. Az eredetiben a `panelroot/collagetab` a `panelroot/picasatab`
-    // testvére, tehát a kollázs a mappapanellel EGYÜTT váltja le a könyvtárat
-    // (`picasa-kollazs-felulet.md` 8.: a „Továbbiak..." visszavált a
-    // `picasatab`-ra). A panel a saját bal hasábját hozza magával.
-    // #1612: a panel az induláskor NEM látszik (külön dokumentum-lap), a
-    // komponensenkénti mérés szerint viszont 74,5 ms-ba kerül. Ezért
-    // `Loader` mögött él: az ELSŐ megnyitásig nem jön létre, utána viszont
-    // MEGMARAD (`betoltve` ragadós) — a félkész kollázs nem veszhet el egy
-    // fülváltáson. A `visible` feltétel változatlan, csak a betöltőre került.
-    Loader {
-        id: collagePanelLoader
-        objectName: "collagePanelLoader"
-        anchors.top: documentTabStrip.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        readonly property bool kellene: !window.viewerOpen && !window.timelineOpen
-                 && documentTabStrip.activeTabId === window.collageTabId
-        property bool betoltve: false
-        onKelleneChanged: if (kellene) betoltve = true
-        active: kellene || betoltve
-        visible: kellene
-        sourceComponent: collagePanelKomponens
-    }
-
-    Component {
-        id: collagePanelKomponens
-
-        CollagePanel {
-            id: collagePanel
-            // az álnév a kötési hurkot kerüli ki (ld. `appController`)
-            controller: window.appController
-            librarySelection: window.selectedIndexes
-
-            // #1028: a mentés VÉGE — a panel jelez, a navigáció a gazdáé
-            onCollageSaved: function(path) { window.locateSavedCollage(path) }
-
-            // spec 4.3/13.: a panel csak JELEZ, a fülváltás a gazdáé
-            onGetMoreClipsRequested: {
-                window.backToCollagePrompted = true
-                documentTabStrip.activateTab(documentTabStrip.libraryTabId)
-            }
-        }
-    }
-
-    // #1001: a „Megjelenítés és szerkesztés" FOGADÓJA. A parancs három
-    // helyről indul (a `CollageRandomRow` gombja, a `CollageNode`
-    // duplakattintása és a `CollageContextMenus` tétele), de mind a három a
-    // vezérlő `viewAndEditSelection()`-jébe fut, tehát EGY fogadó elég — és
-    // egy is kell, mert a lapváltás meg a néző a gazdáé, nem a panelé.
-    Connections {
-        target: controller
-        function onCollageEditRequested(path) {
-            window.openCollageNodeInEditor(path)
-        }
+        hostRefs: ({
+            backupHost: mainWindowPeripheralLayers.exportBackupHost,
+            giftCdHost: mainWindowPeripheralLayers.exportGiftCdHost,
+            importSourceDialog: importSourceDialog,
+            mainDialogs: mainDialogs,
+            picasaMenuBar: picasaMenuBar,
+            searchSuggestionsBox: searchSuggestionsBox,
+            toolbar: toolbar
+        })
     }
 
     // #1939: a „Vissza a kollázshoz" visszaútja AZ ALSÓ SÁVBA került
@@ -1697,190 +675,27 @@ ApplicationWindow {
     // Ezért NINCS itt `backToCollageButton`: ne tegye vissza egy későbbi
     // kör „hiányzó gombként", mert akkor két vezérlő kínálná ugyanazt.
 
-    // A lebegő háttérmunka- és folyamatjelzők önálló komponensben (#6136).
-    MainActivityPanels {
-        id: activityPanels
+    MainWindowPeripheralLayers {
+        id: mainWindowPeripheralLayers
+        anchors.fill: parent
+        hostWindow: window
         hostController: typeof controller !== "undefined" ? controller : null
-        hostActivityCancelConfirm: activityCancelConfirm
-    }
-
-    //: #2966: a megszakítás megerősítése. Az eredeti címsora „Want to
-    //: Cancel?" volt — azt NEM vesszük át, a miénk a műveletről szól.
-    //: #1719/#1720: halasztott példányosítás — a párbeszéd csak az első
-    //: megszakítás-kattintáskor épül fel.
-    DeferredDialog {
-        id: activityCancelConfirm
-        objectName: "activityCancelConfirmLoader"
-        anchors.fill: parent
-        function ask() {
-            //: a `decisionKey` SZÁNDÉKOSAN üres: a futó munka leállítását
-            //: nem lehet „ne kérdezze újra"-val elnyomni
-            //: `IBackgroundNotify::cancel` — az eredeti szövege (#3573)
-            ensure().ask("", qsTr(
-                "Do you want to cancel this operation?"))
-        }
-        sourceComponent: Component {
-            ConfirmDialog {
-                objectName: "activityCancelConfirm"
-                namePrefix: "activityCancel"
-                //: `IBackgroundNotify::canceltitle` — az eredeti szövege (#3573)
-                title: qsTr("Want to Cancel?")
-                onConfirmed: controller.cancelActivity()
-            }
-        }
-    }
-
-    //: #4634: halasztott (#1720) — csak az Eszközök menüpontra épül fel.
-    DeferredDialog {
-        id: xmpFacesWriteDialog
-        objectName: "xmpFacesWriteDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            XmpFacesWriteDialog {
-                onWriteRequested: function (scope, rows) {
-                    if (controller) controller.writeFacesToXmp(scope, rows)
-                }
-            }
-        }
-    }
-
-    // #237: kép/mappa ablakra ejtése → a kép mappája figyelt gyökér lesz
-    // (ImportDropArea → dropImportController). Egér-eseményt nem fog el;
-    // z:95 — a lebegő panelek (90) fölött, a diavetítés (100) alatt, hogy
-    // a visszajelzés-buborék látsszon
-    ImportDropArea {
-        objectName: "importDropArea"
-        anchors.fill: parent
-        z: 95
-    }
-
-    MainErrorBanner {
-        id: mainErrorBanner
-        hostController: controller
-        hostTestLogDialog: tesztuzemNaploDialog
-        hostBrokenPhotoDialog: brokenPhotoDialog
-        hostBrokenPhotoBatchTimer: brokenPhotoBatchTimer
-    }
-
-    //: #1403: az arc elnevezése után AUTOMATIKUS XMP-írás hibája. A jelzés a
-    //: `faceScanController`-é (nem a `facesHelper`-é), és az eredetiben is
-    //: megnevezett hibaeset (csak olvasható fájl) — a névadás maga sikeres
-    //: volt, csak az XMP nem, ezért nem nyeljük el.
-    Connections {
-        target: window._faceScanController
-        function onUnnamedCountChanged() { window.peopleFaceRevision++ }
-        // #4586: a keresés közben is frissül a panel névtelen-arc listája —
-        // összevonva, és csak nyitott panel mellett
-        function onFacesStored() {
-            if (window.peoplePanelOpen || photoViewer.peopleOpen)
-                { if (!unnamedFaceRefreshTimer.running) unnamedFaceRefreshTimer.start() }
-        }
-        function onFaceSuggestionsChanged() { window._javaslatFrissult() }
-        function onXmpAutoWriteFailed(reason) {
-            errorBanner.notice = false
-            errorBannerText.text = qsTr("Face data could not be written to XMP: %1").arg(reason)
-        }
-    }
-    Connections {
-        target: typeof facesHelper !== "undefined" ? facesHelper : null
-        function onFaceWriteFailed(message) {
-            errorBanner.notice = false
-            errorBannerText.text = message
-        }
-
-    }
-
-    // #459: sérült/betölthetetlen kép — ELREJTÉS felajánlása (nem törlés),
-    // a felhasználó döntésével. A "Hide Files" a MEGLÉVŐ elrejtés-úton fut
-    // (`controller.hidePhotosByIds` → `_apply_batch`, a `toggleHiddenRows`
-    // mintája, `photo_ops_controller.py`) — itt NEM íródott újra.
-    //: #1612: halasztva — a sérült kép elrejtés-felajánlása csak akkor kell, ha tényleg akad ilyen kép
-    DeferredDialog {
-        id: brokenPhotoDialog
-        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
-        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
-        objectName: "brokenPhotoDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            ConfirmDialog {
-                //: a BELSŐ példány saját neve: a `brokenPhotoDialog` a
-                //: halasztó `Loader`, tehát a saját mezőire innen NEM azon
-                //: a néven kell hivatkozni (az `ensure()` visszatérése ez az
-                //: objektum)
-                id: brokenPhotoBelso
-                namePrefix: "brokenPhoto"
-                yesText: qsTr("Hide Files")
-                noText: qsTr("Don't Hide")
-                property var pendingIds: []
-                //: #3573: a nevek az üzenet fájllistájához (a `pendingIds`
-                //: párja, ugyanabban a sorrendben)
-                property var pendingNames: []
-                onConfirmed: {
-                    controller.hidePhotosByIds(brokenPhotoBelso.pendingIds)
-                    brokenPhotoBelso.pendingIds = []
-                    brokenPhotoBelso.pendingNames = []
-                }
-                onDenied: {
-                    brokenPhotoBelso.pendingIds = []
-                    brokenPhotoBelso.pendingNames = []
-                }
-            }
-        }
-    }
-
-    Timer {
-        id: brokenPhotoBatchTimer
-        interval: 400
-        onTriggered: {
-            if (brokenPhotoDialog.ensure().pendingIds.length > 0) {
-                // #3573: az eredeti KÉT erőforrásból rakja össze az
-                // üzenetet, és a kettő közé soronként a hibás fájlok nevét
-                // szúrja be (`GetBadImages` + lista + `GetBadImages2`)
-                var dialog = brokenPhotoDialog.ensure()
-                dialog.ask("",
-                    //: `CThumbUI::GetBadImages` — utána a fájllista jön
-                    qsTr("PicasaPy had a problem loading this file(s)\n")
-                    + dialog.pendingNames.join("\n")
-                    //: `CThumbUI::GetBadImages2`
-                    + qsTr("\nWould you like to hide the files on disk?"))
-            }
-        }
-    }
-
-    //: #3503: „Létrehozás ▸ Ajándék CD készítése…" — a kiadás-panel
-    //: Ajándék-CD üzemmódja a könyvtár ALJÁN (az eredetiben is ott ül).
-    //: Csak a könyvtár lapján látszik, ugyanazzal a feltétellel, mint a
-    //: könyvtár maga.
-    GiftCdHost {
-        id: giftCdHost
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        appController: controller
-        fileOps: typeof fileOpsController !== "undefined" ? fileOpsController : null
-        visible: nyitva && !window.viewerOpen && !window.timelineOpen
-                 && window.libraryFrameVisible
-        //: #3504: a kiadás-panel EGYSZERRE egy üzemmódban látszik — az
-        //: Ajándék-CD nyitása becsukja a mentést (az eredetiben is egy sáv
-        //: vált módot, `biztonsagi-mentes.md` 10.)
-        onNyitvaChanged: if (nyitva) backupHost.nyitva = false
-    }
-
-    //: #3504: „Eszközök ▸ Képek biztonsági mentése…" — a kiadás-panel
-    //: mentés-üzemmódja, ugyanúgy a könyvtár alján, mint az Ajándék-CD.
-    BackupHost {
-        id: backupHost
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        visible: nyitva && !window.viewerOpen && !window.timelineOpen
-                 && window.libraryFrameVisible
-        //: #3751: a rács-szűrő csak a panel melletti könyvtár-rácsra hat —
-        //: keresésben, időrendben, más lapon a teljes lista látszik
-        racsLatszik: visible && !(controller && controller.searchActive)
-        nezoNyitva: window.viewerOpen || window.slideshowRunning
-        //: a mentés nyitása becsukja az Ajándék-CD-t (ld. fent)
-        onNyitvaChanged: if (nyitva) giftCdHost.nyitva = false
+        hostRefs: ({
+            photoViewer: photoViewer,
+            documentTabStrip: documentTabStrip,
+            unnamedFaceRefreshTimer: unnamedFaceRefreshTimer,
+            tesztuzemNaploDialog: tesztuzemNaploDialog,
+            brokenPhotoDialog: brokenPhotoDialog,
+            brokenPhotoBatchTimer: brokenPhotoBatchTimer,
+            fileOpsDialogs: fileOpsDialogs,
+            mainDialogs: mainDialogs,
+            moveToNewPersonDialog: moveToNewPersonDialog,
+            openWithDialog: openWithDialog,
+            removeFromAlbumDialog: removeFromAlbumDialog,
+            removePeopleFacesDialog: removePeopleFacesDialog,
+            saveDialogs: saveDialogs,
+            toolbar: toolbar
+        })
     }
 
     // alsó sáv: infó-sáv + kijelölés-tálca (MainTrayBar → TrayBar, #150)
@@ -1898,522 +713,5 @@ ApplicationWindow {
         hostDocumentTabStrip: documentTabStrip
     }
 
-    // -- fájlműveletek (#15): kontextusmenü + dialógusok --------------------
 
-    MainPhotoContextMenu {
-        id: photoContextMenu
-        hostWindow: window
-        hostController: controller
-        hostFileOpsController: typeof fileOpsController !== "undefined"
-            ? fileOpsController : null
-        hostFileOpsDialogs: fileOpsDialogs
-        hostMainDialogs: mainDialogs
-        hostMoveToNewPersonDialog: moveToNewPersonDialog
-        hostOpenWithDialog: openWithDialog
-        hostRemoveFromAlbumDialog: removeFromAlbumDialog
-        hostRemovePeopleFacesDialog: removePeopleFacesDialog
-        hostSaveDialogs: saveDialogs
-        hostToolbar: toolbar
-    }
-
-    // #3539: „Eltávolítás az albumból" — a kijelölt képek albumtagságát
-    // veszi le, megerősítéssel (a "Remove from album without confirmation"
-    // beállítással elnyomható, a #367 törlés-elnyomás mintája szerint).
-    //: #1612: halasztva — a megerősítés csak a menüpontból/billentyűből nyílik
-    DeferredDialog {
-        id: removeFromAlbumDialog
-        objectName: "removeFromAlbumDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            ConfirmDialog {
-                objectName: "removeFromAlbumDialog"
-                namePrefix: "removeFromAlbum"
-                //: DeleteMessage::RemoveItemsTitle (spec picasa-fen-dialogs.md 3.3.1)
-                title: qsTr("Remove Items")
-                property var rows: []
-                property string token: ""
-                function openFor(rowList, albumToken) {
-                    if (rowList.length === 0 || albumToken.length === 0) return
-                    rows = rowList
-                    token = albumToken
-                    if (rowList.length <= 1) {
-                        //: DeleteMessage::RemoveSingleYesButton
-                        yesText = qsTr("Remove Image")
-                        //: DeleteMessage::RemoveSingle
-                        ask("removeFromAlbum", qsTr(
-                            "Are you sure you want to remove the selected "
-                            + "image from the current album?"))
-                    } else {
-                        //: DeleteMessage::RemoveMultipleYesButton
-                        yesText = qsTr("Remove Images")
-                        //: DeleteMessage::RemoveMultiple
-                        ask("removeFromAlbum", qsTr(
-                            "Are you sure you want to remove the %n selected "
-                            + "images from the current album?", "",
-                            rowList.length))
-                    }
-                }
-                onConfirmed: controller.removeRowsFromAlbum(rows, token)
-            }
-        }
-    }
-
-    // #422: „Eltávolítás az Emberek albumból" — a kijelölt képekről leveszi
-    // az ADOTT személy arc-címkéjét (a régió is eltűnik: a Picasa is az
-    // arcot veszi le, nem csak a nevet). Megerősítéssel: a névcímke
-    // visszaállítása csak újbóli felismeréssel/kézi felvétellel lehetséges.
-    // #3539: a cím és a szöveg a `DeleteMessage::` család szerint (spec
-    // 3.3.1) — a korábbi saját "arc-címke" szöveg helyett.
-    //: #1612: halasztva — az arcok eltávolításának megerősítése csak a menüpontból nyílik
-    DeferredDialog {
-        id: removePeopleFacesDialog
-        //: a BUROK neve — a #1612 őre ezen hívja az `ensure()`-t, és
-        //: ezzel bizonyítja, hogy induláskor tényleg nincs példány
-        objectName: "removePeopleFacesDialogLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            ConfirmDialog {
-                objectName: "removePeopleFacesDialog"
-                namePrefix: "removePeopleFaces"
-                //: DeleteMessage::UnknownPeopleTitle (a fajta=2 ágon, tárolón kívül)
-                title: qsTr("Remove People")
-                property var rows: []
-                property string person: ""
-                function openFor(rowList, name) {
-                    if (rowList.length === 0 || name.length === 0) return
-                    rows = rowList
-                    person = name
-                    if (rowList.length <= 1) {
-                        //: DeleteMessage::RemoveSingleYesButtonPeople
-                        yesText = qsTr("Remove Person")
-                        //: DeleteMessage::RemoveSinglePeople
-                        ask("removePeopleFaces", qsTr(
-                            "Are you sure you want to remove the selected "
-                            + "person from the current album?"))
-                    } else {
-                        //: DeleteMessage::RemoveMultipleYesButtonPeople
-                        yesText = qsTr("Remove People")
-                        //: DeleteMessage::RemoveMultiplePeople
-                        ask("removePeopleFaces", qsTr(
-                            "Are you sure you want to remove the %n selected "
-                            + "people from the current album?", "",
-                            rowList.length))
-                    }
-                }
-                onConfirmed: controller.removePersonFromRows(rows, person)
-            }
-        }
-    }
-
-    // #422: „Áthelyezés új személyhez…" — az adott személy arc-címkéje a
-    // kijelölt képeken ÁTKERÜL egy másik névre (a régió marad).
-    //: #1612: halasztva — az „Áthelyezés új személyhez" csak az arcpanel
-    //: helyi menüjéből nyílik. Az `objectName` a BELSŐ párbeszédre marad,
-    //: hogy a felépülés után ugyanúgy megtalálható legyen.
-    DeferredDialog {
-        id: moveToNewPersonDialog
-        sourceComponent: Component {
-            NameInputDialog {
-                objectName: "moveToNewPersonDialog"
-                title: qsTr("Move to New Person")
-                prompt: qsTr("New person's name:")
-                property var rows: []
-                property string person: ""
-                function openFor(rowList, name) {
-                    if (rowList.length === 0 || name.length === 0) return
-                    rows = rowList
-                    person = name
-                    openEmpty()
-                }
-                onAccepted: controller.movePersonOnRows(rows, person, enteredName)
-            }
-        }
-    }
-
-    // #449: első indítás — a kérdés az ablak megjelenése UTÁN jön elő, hogy
-    // a felhasználó lássa, mibe kerül bele
-    InitialScanDialog {
-        id: initialScanDialog
-        objectName: "initialScanDialog"
-        // #1167: a migrációs „frissítés" ág a meglévő Picasa-átvételt
-        // nyitja (#146) — a felderítést a PicasaImportDialog végzi újra
-        onImportRequested: {
-            if (typeof discoveryController !== "undefined" && discoveryController)
-                discoveryController.openImportDialog()
-        }
-    }
-
-    // #5704: ugyanaz a jelszókezelő szolgálja ki a felhasználói és a
-    // beépített Rejtett mappák gyűjteményt. Hibás jelszónál a párbeszéd
-    // nyitva marad, így a felhasználó azonnal újrapróbálhatja.
-    DeferredDialog {
-        id: collectionPasswordDialog
-        anchors.fill: parent
-        sourceComponent: Component {
-            CollectionPasswordDialog {
-                controller: window.appController
-            }
-        }
-    }
-
-    // #5704 (spec #5700): ajánlat a Rejtett mappák védelmére elrejtés után.
-    DeferredDialog {
-        id: hiddenPasswordOfferDialog
-        anchors.fill: parent
-        sourceComponent: Component {
-            ConfirmDialog {
-                namePrefix: "hiddenPasswordOffer"
-                title: qsTr("Add Password")
-                message: qsTr("The \"Hidden Folders\" collection is not currently password protected.\nWould you like to add a password now?")
-                yesText: qsTr("Add Password")
-                noText: qsTr("Don't Add Password")
-                rememberText: qsTr("Do not ask me again.")
-                rememberOnDenied: true
-                cancelVisible: false
-                focusYesOnOpen: true
-                onConfirmed:
-                    collectionPasswordDialog.ensure().openForHiddenCollection()
-            }
-        }
-    }
-    Connections {
-        target: controller
-        function onHiddenPasswordOfferRequested() {
-            hiddenPasswordOfferDialog.ensure().ask(
-                "DoNotConfirmHiddenPwd",
-                qsTr("The \"Hidden Folders\" collection is not currently password protected.\nWould you like to add a password now?"))
-        }
-    }
-
-    // #1051: a kollázs-piszkozat visszaállításának felajánlása. A LAPRA
-    // váltás a gazdáé — a párbeszéd csak jelez, ahogy a `CollagePanel` is.
-
-    CollageDraftDialog {
-        id: collageDraftDialog
-        onRestored: documentTabStrip.activateTab(window.collageTabId)
-    }
-
-    // #1129: a lebegő értesítősáv (Picasa Notifier) — önálló, keret nélküli
-    // ablak a munkaterület jobb alsó részén. Az alkalmazás indítása hozza
-    // létre, nem a főablak, ezért nincs `transientParent`-je.
-    //
-    // A `NotifierBus.attached` kapun át a `CollageDoneNotice` MAGÁTÓL
-    // elhallgat, amint a sáv jelen van — így ugyanaz az esemény nem szólal
-    // meg kétszer, két helyen. A `CollageDoneNotice` SZÁNDÉKOSAN marad a
-    // fában: a #1119 őre a jelenlétét állítja, és a törlése önálló döntés
-    // (a sáv nélküli üzemmód tartaléka).
-    PicasaNotifier {
-        id: picasaNotifier
-        onActivated: function (kind, payload) {
-            if (kind === "collage")
-                window.openCollageNodeInEditor(payload)
-        }
-    }
-
-    // #1028: „A kollázs kész (kattintson ide)" — a lapzárás UTÁN is látszik,
-    // ezért a gazdában él, nem a panelben, ami közben bezárul.
-    CollageDoneNotice {
-        id: collageDoneNotice
-        z: 100
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 24
-        onClicked: {
-            var cel = collageDoneNotice.path
-            collageDoneNotice.dismiss()
-            window.openCollageNodeInEditor(cel)
-        }
-    }
-
-    // #444: Mentés / Visszaállítás / Utolsó mentés visszavonása
-    // #1720: halasztott példányosítás — a párbeszéd csak az első
-    // megnyitáskor épül fel (ld. `DeferredDialog.qml`).
-    DeferredDialog {
-        id: saveDialogs
-        // ⚠️ Az `objectName` a BECSOMAGOLT párbeszédé marad, nem a
-        // `Loader`-é: a `findChild(objectName)` így a megnyitás után a
-        // VALÓDI komponenst adja vissza, nem a burkot.
-        objectName: "saveDialogsLoader"
-        anchors.fill: parent
-        sourceComponent: Component {
-            SaveDialogs { objectName: "saveDialogs"; appWindow: window }
-        }
-    }
-
-    // átnevezés / áthelyezés / törlés / hiba (FileOpsDialogs.qml, #150)
-    //: #1612: halasztva — a fájlművelet-párbeszédek 571 QObjectet építettek
-    //: fel MINDEN induláskor, holott a legtöbb indulásnál egyet sem nyit meg
-    //: a felhasználó. A vezérlő jelzéseit a lenti, MINDIG álló `Connections`
-    //: fogadja, nem a komponens belseje (#1743, #2096).
-    DeferredDialog {
-        id: fileOpsDialogs
-        objectName: "fileOpsDialogs"
-        anchors.fill: parent
-        sourceComponent: Component {
-            //: a BELSŐ példány saját neve — a burok (`fileOpsDialogs`) a
-            //: `Loader`, a párbeszédeket tartó `Item` ez. A tesztek az
-            //: `ensure()` után ezen a néven érik el a nyilvános belépőket.
-            FileOpsDialogs {
-                objectName: "fileOpsDialogsItem"
-                appWindow: window
-            }
-        }
-    }
-
-    //: #1612: a fájlművelet-vezérlő hallgatói. Azért ITT állnak és nem a
-    //: komponensben, mert az halasztott: a `fileOpsController` jelzései nem
-    //: csak a saját párbeszédeiből indulhatnak — a mappafa
-    //: áthelyezés/törlés útja (`FolderPane.qml`) is ezen jelez. Az
-    //: `ensure()` mindhárom ágon KÖTELEZŐ: mind a három a FELHASZNÁLÓNAK
-    //: szól, tehát némán elmaradnia nem szabad.
-    Connections {
-        target: fileOpsController
-        function onBatchProgress(operation, destination, done, total, speed) {
-            fileOpsDialogs.ensure().reportBatch(
-                operation, destination, done, total, speed)
-        }
-        function onBatchFinished(operation, done, skipped, failed, reason) {
-            fileOpsDialogs.ensure().finishBatch(
-                operation, done, skipped, failed, reason)
-        }
-        function onOperationFailed(operation, message) {
-            fileOpsDialogs.ensure().showOperationError(operation, message)
-        }
-    }
-
-    // exportálás mappába (#16, Ctrl+Shift+S; ExportDialogs.qml, #150)
-    // #1720: halasztott példányosítás — a párbeszéd csak az első
-    // megnyitáskor épül fel (ld. `DeferredDialog.qml`).
-    DeferredDialog {
-        id: exportDialogs
-        anchors.fill: parent
-        sourceComponent: Component {
-            ExportDialogs { appWindow: window }
-        }
-    }
-
-    // #1743: A HALLGATÓK MINDIG ÁLLNAK, a párbeszéd nem.
-    //
-    // A #1720 óta a mentés- és export-párbeszéd halasztott: csak az első
-    // megnyitáskor épül fel. A vezérlő eredmény- és hibajelzéseit viszont
-    // EDDIG a párbeszéden BELÜLI `Connections` fogadta — ami addig nem is
-    // létezett. Amíg minden belépő az `ensure()`-ön át megy, ez nem okoz
-    // bajt; egy ÚJ belépő (gyorsbillentyű, tálcagomb, kötegelt művelet)
-    // viszont némán elnyelné a hibaüzenetet, és semmilyen teszt nem bukna
-    // el rá.
-    //
-    // Ezért a hallgató ide került, a mindig felépülő ablakba: pár objektum,
-    // a #1720 nyeresége érintetlen. Az `ensure()` a jelzés pillanatában
-    // építi fel a párbeszédet — pontosan akkor, amikor tényleg kell.
-    Connections {
-        target: controller
-        function onDiskOperationSucceededPaths(paths) {
-            photoViewer.frissitsdALemezműveletUtániElőnézetet(paths)
-        }
-        function onSaveFailedDetails(details) {
-            saveDialogs.ensure().jelezdAbukottMentest(details)
-        }
-        function onSaveErrorOccurred(kind, fileName, code) {
-            saveDialogs.ensure().jelezdAmentesiHibat(kind, fileName, code)
-        }
-        function onRevertErrorOccurred() {
-            saveDialogs.ensure().jelezdAVisszaallitasiHibat()
-        }
-        function onExportFailedDetails(details) {
-            exportDialogs.ensure().jegyezdAbukottFajlokat(details)
-        }
-        function onExportFinished(done, failed) {
-            exportDialogs.ensure().jelezdAzExportVeget(done, failed)
-        }
-        function onEarthExportFinished(kmlPath, placemarks, skipped) {
-            exportDialogs.ensure().jelezdAzEarthExportVeget(
-                kmlPath, placemarks, skipped)
-        }
-        function onEarthViewReady(kmlPath, placemarks, skipped) {
-            exportDialogs.ensure().nyisdMegAzEarthFajlt(
-                kmlPath, placemarks, skipped)
-        }
-    }
-
-    // kollázs és mozgófilm a kijelölésből (#29; CreateDialogs.qml)
-    //: #1612/#2096: halasztva — a Létrehozás-párbeszédek csak a menüből vagy
-    //: a tálcáról nyílnak. A vezérlő jelzéseit a lenti, MINDIG álló
-    //: `Connections` fogadja, nem a komponens belseje (#1743).
-    DeferredDialog {
-        id: createDialogs
-        objectName: "createDialogs"
-        // A belső Dialogok ehhez a felülethez igazodnak; méret nélkül a Loader 0×0 marad.
-        anchors.fill: parent
-        sourceComponent: Component {
-            CreateDialogs { appWindow: window }
-        }
-    }
-
-    // #2096: a Létrehozás-párbeszédek vezérlő-hallgatói. Azért ITT állnak és
-    // nem a komponensben, mert az halasztott: amíg a felhasználó meg nem
-    // nyitotta, egy belső `Connections` nem létezne, és a kollázs/film
-    // visszajelzése NÉMÁN elmaradna. A kollázs a Kollázs panelről is
-    // indítható, tehát ez nem elméleti eset.
-    Connections {
-        target: controller
-        function onCollagePreviewReady(revision) {
-            // ⚠️ Itt SZÁNDÉKOSAN nincs `ensure()`. Az élő előnézet csak a
-            // NYITOTT kollázs-párbeszédnek szól: ha a párbeszéd nem áll, nincs
-            // mit frissíteni, és felépíteni is fölösleges volna. A többi
-            // jelzés (eredmény, hiba) viszont a felhasználónak szól, ott az
-            // `ensure()` KÖTELEZŐ — különben némán elmaradna a visszajelzés.
-            if (createDialogs.item)
-                createDialogs.item.frissitsdAzElonezetet(revision)
-        }
-        function onMovieTransitionPreviewReady(source, generation) {
-            // Mint a kollázs-előnézet: csak a NYITOTT párbeszédnek szól,
-            // felépíteni fölösleges (nincs film-előnézet, ha nem áll).
-            if (createDialogs.item)
-                createDialogs.item.jelezdAFilmAtmenetElonezetet(source, generation)
-        }
-        function onCollageFinished(path, used, skipped, missing) {
-            createDialogs.ensure().jelezdAKollazsSikert(path, used, skipped, missing)
-        }
-        function onCollagePreviewFailed(message) {
-            // Az előnézet a háttérből a főablak lebontása közben is bukhat;
-            // akkor már nincs párbeszéd, amelyben jelezni lehetne.
-            const parbeszedek = createDialogs.ensure()
-            if (parbeszedek)
-                parbeszedek.jelezdAKollazsHibajat(message)
-        }
-        function onCollageFailed(message) {
-            createDialogs.ensure().jelezdAKollazsHibajat(message)
-        }
-        function onMovieProgress(done, total) {
-            createDialogs.ensure().frissitsdAFilmHaladast(done, total)
-        }
-        function onMovieFinished(path, used, skipped, missing) {
-            createDialogs.ensure().jelezdAFilmSikert(path, used, skipped, missing)
-        }
-        function onMovieFailed(message) {
-            createDialogs.ensure().jelezdAFilmHibajat(message)
-        }
-        function onPosterFinished(paths) {
-            createDialogs.ensure().jelezdAPoszterSikert(paths)
-        }
-        function onPosterFailed(message) {
-            createDialogs.ensure().jelezdAPoszterHibajat(message)
-        }
-    }
-
-    // #2054: a felhasználói súgó — F1. Halasztott, mint a többi:
-    // induláskor nem épül fel, csak az első megnyitáskor.
-    DeferredDialog {
-        id: helpDialog
-        anchors.fill: parent
-        sourceComponent: Component { HelpDialog { objectName: "helpDialog" } }
-    }
-
-    //: #1792: a fejlec gombsoranak testreszabasa — halasztott toltes, a
-    //: tobbi parbeszed mintajara (a nev a BECSOMAGOLT parbeszede)
-    DeferredDialog {
-        id: configureButtonsDialog
-        anchors.fill: parent
-        sourceComponent: Component {
-            ConfigureButtonsDialog { objectName: "configureButtonsDialog" }
-        }
-    }
-
-    DeferredDialog {
-        id: aboutDialog
-        anchors.fill: parent
-        // az `objectName` a BECSOMAGOLT párbeszédé — enélkül a #1720
-        // őre üres halmazt vizsgálna, azaz némán mindig zöld lenne
-        sourceComponent: Component { AboutDialog { objectName: "aboutDialog" } }
-    }
-
-    // #350: Beállítások-dialógus (options.fen)
-    DeferredDialog {
-        id: optionsDialog
-        anchors.fill: parent
-        sourceComponent: Component { OptionsDialog { } }
-    }
-
-    // #351: webexport-dialógus (.tpl sablonmotor)
-    DeferredDialog {
-        id: webExportDialog
-        anchors.fill: parent
-        sourceComponent: Component { WebExportDialog { } }
-    }
-
-    // #1472: nyomtatás-párbeszéd (nyomtató-választó + PDF-fájlba nyomtatás)
-    DeferredDialog {
-        id: printDialog
-        anchors.fill: parent
-        sourceComponent: Component { PrintDialog { } }
-    }
-
-    // #368: adatbázis-áthelyezés dialógus (relocateController hídon)
-    DeferredDialog {
-        id: moveDatabaseDialog
-        anchors.fill: parent
-        sourceComponent: Component { MoveDatabaseDialog { } }
-    }
-    // #644: figyelmeztetés, ha egy másik program felülírta a szerkesztéseinket
-    DeferredDialog {
-        id: editOverwriteDialog
-        anchors.fill: parent
-        sourceComponent: Component { EditOverwriteDialog { } }
-    }
-    Connections {
-        target: controller
-        function onEditsOverwritten(lost) { editOverwriteDialog.ensure().show(lost) }
-    }
-    DeferredDialog {
-        id: compactDatabaseDialog
-        anchors.fill: parent
-        sourceComponent: Component { CompactDatabaseDialog { } }
-    }
-    // #1401: az Útlevélkép hibaablaka — a főablak tartalmában, tehát
-    // fölötte látszik. Egy arcnál párbeszéd nélkül a MEGLÉVŐ nyomtatási
-    // nézet nyílik (élő mérés, picasa-colab-jobs #54).
-    DeferredDialog {
-        id: passportErrorDialog
-        anchors.fill: parent
-        sourceComponent: Component { PassportErrorDialog { } }
-    }
-    Connections {
-        target: typeof passportController !== "undefined" ? passportController : null
-        function onPassportNoFace() {
-            passportErrorDialog.ensure().showError("noFace")
-        }
-        function onPassportMultipleFaces() {
-            passportErrorDialog.ensure().showError("multipleFaces")
-        }
-        function onPassportFailed(kind) {
-            passportErrorDialog.ensure().showError(kind)
-        }
-        function onPassportReady(url) {
-            printDialog.ensure().openForPassport(url)
-        }
-    }
-    // #3132: a db3-import párbeszéde — ritkán nyitott, ezért halasztott
-    DeferredDialog {
-        id: picasaDataImportDialog
-        anchors.fill: parent
-        sourceComponent: Component { PicasaDataImportDialog { } }
-    }
-
-    // Indítóképernyő (#189): a legfelső rétegen ül, a startupStatus hídból
-    // kapja az állapotot, és ready-re magától kifakul/eltűnik.
-    // A kötés defenzív: híd (context property) nélkül — pl. célzott
-    // tesztkörnyezetben — a splash készre áll, azaz rejtve marad.
-    SplashScreen {
-        readonly property var statusBridge:
-            typeof startupStatus !== "undefined" ? startupStatus : null
-        anchors.fill: parent
-        z: 10000
-        version: appVersion
-        statusText: statusBridge ? statusBridge.statusText : ""
-        ready: statusBridge ? statusBridge.ready : true
-        // #243: félkész-figyelmeztetés + OK a betöltés végén, amíg az
-        // effekt-paritás nem teljes (a kapcsoló az application.py-ban él)
-        confirmationRequired:
-            statusBridge ? statusBridge.requiresConfirmation : false
-    }
 }

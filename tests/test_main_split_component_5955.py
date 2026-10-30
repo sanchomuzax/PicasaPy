@@ -6,7 +6,7 @@ import re
 
 _GYOKER = Path(__file__).resolve().parents[1]
 _MAIN = _GYOKER / "src/picasapy/app/qml/Main.qml"
-_SPLIT = _GYOKER / "src/picasapy/app/qml/PicasaPy/MainSplit.qml"
+_WORKSPACE = _GYOKER / "src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml"
 _MENU_BAR = _GYOKER / "src/picasapy/app/qml/PicasaPy/MainMenuBar.qml"
 _QML_DIR = _GYOKER / "src/picasapy/app/qml"
 _QMLDIR = _GYOKER / "src/picasapy/app/qml/PicasaPy/qmldir"
@@ -14,12 +14,14 @@ _QMLDIR = _GYOKER / "src/picasapy/app/qml/PicasaPy/qmldir"
 
 def test_main_split_inline_marad_a_kepazonossaghoz():
     main = _MAIN.read_text(encoding="utf-8")
+    workspace = _WORKSPACE.read_text(encoding="utf-8")
     qmldir = _QMLDIR.read_text(encoding="utf-8")
 
-    assert re.search(r"^    SplitView\s*\{\n        id: mainSplit", main, re.MULTILINE)
-    assert 'objectName: "mainSplit"' in main
+    assert re.search(r"^    SplitView\s*\{\n        id: mainSplit", workspace, re.MULTILINE)
+    assert 'objectName: "mainSplit"' in workspace
+    assert "MainWindowWorkspace {" in main
     assert not re.search(r"^MainSplit\s", qmldir, re.MULTILINE)
-    assert not _SPLIT.exists()
+    assert not (_QML_DIR / "PicasaPy/MainSplit.qml").exists()
 
 
 def test_foablak_menubar_kulon_komponensben_marad_a_neveivel():

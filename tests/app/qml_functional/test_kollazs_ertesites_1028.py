@@ -179,7 +179,10 @@ class TestAJelzesnekVanFogadoja:
         import picasapy.app
 
         main = (
-            Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
+            Path(picasapy.app.__file__).parent
+            / "qml"
+            / "PicasaPy"
+            / "MainWindowWorkspace.qml"
         ).read_text(encoding="utf-8")
 
         assert "onCollageSaved" in main

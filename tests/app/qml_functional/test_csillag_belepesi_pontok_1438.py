@@ -24,6 +24,7 @@ pontot ad hozzá, ez a fájl emlékeztessen: oda is őr kell.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from picasapy.index import open_index
@@ -198,15 +199,19 @@ class TestABelepesiPontokLeltara:
         hivok = sorted(
             path.relative_to(_QML_DIR).as_posix()
             for path in _QML_DIR.rglob("*.qml")
-            if "controller.toggleStar" in path.read_text(encoding="utf-8")
+            if re.search(
+                r"\b(?:hostController|controller)\.toggleStar\s*\(",
+                path.read_text(encoding="utf-8"),
+            )
         )
         assert hivok == [
-            "Main.qml",
             "PicasaPy/MainSlideshow.qml",
+            "PicasaPy/MainWindowWorkspace.qml",
             "PicasaPy/TrayTopRow.qml",
         ], (
             "új csillag-belépési pont került a felületre — ehhez a fájlhoz "
-            "őr-teszt is kell (a Main.qml kezeli a menüparancsot, a "
+            "őr-teszt is kell (a MainWindowWorkspace.qml kezeli a rács "
+            "parancsát, a "
             "MainSlideshow.qml a diavetítés gombját, a TrayTopRow.qml a tálcáét; "
             "#6050-ben a felső sor külön komponens lett)"
         )

@@ -62,7 +62,7 @@ spacing_slider,parositva,PicasaPy/CollageSettingsTab.qml;PicasaPy/PicasaSlider.q
 tagpanel,parositva,PicasaPy/TagsPanel.qml,Címke oldalsó panel
 textopacityslider,parositva,PicasaPy/EditorTextPanel.qml;PicasaPy/PicasaSlider.qml,A szöveg-átlátszóság csúszkája a közös PicasaSliderre épül (#4214)
 throttle,parositva,PicasaPy/PicasaScrollBar.qml,Gyorsgörgető a rács jobb szélén
-thumbui,parositva,PicasaPy/MainToolbar.qml;PicasaPy/LightboxFeed.qml;PicasaPy/ThumbDelegate.qml;PicasaPy/TrayBar.qml;PicasaPy/TimelineView.qml;PicasaPy/PicasaScrollBar.qml;PicasaPy/FolderPane.qml;PicasaPy/FolderTreeItem.qml;PicasaPy/FolderStateBadge.qml;PicasaPy/SlideshowView.qml;Main.qml,A fő könyvtárnézet egésze
+thumbui,parositva,PicasaPy/MainToolbar.qml;PicasaPy/LightboxFeed.qml;PicasaPy/ThumbDelegate.qml;PicasaPy/TrayBar.qml;PicasaPy/TimelineView.qml;PicasaPy/PicasaScrollBar.qml;PicasaPy/FolderPane.qml;PicasaPy/FolderTreeItem.qml;PicasaPy/FolderStateBadge.qml;PicasaPy/SlideshowView.qml;PicasaPy/MainWindowWorkspace.qml;Main.qml,A fő könyvtárnézet egésze
 timeslider,parositva,PicasaPy/MainToolbar.qml;PicasaPy/PicasaSlider.qml,A főablak időszűrője a közös csúszkát használja (#4214)
 titledialog,parositva,PicasaPy/MovieTitleDialog.qml;PicasaPy/CreateDialogs.qml,"Filmes címdia-szerkesztő: szöveg/betűformázás, képfelirat, élő előnézet és Add/Cancel"
 toolslider,parositva,PicasaPy/EditorToolBar.qml;PicasaPy/PicasaSlider.qml,A szerkesztő eszközcsúszkája a közös PicasaSliderre épül (#4214)
