@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.305] - 2026-10-30
+
+- A még üres album ismét törölhető, és a tulajdonságai (név, dátum, hely, leírás, zene) betölthetők és módosíthatók (#6281).
+
 ## [0.9.304] - 2026-10-30
 
 - A diavetítés életciklusa és a fotóalbum-műveletek önálló részekbe kerülnek, változatlan viselkedéssel (#6275).
