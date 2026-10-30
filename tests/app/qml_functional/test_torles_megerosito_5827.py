@@ -74,10 +74,14 @@ def _varj(qt_app, feltetel, uzenet):
     assert var_feltetelre(qt_app, feltetel), uzenet
 
 
+@pytest.mark.parametrize("magassag_elteres", _ABLAKMAGASSAG_ELTERESEK)
 def test_delete_enter_keeps_photo_then_delete_image_button_removes_it(
-    qml_app_valodi_belyegkep, qt_app, monkeypatch, tmp_path
+    qml_app_valodi_belyegkep, qt_app, monkeypatch, tmp_path, magassag_elteres
 ):
     window, _controller, _engine = qml_app_valodi_belyegkep
+    celmagassag = window.height() + magassag_elteres
+    window.setHeight(celmagassag)
+    _varj(qt_app, lambda: window.height() == celmagassag, "ablakmagasság")
     photo = tmp_path / "kepek" / "a.jpg"
     assert photo.is_file(), "a teszt valódi próbaképe hiányzik"
     test_trash = tmp_path / "test-trash"
@@ -101,7 +105,13 @@ def test_delete_enter_keeps_photo_then_delete_image_button_removes_it(
     assert dialog.property("visible") is True, "a Delete nem nyitotta meg a megerősítőt"
     remember = _gyerek(window, "confirmRememberCheck")
     remember_text = remember.property("text")
+    yes = _gyerek(window, "confirmYesButton")
+    no = _gyerek(window, "confirmNoButton")
     cancel = _gyerek(window, "confirmCancelButton")
+    assert yes.property("visible") is True, "a Delete Image gomb nem látható"
+    assert yes.property("text") == "Delete Image"
+    assert no.property("visible") is False, "a fölösleges No gomb látható"
+    assert cancel.property("visible") is True, "a Cancel gomb nem látható"
     cancel_focused = cancel.property("activeFocus") is True
 
     screenshot = window.grabWindow()
@@ -132,7 +142,6 @@ def test_delete_enter_keeps_photo_then_delete_image_button_removes_it(
             lambda: dialog.property("visible"),
             "a második Delete nem nyitotta meg a megerősítőt",
         )
-        yes = _gyerek(window, "confirmYesButton")
         yes_text = yes.property("text")
         kattints(window, qt_app, yes)
         _varj(qt_app, lambda: not photo.exists(), "a Delete Image nem törölte a képet")

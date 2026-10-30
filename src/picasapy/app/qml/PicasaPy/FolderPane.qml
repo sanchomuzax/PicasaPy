@@ -580,11 +580,10 @@ Rectangle {
 
     function _askRemoveFolder(path) {
         paneMenus.folderContextMenu.folderPath = path
-        var nev = String(path).split(/[\\/]/).filter(Boolean).pop() || path
         paneMenus.removeFolderConfirm.ask(
             "removeFolder",
-            qsTr("Do you want to remove the folder %1 and its subfolders?")
-                .arg(nev))
+            qsTr("Do you want to remove the folder \"%1\" and its subfolders?")
+                .arg(String(path)))
     }
 
 

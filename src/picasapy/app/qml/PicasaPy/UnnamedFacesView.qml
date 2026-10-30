@@ -542,10 +542,44 @@ ColumnLayout {
         title: qsTr("Ignore People")
         modal: true
         anchors.centerIn: Overlay.overlay
-        standardButtons: Dialog.Yes | Dialog.Cancel
-        onOpened: standardButton(Dialog.Yes).text =
-            root.pendingIgnoreIds.length > 1 ? qsTr("Ignore People")
-                                             : qsTr("Ignore Person")
+        // #6296, job-333: csak az Ignore Person / Cancel pár látszik;
+        // az Ignore Person kap fókuszt és az Enter ezt fogadja el.
+        footer: RowLayout {
+            spacing: 8
+            Item { Layout.fillWidth: true }
+            Button {
+                id: ignoreConfirmYesButton
+                objectName: "ignoreFacesYesButton"
+                text: root.pendingIgnoreIds.length > 1
+                    ? qsTr("Ignore People") : qsTr("Ignore Person")
+                Keys.priority: Keys.BeforeItem
+                Keys.onReturnPressed: function(event) {
+                    ignoreConfirm.accept()
+                    event.accepted = true
+                }
+                Keys.onEnterPressed: function(event) {
+                    ignoreConfirm.accept()
+                    event.accepted = true
+                }
+                onClicked: ignoreConfirm.accept()
+            }
+            Button {
+                id: ignoreConfirmCancelButton
+                objectName: "ignoreFacesCancelButton"
+                text: qsTr("Cancel")
+                Keys.priority: Keys.BeforeItem
+                Keys.onReturnPressed: function(event) {
+                    ignoreConfirm.reject()
+                    event.accepted = true
+                }
+                Keys.onEnterPressed: function(event) {
+                    ignoreConfirm.reject()
+                    event.accepted = true
+                }
+                onClicked: ignoreConfirm.reject()
+            }
+        }
+        onOpened: ignoreConfirmYesButton.forceActiveFocus()
         onAccepted: {
             if (dontAskCheck.checked && typeof confirmSettings !== "undefined"
                     && confirmSettings)

@@ -50,7 +50,9 @@ Dialog {
     property bool focusCancelOnOpen: false
     // #6283: az eredeti album-törlő ablakában (job-329) csak két gomb van,
     // jelölőnégyzet nincs, és a fókusz a „No” gombon áll: Enterre elutasít.
+    // #6296: egyes hívókban a Cancel közvetlenül követi az elfogadást.
     property bool cancelVisible: true
+    property bool noVisible: true
     property bool rememberVisible: true
     property bool focusNoOnOpen: false
     // #6287: a Rejtett mappák jelszóajánlatában (job-331) az igen-gomb a
@@ -149,6 +151,7 @@ Dialog {
                 id: noButton
                 objectName: root.namePrefix + "NoButton"
                 text: root.noText
+                visible: root.noVisible
                 Keys.onReturnPressed: root._deny()
                 Keys.onEnterPressed: root._deny()
                 onClicked: root._deny()
