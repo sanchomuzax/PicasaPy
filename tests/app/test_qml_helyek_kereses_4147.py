@@ -7,6 +7,7 @@ import pytest
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
+from tests.support.qt_wait import varj_ablakon_belulre
 from tests.support.varakozas import hibaturo_feltetel, var_feltetelre
 
 
@@ -33,6 +34,7 @@ def _var(qt_app, predicate, timeout: float = 10.0) -> bool:
 
 def _kattint(window, item: QQuickItem, qt_app) -> None:
     assert _var(qt_app, lambda: item.width() > 0 and item.height() > 0)
+    varj_ablakon_belulre(window, item)
     scene_point = item.mapToScene(item.boundingRect().center())
     point = QPoint(round(scene_point.x()), round(scene_point.y()))
     QTest.mouseClick(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, point)
