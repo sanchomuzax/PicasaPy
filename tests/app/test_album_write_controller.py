@@ -272,12 +272,14 @@ class TestCreateEmptyAlbum:
         assert failures.count() == 1
         assert failures.at(0)[0]
 
-    def test_writes_empty_definition_to_folder_ini_and_survives_reindex(
+    def test_stores_empty_album_outside_folder_ini_and_survives_reindex(
         self, controller, library, tmp_path
     ):
         from picasapy.index import open_index, sync_tree
 
         folder = library / "varos"
+        ini_path = folder / ".picasa.ini"
+        ini_before = ini_path.read_bytes() if ini_path.exists() else None
         token = controller.createEmptyAlbum(
             "Budapest",
             str(folder),
@@ -289,21 +291,105 @@ class TestCreateEmptyAlbum:
         )
 
         assert re.fullmatch(r"[0-9a-f]{32}", token)
-        document = load_document(folder / ".picasa.ini")
-        album = document.section(f".album:{token}")
-        assert album is not None
-        assert album.get("name") == "Budapest"
-        assert album.get("date") == "2026-10-25"
-        assert album.get("location") == "Budapest"
-        assert album.get("description") == "Üres album"
-        photo = document.section("c.jpg")
-        assert photo is None or photo.get("albums") is None
+        assert (ini_path.read_bytes() if ini_path.exists() else None) == ini_before
         assert {a["token"]: a["count"] for a in controller.albums}[token] == 0
 
         with open_index(tmp_path / "index.db") as conn:
-            sync_tree(conn, library)
-        controller._reload()
+            sync_tree(conn, library, incremental=False)
+        from PySide6.QtCore import QSettings
 
-        by_token = {a["token"]: a for a in controller.albums}
+        from picasapy.app.controller import AppController
+        from picasapy.app.thumbnail_provider import ThumbnailProvider
+        from picasapy.thumbs import ThumbnailCache
+
+        restarted = AppController(
+            tmp_path / "index.db",
+            (str(library),),
+            ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs-restarted", size=32)),
+            settings=QSettings(
+                str(tmp_path / "settings-restarted.ini"), QSettings.Format.IniFormat
+            ),
+            watched_file=tmp_path / "WatchedFolders-restarted.txt",
+        )
+        restarted._reload()
+
+        by_token = {a["token"]: a for a in restarted.albums}
         assert by_token[token]["name"] == "Budapest"
         assert by_token[token]["count"] == 0
+
+    def test_first_member_materializes_pending_properties_and_membership(
+        self, controller, library, tmp_path
+    ):
+        from picasapy.index import open_index
+        from picasapy.ini.albums import albums_of
+
+        token = controller.createEmptyAlbum(
+            "Budapest",
+            str(library / "varos"),
+            "2026-10-25",
+            "Budapest",
+            "Üres album",
+            True,
+            "tone.mp3",
+        )
+        assert token
+        assert not (library / "varos" / ".picasa.ini").exists()
+
+        controller.addRowsToAlbum([_row_of(controller, "c.jpg")], token)
+
+        pending_document = load_document(library / "varos" / ".picasa.ini")
+        pending_album = next(
+            album for album in albums_of(pending_document) if album.token == token
+        )
+        assert pending_album.name == "Budapest"
+        assert pending_album.date == "2026-10-25"
+        assert pending_album.location == "Budapest"
+        assert pending_album.description == "Üres album"
+        assert pending_album.use_music is True
+        assert pending_album.music_file == "tone.mp3"
+        assert pending_document.section("c.jpg").get("albums") == token
+
+        reference_token = controller.createAlbumWithProperties(
+            "Budapest",
+            [_row_of(controller, "a.jpg")],
+            "2026-10-25",
+            "Budapest",
+            "Üres album",
+            True,
+            "tone.mp3",
+        )
+        reference_document = load_document(library / "nyaralas" / ".picasa.ini")
+        reference_album = next(
+            album
+            for album in albums_of(reference_document)
+            if album.token == reference_token
+        )
+        pending_fields = dict(
+            pending_document.section(f".album:{token}").items()
+        )
+        reference_fields = dict(
+            reference_document.section(f".album:{reference_token}").items()
+        )
+        pending_fields.pop("token")
+        reference_fields.pop("token")
+        assert pending_fields == reference_fields
+        assert (
+            pending_album.name,
+            pending_album.date,
+            pending_album.description,
+            pending_album.location,
+            pending_album.use_music,
+            pending_album.music_file,
+        ) == (
+            reference_album.name,
+            reference_album.date,
+            reference_album.description,
+            reference_album.location,
+            reference_album.use_music,
+            reference_album.music_file,
+        )
+
+        with open_index(tmp_path / "index.db") as conn:
+            assert conn.execute(
+                "SELECT 1 FROM local_empty_albums WHERE token = ?", (token,)
+            ).fetchone() is None

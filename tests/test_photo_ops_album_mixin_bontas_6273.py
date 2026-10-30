@@ -59,7 +59,7 @@ _EREDETI_NYILVANOS_NEVEK = {
 # A bontás előtti photo_ops_album_mixin.py 22 metódusának LF-normalizált,
 # UTF-8 forrásszöveg-lenyomata a dekorátortól a metódus záró soráig.
 _EREDETI_FORRAS_SHA256 = {
-    "addRowsToAlbum": "0dff048a698a9d2acb525662bf9edb224ac7db079191d7e8c8a30689c6b8c98e",
+    "addRowsToAlbum": "79097cd609e59098501f9d323e629a39943e92d68c0148688b0b507453f1298e",
     "removeRowsFromAlbum": "6ece39f95ddb1d0fc0a5590d3c256139b2b5937e55210112a1a4402f7e025be1",
     "deleteAlbum": "de2811240af61e746f8ff32386032720d043344e770d253043301f88997bac6a",
     "sortAlbum": "d037c31c30de643224579a7f939e1d26c2c266416472cb22cb9802e961637869",
@@ -74,7 +74,7 @@ _EREDETI_FORRAS_SHA256 = {
     "_album_dokumentumok": "93229cf8ec334fca93d3d22d80fc1dfe077badfc8df952be25162eef0d612045",
     "createAlbum": "ef0c45d043b67bb6714deea959268ab0c4eb89ab3c84bf0cdadbd732d54a9a3a",
     "createAlbumWithProperties": "e7f9f61ae2a5fb48dcb264eb2a1c21ce4b81ed9f07b7359fb15828bf78e0ce57",
-    "createEmptyAlbum": "5f1345277e4d6762724061b2702ca93ee576d76cf7c47de2e2328a2432dc58ce",
+    "createEmptyAlbum": "c96d70e3e9bf57c6380655b3ea833da02ef9749d30dc5c963de1a9965456b165",
     "_albumot_keszit": "1c690d2f14511d1ade16ab7a024c6143f6624a1b6d7ca29c340e9e324c40b0ac",
     "setPhotoAsDesktopBackground": "fc86c3c32a894726152a71d252afc31cf41585c8a6f8dd355c019781237d327b",
     "showTagAsAlbum": "c405fb498f23de04a08fa0e0823c0db73d202816144b04b9ba358912c9c8c11f",

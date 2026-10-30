@@ -1,4 +1,4 @@
-"""Az eszköztár Új album útja az Album Properties párbeszédet nyitja (#5812)."""
+"""Az eszköztár új, üres albumot hoz létre ini-írás nélkül (#6278)."""
 
 from __future__ import annotations
 
@@ -75,6 +75,8 @@ def test_toolbar_opens_album_properties_and_creates_empty_album(
     window, controller, _engine = next(app)
     try:
         assert var_feltetelre(qt_app, lambda: controller.photos.rowCount() == 2, 3.0)
+        ini_path = tmp_path / "kepek" / ".picasa.ini"
+        ini_before = ini_path.read_bytes() if ini_path.exists() else None
         dialog = _open_toolbar_dialog(window, qt_app, height_offset)
         assert dialog.property("title") == "Album Properties"
         name_field = _item(dialog, "folderPropertiesNameField")
@@ -102,11 +104,10 @@ def test_toolbar_opens_album_properties_and_creates_empty_album(
         if hasattr(model, "toVariant"):
             model = model.toVariant()
         assert any(a["token"] == album["token"] and a["count"] == 0 for a in model)
-        ini = (tmp_path / "kepek" / ".picasa.ini").read_text(
-            encoding="utf-8"
+        ini_after = ini_path.read_bytes() if ini_path.exists() else None
+        assert ini_after == ini_before, (
+            "az új, üres album létrehozása módosította a mappa .picasa.ini-jét"
         )
-        assert f"[.album:{album['token']}]" in ini
-        assert f"albums={album['token']}" not in ini
 
         with open_index(tmp_path / "index.db") as conn:
             sync_tree(conn, tmp_path / "kepek")

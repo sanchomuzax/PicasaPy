@@ -1,4 +1,4 @@
-"""Az eszköztár üres albumot ment fotómappába, vagy látható hibát jelez (#5835)."""
+"""Az eszköztár az üres albumot a profil-indexben tartja (#6278, #5835)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ import pytest
 from PySide6.QtCore import QObject, QPointF, Qt
 from PySide6.QtTest import QTest
 
-from picasapy.ini import load_document
 from tests.app.qml_functional.conftest import _build_qml_app
 from tests.support.jpeg_factory import make_minta_jpeg
 from tests.support.varakozas import var_feltetelre
@@ -140,6 +139,8 @@ def test_timeline_selected_photo_creates_empty_album_in_its_folder(
         assert var_feltetelre(qt_app, lambda: window.height() == target_height, 3.0)
 
         _timeline_album_without_folder(window, controller, engine, qt_app)
+        ini_path = album_folder / ".picasa.ini"
+        ini_before = ini_path.read_bytes() if ini_path.exists() else None
         _click(window, qt_app, _item(window, "toolbarNewAlbumButton"))
         dialog = _item(window, "toolbarNewAlbumPropertiesDialog")
         assert var_feltetelre(qt_app, lambda: dialog.property("opened") is True, 3.0)
@@ -178,10 +179,10 @@ def test_timeline_selected_photo_creates_empty_album_in_its_folder(
             target.mkdir(parents=True, exist_ok=True)
             assert capture.save(str(target / "uj-album-idorendbol-5835.png"))
 
-        ini = load_document(album_folder / ".picasa.ini")
-        assert ini.section(f".album:{album['token']}") is not None
-        assert ini.section("a.jpg").get("albums") == ALBUM_TOKEN
-        assert album["token"] not in (ini.section("a.jpg").get("albums") or "")
+        ini_after = ini_path.read_bytes() if ini_path.exists() else None
+        assert ini_after == ini_before, (
+            "az új, üres album megváltoztatta a mappa .picasa.ini-jét"
+        )
         assert not (other_folder / ".picasa.ini").exists()
     finally:
         app.close()

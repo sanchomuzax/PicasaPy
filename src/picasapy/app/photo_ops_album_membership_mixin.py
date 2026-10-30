@@ -8,6 +8,11 @@ import secrets
 from PySide6.QtCore import QCoreApplication, Slot
 
 from picasapy.index import open_index
+from picasapy.index.albums import (
+    _pending_empty_album,
+    _remove_empty_album,
+    _store_empty_album,
+)
 from picasapy.ini import STAR_ALBUM_TOKEN
 from picasapy.ini.albums import (
     ensure_album,
@@ -16,7 +21,6 @@ from picasapy.ini.albums import (
     without_album,
     without_album_everywhere,
 )
-from picasapy.scanner import PICASA_INI_NAME
 
 from .photo_ops_compat import _WRITE_ERRORS, update_document
 
@@ -35,10 +39,31 @@ class PhotoOpsAlbumMembershipMixin:
         if not valid:
             return
 
-        def mutate(document, photo):
-            return with_album(document, photo.name, token)
+        with open_index(self._db_path) as conn:
+            pending = _pending_empty_album(conn, token)
 
-        self._write_album_batch(valid, mutate)
+        if pending is None:
+            def mutate(document, photo):
+                return with_album(document, photo.name, token)
+        else:
+            def mutate(document, photo):
+                document = ensure_album(document, token, pending.name)
+                document = with_album_fields(
+                    document,
+                    token,
+                    name=pending.name,
+                    date=pending.date,
+                    location=pending.location,
+                    description=pending.description,
+                    use_music=pending.use_music,
+                    music_file=pending.music_file,
+                )
+                return with_album(document, photo.name, token)
+
+        if self._write_album_batch(valid, mutate) and pending is not None:
+            with open_index(self._db_path) as conn:
+                _remove_empty_album(conn, token)
+                self._load_albums(conn)
 
     @Slot(list, str)
     def removeRowsFromAlbum(self, rows, token: str) -> None:
@@ -157,11 +182,11 @@ class PhotoOpsAlbumMembershipMixin:
         use_music: bool,
         music_file: str,
     ) -> str:
-        """Üres albumot ment az aktuális mappa ini-jébe (#5812).
+        """Üres albumot ment az index tartós helyi tárába (#6278).
 
-        Az album tulajdonságait a párbeszéd OK-ja után írjuk ki. A kijelölt
-        képek `albums=` mezői nem változnak; az index a definícióból 0 tagú
-        albumot olvas be, ami teljes újraindexelés után is megmarad.
+        Az album tulajdonságai a profil-indexben maradnak, a mappa ini-je
+        változatlan. Az első kép tagságának írásakor kerül a definíció és a
+        tagság együtt az érintett mappa ini-jébe.
         """
         folder_path = (folder_path or "").strip()
         folder_error = QCoreApplication.translate(
@@ -178,20 +203,6 @@ class PhotoOpsAlbumMembershipMixin:
 
         token = secrets.token_hex(16)
         clean_name = (name or "").strip() or None
-        ini_path = folder / PICASA_INI_NAME
-
-        def mutate(document):
-            document = ensure_album(document, token, clean_name)
-            return with_album_fields(
-                document,
-                token,
-                name=clean_name,
-                date=date,
-                location=location,
-                description=description,
-                use_music=use_music,
-                music_file=music_file,
-            )
 
         try:
             with open_index(self._db_path) as conn:
@@ -201,8 +212,17 @@ class PhotoOpsAlbumMembershipMixin:
                 if indexed is None:
                     self.albumWriteFailed.emit(folder_error)
                     return ""
-                update_document(ini_path, mutate, backup=True)
-                self._sync_tree(conn, str(folder))
+                _store_empty_album(
+                    conn,
+                    token=token,
+                    folder_path=str(folder),
+                    name=clean_name,
+                    date=date,
+                    location=location,
+                    description=description,
+                    use_music=use_music,
+                    music_file=music_file,
+                )
                 self._load_albums(conn)
         except _WRITE_ERRORS as error:
             self.albumWriteFailed.emit(str(error))
