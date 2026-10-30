@@ -9,6 +9,7 @@ from pathlib import Path
 _QML_DIR = Path(__file__).resolve().parents[2] / "src/picasapy/app/qml"
 _MAIN = _QML_DIR / "Main.qml"
 _COMPONENT = _QML_DIR / "PicasaPy/MainFolderPane.qml"
+_WORKSPACE = _QML_DIR / "PicasaPy/MainLibraryWorkspace.qml"
 _QMLDIR = _QML_DIR / "PicasaPy/qmldir"
 
 
@@ -38,13 +39,28 @@ def test_a_mappahasab_a_gazdaobjektumokat_kotelezoen_kapja():
 
 def test_a_foablak_megtartja_a_mappahasab_nevet_es_a_bekotest():
     main = _MAIN.read_text(encoding="utf-8")
+    workspace = _WORKSPACE.read_text(encoding="utf-8")
     assert re.search(
-        r"MainFolderPane\s*\{\s*id:\s*folderPane\s*objectName:\s*\"folderPane\"",
+        r"MainLibraryWorkspace\s*\{\s*id:\s*mainLibraryWorkspace",
         main,
+    ), "a munkaterületi komponens bekötése hiányzik"
+    assert re.search(
+        r"MainFolderPane\s*\{\s*id:\s*_folderPane\s*objectName:\s*\"folderPane\"",
+        workspace,
     ), "a folderPane azonosítója vagy objectName-je megváltozott"
-    assert not re.search(r"(?<!Main)FolderPane\s*\{", main), (
+    assert "property alias folderPane: mainLibraryWorkspace.folderPane" in main
+    assert not re.search(r"(?<!Main)FolderPane\s*\{", workspace), (
         "a FolderPane példány inline maradt"
     )
+    for binding in (
+        "hostWindow: root.hostWindow",
+        "hostController: root.hostController",
+        "hostToolbar: root.hostToolbar",
+        "hostBackupHost: root.hostBackupHost",
+        "hostFileOpsDialogs: root.hostFileOpsDialogs",
+        "hostCollectionPasswordDialog: root.hostCollectionPasswordDialog",
+    ):
+        assert binding in workspace, f"hiányzó munkaterületi bekötés: {binding}"
     for binding in (
         "hostWindow: window",
         "hostController: controller",

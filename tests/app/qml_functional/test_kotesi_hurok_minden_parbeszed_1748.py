@@ -107,6 +107,17 @@ _KOTELEZO_VALTOZATOK = {
         "hostPhotoViewer: ({}); hostMainSplit: ({}); "
         "hostMainLibraryCanvas: ({ unnamedFacesView: ({}) }); hostMainDialogs: ({})",
     ),
+    # #6136: a könyvtári munkaterület a nézetek és panelek gazdáit kötelezően kapja.
+    "MainLibraryWorkspace": (
+        "hostWindow: ({}); hostController: null; hostToolbar: ({}); "
+        "hostPhotoViewer: ({}); hostMainDialogs: ({}); "
+        "hostBackupHost: ({}); hostGiftCdHost: ({}); "
+        "hostSearchSuggestionsBox: ({}); "
+        "hostCollectionPasswordDialog: ({}); hostFileOpsDialogs: ({}); "
+        "hostFileOpsController: null; hostFaceScanController: null; "
+        "hostFolderHierarchyController: null; propertiesLabel: ''; "
+        "tagsLabel: ''; peopleLabel: ''; placesLabel: ''",
+    ),
     # #6136: a FolderPane főablakbeli bekötése önálló, kötelező gazda-propokat kér.
     "MainFolderPane": (
         "hostWindow: ({}); hostController: null; hostToolbar: ({}); "

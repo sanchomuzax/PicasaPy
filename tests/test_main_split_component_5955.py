@@ -7,6 +7,7 @@ import re
 _GYOKER = Path(__file__).resolve().parents[1]
 _MAIN = _GYOKER / "src/picasapy/app/qml/Main.qml"
 _SPLIT = _GYOKER / "src/picasapy/app/qml/PicasaPy/MainSplit.qml"
+_WORKSPACE = _GYOKER / "src/picasapy/app/qml/PicasaPy/MainLibraryWorkspace.qml"
 _MENU_BAR = _GYOKER / "src/picasapy/app/qml/PicasaPy/MainMenuBar.qml"
 _QML_DIR = _GYOKER / "src/picasapy/app/qml"
 _QMLDIR = _GYOKER / "src/picasapy/app/qml/PicasaPy/qmldir"
@@ -14,10 +15,14 @@ _QMLDIR = _GYOKER / "src/picasapy/app/qml/PicasaPy/qmldir"
 
 def test_main_split_inline_marad_a_kepazonossaghoz():
     main = _MAIN.read_text(encoding="utf-8")
+    workspace = _WORKSPACE.read_text(encoding="utf-8")
     qmldir = _QMLDIR.read_text(encoding="utf-8")
 
-    assert re.search(r"^    SplitView\s*\{\n        id: mainSplit", main, re.MULTILINE)
-    assert 'objectName: "mainSplit"' in main
+    assert re.search(r"^    MainLibraryWorkspace\s*\{\n        id: mainLibraryWorkspace", main, re.MULTILINE)
+    assert re.search(r"^    SplitView\s*\{\n        id: _mainSplit", workspace, re.MULTILINE)
+    assert 'objectName: "mainSplit"' in workspace
+    assert "property alias mainSplit: mainLibraryWorkspace.mainSplit" in main
+    assert "property alias mainSplit: _mainSplit" in workspace
     assert not re.search(r"^MainSplit\s", qmldir, re.MULTILINE)
     assert not _SPLIT.exists()
 

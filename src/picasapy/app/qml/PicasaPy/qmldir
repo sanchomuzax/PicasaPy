@@ -300,6 +300,7 @@ PhotoViewerPhotoArea 1.0 PhotoViewerPhotoArea.qml
 MainSlideshow 1.0 MainSlideshow.qml
 MainWindowToolbar 1.0 MainWindowToolbar.qml
 MainLibraryCanvas 1.0 MainLibraryCanvas.qml
+MainLibraryWorkspace 1.0 MainLibraryWorkspace.qml
 MainKeyboardShortcuts 1.0 MainKeyboardShortcuts.qml
 PhotoViewerStraightenGrid 1.0 PhotoViewerStraightenGrid.qml
 PhotoViewerTiltToolBar 1.0 PhotoViewerTiltToolBar.qml
