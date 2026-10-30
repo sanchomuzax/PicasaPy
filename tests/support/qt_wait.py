@@ -410,3 +410,17 @@ def varj_feltetelre(
     finally:
         if szunetel:
             gc.enable()
+
+
+def varj_ablakon_belulre(
+    qt_app, window, item, masodperc: float = 3.0
+) -> bool:
+    """Várja meg, míg a látható elem közepe a főablak területére kerül."""
+
+    def kozep_belul_van() -> bool:
+        if item is None or not item.isVisible():
+            return False
+        kozep = item.mapToScene(item.boundingRect().center())
+        return 0 <= kozep.x() < window.width() and 0 <= kozep.y() < window.height()
+
+    return varj_feltetelre(qt_app, kozep_belul_van, masodperc)

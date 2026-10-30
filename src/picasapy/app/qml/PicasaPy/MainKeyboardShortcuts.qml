@@ -304,11 +304,43 @@ Item {
         id: shortcutTagsPanel
         sequence: "Ctrl+T"
         enabled: hostWindow._konyvtariGyorsbillentyuEngedelyezve
-        onActivated: if (!hostWindow.viewerOpen)
-                         // #1773: a billentyű BILLENT (a menütétel nem) —
-                         // a Ctrl+T nyitja, és zárja is a fiókot
-                         hostWindow.tagsPanelOpen ? hostWindow.ureseidAFiokot()
-                                              : hostWindow.valtsFiokLapot("tags")
+        onActivated: {
+            if (hostWindow.viewerOpen) return
+            // #1773: a billentyű BILLENT (a menütétel nem). Megnyitáskor a
+            // címkemező fókuszát csak a billentyű kéri; a menü útja változatlan.
+            if (hostWindow.tagsPanelOpen) {
+                hostWindow.ureseidAFiokot()
+                return
+            }
+            hostWindow.valtsFiokLapot("tags")
+            tagsPanelInputFocusTimer.restart()
+        }
+    }
+
+    // #6301: a fiók dokumentált nyitóanimációja 400 ms. A következő képkockára
+    // hagyott idő után fókuszálunk, így a teljesen kinyílt fiók sem veszi el.
+    // Ez az időzítő csak a Ctrl+T ágából indul; a Nézet menü útja érintetlen.
+    Timer {
+        id: tagsPanelInputFocusTimer
+        interval: 450
+        repeat: false
+        onTriggered: {
+            if (!hostWindow.tagsPanelOpen) return
+            var findItem = function(root) {
+                if (!root) return null
+                if (root.objectName === "tagInput") return root
+                var children = root.children
+                if (!children) return null
+                for (var i = 0; i < children.length; i++) {
+                    var found = findItem(children[i])
+                    if (found) return found
+                }
+                return null
+            }
+            var field = findItem(hostWindow.contentItem)
+            if (field && field.visible && field.enabled)
+                field.forceActiveFocus(Qt.OtherFocusReason)
+        }
     }
 
     // #13: Alt+Enter — Tulajdonságok-panel (Picasa-billentyű)
