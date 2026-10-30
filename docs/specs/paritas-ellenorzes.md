@@ -883,3 +883,30 @@ célmappa ini-tartalmáról nem ad bájtszintű adat.
 Cáfoló próbának a job-315 `filters` állítását a job-253-cal és a `picasa-ini-format.md` utasításszintű leírásával vetettem össze; ezek az eredeti-mappa ini-be helyezést támasztják alá, így a job-315-ből általános `filters`-szabály nem mondható ki. A job-316-318 800-as méretét az `export-parbeszed.md` eredeti-méret alapállásával és a mentett beállítások tényével vetettem össze; ez cáfolja, hogy a felvételből tiszta profilra vonatkozó alapérték következne. A felvételek nyers ini-je, profilja és célmappája nem elérhető, ezért az ellentmondás feloldatlan.
 
 A futtatott 7 célzott tesztfájl: `tests/app/qml_functional/test_export_felulet_1138.py`, `tests/app/qml_functional/test_mentes_parancsok_1527.py`, `tests/app/qml_functional/test_save_chain_originals_5833.py`, `tests/app/test_export_beallitasok_1138.py`, `tests/edit/test_mentes_eredeti_ini_5833.py`, `tests/edit/test_save.py`, `tests/export/test_exporter.py`.
+
+### Album-, mappa- és személyműveletek - 2026-10-30 (job-323 - job-345)
+
+Az eredeti oszlop a picasa-colab-jobs felvételeiből jön (képkocka, mappa-ini,
+profillista); a „Nálunk” oszlop kódút és valódi kattintásos QML-teszt.
+
+| Művelet | Eredeti | Nálunk | Eltérés | Bizonyíték |
+|---|---|---|---|---|
+| Album létrehozása kijelölt képpel | Album Properties ablak; a kép mellett is üres album jön létre, a mappa ini-je nem változik, a profilban `ioqueue/albumsafe.ioq` jelenik meg. | Az üres album az index `local_empty_albums` táblájába kerül, az ini változatlan. | egyezik (#6278) | job-323, job-324 |
+| Üres album törlése | „Delete Album” ablak, „Are you sure you want to delete the album "%s"?”, két gomb: Delete Album / No, az alapgomb a No; törlés után Albums (2) -> (1), ini-írás nincs. | A #6278 óta nem volt törölhető, és az ablakban Cancel gomb és jelölőnégyzet is volt. | javítva: #6281, #6283 | job-329, job-330; `0x005fdc30` |
+| Mappa elrejtése | Az ini azonnal `[Picasa] P2category=Hidden Folders` sort kap, utána „Add Password” ablak: Add Password (fókuszban) / Don't Add Password, „Do not ask me again.”. | Az ini-hatás egyezik; az ablakban Cancel gomb is volt. | javítva: #6287 | job-331; `0x005ee2a0` |
+| Arc mellőzése | „Ignore People” ablak („Don't ask again, always ignore”, Ignore Person / Cancel); a kép szakaszában `faces=rect64(...),ffffffffffffffff`; a bal sávban „Ignored (1)”, „Back to Unnamed”. | egyezik (`UnnamedFacesView.qml`, `face_scan_controller_reset_mixin.py`) | - | job-333, job-334 |
+| Személy-album törlése | Helyi menü: Edit People Album... · Select All · Clear Selection · Invert Selection · Refresh Thumbnails · Sort Album By · Delete People Album. „Remove People” ablak, Delete Album / Cancel (Cancel fókuszban). A kép `faces=` sora kikerül, a `[Contacts2]` névjegy marad, az arc visszakerül a Név nélküliek közé. | egyezik (`remove_album`: arcok törlése, névjegy marad) | - | job-336 - job-339; `0x005fdc30` |
+| Személy átnevezése meglévő névre | Nincs kérdés és nincs összevonás: két külön azonos nevű személy marad, külön `[Contacts2]` azonosítóval. | Átnevezéskor szintén nincs kérdés, de a további műveletek névvel azonosítanak, így mindkét személyt érintik. | eltér: #6290 | job-340, job-343 |
+| Mappa áthelyezése | A Windows rendszer-mappaválasztója („Browse for Folder”: Make New Folder / OK / Cancel). A Wine alatt a fa üres, cél nem választható, a fájlhatás nem mérhető. | Rendszer-mappaválasztó, a mappa a `.picasa.ini`-jével együtt mozog. | nem mérhető | job-344, job-345 |
+
+### Az 1. kör összesítése
+
+Az 1. kör minden lemezre író műveletére (csillag, forgatás, címke, elrejtés,
+átnevezés, felirat, Mentés, export, album létrehozása és törlése, mappa
+elrejtése és áthelyezése, arc mellőzése, személy elnevezése, törlése és
+átnevezése) megvan a Colab-felvétel. Az eltérésekből nyílt jegyek: #5804
+(egyfájlos átnevezés), #6281 és #6283 (üres album törlése), #6287
+(jelszóajánlat), #6290 (azonos nevű személyek). A mappa áthelyezésének
+fájlhatása a Wine korlátja miatt nem mérhető. A 2. kör (párbeszédablakok
+minden menüparancsra, #6291) és a 3. kör (nézetek és navigáció, #6292) saját
+jegyen folytatódik.
