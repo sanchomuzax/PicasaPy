@@ -31,9 +31,9 @@ _QML_DIR = (
     / "src" / "picasapy" / "app" / "qml" / "PicasaPy"
 )
 _QML_SOURCE = editor_panel_family_source(_QML_DIR)
-_VIEWER_QML_SOURCE = (
+_VIEWER_LAYOUT_QML_SOURCE = (
     Path(__file__).resolve().parents[3]
-    / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "PhotoViewer.qml"
+    / "src" / "picasapy" / "app" / "qml" / "PicasaPy" / "PhotoViewerLayout.qml"
 ).read_text(encoding="utf-8")
 _LEFT_DRAWER_QML_SOURCE = (
     Path(__file__).resolve().parents[3]
@@ -96,10 +96,10 @@ class TestPanelFixedWidth:
         assert panel.property("implicitWidth") == 280
 
     def test_photo_viewer_source_reserves_280_for_the_panel(self):
-        """A PhotoViewer.qml bal panel-példánya 280px-es —
+        """A PhotoViewerLayout.qml bal panel-példánya 280px-es —
         forrás-szintű ellenőrzés (a teljes PhotoViewer betöltése a
         `qml_app` fixtúrát igényelné, ld. test_viewer.py mintája)."""
-        assert "Layout.preferredWidth: 280" in _VIEWER_QML_SOURCE
+        assert "Layout.preferredWidth: 280" in _VIEWER_LAYOUT_QML_SOURCE
 
     def test_no_leftover_scaled_190_width_in_source(self):
         """Regresszió-őr: a #405-ös hibás, ablakarányosan leskálázott
@@ -121,9 +121,12 @@ class TestPanelFixedWidth:
             "a bal panel objektumneve kikerült a komponensből"
         )
         bal_panel_peldany = blokk_horgony_utan(
-            _VIEWER_QML_SOURCE, "PhotoViewerLeftDrawer"
+            _VIEWER_LAYOUT_QML_SOURCE, "PhotoViewerLeftDrawer"
         )
-        assert "Layout.preferredWidth: 280 + viewer.editorDrawerOffset" in bal_panel_peldany, (
+        assert (
+            "Layout.preferredWidth: 280 + viewerLayout.hostViewer.editorDrawerOffset"
+            in bal_panel_peldany
+        ), (
             "az őr elcsúszott: a bal panel példánya nem a mért 280px-es szélességet kapja"
         )
         assert "Layout.preferredWidth: 190" not in bal_panel_peldany
