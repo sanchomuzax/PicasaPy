@@ -7,6 +7,8 @@ látniuk kell, és közben ini-t sem írhatnak.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from support.jpeg_factory import make_jpeg
@@ -120,5 +122,5 @@ def test_edit_music_of_index_only_album(controller, library, empty_token):
     props = controller.albumProperties(empty_token)
     assert props["use_music"] is True
     assert props["music_file"] == "tone.mp3"
-    assert controller.albumMusicFile(empty_token) == str(music.resolve())
+    assert Path(controller.albumMusicFile(empty_token)) == music.resolve()
     assert not _ini(library).exists()
