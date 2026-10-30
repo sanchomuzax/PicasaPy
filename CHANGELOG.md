@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.312] - 2026-10-30
+
+- A megerősítő ablakok a művelethez tartozó gombokat és fókuszt mutatják. (#6296).
+
 ## [0.9.311] - 2026-10-30
 
 - A főablak felületi kódja kisebb, önálló részekre bomlik, változatlan képpel és viselkedéssel (#6136).
