@@ -50,11 +50,10 @@ _TRANSLATED = {
     "features/poszter.md",
     "features/sugo.md",
     "features/utlevelkep.md",
-}
-_MISSING = {
     "changelog-user.md",
     "features/konyvtar.md",
 }
+_MISSING: set[str] = set()
 _SUGO = Path(__file__).parents[1] / "src/picasapy/help"
 _TS = Path(__file__).parents[1] / "src/picasapy/app/i18n/picasapy_hu.ts"
 
@@ -69,13 +68,11 @@ def _normalise(text: str) -> str:
     return " ".join(text.replace("&", "").split())
 
 
-def test_english_help_is_explicitly_partial_until_every_page_is_translated():
+def test_english_and_hungarian_help_have_the_same_complete_chapter_list():
     hungarian = set(fejezetek(language="hu"))
     english = set(fejezetek(language="en"))
     assert english == _TRANSLATED, f"angol súgólapok eltérése: {sorted(english ^ _TRANSLATED)}"
-    assert hungarian == _TRANSLATED | _MISSING, (
-        f"a fordítási állapot nincs teljesen felsorolva: {sorted(hungarian ^ (_TRANSLATED | _MISSING))}"
-    )
+    assert hungarian == english, f"a magyar és angol fejezetlista eltér: {sorted(hungarian ^ english)}"
 
 
 def test_english_ui_gets_english_text_and_never_falls_back_to_hungarian():
@@ -83,7 +80,7 @@ def test_english_ui_gets_english_text_and_never_falls_back_to_hungarian():
     text = help_controller.helpTopicText("index.md")
     assert "PicasaPy Help" in text
     assert "PicasaPy súgó" not in text
-    assert help_controller.helpTopicText("features/konyvtar.md") == ""
+    assert "Folders" in help_controller.helpTopicText("features/konyvtar.md")
     assert help_controller.helpSearch("internet")
 
 
@@ -114,12 +111,14 @@ def test_translated_pages_keep_the_hungarian_link_targets_and_resolve_in_english
                 assert hivatkozas_celja(chapter, target, language="en") == target
 
 
-def test_english_ui_names_in_bold_are_original_picasa_ts_sources():
+def test_english_bold_ui_names_match_original_picasa_sources():
     root = ET.parse(_TS).getroot()
-    sources = {_normalise(node.text or "") for node in root.iter("source")}
+    # A súgó azt a nevet idézi, amit a felhasználó az angol felületen lát: a .ts
+    # <source> szövegét (a Picasa eredetijét, illetve a márkanévre átírt alakot).
+    sources = {_normalise(message.findtext("source", "")) for message in root.iter("message")}
     bold_names = set()
     for chapter in _TRANSLATED:
         text = (_SUGO / "en" / chapter).read_text(encoding="utf-8")
         bold_names.update(_normalise(match) for match in re.findall(r"\*\*(.+?)\*\*", text, re.S))
     missing = sorted(name for name in bold_names if name not in sources)
-    assert not missing, f"nincs eredeti Picasa <source> a félkövér felületi névhez: {missing}"
+    assert not missing, f"nincs eredeti Picasa-forrás a félkövér felületi névhez: {missing}"
