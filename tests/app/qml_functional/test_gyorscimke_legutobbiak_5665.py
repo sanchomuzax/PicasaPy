@@ -12,6 +12,7 @@ from PySide6.QtTest import QTest
 
 from tests.app.qml_functional.conftest import _build_qml_app
 from tests.support.jpeg_factory import make_minta_jpeg
+from tests.support.qt_wait import varj_ablakon_belulre
 from tests.support.varakozas import var_feltetelre
 
 #: a kiadáskép csak kérésre készül, a hívó adja a mappát
@@ -64,6 +65,7 @@ def test_kikapcsolt_legutobbiak_valodi_kattintas_utan_megmaradnak(
     ), "a gyorscímke gomb nem épült fel"
 
     button = window.findChild(QQuickItem, "quickTagButton0")
+    varj_ablakon_belulre(window, button)
     center = button.mapToScene(QPointF(button.width() / 2, button.height() / 2))
     QTest.mouseClick(
         window,

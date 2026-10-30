@@ -410,3 +410,24 @@ def varj_feltetelre(
     finally:
         if szunetel:
             gc.enable()
+
+
+def varj_ablakon_belulre(window, item, masodperc: float = 5.0) -> None:
+    """Megvárja, hogy az elem közepe az ablakon BELÜL legyen (#6136).
+
+    Az animáltan nyíló fiók gombja a nyitás elején még az ablak jobb szélén
+    túl ül. Az ablakon kívüli kattintás csak véletlenül ért célba, és a
+    főablak komponensekre bontása után el is vész; a felhasználó a már
+    kinyílt fiókra kattint, a teszt is erre vár.
+    """
+    from PySide6.QtCore import QPointF
+
+    app = QCoreApplication.instance()
+
+    def _bent() -> bool:
+        kozep = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
+        return 0 <= kozep.x() < window.width() and 0 <= kozep.y() < window.height()
+
+    assert varj_feltetelre(app, _bent, masodperc), (
+        "az elem közepe határidőn belül sem került az ablakon belülre"
+    )

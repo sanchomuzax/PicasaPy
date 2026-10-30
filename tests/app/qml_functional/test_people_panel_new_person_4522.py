@@ -12,7 +12,7 @@ from PySide6.QtTest import QTest
 from picasapy.faces.detector import FaceDetection, FaceLandmarks
 from picasapy.index import open_index, replace_faces, sync_tree
 from picasapy.ini import contacts_of, load_document, parse_faces
-from support.qt_wait import varj_feltetelre
+from support.qt_wait import varj_ablakon_belulre, varj_feltetelre
 from test_people_panel_26 import (
     _child,
     _draw_sample_faces,
@@ -93,6 +93,7 @@ def _prepare_panel(qml_app_valodi_belyegkep, qt_app, tmp_path, *, named=False):
 
 
 def _click(window, item):
+    varj_ablakon_belulre(window, item)
     center = item.mapToScene(item.boundingRect().center())
     QTest.mouseClick(
         window,

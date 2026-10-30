@@ -242,6 +242,7 @@ _GYEREK = textwrap.dedent(
     from PySide6.QtGui import QGuiApplication
     from PySide6.QtQml import QQmlComponent, QQmlEngine
     from PySide6.QtQuick import QQuickItem  # a QQuickItem* konverterhez
+    import shiboken6
     import picasapy.app
 
     VALTOZATOK = %(valtozatok)r
@@ -306,6 +307,9 @@ _GYEREK = textwrap.dedent(
         QQmlEngine.setObjectOwnership(ablak, QQmlEngine.ObjectOwnership.CppOwnership)
         app.processEvents()
         for gy in ablak.findChildren(QObject):
+            # #6136: egy előző párbeszéd nyitása-zárása törölhet gyermeket
+            if not shiboken6.isValid(gy):
+                continue
             mo = gy.metaObject()
             if not any(mo.property(i).name() == "message" for i in range(mo.propertyCount())):
                 continue

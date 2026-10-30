@@ -10,6 +10,8 @@ from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
+from support.qt_wait import varj_ablakon_belulre
+
 _PEOPLE = (
     Path(__file__).resolve().parents[3]
     / "src/picasapy/app/qml/PicasaPy/PeoplePanel.qml"
@@ -40,6 +42,7 @@ def _item(window, name: str) -> QQuickItem:
 
 
 def _click(window, item: QQuickItem) -> None:
+    varj_ablakon_belulre(window, item)
     center = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
     QTest.mouseClick(
         window,
