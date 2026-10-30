@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.0] - 2026-10-30
+
+- Az indítóképernyő a betöltés végén magától eltűnik, a félkész szoftverről szóló figyelmeztetés kikerült. (#6311).
+
 ## [0.9.312] - 2026-10-30
 
 - A megerősítő ablakok a művelethez tartozó gombokat és fókuszt mutatják. (#6296).
