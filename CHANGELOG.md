@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.303] - 2026-10-30
+
+- A fotóírás belső felépítése kisebb részekre bomlott. (#6266).
+
 ## [0.9.302] - 2026-10-30
 
 - A főablak folyamatjelző paneljei önálló komponensbe kerülnek, változatlan képpel (#6265).
