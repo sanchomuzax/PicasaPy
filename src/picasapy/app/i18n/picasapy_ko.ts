@@ -9183,7 +9183,7 @@ picasapy-origin-key: stringres:IBackgroundNotify::canceltitle</extracomment>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="374" />
             <source>Face data could not be written to XMP: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>XMP에 얼굴 정보를 쓸 수 없습니다: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="407" />
@@ -9196,21 +9196,23 @@ picasapy-origin-key: stringres:CThumbUI::GetBadImagesYesButton</extracomment>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="408" />
             <source>Don't Hide</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>숨기지 않기</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="438" />
             <source>PicasaPy had a problem loading this file(s)
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy에서 다음 파일을 불러오는 데 문제가 있습니다.
+</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="441" />
             <source>
 Would you like to hide the files on disk?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>
+디스크의 파일을 숨기시겠습니까?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="460" />
@@ -9249,8 +9251,8 @@ picasapy-origin-key: stringres:DeleteMessage::RemoveMultipleYesButton</extracomm
             <source>Are you sure you want to remove the %n selected images from the current album?</source>
             <extracomment>DeleteMessage::RemoveMultiple
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>현재 앨범에서 선택한 이미지 %n개를 제거하시겠습니까?</numerusform>
             </translation>
         </message>
         <message>
@@ -9285,21 +9287,21 @@ picasapy-origin-key: stringres:DeleteMessage::RemoveSinglePeople</extracomment>
             <source>Are you sure you want to remove the %n selected people from the current album?</source>
             <extracomment>DeleteMessage::RemoveMultiplePeople
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>현재 앨범에서 선택한 인물 %n명을 제거하시겠습니까?</numerusform>
             </translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="548" />
             <source>Move to New Person</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>새 인물로 이동</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="549" />
             <source>New person's name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>새 인물 이름:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="599" />
@@ -9340,7 +9342,7 @@ picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="48" />
             <source>Configure Buttons...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>버튼 구성...</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="221" />
@@ -9360,13 +9362,13 @@ picasapy-origin-key: stringres:CAlbumState::addsearchprompt</extracomment>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="227" />
             <source>No pictures have that tag.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>해당 태그가 지정된 사진이 없습니다.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="239" />
             <source>The search results could not be saved as an album.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>검색 결과를 앨범으로 저장할 수 없습니다.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="253" />
@@ -9386,13 +9388,13 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
             <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>내보내기, 웹 내보내기 또는 얼굴 검색과 같은 백그라운드 작업이 아직 실행 중입니다. 지금 종료하면 작업이 중단되고 나중에 다시 시작되지 않습니다.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />
             <source>Exit PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPy 종료</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="309" />
@@ -9412,7 +9414,7 @@ picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(i
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="341" />
             <source>There are no files on the clipboard to paste.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>클립보드에 붙여넣을 파일이 없습니다.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="497" />
@@ -9442,31 +9444,31 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="31" />
             <source>The selected screensaver sources contain no available pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>선택한 화면 보호기 원본에 표시할 사진이 없습니다.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="278" />
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>속성</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="279" />
             <source>Tags:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>태그:</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="280" />
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>인물</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="281" />
             <source>Places</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>장소</translation>
         </message>
     </context>
     <context>

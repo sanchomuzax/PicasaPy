@@ -32,6 +32,19 @@ from PySide6.QtCore import QObject
 import picasapy.app
 
 _QML_DIR = Path(picasapy.app.__file__).parent / "qml"
+_FOALAK_FORRASOK = (
+    _QML_DIR / "Main.qml",
+    *_QML_DIR.joinpath("PicasaPy").glob("Main*.qml"),
+)
+_MAIN_KOMPONENS_FORRASOK = tuple(
+    _QML_DIR / "PicasaPy" / f"{name}.qml"
+    for name in (
+        "MainWindowCommands",
+        "MainWindowDialogStack",
+        "MainWindowPeripheralLayers",
+        "MainWindowWorkspace",
+    )
+)
 
 #: A vezérlő-szerű context property-k: ezekre kötött `Connections` az, ami
 #: elveszhet, ha a befoglaló párbeszéd még nem épült fel.
@@ -88,9 +101,10 @@ def _kivetel_kulcs(fajl: str, kifejezes: str) -> tuple[str, str]:
 
 
 def _halasztott_komponensek() -> list[str]:
-    """A `Main.qml`-ből olvassuk ki, mi van `DeferredDialog`-ba csomagolva —
-    így az őr akkor is igaz marad, ha a halasztottak köre változik."""
-    main = (_QML_DIR / "Main.qml").read_text(encoding="utf-8")
+    """A főablak forráscsaládjából olvassuk ki a halasztott párbeszédeket."""
+    main = "\n".join(
+        path.read_text(encoding="utf-8") for path in _FOALAK_FORRASOK
+    )
     return sorted(
         set(re.findall(r"sourceComponent:\s*Component\s*\{\s*(\w+)", main))
     )
@@ -180,7 +194,10 @@ class TestNincsVezerloreKotottConnections:
             _QML_DIR / "PicasaPy" / fajl
         ).read_text(encoding="utf-8"), f"{fuggveny} nincs a {fajl}-ban"
 
-        main = (_QML_DIR / "Main.qml").read_text(encoding="utf-8")
+        main = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in _MAIN_KOMPONENS_FORRASOK
+        )
         assert f"ensure().{fuggveny}(" in main, (
             f"a Main.qml nem az `ensure()`-ön át hívja a(z) {fuggveny}-t"
         )

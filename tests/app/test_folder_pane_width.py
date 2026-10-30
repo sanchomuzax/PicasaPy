@@ -143,7 +143,8 @@ def test_a_QML_felso_korlatja_ABLAKFUGGO() -> None:
 
     qml = (
         _P(__file__).resolve().parents[2]
-        / "src" / "picasapy" / "app" / "qml" / "Main.qml"
+        / "src" / "picasapy" / "app" / "qml" / "PicasaPy"
+        / "MainWindowWorkspace.qml"
     ).read_text(encoding="utf-8")
     import re
 

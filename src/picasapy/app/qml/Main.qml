@@ -44,7 +44,7 @@ ApplicationWindow {
     property alias _pendingSelectedIds: mainWindowCommands._pendingSelectedIds
     property alias _pendingAnchorId: mainWindowCommands._pendingAnchorId
     readonly property alias _kulonAblakosParbeszedNyitva: mainWindowCommands._kulonAblakosParbeszedNyitva
-    property alias helpCursor: mainWindowCommands.helpCursor
+    property point helpCursor: Qt.point(-1, -1)
     readonly property alias _szovegmezoneVanFokusz: mainWindowCommands._szovegmezoneVanFokusz
     readonly property alias _konyvtariGyorsbillentyuEngedelyezve: mainWindowCommands._konyvtariGyorsbillentyuEngedelyezve
     property alias trayHasPictures: mainWindowCommands.trayHasPictures
@@ -88,6 +88,13 @@ ApplicationWindow {
     // zsugorodik tovább. Az igény MÉRT (ld. `TrayBar.requiredWidth`),
     // és őr-teszt méri újra élőben.
     minimumWidth: trayBar.requiredWidth
+    //: A mutatókövető a főablak gyökerén marad, hogy a munkaterület fölötti
+    //: elemek fölött is megkapja a hover-eseményt, ahogy a bontás előtt.
+    HoverHandler {
+        objectName: "helpCursorTracker"
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onPointChanged: window.helpCursor = point.position
+    }
     visible: true
     //: #671: az ablak „X"-e UGYANAZT az utat járja, mint a Fájl ▸ Kilépés.
     //: Ha háttérmunka fut, a bezárást visszavonjuk, és a kérdés dönt;

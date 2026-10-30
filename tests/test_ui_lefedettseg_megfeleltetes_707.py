@@ -322,13 +322,13 @@ class TestJegy4131:
             "PicasaPy/PicasaCreateMenu.qml:48;PicasaPy/GiftCdHost.qml:67;"
             "PicasaPy/PublishPanel.qml:181",
         ),
-        "thumbui/hlistsizer": ("megvan", "Main.qml:2294"),
-        "thumbui/hlisthandle": ("megvan", "Main.qml:2325"),
+        "thumbui/hlistsizer": ("megvan", "PicasaPy/MainWindowWorkspace.qml:180"),
+        "thumbui/hlisthandle": ("megvan", "PicasaPy/MainWindowWorkspace.qml:219"),
         "thumbui/acquirebutton": (
             "megvan",
             "PicasaPy/MainToolbar.qml:119",
         ),
-        "thumbui/editpanel": ("megvan", "Main.qml:2294"),
+        "thumbui/editpanel": ("megvan", "PicasaPy/MainWindowWorkspace.qml:180"),
         "thumbui/listdetail": (
             "megvan",
             "PicasaPy/LightboxFeed.qml:13",

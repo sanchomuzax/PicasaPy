@@ -80,7 +80,7 @@ Item {
     //: `ensure()` mindhárom ágon KÖTELEZŐ: mind a három a FELHASZNÁLÓNAK
     //: szól, tehát némán elmaradnia nem szabad.
     Connections {
-        target: fileOpsController
+        target: typeof fileOpsController !== "undefined" ? fileOpsController : null
         function onBatchProgress(operation, destination, done, total, speed) {
             fileOpsDialogs.ensure().reportBatch(
                 operation, destination, done, total, speed)
@@ -119,7 +119,7 @@ Item {
     // a #1720 nyeresége érintetlen. Az `ensure()` a jelzés pillanatában
     // építi fel a párbeszédet — pontosan akkor, amikor tényleg kell.
     Connections {
-        target: controller
+        target: typeof controller !== "undefined" ? controller : null
         function onDiskOperationSucceededPaths(paths) {
             hostPhotoViewer.frissitsdALemezműveletUtániElőnézetet(paths)
         }
@@ -168,7 +168,7 @@ Item {
     // visszajelzése NÉMÁN elmaradna. A kollázs a Kollázs panelről is
     // indítható, tehát ez nem elméleti eset.
     Connections {
-        target: controller
+        target: typeof controller !== "undefined" ? controller : null
         function onCollagePreviewReady(revision) {
             // ⚠️ Itt SZÁNDÉKOSAN nincs `ensure()`. Az élő előnézet csak a
             // NYITOTT kollázs-párbeszédnek szól: ha a párbeszéd nem áll, nincs
@@ -274,7 +274,7 @@ Item {
         sourceComponent: Component { EditOverwriteDialog { } }
     }
     Connections {
-        target: controller
+        target: typeof controller !== "undefined" ? controller : null
         function onEditsOverwritten(lost) { editOverwriteDialog.ensure().show(lost) }
     }
     DeferredDialog {
@@ -334,7 +334,10 @@ Item {
                 namePrefix: "activityCancel"
                 //: `IBackgroundNotify::canceltitle` — az eredeti szövege (#3573)
                 title: qsTr("Want to Cancel?")
-                onConfirmed: controller.cancelActivity()
+                onConfirmed: {
+                    if (typeof controller !== "undefined" && controller)
+                        controller.cancelActivity()
+                }
             }
         }
     }
@@ -348,7 +351,8 @@ Item {
         sourceComponent: Component {
             XmpFacesWriteDialog {
                 onWriteRequested: function (scope, rows) {
-                    if (controller) controller.writeFacesToXmp(scope, rows)
+                    if (typeof controller !== "undefined" && controller)
+                        controller.writeFacesToXmp(scope, rows)
                 }
             }
         }
@@ -411,7 +415,8 @@ Item {
                 //: párja, ugyanabban a sorrendben)
                 property var pendingNames: []
                 onConfirmed: {
-                    controller.hidePhotosByIds(brokenPhotoBelso.pendingIds)
+                    if (typeof controller !== "undefined" && controller)
+                        controller.hidePhotosByIds(brokenPhotoBelso.pendingIds)
                     brokenPhotoBelso.pendingIds = []
                     brokenPhotoBelso.pendingNames = []
                 }
@@ -481,7 +486,10 @@ Item {
                             rowList.length))
                     }
                 }
-                onConfirmed: controller.removeRowsFromAlbum(rows, token)
+                onConfirmed: {
+                    if (typeof controller !== "undefined" && controller)
+                        controller.removeRowsFromAlbum(rows, token)
+                }
             }
         }
     }
@@ -529,7 +537,10 @@ Item {
                             rowList.length))
                     }
                 }
-                onConfirmed: controller.removePersonFromRows(rows, person)
+                onConfirmed: {
+                    if (typeof controller !== "undefined" && controller)
+                        controller.removePersonFromRows(rows, person)
+                }
             }
         }
     }
@@ -555,7 +566,10 @@ Item {
                     person = name
                     openEmpty()
                 }
-                onAccepted: controller.movePersonOnRows(rows, person, enteredName)
+                onAccepted: {
+                    if (typeof controller !== "undefined" && controller)
+                        controller.movePersonOnRows(rows, person, enteredName)
+                }
             }
         }
     }
@@ -611,7 +625,7 @@ Item {
     }
 
     Connections {
-        target: controller
+        target: typeof controller !== "undefined" ? controller : null
         function onHiddenPasswordOfferRequested() {
             hiddenPasswordOfferDialog.ensure().ask(
                 "DoNotConfirmHiddenPwd",

@@ -185,7 +185,7 @@ Item {
             typeof startupStatus !== "undefined" ? startupStatus : null
         anchors.fill: parent
         z: 10000
-        version: appVersion
+        version: typeof appVersion !== "undefined" ? appVersion : ""
         statusText: statusBridge ? statusBridge.statusText : ""
         ready: statusBridge ? statusBridge.ready : true
         // #243: félkész-figyelmeztetés + OK a betöltés végén, amíg az

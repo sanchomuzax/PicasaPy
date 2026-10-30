@@ -6,6 +6,7 @@ import re
 
 _ROOT = Path(__file__).resolve().parents[1]
 _MAIN = _ROOT / "src/picasapy/app/qml/Main.qml"
+_WORKSPACE = _ROOT / "src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml"
 _QML_DIR = _ROOT / "src/picasapy/app/qml/PicasaPy/qmldir"
 _COMPONENTS = {
     "MainWindowToolbar": ("MainWindowToolbar.qml", "mainToolbar"),
@@ -15,6 +16,7 @@ _COMPONENTS = {
 
 def test_felso_sav_vetites_es_nezo_onallo_komponensben_marad():
     main = _MAIN.read_text(encoding="utf-8")
+    workspace = _WORKSPACE.read_text(encoding="utf-8")
     qmldir = _QML_DIR.read_text(encoding="utf-8")
 
     for type_name, (filename, object_name) in _COMPONENTS.items():
@@ -30,11 +32,13 @@ def test_felso_sav_vetites_es_nezo_onallo_komponensben_marad():
         assert not re.search(rf"\b{old_type}\s*\{{", main), (
             f"a {old_type} még inline a Main.qml-ben"
         )
-    for component_type in _COMPONENTS:
-        assert re.search(rf"\b{component_type}\s*\{{", main), (
-            f"hiányzik a {component_type} példány a Main.qml-ből"
-        )
+    assert re.search(r"\bMainWindowToolbar\s*\{", main)
+    assert re.search(r"\bMainSlideshow\s*\{", workspace), (
+        "hiányzik a MainSlideshow példány a MainWindowWorkspace.qml-ből"
+    )
 
-    # A teljes nézőblokk a helyén marad: a komponensváltozat két állapotban
-    # 29 képponttal tért el, az inline változat ott 0 eltérést adott.
-    assert re.search(r"^    PhotoViewer\s*\{\n        id: photoViewer", main, re.MULTILINE)
+    # A teljes nézőblokk változatlanul a Workspace-ben marad, a szétbontás
+    # további körében sem emeljük át külön komponensbe.
+    assert re.search(
+        r"^    PhotoViewer\s*\{\n        id: photoViewer", workspace, re.MULTILINE
+    )

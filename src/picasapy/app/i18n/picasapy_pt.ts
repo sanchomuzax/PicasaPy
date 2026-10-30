@@ -9183,7 +9183,7 @@ picasapy-origin-key: stringres:IBackgroundNotify::canceltitle</extracomment>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="374" />
             <source>Face data could not be written to XMP: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Não foi possível gravar os dados de caras no XMP: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="407" />
@@ -9196,21 +9196,23 @@ picasapy-origin-key: stringres:CThumbUI::GetBadImagesYesButton</extracomment>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="408" />
             <source>Don't Hide</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Não ocultar</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="438" />
             <source>PicasaPy had a problem loading this file(s)
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>O PicasaPy teve um problema ao carregar este(s) ficheiro(s)
+</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="441" />
             <source>
 Would you like to hide the files on disk?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>
+Pretende ocultar os ficheiros no disco?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="460" />
@@ -9249,8 +9251,8 @@ picasapy-origin-key: stringres:DeleteMessage::RemoveMultipleYesButton</extracomm
             <source>Are you sure you want to remove the %n selected images from the current album?</source>
             <extracomment>DeleteMessage::RemoveMultiple
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>Tem a certeza de que pretende remover as imagens selecionadas (%n) do álbum atual?</numerusform>
             </translation>
         </message>
         <message>
@@ -9285,21 +9287,21 @@ picasapy-origin-key: stringres:DeleteMessage::RemoveSinglePeople</extracomment>
             <source>Are you sure you want to remove the %n selected people from the current album?</source>
             <extracomment>DeleteMessage::RemoveMultiplePeople
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>Tem a certeza de que pretende remover as pessoas selecionadas (%n) do álbum atual?</numerusform>
             </translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="548" />
             <source>Move to New Person</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Mover para nova pessoa</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="549" />
             <source>New person's name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nome da nova pessoa:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="599" />
@@ -9340,7 +9342,7 @@ picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="48" />
             <source>Configure Buttons...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Configurar botões...</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="221" />
@@ -9360,13 +9362,13 @@ picasapy-origin-key: stringres:CAlbumState::addsearchprompt</extracomment>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="227" />
             <source>No pictures have that tag.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Nenhuma imagem tem essa etiqueta.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="239" />
             <source>The search results could not be saved as an album.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Não foi possível guardar os resultados da pesquisa como um álbum.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="253" />
@@ -9386,13 +9388,13 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
             <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ainda há operações em segundo plano em curso (exportação, exportação para a Web ou procura de caras). Se sair agora, serão interrompidas e não serão retomadas.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />
             <source>Exit PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sair do PicasaPy</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="309" />
@@ -9406,13 +9408,13 @@ picasapy-origin-key: stringres:CUploadManagerThread::cancel</extracomment>
             <source>Keep Going</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(initialscan/ok-label);stringres:il_BurnPanel::InsertNext::1;stringres:il_ContinueButton;uploadmgr:Label(uploadmgr/resume)</extracomment>
-            <translation type="unfinished" />
+            <translation>Continuar mesmo assim</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="341" />
             <source>There are no files on the clipboard to paste.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Não há ficheiros na área de transferência para colar.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="497" />
@@ -9442,31 +9444,31 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="31" />
             <source>The selected screensaver sources contain no available pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>As fontes selecionadas para a proteção de ecrã não contêm imagens disponíveis.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="278" />
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Propriedades</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="279" />
             <source>Tags:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Etiquetas:</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="280" />
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Pessoas</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="281" />
             <source>Places</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Lugares</translation>
         </message>
     </context>
     <context>

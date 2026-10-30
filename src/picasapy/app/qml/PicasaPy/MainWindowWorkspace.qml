@@ -192,8 +192,15 @@ Item {
         //: #3503: nyitott Ajándék-CD panelnél a könyvtár a panel fölött ér
         //: véget — a panel nem takarhatja el a képeket
         //: #3504: ugyanez a mentés-panelre is vonatkozik
-        anchors.bottom: hostRefs.giftCdHost.visible ? hostRefs.giftCdHost.top
-                        : (hostRefs.backupHost.visible ? hostRefs.backupHost.top : parent.bottom)
+        anchors.bottom: parent.bottom
+        // A Gift CD és a mentés-panel már a MainWindowPeripheralLayers
+        // gyermekei, ezért nem horgonyozhatunk rájuk ebből a komponensből.
+        // A korábbi top koordinátájukból ugyanazt az alsó margót számoljuk.
+        anchors.bottomMargin: hostRefs.giftCdHost.visible
+            ? parent.height - hostRefs.giftCdHost.mapToItem(parent, 0, 0).y
+            : (hostRefs.backupHost.visible
+                ? parent.height - hostRefs.backupHost.mapToItem(parent, 0, 0).y
+                : 0)
         // A Könyvtár lapjának tartalma. NEM `Loader.active`: a lap váltásakor
         // a feed nem semmisülhet meg, különben elveszne a görgetési helye és
         // a kijelölése (a #944 kimérte, a #985 tesztje állítja).

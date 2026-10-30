@@ -36,11 +36,15 @@ _PLACES = (
     Path(picasapy.app.__file__).parent / "qml" / "PicasaPy" / "PlacesPanel.qml"
 ).read_text(encoding="utf-8")
 _QML = Path(picasapy.app.__file__).parent / "qml"
-# A megerősítő ablak a `MainDialogs.qml`-be került (#5955); a jelzés kezelője
-# a `Main.qml`-ben maradt.
+# A megerősítő ablak a `MainDialogs.qml`-be került (#5955), a jelzés kezelője
+# pedig a `MainWindowWorkspace.qml`-be (#6136).
 _MAIN = "\n".join(
     (_QML / nev).read_text(encoding="utf-8")
-    for nev in ("Main.qml", "PicasaPy/MainDialogs.qml")
+    for nev in (
+        "Main.qml",
+        "PicasaPy/MainDialogs.qml",
+        "PicasaPy/MainWindowWorkspace.qml",
+    )
 )
 
 

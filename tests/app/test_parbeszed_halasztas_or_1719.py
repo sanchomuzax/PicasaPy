@@ -71,7 +71,14 @@ _MAIN = _QML / "Main.qml"
 #: A főablak párbeszédei 2026-10-28 óta (#5955) a `MainDialogs.qml`-ben
 #: vannak; az őr mindkét fájlt olvassa, a tárolót magát pedig nem számolja
 #: párbeszédnek - a benne lévő tételeket egyenként ellenőrzi.
-_FORRASOK = (_MAIN, _QML / "PicasaPy" / "MainDialogs.qml")
+_FORRASOK = (
+    _MAIN,
+    _QML / "PicasaPy" / "MainDialogs.qml",
+    _QML / "PicasaPy" / "MainWindowCommands.qml",
+    _QML / "PicasaPy" / "MainWindowDialogStack.qml",
+    _QML / "PicasaPy" / "MainWindowPeripheralLayers.qml",
+    _QML / "PicasaPy" / "MainWindowWorkspace.qml",
+)
 _TAROLOK = {"MainDialogs"}
 
 #: Azok a párbeszédek, amelyek SZÁNDÉKOSAN azonnal felépülnek, indoklással.

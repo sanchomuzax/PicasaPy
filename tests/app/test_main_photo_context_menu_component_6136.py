@@ -6,6 +6,7 @@ import re
 
 _QML = Path(__file__).resolve().parents[2] / "src/picasapy/app/qml"
 _MAIN = _QML / "Main.qml"
+_PERIPHERAL_LAYERS = _QML / "PicasaPy/MainWindowPeripheralLayers.qml"
 _COMPONENT = _QML / "PicasaPy/MainPhotoContextMenu.qml"
 _QMLDIR = _QML / "PicasaPy/qmldir"
 
@@ -22,10 +23,13 @@ def test_a_foto_helyi_menu_gazdakomponense_regisztralt_es_800_sor_alatti():
 
 def test_a_foablak_megtartja_a_fotomenunevet_es_atadja_a_gazdakat():
     main = _MAIN.read_text(encoding="utf-8")
+    peripheral = _PERIPHERAL_LAYERS.read_text(encoding="utf-8")
     component = _COMPONENT.read_text(encoding="utf-8")
 
     assert re.search(
-        r"MainPhotoContextMenu\s*\{\s*id:\s*photoContextMenu", main, re.DOTALL
+        r"MainPhotoContextMenu\s*\{\s*id:\s*photoContextMenu",
+        peripheral,
+        re.DOTALL,
     )
     for name in (
         "hostWindow",
@@ -46,7 +50,8 @@ def test_a_foablak_megtartja_a_fotomenunevet_es_atadja_a_gazdakat():
     assert 'objectName: "photoContextMenu"' in (
         (_QML / "PicasaPy/PhotoContextMenu.qml").read_text(encoding="utf-8")
     )
-    assert "typeof fileOpsController !== \"undefined\"" in main
+    assert "typeof fileOpsController !== \"undefined\"" in peripheral
+    assert "MainWindowPeripheralLayers {" in main
 
 
 # rontás-kontroll: a MainPhotoContextMenu-regisztráció eltávolítva → piros.

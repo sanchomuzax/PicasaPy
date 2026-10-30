@@ -130,19 +130,8 @@ Item {
     //: (`WindowHelp`) áll: a kettő kétértelmű, és MEGMÉRVE egyik sem sül el.
     //: A párbeszédek alkalmazás-modálisak, a főablak addig úgysem kezelhető.
     readonly property bool _kulonAblakosParbeszedNyitva:
-        [folderManager, importSourceDialog, optionsDialog, webExportDialog,
+        [folderManager, importSourceDialog, hostWindow.optionsDialog, webExportDialog,
          printDialog].some(function (d) { return d.item !== null && d.item.visible })
-
-    //: #2054: a mutató helye a Shift+F1-hez. A `HoverHandler` a teljes
-    //: ablakot lefedi, de NEM nyel el eseményt (`acceptedButtons: NoButton`),
-    //: tehát semmilyen meglévő vezérlőt nem zavar.
-    property point helpCursor: Qt.point(-1, -1)
-
-    HoverHandler {
-        objectName: "helpCursorTracker"
-        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-        onPointChanged: hostWindow.helpCursor = point.position
-    }
 
     //: #2054: a mutató alatti elemtől FELFELÉ sétálunk a szülőláncon az
     //: első olyan ősig, amelyik deklarál `helpTopic`-ot. Így nem kell
@@ -336,6 +325,8 @@ Item {
     }
 
     function beillesztAVagolaprol() {
+        if (typeof fileOpsController === "undefined" || !fileOpsController
+                || !hostController) return
         if (fileOpsController.pasteFilesFromClipboard(hostController.currentFolder))
             return
         hostWindow.errorBanner.notice = true
@@ -449,7 +440,7 @@ Item {
     // #4330: a Fájl menü és a Ctrl+Shift+O ugyanazt a kijelölés-pillanatképet
     // adja a rendszer alapértelmezett fájlmegnyitójának.
     function openSelectionInDefaultEditor() {
-        if (!fileOpsController) return
+        if (typeof fileOpsController === "undefined" || !fileOpsController) return
         var paths = hostWindow.photoActionPaths()
         if (paths.length > 0)
             fileOpsController.openPhotosInDefaultEditor(paths)
@@ -525,7 +516,10 @@ Item {
         sourceComponent: Component {
             OpenWithDialog {
                 objectName: "openWithDialog"
-                onAccepted: fileOpsController.openWithApp(photoPath, selectedAppId)
+                onAccepted: {
+                    if (typeof fileOpsController !== "undefined" && fileOpsController)
+                        fileOpsController.openWithApp(photoPath, selectedAppId)
+                }
             }
         }
     }
@@ -554,7 +548,7 @@ Item {
         id: peopleManagerLoader
         objectName: "peopleManagerLoader"
         active: false
-        source: Qt.resolvedUrl("PicasaPy/PeopleManagerDialog.qml")
+        source: Qt.resolvedUrl("PeopleManagerDialog.qml")
         onLoaded: {
             item.controller = hostController
             var targetName = hostWindow.pendingPeopleManagerPersonName

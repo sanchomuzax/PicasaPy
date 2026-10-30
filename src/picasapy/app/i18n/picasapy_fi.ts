@@ -9196,7 +9196,7 @@ picasapy-origin-key: stringres:IBackgroundNotify::canceltitle</extracomment>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="374" />
             <source>Face data could not be written to XMP: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Kasvotietoja ei voitu kirjoittaa XMP:hen: %1</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="407" />
@@ -9209,21 +9209,23 @@ picasapy-origin-key: stringres:CThumbUI::GetBadImagesYesButton</extracomment>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="408" />
             <source>Don't Hide</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Älä piilota</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="438" />
             <source>PicasaPy had a problem loading this file(s)
 </source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>PicasaPyllä oli ongelma tämän tiedoston lataamisessa
+</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="441" />
             <source>
 Would you like to hide the files on disk?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>
+Haluatko piilottaa tiedostot levyltä?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="460" />
@@ -9262,8 +9264,9 @@ picasapy-origin-key: stringres:DeleteMessage::RemoveMultipleYesButton</extracomm
             <source>Are you sure you want to remove the %n selected images from the current album?</source>
             <extracomment>DeleteMessage::RemoveMultiple
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>Haluatko varmasti poistaa %n valittua kuvaa nykyisestä albumista?</numerusform>
+                <numerusform>Haluatko varmasti poistaa %n valittua kuvaa nykyisestä albumista?</numerusform>
             </translation>
         </message>
         <message>
@@ -9298,21 +9301,22 @@ picasapy-origin-key: stringres:DeleteMessage::RemoveSinglePeople</extracomment>
             <source>Are you sure you want to remove the %n selected people from the current album?</source>
             <extracomment>DeleteMessage::RemoveMultiplePeople
 picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished">
-                <numerusform />
+            <translation>
+                <numerusform>Haluatko varmasti poistaa %n valittua henkilöä nykyisestä albumista?</numerusform>
+                <numerusform>Haluatko varmasti poistaa %n valittua henkilöä nykyisestä albumista?</numerusform>
             </translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="548" />
             <source>Move to New Person</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Siirrä uudelle henkilölle</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="549" />
             <source>New person's name:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Uuden henkilön nimi:</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="599" />
@@ -9353,7 +9357,7 @@ picasapy-origin-key: stringres:IDS_CLOSE_LAST_CHECK</extracomment>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="48" />
             <source>Configure Buttons...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Määritä painikkeet...</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="221" />
@@ -9373,13 +9377,13 @@ picasapy-origin-key: stringres:CAlbumState::addsearchprompt</extracomment>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="227" />
             <source>No pictures have that tag.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Yhdelläkään kuvalla ei ole tätä tagia.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="239" />
             <source>The search results could not be saved as an album.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Hakutuloksia ei voitu tallentaa albumina.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="253" />
@@ -9399,13 +9403,13 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
             <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Taustalla on yhä käynnissä tehtäviä (vienti, verkkovienti tai kasvojen haku). Jos suljet sovelluksen nyt, ne keskeytyvät eivätkä jatku myöhemmin.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />
             <source>Exit PicasaPy</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Sulje PicasaPy</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="309" />
@@ -9425,7 +9429,7 @@ picasapy-origin-key: initialscan:Text1(initialscan/ok-label);initialscan:Text2(i
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="341" />
             <source>There are no files on the clipboard to paste.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Leikepöydällä ei ole liitettäviä tiedostoja.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="497" />
@@ -9455,31 +9459,31 @@ picasapy-origin-key: stringres:addtosaver::warning</extracomment>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="31" />
             <source>The selected screensaver sources contain no available pictures.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Valituissa näytönsäästäjän lähteissä ei ole käytettävissä olevia kuvia.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="278" />
             <source>Properties</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ominaisuudet</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="279" />
             <source>Tags:</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Tagit:</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="280" />
             <source>People</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ihmiset</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowWorkspace.qml" line="281" />
             <source>Places</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Paikat</translation>
         </message>
     </context>
     <context>
