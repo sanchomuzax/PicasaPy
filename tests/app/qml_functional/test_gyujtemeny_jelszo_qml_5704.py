@@ -185,3 +185,37 @@ def test_mappa_elrejtese_utan_ajanl_es_a_nem_kerdezd_ujra_megmarad(
     controller.toggleFolderHidden(str(harmadik))
     assert len(ajanlatok) == 2
     assert ajanlat.property("visible") is False
+
+
+def test_ajanlat_ket_gombos_es_enterre_a_jelszoablakot_nyitja(qml_app, qt_app):
+    """#6287: az eredetiben (job-331) csak Add Password és Don't Add Password
+    van, a fókusz az Add Password gombon, Enterre a jelszóablak nyílik."""
+    window, controller, _engine = qml_app
+    mappa = Path(controller.watchedFolders[0]) / "rejtendo_6287"
+    mappa.mkdir(parents=True, exist_ok=True)
+    make_jpeg(mappa / "kep.jpg", size=(80, 60))
+    controller.rescan()
+
+    def _bent_van():
+        controller.waitForBackgroundWorkers(0.05)
+        with open_index(controller._db_path) as conn:
+            return conn.execute(
+                "SELECT 1 FROM folders WHERE path = ?", (str(mappa),)
+            ).fetchone() is not None
+
+    assert _var(qt_app, _bent_van), "a mappa nem került be az indexbe"
+    controller.toggleFolderHidden(str(mappa))
+    ajanlat = _elem(window, "hiddenPasswordOfferDialog")
+    assert _var(qt_app, lambda: ajanlat is not None and ajanlat.property("visible"))
+
+    assert _elem(window, "hiddenPasswordOfferYesButton").property("visible") is True
+    assert _elem(window, "hiddenPasswordOfferNoButton").property("visible") is True
+    assert _elem(window, "hiddenPasswordOfferCancelButton").property("visible") is False
+    assert _elem(window, "hiddenPasswordOfferRememberCheck").property("visible") is True
+    igen = _elem(window, "hiddenPasswordOfferYesButton")
+    assert _var(qt_app, lambda: igen.property("activeFocus") is True)
+
+    QTest.keyClick(window, Qt.Key.Key_Return)
+    assert _var(qt_app, lambda: ajanlat.property("visible") is False)
+    jelszo = _elem(window, "collectionPasswordDialog")
+    assert _var(qt_app, lambda: jelszo is not None and jelszo.property("visible"))

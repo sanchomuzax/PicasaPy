@@ -53,6 +53,9 @@ Dialog {
     property bool cancelVisible: true
     property bool rememberVisible: true
     property bool focusNoOnOpen: false
+    // #6287: a Rejtett mappák jelszóajánlatában (job-331) az igen-gomb a
+    // fókuszos, Enterre elfogad.
+    property bool focusYesOnOpen: false
     // #5704: az opt-out a „No” ágon is menthető az eredeti rejtettjelszó-
     // ajánlatban. Más megerősítők változatlanul csak az „Yes” ágon mentenek.
     property bool rememberOnDenied: false
@@ -63,6 +66,8 @@ Dialog {
             cancelButton.forceActiveFocus()
         else if (root.focusNoOnOpen)
             noButton.forceActiveFocus()
+        else if (root.focusYesOnOpen)
+            yesButton.forceActiveFocus()
     }
 
     function _deny() {
@@ -131,10 +136,13 @@ Dialog {
             spacing: 8
 
             PicasaButton {
+                id: yesButton
                 objectName: root.namePrefix + "YesButton"
                 text: root.yesText
                 accent: Theme.picasaGreen
                 enabled: root.yesEnabled
+                Keys.onReturnPressed: root.accept()
+                Keys.onEnterPressed: root.accept()
                 onClicked: root.accept()
             }
             PicasaButton {
