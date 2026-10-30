@@ -95,17 +95,20 @@ class PhotoOpsAlbumMembershipMixin:
 
         A törlés a `[.album:<token>]` definíciót és a képek `albums=`
         hivatkozásait is kiveszi. A képfájlok és a többi album érintetlenek
-        maradnak. Visszatérés: legalább egy albumot ismerő mappába írtunk-e.
+        maradnak. A még tag nélküli albumot az index függő tárából veszi ki
+        (#6281). Visszatérés: töröltünk-e bármit.
         """
         token = (token or "").strip()
         if not token:
             return False
         erintett = list(self._album_dokumentumok(token))
-        if not erintett:
-            return False
 
         try:
             with open_index(self._db_path) as conn:
+                # #6281: a még tag nélküli album csak az indexben él
+                fuggo = _remove_empty_album(conn, token)
+                if not erintett and not fuggo:
+                    return False
                 for ini_ut, _document in erintett:
                     update_document(
                         ini_ut,

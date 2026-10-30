@@ -7,6 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import Slot
 
 from picasapy.index import open_index
+from picasapy.index.albums import _pending_empty_album, _update_empty_album
 from picasapy.ini import load_existing
 from picasapy.ini.albums import albums_of, with_album_fields
 from picasapy.ini.document import ALBUM_SECTION_PREFIX
@@ -31,15 +32,22 @@ class PhotoOpsAlbumPropertiesMixin:
             for album in albums_of(dokumentum):
                 if album.token != token:
                     continue
-                return {
-                    "name": album.name or "",
-                    "date": album.date or "",
-                    "location": album.location or "",
-                    "description": album.description or "",
-                    "use_music": album.use_music,
-                    "music_file": album.music_file or "",
-                }
-        return {}
+                return _properties_map(album)
+        fuggo = self._fuggo_ures_album(token)
+        return _properties_map(fuggo) if fuggo is not None else {}
+
+    def _fuggo_ures_album(self, token: str):
+        """A csak az indexben élő, tag nélküli album (#6281), vagy None."""
+        with open_index(self._db_path) as conn:
+            return _pending_empty_album(conn, token)
+
+    def _fuggo_ures_album_frissit(self, token: str, **mezok) -> bool:
+        """A függő üres album mezőinek mentése ini-írás nélkül (#6281)."""
+        with open_index(self._db_path) as conn:
+            if not _update_empty_album(conn, token, **mezok):
+                return False
+            self._load_albums(conn)
+        return True
 
     def albumMusicFile(self, token: str) -> str:  # noqa: N802
         """Az engedélyezett albumzene meglévő, helyi fájlútvonala."""
@@ -48,21 +56,12 @@ class PhotoOpsAlbumPropertiesMixin:
             return ""
         for ini_path, document in self._album_dokumentumok(token):
             for album in albums_of(document):
-                if album.token != token:
-                    continue
-                if not album.use_music or not album.music_file:
-                    return ""
-                local_path = formatting.to_local_path(album.music_file)
-                if not local_path:
-                    return ""
-                music_path = Path(local_path).expanduser()
-                if not music_path.is_absolute():
-                    music_path = ini_path.parent / music_path
-                try:
-                    return str(music_path.resolve()) if music_path.is_file() else ""
-                except OSError:
-                    return ""
-        return ""
+                if album.token == token:
+                    return _music_path(album, ini_path.parent)
+        fuggo = self._fuggo_ures_album(token)
+        if fuggo is None:
+            return ""
+        return _music_path(fuggo, Path(fuggo.folder_path))
 
     def albumMusicTrackUrls(self, token: str) -> list:  # noqa: N802
         """Az album egyetlen kiválasztott zeneszáma file-URL-ként."""
@@ -107,6 +106,15 @@ class PhotoOpsAlbumPropertiesMixin:
 
         irt = False
         try:
+            if self._fuggo_ures_album_frissit(
+                token,
+                name=name,
+                date=date,
+                location=location,
+                description=description,
+            ):
+                self._refresh_view()
+                return True
             with open_index(self._db_path) as conn:
                 for ut, dokumentum in self._album_dokumentumok(token):
                     if mutate(dokumentum) is dokumentum:
@@ -142,6 +150,11 @@ class PhotoOpsAlbumPropertiesMixin:
 
         irt = False
         try:
+            if self._fuggo_ures_album_frissit(
+                token, use_music=use_music, music_file=music_file
+            ):
+                self._refresh_view()
+                return True
             with open_index(self._db_path) as conn:
                 for ut, dokumentum in self._album_dokumentumok(token):
                     if mutate(dokumentum) is dokumentum:
@@ -181,3 +194,32 @@ class PhotoOpsAlbumPropertiesMixin:
                 continue
             if dokumentum.section(szakasz) is not None:
                 yield ut, dokumentum
+
+
+def _properties_map(album) -> dict:
+    """Az album tulajdonságai a párbeszéd előtöltéséhez (ini- vagy függő album)."""
+    return {
+        "name": album.name or "",
+        "date": album.date or "",
+        "location": album.location or "",
+        "description": album.description or "",
+        "use_music": bool(album.use_music),
+        "music_file": album.music_file or "",
+    }
+
+
+def _music_path(album, base: Path) -> str:
+    """Az engedélyezett albumzene meglévő, helyi útvonala; a relatív út a
+    mappához (`base`) képest értendő."""
+    if not album.use_music or not album.music_file:
+        return ""
+    local_path = formatting.to_local_path(album.music_file)
+    if not local_path:
+        return ""
+    music_path = Path(local_path).expanduser()
+    if not music_path.is_absolute():
+        music_path = base / music_path
+    try:
+        return str(music_path.resolve()) if music_path.is_file() else ""
+    except OSError:
+        return ""
