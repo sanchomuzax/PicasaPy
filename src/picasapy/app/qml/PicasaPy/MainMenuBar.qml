@@ -194,7 +194,8 @@ PicasaMenuBar {
     onWallpaperRequested: {
         var sorok = hostWindow.photoActionRows()
         if (sorok.length > 0)
-            hostController.setPhotoAsDesktopBackground(sorok[0])
+            hostMainDialogs.wallpaperConfirmDialog.ensure().openFor(
+                Number(sorok[0]))
     }
     // #4268: a Picasa poszterpárbeszéde a kijelölés első képéből indul.
     onPosterRequested: {

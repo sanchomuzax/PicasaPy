@@ -9564,6 +9564,20 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <translation>Potvrdiť</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" />
+            <source>Set Desktop</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRM_SET_DESKTOP_YES_BUTTON</extracomment>
+            <translation>Nastaviť pracovnú plochu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" />
+            <source>This will replace your current desktop background with the current image.  Are you sure you want to proceed?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRM_SET_DESKTOP</extracomment>
+            <translation>Týmto sa nahradí aktuálne pozadie pracovnej plochy aktuálnym obrázkom.  Naozaj chcete pokračovať?</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/MainDialogs.qml" line="339" />
             <source>Remove Edits</source>
             <extracomment>picasapy-origin: picasa
@@ -18686,6 +18700,11 @@ picasapy-origin-key: stringres:CImageOutput::filewriteerr</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CChooseEmailDialog::title</extracomment>
             <translation>Vyberte e-mail</translation>
+        </message>
+        <message>
+            <source>Native Mail Client</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Natívny poštový klient</translation>
         </message>
         <message>
             <source>Send pictures by email</source>

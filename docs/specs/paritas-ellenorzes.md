@@ -910,3 +910,35 @@ elrejtése és áthelyezése, arc mellőzése, személy elnevezése, törlése �
 fájlhatása a Wine korlátja miatt nem mérhető. A 2. kör (párbeszédablakok
 minden menüparancsra, #6291) és a 3. kör (nézetek és navigáció, #6292) saját
 jegyen folytatódik.
+
+### 2. kör: a menüparancsok párbeszédablakai - 2026-10-30 (#6291, job-346 - job-354)
+
+Minden ablakot nyitó menüparancsot egy kijelölt képpel, alapállapotból
+megnyitottunk, és Escape-pel zártunk. Az online szolgáltatások (Import from
+Google Photos, Order Prints, Upload Manager, Batch Upload, Publish to Blogger)
+a #5396 szerint kimaradtak.
+
+| Ablak | Eredeti | Nálunk | Eltérés |
+|---|---|---|---|
+| Album Properties (New Album...) | Name, Date, Music + Browse, Place taken, Description, OK / Cancel | egyezik | - |
+| Folder Properties (Move to New Folder... / Edit Description...) | ugyanez; a meglévő mappánál „Automatic date” gomb is | egyezik | - |
+| Rename Files | „1 file(s) selected for rename.”, Date és Image resolution jelölő, Example, Rename (tiltva) / Cancel | egyezik (#5804) | - |
+| Export to Folder | hely, mappanév, sorszám, méret, minőség, filmek, vízjel, Export / Cancel | egyezik (#5396) | - |
+| Export as HTML Page | képméret, filmek, cím, mappa, hat sablon és XML, előnézet, Export / Cancel | egyezik | - |
+| Poster Settings | Tip, Poster size 200%, Paper size 4x6, Overlap tiles, OK / Cancel | egyezik | - |
+| Adjust Photo Date | Current / New photo date és idő, OK / Cancel | egyezik | - |
+| Configure Buttons | Available / Current Buttons, Add / Remove / Move Up / Move Down, Reset to Defaults, OK / Cancel | egyezik | - |
+| Options | General, E-Mail, File Types, Slideshow, Printing, Network, Web Albums, Name Tags | egyezik | - |
+| Undo All Edits | Confirm, „This will remove all edits you have made to ALL of the selected pictures.”, Remove Edits (fókusz) / No | egyezik | - |
+| Delete Items (Delete from Disk...) | Delete Image / Cancel, a Cancel fókuszban | plusz No gomb | #6296 |
+| Remove from Picasa... | Confirm, „Do you want to remove the folder "C:\PicasaTeszt\" and its subfolders?”, Remove Folder / Cancel | plusz No gomb, más cím, a mappa neve a teljes út helyett | #6296 |
+| Set as Desktop... | Confirm, „This will replace your current desktop background...”, Set Desktop / No | megerősítés nélkül futott | #6295 (javítva) |
+| Select Email (E-Mail...) | cím „Select Email”, a levelező neve (Wine alatt „Native Mail Client”) | más cím, a „MAIL CLIENT” helyőrző látszott | #6297 (javítva) |
+| Open / Save As | a Windows rendszer-fájlválasztója | rendszer-fájlválasztó | - |
+| Picture > Batch Edit almenü | Rename, Rotate (2), Auto Contrast, Auto Color, I'm Feeling Lucky, Sepia, Sharpen, Warmify, Film Grain, Black and White, Auto Red Eye Correction, Show Text, Hide Text | egyezik | - |
+| Picture > Hide | kérdés nélkül elrejt | kérdés nélkül elrejt | - |
+
+Nem mérhető: a Create a Gift CD és a Back Up Pictures a Wine alatt csak az
+„Unable to connect to Windows IMAPI2 CD Engine.” hibát adja. A Print, a
+Picture Collage, a Folder Manager és a People Manager nem külön ablak, hanem
+a főablak nézete; ezek tartalma nem ennek a körnek a tárgya.

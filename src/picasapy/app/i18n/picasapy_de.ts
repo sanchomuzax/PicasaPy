@@ -9549,6 +9549,20 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <translation>Bestätigen</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" />
+            <source>Set Desktop</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRM_SET_DESKTOP_YES_BUTTON</extracomment>
+            <translation>Desktop einstellen</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" />
+            <source>This will replace your current desktop background with the current image.  Are you sure you want to proceed?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRM_SET_DESKTOP</extracomment>
+            <translation>Hierdurch wird Ihr aktuelles Desktop-Hintergrundbild mit dem ausgewählten Bild ersetzt. Sind Sie sicher, dass Sie fortfahren möchten?</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/MainDialogs.qml" line="339" />
             <source>Remove Edits</source>
             <extracomment>picasapy-origin: picasa
@@ -18670,6 +18684,11 @@ picasapy-origin-key: stringres:CImageOutput::filewriteerr</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CChooseEmailDialog::title</extracomment>
             <translation>E-Mail auswählen</translation>
+        </message>
+        <message>
+            <source>Native Mail Client</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nativer E-Mail-Client</translation>
         </message>
         <message>
             <source>Send pictures by email</source>

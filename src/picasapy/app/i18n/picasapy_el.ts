@@ -9534,6 +9534,20 @@ picasapy-origin-key: album:album/ok.title;autocomplete_errors:autocomplete_error
             <translation>Επιβεβαίωση</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" />
+            <source>Set Desktop</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRM_SET_DESKTOP_YES_BUTTON</extracomment>
+            <translation>Ρύθμιση επιφάνειας εργασίας</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" />
+            <source>This will replace your current desktop background with the current image.  Are you sure you want to proceed?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRM_SET_DESKTOP</extracomment>
+            <translation>Το φόντο της επιφάνειας εργασίας σας θα αντικατασταθεί από την τρέχουσα εικόνα.  Είστε βέβαιοι ότι θέλετε να συνεχίσετε;</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/MainDialogs.qml" line="339" />
             <source>Remove Edits</source>
             <extracomment>picasapy-origin: picasa
@@ -18655,6 +18669,11 @@ picasapy-origin-key: stringres:CImageOutput::filewriteerr</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CChooseEmailDialog::title</extracomment>
             <translation>Επιλέξτε ηλεκτρονικό ταχυδρομείο</translation>
+        </message>
+        <message>
+            <source>Native Mail Client</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Εγγενές πρόγραμμα αλληλογραφίας</translation>
         </message>
         <message>
             <source>Send pictures by email</source>

@@ -8,7 +8,7 @@ from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
 from tests.app.qml_functional.conftest import _build_qml_app
-from tests.support.qt_wait import varj_ablakon_belulre
+from tests.support.qt_wait import varj_kattinthatora
 from tests.support.varakozas import var_feltetelre
 
 
@@ -49,7 +49,7 @@ def test_recent_es_kezi_helyek_a_savban_es_valodi_kattintas(
     )
 
     button = window.findChild(QQuickItem, "quickTagButton2")
-    varj_ablakon_belulre(window, button)
+    varj_kattinthatora(window, button)
     center = button.mapToScene(QPointF(button.width() / 2, button.height() / 2))
     QTest.mouseClick(
         window,

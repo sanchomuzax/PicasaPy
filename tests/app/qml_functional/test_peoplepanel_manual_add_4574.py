@@ -10,7 +10,7 @@ from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
-from support.qt_wait import varj_ablakon_belulre
+from support.qt_wait import varj_kattinthatora
 
 _PEOPLE = (
     Path(__file__).resolve().parents[3]
@@ -42,7 +42,7 @@ def _item(window, name: str) -> QQuickItem:
 
 
 def _click(window, item: QQuickItem) -> None:
-    varj_ablakon_belulre(window, item)
+    varj_kattinthatora(window, item)
     center = item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
     QTest.mouseClick(
         window,

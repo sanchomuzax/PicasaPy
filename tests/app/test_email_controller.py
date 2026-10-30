@@ -117,6 +117,85 @@ class TestSizeSettingsDefaults:
         controller = _controller([], tmp_path)
         assert controller.useDefaultClient is False
 
+    @pytest.mark.parametrize(
+        ("system_name", "expected"),
+        [(None, ""), ("Thunderbird", "Thunderbird")],
+    )
+    def test_a_rendszerlevelezo_neve_vagy_a_nativ_tartalek_latszik(
+        self, qt_app, tmp_path, monkeypatch, system_name, expected
+    ):
+        monkeypatch.setattr(
+            email_controller_module,
+            "_get_default_mail_client_name",
+            lambda: system_name,
+            raising=False,
+        )
+        controller = _controller([], tmp_path)
+
+        assert controller.defaultMailClientName == expected
+
+
+class TestSystemMailClientName:
+    def test_linux_a_mailto_tarsitas_alkalmazasnevet_adja_vissza(
+        self, tmp_path, monkeypatch
+    ):
+        import subprocess
+
+        alkalmazasok = tmp_path / "applications"
+        alkalmazasok.mkdir()
+        (alkalmazasok / "thunderbird.desktop").write_text(
+            "[Desktop Entry]\n"
+            "Name=Thunderbird\n"
+            "Name[hu_HU]=Mozilla Thunderbird\n",
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(
+            email_controller_module,
+            "_which_mail_settings",
+            lambda _nev: "/usr/bin/xdg-settings",
+            raising=False,
+        )
+        monkeypatch.setattr(
+            email_controller_module,
+            "_run_mail_settings",
+            lambda *args, **kwargs: subprocess.CompletedProcess(
+                args[0], 0, stdout="thunderbird.desktop\n", stderr=""
+            ),
+            raising=False,
+        )
+        monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+        monkeypatch.setenv("LC_MESSAGES", "hu_HU.UTF-8")
+
+        assert email_controller_module._linux_default_mail_client_name() == (
+            "Mozilla Thunderbird"
+        )
+
+    def test_windows_a_mailto_tarsitas_baratsagos_nevet_adja_vissza(
+        self, monkeypatch
+    ):
+        class FakeQuery:
+            argtypes = None
+            restype = None
+            arguments = None
+
+            def __call__(self, *arguments):
+                self.arguments = arguments
+                arguments[4].value = "Microsoft Outlook"
+                return 0
+
+        query = FakeQuery()
+        monkeypatch.setattr(
+            email_controller_module.ctypes,
+            "WinDLL",
+            lambda _library: SimpleNamespace(AssocQueryStringW=query),
+            raising=False,
+        )
+
+        assert email_controller_module._windows_default_mail_client_name() == (
+            "Microsoft Outlook"
+        )
+        assert query.arguments[2] == "mailto"
+
 
 class TestSizeSettingsPersistence:
     def test_a_meret_tullel_egy_ujrainditast(self, qt_app, tmp_path):

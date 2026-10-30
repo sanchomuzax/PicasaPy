@@ -9549,6 +9549,20 @@ picasapy-origin-key: stringres:ytApp::ConfirmTitle</extracomment>
             <translation>Jóváhagyás</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" />
+            <source>Set Desktop</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRM_SET_DESKTOP_YES_BUTTON</extracomment>
+            <translation>Háttérkép beállítása</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainDialogs.qml" />
+            <source>This will replace your current desktop background with the current image.  Are you sure you want to proceed?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_CONFIRM_SET_DESKTOP</extracomment>
+            <translation>Ezzel a művelettel lecseréli az asztal jelenlegi hátterét az aktuális képre. Biztosan folytatja?</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/MainDialogs.qml" line="339" />
             <source>Remove Edits</source>
             <extracomment>picasapy-origin: picasa
@@ -18682,6 +18696,11 @@ picasapy-origin-key: stringres:CImageOutput::filewriteerr</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CChooseEmailDialog::title</extracomment>
             <translation>Válasszon levelezőprogramot</translation>
+        </message>
+        <message>
+            <source>Native Mail Client</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Beépített levelezőprogram</translation>
         </message>
         <message>
             <source>Send pictures by email</source>
