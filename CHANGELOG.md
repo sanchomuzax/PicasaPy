@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.300] - 2026-10-30
+
+- A kollázs-renderelő és a Létrehozás menü vezérlője kisebb részekre bomlik, változatlan viselkedéssel (#6255).
+- A kollázs Picasa-renderelője kisebb modulokra bomlott, változatlan képkimenettel (#6251).
+- A Létrehozás vezérlő belső részei külön modulokba kerültek, a felület és a működés változatlan maradt (#6252).
+- A kollázs vezérlőjének belső felépítése kisebb modulokra bomlott. (#6254).
+- A Google Fotók belső kódja kisebb modulokra bomlott a régi importútvonal megtartásával. (#6256).
+
 ## [0.9.299] - 2026-10-30
 
 - A fotók helyi menüje, a kijelölés állapota, a szerkesztési munkamenet és a megjelenítési módok önálló részekbe kerülnek (#6249).
