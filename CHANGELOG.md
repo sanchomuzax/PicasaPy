@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.308] - 2026-10-30
+
+- A háttérkép asztali háttérként beállítása előtt megerősítés jelenik meg (#6295).
+
 ## [0.9.307] - 2026-10-30
 
 - A személyalbum műveletei az azonos nevű emberek közül csak a kiválasztott személyt érintik (#6290).
