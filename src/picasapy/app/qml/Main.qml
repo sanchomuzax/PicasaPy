@@ -162,9 +162,10 @@ ApplicationWindow {
             window.viewerVisibilityManaged = false
         }
     }
-    property bool timelineOpen: false     // Időrend nézet (#24, Ctrl+5)
-    property bool timelineSlideshowActive: false
-    property var timelineSlideshowModel: null
+    // Az eredeti főablaki állapotnevek az Időrend-komponensre mutatnak.
+    property alias timelineOpen: timelineView.timelineOpen
+    property alias timelineSlideshowActive: timelineView.timelineSlideshowActive
+    property alias timelineSlideshowModel: timelineView.timelineSlideshowModel
     //: #1808: rács-nagyító be/ki. A rácsban a nagyító-réteg
     //: ELNYELI az egéreseményeket, tehát bekapcsolva a húzás nem
     //: jelöl ki — ez szándékos, ld. LightboxFeed.qml.
@@ -932,72 +933,17 @@ ApplicationWindow {
         return window.selectedRows()
     }
 
-    // -- Időrend bemutató (#5770, Ctrl+5) ------------------------------------
-    // Mappa- és albumkártyás, teljes képernyős bemutató.
+    // Az Időrend főablaki belépői megőrzik az eddigi QML-neveket.
     function timelineCollectionForId(collectionId) {
-        if (!timelineController || !timelineController.collections)
-            return null
-        var keresett = String(collectionId || "")
-        for (var i = 0; i < timelineController.collections.length; ++i) {
-            var collection = timelineController.collections[i]
-            if (collection.collectionId === keresett
-                    || collection.folderPath === keresett)
-                return collection
-        }
-        return null
+        return timelineView.timelineCollectionForId(collectionId)
     }
-
     function selectTimelineCollection(collection) {
-        if (!controller || !collection)
-            return -1
-        toolbar.clearSearch()
-        window.clearSelection()
-        window.unnamedFacesOpen = false
-        if (collection.kind === "album")
-            controller.showAlbum(collection.albumToken)
-        else
-            controller.selectFolder(collection.folderPath)
-        var row = controller.photos.rowOfPath(collection.firstPhotoPath)
-        window.selectedIndex = row
-        window.selectedIndexes = row >= 0 ? [row] : []
-        return row
+        return timelineView.selectTimelineCollection(collection)
     }
-
-    function closeTimeline() {
-        var collection = timelineView.collectionAt(timelineView.currentIndex)
-        if (collection)
-            window.selectTimelineCollection(collection)
-        window.timelineOpen = false
-    }
-
-    function toggleTimeline() {
-        if (window.timelineOpen) {
-            window.closeTimeline()
-            return
-        }
-        timelineController.reload()
-        window.timelineOpen = true
-    }
-
+    function closeTimeline() { timelineView.closeTimeline() }
+    function toggleTimeline() { timelineView.toggleTimeline() }
     function startTimelineSlideshow(collectionId) {
-        if (!controller || !collectionId)
-            return
-        var collection = window.timelineCollectionForId(collectionId)
-        if (!collection)
-            return
-        var collectionModel = timelineController.slideshowModel(
-            collection.collectionId)
-        if (!collectionModel || collectionModel.rowCount() <= 0)
-            return
-        window.selectTimelineCollection(collection)
-        window.timelineOpen = false
-        window.timelineSlideshowModel = collectionModel
-        window.timelineSlideshowActive = true
-        window.visibilityBeforeSlideshow = window.visibility
-        window.visibility = Window.FullScreen
-        slideshow.start(0)
-        if (!slideshow.visible)
-            window.exitSlideshow()
+        timelineView.startTimelineSlideshow(collectionId)
     }
 
     // #4569: az eredeti F11 a képnéző teljes képernyős módját kapcsolja.
@@ -1553,17 +1499,17 @@ ApplicationWindow {
     }
 
 
-    // #5770: a Picasa Időrend külön teljes képernyős ablak, saját vezérlőkkel.
-    TimelineView {
+    // #5770: az Időrend állapota és ablaka a saját komponensében él.
+    MainTimeline {
         id: timelineView
         objectName: "timelineView"
         transientParent: window
-        visible: window.timelineOpen
-        collectionsModel: timelineController ? timelineController.collections : []
-        onClosed: window.closeTimeline()
-        onSlideshowRequested: function(collectionId) {
-            window.startTimelineSlideshow(collectionId)
-        }
+        hostWindow: window
+        hostController: typeof controller !== "undefined" ? controller : null
+        hostTimelineController: typeof timelineController !== "undefined"
+            ? timelineController : null
+        hostToolbar: toolbar
+        hostSlideshow: slideshow
     }
 
     // #985: a dokumentum-fülsáv (#944) a tartalomterület TETEJÉN, az
