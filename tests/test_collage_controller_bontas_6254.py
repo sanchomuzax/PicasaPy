@@ -109,7 +109,7 @@ _REGI_NYILVANOS_NEVEK = {
     "with_selection",
 }
 
-_QT_META_SHA256 = "662bfb58535bee02da41ede120251d721838821c3ab6bd825862d6c776c062d9"
+_QT_META_SHA256 = "701f39724bdc0a22a7dfc5b9503ffee65e658128f5ecb9e9ed39c201a1e31957"
 _QT_META_METHODS = 79
 _QT_META_PROPERTIES = 23
 
@@ -155,20 +155,23 @@ def _qt_collage_meta_rows() -> list[str]:
     for index in range(meta.methodCount()):
         method = meta.method(index)
         if _as_text(method.name()) in names:
+            # A típusnevek PySide-verziónként másképp íródnak (helyben 6.8, a
+            # CI-n újabb), ezért a lenyomat a metódus fajtáját, nevét és
+            # paraméterszámát rögzíti.
             rows.append(
                 "M:"
                 f"{method.methodType().name}:"
-                f"{_as_text(method.methodSignature())}:"
-                f"{_as_text(method.typeName())}"
+                f"{_as_text(method.name())}:"
+                f"{method.parameterCount()}"
             )
     for index in range(meta.propertyCount()):
         prop = meta.property(index)
         name = _as_text(prop.name())
         if name not in names:
             continue
-        notify = _as_text(prop.notifySignal().methodSignature()) if prop.hasNotifySignal() else ""
+        notify = _as_text(prop.notifySignal().name()) if prop.hasNotifySignal() else ""
         rows.append(
-            f"P:{name}:{_as_text(prop.typeName())}:{notify}:"
+            f"P:{name}:{notify}:"
             f"{int(prop.isConstant())}:{int(prop.isWritable())}"
         )
     return sorted(rows)
@@ -231,7 +234,7 @@ def test_a_qt_metaobjektum_kollazs_felulet_valtozatlan() -> None:
 
 def test_az_appcontroller_mixinek_sorrendje_valtozatlan() -> None:
     mro = [cls.__name__ for cls in AppController.__mro__]
-    assert any(
-        mro[index : index + 3] == ["CreateMixin", "PosterMixin", "CollageMixin"]
-        for index in range(len(mro) - 2)
-    ), f"az AppController MRO-sorrendje megváltozott: {mro}"
+    # A #6252 a CreateMixin alá saját mixineket tett, ezért a három osztály
+    # már nem szomszédos az MRO-ban; a relatív sorrendjük az állítás.
+    sorrend = [mro.index(nev) for nev in ("CreateMixin", "PosterMixin", "CollageMixin")]
+    assert sorrend == sorted(sorrend), f"az AppController MRO-sorrendje megváltozott: {mro}"
