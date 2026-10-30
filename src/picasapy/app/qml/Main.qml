@@ -1797,44 +1797,11 @@ ApplicationWindow {
     // Ezért NINCS itt `backToCollageButton`: ne tegye vissza egy későbbi
     // kör „hiányzó gombként", mert akkor két vezérlő kínálná ugyanazt.
 
-    // #209: lebegő „Importálás" folyamat-panel — jobb oldalt lebeg, húzható;
-    // a néző felett is látszik (a szkennelés közben is lehet dolgozni),
-    // csak a diavetítés (z:100) takarja
-    ImportProgressPanel {
-        id: importPanel
-        objectName: "importProgressPanel"
-        z: 90
-        // #305/#1572: null-őr
-        visible: (controller && controller.importPanelVisible !== undefined)
-            ? controller.importPanelVisible : false
-        folderName: controller ? controller.importFolderName : ""
-        doneCount: controller ? controller.importDoneCount : 0
-        totalCount: controller ? controller.importTotalCount : 0
-        newCount: controller ? controller.importNewCount : 0
-        onCloseRequested: controller.dismissImportPanel()
-        // induló hely: jobb felül, a kereső alatt; húzáskor a DragHandler
-        // felülírja a kötést — a panel ott marad, ahova a felhasználó tette
-        x: parent.width - width - 24
-        y: 56
-    }
-
-    // #2966: KÖZÖS háttérművelet-jelző a jobb-felső sarokban. Alapból
-    // rejtve; bármelyik, a közös nyilvántartásba bejelentkezett háttérmunka
-    // futásakor magától megjelenik (`controller.isWorking`), és ha a munka
-    // leállítható, a gombja is (`controller.activityCancellable`).
-    ActivityBadge {
-        id: activityBadge
-        objectName: "activityBadge"
-        z: 95
-        // #305/#1572: null-őr — a controller a betöltés alatt lehet null
-        working: (controller && controller.isWorking !== undefined)
-            ? controller.isWorking : false
-        cancellable: (controller && controller.activityCancellable !== undefined)
-            ? controller.activityCancellable : false
-        // a mért hely: felülről 5, jobbról 5 képpont (#3112)
-        x: parent.width - width - 5
-        y: 5
-        onCancelRequested: activityCancelConfirm.ask()
+    // A lebegő háttérmunka- és folyamatjelzők önálló komponensben (#6136).
+    MainActivityPanels {
+        id: activityPanels
+        hostController: typeof controller !== "undefined" ? controller : null
+        hostActivityCancelConfirm: activityCancelConfirm
     }
 
     //: #2966: a megszakítás megerősítése. Az eredeti címsora „Want to
@@ -1875,73 +1842,6 @@ ApplicationWindow {
                 }
             }
         }
-    }
-
-    // #425: lebegő „Csoportos szerkesztés" folyamat-panel — az
-    // ImportProgressPanel mintájára, Mégse gombbal (megszakítható köteg)
-    //: #1403: az XMP-arcírás folyamat-panelje — MEGSZAKÍTHATÓ, ahogy az
-    //: eredeti kötegelt munkája (`FaceTagJob::cancelled`). A már kiírt
-    //: sidecarok érvényesek maradnak.
-    XmpFacesProgressPanel {
-        id: xmpFacesPanel
-        objectName: "xmpFacesProgressPanel"
-        z: 90
-        visible: (controller && controller.xmpFacesActive !== undefined)
-            ? controller.xmpFacesActive : false
-        folderName: controller ? controller.currentFolder : ""
-        doneCount: controller ? controller.xmpFacesDone : 0
-        totalCount: controller ? controller.xmpFacesTotal : 0
-        onCancelRequested: controller.cancelXmpFaces()
-        x: parent.width - width - 24
-        y: 56
-    }
-
-    BatchEditProgressPanel {
-        id: batchEditPanel
-        objectName: "batchEditProgressPanel"
-        z: 90
-        visible: (controller && controller.batchEditActive !== undefined)
-            ? controller.batchEditActive : false
-        folderName: controller ? controller.batchEditFolderName : ""
-        doneCount: controller ? controller.batchEditDoneCount : 0
-        totalCount: controller ? controller.batchEditTotalCount : 0
-        onCancelRequested: controller.cancelBatchEdit()
-        x: parent.width - width - 24
-        y: 56 + importPanel.height + 12
-    }
-
-    // #1527/#5268: a mentés és a fájl-visszaállítás közös folyamatjelzője.
-    // Mindkét művelet háttérszálon fut; a szöveg az eredeti hivatalos,
-    // műveletfüggő alakja, mentéskor a százalék egy tizedesjegyre.
-    SaveProgressPanel {
-        id: saveProgressPanel
-        objectName: "saveProgressPanel"
-        z: 90
-        visible: (controller && controller.saveProgressActive !== undefined)
-            ? controller.saveProgressActive : false
-        fileCount: controller ? controller.saveProgressFileCount : 0
-        percent: controller ? controller.saveProgressPercent : 0
-        isReverting: controller ? controller.saveProgressIsReverting : false
-        x: parent.width - width - 24
-        y: 56 + importPanel.height + batchEditPanel.height + 24
-    }
-
-    // #211: lebegő „Teljesítmény-monitor" panel — a Súgó menüből
-    // kapcsolható; balra az importálás-paneltől, hogy ne fedjék egymást
-    PerfMonitorPanel {
-        id: perfPanel
-        objectName: "perfMonitorPanel"
-        z: 90
-        // #305/#1572: null-őr
-        visible: (controller && controller.perfMonitorEnabled !== undefined)
-            ? controller.perfMonitorEnabled : false
-        cpuPercent: controller ? controller.perfCpuPercent : 0
-        rssMb: controller ? controller.perfRssMb : 0
-        topActivity: controller ? controller.perfTopActivity : ""
-        onCloseRequested: controller.setPerfMonitorEnabled(false)
-        onSaveRequested: perfPanel.lastSavedPath = controller.saveDiagnostics()
-        x: 24
-        y: 56
     }
 
     // #237: kép/mappa ablakra ejtése → a kép mappája figyelt gyökér lesz
