@@ -403,14 +403,20 @@ def _assert_toolbar_referenciaegyezes_belso(
     )
     for nev, vart in vart_szovegek.items():
         mostani = mostani_szovegek[nev]
-        if nev.split(":", 1)[-1].rsplit("#", 1)[0] != "versionLabel":
+        verzio = nev.split(":", 1)[-1].rsplit("#", 1)[0] == "versionLabel"
+        if not verzio:
             assert mostani["text"] == vart["text"], (
                 f"megváltozott felirat ({nev}): "
                 f"{vart['text']!r} → {mostani['text']!r}"
             )
+        # #6315: a jobbra igazított verziófelirat vízszintes közepe a
+        # verziószám hosszával mozog, ezért ott csak a függőleges helyzet mért.
+        tengelyek = slice(1, 2) if verzio else slice(0, 2)
         assert all(
             abs(a - b) <= 2
-            for a, b in zip(vart["center"], mostani["center"], strict=True)
+            for a, b in zip(
+                vart["center"][tengelyek], mostani["center"][tengelyek], strict=True
+            )
         ), f"{nev} feliratközepe 2 px-nél jobban eltolódott"
 
     assert abs(kep.width() - elotte.width()) <= 3
