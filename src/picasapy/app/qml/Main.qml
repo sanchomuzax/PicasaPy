@@ -946,72 +946,15 @@ ApplicationWindow {
         timelineView.startTimelineSlideshow(collectionId)
     }
 
-    // #4569: az eredeti F11 a képnéző teljes képernyős módját kapcsolja.
-    // A diavetítés saját teljes képernyős állapotát ez a parancs nem írhatja felül.
-    property int visibilityBeforeViewerFullscreen: Window.Windowed
-    function toggleViewerFullscreen() {
-        if (!window.viewerOpen || slideshow.visible) return
-        if (window.visibility === Window.FullScreen) {
-            window.visibility =
-                window.visibilityBeforeViewerFullscreen === Window.FullScreen
-                    ? Window.Windowed : window.visibilityBeforeViewerFullscreen
-        } else {
-            window.visibilityBeforeViewerFullscreen = window.visibility
-            window.visibility = Window.FullScreen
-        }
-    }
-
-    // -- diavetítés (#8) ----------------------------------------------------
-    // Indítás: viszonyítási pont a néző képe / a rács-kijelölés / az első
-    // kép; a vetítés valódi teljes képernyőn fut, kilépéskor az ablak
-    // visszaáll, és a rács/néző követi a vetítés utolsó képét.
-    property int visibilityBeforeSlideshow: Window.Windowed
-    function startSlideshow(fromIndex) {
-        var index = fromIndex
-        if (index < 0)
-            index = window.viewerOpen ? photoViewer.currentIndex
-                                      : Math.max(0, window.selectedIndex)
-        window.visibilityBeforeSlideshow = window.visibility
-        window.visibility = Window.FullScreen
-        slideshow.start(index)
-        if (!slideshow.visible)   // nincs vetíthető fotó — állítsuk vissza
-            window.exitSlideshow()
-    }
-    function startScreensaverPreview() {
-        if (!controller || controller.prepareScreensaverPreview() <= 0) {
-            errorBanner.notice = false
-            errorBannerText.text = qsTr(
-                "The selected screensaver sources contain no available pictures.")
-            return
-        }
-        window.visibilityBeforeSlideshow = window.visibility
-        window.visibility = Window.FullScreen
-        slideshow.startScreensaver()
-        if (!slideshow.visible)
-            window.exitSlideshow()
-    }
-    function exitSlideshow() {
-        var wasScreensaver = slideshow.screensaverMode
-        var wasTimelineSlideshow = window.timelineSlideshowActive
-        window.visibility =
-            window.visibilityBeforeSlideshow === Window.FullScreen
-                ? Window.Windowed : window.visibilityBeforeSlideshow
-        if (wasScreensaver)
-            return
-        if (wasTimelineSlideshow) {
-            window.timelineSlideshowActive = false
-            window.timelineSlideshowModel = null
-            return
-        }
-        if (slideshow.currentIndex >= 0) {
-            if (window.viewerOpen) {
-                photoViewer.show(slideshow.currentIndex)
-            } else {
-                window.selectedIndex = slideshow.currentIndex
-                window.selectedIndexes = [slideshow.currentIndex]
-            }
-        }
-    }
+    // A teljes képernyős állapotot a vetítési komponens birtokolja; a régi
+    // főablaki QML-nevek megmaradnak a hívóknak és a teszteknek.
+    property alias visibilityBeforeViewerFullscreen:
+        slideshow.visibilityBeforeViewerFullscreen
+    property alias visibilityBeforeSlideshow: slideshow.visibilityBeforeSlideshow
+    function toggleViewerFullscreen() { slideshow.toggleViewerFullscreen() }
+    function startSlideshow(fromIndex) { slideshow.startSlideshow(fromIndex) }
+    function startScreensaverPreview() { slideshow.startScreensaverPreview() }
+    function exitSlideshow() { slideshow.exitSlideshow() }
 
     // #922: a képtálca tartalma ÁLLAPOTKÉNT, nem közvetlen kötésként. Egy
     // `controller.heldCount`-ra épülő kötés a `controller` null állapotában
@@ -1405,6 +1348,12 @@ ApplicationWindow {
     MainSlideshow {
         id: slideshow
         hostWindow: window
+        hostController: typeof controller !== "undefined" ? controller : null
+        hostPhotoViewer: photoViewer
+        hostErrorBanner: errorBanner
+        hostErrorBannerText: errorBannerText
+        noScreensaverPicturesMessage: qsTr(
+            "The selected screensaver sources contain no available pictures.")
     }
 
     PhotoViewer {

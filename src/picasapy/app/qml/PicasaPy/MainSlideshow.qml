@@ -1,13 +1,82 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Window
 import PicasaPy
 
 // A főablak diavetítési rétege.
 SlideshowView {
-    property var hostWindow
+    required property var hostWindow
+    required property var hostController
+    required property var hostPhotoViewer
+    required property var hostErrorBanner
+    required property var hostErrorBannerText
+    required property string noScreensaverPicturesMessage
     id: slideshow
     objectName: "slideshowView"
     anchors.fill: parent
+    property int visibilityBeforeViewerFullscreen: Window.Windowed
+    property int visibilityBeforeSlideshow: Window.Windowed
+
+    function toggleViewerFullscreen() {
+        if (!hostWindow.viewerOpen || slideshow.visible) return
+        if (hostWindow.visibility === Window.FullScreen) {
+            hostWindow.visibility =
+                hostWindow.visibilityBeforeViewerFullscreen === Window.FullScreen
+                    ? Window.Windowed : hostWindow.visibilityBeforeViewerFullscreen
+        } else {
+            hostWindow.visibilityBeforeViewerFullscreen = hostWindow.visibility
+            hostWindow.visibility = Window.FullScreen
+        }
+    }
+
+    function startSlideshow(fromIndex) {
+        var index = fromIndex
+        if (index < 0)
+            index = hostWindow.viewerOpen ? hostPhotoViewer.currentIndex
+                                          : Math.max(0, hostWindow.selectedIndex)
+        hostWindow.visibilityBeforeSlideshow = hostWindow.visibility
+        hostWindow.visibility = Window.FullScreen
+        slideshow.start(index)
+        if (!slideshow.visible)   // nincs vetíthető fotó — állítsuk vissza
+            exitSlideshow()
+    }
+
+    function startScreensaverPreview() {
+        if (!hostController || hostController.prepareScreensaverPreview() <= 0) {
+            hostErrorBanner.notice = false
+            hostErrorBannerText.text = noScreensaverPicturesMessage
+            return
+        }
+        hostWindow.visibilityBeforeSlideshow = hostWindow.visibility
+        hostWindow.visibility = Window.FullScreen
+        slideshow.startScreensaver()
+        if (!slideshow.visible)
+            exitSlideshow()
+    }
+
+    function exitSlideshow() {
+        var wasScreensaver = slideshow.screensaverMode
+        var wasTimelineSlideshow = hostWindow.timelineSlideshowActive
+        hostWindow.visibility =
+            hostWindow.visibilityBeforeSlideshow === Window.FullScreen
+                ? Window.Windowed : hostWindow.visibilityBeforeSlideshow
+        if (wasScreensaver)
+            return
+        if (wasTimelineSlideshow) {
+            hostWindow.timelineSlideshowActive = false
+            hostWindow.timelineSlideshowModel = null
+            return
+        }
+        if (slideshow.currentIndex >= 0) {
+            if (hostWindow.viewerOpen) {
+                hostPhotoViewer.show(slideshow.currentIndex)
+            } else {
+                hostWindow.selectedIndex = slideshow.currentIndex
+                hostWindow.selectedIndexes = [slideshow.currentIndex]
+            }
+        }
+    }
+
     bigSlideshow2: (typeof controller !== "undefined" && controller)
         ? controller.bigSlideshow2 : true
     screenDepth: (typeof controller !== "undefined" && controller)
