@@ -12,6 +12,7 @@ Item {
     property alias panelClearGeotagDialog: _panelClearGeotagDialog
     property alias undoAllEditsDialog: _undoAllEditsDialog
     property alias languageConfirmDialog: _languageConfirmDialog
+    property alias wallpaperConfirmDialog: _wallpaperConfirmDialog
 
     // #5836: a mért eredeti cím és a két gomb kell, ezért ez nem a közös
     // pipás/Mégse-vel működő ConfirmDialog-komponens.
@@ -372,6 +373,44 @@ Item {
                     ask("", qsTr("Change the language PicasaPy uses?\n\nIt will change the next time PicasaPy is opened."))
                 }
                 onConfirmed: if (controller) controller.setLanguage(candidateCode)
+            }
+        }
+    }
+
+    // #6295: a Create > Set as Desktop parancs az asztal megváltoztatása
+    // előtt kéri a felhasználó megerősítését.
+    DeferredDialog {
+        id: _wallpaperConfirmDialog
+        objectName: "wallpaperConfirmDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            ConfirmDialog {
+                objectName: "wallpaperConfirmDialog"
+                namePrefix: "wallpaperConfirm"
+                title: qsTr("Confirm")
+                //: IDS_CONFIRM_SET_DESKTOP_YES_BUTTON — az eredeti gombfelirat.
+                yesText: qsTr("Set Desktop")
+                //: Az eredeti `confirm:confirm/no.title` felirata.
+                noText: qsTr("No")
+                cancelVisible: false
+                rememberVisible: false
+                focusYesOnOpen: true
+                property int pendingRow: -1
+                function openFor(row) {
+                    if (row < 0) return
+                    pendingRow = row
+                    //: IDS_CONFIRM_SET_DESKTOP — az eredeti szöveg két
+                    //: mondata között két szóközzel.
+                    ask("", qsTr("This will replace your current desktop background with the current image.  Are you sure you want to proceed?"))
+                }
+                onConfirmed: {
+                    var row = pendingRow
+                    pendingRow = -1
+                    if (controller && row >= 0)
+                        controller.setPhotoAsDesktopBackground(row)
+                }
+                onDenied: pendingRow = -1
+                onCanceled: pendingRow = -1
             }
         }
     }

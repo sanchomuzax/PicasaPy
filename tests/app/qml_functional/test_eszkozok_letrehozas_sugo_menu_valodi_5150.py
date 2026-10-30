@@ -41,6 +41,7 @@ from tests.app.qml_functional._eszkozok_menu_5150_helpers import (
     zar,
 )
 from tests.app.qml_functional._fomenu_4420_menu import _megnyit
+from tests.app.qml_functional._felsomenupontok_helpers_4329 import _kattints
 
 
 @pytest.fixture
@@ -71,8 +72,18 @@ class TestLetrehozas:
 
         menupont_kattintasa(window, qt_app, "menuCreateWallpaper")
 
+        # #6295: a menüpont után az eredeti megerősítés jelenik meg; csak a
+        # Set Desktop tényleges kattintása indíthatja el az OS-beállítást.
+        confirm = gyerek(window, "wallpaperConfirmDialog")
+        assert varj(qt_app, lambda: confirm.property("visible") is True), (
+            "a Set as Desktop parancs nem kérte a megerősítést"
+        )
+        igen = gyerek(confirm, "wallpaperConfirmYesButton")
+        assert igen.property("text") == "Set Desktop"
+        _kattints(qt_app, igen)
+
         assert varj(qt_app, lambda: len(beallitott) == 1), (
-            "a Létrehozás ▸ Set as Desktop kattintás nem állította be a hátteret"
+            "a Set Desktop megerősítés nem indította el a háttérbeállítást"
         )
         assert beallitott[0].read_bytes()[:2] == b"BM", (
             "a háttérkép nem BMP-másolat"
