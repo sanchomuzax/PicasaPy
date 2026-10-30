@@ -135,6 +135,14 @@ _KOTELEZO_VALTOZATOK = {
         "hostSaveDialogs: ({}); hostSlideshow: ({ visible: false }); "
         "hostTrayBar: ({ keyboardShortcutSequences: [] })",
     ),
+    # #6136: a fotó-helyi menü főablaki bekötése önálló gazda-komponens.
+    "MainPhotoContextMenu": (
+        "hostWindow: ({}); hostController: null; hostFileOpsController: null; "
+        "hostFileOpsDialogs: ({}); hostMainDialogs: ({}); "
+        "hostMoveToNewPersonDialog: ({}); hostOpenWithDialog: ({}); "
+        "hostRemoveFromAlbumDialog: ({}); hostRemovePeopleFacesDialog: ({}); "
+        "hostSaveDialogs: ({}); hostToolbar: ({})",
+    ),
     # #6136: a személyalbum-műveletek állapota kötelező gazdaobjektumokat kap.
     "MainPeopleAlbumState": (
         "hostWindow: ({ selectedIndexes: [], selectedIndex: -1, "

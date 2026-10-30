@@ -2457,146 +2457,20 @@ ApplicationWindow {
 
     // -- fájlműveletek (#15): kontextusmenü + dialógusok --------------------
 
-    PhotoContextMenu {
+    MainPhotoContextMenu {
         id: photoContextMenu
-        // #1613: a lemezt CSAK a menü megnyitásakor kérdezzük meg — egy
-        // kötés minden képkockán fájlrendszert olvasna.
-        onAboutToShow: {
-            var ut = controller
-                ? controller.photos.filePathAt(window.fileOpTargetRow) : ""
-            photoContextMenu.hasOriginalOnDisk =
-                ut.length > 0 && fileOpsController.hasOriginalOnDisk(ut)
-            // #3468: a „Keresés" almenü csak EGY kijelölt képnél jelenik meg
-            var db = window.selectedRows().length
-            photoContextMenu.kijeloltKepekSzama = db > 0 ? db : 1
-            photoContextMenu.peopleThumbnailFaceAvailable = controller
-                ? controller.canSetPersonThumbnail(
-                    Number(controller.photos.idAt(window.fileOpTargetRow)),
-                    controller.currentPersonName)
-                : false
-            // #5195: a „Társítás ▸" almenü listája a megnyitáskor készül
-            photoContextMenu.nativeOpenWith = fileOpsController.hasNativeOpenWith()
-            photoContextMenu.openWithApps = ut.length > 0
-                ? fileOpsController.openWithChoices(ut) : []
-        }
-        // #17: pipa, ha a jobbklikkelt kép rejtett (photos.revision-nel
-        // együtt kötve, hogy a menü újranyitáskor friss legyen)
-        // #305: null-őr
-        hideChecked: controller
-            ? (controller.photos.revision,
-               (controller.photos.itemAt(window.fileOpTargetRow)
-                    .hidden === true))
-            : false
-        // #422: a mentés-parancsok aktív állapota — a jobbklikkelt képen
-        // van-e szerkesztés, illetve van-e mentés-előtti másolat
-        hasEdits: controller
-            ? (controller.photos.revision,
-               (controller.photos.itemAt(window.fileOpTargetRow)
-                    .hasEdits === true))
-            : false
-        hasBackup: controller
-            ? controller.hasSavedBackup(window.selectedRows()) : false
-        onSaveRequested: saveDialogs.ensure().openSave(window.selectedRows())
-        onRevertRequested: saveDialogs.ensure().openRevert(window.selectedRows())
-        onUndoAllEditsRequested: mainDialogs.undoAllEditsDialog.ensure().openForLibrary(
-            window.selectedRows())
-        onResetFacesRequested: resetFacesForPaths(window.selectedPaths())
-        onHideToggleRequested: window.toggleHiddenSelection()
-        onMoveRequested: fileOpsDialogs.ensure().openMove(window.selectedPaths())
-        onDeleteRequested: fileOpsDialogs.ensure().openDelete(window.selectedPaths())
-        onLocateRequested: {
-            var p = controller.photos.filePathAt(window.fileOpTargetRow)
-            if (p.length > 0) fileOpsController.revealPhoto(p)
-        }
-        // #1613: a „Keresés" almenü két új tétele.
-        //
-        // A `hasOriginalOnDisk` a menü MEGNYITÁSAKOR kérdez rá a lemezre
-        // (`fileOpTargetRow` változásakor) — kötésben nem tehetnénk, mert
-        // az minden képkockán fájlrendszert kérdezne.
-        onLocateOriginalRequested: {
-            var p = controller.photos.filePathAt(window.fileOpTargetRow)
-            if (p.length > 0) fileOpsController.revealOriginal(p)
-        }
-        // az eredeti `IDS_LOCATE_SOURCE_IMAGE`: a kép VALÓDI mappájára ugrik
-        // (album-/Emberek-nézetből, ahol a kép nem a saját mappájában látszik)
-        onLocateInPicasaRequested: {
-            var p = controller.photos.filePathAt(window.fileOpTargetRow)
-            if (p.length === 0) return
-            var mappa = p.substring(0, p.lastIndexOf("/"))
-            if (mappa.length === 0) return
-            toolbar.clearSearch()
-            window.clearSelection()
-            window.unnamedFacesOpen = false
-            controller.selectFolder(mappa)
-        }
-        // #422 (2. lépcső): az eredeti AlbumPhoto-menü többi parancsa
-        onOpenRequested: {
-            window.openPhotoViewer(window.fileOpTargetRow)
-        }
-        onRotateRightRequested: controller.rotateRightMany(window.selectedRows())
-        onRotateLeftRequested: controller.rotateLeftMany(window.selectedRows())
-        onOpenFileRequested: {
-            var target = controller.photos.filePathAt(window.fileOpTargetRow)
-            if (target.length > 0) fileOpsController.openPhoto(target)
-        }
-        // #5195: a „Társítás ▸" almenü egy alkalmazása megnyitja a képet
-        onOpenWithAppRequested: function(appId) {
-            var target = controller.photos.filePathAt(window.fileOpTargetRow)
-            if (target.length > 0) fileOpsController.openWithApp(target, appId)
-        }
-        // #4533: Társítás… — Windowson a héj saját párbeszéde, Linuxon a mi választónk
-        onOpenWithRequested: {
-            var target = controller.photos.filePathAt(window.fileOpTargetRow)
-            if (target.length === 0) return
-            if (fileOpsController.hasNativeOpenWith())
-                fileOpsController.openWithNative(target)
-            else
-                openWithDialog.ensure().openFor(target)
-        }
-        onCopyFullPathRequested: {
-            var full = controller.photos.filePathAt(window.fileOpTargetRow)
-            if (full.length > 0) fileOpsController.copyFullPath(full)
-        }
-        onPropertiesRequested: window.valtsFiokLapot("properties")
-        // #9 (2. lépés): albumtagság — #305 null-őr
-        albums: controller ? controller.albums : []
-        currentAlbumToken: controller ? controller.currentAlbumToken : ""
-        currentFolder: controller ? controller.currentFolder : ""
-        onSplitFolderRequested: window.splitFolderHere()
-        onAddToAlbumRequested: function(token) {
-            if (controller) controller.addRowsToAlbum(window.selectedRows(), token)
-        }
-        // #3539: megerősítéssel — a "Remove from album without
-        // confirmation" beállítással elnyomható (`removeFromAlbumDialog`)
-        onRemoveFromAlbumRequested: {
-            if (controller) removeFromAlbumDialog.ensure().openFor(
-                window.selectedRows(), controller.currentAlbumToken)
-        }
-        onNewAlbumRequested: fileOpsDialogs.ensure().openNewAlbum(window.selectedRows())
-        // #422 4. lépcső: az Emberek-album kép-szintű parancsai. A tételek
-        // csak személy-albumban látszanak (üres `personName` = rejtve).
-        personName: controller ? controller.currentPersonName : ""
-        people: controller ? controller.people : []
-        onRemoveFromPeopleAlbumRequested: {
-            if (controller) removePeopleFacesDialog.ensure().openFor(
-                window.selectedRows(), controller.currentPersonName)
-        }
-        // #3464: a „Hozzáadás az Emberek albumhoz" almenü egy meglévő
-        // személyére kattintva a kijelölt képeken az arc ÁTKERÜL hozzá
-        onMoveToPersonRequested: function (name) {
-            if (controller) controller.movePersonOnRows(
-                window.selectedRows(), controller.currentPersonName, name)
-        }
-        onMoveToNewPersonRequested: {
-            if (controller) moveToNewPersonDialog.ensure().openFor(
-                window.selectedRows(), controller.currentPersonName)
-        }
-        onSetPeopleAlbumThumbnailRequested: {
-            if (controller && controller.setPersonThumbnail(
-                    Number(controller.photos.idAt(window.fileOpTargetRow)),
-                    controller.currentPersonName))
-                window.peopleFaceRevision++
-        }
+        hostWindow: window
+        hostController: controller
+        hostFileOpsController: typeof fileOpsController !== "undefined"
+            ? fileOpsController : null
+        hostFileOpsDialogs: fileOpsDialogs
+        hostMainDialogs: mainDialogs
+        hostMoveToNewPersonDialog: moveToNewPersonDialog
+        hostOpenWithDialog: openWithDialog
+        hostRemoveFromAlbumDialog: removeFromAlbumDialog
+        hostRemovePeopleFacesDialog: removePeopleFacesDialog
+        hostSaveDialogs: saveDialogs
+        hostToolbar: toolbar
     }
 
     // #3539: „Eltávolítás az albumból" — a kijelölt képek albumtagságát
