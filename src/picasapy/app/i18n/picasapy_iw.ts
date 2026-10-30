@@ -7584,7 +7584,7 @@ picasapy-origin-key: stringres:ViewRoot::AllFolders</extracomment>
             <source>Do you want to remove the folder "%1" and its subfolders?</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbUI::ManageAlbum</extracomment>
-            <translation>‏האם ברצונך להסיר את התיקייה \"%s\" ואת תיקיות המשנה שלה?</translation>
+            <translation>‏האם ברצונך להסיר את התיקייה "%1" ואת תיקיות המשנה שלה?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="234" />
