@@ -7,10 +7,12 @@ Repeater/GridView delegate-jei nem érhetők el findChild-dal)."""
 
 from __future__ import annotations
 
+import pytest
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, Qt, QUrl, Signal, Slot
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 from PySide6.QtQuick import QQuickWindow
 from PySide6.QtTest import QTest
+from support.qt_wait import varj_feltetelre
 
 _KEEPALIVE = []
 
@@ -246,6 +248,57 @@ class TestIgnorePeople:
         view.setProperty("selectedCount", 1)
         qt_app.processEvents()
         assert button.property("enabled") is True
+
+    @pytest.mark.parametrize("height_offset", (-5, 0, 5))
+    @pytest.mark.parametrize(
+        "enter_key", (Qt.Key.Key_Return, Qt.Key.Key_Enter), ids=("return", "enter")
+    )
+    def test_ignore_person_dialog_focuses_yes_and_enter_ignores(
+        self, qt_app, height_offset, enter_key
+    ):
+        stub = _StubFaceScanController()
+        view = _make_view(qt_app, controller=stub)
+        window = _host_in_window(qt_app, view)
+        target_height = int(window.height()) + height_offset
+        window.setHeight(target_height)
+        assert varj_feltetelre(
+            qt_app, lambda: int(window.height()) == target_height, 3.0
+        ), "az ablak nem vette fel a kért magasságot"
+
+        view.setProperty("pendingIgnoreIds", [4])
+        dialog = view.findChild(QObject, "ignoreFacesDialog")
+        assert dialog is not None
+        assert QMetaObject.invokeMethod(
+            dialog, "open", Qt.ConnectionType.DirectConnection
+        )
+        assert varj_feltetelre(
+            qt_app, lambda: dialog.property("visible") is True, 3.0
+        ), "az Ignore People megerősítő nem nyílt meg"
+
+        buttons = [
+            item
+            for item in dialog.findChildren(QObject)
+            if item.metaObject().indexOfSignal("clicked()") >= 0
+            and item.property("visible") is True
+            and str(item.property("text"))
+            in {"Ignore Person", "Ignore People", "Cancel"}
+        ]
+        feliratok = {str(item.property("text")) for item in buttons}
+        assert feliratok == {"Ignore Person", "Cancel"}, (
+            f"a látható gombok eltérnek: {feliratok!r}"
+        )
+        igen = next(item for item in buttons if item.property("text") == "Ignore Person")
+        assert igen.property("activeFocus") is True, (
+            "az Ignore Person nem kapta meg a kezdeti fókuszt"
+        )
+
+        QTest.keyClick(igen.window(), enter_key)
+        assert varj_feltetelre(
+            qt_app, lambda: dialog.property("visible") is False, 3.0
+        ), "az Enter nem választotta az Ignore Person gombot"
+        assert ("ignoreFaces", [4]) in stub.calls, (
+            "az Enter nem mellőzte az arcot"
+        )
 
     def test_it_asks_before_ignoring(self, qt_app):
         """A gomb NEM mellőz azonnal — előbb megerősítést kér."""

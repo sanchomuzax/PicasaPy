@@ -7571,10 +7571,11 @@ picasapy-origin-key: stringres:ViewRoot::AllFolders</extracomment>
             <translation>Моят компютър</translation>
         </message>
         <message>
-            <location filename="../qml/PicasaPy/FolderPane.qml" line="579" />
-            <source>Do you want to remove the folder %1 and its subfolders?</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Искате ли да премахнете папката %1 и подпапките ѝ?</translation>
+            <location filename="../qml/PicasaPy/FolderPane.qml" line="583" />
+            <source>Do you want to remove the folder "%1" and its subfolders?</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI::ManageAlbum</extracomment>
+            <translation>Искате ли да премахнете папката „%s“ и нейните подпапки?</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPane.qml" line="234" />
@@ -7696,6 +7697,13 @@ picasapy-origin-key: stringres:AspectRatioList:Other;stringres:EXIF::Other;strin
     <context>
         <name>FolderPaneMenus</name>
         <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="347" />
+            <source>Confirm</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbUI:ManageAlbumConfirm</extracomment>
+            <translation>Потвърждаване</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="63" />
             <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="64" />
             <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="142" />
@@ -7798,6 +7806,13 @@ picasapy-origin-key: stringres:CloseCollection::YesButon</extracomment>
     </context>
     <context>
         <name>UnnamedFacesView</name>
+        <message>
+            <location filename="../qml/PicasaPy/UnnamedFacesView.qml" line="569" />
+            <source>Cancel</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_Cancel</extracomment>
+            <translation>Отказ</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/UnnamedFacesView.qml" />
             <source>Show ignored faces</source>

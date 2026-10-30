@@ -519,6 +519,8 @@ Item {
         objectName: "deleteConfirmDialog"
         //: IDS_CONFIRM_REMOVE_CHECK_MESSAGE, a confirm.fen törlési ága
         rememberText: qsTr("Don't ask again, always remove")
+        //: job-347: az eredeti Delete Image után a Cancel következik.
+        noVisible: false
         focusCancelOnOpen: true
         //: DeleteMessage::DeleteItemsTitle
         title: qsTr("Delete Items")

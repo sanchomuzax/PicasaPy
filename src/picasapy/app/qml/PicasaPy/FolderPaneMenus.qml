@@ -343,8 +343,13 @@ Item {
     ConfirmDialog {
         id: removeFolderConfirm
         namePrefix: "removeFolderConfirm"
+        //: CThumbUI::ManageAlbumConfirm; job-348: a cím az eredetiben Confirm.
+        title: qsTr("Confirm")
         // az eredeti igen-gombja: `CThumbUI:ManageAlbumYesButton`
         yesText: qsTr("Remove Folder")
+        //: job-348: Remove Folder / Cancel; Enter az elfogadást választja.
+        noVisible: false
+        focusYesOnOpen: true
         onConfirmed: {
             // #1249: a removeWatchedFolder CSAK pontos figyelt-gyökérre
             // hatott — almappán némán semmit nem csinált (a jelentett

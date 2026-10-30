@@ -8,9 +8,15 @@ metódust hívta, miközben a metódus-szintű tesztek zöldek voltak.
 
 from pathlib import Path
 
+import pytest
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from PySide6.QtTest import QTest
 
 from support.jpeg_factory import make_jpeg
+from support.qt_wait import varj_feltetelre
+
+
+_ABLAKMAGASSAG_ELTERESEK = (-5, 0, 5)
 
 
 def _ujraolvas(controller, qt_app) -> None:
@@ -40,13 +46,17 @@ def _elem(window, nev):
 
 
 class TestMenuUt:
+    @pytest.mark.parametrize("magassag_elteres", _ABLAKMAGASSAG_ELTERESEK)
     def test_a_menu_es_a_megerosites_eltunteti_az_almappat(
-        self, qml_app, qt_app
+        self, qml_app, qt_app, magassag_elteres
     ):
-        """A teljes út: menüpont → megerősítés (a mappa NEVÉVEL, az
-        eredeti igen-gombbal) → az almappa eltűnik, és rescan után sem
-        jön vissza."""
+        """A teljes út: útvonalas kérdés, Remove Folder Enter, eltávolítás."""
         window, controller, alma = _almappas_konyvtar(qml_app, qt_app)
+        celmagassag = int(window.height()) + magassag_elteres
+        window.setHeight(celmagassag)
+        assert varj_feltetelre(
+            qt_app, lambda: int(window.height()) == celmagassag, 3.0
+        ), "a főablak nem vette fel a kért magasságot"
         pane = _elem(window, "folderPane")
 
         # a menü megnyitása az almappára — a valódi jobbklikk-kezelő útja
@@ -69,14 +79,26 @@ class TestMenuUt:
         assert megerosites.property("visible") is True, (
             "a megerősítő nem nyílt meg"
         )
+        assert megerosites.property("title") == "Confirm"
         uzenet = str(megerosites.property("message"))
-        assert "alma" in uzenet, f"a mappa neve hiányzik: {uzenet!r}"
-        assert "subfolders" in uzenet, f"az almappákat nem mondja ki: {uzenet!r}"
+        assert uzenet == (
+            f'Do you want to remove the folder "{alma}" and its subfolders?'
+        ), f"a teljes útvonalas kérdés eltér: {uzenet!r}"
         assert str(megerosites.property("yesText")) == "Remove Folder"
+        igen = _elem(megerosites, "removeFolderConfirmYesButton")
+        nem = _elem(megerosites, "removeFolderConfirmNoButton")
+        megse = _elem(megerosites, "removeFolderConfirmCancelButton")
+        assert igen.property("visible") is True
+        assert nem.property("visible") is False, "a No gombnak rejtve kell lennie"
+        assert megse.property("visible") is True
+        assert varj_feltetelre(
+            qt_app, lambda: igen.property("activeFocus") is True, 3.0
+        ), "a Remove Folder nem kapta meg a kezdeti fókuszt"
 
-        QMetaObject.invokeMethod(
-            megerosites, "confirmed", Qt.ConnectionType.DirectConnection
-        )
+        QTest.keyClick(window, Qt.Key.Key_Return)
+        assert varj_feltetelre(
+            qt_app, lambda: megerosites.property("visible") is False, 3.0
+        ), "az Enter nem választotta a fókuszos Remove Folder gombot"
         for _ in range(200):
             qt_app.processEvents()
             if controller.waitForBackgroundWorkers(0.05):
