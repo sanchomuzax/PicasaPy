@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.309] - 2026-10-30
+
+- Az e-mail választó az ablak címében és a rendszer levelezőjének nevében követi az eredeti Picasa működését; levelező hiányában a „Beépített levelezőprogram” feliratot mutatja. (#6297).
+
 ## [0.9.308] - 2026-10-30
 
 - A háttérkép asztali háttérként beállítása előtt megerősítés jelenik meg (#6295).
