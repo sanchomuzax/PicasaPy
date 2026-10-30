@@ -355,8 +355,9 @@ Rectangle {
             qsTr("Are you sure you want to delete the album \"%1\"?")
                 .replace("%1", name))
     }
-    function openPeopleAlbumContextMenu(name) {
+    function openPeopleAlbumContextMenu(name, personId) {
         paneMenus.peopleAlbumContextMenu.personName = name
+        paneMenus.peopleAlbumContextMenu.personId = personId || ""
         paneMenus.peopleAlbumContextMenu.popup()
     }
 

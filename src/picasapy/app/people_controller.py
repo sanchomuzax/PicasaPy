@@ -194,6 +194,7 @@ class PeopleMixin(PeopleManagerMixin, PeopleAlbumMixin, PeopleFacesMixin):
                 result.append(
                     {
                         "name": person.name,
+                        "person_id": person.person_id or "",
                         "count": person.photo_count,
                         "thumbUrl": _thumb_url(photo, arc=rect)
                         if photo is not None and rect is not None
