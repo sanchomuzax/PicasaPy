@@ -95,13 +95,8 @@ class TestAForrasAlakja:
     def test_a_Main_qml_betoltovel_hozza_a_panelt(self):
         import picasapy.app.application as app_module
 
-        qml_dir = app_module._APP_DIR / "qml"
-        forras = "\n".join(
-            path.read_text(encoding="utf-8")
-            for path in (
-                qml_dir / "Main.qml",
-                *sorted((qml_dir / "PicasaPy").glob("Main*.qml")),
-            )
+        forras = (app_module._APP_DIR / "qml" / "Main.qml").read_text(
+            encoding="utf-8"
         )
         assert "collagePanelLoader" in forras
         assert "CollagePanel {" in forras, "a komponens definíciója eltűnt"

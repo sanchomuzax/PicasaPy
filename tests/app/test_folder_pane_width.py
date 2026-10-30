@@ -141,17 +141,10 @@ def test_a_QML_felso_korlatja_ABLAKFUGGO() -> None:
     """
     from pathlib import Path as _P
 
-    qml_dir = (
+    qml = (
         _P(__file__).resolve().parents[2]
-        / "src" / "picasapy" / "app" / "qml"
-    )
-    qml = "\n".join(
-        path.read_text(encoding="utf-8")
-        for path in (
-            qml_dir / "Main.qml",
-            *sorted((qml_dir / "PicasaPy").glob("Main*.qml")),
-        )
-    )
+        / "src" / "picasapy" / "app" / "qml" / "Main.qml"
+    ).read_text(encoding="utf-8")
     import re
 
     m = re.search(r"^\s*SplitView\.maximumWidth:(.*)$", qml, re.MULTILINE)
@@ -160,7 +153,7 @@ def test_a_QML_felso_korlatja_ABLAKFUGGO() -> None:
     assert not re.fullmatch(r"\d+", kifejezes), (
         "a felső korlát FIX szám — az eredetié ablakfüggő: " + kifejezes
     )
-    assert "_mainSplit.width" in kifejezes, (
+    assert "mainSplit.width" in kifejezes, (
         "a felső korlát nem a tároló szélességéhez kötött: " + kifejezes
     )
     assert "240" in kifejezes, (
