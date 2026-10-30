@@ -130,6 +130,11 @@ _KOTELEZO_VALTOZATOK = {
     "MainActivityPanels": (
         "hostController: null; hostActivityCancelConfirm: ({ ask: function() {} })",
     ),
+    # #6136: az Időrend ablaka a főablak állapotát és gazdaobjektumait kapja.
+    "MainTimeline": (
+        "hostWindow: ({}); hostController: null; hostTimelineController: null; "
+        "hostToolbar: ({}); hostSlideshow: ({ visible: false })",
+    ),
     # #6136: a gyorsbillentyűk külön komponensbe kerültek; a 12 gazda-prop
     # közül azok kapnak minimális alakot, amelyek felépítéskor kiolvasódnak.
     "MainKeyboardShortcuts": (
@@ -263,13 +268,24 @@ _GYEREK = textwrap.dedent(
         hiba = ""
         for extra in VALTOZATOK.get(nev, ALTALANOS_VALTOZATOK):
             k = QQmlComponent(motor)
-            k.setData((
+            qml_forras = (
                 "import QtQuick\\n"
                 "import QtQuick.Controls\\n"
                 "import PicasaPy 1.0\\n"
-                "ApplicationWindow { width: 900; height: 600; visible: true\\n"
-                "  " + nev + " { objectName: \\"proba\\"; " + extra + " } }"
-            ).encode(), QUrl())
+            )
+            if nev == "MainTimeline":
+                # A MainTimeline maga egy külön Window-gyökér, nem egy
+                # párbeszédpanel az őr próba-ApplicationWindow-jában.
+                qml_forras += (
+                    "MainTimeline { objectName: \\"proba\\"; "
+                    + extra + " }"
+                )
+            else:
+                qml_forras += (
+                    "ApplicationWindow { width: 900; height: 600; visible: true\\n"
+                    "  " + nev + " { objectName: \\"proba\\"; " + extra + " } }"
+                )
+            k.setData(qml_forras.encode(), QUrl())
             ablak = k.create()
             if ablak is not None:
                 break
