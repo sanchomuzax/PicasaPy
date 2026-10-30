@@ -135,6 +135,14 @@ _KOTELEZO_VALTOZATOK = {
         "hostSaveDialogs: ({}); hostSlideshow: ({ visible: false }); "
         "hostTrayBar: ({ keyboardShortcutSequences: [] })",
     ),
+    # #6136: a fotó-helyi menü főablaki bekötése önálló gazda-komponens.
+    "MainPhotoContextMenu": (
+        "hostWindow: ({}); hostController: null; hostFileOpsController: null; "
+        "hostFileOpsDialogs: ({}); hostMainDialogs: ({}); "
+        "hostMoveToNewPersonDialog: ({}); hostOpenWithDialog: ({}); "
+        "hostRemoveFromAlbumDialog: ({}); hostRemovePeopleFacesDialog: ({}); "
+        "hostSaveDialogs: ({}); hostToolbar: ({})",
+    ),
     # #6136: a személyalbum-műveletek állapota kötelező gazdaobjektumokat kap.
     "MainPeopleAlbumState": (
         "hostWindow: ({ selectedIndexes: [], selectedIndex: -1, "
@@ -147,6 +155,26 @@ _KOTELEZO_VALTOZATOK = {
         "hostWindow: ({}); hostController: null; hostDocumentTabStrip: ({}); "
         "hostSlideshow: ({}); hostCreateDialogs: ({}); "
         "collageTitle: \"Collage\"; movieMakerTitle: \"Movie Maker\"",
+    ),
+    # #6136: a főablak kijelöléskezelője a korábbi QML-neveket gazdán át éri el.
+    "MainLibrarySelectionState": (
+        "hostWindow: ({ selectedIndexes: [], selectedIndex: -1, "
+        "selectedRows: function() { return [] }, "
+        "photoActionRows: function() { return [] }, "
+        "vanMentetlenSzerkesztes: function() { return false }, "
+        "_folderOfRow: function() { return '' }, "
+        "_selectionInFolder: function() { return false }, "
+        "clearSelection: function() {}, "
+        "_currentGroup: function() { return null }, "
+        "_groupRows: function() { return [] }, "
+        "addPhotosToScreensaver: function() {} }); "
+        "hostController: null; "
+        "hostPhotoViewer: ({ _kijeloltSort: function() { return -1 }, "
+        "facesEditRevision: 0 }); "
+        "hostMainDialogs: ({}); hostPhotoContextMenu: ({}); "
+        "hostFolderPane: ({}); hostScreensaverAlbumConfirmLoader: ({}); "
+        "hostFaceScanDialog: ({}); hostFaceScanController: null; "
+        "screensaverAddedMessage: '%1'",
     ),
     # #6136: a felső menüsor bekötése külön komponens; valamennyi
     # testvér-objektumot a főablak kötelező tulajdonságként adja át.

@@ -283,160 +283,11 @@ _MT_ONE = np.uint32(1)
 _MT_U32_MASK = np.uint32(0xFFFFFFFF)
 
 
-class PicasaDitherGenerator:
-    """A spec 5.3 szerinti MT19937-alakú, Picasa-maszkos generátor.
-
-    Az inicializáló szorzó (`0x19660D`) és a két temperálómaszk eltér a
-    klasszikus MT19937-től. A twist annak lépéseit követi. A `random_uint32`
-    blokkonként temperálja az állapotot, hogy nagy képeknél se pixelenkénti
-    Python-hívás legyen a renderelési út.
-    """
-
-    def __init__(self, seed: int = DITHER16_SEED) -> None:
-        self._state = np.empty(_MT_N, dtype=np.uint32)
-        self._state[0] = np.uint32(int(seed) & 0xFFFFFFFF)
-        for index in range(1, _MT_N):
-            elozo = int(self._state[index - 1])
-            self._state[index] = np.uint32(
-                (0x0019660D * (elozo ^ (elozo >> 30)) + index) & 0xFFFFFFFF
-            )
-        self._index = _MT_N
-
-    def _twist(self) -> None:
-        """624 állapotérték újratöltése a szabványos MT19937-twisttel."""
-        regi = self._state
-        uj = regi.copy()
-
-        elso = np.arange(0, _MT_N - _MT_M)
-        osszefuzes = (regi[elso] & _MT_UPPER_MASK) | (
-            regi[elso + 1] & _MT_LOWER_MASK
-        )
-        uj[elso] = (
-            regi[elso + _MT_M]
-            ^ (osszefuzes >> _MT_ONE)
-            ^ ((osszefuzes & _MT_ONE) * _MT_MATRIX_A)
-        )
-
-        masodik_elso = np.arange(_MT_N - _MT_M, 2 * (_MT_N - _MT_M))
-        osszefuzes = (regi[masodik_elso] & _MT_UPPER_MASK) | (
-            regi[masodik_elso + 1] & _MT_LOWER_MASK
-        )
-        uj[masodik_elso] = (
-            uj[masodik_elso + _MT_M - _MT_N]
-            ^ (osszefuzes >> _MT_ONE)
-            ^ ((osszefuzes & _MT_ONE) * _MT_MATRIX_A)
-        )
-
-        # Az in-place MT-twist második fele már egymásra épül: i=454-től a
-        # `i-227` forrás maga is a fenti szakaszban frissített elem. Két
-        # adagban dolgozunk, így a numpy-vektoros lépés a ciklussorrendet is
-        # bitre megtartja.
-        masodik_masodik = np.arange(2 * (_MT_N - _MT_M), _MT_N - 1)
-        osszefuzes = (regi[masodik_masodik] & _MT_UPPER_MASK) | (
-            regi[masodik_masodik + 1] & _MT_LOWER_MASK
-        )
-        uj[masodik_masodik] = (
-            uj[masodik_masodik + _MT_M - _MT_N]
-            ^ (osszefuzes >> _MT_ONE)
-            ^ ((osszefuzes & _MT_ONE) * _MT_MATRIX_A)
-        )
-
-        utolso_osszefuzes = (regi[_MT_N - 1] & _MT_UPPER_MASK) | (
-            uj[0] & _MT_LOWER_MASK
-        )
-        uj[_MT_N - 1] = (
-            uj[_MT_M - 1]
-            ^ (utolso_osszefuzes >> _MT_ONE)
-            ^ ((utolso_osszefuzes & _MT_ONE) * _MT_MATRIX_A)
-        )
-
-        self._state = uj
-        self._index = 0
-
-    @staticmethod
-    def _temper(values: np.ndarray) -> np.ndarray:
-        tempered = values.copy()
-        tempered ^= tempered >> np.uint32(11)
-        tempered ^= (tempered & np.uint32(0xFF3A58AD)) << np.uint32(7)
-        tempered &= _MT_U32_MASK
-        tempered ^= (tempered & np.uint32(0xFFFFDF8C)) << np.uint32(15)
-        tempered &= _MT_U32_MASK
-        tempered ^= tempered >> np.uint32(18)
-        return tempered
-
-    def random_uint32(self, count: int) -> np.ndarray:
-        """`count` egymást követő, 32 bites temperált érték tömbje."""
-        mennyiseg = max(0, int(count))
-        eredmeny = np.empty(mennyiseg, dtype=np.uint32)
-        kitoltott = 0
-        while kitoltott < mennyiseg:
-            if self._index == _MT_N:
-                self._twist()
-            adag = min(_MT_N - self._index, mennyiseg - kitoltott)
-            nyers = self._state[self._index : self._index + adag]
-            eredmeny[kitoltott : kitoltott + adag] = self._temper(nyers)
-            self._index += adag
-            kitoltott += adag
-        return eredmeny
-
-
-def _luma_tabla() -> np.ndarray:
-    """Csatornánkénti `súly · érték` tábla uint16-ban (spec 5.7 1. fele).
-
-    `cv2.LUT`-kész `(1, 256, 3)` alak. A **uint16** kimenet szándékos: a
-    legnagyobb részszorzat `151 · 255 = 38505` nem férne 8 bitre, a három
-    csatorna összege (`65280`) viszont még uint16-ban is elfér, tehát az
-    összegzés túlcsordulás nélkül, **egészben** elvégezhető.
-    """
-    ertekek = np.arange(256, dtype=np.uint16)
-    tabla = np.empty((1, 256, 3), dtype=np.uint16)
-    for csatorna, suly in enumerate(LUMA_WEIGHTS_RGB):
-        tabla[0, :, csatorna] = ertekek * np.uint16(suly)
-    return tabla
-
-
-def _szepia_tabla() -> np.ndarray:
-    """A szépia 2–4. lépése `Y`-nal indexelt `(1, 256, 3)` uint8 táblává.
-
-    A szépia teljes egészében a lumából származik (az 1. lépés mindhárom
-    csatornára ugyanazt az `Y`-t teríti szét), ezért a maradék három lépés
-    **egyetlen, 256 soros keresőtáblává** előszámolható — a képpontonkénti
-    munka így egy `cv2.LUT` hívás.
-
-    A számítás végig `int32`-n megy, de minden lépés a mért **egész**
-    aritmetika: `>> 8` levágás, nem osztás és nem kerekítés.
-    """
-    y = np.arange(256, dtype=np.int32)
-    # 2. lépés — világosítás: xor 0xFF → ·218 → >>8 → xor 0xFF.
-    v1 = 255 - (((255 - y) * SEPIA_LIGHTEN_MULTIPLIER) >> 8)
-    # 3. lépés — a mért `((v1 >> 7) & 0x010101) · 0xFF` csatornánkénti alakja:
-    # 0xFF, ha az érték felső bitje áll (≥ 128), különben 0x00.
-    maszk = ((v1 >> 7) & 1) * 0xFF
-    # 4. lépés — a maszkkal tükrözött érték kétszerese.
-    v2 = (v1 ^ maszk) * 2
-    tabla = np.empty((1, 256, 3), dtype=np.uint8)
-    for csatorna, keveroszin in enumerate(SEPIA_BLEND_RGB):
-        # …szorzás a szintén tükrözött keverőszínnel, `>> 8`, majd vissza.
-        tabla[0, :, csatorna] = (((v2 * (keveroszin ^ maszk)) >> 8) ^ maszk).astype(
-            np.uint8
-        )
-    return tabla
-
-
-#: A luma-súlytábla — egyszer épül fel, modulszinten.
-_LUMA_TABLE: np.ndarray = _luma_tabla()
-
-#: A szépia `Y → (R, G, B)` táblája — egyszer épül fel, modulszinten.
-_SEPIA_TABLE: np.ndarray = _szepia_tabla()
-
-#: Módazonosító → a hozzá tartozó sötétítő szorzó (spec 5.4/5.5).
 _DARKEN_MULTIPLIERS: dict[str, int] = {
     PROJECTOR_MODE: PROJECTOR_MULTIPLIER,
     LCD_MODE: LCD_MULTIPLIER,
 }
 
-#: Az a néhány mód, amely MA ténylegesen átírja a képpontokat. A hívó ebből
-#: tudja, hogy megéri-e egyáltalán a képet numpy-tömbbé alakítania.
 PIXEL_AFFECTING_MODES: frozenset[str] = frozenset(
     {
         OVERFLOW_MODE,
@@ -450,220 +301,65 @@ PIXEL_AFFECTING_MODES: frozenset[str] = frozenset(
     }
 )
 
-def display_mode_changes_pixels(mode: str) -> bool:
-    """Mozdít-e ez a mód képpontot? (Ismeretlen/üres módra `False`.)"""
-    return mode in PIXEL_AFFECTING_MODES
+# A részmodulok a fenti homlokzati konstansokat használják; ezért csak
+# azok inicializálása után importálhatók.
+from picasapy.render.display_mode_pixels import (  # noqa: E402,F401
+    _LUMA_TABLE,
+    _SEPIA_TABLE,
+    _luma_tabla,
+    _rgb_kep_e,
+    _szepia_tabla,
+    _tablat_alkalmaz,
+    apply_display_bw,
+    apply_display_sepia,
+    apply_linear_gamma,
+    apply_mac_gamma,
+    darken,
+    display_mode_changes_pixels,
+    luma,
+    mark_overflow,
+)
+from picasapy.render.display_mode_dither import (  # noqa: E402
+    PicasaDitherGenerator,
+    apply_dither16,
+)
 
 
-def apply_dither16(rgb: np.ndarray) -> np.ndarray:
-    """A Picasa 16 bites, szemcsézett képernyőmódja (spec 5.3, 5.3/b).
-
-    Minden forráspixelhez egy temperált 32 bites értéket kér a bizonyított
-    `0x80AE2D6C` magú generátortól. A `0x00070307` maszk RGB-ben
-    `(R:0…7, G:0…3, B:0…7)` zajt ad; a csatornánkénti összeadás telít.
-    Minden kép saját, újraindított generátort kap, így a QML/thumbnail
-    újrakérése ugyanazokat a pixeleket adja, és párhuzamos kérések sorrendje
-    nem változtatja meg a képet.
-
-    A bemenet `(H, W, 3)` uint8 RGB. Érvénytelen bemenet változatlanul
-    visszatér; érvényes bemenetet sosem írunk át.
-    """
-    if not _rgb_kep_e(rgb):
-        return rgb
-    if rgb.size == 0:
-        return rgb.copy()
-
-    magassag, szelesseg = rgb.shape[:2]
-    szavak = PicasaDitherGenerator().random_uint32(magassag * szelesseg)
-    szavak = szavak.reshape((magassag, szelesseg))
-    zaj = np.empty_like(rgb)
-    zaj[:, :, 0] = ((szavak >> np.uint32(16)) & np.uint32(0x07)).astype(
-        np.uint8
-    )
-    zaj[:, :, 1] = ((szavak >> np.uint32(8)) & np.uint32(0x03)).astype(
-        np.uint8
-    )
-    zaj[:, :, 2] = (szavak & np.uint32(0x07)).astype(np.uint8)
-    return cv2.add(rgb, zaj)
-
-
-def mark_overflow(rgb: np.ndarray) -> np.ndarray:
-    """A tökéletesen fehér képpontok átfestése `#FF7F7F`-re (`ID_VIEW_OV`).
-
-    A bemenet `(H, W, 3)` uint8 RGB-tömb. A visszaadott tömb **új**, ha volt
-    mit jelölni — a bemenetet SOHA nem írjuk át helyben, mert a hívó
-    (edit-előnézet) gyorsítótárazott köztes eredményt ad át, és annak
-    megmérgezése a mód kikapcsolása után is festve hagyná a képet.
-
-    Ha nincs jelölendő képpont, a bemenetet adja vissza változatlanul (a
-    hívók nem mutálnak, tehát a másolat itt fölösleges munka volna).
-
-    **Mérve** (RPi5, 4000×3000, `min` 5 futásból): kifehéredett folt nélkül
-    34 ms, ~5 %-nyi folttal 58 ms, végig fehér képen 117 ms. A néző valódi
-    előnézeti mérete (2560 px-es élhossz) mellett ~24 ms. A kézenfekvő
-    alakok LASSABBAK: a `(r == 255) & (g == 255) & (b == 255)` maszk és a
-    `kép[maszk] = szín` háromdimenziós szórás együtt 2–4-szeres idő
-    (68/127/469 ms), a `min(axis=2)` pedig 5–10-szeres. Ezért készül a maszk
-    bitenkénti ÉS-sel, és ezért csatornánként (kétdimenziós nézeten) írunk.
-    """
-    if rgb is None or rgb.ndim != 3 or rgb.shape[2] != 3:
-        return rgb
-    # `(r & g & b) == 255` pontosan akkor igaz, ha MINDHÁROM csatorna 255 —
-    # ez maga a mért `and esi, 0xffffff` + `cmp esi, 0xffffff`, tűrés nélkül.
-    mask = (rgb[:, :, 0] & rgb[:, :, 1] & rgb[:, :, 2]) == 255
-    if not mask.any():
-        return rgb
-    marked = rgb.copy()
-    for channel, value in enumerate(OVERFLOW_MARK_RGB):
-        # `marked[:, :, channel]` NÉZET — a beírás a másolatba megy.
-        plane = marked[:, :, channel]
-        plane[mask] = value
-    return marked
-
-
-def _rgb_kep_e(rgb: np.ndarray) -> bool:
-    """`(H, W, 3)` uint8 tömb-e? (A hívó bármit átadhat.)"""
-    return (
-        rgb is not None
-        and getattr(rgb, "ndim", 0) == 3
-        and rgb.shape[2] == 3
-        and rgb.dtype == np.uint8
-    )
-
-
-def _tablat_alkalmaz(rgb: np.ndarray, table: np.ndarray) -> np.ndarray:
-    """256 elemű tábla mindhárom csatornára, ÚJ tömbbe.
-
-    A `cv2.LUT` nulla kiterjedésű képre `None`-t ad — az üres tömb így a
-    másolatával tér vissza (a hívó mindig új, írható tömböt kap).
-    """
-    if rgb.size == 0:
-        return rgb.copy()
-    return cv2.LUT(rgb, table)
-
-
-def darken(rgb: np.ndarray, multiplier: int) -> np.ndarray:
-    """Egyenletes sötétítés `c' = (c · multiplier) >> 8` (spec 5.4/5.5).
-
-    Mindhárom csatorna UGYANAZT a szorzót kapja, tehát **színeltolás nincs**
-    — ez a mért viselkedés, nem hiányosság (ld. a modul-docstringet az „LCD
-    fehérpont" félrevezető feliratáról).
-
-    A bemenet `(H, W, 3)` uint8 RGB-tömb; a visszaadott tömb **új**. A
-    bemenetet SOHA nem írjuk át helyben: a hívó (edit-előnézet)
-    gyorsítótárazott köztes eredményt ad át, és annak megmérgezése a mód
-    kikapcsolása után is sötéten hagyná a képet.
-
-    A számítás 256 elemű táblává előszámolva megy (`cv2.LUT`): a tábla maga
-    az egész aritmetika, tehát a kerekítés bitre a mért `>> 8` levágása.
-    """
-    if not _rgb_kep_e(rgb):
-        return rgb
-    # `arange` uint16-on: 255 · 246 = 62730 nem fér 8 bitre, a `>> 8` UTÁN
-    # viszont már igen. Ez maga a mért egész aritmetika, lebegőpont nélkül.
-    table = ((np.arange(256, dtype=np.uint16) * int(multiplier)) >> 8).astype(
-        np.uint8
-    )
-    return _tablat_alkalmaz(rgb, table)
-
-
-def apply_linear_gamma(rgb: np.ndarray) -> np.ndarray:
-    """A lineáris gamma (2,2) keresőtáblája csatornánként (spec 12.4).
-
-    A bemenet `(H, W, 3)` uint8 RGB-tömb; a visszaadott tömb **új**.
-
-    🟡 A tábla (`LINEAR_GAMMA_LUT`) **SZÁMÍTOTT**, és ez a hű alak: az
-    eredeti a `0x00d32cd0` táblát futásidőben tölti fel a
-    `round(pow(i/255, 1/2,2) · 255)` képlettel. A binárisba beégetett
-    `0x00d32bd0` tábla NEM ezé a módé, hanem a Mac gammáé (#3068).
-    """
-    if not _rgb_kep_e(rgb):
-        return rgb
-    return _tablat_alkalmaz(rgb, _LINEAR_GAMMA_TABLE)
-
-
-def apply_mac_gamma(rgb: np.ndarray) -> np.ndarray:
-    """A `Mac gamma (1.6)` világosítása (#1730).
-
-    A bemenet `(H, W, 3)` uint8 RGB-tömb; a visszaadott tömb **új**.
-
-    🔴 A tábla (`MAC_GAMMA_LUT`) **MÉRT adat**: a binárisba beégetett
-    `0x00d32bd0` 256 bájtja (spec 5.9). Képlettel helyettesíteni tilos —
-    a legjobb illesztés (`p = 0,6945`) is 37 helyen téved.
-
-    ⚠️ A MENÜFELIRAT („Mac gamma (1.6)") ÉS A TÁBLA NEM EGYEZIK: a tábla
-    effektív gammája ≈1,44. Ez az EREDETI sajátossága, nem a mi hibánk, és
-    a hűség a táblát követi. A #1580 képernyőkép-mérése (133,5 → 154,5)
-    kereszt-ellenőrzés: az irány és a nagyságrend stimmel, a pontos érték
-    a felvétel körülményeitől függ (#3068).
-
-    A 0 és a 255 fixpont marad, tehát a fekete nem mosódik szürkévé, a
-    fehér nem csordul ki.
-    """
-    if not _rgb_kep_e(rgb):
-        return rgb
-    return _tablat_alkalmaz(rgb, _MAC_GAMMA_TABLE)
-
-
-def luma(rgb: np.ndarray) -> np.ndarray:
-    """A mért egész luma `(H, W)` uint8 síkja: `(77·R + 151·G + 28·B) >> 8`.
-
-    A számítás **végig egész**: a csatornánkénti szorzatokat egy uint16
-    kimenetű `cv2.LUT` adja, az összegzés uint16-ban megy (a legnagyobb
-    lehetséges összeg `65280`, tehát nem csordul túl), és a `>> 8` levágás
-    — nem kerekítés. Lebegőpontos úton (`cv2.addWeighted`, `cv2.transform`
-    float mátrixszal) a kerekítés miatt csatornánként ±1 eltérés keletkezne
-    az eredetitől.
-
-    ⚠️ **Előfeltétel:** a bemenet `(H, W, 3)` uint8, nem üres tömb — ez a
-    függvény NEM ellenőriz. A védett belépési pont az `apply_display_bw`.
-    Szándékosan nincs a `picasapy.render` csomagszintű névterében sem: ott
-    a `luma` név összekeverhető volna a `glimmer_ops` LEBEGŐPONTOS,
-    Rec.601-es `luma`-jával, ami egészen mást számol.
-    """
-    sulyozott = cv2.LUT(rgb, _LUMA_TABLE)
-    osszeg = sulyozott[:, :, 0] + sulyozott[:, :, 1] + sulyozott[:, :, 2]
-    return (osszeg >> 8).astype(np.uint8)
-
-
-def apply_display_bw(rgb: np.ndarray) -> np.ndarray:
-    """Fekete-fehér MEGJELENÍTÉSI mód: a luma mindhárom csatornára (spec 5.7).
-
-    A bemenet `(H, W, 3)` uint8 RGB-tömb; a visszaadott tömb **új**. A
-    bemenetet SOHA nem írjuk át helyben: a hívó (edit-előnézet)
-    gyorsítótárazott köztes eredményt ad át, és annak megmérgezése a mód
-    kikapcsolása után is szürkén hagyná a képet.
-
-    ⚠️ **Nem azonos a szerkesztő `bw` effektjével** (`render/color.py`):
-    az a mentett képre ír és a `filters=` láncba kerül, ez csak a
-    képernyőre hat. A képletük a #3613 óta ugyanaz, ld. a modul-docstringet.
-    """
-    if not _rgb_kep_e(rgb):
-        return rgb
-    if rgb.size == 0:
-        return rgb.copy()
-    szurke = luma(rgb)
-    return cv2.merge((szurke, szurke, szurke))
-
-
-def apply_display_sepia(rgb: np.ndarray) -> np.ndarray:
-    """Szépia MEGJELENÍTÉSI mód: a mért négylépéses műveletsor (spec 5.8).
-
-    A bemenet `(H, W, 3)` uint8 RGB-tömb; a visszaadott tömb **új**.
-
-    Az 1. lépés a fekete-fehér móddal azonos luma, a 2–4. lépés pedig
-    `Y`-tól függ csak, ezért egyetlen előszámolt táblából (`_SEPIA_TABLE`)
-    olvasható ki. A lépéssort ld. a modul-docstringben: **a nevét
-    („overlay") nem valósítjuk meg, csak a mért műveleteket** — a szokásos
-    overlay `/255`-tel normalizál, a mért kód `>> 8`-cal.
-
-    ⚠️ **Nem azonos a szerkesztő `sepia` effektjével** (`render/color.py`):
-    az a mentett képre ír, ez csak a képernyőre hat.
-    """
-    if not _rgb_kep_e(rgb):
-        return rgb
-    return _tablat_alkalmaz(apply_display_bw(rgb), _SEPIA_TABLE)
-
+__all__ = [
+    "annotations",
+    "cv2",
+    "np",
+    "OVERFLOW_MODE",
+    "OVERFLOW_MARK_RGB",
+    "PROJECTOR_MODE",
+    "LCD_MODE",
+    "LINEAR_GAMMA_MODE",
+    "MAC_MODE",
+    "MAC_GAMMA_SCREENSHOT_PAIR",
+    "BW_MODE",
+    "SEPIA_MODE",
+    "LUMA_WEIGHTS_RGB",
+    "SEPIA_LIGHTEN_MULTIPLIER",
+    "SEPIA_BLEND_RGB",
+    "PROJECTOR_MULTIPLIER",
+    "LCD_MULTIPLIER",
+    "MAC_GAMMA_LUT",
+    "LINEAR_GAMMA_GAMMA",
+    "LINEAR_GAMMA_LUT",
+    "DITHER16_SEED",
+    "PicasaDitherGenerator",
+    "PIXEL_AFFECTING_MODES",
+    "display_mode_changes_pixels",
+    "apply_dither16",
+    "mark_overflow",
+    "darken",
+    "apply_linear_gamma",
+    "apply_mac_gamma",
+    "luma",
+    "apply_display_bw",
+    "apply_display_sepia",
+    "apply_display_mode",
+]
 
 def apply_display_mode(rgb: np.ndarray | None, mode: str) -> np.ndarray | None:
     """A megjelenítési mód alkalmazása a MEGJELENÍTENDŐ képre.

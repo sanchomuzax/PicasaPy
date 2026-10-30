@@ -73,7 +73,14 @@ class TestKulonEszkozlistasUt:
     def test_a_toolbar_es_a_fajl_menu_kulon_utvonalat_hasznal(self):
         """A toolbar üres albumot készít; a Fájl menü kijelöléses út marad."""
         toolbar = _MAIN_TOOLBAR.read_text(encoding="utf-8")
-        fo = _MAIN.read_text(encoding="utf-8")
+        # #6136: a fotó-helyi menü főablaki bekötése a MainPhotoContextMenu.qml-be
+        # költözött, ahol a gazdát hostWindow / hostFileOpsDialogs néven éri el.
+        fo = "\n".join(
+            ut.read_text(encoding="utf-8")
+            for ut in (_MAIN, _MAIN_TOOLBAR.with_name("MainPhotoContextMenu.qml"))
+        ).replace("hostFileOpsDialogs.", "fileOpsDialogs.").replace(
+            "hostWindow.", "window."
+        )
         toolbar_route = toolbar.split("// #5812:", 1)[1].split("// #1421:", 1)[0]
         assert "openNewAlbumProperties(" in toolbar_route
         assert "openNewAlbum(window.selectedRows())" not in toolbar_route
