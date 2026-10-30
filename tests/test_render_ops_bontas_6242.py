@@ -18,34 +18,34 @@ _UJ_MODULOK = (
     "ops_redeye.py",
 )
 
-# A bontás előtti ops.py 24 függvényének/osztályának AST-lenyomata.
-# Az attribútumok (sor- és oszlopszám) kimaradnak; a teljes kifejezésfa,
-# dekorátorok, annotációk, alapértékek és törzsek részei az összevetésnek.
+# A bontás előtti ops.py 24 függvényének/osztályának forrásszöveg-lenyomata
+# (a dekorátoroktól a záró sorig). Az ast.dump Python-verziónként eltér
+# (helyben 3.13, a CI-n 3.12), a forrás szövege nem; a bontás bájtra azonos.
 _EREDETI_AST_SHA256 = {
-    "_rect_to_pixels": "2e06bb5e609e63b41d50337ef689ed6075b5be26eecf035ded14f396909cae1a",
-    "apply_crop": "e4ce60b6592c52b474286ee331705615e7b87d207a1c67ed7f5dd9c413d83677",
-    "tilt_scale": "47a551a28edb858d8df4892b2da2c6f30d4953bfe2406e7a96b15c9f42e1bc2f",
-    "tilt_matrix": "19c0061c5b74083e2eac9e12d1200f5a265b3bf8f7a5cd5950168478c074e3e6",
-    "apply_tilt": "08c59e5f23bc548bcfb1373232f330ad9e094ecd465452b8aeac31e09226038e",
-    "_levels_clip_threshold": "f29941f32b8c6d9ee98ce2baaf5abd054dcb721199ab63ebee50b2dfbc3487f3",
-    "_channel_histograms": "8d2a357f2e4b13e5ccef27aaaba1872da85c70e2efa0c10c9d2e1a2e1f6691c5",
-    "_native_clip_points": "eb034f64214dc5801547f92403830e1654af66896226463fed8de2bfe176b314",
-    "_native_levels_lut": "9d6b4719ef503ea03988f3ef6eed2e617b554fcb272eb0a128706327b130c0b5",
-    "_union_black_white_point": "63e0f83fb33212ae71df3e029144bd47391f7e7bf4f87c914b239ec0a7d59d25",
-    "apply_autolight": "35b7ca6fcfebdaa3eff4f703640c4ac8878605e0c415fd11bc82a515977e8a7f",
-    "_analysis_region": "6688e7061645691bee7726054efc43af58a1fe06df30fb6c2e92f711ce9e6eb7",
-    "_channel_black_white_points": "ced90449491ad04cbe889ab0f5064ac3d974e7ed53f336ea9e67d5960611c172",
-    "autocolor_gains": "4162337ddb0e11f32b02c978f77fedfc0c38b74c06187807ee4962b28bf55bef",
-    "apply_autocolor": "20147077baca400f1f0103bd021c47602536e46c505dcb241ab16c56c333befe",
-    "_blend_clip_points": "55ac7404125dc69f59bee9b26a48873dc54bd9f0b7719eeccc2a9c182b193546",
-    "apply_channel_levels_stretch": "497d6c560d092f8004bc7b0aca196d12fd30a66a1d79c092b80286dafda3ecaf",
-    "apply_enhance": "47d903c5438e037e13db98ab59ba48e665a3f9bc3f8cef4e9288071f1ee0ab2d",
-    "apply_autocontrast": "cb6f44056a0b23b79ac7be800df9026c2b1630d48ffc124e519fba360d623046",
-    "apply_redeye": "50f53974c9e051babc3f34ff414fccac3f6206b58ef0cf410e9e8213a2b081d2",
-    "_redeye_pixel_mask": "731061242ada5cb4dcd7f8d0780788ca780d54a82faa2a0d6236100dee064318",
-    "_eye_circle_mask": "15df3f31a23c627cae97c6fdc5df6e25e8a15dfd0ca02942bb6698266144bb19",
-    "_eye_red_pixel_mask": "36e0f49ff25b72b3e5f516817e3cf696498675eb74fd389a49b2e2b3d3bceab3",
-    "count_redeye_spots": "580e03ff85e5a8a597f0f1297ade607a618372add01ecda99dfd63aa790724b4",
+    "_rect_to_pixels": "31bd6a73ec7150988fc2a5ac3319dde76d4e49a32228b3535521b62c8ba10fbc",
+    "apply_crop": "2b4e10ea76a565092c061d25154263ed0eb383ee82d204f4dcc308afc8551d20",
+    "tilt_scale": "4ae0e3bb8c51cc4831a065ccec86a1b4e1073b799634642194115e6692d8be9a",
+    "tilt_matrix": "4e318245d110848b38a90ac27bdd526bab5b03f2f8a2c91f6863cb8559fb316b",
+    "apply_tilt": "08d048b4c6857bd4eeba724a26a37b8cb3e204487efe9e7d6f3e54c1a7cd7453",
+    "_levels_clip_threshold": "6f0ea37d82eab40b2d996f80f7d6f37a5be69993bb4b38e53d8d66fae2c72df0",
+    "_channel_histograms": "0b86fa89217ac0408af32aafe6d4714c3fb55740928fc61b4001120d4bb09e18",
+    "_native_clip_points": "8adf98046520c9eda470fb5e9c45258e4e4959eddbe72b04c3dece152c0f94fc",
+    "_native_levels_lut": "433d4d7d396def4beb09780717dd1b0ad07964fd73e9691ab9f8e72514cfe6b9",
+    "_union_black_white_point": "65e126ef5cab343f94ba20fc21f62e0bc964abacba2182b31c21c5c5bf5a0da1",
+    "apply_autolight": "2202af29603b7da7bf693fe0f170d0d6027e13d011253cd8c0fd2c8f314d6417",
+    "_analysis_region": "b7dc84344dd79f4c510e92f2e8526e95570b6dc0709af2c59c379472754c990c",
+    "_channel_black_white_points": "6baf8e6e6ecaf100dc4d444e40a1047a4552a1b35ceae09bae4e82e406ec4bf6",
+    "autocolor_gains": "f21696913c68e6ff2ad27c846c8229904567f3ff8d14b47319472edddacdedca",
+    "apply_autocolor": "c6388409c3cef414878341ed035010be28557f2db06dde860c71dc10d419f9d1",
+    "_blend_clip_points": "2ef1b229151f0db666efcf21e6ba54288a7cf7fe31c19df6ae47bc30d9e29b9b",
+    "apply_channel_levels_stretch": "bc204e5a54fd338459f45c27a10ca818d5356dc10130dfb6d47eee53ee6c017b",
+    "apply_enhance": "fd11f32ffe995afae1947c52301b1445146c36bdb09aa1768fe48ea5e97017d5",
+    "apply_autocontrast": "78ccce24de7e658b5f379f9513448dd22404710b8eef6e4a670610e7138d3774",
+    "apply_redeye": "cb624d1a2ecfd0ecba6b7c635bb8bb2b73ca01a309bf1d3d45a7fb3574f01030",
+    "_redeye_pixel_mask": "6b9ed011bdf73d09bced9785412cac8015c8ebcbe9650f5282bcf9243a585857",
+    "_eye_circle_mask": "97a6adc0f4362c0056ca7c70555c50b72892d64f716e1f8d067564af915f8775",
+    "_eye_red_pixel_mask": "878fa1268882e377411cad9e8d96986474637927672d3c86af9184f26382fa02",
+    "count_redeye_spots": "766b64a56cc22010854e485ffb230339dc70928ff8a60c744a02715d4297be5c",
 }
 
 _EREDETI_NYILVANOS_NEVEK = {
@@ -77,8 +77,10 @@ _EREDETI_NYILVANOS_NEVEK = {
 }
 
 
-def _ast_sha256(node: ast.AST) -> str:
-    return hashlib.sha256(ast.dump(node, include_attributes=False).encode()).hexdigest()
+def _forras_sha256(forras: str, node: ast.AST) -> str:
+    sorok = forras.splitlines()
+    eleje = min([d.lineno for d in getattr(node, "decorator_list", [])] + [node.lineno])
+    return hashlib.sha256("\n".join(sorok[eleje - 1 : node.end_lineno]).encode()).hexdigest()
 
 
 def _fuggveny_ast_kivonat() -> dict[str, str]:
@@ -87,11 +89,12 @@ def _fuggveny_ast_kivonat() -> dict[str, str]:
     for fajl in fajlok:
         if not fajl.is_file():
             continue
-        fa = ast.parse(fajl.read_text(encoding="utf-8"), filename=str(fajl))
+        forras = fajl.read_text(encoding="utf-8")
+        fa = ast.parse(forras, filename=str(fajl))
         for node in fa.body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 assert node.name not in lenyomatok, f"többszörös definíció: {node.name}"
-                lenyomatok[node.name] = _ast_sha256(node)
+                lenyomatok[node.name] = _forras_sha256(forras, node)
     return lenyomatok
 
 
