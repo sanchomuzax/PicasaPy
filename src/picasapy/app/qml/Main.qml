@@ -113,6 +113,7 @@ ApplicationWindow {
     property alias peoplePanel: jobbFiok.peoplePanel
 
     property string pendingPeopleManagerPersonName: ""
+    property string pendingPeopleManagerPersonId: ""
     property int thumbSize: 144
     //: #598: a cellaméret átadása a bélyegkép-tárnak — a SZINTET (72 · 144 ·
     //: a maximum) a tár választja ki belőle. A csúszka húzása nem kér újra
@@ -1139,12 +1140,14 @@ ApplicationWindow {
         sourceComponent: Component { FolderManagerDialog { } }
     }
 
-    function openPeopleManagerForPerson(name) {
+    function openPeopleManagerForPerson(name, personId) {
         var targetName = String(name || "").trim()
+        var targetPersonId = String(personId || "").trim()
         if (peopleManagerLoader.status === Loader.Ready) {
-            peopleManagerLoader.item.openForPerson(targetName)
+            peopleManagerLoader.item.openForPerson(targetName, targetPersonId)
         } else {
             window.pendingPeopleManagerPersonName = targetName
+            window.pendingPeopleManagerPersonId = targetPersonId
             peopleManagerLoader.active = true
         }
     }
@@ -1159,9 +1162,11 @@ ApplicationWindow {
         onLoaded: {
             item.controller = controller
             var targetName = window.pendingPeopleManagerPersonName
+            var targetPersonId = window.pendingPeopleManagerPersonId
             window.pendingPeopleManagerPersonName = ""
+            window.pendingPeopleManagerPersonId = ""
             if (targetName.length > 0)
-                item.openForPerson(targetName)
+                item.openForPerson(targetName, targetPersonId)
             else
                 item.open()
         }

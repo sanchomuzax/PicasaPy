@@ -128,7 +128,10 @@ Flickable {
             delegate: Rectangle {
                 id: personItem
                 required property var modelData
-                objectName: "personItem_" + modelData.name
+                readonly property string personRowKey:
+                    modelData.name + (modelData.person_id
+                        ? "_" + modelData.person_id : "")
+                objectName: "personItem_" + personItem.personRowKey
                 readonly property bool isSelectedPerson:
                     folderPane.selectedPersonName === modelData.name
                 visible: !folderPane.peopleCollapsed
@@ -141,7 +144,8 @@ Flickable {
                     anchors.left: parent.left; anchors.leftMargin: 16
                     spacing: 5
                     Image {
-                        objectName: "personThumbnailImage_" + modelData.name
+                        objectName: "personThumbnailImage_"
+                            + personItem.personRowKey
                         width: source !== "" ? 18 : 0
                         height: 18
                         anchors.verticalCenter: parent.verticalCenter
@@ -175,7 +179,8 @@ Flickable {
                         // #422: jobbklikk = az Emberek-album menüje
                         if (mouse.button === Qt.RightButton) {
                             folderPane.openPeopleAlbumContextMenu(
-                                personItem.modelData.name)
+                                personItem.modelData.name,
+                                personItem.modelData.person_id || "")
                             return
                         }
                         folderPane.personChosen(personItem.modelData.name)

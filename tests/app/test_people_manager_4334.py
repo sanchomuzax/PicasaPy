@@ -7,6 +7,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
+import pytest
 from PySide6.QtCore import QObject, Signal
 
 from picasapy.index import open_index, sync_tree
@@ -254,3 +255,93 @@ def test_delete_people_album_matches_job222_and_job224_ini_pair(tmp_path):
         .replace("backuphash=14160", "backuphash=<run-specific>")
     )
     assert actual == expected
+
+
+@pytest.mark.parametrize("action", ["remove_album", "update", "delete"])
+def test_duplicate_names_are_changed_by_person_id_only(tmp_path, action):
+    """Az azonos nevű, eltérő Contacts2-id-jű személy külön kezelhető."""
+    from support.jpeg_factory import make_jpeg
+
+    first_id = "aaaaaaaaaaaaaaaa"
+    second_id = "bbbbbbbbbbbbbbbb"
+    library = tmp_path / "duplicate-names"
+    library.mkdir()
+    for filename in ("first.jpg", "second.jpg"):
+        make_jpeg(library / filename)
+    ini_path = library / ".picasa.ini"
+    ini_path.write_text(
+        "[Contacts2]\n"
+        f"{first_id}=Proba Ember (1);;\n"
+        f"{second_id}=Proba Ember (1);;\n"
+        "[first.jpg]\n"
+        f"faces=rect64({_RECT}),{first_id}\n"
+        "[second.jpg]\n"
+        f"faces=rect64({_RECT}),{second_id}\n",
+        encoding="utf-8",
+    )
+    host = _setup_host(tmp_path, library)
+    save_contacts_xml(
+        _central_path(host),
+        (
+            ContactXmlEntry(
+                first_id,
+                "Proba Ember (1)",
+                modified_time=_MODIFIED,
+                local_contact="1",
+            ),
+            ContactXmlEntry(
+                second_id,
+                "Proba Ember (1)",
+                modified_time=_MODIFIED,
+                local_contact="1",
+            ),
+        ),
+    )
+    from picasapy.index.people import people_in_index
+
+    with open_index(host._db_path) as conn:
+        album_people = people_in_index(conn, central_path=_central_path(host))
+    assert {
+        person.person_id
+        for person in album_people
+        if person.name == "Proba Ember (1)"
+    } == {first_id, second_id}
+    manager_rows = [
+        row
+        for row in host.peopleManagerContacts()
+        if row["name"] == "Proba Ember (1)"
+    ]
+    assert {row["personId"] for row in manager_rows} == {first_id, second_id}
+
+    change = {"action": action, "oldName": "Proba Ember (1)", "person_id": first_id}
+    if action == "update":
+        change["name"] = "Proba Ember átnevezve"
+        change["email"] = ""
+
+    assert host.savePeopleManagerChanges([change])
+
+    contacts = load_contacts_xml(_central_path(host))
+    ini_text = ini_path.read_text(encoding="utf-8")
+    first_face = f"faces=rect64({_RECT}),{first_id}"
+    second_face = f"faces=rect64({_RECT}),{second_id}"
+    if action == "remove_album":
+        assert {contact.person_id for contact in contacts} == {first_id, second_id}
+        assert first_face not in ini_text
+        assert second_face in ini_text
+        assert f"{first_id}=Proba Ember (1);;" in ini_text
+        assert f"{second_id}=Proba Ember (1);;" in ini_text
+    elif action == "update":
+        assert {contact.person_id: contact.name for contact in contacts} == {
+            first_id: "Proba Ember átnevezve",
+            second_id: "Proba Ember (1)",
+        }
+        assert f"{first_id}=Proba Ember átnevezve;;" in ini_text
+        assert f"{second_id}=Proba Ember (1);;" in ini_text
+        assert first_face in ini_text
+        assert second_face in ini_text
+    else:
+        assert {contact.person_id for contact in contacts} == {second_id}
+        assert f"{first_id}=Proba Ember (1);;" not in ini_text
+        assert f"{second_id}=Proba Ember (1);;" in ini_text
+        assert first_face not in ini_text
+        assert second_face in ini_text

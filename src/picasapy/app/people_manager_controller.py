@@ -90,9 +90,9 @@ class PeopleManagerMixin:
     def _build_people_manager_contacts(self) -> list[dict]:
         """A központi névjegytár és a mappák kontaktjainak uniója.
 
-        A központi id mellett a listában minden mappánkénti `[Contacts2]` id
-        is megmarad. A mappák között név szerint egyesítünk, mert a helyi id
-        eltérhet; az album képszáma a `faces=` hivatkozásokból származik.
+        A helyi azonosítók a nem kétértelmű nevek alatt egyesülnek; azonos
+        névhez több `[Contacts2]`-azonosító esetén külön rekord marad.
+        Az album képszáma a `faces=` hivatkozásokból származik.
         """
         with open_index(self._db_path) as conn:
             photos = all_photos(conn)
@@ -100,26 +100,41 @@ class PeopleManagerMixin:
         for photo in photos:
             by_folder.setdefault(photo.folder_path, []).append(photo)
 
-        contacts_by_name: dict[str, dict] = {}
         resolver = ContactNameResolver(self._people_contacts_path())
-        central_contacts = resolver.central_contacts
-        for contact in central_contacts:
-            if not contact.name or not contact.person_id:
-                continue
-            key = contact.name.casefold()
-            row = contacts_by_name.setdefault(
+        contacts_by_identity: dict[tuple[str, str], dict] = {}
+        photo_counts_by_name: dict[str, int] = {}
+        ids_by_name: dict[str, set[str]] = {}
+        for contact in resolver.central_contacts:
+            if contact.name and contact.person_id:
+                ids_by_name.setdefault(contact.name.casefold(), set()).add(
+                    contact.person_id.casefold()
+                )
+
+        def ensure_row(name: str, person_id: str, *, central: bool = False) -> dict:
+            key = (name.casefold(), person_id.casefold())
+            row = contacts_by_identity.setdefault(
                 key,
                 {
-                    "name": contact.name,
+                    "name": name,
+                    "personId": person_id,
                     "email": "",
                     "contactIds": [],
                     "localContactIds": [],
                     "photoCount": 0,
+                    "central": False,
                 },
             )
+            row["central"] |= central
+            return row
+
+        for contact in resolver.central_contacts:
+            if not contact.name or not contact.person_id:
+                continue
+            row = ensure_row(contact.name, contact.person_id, central=True)
             if contact.person_id not in row["contactIds"]:
                 row["contactIds"].append(contact.person_id)
 
+        duplicate_local_names: set[str] = set()
         for folder_path, folder_photos in by_folder.items():
             try:
                 document = _load_ini(Path(folder_path) / PICASA_INI_NAME)
@@ -137,25 +152,22 @@ class PeopleManagerMixin:
                 for person_id, name in resolved_names.items()
                 if name and person_id != UNIDENTIFIED_CONTACT
             }
+            local_ids_by_name: dict[str, set[str]] = {}
             for contact in contacts:
                 name = names.get(contact.person_id.casefold(), contact.name)
-                key = name.casefold()
-                row = contacts_by_name.setdefault(
-                    key,
-                    {
-                        "name": name,
-                        "email": "",
-                        "contactIds": [],
-                        "localContactIds": [],
-                        "photoCount": 0,
-                    },
+                local_ids_by_name.setdefault(name.casefold(), set()).add(
+                    contact.person_id.casefold()
                 )
+                row = ensure_row(name, contact.person_id)
                 if not row["email"]:
                     row["email"] = contact.email
                 if contact.person_id not in row["contactIds"]:
                     row["contactIds"].append(contact.person_id)
                 if contact.person_id not in row["localContactIds"]:
                     row["localContactIds"].append(contact.person_id)
+            duplicate_local_names.update(
+                name for name, ids in local_ids_by_name.items() if len(ids) > 1
+            )
 
             for photo in folder_photos:
                 section = document.section(photo.name)
@@ -166,17 +178,82 @@ class PeopleManagerMixin:
                     faces = parse_faces(raw_faces)
                 except ValueError:
                     continue
-                names_on_photo = {
-                    names[face.contact_id.casefold()].casefold()
-                    for face in faces
-                    if face.is_identified
-                    and face.contact_id.casefold() in names
-                }
+                names_on_photo: set[str] = set()
+                identities_on_photo: set[tuple[str, str]] = set()
+                for face in faces:
+                    if not face.is_identified:
+                        continue
+                    folded_id = face.contact_id.casefold()
+                    name = names.get(folded_id)
+                    if name is None:
+                        continue
+                    folded_name = name.casefold()
+                    names_on_photo.add(folded_name)
+                    identities_on_photo.add((folded_name, folded_id))
+                    ensure_row(name, face.contact_id)
                 for name in names_on_photo:
-                    contacts_by_name[name]["photoCount"] += 1
+                    photo_counts_by_name[name] = photo_counts_by_name.get(name, 0) + 1
+                for identity in identities_on_photo:
+                    contacts_by_identity[identity]["photoCount"] += 1
 
-        contacts = sorted(
-            contacts_by_name.values(), key=lambda contact: contact["name"].casefold()
+        duplicate_names = set(duplicate_local_names)
+        duplicate_names.update(
+            name for name, ids in ids_by_name.items() if len(ids) > 1
+        )
+        grouped_rows: dict[str, list[dict]] = {}
+        for row in contacts_by_identity.values():
+            grouped_rows.setdefault(row["name"].casefold(), []).append(row)
+
+        contacts = []
+        for name_key, rows in grouped_rows.items():
+            if name_key in duplicate_names:
+                for row in rows:
+                    contacts.append(
+                        {
+                            "name": row["name"],
+                            "personId": row["personId"],
+                            "duplicateName": True,
+                            "email": row["email"],
+                            "contactIds": row["contactIds"],
+                            "localContactIds": row["localContactIds"],
+                            "photoCount": row["photoCount"],
+                        }
+                    )
+                continue
+
+            rows.sort(key=lambda row: (not row["central"], row["personId"].casefold()))
+            primary = rows[0]
+            contact_ids = list(
+                dict.fromkeys(
+                    contact_id
+                    for row in rows
+                    for contact_id in row["contactIds"]
+                )
+            )
+            local_contact_ids = list(
+                dict.fromkeys(
+                    contact_id
+                    for row in rows
+                    for contact_id in row["localContactIds"]
+                )
+            )
+            contacts.append(
+                {
+                    "name": primary["name"],
+                    "personId": primary["personId"],
+                    "duplicateName": False,
+                    "email": next((row["email"] for row in rows if row["email"]), ""),
+                    "contactIds": contact_ids,
+                    "localContactIds": local_contact_ids,
+                    "photoCount": photo_counts_by_name.get(name_key, 0),
+                }
+            )
+
+        contacts.sort(
+            key=lambda contact: (
+                contact["name"].casefold(),
+                contact["personId"].casefold(),
+            )
         )
         thumbnail_urls = {}
         if hasattr(self, "_people"):
@@ -213,7 +290,8 @@ class PeopleManagerMixin:
 
         Az Új személyt a központi tárba menti; a névváltoztatás a központi
         bejegyzések mellett csak az érintett mappák `[Contacts2]` sorait
-        frissíti, így az arckapcsolatok id-je megmarad. A törlés a központi
+        frissíti, így az arckapcsolatok id-je megmarad. A régi, csak nevet
+        küldő alakot egyetlen találatra oldja fel. A törlés a központi
         bejegyzést, valamint az érintett mappák névjegyeit és `faces=`
         hivatkozásait távolítja el. A `remove_album` csak az album arcait
         törli; a névjegyet megtartja. Mappánként egy útvonalanként
@@ -229,14 +307,30 @@ class PeopleManagerMixin:
             name = str(change.get("name", "")).strip()
             email = str(change.get("email", "")).strip()
             old_name = str(change.get("oldName", "")).strip()
+            person_id = str(change.get("person_id", "")).strip()
+            raw_contact_ids = change.get("contact_ids", ())
+            if not isinstance(raw_contact_ids, (list, tuple)):
+                return False
+            contact_ids = tuple(
+                dict.fromkeys(
+                    str(contact_id).strip()
+                    for contact_id in raw_contact_ids
+                    if str(contact_id).strip()
+                )
+            )
+            if any(
+                any(char in contact_id for char in ";\r\n")
+                for contact_id in (person_id, *contact_ids)
+            ):
+                return False
             if action not in {"create", "update", "delete", "remove_album"}:
                 return False
             if action in {"delete", "remove_album"}:
-                if not old_name:
+                if not old_name and not person_id:
                     return False
             elif (
                 not name
-                or not old_name and action == "update"
+                or not old_name and not person_id and action == "update"
                 or any(char in name or char in email for char in ";\r\n")
             ):
                 return False
@@ -246,6 +340,8 @@ class PeopleManagerMixin:
                     "oldName": old_name,
                     "name": name,
                     "email": email,
+                    "person_id": person_id,
+                    "contact_ids": contact_ids,
                 }
             )
 
@@ -256,28 +352,73 @@ class PeopleManagerMixin:
             # A mért központi XML-formátumban nincs e-mail mező; emailt csak
             # olyan személyhez mentünk, akinek van mappabeli Contacts2 sora.
             return False
-        email_updates = {
-            change["oldName"].casefold()
-            for change in tiszta_valtozasok
-            if change["action"] == "update" and change["email"]
-        }
-        if email_updates:
-            local_names = {
-                row["name"].casefold()
-                for row in self.peopleManagerContacts()
-                if row["localContactIds"]
-            }
-            if not email_updates <= local_names:
-                return False
-
         try:
             central_path = self._people_contacts_path()
             entries = list(load_contacts_xml(central_path))
+            needs_manager_contacts = any(
+                change["action"] != "create"
+                and (
+                    not change["person_id"]
+                    or change["action"] == "update" and change["email"]
+                )
+                for change in tiszta_valtozasok
+            )
+            manager_contacts = (
+                self.peopleManagerContacts() if needs_manager_contacts else []
+            )
+            for change in tiszta_valtozasok:
+                if change["action"] == "create" or change["person_id"]:
+                    change["target_ids"] = {
+                        item.casefold()
+                        for item in (change["person_id"], *change["contact_ids"])
+                        if item
+                    }
+                    continue
+
+                old_key = change["oldName"].casefold()
+                matching_rows = [
+                    row
+                    for row in manager_contacts
+                    if row["name"].casefold() == old_key
+                ]
+                if len(matching_rows) > 1:
+                    # A régi, csak nevet küldő hívó nem dönthet két
+                    # azonos nevű névjegy közül.
+                    return False
+                if matching_rows:
+                    row = matching_rows[0]
+                    change["person_id"] = str(row.get("personId", ""))
+                    change["contact_ids"] = tuple(row["localContactIds"])
+                    change["target_ids"] = {
+                        item.casefold()
+                        for item in (change["person_id"], *change["contact_ids"])
+                        if item
+                    }
+                else:
+                    change["target_ids"] = set()
+
+            email_updates = [
+                change
+                for change in tiszta_valtozasok
+                if change["action"] == "update" and change["email"]
+            ]
+            local_ids = {
+                contact_id.casefold()
+                for row in manager_contacts
+                for contact_id in row["localContactIds"]
+            }
+            if any(
+                not (change["target_ids"] & local_ids)
+                for change in email_updates
+            ):
+                return False
+
             now = datetime.now().astimezone().isoformat(timespec="seconds")
             changed_central = False
             for change in tiszta_valtozasok:
                 action = change["action"]
-                old_key = change["oldName"].casefold()
+                person_id = change["person_id"]
+                person_key = person_id.casefold()
                 if action == "create":
                     if any(
                         c.name.casefold() == change["name"].casefold()
@@ -298,10 +439,13 @@ class PeopleManagerMixin:
                     )
                     changed_central = True
                 elif action == "update":
-                    matched = False
+                    matched = bool(person_id) and any(
+                        contact.person_id.casefold() == person_key
+                        for contact in entries
+                    )
                     updated_entries = []
                     for contact in entries:
-                        if contact.name.casefold() == old_key:
+                        if matched and contact.person_id.casefold() == person_key:
                             updated_entries.append(
                                 replace(
                                     contact,
@@ -309,17 +453,16 @@ class PeopleManagerMixin:
                                     modified_time=now,
                                 )
                             )
-                            matched = True
                         else:
                             updated_entries.append(contact)
                     if not matched:
                         used_ids = {c.person_id.casefold() for c in entries}
-                        person_id = generate_contact_id()
-                        while person_id.casefold() in used_ids:
-                            person_id = generate_contact_id()
+                        new_person_id = person_id or generate_contact_id()
+                        while new_person_id.casefold() in used_ids and not person_id:
+                            new_person_id = generate_contact_id()
                         updated_entries.append(
                             ContactXmlEntry(
-                                person_id=person_id,
+                                person_id=new_person_id,
                                 name=change["name"],
                                 modified_time=now,
                                 local_contact="1",
@@ -328,7 +471,12 @@ class PeopleManagerMixin:
                     entries = updated_entries
                     changed_central = True
                 elif action == "delete":
-                    kept = [c for c in entries if c.name.casefold() != old_key]
+                    kept = [
+                        contact
+                        for contact in entries
+                        if not person_key
+                        or contact.person_id.casefold() != person_key
+                    ]
                     changed_central |= len(kept) != len(entries)
                     entries = kept
 
@@ -350,8 +498,7 @@ class PeopleManagerMixin:
                 except (OSError, ValueError):
                     continue
                 if not any(
-                    contact.name.casefold()
-                    == change["oldName"].casefold()
+                    contact.person_id.casefold() in change["target_ids"]
                     for contact in contacts_of(current)
                     for change in tiszta_valtozasok
                     if change["action"] in {"update", "delete", "remove_album"}
@@ -369,8 +516,7 @@ class PeopleManagerMixin:
                         matches = tuple(
                             contact
                             for contact in contacts_of(document)
-                            if contact.name.casefold()
-                            == change["oldName"].casefold()
+                            if contact.person_id.casefold() in change["target_ids"]
                         )
                         if action == "update":
                             for contact in matches:
@@ -385,7 +531,9 @@ class PeopleManagerMixin:
                                 )
                             continue
 
-                        person_ids = {contact.person_id.casefold() for contact in matches}
+                        person_ids = {
+                            contact.person_id.casefold() for contact in matches
+                        }
                         if not person_ids:
                             continue
                         for section in document.file_sections():
