@@ -185,10 +185,9 @@ class TestSystemMailClientName:
 
         query = FakeQuery()
         monkeypatch.setattr(
-            email_controller_module.ctypes,
-            "WinDLL",
+            email_controller_module,
+            "_WinDLL",
             lambda _library: SimpleNamespace(AssocQueryStringW=query),
-            raising=False,
         )
 
         assert email_controller_module._windows_default_mail_client_name() == (
