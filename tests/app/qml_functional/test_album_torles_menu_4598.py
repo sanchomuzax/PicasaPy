@@ -119,7 +119,7 @@ def test_kattintas_utan_megerositve_torol_es_mas_adatot_meghagy(
         assert int(window.height()) == alapmagassag + eltolás
         dialog = _torles_megerositot_nyit(window, qt_app)
         if eltolás < 5:
-            _katt(window, _child(dialog, "deleteAlbumCancelButton"))
+            _katt(window, _child(dialog, "deleteAlbumNoButton"))
             _varj(
                 lambda dialog=dialog: not dialog.property("visible"),
                 qt_app,
@@ -144,3 +144,38 @@ def test_kattintas_utan_megerositve_torol_es_mas_adatot_meghagy(
     assert "caption=maradjon" in (root / ".picasa.ini").read_text(encoding="utf-8")
     assert "star=yes" in (root / ".picasa.ini").read_text(encoding="utf-8")
     assert (idegen / ".picasa.ini").read_bytes() == erintetlen_ini
+
+
+def test_az_ablak_ket_gombos_es_enterre_megtartja_az_albumot(
+    qml_app, qt_app, tmp_path
+):
+    """#6283: az eredetiben (job-329) csak Delete Album és No van, jelölőnégyzet
+    nincs, a fókusz a No gombon áll, és Enterre az album megmarad."""
+    window, controller, _engine = qml_app
+    root = tmp_path / "kepek"
+    root.mkdir(exist_ok=True)
+    (root / ".picasa.ini").write_text(
+        f"[.album:{_TOKEN}]\ntoken={_TOKEN}\nname=Nyaralás\n"
+        f"[a.jpg]\nalbums={_TOKEN}\n",
+        encoding="utf-8",
+    )
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, root)
+    controller._reload_after_sync()
+    qt_app.processEvents()
+    eredeti = (root / ".picasa.ini").read_bytes()
+
+    dialog = _torles_megerositot_nyit(window, qt_app)
+
+    assert _child(dialog, "deleteAlbumYesButton").property("visible") is True
+    assert _child(dialog, "deleteAlbumNoButton").property("visible") is True
+    assert _child(dialog, "deleteAlbumCancelButton").property("visible") is False
+    assert _child(dialog, "deleteAlbumRememberCheck").property("visible") is False
+    nem = _child(dialog, "deleteAlbumNoButton")
+    _varj(lambda: nem.property("activeFocus"), qt_app, "fókusz a No gombon")
+
+    QTest.keyClick(window, Qt.Key_Return)
+    _varj(lambda: not dialog.property("visible"), qt_app, "megerősítő bezárása")
+
+    assert any(album["token"] == _TOKEN for album in controller.albums)
+    assert (root / ".picasa.ini").read_bytes() == eredeti
