@@ -9,7 +9,7 @@ import QtQuick.Layouts
 Dialog {
     id: root
 
-    title: qsTr("Send pictures by email")
+    title: qsTr("Select Email")
     modal: true
     focus: true
     anchors.centerIn: Overlay.overlay
@@ -115,7 +115,11 @@ Dialog {
 
                                 Label {
                                     objectName: "emailChoiceMailClientLabel"
-                                    text: qsTr("MAIL CLIENT")
+                                    text: typeof emailController !== "undefined"
+                                          && emailController
+                                          && emailController.defaultMailClientName
+                                        ? emailController.defaultMailClientName
+                                        : qsTr("Native Mail Client")
                                     color: Theme.ink
                                     font.bold: true
                                     font.pixelSize: Theme.fontSize

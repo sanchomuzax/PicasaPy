@@ -25,8 +25,11 @@ determinisztikus, oldalhatás-mentes módja) — a parancs-összeállítás
 
 from __future__ import annotations
 
+import configparser
 import ctypes
+import locale
 import logging
+import os
 import shutil
 import subprocess
 import sys
@@ -78,6 +81,142 @@ def _platform() -> str:
     """A futó platform — külön függvény, hogy a teszt helyettesíthesse
     (#1217: a platformfüggő ág a saját platformját mondja ki, #4607)."""
     return sys.platform
+
+
+#: A levelező neve nem beállítás: az operációs rendszer mailto-társításából
+#: olvassuk ki. Külön fogantyúk, hogy a platform lekérdezése tesztben
+#: oldalhatás nélkül helyettesíthető legyen.
+_which_mail_settings = shutil.which
+_run_mail_settings = subprocess.run
+
+
+def _linux_desktop_name(desktop_id: str) -> str | None:
+    """A mailto-kezelő .desktop fájljának felhasználói nyelvű neve."""
+    desktop_id = desktop_id.strip()
+    if not desktop_id or Path(desktop_id).name != desktop_id:
+        return None
+    if not desktop_id.endswith(".desktop"):
+        desktop_id += ".desktop"
+
+    data_home = Path(
+        os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local/share"))
+    )
+    data_dirs = [data_home]
+    data_dirs.extend(
+        Path(path)
+        for path in os.environ.get(
+            "XDG_DATA_DIRS", "/usr/local/share:/usr/share"
+        ).split(os.pathsep)
+        if path
+    )
+
+    for data_dir in data_dirs:
+        desktop_file = data_dir / "applications" / desktop_id
+        if not desktop_file.is_file():
+            continue
+        entry = configparser.ConfigParser(interpolation=None, strict=False)
+        entry.optionxform = str
+        try:
+            entry.read(desktop_file, encoding="utf-8")
+            values = entry["Desktop Entry"]
+        except (OSError, KeyError, configparser.Error, UnicodeError):
+            continue
+
+        for language in _desktop_language_candidates():
+            name = values.get(f"Name[{language}]", "").strip()
+            if name:
+                return name
+        name = values.get("Name", "").strip()
+        if name:
+            return name
+    return None
+
+
+def _desktop_language_candidates() -> list[str]:
+    """Az aktuális rendszer-nyelv desktop fájlban használt alakjai."""
+    candidates: list[str] = []
+    language_names = [
+        os.environ.get("LC_ALL", ""),
+        os.environ.get("LC_MESSAGES", ""),
+        os.environ.get("LANG", ""),
+    ]
+    try:
+        language_names.append(locale.getlocale()[0] or "")
+    except (TypeError, ValueError):
+        pass
+
+    for value in language_names:
+        normalized = value.split(".", 1)[0].split("@", 1)[0]
+        if not normalized or normalized in {"C", "POSIX"}:
+            continue
+        normalized = normalized.replace("-", "_")
+        for candidate in (normalized, normalized.split("_", 1)[0]):
+            if candidate not in candidates:
+                candidates.append(candidate)
+    return candidates
+
+
+def _linux_default_mail_client_name() -> str | None:
+    """Az xdg-settings mailto-kezelőjének megjelenített neve."""
+    xdg_settings = _which_mail_settings("xdg-settings")
+    if not xdg_settings:
+        return None
+    try:
+        result = _run_mail_settings(
+            [xdg_settings, "get", "default-url-scheme-handler", "mailto"],
+            capture_output=True,
+            text=True,
+            timeout=2.0,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    return _linux_desktop_name(result.stdout)
+
+
+def _windows_default_mail_client_name() -> str | None:
+    """A Windows mailto-társítás barátságos alkalmazásneve."""
+    try:
+        query = ctypes.WinDLL("Shlwapi.dll").AssocQueryStringW
+        query.argtypes = [
+            ctypes.c_uint32,
+            ctypes.c_uint32,
+            ctypes.c_wchar_p,
+            ctypes.c_wchar_p,
+            ctypes.c_wchar_p,
+            ctypes.POINTER(ctypes.c_uint32),
+        ]
+        query.restype = ctypes.c_long
+        capacity = ctypes.c_uint32(256)
+        for _ in range(2):
+            buffer = ctypes.create_unicode_buffer(capacity.value)
+            result = query(
+                0,
+                4,  # ASSOCSTR_FRIENDLYAPPNAME
+                "mailto",
+                None,
+                buffer,
+                ctypes.byref(capacity),
+            )
+            if result == 0 and buffer.value.strip():
+                return buffer.value.strip()
+            if result != 1 or capacity.value <= len(buffer):
+                break
+        return None
+    except (AttributeError, OSError, TypeError, ValueError):
+        return None
+
+
+def _get_default_mail_client_name() -> str | None:
+    """Az operációs rendszer mailto-társításának emberi olvasású neve."""
+    platform = _platform()
+    if platform == "linux":
+        return _linux_default_mail_client_name()
+    if platform == "win32":
+        return _windows_default_mail_client_name()
+    return None
 
 
 _log = logging.getLogger(__name__)
@@ -224,6 +363,8 @@ class EmailController(QObject):
         # #1072: a piszkozat-tilalom — közös a `PrintController`-rel
         self._draft_guard = CollageDraftGuard(self)
         self._settings = settings if settings is not None else QSettings()
+        self._default_mail_client_name: str | None = None
+        self._default_mail_client_name_resolved = False
         self._email_size = self._betolt_meretet()
         self._single_original = self._betolt_egy_kep_kapcsolot()
         # Az eredeti Preferences\EmailMovie alapértéke 0: az első
@@ -371,6 +512,23 @@ class EmailController(QObject):
         utat járja, a kapcsoló egyelőre csak a beállítás megőrzését
         szolgálja (FEN-paritás, ld. `OptionsTabEmail.qml`)."""
         return self._use_default_client
+
+    @Property(str, constant=True)
+    def defaultMailClientName(self) -> str:  # noqa: N802 — QML-stílus
+        """Az operációs rendszer alapértelmezett mailto-kezelőjének neve.
+
+        Üres, ha a rendszer nem ad meg levelezőt; ilyenkor a QML a
+        lefordított „Native Mail Client” feliratot jeleníti meg.
+        A lekérdezés lusta, ezért a vezérlő nem indít külső folyamatot olyan
+        tesztben vagy nézetben, amely nem használja ezt a feliratot.
+        """
+        if not self._default_mail_client_name_resolved:
+            name = _get_default_mail_client_name()
+            self._default_mail_client_name = (
+                name.strip() if isinstance(name, str) and name.strip() else ""
+            )
+            self._default_mail_client_name_resolved = True
+        return self._default_mail_client_name or ""
 
     @Slot(bool)
     def setUseDefaultClient(self, use_default: bool) -> None:

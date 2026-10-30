@@ -18363,6 +18363,11 @@ picasapy-origin-key: stringres:CChooseEmailDialog::title</extracomment>
             <translation>Pilih Email</translation>
         </message>
         <message>
+            <source>Native Mail Client</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Klien Email Bawaan</translation>
+        </message>
+        <message>
             <source>Send pictures by email</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Kirim foto melalui email</translation>

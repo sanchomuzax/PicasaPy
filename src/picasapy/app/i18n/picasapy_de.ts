@@ -18376,6 +18376,11 @@ picasapy-origin-key: stringres:CChooseEmailDialog::title</extracomment>
             <translation>E-Mail auswählen</translation>
         </message>
         <message>
+            <source>Native Mail Client</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nativer E-Mail-Client</translation>
+        </message>
+        <message>
             <source>Send pictures by email</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Bilder per E-Mail senden</translation>

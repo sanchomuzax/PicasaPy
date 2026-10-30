@@ -18363,6 +18363,11 @@ picasapy-origin-key: stringres:CChooseEmailDialog::title</extracomment>
             <translation>Velg e-post</translation>
         </message>
         <message>
+            <source>Native Mail Client</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Innebygd e-postprogram</translation>
+        </message>
+        <message>
             <source>Send pictures by email</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Send bilder med e-post</translation>

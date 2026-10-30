@@ -18363,6 +18363,11 @@ picasapy-origin-key: stringres:CChooseEmailDialog::title</extracomment>
             <translation>Επιλέξτε ηλεκτρονικό ταχυδρομείο</translation>
         </message>
         <message>
+            <source>Native Mail Client</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Εγγενές πρόγραμμα αλληλογραφίας</translation>
+        </message>
+        <message>
             <source>Send pictures by email</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Αποστολή φωτογραφιών με ηλεκτρονικό ταχυδρομείο</translation>

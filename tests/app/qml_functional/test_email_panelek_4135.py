@@ -10,6 +10,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
+import pytest
 from PySide6.QtCore import (
     QObject,
     QPoint,
@@ -31,10 +32,9 @@ _QML = (
 _I18N = _QML.parents[2] / "i18n"
 
 _EMAIL_FORRASOK = {
-    'qsTr("Send pictures by email")': 1,
-    'qsTr("Select Email")': 1,
+    'qsTr("Select Email")': 2,
     'qsTr("Select how you want to e-mail your photos.")': 1,
-    'qsTr("MAIL CLIENT")': 1,
+    'qsTr("Native Mail Client")': 1,
     'qsTr("Use my default email program.")': 1,
     'qsTr("Google Mail")': 1,
     'qsTr("Use my Gmail or Google account.")': 1,
@@ -54,12 +54,11 @@ _EMAIL_FORRASOK = {
 }
 
 _EMAIL_MAGYAR = {
-    "Send pictures by email": "Képek küldése e-mailben",
     "Select Email": "Válasszon levelezőprogramot",
     "Select how you want to e-mail your photos.": (
         "Válassza ki, hogyan szeretné e-mailben elküldeni fotóit."
     ),
-    "MAIL CLIENT": "LEVELEZŐPROGRAM",
+    "Native Mail Client": "Beépített levelezőprogram",
     "Use my default email program.": "Az alapértelmezett levelezőprogram használata",
     "Google Mail": "Google Mail",
     "Use my Gmail or Google account.": (
@@ -190,11 +189,40 @@ def test_email_feliratok_hivatalos_forditasa_benne_van_a_betoltott_qm(qt_app):
         assert translator.translate("EmailChoiceDialog", forras) == magyar
 
 
+@pytest.mark.parametrize("magassag_elteres", (-5, 0, 5))
+def test_email_valaszto_a_rendszerlevelezo_nevet_mutatja(
+    qml_app_email, qt_app, monkeypatch, magassag_elteres
+):
+    import picasapy.app.email_controller as email_module
+
+    monkeypatch.setattr(
+        email_module, "_get_default_mail_client_name", lambda: "Thunderbird"
+    )
+    window, _app_controller, _engine = qml_app_email
+    eredeti_magassag = window.height()
+    window.setHeight(eredeti_magassag + magassag_elteres)
+    qt_app.processEvents()
+    window.setProperty("selectedIndexes", [0])
+    window.setProperty("selectedIndex", 0)
+    qt_app.processEvents()
+
+    _kattint(window, _elem(window, "trayEmailButton"), qt_app)
+    dialog = _var(window, "emailChoiceDialog", qt_app)
+    try:
+        assert dialog.property("title") == "Válasszon levelezőprogramot"
+        assert _elem(dialog, "emailChoiceMailClientLabel").property("text") == (
+            "Thunderbird"
+        )
+    finally:
+        dialog.reject()
+
+
 def test_fooldali_kattintas_osszeallitja_es_atadja_a_levelet(
     qml_app_email, qt_app, tmp_path, monkeypatch
 ):
     import picasapy.app.email_controller as email_module
 
+    monkeypatch.setattr(email_module, "_get_default_mail_client_name", lambda: None)
     window, _app_controller, engine = qml_app_email
     eredeti_magassag = window.height()
 
@@ -226,7 +254,13 @@ def test_fooldali_kattintas_osszeallitja_es_atadja_a_levelet(
 
     dialog = _var(window, "emailChoiceDialog", qt_app)
     try:
-        assert dialog.property("title") == "Képek küldése e-mailben"
+        assert dialog.property("title") == "Válasszon levelezőprogramot"
+        email_controller = engine.rootContext().contextProperty("emailController")
+        levelezo_nev = _elem(dialog, "emailChoiceMailClientLabel").property("text")
+        vart_levelezo_nev = "Beépített levelezőprogram"
+        assert email_controller.defaultMailClientName == ""
+        assert levelezo_nev == vart_levelezo_nev
+        assert levelezo_nev not in ("MAIL CLIENT", "LEVELEZŐPROGRAM")
         valaszto = _elem(dialog, "emailChoicePicker")
         assert valaszto.isVisible()
         # A szöveg nélküli rádiógomb jelölője a stílusban középre kerülne, a
@@ -252,7 +286,6 @@ def test_fooldali_kattintas_osszeallitja_es_atadja_a_levelet(
                 "emailChoiceSelectText",
                 "Válassza ki, hogyan szeretné e-mailben elküldeni fotóit.",
             ),
-            ("emailChoiceMailClientLabel", "LEVELEZŐPROGRAM"),
             (
                 "emailChoiceMailClientDescription",
                 "Az alapértelmezett levelezőprogram használata",

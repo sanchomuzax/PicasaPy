@@ -18432,6 +18432,11 @@ picasapy-origin-key: stringres:CChooseEmailDialog::title</extracomment>
             <translation>تحديد بريد إلكتروني</translation>
         </message>
         <message>
+            <source>Native Mail Client</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>عميل البريد الأصلي</translation>
+        </message>
+        <message>
             <source>Send pictures by email</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>إرسال الصور بالبريد الإلكتروني</translation>
