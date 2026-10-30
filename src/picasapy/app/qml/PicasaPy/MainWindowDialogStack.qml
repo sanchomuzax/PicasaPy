@@ -602,6 +602,8 @@ Item {
                 noText: qsTr("Don't Add Password")
                 rememberText: qsTr("Do not ask me again.")
                 rememberOnDenied: true
+                cancelVisible: false
+                focusYesOnOpen: true
                 onConfirmed:
                     collectionPasswordDialog.ensure().openForHiddenCollection()
             }
