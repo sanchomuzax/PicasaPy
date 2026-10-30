@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.302] - 2026-10-30
+
+- A főablak folyamatjelző paneljei önálló komponensbe kerülnek, változatlan képpel (#6265).
+- A főablak folyamatjelző paneljei önálló QML-komponensbe kerültek, változatlan megjelenéssel és működéssel (#6136).
+
 ## [0.9.301] - 2026-10-30
 
 - A tálca alsó sávjának bekötése önálló komponensbe kerül, változatlan képpel (#6258).
