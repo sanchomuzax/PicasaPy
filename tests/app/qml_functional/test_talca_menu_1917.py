@@ -49,9 +49,15 @@ _TRAYBAR = (
     Path(picasapy.app.__file__).parent
     / "qml" / "PicasaPy" / "TrayBar.qml"
 ).read_text(encoding="utf-8")
-_MAIN = (
-    Path(picasapy.app.__file__).parent / "qml" / "Main.qml"
-).read_text(encoding="utf-8")
+_QML = Path(picasapy.app.__file__).parent / "qml"
+_MAIN = (_QML / "Main.qml").read_text(encoding="utf-8")
+_MAIN_TRAYBAR = (_QML / "PicasaPy" / "MainTrayBar.qml").read_text(
+    encoding="utf-8"
+)
+_MAIN_COMPONENT_FAMILY = "\n".join(
+    path.read_text(encoding="utf-8")
+    for path in (_QML / "Main.qml", *_QML.joinpath("PicasaPy").glob("Main*.qml"))
+)
 
 #: a MÉRT sorrend — az `objectName` és az angol felirat
 _TETELEK = (
@@ -118,20 +124,18 @@ class TestAzOtOrokoltTetelNemNEMA:
             "onTrayLocateRequested",
             "onTrayPropertiesRequested",
         ):
-            assert kezelo in _MAIN, f"a Main.qml nem fogja el: {kezelo}"
+            assert kezelo in _MAIN_COMPONENT_FAMILY, (
+                f"a főablak-komponenscsalád nem fogja el: {kezelo}"
+            )
 
     def test_a_kezelok_a_TALCA_blokkjaban_allnak(self):
-        """⚠️ A `Main.qml` több helyen is fogad hasonló nevű jelzést (a rács
-        helyi menüje, a menüsor). A tálca kezelőinek a `footer: TrayBar`
-        blokkjában kell lenniük — máshová téve a rács menüjének
-        tulajdonságát írnák felül, és a QML „Property value set multiple
-        times"-szal el sem indulna."""
-        talca_kezdet = _MAIN.index("footer: TrayBar {")
+        # A tálca kezelői a footer MainTrayBar komponensében vannak.
+        assert "footer: MainTrayBar {" in _MAIN
         for kezelo in (
             "onTrayRotateRightRequested",
             "onTrayLocateRequested",
             "onTrayPropertiesRequested",
         ):
-            assert _MAIN.index(kezelo) > talca_kezdet, (
-                f"{kezelo} a TrayBar blokkja ELŐTT áll"
+            assert kezelo in _MAIN_TRAYBAR, (
+                f"{kezelo} nem a MainTrayBar komponensben áll"
             )

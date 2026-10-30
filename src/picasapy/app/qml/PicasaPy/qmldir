@@ -10,6 +10,7 @@ PicasaMenuBar 1.0 PicasaMenuBar.qml
 MainDialogs 1.0 MainDialogs.qml
 MainErrorBanner 1.0 MainErrorBanner.qml
 MainPeopleAlbumState 1.0 MainPeopleAlbumState.qml
+MainTrayBar 1.0 MainTrayBar.qml
 MainLibrarySelectionState 1.0 MainLibrarySelectionState.qml
 MainProjectTabs 1.0 MainProjectTabs.qml
 MainMenuBar 1.0 MainMenuBar.qml
