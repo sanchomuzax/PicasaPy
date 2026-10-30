@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.307] - 2026-10-30
+
+- A személyalbum műveletei az azonos nevű emberek közül csak a kiválasztott személyt érintik (#6290).
+
 ## [0.9.306] - 2026-10-30
 
 - Az album törlésének megerősítő ablakában az eredetihez hasonlóan csak a Delete Album és a No gomb látszik, és Enterre az album megmarad (#6283).
