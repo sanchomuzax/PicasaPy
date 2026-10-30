@@ -37,47 +37,56 @@ from picasapy.render.elonezeti_arany import elonezeti_arany
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 from picasapy.thumbs.prune import prune_cache_dir, prune_in_background
 from picasapy.thumbs.szintek import szint_cellahoz, szintek
+from picasapy.thumbs.cache_generation import _CacheGenerationMixin
+from picasapy.thumbs.cache_storage import _CacheStorageMixin
+from picasapy.thumbs.cache_policy import (
+    _EDIT_BASE_CAP,
+    _EDIT_BASE_FACTOR,
+    _EDIT_BASE_MIN,
+    _EDIT_CACHE_VERSION,
+    _VIDEO_DECODE_TIMEOUT_S,
+    _VIDEO_FALLBACK_LOCK,
+    _ffmpeg_allapot,
+    _futtato,
+)
+
+__all__ = [
+    "FilterOp",
+    "Path",
+    "ThumbnailCache",
+    "VIDEO_EXTENSIONS",
+    "apply_filters",
+    "cv2",
+    "dekodol_nyerset",
+    "elonezeti_arany",
+    "hashlib",
+    "hosszabb_el",
+    "logging",
+    "normalize_crop_ops",
+    "np",
+    "nyers_hosszabb_el",
+    "nyers_utvonal",
+    "open_video",
+    "os",
+    "prune_cache_dir",
+    "prune_in_background",
+    "read_image_bytes",
+    "reduced_color_flag",
+    "scale_down",
+    "scale_down_picasa_mag",
+    "serialize_filters",
+    "subprocess",
+    "sys",
+    "szint_cellahoz",
+    "szintek",
+    "tempfile",
+    "threading",
+    "write_atomic",
+]
 
 _log = logging.getLogger(__name__)
 
 _JPEG_QUALITY = 85
-
-# #673: a videó-megnyitás háttere KÉNYSZERÍTETTEN FFMPEG.
-#
-# Háttér-megjelölés nélkül az OpenCV a saját prioritási sorát követi
-# (FFMPEG=1900, majd GSTREAMER=1800): ha a fájlt az FFMPEG nem tudja
-# megnyitni — sérült vagy csonka videó —, VISSZAESIK a GStreamerre, az
-# pedig több szálból egyszerre hívva SIGSEGV-vel viszi el az EGÉSZ
-# processzt. Elég egy sérült videó a megnyitott mappában.
-#
-# Mérve (64 bájtos szemét-.mp4, 4 szál × 5 kör, 15 futás):
-#   * mai állapot (automatikus háttérválasztás): 12 összeomlás / 15
-#   * globális zárral sorosítva:                  5 összeomlás / 15
-#   * cv2.CAP_FFMPEG-re kényszerítve:             0 összeomlás / 15
-#
-# A zár önmagában nem javítás: a GStreamer a saját (Python elől láthatatlan)
-# csővezeték-szálain omlik össze, azok pedig túlélik a `release()`-t, így
-# a Python-szintű sorosítás nem éri el őket. A #4273 ezért a dekódolót külön,
-# időkorlátos folyamatban futtatja; a FFMPEG kényszerítése a GStreamerre
-# visszaesést is kizárja.
-#
-# Amit a kényszerítéssel VESZTÜNK: ha egy videót az FFMPEG nem nyit meg, a
-# GStreamer már nem kap esélyt — az ilyen fájl bélyegkép nélkül marad. Ez a
-# helyes viselkedés (a sérült fájl bélyegkép nélküli, de a program él), és a
-# gyakorlatban nem jár tényleges veszteséggel: a `VIDEO_EXTENSIONS` minden
-# konténerét (mp4/mov/avi/mkv/wmv/3gp/mts…) az avformat kezeli.
-#
-# Ha a telepített OpenCV FFMPEG NÉLKÜL épült, nincs mire kényszeríteni —
-# ilyenkor marad az automatikus választás, de a zárral. A külön folyamat
-# ilyenkor is megvédi a főfolyamatot az összeomlástól és a beragadástól.
-#
-# #1611: FÜGGVÉNY, nem modulszintű konstans — és nem csak importálja a
-# cv2-t, hanem MEG IS HÍVJA. Modulszinten ez a sor egymaga behozná az
-# OpenCV-t az indulási láncban (`thumbs/__init__` → `thumbs/cache`), és
-# ezzel elvenné a lusta import teljes nyereségét. Az eredmény egyszer
-# számolódik ki, az első videó-bélyegképnél.
-_ffmpeg_allapot: bool | None = None
-
 
 def _ffmpeg_elerheto() -> bool:
     """Van-e FFMPEG-háttér az OpenCV-ben (egyszer kiszámolva, gyorstárazva)."""
@@ -87,18 +96,6 @@ def _ffmpeg_elerheto() -> bool:
             cv2.CAP_FFMPEG in cv2.videoio_registry.getStreamBackends()
         )
     return _ffmpeg_allapot
-
-
-# #4273: egy hibás vagy beragadó natív videódekóder ne tarthassa fel a
-# bélyegkép-rács egyik munkaszálát korlátlan ideig. A határidő lejártakor a
-# subprocess leállítja a dekódoló alfolyamatot; a szolgáltató a már meglévő
-# hibás-kép útján placeholdert és jelzést ad a felületnek.
-_VIDEO_DECODE_TIMEOUT_S = 5.0
-
-
-#: A futtató folyamat adatai (frozen, executable) — modulszintű fogantyú,
-#: hogy a teszt ezt cserélje, ne a globális `sys`-t.
-_futtato = sys
 
 
 def _video_decode_worker_command(source: Path, output: Path) -> list[str]:
@@ -220,81 +217,6 @@ def _decode_video_frame_isolated(
     return frame
 
 
-# Csak az FFMPEG-telen tartaléknál használt sorosító zár (ld. fent).
-_VIDEO_FALLBACK_LOCK = threading.Lock()
-
-# #163: a szerkesztett (filters=) bélyegkép bázisa a célméret többszöröse —
-# a lánc (jellemzően crop64) a nagy bázison fut, és csak a VÉGEREDMÉNYT
-# kicsinyítjük a célméretre. Így az erős vágás után is éles marad a kép
-# (nem a kész kis thumbnailt vágjuk tovább, amit a rács homályosan
-# felnagyítana). A faktor 4: 25%-os vágás után a kimenet még pont a teljes
-# célméret; ennél erősebb vágásnál is jóval élesebb a naiv útnál.
-_EDIT_BASE_FACTOR = 4
-
-# #525: a Glimmer-effektek (Holga, Lomo, Vignette, ...) sugár-/elmosás-
-# képletei RÉSZBEN abszolút képpontszámban vannak megadva (a Flash
-# `blurX`/`blurY` 255-ös korlátjának öröksége, ld. `belso_ragyogas.
-# blur_atvalto`) — ha a láncot a MÁR kicsinyített (pl. 96–256px-es)
-# thumbnailra futtatjuk, ez a sugár relatíve sokszorosan szélesebb
-# vignettát rajzol, mint amit Picasa nagy (2560px-es) exportján látni
-# (mérve: #525 jegy, `referencia/holga` és `referencia/lomo`). A puszta
-# `_EDIT_BASE_FACTOR` (kis thumbnail-méretnél 96×4=384, 256×4=1024) ezt
-# NEM oldja meg — a mérés szerint a torzulás csak kb. 1500–2000px-es
-# bázisnál kezd belapulni. Ezért a bázis egy ALSÓ KORLÁTOT is kap
-# (`_EDIT_BASE_MIN`) a puszta szorzat mellé, felül pedig egy teljesítmény-
-# korlátot (`_EDIT_BASE_CAP`) — 2560px-es (natív méretű) bázison a Holga
-# ~1 mp/kép, ami a bélyegkép-gyorsítótár (egyszeri, háttérszálas) útjára
-# nézve nagyságrendi lassulás lenne. A mért kompromisszum (2560×1702-es
-# referenciafotón, Holga): bázis 1536px → átlagfény-eltérés a Picasa
-# kimenetétől 33,2 (a "kicsinyít-majd-effektez" út 47,9-éhez képest),
-# 0,57 mp/kép; bázis 2048px → 21,2, 1,08 mp/kép; teljes (2560px) → 14,1,
-# 2,65 mp/kép. Az 1536–2048-as sáv adja a legjobb arányt — jelentős
-# javulás, a lassulás pedig még mindig kevesebb, mint egy nagyságrend a
-# korábbi (384–1024px-es) bázishoz képest.
-_EDIT_BASE_MIN = 1536
-_EDIT_BASE_CAP = 2048
-
-# #525: a bázisméret-képlet fenti változása miatt a RÉGI (a bug miatt
-# sötét) szerkesztett bélyegképeket el kell avultatni — a cache-kulcs a
-# forrás/mtime/méret/lánc mellé ezt a verziószámot is beleszámítja, így a
-# meglévő lemez-cache-ben ragadt sötét bejegyzések nem találatot adnak,
-# hanem újragenerálódnak az új bázismérettel. Csak a #163 SZERKESZTETT
-# (`filters=` láncos) bélyegképeket érinti — a sima `get_or_create` út
-# (a könyvtár nagy része) változatlan, nem kell újragenerálódnia.
-_EDIT_CACHE_VERSION = 12
-# 3 (#3472): a keret két vastagsága a bázis és a teljes kép arányában
-# skálázódik — a korábbi, túl vastag keretes bélyegképek újragenerálódnak.
-# 4 (#3827): a belső ragyogás (Vignetta, Matt, Múzeumi matt, Lomo, Holga,
-# Éjjellátó, Képregény) a natív lánccal számol — a régi, erf-modelles
-# szerkesztett bélyegképek újragenerálódnak.
-# 5 (#3902): a Színátmenet `ffffffff`-es fehérje egy szinttel sötétít; a
-# szint a vele egy kiadásba szánt Lágyítás 0-s keverését is fedi (#3895).
-# 6 (#3913, #3917): a Ragyogás (`glow`, `glow2`) az eredeti egész
-# aritmetikájával, a Lágy fókusz (`radblur`) elmosási sugara a bináris
-# 0,01-es képszélesség-hányadával számol — az érintett szerkesztett
-# bélyegképek újragenerálódnak.
-# 7 (#3931): a Holga fekete-fehér lépése (`bw_tint`) Haeberli-súlyokkal és
-# a natív fixpontos színmátrix-alkalmazóval számol — a régi, Rec.601-es
-# lebegőpontos modellel készült szerkesztett bélyegképek újragenerálódnak.
-# 8 (#3928): a régi Szemcse (`grain`/`grain2`) csomós, középtónusban erős
-# zajt ad az eddigi egyenletes Gauss-zaj helyett — az érintett szerkesztett
-# bélyegképek újragenerálódnak.
-# 9 (#3939): a Gamma Correct (`gamma`) a 8 bites gamma-táblán fut, dither
-# nélkül — a régi, 16 bites ditheres szinthúzón renderelt szerkesztett
-# bélyegképek újragenerálódnak.
-# 10 (#3942): az `AdjustCurves`-lánc a mestergörbe értékét kerekítés és
-# vágás nélkül adja tovább a csatornagörbének, ami a töréspontokon túl
-# extrapolál — az érintett (Sixties, Cinemascope, CrossProcess stb.)
-# szerkesztett bélyegképek újragenerálódnak.
-# 11 (#3951): a `SimpleColorMatrix` és a `Tint` szürkítése az eredeti
-# fixpontos színmátrix-alkalmazóval számol (Neon, Lomo, Boost, Holga,
-# Áttűnés, Kinemaszkóp, PicnikTint) — az érintett szerkesztett
-# bélyegképek újragenerálódnak.
-# 12 (#3958): a Lomo és a Holga körmaszkja 16 bites pozícióval, egész
-# koordinátával és megálló-táblával számol — az érintett szerkesztett
-# bélyegképek újragenerálódnak.
-
-
 def _edit_base_size(target_size: int) -> int:
     """A szerkesztett bélyegkép rendereléséhez használt bázisméret (#525):
     legalább `_EDIT_BASE_MIN`, legfeljebb `_EDIT_BASE_CAP`, a kettő között
@@ -320,151 +242,7 @@ def _bazis_arany(source: Path, dekodolt: np.ndarray, bazis: np.ndarray) -> float
     return min(1.0, max(bazis.shape[0], bazis.shape[1]) / teljes)
 
 
-class ThumbnailCache:
-    def __init__(
-        self,
-        root: str | Path,
-        size: int = 256,
-        max_bytes: int | None = None,
-    ):
-        """`max_bytes`: a lemez-cache méretkorlátja (#144) — ha meg van
-        adva, induláskor háttérszálon lefut az LRU-takarító, hogy a
-        `~/.cache` alatti tár ne nőjön korlátlanul."""
-        self._root = Path(root)
-        self._size = size
-        #: #598: a tár SZINTJEI (72 · 144 · a rács maximuma). A felső szint
-        #: útvonala szándékosan VÁLTOZATLAN (`root/<2 hex>/…`): így a már
-        #: meglévő — százezres könyvtárnál órákba kerülő — gyorsítótár
-        #: érvényes marad, és csak a két új kis szint épül fel menet közben.
-        self._szintek = szintek(size)
-        self._max_bytes = max_bytes
-        # A szál referenciáját eltároljuk, hogy a hívó (pl. teszt) be
-        # tudja várni — enélkül a takarítás versenyezne a mappa-törléssel.
-        self._prune_thread: threading.Thread | None = None
-        if max_bytes is not None:
-            self._prune_thread = prune_in_background(self._root, max_bytes)
-
-    def prune(self) -> int:
-        """Szinkron LRU-takarítás a beállított korlátig; a törölt bájtok
-        száma. Korlát nélkül nem csinál semmit (0)."""
-        if self._max_bytes is None:
-            return 0
-        return prune_cache_dir(self._root, self._max_bytes)
-
-    @property
-    def levels(self) -> tuple[int, ...]:
-        """A tár szintjei növő sorrendben (#598) — a legnagyobb a saját mérete."""
-        return self._szintek
-
-    def level_for(self, cella_px: int) -> int:
-        """A `cella_px` oldalú megjelenítéshez tartozó szint (#598)."""
-        return szint_cellahoz(cella_px, self._size)
-
-    def clear(self) -> int:
-        """A LEMEZES bélyegkép-tár ürítése; a felszabadult bájtok száma (#598).
-
-        Az eredeti Beállítások `disposepreviews` kapcsolójának kért
-        kilépéskori takarítója (#5897). Minden szintet töröl, a
-        mappaszerkezetet meghagyja - a bélyegképek kérésre újraépülnek,
-        tehát ez nem adatvesztés, csak lemezhely-visszanyerés.
-
-        Best-effort, mint a takarító: az időközben eltűnt vagy zárolt fájlt
-        kihagyja. Egy sikertelen törlés nem hibaüzenet, hanem kevesebb
-        visszanyert hely."""
-        import contextlib
-
-        freed = 0
-        if not self._root.is_dir():
-            return 0
-        try:
-            fajlok = list(self._root.rglob("*.jpg"))
-        except OSError:
-            return 0
-        for path in fajlok:
-            try:
-                meret = path.stat().st_size
-            except OSError:
-                continue
-            with contextlib.suppress(OSError):
-                path.unlink()
-                freed += meret
-        return freed
-
-    def thumbnail_path(
-        self,
-        photo_path: Path,
-        mtime_ns: int,
-        size_bytes: int,
-        level: int | None = None,
-    ) -> Path:
-        """A bélyegkép helye. `level` nélkül a legnagyobb (régi) szint.
-
-        A kulcsban a szint SZÁMA áll — ugyanaz a séma, mint korábban a
-        `self._size`-zal —, a kis szintek pedig külön alkönyvtárba mennek,
-        hogy a takarító szintenként is dolgozni tudjon."""
-        px = self._size if level is None else level
-        key = f"{photo_path}\x00{mtime_ns}\x00{size_bytes}\x00{px}"
-        digest = hashlib.sha1(key.encode("utf-8")).hexdigest()
-        gyoker = self._root if px == self._size else self._root / f"sz{px}"
-        return gyoker / digest[:2] / f"{digest}.jpg"
-
-    def get_or_create(
-        self,
-        photo_path: str | Path,
-        mtime_ns: int,
-        size_bytes: int,
-        level: int | None = None,
-    ) -> Path | None:
-        """A kész thumbnail útvonala; None, ha a forrás nem dekódolható.
-
-        `level` (#598) a kért szint; érvénytelen értéket a legközelebbi
-        szintre kerekítünk, mert egy elgépelt szám némán negyedik, sosem
-        találatot adó tárat nyitna."""
-        source = Path(photo_path)
-        px = self._size if level is None else self.level_for(level)
-        target = self.thumbnail_path(source, mtime_ns, size_bytes, px)
-        if target.exists():
-            return target
-        image = self._szint_forras(source, mtime_ns, size_bytes, px)
-        if image is None:
-            return None
-        # #871: a bélyegkép a Picasa magjával készül — ott mértük
-        # (bigthumbs, 119 kép), és ott gyorsabb is az INTER_AREA-nál.
-        thumb = scale_down_picasa_mag(image, px)
-        ok, encoded = cv2.imencode(
-            ".jpg", thumb, [cv2.IMWRITE_JPEG_QUALITY, _JPEG_QUALITY]
-        )
-        if not ok:
-            return None
-        try:
-            self._write_atomic(target, encoded.tobytes())
-        except OSError:
-            return None  # tele lemez / NAS-hiba — a hívó placeholderre esik
-        return target
-
-    def _szint_forras(
-        self, source: Path, mtime_ns: int, size_bytes: int, px: int
-    ):
-        """Egy szint bemenete: a legkisebb NAGYOBB, már kész szint — ha nincs,
-        a forrásfájl (#598).
-
-        A mérés szerint (`szintek` modul) ez a lépés adja a nyereséget: a
-        72/144-es szint felépítése egy kész 256-osból nagyságrenddel kevesebb
-        munka, mint a forrásfotó újradekódolása."""
-        for nagyobb in self._szintek:
-            if nagyobb <= px:
-                continue
-            kesz = self.thumbnail_path(source, mtime_ns, size_bytes, nagyobb)
-            if not kesz.exists():
-                continue
-            payload = read_image_bytes(kesz)
-            if payload is None:
-                continue
-            kep = cv2.imdecode(np.frombuffer(payload, np.uint8), cv2.IMREAD_COLOR)
-            if kep is not None:
-                return kep
-        return self._decode_source(source)
-
+class ThumbnailCache(_CacheGenerationMixin, _CacheStorageMixin):
     def get_or_create_edited(
         self,
         photo_path: str | Path,
@@ -600,27 +378,6 @@ class ThumbnailCache:
         if payload is None:
             return None
         return cv2.imdecode(payload, self._read_flag(payload, target))
-
-    def _read_flag(self, payload: np.ndarray, target: int | None = None) -> int:
-        """Dekódolási flag a MÁR beolvasott bájtokból: nagy képre redukált
-        beolvasás (memóriakímélés). A döntés a közös `picasapy.cvimage.
-        reduced_color_flag`-ben él (#294) — ugyanazt hívja a dedup dHash-e is."""
-        return reduced_color_flag(payload, self._size if target is None else target)
-
-    @staticmethod
-    def _write_atomic(target: Path, payload: bytes) -> None:
-        """Közös helper (#129), egyedi temp-névvel: a provider több szálról
-        is kérheti ugyanazt a thumbnailt. A cache tartalma újragenerálható,
-        ezért fsync nem kell (durable=False); a replace sharing violationje
-        (#66) lenyelhető, ha a thumbnail közben a párhuzamos írótól
-        létrejött (ignore_replace_race)."""
-        write_atomic(
-            target,
-            payload,
-            durable=False,
-            make_parents=True,
-            ignore_replace_race=True,
-        )
 
 
 def _open_video(source: Path) -> cv2.VideoCapture:
