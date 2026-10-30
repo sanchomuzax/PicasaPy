@@ -51,17 +51,17 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass  # noqa: F401 - régi modulimportútvonal
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
-from .fitting import MsvcRandom, picasa_round
+from .fitting import MsvcRandom, picasa_round  # noqa: F401 - régi modulimportútvonal
 from .frames import POLAROID_HEIGHT_RATIO, POLAROID_WIDTH_RATIO
-from .multi_exposure import blend_multi_exposure
-from .nodes import (
+from .multi_exposure import blend_multi_exposure  # noqa: F401 - régi modulimportútvonal
+from .nodes import (  # noqa: F401 - régi modulimportútvonal
     SHEET_UNITS,
     CollageNode,
     border_growth,
@@ -71,15 +71,15 @@ from .nodes import (
     pixels_to_sheet,
     sheet_to_pixels,
 )
-from .location_tree import pack_with_center
-from .packing import pack
-from .regular_grid import regular_grid_rects, regular_grid_shape
-from .render import CollageReport, _decode, fit_to_frame
-from .shadow import (
+from .location_tree import pack_with_center  # noqa: F401 - régi modulimportútvonal
+from .packing import pack  # noqa: F401 - régi modulimportútvonal
+from .regular_grid import regular_grid_rects, regular_grid_shape  # noqa: F401 - régi modulimportútvonal
+from .render import CollageReport, _decode, fit_to_frame  # noqa: F401 - régi modulimportútvonal
+from .shadow import (  # noqa: F401 - régi modulimportútvonal
     ShadowParams,
     shadow_params,
 )
-from .themes import (
+from .themes import (  # noqa: F401 - régi modulimportútvonal
     BORDER_THEMES,
     COLLAGE_THEMES,
     THEME_CAPABILITIES,
@@ -91,7 +91,7 @@ from .themes import (
     PICTUREPILE,
     REGULARGRID,
 )
-from .picasa_render_layouts import (
+from .picasa_render_layouts import (  # noqa: F401 - régi modulimportútvonal
     _ContactSheetGeometry,  # noqa: F401 - régi modulimportútvonal
     _cell_nodes,
     _contact_sheet_band,
@@ -105,6 +105,32 @@ from .picasa_render_layouts import (
     _unicode_font,
     contact_sheet_cell_scale,
 )
+from .picasa_render_settings import (
+    PicasaCollageSettings,
+    _DEFAULT_SETTINGS,
+    _canvas,
+    shadow_for_settings,
+)
+from .picasa_render_placement import (  # noqa: F401 - régi modulimportútvonal
+    _aspects,
+    _multiexp_node,
+    layout_nodes,
+    layout_nodes_for_aspects,
+)
+from .picasa_render_make import make_picasa_collage
+
+# A régi importútvonal metaadatai is a homlokzathoz kötődnek.
+PicasaCollageSettings.__module__ = __name__
+for _nev in (
+    "_canvas",
+    "shadow_for_settings",
+    "_aspects",
+    "layout_nodes_for_aspects",
+    "layout_nodes",
+    "_multiexp_node",
+    "make_picasa_collage",
+):
+    globals()[_nev].__module__ = __name__
 
 #: A polaroid csempe RÖGZÍTETT oldalaránya (#1053). Nem új szám: a keret két
 #: aránya adja (`1,145 / 1,374 = 0,83333`), és a golden csempéken mérve
@@ -137,166 +163,6 @@ BACKGROUND_DIM_FACTOR = (255 - BACKGROUND_DIM_ALPHA) / 255
 
 _DEFAULT_WIDTH = 1600
 _DEFAULT_HEIGHT = 1200
-
-
-@dataclass(frozen=True)
-class PicasaCollageSettings:
-    """A Picasa kollázs-panel beállításai.
-
-    `theme` a `themes.COLLAGE_THEMES` egyike, `border` a
-    `themes.BORDER_THEMES` egyike. A `spacing` a „Rács vastagsága" csúszka
-    **0…1** értéke (nem képpont) — a `rects.to_pixel_rects` így várja.
-    `background` BGR hármas.
-    """
-
-    theme: str = PICTUREGRID
-    border: str = NOBORDER
-    width: int = _DEFAULT_WIDTH
-    height: int = _DEFAULT_HEIGHT
-    background: tuple[int, int, int] = (255, 255, 255)
-    spacing: float = 0.0
-    seed: int = 0
-    caption: str = ""
-    #: Az Indexkép két fejlécsorának forrása (#1273). A mezők a `.cxf`
-    #: `albumTitle` / `albumDate` értékei; a darabszámot a rajzoló ismeri.
-    album_title: str = ""
-    album_date: str = ""
-    #: A „Beállítás képkockaközéppontként" gomb eredménye: melyik kép kapja
-    #: a hangsúlyos középső helyet a Képkockamozaikban. `None` esetén NINCS
-    #: rögzített kép — és ilyenkor az eredeti is az alap (Mozaik-)pakolóra
-    #: esik vissza (spec 1.9.14: „a `CLocationTree` nem helyettesíti, hanem
-    #: kiegészíti az alap algoritmust").
-    frame_center: int | None = None
-    #: #978: a felület „képfeliratok" kapcsolója (`collage/showcaptions`).
-    #: Az eredetiben a Polaroid-felirat KÉT feltételhez kötött — a kapcsoló
-    #: BE **és** a keret `polaroid` (`0x00839830`). Nálunk a rajzolási úton
-    #: eddig csak a keret szerepelt, tehát a kapcsoló NÉMA volt: kikapcsolva
-    #: is ott maradt a felirat a mentett képen.
-    captions: bool = True
-    #: Rajzoljunk-e árnyékot. `None` = a téma alapértelmezése (a maszk
-    #: 14. bitje) — ez az eredeti viselkedése, ld. `effective_shadow`.
-    shadow: bool | None = None
-    #: A HÁTTÉRKÉP útvonala (#1015). Üresen a `background` szín marad. A
-    #: kép a lapot KITÖLTI (arányt tartva, középről vágva) — a golden
-    #: háttere a teljes lapot fedi, élesen, effekt nélkül.
-    background_image: str = ""
-
-    @property
-    def effective_border(self) -> str:
-        """A ténylegesen alkalmazott képkeret — a téma képességével szűrve.
-
-        #923: a Picasában a keretválasztó CSAK a Képkupacnál és az
-        Indexképnél látszik (a maszk 9. bitje). A többi témánál a beállítás
-        elő sem állítható a felületen, ezért itt **figyelmen kívül marad**.
-
-        Miért nem hiba, hanem elhagyás: a `.cxf` projektfájl tartalmazhat
-        sávon kívüli értéket (kézzel szerkesztve, vagy régebbi verzióból),
-        és a round-trip elv szerint azt MEGŐRIZZÜK — csak nem rajzoljuk ki.
-        A tárolt `border` ezért változatlan marad; a renderelő ezt a
-        property-t használja.
-        """
-        return self.border if THEME_CAPABILITIES[self.theme].borders else NOBORDER
-
-    @property
-    def effective_spacing(self) -> float:
-        """A ténylegesen alkalmazott térköz — a téma képességével szűrve.
-
-        A térköz-csúszka a három rácsos témánál látszik (10. bit); a
-        Képkupacnál, az Indexképnél és a Többszörös exponálásnál nincs
-        értelmezve. Ld. `effective_border` a megőrzés indoklásáért.
-        """
-        return self.spacing if THEME_CAPABILITIES[self.theme].spacing else 0.0
-
-    @property
-    def effective_shadow(self) -> bool:
-        """Rajzolunk-e árnyékot. A 11. bit engedélyezi, a 14. az ALAPÉRTÉKE.
-
-        A Többszörös exponálásnál az árnyék tiltott (a maszk 11. bitje 0),
-        a Képkupacnál és az Indexképnél alapból BE, a többinél KI.
-        """
-        képesség = THEME_CAPABILITIES[self.theme]
-        if not képesség.shadow:
-            return False
-        return képesség.shadow_default if self.shadow is None else self.shadow
-
-    def __post_init__(self) -> None:
-        if self.theme not in COLLAGE_THEMES:
-            raise ValueError(f"Ismeretlen kollázs-téma: {self.theme!r}")
-        if self.border not in BORDER_THEMES:
-            raise ValueError(f"Ismeretlen képkeret: {self.border!r}")
-        if self.width < 16 or self.height < 16:
-            raise ValueError(f"Érvénytelen lapméret: {self.width}×{self.height}")
-        if not 0.0 <= self.spacing <= 1.0:
-            raise ValueError(f"A rács vastagsága 0..1 közé esik: {self.spacing}")
-        if len(self.background) != 3 or not all(0 <= c <= 255 for c in self.background):
-            raise ValueError(f"Érvénytelen háttérszín: {self.background}")
-
-
-_DEFAULT_SETTINGS = PicasaCollageSettings()
-
-
-def _canvas(settings: PicasaCollageSettings) -> np.ndarray:
-    """A lap alapja: a beállított szín, vagy a HÁTTÉRKÉP (#1015).
-
-    ⚠️ A háttérkép baja SOHA nem viheti el a kollázst. Hiányzó, olvashatatlan
-    vagy sérült fájlnál a szín marad — a felhasználó képei fontosabbak, mint
-    a háttér, és egy elszálló mentés sokkal rosszabb egy egyszínű háttérnél.
-
-    A kép a lapot KITÖLTI (`fill=True`): arányt tartva nagyít, a túllógó részt
-    középről vágja. A kitöltés-vagy-nyújtás kérdés nincs lemérve — a döntés
-    indoklása a `tests/collage/test_kephatter_1015.py` modul-docstringjében.
-
-    A háttér **TOMPÍTVA** kerül a lapra (`BACKGROUND_DIM_FACTOR`) — ez nem
-    stílus, hanem mérés: a golden háttere a forráskép 85,1%-án áll."""
-    canvas = np.empty((settings.height, settings.width, 3), dtype=np.uint8)
-    canvas[:, :] = settings.background
-    if not settings.background_image:
-        return canvas
-    try:
-        hatter = _decode(Path(settings.background_image))
-    except (ValueError, OSError) as hiba:
-        logger.info(
-            "A kollázs háttérképe nem olvasható (%s): %s",
-            settings.background_image,
-            hiba,
-        )
-        return canvas
-    illesztett = fit_to_frame(hatter, settings.width, settings.height, fill=True)
-    canvas[:, :] = np.rint(
-        illesztett.astype(np.float32) * BACKGROUND_DIM_FACTOR
-    ).astype(np.uint8)
-    return canvas
-
-
-def shadow_for_settings(
-    settings: PicasaCollageSettings, count: int
-) -> ShadowParams | None:
-    """A téma árnyék-paraméterei, vagy `None`, ha nem kell árnyék (#977).
-
-    Két kapu van, és MINDKETTŐ a képesség-maszkból jön: az
-    `effective_shadow` (11. bit engedélyez, 14. bit az alapérték), és a
-    `shadow.shadow_params` maga is a 11. bitet nézi. Így a Többszörös
-    exponálás tiltása egyetlen forrásból származik — témanév-hasonlítás
-    sehol nem születik.
-
-    ⚠️ **Nyilvános** (#1021): az élő vászon UGYANEZT hívja, ugyanazzal a
-    `render_settings()`-szel, amivel a mentés dolgozik. Enélkül a vászon
-    egy párhuzamos számítást tartana, ami előbb-utóbb elválna — és a
-    felhasználó azt látná, hogy a mentett kép mást mutat, mint az
-    előnézet."""
-    if not settings.effective_shadow:
-        return None
-    return shadow_params(
-        settings.theme,
-        page_width=settings.width,
-        page_height=settings.height,
-        count=max(1, count),
-    )
-
-
-def _aspects(images: list[np.ndarray]) -> list[float]:
-    return [image.shape[1] / image.shape[0] for image in images]
-
 
 def render_nodes(
     nodes: Sequence[CollageNode],
@@ -364,8 +230,6 @@ def render_nodes(
     )
 
 
-# --- Az elrendezések → csomópontok -------------------------------------------
-
 def _draw_contact_header(
     canvas: np.ndarray, settings: PicasaCollageSettings, count: int = 0
 ) -> int:
@@ -418,226 +282,6 @@ def _draw_contact_header(
     )
     canvas[:band] = cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
     return band
-
-
-def layout_nodes_for_aspects(
-    aspects: Sequence[float],
-    paths: Sequence[Path],
-    settings: PicasaCollageSettings = _DEFAULT_SETTINGS,
-) -> list[CollageNode]:
-    """MIND A HAT téma pakolója, a képek OLDALARÁNYÁBÓL (#989).
-
-    Ez a kollázs elrendezésének **egyetlen** forrása: innen tölti fel a
-    vásznát a kollázs-panel, és ezt futtatja a `make_picasa_collage` is a
-    rajzolás előtt. Aki két pakoló-utat épít, előbb-utóbb azt kapja, hogy a
-    mentett kép mást mutat, mint a vászon (spec 6.5).
-
-    Miért oldalarány és nem kép: a panel a képeket **nem dekódolja** (350
-    képnél nem is tehetné) — az indexből csak az arányt ismeri. A rajzolónak
-    van dekódolt képe, abból a `layout_nodes` számol arányt. A geometria
-    egyik esetben sem függ a forrás abszolút képpontméretétől
-    (`fitting.fit_aspect_inside`).
-
-    | téma | a geometriát adó mag |
-    |---|---|
-    | `picturepile` | `pile.pile_layout` |
-    | `picturegrid` | `packing.pack` |
-    | `framegrid` | `packing.pack` + a hangsúlyos kép a középső területre |
-    | `regulargrid` | `regular_grid` |
-    | `contactsheet` | `regular_grid` a fejlécsáv ALATT |
-    | `multiexp` | a közös illesztő: mindenki a teljes lapra, középre |
-
-    A keret és a térköz a téma KÉPESSÉG-MASZKJÁN át hat (`effective_border`,
-    `effective_spacing`) — témánkénti `if` sem itt, sem a felületen nem
-    születik.
-    """
-    if len(aspects) != len(paths):
-        raise ValueError("Minden képhez tartoznia kell útvonalnak.")
-    if not aspects:
-        return []
-    if settings.theme == PICTUREPILE:
-        return _pile_nodes(aspects, paths, settings)
-    if settings.theme == MULTIEXP:
-        return _multi_exposure_nodes(aspects, paths, settings)
-    if settings.theme == CONTACTSHEET:
-        nodes, _, _ = _contact_sheet_nodes(aspects, paths, settings)
-        return nodes
-    if settings.theme in (PICTUREGRID, FRAMEGRID):
-        rogzitett = (
-            settings.frame_center
-            if settings.theme == FRAMEGRID
-            and settings.frame_center is not None
-            and 0 <= settings.frame_center < len(aspects)
-            else None
-        )
-        if rogzitett is None:
-            # nincs rögzített kép → az EREDETI IS az alap pakolóra esik vissza
-            rects = pack(
-                list(aspects),
-                settings.width / settings.height,
-                MsvcRandom(settings.seed),
-            )
-            return _cell_nodes(paths, rects, settings)
-        #: #916: a hangsúlyos kép a MÉRT cellát kapja (`0x00889185`), a
-        #: többi a maradék sávokra — a `CLocationTree` pakolója.
-        rects = pack_with_center(
-            list(aspects),
-            settings.width / settings.height,
-            MsvcRandom(settings.seed),
-            center=rogzitett,
-        )
-        #: a hangsúlyos kép LEGFELÜL: a lista VÉGÉN áll, hogy a rajzoló ne
-        #: takarja el a köré pakolt csempékkel
-        sorrend = [i for i in range(len(aspects)) if i != rogzitett] + [rogzitett]
-        nodes = _cell_nodes(
-            [paths[i] for i in sorrend],
-            tuple(rects[i] for i in sorrend),
-            settings,
-        )
-        return nodes
-    if settings.theme == REGULARGRID:
-        sorok, oszlopok = regular_grid_shape(
-            list(aspects), settings.width, settings.height
-        )
-        rects = regular_grid_rects(len(aspects), sorok, oszlopok)
-        return _cell_nodes(paths, rects, settings)
-    raise ValueError(
-        f"Ehhez a témához nincs csomópont-elrendezés: {settings.theme!r}"
-    )
-
-
-def layout_nodes(
-    images: Sequence[np.ndarray],
-    paths: Sequence[Path],
-    settings: PicasaCollageSettings = _DEFAULT_SETTINGS,
-) -> list[CollageNode]:
-    """A téma pakolója DEKÓDOLT képekből — a `make_picasa_collage` első fele.
-
-    Csak annyit tesz, hogy a képekből oldalarányt számol, és átadja a
-    `layout_nodes_for_aspects`-nek; a geometria egyetlen helyen él.
-    """
-    if len(images) != len(paths):
-        raise ValueError("Minden képhez tartoznia kell útvonalnak.")
-    return layout_nodes_for_aspects(_aspects(list(images)), paths, settings)
-
-
-def _multiexp_node(path: Path, settings: PicasaCollageSettings) -> CollageNode:
-    """A Többszörös exponálás egyetlen csomópont-alakja (#1248).
-
-    Mérve az `AI7.cxf`-en: `x=0 y=0 w=1 h=1 theta=0`, `noborder` — vagyis
-    minden kép a TELJES lapot fedi. Lapegységben ez a lap közepén álló,
-    lap méretű doboz."""
-    lap_magassag = SHEET_UNITS * settings.height / settings.width
-    return CollageNode(
-        path=str(path),
-        center_x=SHEET_UNITS / 2.0,
-        center_y=lap_magassag / 2.0,
-        width=SHEET_UNITS,
-        height=lap_magassag,
-        theta=0.0,
-        border=NOBORDER,
-        fill=False,
-    )
-
-
-def make_picasa_collage(
-    sources, settings: PicasaCollageSettings = _DEFAULT_SETTINGS
-) -> CollageReport:
-    """Picasa-hű kollázs a hat téma egyikével.
-
-    A hibás/hiányzó források kimaradnak, nem állítják meg a munkát — a hívó
-    a `CollageReport.used` üres voltából látja, ha nincs mit menteni (ez a
-    `render.make_collage` viselkedése, szándékosan azonos).
-    """
-    paths = [Path(s) for s in sources]
-    if not paths:
-        raise ValueError("Kollázshoz legalább egy kép kell.")
-
-    decoded: list[np.ndarray] = []
-    used: list[Path] = []
-    skipped: list[Path] = []
-    reasons: list[str] = []
-    missing: list[Path] = []
-    for path in paths:
-        if not path.exists():
-            missing.append(path)
-            skipped.append(path)
-            reasons.append("a fájl nem található")
-            continue
-        try:
-            decoded.append(_decode(path))
-            used.append(path)
-        except (ValueError, OSError) as error:
-            skipped.append(path)
-            reasons.append(str(error))
-
-    canvas = _canvas(settings)
-    if not decoded:
-        return CollageReport(
-            image=canvas,
-            used=(),
-            skipped=tuple(skipped),
-            reasons=tuple(reasons),
-            missing=tuple(missing),
-        )
-
-    # #960: a kirajzolt csomópontok — a `.cxf` piszkozat egyetlen hiteles
-    # forrása. A Többszörös exponálás sem kivétel (#1248): geometriát nem
-    # ad, a FORRÁSKÉPEK listáját viszont neki is ki kell adnia.
-    rajzolt: tuple[CollageNode, ...] = ()
-    if settings.theme == MULTIEXP:
-        # A Többszörös exponálás nem HELYEZ el képeket, hanem egymásra keveri
-        # őket — ezért nem a közös rajzolón megy át. A képesség-maszkja is
-        # ezt mondja: se kijelölés, se keret, se háttér.
-        canvas = blend_multi_exposure(
-            decoded, settings.width, settings.height, settings.background
-        )
-        # ⚠️ #1248: a csomópontok ettől függetlenül KELLENEK. A geometria
-        # tényleg nem hordoz információt, a `.cxf`-nek viszont tudnia kell,
-        # MELYIK képekből készült a kollázs — enélkül az újraszerkesztés
-        # fekete lapot ad, és a mentés azt jelenti, hogy „az összes képet
-        # eltávolították" (a tulajdonos jelentése, v0.8.45).
-        #
-        # Az alak MÉRVE (`referencia/kollazs-golden/AI7.cxf`, valódi
-        # Picasa-minta): képenként EGY csomópont, mind a TELJES lapon,
-        # forgatás és keret nélkül.
-        rajzolt = tuple(_multiexp_node(ut, settings) for ut in used)
-    elif settings.theme == CONTACTSHEET:
-        # Ugyanez a teljes-lapos csomópontlista megy az élő vászonra és a
-        # mentésbe; ettől a szerkesztés közbeni frissítés nem válhat el.
-        _draw_contact_header(canvas, settings, len(decoded))
-        nodes, _, alsobeallitas = _contact_sheet_nodes(
-            _aspects(decoded), used, settings
-        )
-        draw_nodes(
-            canvas,
-            nodes,
-            decoded,
-            alsobeallitas.width,
-            shadow_for_settings(settings, len(decoded)),
-            captions=settings.captions,
-        )
-        rajzolt = tuple(nodes)
-    else:
-        nodes = layout_nodes(decoded, used, settings)
-        draw_nodes(
-            canvas,
-            nodes,
-            decoded,
-            settings.width,
-            shadow_for_settings(settings, len(decoded)),
-            captions=settings.captions,
-        )
-        rajzolt = tuple(nodes)
-
-    return CollageReport(
-        image=canvas,
-        used=tuple(used),
-        skipped=tuple(skipped),
-        reasons=tuple(reasons),
-        missing=tuple(missing),
-        nodes=rajzolt,
-    )
 
 
 __all__ = [
