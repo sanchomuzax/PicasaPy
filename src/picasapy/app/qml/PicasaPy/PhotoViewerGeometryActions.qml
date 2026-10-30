@@ -89,10 +89,10 @@ function forrasMeret(index, url) {
 function _betoltesekIrasa() {
     viewer._betolt(photoElotte, photoElotte.betoltes)
     viewer._betolt(photo, photo.betoltes)
-    viewer._betolt(viewerOverlayControls.nextPreloadImage,
-                   viewerOverlayControls.nextPreloadImage.betoltes)
-    viewer._betolt(viewerOverlayControls.previousPreloadImage,
-                   viewerOverlayControls.previousPreloadImage.betoltes)
+    viewer._betolt(geometryActions.nextPreloadImage,
+                   geometryActions.nextPreloadImage.betoltes)
+    viewer._betolt(geometryActions.previousPreloadImage,
+                   geometryActions.previousPreloadImage.betoltes)
 }
 function _betolt(kep, par) {
     var regi = kep.sourceSize

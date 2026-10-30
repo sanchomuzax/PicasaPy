@@ -256,3 +256,57 @@ def test_azonos_fajlban_a_darabszam_szamit() -> None:
     uj, elavult = guard.compare(ket_talalat, regi)
     assert len(uj) == 1 and elavult == []
     assert guard.compare([], regi) == ([], [("constant-disabled", "src/x/A.qml:10:enabled=false")])
+
+
+def _ketszintu_repo(tmp_path: Path, koztes_kotes: str) -> Path:
+    root = _repo(
+        tmp_path,
+        qml='''\
+Item {
+    id: viewer
+    signal manualFaceAddCancelRequested()
+    ViewerLayout { hostViewer: viewer }
+}
+''',
+    )
+    qml_dir = root / "src" / "picasapy" / "app" / "qml"
+    (qml_dir / "ViewerLayout.qml").write_text(
+        f"""\
+Item {{
+    id: viewerLayout
+    property var hostViewer: null
+    property var other: null
+    PhotoArea {{ hostViewer: {koztes_kotes} }}
+}}
+""",
+        encoding="utf-8",
+    )
+    (qml_dir / "PhotoArea.qml").write_text(
+        """\
+Item {
+    id: photoArea
+    property var hostViewer: null
+    Connections {
+        target: photoArea.hostViewer
+        function onManualFaceAddCancelRequested() { visible = false }
+    }
+}
+""",
+        encoding="utf-8",
+    )
+    return root
+
+
+def test_ket_szinten_tovabbadott_host_jelzeskezelo_ervenyes_6234(tmp_path: Path) -> None:
+    """#6234: a néző a PhotoArea-t egy köztes elrendezés-komponensen át példányosítja."""
+    root = _ketszintu_repo(tmp_path, "viewerLayout.hostViewer")
+
+    assert _category_findings(root, "unbound-signal") == []
+
+
+def test_ket_szinten_mas_tulajdonsagra_kotve_nem_fogado_6234(tmp_path: Path) -> None:
+    root = _ketszintu_repo(tmp_path, "viewerLayout.other")
+
+    assert [f.key for f in _category_findings(root, "unbound-signal")] == [
+        "src/picasapy/app/qml/Main.qml::manualFaceAddCancelRequested"
+    ]

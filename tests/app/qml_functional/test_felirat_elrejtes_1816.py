@@ -21,7 +21,8 @@ főablak-építő (`0x0040bf70`) induláskor visszaállítja.
 
 A jegy előírja, hogy az elrejtés **mindkét** nézetben elérhető legyen
 (`editpanel/` és `editoneup/captionbutton`). Nálunk a szerkesztő panel a
-**nézőn belül** él (`PhotoViewer.qml` → `PhotoViewerLeftDrawer.qml` →
+**nézőn belül** él (`PhotoViewer.qml` → `PhotoViewerLayout.qml` →
+`PhotoViewerLeftDrawer.qml` →
 `PhotoViewerEditorPanel.qml`),
 tehát egy sáv szolgálja mindkét állapotot. A teszt ezt **méri**: a sáv
 láthatósága nem függ a szerkesztő nyitottságától.
@@ -158,12 +159,20 @@ class TestAKetBelepesiPont:
         """A fenti következtetés alapja — ha ez megváltozik, a fenti
         teszt önmagában már nem elég, és ezt itt kell megtudni."""
         nezo = (_QML_DIR / "PhotoViewer.qml").read_text(encoding="utf-8")
+        elrendezes = (_QML_DIR / "PhotoViewerLayout.qml").read_text(
+            encoding="utf-8"
+        )
         fiok = (_QML_DIR / "PhotoViewerLeftDrawer.qml").read_text(
             encoding="utf-8"
         )
-        assert "PhotoViewerLeftDrawer {" in nezo and "PhotoViewerEditorPanel {" in fiok, (
+        assert (
+            "PhotoViewerLayout {" in nezo
+            and "PhotoViewerLeftDrawer {" in elrendezes
+            and "PhotoViewerEditorPanel {" in fiok
+        ), (
             "a szerkesztő panel kikerült a nézőből — a #1816 két belépési "
-            "pontját újra kell mérni (a PhotoViewer → bal fiók → szerkesztőpanel lánc megszakadt)"
+            "pontját újra kell mérni (a PhotoViewer → layout → bal fiók → "
+            "szerkesztőpanel lánc megszakadt)"
         )
 
 

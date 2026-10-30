@@ -10,6 +10,7 @@ PicasaMenuBar 1.0 PicasaMenuBar.qml
 MainDialogs 1.0 MainDialogs.qml
 MainErrorBanner 1.0 MainErrorBanner.qml
 MainPeopleAlbumState 1.0 MainPeopleAlbumState.qml
+MainProjectTabs 1.0 MainProjectTabs.qml
 MainMenuBar 1.0 MainMenuBar.qml
 internal PicasaFileMenu PicasaFileMenu.qml
 internal PicasaEditMenu PicasaEditMenu.qml
@@ -29,6 +30,9 @@ LightboxHeaderButtons 1.0 LightboxHeaderButtons.qml
 LightboxHeaderSuggestionRow 1.0 LightboxHeaderSuggestionRow.qml
 LightboxHeaderDescription 1.0 LightboxHeaderDescription.qml
 PhotoViewer 1.0 PhotoViewer.qml
+internal PhotoViewerKeyboard PhotoViewerKeyboard.qml
+internal PhotoViewerLayout PhotoViewerLayout.qml
+internal PhotoViewerState PhotoViewerState.qml
 PhotoViewerNavigation 1.0 PhotoViewerNavigation.qml
 PhotoViewerEditWorkflow 1.0 PhotoViewerEditWorkflow.qml
 PhotoViewerGeometryActions 1.0 PhotoViewerGeometryActions.qml

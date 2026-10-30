@@ -13,9 +13,17 @@ GYOKER = Path(__file__).resolve().parents[2]
 QML = GYOKER / "src/picasapy/app/qml/PicasaPy"
 
 
+def _nezo_csalad() -> str:
+    """#6234: a néző gyerekkomponensei a PhotoViewerLayout.qml-ben példányosulnak."""
+    return "\n".join(
+        (QML / nev).read_text(encoding="utf-8")
+        for nev in ("PhotoViewer.qml", "PhotoViewerLayout.qml")
+    )
+
+
 def test_filmstrip_onallo_qml_tipus_es_megmarad_a_neve() -> None:
     """A QML-modul regisztrálja a külön fájlt, a régi objektumnévvel."""
-    gazda = (QML / "PhotoViewer.qml").read_text(encoding="utf-8")
+    gazda = _nezo_csalad()
     komponens_ut = QML / "PhotoViewerFilmstrip.qml"
     qmldir = (QML / "qmldir").read_text(encoding="utf-8")
 
@@ -40,8 +48,9 @@ def test_zoom_allapot_az_uj_aliasfelulet_elott_epul_fel() -> None:
     main = (GYOKER / "src/picasapy/app/qml/Main.qml").read_text(encoding="utf-8")
     tray_top_row = (QML / "TrayTopRow.qml").read_text(encoding="utf-8")
 
+    # #6234: a szerkesztőpanel aliasa a PhotoViewerLayout.qml-en át jön.
     assert viewer.index("property real zoomValue: 0") < viewer.index(
-        "property alias editorPanel: leftDrawer.hostEditorPanel"
+        "property alias editorPanel: viewerLayout.editorPanel"
     )
     assert "viewerZoomValue: photoViewer.zoomValue" in main
     # #6050: a csúszka a TrayTopRow komponensbe került; a stabil
@@ -51,7 +60,7 @@ def test_zoom_allapot_az_uj_aliasfelulet_elott_epul_fel() -> None:
 
 def test_editor_panel_kulon_tipus_es_forditasi_kontextus() -> None:
     """A kiemelt panel explicit host-kapcsolatokat és saját TS-kontextust kap."""
-    gazda = (QML / "PhotoViewer.qml").read_text(encoding="utf-8")
+    gazda = _nezo_csalad()
     komponens_ut = QML / "PhotoViewerEditorPanel.qml"
     fiok_ut = QML / "PhotoViewerLeftDrawer.qml"
     qmldir = (QML / "qmldir").read_text(encoding="utf-8")
@@ -90,7 +99,7 @@ def test_editor_panel_kulon_tipus_es_forditasi_kontextus() -> None:
 
 def test_left_drawer_onallo_tipus_es_megtartja_a_panel_hivatkozasat() -> None:
     """A kiemelt fiók átadja a gazdát, és kivezeti a korábbi panel-azonosítót."""
-    gazda = (QML / "PhotoViewer.qml").read_text(encoding="utf-8")
+    gazda = _nezo_csalad()
     komponens_ut = QML / "PhotoViewerLeftDrawer.qml"
     qmldir = (QML / "qmldir").read_text(encoding="utf-8")
     ts = ET.parse(GYOKER / "src/picasapy/app/i18n/picasapy_hu.ts").getroot()
@@ -114,7 +123,7 @@ def test_left_drawer_onallo_tipus_es_megtartja_a_panel_hivatkozasat() -> None:
 
 def test_photo_area_onallo_tipus_es_a_kulso_azonositoi_megmaradnak() -> None:
     """A kiemelt képterület a régi, kívülről használt QML-neveket kivezeti."""
-    gazda = (QML / "PhotoViewer.qml").read_text(encoding="utf-8")
+    gazda = _nezo_csalad()
     komponens_ut = QML / "PhotoViewerPhotoArea.qml"
     qmldir = (QML / "qmldir").read_text(encoding="utf-8")
     ts = ET.parse(GYOKER / "src/picasapy/app/i18n/picasapy_hu.ts").getroot()
@@ -124,7 +133,7 @@ def test_photo_area_onallo_tipus_es_a_kulso_azonositoi_megmaradnak() -> None:
     assert "PhotoViewerPhotoArea {" in gazda
     assert "hostViewer: viewer" in gazda
     assert "hostViewerPanArea: viewerOverlayControls.hostViewerPanArea" in gazda
-    assert "hostEditorPanel: editorPanel" in gazda
+    assert "hostEditorPanel: viewerLayout.hostViewer.editorPanel" in gazda
     assert 'objectName: "viewerPhotoArea"' in komponens
     assert "photoArea.hostViewer." in komponens
     assert "PhotoViewerPhotoArea 1.0 PhotoViewerPhotoArea.qml" in qmldir

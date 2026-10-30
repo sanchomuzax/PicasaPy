@@ -178,6 +178,8 @@ def _component_property_forwards_target(
     component_masked: str,
     target: str,
     owner_masked: str,
+    qml_sources: dict[Path, tuple[str, str]] | None = None,
+    depth: int = 0,
 ) -> bool:
     """Követi a gyerek root-tulajdonságán át továbbadott gazda-jelet.
 
@@ -211,10 +213,41 @@ def _component_property_forwards_target(
         + re.escape(owner_root_id)
         + r"\b"
     )
-    return any(
+    if any(
         binding.search(body)
         for body in _object_blocks(owner_masked, component_path.stem)
+    ):
+        return True
+    # #6234: a gazda egy köztes komponensen át adja tovább magát
+    # (`PhotoViewer` → `PhotoViewerLayout { hostViewer: viewer }` →
+    # `PhotoViewerPhotoArea { hostViewer: viewerLayout.hostViewer }`).
+    if qml_sources is None or depth >= 2:
+        return False
+    forwarded = re.compile(
+        r"\b" + re.escape(property_name) + r"\s*:\s*(\w+)\s*\.\s*(\w+)\b"
     )
+    for mid_path, (_, mid_masked) in qml_sources.items():
+        mid_root_id = _root_identifier(mid_masked)
+        if mid_path == component_path or mid_root_id is None:
+            continue
+        for body in _object_blocks(mid_masked, component_path.stem):
+            match = forwarded.search(body)
+            if (
+                match
+                and match.group(1) == mid_root_id
+                and _component_property_forwards_target(
+                    owner_path,
+                    owner_root_id,
+                    mid_path,
+                    mid_masked,
+                    f"{mid_root_id}.{match.group(2)}",
+                    owner_masked,
+                    qml_sources,
+                    depth + 1,
+                )
+            ):
+                return True
+    return False
 
 
 def _qml_handler_receives(
@@ -269,6 +302,7 @@ def _qml_handler_receives(
                     masked,
                     target.group(1),
                     owner_masked,
+                    qml_sources,
                 )
             ):
                 return True
