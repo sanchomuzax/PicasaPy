@@ -18350,7 +18350,7 @@ picasapy-origin-key: stringres:CChooseEmailDialog::title</extracomment>
         <message>
             <source>Native Mail Client</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Ứng dụng thư gốc</translation>
         </message>
         <message>
             <source>Send pictures by email</source>
