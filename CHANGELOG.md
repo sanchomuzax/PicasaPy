@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.298] - 2026-10-30
+
+- A fotónéző, a képművelet- és a bélyegkép-gyorstár modul bomlik, a súgó a felület nyelvét követi (#6244).
+- A főablak projektlapjai önálló QML-komponensbe kerültek, változatlan megjelenéssel és működéssel (#6136).
+- A fotónéző belső QML-felépítése kisebb, önálló komponensekre bomlott (#6234).
+- A beépített súgó angol felületen angolul, más nyelveken magyarul jelenik meg. (#6239).
+- A képműveletek belső szerkezete kisebb modulokra bomlott, a régi eredmények megőrzésével. (#6242).
+- A bélyegkép-gyorsítótár belső modulokra bomlott, a régi importfelület változatlan maradt (#6245).
+
 ## [0.9.297] - 2026-10-30
 
 - A főablak vezérlője kisebb, könnyebben karbantartható részekre bomlott, változatlan működéssel (#6227).
