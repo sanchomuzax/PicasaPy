@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.311] - 2026-10-30
+
+- A főablak felületi kódja kisebb, önálló részekre bomlik, változatlan képpel és viselkedéssel (#6136).
+- Windowson a levelezőválasztó a rendszer alapértelmezett levelezőjének nevét a program saját, tesztelhető útján kérdezi le (#6297).
+
 ## [0.9.310] - 2026-10-30
 
 - A Ctrl+T a Címkék panel megnyitásakor a címkemezőbe helyezi a fókuszt (#6301).
