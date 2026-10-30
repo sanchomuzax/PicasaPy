@@ -221,10 +221,13 @@ class TestBekotes:
         """Forrás-szintű kapu: a bekötés két híváshelye ne csússzon vissza."""
         from pathlib import Path
 
-        szoveg = (
-            Path(__file__).resolve().parents[1]
-            / "src" / "picasapy" / "thumbs" / "cache.py"
-        ).read_text(encoding="utf-8")
+        # #6245: a gyorstár a cache.py homlokzatra és cache_*.py részmodulokra
+        # bomlott; a híváshelyeket a modulcsaládban számoljuk.
+        thumbs = Path(__file__).resolve().parents[1] / "src" / "picasapy" / "thumbs"
+        szoveg = "\n".join(
+            ut.read_text(encoding="utf-8")
+            for ut in [thumbs / "cache.py", *sorted(thumbs.glob("cache_*.py"))]
+        )
         #: #598: HÁROM híváshely — a szűretlen bélyegkép, a szerkesztett, és
         #: a rétegzett tár SZINT-levezetése (a kis szint a nagyobbik kész
         #: bélyegképéből áll elő). Mindhárom ugyanazt a magot hívja; a kapu

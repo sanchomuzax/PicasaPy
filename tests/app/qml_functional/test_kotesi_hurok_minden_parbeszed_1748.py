@@ -142,6 +142,12 @@ _KOTELEZO_VALTOZATOK = {
         "hostController: null; hostFaceScanController: null; "
         "hostRemovePeopleFacesDialog: ({}); hostCreateDialogs: ({})",
     ),
+    # #6136: a projektlapok állapota kötelező gazdaobjektumokat és címeket kap.
+    "MainProjectTabs": (
+        "hostWindow: ({}); hostController: null; hostDocumentTabStrip: ({}); "
+        "hostSlideshow: ({}); hostCreateDialogs: ({}); "
+        "collageTitle: \"Collage\"; movieMakerTitle: \"Movie Maker\"",
+    ),
     # #6136: a felső menüsor bekötése külön komponens; valamennyi
     # testvér-objektumot a főablak kötelező tulajdonságként adja át.
     "MainMenuBar": (

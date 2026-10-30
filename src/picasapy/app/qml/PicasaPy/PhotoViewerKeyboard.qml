@@ -13,7 +13,7 @@ Item {
         if (editorPanel.paramPanelActive)
             editorPanel.cancelParamPanel()
         else if (editorPanel.retouchActive && editorPanel.retouchPatchPending)
-            keyboard.hostViewer.editCtl.cancelRetouchPatch()
+            editController.cancelRetouchPatch()
         else if (editorPanel.cropActive)
             editorPanel.cropCancelRequested()
         else if (keyboard.hostViewer.facesEditMode)
