@@ -56,6 +56,9 @@ _KNOWN_CONTEXT_FORWARDING_EXCEPTIONS: dict[tuple[str, str], str] = {
         "ExportMixin",
         "Sorry, there is not enough free disk space to safely download pictures.",
     ): "AppController",
+    # #6227: a névtelen album helykitöltője lupdate-nél a mixin nevét kapja,
+    # de futásidőben az AppController fordítási kontextusát használja.
+    ("AppControllerPhotoListMixin", "Album %1"): "AppController",
     # #943: a `CollageMixin` (collage_controller.py) ugyanez az eset — a
     # kollázs-panel szelete is az `AppController`-be kevert mixin, tehát a
     # mentés folyamat- és hibaszövegei futásidőben ott vannak lefordítva.
@@ -309,6 +312,9 @@ class TestI18nCompleteness:
             from picasapy.app.collage_controller import CollageMixin
             from picasapy.app.create_controller import CreateMixin
             from picasapy.app.export_controller import ExportMixin
+            from picasapy.app.controller_photo_list_mixin import (
+                AppControllerPhotoListMixin,
+            )
 
             # A self.tr() futásidejű kontextusa a KONKRÉT (Python) osztály
             # neve — nem a lexikai (mixin) osztályé, FÜGGETLENÜL attól,
@@ -321,7 +327,15 @@ class TestI18nCompleteness:
             # (#943: a CollageMixin is itt van — a `collageFailed` jelzés két
             # mixinben is szerepel, ez PySide6-ban rendben van.)
             probe_cls = type(
-                "AppController", (QObject, CreateMixin, ExportMixin, CollageMixin), {}
+                "AppController",
+                (
+                    QObject,
+                    CreateMixin,
+                    ExportMixin,
+                    CollageMixin,
+                    AppControllerPhotoListMixin,
+                ),
+                {},
             )
             # Más célkontextusnál (#6025: FaceScanController) a próba-osztály
             # neve a cél; a self.tr() csak a konkrét osztály nevét nézi.
@@ -331,10 +345,30 @@ class TestI18nCompleteness:
             ):
                 if real_context not in probes:
                     probes[real_context] = type(real_context, (QObject,), {})()
+                if source == "Album %1":
+                    # A hivatalos magyar alak is „Album %1”, ezért a
+                    # szöveg-egyezés nem bizonyítja a kontextust. Lent külön,
+                    # csak erre a forrásra telepített próbafordító méri azt.
+                    continue
                 translated = probes[real_context].tr(source)
                 assert translated != source, (
                     f"{source!r} angolul jelenik meg — a mixin self.tr() "
                     "nem találta a fordítást"
                 )
+
+            class AlbumContextProbe(QTranslator):
+                def translate(self, context, source, disambiguation=None, n=-1):
+                    if (context, source) == ("AppController", "Album %1"):
+                        return "AppController album: %1"
+                    return ""
+
+            context_probe = AlbumContextProbe()
+            app.installTranslator(context_probe)
+            try:
+                assert probes["AppController"]._album_placeholder_name(
+                    "0123456789abcdef"
+                ) == "AppController album: 01234567"
+            finally:
+                app.removeTranslator(context_probe)
         finally:
             app.removeTranslator(translator)
