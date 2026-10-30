@@ -168,7 +168,10 @@ class TestABekotes:
 
         import picasapy.app.create_controller as cc
 
-        forras = Path(cc.__file__).read_text(encoding="utf-8")
+        # #6252: a változatlan metódustörzs az új kollázsmixinbe került.
+        forras = Path(cc.__file__).with_name("create_collage_mixin.py").read_text(
+            encoding="utf-8"
+        )
         #: a blokk a KÖVETKEZŐ függvényig tart — egy fix karakterablak
         #: átlógna a szomszédokba, és ott a `_drop_collage_draft` jogosan
         #: szerepel (a mentés utáni ág).
@@ -194,7 +197,10 @@ class TestABekotes:
 
         import picasapy.app.create_controller as cc
 
-        forras = Path(cc.__file__).read_text(encoding="utf-8")
+        # #6252: a változatlan metódustörzs az új kollázsmixinbe került.
+        forras = Path(cc.__file__).with_name("create_collage_mixin.py").read_text(
+            encoding="utf-8"
+        )
         kezdet = forras.find("def _drop_collage_draft")
         veg = forras.find("\n    @", kezdet + 10)
         blokk = forras[kezdet:veg if veg > 0 else None]
