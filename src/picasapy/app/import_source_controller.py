@@ -33,13 +33,13 @@ rácsban, ahogy a valódi Picasa importja is tenné."""
 
 from __future__ import annotations
 
-import ctypes
-import sqlite3
+import ctypes as ctypes
+import sqlite3 as sqlite3
 import sys
 import time
-from collections.abc import Sequence
-from ctypes import wintypes
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from collections.abc import Sequence as Sequence
+from ctypes import wintypes as wintypes
+from pathlib import Path, PurePosixPath as PurePosixPath, PureWindowsPath as PureWindowsPath
 from typing import Callable
 
 from PySide6.QtCore import (
@@ -47,49 +47,54 @@ from PySide6.QtCore import (
     QObject,
     QSettings,
     QStandardPaths as QStandardPaths,
-    QStorageInfo,
+    QStorageInfo as QStorageInfo,
     QUrl as QUrl,
     Signal,
     Slot,
 )
 
 from picasapy.fileops import (
-    companions_of,
-    copy_photo,
-    has_enough_free_space,
-    required_bytes_for,
+    companions_of as companions_of,
+    copy_photo as copy_photo,
+    has_enough_free_space as has_enough_free_space,
+    required_bytes_for as required_bytes_for,
 )
-from picasapy.fileops.original_ini import remove_original_ini_sections
+from picasapy.fileops.original_ini import remove_original_ini_sections as remove_original_ini_sections
 from picasapy.importsource import (
     ATMERETEZES_EREDETI as ATMERETEZES_EREDETI,
     ATMERETEZES_OPCIOK as ATMERETEZES_OPCIOK,
     MEDIA_FILTER_PICTURES_AND_MOVIES,
-    NAMING_BY_DATE,
-    NAMING_MANUAL,
+    NAMING_BY_DATE as NAMING_BY_DATE,
+    NAMING_MANUAL as NAMING_MANUAL,
     NAMING_TODAY as NAMING_TODAY,
     ImportCandidate,
-    atmeretez_masolatot,
-    destination_subpath_for_mode,
-    duplicate_paths,
-    is_valid_folder_name,
+    atmeretez_masolatot as atmeretez_masolatot,
+    destination_subpath_for_mode as destination_subpath_for_mode,
+    duplicate_paths as duplicate_paths,
+    is_valid_folder_name as is_valid_folder_name,
     scan_files as scan_files,
     scan_source_detailed as scan_source_detailed,
 )
-from picasapy.index import IndexFastKeySource, PhotoRecord, all_photos, open_index
-from picasapy.ini import (
-    has_ini_source,
-    load_or_empty,
-    update_document,
-    with_backuphash,
+from picasapy.index import (
+    IndexFastKeySource as IndexFastKeySource,
+    PhotoRecord as PhotoRecord,
+    all_photos as all_photos,
+    open_index as open_index,
 )
-from picasapy.ini.names import INI_NAME
-from picasapy.scanner import media_kind_of
+from picasapy.ini import (
+    has_ini_source as has_ini_source,
+    load_or_empty as load_or_empty,
+    update_document as update_document,
+    with_backuphash as with_backuphash,
+)
+from picasapy.ini.names import INI_NAME as INI_NAME
+from picasapy.scanner import media_kind_of as media_kind_of
 
 from .formatting import to_file_url as to_file_url, to_local_path
 from .wipe_card_warning import WipeCardFacts as WipeCardFacts
 from .wipe_card_warning import wipe_card_warning as wipe_card_warning
 from .worker_thread import BackgroundWorkerMixin
-from .display_mode_paint import current_display_mode_suffix
+from .display_mode_paint import current_display_mode_suffix as current_display_mode_suffix
 from .import_source_controller_scanning import ImportSourceControllerScanningMixin
 from .import_source_controller_state import (
     AFTER_COPY_DELETE_ALL,
@@ -106,7 +111,26 @@ from .import_source_controller_state import (
     RESIZE_SETTINGS_KEY as RESIZE_SETTINGS_KEY,
     _IMPORT_FAILED_DETAILS_LIMIT,
     _VALID_AFTER_COPYING,
-    _VALID_NAMING_MODES,
+    _VALID_NAMING_MODES as _VALID_NAMING_MODES,
+)
+from .import_source_controller_import import (
+    _mark_imported_ini as _mark_imported_ini,
+    _remove_source_file as _remove_source_file,
+    _size_of as _size_of,
+)
+from .import_source_controller_sources import (
+    _DRIVE_REMOVABLE as _DRIVE_REMOVABLE,
+    _DRIVE_REMOTE as _DRIVE_REMOTE,
+    _duplikatumok as _duplikatumok,
+    _has_dcim_directory_original as _has_dcim_directory,  # noqa: F401 — régi patch-pont
+    _library_paths as _library_paths,
+    _linux_media_mount_points as _linux_media_mount_points,
+    _preview_photo_record as _preview_photo_record,
+    _thumb_url as _thumb_url,
+    _windows_drive_type_original as _windows_drive_type,  # noqa: F401 — régi patch-pont
+    discover_linux_mounted_sources as discover_linux_mounted_sources,
+    discover_mounted_sources as discover_mounted_sources,
+    discover_windows_mounted_sources as discover_windows_mounted_sources,
 )
 
 
@@ -122,207 +146,25 @@ def _read_mountinfo() -> str:
     return Path("/proc/self/mountinfo").read_text(encoding="utf-8")
 
 
-def _linux_media_mount_points(mountinfo: str) -> list[str]:
-    """A mountinfóból csak a felhasználói médiagyökerek alatti pontokat adja."""
-    mount_roots = (PurePosixPath("/media"), PurePosixPath("/run/media"))
-    mount_points: set[str] = set()
-    for line in mountinfo.splitlines():
-        fields = line.split()
-        if len(fields) < 6:
-            continue
-        # A mountinfo a szóközt, tabot, sortörést és backslash-t oktális
-        # escape-ként tárolja a mountpont mezőben.
-        raw_path = fields[4]
-        decoded_path = (
-            raw_path.replace("\\040", " ")
-            .replace("\\011", "\t")
-            .replace("\\012", "\n")
-            .replace("\\134", "\\")
-        )
-        mount_path = PurePosixPath(decoded_path)
-        if not mount_path.is_absolute():
-            continue
-        if any(
-            mount_path != root and mount_path.is_relative_to(root)
-            for root in mount_roots
-        ):
-            mount_points.add(str(mount_path))
-    return sorted(mount_points)
 
 
-def discover_linux_mounted_sources() -> list[dict[str, str]]:
-    """A Linux felhasználói médiagyökerei alatti mountokat adja vissza.
-
-    A helyi mountlistából először csak a `/media` és `/run/media` alatti
-    pontokat választjuk ki, utána a QStorageInfo ezek kész állapotát és
-    címkéjét adja meg. Így más csatolt fájlrendszert (például hálózati
-    meghajtót) nem kérdezünk le.
-    """
-    by_path: dict[str, dict[str, str]] = {}
-    try:
-        mountinfo = _read_mountinfo()
-    except OSError:
-        return []
-
-    for path in _linux_media_mount_points(mountinfo):
-        volume = QStorageInfo(path)
-        if not volume.isReady():
-            continue
-        root = PurePosixPath(str(volume.rootPath()))
-        # Csak a mountlistában felsorolt tényleges csatolási pontot fogadjuk
-        # el; egy közönséges almappa saját QStorageInfo-ja a szülő mountot
-        # adná vissza.
-        if root != PurePosixPath(path):
-            continue
-
-        name = str(volume.name() or "").strip() or root.name
-        if not name:
-            continue
-        by_path[path] = {"path": path, "name": name}
-
-    return sorted(
-        by_path.values(), key=lambda source: (source["name"].casefold(), source["path"])
-    )
 
 
-_DRIVE_REMOVABLE = 2
-_DRIVE_REMOTE = 4
 
 
-def _windows_drive_type(root_path: str) -> int:
-    """A Windows meghajtótípusát adja vissza a GetDriveTypeW hívással."""
-    get_drive_type = ctypes.windll.kernel32.GetDriveTypeW
-    get_drive_type.argtypes = [wintypes.LPCWSTR]
-    get_drive_type.restype = wintypes.UINT
-    return int(get_drive_type(root_path))
 
 
-def _has_dcim_directory(root_path: str) -> bool:
-    """Megnézi, hogy a helyi meghajtó gyökerében van-e DCIM mappa."""
-    return (Path(root_path) / "DCIM").is_dir()
 
 
-def discover_windows_mounted_sources() -> list[dict[str, str]]:
-    """Windows cserélhető meghajtókat és DCIM-et tartalmazó köteteket ad vissza.
-
-    A távoli meghajtót a meghajtótípus alapján még azelőtt kihagyjuk, hogy
-    készültséget, címkét vagy DCIM könyvtárat kérdeznénk le róla.
-    """
-    by_path: dict[str, dict[str, str]] = {}
-    for volume in QStorageInfo.mountedVolumes():
-        root_path = str(volume.rootPath() or "").strip()
-        if not root_path:
-            continue
-
-        drive_type = _windows_drive_type(root_path)
-        if drive_type == _DRIVE_REMOTE or not volume.isReady():
-            continue
-        if drive_type != _DRIVE_REMOVABLE and not _has_dcim_directory(root_path):
-            continue
-
-        path_key = root_path.casefold()
-        name = str(volume.name() or "").strip()
-        if not name:
-            name = PureWindowsPath(root_path).drive or root_path
-        by_path[path_key] = {"path": root_path, "name": name}
-
-    return sorted(
-        by_path.values(),
-        key=lambda source: (source["name"].casefold(), source["path"].casefold()),
-    )
 
 
-def discover_mounted_sources() -> list[dict[str, str]]:
-    """A támogatott platformokon felderített kártya- és USB-források.
-
-    A PTP/MTP kamerák külön termékdöntésig nem kerülnek ebbe a listába.
-    """
-    active_platform = _platform()
-    if active_platform.startswith("linux"):
-        return discover_linux_mounted_sources()
-    if active_platform == "win32":
-        return discover_windows_mounted_sources()
-    return []
 
 
-def _thumb_url(photo_id: int) -> str:
-    # #1656: a megjelenítési mód cimkéje (üres a no-op módokra)
-    return f"image://thumbs/{photo_id}{current_display_mode_suffix()}"
 
 
-def _preview_photo_record(index: int, candidate: ImportCandidate) -> PhotoRecord:
-    """Ideiglenes rekord a forrás-előnézethez.
-
-    NEGATÍV id-tartományt használ (a valódi indexbeli fotók mindig pozitív,
-    autoincrement id-jűek) — a thumbnail-provider `register_additional_
-    photos` regisztrációja így SOSE ütközhet valódi könyvtárbeli fotóval."""
-    try:
-        stat = candidate.path.stat()
-        size, mtime_ns = stat.st_size, stat.st_mtime_ns
-    except OSError:
-        size, mtime_ns = 0, 0
-    return PhotoRecord(
-        id=-(index + 1),
-        folder_path=str(candidate.path.parent),
-        name=candidate.path.name,
-        kind=media_kind_of(candidate.path.name) or "photo",
-        size=size,
-        mtime_ns=mtime_ns,
-        star=False,
-        caption=None,
-        keywords=None,
-        rotate_steps=0,
-        filters=None,
-        taken_at=candidate.date.isoformat() if candidate.date else None,
-        orientation=1,
-        width=None,
-        height=None,
-    )
 
 
-def _library_paths(conn: sqlite3.Connection) -> tuple[Path, ...]:
-    """A jelenleg indexelt könyvtár teljes fájl-útvonalai (#441 duplikátum-
-    kizárás forrása). #4887: a rejtett mappák képei is — ez nem
-    megjelenítés, hanem a „már a könyvtárban van-e” döntés."""
-    return tuple(
-        Path(record.folder_path) / record.name
-        for record in all_photos(conn, include_hidden_folders=True)
-    )
 
-
-def _duplikatumok(
-    index_path: str | Path, candidates: Sequence[ImportCandidate]
-) -> frozenset[Path]:
-    """A könyvtárral tartalom-egyező jelöltek (#441), index-hátterű
-    gyorskulccsal (#1494).
-
-    A kapcsolat az ÖSSZEVETÉS TELJES idejére nyitva marad — ezért tud a
-    könyvtárbeli fájlok gyorskulcsa az indexből jönni, és ezért kerülhet
-    az újonnan számolt kulcs mindjárt vissza is oda. A második importálási
-    kör így a könyvtár változatlan képeinek fájlvégeit sem olvassa be újra.
-
-    Hiányzó/olvashatatlan indexnél üres halmaz — az "Exclude Duplicates"
-    ekkor egyszerűen nem talál semmit, NEM hibázik.
-
-    ⚠️ A gyorstár mentése a KÉSZ eredményt nem ronthatja el: a `flush()`
-    maga commitol és maga nyeli el a saját index-hibáit (ld. ott), ezért
-    állhat a `finally`-ben. Csupasz `conn.commit()` itt SOHA ne legyen —
-    zárolt vagy tele indexen az a külső `except`-be esne, és az "Exclude
-    Duplicates" szótlanul nem találna semmit, a felhasználó pedig
-    újraimportálná a már meglévő képeit (#1494 átnézés, 1. lelet)."""
-    try:
-        with open_index(index_path) as conn:
-            kulcsforras = IndexFastKeySource(conn)
-            try:
-                return duplicate_paths(
-                    candidates,
-                    _library_paths(conn),
-                    library_key_source=kulcsforras,
-                )
-            finally:
-                kulcsforras.flush()
-    except (OSError, sqlite3.Error):
-        return frozenset()
 
 
 class ImportSourceController(
@@ -624,76 +466,3 @@ class ImportSourceController(
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-importsource-run")
-
-
-def _size_of(path: Path) -> int:
-    """A fájl mérete bájtban; olvashatatlan fájlnál 0 — a sebesség-becslés
-    sosem akaszthatja meg az importot."""
-    try:
-        return path.stat().st_size
-    except OSError:
-        return 0
-
-
-def _mark_imported_ini(
-    target: Path, rotation: int, starred: bool
-) -> None:
-    """A forgatás/csillag beírása a MÁSOLAT `.picasa.ini`-jébe (#441).
-
-    Nem-destruktív, ahogy a rács forgatása is: `rotate=rotate(n)` és
-    `star=yes`. A kártyán lévő eredetihez NEM nyúlunk — a „Leave card
-    alone" ág épp azt várja el, hogy a forrás érintetlen maradjon.
-    """
-    if not rotation and not starred:
-        return
-
-    def _mutate(document):
-        result = document
-        if rotation:
-            result = result.with_value(target.name, "rotate", f"rotate({rotation})")
-            result = with_backuphash(result, target.name)
-        if starred:
-            result = result.with_value(target.name, "star", "yes")
-        return result
-
-    update_document(target.parent / INI_NAME, _mutate, backup=True)
-
-
-def _remove_source_file(path: Path) -> None:
-    """Egy forrásfájl eltávolítása (#441 "After Copying:" törléssel járó két
-    állapota): a fájl törlése, majd — ha volt — az ini-szekció eltávolítása
-    a forrás `.picasa.ini`-jéből. A cél a saját (ütközés esetén átnevezett)
-    másolatát már megkapta a `copy_photo`-tól, mielőtt ez lefut.
-
-    #1450/#1451: a megőrzött eredeti és a pillanatképek is mennek. Ez az út
-    (`copy_photo` + forrástörlés) TÉNYLEGES mozgatás, tehát ha a kísérők itt
-    maradnának, a forrásmappában árván gyűlnének, és a következő, azonos
-    nevű kép egy IDEGEN fénykép eredetijét örökölné. A célban a példányuk
-    már ott van (`copy_photo`), tehát a visszaút nem vész el."""
-    kiserok = companions_of(path)
-    path.unlink(missing_ok=True)
-    for kisero in kiserok:
-        kisero.unlink(missing_ok=True)
-    if kiserok:
-        try:
-            remove_original_ini_sections(kiserok)
-        except Exception:  # noqa: BLE001 — az ini-réteg többféle hibát dob
-            pass
-        for directory in {kisero.parent for kisero in kiserok}:
-            try:
-                directory.rmdir()  # csak ÜRES mappát töröl
-            except OSError:
-                pass
-    source_ini = path.parent / INI_NAME
-    if not has_ini_source(source_ini):
-        return
-    try:
-        document = load_or_empty(source_ini)
-    except (OSError, ValueError):
-        return
-    if document.section(path.name) is not None:
-        update_document(
-            source_ini,
-            lambda current: current.without_section(path.name),
-            backup=True,
-        )
