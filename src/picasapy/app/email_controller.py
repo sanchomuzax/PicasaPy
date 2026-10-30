@@ -77,6 +77,10 @@ _popen = subprocess.Popen
 _mapi_send = send_mapi
 
 
+# #6297: a Windows-ág modulszintű fogantyúja, hogy a teszt ezt cserélje, ne
+# a globális ctypes modult (#1375)
+_WinDLL = getattr(ctypes, "WinDLL", None)
+
 def _platform() -> str:
     """A futó platform — külön függvény, hogy a teszt helyettesíthesse
     (#1217: a platformfüggő ág a saját platformját mondja ki, #4607)."""
@@ -179,7 +183,9 @@ def _linux_default_mail_client_name() -> str | None:
 def _windows_default_mail_client_name() -> str | None:
     """A Windows mailto-társítás barátságos alkalmazásneve."""
     try:
-        query = ctypes.WinDLL("Shlwapi.dll").AssocQueryStringW
+        if _WinDLL is None:
+            return None
+        query = _WinDLL("Shlwapi.dll").AssocQueryStringW
         query.argtypes = [
             ctypes.c_uint32,
             ctypes.c_uint32,
