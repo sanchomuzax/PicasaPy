@@ -214,6 +214,16 @@ _KOTELEZO_VALTOZATOK = {
         "hostTrayBar: ({}); hostWebExportDialog: ({}); "
         "hostXmpFacesWriteDialog: ({})",
     ),
+    # #6136: a főablak bontásából született gazdakomponensek.
+    "MainWindowCommands": ("hostWindow: ({}); hostController: ({}); hostRefs: ({})",),
+    "MainWindowDialogStack": (
+        "hostWindow: ({}); hostPhotoViewer: ({}); hostDocumentTabStrip: ({}); "
+        "hostUnnamedFaceRefreshTimer: ({})",
+    ),
+    "MainWindowPeripheralLayers": (
+        "hostWindow: ({}); hostController: ({}); hostRefs: ({})",
+    ),
+    "MainWindowWorkspace": ("hostWindow: ({}); hostController: ({}); hostRefs: ({})",),
 }
 _ALTALANOS_VALTOZATOK = (
     "", "appWindow: null", "panel: null", "appWindow: null; panel: null"
