@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [0.9.297] - 2026-10-30
+
+- A főablak vezérlője kisebb, könnyebben karbantartható részekre bomlott, változatlan működéssel (#6227).
+- Az észlelt arcok indexmodulja kisebb, áttekinthetőbb részekre bomlott (#6233).
+
 ## [0.9.296] - 2026-10-30
 
 - A személyalbum javaslatainak kezelése külön QML-komponensbe került, a felület változatlan maradt (#6136).
