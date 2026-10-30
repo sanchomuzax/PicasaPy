@@ -109,7 +109,7 @@ _REGI_NYILVANOS_NEVEK = {
     "with_selection",
 }
 
-_QT_META_SHA256 = "701f39724bdc0a22a7dfc5b9503ffee65e658128f5ecb9e9ed39c201a1e31957"
+_QT_META_SHA256 = "234829d6617512fabb776cc33f50b751cceff8973ef60fd81381161f538ae25d"
 _QT_META_METHODS = 79
 _QT_META_PROPERTIES = 23
 
@@ -170,10 +170,9 @@ def _qt_collage_meta_rows() -> list[str]:
         if name not in names:
             continue
         notify = _as_text(prop.notifySignal().name()) if prop.hasNotifySignal() else ""
-        rows.append(
-            f"P:{name}:{notify}:"
-            f"{int(prop.isConstant())}:{int(prop.isWritable())}"
-        )
+        # Az isWritable a csak olvasható tulajdonságra is PySide-verziónként
+        # mást ad (6.8: 1, újabb: 0), ezért nem része a lenyomatnak.
+        rows.append(f"P:{name}:{notify}:{int(prop.isConstant())}")
     return sorted(rows)
 
 
