@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.4] - 2026-10-31
+
+- A windowsos darabok a választóval azonos tesztkészletet futtatják (#6324).
 ## [1.0.3] - 2026-10-31
 
 - A Helyek panel keresőgombja kis ablakban és Windowson is a panelen belül marad. (#6321).
