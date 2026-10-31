@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.7] - 2026-10-31
+
+- A kamera pillanatképe megvárja, hogy a kamera készen álljon, a hibát kiírja, és a mentett kép megjelenik a könyvtárban (#6332).
+- A könyvtárból megnyitott kép nem méretezi át az ablakot, a visszatérés pedig megtartja a rács helyzetét (#6333).
+
 ## [1.0.6] - 2026-10-31
 
 - A Helyek panel térkép nélküli felirata tördelődik, és nem szélesíti ki a panelt (#6321).
