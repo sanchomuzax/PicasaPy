@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.8] - 2026-10-31
+
+- A súgó helyesen írja, hogy a Teljes képernyős indítás csak a fájlból megnyitott Fotómegjelenítőre hat, a könyvtárból megnyitott kép az ablakban marad (#6337).
+- A 6. és 7. effektfül használható gombjai most effektezett előnézetet mutatnak (#6339).
+
 ## [1.0.7] - 2026-10-31
 
 - A kamera pillanatképe megvárja, hogy a kamera készen álljon, a hibát kiírja, és a mentett kép megjelenik a könyvtárban (#6332).
