@@ -14,7 +14,8 @@ Picasáé, a **Google Fotók** fül a PicasaPy saját kiegészítése.
 > szürkék. A **Webalbumok** fül **nem működik**: a Picasa Webalbumok
 > megszűnt szolgáltatás, a fül csak az eredeti Picasa elrendezését követi.
 > Az Általános fülön szürke a **Névtelen használati statisztikák
-> küldése a Google részére** és az **Automatikus frissítések** is.
+> küldése a Google részére**. A **Frissítések keresése automatikusan**
+> kapcsoló működik; alapból be van kapcsolva.
 
 Az ablak alján két gomb áll, ahogy az eredeti Picasában:
 
@@ -34,9 +35,9 @@ szélén egy-egy **‹** és **›** nyíllal. A kiválasztott fül mindig
 láthatóra görög. A **Google Fotók** fül alapméretben sem fér ki mindig:
 ilyenkor a **›** nyíllal érheted el.
 
-Az ablak feliratai — a szürke vezérlők feliratai is — az **eredeti Picasa
+Az ablak meglévő feliratai — a szürke vezérlőkéi is — az **eredeti Picasa
 saját szövegei**, ezért néhol másképp fogalmaznak, mint amit a funkció
-alapján várnál.
+alapján várnál. A frissítéskereső saját PicasaPy-funkció.
 
 ### Általános fül
 
@@ -69,6 +70,38 @@ mappát választasz; ezzel nyílik meg ezután az **Importálás** ablak
 
 Az **Adatvédelem…** hivatkozás a Google adatvédelmi oldalát nyitja meg a
 böngészőben.
+
+### Frissítések keresése
+
+A **Frissítések keresése automatikusan** jelölő alapból be van kapcsolva.
+Bekapcsolva a PicasaPy indulás után körülbelül 30 másodperccel, naponta
+legfeljebb egyszer a PicasaPy GitHub-kiadáslistájához
+(https://github.com/sanchomuzax/PicasaPy/releases/) fordul, hogy talál-e újabb
+verziót. Hálózati hiba vagy offline állapot
+esetén csendben folytatja a működést. A Súgó ▸ **Frissítések keresése…**
+paranccsal bármikor kézzel is kérhetsz ellenőrzést; ilyenkor azt is kiírja,
+ha nincs újabb verzió.
+
+Új verziónál a jobb felső verziófelirat kiemelt címkévé változik. Az első
+észleléskor rövid értesítés jelenik meg az alsó sávban; a felület nem nyit
+felugró ablakot magától. Ha éppen szerkesztesz, diavetítés, exportálás vagy
+feltöltés fut, az értesítés megvárja, amíg a program nyugalmi állapotba
+kerül. A címkére kattintva elolvashatod a kiadás rövid leírását. A
+**Később** bezárja az ablakot, és ugyanaz az értesítés magától nem nyílik
+meg újra; **Ezt a verziót kihagyom** után a program többé nem ajánlja fel
+azt a kiadást.
+
+Windowsos PyInstaller-programnál a **Frissítés most** a háttérben tölti le
+a csomagot, miközben tovább használhatod a PicasaPy-t. Telepítés előtt
+ellenőrzi a kiadáshoz közzétett `SHA256SUMS` ujjlenyomatot. Ha az ellenőrzés
+nem sikerül, nem cserél fájlt. Sikeres letöltés után választhatsz az
+azonnali újraindítás és a kilépéskori telepítés között. Az azonnali
+újraindítás megvárja a futó háttérmunkát; a csere után az előző verzió
+megmarad, és ha az új példány nem indul el, a program visszaállítja.
+
+Linuxon (`.deb`) és `pip`-telepítésnél a párbeszédablak megmutatja a
+kiadási oldalt és a pontos parancsot. A program ezeken a rendszereken nem
+cseréli le önmagát.
 
 ### Nyelv
 

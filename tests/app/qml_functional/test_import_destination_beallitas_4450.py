@@ -56,6 +56,13 @@ def test_beallitasbol_kattintva_menti_es_importnal_felkinalja(
 ):
     foablak, _app_vezerlo, engine = qml_app
     import_vezerlo, settings = _import_vezerlo(engine, tmp_path)
+    from picasapy import __version__
+    from picasapy.app.update_manager import UpdateController
+
+    update_controller = UpdateController(
+        __version__, settings=_app_vezerlo._get_settings(), schedule=False
+    )
+    engine.rootContext().setContextProperty("updateController", update_controller)
     celu_mappa = tmp_path / "sajat import cel"
     celu_mappa.mkdir()
     magassag_elteresek = (-5, 0, 5)
@@ -116,10 +123,15 @@ def test_beallitasbol_kattintva_menti_es_importnal_felkinalja(
         f"elválasztóközétől: {update_from_divider:.1f} px"
     )
     language = _elem(options, "optionsLanguageCombo")
+    update_check = _elem(options, "optionsAutomaticUpdatesCheck")
+    update_description = _elem(options, "optionsAutomaticUpdatesDescription")
+    assert update_check.property("enabled") is True
+    assert update_check.property("checked") is True
+    assert "GitHub" in update_description.property("text")
     language_gap = _kozep_y(language) - _kozep_y(update_mode)
-    assert abs(language_gap - 32) <= 3, (
+    assert abs(language_gap - 46) <= 4, (
         f"a Frissítések és Nyelv sor közti térköz {language_gap:.1f} px, "
-        "a referencia 32 px"
+        "a sor 46 px-es magasságával"
     )
     destination_gap = _kozep_y(mezo) - _kozep_y(language)
     assert abs(destination_gap - 32) <= 3, (
@@ -182,6 +194,8 @@ def test_beallitasbol_kattintva_menti_es_importnal_felkinalja(
     assert Path(import_vezerlo.defaultDestination) != celu_mappa.resolve(), (
         "az importcél a Beállítások OK gombja előtt íródott ki"
     )
+    _kattint(options, update_check, qt_app)
+    assert update_check.property("checked") is False
     ok_gomb = _elem(options, "optionsOkButton")
     _kattint(options, ok_gomb, qt_app)
     _varj(
@@ -192,6 +206,7 @@ def test_beallitasbol_kattintva_menti_es_importnal_felkinalja(
     settings.sync()
     assert Path(import_vezerlo.defaultDestination) == celu_mappa.resolve()
     assert Path(settings.value("import/defaultdestination")) == celu_mappa.resolve()
+    assert _app_vezerlo._get_settings().value("updates/autoCheck") is False
 
     QMetaObject.invokeMethod(menu, "triggered", Qt.ConnectionType.DirectConnection)
     _varj(
@@ -200,6 +215,7 @@ def test_beallitasbol_kattintva_menti_es_importnal_felkinalja(
         "a Beállítások ablaka nem nyílt meg újra",
     )
     assert Path(str(mezo.property("text"))) == celu_mappa.resolve()
+    assert _elem(options, "optionsAutomaticUpdatesCheck").property("checked") is False
     QMetaObject.invokeMethod(options, "close", Qt.ConnectionType.DirectConnection)
     qt_app.processEvents()
 

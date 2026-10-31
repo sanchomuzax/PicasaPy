@@ -77,6 +77,10 @@ class AppBusyRegistry(QObject):
     #: property-i, NEM a nyers számlálóra.
     visibleChanged = Signal()
 
+    #: Nyers háttérmunka-számláló változása. A feladatfüggő, csendes
+    #: felületi műveletek ehhez kötődhetnek, a 300 ms-os csíkküszöb nélkül.
+    activeCountChanged = Signal()
+
     #: A MEGSZAKÍTHATÓSÁG változott (#2966): az imént jelentkezett be az
     #: első leállítható munka, vagy az utolsó kijelentkezett. A jobb-felső
     #: sarki jelző megszakítás-gombjának láthatósága erre köt.
@@ -221,11 +225,13 @@ class AppBusyRegistry(QObject):
 
     def _on_begin(self) -> None:
         self._active += 1
+        self.activeCountChanged.emit()
         if self._active == 1 and not self._visible and not self._show_timer.isActive():
             self._show_timer.start(SHOW_DELAY_MS)
 
     def _on_end(self) -> None:
         self._active = max(0, self._active - 1)
+        self.activeCountChanged.emit()
         if self._active > 0:
             return
         self._show_timer.stop()

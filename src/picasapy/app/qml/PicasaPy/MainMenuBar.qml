@@ -216,6 +216,8 @@ PicasaMenuBar {
     onOptionsRequested: hostOptionsDialog.open()
     //: #2054
     onHelpRequested: function (topic) { hostHelpDialog.ensure().nyisdMeg(topic) }
+    // #6340: kézi kiadáskeresés; a válaszablak a verziócímke vezérlőjében él.
+    onUpdateCheckRequested: hostToolbar.checkForUpdates()
     // #4639: a billentyűk listája ugyanebben a helyi súgóban jelenik
     // meg, és a kulcsokat a tényleges QML Shortcut-okból veszi.
     onKeyboardShortcutsRequested: {

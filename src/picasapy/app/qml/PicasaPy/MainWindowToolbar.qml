@@ -9,6 +9,7 @@ MainToolbar {
     property var hostRefs: ({})
     id: toolbar
     objectName: "mainToolbar"
+    updateOwnerWindow: hostWindow
     // #741/4: a nézőben (és így a szerkesztőben) NINCS alkalmazás-szintű
     // eszköztár. A binárisban a szerkesztő felső 40 képpontos sávjában
     // egyetlen elem van, az `editpanel/albumview` („Vissza a

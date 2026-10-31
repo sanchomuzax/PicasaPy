@@ -1473,6 +1473,18 @@ picasapy-origin-key: options:options/labelgroup34.title</extracomment>
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
             <translation>Procházet...</translation>
         </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/OptionsTabGeneral.qml" line="357" />
+            <source>Check for updates automatically</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Automaticky kontrolovat aktualizace</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/OptionsTabGeneral.qml" line="370" />
+            <source>PicasaPy checks GitHub for new versions.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>PicasaPy kontroluje nové verze na GitHubu.</translation>
+        </message>
     </context>
     <context>
         <name>OptionsTabEmail</name>
@@ -9833,6 +9845,95 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/folderviewpopup)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMoviePanelPopup::title;stringres:CanonCaptureMoviePanelPopup::title;tooltips:Label(panelroot/capturemovietab)</extracomment>
             <translation>Zaznamenat</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="38" />
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="946" />
+            <source>Could not check for updates.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aktualizace se nepodařilo zkontrolovat.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="651" />
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="772" />
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="790" />
+            <source>v%1 available</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Je dostupná verze v%1</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="885" />
+            <source>Update now</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aktualizovat</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="893" />
+            <source>Later</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Později</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="903" />
+            <source>Skip this version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Přeskočit tuto verzi</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="912" />
+            <source>Restart now</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Restartovat nyní</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="916" />
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="927" />
+            <source>Update helper could not start.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pomocný program pro aktualizaci se nepodařilo spustit.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="924" />
+            <source>Install on exit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Instalovat při ukončení</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="944" />
+            <source>No newer version found.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nebyla nalezena novější verze.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="953" />
+            <source>SHA-256 check failed. Update not installed.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kontrola SHA-256 selhala. Aktualizace nebyla nainstalována.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="955" />
+            <source>Update download failed.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Stažení aktualizace se nezdařilo.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="648" />
+            <source>Downloading...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Stahování...</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="871" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Zavřít</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="791" />
+            <source>&amp;Check for Updates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_CHECK_FOR_UPDATES</extracomment>
+            <translation>Z&amp;kontrolovat aktualizace</translation>
         </message>
     </context>
     <context>

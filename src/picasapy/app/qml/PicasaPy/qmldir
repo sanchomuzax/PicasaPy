@@ -123,6 +123,7 @@ LightboxFeedEmptyState 1.0 LightboxFeedEmptyState.qml
 LightboxFeedWheelArea 1.0 LightboxFeedWheelArea.qml
 LightboxFeedLassoBand 1.0 LightboxFeedLassoBand.qml
 MainToolbar 1.0 MainToolbar.qml
+UpdatePanel 1.0 UpdatePanel.qml
 CaptureMoviePanelPopup 1.0 CaptureMoviePanelPopup.qml
 CaptureMovieMedia 1.0 CaptureMovieMedia.qml
 TrayBar 1.0 TrayBar.qml

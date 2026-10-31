@@ -6,6 +6,7 @@ PicasaMenu {
     id: menuHelp
     property var bar: null
     property var controllerRef: null
+    signal updateCheckRequested()
     title: qsTr("&Help")
     //: #2054: BEKÖTVE — a súgó a csomagban van, net nélkül is megnyílik.
     MenuItem {
@@ -27,11 +28,13 @@ PicasaMenu {
     PicasaMenuItem { text: qsTr("Privacy Policy"); placeholder: false; retired: true }  // #638
     PicasaMenuItem { text: qsTr("Terms of Service"); placeholder: false; retired: true }  // #638
     MenuSeparator {}
-    // #4640: a PicasaPy saját frissítéskeresése nem paritás-feladat. Az
-    // eredeti az egykori Google-szolgáltatásra épült, amelyet a Picasa
-    // Wine alatt maga letiltott, ezért nyugdíjazott (szürke, pont nélkül),
-    // nem helyfoglaló.
-    PicasaMenuItem { text: qsTr("&Check for Updates"); placeholder: false; retired: true }
+    // SAJÁT FUNKCIÓ (#6340): a GitHub kiadáslistáját ellenőrzi, és a
+    // letöltést csak a felhasználó indítja el.
+    MenuItem {
+        objectName: "menuHelpCheckUpdates6340"
+        text: qsTr("&Check for Updates") + "…"
+        onTriggered: menuHelp.updateCheckRequested()
+    }
     MenuSeparator {}
     // SAJÁT FUNKCIÓ (#1364): a Teljesítmény-monitor az eredeti Picasa
     // 3.9 Súgó menüjében NEM létezik (`docs/specs/ui-audit-menus.md`) —

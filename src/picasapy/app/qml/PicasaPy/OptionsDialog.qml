@@ -124,7 +124,9 @@ Window {
             "faces/automaticDetection": faceScanController.automaticDetectionEnabled(),
             "faces/suggestionsEnabled": faceScanController.suggestionsEnabled(),
             "faces/suggestStep": faceScanController.suggestionThreshold(),
-            "faces/clusterStep2": faceScanController.clusterThreshold()
+            "faces/clusterStep2": faceScanController.clusterThreshold(),
+            "updates/autoCheck": typeof updateController !== "undefined"
+                && updateController !== null ? updateController.autoCheckEnabled : true
         }
         var fileTypeGroups = ["bmp", "psd", "tiff", "webp", "png", "gif", "movies"]
         for (var i = 0; i < fileTypeGroups.length; ++i) {

@@ -343,11 +343,6 @@ BEALLITASOK = {
     ("OptionsTabGeneral", "Clear cache files"): (
         "Gyorsítótárban lévő fájlok törlése",
         "options/disposepreviews.title"),
-    ("OptionsTabGeneral", "Never check for updates"): (
-        "Ne keressen frissítést", "options/item24.title"),
-    ("OptionsTabGeneral", "Prompt before downloading updates"): (
-        "Mindig tegyen fel kérdést a frissítések letöltése előtt",
-        "options/item23.title"),
     ("OptionsTabGeneral", "Send anonymous usage statistics"): (
         "Névtelen használati statisztikák küldése a Google részére",
         "options/usagestats.title"),

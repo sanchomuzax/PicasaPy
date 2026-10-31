@@ -20,6 +20,7 @@ OPTION_SETTING_KEYS = (
     "faces/suggestionsEnabled",
     "faces/suggestStep",
     "faces/clusterStep2",
+    "updates/autoCheck",
 )
 
 _FILETYPE_GROUPS = ("bmp", "psd", "tiff", "webp", "png", "gif", "movies")
@@ -34,6 +35,7 @@ def current_option_settings(
     """Az induláskor ténylegesen feloldott Opció-értékeket adja vissza."""
     values: dict[str, bool | int] = {
         "import/autoexclude": import_source_controller.autoExclude,
+        "updates/autoCheck": True,
     }
     values.update(
         {

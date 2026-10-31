@@ -1722,6 +1722,7 @@ def test_ok_mind_a_tizenot_beallitasi_kulcsot_kiir(tmp_path, qt_app):
         "faces/suggestionsEnabled",
         "faces/suggestStep",
         "faces/clusterStep2",
+        "updates/autoCheck",
     )
     settings = QSettings(
         str(tmp_path / "options.ini"), QSettings.Format.IniFormat
@@ -1825,6 +1826,7 @@ def test_ok_mind_a_tizenot_beallitasi_kulcsot_kiir(tmp_path, qt_app):
             "faces/suggestionsEnabled": True,
             "faces/suggestStep": 85,
             "faces/clusterStep2": 85,
+            "updates/autoCheck": True,
         }
         assert set(settings.allKeys()) == set(keys)
         assert settings.value("library/fileTypes/png") is False

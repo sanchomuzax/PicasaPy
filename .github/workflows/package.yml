@@ -26,6 +26,8 @@ on:
       - "packaging/windows/**"
       - ".github/workflows/package.yml"
       - "src/picasapy/app/application.py"
+      - "src/picasapy/app/update_*.py"
+      - "src/picasapy/app/qml/PicasaPy/MainToolbar.qml"
       - "pyproject.toml"
   workflow_dispatch:
     inputs:
@@ -162,12 +164,32 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
+          python - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+
+          paths = sorted(
+              [*Path("dist").glob("*.whl"), *Path("dist").glob("*.tar.gz")]
+              + list(Path("packaging/dist").glob("*.deb"))
+              + list(Path("packaging/dist").glob("*.zip")),
+              key=lambda path: path.name,
+          )
+          manifest = Path("packaging/dist/SHA256SUMS")
+          manifest.write_text(
+              "".join(
+                  f"{sha256(path.read_bytes()).hexdigest()}  {path.name}\n"
+                  for path in paths
+              ),
+              encoding="ascii",
+          )
+          PY
           # #896: a feltöltés is újrapróbálkozik — a `--clobber` miatt a
           # megismételt feltöltés felülír, nem duplikál, tehát biztonságos.
           for kiserlet in 1 2 3 4 5; do
             if gh release upload "$TAG" \
                  dist/*.whl dist/*.tar.gz \
                  packaging/dist/*.deb packaging/dist/*.zip \
+                 packaging/dist/SHA256SUMS \
                  --repo "$GITHUB_REPOSITORY" \
                  --clobber; then
               exit 0
@@ -191,9 +213,13 @@ jobs:
   # kell kiderülnie, nem a felhasználó gépén.
   # ------------------------------------------------------------------------
   windows-telepito:
+    needs: build-and-upload
     if: >-
-      github.event_name != 'workflow_run'
-      || github.event.workflow_run.conclusion == 'success'
+      always()
+      && (github.event_name == 'pull_request'
+          || (needs.build-and-upload.result == 'success'
+              && (github.event_name != 'workflow_run'
+                  || github.event.workflow_run.conclusion == 'success')))
     runs-on: windows-latest
     timeout-minutes: 40
     steps:
@@ -261,6 +287,29 @@ jobs:
         if: steps.tag.outputs.skip != 'true'
         shell: bash
         run: pyinstaller --noconfirm packaging/windows/picasapy.spec
+
+      - name: Frissítő segédprogram csomagolása
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        run: >-
+          pyinstaller --noconfirm
+          --distpath dist/update-helper
+          --workpath build/update-helper
+          packaging/windows/picasapy_update_helper.spec
+
+      - name: Portable PyInstaller ZIP
+        if: steps.tag.outputs.skip != 'true'
+        shell: pwsh
+        run: |
+          $helper = Join-Path $PWD "dist\update-helper\PicasaPyUpdateHelper.exe"
+          if (-not (Test-Path $helper)) {
+            Write-Error "a frissítő segédprogram nem készült el"
+            exit 1
+          }
+          Copy-Item $helper "dist\PicasaPy\PicasaPyUpdateHelper.exe" -Force
+          New-Item -ItemType Directory -Force "packaging\dist" | Out-Null
+          Compress-Archive -Path "dist\PicasaPy" `
+              -DestinationPath "packaging\dist\PicasaPy-windows-x64.zip" -Force
 
       - name: Füstpróba — a CSOMAGOLT program elindul
         if: steps.tag.outputs.skip != 'true'
@@ -479,11 +528,40 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.tag.outputs.tag }}
+          PYTHONIOENCODING: utf-8
         run: |
           FAJL="packaging/dist/PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe"
           test -f "$FAJL" || { echo "::error::nincs kész telepítő: $FAJL"; exit 1; }
+          ZIP="packaging/dist/PicasaPy-windows-x64.zip"
+          test -f "$ZIP" || { echo "::error::nincs kész portable ZIP: $ZIP"; exit 1; }
+          ASSET_DIR="$RUNNER_TEMP/picasapy-release-assets"
+          mkdir -p "$ASSET_DIR"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir "$ASSET_DIR"
+          cp "$FAJL" "$ZIP" "$ASSET_DIR/"
+          python - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+          import os
+
+          asset_dir = Path(os.environ["RUNNER_TEMP"]) / "picasapy-release-assets"
+          files = sorted(
+              (path for path in asset_dir.iterdir()
+               if path.is_file() and path.name != "SHA256SUMS"),
+              key=lambda path: path.name,
+          )
+          (asset_dir / "SHA256SUMS").write_text(
+              "".join(
+                  f"{sha256(path.read_bytes()).hexdigest()}  {path.name}\n"
+                  for path in files
+              ),
+              encoding="ascii",
+          )
+          PY
           for kiserlet in 1 2 3 4 5; do
-            if gh release upload "$TAG" "$FAJL" \
+            if gh release upload "$TAG" \
+                 "$ASSET_DIR/PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe" \
+                 "$ASSET_DIR/PicasaPy-windows-x64.zip" \
+                 "$ASSET_DIR/SHA256SUMS" \
                  --repo "$GITHUB_REPOSITORY" --clobber; then
               exit 0
             fi
