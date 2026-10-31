@@ -250,6 +250,10 @@ Rectangle {
             objectName: "placesFallbackText"
             visible: mapLoader.status === Loader.Error
             Layout.fillWidth: true
+            // #6321: a tördelt szöveg a panel szélességét kövesse; enélkül
+            // az egysoros hossza (Windowson, ahol a QtLocation hiányzik)
+            // kiszélesítette az oszlopot, és a keresőgomb kilógott.
+            Layout.preferredWidth: 0
             wrapMode: Text.WordWrap
             text: qsTr("The map component (QtLocation) is not available. Geotags can still be edited.")
             font.pixelSize: Theme.fontSize

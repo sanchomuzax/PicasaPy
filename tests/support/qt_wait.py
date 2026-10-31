@@ -533,4 +533,22 @@ def _szulolanc(item, legfeljebb: int = 14) -> str:
             elem = elem.parentItem()
     except (AttributeError, TypeError, RuntimeError):
         sorok.append("…")
-    return " < ".join(sorok)
+    return " < ".join(sorok) + _tul_szeles_testverek(item)
+
+
+def _tul_szeles_testverek(item) -> str:
+    """Az első túl széles ős gyerekei: melyik kér több helyet (#6321)."""
+    try:
+        elem = item.parentItem()
+        while elem is not None and elem.implicitWidth() <= elem.width() + 1:
+            elem = elem.parentItem()
+        if elem is None:
+            return ""
+        gyerekek = [
+            f"{gy.objectName() or type(gy).__name__}"
+            f"[w={gy.width():.0f} iw={gy.implicitWidth():.0f} v={int(gy.isVisible())}]"
+            for gy in elem.childItems()
+        ]
+        return f"; túl széles: {elem.objectName() or type(elem).__name__}, gyerekei: " + ", ".join(gyerekek)
+    except (AttributeError, TypeError, RuntimeError):
+        return ""
