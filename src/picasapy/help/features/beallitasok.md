@@ -35,7 +35,7 @@ szélén egy-egy **‹** és **›** nyíllal. A kiválasztott fül mindig
 láthatóra görög. A **Google Fotók** fül alapméretben sem fér ki mindig:
 ilyenkor a **›** nyíllal érheted el.
 
-Az ablak meglévő feliratai — a szürke vezérlőkéi is — az **eredeti Picasa
+Az ablak meglévő feliratai (a szürke vezérlőkéi is) az **eredeti Picasa
 saját szövegei**, ezért néhol másképp fogalmaznak, mint amit a funkció
 alapján várnál. A frissítéskereső saját PicasaPy-funkció.
 

@@ -212,7 +212,7 @@ class _Worker(QRunnable):
                 self.signals.progress.emit(self.job_id, received, total)
 
             self.signals.finished.emit(self.job_id, self.action(report_progress))
-        except Exception as error:  # noqa: BLE001 — háttérhiba a vezérlő jelzésén megy vissza
+        except Exception as error:  # noqa: BLE001 - háttérhiba a vezérlő jelzésén megy vissza
             self.signals.failed.emit(self.job_id, str(error))
 
 

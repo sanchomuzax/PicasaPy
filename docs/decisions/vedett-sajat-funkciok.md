@@ -62,7 +62,7 @@ kódtól).
 
 ## Ismert esetek
 
-- `src/picasapy/app/update_manager.py` és `src/picasapy/app/qml/PicasaPy/MainToolbar.qml` (#6340) — napi, csendes GitHub-kiadásellenőrzés és felhasználó által jóváhagyott frissítés. A Picasa eredeti külső háttérfrissítője nem része ennek a programnak; ez a saját PicasaPy-megoldás, a Windowsos csere SHA-256 ellenőrzéssel és visszaállítással.
+- `src/picasapy/app/update_manager.py` és `src/picasapy/app/qml/PicasaPy/MainToolbar.qml` (#6340): napi, csendes GitHub-kiadásellenőrzés és felhasználó által jóváhagyott frissítés. A Picasa eredeti külső háttérfrissítője nem része ennek a programnak; ez a saját PicasaPy-megoldás, a Windowsos csere SHA-256 ellenőrzéssel és visszaállítással.
 - `docs/decisions/keresosav-webview-szuro-kimarad.md` (#839) — A keresősáv
   NEGYEDIK szűrő-ikonja: az eredetiben ott a `webview` áll (csak a
   webalbumba feltöltöttek), nálunk a **másodpéldány-szűrő**. Az eredeti a

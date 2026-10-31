@@ -222,7 +222,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         install_after_exit(args.pid, args.archive, args.install_dir, args.executable)
-    except Exception as error:  # noqa: BLE001 — az elkülönített helper hibája konzolra kerül
+    except Exception as error:  # noqa: BLE001 - az elkülönített helper hibája konzolra kerül
         print(f"A PicasaPy-frissítés nem sikerült: {error}", file=sys.stderr)
         return 1
     return 0
