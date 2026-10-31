@@ -47,9 +47,11 @@ az ablakot az előző méretére. A billentyű csak a nyitott nézőben hat; a
 diavetítés a saját teljes képernyős állapotát kezeli, ott az F11 nem nyúl
 hozzá.
 
-Hogy a néző megnyitáskor magától teljes képernyőre váltson-e, azt az
-**Eszközök ▸ Fotómegjelenítő beállítása…** ablak **Teljes képernyős
-indítás** jelölője dönti el (lásd [Beállítások](beallitasok.md)).
+A könyvtárból megnyitott kép a program ablakában jelenik meg, a néző nem
+vált magától teljes képernyőre. Az **Eszközök ▸ Fotómegjelenítő
+beállítása…** ablak **Teljes képernyős indítás** jelölője csak a fájlból
+indított egyszerűsített nézőre hat (lásd lentebb és
+[Beállítások](beallitasok.md)).
 
 ### A filmszalag
 
@@ -93,7 +95,7 @@ ezzel** parancsával, vagy indításkor a kép nevét megadva, lásd
 [Első lépések](../getting-started.md)), a program nem a könyvtárat
 tölti be, hanem rögtön a képet mutatja egy egyszerűsített nézőben, ahogy
 az eredeti Picasa Fotómegjelenítője. A **Beállítások** **Teljes
-képernyős indítás** jelölőnégyzete itt is érvényes.
+képernyős indítás** jelölőnégyzete csak erre a nézőre hat.
 
 A néző csak azokat a képeket mutatja, amelyeket megadtál; ha több képet
 adtál meg, akár különböző mappákból, a nyilakkal végiglépkedhetsz
