@@ -146,6 +146,7 @@ def test_photo_viewer_settings_component_loads_without_controller(qt_app):
 def test_fullscreen_startup_checkbox_controls_the_viewer_visibility(
     qml_app, qt_app, height_delta
 ):
+    """A beállítás mentődik, a könyvtárnéző a főablak módját tartja meg."""
     window, controller, _engine = qml_app
     window.resize(window.width(), window.height() + height_delta)
     qt_app.processEvents()
@@ -183,7 +184,7 @@ def test_fullscreen_startup_checkbox_controls_the_viewer_visibility(
         qt_app,
         lambda: window.visibility() == window.Visibility.Windowed,
         3.0,
-    )
+    ), "a könyvtárból nyitott néző megváltoztatta az ablak módját"
 
     vissza = _gyerek(window, "viewerBackButton")
     _kattintas(window, qt_app, vissza)
@@ -215,13 +216,13 @@ def test_fullscreen_startup_checkbox_controls_the_viewer_visibility(
     assert varj_feltetelre(qt_app, lambda: window.property("viewerOpen"), 3.0)
     assert varj_feltetelre(
         qt_app,
-        lambda: window.visibility() == window.Visibility.FullScreen,
+        lambda: window.visibility() == window.Visibility.Maximized,
         3.0,
-    )
+    ), "a könyvtárból nyitott néző teljes képernyőre váltott"
 
     vissza = _gyerek(window, "viewerBackButton")
     _kattintas(vissza.window(), qt_app, vissza)
     assert varj_feltetelre(qt_app, lambda: not window.property("viewerOpen"), 3.0)
     assert varj_feltetelre(
         qt_app, lambda: window.visibility() == window.Visibility.Maximized, 3.0
-    ), "a néző bezárása nem állította vissza az ablak korábbi állapotát"
+    ), "a néző bezárása nem tartotta meg a könyvtár ablakállapotát"
