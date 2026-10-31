@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.5] - 2026-10-31
+
+- A kattintásőr hibaüzenete a szülőlánc méreteit is kiírja (#6321).
 ## [1.0.4] - 2026-10-31
 
 - A windowsos darabok a választóval azonos tesztkészletet futtatják (#6324).
