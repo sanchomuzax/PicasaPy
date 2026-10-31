@@ -63,3 +63,36 @@ def test_a_felveteli_meret_es_a_forrasok_beallitasai_tartosak(tmp_path):
     assert ujrainditott.captureSize == "1280x720"
     assert ujrainditott.cameraId == "kamera-1"
     assert ujrainditott.audioId == "mikrofon-2"
+
+
+def test_snapshot_utvonalat_a_qt_natív_elvalasztoira_alakitja(tmp_path, monkeypatch):
+    from PySide6.QtCore import QDir
+
+    from picasapy.app import camera_capture_controller as modul
+    from picasapy.app.camera_capture_controller import CameraCaptureController
+
+    celmappa = tmp_path / "Rögzített videoklipek"
+    monkeypatch.setattr(modul, "capture_folder", lambda: celmappa)
+    monkeypatch.setattr(
+        QDir,
+        "toNativeSeparators",
+        staticmethod(lambda path: path.replace("/", "\\")),
+    )
+
+    path = CameraCaptureController().reserveCapturePath("snapshot")
+
+    assert path == str(celmappa / "snapshot-001.jpg").replace("/", "\\")
+
+
+def test_snapshot_hibaja_naplozza_a_kodot_szoveget_es_utvonalat(caplog):
+    import logging
+
+    from picasapy.app.camera_capture_controller import CameraCaptureController
+
+    path = r"C:\Users\felhasznalo\Képek\Picasa\Rögzített videoklipek\snapshot-001.jpg"
+    with caplog.at_level(logging.WARNING, logger="picasapy.app.camera_capture_controller"):
+        CameraCaptureController().logSnapshotFailure(-1, "Access denied", path)
+
+    assert "-1" in caplog.text
+    assert "Access denied" in caplog.text
+    assert path in caplog.text

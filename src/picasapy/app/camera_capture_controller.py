@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 
-from PySide6.QtCore import QObject, Property, QSettings, Signal, Slot
+from PySide6.QtCore import QDir, QObject, Property, QSettings, Signal, Slot
 
 from .frame_capture_controller import capture_folder
 from .movie_output import write_album_ini
@@ -50,6 +50,11 @@ class CameraCaptureController(QObject):
     @Property(str, notify=captureSettingsChanged)
     def audioId(self) -> str:
         return str(self._settings.value("cameraCapture/audioId", ""))
+
+    @Property(str)
+    def captureFolder(self) -> str:
+        """A kameraképek és videók közös könyvtára, az aktuális nyelv szerint."""
+        return QDir.toNativeSeparators(str(capture_folder()))
 
     @Slot(str)
     def setCaptureSize(self, value: str) -> None:
@@ -106,7 +111,9 @@ class CameraCaptureController(QObject):
             for sorszam in range(1, _MAX_EGYEDISETO + 1):
                 cel = mappa / f"{fajlnev}-{sorszam:03d}{kiterjesztes}"
                 if not cel.exists():
-                    return str(cel)
+                    # ImageCapture.captureToFile(QString) helyi fájlútvonalat
+                    # vár; a QDir a futó platform elválasztóira alakítja.
+                    return QDir.toNativeSeparators(str(cel))
         except OSError as exc:
             logger.exception("#4137: nem készíthető elő a kamerafelvétel célja")
             self.capturePathFailed.emit(str(exc))
@@ -114,6 +121,16 @@ class CameraCaptureController(QObject):
 
         self.capturePathFailed.emit("A mappában elfogyott a szabad fájlnév.")
         return ""
+
+    @Slot(int, str, str)
+    def logSnapshotFailure(self, error_code: int, error_string: str, path: str) -> None:
+        """A QML hibajelzését útvonallal együtt megőrzi a windowsos naplóban."""
+        logger.warning(
+            "#6332: a kamerakép mentése sikertelen; error=%s errorString=%r path=%s",
+            error_code,
+            error_string,
+            path,
+        )
 
 
 __all__ = ["CameraCaptureController"]

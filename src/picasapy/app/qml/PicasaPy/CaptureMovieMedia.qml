@@ -25,6 +25,7 @@ Item {
         recorder.recorderState === MediaRecorder.PausedState
     readonly property bool clipPlaying:
         player.playbackState === MediaPlayer.PlayingState
+    readonly property var imageCaptureObject: imageCapture
 
     signal snapshotSaved(string path)
     signal clipSaved(string path)
