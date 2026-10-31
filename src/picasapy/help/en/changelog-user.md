@@ -2,6 +2,30 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-10-31
+
+### Startup
+
+- The startup screen now closes by itself when loading finishes. The earlier warning and its **OK** button are gone; you no longer need to click anything.
+
+### Confirmation windows
+
+- **Create** ▸ **Set as Desktop...** now asks before it replaces your desktop background. See [Desktop background](features/hatterkep.md).
+- Confirmation windows use the same buttons as the original Picasa: deleting pictures (**Delete Image** / **Cancel**), removing a folder from Picasa (**Remove Folder** / **Cancel**, showing the folder's full path), ignoring a face (**Ignore Person** / **Cancel**), deleting an album (**Delete Album** / **No**; `Enter` keeps the album), and the Hidden Folders password offer (`Enter` chooses **Add Password**). See [File operations](features/fajlmuveletek.md), [People](features/emberek.md), and [Library](features/konyvtar.md).
+
+### Email
+
+- The email program chooser shows the name of your computer's default email program. See [Email](features/email.md).
+
+### Tags
+
+- When you open the **Tags** panel with `Ctrl+T`, the cursor goes straight to the tag entry field. See [Stars, captions, and tags](features/csillag-felirat-cimke.md).
+
+### Albums and people
+
+- An empty album created with the toolbar's **+** button no longer changes the folder's <code>.picasa.ini</code>; it is written there only when you add the first picture. Empty albums can be deleted and edited again. See [Library](features/konyvtar.md).
+- When two people have the same name, only the one you select changes in people management and in the person album menu; the other stays unchanged.
+
 ## 2026-10-29
 
 ### Appearance

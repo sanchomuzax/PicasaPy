@@ -63,7 +63,10 @@ programok is látják.
 
 A címkék a jobb oldali **Címkék** panelen élnek. Megnyitás: **Nézet ▸
 Címkék** vagy **Ctrl+T**, illetve a képtálca Címkék gombja. A Ctrl+T
-nyitja és zárja is a panelt.
+nyitja és zárja is a panelt. Ha Ctrl+T-vel nyitod meg, a kurzor rögtön
+a címke beíró mezőjébe kerül, így azonnal gépelhetsz. Amíg a kurzor a
+mezőben áll, a második Ctrl+T nem zárja be a panelt; kattints előbb a
+képekre, utána a Ctrl+T ismét nyitja és zárja.
 
 - Jelölj ki egy vagy több képet, majd a beíró mezőbe („Írjon be egy
   hozzáadandó címkét:") írd be a címkét, és nyomj Entert, vagy kattints

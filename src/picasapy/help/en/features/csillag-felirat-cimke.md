@@ -65,7 +65,10 @@ programs can read them.
 
 Tags are shown in the **Tags** panel on the right. Open or close it from **View**,
 press `Ctrl+T`, or use the Tags control in the photo tray. Ctrl+T also
-closes the panel.
+closes the panel. When you open it with `Ctrl+T`, the cursor goes straight
+to the tag entry field so you can type at once. While the cursor is in
+the field, a second `Ctrl+T` does not close the panel; click the pictures
+first, then `Ctrl+T` toggles it again.
 
 - Select one or more photos, type a tag in the entry field, then press
   Enter or click the adjacent **+** control. The tag is applied to every

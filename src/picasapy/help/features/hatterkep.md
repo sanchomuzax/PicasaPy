@@ -9,6 +9,11 @@ Jelölj ki egy képet, majd **Létrehozás ▸ Beállítás háttérképként…
 Kijelölés nélkül a menüpont szürke. Ha több képet jelöltél ki, az első
 lesz a háttér.
 
+A program előbb rákérdez: **Jóváhagyás** címmel figyelmeztet, hogy a kép
+lecseréli az asztal jelenlegi hátterét. A **Háttérkép beállítása** gomb
+(ezen áll a fókusz, így az Enter is ezt választja) beállítja a hátteret,
+a **Nem** gomb elveti.
+
 ## Egy kollázsból
 
 A kollázs-panel **Asztali háttérkép** gombja egy lépésben elkészíti a

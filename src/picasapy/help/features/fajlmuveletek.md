@@ -155,6 +155,7 @@ szövege attól függ, **hova** kerül a fájl:
   művelet nem vonható vissza.)" A gomb ekkor **Fájl törlése**, illetve
   **Fájlok törlése**.
 
+Az ablakban két gomb van, a jóváhagyó gomb és a **Mégse**.
 Megnyitáskor a **Mégse** gomb kapja a fókuszt, így egy véletlen **Enter**
 nem töröl semmit. Az ablak alján a **Ne kérdezzen újból, mindig
 távolítsa el** jelölővel kapcsolhatod ki, hogy a program legközelebb is
@@ -209,4 +210,7 @@ A helyi menüben ezen kívül:
 - **Mappa ▸ Törlés…** — a mappa törlése a lemezről. A program külön
   rákérdez, mert az almappákat is elviszi.
 - **Mappa ▸ Eltávolítás a Picasából…** — a mappa csak a nézetből kerül
-  ki, a fájlok maradnak.
+  ki, a fájlok maradnak. A program **Jóváhagyás** címmel rákérdez, és a
+  kérdésben a mappa **teljes útvonala** áll. A két gomb a **Mappa
+  eltávolítása** és a **Mégse**; a fókusz a **Mappa eltávolítása**
+  gombon áll, tehát az Enter eltávolítja a mappát.

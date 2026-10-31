@@ -4,6 +4,48 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-10-31
+
+**Indítás**
+
+- Az indítóképernyő a betöltés végén magától eltűnik. A korábbi
+  figyelmeztetés és az **OK** gomb megszűnt, nem kell rákattintanod.
+
+**Megerősítő ablakok**
+
+- A **Létrehozás ▸ Beállítás háttérképként…** előbb rákérdez, mielőtt
+  lecserélné az asztal hátterét. Lásd
+  [Asztali háttérkép](features/hatterkep.md).
+- A megerősítő ablakok gombjai az eredeti Picasáéhoz igazodnak: a
+  képtörlés (**Kép törlése** / **Mégse**), a mappa eltávolítása a
+  Picasából (**Mappa eltávolítása** / **Mégse**, a mappa teljes
+  útvonalával), az arc mellőzése (**Személy mellőzése** / **Mégse**), az
+  album törlése (**Album törlése** / **Nem**, az Enter megtartja az
+  albumot) és a Rejtett mappák jelszóajánlata (az Enter a **Jelszó
+  hozzáadása**). Lásd [Fájlműveletek](features/fajlmuveletek.md),
+  [Emberek](features/emberek.md) és [A könyvtár](features/konyvtar.md).
+
+**Levelezés**
+
+- A levelezőprogram-választó a számítógéped alapértelmezett
+  levelezőprogramjának nevét mutatja. Lásd [Küldés e-mailben](features/email.md).
+
+**Címkék**
+
+- A Ctrl+T-vel megnyitott **Címkék** panelen a kurzor rögtön a címke
+  beíró mezőjébe kerül. Lásd
+  [Csillagok, feliratok, címkék](features/csillag-felirat-cimke.md).
+
+**Albumok és emberek**
+
+- Az eszköztár **+** gombjával készült üres album már nem módosítja a
+  mappa `.picasa.ini` fájlját; csak az első kép hozzáadásakor kerül oda.
+  Az üres album ismét törölhető és szerkeszthető. Lásd
+  [A könyvtár](features/konyvtar.md).
+- Ha két személynek ugyanaz a neve, a személyek kezelésében és a
+  személyalbum menüjében csak a kiválasztott módosul, a másik
+  változatlan marad.
+
 ## 2026-10-29
 
 **Megjelenés**

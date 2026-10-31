@@ -59,9 +59,11 @@ be van kapcsolva, és a program megjegyzi, hogyan hagytad.
 ## Levelezőprogram-választó
 
 Amíg nem döntöttél másképp, az **első küldésnél** a program előbb a
-**Válasszon levelezőprogramot** lapot mutatja. Itt a **LEVELEZŐPROGRAM**
-tételt hagyod jóvá: a képek a számítógép alapértelmezett
-levelezőprogramjában nyílnak meg új levélként. A **Google Mail**
+**Válasszon levelezőprogramot** lapot mutatja. Az első tétel a
+számítógéped alapértelmezett levelezőprogramjának nevét mutatja
+(például Thunderbird vagy Outlook); ha a program nem tudja kiolvasni,
+**Beépített levelezőprogram** áll ott. Ezt hagyod jóvá: a képek ebben a
+levelezőprogramban nyílnak meg új levélként. A **Google Mail**
 tétel szürke, nem választható: a PicasaPy-nak nincs Google-fiók-kapcsolata.
 
 Ha bejelölöd a **Jegyezze meg ezt a beállítást, ne jelenítse meg a
