@@ -6,10 +6,13 @@ a kapott kép mérete, hogy két különböző effekt bélyegképe ténylegesen 
 a lemez-dekódot)."""
 
 from dataclasses import replace
+from pathlib import Path
+
+import numpy as np
 
 from picasapy.index import open_index, photos_in_folder, sync_tree
 from picasapy.ini.rect64 import Rect64, encode_rect64
-from support.jpeg_factory import make_jpeg
+from support.jpeg_factory import make_jpeg, make_minta_jpeg
 
 
 def _library(tmp_path, count=1, size=(320, 200)):
@@ -27,6 +30,15 @@ def _provider(records, **kwargs):
 
     registry = {str(r.id): r for r in records}
     return EffectThumbnailProvider(registry.get, **kwargs)
+
+
+def _minta_library(tmp_path):
+    lib = tmp_path / "legacy-kepek"
+    lib.mkdir()
+    make_minta_jpeg(lib / "minta.jpg", size=(320, 240), seed=6339)
+    with open_index(tmp_path / "legacy-index.db") as conn:
+        sync_tree(conn, lib)
+        return photos_in_folder(conn, lib)
 
 
 class TestSyncRender:
@@ -144,6 +156,84 @@ class TestSyncRender:
             assert image.width() != 16 or image.height() != 16, (
                 f"{effect}: placeholder jött KÉSZ bélyegkép helyett"
             )
+
+
+class TestLegacyEffectThumbnails:
+    def test_enabled_legacy_effects_render_real_thumbnails(self, qt_app, tmp_path):
+        """A 7. fül engedélyezett nevei is a közös effekt-renderen mennek át."""
+        from picasapy.app.edit_controller import _LEGACY_EFFECT_NAMES
+
+        records = _minta_library(tmp_path)
+        provider = _provider(records)
+        from picasapy.app import effect_thumbnails as mod
+
+        record = records[0]
+        source = provider._source_for(
+            Path(record.folder_path) / record.name, record.mtime_ns
+        )
+        assert source is not None
+        source_pixels = _rgb_pixels(
+            mod._scale_to_thumb(mod._rgb_array_to_qimage(source))
+        )
+        for effect in _LEGACY_EFFECT_NAMES:
+            image = provider.requestImage(
+                f"{record.id}/{effect}", None, None
+            )
+            assert not image.isNull(), effect
+            assert max(image.width(), image.height()) > 16, (
+                f"{effect}: placeholder jött a valódi előnézet helyett"
+            )
+            if effect in {"autobacklight", "fill"}:
+                assert not np.array_equal(_rgb_pixels(image), source_pixels), (
+                    f"{effect}: az előnézet nem alkalmazta az alapértelmezett effektet"
+                )
+
+    def test_sixth_tab_parameter_defaults_change_the_source(self, qt_app, tmp_path):
+        from picasapy.app import effect_thumbnails as mod
+
+        records = _minta_library(tmp_path)
+        record = records[0]
+        provider = _provider(records)
+        source = provider._source_for(
+            Path(record.folder_path) / record.name, record.mtime_ns
+        )
+        assert source is not None
+        source_pixels = _rgb_pixels(
+            mod._scale_to_thumb(mod._rgb_array_to_qimage(source))
+        )
+        for effect in ("nightvision", "localcontrast"):
+            image = provider.requestImage(f"{record.id}/{effect}", None, None)
+            assert not np.array_equal(_rgb_pixels(image), source_pixels), effect
+
+    def test_fill_thumbnail_uses_the_editor_default_strength(
+        self, qt_app, tmp_path
+    ):
+        """A `fill` kötelező erőssége a közös EditorController-alapérték."""
+        from picasapy.app import effect_thumbnails as mod
+
+        records = _minta_library(tmp_path)
+        record = records[0]
+        provider = _provider(records)
+        source = provider._source_for(
+            Path(record.folder_path) / record.name, record.mtime_ns
+        )
+        assert source is not None
+        source_pixels = _rgb_pixels(
+            mod._scale_to_thumb(mod._rgb_array_to_qimage(source))
+        )
+        fill_pixels = _rgb_pixels(
+            provider.requestImage(f"{record.id}/fill", None, None)
+        )
+        assert not np.array_equal(fill_pixels, source_pixels), (
+            "a fill előnézet nem használta az EditorController 25%-os alapértékét"
+        )
+
+
+def _rgb_pixels(image):
+    converted = image.convertToFormat(image.Format.Format_RGB888)
+    return np.frombuffer(
+        converted.constBits().tobytes(), dtype=np.uint8
+    ).reshape(converted.height(), converted.width(), 3)
 
 
 class TestToolPreviewNames:
