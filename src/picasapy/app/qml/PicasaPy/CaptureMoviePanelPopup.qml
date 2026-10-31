@@ -10,6 +10,8 @@ Popup {
     id: panel
     objectName: "captureMoviePanelPopup"
     property var storage: null
+    // #6332: a mentési út hamis ImageCapture-rel is gyakorolható kamera nélkül.
+    property var imageCaptureOverride: null
     property string fallbackCaptureSize: "640x480"
     readonly property string selectedSize:
         storage ? storage.captureSize : fallbackCaptureSize
@@ -20,6 +22,7 @@ Popup {
     property string currentCapturePath: ""
     property var clips: []
     property int clipIndex: -1
+    readonly property bool snapshotBusy: snapshotCapture.busy
 
     readonly property var mediaRuntime: mediaRuntimeLoader.item
     readonly property var videoDevices:
@@ -119,13 +122,13 @@ Popup {
     }
 
     function takeSnapshot() {
-        if (!mediaRuntime)
+        if ((!mediaRuntime && !imageCaptureOverride) || !storage || snapshotBusy)
             return
         var path = outputPath("snapshot")
         if (!path)
             return
         currentCapturePath = path
-        mediaRuntime.imageCapture.captureToFile(path)
+        snapshotCapture.requestSnapshot(path)
     }
 
     property string pendingSize: selectedSize
@@ -158,6 +161,158 @@ Popup {
         }
     }
 
+    component SnapshotCaptureFlow: QtObject {
+        property var imageCapture: panel.imageCaptureOverride
+            ? panel.imageCaptureOverride
+            : (panel.mediaRuntime
+                ? (panel.mediaRuntime.imageCaptureObject
+                    || panel.mediaRuntime.imageCapture || null)
+                : null)
+        property string pendingSnapshotPath: ""
+        property string currentSnapshotPath: ""
+        readonly property bool busy:
+            pendingSnapshotPath.length > 0 || currentSnapshotPath.length > 0
+
+        signal snapshotSaved(string path)
+        signal captureFailed(string message)
+        signal snapshotFailureDetails(int errorCode, string errorString, string path)
+
+        function requestSnapshot(path) {
+            if (!path || busy)
+                return
+            if (!imageCapture) {
+                failSnapshot(-1, "", path, qsTr("Capture failed"))
+                return
+            }
+            // A valódi ImageCapture bool tulajdonságot ad; régebbi
+            // médiateszthelyettesítőkben ez még hiányozhat.
+            if (imageCapture.readyForCapture !== false) {
+                startSnapshot(path)
+            } else {
+                pendingSnapshotPath = path
+                snapshotReadyTimer.restart()
+            }
+        }
+
+        function tryPendingSnapshot() {
+            if (!pendingSnapshotPath || !imageCapture
+                    || !imageCapture.readyForCapture)
+                return
+            var path = pendingSnapshotPath
+            pendingSnapshotPath = ""
+            snapshotReadyTimer.stop()
+            startSnapshot(path)
+        }
+
+        function startSnapshot(path) {
+            pendingSnapshotPath = ""
+            currentSnapshotPath = path
+            snapshotReadyTimer.stop()
+            var requestId = -1
+            try {
+                requestId = imageCapture.captureToFile(path)
+            } catch (error) {
+                var exceptionText = error && error.message
+                    ? String(error.message) : String(error)
+                failSnapshot(-1, exceptionText, path,
+                             exceptionText || qsTr("Capture failed"))
+                return
+            }
+            if (Number(requestId) < 0 && currentSnapshotPath === path) {
+                var errorText = String(imageCapture.errorString || "")
+                failSnapshot(-1, errorText, path,
+                             errorText || qsTr("Capture failed"))
+            }
+        }
+
+        function failSnapshot(errorCode, errorString, path, message) {
+            if (pendingSnapshotPath === path)
+                pendingSnapshotPath = ""
+            if (currentSnapshotPath === path)
+                currentSnapshotPath = ""
+            snapshotReadyTimer.stop()
+            snapshotFailureDetails(Number(errorCode), String(errorString || ""),
+                                   String(path))
+            captureFailed(String(message || errorString || qsTr("Capture failed")))
+        }
+
+        function failCurrentSnapshot(errorCode, errorString) {
+            var path = currentSnapshotPath || pendingSnapshotPath
+            if (!path)
+                return
+            var actualError = String(errorString
+                || (imageCapture ? imageCapture.errorString : "") || "")
+            failSnapshot(errorCode, actualError, path,
+                         actualError || qsTr("Capture failed"))
+        }
+
+        function completeSnapshot(path) {
+            if (!currentSnapshotPath)
+                return
+            var savedPath = String(path || currentSnapshotPath)
+            currentSnapshotPath = ""
+            snapshotSaved(savedPath)
+        }
+
+        function expirePendingSnapshot() {
+            if (!pendingSnapshotPath)
+                return
+            if (imageCapture && imageCapture.readyForCapture) {
+                tryPendingSnapshot()
+                return
+            }
+            var path = pendingSnapshotPath
+            var message = qsTr(
+                "Camera did not become ready for a snapshot within 5 seconds."
+            )
+            failSnapshot(-1, message, path, message)
+        }
+
+    }
+    SnapshotCaptureFlow {
+        id: snapshotCapture
+        objectName: "snapshotCaptureRequest"
+    }
+    Timer {
+        id: snapshotReadyTimer
+        objectName: "snapshotReadyTimer"
+        interval: 5000
+        repeat: false
+        onTriggered: snapshotCapture.expirePendingSnapshot()
+    }
+    Connections {
+        target: snapshotCapture.imageCapture
+        ignoreUnknownSignals: true
+        function onReadyForCaptureChanged() {
+            snapshotCapture.tryPendingSnapshot()
+        }
+        function onImageSaved(id, path) {
+            snapshotCapture.completeSnapshot(String(path))
+        }
+        function onErrorOccurred(id, error, errorString) {
+            snapshotCapture.failCurrentSnapshot(Number(error), String(errorString || ""))
+        }
+    }
+    Connections {
+        target: snapshotCapture
+        function onSnapshotSaved(path) {
+            panel.currentCapturePath = ""
+            panel.statusMessage = qsTr("Snapshot saved")
+            // A nem figyelt kamera-mappát is egyszeri beolvasással vesszük
+            // fel; figyelt mappánál a meglévő watcher végzi a frissítést.
+            if (panel.storage && typeof controller !== "undefined" && controller)
+                controller.scanFolderOnce(panel.storage.captureFolder)
+        }
+        function onCaptureFailed(message) {
+            panel.currentCapturePath = ""
+            panel.statusMessage = message
+        }
+        function onSnapshotFailureDetails(errorCode, errorString, path) {
+            if (panel.storage)
+                panel.storage.logSnapshotFailure(errorCode, errorString, path)
+        }
+    }
+
     Component {
         id: mediaRuntimeComponent
         CaptureMovieMedia {
@@ -172,8 +327,7 @@ Popup {
                 panel.statusMessage = message
             }
             onSnapshotSaved: function(path) {
-                panel.currentCapturePath = ""
-                panel.statusMessage = qsTr("Snapshot saved")
+                snapshotCapture.completeSnapshot(String(path))
             }
             onClipSaved: function(path) {
                 panel.currentCapturePath = ""
@@ -266,6 +420,7 @@ Popup {
                     objectName: "captureMovieMediaLoader"
                     anchors.fill: parent
                     active: panel.visible && panel.storage !== null
+                            && panel.imageCaptureOverride === null
                     sourceComponent: mediaRuntimeComponent
                     onLoaded: {
                         if (panel.storage)
@@ -392,7 +547,7 @@ Popup {
                     objectName: "capturemoviepanelpopup/snapshot"
                     text: qsTr("Snapshot")
                     enabled: panel.cameraAvailable && panel.cameraActive
-                             && panel.storage !== null
+                             && panel.storage !== null && !panel.snapshotBusy
                     onClicked: panel.takeSnapshot()
                 }
                 Button {

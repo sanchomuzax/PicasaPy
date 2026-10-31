@@ -9972,6 +9972,12 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
             <translation>कैप्चर विफल हुआ</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/CaptureMoviePanelPopup.qml" line="263" />
+            <source>Camera did not become ready for a snapshot within 5 seconds.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
             <source>Unable to prepare the capture folder.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>कैप्चर फ़ोल्डर तैयार नहीं किया जा सका.</translation>
