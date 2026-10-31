@@ -104,3 +104,27 @@ def test_nagy_mezo_implicit_szelessegnel_a_keresogomb_a_panelben_marad(
         f"a keresőgomb jobb széle ({button_right:.1f}) kilóg az ablakból "
         f"({window.width()}); ősök: {_ancestors(button)}"
     )
+
+
+def test_a_terkep_nelkuli_felirat_nem_szelesiti_ki_a_panel_oszlopat(qml_app, qt_app):
+    """Windowson a QtLocation hiányzik, és a tördelt felirat látszik (#6321)."""
+    window, _controller, _engine = qml_app
+    fallback = _elem(window, "placesFallbackText")
+    fallback.setProperty("visible", True)
+
+    _kattint(window, _elem(window, "trayPanelToggle_places"), qt_app)
+    panel = _elem(window, "placesPanel")
+    oszlop = _elem(window, "placesSearchGroup").parentItem()
+    assert _var(qt_app, lambda: abs(panel.width() - 276) <= 1)
+    assert _var(qt_app, lambda: oszlop.width() > 200)
+
+    assert _var(qt_app, lambda: oszlop.implicitWidth() <= oszlop.width() + 1), (
+        f"a panel oszlopa szélesebbet kér ({oszlop.implicitWidth():.1f}), mint "
+        f"a helye ({oszlop.width():.1f}); felirat implicit szélessége: "
+        f"{fallback.implicitWidth():.1f}; gyerekek: "
+        + ", ".join(
+            f"{gy.objectName() or gy.metaObject().className()}"
+            f"[iw={gy.implicitWidth():.0f} v={int(gy.isVisible())}]"
+            for gy in oszlop.childItems()
+        )
+    )

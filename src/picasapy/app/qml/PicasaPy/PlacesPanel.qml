@@ -76,12 +76,16 @@ Rectangle {
             Layout.fillWidth: true
             Text {
                 objectName: "placesCountLabel"
+                // #6321: a felirat kitölti a választóig tartó helyet, és
+                // szűk panelen levágódik, ahelyett hogy kiszélesítené.
+                Layout.fillWidth: true
+                Layout.preferredWidth: 0
+                elide: Text.ElideRight
                 text: qsTr("%1 pictures with a place")
                           .arg(panel.filteredMarkers.length)
                 font.pixelSize: Theme.fontSize
                 color: Theme.textGray
             }
-            Item { Layout.fillWidth: true }
             PicasaComboBox {
                 objectName: "placesMapTypeMenu"
                 Layout.preferredWidth: 104
@@ -250,6 +254,10 @@ Rectangle {
             objectName: "placesFallbackText"
             visible: mapLoader.status === Loader.Error
             Layout.fillWidth: true
+            // #6321: a tördelt szöveg a panel szélességét kövesse; enélkül
+            // az egysoros hossza (Windowson, ahol a QtLocation hiányzik)
+            // kiszélesítette az oszlopot, és a keresőgomb kilógott.
+            Layout.preferredWidth: 0
             wrapMode: Text.WordWrap
             text: qsTr("The map component (QtLocation) is not available. Geotags can still be edited.")
             font.pixelSize: Theme.fontSize
@@ -262,6 +270,8 @@ Rectangle {
             Text {
                 objectName: "placesHintText"
                 Layout.fillWidth: true
+                // #6321: a levágott súgó se kérje a teljes hosszát
+                Layout.preferredWidth: 0
                 elide: Text.ElideRight
                 text: panel.mapAvailable
                       ? qsTr("Right-click the map to place the selected pictures.")
