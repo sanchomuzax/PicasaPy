@@ -415,25 +415,101 @@ def varj_feltetelre(
 def varj_ablakon_belulre(
     qt_app, window, item, masodperc: float = 3.0
 ) -> bool:
-    """Várja meg, míg a látható elem közepe a főablak területére kerül."""
+    """Várja meg, míg a látható elem közepe bent van és megáll.
 
-    def kozep_belul_van() -> bool:
-        if item is None or not item.isVisible():
-            return False
-        kozep = item.mapToScene(item.boundingRect().center())
-        return 0 <= kozep.x() < window.width() and 0 <= kozep.y() < window.height()
+    A főablak jobb oldali fiókja 400 ms alatt nyílik ki. Az első olyan
+    képkocka, amelyen egy benne lévő vezérlő közepe belép az ablakba, még
+    mozgás közben van; a felhasználói kattintásra váró tesztnek a stabil
+    helyzetet kell megvárnia. Az ötven milliszekundumos minták között is
+    feldolgozzuk a Qt-eseményeket, hogy az animáció továbbhaladhasson.
+    """
+    hatarido = time.monotonic() + max(0.0, masodperc)
+    kovetkezo_minta = time.monotonic()
+    elozo_helyzet = None
+    stabil_mintak = 0
+    elso_minta = True
 
-    return varj_feltetelre(qt_app, kozep_belul_van, masodperc)
+    while elso_minta or time.monotonic() <= hatarido:
+        elso_minta = False
+        most = time.monotonic()
+        if most < kovetkezo_minta:
+            qt_app.processEvents()
+            maradek = min(kovetkezo_minta - most, hatarido - most)
+            if maradek > 0:
+                time.sleep(min(0.01, maradek))
+            continue
+
+        qt_app.processEvents()
+        try:
+            if item is None:
+                helyzet = None
+                lathato = False
+            else:
+                center = item.mapToScene(item.boundingRect().center())
+                helyzet = (float(center.x()), float(center.y()))
+                lathato = item.isVisible()
+            ablakon_belul = (
+                lathato
+                and helyzet is not None
+                and 0 <= helyzet[0] < window.width()
+                and 0 <= helyzet[1] < window.height()
+            )
+        except (AttributeError, TypeError, RuntimeError):
+            helyzet = None
+            ablakon_belul = False
+
+        if ablakon_belul:
+            if helyzet == elozo_helyzet:
+                stabil_mintak += 1
+            else:
+                elozo_helyzet = helyzet
+                stabil_mintak = 1
+            if stabil_mintak >= 3:
+                return True
+        else:
+            elozo_helyzet = None
+            stabil_mintak = 0
+
+        most = time.monotonic()
+        if most >= hatarido:
+            break
+        kovetkezo_minta = most + 0.05
+
+    return False
+
+
+def _item_scene_center(item) -> tuple[float, float] | None:
+    """Az elem közepe a jelenetben, ha még lekérdezhető."""
+    try:
+        center = item.mapToScene(item.boundingRect().center())
+        return float(center.x()), float(center.y())
+    except (AttributeError, TypeError, RuntimeError):
+        return None
 
 
 def varj_kattinthatora(window, item, masodperc: float = 5.0) -> None:
-    """Kattintás előtti őr: az elem közepe az ablakon BELÜL legyen (#6136).
+    """Kattintás előtti őr: az elem közepe legyen bent és stabil (#6136/#6318).
 
     Az animáltan nyíló fiók gombja a nyitás elején még az ablak jobb szélén
     túl ül. Az ablakon kívüli kattintás csak véletlenül ért célba, és a
     főablak komponensekre bontása után el is vész; a felhasználó a már
     kinyílt fiókra kattint, a teszt is erre vár.
     """
-    assert varj_ablakon_belulre(
+    if varj_ablakon_belulre(
         QCoreApplication.instance(), window, item, masodperc
-    ), "az elem közepe határidőn belül sem került az ablakon belülre"
+    ):
+        return
+
+    helyzet = _item_scene_center(item)
+    helyzet_szoveg = (
+        f"({helyzet[0]:.1f}, {helyzet[1]:.1f})" if helyzet is not None else "nem elérhető"
+    )
+    try:
+        nev = item.objectName() or "ismeretlen"
+    except (AttributeError, RuntimeError):
+        nev = "ismeretlen"
+    raise AssertionError(
+        "az elem közepe határidőn belül sem került az ablakon belülre; "
+        f"elem={nev}, helyzet={helyzet_szoveg}, "
+        f"ablak={window.width()}x{window.height()}"
+    )
