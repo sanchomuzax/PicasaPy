@@ -121,5 +121,10 @@ def test_a_terkep_nelkuli_felirat_nem_szelesiti_ki_a_panel_oszlopat(qml_app, qt_
     assert _var(qt_app, lambda: oszlop.implicitWidth() <= oszlop.width() + 1), (
         f"a panel oszlopa szélesebbet kér ({oszlop.implicitWidth():.1f}), mint "
         f"a helye ({oszlop.width():.1f}); felirat implicit szélessége: "
-        f"{fallback.implicitWidth():.1f}"
+        f"{fallback.implicitWidth():.1f}; gyerekek: "
+        + ", ".join(
+            f"{gy.objectName() or gy.metaObject().className()}"
+            f"[iw={gy.implicitWidth():.0f} v={int(gy.isVisible())}]"
+            for gy in oszlop.childItems()
+        )
     )
