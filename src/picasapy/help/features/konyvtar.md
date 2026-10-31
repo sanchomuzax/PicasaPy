@@ -265,12 +265,17 @@ több albumban is szerepelhet.
   is: megnyitja az **Album tulajdonságai** ablakot (a név mezőben
   **Névtelen** áll), és az **OK** után egy **üres** albumot készít, a
   kijelölt képek nélkül. Ezt utólag töltöd fel képekkel, például
-  ráhúzással. Az album adatai egy képmappa `.picasa.ini` fájljába
-  kerülnek: ha a bal hasábon egy **mappa** van megnyitva, abba; az
-  **Időrend**, a keresési találatok vagy egy album nézetében pedig a
-  kijelölt (kijelölés nélkül a kiemelt) kép mappájába. Ha ilyen mappa
-  nincs, vagy a mappa nem része a könyvtárnak, a program szól: „Albumot
-  csak indexelt képmappába lehet menteni.", és nem készül album.
+  ráhúzással. Amíg az album üres, a PicasaPy csak a saját
+  adatbázisában tartja nyilván, a képmappák `.picasa.ini` fájljához
+  **nem nyúl**. Az album egy képmappához tartozik: ha a bal hasábon egy
+  **mappa** van megnyitva, ahhoz; az **Időrend**, a keresési találatok
+  vagy egy album nézetében pedig a kijelölt (kijelölés nélkül a
+  kiemelt) kép mappájához. Ha ilyen mappa nincs, vagy a mappa nem része
+  a könyvtárnak, a program szól: „Albumot csak indexelt képmappába lehet
+  menteni.", és nem készül album. Amikor az első képet hozzáadod, az
+  album a nevével és adataival együtt a kép mappájának `.picasa.ini`
+  fájljába kerül, ahogy bármelyik más album. Az üres album is
+  átnevezhető, szerkeszthető és törölhető.
 - Meglévő albumhoz a kép helyi menüjének **Hozzáadás az albumhoz**
   almenüjén át adsz hozzá képet. Ugyanez elérhető a képtálca
   album-gombjával: ez egy fölfelé nyíló menüt nyit, akkor is, ha még
@@ -310,7 +315,9 @@ Mappánál a mezők kicsit mások (lásd fent, **A mappa tulajdonságai**).
 ### Album törlése
 
 Az album sorára jobbgombbal kattintva az **Album törlése** tétel előbb
-rákérdez: „Biztosan törli a(z) "*név*" albumot?" Az **Album törlése**
+rákérdez: „Biztosan törli a(z) "*név*" albumot?" Az ablakban két gomb
+van, az **Album törlése** és a **Nem**. A fókusz a **Nem** gombon áll,
+tehát egy véletlen Enter megtartja az albumot. Az **Album törlése**
 gombbal jóváhagyva a program az albumot minden olyan mappa
 `.picasa.ini` fájljából kiveszi, ahol tagja volt. **A képek megmaradnak**
 a mappáikban, és a többi albumhoz sem nyúl — csak ez az egy összeállítás
@@ -709,7 +716,8 @@ Rejtett képek** bekapcsolása előbb ezt kéri.
 Ha még nincs jelszavad, egy mappa elrejtése után a program rákérdez:
 „A "Rejtett mappák" gyűjteményt jelenleg nem védi jelszó. Szeretne most
 megadni egy jelszót?" A **Jelszó hozzáadása** gomb rögtön a jelszó
-ablakát nyitja, a **Jelszó hozzáadásának mellőzése** kihagyja. Ha
+ablakát nyitja (ezen áll a fókusz, így az Enter is ezt választja), a
+**Jelszó hozzáadásának mellőzése** kihagyja. Más gomb nincs. Ha
 bejelölöd a **Ne kérdezzen újra.** négyzetet, és a mellőzést választod,
 a kérdés többé nem jön elő. A mappa felfedése és a **Nézet ▸ Rejtett
 képek** kapcsoló nem hozza elő ezt a kérdést.

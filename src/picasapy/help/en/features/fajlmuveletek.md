@@ -139,6 +139,7 @@ If Trash is unavailable, such as on some network or removable drives,
 the file is permanently deleted after a separate warning. The button is
 then **Delete File** or **Delete Files**.
 
+The dialog has two buttons: the confirm button and **Cancel**.
 The **Cancel** button has focus when the dialog opens, so pressing
 `Enter` by accident does not delete anything. The option **Don't ask
 again, always remove** turns off future confirmations. The same
@@ -183,3 +184,6 @@ back, the error explains where the contents are.
 The delete-folder command removes the folder from disk and asks for
 confirmation because it also deletes subfolders. The remove-from-library
 command hides the folder from PicasaPy while leaving its files in place.
+It asks first in a **Confirm** window that shows the folder's full path.
+The two buttons are **Remove Folder** and **Cancel**; **Remove Folder**
+has focus, so `Enter` removes the folder.

@@ -91,7 +91,9 @@ húzhatsz** a listában: elengedve az arc az ő nevét kapja.
 
 A névtelen arckép sarkában lévő **×** (**Személy mellőzése**) a mellőzést
 kéri: a program rákérdez, hogy valóban a Mellőzött emberek albumba
-kerüljön-e az arc. Az **×** a megnevezett sorokon is látszik, ahogy az
+kerüljön-e az arc. A kérdés két gombja a **Személy mellőzése** (több
+arcnál **Személyek mellőzése**) és a **Mégse**; az Enter a mellőzést
+választja. Az **×** a megnevezett sorokon is látszik, ahogy az
 eredetiben, de ott nem csinál semmit.
 
 Ha a program **tippel** egy névtelen arcra, a sorban a javasolt név

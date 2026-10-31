@@ -53,8 +53,10 @@ default, and PicasaPy remembers your choice.
 ## Choose an email program
 
 Until you choose otherwise, PicasaPy first shows the **Select Email**
-page the first time you send. Confirm **MAIL CLIENT** to open a new
-message in your computer's default email program. **Google Mail** is
+page the first time you send. The first entry shows the name of
+your computer's default email program (for example Thunderbird or
+Outlook); if PicasaPy cannot read it, the entry says **Native Mail
+Client**. Confirm it to open a new message in that email program. **Google Mail** is
 disabled because PicasaPy does not connect to a Google account.
 
 Check the option to remember this choice and skip the dialog next time

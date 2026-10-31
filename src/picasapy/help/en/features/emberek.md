@@ -75,7 +75,8 @@ Type a name and press Enter:
 
 You can also drag an unnamed face onto a named person in the list. A
 small × on an unnamed face asks whether to move it to the Ignored People
-album. The same symbol appears on named rows, but has no effect there.
+album. The two buttons are **Ignore Person** (**Ignore People** for
+several faces) and **Cancel**; `Enter` chooses to ignore. The same symbol appears on named rows, but has no effect there.
 
 When PicasaPy suggests a name, it shows the name with a question mark.
 Use the check mark to accept it and assign the face, or the X to reject

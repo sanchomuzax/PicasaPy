@@ -9,6 +9,10 @@ Select one photo, then choose **Create** ▸ **Set as Desktop...**. The
 command is disabled if nothing is selected. If several photos are
 selected, the first one is used.
 
+PicasaPy asks first: a **Confirm** window warns that the picture will
+replace your current desktop background. **Set Desktop** (it has focus,
+so `Enter` chooses it) sets the background; **No** cancels.
+
 ## From a collage
 
 Choose **Desktop Background** in the collage panel to create the
