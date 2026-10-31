@@ -40,18 +40,13 @@ QtObject {
     //: szerkesztés" parancs: a kijelölt képet a nézőben nyitja meg, ahol a
     //: szerkesztő panel is ül. Egy belépő, több hívó — a tálca helyi
     //: menüje (#1917) is ezt hívja.
-    // #4656: minden tényleges nézőnyitás ezt használja. A teljes képernyő
-    // vagy ablakos mód a mentett jelölőt követi; bezáráskor a korábbi
-    // ablakállapot áll vissza.
+    // #6333: a könyvtárból nyitott néző a főablakban marad, nem vált teljes
+    // képernyőre. A ViewerFullscreenStartup a külön Fotómegjelenítő
+    // (PicasaPhotoViewer.exe) beállítása (spec 12.6.1), ezért csak a
+    // gyorsnézetes indítást vezérli (startQuickViewer).
     function openPhotoViewer(row) {
         if (!hostWindow.viewerOpen) {
-            hostWindow.visibilityBeforeViewer = hostWindow.visibility
-            var fullscreenStartup = hostController
-                && hostController.viewerFullscreenStartup !== undefined
-                ? hostController.viewerFullscreenStartup : true
-            hostWindow.visibility = fullscreenStartup
-                ? Window.FullScreen : Window.Windowed
-            hostWindow.viewerVisibilityManaged = true
+            hostWindow.viewerVisibilityManaged = false
             hostWindow.viewerOpen = true
         }
         hostPhotoViewer.show(row)
