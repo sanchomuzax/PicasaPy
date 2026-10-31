@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.1] - 2026-10-31
+
+- Az eszköztár-referencia a verziófelirat vízszintes helyét nem méri (#6315).
 ## [1.0.0] - 2026-10-30
 
 - Az indítóképernyő a betöltés végén magától eltűnik, a félkész szoftverről szóló figyelmeztetés kikerült. (#6311).
