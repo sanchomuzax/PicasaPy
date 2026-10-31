@@ -25,6 +25,15 @@ on:
         required: false
         default: "16"
         type: string
+      teljes:
+        # #6324: a hívó választójával azonos döntés. A `ci.yml` kódváltozás
+        # nélküli main-pushon (kiadási commit) üreset ad: ilyenkor a windowsos
+        # láb is csak a Windows-érzékeny teszteket futtatja, ahogy a darabszám
+        # is erre készült. Alapértéke "1", a többi hívó változatlan.
+        description: Teljes készlet nem-PR eseményen ("1") vagy szűkített ("")
+        required: false
+        default: "1"
+        type: string
       cov:
         # #1156: a lefedettség-mérés ALAPÉRTELMEZÉSBEN KI van kapcsolva.
         # A `--cov` minden részfutást `coverage run -p` alá tesz, ami a
@@ -66,7 +75,7 @@ jobs:
       QT_QPA_PLATFORM: offscreen
       # A kiválasztó által írt fájllista fut; main-pushon a teljes készlet.
       PICASAPY_ERINTETT_ALAP: ${{ github.event.pull_request.base.sha }}
-      PICASAPY_TESZT_TELJES: ${{ github.event_name != 'pull_request' && '1' || '' }}
+      PICASAPY_TESZT_TELJES: ${{ github.event_name != 'pull_request' && inputs.teljes == '1' && '1' || '' }}
 
     steps:
       - name: Checkout
@@ -119,10 +128,10 @@ jobs:
       - name: Select test files
         env:
           PICASAPY_ERINTETT_ALAP: ${{ github.event.pull_request.base.sha }}
-          PICASAPY_TESZT_TELJES: ${{ github.event_name != 'pull_request' && '1' || '' }}
+          PICASAPY_TESZT_TELJES: ${{ github.event_name != 'pull_request' && inputs.teljes == '1' && '1' || '' }}
         # Windows PR-en ugyanazt a diffet szűkítjük a Windows-érzékeny
         # tesztekre; mainen a --teljes felülírja ezt, és minden teszt megmarad.
-        run: python scripts/teszt_valasztas.py --lista "${{ runner.temp }}/picasapy-test-list.json" ${{ inputs.os == 'windows-latest' && github.event_name == 'pull_request' && '--windows' || '' }}
+        run: python scripts/teszt_valasztas.py --lista "${{ runner.temp }}/picasapy-test-list.json" ${{ inputs.os == 'windows-latest' && (github.event_name == 'pull_request' || inputs.teljes != '1') && '--windows' || '' }}
 
       - name: Run tests
         # darabolt futtatás (#53): a teljes készlet egy processzben a

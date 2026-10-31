@@ -139,6 +139,7 @@ jobs:
       os: windows-latest
       darabok: ${{ needs.valtozas.outputs.windows_darabok }}
       darabszam: ${{ needs.valtozas.outputs.windows_darabszam }}
+      teljes: ${{ needs.valtozas.outputs.kod == 'true' && '1' || '' }}
 
   # #1863: a `docs/`-ot OLVASÓ őrök — csak-dokumentációs PR-en ez fut a
   # kihagyott mátrix helyett. A listát a `scripts/docs_olvaso_tesztek.py`
