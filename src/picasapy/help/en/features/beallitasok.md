@@ -232,10 +232,11 @@ checkboxes:
 - **Fullscreen startup (requires restart of Photo Viewer to take effect)**
   is checked by default, and the choice is saved. The note in parentheses
   is misleading: you do not need to restart the application. The setting
-  takes effect the next time you open the viewer. When checked, the viewer
-  opens full screen no matter how you launch it. When unchecked, it keeps
-  its usual window size. Closing the viewer restores the window to the
-  state it had before the viewer opened. Press `F11` in the viewer to
+  takes effect the next time you open the viewer. It applies only to the
+  simplified viewer (the Photo Viewer), that is, when you open a picture
+  file from outside the program: when checked, it opens full screen; when
+  unchecked, it opens in a window. A picture opened from the library always
+  stays in the program window, whatever the setting. Press `F11` in the viewer to
   switch between full screen and windowed mode. See
   [Viewing photos](nezegetes.md).
 - **Use Color Management** is the same setting as the one under the View

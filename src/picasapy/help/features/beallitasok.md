@@ -253,10 +253,11 @@ jelölőnégyzettel:
 - **Teljes képernyős indítás (a Fotómegjelenítő újraindítása után lép
   érvénybe)** — alapból be van jelölve; a választás megmarad. A felirat
   zárójeles része félrevezető: a program újraindítására nincs szükség, a
-  beállítás a **következő képnézőnyitástól** hat. Bejelölve a néző
-  (akárhonnan nyitod meg) teljes képernyőn nyílik; ha nincs bejelölve, az
-  ablak a megszokott méretében marad. A néző bezárásakor az ablak visszaáll arra az állapotra, amelyben
-  a néző megnyitása előtt volt. Az **F11** a megnyitott nézőben bármikor
+  beállítás a **következő képnézőnyitástól** hat. A jelölő csak az
+  egyszerűsített nézőre (a Fotómegjelenítőre) vonatkozik, vagyis amikor egy
+  képet a programon kívülről, fájlból nyitsz meg: bejelölve ez teljes
+  képernyőn nyílik, ha nincs bejelölve, ablakban. A könyvtárból megnyitott
+  kép mindig a program ablakában marad, a jelölő állásától függetlenül. Az **F11** a megnyitott nézőben bármikor
   átvált teljes képernyő és ablak közt (lásd [Nézegetés](nezegetes.md));
 - **Színkezelés használata** — ugyanaz az egyetlen beállítás, mint a
   **Nézet ▸ Színkezelés használata** (lásd lentebb): ha az egyiken

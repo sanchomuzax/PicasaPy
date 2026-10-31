@@ -43,9 +43,10 @@ F11 switches the viewer to full screen; press it again to restore the
 previous window size. It affects the open viewer only. A slideshow
 controls its own full-screen state.
 
-To open the viewer in full screen automatically, use the full-screen
-startup option in **Configure Photo Viewer...** (see
-[Settings](beallitasok.md)).
+A picture opened from the library appears in the program window; the
+viewer does not switch to full screen by itself. The full-screen startup
+option in **Configure Photo Viewer...** applies only to the simplified
+viewer started from a file (see below and [Settings](beallitasok.md)).
 
 ### The filmstrip
 
@@ -84,8 +85,8 @@ If you start PicasaPy with a picture file, such as with the file
 manager's Open with command or by giving the filename at startup (see
 [Getting started](../getting-started.md)), PicasaPy opens a simplified
 viewer instead of loading the library, much like the original Picasa
-Photo Viewer. The full-screen startup option in Settings applies here
-too.
+Photo Viewer. The full-screen startup option in Settings applies only
+to this viewer.
 
 The viewer displays only the files you specified. If you supplied
 several, including files from different folders, use the arrows to move
