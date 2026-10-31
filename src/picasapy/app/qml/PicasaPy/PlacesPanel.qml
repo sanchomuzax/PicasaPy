@@ -196,6 +196,7 @@ Rectangle {
         Rectangle {
             objectName: "placesSearchGroup"
             Layout.fillWidth: true
+            Layout.minimumWidth: 0
             Layout.preferredHeight: 28
             color: Theme.contentPanel
             border.color: Theme.chromeBorder
@@ -212,6 +213,8 @@ Rectangle {
                     objectName: "placesSearchInput"
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    Layout.minimumWidth: 0
+                    Layout.preferredWidth: 0
                     text: panel.searchDraft
                     onTextChanged: panel.searchDraft = text
                     onAccepted: panel.applyLocalSearch()
@@ -222,6 +225,8 @@ Rectangle {
                     id: placesSearchButton
                     objectName: "placesSearchButton"
                     Layout.preferredWidth: 28
+                    Layout.minimumWidth: 28
+                    Layout.maximumWidth: 28
                     Layout.fillHeight: true
                     text: qsTr("Search")
                     Accessible.name: qsTr("Search")
