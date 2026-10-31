@@ -511,5 +511,26 @@ def varj_kattinthatora(window, item, masodperc: float = 5.0) -> None:
     raise AssertionError(
         "az elem közepe határidőn belül sem került az ablakon belülre; "
         f"elem={nev}, helyzet={helyzet_szoveg}, "
-        f"ablak={window.width()}x{window.height()}"
+        f"ablak={window.width()}x{window.height()}; "
+        f"szülőlánc: {_szulolanc(item)}"
     )
+
+
+def _szulolanc(item, legfeljebb: int = 14) -> str:
+    """Az elem és szülei: név, jelenetbeli x, szélesség, implicit szélesség (#6321).
+
+    A kilógó elemnél ebből látszik, melyik konténer szélesebb a helyénél.
+    """
+    sorok = []
+    try:
+        elem = item
+        while elem is not None and len(sorok) < legfeljebb:
+            bal = elem.mapToScene(elem.boundingRect().topLeft()).x()
+            nev = elem.objectName() or type(elem).__name__
+            sorok.append(
+                f"{nev}[x={bal:.0f} w={elem.width():.0f} iw={elem.implicitWidth():.0f}]"
+            )
+            elem = elem.parentItem()
+    except (AttributeError, TypeError, RuntimeError):
+        sorok.append("…")
+    return " < ".join(sorok)
