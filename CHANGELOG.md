@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.6] - 2026-10-31
+
+- A Helyek panel térkép nélküli felirata tördelődik, és nem szélesíti ki a panelt (#6321).
+
 ## [1.0.5] - 2026-10-31
 
 - A kattintásőr hibaüzenete a szülőlánc méreteit is kiírja (#6321).
