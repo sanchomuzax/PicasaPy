@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.3] - 2026-10-31
+
+- A Helyek panel keresőgombja kis ablakban és Windowson is a panelen belül marad. (#6321).
+
 ## [1.0.2] - 2026-10-31
 
 - A kattintás előtti várakozás a fiók animációjának végét is kivárja (#6318).
