@@ -125,7 +125,7 @@ def test_a_pillanatkep_varakozik_keszsegre_es_az_idotullepest_kiirja(
     assert timer.property("interval") == 5000
     timer.setProperty("interval", 20)
     _invoke(popup, "takeSnapshot")
-    timeout_message = "Camera did not become ready for a snapshot within 5 seconds."
+    timeout_message = "Capture failed"
     assert var_feltetelre(
         qt_app, lambda: popup.property("statusMessage") == timeout_message, 2.0
     ), "az időtúllépés nem jelent meg az állapotsorban"

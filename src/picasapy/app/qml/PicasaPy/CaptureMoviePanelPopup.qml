@@ -262,9 +262,9 @@ Popup {
                 return
             }
             var path = pendingSnapshotPath
-            var message = qsTr(
-                "Camera did not become ready for a snapshot within 5 seconds."
-            )
+            // Az 5 mp-es várakozás lejárt; saját felirat helyett a már
+            // lefordított általános hibaszöveg (minden nyelven megvan).
+            var message = qsTr("Capture failed")
             failSnapshot(-1, message, path, message)
         }
 
