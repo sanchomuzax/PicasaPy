@@ -644,6 +644,36 @@ jobs:
             --futtato "forras=@python,picasapy" \
             --futtato "telepitett=$EXE" --munka "$RUNNER_TEMP/csomag-meres"
 
+      # #6383: az önfrissítés a ténylegesen telepített Windows-programon,
+      # loopback hamis kiadással fut végig. A mérő mindegyik állapotot
+      # képernyőképként menti; egy hiányzó lépés vagy 60 s-os határ piros.
+      - name: Mérés — a telepített program önfrissítése
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          if [ ! -f packaging/windows/csomag_meres.py ] \
+             || ! grep -q -- 'choices=("ido", "ikon", "frissites")' packaging/windows/csomag_meres.py; then
+            echo "Régi kiadási tag: nincs önfrissítési végponttól végpontig mérés."
+            exit 0
+          fi
+          EXE="$RUNNER_TEMP/PicasaPy-installed/PicasaPy.exe"
+          python packaging/windows/csomag_meres.py frissites \
+            --futtato "telepitett=$EXE" \
+            --munka "$RUNNER_TEMP/csomag-frissites" \
+            --kepernyokep-mappa "$RUNNER_TEMP/PicasaPy-update-screenshots" \
+            --elvart-verzio "${{ steps.tag.outputs.verzio }}"
+
+      - name: A frissítési képernyőképek csatolása
+        if: always() && steps.tag.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-update-screenshots
+          path: ${{ runner.temp }}/PicasaPy-update-screenshots/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: A telepítő feltöltése a kiadásra
         if: steps.tag.outputs.skip != 'true' && github.event_name != 'pull_request'
         shell: bash
