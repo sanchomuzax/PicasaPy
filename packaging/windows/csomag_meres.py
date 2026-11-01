@@ -895,6 +895,31 @@ def _lathato_koordinataval(obj: dict | None) -> bool:
     return obj["rect"].get("width", 0) > 0 and obj["rect"].get("height", 0) > 0
 
 
+def _kilepes_diagnosztika(diag_mappa: Path, pid: int, kattintas: float, profil_gyoker: Path) -> None:
+    """Miért nem lépett ki a régi program a Restart now után (#6383).
+
+    A diagnosztika eseményciklus-időzítőről ír: ha a kattintás után nincs új
+    pillanat, a program kilépett az eseményciklusból, és a lezárásban akadt
+    el; ha van, a kattintás nem ért célba vagy a program várakozik."""
+    sajat = [s for s in _diagnosztika(diag_mappa) if s.get("pid") == pid]
+    utana = [s for s in sajat if float(s.get("at", 0)) > kattintas]
+    utolso = sajat[-1] if sajat else {}
+    gomb = _objektum(utolso, "updateDialogRestartButton") if utolso else None
+    print(
+        f"  kattintás után {len(utana)} pillanat; az utolsó "
+        f"{time.time() - float(utolso.get('at', time.time())):.1f} s-a; "
+        f"download_state={utolso.get('download_state')}; "
+        f"Restart now: {(gomb or {}).get('visible')} {(gomb or {}).get('rect')}",
+        flush=True,
+    )
+    for nev in ("frissites-naplo.txt", "errorlog.txt"):
+        for naplo in sorted(profil_gyoker.rglob(nev)):
+            sorok = naplo.read_text(encoding="utf-8", errors="replace").splitlines()
+            print(f"  --- {nev} (utolsó {min(15, len(sorok))} sor) ---", flush=True)
+            for sor in sorok[-15:]:
+                print(f"    {sor}", flush=True)
+
+
 def _varjon_diagnosztikara(
     diag_mappa: Path,
     feltetel,
@@ -1141,6 +1166,8 @@ def frissites(
                 kepernyokep_mappa / "04-ujrainditasra-kesz.png", folyamat.pid
             )
             restart_button = _objektum(ready, "updateDialogRestartButton")
+            print(f"  Restart now gomb: {restart_button.get('rect')}", flush=True)
+            kattintas = time.time()
             _valodi_eger_kattintas(restart_button, folyamat.pid)
             _kepernyokep_mentese(
                 kepernyokep_mappa / "05-ujrainditas-kerese.png", folyamat.pid
@@ -1150,6 +1177,7 @@ def frissites(
             while folyamat.poll() is None and time.monotonic() < kilepett:
                 time.sleep(0.05)
             if folyamat.poll() is None:
+                _kilepes_diagnosztika(diag_mappa, folyamat.pid, kattintas, munka / "futas")
                 raise TimeoutError("a Frissítés most kattintás után a régi program nem lépett ki")
 
             uj_pid_state, _ = _varjon_diagnosztikara(

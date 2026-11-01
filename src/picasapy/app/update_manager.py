@@ -349,6 +349,29 @@ def mappa_irhato(folder: Path) -> bool:
     return True
 
 
+#: Ennyi idő jut a rendes lezárásra a „Restart now” után (#6383).
+KILEPESI_HATARIDO_MP = 20.0
+
+
+def _kenyszeritett_kilepes_ha_beragad(hatarido_mp: float = KILEPESI_HATARIDO_MP) -> None:
+    """Ha a lezárás beragad, a folyamat a határidő után kilép (#6383).
+
+    A frissítősegéd addig vár, amíg ez a folyamat él; egy beragadt háttérszál
+    miatt a csere soha nem indulna el. A démonszálas időzítő az értelmező
+    leállása közben is lefut, ezért a nem démon szálakra várakozást is
+    átvágja. A rendes lezárás (index, beállítások) a határidőn belül végez."""
+    import threading
+
+    def _kilepes() -> None:
+        logger.warning("A lezárás %.0f s alatt nem fejeződött be; kilépés a frissítéshez", hatarido_mp)
+        logging.shutdown()
+        os._exit(0)
+
+    idozito = threading.Timer(hatarido_mp, _kilepes)
+    idozito.daemon = True
+    idozito.start()
+
+
 def _inditsd_a_segedet(args: list[str], *, emelt: bool) -> bool:
     """A frissítő segéd indítása; UAC-ot csak akkor kér, ha `emelt` (#6340)."""
     import subprocess
@@ -835,5 +858,6 @@ class UpdateController(QObject):
         if restart_now:
             from PySide6.QtCore import QCoreApplication
 
+            _kenyszeritett_kilepes_ha_beragad()
             QCoreApplication.quit()
         return True

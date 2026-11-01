@@ -716,3 +716,54 @@ def test_teljes_windows_kiadast_felajanl(qt_app):
     )
     controller._automatic_check_if_due()
     assert controller.updateAvailable
+
+
+def test_restart_now_utan_beragadt_lezarasnal_a_folyamat_kilep(qt_app, tmp_path, monkeypatch):
+    """#6383: a frissítősegéd a folyamat kilépésére vár; beragadt lezárásnál
+    a határidő után kényszerített kilépés jön, különben a csere sosem indul."""
+    from types import SimpleNamespace
+
+    from picasapy.app import update_manager
+
+    telepites = tmp_path / "PicasaPy"
+    telepites.mkdir()
+    (telepites / "PicasaPyUpdateHelper.exe").write_bytes(b"seged")
+    monkeypatch.setattr(
+        update_manager, "_futtato", SimpleNamespace(executable=str(telepites / "PicasaPy.exe"))
+    )
+    monkeypatch.setattr(update_manager, "_inditsd_a_segedet", lambda args, *, emelt: True)
+    monkeypatch.setattr(update_manager, "mappa_irhato", lambda _m: True)
+    halok = []
+    monkeypatch.setattr(
+        update_manager, "_kenyszeritett_kilepes_ha_beragad", lambda: halok.append("felhuzva")
+    )
+    from PySide6.QtCore import QCoreApplication
+
+    monkeypatch.setattr(QCoreApplication, "quit", staticmethod(lambda: halok.append("quit")))
+    controller = UpdateController(
+        "1.0.0",
+        settings=_MemorySettings(),
+        client=_ReleaseClient(),
+        pool=_InlinePool(),
+        schedule=False,
+        install_kind="windows",
+    )
+    controller._download_path = tmp_path / "csomag.zip"
+
+    assert controller.installWhenExiting(True) is True
+    assert halok == ["felhuzva", "quit"]
+
+
+def test_a_kenyszeritett_kilepes_a_hatarido_utan_os_exit(monkeypatch):
+    import threading
+
+    from picasapy.app import update_manager
+
+    kilepett = threading.Event()
+    kodok = []
+    monkeypatch.setattr(
+        update_manager.os, "_exit", lambda kod: (kodok.append(kod), kilepett.set())
+    )
+    update_manager._kenyszeritett_kilepes_ha_beragad(0.05)
+    assert kilepett.wait(2.0)
+    assert kodok == [0]
