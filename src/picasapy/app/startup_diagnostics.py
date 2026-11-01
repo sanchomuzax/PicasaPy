@@ -36,53 +36,62 @@ def runtime_version_messages(pyside6_version: str, qt_version: str) -> tuple[str
     return tuple(messages)
 
 
-def process_age_ms() -> int | None:
+def process_age_ms(platform: str = sys.platform) -> int | None:
     """A folyamat létrehozása óta eltelt idő ezredmásodpercben (#6344).
 
     A hibanapló első saját jelzése a Python-modulok betöltése UTÁN
     születik; ami előtte történt (a PyInstaller-indító, a DLL-ek betöltése
     és a víruskereső vizsgálata), az eddig sehol nem látszott. Windowson a
-    `GetProcessTimes`, Linuxon a `/proc` adja; ahol egyik sincs, `None`."""
+    `GetProcessTimes`, Linuxon a `/proc` adja; ahol egyik sincs, `None`.
+    Diagnosztika: semmilyen hibával nem dobhat."""
     try:
-        if sys.platform == "win32":
-            import ctypes
-            from ctypes import wintypes
-
-            kernel32 = ctypes.WinDLL("kernel32")
-            kernel32.GetCurrentProcess.restype = wintypes.HANDLE
-            # ⚠️ argtypes NÉLKÜL a 64 bites ál-leíró (-1) C `int`-ként menne
-            # át, és `ctypes.ArgumentError`-ral elszállna — mérve a windowsos
-            # CI-n: a csomagolt program hibaablakkal állt meg.
-            kernel32.GetProcessTimes.argtypes = [wintypes.HANDLE] + [
-                ctypes.POINTER(wintypes.FILETIME)
-            ] * 4
-            kernel32.GetProcessTimes.restype = wintypes.BOOL
-            kernel32.GetSystemTimeAsFileTime.argtypes = [ctypes.POINTER(wintypes.FILETIME)]
-            creation, exited, kernel, user, now = (wintypes.FILETIME() for _ in range(5))
-            if not kernel32.GetProcessTimes(
-                kernel32.GetCurrentProcess(),
-                ctypes.byref(creation),
-                ctypes.byref(exited),
-                ctypes.byref(kernel),
-                ctypes.byref(user),
-            ):
-                return None
-            kernel32.GetSystemTimeAsFileTime(ctypes.byref(now))
-
-            def ticks(filetime) -> int:
-                return (filetime.dwHighDateTime << 32) | filetime.dwLowDateTime
-
-            return (ticks(now) - ticks(creation)) // 10_000
-        if sys.platform.startswith("linux"):
-            import os
-
-            fields = Path("/proc/self/stat").read_text().rsplit(")", 1)[1].split()
-            started = int(fields[19]) / os.sysconf("SC_CLK_TCK")
-            uptime = float(Path("/proc/uptime").read_text().split()[0])
-            return max(0, round((uptime - started) * 1000))
+        if platform == "win32":
+            return _windows_process_age_ms()
+        if platform.startswith("linux"):
+            return _linux_process_age_ms()
     except Exception:  # noqa: BLE001 — diagnosztika: az indulást SOHA nem akadályozhatja
         return None
     return None
+
+
+def _windows_process_age_ms() -> int | None:
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32")
+    kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+    # ⚠️ argtypes NÉLKÜL a 64 bites ál-leíró (-1) C `int`-ként menne át, és
+    # `ctypes.ArgumentError`-ral elszállna — mérve a windowsos CI-n: a
+    # csomagolt program hibaablakkal állt meg.
+    kernel32.GetProcessTimes.argtypes = [wintypes.HANDLE] + [
+        ctypes.POINTER(wintypes.FILETIME)
+    ] * 4
+    kernel32.GetProcessTimes.restype = wintypes.BOOL
+    kernel32.GetSystemTimeAsFileTime.argtypes = [ctypes.POINTER(wintypes.FILETIME)]
+    creation, exited, kernel, user, now = (wintypes.FILETIME() for _ in range(5))
+    if not kernel32.GetProcessTimes(
+        kernel32.GetCurrentProcess(),
+        ctypes.byref(creation),
+        ctypes.byref(exited),
+        ctypes.byref(kernel),
+        ctypes.byref(user),
+    ):
+        return None
+    kernel32.GetSystemTimeAsFileTime(ctypes.byref(now))
+
+    def ticks(filetime) -> int:
+        return (filetime.dwHighDateTime << 32) | filetime.dwLowDateTime
+
+    return (ticks(now) - ticks(creation)) // 10_000
+
+
+def _linux_process_age_ms() -> int:
+    import os
+
+    fields = Path("/proc/self/stat").read_text().rsplit(")", 1)[1].split()
+    started = int(fields[19]) / os.sysconf("SC_CLK_TCK")
+    uptime = float(Path("/proc/uptime").read_text().split()[0])
+    return max(0, round((uptime - started) * 1000))
 
 
 def write_console(message: str, *, error: bool = False) -> None:
