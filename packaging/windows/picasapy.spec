@@ -45,6 +45,19 @@ adatok = [
     (str(APP / "i18n"), "picasapy/app/i18n"),
     (str(APP / "assets"), "picasapy/app/assets"),
 ]
+#: #6348: a csomagban se `pyproject.toml`, se telepítési metaadat nincs —
+#: a verziót a build írja egy fájlba, amit a `picasapy/__init__.py` olvas.
+#: E nélkül a program `0.0.0+ismeretlen`-t mutatott.
+import tomllib  # noqa: E402
+
+_VERZIO = tomllib.loads((GYOKER / "pyproject.toml").read_text(encoding="utf-8"))[
+    "project"
+]["version"]
+_VERZIO_FAJL = Path(workpath) / "_csomag_verzio.txt"
+_VERZIO_FAJL.parent.mkdir(parents=True, exist_ok=True)
+_VERZIO_FAJL.write_text(_VERZIO + "\n", encoding="utf-8")
+adatok.append((str(_VERZIO_FAJL), "picasapy"))
+
 #: a `help/` és a többi csomagon belüli adat a saját hookok nélkül is kell
 adatok += collect_data_files(
     "picasapy", includes=["**/*.md", "**/*.json", "**/*.onnx"]

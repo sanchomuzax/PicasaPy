@@ -371,6 +371,21 @@ jobs:
                   print(f"{mode}/{case}: a főablak megjelent a splash után")
           PY
 
+      # #6344: a csomagolt program INDULÁSI IDEJE a forrásból indítotthoz
+      # mérve, ugyanazon a futón, egymás után. Mérés, nem kapu: az idő a
+      # futó terhelésétől is szór, ezért itt nem bukik.
+      - name: Mérés — a csomagolt és a forrásból indított program indulása
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          if [ ! -f packaging/windows/csomag_meres.py ]; then echo "Régi kiadási tag: nincs mérőszkript."; exit 0; fi
+          python packaging/windows/csomag_meres.py ido \
+            --futtato "forras=@python,picasapy" \
+            --futtato "csomagolt=dist/PicasaPy/PicasaPy.exe" \
+            --munka "$RUNNER_TEMP/csomag-meres"
+
       # ⚠️ PowerShell, nem bash: a Git-bash MSYS-útvonalátírása a
       # `/DMyAppVersion=...` argumentumot fájlútvonalnak vette, és az ISCC
       # „You may not specify more than one script filename" hibával állt le
@@ -472,6 +487,26 @@ jobs:
                   raise SystemExit(f"{case}: a telepített főablak nem jelent meg a splash után")
               print(f"{case}: a telepített főablak megjelent a splash után")
           '@ | python -
+
+      # #6344/#6345: a TELEPÍTETT program indulási ideje és VALÓDI ablakának
+      # ikonja. Az ikon csak valódi ablakon kérdezhető le (offscreen alatt
+      # nincs natív ablak) — a tálca és az Alt+Tab ugyanezt mutatja.
+      - name: Mérés — a telepített program indulása és ablakikonja
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          if [ ! -f packaging/windows/csomag_meres.py ]; then echo "Régi kiadási tag: nincs mérőszkript."; exit 0; fi
+          EXE="$RUNNER_TEMP/PicasaPy-installed/PicasaPy.exe"
+          # #6348: a telepített program a valódi verzióját írja a naplóba
+          python packaging/windows/csomag_meres.py ido \
+            --futtato "telepitett=$EXE" --munka "$RUNNER_TEMP/csomag-meres" \
+            --elvart-verzio "${{ steps.tag.outputs.verzio }}"
+          # #6345: KAPU — ha a telepített program ablakának nincs ikonja, piros
+          python packaging/windows/csomag_meres.py ikon --szigoru \
+            --futtato "forras=@python,picasapy" \
+            --futtato "telepitett=$EXE" --munka "$RUNNER_TEMP/csomag-meres"
 
       - name: A telepítő feltöltése a kiadásra
         if: steps.tag.outputs.skip != 'true' && github.event_name != 'pull_request'

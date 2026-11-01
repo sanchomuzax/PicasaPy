@@ -49,11 +49,18 @@ Source: "..\..\dist\PicasaPy\*"; DestDir: "{app}"; \
     Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
+; #6345: a parancsikon UGYANAZT az AppUserModelID-t viseli, amit a program
+; induláskor beállít (`application_platform._set_windows_app_id`, #67).
+; Eltérő azonosítónál a Windows a futó ablakot és a parancsikont két külön
+; alkalmazásnak látja: a tálcára rögzített ikon mellett külön, ikon nélküli
+; gomb nyílik.
+#define MyAppUserModelID "PicasaPy.PicasaPy"
 ; Start menü
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; \
+    AppUserModelID: "{#MyAppUserModelID}"
 ; asztali ikon (a telepítő kérdezi)
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; \
-    Tasks: desktopicon
+    AppUserModelID: "{#MyAppUserModelID}"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; \

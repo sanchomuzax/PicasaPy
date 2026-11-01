@@ -41,6 +41,7 @@ from __future__ import annotations
 import itertools
 import logging
 import threading
+import time
 from collections.abc import Callable
 
 import shiboken6
@@ -66,6 +67,12 @@ SHOW_DELAY_MS = 300
 #: elég hosszú ahhoz, hogy egyetlen villanás helyett folyamatos, észlelhető
 #: benyomást keltsen.
 MIN_VISIBLE_MS = 500
+
+#: #6349: ennyi folyamatos pörgés után a nyilvántartás a hibanaplóba írja,
+#: MI fut (a nyilvántartott háttérszálak neve), és a végén azt is, meddig
+#: pörgött. A tulajdonos gépén a jelző „nagyon sokáig" pörgött, és a
+#: naplóból nem derült ki, melyik munka — ez a sor mondja meg.
+LONG_SPIN_LOG_MS = 30_000
 
 
 class AppBusyRegistry(QObject):
@@ -101,6 +108,10 @@ class AppBusyRegistry(QObject):
         self._min_visible_timer = QTimer(self)
         self._min_visible_timer.setSingleShot(True)
         self._min_visible_timer.timeout.connect(self._on_min_visible_timeout)
+        self._long_spin_timer = QTimer(self)
+        self._long_spin_timer.setSingleShot(True)
+        self._long_spin_timer.timeout.connect(self._on_long_spin)
+        self._shown_at: float | None = None
         self._beginRequested.connect(self._on_begin)
         self._endRequested.connect(self._on_end)
         # #2966: a leállítható munkák visszahívásai. A regisztráció a hívó
@@ -243,18 +254,50 @@ class AppBusyRegistry(QObject):
             return  # a munka a küszöb ideje alatt befejeződött — nincs villanás
         self._visible = True
         self._pending_hide = False
+        self._shown_at = time.monotonic()
         self.visibleChanged.emit()
         self._min_visible_timer.start(MIN_VISIBLE_MS)
+        self._long_spin_timer.start(LONG_SPIN_LOG_MS)
 
     def _on_min_visible_timeout(self) -> None:
         if self._pending_hide or self._active <= 0:
             self._hide()
         self._pending_hide = False
 
+    def spinning_for_s(self) -> float | None:
+        """Mióta látszik a jelző folyamatosan (mp), vagy `None`."""
+        if not self._visible or self._shown_at is None:
+            return None
+        return time.monotonic() - self._shown_at
+
+    def _on_long_spin(self) -> None:
+        if not self._visible:
+            return
+        logger.warning(
+            "#6349: a háttérmunka-jelző %.0f s óta pörög; futó munkák: %s (%d aktív)",
+            self.spinning_for_s() or 0.0,
+            ", ".join(_futo_munkak()) or "nincs nyilvántartott háttérszál",
+            self._active,
+        )
+
     def _hide(self) -> None:
+        eltelt = self.spinning_for_s()
+        self._long_spin_timer.stop()
         self._visible = False
         self._pending_hide = False
+        self._shown_at = None
+        if eltelt is not None and eltelt * 1000 >= LONG_SPIN_LOG_MS:
+            logger.warning("#6349: a háttérmunka-jelző %.0f s-ig pörgött", eltelt)
         self.visibleChanged.emit()
+
+
+def _futo_munkak() -> tuple[str, ...]:
+    """A futó háttérszálak nevei — lusta import, a körkörös függés ellen."""
+    try:
+        from .worker_thread import running_background_workers
+    except ImportError:
+        return ()
+    return running_background_workers()
 
 
 _registry: AppBusyRegistry | None = None
@@ -294,5 +337,6 @@ def reset_app_busy_registry() -> None:
         _registry.blockSignals(True)
         _registry._show_timer.stop()
         _registry._min_visible_timer.stop()
+        _registry._long_spin_timer.stop()
         _retired_registries.append(_registry)
     _registry = None

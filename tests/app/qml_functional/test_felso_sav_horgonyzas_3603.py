@@ -177,6 +177,25 @@ class TestAVerziofelirat:
         )
         assert _jobb_szel(window, "versionLabel") <= ablak
 
+    def test_hosszu_verzio_sem_log_a_mezore(self, qml_app_module, qt_app):
+        """#6348: a csomagolt program `v0.0.0+ismeretlen`-je a mezőre lógott."""
+        window, _, _ = qml_app_module
+        _szelesseg(window, qt_app, 1200)
+        cimke = _elem(window, "versionLabel")
+        eredeti = cimke.property("text")
+        try:
+            cimke.setProperty("text", "v0.0.0+ismeretlen-nagyon-hosszu")
+            for _ in range(4):
+                qt_app.processEvents()
+            assert _x_a_savban(window, "versionLabel") >= _jobb_szel(
+                window, "toolbarSearchBox"
+            ) + 2
+            assert cimke.property("truncated")
+        finally:
+            cimke.setProperty("text", eredeti)
+            for _ in range(4):
+                qt_app.processEvents()
+
     def test_csak_a_rovid_verzio_latszik(self, qml_app_module):
         from picasapy import __version__
         from picasapy.version import version_string

@@ -10,8 +10,10 @@ A feloldás sorrendje szándékosan a FORRÁSSAL kezd:
 
 1. **`pyproject.toml`**, ha a forrásfából futunk — így a kijelzett szám azt
    azonosítja, ami TÉNYLEG fut, nem azt, amit legutóbb telepítettek;
-2. **`importlib.metadata`** a telepített csomagnál (wheel, pipx);
-3. végső esetben `"0.0.0+ismeretlen"` — jobb egy nyilvánvalóan hamis szám,
+2. **`_csomag_verzio.txt`** a PyInstaller-csomagban (windowsos telepítő,
+   #6348) — ezt a `packaging/windows/picasapy.spec` írja a build idején;
+3. **`importlib.metadata`** a telepített csomagnál (wheel, pipx);
+4. végső esetben `"0.0.0+ismeretlen"` — jobb egy nyilvánvalóan hamis szám,
    mint egy hihető, de rossz.
 
 A `pyproject.toml` a `release.yml`-ben SZÖVEGESEN olvasódik (`grep`), ezért
@@ -58,6 +60,26 @@ def _verzio_a_telepitesbol() -> str | None:
         return None
 
 
-__version__ = _verzio_a_forrasbol() or _verzio_a_telepitesbol() or _ISMERETLEN
+#: #6348: a PyInstaller-csomag (windowsos telepítő) mellé a build EZT a fájlt
+#: teszi, a `pyproject.toml` verziójával. A csomagban se `pyproject.toml`,
+#: se telepítési metaadat nincs — e nélkül a program `0.0.0+ismeretlen`-t
+#: mutatott, és a kijelzett szám a keresőmezőre lógott.
+_CSOMAG_VERZIO_FAJL = "_csomag_verzio.txt"
+
+
+def _verzio_a_csomagbol() -> str | None:
+    try:
+        ertek = (Path(__file__).parent / _CSOMAG_VERZIO_FAJL).read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    return ertek or None
+
+
+__version__ = (
+    _verzio_a_forrasbol()
+    or _verzio_a_csomagbol()
+    or _verzio_a_telepitesbol()
+    or _ISMERETLEN
+)
 
 __all__ = ["__version__"]

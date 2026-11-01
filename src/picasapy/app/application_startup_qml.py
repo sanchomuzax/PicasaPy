@@ -212,7 +212,13 @@ def _startup_step_load_qml(state):
     timeline = state.timeline
 
     progress_log.mark("Main.qml betöltése elkezdődött")
-    with timeline.phase("QML betöltése (Main.qml)"):
+    # #6349: a tulajdonos gépén ez a hívás 25–46 s (a CI-n 1–2 s) — a
+    # figyelő a hibanaplóba írja, melyik kódsoron várt közben a fő szál
+    from picasapy.perf.foszal_figyelo import foszal_figyelo
+
+    with timeline.phase("QML betöltése (Main.qml)"), foszal_figyelo().szakasz(
+        "Main.qml betöltése"
+    ):
         engine.load(str(_app._APP_DIR / "qml" / "Main.qml"))
     if not engine.rootObjects():
         progress_log.mark("Main.qml betöltése sikertelen: nem jött létre főablak")

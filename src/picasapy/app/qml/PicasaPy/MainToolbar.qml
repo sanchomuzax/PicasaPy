@@ -614,6 +614,14 @@ Rectangle {
             // a teljes címke, pl. „v0.8.590 (6120.ad7e5c7c)”
             readonly property string fullText: appVersion
             text: String(appVersion).split(" ")[0]
+            // #6348: a felirat SOHA nem lóghat a mezőre — a mező mögötti sáv
+            // a felső határ, ami nem fér ki, „…”-tal zárul (a teljes címke a
+            // buboréksúgóban marad). A 0.0.0+ismeretlen csomagverzió e
+            // korlát nélkül balra kifutott, rá a keresőmezőre.
+            readonly property real maxWidth: Math.max(0,
+                toolbar.width - toolbar.searchBoxRight - anchors.rightMargin - 2)
+            width: Math.min(implicitWidth, maxWidth)
+            elide: Text.ElideRight
             font.pixelSize: 9
             // #706: rámutatásra és fókuszban aláhúzott — ránézésre is
             // látszódjon, hogy a szám kattintható hivatkozás.

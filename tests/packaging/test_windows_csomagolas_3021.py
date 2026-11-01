@@ -127,6 +127,27 @@ class TestAzInnoSetupTelepito:
     def test_ASZTALI_ikont_ad(self, iss):
         assert "{autodesktop}" in iss or "{commondesktop}" in iss
 
+    def test_a_parancsikonok_a_program_AppUserModelID_jat_viselik(self, iss):
+        """#6345: a parancsikon és a futó program azonosítója egyezzen, különben
+        a Windows két külön alkalmazásnak látja őket."""
+        import re
+
+        from picasapy.app import application_platform
+
+        forras = Path(application_platform.__file__).read_text(encoding="utf-8")
+        program = re.search(
+            r'SetCurrentProcessExplicitAppUserModelID\(\s*"([^"]+)"', forras
+        ).group(1)
+        assert f'#define MyAppUserModelID "{program}"' in iss
+        ikonsorok = [
+            sor
+            for sor in iss.split("[Icons]")[1].split("\n[")[0].replace("\\\n", " ").splitlines()
+            if sor.startswith("Name:")
+        ]
+        assert len(ikonsorok) == 2
+        for sor in ikonsorok:
+            assert 'AppUserModelID: "{#MyAppUserModelID}"' in sor, sor
+
     def test_ELTAVOLITHATO(self, iss):
         """Az Inno magától ír uninstall-bejegyzést; ehhez viszont kell
         `AppId` — enélkül egy átnevezés két bejegyzést hagyna."""

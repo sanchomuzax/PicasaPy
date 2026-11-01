@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import os
 import shutil
+import struct
 import subprocess
 import sys
 from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication
-from PySide6.QtGui import QFontDatabase, QGuiApplication
+from PySide6.QtGui import QFontDatabase, QGuiApplication, QIcon, QPixmap
 
 from picasapy.render.text_fonts import clear_family_cache
 from ._application_constants import _SPLASH_MIN_VISIBLE_MS
@@ -108,6 +109,66 @@ def _window_icon_path(platform: str = sys.platform) -> Path:
     if platform == "win32":
         return _app._APP_DIR / "assets" / "icon.ico"
     return _app._APP_DIR / "assets" / "icon.png"
+
+def _ico_png_frames(path: Path) -> list[bytes]:
+    """A `.ico` PNG-tömörítésű képkockái, a fájl saját sorrendjében (#6345).
+
+    A `assets/icon.ico` mind a hét mérete (16–256 px) PNG-képkocka. Hibás
+    vagy nem PNG-s fájlnál üres listát ad — ilyenkor a hívó a Qt saját
+    `.ico`-olvasójára esik vissza."""
+    try:
+        data = path.read_bytes()
+        reserved, kind, count = struct.unpack_from("<HHH", data, 0)
+        if reserved != 0 or kind != 1:
+            return []
+        frames = []
+        for index in range(count):
+            size, offset = struct.unpack_from("<II", data, 6 + 16 * index + 8)
+            frame = data[offset : offset + size]
+            if len(frame) == size and frame.startswith(b"\x89PNG\r\n\x1a\n"):
+                frames.append(frame)
+        return frames
+    except (OSError, struct.error):
+        return []
+
+
+def _load_window_icon(path: Path) -> QIcon:
+    """Az ablak- és tálcaikon, a Qt képformátum-bővítményei nélkül (#6345).
+
+    A `QIcon("icon.ico")` a `qico` bővítményen múlik, tehát a csomagolt
+    programban a bővítmény-útvonaltól is. Üres ikonnál a Qt az `IDI_ICON1`
+    erőforrást keresi; ilyet a PyInstaller nem tesz az `.exe`-be, a Windows
+    így az általános üres ikont mutatja. A PNG-olvasó a QtGui-ba BE VAN
+    FORDÍTVA, tehát a `.ico` PNG-képkockáit közvetlenül betöltve az ikon
+    bővítmény nélkül is megvan, előre renderelt méretenként (#67)."""
+    icon = QIcon()
+    for frame in _ico_png_frames(path) if path.suffix.lower() == ".ico" else ():
+        pixmap = QPixmap()
+        if pixmap.loadFromData(frame, "PNG"):
+            icon.addPixmap(pixmap)
+    return icon if not icon.isNull() else QIcon(str(path))
+
+
+def _icon_report(icon, path: Path) -> str:
+    """Az alkalmazásikon állapota egy hibanapló-sorban (#6345).
+
+    A csomagolt windowsos programnál az ikon hiánya csak a tálcán látszik;
+    ez a sor a felhasználó naplójában és a CI-ban is megmondja, hogy a
+    betöltés sikerült-e, és ha nem, melyik feltétel hiányzott. Útvonalat
+    nem ír ki (a napló személyes adatot nem tartalmazhat)."""
+    sizes = sorted({size.width() for size in icon.availableSizes()})
+    if not icon.isNull() and sizes:
+        return "Alkalmazásikon betöltve: " + ",".join(str(size) for size in sizes) + " px"
+    from PySide6.QtGui import QImageReader
+
+    formats = {bytes(fmt).decode("ascii", "replace") for fmt in QImageReader.supportedImageFormats()}
+    return (
+        "Alkalmazásikon ÜRES: fájl "
+        + ("megvan" if path.is_file() else "HIÁNYZIK")
+        + f", {path.suffix or '?'}-olvasó "
+        + ("elérhető" if path.suffix.lstrip(".").lower() in formats else "NINCS")
+    )
+
 
 def _install_desktop_entry() -> None:
     """Asztali bejegyzés + ikon telepítése (~/.local/share) — Waylanden a
