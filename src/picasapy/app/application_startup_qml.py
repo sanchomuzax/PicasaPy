@@ -10,6 +10,7 @@ from . import application as _app
 from . import display_photo_provider
 from .application_location import program_location
 from .color_palette import ColorPaletteProvider
+from .external_links import EXTERNAL_LINKS
 from .option_settings import initialize_option_settings
 
 def _startup_step_create_qml_engine(state):
@@ -202,6 +203,8 @@ def _startup_step_register_qml_context(state):
     # melyik commit fut — ld. version.version_string().
     engine.rootContext().setContextProperty("appVersion", version_string())
     engine.rootContext().setContextProperty("appLocation", program_location())
+    # #6402: honlap, adatvédelem és feltételek (Névjegy, Google-bejelentkezés)
+    engine.rootContext().setContextProperty("appLinks", EXTERNAL_LINKS)
     # #6340: kiadásellenőrzés a főablak betöltése után induló 30 mp-es
     # várással; a hálózati hívás a vezérlő saját háttérmunkásán fut.
     from picasapy import __version__
