@@ -317,7 +317,10 @@ class TestATakaritasNincsAKritikusUton:
             )
             for step in lepesek
         ]
-        assert kulcsok == ["orphan_cleanup", "folder_hierarchy", "exported_folders"], (
-            "a takarítás, a mappafa-frissítés és az exportcélok ellenőrzése "
-            "nem a szinkron előtt, ebben a sorrendben fut"
+        # az exportcélok ellenőrzése a könyvtár első szinkronja UTÁN, külön
+        # munkacsoportban fut, hogy ne tartsa vissza az indítóképernyőt
+        assert kulcsok == ["orphan_cleanup", "folder_hierarchy"], (
+            "a takarítás és a mappafa-frissítés nem a szinkron előtt, ebben a "
+            "sorrendben fut, vagy más is bekerült az indítóképernyőt "
+            "visszatartó munkacsoportba"
         )

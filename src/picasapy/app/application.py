@@ -546,6 +546,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     )
     splash_state = {"started": False}
     startup_state = {"first_frame_at": None}
+    exportcel_allapot = {"elinditva": False}
 
     def _start_and_finish() -> None:
         startup_state["first_frame_at"] = time.monotonic()
@@ -581,20 +582,41 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
                     ),
                     work=state._mappafa_sorai,
                 ),
-                StartupMaintenanceStep(
-                    key="exported_folders",
-                    name="Exportmappák ellenőrzése",
-                    status_text=QCoreApplication.translate(
-                        "startup", "Checking export folders…"
-                    ),
-                    work=lambda: _exportcelok_visszavetele(
-                        state.data_dir / "index.db", QSettings()
-                    ),
-                ),
             ),
         )
 
+        # Az exportcélok ellenőrzése NEM tartja vissza az indítóképernyőt: a
+        # tulajdonos gépén a NAS-on lévő exportmappák újraolvasása percekig
+        # tartott, és addig a program használhatatlan volt. A könyvtár első
+        # szinkronja UTÁN fut a háttérben (a két író így nem fut egyszerre),
+        # és a végén a nézetek ugyanúgy frissülnek, mint egy szinkron után.
+        def _exportcelok_hatterben() -> None:
+            if exportcel_allapot["elinditva"]:
+                return
+            exportcel_allapot["elinditva"] = True
+            state.startup_maintenance.enqueue(
+                "exported",
+                (
+                    StartupMaintenanceStep(
+                        key="exported_folders",
+                        name="Exportmappák ellenőrzése",
+                        status_text=None,
+                        work=lambda: _exportcelok_visszavetele(
+                            state.data_dir / "index.db", QSettings()
+                        ),
+                    ),
+                ),
+            )
+
+        state.controller.syncFinished.connect(
+            _exportcelok_hatterben, Qt.ConnectionType.QueuedConnection
+        )
+
     def _maintenance_batch_finished(batch_key: str) -> None:
+        if batch_key == "exported":
+            # az újraindexelt exportmappák a nézetekben is megjelenjenek
+            state.controller.syncFinished.emit()
+            return
         if batch_key != "initial":
             return
         progress_log.mark("Induláskori könyvtárszinkron indítása")
