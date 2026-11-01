@@ -330,6 +330,12 @@ jobs:
           QT_QPA_PLATFORM: offscreen
           QT_QUICK_BACKEND: software
         run: |
+          # #6392: a HTML-export sablonjai a csomagban (régi tagben nincs őr)
+          if [ -f tests/packaging/test_csomag_adatfajlok_6392.py ]; then
+            n=$(find dist/PicasaPy -path "*picasapy/webexport/templates/*" -name "*.html" | wc -l)
+            echo "HTML-sablonfájlok a csomagban: $n"
+            [ "$n" -gt 0 ] || { echo "a webexport-sablonok hiányoznak a csomagból"; exit 1; }
+          fi
           # A csomag hiányossága csak INDÍTÁSKOR derül ki. A kapcsoló a
           # felület felépülése után kilép, eseményciklus nélkül.
           # ⚠️ KEMÉNY időkorlát: ha a csomagolt program nem lép ki, a job
