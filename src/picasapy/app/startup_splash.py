@@ -217,6 +217,8 @@ class IndulasAblak(QRasterWindow):
         surface_format.setAlphaBufferSize(8)
         self.setFormat(surface_format)
         self.setFlags(_splash_window_flags())
+        # keret nélkül a cím nem látszik; a csomagmérő erről ismeri fel
+        self.setTitle("PicasaPy startup")
         self.resize(pixmap.size())
         self.create()
         self._alpha_supported = self.format().alphaBufferSize() >= 8

@@ -763,7 +763,10 @@ def _induloablak_kepe(hwnd: int) -> tuple[bytes | None, tuple[int, int, int] | N
 def _renderelt_indulokep_ellenorzese(
     png: bytes,
 ) -> tuple[tuple[int, int, int] | None, str | None]:
-    """A szöveg nélküli alsó sáv sorát vizsgálja, betűképpontok nélkül."""
+    """A fehér kártyát és a rajta ülő logót vizsgálja (#6378).
+
+    A logó közepén átmenő sorban fehér háttér ÉS attól eltérő, sötétebb
+    képpontok (logó, szójel) is vannak."""
     import io
 
     from PIL import Image
@@ -775,11 +778,12 @@ def _renderelt_indulokep_ellenorzese(
         return None, f"érvénytelen képernyőkép: {hiba}"
     if kep.width <= 0 or kep.height <= 0:
         return None, "a renderelt indulókép mérete üres"
-    sor = [kep.getpixel((x, kep.height - 2)) for x in range(kep.width)]
+    sor = [kep.getpixel((x, kep.height // 2)) for x in range(kep.width)]
     szinszam = len(set(sor))
-    piros, zold, kek = kep.getpixel((kep.width // 2, kep.height - 2))
-    if szinszam < 2 or kek <= max(piros, zold):
-        return None, "a renderelt indulókép alsó sávja hiányzik vagy nem kék"
+    feher = sum(1 for kp in sor if min(kp) >= 240)
+    tartalom = sum(1 for kp in sor if min(kp) < 200)
+    if feher < kep.width // 3 or tartalom < kep.width // 20:
+        return None, "a renderelt indulóképen nincs fehér kártya logóval"
     return (kep.width, kep.height, szinszam), None
 
 
