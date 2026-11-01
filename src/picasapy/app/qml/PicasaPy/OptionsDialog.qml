@@ -68,7 +68,10 @@ Window {
             discard()
         }
     }
-    WindowHelp { tema: optionsWindow.helpTopic }
+    WindowHelp {
+        id: optionsWindowHelp
+        tema: optionsWindow.helpTopic
+    }
     // #3661 (2. lelet): az eredeti 560 px-es alapszélesség belső
     // tartalomterülete (536 px) kisebb, mint a 8 eredeti magyar fülcím összesen
     // igényelt szélessége (mérve, a csomagolt Open Sans-szal/`PicasaStyle`-
@@ -99,6 +102,11 @@ Window {
         optionsDraft.discard()
         optionsWindow.visible = true
         Qt.callLater(function() { okButton.forceActiveFocus() })
+    }
+
+    function openGooglePhotos() {
+        tabBar.currentIndex = tabBar.count - 1
+        open()
     }
 
     function acceptOptions() {
@@ -374,6 +382,9 @@ Window {
             }
             OptionsTabGooglePhotos {
                 Layout.fillWidth: true
+                openGooglePhotosHelp: function() {
+                    optionsWindowHelp.nyisdASugot("features/google-fotok.md")
+                }
             }
         }
 

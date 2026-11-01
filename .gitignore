@@ -23,6 +23,7 @@ credentials/
 *credentials*.json
 *secret*.json
 *token*.json
+**/_google_oauth.json
 *.crt
 *.cer
 

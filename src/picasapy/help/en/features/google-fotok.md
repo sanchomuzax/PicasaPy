@@ -7,27 +7,33 @@ This is the only working upload path. Similar-looking items in the
 menus, such as the upload command under **Tools**, are still
 unavailable; see [Features not yet available](meg-nem-erheto-el.md).
 
-## Before the first upload: create a Google client
+## Sign in
 
-The original Picasa uploaded through Google's own service, which has
-been discontinued. PicasaPy therefore uses a Google client that you
-create. In the Google developer console, create an OAuth client of the
-desktop application type and enable Google Photos upload. Google will
-give you a client ID and client secret. PicasaPy cannot perform this
-setup for you.
+Click **Sign in with Google Account** at the right side of the menu bar.
+A browser opens. Sign in there and grant access. After sign-in, the menu
+bar shows your account status. Click it to open the menu and sign out.
 
-Then open **Tools** ▸ **Options** in PicasaPy and enter the client ID
-and secret in the Google Photos settings. Choose **Save**, then choose
-**Sign in with Google Account**. A browser opens; sign in there and
-grant access. When sign-in succeeds, the settings show that you are
-connected.
+If the PicasaPy package does not include a built-in Google client, the
+menu bar link opens the **Settings ▸ Google Photos** tab. Its sign-in
+button uses the same built-in client.
 
-The settings action and sign-in take effect immediately; you do not
-need to choose **OK** in the Options window. PicasaPy stores the client
-secret and sign-in in the system keyring when available, or otherwise
-in your user settings. If you change only the client ID, leave the
-secret field blank to keep the saved secret. For a new client ID, enter
-the new secret and sign in again.
+## Advanced: use your own Google client
+
+Most people do not need to configure a Google client. If you need your
+own, open **Settings ▸ Google Photos** and expand **Advanced: use your
+own Google client (optional)**. Enter the OAuth client ID and client
+secret, then choose **Save**. Start sign-in from the tab or the menu bar.
+
+For your own client, create an OAuth client of the **desktop app** type
+in the Google developer console and enable Google Photos upload. Google
+provides the two values. The built-in PicasaPy client needs no user setup
+in packaged builds. When running from source, set
+`PICASAPY_GOOGLE_CLIENT_ID` and `PICASAPY_GOOGLE_CLIENT_SECRET` to use it.
+
+PicasaPy stores your client secret and sign-in in the system keyring
+when available, or otherwise in your user settings. If you change only
+the client ID, leave the secret field blank to keep the saved secret.
+For a new client ID, enter the new secret and sign in again.
 
 The sign-out action clears the saved sign-in. Sign in again before your
 next upload.

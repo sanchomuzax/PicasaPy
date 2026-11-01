@@ -214,6 +214,8 @@ PicasaMenuBar {
     }
     // #350: Eszközök → Beállítások…
     onOptionsRequested: hostOptionsDialog.open()
+    onGooglePhotosOptionsRequested:
+        hostOptionsDialog.ensure().openGooglePhotos()
     //: #2054
     onHelpRequested: function (topic) { hostHelpDialog.ensure().nyisdMeg(topic) }
     // #6340: kézi kiadáskeresés; a válaszablak a verziócímke vezérlőjében él.

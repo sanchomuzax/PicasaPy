@@ -226,7 +226,7 @@ def test_every_language_has_all_messages_of_the_hungarian_catalog_4863():
 
 
 def test_google_photos_messages_have_finished_placeholder_safe_translations():
-    """A #5976 új feliratai minden nyelven kész, Qt-helyőrzőkkel szerepelnek."""
+    """A #5976 és a #6361 Google Fotók-feliratai minden nyelven kész, Qt-helyőrzőkkel szerepelnek."""
     google_photos_sources = {
         message.findtext("source") or ""
         for context in ET.parse(_I18N / "picasapy_hu.ts").getroot().iter("context")
@@ -252,7 +252,13 @@ def test_google_photos_messages_have_finished_placeholder_safe_translations():
         "Failed to upload %1",
         "Close",
     }
-    assert len(google_photos_sources) == 19
+    assert len(google_photos_sources) == 23
+    assert {
+        "PicasaPy signs in with its built-in client. Use your own client only if needed.",
+        "Advanced: use your own Google client (optional)",
+        "OAuth client ID",
+        "Client secret",
+    } <= google_photos_sources
     assert len(tray_sources) == 17
 
     # #6050: these three messages now belong to the extracted action-area QML
