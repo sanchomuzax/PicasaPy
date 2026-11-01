@@ -136,10 +136,19 @@ def test_a_nevjegy_tartalmazza_a_harom_linket(qml_app, qt_app):
 
 
 def _nyisd_meg_a_beallitasokat(qt_app, window):
-    """A bejelentkezés-sáv kattintása kliens nélkül a Google Fotók beállításait nyitja."""
-    kattinthato = window.findChild(QObject, "menuBarSignInArea")
-    assert kattinthato is not None, "a menüsori bejelentkezés-sáv hiányzik"
-    kattint_elemre(window, qt_app, kattinthato)
+    """A Google Fotók beállításainak megnyitása a menüsor jelzésével.
+
+    #6388 óta a menüsori bejelentkezés-sáv kliens nélkül üzenetet mutat, nem
+    a beállításokat; a fület a menüsor saját jelzése nyitja."""
+    menu_bars = [
+        item
+        for item in window.findChildren(QObject)
+        if item.metaObject().indexOfSignal("googlePhotosOptionsRequested()") >= 0
+    ]
+    assert menu_bars, "a menüsor Google Fotók-jelzése hiányzik"
+    QMetaObject.invokeMethod(
+        menu_bars[0], "googlePhotosOptionsRequested", Qt.ConnectionType.DirectConnection
+    )
     assert varj(
         qt_app,
         lambda: any(
