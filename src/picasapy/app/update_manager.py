@@ -114,6 +114,35 @@ def should_offer_release(version: str, *, skipped_version: str = "") -> bool:
     return bool(version) and version != skipped_version
 
 
+_HTML_MEGJEGYZES = re.compile(r"<!--.*?-->", re.DOTALL)
+_KEPHIVATKOZAS = re.compile(r"!\[[^\]]*\]\([^)]*\)")
+_HIVATKOZAS = re.compile(r"\[([^\]]+)\]\([^)]*\)")
+_KIEMELES = re.compile(r"(\*\*|__|`)")
+_LISTAJEL = re.compile(r"^(\s*)[*+-]\s+")
+_CIMSOR = re.compile(r"^\s*#{1,6}\s*")
+
+
+def olvashato_jegyzet(body: str) -> str:
+    """A GitHub-kiadás Markdown-leírása olvasható sima szövegként (#6358).
+
+    A frissítési ablak sima szöveget mutat: a címsor- és listajel, a
+    kiemelés, a képhivatkozás és a rejtett megjegyzés kimarad, a
+    hivatkozásból a felirata marad. Az egymást követő üres sorok egyre
+    rövidülnek."""
+    szoveg = _HTML_MEGJEGYZES.sub("", body or "")
+    sorok: list[str] = []
+    for sor in szoveg.splitlines():
+        sor = _KEPHIVATKOZAS.sub("", sor)
+        sor = _HIVATKOZAS.sub(r"\1", sor)
+        sor = _CIMSOR.sub("", sor)
+        sor = _LISTAJEL.sub(lambda m: m.group(1) + "• ", sor)
+        sor = _KIEMELES.sub("", sor).rstrip()
+        if not sor.strip() and (not sorok or not sorok[-1]):
+            continue
+        sorok.append(sor if sor.strip() else "")
+    return "\n".join(sorok).strip()
+
+
 def parse_sha256sums(manifest: str) -> dict[str, str]:
     """GNU sha256sum formátumú manifesztből fájlnév → hex digest térképet ad."""
     result: dict[str, str] = {}
@@ -396,7 +425,7 @@ class UpdateController(QObject):
 
     @Property(str, notify=updateAvailableChanged)
     def releaseNotes(self) -> str:  # noqa: N802
-        return self._release.notes if self._release else ""
+        return olvashato_jegyzet(self._release.notes) if self._release else ""
 
     @Property(str, notify=updateAvailableChanged)
     def releaseUrl(self) -> str:  # noqa: N802
