@@ -503,7 +503,8 @@ jobs:
           python packaging/windows/csomag_meres.py ido \
             --futtato "telepitett=$EXE" --munka "$RUNNER_TEMP/csomag-meres" \
             --elvart-verzio "${{ steps.tag.outputs.verzio }}"
-          python packaging/windows/csomag_meres.py ikon \
+          # #6345: KAPU — ha a telepített program ablakának nincs ikonja, piros
+          python packaging/windows/csomag_meres.py ikon --szigoru \
             --futtato "forras=@python,picasapy" \
             --futtato "telepitett=$EXE" --munka "$RUNNER_TEMP/csomag-meres"
 
