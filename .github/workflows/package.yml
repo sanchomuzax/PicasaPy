@@ -25,7 +25,8 @@ on:
     paths:
       - "packaging/windows/**"
       - ".github/workflows/package.yml"
-      - "src/picasapy/app/application.py"
+      - "src/picasapy/app/application*.py"
+      - "src/picasapy/halozati_ut.py"
       - "src/picasapy/app/update_*.py"
       - "src/picasapy/app/qml/PicasaPy/MainToolbar.qml"
       - "pyproject.toml"
@@ -434,6 +435,24 @@ jobs:
             --futtato "forras=@python,picasapy" \
             --futtato "csomagolt=dist/PicasaPy/PicasaPy.exe" \
             --munka "$RUNNER_TEMP/csomag-meres"
+
+      # #6355: KAPU — a tulajdonos gépén a program 30-40 s alatt indult, üres
+      # könyvtáron viszont 4-5 s alatt: az idő az adattal nő. Itt 2000 képpel
+      # és egy elérhetetlen hálózati exportcéllal (a NAS mintájára) mérünk;
+      # ha a főablak a meleg indításnál 5 s-nál később jelenik meg, piros.
+      - name: Mérés — valósághű könyvtár, elérhetetlen hálózati exportcél
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          if ! grep -q -- "--hatar-mp" packaging/windows/csomag_meres.py; then echo "Régi kiadási tag: nincs valósághű mérés."; exit 0; fi
+          python packaging/windows/csomag_meres.py ido \
+            --futtato "csomagolt=dist/PicasaPy/PicasaPy.exe" \
+            --munka "$RUNNER_TEMP/csomag-meres" \
+            --kepek 2000 --inditasok 3 \
+            --halozati-export '\\192.0.2.1\picasa\export\album' \
+            --hatar-mp 5
 
       # ⚠️ PowerShell, nem bash: a Git-bash MSYS-útvonalátírása a
       # `/DMyAppVersion=...` argumentumot fájlútvonalnak vette, és az ISCC

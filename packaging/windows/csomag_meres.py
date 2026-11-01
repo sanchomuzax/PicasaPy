@@ -29,6 +29,19 @@ látható felső szintű ablakaitól lekérdezi a Windows ikonját
 (`WM_GETICON`, illetve az ablakosztály ikonja). A tálca és az Alt+Tab ezt
 mutatja. `--szigoru` mellett bukik, ha egyik ablaknak sincs ikonja.
 
+## Valósághű indulás (#6355)
+
+    python csomag_meres.py ido --futtato csomagolt=dist/PicasaPy/PicasaPy.exe \
+        --kepek 2000 --halozati-export "\\\\192.0.2.1\\picasa\\export" --hatar-mp 5
+
+Üres könyvtáron a csomagolt program 4-5 s alatt indul, a tulajdonos gépén
+viszont 30-40 s alatt: az idő az ADATTAL nő. Ez a mód ezért sok képpel
+(`--kepek`, mappánként 50) és egy elérhetetlen hálózati exportcéllal
+(`--halozati-export`, a tulajdonos NAS-ának mintájára) indít. A
+`192.0.2.0/24` dokumentációs címtartomány: oda soha semmi nem válaszol, a
+Windows tehát kivárja a hálózati időkorlátot. `--hatar-mp` mellett bukik,
+ha a főablak az utolsó (meleg) indításnál ennél később jelenik meg.
+
 Ez CI-eszköz, nem termékkód: a csomag nem tartalmazza.
 """
 
@@ -76,12 +89,62 @@ def _resz(resz: str) -> str:
     return str(ut.resolve()) if not ut.is_absolute() and ut.exists() else resz
 
 
-def _profil(gyoker: Path) -> tuple[dict[str, str], Path]:
-    """Elszigetelt profil és egy üres könyvtár, a CI meglévő füstpróbájának
-    mintájára (`package.yml`)."""
+#: a valósághű könyvtár mappánkénti képszáma (#6355)
+_KEP_MAPPANKENT = 50
+
+#: a QSettings windowsos helye (szervezet és alkalmazás: PicasaPy)
+_BEALLITAS_KULCS = r"Software\PicasaPy\PicasaPy\export"
+_EXPORT_ERTEK = "exportedfolders"
+
+
+def _kepekkel_tolt(konyvtar: Path, darab: int) -> None:
+    """`darab` kis JPEG, mappánként `_KEP_MAPPANKENT`; a meglévőt nem írja újra."""
+    if darab <= 0 or (konyvtar / ".kepek-kesz").exists():
+        return
+    from PIL import Image
+
+    for sorszam in range(darab):
+        mappa = konyvtar / f"album-{sorszam // _KEP_MAPPANKENT:03d}"
+        mappa.mkdir(parents=True, exist_ok=True)
+        szin = (sorszam * 37 % 256, sorszam * 91 % 256, sorszam * 13 % 256)
+        Image.new("RGB", (320, 240), szin).save(mappa / f"kep-{sorszam:05d}.jpg", "JPEG")
+    (konyvtar / ".kepek-kesz").write_text("", encoding="utf-8")
+
+
+def _exportcelok_beallitasa(utak: list[str]) -> list[str] | None:
+    """A nyilvántartott exportcélok beírása a PicasaPy beállításai közé;
+    a korábbi értéket adja vissza (visszaállításhoz). Csak Windowson."""
+    import winreg
+
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _BEALLITAS_KULCS) as kulcs:
+        try:
+            korabbi, _ = winreg.QueryValueEx(kulcs, _EXPORT_ERTEK)
+        except OSError:
+            korabbi = None
+        winreg.SetValueEx(kulcs, _EXPORT_ERTEK, 0, winreg.REG_MULTI_SZ, list(utak))
+    return korabbi
+
+
+def _exportcelok_visszaallitasa(korabbi: list[str] | None) -> None:
+    import winreg
+
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _BEALLITAS_KULCS) as kulcs:
+        if korabbi is None:
+            try:
+                winreg.DeleteValue(kulcs, _EXPORT_ERTEK)
+            except OSError:
+                pass
+        else:
+            winreg.SetValueEx(kulcs, _EXPORT_ERTEK, 0, winreg.REG_MULTI_SZ, korabbi)
+
+
+def _profil(gyoker: Path, kepek: int = 0) -> tuple[dict[str, str], Path]:
+    """Elszigetelt profil és egy könyvtár, a CI meglévő füstpróbájának
+    mintájára (`package.yml`); `kepek` > 0 esetén annyi képpel (#6355)."""
     konyvtar = gyoker / "library"
     profil = gyoker / "profile"
     konyvtar.mkdir(parents=True, exist_ok=True)
+    _kepekkel_tolt(konyvtar, kepek)
     (profil / "Temp").mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
     env.update(
@@ -115,8 +178,10 @@ def _naplo_sorai(profil_gyoker: Path) -> list[tuple[datetime, str]]:
     return sorok
 
 
-def _egy_inditas(parancs: list[str], gyoker: Path, *, ablakkal: bool) -> dict:
-    env, konyvtar = _profil(gyoker)
+def _egy_inditas(
+    parancs: list[str], gyoker: Path, *, ablakkal: bool, kepek: int = 0
+) -> dict:
+    env, konyvtar = _profil(gyoker, kepek)
     if ablakkal:
         env.pop("QT_QPA_PLATFORM", None)
         env.pop("QT_QUICK_BACKEND", None)
@@ -193,26 +258,84 @@ def _jelentes(nev: str, sorszam: int, eredmeny: dict) -> str:
     return "\n".join(sorok_szoveg)
 
 
+def foablak_mp(eredmeny: dict) -> float | None:
+    """A folyamat indításától a főablak megjelenéséig eltelt idő, másodpercben;
+    `None`, ha a főablak nem jelent meg."""
+    return next(
+        (
+            (ido - eredmeny["indult"]).total_seconds()
+            for ido, szakasz in eredmeny["sorok"]
+            if szakasz == _SIKER
+        ),
+        None,
+    )
+
+
+def hatar_hiba(nev: str, eredmeny: dict, hatar_mp: float | None) -> str | None:
+    """Hibaüzenet, ha a főablak a határnál később (vagy egyáltalán nem) jelent
+    meg; különben `None`."""
+    if hatar_mp is None:
+        return None
+    mert = foablak_mp(eredmeny)
+    if mert is None:
+        return f"{nev}: a főablak nem jelent meg"
+    if mert > hatar_mp:
+        return f"{nev}: a főablak {mert:.2f} s alatt jelent meg, a határ {hatar_mp:.1f} s"
+    return None
+
+
 def ido(
     futtatok: list[tuple[str, list[str]]],
     inditasok: int,
     munka: Path,
     elvart_verzio: str | None = None,
+    *,
+    kepek: int = 0,
+    halozati_export: list[str] | None = None,
+    hatar_mp: float | None = None,
 ) -> int:
     hiba = 0
-    for nev, parancs in futtatok:
-        gyoker = munka / f"ido-{nev}"
-        for sorszam in range(1, inditasok + 1):
-            eredmeny = _bevar(_egy_inditas(parancs, gyoker, ablakkal=False))
-            print(_jelentes(nev, sorszam, eredmeny), flush=True)
-            if eredmeny["kod"] != 0:
+    korabbi = _exportcelok_beallitasa(halozati_export) if halozati_export else None
+    try:
+        for nev, parancs in futtatok:
+            hiba |= _ido_futtato(
+                nev, parancs, inditasok, munka, elvart_verzio, kepek, hatar_mp
+            )
+    finally:
+        if halozati_export:
+            _exportcelok_visszaallitasa(korabbi)
+    return hiba
+
+
+def _ido_futtato(
+    nev: str,
+    parancs: list[str],
+    inditasok: int,
+    munka: Path,
+    elvart_verzio: str | None,
+    kepek: int,
+    hatar_mp: float | None,
+) -> int:
+    hiba = 0
+    gyoker = munka / (f"ido-{nev}-{kepek}kep" if kepek else f"ido-{nev}")
+    eredmeny: dict = {}
+    for sorszam in range(1, inditasok + 1):
+        eredmeny = _bevar(_egy_inditas(parancs, gyoker, ablakkal=False, kepek=kepek))
+        print(_jelentes(nev, sorszam, eredmeny), flush=True)
+        if eredmeny["kod"] != 0:
+            hiba = 1
+        if elvart_verzio is not None:
+            # #6348: a csomagolt program 0.0.0+ismeretlen-t mutatott
+            sor = f"PicasaPy-verzió: {elvart_verzio}"
+            if not any(s == sor for _, s in eredmeny["sorok"]):
+                print(f"  ❌ {nev}: a naplóban nincs „{sor}”", flush=True)
                 hiba = 1
-            if elvart_verzio is not None:
-                # #6348: a csomagolt program 0.0.0+ismeretlen-t mutatott
-                sor = f"PicasaPy-verzió: {elvart_verzio}"
-                if not any(s == sor for _, s in eredmeny["sorok"]):
-                    print(f"  ❌ {nev}: a naplóban nincs „{sor}”", flush=True)
-                    hiba = 1
+    # a határ a MELEG (utolsó) indításra vonatkozik: a hideg indítást a
+    # víruskereső első fájlvizsgálata is lassítja, az nem a program ideje
+    uzenet = hatar_hiba(nev, eredmeny, hatar_mp) if eredmeny else None
+    if uzenet is not None:
+        print(f"  ❌ {uzenet}", flush=True)
+        hiba = 1
     return hiba
 
 
@@ -385,13 +508,24 @@ def main(argv: list[str] | None = None) -> int:
     ertelmezo.add_argument("--szigoru", action="store_true")
     ertelmezo.add_argument("--elvart-verzio", default=None)
     ertelmezo.add_argument("--munka", type=Path, default=None)
+    ertelmezo.add_argument("--kepek", type=int, default=0)
+    ertelmezo.add_argument("--halozati-export", action="append", default=None)
+    ertelmezo.add_argument("--hatar-mp", type=float, default=None)
     args = ertelmezo.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     munka = args.munka or Path(tempfile.mkdtemp(prefix="picasapy-csomag-meres-"))
     futtatok = _futtatok(args.futtato)
     if args.mod == "ido":
-        return ido(futtatok, args.inditasok, munka, args.elvart_verzio)
+        return ido(
+            futtatok,
+            args.inditasok,
+            munka,
+            args.elvart_verzio,
+            kepek=args.kepek,
+            halozati_export=args.halozati_export,
+            hatar_mp=args.hatar_mp,
+        )
     return ikon(futtatok, munka, args.szigoru)
 
 
