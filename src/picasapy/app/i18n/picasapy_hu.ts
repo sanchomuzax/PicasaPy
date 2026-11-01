@@ -3810,6 +3810,12 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Modern, nyílt Picasa-utód.</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/AboutDialog.qml" line="24" />
+            <source>Location: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hely: %1</translation>
+        </message>
     </context>
     <context>
         <name>AppController</name>

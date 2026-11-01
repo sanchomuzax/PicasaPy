@@ -33,6 +33,8 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 #: a repó gyökere — a spec a `packaging/windows/` alatt él
 GYOKER = Path(SPECPATH).resolve().parents[1]
 APP = GYOKER / "src" / "picasapy" / "app"
+sys.path.insert(0, str(Path(SPECPATH).resolve()))
+from _windows_version_resource import write_version_info  # noqa: E402
 
 #: ⚠️ A `collect_*` segédek IMPORTÁLJÁK a csomagot; a `pathex` csak az
 #: elemzésre hat. Enélkül a CI-n „'picasapy' … is not a package” mellett
@@ -57,6 +59,10 @@ _VERZIO_FAJL = Path(workpath) / "_csomag_verzio.txt"
 _VERZIO_FAJL.parent.mkdir(parents=True, exist_ok=True)
 _VERZIO_FAJL.write_text(_VERZIO + "\n", encoding="utf-8")
 adatok.append((str(_VERZIO_FAJL), "picasapy"))
+
+#: A Windows Tulajdonságok Részletek lapján a termék verziója is jelenjen meg.
+_VERZIO_EROFORRAS = Path(workpath) / "_picasapy_version_info.txt"
+write_version_info(GYOKER / "pyproject.toml", _VERZIO_EROFORRAS, "PicasaPy.exe")
 
 #: a `help/` és a többi csomagon belüli adat a saját hookok nélkül is kell
 adatok += collect_data_files(
@@ -104,6 +110,7 @@ exe = EXE(
     #: parancssor-ablak nyílna a felület mellé
     console=False,
     icon=str(APP / "assets" / "icon.ico"),
+    version=str(_VERZIO_EROFORRAS),
 )
 coll = COLLECT(
     exe,

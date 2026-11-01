@@ -19,11 +19,14 @@ Dialog {
         }
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: "PicasaPy " + appVersion + " — "
+            text: "PicasaPy " + appVersion + " - "
                   + qsTr("A modern, open Picasa successor.")
+                  + "\n" + qsTr("Location: %1").arg(appLocation)
                   + "\nGPL-3.0 · github.com/sanchomuzax/PicasaPy"
             font.pixelSize: Theme.fontSize
             horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.Wrap
+            width: 480
         }
     }
 }

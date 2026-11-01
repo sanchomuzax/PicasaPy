@@ -5,7 +5,17 @@ import sys
 from pathlib import Path
 
 GYOKER = Path(SPECPATH).resolve().parents[1]
+sys.path.insert(0, str(Path(SPECPATH).resolve()))
+from _windows_version_resource import write_version_info  # noqa: E402
+
 sys.path.insert(0, str(GYOKER / "src"))
+
+_VERZIO_EROFORRAS = Path(workpath) / "_picasapy_version_info.txt"
+write_version_info(
+    GYOKER / "pyproject.toml",
+    _VERZIO_EROFORRAS,
+    "PicasaPyUpdateHelper.exe",
+)
 
 a = Analysis(
     [str(Path(SPECPATH) / "picasapy_update_helper.py")],
@@ -30,4 +40,5 @@ exe = EXE(
     strip=False,
     upx=False,
     console=True,
+    version=str(_VERZIO_EROFORRAS),
 )

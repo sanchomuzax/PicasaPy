@@ -38,6 +38,13 @@ ShowLanguageDialog=no
 
 [Languages]
 Name: "hu"; MessagesFile: "compiler:Languages\Hungarian.isl"
+Name: "en"; MessagesFile: "compiler:Default.isl"
+
+[CustomMessages]
+hu.RemoveOtherInstallation=Egy másik mappába telepített PicasaPy található itt: %1. Eltávolítja az új telepítés előtt?
+en.RemoveOtherInstallation=A PicasaPy is installed in a different folder: %1. Remove it before installing this version?
+hu.UninstallFailed=A régi PicasaPy eltávolítása nem sikerült: %1. Az új telepítés folytatódik; a régit később a Gépházban (Alkalmazások) távolíthatja el.
+en.UninstallFailed=The old PicasaPy could not be uninstalled: %1. Setup will continue; you can remove the old one later in Settings (Apps).
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; \
@@ -66,3 +73,105 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; \
 Filename: "{app}\{#MyAppExeName}"; \
     Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; \
     Flags: nowait postinstall skipifsilent
+
+[Code]
+const
+  PicasaPyUninstallKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{9F3C1D28-7C4E-4E2B-9A55-3B1D6A0C77E1}_is1';
+  SilentUninstallParameters = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART';
+
+function SplitUninstallCommand(const CommandLine: String; var ExeName, Parameters: String): Boolean;
+var
+  Value: String;
+  Boundary: Integer;
+begin
+  Result := False;
+  ExeName := '';
+  Parameters := '';
+  Value := Trim(CommandLine);
+  if Value = '' then
+    Exit;
+
+  if Value[1] = '"' then
+  begin
+    Delete(Value, 1, 1);
+    Boundary := Pos('"', Value);
+    if Boundary = 0 then
+      Exit;
+    ExeName := Copy(Value, 1, Boundary - 1);
+    Parameters := Trim(Copy(Value, Boundary + 1, Length(Value)));
+  end
+  else
+  begin
+    Boundary := Pos('.exe', Lowercase(Value));
+    if Boundary = 0 then
+      Exit;
+    ExeName := Copy(Value, 1, Boundary + 3);
+    Parameters := Trim(Copy(Value, Boundary + 4, Length(Value)));
+  end;
+
+  Result := FileExists(ExeName);
+end;
+
+function SameInstallDirectory(const FirstPath, SecondPath: String): Boolean;
+var
+  FirstDirectory, SecondDirectory: String;
+begin
+  FirstDirectory := AddBackslash(ExpandFileName(FirstPath));
+  SecondDirectory := AddBackslash(ExpandFileName(SecondPath));
+  Result := CompareText(FirstDirectory, SecondDirectory) = 0;
+end;
+
+function RemoveDifferentInstallation(const RootKey: HKEY): String;
+var
+  UninstallString, InstallLocation, ExeName, Parameters: String;
+  ResultCode: Integer;
+begin
+  Result := '';
+  if not RegQueryStringValue(RootKey, PicasaPyUninstallKey, 'UninstallString', UninstallString) then
+    Exit;
+  if not SplitUninstallCommand(UninstallString, ExeName, Parameters) then
+    Exit;
+  if not RegQueryStringValue(RootKey, PicasaPyUninstallKey, 'InstallLocation', InstallLocation) then
+    InstallLocation := ExtractFileDir(ExeName);
+  if InstallLocation = '' then
+    InstallLocation := ExtractFileDir(ExeName);
+
+  if SameInstallDirectory(InstallLocation, WizardDirValue) then
+    Exit;
+
+  if SuppressibleMsgBox(
+       FmtMessage(CustomMessage('RemoveOtherInstallation'), [InstallLocation]),
+       mbConfirmation, MB_YESNO, IDYES) <> IDYES then
+    Exit;
+
+  if Parameters <> '' then
+    Parameters := Parameters + ' ';
+  Parameters := Parameters + SilentUninstallParameters;
+  { ShellExec: a rendszergazdai telepítés eltávolítója a manifestje szerint
+    UAC-emelést kér; az Exec (CreateProcess) ilyenkor 740-es hibával elbukna. }
+  if (not ShellExec('', ExeName, Parameters, '', SW_HIDE, ewWaitUntilTerminated, ResultCode))
+     or (ResultCode <> 0) then
+    { a sikertelen eltávolítás nem állítja meg az új telepítést: jelezzük,
+      és a felhasználó később kézzel is eltávolíthatja a régit }
+    SuppressibleMsgBox(FmtMessage(CustomMessage('UninstallFailed'), [InstallLocation]),
+      mbError, MB_OK, IDOK);
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  Result := RemoveDifferentInstallation(HKEY_CURRENT_USER_32);
+  if Result <> '' then
+    Exit;
+  if IsWin64 then
+  begin
+    Result := RemoveDifferentInstallation(HKEY_CURRENT_USER_64);
+    if Result <> '' then
+      Exit;
+  end;
+
+  Result := RemoveDifferentInstallation(HKEY_LOCAL_MACHINE_32);
+  if Result <> '' then
+    Exit;
+  if IsWin64 then
+    Result := RemoveDifferentInstallation(HKEY_LOCAL_MACHINE_64);
+end;

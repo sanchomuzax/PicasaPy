@@ -3810,6 +3810,12 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Sodobna, odprtokodna naslednica Picase.</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/AboutDialog.qml" line="24" />
+            <source>Location: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
     </context>
     <context>
         <name>AppController</name>
