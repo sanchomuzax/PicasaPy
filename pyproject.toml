@@ -41,7 +41,9 @@ dependencies = [
     # kódcsaládnak a mai tagja, amit az eredeti Picasa is beépített
     # (`dcraw v9.19`, a sztring ott van a `Picasa3.exe`-ben).
     "rawpy",
-    "watchdog",
+    # #6363: a 7.0.0 megjelenése óta (2026-10-31) a windowsos CI minden
+    # futáson piros (időtúllépés, hozzáférési hiba), változatlan kód mellett.
+    "watchdog<7",
 ]
 
 # Fejlesztői eszközök: teszt, lefedettség, lint, csomagépítés. Nem a futáshoz
