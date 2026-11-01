@@ -66,8 +66,8 @@ def _latest_release_api_url(environ: dict[str, str] | None = None) -> str:
         port = parsed.port
     except ValueError as error:
         raise ValueError(
-            "A PICASAPY_UPDATE_API csak http://127.0.0.1 vagy "
-            "http://localhost címet fogadhat el"
+            "A PICASAPY_UPDATE_API csak helyi (127.0.0.1 vagy localhost) "
+            "http-címet fogadhat el"
         ) from error
     if (
         parsed.scheme != "http"
@@ -78,8 +78,8 @@ def _latest_release_api_url(environ: dict[str, str] | None = None) -> str:
         or (port is not None and not 1 <= port <= 65535)
     ):
         raise ValueError(
-            "A PICASAPY_UPDATE_API csak http://127.0.0.1 vagy "
-            "http://localhost címet fogadhat el"
+            "A PICASAPY_UPDATE_API csak helyi (127.0.0.1 vagy localhost) "
+            "http-címet fogadhat el"
         )
     return override
 
