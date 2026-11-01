@@ -920,6 +920,28 @@ def _kilepes_diagnosztika(diag_mappa: Path, pid: int, kattintas: float, profil_g
                 print(f"    {sor}", flush=True)
 
 
+def _uj_folyamat_diagnosztika(diag_mappa: Path, regi_pid: int, profil_gyoker: Path) -> None:
+    """Miért nem jelentkezett a frissített program (#6383)."""
+    pidek: dict[int, list[dict]] = {}
+    for sor in _diagnosztika(diag_mappa):
+        if sor.get("pid") != regi_pid:
+            pidek.setdefault(int(sor.get("pid", 0)), []).append(sor)
+    print(f"  új folyamatok a diagnosztikában: {len(pidek)}", flush=True)
+    for pid, sorok in pidek.items():
+        cimke = _objektum(sorok[-1], "versionLabel") or {}
+        print(
+            f"    PID {pid}: {len(sorok)} pillanat, test_mode={sorok[-1].get('test_mode')}, "
+            f"verzió={cimke.get('current_version_text')!r}",
+            flush=True,
+        )
+    for nev in ("frissites-naplo.txt", "errorlog.txt"):
+        for naplo in sorted(profil_gyoker.rglob(nev)):
+            sorok = naplo.read_text(encoding="utf-8", errors="replace").splitlines()
+            print(f"  --- {nev} (utolsó {min(25, len(sorok))} sor) ---", flush=True)
+            for sor in sorok[-25:]:
+                print(f"    {sor}", flush=True)
+
+
 def _varjon_diagnosztikara(
     diag_mappa: Path,
     feltetel,
@@ -1225,26 +1247,32 @@ def frissites(
                 _kilepes_diagnosztika(diag_mappa, folyamat.pid, kattintas, munka / "futas")
                 raise TimeoutError("a Frissítés most kattintás után a régi program nem lépett ki")
 
-            uj_pid_state, _ = _varjon_diagnosztikara(
-                diag_mappa,
-                lambda sorok: next(
-                    (
-                        sor
-                        for sor in reversed(sorok)
-                        if sor.get("pid") != folyamat.pid
-                        and not sor.get("test_mode")
-                        and _objektum(sor, "versionLabel") is not None
-                        and str(
-                            (_objektum(sor, "versionLabel") or {}).get(
-                                "current_version_text", ""
-                            )
-                        ).startswith(f"v{uj_verzio}")
-                        and sum(1 for item in sorok if item.get("pid") == sor.get("pid")) >= 5
+            try:
+                uj_pid_state, _ = _varjon_diagnosztikara(
+                    diag_mappa,
+                    lambda sorok: next(
+                        (
+                            sor
+                            for sor in reversed(sorok)
+                            if sor.get("pid") != folyamat.pid
+                            and not sor.get("test_mode")
+                            and _objektum(sor, "versionLabel") is not None
+                            and str(
+                                (_objektum(sor, "versionLabel") or {}).get(
+                                    "current_version_text", ""
+                                )
+                            ).startswith(f"v{uj_verzio}")
+                            and sum(1 for item in sorok if item.get("pid") == sor.get("pid")) >= 5
+                        ),
+                        None,
                     ),
-                    None,
-                ),
-                "a frissített program új folyamata induljon el",
-            )
+                    "a frissített program új folyamata induljon el",
+                    # a segéd kicsomagolja és lecseréli a telepítést, ez percekig tarthat
+                    timeout=180.0,
+                )
+            except TimeoutError:
+                _uj_folyamat_diagnosztika(diag_mappa, folyamat.pid, munka / "futas")
+                raise
             uj_pid = int(uj_pid_state["pid"])
             _kepernyokep_mentese(
                 kepernyokep_mappa / "06-uj-verzio-elindult.png", uj_pid
