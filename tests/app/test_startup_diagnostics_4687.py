@@ -89,3 +89,15 @@ def test_a_korai_hibanaplo_azonnal_ir_es_adatgyoker_valtaskor_atviszi_a_szakaszo
     final_log = tmp_path / "athelyezett-adatok" / "errorlog.txt"
     progress.install(final_log)
     assert "PySide6 és Qt verziója" in final_log.read_text(encoding="utf-8")
+
+
+def test_a_folyamat_kora_merheto_es_nem_negativ():
+    """#6344: a hibanapló a modulbetöltés ELŐTTI időt is mutassa."""
+    import sys
+
+    from picasapy.app.startup_diagnostics import process_age_ms
+
+    kor = process_age_ms()
+    if sys.platform == "win32" or sys.platform.startswith("linux"):
+        assert kor is not None
+        assert 0 <= kor < 24 * 3600 * 1000

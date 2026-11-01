@@ -111,6 +111,7 @@ from .startup_status import StartupStatus as StartupStatus
 from .startup_maintenance import StartupMaintenance as StartupMaintenance, StartupMaintenanceStep
 from .startup_diagnostics import (
     StartupProgressLog,
+    process_age_ms,
     runtime_version_messages as runtime_version_messages,
     write_console,
 )
@@ -459,6 +460,13 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     progress_log = StartupProgressLog()
     progress_log.mark("Python- és PySide6-modulok betöltése befejeződött")
+    # #6344: ami ELŐTTE volt (indító, DLL-ek, víruskereső), az csak így látszik
+    age_ms = process_age_ms()
+    if age_ms is not None:
+        progress_log.mark(f"A folyamat indulása óta eltelt: {age_ms} ms")
+    from picasapy import __version__ as _app_version
+
+    progress_log.mark(f"PicasaPy-verzió: {_app_version}")
     onellenorzes, argv = argv_onellenorzes(argv)
     startup_smoke, argv = argv_indulasellenorzes(argv)
     progress_log.mark("Indulási argumentumok beolvasva")

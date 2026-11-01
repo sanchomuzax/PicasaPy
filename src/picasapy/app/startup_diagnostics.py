@@ -36,6 +36,47 @@ def runtime_version_messages(pyside6_version: str, qt_version: str) -> tuple[str
     return tuple(messages)
 
 
+def process_age_ms() -> int | None:
+    """A folyamat létrehozása óta eltelt idő ezredmásodpercben (#6344).
+
+    A hibanapló első saját jelzése a Python-modulok betöltése UTÁN
+    születik; ami előtte történt (a PyInstaller-indító, a DLL-ek betöltése
+    és a víruskereső vizsgálata), az eddig sehol nem látszott. Windowson a
+    `GetProcessTimes`, Linuxon a `/proc` adja; ahol egyik sincs, `None`."""
+    try:
+        if sys.platform == "win32":
+            import ctypes
+            from ctypes import wintypes
+
+            kernel32 = ctypes.WinDLL("kernel32")
+            kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+            creation, exited, kernel, user, now = (wintypes.FILETIME() for _ in range(5))
+            if not kernel32.GetProcessTimes(
+                kernel32.GetCurrentProcess(),
+                ctypes.byref(creation),
+                ctypes.byref(exited),
+                ctypes.byref(kernel),
+                ctypes.byref(user),
+            ):
+                return None
+            kernel32.GetSystemTimeAsFileTime(ctypes.byref(now))
+
+            def ticks(filetime) -> int:
+                return (filetime.dwHighDateTime << 32) | filetime.dwLowDateTime
+
+            return (ticks(now) - ticks(creation)) // 10_000
+        if sys.platform.startswith("linux"):
+            import os
+
+            fields = Path("/proc/self/stat").read_text().rsplit(")", 1)[1].split()
+            started = int(fields[19]) / os.sysconf("SC_CLK_TCK")
+            uptime = float(Path("/proc/uptime").read_text().split()[0])
+            return max(0, round((uptime - started) * 1000))
+    except (OSError, ValueError, IndexError, AttributeError):
+        return None
+    return None
+
+
 def write_console(message: str, *, error: bool = False) -> None:
     """Üzenet kiírása, ha a platform a folyamatnak konzolt adott."""
     stream = sys.stderr if error else sys.stdout

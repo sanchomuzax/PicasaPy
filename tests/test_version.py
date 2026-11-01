@@ -48,3 +48,15 @@ class TestVersionString:
         # Az élő repóban a git elérhető: a build-szám csupa számjegy.
         number = version.build_number()
         assert number is not None and number.isdigit()
+
+
+class TestCsomagoltProgram:
+    """#6344: a PyInstaller-csomagból nem indul `git` az induláskor."""
+
+    def test_csomagolt_programbol_nem_indul_git(self, monkeypatch):
+        def tilos(*args, **kwargs):
+            raise AssertionError("a csomagolt program git-et indított")
+
+        monkeypatch.setattr(version, "_run", tilos)
+        monkeypatch.setattr(version, "_futtato", type("Fagyott", (), {"frozen": True}))
+        assert version.build_label() == "dev"

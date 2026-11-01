@@ -35,6 +35,7 @@ Ez CI-eszköz, nem termékkód: a csomag nem tartalmazza.
 from __future__ import annotations
 
 import argparse
+import base64
 import os
 import re
 import subprocess
@@ -185,9 +186,10 @@ def _jelentes(nev: str, sorszam: int, eredmeny: dict) -> str:
     ]
     for ms, honnan, hova in sorted(resek, reverse=True)[:6]:
         sorok_szoveg.append(f"    {ms:8.0f} ms  {honnan}  →  {hova}")
-    ikon = [s for _, s in sorok if s.startswith("Alkalmazásikon")]
-    if ikon:
-        sorok_szoveg.append(f"  {ikon[-1]}")
+    for elotag in ("Alkalmazásikon", "A folyamat indulása óta", "PicasaPy-verzió"):
+        talalat = [s for _, s in sorok if s.startswith(elotag)]
+        if talalat:
+            sorok_szoveg.append(f"  {talalat[-1]}")
     return "\n".join(sorok_szoveg)
 
 
@@ -262,6 +264,44 @@ def _ablakikonok(pid: int) -> dict[int, dict]:
     return talalt
 
 
+def _kepernyokep(hwnd: int | None) -> dict[str, bytes]:
+    """A tálca és az ablak címsorának képe PNG-ben (#6345).
+
+    A tulajdonos a TÁLCÁN nem látja az ikont; a `WM_GETICON` csak azt
+    mondja meg, mit ad az ablak, azt nem, mit mutat a tálca. Ez a kép
+    azt mutatja, amit a felhasználó lát."""
+    import ctypes
+    import io
+    from ctypes import wintypes
+
+    from PIL import ImageGrab
+
+    try:
+        teljes = ImageGrab.grab(all_screens=True)
+    except OSError as hiba:
+        print(f"  ⚠️ képernyőkép nem készült: {hiba}", flush=True)
+        return {}
+    kepek = {}
+    szel, mag = teljes.size
+    talca = teljes.crop((0, max(0, mag - 64), szel, mag))
+    if szel > 1280:
+        talca = talca.resize((1280, round(talca.height * 1280 / szel)))
+    for nev, kep in (("talca", talca),):
+        puffer = io.BytesIO()
+        kep.save(puffer, "PNG", optimize=True)
+        kepek[nev] = puffer.getvalue()
+    if hwnd is not None:
+        teglalap = wintypes.RECT()
+        ctypes.WinDLL("user32").GetWindowRect(hwnd, ctypes.byref(teglalap))
+        bal, felso = max(0, teglalap.left), max(0, teglalap.top)
+        cimsor = teljes.crop((bal, felso, min(szel, bal + 360), min(mag, felso + 48)))
+        puffer = io.BytesIO()
+        cimsor.save(puffer, "PNG", optimize=True)
+        kepek["cimsor"] = puffer.getvalue()
+    print(f"  képernyő {szel}×{mag}", flush=True)
+    return kepek
+
+
 def ikon(futtatok: list[tuple[str, list[str]]], munka: Path, szigoru: bool) -> int:
     if sys.platform != "win32":
         print("ikon: csak Windowson mérhető", flush=True)
@@ -270,8 +310,17 @@ def ikon(futtatok: list[tuple[str, list[str]]], munka: Path, szigoru: bool) -> i
     for nev, parancs in futtatok:
         futas = _egy_inditas(parancs, munka / f"ikon-{nev}", ablakkal=True)
         latott: dict[int, dict] = {}
+        kepek: dict[str, bytes] = {}
+        elso_ablak: float | None = None
         while futas["folyamat"].poll() is None:
-            for hwnd, adat in _ablakikonok(futas["folyamat"].pid).items():
+            ablakok = _ablakikonok(futas["folyamat"].pid)
+            if ablakok and elso_ablak is None:
+                elso_ablak = time.perf_counter()
+            # a splash legalább 1,5 s-ig áll: ennyi idő után a tálcagomb és
+            # a címsor már végleges — ekkor egyszer lefényképezzük
+            if elso_ablak is not None and not kepek and time.perf_counter() - elso_ablak > 1.0:
+                kepek = _kepernyokep(next(iter(ablakok)) if ablakok else None)
+            for hwnd, adat in ablakok.items():
                 regi = latott.get(hwnd)
                 # egy ablak ikonja menet közben áll be: a LEGJOBB állapot számít
                 if regi is None or sum(1 for k in ("kicsi", "nagy") if adat[k]) >= sum(
@@ -297,6 +346,15 @@ def ikon(futtatok: list[tuple[str, list[str]]], munka: Path, szigoru: bool) -> i
         ikonsor = [s for _, s in eredmeny["sorok"] if s.startswith("Alkalmazásikon")]
         if ikonsor:
             print(f"  {ikonsor[-1]}", flush=True)
+        for resz, png in kepek.items():
+            # A kép a naplóba megy, base64-ben: a CI-melléklet letöltéséhez
+            # hitelesítés kellene, a napló viszont mindenhonnan olvasható.
+            print(f"  KÉP {nev}/{resz} {len(png)} bájt", flush=True)
+            print(f"  -----KEP-KEZDET {nev}/{resz}-----", flush=True)
+            kodolt = base64.b64encode(png).decode("ascii")
+            for i in range(0, len(kodolt), 4000):
+                print("  " + kodolt[i : i + 4000], flush=True)
+            print(f"  -----KEP-VEGE {nev}/{resz}-----", flush=True)
         if not latott:
             print("  ⚠️ nem láttunk ablakot (nincs asztali munkamenet?)", flush=True)
         elif not van_ikon:

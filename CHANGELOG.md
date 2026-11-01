@@ -8,6 +8,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 ## [Nem kiadott]
 
 - A program a hibanaplóba írja, hogy induláskor betöltötte-e az alkalmazásikont, a windowsos csomag CI-ja pedig méri a telepített program indulási idejét és ablakikonját (#6344, #6345).
+- A telepítővel feltett windowsos program induláskor nem indít `git`-folyamatot a verziócímkéhez, a hibanapló pedig a folyamat indulása óta eltelt időt és a program verzióját is rögzíti (#6344).
 - A telepítővel feltett windowsos program ikonja a Qt képformátum-bővítménye nélkül is betöltődik, a parancsikonok pedig ugyanazt az alkalmazásazonosítót viselik, mint a futó program (#6345).
 
 ## [1.0.8] - 2026-10-31
