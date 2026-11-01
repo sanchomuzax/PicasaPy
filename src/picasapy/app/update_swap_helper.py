@@ -79,6 +79,13 @@ def swap_update_directory(
     if failed_dir.exists():
         shutil.rmtree(failed_dir)
     if backup_dir.exists():
+        # #6354: Program Files-ba telepítve a program induláskor nem írhat a
+        # saját mappájába, így egy korábbi csere után az eltávolító a régi
+        # mappában maradhatott. Ez a segéd emelt joggal fut: törlés előtt
+        # visszamenti, különben végleg elveszne.
+        from .update_cleanup import mentsd_at_az_eltavolitot
+
+        mentsd_at_az_eltavolitot(backup_dir, install_dir)
         shutil.rmtree(backup_dir)
     had_previous = install_dir.exists()
     if had_previous:
@@ -93,6 +100,10 @@ def swap_update_directory(
             if failed_dir.exists():
                 shutil.rmtree(failed_dir, ignore_errors=True)
             return False
+        if had_previous:
+            from .update_cleanup import finalize_successful_update
+
+            finalize_successful_update(install_dir)
     except Exception:
         if install_dir.exists():
             install_dir.rename(failed_dir)
