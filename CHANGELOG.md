@@ -7,6 +7,16 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.9] - 2026-11-01
+
+- A telepítővel feltett windowsos program induláskor nem indít `git`-folyamatot a verziócímkéhez, ami a vezérlők regisztrálását kb. egy másodperccel gyorsítja (#6344).
+- A hibanapló a folyamat indulása óta eltelt időt és a program verzióját is rögzíti, a windowsos CI pedig egymás mellett méri a forrásból, a csomagból és a telepítőből indított program indulását (#6344).
+- A telepítővel feltett windowsos program ikonja a Qt képformátum-bővítménye nélkül is betöltődik, a parancsikonok pedig ugyanazt az alkalmazásazonosítót viselik, mint a futó program (#6345).
+- A program a hibanaplóba írja, hogy induláskor betöltötte-e az alkalmazásikont, a CI pedig a telepített program valódi ablakán ellenőrzi az ikont (#6345).
+- A telepítővel feltett windowsos program a valódi verzióját mutatja a `0.0.0+ismeretlen` helyett, a verziófelirat pedig semmilyen hosszúságnál nem lóg a keresőmezőre (#6348).
+- Ha a felület két másodpercnél tovább nem válaszol (a Main.qml betöltésekor vagy futás közben), a hibanapló megnevezi, melyik kódsoron várt a program (#6349).
+- A hibanapló rögzíti, ha a háttérmunka-jelző fél percnél tovább pörög, és hogy melyik munka tartja fel a kilépést (#6349).
+
 ## [1.0.8] - 2026-10-31
 
 - A súgó helyesen írja, hogy a Teljes képernyős indítás csak a fájlból megnyitott Fotómegjelenítőre hat, a könyvtárból megnyitott kép az ablakban marad (#6337).
