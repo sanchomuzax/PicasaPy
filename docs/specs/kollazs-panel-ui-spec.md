@@ -433,6 +433,43 @@ Az `x, y` a **`tabpanel1` bal-felső sarkához** képest értendő (a
 A 15. és 16. jelölőnél a **feliratra kattintva is kapcsol**
 (`m_hit_childlabel`).
 
+**#6362 tipográfiai mérés (2026-11-01).** A Windows-erőforráscsomagból
+kinyert `referencia/tre-eroforrasok/collagepanel.tre:143-145` a
+`collagepanel/caption_checkbox_label` réteghez a `m_displayfont12` makrót
+rendeli. A `fontmacros_win.tre:43-48` értékei: `Praxis Semi Bold/Heavy`,
+`fontsize 12`, `fontweight 400`. A forrás tehát 12-es Picasa-betűméretet ír
+elő, nem 14-est.
+
+| felület | család, méret és súly | mérés |
+|---|---|---|
+| Eredeti Picasa 3 Windows | Praxis Semi Bold/Heavy, 12, 400 | `collagepanel.tre` `caption_checkbox_label` → `m_displayfont12`; a méret és súly a `fontmacros_win.tre` makrójából való |
+| PicasaPy a javítás előtt | Open Sans, 12 logikai px, a súly a Qt örökölt betűjéből | `Theme.fontSize` 12; az alkalmazás a csomagolt Open Sans családot állítja be; Linux offscreen mérésben a QML-felirat súlya 300 volt |
+| PicasaPy a javítás után | Open Sans, 12 logikai px, 400 | A kollázs felirata explicit rögzíti a családot, méretet és súlyt; a Windows platformfüggő örökölt súly nem befolyásolja |
+
+A kollázs jelölője saját `CheckSquare` és `Text` elemekből áll, nem Qt Controls
+`CheckBox`-ból. Ezért a Controls-stílus alapbetűje nem forrása a méretnek. A
+Qt 6 a Windows képernyőskálázását automatikusan alkalmazza: a QML geometriája
+és `font.pixelSize` értéke logikai képpont, így a betű és a helye ugyanazzal a
+képernyőarány-szorzóval jelenik meg. A PicasaPy nem állít be saját
+`QT_SCALE_FACTOR` vagy `QT_FONT_DPI` értéket. Részletek: [Qt 6 High DPI
+útmutató](https://doc.qt.io/qt-6.8/highdpi.html).
+
+A PicasaPy eredeti `Theme.fontSize` értéke 12 volt, a kollázs `CheckLabel`
+pedig 109 px széles maradt, ami az angol felirathoz készült. A 12 px-es Open
+Sans magyar fordítása így két sorra tört; a mért 34 px magas címkedoboz 1 px-szel
+ráért az alsó gombsorra. A javítás a beállításlap meglévő szélességén belül
+236 px-re növeli csak a címke terét. A `framegrid` témában, ahol a képkocka-
+középpont gomb elfoglalja a címke helyét, a jelölő és a címke közvetlenül a gomb
+alá kerül, egy sorral, az alsó gombsor fölött. A 276 px-es hasáb nem változik.
+
+A történetben a `Theme.fontSize` 12 az eredeti QML-beli bevezetése óta
+(`88392ebdb`, 2026-07-17); nem találtunk későbbi méretnövelő commitot. A
+109 px-es kollázs-címkeszélesség a #946-os bevezetéskor került be
+(`14cec6f0e`, 2026-08-18), az Open Sans mérés alapján választott helyettesítő
+családja pedig a #3310-ben (`ee34dd382`, 2026-09-18). A rögzített forrásőrt és
+a renderelt elrendezéspróbát a `tests/app/qml_functional/test_collage_typography_6362.py`
+védi. A Windowsos futtatás nem volt elérhető ebben a munkakörnyezetben.
+
 **A `collageThemePopup` lenyílója** (a 4. képernyőkép): hat sor, mind
 **ikon + kétsoros szöveg** — a téma neve és a leírása egy sorban, a
 hivatalos magyar szöveggel:
