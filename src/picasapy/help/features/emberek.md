@@ -132,7 +132,11 @@ négyszöggel, a panelen pedig egy rövid útmutató jelenik meg:
 
 A **Mégse** gomb kilép a kézi hozzáadásból.
 
-A bal hasáb **Emberek** csoportjában minden névhez tartozik egy album. A
+A bal hasáb **Emberek** csoportjában minden névhez tartozik egy album.
+Ezek az albumok csak a programban léteznek: a lemezen nincs hozzájuk
+mappa, a képek az eredeti mappájukban maradnak. A program a mappák
+`.picasa.ini` fájljában tárolt arcokból és nevekből állítja össze őket,
+ezért egy személy albumából kivett kép a lemezről nem törlődik. A
 névre jobbgombbal kattintva:
 
 - **Az Emberek album törlése** - a **Személyek eltávolítása** ablakban
@@ -163,13 +167,10 @@ Az album **első megnyitásakor** egy üdvözlő ablak jelenik meg
 („Üdvözöljük a Név nélküliek albumban!"): röviden leírja, hogyan nevezel
 el valakit, hogyan mellőzöl egy arcot, és hol találod a javaslatokat. A
 **Bezárás** gombbal csukod be, és legközelebb már nem jön elő. A
-**További információ...** gomb az alapértelmezett böngésződben megnyitja
-az eredeti Picasa súgójának erre szóló címét, a felület nyelvén; az
-üdvözlő ablak közben nyitva marad. A Google a Picasa online súgóját
-megszüntette, ezért ott valószínűleg nem találsz tartalmat: a tudnivalók
-ebben a súgóban vannak. (Az útmutató egyik
-mondata Google-fiókos bejelentkezést említ - a PicasaPy-ban ilyen nincs,
-erre nincs szükség.)
+**További információ...** gomb ezt a súgófejezetet nyitja meg; az
+üdvözlő ablak közben nyitva marad. (Az útmutató egyik mondata
+Google-fiókos bejelentkezést említ: az arcok elnevezéséhez erre nincs
+szükség.)
 
 Ha a gyűjtemény **üres** - például még egyetlen arcot sem talált a
 keresés -, ugyanez az útmutató az Emberek panelen is olvasható.
