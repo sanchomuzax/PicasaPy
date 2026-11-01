@@ -1,5 +1,8 @@
 """GitHub kiadások ellenőrzése és Windows-frissítés letöltése (#6340).
 
+SAJÁT FUNKCIÓ (#6340): az eredeti Picasa a Google külső háttérfrissítőjével
+frissült; ez a PicasaPy saját, GitHub-alapú, jóváhagyásos frissítője.
+
 A hálózati réteg szándékosan egy vékony, behelyettesíthető urllib-kliens.
 Az időzítés, a verziószabályok és a SHA-256 ellenőrzés külön függvények,
 hogy a működés GitHub-hozzáférés nélkül is mérhető legyen.
