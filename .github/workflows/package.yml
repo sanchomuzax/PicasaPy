@@ -287,6 +287,9 @@ jobs:
       - name: PyInstaller-csomagolás
         if: steps.tag.outputs.skip != 'true'
         shell: bash
+        env:
+          PICASAPY_GOOGLE_CLIENT_ID: ${{ secrets.PICASAPY_GOOGLE_CLIENT_ID }}
+          PICASAPY_GOOGLE_CLIENT_SECRET: ${{ secrets.PICASAPY_GOOGLE_CLIENT_SECRET }}
         run: pyinstaller --noconfirm packaging/windows/picasapy.spec
 
       - name: Frissítő segédprogram csomagolása
@@ -452,7 +455,21 @@ jobs:
             --munka "$RUNNER_TEMP/csomag-meres" \
             --kepek 2000 --inditasok 3 \
             --halozati-export '\\192.0.2.1\picasa\export\album' \
-            --hatar-mp 5
+            --hatar-mp 5 --elso-hatar-mp 10
+
+      # #6367: a külön indulóablak valódi ablakkal, a folyamat indításától
+      # mérve; a kapu a három indítás középértékére 1000 ms
+      - name: Mérés — az indulóablak megjelenése
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          if ! grep -q -- "--indulo-hatar-ms" packaging/windows/csomag_meres.py; then echo "Régi kiadási tag: nincs indulóablak-mérés."; exit 0; fi
+          python packaging/windows/csomag_meres.py ido \
+            --futtato "indulo=dist/PicasaPy/PicasaPy.exe" \
+            --munka "$RUNNER_TEMP/csomag-meres" \
+            --inditasok 3 --indulo-hatar-ms 1000
 
       # ⚠️ PowerShell, nem bash: a Git-bash MSYS-útvonalátírása a
       # `/DMyAppVersion=...` argumentumot fájlútvonalnak vette, és az ISCC
@@ -483,19 +500,62 @@ jobs:
           # a cp1252-es konzol a cserekaraktert nem tudja kiírni
           PYTHONIOENCODING: utf-8
         run: |
-          $installDir = Join-Path $env:RUNNER_TEMP "PicasaPy-installed"
+          $ErrorActionPreference = "Stop"
           $installer = Join-Path $PWD "packaging\dist\PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe"
+          $legacyDir = Join-Path $env:RUNNER_TEMP "PicasaPy-legacy-installed"
+          $legacyArguments = @(
+            "/VERYSILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART",
+            "/SP-",
+            "/CURRENTUSER",
+            "/DIR=$legacyDir"
+          )
+          $legacyInstall = Start-Process -FilePath $installer -ArgumentList $legacyArguments -Wait -PassThru
+          if ($legacyInstall.ExitCode -ne 0) {
+            throw "a régi felhasználói telepítés nem futott le: $($legacyInstall.ExitCode)"
+          }
+          $legacyExe = Join-Path $legacyDir "PicasaPy.exe"
+          if (-not (Test-Path $legacyExe)) {
+            throw "a régi telepítés exe-je hiányzik"
+          }
+
+          $uninstallKey = "Software\Microsoft\Windows\CurrentVersion\Uninstall\{9F3C1D28-7C4E-4E2B-9A55-3B1D6A0C77E1}_is1"
+          function Test-PicasaPyUninstallEntry {
+            foreach ($view in @([Microsoft.Win32.RegistryView]::Registry32, [Microsoft.Win32.RegistryView]::Registry64)) {
+              $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser, $view)
+              try {
+                $entry = $base.OpenSubKey($uninstallKey)
+                if ($entry) {
+                  $entry.Dispose()
+                  return $true
+                }
+              } finally {
+                $base.Dispose()
+              }
+            }
+            return $false
+          }
+          if (-not (Test-PicasaPyUninstallEntry)) {
+            throw "a régi telepítés eltávolítási bejegyzése hiányzik"
+          }
+
+          $installDir = Join-Path $env:RUNNER_TEMP "PicasaPy-installed"
           $arguments = @(
             "/VERYSILENT",
             "/SUPPRESSMSGBOXES",
             "/NORESTART",
             "/SP-",
+            "/ALLUSERS",
             "/DIR=$installDir"
           )
           $install = Start-Process -FilePath $installer -ArgumentList $arguments -Wait -PassThru
           if ($install.ExitCode -ne 0) {
             Write-Error "a telepítő nem futott le: $($install.ExitCode)"
             exit 1
+          }
+          if ((Test-Path $legacyExe) -or (Test-PicasaPyUninstallEntry)) {
+            throw "a régi telepítés a frissítés után is megmaradt"
           }
           $env:PICASAPY_INSTALLED_EXE = Join-Path $installDir "PicasaPy.exe"
           @'

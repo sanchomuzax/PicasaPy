@@ -7,38 +7,42 @@ Ez az egyetlen működő feltöltési út. A menükben lévő, hasonló nevű
 tételek (például **Eszközök ▸ Feltöltés**) továbbra sem működnek, lásd
 [Ami még nem érhető el](meg-nem-erheto-el.md).
 
-## Mielőtt először feltöltesz: saját Google-kliens
+## Bejelentkezés
 
-Az eredeti Picasa a Google saját kapcsolatán át töltött fel; ez a
-kapcsolat megszűnt. A PicasaPy ezért **a te saját Google-kliensedet**
-használja. Ehhez a Google fejlesztői felületén egyszer létre kell hoznod
-egy **asztali alkalmazás** típusú OAuth-klienst, és engedélyezned kell
-hozzá a Google Fotók feltöltését. A Google ezután ad egy
-**kliensazonosítót** és egy **klienstitkot**. Ezt a lépést a PicasaPy nem
-tudja elvégezni helyetted.
+A bejelentkezéshez kattints a menüsor jobb szélén a **Bejelentkezés
+Google Fiókkal** feliratra. Megnyílik a böngésző; jelentkezz be, és
+hagyd jóvá a hozzáférést. A bejelentkezés után a felirat a fiók állapotát
+mutatja. Rákattintva a megjelenő menüből kijelentkezhetsz.
 
-Utána a PicasaPy-ban:
+Ha a PicasaPy csomag nem tartalmaz beépített Google-klienst, a felirat
+a **Beállítások ▸ Google Fotók** fülre visz. A fül bejelentkezési gombja
+ugyanazt a beépített klienst használja.
 
-1. Nyisd meg az **Eszközök ▸ Beállítások…** ablakot, és válaszd a
-   **Google Fotók** fület. Ha nem látszik, a fülsor jobb szélén lévő
-   **›** nyíllal görgess oda.
-2. Írd be az **OAuth-kliensazonosító** és az **OAuth-kliens titka**
-   mezőbe a Google-tól kapott két értéket.
-3. Kattints a **Mentés** gombra.
-4. Kattints a **Bejelentkezés Google Fiókkal** gombra. Megnyílik a
-   böngésződ; ott jelentkezz be, és engedélyezd a hozzáférést.
-5. Ha sikerült, a fülön ez áll: **Bejelentkezve a Google Fotókba**.
+## Speciális: saját Google-kliens
 
-A fül **Mentés** és **Bejelentkezés** gombja azonnal hat, nem kell hozzá
-a Beállítások ablak **OK** gombja.
+A legtöbb felhasználónak nem kell saját Google-klienst beállítania. Ha
+haladó felhasználóként mégis sajátot használnál, nyisd meg a **Beállítások
+▸ Google Fotók** fület, és bontsd ki a **Speciális: saját Google-kliens
+(nem kötelező)** részt. Add meg az OAuth-kliensazonosítót és a kliens
+titkos kulcsát, majd kattints a **Mentés** gombra. Ezután a fül vagy a
+menüsor bejelentkezési gombjával indíthatod a bejelentkezést.
 
-A klienstitkot és a bejelentkezést a program a rendszer kulcstartójában
-tárolja, ha van ilyen, különben a felhasználói beállítások között. Ha
-később csak a kliensazonosítót módosítod, a titok mezőjét üresen
-hagyhatod: a mentett titok megmarad. Új kliensazonosítónál viszont újra
-meg kell adnod a titkot, és újra be kell jelentkezned.
+A saját klienshez a Google fejlesztői felületén **asztali alkalmazás**
+típusú OAuth-klienst kell létrehoznod, és engedélyezned kell rajta a
+Google Fotók feltöltését. A két értéket a Google adja. A beépített
+PicasaPy-kliens csomagolt változatban nem igényel saját beállítást.
+Forrásból indított futtatáskor a beépített kliens a
+`PICASAPY_GOOGLE_CLIENT_ID` és `PICASAPY_GOOGLE_CLIENT_SECRET`
+környezeti változókkal érhető el.
 
-A **Kijelentkezés** gomb törli a mentett bejelentkezést. Ezután a
+A kliens titkos kulcsát és a bejelentkezést a program a rendszer
+kulcstartójában tárolja, ha van ilyen, különben a felhasználói
+beállítások között. Ha később csak a kliensazonosítót módosítod, a
+titok mezőjét üresen hagyhatod: a mentett titok megmarad. Új
+kliensazonosítónál viszont újra meg kell adnod a titkot, és újra be kell
+jelentkezned.
+
+A **Kijelentkezés** művelet törli a mentett bejelentkezést. Ezután a
 feltöltéshez újra be kell jelentkezned.
 
 ### Ha a bejelentkezés nem sikerül

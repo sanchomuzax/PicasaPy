@@ -1290,6 +1290,16 @@ picasapy-origin-key: options:options/button190.title</extracomment>
             <translation>به Google Photos وارد نشده‌اید</translation>
         </message>
         <message>
+            <source>PicasaPy signs in with its built-in client. Use your own client only if needed.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>PicasaPy با کلاینت داخلی خود وارد می‌شود. فقط در صورت نیاز از کلاینت خودتان استفاده کنید.</translation>
+        </message>
+        <message>
+            <source>Advanced: use your own Google client (optional)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>پیشرفته: استفاده از کلاینت Google خودتان (اختیاری)</translation>
+        </message>
+        <message>
             <source>Use your own Google OAuth client (Desktop app).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>از کلاینت OAuth خودتان برای Google (برنامهٔ دسکتاپ) استفاده کنید.</translation>
@@ -1298,6 +1308,11 @@ picasapy-origin-key: options:options/button190.title</extracomment>
             <source>OAuth client ID</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>شناسهٔ کلاینت OAuth</translation>
+        </message>
+        <message>
+            <source>Client secret</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>رمز کلاینت</translation>
         </message>
         <message>
             <source>OAuth client secret</source>
@@ -1313,6 +1328,11 @@ picasapy-origin-key: options:options/button190.title</extracomment>
             <source>The client secret and refresh token are stored in the system keyring or user settings.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>رمز کلاینت و توکن نوسازی در جاکلیدی سیستم یا تنظیمات کاربر ذخیره می‌شوند.</translation>
+        </message>
+        <message>
+            <source>Read the Google Photos sign-in guide</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>راهنمای ورود به Google Photos را بخوانید</translation>
         </message>
         <message>
             <source>Save</source>
@@ -3806,6 +3826,12 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <source>A modern, open Picasa successor.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>جانشینی مدرن و آزاد برای Picasa.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AboutDialog.qml" line="24" />
+            <source>Location: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>مکان: %1</translation>
         </message>
     </context>
     <context>
@@ -11152,6 +11178,22 @@ picasapy-origin-key: stringres:PplAlbumPhoto::ID_FILE_DELETEFROMDISK</extracomme
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>‏ورود به سیستم با حساب Google</translation>
+        </message>
+        <message>
+            <source>Waiting for Google authorization…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>در انتظار مجوز Google…</translation>
+        </message>
+        <message>
+            <source>Signed in to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>به Google Photos وارد شده‌اید</translation>
+        </message>
+        <message>
+            <source>Sign Out</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
+            <translation>خروج از سیستم</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="66" />

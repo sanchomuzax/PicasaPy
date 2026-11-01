@@ -1290,6 +1290,16 @@ picasapy-origin-key: options:options/button190.title</extracomment>
             <translation>Niet aangemeld bij Google Foto's</translation>
         </message>
         <message>
+            <source>PicasaPy signs in with its built-in client. Use your own client only if needed.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>PicasaPy meldt zich aan met de ingebouwde client. Gebruik alleen een eigen client als dat nodig is.</translation>
+        </message>
+        <message>
+            <source>Advanced: use your own Google client (optional)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Geavanceerd: eigen Google-client gebruiken (optioneel)</translation>
+        </message>
+        <message>
             <source>Use your own Google OAuth client (Desktop app).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Gebruik je eigen Google OAuth-client (desktopapp).</translation>
@@ -1298,6 +1308,11 @@ picasapy-origin-key: options:options/button190.title</extracomment>
             <source>OAuth client ID</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>OAuth-client-ID</translation>
+        </message>
+        <message>
+            <source>Client secret</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Clientgeheim</translation>
         </message>
         <message>
             <source>OAuth client secret</source>
@@ -1313,6 +1328,11 @@ picasapy-origin-key: options:options/button190.title</extracomment>
             <source>The client secret and refresh token are stored in the system keyring or user settings.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Het clientgeheim en de vernieuwingstoken worden opgeslagen in de systeem-sleutelhanger of gebruikersinstellingen.</translation>
+        </message>
+        <message>
+            <source>Read the Google Photos sign-in guide</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Lees de handleiding voor inloggen bij Google Foto's</translation>
         </message>
         <message>
             <source>Save</source>
@@ -3806,6 +3826,12 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <source>A modern, open Picasa successor.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Een moderne, open opvolger van Picasa.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AboutDialog.qml" line="24" />
+            <source>Location: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Locatie: %1</translation>
         </message>
     </context>
     <context>
@@ -11152,6 +11178,22 @@ picasapy-origin-key: stringres:PplAlbumPhoto::ID_FILE_DELETEFROMDISK</extracomme
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>Inloggen met Google-account</translation>
+        </message>
+        <message>
+            <source>Waiting for Google authorization…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Wachten op Google-autorisatie…</translation>
+        </message>
+        <message>
+            <source>Signed in to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aangemeld bij Google Foto's</translation>
+        </message>
+        <message>
+            <source>Sign Out</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
+            <translation>Uitloggen</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="66" />

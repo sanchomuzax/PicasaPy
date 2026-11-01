@@ -386,7 +386,19 @@ def test_az_elemek_a_spec_szerinti_helyen_vannak(qt_app, nev):
     használjuk (ott a `collageSetFrameCenter` is él), és a rejtett
     csoportokat is megmérjük."""
     tab = _tab(qt_app, theme="framegrid")
-    assert _doboz(tab, _child(tab, nev)) == GEOMETRIA[nev]
+    elvart = GEOMETRIA[nev]
+    if nev == "collageCaptionCheckbox":
+        # #6362: a jelölő a képkockaközéppont-gomb után következik.
+        doboz = _doboz(tab, _child(tab, nev))
+        keretgomb = _doboz(tab, _child(tab, "collageSetFrameCenter"))
+        assert (doboz[0], doboz[2], doboz[3]) == (
+            elvart[0],
+            elvart[2],
+            elvart[3],
+        )
+        assert doboz[1] >= keretgomb[1] + keretgomb[3]
+    else:
+        assert _doboz(tab, _child(tab, nev)) == elvart
 
 
 def test_a_kuka_a_lap_jobb_szelehez_igazodik(qt_app):

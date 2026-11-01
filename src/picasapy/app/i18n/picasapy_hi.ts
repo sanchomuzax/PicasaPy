@@ -1290,6 +1290,16 @@ picasapy-origin-key: options:options/button190.title</extracomment>
             <translation>Google Photos में साइन-इन नहीं किया गया</translation>
         </message>
         <message>
+            <source>PicasaPy signs in with its built-in client. Use your own client only if needed.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>PicasaPy अपने अंतर्निहित क्लाइंट से साइन इन करता है। अपने क्लाइंट का उपयोग केवल ज़रूरत होने पर करें।</translation>
+        </message>
+        <message>
+            <source>Advanced: use your own Google client (optional)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>उन्नत: अपना Google क्लाइंट उपयोग करें (वैकल्पिक)</translation>
+        </message>
+        <message>
             <source>Use your own Google OAuth client (Desktop app).</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>अपना Google OAuth क्लाइंट इस्तेमाल करें (डेस्कटॉप ऐप)।</translation>
@@ -1298,6 +1308,11 @@ picasapy-origin-key: options:options/button190.title</extracomment>
             <source>OAuth client ID</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>OAuth क्लाइंट ID</translation>
+        </message>
+        <message>
+            <source>Client secret</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>क्लाइंट सीक्रेट</translation>
         </message>
         <message>
             <source>OAuth client secret</source>
@@ -1313,6 +1328,11 @@ picasapy-origin-key: options:options/button190.title</extracomment>
             <source>The client secret and refresh token are stored in the system keyring or user settings.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>क्लाइंट सीक्रेट और रिफ़्रेश टोकन सिस्टम कीरिंग या उपयोगकर्ता सेटिंग में संग्रहीत होते हैं।</translation>
+        </message>
+        <message>
+            <source>Read the Google Photos sign-in guide</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google Photos साइन-इन गाइड पढ़ें</translation>
         </message>
         <message>
             <source>Save</source>
@@ -3806,6 +3826,12 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <source>A modern, open Picasa successor.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Picasa का आधुनिक, मुक्त उत्तराधिकारी.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/AboutDialog.qml" line="24" />
+            <source>Location: %1</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>स्थान: %1</translation>
         </message>
     </context>
     <context>
@@ -11152,6 +11178,22 @@ picasapy-origin-key: stringres:PplAlbumPhoto::ID_FILE_DELETEFROMDISK</extracomme
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>Google खाता के साथ प्रवेश करें</translation>
+        </message>
+        <message>
+            <source>Waiting for Google authorization…</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google प्राधिकरण की प्रतीक्षा हो रही है…</translation>
+        </message>
+        <message>
+            <source>Signed in to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Google Photos में साइन-इन किया गया</translation>
+        </message>
+        <message>
+            <source>Sign Out</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
+            <translation>प्रस्थान करें</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="66" />

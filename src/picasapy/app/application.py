@@ -20,7 +20,6 @@ import time
 from collections.abc import Callable as Callable, Mapping as Mapping
 from pathlib import Path
 from types import FunctionType as _FunctionType
-from types import SimpleNamespace as _SimpleNamespace
 
 import shutil
 import subprocess
@@ -109,9 +108,13 @@ from .platform_storage import (
 )
 from .startup_status import StartupStatus as StartupStatus
 from .startup_maintenance import StartupMaintenance as StartupMaintenance, StartupMaintenanceStep
+from .application_startup_state import (
+    _startup_step_prepare_state,
+    _startup_step_read_arguments,
+    _zard_be_az_induloablakot,
+)
+from .startup_splash import _close_after_first_frame, take_early_startup
 from .startup_diagnostics import (
-    StartupProgressLog,
-    process_age_ms,
     runtime_version_messages as runtime_version_messages,
     write_console,
 )
@@ -313,8 +316,6 @@ if TYPE_CHECKING:
         _indexelt_kepszamok,
         _indulasi_idovonal,
         _jelentsd_az_idovonalat,
-        argv_indulasellenorzes,
-        argv_onellenorzes,
     )
     from .application_startup_controllers import (
         _startup_step_create_edit_and_file_controllers,
@@ -453,40 +454,21 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     (#1654), a --tesztuzem kapcsoló és a PICASAPY_STARTUP_TIMELINE=1
     környezeti változó (#1601) kapcsolja be — ld. _indulasi_idovonal.
     """
+
+    early_startup = take_early_startup()
     _ensure_application_helpers()
     screensaver_exit = _startup_step_screensaver(argv)
     if screensaver_exit is not None:
         return screensaver_exit
 
-    progress_log = StartupProgressLog()
-    progress_log.mark("Python- és PySide6-modulok betöltése befejeződött")
-    # #6344: ami ELŐTTE volt (indító, DLL-ek, víruskereső), az csak így látszik
-    age_ms = process_age_ms()
-    if age_ms is not None:
-        progress_log.mark(f"A folyamat indulása óta eltelt: {age_ms} ms")
-    from picasapy import __version__ as _app_version
-
-    progress_log.mark(f"PicasaPy-verzió: {_app_version}")
-    onellenorzes, argv = argv_onellenorzes(argv)
-    startup_smoke, argv = argv_indulasellenorzes(argv)
-    progress_log.mark("Indulási argumentumok beolvasva")
-    timeline, argv = _indulasi_idovonal(argv, entry_at=entry_at)
-    # #5762: a fájlok közvetlenül a viewer listájába kerülnek; a könyvtárak
-    # maradnak a könyvtárnézet gyökerei. A fájlnevek Qt-argumentumként sem
-    # szükségesek, az alkalmazás a saját listájából olvassa őket.
+    elso = _startup_step_read_arguments(argv, early_startup)
+    progress_log, onellenorzes, startup_smoke = elso.progress_log, elso.onellenorzes, elso.startup_smoke
+    timeline, argv = _indulasi_idovonal(elso.argv, entry_at=entry_at)
+    # #5762: a fájlok a viewer listájába, a könyvtárak a könyvtárnézet gyökerei közé
     from .quick_view import parse_launch_arguments
-
     launch_arguments = parse_launch_arguments(argv)
     library_argv = [argv[0] if argv else "picasapy", *launch_arguments.directory_roots]
-    state = _SimpleNamespace(
-        argv=argv,
-        progress_log=progress_log,
-        timeline=timeline,
-        onellenorzes=onellenorzes,
-        startup_smoke=startup_smoke,
-        launch_arguments=launch_arguments,
-        library_argv=library_argv,
-    )
+    state = _startup_step_prepare_state(elso, argv, timeline, launch_arguments, library_argv)
 
     _startup_step_log_and_qt_setup(state)
     # A hívást késleltetjük: a lépés előbb ellenőrzi a #3214 költözést,
@@ -495,6 +477,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         state, bootstrap_storage=lambda: _bootstrap_storage()
     )
     if storage_exit is not None:
+        _zard_be_az_induloablakot(early_startup)
         return storage_exit
 
     progress_log.mark("Figyelt könyvtárak beolvasása elkezdődött")
@@ -510,30 +493,27 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     _startup_step_register_qml_context(state)
     load_exit = _startup_step_load_qml(state)
     if load_exit is not None:
+        _zard_be_az_induloablakot(early_startup)
         return load_exit
 
-    #: #3021: a csomagolás füstpróbája. Idáig eljutni azt jelenti, hogy a
-    #: Qt-bővítmények, a QML-fa, a fordítás és az ikon MIND a csomagban van
-    #: — a felület felépült. Az ablakot már nem mutatjuk meg, és az
-    #: eseményciklus el sem indul.
-    #:
-    #: A LEZÁRÁS nem hagyható ki. A vezérlő ekkor már él, és háttérszálai
-    #: vannak; nélkülük a processz nem lép ki, csak áll — a windowsos
-    #: CI-futáson MÉRVE 38 percig, amíg a job időkorlátja levágta. A
-    #: füstpróba pontosan azt nem mutatta volna meg, amiért van.
+    #: #3021: a csomagolás füstpróbája: a felület felépült (Qt-bővítmények, QML,
+    #: fordítás, ikon a csomagban), az eseményciklus el sem indul. A LEZÁRÁS nem
+    #: hagyható ki: a vezérlő háttérszálai nélküle nem engedik kilépni a processzt
+    #: (a windowsos CI-on MÉRVE 38 percig állt).
     if onellenorzes:
         _startup_step_smoke_test(state)
+        _zard_be_az_induloablakot(early_startup)
         return 0
 
-    # #240: a betöltés csak az ablak ELSŐ kirajzolt képkockája UTÁN indul —
-    # Windowson a korábbi singleShot(0) még az első frame előtt lefutott, a
-    # finish() a splash-t láthatatlanul kifakította. A splash emellett
-    # legalább _SPLASH_MIN_VISIBLE_MS-ig látszik (gyors betöltésnél is van
-    # ideje megjelenni, a Picasa-élményhez hasonlóan).
+    # #240: a betöltés csak az ablak ELSŐ kirajzolt képkockája UTÁN indul (Windowson
+    # a korábbi singleShot(0) még az első frame előtt futott); #6367: a külön
+    # indulóablak ugyanekkor zárul.
     window = state.engine.rootObjects()[0]
+    early_splash = early_startup.splash if early_startup is not None else None
+    if early_splash is not None:
+        _close_after_first_frame(window, early_splash)
 
-    # #192: az utolsó ablakpozíció/-méret visszaállítása induláskor,
-    # mentése az ablak zárásakor — a controllerrel közös QSettings-tárba
+    # #192: az ablak helye/mérete visszaáll induláskor, záráskor mentődik (közös QSettings)
     wire_window_geometry(
         window, QSettings("PicasaPy", "PicasaPy"), virtual_desktop_rect(state.app)
     )
@@ -546,13 +526,12 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     )
     splash_state = {"started": False}
     startup_state = {"first_frame_at": None}
+    exportcel_allapot = {"elinditva": False}
 
     def _start_and_finish() -> None:
         startup_state["first_frame_at"] = time.monotonic()
         if state.quick_view_started:
-            # Ne kérdezzük le a mentett könyvtárat és ne indítsuk el a
-            # könyvtárszkennelést: a gyorsnézegető induló képsora csak a
-            # parancssorban kapott fájlokat tartalmazza.
+            # a gyorsnézegető csak a parancssori fájlokat mutatja: nincs könyvtárszkennelés
             state.startup_status.finish()
             timeline.mark("közvetlen gyorsnézegető-indítás")
             progress_log.mark("A gyorsnézegető megnyílt a megadott képekkel")
@@ -581,20 +560,38 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
                     ),
                     work=state._mappafa_sorai,
                 ),
-                StartupMaintenanceStep(
-                    key="exported_folders",
-                    name="Exportmappák ellenőrzése",
-                    status_text=QCoreApplication.translate(
-                        "startup", "Checking export folders…"
-                    ),
-                    work=lambda: _exportcelok_visszavetele(
-                        state.data_dir / "index.db", QSettings()
-                    ),
-                ),
             ),
         )
 
+        # #6369: az exportcélok ellenőrzése (NAS-on percekig tartott) nem tartja vissza
+        # az indítóképernyőt: az első szinkron UTÁN, a háttérben fut (két író nincs).
+        def _exportcelok_hatterben() -> None:
+            if exportcel_allapot["elinditva"]:
+                return
+            exportcel_allapot["elinditva"] = True
+            state.startup_maintenance.enqueue(
+                "exported",
+                (
+                    StartupMaintenanceStep(
+                        key="exported_folders",
+                        name="Exportmappák ellenőrzése",
+                        status_text=None,
+                        work=lambda: _exportcelok_visszavetele(
+                            state.data_dir / "index.db", QSettings()
+                        ),
+                    ),
+                ),
+            )
+
+        state.controller.syncFinished.connect(
+            _exportcelok_hatterben, Qt.ConnectionType.QueuedConnection
+        )
+
     def _maintenance_batch_finished(batch_key: str) -> None:
+        if batch_key == "exported":
+            # az újraindexelt exportmappák a nézetekben is megjelenjenek
+            state.controller.syncFinished.emit()
+            return
         if batch_key != "initial":
             return
         progress_log.mark("Induláskori könyvtárszinkron indítása")
@@ -629,6 +626,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         if splash_state["started"]:
             return
         splash_state["started"] = True
+        if early_splash is not None and early_splash.isVisible():
+            early_splash.close()
         timeline.mark("az ablak első kirajzolt képkockája")
         progress_log.mark("Első főablak-képkocka; a rács megjelent")
         QTimer.singleShot(0, _start_and_finish)
@@ -639,14 +638,15 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     screen_capture_controller = state.screen_capture_controller
     startup_maintenance = state.startup_maintenance
     window.frameSwapped.connect(_on_first_frame)
-    # tartalék: ha a frameSwapped nem jönne (pl. offscreen platform), az
-    # indulás legkésőbb 1 s után akkor is elkezdődik
+    # tartalék: frameSwapped nélkül (pl. offscreen) az indulás 1 s után is elkezdődik
     QTimer.singleShot(1000, _on_first_frame)
     # #6349: futás közbeni fagyás (homokóra) esetén a fő szál helye a naplóba kerül
     from picasapy.perf.foszal_figyelo import foszal_figyelo
 
     foszal_figyelo().szivveres_inditasa(app)
     exit_code = app.exec()
+    if early_splash is not None:
+        early_splash.close()
     foszal_figyelo().leallitas()
     if smoke_probe is not None:
         smoke_probe._timer.stop()
