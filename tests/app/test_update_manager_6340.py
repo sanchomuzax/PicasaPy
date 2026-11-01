@@ -21,7 +21,6 @@ from picasapy.app.update_manager import (
     installation_kind,
     parse_sha256sums,
     release_is_newer,
-    should_offer_release,
     verify_sha256,
 )
 from picasapy.app import update_swap_helper
@@ -51,11 +50,6 @@ def test_az_automatikus_kereses_nem_napi_korlathoz_kotott():
 
 def test_kikapcsolt_automatikus_ellenorzes_nem_indit_ellenorzest():
     assert not automatic_check_is_due(enabled=False)
-
-
-def test_kihagyott_verziot_tobbe_nem_ajanl_fel():
-    assert should_offer_release("1.2.0", skipped_version="1.2.0") is False
-    assert should_offer_release("1.2.1", skipped_version="1.2.0") is True
 
 
 def test_a_futtatasi_hely_alapjan_megkulonbozteti_a_windows_deb_es_pip_modot():
@@ -272,6 +266,9 @@ class _MemorySettings:
     def setValue(self, key, value):
         self.values[key] = value
 
+    def remove(self, key):
+        self.values.pop(key, None)
+
     def sync(self):
         pass
 
@@ -317,7 +314,8 @@ def test_offline_automatikus_hiba_csendben_marad_es_a_keresest_rogziti(qt_app):
     assert controller.autoCheckEnabled is True
 
 
-def test_kezi_ellenorzes_uj_verziot_jelez_de_a_kihagyottat_nem_ajanlja_fel(qt_app):
+def test_kezi_ellenorzes_a_regi_kihagyas_utan_is_felajanlja_a_legujabbat(qt_app):
+    """#6394: a korábban kihagyott verzió induláskor újra felkínálható."""
     settings = _MemorySettings({SKIPPED_VERSION_KEY: "1.2.0"})
     client = _ReleaseClient(_release("1.2.0"))
     controller = UpdateController(
@@ -330,8 +328,18 @@ def test_kezi_ellenorzes_uj_verziot_jelez_de_a_kihagyottat_nem_ajanlja_fel(qt_ap
 
     controller.checkForUpdates()
 
-    assert outcomes == [(False, "up-to-date")]
-    assert not controller.updateAvailable
+    assert outcomes == [(True, "available")]
+    assert controller.updateAvailable
+
+
+def test_induláskor_a_korabbi_kihagyas_torlodik(qt_app):
+    """#6394: a „Verzió kihagyása” már nincs; a régi beállítás induláskor törlődik."""
+    settings = _MemorySettings({SKIPPED_VERSION_KEY: "1.2.0"})
+    UpdateController(
+        "1.0.0", settings=settings, client=_ReleaseClient(), pool=_InlinePool(), schedule=False
+    )
+
+    assert SKIPPED_VERSION_KEY not in settings.values
 
 
 def test_automatikus_ellenorzes_minden_alkalommal_fut_de_csak_egyszer_ertesit(qt_app):

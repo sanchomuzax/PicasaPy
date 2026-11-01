@@ -203,18 +203,6 @@ Dialog {
                 }
             }
             PicasaButton {
-                objectName: "updateDialogSkipButton"
-                visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
-                    ? root.updateAgent.updateAvailable === true
-                        && root.updateAgent.downloadState !== undefined
-                        && root.updateAgent.downloadState === "idle" : false
-                text: root.strings.skip
-                onClicked: {
-                    root.updateAgent.skipAvailableVersion()
-                    root.close()
-                }
-            }
-            PicasaButton {
                 objectName: "updateDialogRestartButton"
                 visible: root.updateAgent && root.updateAgent.downloadState === "ready"
                 text: root.strings.restart

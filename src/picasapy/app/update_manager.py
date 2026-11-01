@@ -139,11 +139,6 @@ def automatic_check_is_due(*, enabled: bool = True) -> bool:
     return enabled
 
 
-def should_offer_release(version: str, *, skipped_version: str = "") -> bool:
-    """A kihagyott kiadást többé nem ajánlja fel."""
-    return bool(version) and version != skipped_version
-
-
 _HTML_MEGJEGYZES = re.compile(r"<!--.*?-->", re.DOTALL)
 _KEPHIVATKOZAS = re.compile(r"!\[[^\]]*\]\([^)]*\)")
 _HIVATKOZAS = re.compile(r"\[([^\]]+)\]\([^)]*\)")
@@ -403,6 +398,10 @@ class UpdateController(QObject):
         from PySide6.QtCore import QSettings
 
         self._settings = settings or QSettings("PicasaPy", "PicasaPy")
+        #: #6394: a „Verzió kihagyása” megszűnt; a régi kihagyást egyszer töröljük,
+        #: hogy a korábban kihagyott verzió újra felkínálható legyen
+        self._settings.remove(SKIPPED_VERSION_KEY)
+        self._settings.sync()
         self._client = client or GitHubReleaseClient()
         self._pool = pool or QThreadPool.globalInstance()
         self._current_version = current_version.removeprefix("v")
@@ -673,10 +672,7 @@ class UpdateController(QObject):
             self.checkingChanged.emit()
             release = value if isinstance(value, ReleaseInfo) else None
             is_newer = bool(release and release_is_newer(release.version, self._current_version))
-            if is_newer and release and should_offer_release(
-                release.version,
-                skipped_version=str(self._settings.value(SKIPPED_VERSION_KEY, "") or ""),
-            ):
+            if is_newer and release:
                 self._release = release
                 self.updateAvailableChanged.emit()
                 if manual:
@@ -722,15 +718,6 @@ class UpdateController(QObject):
         except (OSError, ValueError, UnicodeDecodeError):
             return None
         return release if WINDOWS_ASSET_NAME in hashes else None
-
-    @Slot()
-    def skipAvailableVersion(self) -> None:  # noqa: N802
-        if self._release is None:
-            return
-        self._settings.setValue(SKIPPED_VERSION_KEY, self._release.version)
-        self._settings.sync()
-        self._release = None
-        self.updateAvailableChanged.emit()
 
     @Slot()
     def deferAvailableVersion(self) -> None:  # noqa: N802
