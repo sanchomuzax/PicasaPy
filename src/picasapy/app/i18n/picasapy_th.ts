@@ -3831,7 +3831,7 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <location filename="../qml/PicasaPy/AboutDialog.qml" line="24" />
             <source>Location: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>ตำแหน่ง: %1</translation>
         </message>
     </context>
     <context>

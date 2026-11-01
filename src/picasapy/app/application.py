@@ -441,26 +441,8 @@ def _startup_step_smoke_test(state) -> None:
     state.edit_controller.waitForBackgroundWorkers(2.0)
 
 
-def run(argv: list[str], *, entry_at: float | None = None) -> int:
-    """Az alkalmazás indítása.
-
-    #1601: az entry_at a belépési pont (__main__.py) legelső saját
-    sorában olvasott time.monotonic() — ebből látszik, mennyit visz el
-    maga a Python- és PySide6-import, mielőtt idáig eljutnánk. None
-    esetén ez a szakasz kimarad a jelentésből; mérni nem kötelező.
-
-    Az idővonal alapból KI van kapcsolva; a tartós tesztüzem beállítás
-    (#1654), a --tesztuzem kapcsoló és a PICASAPY_STARTUP_TIMELINE=1
-    környezeti változó (#1601) kapcsolja be — ld. _indulasi_idovonal.
-    """
-    from .startup_splash import _close_after_first_frame, take_early_startup
-
-    early_startup = take_early_startup()
-    _ensure_application_helpers()
-    screensaver_exit = _startup_step_screensaver(argv)
-    if screensaver_exit is not None:
-        return screensaver_exit
-
+def _startup_step_prepare_state(argv: list[str], entry_at: float | None, early_startup):
+    """Az indulás állapota: napló, argumentumok, idővonal (#5958, #6367)."""
     progress_log = (
         early_startup.progress_log if early_startup is not None else StartupProgressLog()
     )
@@ -496,6 +478,39 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
             early_startup.qml_splash_enabled if early_startup is not None else True
         ),
     )
+    return state
+
+
+def _zard_be_az_induloablakot(early_startup) -> None:
+    """A korai indulóablak bezárása, ha az indulás idő előtt véget ér (#6367)."""
+    if early_startup is not None and early_startup.splash is not None:
+        early_startup.splash.close()
+
+
+def run(argv: list[str], *, entry_at: float | None = None) -> int:
+    """Az alkalmazás indítása.
+
+    #1601: az entry_at a belépési pont (__main__.py) legelső saját
+    sorában olvasott time.monotonic() — ebből látszik, mennyit visz el
+    maga a Python- és PySide6-import, mielőtt idáig eljutnánk. None
+    esetén ez a szakasz kimarad a jelentésből; mérni nem kötelező.
+
+    Az idővonal alapból KI van kapcsolva; a tartós tesztüzem beállítás
+    (#1654), a --tesztuzem kapcsoló és a PICASAPY_STARTUP_TIMELINE=1
+    környezeti változó (#1601) kapcsolja be — ld. _indulasi_idovonal.
+    """
+    from .startup_splash import _close_after_first_frame, take_early_startup
+
+    early_startup = take_early_startup()
+    _ensure_application_helpers()
+    screensaver_exit = _startup_step_screensaver(argv)
+    if screensaver_exit is not None:
+        return screensaver_exit
+
+    state = _startup_step_prepare_state(argv, entry_at, early_startup)
+    progress_log, timeline = state.progress_log, state.timeline
+    onellenorzes, startup_smoke = state.onellenorzes, state.startup_smoke
+    library_argv = state.library_argv
 
     _startup_step_log_and_qt_setup(state)
     # A hívást késleltetjük: a lépés előbb ellenőrzi a #3214 költözést,
@@ -504,8 +519,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         state, bootstrap_storage=lambda: _bootstrap_storage()
     )
     if storage_exit is not None:
-        if early_startup is not None and early_startup.splash is not None:
-            early_startup.splash.close()
+        _zard_be_az_induloablakot(early_startup)
         return storage_exit
 
     progress_log.mark("Figyelt könyvtárak beolvasása elkezdődött")
@@ -521,30 +535,21 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     _startup_step_register_qml_context(state)
     load_exit = _startup_step_load_qml(state)
     if load_exit is not None:
-        if early_startup is not None and early_startup.splash is not None:
-            early_startup.splash.close()
+        _zard_be_az_induloablakot(early_startup)
         return load_exit
 
-    #: #3021: a csomagolás füstpróbája. Idáig eljutni azt jelenti, hogy a
-    #: Qt-bővítmények, a QML-fa, a fordítás és az ikon MIND a csomagban van
-    #: — a felület felépült. Az ablakot már nem mutatjuk meg, és az
-    #: eseményciklus el sem indul.
-    #:
-    #: A LEZÁRÁS nem hagyható ki. A vezérlő ekkor már él, és háttérszálai
-    #: vannak; nélkülük a processz nem lép ki, csak áll — a windowsos
-    #: CI-futáson MÉRVE 38 percig, amíg a job időkorlátja levágta. A
-    #: füstpróba pontosan azt nem mutatta volna meg, amiért van.
+    #: #3021: a csomagolás füstpróbája: a felület felépült (Qt-bővítmények, QML,
+    #: fordítás, ikon a csomagban), az eseményciklus el sem indul. A LEZÁRÁS nem
+    #: hagyható ki: a vezérlő háttérszálai nélküle nem engedik kilépni a processzt
+    #: (a windowsos CI-on MÉRVE 38 percig állt).
     if onellenorzes:
         _startup_step_smoke_test(state)
-        if early_startup is not None and early_startup.splash is not None:
-            early_startup.splash.close()
+        _zard_be_az_induloablakot(early_startup)
         return 0
 
-    # #240: a betöltés csak az ablak ELSŐ kirajzolt képkockája UTÁN indul —
-    # Windowson a korábbi singleShot(0) még az első frame előtt lefutott, a
-    # finish() a splash-t láthatatlanul kifakította. A splash emellett
-    # legalább _SPLASH_MIN_VISIBLE_MS-ig látszik (gyors betöltésnél is van
-    # ideje megjelenni, a Picasa-élményhez hasonlóan).
+    # #240: a betöltés csak az ablak ELSŐ kirajzolt képkockája UTÁN indul (Windowson
+    # a korábbi singleShot(0) még az első frame előtt futott); #6367: a külön
+    # indulóablak ugyanekkor zárul.
     window = state.engine.rootObjects()[0]
     early_splash = early_startup.splash if early_startup is not None else None
     if early_splash is not None:
@@ -603,11 +608,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
             ),
         )
 
-        # Az exportcélok ellenőrzése NEM tartja vissza az indítóképernyőt: a
-        # tulajdonos gépén a NAS-on lévő exportmappák újraolvasása percekig
-        # tartott, és addig a program használhatatlan volt. A könyvtár első
-        # szinkronja UTÁN fut a háttérben (a két író így nem fut egyszerre),
-        # és a végén a nézetek ugyanúgy frissülnek, mint egy szinkron után.
+        # #6369: az exportcélok ellenőrzése (NAS-on percekig tartott) nem tartja vissza
+        # az indítóképernyőt: az első szinkron UTÁN, a háttérben fut (két író nincs).
         def _exportcelok_hatterben() -> None:
             if exportcel_allapot["elinditva"]:
                 return
