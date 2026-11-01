@@ -15,6 +15,7 @@ from picasapy.app.update_manager import (
     LAST_AUTO_CHECK_KEY,
     ReleaseInfo,
     SKIPPED_VERSION_KEY,
+    AUTO_CHECK_INTERVAL_MS,
     UpdateController,
     automatic_check_is_due,
     installation_kind,
@@ -42,16 +43,14 @@ def test_release_verziot_teljes_verziokent_hasonlitja_ossze(current, latest, exp
     assert release_is_newer(latest, current) is expected
 
 
-def test_napi_automatikus_korlat_utc_naptari_nap_alapjan():
-    today = datetime(2026, 10, 31, 15, tzinfo=timezone.utc)
-    assert automatic_check_is_due(None, today)
-    assert not automatic_check_is_due("2026-10-31", today)
-    assert automatic_check_is_due("2026-10-30", today)
+def test_az_automatikus_kereses_nem_napi_korlathoz_kotott():
+    """#6379: a mai korábbi keresés nem tiltja le a következőt."""
+    assert automatic_check_is_due()
+    assert automatic_check_is_due(enabled=True)
 
 
-def test_kikapcsolt_automatikus_ellenorzes_nem_indit_napi_ellenorzest():
-    today = datetime(2026, 10, 31, 15, tzinfo=timezone.utc)
-    assert not automatic_check_is_due(None, today, enabled=False)
+def test_kikapcsolt_automatikus_ellenorzes_nem_indit_ellenorzest():
+    assert not automatic_check_is_due(enabled=False)
 
 
 def test_kihagyott_verziot_tobbe_nem_ajanl_fel():
@@ -299,7 +298,7 @@ def _release(version: str) -> ReleaseInfo:
     return ReleaseInfo(version, "Notes", "https://example.test/release", ())
 
 
-def test_offline_automatikus_hiba_csendben_marad_es_a_napi_korlatot_rogziti(qt_app):
+def test_offline_automatikus_hiba_csendben_marad_es_a_keresest_rogziti(qt_app):
     settings = _MemorySettings()
     client = _ReleaseClient(error=URLError("offline"))
     controller = UpdateController(
@@ -312,7 +311,9 @@ def test_offline_automatikus_hiba_csendben_marad_es_a_napi_korlatot_rogziti(qt_a
 
     assert client.checks == 1
     assert notices == []
-    assert settings.value(LAST_AUTO_CHECK_KEY) == datetime.now(timezone.utc).date().isoformat()
+    assert str(settings.value(LAST_AUTO_CHECK_KEY)).startswith(
+        datetime.now(timezone.utc).date().isoformat()
+    )
     assert controller.autoCheckEnabled is True
 
 
@@ -333,8 +334,10 @@ def test_kezi_ellenorzes_uj_verziot_jelez_de_a_kihagyottat_nem_ajanlja_fel(qt_ap
     assert not controller.updateAvailable
 
 
-def test_automatikus_ellenorzes_alapbol_engedelyezett_es_naponta_egyszer_fut(qt_app):
-    settings = _MemorySettings({AUTO_CHECK_KEY: True})
+def test_automatikus_ellenorzes_minden_alkalommal_fut_de_csak_egyszer_ertesit(qt_app):
+    """#6379: a napi korlát megszűnt; az értesítés verziónként egyszer jön."""
+    today = datetime.now(timezone.utc).date().isoformat()
+    settings = _MemorySettings({AUTO_CHECK_KEY: True, LAST_AUTO_CHECK_KEY: today})
     client = _ReleaseClient(_release("1.1.0"))
     controller = UpdateController(
         "1.0.0", settings=settings, client=client, pool=_InlinePool(), schedule=False
@@ -345,27 +348,43 @@ def test_automatikus_ellenorzes_alapbol_engedelyezett_es_naponta_egyszer_fut(qt_
     controller._automatic_check_if_due()
     controller._automatic_check_if_due()
 
-    assert client.checks == 1
+    assert client.checks == 2
     assert controller.updateAvailable
     assert notices == [True]
 
 
-class _AssetClient(_ReleaseClient):
-    """Letöltést is tudó kliens: a manifeszt és a csomag bájtjait adja."""
+def test_kikapcsolt_automatikus_kereses_nem_fordul_a_klienshez(qt_app):
+    settings = _MemorySettings({AUTO_CHECK_KEY: False})
+    client = _ReleaseClient(_release("1.1.0"))
+    controller = UpdateController(
+        "1.0.0", settings=settings, client=client, pool=_InlinePool(), schedule=False
+    )
 
-    def __init__(self, release, payload: bytes, manifest: str):
-        super().__init__(release)
-        self.payload = payload
-        self.manifest = manifest
+    controller._automatic_check_if_due()
 
-    def download(self, asset, *, progress=None):
-        return self.manifest.encode("utf-8")
+    assert client.checks == 0
 
-    def download_to(self, asset, destination, *, progress=None):
-        destination.write_bytes(self.payload)
-        if progress:
-            progress(len(self.payload), len(self.payload))
-        return hashlib.sha256(self.payload).hexdigest()
+
+def test_futas_kozben_hat_orankent_ujra_keres(qt_app):
+    """#6379: a napokig nyitva hagyott program is észreveszi az új verziót."""
+    client = _ReleaseClient(_release("1.1.0"))
+    controller = UpdateController(
+        "1.0.0",
+        settings=_MemorySettings({AUTO_CHECK_KEY: True}),
+        client=client,
+        pool=_InlinePool(),
+        schedule=False,
+    )
+
+    controller.start_automatic_check()
+    timer = controller._periodic_check_timer
+
+    assert AUTO_CHECK_INTERVAL_MS == 6 * 60 * 60 * 1000
+    assert timer.interval() == AUTO_CHECK_INTERVAL_MS
+    assert not timer.isSingleShot()
+    assert timer.isActive()
+    timer.timeout.emit()
+    assert client.checks == 1
 
 
 def _windows_release(version: str = "1.1.0") -> ReleaseInfo:
@@ -403,6 +422,24 @@ def _letolto_vezerlo(payload: bytes, manifest_hash: str):
     controller.checkForUpdates()
     assert controller.updateAvailable
     return controller
+
+
+class _AssetClient(_ReleaseClient):
+    """Letöltést is tudó kliens: a manifeszt és a csomag bájtjait adja."""
+
+    def __init__(self, release, payload: bytes, manifest: str):
+        super().__init__(release)
+        self.payload = payload
+        self.manifest = manifest
+
+    def download(self, asset, *, progress=None):
+        return self.manifest.encode("utf-8")
+
+    def download_to(self, asset, destination, *, progress=None):
+        destination.write_bytes(self.payload)
+        if progress:
+            progress(len(self.payload), len(self.payload))
+        return hashlib.sha256(self.payload).hexdigest()
 
 
 def test_a_letoltes_fajlba_megy_es_az_ujjlenyomat_egyezik(qt_app):
@@ -563,3 +600,111 @@ def test_a_korabbi_regi_mappa_eltavolitoja_a_csere_elott_visszakerul(tmp_path):
     assert (app / "unins000.exe").read_bytes() == b"uninstaller"
     assert (app / "unins000.dat").read_bytes() == b"uninstaller data"
     assert not previous.exists()
+
+
+class _AllóPool:
+    """A munkát elfogadja, de nem futtatja: a letöltés még "úton van"."""
+
+    def __init__(self):
+        self.workers = []
+
+    def start(self, worker):
+        self.workers.append(worker)
+
+
+def test_frissites_most_utan_azonnal_letoltes_allapot(qt_app):
+    """#6380: a kattintás pillanatától látszik, hogy dolgozik."""
+    pool = _AllóPool()
+    controller = UpdateController(
+        "1.0.0",
+        settings=_MemorySettings(),
+        client=_ReleaseClient(_windows_release("1.1.0")),
+        pool=pool,
+        schedule=False,
+        install_kind="windows",
+    )
+    controller._release = _windows_release("1.1.0")
+    allapotok = []
+    controller.progressChanged.connect(lambda: allapotok.append(controller.downloadState))
+
+    controller.downloadUpdate()
+
+    assert pool.workers, "a letöltés nem indult el"
+    assert controller.downloadState == "downloading"
+    assert controller.downloadProgress == 0
+    assert allapotok == ["downloading"]
+
+
+def test_sikertelen_letoltes_utan_visszaall_tetlenre(qt_app):
+    client = _ReleaseClient(_windows_release("1.1.0"))
+    client.download = lambda asset, *, progress=None: (_ for _ in ()).throw(URLError("offline"))
+    controller = UpdateController(
+        "1.0.0",
+        settings=_MemorySettings(),
+        client=client,
+        pool=_InlinePool(),
+        schedule=False,
+        install_kind="windows",
+    )
+    controller._release = _windows_release("1.1.0")
+    eredmeny = []
+    controller.downloadFinished.connect(lambda ok, ok_ok: eredmeny.append((ok, ok_ok)))
+
+    controller.downloadUpdate()
+
+    assert eredmeny == [(False, "download-error")]
+    assert controller.downloadState == "idle"
+
+
+class _ManifestesKliens(_ReleaseClient):
+    """A kiadás mellé `SHA256SUMS`-t is ad (vagy hibát, ha nincs)."""
+
+    def __init__(self, release, manifest: str | None):
+        super().__init__(release)
+        self.manifest = manifest
+
+    def download(self, asset, *, progress=None):
+        if self.manifest is None:
+            raise URLError("nincs SHA256SUMS")
+        return self.manifest.encode("utf-8")
+
+
+def _windows_vezerlo(client):
+    from picasapy.app.update_manager import UpdateController as _Vezerlo
+
+    return _Vezerlo(
+        "1.0.0",
+        settings=_MemorySettings({AUTO_CHECK_KEY: True}),
+        client=client,
+        pool=_InlinePool(),
+        schedule=False,
+        install_kind="windows",
+    )
+
+
+def test_hianyzo_windows_csomagnal_nem_ajanl_fel_kiadast(qt_app):
+    """#6389: a kiadási lap már kint, a windowsos zip még nincs fent."""
+    controller = _windows_vezerlo(_ManifestesKliens(_release("1.1.0"), "abc  x.whl\n"))
+    controller._automatic_check_if_due()
+    assert not controller.updateAvailable
+
+
+def test_zip_nelkuli_sha256sumsnal_nem_ajanl_fel_kiadast(qt_app):
+    from picasapy.app.update_manager import WINDOWS_ASSET_NAME
+
+    assert WINDOWS_ASSET_NAME == "PicasaPy-windows-x64.zip"
+    controller = _windows_vezerlo(
+        _ManifestesKliens(_windows_release("1.1.0"), "abc  picasapy-1.1.0.tar.gz\n")
+    )
+    controller._automatic_check_if_due()
+    assert not controller.updateAvailable
+
+
+def test_teljes_windows_kiadast_felajanl(qt_app):
+    from picasapy.app.update_manager import WINDOWS_ASSET_NAME
+
+    controller = _windows_vezerlo(
+        _ManifestesKliens(_windows_release("1.1.0"), f"{'a' * 64}  {WINDOWS_ASSET_NAME}\n")
+    )
+    controller._automatic_check_if_due()
+    assert controller.updateAvailable
