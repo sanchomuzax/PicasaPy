@@ -571,6 +571,7 @@ class UpdateController(QObject):
         try:
             from PySide6.QtCore import QPointF, QObject
             from PySide6.QtGui import QGuiApplication
+            from PySide6.QtQuick import QQuickItem  # noqa: F401 - a contentItem átalakítója
 
             app = QGuiApplication.instance()
             if app is None:
@@ -584,10 +585,20 @@ class UpdateController(QObject):
             }
             objects: list[dict[str, object]] = []
             for window in app.allWindows():
-                root = window.contentItem()
-                if root is None:
-                    continue
-                for item in [root, *root.findChildren(QObject)]:
+                # A QML-ben az ablakba írt elemek Qt-szülője maga az ablak, nem
+                # a tartalomelem: mindkét fát be kell járni (#6383). Nem
+                # Quick-ablaknak (pl. az indulóablak) nincs tartalomeleme.
+                root = window.property("contentItem")
+                if not isinstance(root, QObject):
+                    root = None
+                fak = [window.findChildren(QObject)]
+                if root is not None:
+                    fak.insert(0, [root, *root.findChildren(QObject)])
+                bejart: dict[int, QObject] = {}
+                for fa in fak:
+                    for item in fa:
+                        bejart.setdefault(id(item), item)
+                for item in bejart.values():
                     try:
                         name = str(item.objectName() or "")
                         text = str(item.property("text") or "")

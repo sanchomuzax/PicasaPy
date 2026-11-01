@@ -902,14 +902,23 @@ def _varjon_diagnosztikara(
     *,
     timeout: float = 60.0,
 ) -> tuple[dict, list[dict]]:
-    hatarido = time.monotonic() + min(timeout, 60.0)
+    hatarido = time.monotonic() + timeout
+    pillanatok: list[dict] = []
     while time.monotonic() < hatarido:
         pillanatok = _diagnosztika(diag_mappa)
         talalat = feltetel(pillanatok)
         if talalat is not None:
             return talalat, pillanatok
         time.sleep(0.05)
-    raise TimeoutError(f"60 másodpercen belül nem teljesült: {leiras}")
+    utolso = pillanatok[-1] if pillanatok else {}
+    print(
+        "  utolsó diagnosztika: "
+        f"{len(pillanatok)} pillanat, update_available={utolso.get('update_available')}, "
+        f"download_state={utolso.get('download_state')}, elemek="
+        f"{[o.get('name') or o.get('text') for o in utolso.get('objects', [])][:12]}",
+        flush=True,
+    )
+    raise TimeoutError(f"{timeout:.0f} másodpercen belül nem teljesült: {leiras}")
 
 
 def _eloterbe_hoz(pid: int) -> None:
@@ -1065,6 +1074,8 @@ def frissites(
                     None,
                 ),
                 "az alkalmazás jelezze az új verziót",
+                # a program induláskor 30 s-ot vár a keresés előtt (AUTO_CHECK_DELAY_MS)
+                timeout=120.0,
             )
             label = _objektum(available, "versionLabel")
             if not _lathato_koordinataval(label) or not str(label.get("text", "")).startswith("↑"):
