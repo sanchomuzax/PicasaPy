@@ -7,6 +7,21 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.12] - 2026-11-01
+
+- 1.0.12 integráció: gyors indulás, indulóablak, telepítő, betűköz, Google-bejelentkezés (#6375).
+- Az eredeti Picasa 3 indulóablaka a specifikációban (#6360).
+- A telepítővel feltett PicasaPy önfrissítés után is eltávolítható, és a régi programmappa nem marad a lemezen (#6354).
+- Elérhetetlen hálózati exportmappa mellett a program nem vár induláskor kb. 20 másodpercet a mappák ellenőrzésére (#6355).
+- A windowsos csomagolás CI-ja 2000 képes könyvtárral és elérhetetlen hálózati exportmappával méri az indulást, és piros, ha a főablak bármelyik indításnál 5 másodpercnél később jelenik meg (#6355).
+- Az új verziót jelző ablak a program többi ablakához igazodik: a gombok egymás mellett, jobbra igazítva állnak, a kiadási leírás olvasható szöveg (#6358).
+- A Google Fotókba egy kattintással be lehet jelentkezni a jobb felső „Bejelentkezés Google Fiókkal” felirattal; saját Google-kliens csak haladóknak kell (#6361).
+- A kollázs-panel „Képfeliratok megjelenítése” felirata az eredeti betűjét és betűközét kapja, egy sorban fér el, és a gombsor nem takarja (#6362).
+- A mappafigyelő könyvtár (watchdog) a 7-es főverzió alá rögzítve: a 7.0.0 Windowson lefagyást és összeomlást okozott (#6363).
+- A telepítő észreveszi és felajánlja eltávolításra a másik mappába telepített régi PicasaPy-t; a Névjegy megmutatja, honnan fut a program (#6365).
+- Indításkor azonnal megjelenik a PicasaPy indulóablaka a képernyő közepén, még a felület betöltése előtt, mint az eredeti Picasában (#6367).
+- Az „Exportmappák ellenőrzése” nem tartja vissza az indítóképernyőt: a könyvtár betöltése után a háttérben fut, mint az eredeti Picasában, ahol az indulás nem vár mappa-ellenőrzésre (#6369).
+
 ## [1.0.11] - 2026-11-01
 
 - A program naponta egyszer megnézi, van-e újabb kiadás; ha van, a jobb felső verziófelirat jelzi, és Windowson a felhasználó jóváhagyásával, ujjlenyomat-ellenőrzéssel frissíti magát, hibánál visszaállva az előző változatra (#6340).
