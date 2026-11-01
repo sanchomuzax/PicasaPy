@@ -980,6 +980,41 @@ def _valodi_eger_kattintas(obj: dict, pid: int) -> None:
     print(f"  valódi egérkattintás: {obj.get('name') or obj.get('text')} ({x}, {y})", flush=True)
 
 
+#: ennyi ideig nem változhat a felület, mielőtt kattintunk (#6383)
+_NYUGALOM_MP = 0.7
+#: az óra és a várakozás cserélhető fogantyúja a próbákhoz (#1375)
+_falido = time.time
+_szunet = time.sleep
+
+
+def _stabil_kattintas(diag_mappa: Path, pid: int, kivalaszto, leiras: str) -> dict:
+    """Akkor kattint, amikor az elem helye már nem változik (#6383).
+
+    A párbeszéd megjelenéskor még a végleges helyére mozog; az első látható
+    koordinátára kattintva a próba kétszer is mellé kattintott. A
+    diagnosztika 100 ms-onként ír; ha az utolsó `_NYUGALOM_MP` másodperc
+    legalább három pillanatában az elem látható és a helye ugyanaz, a
+    felület nyugalomban van."""
+    hatarido = time.monotonic() + 30.0
+    while time.monotonic() < hatarido:
+        most = _falido()
+        ablak = [
+            s
+            for s in _diagnosztika(diag_mappa)
+            if s.get("pid") == pid and most - float(s.get("at", 0)) <= _NYUGALOM_MP
+        ]
+        elemek = [kivalaszto(s) for s in ablak]
+        if (
+            len(elemek) >= 3
+            and all(_lathato_koordinataval(e) for e in elemek)
+            and len({json.dumps(e.get("rect"), sort_keys=True) for e in elemek}) == 1
+        ):
+            _valodi_eger_kattintas(elemek[-1], pid)
+            return elemek[-1]
+        _szunet(0.1)
+    raise TimeoutError(f"30 másodpercen belül nem állt meg a felület: {leiras}")
+
+
 def _kepernyokep_mentese(cel: Path, pid: int) -> None:
     from PIL import ImageGrab
 
@@ -1107,7 +1142,9 @@ def frissites(
                 raise RuntimeError("az új verziójelzés nem látható a főablakban")
             _kepernyokep_mentese(kepernyokep_mappa / "01-uj-verzio-jelzese.png", folyamat.pid)
 
-            _valodi_eger_kattintas(label, folyamat.pid)
+            _stabil_kattintas(
+                diag_mappa, folyamat.pid, lambda s: _objektum(s, "versionLabel"), "verziójel"
+            )
             dialog_state, _ = _varjon_diagnosztikara(
                 diag_mappa,
                 lambda sorok: next(
@@ -1127,8 +1164,12 @@ def frissites(
             _kepernyokep_mentese(
                 kepernyokep_mappa / "02-frissites-most-gomb.png", folyamat.pid
             )
-            download_button = _objektum(dialog_state, "updateDialogDownloadButton")
-            _valodi_eger_kattintas(download_button, folyamat.pid)
+            _stabil_kattintas(
+                diag_mappa,
+                folyamat.pid,
+                lambda s: _objektum(s, "updateDialogDownloadButton"),
+                "Frissítés most gomb",
+            )
 
             _varjon_diagnosztikara(
                 diag_mappa,
@@ -1165,10 +1206,14 @@ def frissites(
             _kepernyokep_mentese(
                 kepernyokep_mappa / "04-ujrainditasra-kesz.png", folyamat.pid
             )
-            restart_button = _objektum(ready, "updateDialogRestartButton")
-            print(f"  Restart now gomb: {restart_button.get('rect')}", flush=True)
             kattintas = time.time()
-            _valodi_eger_kattintas(restart_button, folyamat.pid)
+            restart_button = _stabil_kattintas(
+                diag_mappa,
+                folyamat.pid,
+                lambda s: _objektum(s, "updateDialogRestartButton"),
+                "Restart now gomb",
+            )
+            print(f"  Restart now gomb: {restart_button.get('rect')}", flush=True)
             _kepernyokep_mentese(
                 kepernyokep_mappa / "05-ujrainditas-kerese.png", folyamat.pid
             )
@@ -1217,7 +1262,7 @@ def frissites(
                 ),
                 "a Súgó menü kattintható területe jelenjen meg",
             )
-            _valodi_eger_kattintas(_help_menu(help_state), uj_pid)
+            _stabil_kattintas(diag_mappa, uj_pid, _help_menu, "Súgó menü")
             about_menu_state, _ = _varjon_diagnosztikara(
                 diag_mappa,
                 lambda sorok: next(
@@ -1230,7 +1275,7 @@ def frissites(
                 ),
                 "az About PicasaPy menüpont jelenjen meg",
             )
-            _valodi_eger_kattintas(_about_menu(about_menu_state), uj_pid)
+            _stabil_kattintas(diag_mappa, uj_pid, _about_menu, "About PicasaPy menüpont")
             _varjon_diagnosztikara(
                 diag_mappa,
                 lambda sorok: next(

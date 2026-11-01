@@ -762,7 +762,7 @@ def test_a_kenyszeritett_kilepes_a_hatarido_utan_os_exit(monkeypatch):
     kilepett = threading.Event()
     kodok = []
     monkeypatch.setattr(
-        update_manager.os, "_exit", lambda kod: (kodok.append(kod), kilepett.set())
+        update_manager, "_azonnali_kilepes", lambda kod: (kodok.append(kod), kilepett.set())
     )
     update_manager._kenyszeritett_kilepes_ha_beragad(0.05)
     assert kilepett.wait(2.0)

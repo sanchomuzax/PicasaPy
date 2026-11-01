@@ -351,6 +351,8 @@ def mappa_irhato(folder: Path) -> bool:
 
 #: Ennyi idő jut a rendes lezárásra a „Restart now” után (#6383).
 KILEPESI_HATARIDO_MP = 20.0
+#: A kényszerített kilépés cserélhető fogantyúja (#1375, #6383).
+_azonnali_kilepes = os._exit
 
 
 def _kenyszeritett_kilepes_ha_beragad(hatarido_mp: float = KILEPESI_HATARIDO_MP) -> None:
@@ -365,7 +367,7 @@ def _kenyszeritett_kilepes_ha_beragad(hatarido_mp: float = KILEPESI_HATARIDO_MP)
     def _kilepes() -> None:
         logger.warning("A lezárás %.0f s alatt nem fejeződött be; kilépés a frissítéshez", hatarido_mp)
         logging.shutdown()
-        os._exit(0)
+        _azonnali_kilepes(0)
 
     idozito = threading.Timer(hatarido_mp, _kilepes)
     idozito.daemon = True

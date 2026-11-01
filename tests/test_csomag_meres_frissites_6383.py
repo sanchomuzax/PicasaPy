@@ -105,3 +105,41 @@ def test_a_frissites_alparancs_windowson_kivul_tiszta_kihagyas(tmp_path, monkeyp
             "1.2.3",
         ]
     ) == 0
+
+
+def _pillanat(at: float, x: float) -> dict:
+    return {
+        "pid": 7,
+        "at": at,
+        "objects": [
+            {"name": "gomb", "visible": True, "rect": {"x": x, "y": 10, "width": 40, "height": 20}}
+        ],
+    }
+
+
+def test_a_mozgo_gombra_csak_megallas_utan_kattint(monkeypatch, tmp_path):
+    """#6383: a párbeszéd megjelenéskor még mozog; az első látható helyre
+    kattintva a próba mellé kattintott. Csak nyugalomban kattinthat."""
+    import time as ido
+
+    most = ido.time()
+    korok = iter(
+        [
+            [_pillanat(most - 0.5, 100), _pillanat(most - 0.3, 300), _pillanat(most - 0.1, 500)],
+            [_pillanat(most - 0.5, 608), _pillanat(most - 0.3, 608), _pillanat(most - 0.1, 608)],
+        ]
+    )
+    monkeypatch.setattr(csomag_meres, "_diagnosztika", lambda _m: next(korok))
+    monkeypatch.setattr(csomag_meres, "_falido", lambda: most)
+    monkeypatch.setattr(csomag_meres, "_szunet", lambda _mp: None)
+    kattintasok = []
+    monkeypatch.setattr(
+        csomag_meres, "_valodi_eger_kattintas", lambda obj, pid: kattintasok.append(obj["rect"]["x"])
+    )
+
+    obj = csomag_meres._stabil_kattintas(
+        tmp_path, 7, lambda s: csomag_meres._objektum(s, "gomb"), "gomb"
+    )
+
+    assert kattintasok == [608]
+    assert obj["rect"]["x"] == 608
