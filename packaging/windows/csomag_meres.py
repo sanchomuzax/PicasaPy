@@ -395,6 +395,7 @@ def ido(
     halozati_export: list[str] | None = None,
     hatar_mp: float | None = None,
     indulo_hatar_ms: float | None = None,
+    elso_hatar_mp: float | None = None,
 ) -> int:
     if indulo_hatar_ms is not None and sys.platform != "win32":
         raise SystemExit("--indulo-hatar-ms csak Windowson mérhető")
@@ -411,6 +412,7 @@ def ido(
                 kepek,
                 hatar_mp,
                 indulo_hatar_ms,
+                elso_hatar_mp,
             )
     finally:
         if halozati_export:
@@ -427,6 +429,7 @@ def _ido_futtato(
     kepek: int,
     hatar_mp: float | None,
     indulo_hatar_ms: float | None,
+    elso_hatar_mp: float | None = None,
 ) -> int:
     hiba = 0
     gyoker = munka / (f"ido-{nev}-{kepek}kep" if kepek else f"ido-{nev}")
@@ -458,8 +461,11 @@ def _ido_futtato(
                 print(f"  ❌ {nev}: a naplóban nincs „{sor}”", flush=True)
                 hiba = 1
         # a határ MINDEN indításra vonatkozik: a CI első mérésén épp az első
-        # indulás volt 24,9 s (elérhetetlen hálózati gyökér), a többi 4,1 s
-        uzenet = hatar_hiba(f"{nev} #{sorszam}", eredmeny, hatar_mp)
+        # indulás volt 24,9 s (elérhetetlen hálózati gyökér), a többi 4,1 s.
+        # Az első indulásnak (friss profil) külön határa lehet: ilyenkor a Qt
+        # a felület QML-fájljait egyszer lefordítja és eltárolja (#6374).
+        hatar = elso_hatar_mp if sorszam == 1 and elso_hatar_mp is not None else hatar_mp
+        uzenet = hatar_hiba(f"{nev} #{sorszam}", eredmeny, hatar)
         if uzenet is not None:
             print(f"  ❌ {uzenet}", flush=True)
             hiba = 1
@@ -575,7 +581,7 @@ def _induloablak_kepe(hwnd: int) -> tuple[bytes | None, tuple[int, int, int] | N
     import io
     from ctypes import wintypes
 
-    from PIL import Image, ImageGrab
+    from PIL import ImageGrab
 
     user32 = ctypes.WinDLL("user32", use_last_error=True)
     user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
@@ -700,6 +706,7 @@ def main(argv: list[str] | None = None) -> int:
     ertelmezo.add_argument("--kepek", type=int, default=0)
     ertelmezo.add_argument("--halozati-export", action="append", default=None)
     ertelmezo.add_argument("--hatar-mp", type=float, default=None)
+    ertelmezo.add_argument("--elso-hatar-mp", type=float, default=None)
     ertelmezo.add_argument("--indulo-hatar-ms", type=float, default=None)
     args = ertelmezo.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
@@ -715,6 +722,7 @@ def main(argv: list[str] | None = None) -> int:
             kepek=args.kepek,
             halozati_export=args.halozati_export,
             hatar_mp=args.hatar_mp,
+            elso_hatar_mp=args.elso_hatar_mp,
             indulo_hatar_ms=args.indulo_hatar_ms,
         )
     return ikon(futtatok, munka, args.szigoru)
