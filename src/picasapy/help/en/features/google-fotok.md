@@ -14,17 +14,17 @@ A browser opens. Sign in there and grant access. After sign-in, the menu
 bar shows your account status. Click it to open the menu and sign out.
 
 If the PicasaPy package does not include a built-in Google client, the
-menu bar link opens the **Settings ▸ Google Photos** tab. Its sign-in
+menu bar link opens the **Google Photos** tab of **Options**. Its sign-in
 button uses the same built-in client.
 
 ## Advanced: use your own Google client
 
 Most people do not need to configure a Google client. If you need your
-own, open **Settings ▸ Google Photos** and expand **Advanced: use your
+own, open the **Google Photos** tab of **Options** and expand **Advanced: use your
 own Google client (optional)**. Enter the OAuth client ID and client
 secret, then choose **Save**. Start sign-in from the tab or the menu bar.
 
-For your own client, create an OAuth client of the **desktop app** type
+For your own client, create an OAuth client of the desktop app type
 in the Google developer console and enable Google Photos upload. Google
 provides the two values. The built-in PicasaPy client needs no user setup
 in packaged builds. When running from source, set

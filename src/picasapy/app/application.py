@@ -20,7 +20,6 @@ import time
 from collections.abc import Callable as Callable, Mapping as Mapping
 from pathlib import Path
 from types import FunctionType as _FunctionType
-from types import SimpleNamespace as _SimpleNamespace
 
 import shutil
 import subprocess
@@ -109,9 +108,13 @@ from .platform_storage import (
 )
 from .startup_status import StartupStatus as StartupStatus
 from .startup_maintenance import StartupMaintenance as StartupMaintenance, StartupMaintenanceStep
+from .application_startup_state import (
+    _startup_step_prepare_state,
+    _startup_step_read_arguments,
+    _zard_be_az_induloablakot,
+)
+from .startup_splash import _close_after_first_frame, take_early_startup
 from .startup_diagnostics import (
-    StartupProgressLog,
-    process_age_ms,
     runtime_version_messages as runtime_version_messages,
     write_console,
 )
@@ -313,8 +316,6 @@ if TYPE_CHECKING:
         _indexelt_kepszamok,
         _indulasi_idovonal,
         _jelentsd_az_idovonalat,
-        argv_indulasellenorzes,
-        argv_onellenorzes,
     )
     from .application_startup_controllers import (
         _startup_step_create_edit_and_file_controllers,
@@ -441,52 +442,6 @@ def _startup_step_smoke_test(state) -> None:
     state.edit_controller.waitForBackgroundWorkers(2.0)
 
 
-def _startup_step_prepare_state(argv: list[str], entry_at: float | None, early_startup):
-    """Az indulás állapota: napló, argumentumok, idővonal (#5958, #6367)."""
-    progress_log = (
-        early_startup.progress_log if early_startup is not None else StartupProgressLog()
-    )
-    progress_log.mark("Python- és PySide6-modulok betöltése befejeződött")
-    # #6344: ami ELŐTTE volt (indító, DLL-ek, víruskereső), az csak így látszik
-    age_ms = process_age_ms()
-    if age_ms is not None:
-        progress_log.mark(f"A folyamat indulása óta eltelt: {age_ms} ms")
-    from picasapy import __version__ as _app_version
-
-    progress_log.mark(f"PicasaPy-verzió: {_app_version}")
-    onellenorzes, argv = argv_onellenorzes(argv)
-    startup_smoke, argv = argv_indulasellenorzes(argv)
-    progress_log.mark("Indulási argumentumok beolvasva")
-    timeline, argv = _indulasi_idovonal(argv, entry_at=entry_at)
-    # #5762: a fájlok közvetlenül a viewer listájába kerülnek; a könyvtárak
-    # maradnak a könyvtárnézet gyökerei. A fájlnevek Qt-argumentumként sem
-    # szükségesek, az alkalmazás a saját listájából olvassa őket.
-    from .quick_view import parse_launch_arguments
-
-    launch_arguments = parse_launch_arguments(argv)
-    library_argv = [argv[0] if argv else "picasapy", *launch_arguments.directory_roots]
-    state = _SimpleNamespace(
-        argv=argv,
-        progress_log=progress_log,
-        timeline=timeline,
-        onellenorzes=onellenorzes,
-        startup_smoke=startup_smoke,
-        launch_arguments=launch_arguments,
-        library_argv=library_argv,
-        early_qt_app=early_startup is not None,
-        qml_splash_enabled=(
-            early_startup.qml_splash_enabled if early_startup is not None else True
-        ),
-    )
-    return state
-
-
-def _zard_be_az_induloablakot(early_startup) -> None:
-    """A korai indulóablak bezárása, ha az indulás idő előtt véget ér (#6367)."""
-    if early_startup is not None and early_startup.splash is not None:
-        early_startup.splash.close()
-
-
 def run(argv: list[str], *, entry_at: float | None = None) -> int:
     """Az alkalmazás indítása.
 
@@ -499,7 +454,6 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     (#1654), a --tesztuzem kapcsoló és a PICASAPY_STARTUP_TIMELINE=1
     környezeti változó (#1601) kapcsolja be — ld. _indulasi_idovonal.
     """
-    from .startup_splash import _close_after_first_frame, take_early_startup
 
     early_startup = take_early_startup()
     _ensure_application_helpers()
@@ -507,10 +461,14 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     if screensaver_exit is not None:
         return screensaver_exit
 
-    state = _startup_step_prepare_state(argv, entry_at, early_startup)
-    progress_log, timeline = state.progress_log, state.timeline
-    onellenorzes, startup_smoke = state.onellenorzes, state.startup_smoke
-    library_argv = state.library_argv
+    elso = _startup_step_read_arguments(argv, early_startup)
+    progress_log, onellenorzes, startup_smoke = elso.progress_log, elso.onellenorzes, elso.startup_smoke
+    timeline, argv = _indulasi_idovonal(elso.argv, entry_at=entry_at)
+    # #5762: a fájlok a viewer listájába, a könyvtárak a könyvtárnézet gyökerei közé
+    from .quick_view import parse_launch_arguments
+    launch_arguments = parse_launch_arguments(argv)
+    library_argv = [argv[0] if argv else "picasapy", *launch_arguments.directory_roots]
+    state = _startup_step_prepare_state(elso, argv, timeline, launch_arguments, library_argv)
 
     _startup_step_log_and_qt_setup(state)
     # A hívást késleltetjük: a lépés előbb ellenőrzi a #3214 költözést,
@@ -555,8 +513,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     if early_splash is not None:
         _close_after_first_frame(window, early_splash)
 
-    # #192: az utolsó ablakpozíció/-méret visszaállítása induláskor,
-    # mentése az ablak zárásakor — a controllerrel közös QSettings-tárba
+    # #192: az ablak helye/mérete visszaáll induláskor, záráskor mentődik (közös QSettings)
     wire_window_geometry(
         window, QSettings("PicasaPy", "PicasaPy"), virtual_desktop_rect(state.app)
     )
@@ -574,9 +531,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     def _start_and_finish() -> None:
         startup_state["first_frame_at"] = time.monotonic()
         if state.quick_view_started:
-            # Ne kérdezzük le a mentett könyvtárat és ne indítsuk el a
-            # könyvtárszkennelést: a gyorsnézegető induló képsora csak a
-            # parancssorban kapott fájlokat tartalmazza.
+            # a gyorsnézegető csak a parancssori fájlokat mutatja: nincs könyvtárszkennelés
             state.startup_status.finish()
             timeline.mark("közvetlen gyorsnézegető-indítás")
             progress_log.mark("A gyorsnézegető megnyílt a megadott képekkel")
@@ -683,8 +638,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     screen_capture_controller = state.screen_capture_controller
     startup_maintenance = state.startup_maintenance
     window.frameSwapped.connect(_on_first_frame)
-    # tartalék: ha a frameSwapped nem jönne (pl. offscreen platform), az
-    # indulás legkésőbb 1 s után akkor is elkezdődik
+    # tartalék: frameSwapped nélkül (pl. offscreen) az indulás 1 s után is elkezdődik
     QTimer.singleShot(1000, _on_first_frame)
     # #6349: futás közbeni fagyás (homokóra) esetén a fő szál helye a naplóba kerül
     from picasapy.perf.foszal_figyelo import foszal_figyelo
