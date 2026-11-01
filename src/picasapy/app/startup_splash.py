@@ -19,7 +19,11 @@ from PySide6.QtGui import (
 )
 
 from picasapy import __version__
-from .startup_diagnostics import StartupProgressLog
+from .startup_diagnostics import (
+    StartupHangTraceback,
+    StartupProgressLog,
+    StartupRunLog,
+)
 
 
 _NOSPLASH = "/nosplash"
@@ -38,6 +42,8 @@ class EarlyStartup:
     splash: "IndulasAblak | None"
     qml_splash_enabled: bool
     progress_log: StartupProgressLog
+    run_log: StartupRunLog | None
+    hang_traceback: StartupHangTraceback | None
 
 
 _EARLY_STARTUP: EarlyStartup | None = None
@@ -234,6 +240,26 @@ def start_early_startup(argv: list[str]) -> EarlyStartup:
     """Qt-alkalmazást és indulóablakot hoz létre az alkalmazásimport előtt."""
     global _EARLY_STARTUP
 
+    run_log = None
+    try:
+        from .platform_storage import default_storage_paths
+
+        run_log = StartupRunLog(default_storage_paths(_platform()).data)
+    except Exception:  # noqa: BLE001 - a diagnosztika nem akadályozhatja az indulást
+        pass
+    if run_log is not None:
+        run_log.mark("Korai indulás elkezdődött")
+    hang_traceback = StartupHangTraceback(run_log.file if run_log is not None else None)
+    if run_log is not None:
+        try:
+            from picasapy.perf.tesztuzem import tarolo_tipusa
+
+            run_log.write(
+                f"Tároló típusa: {tarolo_tipusa(run_log.path.parent)}\n"
+            )
+        except Exception:  # noqa: BLE001 - a diagnosztika nem akadályozhatja az indulást
+            pass
+
     progress_log = StartupProgressLog()
     progress_log.mark("Qt-alkalmazás létrehozása elkezdődött")
     settings = QSettings("PicasaPy", "PicasaPy")
@@ -248,6 +274,8 @@ def start_early_startup(argv: list[str]) -> EarlyStartup:
     app.setDesktopFileName("picasapy")
     app.setQuitOnLastWindowClosed(True)
     progress_log.mark("Qt-alkalmazás létrehozva")
+    if run_log is not None:
+        run_log.mark("Qt-alkalmazás létrehozva")
 
     splash = None
     if show_splash:
@@ -255,9 +283,17 @@ def start_early_startup(argv: list[str]) -> EarlyStartup:
         splash.show()
         app.processEvents()
         progress_log.mark("Az indulóablak megjelent")
+        if run_log is not None:
+            run_log.mark("Az indulóablak megjelent")
 
     _EARLY_STARTUP = EarlyStartup(
-        _strip_nosplash(argv), app, splash, qml_splash_enabled, progress_log
+        _strip_nosplash(argv),
+        app,
+        splash,
+        qml_splash_enabled,
+        progress_log,
+        run_log,
+        hang_traceback,
     )
     return _EARLY_STARTUP
 
