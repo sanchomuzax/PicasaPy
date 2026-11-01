@@ -127,3 +127,20 @@ def test_a_kepes_konyvtar_mappankent_50_kepet_kap(tmp_path):
     assert mappak == ["album-000", "album-001", "album-002"]
     assert len(list((tmp_path / "album-000").glob("*.jpg"))) == 50
     assert len(list((tmp_path / "album-002").glob("*.jpg"))) == 20
+
+
+def _indulo(ms: float | None) -> dict:
+    sorok = []
+    if ms is not None:
+        sorok.append((_INDULT + timedelta(milliseconds=ms), csomag_meres._INDULOABLAK))
+    return {"indult": _INDULT, "sorok": sorok, "indulo_kep_kotelezo": False}
+
+
+def test_az_induloablak_kapuja_a_kozeperteket_nezi():
+    """#6367: egy kiugró (CI-zaj) mérés nem dönt, a középérték igen."""
+    kiugro = [_indulo(784), _indulo(8398), _indulo(386)]
+    assert csomag_meres.indulo_kozepertek_hiba("indulo", kiugro, 1000) is None
+    lassu = [_indulo(1500), _indulo(1600), _indulo(400)]
+    assert "középértéke 1500 ms" in csomag_meres.indulo_kozepertek_hiba("indulo", lassu, 1000)
+    hianyzo = [_indulo(400), _indulo(None), _indulo(400)]
+    assert "nem jelent meg" in csomag_meres.indulo_kozepertek_hiba("indulo", hianyzo, 1000)

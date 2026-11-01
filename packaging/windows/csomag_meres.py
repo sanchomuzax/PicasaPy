@@ -359,6 +359,32 @@ def indulo_hatar_hiba(nev: str, eredmeny: dict, hatar_ms: float | None) -> str |
     return None
 
 
+def indulo_kozepertek_hiba(
+    nev: str, eredmenyek: list[dict], hatar_ms: float | None
+) -> str | None:
+    """Az indulóablak kapuja több indítás KÖZÉPÉRTÉKÉRE (#6367).
+
+    Minden indításnál meg kell jelennie; a határ a középértékre vonatkozik, és
+    legalább egy indításnál a renderelt képnek is ellenőrizhetőnek kell lennie
+    (Windowson)."""
+    if hatar_ms is None or not eredmenyek:
+        return None
+    idok = [induloablak_ms(eredmeny) for eredmeny in eredmenyek]
+    if any(ido is None for ido in idok):
+        return f"{nev}: az indulóablak nem jelent meg minden indításnál"
+    rendezett = sorted(idok)
+    kozep = rendezett[len(rendezett) // 2]
+    if kozep > hatar_ms:
+        return (
+            f"{nev}: az indulóablak középértéke {kozep:.0f} ms, a határ {hatar_ms:.0f} ms"
+        )
+    if any(e.get("indulo_kep_kotelezo") for e in eredmenyek) and not any(
+        e.get("indulo_kep_info") is not None for e in eredmenyek
+    ):
+        return f"{nev}: az indulóablak renderelt képe egyik indításnál sem volt ellenőrizhető"
+    return None
+
+
 def foablak_mp(eredmeny: dict) -> float | None:
     """A folyamat indításától a főablak megjelenéséig eltelt idő, másodpercben;
     `None`, ha a főablak nem jelent meg."""
@@ -434,6 +460,7 @@ def _ido_futtato(
     hiba = 0
     gyoker = munka / (f"ido-{nev}-{kepek}kep" if kepek else f"ido-{nev}")
     eredmeny: dict = {}
+    indulo_eredmenyek: list[dict] = []
     for sorszam in range(1, inditasok + 1):
         eredmeny = _bevar(
             _egy_inditas(
@@ -469,12 +496,14 @@ def _ido_futtato(
         if uzenet is not None:
             print(f"  ❌ {uzenet}", flush=True)
             hiba = 1
-        indulo_uzenet = indulo_hatar_hiba(
-            f"{nev} #{sorszam}", eredmeny, indulo_hatar_ms
-        )
-        if indulo_uzenet is not None:
-            print(f"  ❌ {indulo_uzenet}", flush=True)
-            hiba = 1
+        indulo_eredmenyek.append(eredmeny)
+    # az indulóablak kapuja a mérések KÖZÉPÉRTÉKÉT nézi: a windowsos CI-gép
+    # valódi ablakos módban egy-egy indításnál 8 s-os kiugrást mutatott
+    # (a többi 0,4-0,8 s), ami a futtatógép zaja, nem a programé
+    indulo_uzenet = indulo_kozepertek_hiba(nev, indulo_eredmenyek, indulo_hatar_ms)
+    if indulo_uzenet is not None:
+        print(f"  ❌ {indulo_uzenet}", flush=True)
+        hiba = 1
     return hiba
 
 
