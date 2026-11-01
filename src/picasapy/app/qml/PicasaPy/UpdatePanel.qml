@@ -10,6 +10,9 @@ Dialog {
     property var strings: ({})
     property bool pendingNotice: false
     property string feedback: ""
+    readonly property bool notesVisible:
+        (updateAgent && updateAgent.updateAvailable !== undefined)
+            ? updateAgent.updateAvailable === true : false
 
     function checkForUpdates() {
         feedback = ""
@@ -26,8 +29,8 @@ Dialog {
     modal: true
     focus: true
     anchors.centerIn: Overlay.overlay
-    width: 520
-    height: 410
+    // #6358: a többi megerősítő ablak (ConfirmDialog) mintája: a méret a
+    // tartalomhoz igazodik, a gombsor a tartalom alján, jobbra igazítva
 
     onRejected: {
         if (updateAgent && updateAgent.updateAvailable)
@@ -87,31 +90,36 @@ Dialog {
     }
 
     ColumnLayout {
-        anchors.fill: parent
-        spacing: 10
+        spacing: 12
 
         ProgressBar {
             objectName: "updateDialogCheckingProgress"
-            Layout.fillWidth: true
+            Layout.preferredWidth: 400
             visible: (root.updateAgent && root.updateAgent.checking !== undefined)
                 ? root.updateAgent.checking === true : false
             indeterminate: true
         }
-        TextArea {
-            objectName: "updateDialogReleaseNotes"
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
-                ? root.updateAgent.updateAvailable === true : false
-            readOnly: true
-            wrapMode: TextEdit.Wrap
-            text: root.updateAgent ? root.updateAgent.releaseNotes : ""
-            color: Theme.ink
-            TextFieldContextArea {}
+        ScrollView {
+            objectName: "updateDialogReleaseNotesScroll"
+            Layout.preferredWidth: 400
+            Layout.preferredHeight: Math.min(releaseNotes.implicitHeight, 260)
+            visible: root.notesVisible
+            clip: true
+            contentWidth: availableWidth
+            Text {
+                id: releaseNotes
+                objectName: "updateDialogReleaseNotes"
+                width: 400
+                text: root.updateAgent ? root.updateAgent.releaseNotes : ""
+                wrapMode: Text.WordWrap
+                textFormat: Text.PlainText
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+            }
         }
         Text {
             objectName: "updateDialogUpdateCommand"
-            Layout.fillWidth: true
+            Layout.preferredWidth: 400
             visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
                 ? root.updateAgent.updateAvailable === true
                     && root.updateAgent.oneClickUpdateSupported !== true
@@ -124,7 +132,7 @@ Dialog {
         }
         Text {
             objectName: "updateDialogFeedback"
-            Layout.fillWidth: true
+            Layout.preferredWidth: 400
             visible: root.feedback.length > 0
             text: root.feedback
             color: Theme.ink
@@ -133,7 +141,7 @@ Dialog {
         }
         ProgressBar {
             objectName: "updateDialogProgress"
-            Layout.fillWidth: true
+            Layout.preferredWidth: 400
             visible: root.updateAgent
                 && root.updateAgent.downloadState === "downloading"
             value: root.updateAgent
@@ -141,7 +149,7 @@ Dialog {
         }
         Text {
             objectName: "updateDialogReleaseLink"
-            Layout.fillWidth: true
+            Layout.preferredWidth: 400
             visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
                 ? root.updateAgent.updateAvailable === true
                     && root.updateAgent.oneClickUpdateSupported !== true
@@ -151,81 +159,81 @@ Dialog {
             font.pixelSize: Theme.fontSize
             wrapMode: Text.WrapAnywhere
         }
-    }
-
-    footer: RowLayout {
-        spacing: 8
-        PicasaButton {
-            objectName: "updateDialogCloseButton"
-            visible: !root.updateAgent || !root.updateAgent.updateAvailable
-            text: root.strings.close
-            onClicked: root.close()
-        }
-        PicasaButton {
-            objectName: "updateDialogOpenReleaseButton"
-            visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
-                ? root.updateAgent.updateAvailable === true
-                    && root.updateAgent.oneClickUpdateSupported !== true
-                : false
-            text: root.strings.openReleases
-            onClicked: Qt.openUrlExternally(root.updateAgent.releaseUrl)
-        }
-        PicasaButton {
-            objectName: "updateDialogDownloadButton"
-            visible: (root.updateAgent
-                && root.updateAgent.oneClickUpdateSupported !== undefined)
-                ? root.updateAgent.oneClickUpdateSupported === true
-                    && root.updateAgent.downloadState !== undefined
-                    && root.updateAgent.downloadState === "idle" : false
-            text: root.strings.updateNow
-            accent: Theme.picasaGreen
-            onClicked: root.updateAgent.downloadUpdate()
-        }
-        PicasaButton {
-            objectName: "updateDialogLaterButton"
-            visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
-                ? root.updateAgent.updateAvailable === true
-                    && root.updateAgent.downloadState !== undefined
-                    && root.updateAgent.downloadState !== "ready" : false
-            text: root.strings.later
-            onClicked: {
-                root.updateAgent.deferAvailableVersion()
-                root.close()
+        RowLayout {
+            Layout.alignment: Qt.AlignRight
+            spacing: 8
+            PicasaButton {
+                objectName: "updateDialogCloseButton"
+                visible: !root.updateAgent || !root.updateAgent.updateAvailable
+                text: root.strings.close
+                onClicked: root.close()
             }
-        }
-        PicasaButton {
-            objectName: "updateDialogSkipButton"
-            visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
-                ? root.updateAgent.updateAvailable === true
-                    && root.updateAgent.downloadState !== undefined
-                    && root.updateAgent.downloadState === "idle" : false
-            text: root.strings.skip
-            onClicked: {
-                root.updateAgent.skipAvailableVersion()
-                root.close()
+            PicasaButton {
+                objectName: "updateDialogOpenReleaseButton"
+                visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
+                    ? root.updateAgent.updateAvailable === true
+                        && root.updateAgent.oneClickUpdateSupported !== true
+                    : false
+                text: root.strings.openReleases
+                onClicked: Qt.openUrlExternally(root.updateAgent.releaseUrl)
             }
-        }
-        PicasaButton {
-            objectName: "updateDialogRestartButton"
-            visible: root.updateAgent && root.updateAgent.downloadState === "ready"
-            text: root.strings.restart
-            accent: Theme.picasaGreen
-            onClicked: {
-                if (!root.updateAgent.installWhenExiting(true))
-                    root.feedback = root.strings.helperError
-                else
+            PicasaButton {
+                objectName: "updateDialogDownloadButton"
+                visible: (root.updateAgent
+                    && root.updateAgent.oneClickUpdateSupported !== undefined)
+                    ? root.updateAgent.oneClickUpdateSupported === true
+                        && root.updateAgent.downloadState !== undefined
+                        && root.updateAgent.downloadState === "idle" : false
+                text: root.strings.updateNow
+                accent: Theme.picasaGreen
+                onClicked: root.updateAgent.downloadUpdate()
+            }
+            PicasaButton {
+                objectName: "updateDialogLaterButton"
+                visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
+                    ? root.updateAgent.updateAvailable === true
+                        && root.updateAgent.downloadState !== undefined
+                        && root.updateAgent.downloadState !== "ready" : false
+                text: root.strings.later
+                onClicked: {
+                    root.updateAgent.deferAvailableVersion()
                     root.close()
+                }
             }
-        }
-        PicasaButton {
-            objectName: "updateDialogInstallOnExitButton"
-            visible: root.updateAgent && root.updateAgent.downloadState === "ready"
-            text: root.strings.installOnExit
-            onClicked: {
-                if (!root.updateAgent.installWhenExiting(false))
-                    root.feedback = root.strings.helperError
-                else
+            PicasaButton {
+                objectName: "updateDialogSkipButton"
+                visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
+                    ? root.updateAgent.updateAvailable === true
+                        && root.updateAgent.downloadState !== undefined
+                        && root.updateAgent.downloadState === "idle" : false
+                text: root.strings.skip
+                onClicked: {
+                    root.updateAgent.skipAvailableVersion()
                     root.close()
+                }
+            }
+            PicasaButton {
+                objectName: "updateDialogRestartButton"
+                visible: root.updateAgent && root.updateAgent.downloadState === "ready"
+                text: root.strings.restart
+                accent: Theme.picasaGreen
+                onClicked: {
+                    if (!root.updateAgent.installWhenExiting(true))
+                        root.feedback = root.strings.helperError
+                    else
+                        root.close()
+                }
+            }
+            PicasaButton {
+                objectName: "updateDialogInstallOnExitButton"
+                visible: root.updateAgent && root.updateAgent.downloadState === "ready"
+                text: root.strings.installOnExit
+                onClicked: {
+                    if (!root.updateAgent.installWhenExiting(false))
+                        root.feedback = root.strings.helperError
+                    else
+                        root.close()
+                }
             }
         }
     }
