@@ -499,8 +499,10 @@ jobs:
         run: |
           if [ ! -f packaging/windows/csomag_meres.py ]; then echo "Régi kiadási tag: nincs mérőszkript."; exit 0; fi
           EXE="$RUNNER_TEMP/PicasaPy-installed/PicasaPy.exe"
+          # #6348: a telepített program a valódi verzióját írja a naplóba
           python packaging/windows/csomag_meres.py ido \
-            --futtato "telepitett=$EXE" --munka "$RUNNER_TEMP/csomag-meres"
+            --futtato "telepitett=$EXE" --munka "$RUNNER_TEMP/csomag-meres" \
+            --elvart-verzio "${{ steps.tag.outputs.verzio }}"
           python packaging/windows/csomag_meres.py ikon \
             --futtato "forras=@python,picasapy" \
             --futtato "telepitett=$EXE" --munka "$RUNNER_TEMP/csomag-meres"

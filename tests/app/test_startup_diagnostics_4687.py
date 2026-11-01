@@ -101,3 +101,22 @@ def test_a_folyamat_kora_merheto_es_nem_negativ():
     if sys.platform == "win32" or sys.platform.startswith("linux"):
         assert kor is not None
         assert 0 <= kor < 24 * 3600 * 1000
+
+
+def test_a_folyamat_kora_hibanal_none_es_nem_dob(monkeypatch):
+    """#6344: a windowsos CI-n `ctypes.ArgumentError` állította meg a
+    csomagolt programot — a diagnosztika semmilyen hibával nem dobhat."""
+    import builtins
+
+    from picasapy.app import startup_diagnostics
+
+    valodi_import = builtins.__import__
+
+    def hibas_import(nev, *args, **kwargs):
+        if nev in ("ctypes", "os"):
+            raise TypeError("szimulált ctypes-hiba")
+        return valodi_import(nev, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", hibas_import)
+    monkeypatch.setattr(startup_diagnostics.Path, "read_text", lambda *a, **k: (_ for _ in ()).throw(TypeError("x")))
+    assert startup_diagnostics.process_age_ms() is None

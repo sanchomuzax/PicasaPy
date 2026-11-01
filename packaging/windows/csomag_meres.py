@@ -193,7 +193,12 @@ def _jelentes(nev: str, sorszam: int, eredmeny: dict) -> str:
     return "\n".join(sorok_szoveg)
 
 
-def ido(futtatok: list[tuple[str, list[str]]], inditasok: int, munka: Path) -> int:
+def ido(
+    futtatok: list[tuple[str, list[str]]],
+    inditasok: int,
+    munka: Path,
+    elvart_verzio: str | None = None,
+) -> int:
     hiba = 0
     for nev, parancs in futtatok:
         gyoker = munka / f"ido-{nev}"
@@ -202,6 +207,12 @@ def ido(futtatok: list[tuple[str, list[str]]], inditasok: int, munka: Path) -> i
             print(_jelentes(nev, sorszam, eredmeny), flush=True)
             if eredmeny["kod"] != 0:
                 hiba = 1
+            if elvart_verzio is not None:
+                # #6348: a csomagolt program 0.0.0+ismeretlen-t mutatott
+                sor = f"PicasaPy-verzió: {elvart_verzio}"
+                if not any(s == sor for _, s in eredmeny["sorok"]):
+                    print(f"  ❌ {nev}: a naplóban nincs „{sor}”", flush=True)
+                    hiba = 1
     return hiba
 
 
@@ -372,6 +383,7 @@ def main(argv: list[str] | None = None) -> int:
     ertelmezo.add_argument("--futtato", action="append", required=True)
     ertelmezo.add_argument("--inditasok", type=int, default=2)
     ertelmezo.add_argument("--szigoru", action="store_true")
+    ertelmezo.add_argument("--elvart-verzio", default=None)
     ertelmezo.add_argument("--munka", type=Path, default=None)
     args = ertelmezo.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
@@ -379,7 +391,7 @@ def main(argv: list[str] | None = None) -> int:
     munka = args.munka or Path(tempfile.mkdtemp(prefix="picasapy-csomag-meres-"))
     futtatok = _futtatok(args.futtato)
     if args.mod == "ido":
-        return ido(futtatok, args.inditasok, munka)
+        return ido(futtatok, args.inditasok, munka, args.elvart_verzio)
     return ikon(futtatok, munka, args.szigoru)
 
 

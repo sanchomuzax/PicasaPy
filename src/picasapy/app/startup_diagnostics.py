@@ -50,6 +50,14 @@ def process_age_ms() -> int | None:
 
             kernel32 = ctypes.WinDLL("kernel32")
             kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+            # ⚠️ argtypes NÉLKÜL a 64 bites ál-leíró (-1) C `int`-ként menne
+            # át, és `ctypes.ArgumentError`-ral elszállna — mérve a windowsos
+            # CI-n: a csomagolt program hibaablakkal állt meg.
+            kernel32.GetProcessTimes.argtypes = [wintypes.HANDLE] + [
+                ctypes.POINTER(wintypes.FILETIME)
+            ] * 4
+            kernel32.GetProcessTimes.restype = wintypes.BOOL
+            kernel32.GetSystemTimeAsFileTime.argtypes = [ctypes.POINTER(wintypes.FILETIME)]
             creation, exited, kernel, user, now = (wintypes.FILETIME() for _ in range(5))
             if not kernel32.GetProcessTimes(
                 kernel32.GetCurrentProcess(),
@@ -72,7 +80,7 @@ def process_age_ms() -> int | None:
             started = int(fields[19]) / os.sysconf("SC_CLK_TCK")
             uptime = float(Path("/proc/uptime").read_text().split()[0])
             return max(0, round((uptime - started) * 1000))
-    except (OSError, ValueError, IndexError, AttributeError):
+    except Exception:  # noqa: BLE001 — diagnosztika: az indulást SOHA nem akadályozhatja
         return None
     return None
 
