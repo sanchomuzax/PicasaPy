@@ -377,6 +377,10 @@ def _build_qml_app(
         engine, lambda: controller.photos.photos, tmp_path / "utlevel-gyorstar"
     )
     engine.rootContext().setContextProperty("appVersion", version_string())
+    # #6365: a Névjegy a futó példány helyét is mutatja (application_startup_qml.py)
+    from picasapy.app.application_location import program_location
+
+    engine.rootContext().setContextProperty("appLocation", program_location())
     engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
     # #1792: az album-fejléc gombsorának összeállítása — az application.py
     # bekötésének tükre. A fejléc `typeof`-őr mögül hivatkozik rá, tehát

@@ -516,18 +516,21 @@ Item {
         }
     }
 
-    // ⚠️ A felirat TÖRDEL, nem elidál. A `.tre` 109 × 24-es dobozába az angol
-    // („Show Captions") belefér, a hivatalos magyar („Képfeliratok
-    // megjelenítése") viszont nem — elidálva a felhasználó néma
-    // „Képfeliratok megjelen…"-t látna, és ezt egyetlen teszt sem fogná meg.
-    // A szélesség marad 109, hogy a felirat ne csússzon a „Beállítás
-    // képkockaközéppontként" gomb alá; a magasság a szöveghez nő.
+    // A `.tre` 109 × 24-es doboza az angol „Show Captions” felirathoz készült.
+    // Az eredeti betűje Praxis Semi Bold/Heavy, 12-es méret, 400-as súly
+    // (`collagepanel/caption_checkbox_label` → `m_displayfont12`). A magyar
+    // felirat szélesebb, ezért az adott elem a panel meglévő szabad helyét
+    // használja, a betűméret és a hasáb szélessége változatlan marad.
     component CheckLabel: Text {
         id: felirat
         signal toggled()
         width: 109
         height: Math.max(24, felirat.implicitHeight)
-        font.pixelSize: Theme.fontSize
+        font.family: Theme.uiFamily
+        font.pixelSize: 12
+        font.weight: Theme.fontWeightNormal
+        // `m_displayfont12`: fonttrack -1 (az eredeti betűköze egy képponttal szűkebb)
+        font.letterSpacing: -1
         color: Theme.ink
         wrapMode: Text.Wrap
         verticalAlignment: Text.AlignTop
@@ -562,7 +565,7 @@ Item {
     CheckSquare {
         objectName: "collageCaptionCheckbox"
         x: 4
-        y: 328
+        y: tab.theme === tab.frameGridKey ? 343 : 328
         checked: tab.captions
         onToggled: if (tab.controller)
                        tab.controller.setCollageCaptions(!tab.captions)
@@ -570,9 +573,11 @@ Item {
 
     CheckLabel {
         objectName: "collageCaptionLabel"
-        // (22, 327) a laphoz mérve
         x: 22
-        y: 327
+        y: tab.theme === tab.frameGridKey ? 342 : 327
+        width: tab.width - x - 8
+        height: Math.max(18, implicitHeight)
+        wrapMode: Text.NoWrap
         text: qsTr("Show Captions")
         //: `caption_checkbox` buboréksúgó.
         ToolTip.text: qsTr("Show captions as text on pictures with an "

@@ -15,12 +15,25 @@ import time
 #: óraolvasás, tehát kikapcsolva sem kerül semmibe.
 _ENTRY_AT = time.monotonic()
 
-from .application import run  # noqa: E402 — az időbélyeg elé nem kerülhet
+from .startup_splash import start_early_startup  # noqa: E402 — az időbélyeg elé nem kerülhet
+
+
+def run(argv: list[str], *, entry_at: float | None = None) -> int:
+    """A nehéz alkalmazásmodult csak a korai Qt-indítás után tölti be."""
+    from .application import run as application_run
+
+    return application_run(argv, entry_at=entry_at)
 
 
 def main() -> int:
     """A telepített `picasapy` parancs belépési pontja."""
-    return run(sys.argv, entry_at=_ENTRY_AT)
+    early = start_early_startup(sys.argv)
+    try:
+        return run(early.argv, entry_at=_ENTRY_AT)
+    except Exception:
+        if early.splash is not None:
+            early.splash.close()
+        raise
 
 
 if __name__ == "__main__":

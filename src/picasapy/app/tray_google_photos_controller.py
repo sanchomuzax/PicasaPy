@@ -60,14 +60,23 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
     def googlePhotosSignedIn(self) -> bool:
         self._ensure_google_photos_wired()
         return bool(
-            self.googlePhotosClientId
-            and self._google_photos_credentials.get_secret("client_secret")
+            self._effective_google_photos_credentials()
             and self._google_photos_credentials.get_secret("refresh_token")
         )
 
     @Property(bool, notify=googlePhotosChanged)
     def googlePhotosCanSignIn(self) -> bool:
-        return bool(self.googlePhotosClientId and self.googlePhotosClientSecretConfigured)
+        self._ensure_google_photos_wired()
+        return self._effective_google_photos_credentials() is not None
+
+    def _effective_google_photos_credentials(self) -> tuple[str, str] | None:
+        """A mentett saját vagy a beépített klienspárt választja ki."""
+        from picasapy.google_oauth_beepitett import get_google_oauth_credentials
+
+        return get_google_oauth_credentials(
+            self.googlePhotosClientId,
+            self._google_photos_credentials.get_secret("client_secret"),
+        )
 
     @Property(bool, notify=googlePhotosChanged)
     def googlePhotosAuthBusy(self) -> bool:
@@ -161,8 +170,12 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
             self._google_photos_auth_error = "missing_credentials"
             self.googlePhotosChanged.emit()
             return
-        client_id = self.googlePhotosClientId
-        client_secret = self._google_photos_credentials.get_secret("client_secret")
+        credentials = self._effective_google_photos_credentials()
+        if credentials is None:
+            self._google_photos_auth_error = "missing_credentials"
+            self.googlePhotosChanged.emit()
+            return
+        client_id, client_secret = credentials
         try:
             flow = LoopbackOAuthSession(
                 self._google_photos_oauth,
@@ -228,11 +241,13 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
         from picasapy.google_photos import GooglePhotosApiClient, GooglePhotosError
 
         self._ensure_google_photos_wired()
-        if self._photos_upload_running or not self.googlePhotosSignedIn:
+        if self._photos_upload_running:
             return False
-        client_id = self.googlePhotosClientId
-        client_secret = self._google_photos_credentials.get_secret("client_secret")
         refresh_token = self._google_photos_credentials.get_secret("refresh_token")
+        credentials = self._effective_google_photos_credentials()
+        if credentials is None or not refresh_token:
+            return False
+        client_id, client_secret = credentials
         oauth = self._google_photos_oauth
         transport = self._google_photos_transport
         # `heldPaths` a teljes tálcát adja a beszúrási sorrendjében; a rács
