@@ -28,14 +28,6 @@ def _startup_step_create_qml_engine(state):
     # gyanúk közül a **Qt plugin-keresés** kizárólag a motor
     # létrehozásakor jelentkezne — összevont szakaszban láthatatlan.
     timeline.mark("a többi vezérlő létrehozása")
-    # #6374: a csomagban előre fordított fájl-cache-t az engine előtt a
-    # felhasználó Qt-cache-ébe másoljuk. Így a friss profil első indítása
-    # sem fordítja le szinkronban a teljes QML-fát az ablak megjelenése előtt.
-    qml_cache_bundle = _app._APP_DIR / "qmlcache"
-    if (qml_cache_bundle / "manifest.json").is_file():
-        from .qml_disk_cache import _seed_packaged_qml_cache
-
-        _seed_packaged_qml_cache(_app._APP_DIR / "qml")
     engine = QQmlApplicationEngine()
 
     color_palette_provider = ColorPaletteProvider()
