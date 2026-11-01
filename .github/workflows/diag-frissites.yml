@@ -1,0 +1,91 @@
+# Ideiglenes diagnosztika (#6383 előzménye): a tulajdonos gépén az 1.0.11 -> 1.0.12
+# önfrissítés letöltött, de a csere után visszaállt az 1.0.11-re. Itt pontosan
+# ugyanazt játsszuk le: 1.0.11 Setup, majd a telepített segéd a valódi 1.0.12-es zippel.
+name: Diag - frissites 1.0.11 -> 1.0.12
+
+on:
+  push:
+    branches: [diag/frissites-1011-1012]
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        mod: [admin, felhasznalo]
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Letöltés
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force d | Out-Null
+          gh release download v1.0.11 -R sanchomuzax/PicasaPy -p "PicasaPy-Setup-1.0.11.exe" -D d
+          gh release download v1.0.12 -R sanchomuzax/PicasaPy -p "PicasaPy-windows-x64.zip" -D d
+          Get-ChildItem d
+
+      - name: 1.0.11 telepítése a Setupból
+        shell: pwsh
+        run: |
+          $kapcsolo = if ('${{ matrix.mod }}' -eq 'admin') { '/ALLUSERS' } else { '/CURRENTUSER' }
+          $p = Start-Process "d\PicasaPy-Setup-1.0.11.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART $kapcsolo /LOG=setup.log" -Wait -PassThru
+          "setup kilepes: $($p.ExitCode)"
+          $jeloltek = @("$env:ProgramFiles\PicasaPy", "${env:ProgramFiles(x86)}\PicasaPy", "$env:LOCALAPPDATA\Programs\PicasaPy")
+          $dir = $jeloltek | Where-Object { Test-Path "$_\PicasaPy.exe" } | Select-Object -First 1
+          "telepitesi mappa: $dir"
+          if (-not $dir) { Get-Content setup.log -Tail 40; exit 1 }
+          "DIR=$dir" | Out-File -Append $env:GITHUB_ENV -Encoding utf8
+          Get-ChildItem $dir | Select-Object Name, Length | Format-Table -AutoSize | Out-String -Width 200
+          "verzio: " + (Get-Content "$dir\_internal\_csomag_verzio.txt" -ErrorAction SilentlyContinue)
+          Get-ChildItem -Recurse -Filter _csomag_verzio.txt $dir | ForEach-Object { "$($_.FullName): $(Get-Content $_.FullName)" }
+
+      - name: A 1.0.12 önellenőrzése közvetlenül, a segédhez hasonló környezetben
+        shell: pwsh
+        run: |
+          Expand-Archive d\PicasaPy-windows-x64.zip -DestinationPath uj -Force
+          Get-ChildItem uj | Select-Object Name
+          $exe = (Get-ChildItem -Recurse -Filter PicasaPy.exe uj | Select-Object -First 1).FullName
+          "uj exe: $exe"
+          $env:QT_QPA_PLATFORM = 'offscreen'; $env:QT_QUICK_BACKEND = 'software'
+          Push-Location C:\Windows\System32
+          $sw = [Diagnostics.Stopwatch]::StartNew()
+          $p = Start-Process $exe -ArgumentList '--onellenorzes' -RedirectStandardOutput "$env:GITHUB_WORKSPACE\onell-out.txt" -RedirectStandardError "$env:GITHUB_WORKSPACE\onell-err.txt" -Wait -PassThru -NoNewWindow
+          Pop-Location
+          "onellenorzes kilepes: $($p.ExitCode), ido: $($sw.Elapsed.TotalSeconds) s"
+          "--- stdout"; Get-Content onell-out.txt -Tail 40
+          "--- stderr"; Get-Content onell-err.txt -Tail 60
+
+      - name: Frissítés a telepített segéddel (mint a program)
+        shell: pwsh
+        run: |
+          $dir = $env:DIR
+          $alvo = Start-Process ping -ArgumentList '-n 4 127.0.0.1' -PassThru -WindowStyle Hidden
+          $seged = Join-Path $env:TEMP "PicasaPyUpdateHelper-diag.exe"
+          Copy-Item "$dir\PicasaPyUpdateHelper.exe" $seged -Force
+          $zip = (Resolve-Path d\PicasaPy-windows-x64.zip).Path
+          $sw = [Diagnostics.Stopwatch]::StartNew()
+          $p = Start-Process $seged -ArgumentList "--pid $($alvo.Id) --archive `"$zip`" --install-dir `"$dir`" --executable PicasaPy.exe" -RedirectStandardOutput seged-out.txt -RedirectStandardError seged-err.txt -Wait -PassThru -NoNewWindow
+          "seged kilepes: $($p.ExitCode), ido: $($sw.Elapsed.TotalSeconds) s"
+          "--- stdout"; Get-Content seged-out.txt -Tail 40
+          "--- stderr"; Get-Content seged-err.txt -Tail 60
+          "--- a telepitesi mappa szulo-mappaja"
+          Get-ChildItem (Split-Path $dir) | Where-Object Name -like 'PicasaPy*' | Select-Object Name
+          Get-ChildItem -Recurse -Filter _csomag_verzio.txt $dir | ForEach-Object { "verzio a csere utan: $(Get-Content $_.FullName)" }
+          Start-Sleep 5
+          Get-Process PicasaPy -ErrorAction SilentlyContinue | Select-Object Id, Path
+
+      - name: Naplók
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diag-${{ matrix.mod }}
+          path: |
+            setup.log
+            onell-*.txt
+            seged-*.txt
+          if-no-files-found: ignore
