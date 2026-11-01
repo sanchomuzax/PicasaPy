@@ -93,6 +93,15 @@ def _lathato_elemek_az_ablakon_belul(window, dialog, nevek):
     return lathato
 
 
+def _kirajzol(window, qt_app):
+    """A Qt a layoutot a következő képkockánál rendezi át; a mérés előtt
+    kirajzoltatjuk az ablakot, különben a régi helyeket mérnénk (CI)."""
+    for _ in range(3):
+        qt_app.processEvents()
+        window.grabWindow()
+    qt_app.processEvents()
+
+
 def _ment(window, nev):
     kimenet = os.environ.get("PICASAPY_RENDER_KIMENET")
     if kimenet:
@@ -116,8 +125,7 @@ def test_minden_allapotban_a_gombsor_az_ablakon_belul_marad(qml_app, qt_app):
     }
     for allapot, elemek in vart.items():
         fake.allit(allapot)
-        for _ in range(5):
-            qt_app.processEvents()
+        _kirajzol(window, qt_app)
         _ment(window, allapot)
         lathato = _lathato_elemek_az_ablakon_belul(window, dialog, _GOMBOK)
         assert set(lathato) == elemek, allapot
@@ -132,7 +140,7 @@ def test_frissites_most_kattintasra_azonnal_folyamatjelzo(qml_app, qt_app):
 
     QTest.mouseClick(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier,
                      QPoint(round(kozep.x()), round(kozep.y())))
-    qt_app.processEvents()
+    _kirajzol(window, qt_app)
 
     assert fake.letoltes_kerve == 1
     folyamat = window.findChild(QObject, "updateDialogProgress")
