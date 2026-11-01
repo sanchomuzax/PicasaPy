@@ -188,8 +188,11 @@ def _install_translator(app: QGuiApplication, language: str | None = None) -> QT
     if code == DEFAULT_LANGUAGE:
         return None
     _install_qt_translator(app)
-    # #4817: forrásból indítva a `.qm` itt készül el a `.ts`-ből
-    forditsd(_app._I18N_DIR / f"picasapy_{code}.ts")
+    # #4817: forrásból indítva a `.qm` itt készül el a `.ts`-ből. A
+    # PyInstaller-csomagban a `.qm` a build terméke (#6344): ott nincs mit
+    # fordítani, és a `Program Files` alá írni sem lehetne.
+    if not getattr(sys, "frozen", False):
+        forditsd(_app._I18N_DIR / f"picasapy_{code}.ts")
     translator = QTranslator(app)
     if translator.load(f"picasapy_{code}", str(_app._I18N_DIR)):
         app.installTranslator(translator)

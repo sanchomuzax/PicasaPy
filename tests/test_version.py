@@ -60,3 +60,25 @@ class TestCsomagoltProgram:
         monkeypatch.setattr(version, "_run", tilos)
         monkeypatch.setattr(version, "_futtato", type("Fagyott", (), {"frozen": True}))
         assert version.build_label() == "dev"
+
+
+class TestCsomagVerzio:
+    """#6348: a PyInstaller-csomag verzióját a build által írt fájl adja."""
+
+    def test_a_csomag_verziofajlbol_olvas(self, monkeypatch, tmp_path):
+        (tmp_path / picasapy._CSOMAG_VERZIO_FAJL).write_text("1.2.3\n", encoding="utf-8")
+        monkeypatch.setattr(picasapy, "__file__", str(tmp_path / "__init__.py"))
+        assert picasapy._verzio_a_csomagbol() == "1.2.3"
+
+    def test_hianyzo_fajlnal_none(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(picasapy, "__file__", str(tmp_path / "__init__.py"))
+        assert picasapy._verzio_a_csomagbol() is None
+
+    def test_a_spec_ugyanazt_a_fajlt_irja_a_csomagba(self):
+        from pathlib import Path
+
+        spec = (
+            Path(__file__).resolve().parents[1] / "packaging" / "windows" / "picasapy.spec"
+        ).read_text(encoding="utf-8")
+        assert f'"{picasapy._CSOMAG_VERZIO_FAJL}"' in spec
+        assert '(str(_VERZIO_FAJL), "picasapy")' in spec

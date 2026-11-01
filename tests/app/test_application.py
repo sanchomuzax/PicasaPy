@@ -582,3 +582,24 @@ class TestEditControllerShutdownOnExit:
         timeout = match.group(1).strip()
         assert timeout not in ("", "None"), "korlátlan várakozás a kilépési úton"
         assert 0 < float(timeout) <= 5.0, f"eltúlzott kilépési várakozás: {timeout}"
+
+
+def test_csomagolt_programban_nem_fordit_qm_et(qt_app, monkeypatch):
+    """#6344: a PyInstaller-csomagban a `.qm` a build terméke — induláskor
+    nem indulhat `pyside6-lrelease`, és a `Program Files` alá sem írhat."""
+    from PySide6.QtCore import QLocale
+
+    from picasapy.app import application_services
+
+    def tilos(*args, **kwargs):
+        raise AssertionError("a csomagolt program .qm-et fordított")
+
+    monkeypatch.setattr(application_services.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(application_services, "forditsd", tilos)
+    eredeti = QLocale()
+    try:
+        translator = application_services._install_translator(qt_app, "hu")
+        if translator is not None:
+            qt_app.removeTranslator(translator)
+    finally:
+        QLocale.setDefault(eredeti)

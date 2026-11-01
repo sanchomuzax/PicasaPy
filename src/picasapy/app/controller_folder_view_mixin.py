@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from PySide6.QtCore import Property, Slot
 from picasapy.index import open_index
 from .collections import COLLECTIONS, DEFAULT_COLLAPSED, collection_setting_key
@@ -149,7 +151,13 @@ class FolderViewMixin:
         """
         from .worker_thread import running_background_workers
 
-        return bool(running_background_workers())
+        futok = running_background_workers()
+        if futok:
+            # #6349: a kilépést feltartó munka neve a hibanaplóba kerül
+            logging.getLogger(__name__).warning(
+                "#6349: kilépéskor még fut: %s", ", ".join(futok)
+            )
+        return bool(futok)
 
     @Slot()
     def toggleFolderSortReverse(self) -> None:
