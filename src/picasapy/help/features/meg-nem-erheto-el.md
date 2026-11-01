@@ -36,9 +36,8 @@ csak a naplózás működik. Szürke marad:
 - a **Hálózat** fülön a proxy-beállítások (a két mező és az
   **Hálózati beállítások automatikus észlelése** jelölőnégyzet),
 - a **Webalbumok** fül — a Picasa Webalbumok megszűnt szolgáltatás,
-- az **Általános** fülön az **Automatikus frissítések** sor és a
-  **Névtelen használati statisztikák küldése a Google részére**
-  jelölőnégyzet,
+- az **Általános** fülön a **Névtelen használati statisztikák küldése a
+  Google részére** jelölőnégyzet,
 - az **E-mail** fülön a **Szövegközi fotók és képfeliratok küldése
   (csak Outlookban)** jelölőnégyzet.
 
@@ -64,8 +63,6 @@ működik, a saját Google-kliensed segítségével. Lásd
 még nem működnek.
 - Picasa-fórumok, Online információ, Termékkiadási tájékoztató,
   Adatvédelmi irányelvek, Általános Szerződési Feltételek
-- Frissítések keresése — a frissítések ellenőrzése is egy Google-szolgáltatásra
-  épült
 - Megjelenítési mód ▸ Távoli asztal — kifejezetten a windowsos távoli
   asztalhoz készült, nálunk nincs értelme
 

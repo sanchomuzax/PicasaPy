@@ -37,8 +37,7 @@ See [Settings](beallitasok.md) for details.
 - Proxy fields and the **Automatically detect network settings**
   checkbox on **Network**.
 - **Web Albums**, because Picasa Web Albums has been discontinued.
-- Automatic updates and the **Send anonymous usage statistics**
-  checkbox on **General**.
+- The **Send anonymous usage statistics** checkbox on **General**.
 - **Send inline photos and captions (Outlook only)** on **E-Mail**.
 
 ## Discontinued online services
@@ -55,7 +54,6 @@ available and will not be implemented:
   online actions.
 - Picasa forums, online information, product release announcements,
   privacy policy, and terms of service.
-- Checking for updates, which depended on a Google service.
 - The Remote Desktop display mode, which was specific to Windows
   Remote Desktop and is not useful here.
 
