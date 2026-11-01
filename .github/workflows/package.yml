@@ -287,7 +287,13 @@ jobs:
       - name: PyInstaller-csomagolás
         if: steps.tag.outputs.skip != 'true'
         shell: bash
-        run: pyinstaller --noconfirm packaging/windows/picasapy.spec
+        run: |
+          QML_CACHE_DIR="$RUNNER_TEMP/picasapy-qmlcache"
+          python packaging/windows/build_qml_cache.py \
+            --qml-root src/picasapy/app/qml \
+            --output "$QML_CACHE_DIR"
+          PICASAPY_QML_CACHE_DIR="$QML_CACHE_DIR" \
+            pyinstaller --noconfirm packaging/windows/picasapy.spec
 
       - name: Frissítő segédprogram csomagolása
         if: steps.tag.outputs.skip != 'true'
