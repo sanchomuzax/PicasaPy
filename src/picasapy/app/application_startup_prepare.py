@@ -23,6 +23,7 @@ from .application_data import (
 )
 from .application_platform import (
     _force_qml_dialogs,
+    _icon_report,
     _install_desktop_entry,
     _install_ui_font,
     _set_windows_app_id,
@@ -80,7 +81,9 @@ def _startup_step_log_and_qt_setup(state):
     except AttributeError:
         pass  # régebbi Qt: a paletta (Main.qml) így is világost kényszerít
     app.setDesktopFileName("picasapy")  # Wayland app_id → tálca-ikon
-    app.setWindowIcon(QIcon(str(_window_icon_path())))
+    icon_path = _window_icon_path()
+    app.setWindowIcon(QIcon(str(icon_path)))
+    progress_log.mark(_icon_report(app.windowIcon(), icon_path))
     timeline.mark("Qt-alkalmazás létrehozása")
     progress_log.mark("Qt-alkalmazás létrehozva")
     progress_log.mark("Felület-betűtípus betöltése elkezdődött")

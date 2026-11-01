@@ -7,6 +7,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+- A program a hibanaplóba írja, hogy induláskor betöltötte-e az alkalmazásikont, a windowsos csomag CI-ja pedig méri a telepített program indulási idejét és ablakikonját (#6344, #6345).
+
 ## [1.0.8] - 2026-10-31
 
 - A súgó helyesen írja, hogy a Teljes képernyős indítás csak a fájlból megnyitott Fotómegjelenítőre hat, a könyvtárból megnyitott kép az ablakban marad (#6337).

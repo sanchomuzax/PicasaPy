@@ -109,6 +109,27 @@ def _window_icon_path(platform: str = sys.platform) -> Path:
         return _app._APP_DIR / "assets" / "icon.ico"
     return _app._APP_DIR / "assets" / "icon.png"
 
+def _icon_report(icon, path: Path) -> str:
+    """Az alkalmazásikon állapota egy hibanapló-sorban (#6345).
+
+    A csomagolt windowsos programnál az ikon hiánya csak a tálcán látszik;
+    ez a sor a felhasználó naplójában és a CI-ban is megmondja, hogy a
+    betöltés sikerült-e, és ha nem, melyik feltétel hiányzott. Útvonalat
+    nem ír ki (a napló személyes adatot nem tartalmazhat)."""
+    sizes = sorted({size.width() for size in icon.availableSizes()})
+    if not icon.isNull() and sizes:
+        return "Alkalmazásikon betöltve: " + ",".join(str(size) for size in sizes) + " px"
+    from PySide6.QtGui import QImageReader
+
+    formats = {bytes(fmt).decode("ascii", "replace") for fmt in QImageReader.supportedImageFormats()}
+    return (
+        "Alkalmazásikon ÜRES: fájl "
+        + ("megvan" if path.is_file() else "HIÁNYZIK")
+        + f", {path.suffix or '?'}-olvasó "
+        + ("elérhető" if path.suffix.lstrip(".").lower() in formats else "NINCS")
+    )
+
+
 def _install_desktop_entry() -> None:
     """Asztali bejegyzés + ikon telepítése (~/.local/share) — Waylanden a
     tálca az app_id ↔ .desktop párosításból kapja az ikont. Idempotens."""
