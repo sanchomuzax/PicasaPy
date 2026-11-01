@@ -11,8 +11,9 @@ Seven tabs have working controls: General, E-Mail, File Types, Slideshow,
 Print, Name Tags, and Google Photos. On the Network tab, only logging works;
 the proxy controls are disabled. The Web Albums tab does not work because
 Picasa Web Albums has been discontinued; it remains to match the original
-Picasa layout. The anonymous-usage-statistics and automatic-update controls
-on the General tab are disabled as well.
+Picasa layout. The anonymous-usage-statistics control on the General tab is
+disabled. The **Check for updates automatically** control works and is on by
+default.
 
 Two buttons appear at the bottom of the dialog, as in Picasa:
 
@@ -30,9 +31,9 @@ be scrolled horizontally with the `‹` and `›` arrows at its edges. The
 selected tab scrolls into view automatically. The Google Photos tab may
 also extend beyond the default window width; use `›` to reach it.
 
-The dialog's labels, including disabled controls, use the original Picasa
-wording. Some labels may not describe the behavior you expect from the
-feature.
+The dialog's existing labels, including disabled controls, use the original
+Picasa wording. Some labels may not describe the behavior you expect from the
+feature. Update checking is a PicasaPy feature.
 
 ### General tab
 
@@ -61,6 +62,35 @@ folder; that folder is then used when you open the Import window. See
 [Import](importalas.md).
 
 The privacy link opens Google's privacy page in your browser.
+
+### Checking for updates
+
+**Check for updates automatically** is on by default. When enabled, PicasaPy
+checks the PicasaPy GitHub releases page at
+https://github.com/sanchomuzax/PicasaPy/releases/ for a newer version
+about 30 seconds after startup, at most once per day.
+Network errors and offline use stay quiet. You can also choose Help ▸
+**Check for Updates**… at any time; a manual check reports when no newer
+version is available.
+
+When a new version is found, the version label in the upper-right corner is
+highlighted. A small notice appears in the bottom bar the first time; the
+program does not open a window by itself. If you are editing, running a
+slideshow, exporting, or uploading, the notice waits until the program is
+idle. Click the label to read the short release notes. **Later** closes the
+window and does not reopen it automatically for that release. **Skip this
+version** stops the program from offering that release again.
+
+In the Windows PyInstaller build, **Update now** downloads the package in
+the background while PicasaPy remains usable. Before installation it checks
+the fingerprint in the release's `SHA256SUMS` file. A failed check prevents
+replacement. After a successful download, choose to restart now or install
+when you exit. Restarting waits for background work to finish. The previous
+version is kept, and the updater restores it if the new copy fails to start.
+
+On Linux (`.deb`) and `pip` installations, the dialog shows the release page
+and the exact update command. PicasaPy does not replace itself on those
+platforms.
 
 ### Language
 

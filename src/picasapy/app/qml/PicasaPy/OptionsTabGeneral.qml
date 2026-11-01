@@ -30,8 +30,8 @@ import QtQuick.Layouts
 //
 // Az egykattintásos kilépés a #4458-ban azonosított videó-előnézet
 // kattintására hat; az állóképes dupla kattintás változatlan.
-// A többi FEN-vezérlőnek sincs még PicasaPy-beli funkciója (statisztika-
-// küldés/frissítés-ellenőrzés, kamera-esemény); ezek tiltottak maradnak.
+// A #6340 óta a frissítés-ellenőrzés külön, PicasaPy saját funkciója; az
+// eredeti Google-statisztika és a kamera-esemény itt továbbra is tiltott.
 ColumnLayout {
     id: root
     spacing: 0
@@ -338,38 +338,40 @@ ColumnLayout {
         color: Theme.chromeBorder
     }
 
-    // ---- Automatikus frissítés (csak Win az eredetiben) -------------------
-    // nincs beépített frissítés-ellenőrző a PicasaPy-ban (csomagkezelőn/
-    // git-en át frissül) — a lista a FEN-struktúra kedvéért jelenik meg
+    // ---- Frissítés-ellenőrzés (#6340) -------------------------------------
+    // Az előző helyfoglaló sor objektumneve megmarad, hogy a régi QML-határ
+    // fogyasztói továbbra is megtalálják a sor dobozát.
     RowLayout {
+        objectName: "optionsUpdateModeCombo"
         Layout.fillWidth: true
         Layout.topMargin: 6
         Layout.preferredHeight: 32
         spacing: 0
-        enabled: false
-
-        Text {
-            text: qsTr("Automatic updates:")
-            font.pixelSize: Theme.fontSize
-            color: Theme.ink
-            Layout.minimumWidth: 176
-            Layout.preferredWidth: 176
-            Layout.maximumWidth: 176
-            horizontalAlignment: Text.AlignRight
-            verticalAlignment: Text.AlignVCenter
-        }
-        PicasaComboBox {
-            objectName: "optionsUpdateModeCombo"
+        Item { Layout.minimumWidth: 176; Layout.preferredWidth: 176 }
+        CompactCheckBox {
+            objectName: "optionsAutomaticUpdatesCheck"
             Layout.fillWidth: true
-            Layout.minimumWidth: 96
-            Layout.preferredHeight: 32
-            model: [
-                qsTr("Update automatically"),
-                qsTr("Prompt before downloading updates"),
-                qsTr("Never check for updates")
-            ]
-            currentIndex: 0
+            text: qsTr("Check for updates automatically")
+            enabled: typeof updateController !== "undefined" && updateController !== null
+            checked: (typeof updateController !== "undefined" && updateController
+                && updateController.autoCheckEnabled !== undefined)
+                ? root.setting("updates/autoCheck", updateController.autoCheckEnabled) : true
+            onToggled: {
+                if (typeof updateController !== "undefined" && updateController)
+                    root.stage("updates/autoCheck", checked,
+                        function(value) { updateController.setAutoCheckEnabled(value) })
+            }
         }
+    }
+    Text {
+        objectName: "optionsAutomaticUpdatesDescription"
+        text: qsTr("PicasaPy checks GitHub for new versions.")
+        font.pixelSize: Theme.fontSize - 1
+        color: Theme.textGray
+        wrapMode: Text.WordWrap
+        Layout.leftMargin: 176
+        Layout.fillWidth: true
+        Layout.preferredHeight: 14
     }
 
     // Nyelvválasztás, a specben az automatikus frissítés után áll, és

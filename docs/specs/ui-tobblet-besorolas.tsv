@@ -235,16 +235,16 @@ PicasaPy/OptionsTabEmail.qml	Use this computer's default email program	mero-vakf
 PicasaPy/OptionsTabFileTypes.qml	Display JPEG files and:	mero-vakfolt	A hivatalos options/label61.title feliratot a kimeneti mérő nem kapcsolta a fülhöz; a magyar alak a `referencia/i18n/hu/options.xml` szerint pontos.	options/label61.title	Display JPEG files and:
 PicasaPy/OptionsTabFileTypes.qml	RAW formats	mero-vakfolt	A hivatalos options/SupportRAW.title feliratot a kimeneti mérő nem kapcsolta a fülhöz; a magyar alak a `referencia/i18n/hu/options.xml` szerint pontos.	options/SupportRAW.title	RAW formats
 PicasaPy/OptionsTabFileTypes.qml	Supported Formats	mero-vakfolt	A hivatalos options/link93.title feliratot a kimeneti mérő nem kapcsolta a fülhöz; a magyar alak a `referencia/i18n/hu/options.xml` szerint pontos.	options/link93.title	Supported Formats
-PicasaPy/OptionsTabGeneral.qml	Automatic updates:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/labelgroup20.title hivatalos magyarjával.	options/labelgroup20.title	
+PicasaPy/OptionsTabGeneral.qml	Check for updates automatically	sajat-funkcio	#6340: a PicasaPy saját GitHub-kiadásellenőrzésének kapcsolója; az eredeti külső frissítő külön funkció.		
 PicasaPy/OptionsTabGeneral.qml	Browse...	mero-vakfolt	A magyar szövegünk egyezik az options/importdest.title hivatalos magyarjával (csak …/... különbség).	options/importdest.title	
 PicasaPy/OptionsTabGeneral.qml	Clear cache files	mero-vakfolt	A `disposepreviews` beállítás hivatalos angol felirata; a magyar párja az options/disposepreviews.title.	options/disposepreviews.title	Clear cache files
 PicasaPy/OptionsTabGeneral.qml	Delete from disk without confirmation	mero-vakfolt	A magyar szövegünk betűre egyezik az options/DoNotConfirmDeleteFromDisk.title hivatalos magyarjával.	options/DoNotConfirmDeleteFromDisk.title	
 PicasaPy/OptionsTabGeneral.qml	Files:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/labelgroup10.title hivatalos magyarjával.	options/labelgroup10.title	
 PicasaPy/OptionsTabGeneral.qml	Import destination folder:	segedszoveg	A fájlválasztó címe (FolderDialog.title). A címke (Save imported pictures in:) a #5473 óta az eredeti forrásszöveget és fordítást használja; ez a cím a régi forrás maradt, és nincs hozzá igazolt eredeti szöveg.		
 PicasaPy/OptionsTabGeneral.qml	Language:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/labelgroup25.title hivatalos magyarjával.	options/labelgroup25.title	
+PicasaPy/OptionsTabGeneral.qml	PicasaPy checks GitHub for new versions.	sajat-funkcio	#6340: rövid magyarázat az automatikus ellenőrzés adatforgalmáról.		
 PicasaPy/OptionsTabGeneral.qml	Remove from album without confirmation	mero-vakfolt	A magyar szövegünk betűre egyezik az options/DoNotConfirmRemoveFromAlbum.title hivatalos magyarjával.	options/DoNotConfirmRemoveFromAlbum.title	
 PicasaPy/OptionsTabGeneral.qml	Show tooltips	mero-vakfolt	A magyar szövegünk betűre egyezik az options/ShowTooltips.title egyik hivatalos magyar változatával.	options/ShowTooltips.title	
-PicasaPy/OptionsTabGeneral.qml	Update automatically	mero-vakfolt	A magyar szövegünk betűre egyezik az options/item22.title hivatalos magyarjával.	options/item22.title	
 PicasaPy/OptionsTabGeneral.qml	Use special effects	mero-vakfolt	A magyar szövegünk betűre egyezik az options/UITransitions.title hivatalos magyarjával.	options/UITransitions.title	
 PicasaPy/OptionsTabNameTags.qml	Enable suggestions:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/enablefacesuggestions.title hivatalos magyarjával.	options/enablefacesuggestions.title	
 PicasaPy/OptionsTabNameTags.qml	Suggestion threshold:	mero-vakfolt	A magyar szövegünk betűre egyezik az options/labelgroup176.title hivatalos magyarjával.	options/labelgroup176.title	
