@@ -191,3 +191,35 @@ class TestWireWindowGeometry:
         finally:
             window.deleteLater()
             qt_app.processEvents()
+
+    def test_lebontott_beallitason_a_rejtes_nem_dob(self, qt_app, tmp_path, recwarn):
+        """#6347: kilépéskor a `QSettings` az ablak elrejtése előtt is
+        lebomolhat — a mentés ilyenkor csendben elmarad, nem dob."""
+        import shiboken6
+        from PySide6.QtCore import QSettings
+        from PySide6.QtQuick import QQuickWindow
+
+        beallitas = QSettings(str(tmp_path / "lebontott.ini"), QSettings.Format.IniFormat)
+        window = QQuickWindow()
+        try:
+            wire_window_geometry(window, beallitas, DESKTOP)
+            window.show()
+            qt_app.processEvents()
+            shiboken6.delete(beallitas)
+            hibak: list[BaseException] = []
+            import sys
+
+            regi = sys.unraisablehook
+            sys.unraisablehook = lambda arg: hibak.append(arg.exc_value)
+            regi_hook = sys.excepthook
+            sys.excepthook = lambda t, e, tb: hibak.append(e)
+            try:
+                window.close()
+                qt_app.processEvents()
+            finally:
+                sys.unraisablehook = regi
+                sys.excepthook = regi_hook
+            assert hibak == []
+        finally:
+            window.deleteLater()
+            qt_app.processEvents()

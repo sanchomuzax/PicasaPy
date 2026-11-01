@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterator
 from uuid import uuid4
 
+from picasapy.halozati_ut import elerheto
 from picasapy.ioutil import write_atomic
 
 from .document import NO_SOURCE_FILE, IniDocument, SourceFingerprint, parse_document
@@ -152,6 +153,11 @@ def ini_source_path(path: str | Path) -> Path | None:
     `picasa.ini` nevű fájl is forrás lehet (a `Picasa.ini` keresés
     megtalálja)."""
     target = Path(path)
+    # #6344: egy elérhetetlen NAS-megosztáson az `is_file()` a fő szálon
+    # 11–38 s-ig várt. Az időkorlátos próba ugyanazt a választ adja (nincs
+    # forrás), amit az időkorlát lejárta után a `stat` is adott — csak azonnal.
+    if not elerheto(target):
+        return None
     if target.is_file():
         return target
     if target.name == INI_NAME:

@@ -19,6 +19,7 @@ from collections.abc import Callable, Collection
 from pathlib import Path
 from typing import NamedTuple
 
+from picasapy.halozati_ut import elerheto
 from picasapy.index.queries import HIDDEN_INI_PENDING
 from picasapy.index.origin import forget_origin_keys_outside
 from picasapy.ini import (
@@ -213,6 +214,16 @@ def sync_tree(
     megmaradnak (konzisztens, folytatható állapot).
     """
     root_path = Path(normalize_path(root))
+    # #6344/#6349: elérhetetlen hálózati megosztáson a bejárás minden
+    # lépése a hálózati időkorlátig (20–40 s) várna, és a háttér-szinkron
+    # percekig nem engedné a kilépést. A gyökér nem bizonyít semmit
+    # (#132), tehát nincs mit tenni: kihagyjuk, az index érintetlen.
+    if not elerheto(root_path):
+        logger.warning(
+            "#6344: a hálózati megosztás nem érhető el, a(z) %s gyökeret most kihagyjuk",
+            root_path,
+        )
+        return
     _ensure_scan_state(conn)
     # #1249: a sírkövek mindig kizárnak — a hívónak nem kell tudnia róluk
     exclude = tuple(exclude) + removed_folder_paths(conn)
@@ -366,6 +377,14 @@ def sync_folder(
         Path(item) for item in removed_folder_paths(conn)
     )
     excluded = any(folder_path == item or item in folder_path.parents for item in exclude_paths)
+    if not excluded and not elerheto(folder_path):
+        # #6344/#6349: ld. `sync_tree` — a mappa a következő elérhető
+        # szinkronig offline jelölést kap (#459/5), a sorai megmaradnak
+        row = conn.execute("SELECT id FROM folders WHERE path = ?", (str(folder_path),)).fetchone()
+        if row is not None:
+            _set_folder_offline(conn, row["id"], True)
+            conn.commit()
+        return
     filetype_signature = _filetype_signature(enabled_filetypes)
     skip = _make_skip(conn, filetype_signature) if incremental else None
     # #2483: a `folder_path` EBBEN a függvényben lett feloldva — a
