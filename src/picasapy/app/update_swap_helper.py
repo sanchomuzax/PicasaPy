@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import argparse
 import errno
+import getpass
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -17,7 +19,61 @@ import tempfile
 import time
 import zipfile
 
+from picasapy.perf.tesztuzem import tarolo_tipusa
+
 _kill = os.kill
+_run = subprocess.run
+_POSIX_PATH = re.compile(r"(?<![\w.])/(?:[^\r\n\"']+)")
+_QUOTED_WINDOWS_PATH = re.compile(r"(['\"])(?:[A-Za-z]:[\\/]|\\\\).*?\1")
+_WINDOWS_PATH = re.compile(r"(?<![\w])(?:[A-Za-z]:[\\/]|\\\\)[^\s\"']+")
+_RELATIVE_PATH = re.compile(
+    r"(?<![\w.])(?:\.\.?[\\/])?(?:[^\\/\s\"']+[\\/])+[^\\/\s\"']+"
+)
+
+
+def _update_log_path() -> Path:
+    """A segéd saját, helyi alkalmazásadat-naplója."""
+    from .platform_storage import default_storage_paths
+
+    return default_storage_paths(_platform()).data / "frissites-naplo.txt"
+
+
+def _sanitized_log_message(message: object) -> str:
+    """A hiba szövegét megtartja, az útvonalakat és felhasználónevet kiszűri."""
+    text = str(message)
+    names = {
+        getpass.getuser(),
+        os.environ.get("USERNAME", ""),
+        os.environ.get("USER", ""),
+        os.environ.get("LOGNAME", ""),
+        os.environ.get("LNAME", ""),
+        Path.home().name,
+    }
+    for name in sorted((name for name in names if name), key=len, reverse=True):
+        text = re.sub(re.escape(name), "[felhasználó]", text, flags=re.IGNORECASE)
+    text = _QUOTED_WINDOWS_PATH.sub("[útvonal]", text)
+    text = _WINDOWS_PATH.sub("[útvonal]", text)
+    text = _POSIX_PATH.sub("[útvonal]", text)
+    return _RELATIVE_PATH.sub("[útvonal]", text)
+
+
+def _log_update(message: object, *, include_storage: bool = False) -> None:
+    """Egy időbélyeges sort ír; hibanaplóhiba nem szakíthatja meg a cserét."""
+    try:
+        target = _update_log_path()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open("a", encoding="utf-8") as log:
+            if include_storage:
+                log.write(
+                    f"{time.strftime('%Y-%m-%d %H:%M:%S')} tároló: "
+                    f"{tarolo_tipusa(target.parent)}\n"
+                )
+            log.write(
+                f"{time.strftime('%Y-%m-%d %H:%M:%S')} "
+                f"{_sanitized_log_message(message)}\n"
+            )
+    except Exception:  # noqa: BLE001 - a diagnosztika nem állíthatja meg a frissítést
+        return
 
 
 def _safe_member_path(root: Path, member: str) -> Path:
@@ -193,8 +249,9 @@ def _onellenorzes(executable: Path, *, timeout: float = 180.0) -> bool:
     env = os.environ.copy()
     env["QT_QPA_PLATFORM"] = "offscreen"
     env["QT_QUICK_BACKEND"] = "software"
+    started = time.monotonic()
     try:
-        eredmeny = subprocess.run(
+        eredmeny = _run(
             [str(executable), "--onellenorzes"],
             env=env,
             stdin=subprocess.DEVNULL,
@@ -203,8 +260,27 @@ def _onellenorzes(executable: Path, *, timeout: float = 180.0) -> bool:
             timeout=timeout,
             check=False,
         )
-    except (OSError, subprocess.TimeoutExpired):
+    except subprocess.TimeoutExpired:
+        elapsed = time.monotonic() - started
+        _log_update(
+            f"Önellenőrzés: IDŐTÚLLÉPÉS; idő: {elapsed:.2f} s; "
+            f"határidő: {timeout:.2f} s",
+            include_storage=True,
+        )
         return False
+    except Exception as error:  # noqa: BLE001 - minden önellenőrzési hiba naplózandó
+        elapsed = time.monotonic() - started
+        _log_update(
+            f"Önellenőrzés kivétel; idő: {elapsed:.2f} s; "
+            f"hiba: {_sanitized_log_message(error)}",
+            include_storage=True,
+        )
+        return False
+    elapsed = time.monotonic() - started
+    _log_update(
+        f"Önellenőrzés kilépési kód: {eredmeny.returncode}; idő: {elapsed:.2f} s",
+        include_storage=True,
+    )
     return eredmeny.returncode == 0
 
 
@@ -239,18 +315,57 @@ def inditsd_a_felhasznalonak(executable: Path) -> None:
 
 def install_after_exit(pid: int, archive: Path, install_dir: Path, executable: str) -> bool:
     """Vár, kicsomagol, cserél, ellenőriz, szükség esetén visszaáll, majd indít."""
-    wait_for_process(pid)
-    install_dir = Path(install_dir).resolve()
-    work_dir = install_dir.parent
-    stage_root = Path(tempfile.mkdtemp(prefix="PicasaPy-update-", dir=work_dir))
-    sikerult = False
+    _log_update(
+        "A frissítősegéd elindult; várakozás a főfolyamat kilépésére",
+        include_storage=True,
+    )
     try:
+        started = time.monotonic()
+        wait_for_process(pid)
+        _log_update(f"Várakozás kész; idő: {time.monotonic() - started:.2f} s")
+    except Exception as error:
+        _log_update("Visszaállás oka: a főfolyamatra várás kivétellel állt le")
+        _log_update(f"Kivétel: {_sanitized_log_message(error)}")
+        raise
+    try:
+        install_dir = Path(install_dir).resolve()
+    except Exception as error:
+        _log_update("Visszaállás oka: a telepítési hely feloldása hibára futott")
+        _log_update(f"Kivétel: {_sanitized_log_message(error)}")
+        raise
+    try:
+        stage_root = Path(
+            tempfile.mkdtemp(prefix="PicasaPy-update-", dir=install_dir.parent)
+        )
+    except Exception as error:
+        _log_update("Visszaállás oka: a frissítési munkamappa nem hozható létre")
+        _log_update(f"Kivétel: {_sanitized_log_message(error)}")
+        raise
+    try:
+        started = time.monotonic()
+        _log_update("Kicsomagolás elkezdődött")
         staged = extract_update_archive(Path(archive), stage_root / "new")
+        _log_update(f"Kicsomagolás kész; idő: {time.monotonic() - started:.2f} s")
+        started = time.monotonic()
+        _log_update("Csere és önellenőrzés elkezdődött")
         sikerult = swap_update_directory(
             staged,
             install_dir,
             launch=lambda: _onellenorzes(install_dir / executable),
         )
+        elapsed = time.monotonic() - started
+        _log_update(
+            f"Csere {'sikeres' if sikerult else 'sikertelen'}; idő: {elapsed:.2f} s"
+        )
+        if not sikerult:
+            _log_update(
+                "Visszaállás oka: az új változat önellenőrzése nem jelzett sikert"
+            )
+        return sikerult
+    except Exception as error:
+        _log_update("Visszaállás oka: a frissítési lépés kivétellel állt le")
+        _log_update(f"Kivétel: {_sanitized_log_message(error)}")
+        raise
     finally:
         shutil.rmtree(stage_root, ignore_errors=True)
         # sikernél az új, minden más esetben a megmaradt régi változat
@@ -258,9 +373,8 @@ def install_after_exit(pid: int, archive: Path, install_dir: Path, executable: s
         # frissítés kudarca után sem marad bezárva
         try:
             inditsd_a_felhasznalonak(install_dir / executable)
-        except OSError:
-            pass
-    return sikerult
+        except OSError as error:
+            _log_update(f"Újraindítási kivétel: {_sanitized_log_message(error)}")
 
 
 def main(argv: list[str] | None = None) -> int:

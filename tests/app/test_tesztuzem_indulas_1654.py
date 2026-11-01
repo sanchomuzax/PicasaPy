@@ -34,11 +34,11 @@ class _Beallitasok:
 
 
 class TestABekapcsolasUtjai:
-    def test_alapbol_KI_van_kapcsolva(self):
+    def test_alapbol_is_aktiv_indulasi_idovonal(self):
         idovonal, _argv = app_module._indulasi_idovonal(
             ["picasapy"], settings=_Beallitasok(), environ={}
         )
-        assert idovonal.enabled is False
+        assert idovonal.enabled is True
 
     def test_a_TARTOS_beallitas_bekapcsolja(self):
         """A #1654/1: a kapcsoló túléli a kilépést, tehát a KÖVETKEZŐ
@@ -96,11 +96,12 @@ class TestAzElsoSzakasztolNaploz:
         assert idovonal.phases[0][1] == 2500.0
         assert idovonal.total_ms == 2500.0
 
-    def test_kikapcsolva_egyetlen_szakasz_sincs(self):
+    def test_alapbol_is_aktiv_es_varja_az_elso_szakaszt(self):
         idovonal, _argv = app_module._indulasi_idovonal(
             ["picasapy"], settings=_Beallitasok(), environ={}, entry_at=0.0
         )
-        assert idovonal.phases == ()
+        assert idovonal.enabled is True
+        assert idovonal.phases[0][0] == ELSO_SZAKASZ
 
 
 class TestAKapcsoloNemLeszFigyeltGyoker:
@@ -176,15 +177,14 @@ class TestASorrendAForrasban:
         )
 
 
-class TestKikapcsolvaKoltsegmentes:
-    """⚠️ A jegy DoD-ja: „Kikapcsolva a mérés KÖLTSÉGMENTES".
+class TestAlapIndulasiNaplo:
+    """A szokásos indulás naplóz, de nem kér indexméretet.
 
-    A #1601 mérése (0,2 µs/hívás) a szakasz-bejelentésekre vonatkozik; ez
-    az őr a #1654 ÚJ költségét méri: a napló összeállítása a könyvtár
-    méretét is megkérdezi az indextől, és az egy SQLite-nyitás minden
-    induláskor. Kikapcsolt tesztüzemben ennek meg sem szabad történnie."""
+    A teljes lépéssor a jegy szerint minden induláskor kerül fájlba. Az
+    indexméret és a védett gyökerek száma marad a külön bekapcsolható
+    részletes tesztüzem része."""
 
-    def test_kikapcsolva_a_konyvtarmeret_lekerdezese_EL_SEM_INDUL(self, tmp_path):
+    def test_alap_indulas_a_konyvtarmeretet_nem_kerdezi_le(self, tmp_path, qt_app):
         idovonal, _argv = app_module._indulasi_idovonal(
             ["picasapy"], settings=_Beallitasok(), environ={}
         )
@@ -194,20 +194,28 @@ class TestKikapcsolvaKoltsegmentes:
             hivasok.append(True)
             return (1, 2, 3)
 
-        app_module._jelentsd_az_idovonalat(idovonal, _kepszamok)
+        app_module._jelentsd_az_idovonalat(idovonal)
 
         assert hivasok == [], (
-            "kikapcsolt tesztüzemben is megnyitottuk az indexet a "
-            "könyvtárméretért — ez minden induláskor fizetendő költség"
+            "alap induláskor megnyitottuk az indexet a könyvtárméretért"
         )
 
-    def test_kikapcsolva_nem_ir_naplot(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(app_module, "default_log_dir", lambda: tmp_path)
+    def test_minden_indulas_idovonalat_ir_a_rotalo_naploba(
+        self, tmp_path, qt_app
+    ):
+        from picasapy.app.startup_diagnostics import StartupRunLog
+
         idovonal, _argv = app_module._indulasi_idovonal(
             ["picasapy"], settings=_Beallitasok(), environ={}
         )
-        app_module._jelentsd_az_idovonalat(idovonal, lambda: (1,))
-        assert list(tmp_path.iterdir()) == []
+        idovonal.mark("szokásos indulási lépés")
+        naplo = StartupRunLog(tmp_path)
+        app_module._jelentsd_az_idovonalat(idovonal, run_log=naplo)
+        naplo.close()
+
+        tartalom = (tmp_path / "indulas-utolso.txt").read_text(encoding="utf-8")
+        assert "szokásos indulási lépés" in tartalom
+        assert "A tároló típusa" in tartalom
 
     def test_bekapcsolva_VISZONT_ir_es_a_meret_is_benne_van(
         self, tmp_path, monkeypatch, qt_app
