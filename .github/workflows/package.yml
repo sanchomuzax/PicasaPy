@@ -439,7 +439,7 @@ jobs:
       # #6355: KAPU — a tulajdonos gépén a program 30-40 s alatt indult, üres
       # könyvtáron viszont 4-5 s alatt: az idő az adattal nő. Itt 2000 képpel
       # és egy elérhetetlen hálózati exportcéllal (a NAS mintájára) mérünk;
-      # ha a főablak a meleg indításnál 5 s-nál később jelenik meg, piros.
+      # ha a főablak bármelyik indításnál 5 s-nál később jelenik meg, piros.
       - name: Mérés — valósághű könyvtár, elérhetetlen hálózati exportcél
         if: steps.tag.outputs.skip != 'true'
         shell: bash

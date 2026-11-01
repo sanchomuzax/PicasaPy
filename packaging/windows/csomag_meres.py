@@ -40,7 +40,7 @@ viszont 30-40 s alatt: az idő az ADATTAL nő. Ez a mód ezért sok képpel
 (`--halozati-export`, a tulajdonos NAS-ának mintájára) indít. A
 `192.0.2.0/24` dokumentációs címtartomány: oda soha semmi nem válaszol, a
 Windows tehát kivárja a hálózati időkorlátot. `--hatar-mp` mellett bukik,
-ha a főablak az utolsó (meleg) indításnál ennél később jelenik meg.
+ha a főablak bármelyik indításnál ennél később jelenik meg.
 
 Ez CI-eszköz, nem termékkód: a csomag nem tartalmazza.
 """
@@ -330,12 +330,12 @@ def _ido_futtato(
             if not any(s == sor for _, s in eredmeny["sorok"]):
                 print(f"  ❌ {nev}: a naplóban nincs „{sor}”", flush=True)
                 hiba = 1
-    # a határ a MELEG (utolsó) indításra vonatkozik: a hideg indítást a
-    # víruskereső első fájlvizsgálata is lassítja, az nem a program ideje
-    uzenet = hatar_hiba(nev, eredmeny, hatar_mp) if eredmeny else None
-    if uzenet is not None:
-        print(f"  ❌ {uzenet}", flush=True)
-        hiba = 1
+        # a határ MINDEN indításra vonatkozik: a CI első mérésén épp az első
+        # indulás volt 24,9 s (elérhetetlen hálózati gyökér), a többi 4,1 s
+        uzenet = hatar_hiba(f"{nev} #{sorszam}", eredmeny, hatar_mp)
+        if uzenet is not None:
+            print(f"  ❌ {uzenet}", flush=True)
+            hiba = 1
     return hiba
 
 

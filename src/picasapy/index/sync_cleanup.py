@@ -8,6 +8,8 @@ import sqlite3
 from pathlib import Path
 
 
+from picasapy.halozati_ut import elerheto
+
 from .sync_compat import legacy
 
 logger = logging.getLogger("picasapy.index.sync")
@@ -157,6 +159,13 @@ def _resolved_protected_roots(roots: tuple[str | Path, ...]) -> tuple[Path, ...]
         if nyers in latott:
             continue
         latott.add(nyers)
+        if not elerheto(nyers):
+            # #6355: elérhetetlen hálózati megosztáson a `resolve()` a Windows
+            # hálózati időkorlátjáig vár (a CI-on mérve 19,9 s, a tulajdonos
+            # gépén ettől volt 30-40 s az indulás). Feloldás nélkül, a nyers
+            # alakkal védjük: a gyökér így is bent marad, csak nem kanonizáljuk.
+            resolved.append(Path(os.path.normpath(nyers)))
+            continue
         resolved.append(Path(legacy("normalize_path")(root)))
     return tuple(resolved)
 
@@ -241,6 +250,11 @@ def _feloldas_gyorstarral(
         if nyers in latott:
             continue
         latott.add(nyers)
+        if not elerheto(nyers):
+            # #6355: ld. `_resolved_protected_roots` - elérhetetlen megosztáson
+            # se feloldás, se `stat`: mindegyik a hálózati időkorlátig várna
+            eredmeny.append(Path(os.path.normpath(nyers)))
+            continue
 
         sor = tarolt.get(nyers)
         talalat = None
