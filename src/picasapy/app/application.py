@@ -642,7 +642,12 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # tartalék: ha a frameSwapped nem jönne (pl. offscreen platform), az
     # indulás legkésőbb 1 s után akkor is elkezdődik
     QTimer.singleShot(1000, _on_first_frame)
+    # #6349: futás közbeni fagyás (homokóra) esetén a fő szál helye a naplóba kerül
+    from picasapy.perf.foszal_figyelo import foszal_figyelo
+
+    foszal_figyelo().szivveres_inditasa(app)
     exit_code = app.exec()
+    foszal_figyelo().leallitas()
     if smoke_probe is not None:
         smoke_probe._timer.stop()
     startup_maintenance.cancel()

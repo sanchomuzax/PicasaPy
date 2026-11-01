@@ -9,6 +9,7 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 - A program a hibanaplóba írja, hogy induláskor betöltötte-e az alkalmazásikont, a windowsos csomag CI-ja pedig méri a telepített program indulási idejét és ablakikonját (#6344, #6345).
 - A telepítővel feltett windowsos program a valódi verzióját mutatja a `0.0.0+ismeretlen` helyett, a verziófelirat pedig semmilyen hosszúságnál nem lóg a keresőmezőre (#6348).
+- Ha a felület két másodpercnél tovább nem válaszol (a Main.qml betöltésekor vagy futás közben), a hibanapló megnevezi, melyik kódsoron és melyik Qt-lépésnél várt a program (#6349).
 - A hibanapló rögzíti, ha a háttérmunka-jelző fél percnél tovább pörög, és hogy melyik munka tartja fel a kilépést (#6349).
 - A telepítővel feltett windowsos program induláskor nem indít `git`-folyamatot a verziócímkéhez, a hibanapló pedig a folyamat indulása óta eltelt időt és a program verzióját is rögzíti (#6344).
 - A telepítővel feltett windowsos program ikonja a Qt képformátum-bővítménye nélkül is betöltődik, a parancsikonok pedig ugyanazt az alkalmazásazonosítót viselik, mint a futó program (#6345).
