@@ -9,10 +9,11 @@ külső Google-integrációk kapják meg a végleges szürkét. A korábbi ellen
 a Súgó ▸ Billentyűkódok helyfoglaló állapotát őrizte; a #4639 ezt a tételt
 bekötötte, ezért az ellenpróba most a működő állapotot méri.
 
-⚠️ #4640: a „Check for Updates” (Frissítések keresése) KIKERÜLT a helyfoglalók
-közül: a PicasaPy saját frissítéskeresése nem paritás-feladat, az eredeti
-Google-szolgáltatásra épült, és Wine alatt a Picasa maga tiltotta le. Ezért
-`retired: true`; a próbát a `test_frissitesek_keresese_4640.py` fogja meg.
+⚠️ #6340: a „Check for Updates” (Frissítések keresése) a #4640 óta megszűntként
+állt itt. A tulajdonos 2026-10-31-én elfogadta a PicasaPy SAJÁT, GitHub-alapú
+frissítéskeresését (#6340), ezért a tétel él, és nem nyugdíjazott; a próbát a
+`test_frissitesek_keresese_4640.py` fogja meg (a tétel aktív, és kattintásra
+elindítja a keresést).
 """
 
 from __future__ import annotations
@@ -45,8 +46,6 @@ NYUGDIJAZOTT = (
     "Publish to Blogger...",
     "Order Prints...",
     "Import from Google Photos...",
-    # #4640: Google-szolgáltatásra épült, Wine alatt a Picasa maga tiltotta le
-    "Check for Updates",
 )
 
 #: Nálunk MEGVALÓSÍTHATÓ — a helyfoglalók közül kikerült.

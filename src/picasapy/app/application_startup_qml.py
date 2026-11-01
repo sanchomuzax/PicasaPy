@@ -192,6 +192,15 @@ def _startup_step_register_qml_context(state):
     # Verzió + build a fejlécben (jobb felső sarok): pontosan látsszon,
     # melyik commit fut — ld. version.version_string().
     engine.rootContext().setContextProperty("appVersion", version_string())
+    # #6340: kiadásellenőrzés a főablak betöltése után induló 30 mp-es
+    # várással; a hálózati hívás a vezérlő saját háttérmunkásán fut.
+    from picasapy import __version__
+    from .update_manager import UpdateController
+
+    update_controller = UpdateController(
+        __version__, settings=controller._get_settings(), schedule=False
+    )
+    engine.rootContext().setContextProperty("updateController", update_controller)
     # Indítóképernyő (#189): a Main.qml legfelső rétegén ülő SplashScreen
     # ebből a hídból kapja az állapotot, és a finish()-re magától eltűnik.
     engine.rootContext().setContextProperty("startupStatus", startup_status)
@@ -204,6 +213,7 @@ def _startup_step_register_qml_context(state):
     state.picasa_import_controller = picasa_import_controller
     state.faces_helper = faces_helper
     state.face_scan_controller = face_scan_controller
+    state.update_controller = update_controller
 
 def _startup_step_load_qml(state):
     engine = state.engine
@@ -224,6 +234,9 @@ def _startup_step_load_qml(state):
         progress_log.mark("Main.qml betöltése sikertelen: nem jött létre főablak")
         screen_capture_controller.shutdown()
         return 1
+    update_controller = getattr(state, "update_controller", None)
+    if update_controller is not None:
+        update_controller.start_automatic_check()
     progress_log.mark("Main.qml betöltve; főablak létrejött")
 
     return None
@@ -237,4 +250,3 @@ def _startup_step_screensaver(argv: list[str]) -> int | None:
 
     _kepernyovedo, argv = screensaver_mode.argv_kepernyovedo(argv)
     return screensaver_mode.run_screensaver(argv)
-

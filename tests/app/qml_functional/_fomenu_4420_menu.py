@@ -34,14 +34,14 @@ _MENU_UTVONAL_DARAB = {
     "Edit": 13,
     "Tools": 71,
     "Create": 8,
-    "Help": 6,
+    "Help": 7,
     "File": 17,
 }
 # #5713: a Közzététel FTP-n új bejárható Tools ▸ Experimental parancs.
 # #4528: hét új bejárható parancs került a Mappanézetbe (3 személyrendezés,
 # 4 Shortcuts-gyökér); maga az almenücím nem külön parancsútvonal.
 # #5156: a Mappa ▸ Rendezés ▸ Recent changes újra kattintható, ezért a Mappa menü 16.
-assert sum(_MENU_UTVONAL_DARAB.values()) == 202
+assert sum(_MENU_UTVONAL_DARAB.values()) == 203
 _VIEW_UTVONAL_DARAB_CSOPORTONKENT = {"egyeb": 31, "mappanezet": 20}
 assert sum(_VIEW_UTVONAL_DARAB_CSOPORTONKENT.values()) == _MENU_UTVONAL_DARAB[
     "View"

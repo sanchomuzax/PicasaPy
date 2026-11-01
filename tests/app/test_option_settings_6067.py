@@ -24,6 +24,7 @@ _EFFECTIVE_DEFAULTS = {
     "faces/suggestionsEnabled": True,
     "faces/suggestStep": 85,
     "faces/clusterStep2": 85,
+    "updates/autoCheck": True,
 }
 
 
@@ -86,7 +87,7 @@ def _initialize(settings, library=None):
     )
 
 
-def test_tiszta_profilban_indulaskor_mind_a_tizenot_kulcs_elmentodik(tmp_path):
+def test_tiszta_profilban_indulaskor_mind_a_tizenhat_kulcs_elmentodik(tmp_path):
     settings = _settings(tmp_path)
 
     _initialize(settings)

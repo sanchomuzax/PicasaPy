@@ -1471,6 +1471,18 @@ picasapy-origin-key: options:options/labelgroup34.title</extracomment>
 picasapy-origin-key: album:album/music.title;export:export/changeloc.title;gpuploader_advoptions:gpuploader_advoptions/local_folder.title;gpuploader_prefs:gpuploader_prefs/local_folder.title;move_database:move_database/changeloc.title;options:options/MP3SlideshowPath.title;options:options/importdest.title;webexport:webexport/changeloc.title</extracomment>
             <translation>参照...</translation>
         </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/OptionsTabGeneral.qml" line="357" />
+            <source>Check for updates automatically</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>更新を自動的に確認</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/OptionsTabGeneral.qml" line="370" />
+            <source>PicasaPy checks GitHub for new versions.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>PicasaPy は GitHub で新しいバージョンを確認します。</translation>
+        </message>
     </context>
     <context>
         <name>OptionsTabEmail</name>
@@ -9803,6 +9815,95 @@ picasapy-origin-key: tooltips:Tooltip(thumbui/folderviewpopup)</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMoviePanelPopup::title;stringres:CanonCaptureMoviePanelPopup::title;tooltips:Label(panelroot/capturemovietab)</extracomment>
             <translation>キャプチャ</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="38" />
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="946" />
+            <source>Could not check for updates.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>更新を確認できませんでした。</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="651" />
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="772" />
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="790" />
+            <source>v%1 available</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>v%1 を利用できます</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="885" />
+            <source>Update now</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>今すぐ更新</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="893" />
+            <source>Later</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>後で</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="903" />
+            <source>Skip this version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>このバージョンをスキップ</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="912" />
+            <source>Restart now</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>今すぐ再起動</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="916" />
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="927" />
+            <source>Update helper could not start.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>更新ヘルパーを起動できませんでした。</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="924" />
+            <source>Install on exit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>終了時にインストール</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="944" />
+            <source>No newer version found.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>新しいバージョンは見つかりませんでした。</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="953" />
+            <source>SHA-256 check failed. Update not installed.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>SHA-256 の確認に失敗しました。更新はインストールされていません。</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="955" />
+            <source>Update download failed.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>更新のダウンロードに失敗しました。</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="648" />
+            <source>Downloading...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ダウンロード中...</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="871" />
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>閉じる</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="791" />
+            <source>&amp;Check for Updates</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:eMenuHelp::ID_HELP_CHECK_FOR_UPDATES</extracomment>
+            <translation>最新版を確認(&amp;C)</translation>
         </message>
     </context>
     <context>

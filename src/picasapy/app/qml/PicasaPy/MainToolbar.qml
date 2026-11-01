@@ -11,6 +11,43 @@ Rectangle {
 
     readonly property bool searchOptionsOpen: searchOptionsPopup.opened
     readonly property alias searchBoxItem: searchBox
+    property var updateOwnerWindow: null
+    readonly property var updateAgent:
+        typeof updateController !== "undefined" ? updateController : null
+    readonly property var updateStrings: ({
+        couldNotCheck: qsTr("Could not check for updates."),
+        available: qsTr("v%1 available"),
+        downloading: qsTr("Downloading..."),
+        dialogTitle: qsTr("&Check for Updates").replace("&", ""),
+        close: qsTr("Close"),
+        openReleases: qsTr("View releases on GitHub"),
+        updateNow: qsTr("Update now"),
+        later: qsTr("Later"),
+        skip: qsTr("Skip this version"),
+        restart: qsTr("Restart now"),
+        helperError: qsTr("Update helper could not start."),
+        installOnExit: qsTr("Install on exit"),
+        upToDate: qsTr("No newer version found."),
+        integrityError: qsTr("SHA-256 check failed. Update not installed."),
+        downloadError: qsTr("Update download failed.")
+    })
+
+    function updateNoticeIsAllowed() {
+        if (toolbar.updateAgent && toolbar.updateAgent.applicationBusy)
+            return false
+        if (typeof controller !== "undefined" && controller && controller.isWorking)
+            return false
+        if (toolbar.updateOwnerWindow
+                && (toolbar.updateOwnerWindow.viewerOpen
+                    || toolbar.updateOwnerWindow.slideshowRunning
+                    || toolbar.updateOwnerWindow.timelineOpen))
+            return false
+        return true
+    }
+
+    function checkForUpdates() {
+        updateDialog.checkForUpdates()
+    }
 
     function toggleSearchOptions() {
         if (searchOptionsPopup.opened)
@@ -133,7 +170,11 @@ Rectangle {
     readonly property real searchContainerLeft: width * 0.4
     readonly property real searchContainerRight: width - 70
     // a látható mező (`searchbase`) jobb széle: a konténeren túl 23-mal
-    readonly property real searchBoxRight: searchContainerRight + 23
+    readonly property real searchBoxRight: width - Math.max(
+        47,
+        updateAgent && updateAgent.updateAvailable !== undefined
+            && updateAgent.updateAvailable && updateNoticeIsAllowed()
+            ? versionLabel.implicitWidth + 8 : 47)
     Item {
         id: content
         anchors.fill: parent
@@ -600,20 +641,35 @@ Rectangle {
                 }
             }
         }
-        // Verzió a jobb felső sarokban — halványan, a keresőmező mögötti
-        // 47 px-en (#3603). Ide csak a rövid verzió fér („v0.8.590”); a
-        // teljes címke a build-azonosítóval (appVersion →
-        // version.version_string()) a buboréksúgóban olvasható, hogy
-        // továbbra is ellenőrizhető legyen, PONTOSAN melyik commit fut.
+        // Verzió a jobb felső sarokban. Frissítésnél ugyanitt kap kis
+        // kiemelt címkét; a keresőmező jobb széle csak a címke szélességével
+        // rövidül, a szomszédos eszköztár-vezérlők helye változatlan.
         Text {
             id: versionLabel
             objectName: "versionLabel"
             anchors.right: content.right
             anchors.rightMargin: 4
             anchors.verticalCenter: content.verticalCenter
-            // a teljes címke, pl. „v0.8.590 (6120.ad7e5c7c)”
             readonly property string fullText: appVersion
-            text: String(appVersion).split(" ")[0]
+            readonly property bool updateTagVisible: toolbar.updateAgent
+                && toolbar.updateAgent.updateAvailable !== undefined
+                && toolbar.updateAgent.updateAvailable === true
+                && toolbar.updateNoticeIsAllowed()
+            readonly property string currentVersionText: String(appVersion).split(" ")[0]
+            // #6340/#6348: a mező mögötti ~41 px-be a teljes „vX.Y.Z elérhető”
+            // nem fér (félkövéren ~80 px), levágva pedig olvashatatlan. A
+            // címke ezért rövid jel — „↑1.0.11”, letöltés közben „↓ 45%” —, a
+            // teljes szöveg a buboréksúgóban és a kattintásra nyíló ablakban.
+            readonly property bool downloadingVisible:
+                (toolbar.updateAgent && toolbar.updateAgent.downloadState !== undefined)
+                ? toolbar.updateNoticeIsAllowed() === true
+                    && toolbar.updateAgent.downloadState === "downloading"
+                : false
+            text: downloadingVisible
+                ? "\u2193 " + toolbar.updateAgent.downloadProgress + "%"
+                : updateTagVisible
+                ? "\u2191" + toolbar.updateAgent.availableVersion
+                : currentVersionText
             // #6348: a felirat SOHA nem lóghat a mezőre — a mező mögötti sáv
             // a felső határ, ami nem fér ki, „…”-tal zárul (a teljes címke a
             // buboréksúgóban marad). A 0.0.0+ismeretlen csomagverzió e
@@ -623,11 +679,13 @@ Rectangle {
             width: Math.min(implicitWidth, maxWidth)
             elide: Text.ElideRight
             font.pixelSize: 9
+            font.bold: updateTagVisible
             // #706: rámutatásra és fókuszban aláhúzott — ránézésre is
             // látszódjon, hogy a szám kattintható hivatkozás.
             font.underline: versionHover.hovered || versionLabel.activeFocus
-            color: Theme.textGray
-            opacity: 0.6
+            color: updateTagVisible ? Theme.canvasBg : Theme.textGray
+            opacity: updateTagVisible ? 1 : 0.6
+            z: 2
             // billentyűzettel is elérhető (Tab), és Enterrel/szóközzel
             // aktiválható — ld. lent a Keys.onPressed ágat
             activeFocusOnTab: true
@@ -641,11 +699,20 @@ Rectangle {
             // maga a szám nem árulja el, hova visz — a súgó mondja ki.
             // (Saját property, mert a csatolt `ToolTip.text` a Qt
             // metaobjektumán át nem olvasható ki teszteléskor.)
-            readonly property string tooltipText:
-                qsTr("View releases on GitHub") + "\n" + fullText
+            readonly property string tooltipText: (versionLabel.downloadingVisible
+                    ? toolbar.updateStrings.downloading + " "
+                        + toolbar.updateAgent.downloadProgress + "%\n"
+                    : versionLabel.updateTagVisible
+                    ? toolbar.updateStrings.available.arg(
+                        toolbar.updateAgent.availableVersion) + "\n"
+                    : "")
+                + qsTr("View releases on GitHub") + "\n" + fullText
 
             function openReleases() {
-                Qt.openUrlExternally(versionLabel.releasesUrl)
+                if (toolbar.updateAgent && toolbar.updateAgent.updateAvailable)
+                    updateDialog.open()
+                else
+                    Qt.openUrlExternally(versionLabel.releasesUrl)
             }
 
             ToolTip.visible: versionHover.hovered
@@ -682,5 +749,27 @@ Rectangle {
                 radius: 2
             }
         }
+        Rectangle {
+            objectName: "versionUpdateHighlight"
+            anchors.centerIn: versionLabel
+            width: versionLabel.implicitWidth + 8
+            height: 18
+            radius: 3
+            color: Theme.linkBlue
+            visible: versionLabel.updateTagVisible
+                     || (toolbar.updateNoticeIsAllowed()
+                         && toolbar.updateAgent
+                         && ["downloading", "ready"].indexOf(
+                             toolbar.updateAgent.downloadState) >= 0)
+            z: 1
+        }
+    }
+
+    UpdatePanel {
+        id: updateDialog
+        updateAgent: typeof updateController !== "undefined"
+            ? updateController : null
+        noticeAllowed: toolbar.updateNoticeIsAllowed()
+        strings: toolbar.updateStrings
     }
 }

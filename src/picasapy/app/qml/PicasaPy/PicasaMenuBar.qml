@@ -282,6 +282,7 @@ MenuBar {
     signal hiddenPasswordRequested()
     signal rescanRequested()
     signal aboutRequested()
+    signal updateCheckRequested()
     //: #1792: a fejlec gombsoranak testreszabasa
     signal configureButtonsRequested()
     //: #671: a Fájl ▸ Kilépés — a gazda dönti el, kérdez-e
@@ -726,5 +727,6 @@ MenuBar {
         id: menuHelp
         bar: bar
         controllerRef: ctl
+        onUpdateCheckRequested: bar.updateCheckRequested()
     }
 }
