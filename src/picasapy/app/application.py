@@ -453,12 +453,17 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     (#1654), a --tesztuzem kapcsoló és a PICASAPY_STARTUP_TIMELINE=1
     környezeti változó (#1601) kapcsolja be — ld. _indulasi_idovonal.
     """
+    from .startup_splash import _close_after_first_frame, take_early_startup
+
+    early_startup = take_early_startup()
     _ensure_application_helpers()
     screensaver_exit = _startup_step_screensaver(argv)
     if screensaver_exit is not None:
         return screensaver_exit
 
-    progress_log = StartupProgressLog()
+    progress_log = (
+        early_startup.progress_log if early_startup is not None else StartupProgressLog()
+    )
     progress_log.mark("Python- és PySide6-modulok betöltése befejeződött")
     # #6344: ami ELŐTTE volt (indító, DLL-ek, víruskereső), az csak így látszik
     age_ms = process_age_ms()
@@ -486,6 +491,10 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         startup_smoke=startup_smoke,
         launch_arguments=launch_arguments,
         library_argv=library_argv,
+        early_qt_app=early_startup is not None,
+        qml_splash_enabled=(
+            early_startup.qml_splash_enabled if early_startup is not None else True
+        ),
     )
 
     _startup_step_log_and_qt_setup(state)
@@ -495,6 +504,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         state, bootstrap_storage=lambda: _bootstrap_storage()
     )
     if storage_exit is not None:
+        if early_startup is not None and early_startup.splash is not None:
+            early_startup.splash.close()
         return storage_exit
 
     progress_log.mark("Figyelt könyvtárak beolvasása elkezdődött")
@@ -510,6 +521,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     _startup_step_register_qml_context(state)
     load_exit = _startup_step_load_qml(state)
     if load_exit is not None:
+        if early_startup is not None and early_startup.splash is not None:
+            early_startup.splash.close()
         return load_exit
 
     #: #3021: a csomagolás füstpróbája. Idáig eljutni azt jelenti, hogy a
@@ -523,6 +536,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     #: füstpróba pontosan azt nem mutatta volna meg, amiért van.
     if onellenorzes:
         _startup_step_smoke_test(state)
+        if early_startup is not None and early_startup.splash is not None:
+            early_startup.splash.close()
         return 0
 
     # #240: a betöltés csak az ablak ELSŐ kirajzolt képkockája UTÁN indul —
@@ -531,6 +546,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # legalább _SPLASH_MIN_VISIBLE_MS-ig látszik (gyors betöltésnél is van
     # ideje megjelenni, a Picasa-élményhez hasonlóan).
     window = state.engine.rootObjects()[0]
+    early_splash = early_startup.splash if early_startup is not None else None
+    if early_splash is not None:
+        _close_after_first_frame(window, early_splash)
 
     # #192: az utolsó ablakpozíció/-méret visszaállítása induláskor,
     # mentése az ablak zárásakor — a controllerrel közös QSettings-tárba
@@ -651,6 +669,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         if splash_state["started"]:
             return
         splash_state["started"] = True
+        if early_splash is not None and early_splash.isVisible():
+            early_splash.close()
         timeline.mark("az ablak első kirajzolt képkockája")
         progress_log.mark("Első főablak-képkocka; a rács megjelent")
         QTimer.singleShot(0, _start_and_finish)
@@ -669,6 +689,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     foszal_figyelo().szivveres_inditasa(app)
     exit_code = app.exec()
+    if early_splash is not None:
+        early_splash.close()
     foszal_figyelo().leallitas()
     if smoke_probe is not None:
         smoke_probe._timer.stop()
