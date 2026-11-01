@@ -38,6 +38,8 @@ SKIPPED_VERSION_KEY = "updates/skippedVersion"
 NOTIFIED_VERSION_KEY = "updates/notifiedVersion"
 DEFERRED_VERSION_KEY = "updates/deferredVersion"
 AUTO_CHECK_DELAY_MS = 30_000
+#: #6379: futás közben ennyi időnként keres újra (6 óra)
+AUTO_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
 
 
 #: a futtató folyamat (`executable`) — modulszintű fogantyú a tesztnek (#1375)
@@ -94,19 +96,14 @@ def release_is_newer(latest: str, current: str) -> bool:
     return (left, newest[1], newest[2]) > (right, installed[1], installed[2])
 
 
-def automatic_check_is_due(
-    last_check_date: object,
-    now: datetime | None = None,
-    *,
-    enabled: bool = True,
-) -> bool:
-    """Naponta legfeljebb egyszer engedi az indulás utáni automatikus kört."""
-    if not enabled:
-        return False
-    now = now or datetime.now(timezone.utc)
-    if now.tzinfo is None:
-        now = now.replace(tzinfo=timezone.utc)
-    return str(last_check_date or "") != now.astimezone(timezone.utc).date().isoformat()
+def automatic_check_is_due(*, enabled: bool = True) -> bool:
+    """Az automatikus keresés minden indításkor és időzítéskor fut, ha be van kapcsolva.
+
+    #6379: a korábbi napi korlát miatt a napközben kiadott verziót a program
+    csak másnap vette észre. Az értesítés verziónként egyszer jön
+    (`NOTIFIED_VERSION_KEY`), így a gyakoribb keresés nem tolakodó.
+    """
+    return enabled
 
 
 def should_offer_release(version: str, *, skipped_version: str = "") -> bool:
@@ -392,6 +389,10 @@ class UpdateController(QObject):
         ] = {}
         self._next_job_id = 0
         self._automatic_check_started = False
+        self._download_requested = False
+        self._periodic_check_timer = QTimer(self)
+        self._periodic_check_timer.setInterval(AUTO_CHECK_INTERVAL_MS)
+        self._periodic_check_timer.timeout.connect(self._automatic_check_if_due)
         self._restart_pending = False
         from .update_cleanup import start_startup_cleanup
 
@@ -453,7 +454,8 @@ class UpdateController(QObject):
     def downloadState(self) -> str:  # noqa: N802
         if self._download_path is not None:
             return "ready"
-        if self._progress_total or self._progress:
+        # #6380: a kattintás pillanatától "downloading", ne csak az első adag után
+        if self._download_requested or self._progress_total or self._progress:
             return "downloading"
         return "idle"
 
@@ -501,21 +503,20 @@ class UpdateController(QObject):
 
     @Slot()
     def _automatic_check_if_due(self) -> None:
-        if not automatic_check_is_due(
-            self._settings.value(LAST_AUTO_CHECK_KEY), enabled=self.autoCheckEnabled
-        ):
+        if not automatic_check_is_due(enabled=self.autoCheckEnabled):
             return
-        today = datetime.now(timezone.utc).date().isoformat()
-        self._settings.setValue(LAST_AUTO_CHECK_KEY, today)
+        most = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        self._settings.setValue(LAST_AUTO_CHECK_KEY, most)
         self._settings.sync()
         self._check_latest(manual=False)
 
     def start_automatic_check(self) -> None:
-        """A főablak betöltése után egyszer elindítja a 30 másodperces várást."""
+        """A főablak betöltése után 30 másodperccel keres, utána 6 óránként."""
         if self._automatic_check_started:
             return
         self._automatic_check_started = True
         QTimer.singleShot(AUTO_CHECK_DELAY_MS, self._automatic_check_if_due)
+        self._periodic_check_timer.start()
 
     @Slot()
     def checkForUpdates(self) -> None:  # noqa: N802
@@ -561,7 +562,27 @@ class UpdateController(QObject):
             if manual:
                 self.manualCheckFinished.emit(False, "error")
 
-        self._submit(lambda _progress: self._client.latest_release(), completed, failed)
+        self._submit(lambda _progress: self._letoltheto_kiadas(), completed, failed)
+
+    def _letoltheto_kiadas(self) -> ReleaseInfo | None:
+        """A legújabb kiadás, de windowsos telepítésnél csak ha letölthető.
+
+        #6389: a kiadási lap percekkel előbb nyilvános, mint ahogy a Package
+        feltölti a windowsos csomagot; addig nem ajánljuk fel, mert a
+        letöltés hibára futna. A következő keresés újra megnézi."""
+        release = self._client.latest_release()
+        if self._kind != "windows" or release is None:
+            return release
+        if release.asset(WINDOWS_ASSET_NAME) is None:
+            return None
+        manifest = release.asset(SHA256SUMS_NAME)
+        if manifest is None:
+            return None
+        try:
+            hashes = parse_sha256sums(self._client.download(manifest).decode("utf-8"))
+        except (OSError, ValueError, UnicodeDecodeError):
+            return None
+        return release if WINDOWS_ASSET_NAME in hashes else None
 
     @Slot()
     def skipAvailableVersion(self) -> None:  # noqa: N802
@@ -591,6 +612,7 @@ class UpdateController(QObject):
             return
         self._progress = self._progress_total = 0
         self._download_path = None
+        self._download_requested = True
         self.progressChanged.emit()
 
         def download(report_progress: Callable[[int, int], None]) -> Path:
@@ -609,6 +631,7 @@ class UpdateController(QObject):
             return destination
 
         def complete(path: object) -> None:
+            self._download_requested = False
             self._download_path = Path(path)
             self._progress = self._progress_total = 1
             self.progressChanged.emit()
@@ -616,6 +639,8 @@ class UpdateController(QObject):
 
         def failed(message: str) -> None:
             logger.warning("A frissítés letöltése nem sikerült: %s", message)
+            self._download_requested = False
+            self._progress = self._progress_total = 0
             self._download_path = None
             self.progressChanged.emit()
             self.downloadFinished.emit(False, "integrity-error" if "SHA-256" in message else "download-error")
