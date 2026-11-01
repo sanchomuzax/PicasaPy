@@ -42,6 +42,11 @@ viszont 30-40 s alatt: az idő az ADATTAL nő. Ez a mód ezért sok képpel
 Windows tehát kivárja a hálózati időkorlátot. `--hatar-mp` mellett bukik,
 ha a főablak bármelyik indításnál ennél később jelenik meg.
 
+`--indulo-hatar-ms 1000` bekapcsolja a valódi Windows-ablakos mérést is: a
+naplójelzésből kiszámolja a külön indulóablak megjelenési idejét, a képernyőből
+pedig ellenőrzi a splash ténylegesen kirajzolt, szöveg nélküli alsó sávját.
+Alapértelmezésben ez a kapu ki van kapcsolva.
+
 Ez CI-eszköz, nem termékkód: a csomag nem tartalmazza.
 """
 
@@ -60,6 +65,7 @@ from pathlib import Path
 
 #: a program saját sikerjelzése a hibanaplóban (`_StartupSmokeProbe`)
 _SIKER = "A főablak a splash után megjelent"
+_INDULOABLAK = "Az indulóablak megjelent"
 
 #: egy hibanapló-sor: `2026-10-31T15:33:14.123+00:00 INFO picasapy.startup: …`
 _SOR = re.compile(r"^(\S+) INFO picasapy\.startup: (.*)$")
@@ -179,10 +185,16 @@ def _naplo_sorai(profil_gyoker: Path) -> list[tuple[datetime, str]]:
 
 
 def _egy_inditas(
-    parancs: list[str], gyoker: Path, *, ablakkal: bool, kepek: int = 0
+    parancs: list[str],
+    gyoker: Path,
+    *,
+    ablakkal: bool,
+    kepek: int = 0,
+    indulo_hatar_ms: float | None = None,
 ) -> dict:
     env, konyvtar = _profil(gyoker, kepek)
-    if ablakkal:
+    valodi_ablak = ablakkal or indulo_hatar_ms is not None
+    if valodi_ablak:
         env.pop("QT_QPA_PLATFORM", None)
         env.pop("QT_QUICK_BACKEND", None)
     else:
@@ -203,16 +215,41 @@ def _egy_inditas(
         "kezdet": kezdet,
         "korabbi": korabbi,
         "gyoker": gyoker,
+        "indulo_hatar_ms": indulo_hatar_ms,
+        "indulo_kep_kotelezo": sys.platform == "win32" and indulo_hatar_ms is not None,
     }
 
 
 def _bevar(futas: dict) -> dict:
     folyamat = futas["folyamat"]
-    try:
-        kimenet, _ = folyamat.communicate(timeout=_IDOKORLAT_MP)
-    except subprocess.TimeoutExpired:
-        folyamat.kill()
-        kimenet, _ = folyamat.communicate()
+    indulo_kep = None
+    indulo_kep_info = None
+    indulo_kep_hiba = None
+    induloablak_latszott = False
+    if futas["indulo_kep_kotelezo"]:
+        hatarido = time.monotonic() + _IDOKORLAT_MP
+        while True:
+            try:
+                kimenet, _ = folyamat.communicate(timeout=0.05)
+                break
+            except subprocess.TimeoutExpired:
+                if not induloablak_latszott:
+                    for hwnd, ablak in _ablakikonok(folyamat.pid).items():
+                        if not ablak["cim"].casefold().startswith("picasapy startup"):
+                            continue
+                        induloablak_latszott = True
+                        indulo_kep, indulo_kep_info, indulo_kep_hiba = _induloablak_kepe(hwnd)
+                        break
+                if time.monotonic() >= hatarido:
+                    folyamat.kill()
+                    kimenet, _ = folyamat.communicate()
+                    break
+    else:
+        try:
+            kimenet, _ = folyamat.communicate(timeout=_IDOKORLAT_MP)
+        except subprocess.TimeoutExpired:
+            folyamat.kill()
+            kimenet, _ = folyamat.communicate()
     fal_mp = time.perf_counter() - futas["kezdet"]
     sorok = _naplo_sorai(futas["gyoker"])[futas["korabbi"] :]
     return {
@@ -221,6 +258,11 @@ def _bevar(futas: dict) -> dict:
         "indult": futas["indult"],
         "sorok": sorok,
         "kimenet": kimenet.decode("utf-8", errors="replace"),
+        "indulo_hatar_ms": futas["indulo_hatar_ms"],
+        "indulo_kep_kotelezo": futas["indulo_kep_kotelezo"],
+        "indulo_kep": indulo_kep,
+        "indulo_kep_info": indulo_kep_info,
+        "indulo_kep_hiba": indulo_kep_hiba,
     }
 
 
@@ -231,7 +273,14 @@ def _jelentes(nev: str, sorszam: int, eredmeny: dict) -> str:
         f"falióra {eredmeny['fal_mp']:.2f} s"
     )
     if not sorok:
-        return fej + "\n  (a hibanaplóban nincs indulási jelzés)\n" + eredmeny["kimenet"][-2000:]
+        reszletek = _indulo_jelentes(eredmeny)
+        return (
+            fej
+            + "\n  (a hibanaplóban nincs indulási jelzés)\n"
+            + "\n".join(reszletek)
+            + "\n"
+            + eredmeny["kimenet"][-2000:]
+        )
     resek = []
     elozo_ido, elozo_nev = eredmeny["indult"], "folyamat indítása"
     for ido, szakasz in sorok:
@@ -245,6 +294,7 @@ def _jelentes(nev: str, sorszam: int, eredmeny: dict) -> str:
     sorok_szoveg = [
         fej,
         f"  indítótól az első saját sorig (indító + modulbetöltés): {elso:.0f} ms",
+        *_indulo_jelentes(eredmeny),
         "  főablak a splash után: "
         + (f"{siker:.2f} s" if siker is not None else "NEM jelent meg"),
         "  a hat leghosszabb szakasz:",
@@ -256,6 +306,57 @@ def _jelentes(nev: str, sorszam: int, eredmeny: dict) -> str:
         if talalat:
             sorok_szoveg.append(f"  {talalat[-1]}")
     return "\n".join(sorok_szoveg)
+
+
+def _indulo_jelentes(eredmeny: dict) -> list[str]:
+    if eredmeny.get("indulo_hatar_ms") is None:
+        return []
+    mert = induloablak_ms(eredmeny)
+    sor = "  indulóablak megjelenése a folyamatindítástól: "
+    sor += f"{mert:.0f} ms" if mert is not None else "NEM jelent meg"
+    reszletek = [sor]
+    info = eredmeny.get("indulo_kep_info")
+    if info is not None:
+        width, height, colors = info
+        reszletek.append(
+            f"  renderelt indulókép ellenőrizve: {width}×{height}, "
+            f"az alsó szöveg nélküli sor {colors} színe"
+        )
+    elif eredmeny.get("indulo_kep_kotelezo"):
+        reszletek.append(
+            "  renderelt indulókép ellenőrzése sikertelen: "
+            + str(eredmeny.get("indulo_kep_hiba") or "nem készült képernyőkép")
+        )
+    return reszletek
+
+
+def induloablak_ms(eredmeny: dict) -> float | None:
+    """Az indulóablak naplójelzésének ideje a folyamat indításától, ms-ban."""
+    return next(
+        (
+            (ido - eredmeny["indult"]).total_seconds() * 1000
+            for ido, szakasz in eredmeny["sorok"]
+            if szakasz == _INDULOABLAK
+        ),
+        None,
+    )
+
+
+def indulo_hatar_hiba(nev: str, eredmeny: dict, hatar_ms: float | None) -> str | None:
+    """A korai splash idő- és Windowsos képkapuja."""
+    if hatar_ms is None:
+        return None
+    mert = induloablak_ms(eredmeny)
+    if mert is None:
+        return f"{nev}: az indulóablak nem jelent meg"
+    if mert > hatar_ms:
+        return f"{nev}: az indulóablak {mert:.0f} ms alatt jelent meg, a határ {hatar_ms:.0f} ms"
+    if eredmeny.get("indulo_kep_kotelezo") and eredmeny.get("indulo_kep_info") is None:
+        return (
+            f"{nev}: az indulóablak {mert:.0f} ms alatt jelent meg, de a renderelt képe "
+            "nem volt ellenőrizhető"
+        )
+    return None
 
 
 def foablak_mp(eredmeny: dict) -> float | None:
@@ -293,13 +394,23 @@ def ido(
     kepek: int = 0,
     halozati_export: list[str] | None = None,
     hatar_mp: float | None = None,
+    indulo_hatar_ms: float | None = None,
 ) -> int:
+    if indulo_hatar_ms is not None and sys.platform != "win32":
+        raise SystemExit("--indulo-hatar-ms csak Windowson mérhető")
     hiba = 0
     korabbi = _exportcelok_beallitasa(halozati_export) if halozati_export else None
     try:
         for nev, parancs in futtatok:
             hiba |= _ido_futtato(
-                nev, parancs, inditasok, munka, elvart_verzio, kepek, hatar_mp
+                nev,
+                parancs,
+                inditasok,
+                munka,
+                elvart_verzio,
+                kepek,
+                hatar_mp,
+                indulo_hatar_ms,
             )
     finally:
         if halozati_export:
@@ -315,13 +426,29 @@ def _ido_futtato(
     elvart_verzio: str | None,
     kepek: int,
     hatar_mp: float | None,
+    indulo_hatar_ms: float | None,
 ) -> int:
     hiba = 0
     gyoker = munka / (f"ido-{nev}-{kepek}kep" if kepek else f"ido-{nev}")
     eredmeny: dict = {}
     for sorszam in range(1, inditasok + 1):
-        eredmeny = _bevar(_egy_inditas(parancs, gyoker, ablakkal=False, kepek=kepek))
+        eredmeny = _bevar(
+            _egy_inditas(
+                parancs,
+                gyoker,
+                ablakkal=False,
+                kepek=kepek,
+                indulo_hatar_ms=indulo_hatar_ms,
+            )
+        )
         print(_jelentes(nev, sorszam, eredmeny), flush=True)
+        if sorszam == 1 and eredmeny.get("indulo_kep"):
+            print(f"  KÉP {nev}/induloablak {len(eredmeny['indulo_kep'])} bájt", flush=True)
+            print("  -----KEP-KEZDET induloablak-----", flush=True)
+            kodolt = base64.b64encode(eredmeny["indulo_kep"]).decode("ascii")
+            for i in range(0, len(kodolt), 4000):
+                print("  " + kodolt[i : i + 4000], flush=True)
+            print("  -----KEP-VEGE induloablak-----", flush=True)
         if eredmeny["kod"] != 0:
             hiba = 1
         if elvart_verzio is not None:
@@ -335,6 +462,12 @@ def _ido_futtato(
         uzenet = hatar_hiba(f"{nev} #{sorszam}", eredmeny, hatar_mp)
         if uzenet is not None:
             print(f"  ❌ {uzenet}", flush=True)
+            hiba = 1
+        indulo_uzenet = indulo_hatar_hiba(
+            f"{nev} #{sorszam}", eredmeny, indulo_hatar_ms
+        )
+        if indulo_uzenet is not None:
+            print(f"  ❌ {indulo_uzenet}", flush=True)
             hiba = 1
     return hiba
 
@@ -436,6 +569,62 @@ def _kepernyokep(hwnd: int | None) -> dict[str, bytes]:
     return kepek
 
 
+def _induloablak_kepe(hwnd: int) -> tuple[bytes | None, tuple[int, int, int] | None, str | None]:
+    """A valódi splashablak renderelt képét rögzíti és ellenőrzi."""
+    import ctypes
+    import io
+    from ctypes import wintypes
+
+    from PIL import Image, ImageGrab
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+    user32.GetWindowRect.restype = wintypes.BOOL
+    teglalap = wintypes.RECT()
+    if not user32.GetWindowRect(hwnd, ctypes.byref(teglalap)):
+        return None, None, "a Windows nem adta vissza az ablak helyét"
+    bal, felso, jobb, also = (
+        teglalap.left,
+        teglalap.top,
+        teglalap.right,
+        teglalap.bottom,
+    )
+    if jobb <= bal or also <= felso:
+        return None, None, "az indulóablak képkockája üres"
+    try:
+        kep = ImageGrab.grab(bbox=(bal, felso, jobb, also), all_screens=True).convert("RGB")
+    except OSError as hiba:
+        return None, None, f"képernyőkép nem készült: {hiba}"
+    puffer = io.BytesIO()
+    kep.save(puffer, "PNG", optimize=True)
+    png = puffer.getvalue()
+    info, hiba = _renderelt_indulokep_ellenorzese(png)
+    return (png, info, hiba) if hiba is None else (None, None, hiba)
+
+
+def _renderelt_indulokep_ellenorzese(
+    png: bytes,
+) -> tuple[tuple[int, int, int] | None, str | None]:
+    """A szöveg nélküli alsó sáv sorát vizsgálja, betűképpontok nélkül."""
+    import io
+
+    from PIL import Image
+
+    try:
+        with Image.open(io.BytesIO(png)) as kep:
+            kep = kep.convert("RGB")
+    except (OSError, ValueError) as hiba:
+        return None, f"érvénytelen képernyőkép: {hiba}"
+    if kep.width <= 0 or kep.height <= 0:
+        return None, "a renderelt indulókép mérete üres"
+    sor = [kep.getpixel((x, kep.height - 2)) for x in range(kep.width)]
+    szinszam = len(set(sor))
+    piros, zold, kek = kep.getpixel((kep.width // 2, kep.height - 2))
+    if szinszam < 2 or kek <= max(piros, zold):
+        return None, "a renderelt indulókép alsó sávja hiányzik vagy nem kék"
+    return (kep.width, kep.height, szinszam), None
+
+
 def ikon(futtatok: list[tuple[str, list[str]]], munka: Path, szigoru: bool) -> int:
     if sys.platform != "win32":
         print("ikon: csak Windowson mérhető", flush=True)
@@ -511,6 +700,7 @@ def main(argv: list[str] | None = None) -> int:
     ertelmezo.add_argument("--kepek", type=int, default=0)
     ertelmezo.add_argument("--halozati-export", action="append", default=None)
     ertelmezo.add_argument("--hatar-mp", type=float, default=None)
+    ertelmezo.add_argument("--indulo-hatar-ms", type=float, default=None)
     args = ertelmezo.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -525,6 +715,7 @@ def main(argv: list[str] | None = None) -> int:
             kepek=args.kepek,
             halozati_export=args.halozati_export,
             hatar_mp=args.hatar_mp,
+            indulo_hatar_ms=args.indulo_hatar_ms,
         )
     return ikon(futtatok, munka, args.szigoru)
 

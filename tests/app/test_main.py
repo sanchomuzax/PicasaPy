@@ -7,6 +7,16 @@ A teszt nem indít valódi Qt-alkalmazást — az `application.run`-t helyettes�
 from picasapy.app import __main__ as entrypoint
 
 
+def _tiltsd_le_a_korai_qt_inditast(monkeypatch):
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(
+        entrypoint,
+        "start_early_startup",
+        lambda argv: SimpleNamespace(argv=list(argv), splash=None),
+    )
+
+
 def test_main_calls_run_with_sys_argv(monkeypatch):
     captured = {}
 
@@ -19,6 +29,7 @@ def test_main_calls_run_with_sys_argv(monkeypatch):
     monkeypatch.setattr(
         entrypoint.sys, "argv", ["picasapy", "/mnt/nas/fotok"]
     )
+    _tiltsd_le_a_korai_qt_inditast(monkeypatch)
 
     assert entrypoint.main() == 0
     assert captured["argv"] == ["picasapy", "/mnt/nas/fotok"]
@@ -30,5 +41,6 @@ def test_main_calls_run_with_sys_argv(monkeypatch):
 def test_main_returns_runs_exit_code(monkeypatch):
     monkeypatch.setattr(entrypoint, "run", lambda argv, *, entry_at=None: 3)
     monkeypatch.setattr(entrypoint.sys, "argv", ["picasapy"])
+    _tiltsd_le_a_korai_qt_inditast(monkeypatch)
 
     assert entrypoint.main() == 3

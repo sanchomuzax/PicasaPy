@@ -73,8 +73,13 @@ def _startup_step_log_and_qt_setup(state):
 
     timeline.mark("Qt-stílus és platform-kapcsolók")
     progress_log.mark("Qt-stílus és platform-kapcsolók beállítva")
-    progress_log.mark("Qt-alkalmazás létrehozása elkezdődött")
-    app = QGuiApplication(argv)
+    app = QGuiApplication.instance()
+    if app is None:
+        progress_log.mark("Qt-alkalmazás létrehozása elkezdődött")
+        app = QGuiApplication(argv)
+        progress_log.mark("Qt-alkalmazás létrehozva")
+    elif not getattr(state, "early_qt_app", False):
+        progress_log.mark("A Qt-alkalmazás már létezik")
     app.setApplicationName("PicasaPy")
     app.setOrganizationName("PicasaPy")
     try:
@@ -86,7 +91,6 @@ def _startup_step_log_and_qt_setup(state):
     app.setWindowIcon(_load_window_icon(icon_path))
     progress_log.mark(_icon_report(app.windowIcon(), icon_path))
     timeline.mark("Qt-alkalmazás létrehozása")
-    progress_log.mark("Qt-alkalmazás létrehozva")
     progress_log.mark("Felület-betűtípus betöltése elkezdődött")
     _install_ui_font(app)
     timeline.mark("felület-betűtípus betöltése")
@@ -137,6 +141,8 @@ def _startup_step_prepare_storage(state, bootstrap_storage):
     startup_status = StartupStatus(
         QCoreApplication.translate("startup", "Starting…")
     )
+    if not getattr(state, "qml_splash_enabled", True):
+        startup_status.finish()
     progress_log.mark("Splash állapotobjektum létrehozva")
 
     state.koltozes = koltozes
