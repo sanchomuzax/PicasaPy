@@ -21,7 +21,9 @@ from pathlib import Path
 import re
 import sys
 import tempfile
+import time
 from collections.abc import Callable
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 from PySide6.QtCore import QObject, Property, QRunnable, QThreadPool, QTimer, Signal, Slot
@@ -40,6 +42,7 @@ DEFERRED_VERSION_KEY = "updates/deferredVersion"
 AUTO_CHECK_DELAY_MS = 30_000
 #: #6379: futás közben ennyi időnként keres újra (6 óra)
 AUTO_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
+UPDATE_API_ENV = "PICASAPY_UPDATE_API"
 
 
 #: a futtató folyamat (`executable`) — modulszintű fogantyú a tesztnek (#1375)
@@ -49,6 +52,36 @@ _futtato = sys
 def _platform() -> str:
     """Platformfogantyú, hogy a Windows-specifikus indítás helyettesíthető legyen."""
     return sys.platform
+
+
+def _latest_release_api_url(environ: dict[str, str] | None = None) -> str:
+    """Tesztben helyi API-ra irányít, éles alapértéket változatlanul hagyva."""
+    source = os.environ if environ is None else environ
+    override = str(source.get(UPDATE_API_ENV, "") or "").strip()
+    if not override:
+        return LATEST_RELEASE_API
+    try:
+        parsed = urlsplit(override)
+        host = (parsed.hostname or "").casefold()
+        port = parsed.port
+    except ValueError as error:
+        raise ValueError(
+            "A PICASAPY_UPDATE_API csak http://127.0.0.1 vagy "
+            "http://localhost címet fogadhat el"
+        ) from error
+    if (
+        parsed.scheme != "http"
+        or host not in {"127.0.0.1", "localhost"}
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.fragment
+        or (port is not None and not 1 <= port <= 65535)
+    ):
+        raise ValueError(
+            "A PICASAPY_UPDATE_API csak http://127.0.0.1 vagy "
+            "http://localhost címet fogadhat el"
+        )
+    return override
 
 
 @dataclass(frozen=True, slots=True)
@@ -184,7 +217,7 @@ class GitHubReleaseClient:
 
     def latest_release(self) -> ReleaseInfo:
         """A GitHub `releases/latest` végpontjáról beolvassa a kiadás adatait."""
-        raw = json.loads(self._read(LATEST_RELEASE_API).decode("utf-8"))
+        raw = json.loads(self._read(_latest_release_api_url()).decode("utf-8"))
         assets = tuple(
             ReleaseAsset(str(asset["name"]), str(asset["browser_download_url"]))
             for asset in raw.get("assets", [])
@@ -400,6 +433,14 @@ class UpdateController(QObject):
         self._restart_timer = QTimer(self)
         self._restart_timer.setInterval(250)
         self._restart_timer.timeout.connect(self._restart_when_idle)
+        self._test_diagnostic_timer: QTimer | None = None
+        self._last_test_diagnostic = ""
+        if os.environ.get("PICASAPY_UPDATE_TEST_DIAGNOSTICS") == "1":
+            self._test_diagnostic_timer = QTimer(self)
+            self._test_diagnostic_timer.setInterval(100)
+            self._test_diagnostic_timer.timeout.connect(self._write_test_diagnostics)
+            self._test_diagnostic_timer.start()
+            QTimer.singleShot(0, self._write_test_diagnostics)
         if schedule:
             self.start_automatic_check()
 
@@ -517,6 +558,104 @@ class UpdateController(QObject):
         self._automatic_check_started = True
         QTimer.singleShot(AUTO_CHECK_DELAY_MS, self._automatic_check_if_due)
         self._periodic_check_timer.start()
+
+    def _write_test_diagnostics(self) -> None:
+        """A Windows-csomagpróba számára helyi QML-elemkoordinátákat ír ki.
+
+        Kizárólag a külön, tesztben beállított környezeti jelzővel fut; az
+        eredmény PID-nkénti fájlba kerül, hogy az updater által újraindított
+        folyamat is külön követhető legyen.
+        """
+        directory = os.environ.get("PICASAPY_UPDATE_TEST_DIAGNOSTICS_DIR")
+        if os.environ.get("PICASAPY_UPDATE_TEST_DIAGNOSTICS") != "1" or not directory:
+            return
+        try:
+            from PySide6.QtCore import QPointF, QObject
+            from PySide6.QtGui import QGuiApplication
+
+            app = QGuiApplication.instance()
+            if app is None:
+                return
+            watched_names = {
+                "versionLabel",
+                "updateDialog",
+                "updateDialogDownloadButton",
+                "updateDialogRestartButton",
+                "aboutDialog",
+            }
+            objects: list[dict[str, object]] = []
+            for window in app.allWindows():
+                root = window.contentItem()
+                if root is None:
+                    continue
+                for item in [root, *root.findChildren(QObject)]:
+                    try:
+                        name = str(item.objectName() or "")
+                        text = str(item.property("text") or "")
+                        title = str(item.property("title") or "")
+                        current_version_text = str(
+                            item.property("currentVersionText") or ""
+                        )
+                        normalized = text.replace("&", "").strip().casefold()
+                        normalized_title = title.replace("&", "").strip().casefold()
+                        interesting = (
+                            name in watched_names
+                            or normalized in {"help", "about picasapy"}
+                            or normalized_title in {"help", "about picasapy"}
+                            or text.startswith("PicasaPy ")
+                        )
+                        if not interesting:
+                            continue
+                        visible_value = item.property("visible")
+                        visible = (
+                            bool(visible_value)
+                            if visible_value is not None
+                            else bool(item.isVisible())
+                        )
+                        rect: dict[str, float] | None = None
+                        if callable(getattr(item, "mapToGlobal", None)):
+                            point = item.mapToGlobal(QPointF(0, 0))
+                            ratio = float(window.devicePixelRatio() or 1.0)
+                            rect = {
+                                "x": float(point.x()) * ratio,
+                                "y": float(point.y()) * ratio,
+                                "width": float(item.property("width") or 0.0) * ratio,
+                                "height": float(item.property("height") or 0.0) * ratio,
+                            }
+                        objects.append(
+                            {
+                                "name": name,
+                                "text": text,
+                                "title": title,
+                                "current_version_text": current_version_text,
+                                "visible": visible,
+                                "rect": rect,
+                            }
+                        )
+                    except (AttributeError, RuntimeError, TypeError, ValueError):
+                        continue
+            snapshot = {
+                "at": time.time(),
+                "pid": os.getpid(),
+                "test_mode": any(
+                    option in sys.argv
+                    for option in ("--onellenorzes", "--indulasellenorzes")
+                ),
+                "update_available": self.updateAvailable,
+                "available_version": self.availableVersion,
+                "download_state": self.downloadState,
+                "objects": objects,
+            }
+            encoded = json.dumps(snapshot, ensure_ascii=False, separators=(",", ":"))
+            if encoded == self._last_test_diagnostic:
+                return
+            target = Path(directory) / f"{os.getpid()}.jsonl"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with target.open("a", encoding="utf-8") as output:
+                output.write(encoded + "\n")
+            self._last_test_diagnostic = encoded
+        except Exception:  # noqa: BLE001 - diagnosztika nem állíthatja le az alkalmazást
+            logger.debug("A frissítési tesztdiagnosztika nem írható", exc_info=True)
 
     @Slot()
     def checkForUpdates(self) -> None:  # noqa: N802
