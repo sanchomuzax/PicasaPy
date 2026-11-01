@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
-
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtQml import QQmlApplicationEngine
 
@@ -240,12 +237,6 @@ def _startup_step_load_qml(state):
     update_controller = getattr(state, "update_controller", None)
     if update_controller is not None:
         update_controller.start_automatic_check()
-    health_file = os.environ.get("PICASAPY_UPDATE_HEALTH_FILE")
-    if health_file:
-        try:
-            Path(health_file).write_text("ready\n", encoding="utf-8")
-        except OSError:
-            pass
     progress_log.mark("Main.qml betöltve; főablak létrejött")
 
     return None

@@ -266,3 +266,198 @@ def test_automatikus_ellenorzes_alapbol_engedelyezett_es_naponta_egyszer_fut(qt_
     assert client.checks == 1
     assert controller.updateAvailable
     assert notices == [True]
+
+
+class _AssetClient(_ReleaseClient):
+    """Letöltést is tudó kliens: a manifeszt és a csomag bájtjait adja."""
+
+    def __init__(self, release, payload: bytes, manifest: str):
+        super().__init__(release)
+        self.payload = payload
+        self.manifest = manifest
+
+    def download(self, asset, *, progress=None):
+        return self.manifest.encode("utf-8")
+
+    def download_to(self, asset, destination, *, progress=None):
+        destination.write_bytes(self.payload)
+        if progress:
+            progress(len(self.payload), len(self.payload))
+        return hashlib.sha256(self.payload).hexdigest()
+
+
+def _windows_release(version: str = "1.1.0") -> ReleaseInfo:
+    from picasapy.app.update_manager import (
+        SHA256SUMS_NAME,
+        WINDOWS_ASSET_NAME,
+        ReleaseAsset,
+    )
+
+    return ReleaseInfo(
+        version,
+        "Notes",
+        "https://example.test/release",
+        (
+            ReleaseAsset(WINDOWS_ASSET_NAME, "https://example.test/zip"),
+            ReleaseAsset(SHA256SUMS_NAME, "https://example.test/sums"),
+        ),
+    )
+
+
+def _letolto_vezerlo(payload: bytes, manifest_hash: str):
+    from picasapy.app.update_manager import WINDOWS_ASSET_NAME
+
+    client = _AssetClient(
+        _windows_release(), payload, f"{manifest_hash}  {WINDOWS_ASSET_NAME}\n"
+    )
+    controller = UpdateController(
+        "1.0.0",
+        settings=_MemorySettings(),
+        client=client,
+        pool=_InlinePool(),
+        schedule=False,
+        install_kind="windows",
+    )
+    controller.checkForUpdates()
+    assert controller.updateAvailable
+    return controller
+
+
+def test_a_letoltes_fajlba_megy_es_az_ujjlenyomat_egyezik(qt_app):
+    payload = b"PK-zip-tartalom"
+    controller = _letolto_vezerlo(payload, hashlib.sha256(payload).hexdigest())
+    eredmenyek = []
+    controller.downloadFinished.connect(lambda ok, ok_ok: eredmenyek.append((ok, ok_ok)))
+
+    controller.downloadUpdate()
+
+    assert eredmenyek == [(True, "ready")]
+    assert controller._download_path.read_bytes() == payload
+    controller._download_path.unlink()
+
+
+def test_eltero_ujjlenyomatnal_a_letoltott_fajl_torlodik(qt_app):
+    controller = _letolto_vezerlo(b"hamisitott", "0" * 64)
+    eredmenyek = []
+    controller.downloadFinished.connect(lambda ok, ok_ok: eredmenyek.append((ok, ok_ok)))
+
+    controller.downloadUpdate()
+
+    assert eredmenyek == [(False, "integrity-error")]
+    assert controller._download_path is None
+    import tempfile
+
+    assert not (Path(tempfile.gettempdir()) / "picasapy-update" / "PicasaPy-1.1.0.zip").exists()
+
+
+def test_a_github_kliens_fajlba_tolt_es_hasht_szamol(tmp_path):
+    from picasapy.app.update_manager import ReleaseAsset
+
+    adat = b"x" * 300_000
+
+    class _Valasz:
+        headers = {"Content-Length": str(len(adat))}
+
+        def __init__(self):
+            self._maradek = adat
+
+        def read(self, n):
+            darab, self._maradek = self._maradek[:n], self._maradek[n:]
+            return darab
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    kliens = GitHubReleaseClient(opener=lambda request, timeout: _Valasz())
+    cel = tmp_path / "csomag.zip"
+    lepesek = []
+    digest = kliens.download_to(
+        ReleaseAsset("csomag.zip", "https://example.test/zip"),
+        cel,
+        progress=lambda kapott, osszes: lepesek.append(kapott),
+    )
+    assert cel.read_bytes() == adat
+    assert digest == hashlib.sha256(adat).hexdigest()
+    assert lepesek[-1] == len(adat)
+
+
+def test_irhato_telepitesi_mappanal_nem_ker_uac_ot(tmp_path):
+    from picasapy.app import update_manager
+
+    assert update_manager.mappa_irhato(tmp_path) is True
+    assert update_manager.mappa_irhato(tmp_path / "nincs-ilyen") is False
+
+
+def test_a_segedet_csak_irhatatlan_mappanal_inditja_rendszergazdakent(
+    qt_app, tmp_path, monkeypatch
+):
+    from picasapy.app import update_manager
+
+    telepites = tmp_path / "PicasaPy"
+    telepites.mkdir()
+    (telepites / "PicasaPyUpdateHelper.exe").write_bytes(b"seged")
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(
+        update_manager, "_futtato", SimpleNamespace(executable=str(telepites / "PicasaPy.exe"))
+    )
+    hivasok = []
+    monkeypatch.setattr(
+        update_manager,
+        "_inditsd_a_segedet",
+        lambda args, *, emelt: hivasok.append(emelt) or True,
+    )
+    controller = UpdateController(
+        "1.0.0",
+        settings=_MemorySettings(),
+        client=_ReleaseClient(),
+        pool=_InlinePool(),
+        schedule=False,
+        install_kind="windows",
+    )
+    controller._download_path = tmp_path / "csomag.zip"
+
+    monkeypatch.setattr(update_manager, "mappa_irhato", lambda _m: True)
+    assert controller.installWhenExiting(False) is True
+    monkeypatch.setattr(update_manager, "mappa_irhato", lambda _m: False)
+    assert controller.installWhenExiting(False) is True
+    assert hivasok == [False, True]
+
+
+def test_rendszergazdai_segedbol_a_program_normal_jogokkal_indul(monkeypatch, tmp_path):
+    inditasok = []
+    monkeypatch.setattr(update_swap_helper, "_popen", lambda args, **k: inditasok.append(args))
+    exe = tmp_path / "PicasaPy.exe"
+
+    monkeypatch.setattr(update_swap_helper, "_rendszergazda", lambda: True)
+    update_swap_helper.inditsd_a_felhasznalonak(exe)
+    monkeypatch.setattr(update_swap_helper, "_rendszergazda", lambda: False)
+    update_swap_helper.inditsd_a_felhasznalonak(exe)
+
+    assert inditasok[0][0] == "explorer.exe"
+    assert Path(inditasok[0][1]) == exe
+    assert [Path(elem) for elem in inditasok[1]] == [exe]
+
+
+def test_sikertelen_kicsomagolas_utan_is_elindul_a_regi_program(monkeypatch, tmp_path):
+    telepites = tmp_path / "PicasaPy"
+    telepites.mkdir()
+    (telepites / "PicasaPy.exe").write_bytes(b"regi")
+    hibas_zip = tmp_path / "hibas.zip"
+    hibas_zip.write_bytes(b"nem zip")
+    inditasok = []
+    monkeypatch.setattr(update_swap_helper, "wait_for_process", lambda pid: None)
+    monkeypatch.setattr(
+        update_swap_helper, "inditsd_a_felhasznalonak", lambda exe: inditasok.append(exe)
+    )
+
+    import zipfile
+
+    with pytest.raises(zipfile.BadZipFile):
+        update_swap_helper.install_after_exit(123, hibas_zip, telepites, "PicasaPy.exe")
+
+    assert inditasok == [telepites.resolve() / "PicasaPy.exe"]
+    assert (telepites / "PicasaPy.exe").read_bytes() == b"regi"

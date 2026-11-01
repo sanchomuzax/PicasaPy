@@ -171,46 +171,85 @@ def _wait_for_windows_process(pid: int) -> None:
         close_handle(handle)
 
 
-def _launch_and_wait(executable: Path, health_file: Path, *, timeout: float = 60.0) -> bool:
+def _onellenorzes(executable: Path, *, timeout: float = 180.0) -> bool:
+    """Az új változat felépíti-e a felületét — ablak nélkül (#6340).
+
+    A program saját `--onellenorzes` kapcsolója a teljes indulási utat
+    végigjárja (Qt-bővítmények, QML-fa, fordítás), és eseményciklus nélkül
+    kilép; ugyanezt futtatja a CI a csomagon. Ablakot nem nyit, tehát a
+    rendszergazdai jogú segéd is futtathatja anélkül, hogy a felhasználó
+    elé rendszergazdaként futó program kerülne."""
     env = os.environ.copy()
-    env["PICASAPY_UPDATE_HEALTH_FILE"] = str(health_file)
+    env["QT_QPA_PLATFORM"] = "offscreen"
+    env["QT_QUICK_BACKEND"] = "software"
     try:
-        process = subprocess.Popen([str(executable)], env=env, close_fds=True)
-    except OSError:
-        return False
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        if health_file.exists():
-            return True
-        if process.poll() is not None:
-            return False
-        time.sleep(0.1)
-    try:
-        process.terminate()
-        process.wait(timeout=5)
+        eredmeny = subprocess.run(
+            [str(executable), "--onellenorzes"],
+            env=env,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=timeout,
+            check=False,
+        )
     except (OSError, subprocess.TimeoutExpired):
-        process.kill()
-    return False
+        return False
+    return eredmeny.returncode == 0
+
+
+def _rendszergazda() -> bool:
+    """Rendszergazdai (emelt) jogokkal fut-e a segéd — csak Windowson igaz."""
+    if _platform() != "win32":
+        return False
+    try:
+        import ctypes
+
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
+    except (AttributeError, OSError):
+        return False
+
+
+#: a folyamatindítás fogantyúja — a teszt ezt cseréli (#1375)
+_popen = subprocess.Popen
+
+
+def inditsd_a_felhasznalonak(executable: Path) -> None:
+    """A frissített program indítása a felhasználó NORMÁL jogaival (#6340).
+
+    Ha a segéd rendszergazdaként fut (UAC), a közvetlen indítás az új
+    PicasaPy-t is rendszergazdaként futtatná: a létrehozott fájlok a
+    rendszergazdáé lennének, és az Intézőből húzás sem működne. A Windows
+    héja (`explorer.exe`) a bejelentkezett felhasználó jogaival indít."""
+    if _rendszergazda():
+        _popen(["explorer.exe", str(executable)], close_fds=True)
+    else:
+        _popen([str(executable)], close_fds=True)
 
 
 def install_after_exit(pid: int, archive: Path, install_dir: Path, executable: str) -> bool:
-    """Vár, kicsomagol, cserél, próbál indulni és szükség esetén visszaáll."""
+    """Vár, kicsomagol, cserél, ellenőriz, szükség esetén visszaáll, majd indít."""
     wait_for_process(pid)
     install_dir = Path(install_dir).resolve()
     work_dir = install_dir.parent
     stage_root = Path(tempfile.mkdtemp(prefix="PicasaPy-update-", dir=work_dir))
+    sikerult = False
     try:
         staged = extract_update_archive(Path(archive), stage_root / "new")
-        return swap_update_directory(
+        sikerult = swap_update_directory(
             staged,
             install_dir,
-            launch=lambda: _launch_and_wait(
-                install_dir / executable,
-                stage_root / "started.ok",
-            ),
+            launch=lambda: _onellenorzes(install_dir / executable),
         )
     finally:
         shutil.rmtree(stage_root, ignore_errors=True)
+        # sikernél az új, minden más esetben a megmaradt régi változat
+        # indul — mindkettő a felhasználó jogaival; a program tehát a
+        # frissítés kudarca után sem marad bezárva
+        try:
+            inditsd_a_felhasznalonak(install_dir / executable)
+        except OSError:
+            pass
+    return sikerult
 
 
 def main(argv: list[str] | None = None) -> int:

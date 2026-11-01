@@ -122,3 +122,23 @@ def test_valodi_verzio_cimke_kattintasa_megnyitja_a_frissitesi_ablakot(
     assert window.findChild(QObject, "updateDialogReleaseNotes").property("text") == (
         "A rövid kiadási leírás."
     )
+
+
+def test_az_uj_verzio_cimkeje_kifer_a_mezo_mogotti_helyre(qml_app, qt_app):
+    """#6340/#6348: a frissítés címkéje nem lóghat a keresőmezőre, és nem is
+    vágódhat le — a rövid jel („↑9.8.7”) a teljes szélességében látszik."""
+    window, _controller, engine = qml_app
+    window.resize(1200, 800)
+    fake = _FakeUpdateController()
+    engine.rootContext().setContextProperty("updateController", fake)
+    for _ in range(5):
+        qt_app.processEvents()
+    cimke = window.findChild(QObject, "versionLabel")
+    mezo = window.findChild(QObject, "toolbarSearchBox")
+    sav = window.findChild(QObject, "mainToolbar")
+    assert cimke.property("text") == "↑9.8.7"
+    assert cimke.property("truncated") is False
+    cimke_bal = cimke.mapToItem(sav, QPointF(0, 0)).x()
+    mezo_jobb = mezo.mapToItem(sav, QPointF(0, 0)).x() + mezo.property("width")
+    assert cimke_bal >= mezo_jobb + 2
+    assert "9.8.7" in cimke.property("tooltipText")

@@ -656,12 +656,19 @@ Rectangle {
                 && toolbar.updateAgent.updateAvailable === true
                 && toolbar.updateNoticeIsAllowed()
             readonly property string currentVersionText: String(appVersion).split(" ")[0]
-            text: toolbar.updateNoticeIsAllowed() && toolbar.updateAgent
-                  && toolbar.updateAgent.downloadState === "downloading"
-                ? toolbar.updateStrings.downloading + " "
-                    + toolbar.updateAgent.downloadProgress + "%"
+            // #6340/#6348: a mező mögötti ~41 px-be a teljes „vX.Y.Z elérhető”
+            // nem fér (félkövéren ~80 px), levágva pedig olvashatatlan. A
+            // címke ezért rövid jel — „↑1.0.11”, letöltés közben „↓ 45%” —, a
+            // teljes szöveg a buboréksúgóban és a kattintásra nyíló ablakban.
+            readonly property bool downloadingVisible:
+                (toolbar.updateAgent && toolbar.updateAgent.downloadState !== undefined)
+                ? toolbar.updateNoticeIsAllowed() === true
+                    && toolbar.updateAgent.downloadState === "downloading"
+                : false
+            text: downloadingVisible
+                ? "\u2193 " + toolbar.updateAgent.downloadProgress + "%"
                 : updateTagVisible
-                ? toolbar.updateStrings.available.arg(toolbar.updateAgent.availableVersion)
+                ? "\u2191" + toolbar.updateAgent.availableVersion
                 : currentVersionText
             // #6348: a felirat SOHA nem lóghat a mezőre — a mező mögötti sáv
             // a felső határ, ami nem fér ki, „…”-tal zárul (a teljes címke a
@@ -692,8 +699,14 @@ Rectangle {
             // maga a szám nem árulja el, hova visz — a súgó mondja ki.
             // (Saját property, mert a csatolt `ToolTip.text` a Qt
             // metaobjektumán át nem olvasható ki teszteléskor.)
-            readonly property string tooltipText:
-                qsTr("View releases on GitHub") + "\n" + fullText
+            readonly property string tooltipText: (versionLabel.downloadingVisible
+                    ? toolbar.updateStrings.downloading + " "
+                        + toolbar.updateAgent.downloadProgress + "%\n"
+                    : versionLabel.updateTagVisible
+                    ? toolbar.updateStrings.available.arg(
+                        toolbar.updateAgent.availableVersion) + "\n"
+                    : "")
+                + qsTr("View releases on GitHub") + "\n" + fullText
 
             function openReleases() {
                 if (toolbar.updateAgent && toolbar.updateAgent.updateAvailable)

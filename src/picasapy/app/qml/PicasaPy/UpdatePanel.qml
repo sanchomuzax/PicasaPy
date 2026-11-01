@@ -101,7 +101,8 @@ Dialog {
             objectName: "updateDialogReleaseNotes"
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: root.updateAgent && root.updateAgent.updateAvailable
+            visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
+                ? root.updateAgent.updateAvailable === true : false
             readOnly: true
             wrapMode: TextEdit.Wrap
             text: root.updateAgent ? root.updateAgent.releaseNotes : ""
@@ -111,8 +112,10 @@ Dialog {
         Text {
             objectName: "updateDialogUpdateCommand"
             Layout.fillWidth: true
-            visible: root.updateAgent && root.updateAgent.updateAvailable
-                && !root.updateAgent.oneClickUpdateSupported
+            visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
+                ? root.updateAgent.updateAvailable === true
+                    && root.updateAgent.oneClickUpdateSupported !== true
+                : false
             text: root.updateAgent ? root.updateAgent.updateCommand : ""
             color: Theme.ink
             font.pixelSize: Theme.fontSize
@@ -139,8 +142,10 @@ Dialog {
         Text {
             objectName: "updateDialogReleaseLink"
             Layout.fillWidth: true
-            visible: root.updateAgent && root.updateAgent.updateAvailable
-                && !root.updateAgent.oneClickUpdateSupported
+            visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
+                ? root.updateAgent.updateAvailable === true
+                    && root.updateAgent.oneClickUpdateSupported !== true
+                : false
             text: root.updateAgent ? root.updateAgent.releaseUrl : ""
             color: Theme.linkBlue
             font.pixelSize: Theme.fontSize
@@ -158,8 +163,10 @@ Dialog {
         }
         PicasaButton {
             objectName: "updateDialogOpenReleaseButton"
-            visible: root.updateAgent && root.updateAgent.updateAvailable
-                && !root.updateAgent.oneClickUpdateSupported
+            visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
+                ? root.updateAgent.updateAvailable === true
+                    && root.updateAgent.oneClickUpdateSupported !== true
+                : false
             text: root.strings.openReleases
             onClicked: Qt.openUrlExternally(root.updateAgent.releaseUrl)
         }

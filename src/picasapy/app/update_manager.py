@@ -37,6 +37,10 @@ DEFERRED_VERSION_KEY = "updates/deferredVersion"
 AUTO_CHECK_DELAY_MS = 30_000
 
 
+#: a futtató folyamat (`executable`) — modulszintű fogantyú a tesztnek (#1375)
+_futtato = sys
+
+
 def _platform() -> str:
     """Platformfogantyú, hogy a Windows-specifikus indítás helyettesíthető legyen."""
     return sys.platform
@@ -184,6 +188,35 @@ class GitHubReleaseClient:
                     progress(received, total)
         return b"".join(chunks)
 
+    def download_to(
+        self,
+        asset: ReleaseAsset,
+        destination: Path,
+        *,
+        progress: Callable[[int, int], None] | None = None,
+    ) -> str:
+        """Közvetlenül fájlba tölt, menet közben számolt SHA-256-tal (#6340).
+
+        A Windows-csomag ~200 MB: a memóriába gyűjtés (`download`) a darabok
+        és az összefűzött másolat miatt ennek a kétszeresét foglalná."""
+        request = Request(asset.download_url, headers={"User-Agent": "PicasaPy-updater"})
+        digest = hashlib.sha256()
+        received = 0
+        with self._opener(request, timeout=self.timeout) as response, destination.open(
+            "wb"
+        ) as out:
+            total = int(response.headers.get("Content-Length", "0") or 0)
+            while True:
+                chunk = response.read(128 * 1024)
+                if not chunk:
+                    break
+                out.write(chunk)
+                digest.update(chunk)
+                received += len(chunk)
+                if progress:
+                    progress(received, total)
+        return digest.hexdigest()
+
 
 def _as_bool(value: object, default: bool) -> bool:
     if value is None:
@@ -239,6 +272,40 @@ def installation_kind(
     ):
         return "deb"
     return "pip"
+
+
+def mappa_irhato(folder: Path) -> bool:
+    """Írhat-e a felhasználó a mappába — kipróbálva, nem az ACL-ből találgatva.
+
+    A telepítési mappa cseréje a SZÜLŐ mappába ír (átnevezés). A felhasználói
+    telepítésnél (`%LOCALAPPDATA%\\Programs`) ez UAC nélkül megy; csak a
+    `Program Files` alá telepített program kér rendszergazdai jogot."""
+    try:
+        fd, proba = tempfile.mkstemp(prefix=".picasapy-irasproba-", dir=folder)
+    except OSError:
+        return False
+    os.close(fd)
+    try:
+        os.unlink(proba)
+    except OSError:
+        pass
+    return True
+
+
+def _inditsd_a_segedet(args: list[str], *, emelt: bool) -> bool:
+    """A frissítő segéd indítása; UAC-ot csak akkor kér, ha `emelt` (#6340)."""
+    import subprocess
+
+    if _platform() != "win32":
+        subprocess.Popen(args, close_fds=True)
+        return True
+    import ctypes
+
+    params = subprocess.list2cmdline(args[1:])
+    result = ctypes.windll.shell32.ShellExecuteW(
+        None, "runas" if emelt else "open", str(args[0]), params, None, 0
+    )
+    return result > 32
 
 
 def update_command(kind: str) -> str:
@@ -494,15 +561,16 @@ class UpdateController(QObject):
         def download(report_progress: Callable[[int, int], None]) -> Path:
             manifest_data = self._client.download(manifest)
             hashes = parse_sha256sums(manifest_data.decode("utf-8"))
-            payload = self._client.download(archive, progress=report_progress)
             expected = hashes.get(archive.name)
             if expected is None:
                 raise ValueError("A SHA256SUMS nem tartalmazza a Windows-zipet")
-            verify_sha256(payload, expected)
             folder = Path(tempfile.gettempdir()) / "picasapy-update"
             folder.mkdir(parents=True, exist_ok=True)
             destination = folder / f"PicasaPy-{release.version}.zip"
-            destination.write_bytes(payload)
+            actual = self._client.download_to(archive, destination, progress=report_progress)
+            if not hmac.compare_digest(actual, expected.lower()):
+                destination.unlink(missing_ok=True)
+                raise ValueError("A letöltött fájl SHA-256 ujjlenyomata nem egyezik")
             return destination
 
         def complete(path: object) -> None:
@@ -547,13 +615,13 @@ class UpdateController(QObject):
         self._start_helper(True)
 
     def _start_helper(self, restart_now: bool) -> bool:
-        helper = Path(sys.executable).resolve().with_name("PicasaPyUpdateHelper.exe")
+        helper = Path(_futtato.executable).resolve().with_name("PicasaPyUpdateHelper.exe")
         if not helper.is_file():
             self.downloadFinished.emit(False, "missing-helper")
             return False
         copied = Path(tempfile.gettempdir()) / f"PicasaPyUpdateHelper-{os.getpid()}.exe"
         copied.write_bytes(helper.read_bytes())
-        install_dir = Path(sys.executable).resolve().parent
+        install_dir = Path(_futtato.executable).resolve().parent
         args = [
             str(copied),
             "--pid",
@@ -563,20 +631,10 @@ class UpdateController(QObject):
             "--install-dir",
             str(install_dir),
             "--executable",
-            Path(sys.executable).name,
+            Path(_futtato.executable).name,
         ]
-        if _platform() == "win32":
-            import ctypes
-            import subprocess
-
-            params = subprocess.list2cmdline(args[1:])
-            result = ctypes.windll.shell32.ShellExecuteW(None, "runas", str(copied), params, None, 0)
-            if result <= 32:
-                return False
-        else:
-            import subprocess
-
-            subprocess.Popen(args, close_fds=True)
+        if not _inditsd_a_segedet(args, emelt=not mappa_irhato(install_dir.parent)):
+            return False
         if restart_now:
             from PySide6.QtCore import QCoreApplication
 
