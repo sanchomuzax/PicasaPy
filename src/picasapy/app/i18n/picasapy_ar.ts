@@ -3851,7 +3851,7 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
         <message>
             <source>Website</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>الموقع الإلكتروني</translation>
         </message>
         <message>
             <source>Privacy Policy</source>
