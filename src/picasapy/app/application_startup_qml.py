@@ -217,7 +217,7 @@ def _startup_step_load_qml(state):
     from picasapy.perf.foszal_figyelo import foszal_figyelo
 
     with timeline.phase("QML betöltése (Main.qml)"), foszal_figyelo().szakasz(
-        "Main.qml betöltése", qt_naplo=True
+        "Main.qml betöltése"
     ):
         engine.load(str(_app._APP_DIR / "qml" / "Main.qml"))
     if not engine.rootObjects():

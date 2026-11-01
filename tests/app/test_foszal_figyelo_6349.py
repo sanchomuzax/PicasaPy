@@ -85,3 +85,13 @@ def test_futas_kozbeni_fagyas_a_szivveresbol(qt_app, monkeypatch):
     assert len(sorok) == 1, sorok
     assert "a felület nem válaszolt" in sorok[0]
     assert "_lassu_lepes" in sorok[0]
+
+
+def test_a_figyelo_nem_telepit_qt_uzenetkezelot():
+    """⛔ A Python-oldali Qt-üzenetkezelő a QML-betöltés alatt HOLTPONTOT okozott
+    (a `qml_betoltes_bontas.py` gyermeke 180 s után időtúllépés) — tilos."""
+    from pathlib import Path
+
+    forras = Path(modul.__file__).read_text(encoding="utf-8")
+    kod = forras.split('"""', 2)[2]  # a modul leírása (ami a tilalmat elmondja) nélkül
+    assert "qInstallMessageHandler" not in kod

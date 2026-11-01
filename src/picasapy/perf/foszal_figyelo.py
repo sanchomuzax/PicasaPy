@@ -28,12 +28,18 @@ Ha a fő szál a Qt C++-kódjában vár (pl. egy bővítmény betöltésén), a
 legbelső Python-keret az a hívás, ami a C++-ba vezetett (`engine.load`):
 ez önmagában is lelet — azt mondja, hogy a várakozás nem a mi Python-
 kódunkban van.
+
+⛔ **Python-oldali Qt-üzenetkezelőt (`qInstallMessageHandler`) itt TILOS
+telepíteni.** Kipróbáltuk (a Qt import-/bővítménynaplójának csendjeit akartuk
+mérni a betöltés alatt): a QML-fordítás háttérszálon naplóz, a kezelőnek a
+GIL kell, a fő szál pedig közben a háttérszálra vár — HOLTPONT. Mérve a
+`scripts/qml_betoltes_bontas.py` gyermekfolyamatán: a kezelővel 180 s után
+időtúllépés, nélküle 2,7 s. A minta-vevő szál ezzel szemben nem nyúl a Qt-hez.
 """
 
 from __future__ import annotations
 
 import logging
-import re
 import sys
 import threading
 import time
@@ -104,32 +110,19 @@ class FoszalFigyelo:
     # -- a fő szálról hívandó --------------------------------------------
 
     @contextmanager
-    def szakasz(self, nev: str, *, qt_naplo: bool = False) -> Iterator[None]:
-        """Egy blokkoló szakasz (eseményhurok nélkül) mintavételezése.
-
-        `qt_naplo`: a szakasz idejére a Qt import- és bővítménynaplóját is
-        figyeli, és a leghosszabb csendeket naplózza — ha a fő szál a Qt
-        C++-kódjában vár, a Python-verem csak az odavezető hívást mutatja."""
+    def szakasz(self, nev: str) -> Iterator[None]:
+        """Egy blokkoló szakasz (eseményhurok nélkül) mintavételezése."""
         self._inditsd_a_szalat()
-        qt = _QtCsendek() if qt_naplo else None
         with self._zar:
             self._szakasz = nev
             self._fagyas_kezdete = time.monotonic()
             self._mintak = Counter()
         try:
-            if qt is not None:
-                qt.inditas()
             yield
         finally:
             with self._zar:
-                naplozott = self._lezar(nev)
+                self._lezar(nev)
                 self._szakasz = None
-            if qt is not None:
-                qt.leallitas()
-                if naplozott:
-                    sor = qt.osszegzes()
-                    if sor:
-                        self._log.warning("#6349: %s — %s", nev, sor)
 
     def szivveres_inditasa(self, parent) -> None:
         """A fő szál szívverése (QTimer) — az eseményhurok indulása előtt hívandó."""
@@ -219,75 +212,6 @@ class FoszalFigyelo:
             reszek,
         )
         return True
-
-
-#: a Qt naplókategóriái, amelyek a QML-importot és a bővítmények betöltését írják
-_QT_SZABALYOK = "qt.qml.import.debug=true\nqt.core.plugin.loader.debug=true"
-
-#: útvonalszerű szövegrész — a naplóba csak az utolsó tagja kerül
-_UTVONAL = re.compile(r"(?:[A-Za-z]:)?[\\/][^\s\"',:;()]*")
-
-
-def _utvonal_nelkul(szoveg: str) -> str:
-    def rovid(talalat: re.Match) -> str:
-        darab = re.split(r"[\\/]", talalat.group(0).rstrip("\\/"))
-        return "…/" + darab[-1] if darab and darab[-1] else "…"
-
-    return _UTVONAL.sub(rovid, " ".join(szoveg.split()))[:160]
-
-
-class _QtCsendek:
-    """A Qt-üzenetek időbélyegei egy szakaszban, és a leghosszabb csendek."""
-
-    def __init__(self) -> None:
-        self._uzenetek: list[tuple[float, str]] = []
-        self._elozo = None
-        self._kezdet = 0.0
-
-    def inditas(self) -> None:
-        from PySide6.QtCore import QLoggingCategory, qInstallMessageHandler
-
-        self._kezdet = time.monotonic()
-        self._elozo = qInstallMessageHandler(self._kezelo)
-        QLoggingCategory.setFilterRules(_QT_SZABALYOK)
-
-    def leallitas(self) -> None:
-        from PySide6.QtCore import QLoggingCategory, qInstallMessageHandler
-
-        try:
-            QLoggingCategory.setFilterRules("")
-            qInstallMessageHandler(self._elozo)
-        except Exception:  # noqa: BLE001 — diagnosztika: soha nem dönthet
-            pass
-        self._uzenetek.append((time.monotonic(), "(a szakasz vége)"))
-
-    def _kezelo(self, tipus, kontextus, uzenet) -> None:
-        try:
-            kategoria = getattr(kontextus, "category", "") or ""
-            self._uzenetek.append((time.monotonic(), f"{kategoria}: {uzenet}"))
-            if kategoria.startswith(("qt.qml.import", "qt.core.plugin")):
-                return
-            # minden más üzenet (pl. QML-figyelmeztetés) a helyére megy tovább
-            if self._elozo is not None:
-                self._elozo(tipus, kontextus, uzenet)
-            elif sys.stderr is not None:
-                print(uzenet, file=sys.stderr, flush=True)
-        except Exception:  # noqa: BLE001
-            pass
-
-    def osszegzes(self, darab: int = 3) -> str:
-        if not self._uzenetek:
-            return ""
-        csendek = []
-        elozo_ido, elozo_szoveg = self._kezdet, "(a szakasz eleje)"
-        for ido, szoveg in self._uzenetek:
-            csendek.append((ido - elozo_ido, elozo_szoveg, szoveg))
-            elozo_ido, elozo_szoveg = ido, szoveg
-        csendek.sort(key=lambda elem: elem[0], reverse=True)
-        return "a Qt-napló leghosszabb csendjei: " + " | ".join(
-            f"{hossz:.1f} s «{_utvonal_nelkul(utana)}» UTÁN, «{_utvonal_nelkul(elotte)}» ELŐTT"
-            for hossz, utana, elotte in csendek[:darab]
-        )
 
 
 _figyelo: FoszalFigyelo | None = None
