@@ -293,6 +293,10 @@ Item {
             ConfirmDialog {
                 objectName: "exitConfirm"
                 namePrefix: "exit"
+                //: #6350: az eredeti két gombja („Exit Now" / „Keep Going");
+                //: a kérdés nem nyomható el, tehát „Ne kérdezze meg újra" sincs
+                cancelVisible: false
+                rememberVisible: false
                 title: qsTr("Exit PicasaPy")
                 //: az eredeti gombpárja „Exit Now" / „Keep Going" — a
                 //: viselkedés (accept/deny) változatlan, csak a felirat

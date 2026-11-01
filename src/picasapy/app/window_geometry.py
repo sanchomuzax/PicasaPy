@@ -13,6 +13,7 @@ visszavonása később is értelmes méretre ugorjon.
 
 from __future__ import annotations
 
+import shiboken6
 from PySide6.QtGui import QWindow
 
 # a mentett méret alsó határa — ez alatt hibás/értelmetlen adat
@@ -172,7 +173,16 @@ def wire_window_geometry(window, settings, virtual_rect: tuple) -> None:
 
     def _on_visibility_changed(visibility) -> None:
         if visibility == QWindow.Visibility.Hidden:
-            save_window_geometry(window, settings, state["visibility"])
+            # #6347: kilépéskor a `QSettings` C++-oldala az ablak elrejtése
+            # ELŐTT is lebomolhat (`app.exit()` → lebontás); ilyenkor nincs
+            # hova menteni, és a `RuntimeError` traceback-et írt a naplóba.
+            if not shiboken6.isValid(settings) or not shiboken6.isValid(window):
+                return
+            try:
+                save_window_geometry(window, settings, state["visibility"])
+            except RuntimeError:
+                # az isValid óta bomlott le — ugyanaz az eset
+                return
         else:
             state["visibility"] = visibility
 

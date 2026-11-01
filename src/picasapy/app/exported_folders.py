@@ -16,6 +16,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from picasapy.halozati_ut import elerheto
+
 #: A nyilvántartás beállítás-kulcsa.
 EXPORTED_FOLDERS_SETTINGS_KEY = "export/exportedfolders"
 
@@ -74,8 +76,16 @@ def existing_exported_folders(values) -> list[str]:
     """A listából csak azok, amelyek MA IS léteznek.
 
     Az exportált mappa a fájlkezelőben bármikor eltűnhet — a navigációban
-    nem akarunk halott csomópontokat mutatni."""
-    return [path for path in _clean(values) if Path(path).is_dir()]
+    nem akarunk halott csomópontokat mutatni.
+
+    #6344: ez a felület felépítésekor, a fő szálon fut. Egy elérhetetlen
+    NAS-exportcél `is_dir()`-je a tulajdonos gépén 40 s-ig tartott — a
+    megosztás elérhetőségét ezért időkorlátos, gyorsítótárazott próba dönti
+    el (`halozati_ut.elerheto`), és az elérhetetlen cél ugyanúgy kimarad,
+    mint eddig az időkorlát lejárta után."""
+    return [
+        path for path in _clean(values) if elerheto(path) and Path(path).is_dir()
+    ]
 
 
 __all__ = [
