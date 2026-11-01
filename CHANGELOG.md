@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.11] - 2026-11-01
+
+- A program naponta egyszer megnézi, van-e újabb kiadás; ha van, a jobb felső verziófelirat jelzi, és Windowson a felhasználó jóváhagyásával, ujjlenyomat-ellenőrzéssel frissíti magát, hibánál visszaállva az előző változatra (#6340).
+
 ## [1.0.10] - 2026-11-01
 
 - Elérhetetlen hálózati (NAS) exportcél vagy mappa már nem lassítja az indulást: a program a megosztás elérhetőségét fél másodperces időkorláttal ellenőrzi, és egy percig megjegyzi, ahelyett hogy minden ellenőrzésnél 20–40 másodpercig várna (#6344).
