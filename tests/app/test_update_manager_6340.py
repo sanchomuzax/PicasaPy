@@ -119,7 +119,7 @@ def _app(path: Path, text: str) -> None:
     (path / "app.txt").write_text(text, encoding="utf-8")
 
 
-def test_sikeres_csere_megtartja_az_elozo_verziot_es_ujraindit(tmp_path):
+def test_sikeres_csere_eltavolitja_a_regi_mappat_es_ujraindit(tmp_path):
     app = tmp_path / "PicasaPy"
     stage = tmp_path / "staged"
     _app(app, "old")
@@ -133,20 +133,102 @@ def test_sikeres_csere_megtartja_az_elozo_verziot_es_ujraindit(tmp_path):
     )
 
     assert (app / "app.txt").read_text(encoding="utf-8") == "new"
-    assert (tmp_path / "PicasaPy.previous" / "app.txt").read_text(encoding="utf-8") == "old"
+    assert not (tmp_path / "PicasaPy.previous").exists()
     assert started == ["new"]
+
+
+def test_sikeres_csere_atviszi_az_eltavolitot_es_torli_a_regi_mappat(tmp_path):
+    app = tmp_path / "PicasaPy"
+    stage = tmp_path / "staged"
+    _app(app, "old")
+    (app / "unins000.exe").write_bytes(b"uninstaller")
+    (app / "unins000.dat").write_bytes(b"uninstaller data")
+    _app(stage, "new")
+
+    assert swap_update_directory(stage, app, launch=lambda: True)
+
+    assert (app / "unins000.exe").read_bytes() == b"uninstaller"
+    assert (app / "unins000.dat").read_bytes() == b"uninstaller data"
+    assert not (tmp_path / "PicasaPy.previous").exists()
 
 
 def test_uj_verzio_inditasi_hibaja_visszaallitja_az_elsozot(tmp_path):
     app = tmp_path / "PicasaPy"
     stage = tmp_path / "staged"
     _app(app, "old")
+    (app / "unins000.exe").write_bytes(b"old uninstaller")
     _app(stage, "new")
 
     assert not swap_update_directory(stage, app, launch=lambda: False)
 
     assert (app / "app.txt").read_text(encoding="utf-8") == "old"
+    assert (app / "unins000.exe").read_bytes() == b"old uninstaller"
     assert not (tmp_path / "PicasaPy.previous").exists()
+
+
+def test_indulaskori_takaritas_hatterben_atviszi_a_hianyzo_eltavolitot(
+    tmp_path, monkeypatch
+):
+    from picasapy.app import update_cleanup
+
+    app = tmp_path / "PicasaPy"
+    previous = tmp_path / "PicasaPy.previous"
+    app.mkdir()
+    previous.mkdir()
+    executable = app / "PicasaPy.exe"
+    (app / "unins000.exe").write_bytes(b"uj, mar meglevo")
+    (previous / "unins000.exe").write_bytes(b"regi exe")
+    (previous / "unins000.dat").write_bytes(b"regi adat")
+    monkeypatch.setattr(update_cleanup, "_platform", lambda: "win32")
+    monkeypatch.setattr(update_cleanup, "_frozen", lambda: True)
+    monkeypatch.setattr(update_cleanup, "_executable_path", lambda: executable)
+    szalak = []
+
+    class _HatterSzala:
+        def __init__(self, *, target, name, daemon):
+            szalak.append((target, name, daemon))
+
+        def start(self):
+            pass
+
+    monkeypatch.setattr(update_cleanup, "_thread", _HatterSzala)
+
+    update_cleanup.start_startup_cleanup()
+
+    assert len(szalak) == 1
+    cel, nev, daemon = szalak[0]
+    assert nev
+    assert daemon is True
+    cel()
+    assert (app / "unins000.exe").read_bytes() == b"uj, mar meglevo"
+    assert (app / "unins000.dat").read_bytes() == b"regi adat"
+    assert not previous.exists()
+
+
+def test_indulaskori_takaritas_nem_frozen_futasnal_nem_indit_szalat(
+    tmp_path, monkeypatch
+):
+    from picasapy.app import update_cleanup
+
+    app = tmp_path / "PicasaPy"
+    previous = tmp_path / "PicasaPy.previous"
+    app.mkdir()
+    previous.mkdir()
+    (previous / "unins000.exe").write_bytes(b"uninstaller")
+    monkeypatch.setattr(update_cleanup, "_platform", lambda: "win32")
+    monkeypatch.setattr(update_cleanup, "_frozen", lambda: False)
+    monkeypatch.setattr(update_cleanup, "_executable_path", lambda: app / "PicasaPy.exe")
+
+    class _TiltottSzala:
+        def __init__(self, **_kwargs):
+            pytest.fail("nem frozen futásnál nem indulhat takarító szál")
+
+    monkeypatch.setattr(update_cleanup, "_thread", _TiltottSzala)
+
+    update_cleanup.start_startup_cleanup()
+
+    assert previous.exists()
+    assert (previous / "unins000.exe").is_file()
 
 
 def test_windows_varakozas_helyettesitheto_folyamatkezelo_fogantyuval(monkeypatch):
@@ -461,3 +543,23 @@ def test_sikertelen_kicsomagolas_utan_is_elindul_a_regi_program(monkeypatch, tmp
 
     assert inditasok == [telepites.resolve() / "PicasaPy.exe"]
     assert (telepites / "PicasaPy.exe").read_bytes() == b"regi"
+
+
+def test_a_korabbi_regi_mappa_eltavolitoja_a_csere_elott_visszakerul(tmp_path):
+    """#6354: Program Files-ba telepítve az induláskori pótlás nem írhat a
+    mappába; a következő (emelt jogú) csere a régi mappa törlése előtt menti."""
+    app = tmp_path / "PicasaPy"
+    previous = tmp_path / "PicasaPy.previous"
+    stage = tmp_path / "staged"
+    _app(app, "kozbenso")
+    _app(previous, "legregebbi")
+    (previous / "unins000.exe").write_bytes(b"uninstaller")
+    (previous / "unins000.dat").write_bytes(b"uninstaller data")
+    _app(stage, "new")
+
+    assert swap_update_directory(stage, app, launch=lambda: True)
+
+    assert (app / "app.txt").read_text(encoding="utf-8") == "new"
+    assert (app / "unins000.exe").read_bytes() == b"uninstaller"
+    assert (app / "unins000.dat").read_bytes() == b"uninstaller data"
+    assert not previous.exists()

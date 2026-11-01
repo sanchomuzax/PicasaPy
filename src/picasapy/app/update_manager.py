@@ -364,6 +364,9 @@ class UpdateController(QObject):
         self._next_job_id = 0
         self._automatic_check_started = False
         self._restart_pending = False
+        from .update_cleanup import start_startup_cleanup
+
+        start_startup_cleanup()
         self._restart_timer = QTimer(self)
         self._restart_timer.setInterval(250)
         self._restart_timer.timeout.connect(self._restart_when_idle)
