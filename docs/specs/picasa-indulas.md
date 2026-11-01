@@ -6,9 +6,10 @@ Ez a lap a mért lépéssort tartalmazza. Párja a `picasa-bezaras-es-kilepes.md
 
 *Bizonyítottsági fok: **megerősített** minden felsorolt lépés (a bináris
 index `string_xrefs`/`xrefs` tábláiból és a hivatalos `stringres-en-hu.tsv`-ből).
-**Feltételes** a lépések EGYMÁS UTÁNI SORRENDJE — az index a hivatkozásokat
-függvényenként adja, nem utasítás-sorrendben. A sorrend eldöntéséhez a
-`0x004051b0` diszasszemblálása kell.*
+**Feltételes** a 3. fejezet teljes lépéssorrendje. Az index a hivatkozásokat
+függvényenként adja, nem utasítás-sorrendben. A `0x004051b0` célzott
+diszasszemblálása a 6. fejezet indítókép-sorrendjét megerősíti; a teljes
+indulási út utasításszintű sorrendje továbbra sincs kibontva.*
 
 ## 1. A hívási lánc teteje
 
@@ -113,12 +114,128 @@ ott a felhasználó mozgatja a saját adatbázisát, itt a program **magától
 | **korábbi telepítés átvétele** | Windows.old, két alak | ❌ nincs |
 | frissítés-ellenőrzés | `LastUpdateCheck` | ❌ nincs (nem is kell — nem frissítünk így) |
 
-## 6. Nyitott kérdés
+## 6. Az indítókép
 
-**A lépések pontos SORRENDJE.** Az index függvényenként adja a
-hivatkozásokat, nem utasítás-sorrendben, ezért a fenti csoportosítás
-tematikus, nem időrendi. Aki a sorrendre épít, annak előbb a `0x004051b0`-t
-kell diszasszemblálnia (`annot_disasm.py 0x004051b0 <méret>`).
+**Bizalmi fok: feltételes a teljes indítókép viselkedésére.** A szál indítási hívása,
+a `ytWindow` osztály és ablaktulajdonságai, a `/nosplash` kapu, valamint a
+háttérfájl tartalma két, egymástól külön bejárt bizonyítékúttal megerősített.
+Az első ténylegesen kirajzolt képkocka megelőzi-e a főablak első képkockáját, a
+teljes rajzolt tartalom, a natív ablak végső mérete és a vizuális eltűnés
+pontja futásidejű mérés vagy a lent kért célzott Ghidra-kör nélkül nyitott.
+
+### Indítás és sorrend
+
+A `0x004051b0` indulási mag `0x004058e9` utasítása hívja a `0x00403970`
+indítókép-kaput. Ez a `Preferences/usesplashscreen` beállítást alapérték
+`1`-gyel olvassa, és a `0x0040beb0`-n keresztül létrehozza, majd a
+`0x0097b350` szálindítóval elindítja a `SplashThread` objektumot. A
+`0x0040beb0` a `SplashThread::vftable` címét (`0x00c808e4`) írja az
+objektumba. A szálindító a `CreateThread` Win32 függvényt hívja.
+
+Ugyanebben a `0x004051b0` függvényben a `0x004058e9` után következik a
+`0x004058ef` hívás, majd a `0x0040590e` címen a `0x004039f0`. Ez utóbbi
+hozza létre a `ytFrameWindow` főablak-objektumot; a `ytWindow` alap-
+konstruktor natív ablakot hoz létre. A hívási sorrend tehát azt bizonyítja,
+hogy a splash szál indítása a főablak létrehozási útja előtt van. A
+`CreateThread` aszinkron, ezért a szál első képkockájának tényleges
+megjelenési sorrendje nem állapítható meg pusztán a hívási sorrendből.
+
+### Ablak és elhelyezés
+
+A `0x0040b420` rajzoló rutin a `0x00982bf0` konstruktorral `ytWindow`
+objektumot hoz létre `splash` címmel, majd meghívja az objektum vtable
+`+8` metódusát (`0x00983840`), amely a már létrehozott HWND-t
+`ShowWindow`-val megjeleníti.
+
+A létrehozó út 1-es ablakmódján a `CreateWindowEx`-nek megfelelő
+függvénymutató-hívás paraméterei: stílus `0x84000000`, kiterjesztett stílus
+`0x80`, osztálynév `ytWindow`, cím `splash`, szülőablak `0`. A stílus
+`WS_POPUP | WS_CLIPSIBLINGS`, a kiterjesztett stílus `WS_EX_TOOLWINDOW`;
+címsor- és keretstílus nincs beállítva, és `WS_EX_TOPMOST` sincs a
+létrehozási stílusban. Külön `HWND_TOPMOST` elhelyezést a splash útvonalán
+nem azonosítottam. Ez tehát keret nélküli felugró ablak, amelynek
+mindig felül viselkedése nincs igazolva.
+
+A `0x0040b420` `SystemParametersInfoA` hívása `0x30` paraméterrel lekéri a
+képernyő munkaterületét, majd a létrehozási téglalap helyét annak közepéhez
+számolja. A `splashbk.jpg` fájl mért mérete `640x235` képpont. A natív
+ablak végső pixelmérete `NINCS MEG`: a rutin a képet egy belső rajzi
+transzformáción át dolgozza fel a HWND téglalapjának átadása előtt, és ezt
+a kimeneti méretre gyakorolt hatást még nem mértem ki.
+
+### Mit rajzol
+
+A betöltött háttérút a `runtime\\splashbk.jpg` (`0x0040b4fd`). A
+`Picasa3/runtime/splashbk.jpg` eredeti fájl `640x235` képpont, `44 195`
+bájt, RGB JPEG. A megnyitott képen fehér mezőn a Picasa 3 embléma és a
+Google szójel látható.
+
+A rajzoló kód a `splash` nevű `ytWindow` objektumot nagy pontosságú
+időmérést használó képkocka-útba köti, tehát nem csak egy nyers JPEG
+egyszeri másolásáról van szó. A célzott diszasszemblálás közvetlen szövegei
+a `Preferences`, `usesplashscreen`, `runtime\\splashbk.jpg` és `splash`;
+dinamikus verzió-, szerzői jogi vagy állapotszöveget, betűtípust, színt és
+az ilyen szövegek helyét nem azonosítottam. Ezek `NINCS MEG` értékek, nem
+negatív bizonyítékok.
+
+### Eltűnés és `/nosplash`
+
+A `0x0040bcf0` futtató a `0x0040b420` rajzolót hívja, majd az animációs
+objektum állapotát figyeli; várakozáskor `PeekMessage` és `Sleep(0x64)`
+ciklust használ. A `100 ms` a ciklus szünetének bináris értéke, nem a
+splash teljes ideje. A `0x00403970` a `0x0040bf20` takarítófüggvényt
+regisztrálja, a későbbi főablak-indítási út pedig felszabadítja a
+`SplashThread` objektumot. Fix időzítőt a splash teljes idejére,
+főablak-megjelenéshez kötött kifakulást vagy a pontos utolsó képkockát nem
+bizonyítottam. A dinamikus komponens lezárási feltétele nyitott.
+
+A `/nosplash` kapcsolat megerősített két külön függvényből:
+
+1. A `0x004bc0c0` parancssor-elemző a `/nosplash` egyezésekor az átadott
+   struktúra `+4` mezőjét `1`-re állítja (`0x004bc4a9`, `0x004bc4f1`).
+   Hívója `0x00402960` a külső indítási struktúra `+4` címét adja át.
+2. A `0x00403970` az indítási struktúra `+8` mezőjét ellenőrzi, és nem
+   hívja meg a `0x0040beb0` szálindítást, ha a mező nem nulla
+   (`0x004039d2`-`0x004039d7`). A parser belső `+4` mezője így a külső
+   `+8` mezőnek felel meg.
+
+A `Preferences/usesplashscreen` beállítás ettől független kapu, alapértéke
+`1`. A rajzoló ezen felül egy billentyűállapot-ellenőrzést is végez;
+annak pontos jelentése nem része a `/nosplash` kapcsoló bizonyítékának.
+
+### Összevetés a PicasaPy-vel
+
+| Eredeti Picasa 3 | PicasaPy jelenlegi indulóképe | Eltérés |
+|---|---|---|
+| Külön `ytWindow` felugró ablak, saját szálból indítva, a főablak létrehozása előtt | `SplashScreen.qml` elem a QML `ApplicationWindow` rétegén | Nincs vizuális indulókép a fő QML ablak betöltése előtt |
+| `splashbk.jpg`, fehér háttéren Picasa 3 embléma és Google szójel | PicasaPy logó, címkártya és téma szerinti háttér | Az eredeti márkajelzés és képkivágás hiányzik |
+| Esetleges animációs és szövegréteg még nyitott | Verzió, indulási állapotszöveg, pulzáló pontok, mozgó kék sáv | A PicasaPy biztosan ezeket rajzolja; az eredeti dinamikus tartalom nem bizonyított |
+| Az eredeti végső méret és eltűnési animáció nyitott | Kész állapotkor 260 ms-os QML opacitás-animáció | Az eredeti viselkedéshez való egyezés még nem mérhető |
+
+A `Main.qml` `visible: true` ablaka a QML-fa betöltésével jön létre; a
+`SplashScreen` csak a `MainWindowPeripheralLayers` részeként létezik. A
+`StartupStatus` híd korábban létrejön, de maga a vizuális elem nem létezhet
+a `Main.qml` betöltése előtt. A felület jelenlegi formája ezért nem pótolja
+az eredeti külön, korábban megjelenő felugró ablakot.
+
+### Nyitott kérdések és következő bináris irány
+
+- A `0x0040b420` teljes rajzi tartalma: van-e a képen kívül verzió-,
+  szerzői jogi vagy állapotszöveg; ha van, milyen betű, szín és koordináta.
+- A belső képi transzformáció pontos kimeneti mérete és az ablak tényleges
+  pixelmérete.
+- A `splash` grafikai komponens lezárása, a szál leállításának oka és az
+  utolsó képkocka viszonya a főablak megjelenéséhez.
+
+Ghidra-kör kell: 0x0040b420 - a splash ytWindow pontos rajzi tartalma,
+transzformációs mérete és animációs lezárási feltétele; a diszasszemblálás
+nem azonosította a virtuális grafikai hívások szerepét [blokkoló]
+
+A már létező Ghidra-kimenet a `0x00982bf0` `ytWindow` konstruktorát, a
+`0x00983670` létrehozó útját és a `0x004039f0` főablak-építését tartalmazza.
+A címekre új kört csak a `0x0040b420` új, eddig meg nem válaszolt
+rajzolási kérdésére kérünk; a 40b420 korábbi kimenetei csak hivatkozáslistát
+adnak, nem függvénydekompilálást.
 
 ## 7. Helyesbítés — a lap egyik sora már íráskor elavult
 
