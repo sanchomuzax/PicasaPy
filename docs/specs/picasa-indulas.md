@@ -210,7 +210,7 @@ annak pontos jelentése nem része a `/nosplash` kapcsoló bizonyítékának.
 | Külön `ytWindow` felugró ablak, saját szálból indítva, a főablak létrehozása előtt | `SplashScreen.qml` elem a QML `ApplicationWindow` rétegén | Nincs vizuális indulókép a fő QML ablak betöltése előtt |
 | `splashbk.jpg`, fehér háttéren Picasa 3 embléma és Google szójel | PicasaPy logó, címkártya és téma szerinti háttér | Az eredeti márkajelzés és képkivágás hiányzik |
 | Esetleges animációs és szövegréteg még nyitott | Verzió, indulási állapotszöveg, pulzáló pontok, mozgó kék sáv | A PicasaPy biztosan ezeket rajzolja; az eredeti dinamikus tartalom nem bizonyított |
-| Az eredeti végső méret és eltűnési animáció nyitott | Kész állapotkor 260 ms-os QML opacitás-animáció | Az eredeti viselkedéshez való egyezés még nem mérhető |
+| Az eredeti végső méret és eltűnési animáció nyitott | Kész állapotkor 260 ms alatt QML-ben elhalványul | Az eredeti viselkedéshez való egyezés még nem mérhető |
 
 A `Main.qml` `visible: true` ablaka a QML-fa betöltésével jön létre; a
 `SplashScreen` csak a `MainWindowPeripheralLayers` részeként létezik. A
