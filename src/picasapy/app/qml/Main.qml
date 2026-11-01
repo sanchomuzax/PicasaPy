@@ -107,7 +107,12 @@ ApplicationWindow {
         if (controller && controller.backgroundWorkRunning()) {
             close.accepted = false
             kilepesDialog.askExit()
+            return
         }
+        // #6387: a főablakból nyitott súgó nem modális, ezért a főablakkal
+        // együtt zárul. Csak akkor, ha a bezárás ténylegesen megtörténik.
+        if (helpDialog.item)
+            helpDialog.item.close()
     }
     title: "PicasaPy"
     color: Theme.lightboxBg
