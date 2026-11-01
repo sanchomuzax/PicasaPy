@@ -121,7 +121,7 @@ begin
   Result := CompareText(FirstDirectory, SecondDirectory) = 0;
 end;
 
-function RemoveDifferentInstallation(const RootKey: HKEY): String;
+function RemoveDifferentInstallation(const RootKey: Integer): String;
 var
   UninstallString, InstallLocation, ExeName, Parameters: String;
   ResultCode: Integer;
