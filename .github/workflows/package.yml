@@ -290,7 +290,15 @@ jobs:
         env:
           PICASAPY_GOOGLE_CLIENT_ID: ${{ secrets.PICASAPY_GOOGLE_CLIENT_ID }}
           PICASAPY_GOOGLE_CLIENT_SECRET: ${{ secrets.PICASAPY_GOOGLE_CLIENT_SECRET }}
-        run: pyinstaller --noconfirm packaging/windows/picasapy.spec
+        run: |
+          # #6374: régi kiadási tagben még nincs előfordító; ott a sima csomagolás fut
+          if [ ! -f packaging/windows/build_qml_cache.py ]; then pyinstaller --noconfirm packaging/windows/picasapy.spec; exit 0; fi
+          QML_CACHE_DIR="$RUNNER_TEMP/picasapy-qmlcache"
+          python packaging/windows/build_qml_cache.py \
+            --qml-root src/picasapy/app/qml \
+            --output "$QML_CACHE_DIR"
+          PICASAPY_QML_CACHE_DIR="$QML_CACHE_DIR" \
+            pyinstaller --noconfirm packaging/windows/picasapy.spec
 
       - name: Frissítő segédprogram csomagolása
         if: steps.tag.outputs.skip != 'true'
@@ -455,7 +463,7 @@ jobs:
             --munka "$RUNNER_TEMP/csomag-meres" \
             --kepek 2000 --inditasok 3 \
             --halozati-export '\\192.0.2.1\picasa\export\album' \
-            --hatar-mp 5 --elso-hatar-mp 10
+            --hatar-mp 5
 
       # #6367: a külön indulóablak valódi ablakkal, a folyamat indításától
       # mérve; a kapu a három indítás középértékére 1000 ms
