@@ -284,6 +284,21 @@ jobs:
           pip install pyinstaller
           if [ -f scripts/build_qm.py ]; then python scripts/build_qm.py; else echo "Régi kiadási tag (#4825): a .qm még a fában van, nincs mit építeni."; fi  # #4817
 
+      - name: Google-bejelentkezés kliensének ellenőrzése
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          PICASAPY_GOOGLE_CLIENT_ID: ${{ secrets.PICASAPY_GOOGLE_CLIENT_ID }}
+          PICASAPY_GOOGLE_CLIENT_SECRET: ${{ secrets.PICASAPY_GOOGLE_CLIENT_SECRET }}
+        run: |
+          if [[ -z "$PICASAPY_GOOGLE_CLIENT_ID" || -z "$PICASAPY_GOOGLE_CLIENT_SECRET" ]]; then
+            uzenet="⚠️ A Google-bejelentkezés beépített kliensének egyik titka hiányzik; a csomagban a bejelentkezés nem lesz elérhető."
+            echo "::warning title=Hiányzó Google-bejelentkezési kliens::$uzenet"
+          else
+            uzenet="✅ A Google-bejelentkezés beépített kliensének mindkét titka meg van adva."
+          fi
+          echo "$uzenet" >> "$GITHUB_STEP_SUMMARY"
+
       - name: PyInstaller-csomagolás
         if: steps.tag.outputs.skip != 'true'
         shell: bash

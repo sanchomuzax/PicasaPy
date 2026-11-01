@@ -11245,6 +11245,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>Autentificat în Google Foto</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>Google sign-in is not available in this version yet.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Conectarea cu Google nu este încă disponibilă în această versiune.</translation>
+        </message>
+        <message>
             <source>Sign Out</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>

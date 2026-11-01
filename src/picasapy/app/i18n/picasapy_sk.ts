@@ -11245,6 +11245,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>Ste prihlásení do Fotiek Google</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>Google sign-in is not available in this version yet.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Prihlásenie cez Google zatiaľ nie je v tejto verzii k dispozícii.</translation>
+        </message>
+        <message>
             <source>Sign Out</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>

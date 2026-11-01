@@ -11230,6 +11230,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>מחובר ל-Google Photos</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>Google sign-in is not available in this version yet.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>הכניסה באמצעות Google עדיין אינה זמינה בגרסה זו.</translation>
+        </message>
+        <message>
             <source>Sign Out</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>

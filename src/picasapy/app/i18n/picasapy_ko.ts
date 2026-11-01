@@ -11215,6 +11215,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>Google 포토에 로그인됨</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>Google sign-in is not available in this version yet.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>이 버전에서는 아직 Google 로그인을 사용할 수 없습니다.</translation>
+        </message>
+        <message>
             <source>Sign Out</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
