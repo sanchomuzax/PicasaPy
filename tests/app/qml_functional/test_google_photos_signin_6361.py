@@ -37,6 +37,9 @@ class _HamisLoopbackOAuthSession:
     def __init__(self, _oauth, *, client_id, client_secret):
         self.authorization_url = f"https://accounts.google.test/?client_id={client_id}"
 
+    def wait_for_tokens(self):
+        return {"refresh_token": "test-refresh-token"}
+
     def cancel(self):
         return None
 
@@ -96,19 +99,30 @@ def test_a_menusori_felirat_kattintasa_elinditja_a_bejelentkezest(
         tray_google_photos_controller,
         "QDesktopServices",
         SimpleNamespace(
-            openUrl=lambda url: megnyitott_url.append(url.toString()) or False
+            openUrl=lambda url: megnyitott_url.append(url.toString()) or True
         ),
+    )
+    monkeypatch.setattr(
+        controller,
+        "_start_background",
+        lambda target, **_kwargs: target(),
     )
 
     kattinthato = _gyerek(window, "menuBarSignInArea")
     _kattints(qt_app, kattinthato)
 
     assert _varj(qt_app, lambda: bool(megnyitott_url))
-    assert controller.googlePhotosAuthError == "browser_unavailable"
+    assert megnyitott_url == [
+        "https://accounts.google.test/?client_id=test-client-id"
+    ]
+    assert _varj(qt_app, lambda: controller.googlePhotosSignedIn is True)
+    assert controller._google_photos_credentials.get_secret("refresh_token") == (
+        "test-refresh-token"
+    )
 
 
 @pytest.mark.parametrize("height_delta", (-5, 0, 5))
-def test_kliens_nelkul_a_menusori_kattintas_a_google_fotok_beallitasait_nyitja(
+def test_kliens_nelkul_a_menusori_kattintas_egyszeru_uzenetet_mutat(
     google_photos_app, qt_app, height_delta
 ):
     window, controller, _engine = google_photos_app
@@ -119,35 +133,16 @@ def test_kliens_nelkul_a_menusori_kattintas_a_google_fotok_beallitasait_nyitja(
     kattinthato = _gyerek(window, "menuBarSignInArea")
     _kattints(qt_app, kattinthato)
 
-    assert _varj(
-        qt_app,
-        lambda: any(
-            ablak.objectName() == "optionsDialog"
-            for ablak in qt_app.topLevelWindows()
-        ),
+    dialog = _gyerek(window, "googlePhotosUnavailableDialog", QObject)
+    assert _varj(qt_app, lambda: dialog.property("visible") is True)
+    message = _gyerek(dialog, "googlePhotosUnavailableMessage")
+    assert message.property("text") == (
+        "Google sign-in is not available in this version yet."
     )
-    options = _ablak(qt_app, "optionsDialog")
-    tabs = _gyerek(options, "optionsTabBar")
-    assert _varj(qt_app, lambda: options.property("visible") is True)
-    assert tabs.property("currentIndex") == 8
-    resz = _gyerek(options, "googlePhotosAdvancedContents")
-    assert resz.property("visible") is False
-    toggle = _gyerek(options, "googlePhotosAdvancedToggle")
-    _kattints(qt_app, toggle)
-    assert _varj(qt_app, lambda: resz.property("visible") is True)
-    sugo_hivatkozas = _gyerek(options, "googlePhotosHelpLink")
-    _kattints(qt_app, sugo_hivatkozas)
-    assert _varj(
-        qt_app,
-        lambda: any(
-            ablak.objectName() == "helpWindow"
-            for ablak in qt_app.topLevelWindows()
-        ),
+    assert not any(
+        ablak.objectName() == "optionsDialog"
+        for ablak in qt_app.topLevelWindows()
     )
-    sugo_ablak = _ablak(qt_app, "helpWindow")
-    assert _varj(qt_app, lambda: sugo_ablak.property("visible") is True)
-    sugo = _gyerek(sugo_ablak, "helpWindowDialog", QObject)
-    assert sugo.property("topic") == "features/google-fotok.md"
 
 
 @pytest.mark.parametrize("height_delta", (-5, 0, 5))

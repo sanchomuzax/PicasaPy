@@ -11265,6 +11265,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>تم تسجيل الدخول إلى صور Google</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>Google sign-in is not available in this version yet.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تسجيل الدخول عبر Google غير متاح في هذا الإصدار بعد.</translation>
+        </message>
+        <message>
             <source>Sign Out</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
