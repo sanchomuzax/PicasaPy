@@ -483,19 +483,62 @@ jobs:
           # a cp1252-es konzol a cserekaraktert nem tudja kiírni
           PYTHONIOENCODING: utf-8
         run: |
-          $installDir = Join-Path $env:RUNNER_TEMP "PicasaPy-installed"
+          $ErrorActionPreference = "Stop"
           $installer = Join-Path $PWD "packaging\dist\PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe"
+          $legacyDir = Join-Path $env:RUNNER_TEMP "PicasaPy-legacy-installed"
+          $legacyArguments = @(
+            "/VERYSILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART",
+            "/SP-",
+            "/CURRENTUSER",
+            "/DIR=$legacyDir"
+          )
+          $legacyInstall = Start-Process -FilePath $installer -ArgumentList $legacyArguments -Wait -PassThru
+          if ($legacyInstall.ExitCode -ne 0) {
+            throw "a régi felhasználói telepítés nem futott le: $($legacyInstall.ExitCode)"
+          }
+          $legacyExe = Join-Path $legacyDir "PicasaPy.exe"
+          if (-not (Test-Path $legacyExe)) {
+            throw "a régi telepítés exe-je hiányzik"
+          }
+
+          $uninstallKey = "Software\Microsoft\Windows\CurrentVersion\Uninstall\{9F3C1D28-7C4E-4E2B-9A55-3B1D6A0C77E1}_is1"
+          function Test-PicasaPyUninstallEntry {
+            foreach ($view in @([Microsoft.Win32.RegistryView]::Registry32, [Microsoft.Win32.RegistryView]::Registry64)) {
+              $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::CurrentUser, $view)
+              try {
+                $entry = $base.OpenSubKey($uninstallKey)
+                if ($entry) {
+                  $entry.Dispose()
+                  return $true
+                }
+              } finally {
+                $base.Dispose()
+              }
+            }
+            return $false
+          }
+          if (-not (Test-PicasaPyUninstallEntry)) {
+            throw "a régi telepítés eltávolítási bejegyzése hiányzik"
+          }
+
+          $installDir = Join-Path $env:RUNNER_TEMP "PicasaPy-installed"
           $arguments = @(
             "/VERYSILENT",
             "/SUPPRESSMSGBOXES",
             "/NORESTART",
             "/SP-",
+            "/ALLUSERS",
             "/DIR=$installDir"
           )
           $install = Start-Process -FilePath $installer -ArgumentList $arguments -Wait -PassThru
           if ($install.ExitCode -ne 0) {
             Write-Error "a telepítő nem futott le: $($install.ExitCode)"
             exit 1
+          }
+          if ((Test-Path $legacyExe) -or (Test-PicasaPyUninstallEntry)) {
+            throw "a régi telepítés a frissítés után is megmaradt"
           }
           $env:PICASAPY_INSTALLED_EXE = Join-Path $installDir "PicasaPy.exe"
           @'

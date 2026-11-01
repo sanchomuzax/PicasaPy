@@ -210,8 +210,8 @@ _JELZESKEZELO = re.compile(r"on[A-Z]")
 #: Tételes lista, nem minta: így minden ÚJ, osztályra vissza nem vezethető
 #: regisztráció megállítja az őrt (2-es kilépési kód), ahelyett hogy némán
 #: kimaradna a mérésből. Az `appVersion` a `version_string()` eredménye,
-#: azaz sztring.
-_NEM_QOBJECT = frozenset({"appVersion"})
+#: azaz sztring; az `appLocation` futási útvonalat tartalmazó sztring.
+_NEM_QOBJECT = frozenset({"appVersion", "appLocation"})
 
 #: SOSEM alias, akkor sem, ha a jobb oldala pont egy kontextus-objektum.
 #:
