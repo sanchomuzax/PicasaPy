@@ -10,6 +10,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+# #2176: valódi megjelenítő nélkül a Qt abortálna
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
 from picasapy.app.qml_disk_cache import (
     _qt_cache_file_name,
     _seed_packaged_qml_cache,
