@@ -458,6 +458,56 @@ class TestWindowIconPath:
         assert path.exists()
 
 
+class TestWindowIconLoad:
+    """#6345: a telepített windowsos programnak futás közben nem volt ikonja.
+    Az ikon a Qt képformátum-bővítménye (`qico`) nélkül is betöltődjön."""
+
+    def _ico(self):
+        return application._window_icon_path(platform="win32")
+
+    def test_az_ico_minden_merete_png_kepkocka(self):
+        from picasapy.app.application_platform import _ico_png_frames
+
+        assert len(_ico_png_frames(self._ico())) == 7
+
+    def test_az_ico_az_utvonalas_QIcon_nelkul_toltodik_be(self, qt_app, monkeypatch):
+        """Az útvonalas `QIcon(path)` a `qico` bővítményen múlik — a betöltő
+        NEM hívhatja, ha a PNG-képkockák megvannak."""
+        from picasapy.app import application_platform
+
+        valodi = application_platform.QIcon
+        utvonalas: list[tuple] = []
+
+        def figyelt(*args):
+            if args:
+                utvonalas.append(args)
+            return valodi(*args)
+
+        monkeypatch.setattr(application_platform, "QIcon", figyelt)
+        icon = application_platform._load_window_icon(self._ico())
+        assert utvonalas == []
+        meretek = {size.width() for size in icon.availableSizes()}
+        assert {16, 24, 32, 48, 256} <= meretek
+
+    def test_hibas_ico_eseten_a_qt_olvasojara_esik_vissza(self, qt_app, tmp_path):
+        from picasapy.app.application_platform import _ico_png_frames, _load_window_icon
+
+        hibas = tmp_path / "hibas.ico"
+        hibas.write_bytes(b"nem ikon")
+        assert _ico_png_frames(hibas) == []
+        assert _load_window_icon(hibas).isNull()
+
+    def test_a_naplosor_megmondja_ha_az_ikon_ures(self, qt_app, tmp_path):
+        from PySide6.QtGui import QIcon
+
+        from picasapy.app.application_platform import _icon_report
+
+        sor = _icon_report(QIcon(), tmp_path / "nincs.ico")
+        assert sor.startswith("Alkalmazásikon ÜRES")
+        assert "HIÁNYZIK" in sor
+        assert str(tmp_path) not in sor
+
+
 class TestRemainingSplashMs:
     """#240: a splash minimum-megjelenítési idejének számítása."""
 
