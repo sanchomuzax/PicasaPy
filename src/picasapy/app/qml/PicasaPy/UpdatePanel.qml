@@ -144,6 +144,8 @@ Dialog {
             Layout.preferredWidth: 400
             visible: root.updateAgent
                 && root.updateAgent.downloadState === "downloading"
+            // #6380: amíg a méret nem ismert, határozatlan (látszik, hogy dolgozik)
+            indeterminate: !root.updateAgent || root.updateAgent.downloadProgress <= 0
             value: root.updateAgent
                 ? root.updateAgent.downloadProgress / 100 : 0
         }
