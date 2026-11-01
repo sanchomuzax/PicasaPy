@@ -25,6 +25,8 @@ indul gyorsabban, mint az egyfájlos, mert nincs kicsomagolás minden
 indításkor).
 """
 
+import json
+import os
 import sys
 from pathlib import Path
 
@@ -57,6 +59,25 @@ _VERZIO_FAJL = Path(workpath) / "_csomag_verzio.txt"
 _VERZIO_FAJL.parent.mkdir(parents=True, exist_ok=True)
 _VERZIO_FAJL.write_text(_VERZIO + "\n", encoding="utf-8")
 adatok.append((str(_VERZIO_FAJL), "picasapy"))
+
+# A beépített OAuth-kliens titka csak a CI környezetéből kerül a csomagba.
+_GOOGLE_CLIENT_ID = os.environ.get("PICASAPY_GOOGLE_CLIENT_ID", "").strip()
+_GOOGLE_CLIENT_SECRET = os.environ.get("PICASAPY_GOOGLE_CLIENT_SECRET", "").strip()
+_GOOGLE_CREDENTIALS_FILE = Path(workpath) / "_google_oauth.json"
+if _GOOGLE_CLIENT_ID and _GOOGLE_CLIENT_SECRET:
+    _GOOGLE_CREDENTIALS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _GOOGLE_CREDENTIALS_FILE.write_text(
+        json.dumps(
+            {
+                "client_id": _GOOGLE_CLIENT_ID,
+                "client_secret": _GOOGLE_CLIENT_SECRET,
+            }
+        ),
+        encoding="utf-8",
+    )
+    adatok.append((str(_GOOGLE_CREDENTIALS_FILE), "picasapy"))
+else:
+    _GOOGLE_CREDENTIALS_FILE.unlink(missing_ok=True)
 
 #: a `help/` és a többi csomagon belüli adat a saját hookok nélkül is kell
 adatok += collect_data_files(

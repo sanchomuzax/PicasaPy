@@ -286,6 +286,9 @@ jobs:
       - name: PyInstaller-csomagolás
         if: steps.tag.outputs.skip != 'true'
         shell: bash
+        env:
+          PICASAPY_GOOGLE_CLIENT_ID: ${{ secrets.PICASAPY_GOOGLE_CLIENT_ID }}
+          PICASAPY_GOOGLE_CLIENT_SECRET: ${{ secrets.PICASAPY_GOOGLE_CLIENT_SECRET }}
         run: pyinstaller --noconfirm packaging/windows/picasapy.spec
 
       - name: Frissítő segédprogram csomagolása

@@ -41,16 +41,8 @@ MenuBar {
         bar.languageConfirmRequested(code)
     }
 
-    // #423: a kék „Bejelentkezés Google Fiókkal" hivatkozás a menüsáv jobb
-    // szélén — az eredeti Picasa ugyanabban a sorban tartja, mint a
-    // Fájl/Szerkesztés/… menüket. A `background` felülírása szükséges,
-    // mert a MenuBar tartalma (a menük listája) csak a saját szélességét
-    // foglalja el balra — a jobb oldali üres sáv a háttérrétegen keresztül
-    // látszik, oda kerül a felirat. A `Theme.canvasBg` a Main.qml
-    // `palette.window`-jával megegyező szín (ld. Main.qml `palette {}`
-    // blokkja), így a csere vizuálisan nem tér el az alap Fusion-nézettől.
-    // Funkció még nincs mögötte (a Google-fiókos bejelentkezés nem cél) —
-    // ez csak az elrendezés része, ezért nem interaktív.
+    // #423: a Google-fiók bejelentkezési hivatkozása a menüsáv jobb szélén.
+    // A háttér a menük listáján túl is kitölti a teljes sort.
     background: Rectangle {
         color: Theme.canvasBg
         Connections {
@@ -174,10 +166,53 @@ MenuBar {
             anchors.right: parent.right
             anchors.rightMargin: 10
             anchors.verticalCenter: parent.verticalCenter
-            text: qsTr("Sign in with Google Account")
+            text: {
+                if (bar.ctl && bar.ctl.googlePhotosAuthBusy !== undefined
+                        && bar.ctl.googlePhotosAuthBusy)
+                    return qsTr("Waiting for Google authorization…")
+                if (bar.ctl && bar.ctl.googlePhotosSignedIn !== undefined
+                        && bar.ctl.googlePhotosSignedIn)
+                    return qsTr("Signed in to Google Photos")
+                return qsTr("Sign in with Google Account")
+            }
             color: Theme.linkBlue
             font.pixelSize: Theme.fontSize
             font.underline: true
+
+            MouseArea {
+                objectName: "menuBarSignInArea"
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                enabled: !(bar.ctl && bar.ctl.googlePhotosAuthBusy !== undefined
+                    && bar.ctl.googlePhotosAuthBusy)
+                onClicked: {
+                    if (bar.ctl && bar.ctl.googlePhotosSignedIn !== undefined
+                            && bar.ctl.googlePhotosSignedIn) {
+                        googlePhotosAccountMenu.popup(
+                            signInLink,
+                            Math.max(0, signInLink.width
+                                - googlePhotosAccountMenu.implicitWidth),
+                            signInLink.height)
+                    } else if (bar.ctl && bar.ctl.googlePhotosCanSignIn !== undefined
+                            && bar.ctl.googlePhotosCanSignIn) {
+                        bar.ctl.signInGooglePhotos()
+                    } else {
+                        bar.googlePhotosOptionsRequested()
+                    }
+                }
+            }
+        }
+        Menu {
+            id: googlePhotosAccountMenu
+            objectName: "googlePhotosAccountMenu"
+
+            MenuItem {
+                objectName: "googlePhotosSignOutMenuItem"
+                //: picasapy-origin: picasa
+                //: picasapy-origin-key: stringres:NCWebAlbums::Label2
+                text: qsTr("Sign Out")
+                onTriggered: if (bar.ctl) bar.ctl.signOutGooglePhotos()
+            }
         }
         // #1654: a tesztüzem LÁTHATÓ állapot. A menüben ülő pipa ehhez
         // kevés — ahhoz ki kell nyitni a menüt. A felhasználó ne felejtse
@@ -316,6 +351,7 @@ MenuBar {
     // #350: Eszközök → Beállítások... (options.fen) — az OptionsDialog
     // megnyitását a Main.qml köti be (forró fájl, az integrátor dolga)
     signal optionsRequested()
+    signal googlePhotosOptionsRequested()
     //: #2054: a súgó megnyitása; a paraméter a fejezet ( = főoldal)
     signal helpRequested(string topic)
     // #4639: a kódban bekötött gyorsbillentyűk helyi listájának megnyitása.

@@ -6,6 +6,7 @@ ColumnLayout {
     id: root
     objectName: "optionsGooglePhotosTab"
     spacing: 10
+    property var openGooglePhotosHelp: null
 
     readonly property var prefs: (typeof controller !== "undefined" && controller)
         ? controller : null
@@ -35,48 +36,7 @@ ColumnLayout {
     }
 
     Text {
-        text: qsTr("Use your own Google OAuth client (Desktop app).")
-        color: Theme.ink
-        font.pixelSize: Theme.fontSize
-        wrapMode: Text.WordWrap
-        Layout.fillWidth: true
-    }
-
-    Text {
-        text: qsTr("OAuth client ID")
-        color: Theme.ink
-        font.pixelSize: Theme.fontSize
-    }
-
-    TextField {
-        id: clientIdField
-        objectName: "googlePhotosClientIdField"
-        Layout.fillWidth: true
-        text: root.prefs && root.prefs.googlePhotosClientId !== undefined
-            ? root.prefs.googlePhotosClientId : ""
-        selectByMouse: true
-        TextFieldContextArea {}
-    }
-
-    Text {
-        text: qsTr("OAuth client secret")
-        color: Theme.ink
-        font.pixelSize: Theme.fontSize
-    }
-
-    TextField {
-        id: clientSecretField
-        objectName: "googlePhotosClientSecretField"
-        Layout.fillWidth: true
-        echoMode: TextInput.Password
-        selectByMouse: true
-        placeholderText: root.prefs && root.prefs.googlePhotosClientSecretConfigured
-            ? qsTr("Leave blank to keep the saved client secret") : ""
-        TextFieldContextArea {}
-    }
-
-    Text {
-        text: qsTr("The client secret and refresh token are stored in the system keyring or user settings.")
+        text: qsTr("PicasaPy signs in with its built-in client. Use your own client only if needed.")
         color: Theme.ink
         font.pixelSize: Theme.fontSize
         wrapMode: Text.WordWrap
@@ -86,39 +46,24 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         spacing: 8
+        // ha egyik gomb sem látszik, a sor ne foglaljon helyet
+        visible: signInButton.visible || signOutButton.visible
 
         PicasaButton {
-            objectName: "googlePhotosSaveCredentialsButton"
-            //: picasapy-origin: picasa
-            //: picasapy-origin-key: stringres:CThumbUI::FileSave::saveButton
-            text: qsTr("Save")
-        enabled: root.prefs
-            && root.prefs.googlePhotosClientSecretConfigured !== undefined
-            && clientIdField.text.trim().length > 0
-            && (clientSecretField.text.length > 0
-                || root.prefs.googlePhotosClientSecretConfigured)
-            onClicked: root.prefs.configureGooglePhotos(
-                clientIdField.text, clientSecretField.text)
-        }
-
-        PicasaButton {
+            id: signInButton
             objectName: "googlePhotosSignInButton"
             //: picasapy-origin: picasa
             //: picasapy-origin-key: stringres:NCWebAlbums::Label3
             text: qsTr("Sign in with Google Account")
-            enabled: root.prefs
-                && root.prefs.googlePhotosCanSignIn !== undefined
-                && root.prefs.googlePhotosSignedIn !== undefined
-                && root.prefs.googlePhotosAuthBusy !== undefined
-                && root.prefs.googlePhotosCanSignIn
-                && !root.prefs.googlePhotosSignedIn && !root.prefs.googlePhotosAuthBusy
-            onClicked: {
-                if (root.prefs.configureGooglePhotos(clientIdField.text, clientSecretField.text))
-                    root.prefs.signInGooglePhotos()
-            }
+            visible: root.prefs && root.prefs.googlePhotosCanSignIn !== undefined
+                ? root.prefs.googlePhotosCanSignIn : false
+            enabled: visible && root.prefs.googlePhotosAuthBusy !== undefined
+                && !root.prefs.googlePhotosAuthBusy
+            onClicked: root.prefs.signInGooglePhotos()
         }
 
         PicasaButton {
+            id: signOutButton
             objectName: "googlePhotosSignOutButton"
             //: picasapy-origin: picasa
             //: picasapy-origin-key: stringres:NCWebAlbums::Label2
@@ -146,6 +91,112 @@ ColumnLayout {
         font.pixelSize: Theme.fontSize
         wrapMode: Text.WordWrap
         Layout.fillWidth: true
+    }
+
+    // a lenyitható rész a mappafa mintáját követi: háromszög + felirat
+    Text {
+        id: advancedToggle
+        objectName: "googlePhotosAdvancedToggle"
+        property bool checked: false
+        Layout.fillWidth: true
+        text: (checked ? "\u25BE " : "\u25B8 ")
+            + qsTr("Advanced: use your own Google client (optional)")
+        color: Theme.ink
+        font.pixelSize: Theme.fontSize
+        wrapMode: Text.WordWrap
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: advancedToggle.checked = !advancedToggle.checked
+        }
+    }
+
+    ColumnLayout {
+        id: advancedContents
+        objectName: "googlePhotosAdvancedContents"
+        visible: advancedToggle.checked
+        enabled: visible
+        Layout.fillWidth: true
+        spacing: 8
+
+        Text {
+            text: qsTr("Use your own Google OAuth client (Desktop app).")
+            color: Theme.ink
+            font.pixelSize: Theme.fontSize
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+        }
+
+        Text {
+            text: qsTr("OAuth client ID")
+            color: Theme.ink
+            font.pixelSize: Theme.fontSize
+        }
+
+        TextField {
+            id: clientIdField
+            objectName: "googlePhotosClientIdField"
+            Layout.fillWidth: true
+            text: root.prefs && root.prefs.googlePhotosClientId !== undefined
+                ? root.prefs.googlePhotosClientId : ""
+            selectByMouse: true
+            TextFieldContextArea {}
+        }
+
+        Text {
+            text: qsTr("Client secret")
+            color: Theme.ink
+            font.pixelSize: Theme.fontSize
+        }
+
+        TextField {
+            id: clientSecretField
+            objectName: "googlePhotosClientSecretField"
+            Layout.fillWidth: true
+            echoMode: TextInput.Password
+            selectByMouse: true
+            placeholderText: root.prefs && root.prefs.googlePhotosClientSecretConfigured
+                ? qsTr("Leave blank to keep the saved client secret") : ""
+            TextFieldContextArea {}
+        }
+
+        Text {
+            text: qsTr("The client secret and refresh token are stored in the system keyring or user settings.")
+            color: Theme.ink
+            font.pixelSize: Theme.fontSize
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+        }
+
+        Text {
+            objectName: "googlePhotosHelpLink"
+            text: qsTr("Read the Google Photos sign-in guide")
+            color: Theme.linkBlue
+            font.pixelSize: Theme.fontSize
+            font.underline: true
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: if (root.openGooglePhotosHelp)
+                    root.openGooglePhotosHelp()
+            }
+        }
+
+        PicasaButton {
+            objectName: "googlePhotosSaveCredentialsButton"
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:CThumbUI::FileSave::saveButton
+            text: qsTr("Save")
+            enabled: root.prefs
+                && root.prefs.googlePhotosClientSecretConfigured !== undefined
+                && clientIdField.text.trim().length > 0
+                && (clientSecretField.text.length > 0
+                    || root.prefs.googlePhotosClientSecretConfigured)
+            onClicked: root.prefs.configureGooglePhotos(
+                clientIdField.text, clientSecretField.text)
+        }
     }
 
     Item { Layout.fillHeight: true }
