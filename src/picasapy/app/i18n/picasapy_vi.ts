@@ -11175,12 +11175,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
         <message>
             <source>Waiting for Google authorization…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Đang chờ Google cấp quyền…</translation>
         </message>
         <message>
             <source>Signed in to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Đã đăng nhập vào Google Photos</translation>
         </message>
         <message>
             <source>Sign Out</source>

@@ -11206,12 +11206,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
         <message>
             <source>Waiting for Google authorization…</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Чека се ауторизација од Google-а…</translation>
         </message>
         <message>
             <source>Signed in to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Пријављени сте на Google слике</translation>
         </message>
         <message>
             <source>Sign Out</source>
