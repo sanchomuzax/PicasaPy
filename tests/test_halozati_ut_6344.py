@@ -73,3 +73,30 @@ def test_az_elerhetetlen_exportcel_kimarad_a_navigaciobol(monkeypatch, tmp_path)
     assert exported_folders.existing_exported_folders([str(tmp_path)]) == [str(tmp_path)]
     monkeypatch.setattr(exported_folders, "elerheto", lambda _ut: False)
     assert exported_folders.existing_exported_folders([str(tmp_path)]) == []
+
+
+def test_a_szinkron_az_elerhetetlen_megosztast_kihagyja_es_offline_jeloli(monkeypatch, tmp_path):
+    """A háttér-szinkron nem bolyong az elérhetetlen NAS-on: a mappa
+    offline jelölést kap, a sorai megmaradnak, bejárás nincs."""
+    from PIL import Image
+
+    from picasapy.index import open_index, sync, sync_folder, sync_tree
+
+    gyoker = tmp_path / "kepek"
+    mappa = gyoker / "export"
+    mappa.mkdir(parents=True)
+    Image.new("RGB", (8, 8), "red").save(mappa / "a.jpg")
+    with open_index(tmp_path / "index.db") as conn:
+        sync_tree(conn, gyoker)
+        monkeypatch.setattr(sync, "elerheto", lambda _ut: False)
+        monkeypatch.setattr(sync, "scan_folder", lambda *a, **k: pytest.fail("bejárás"))
+        monkeypatch.setattr(sync, "scan_tree", lambda *a, **k: pytest.fail("bejárás"))
+        sync_folder(conn, gyoker, mappa)
+        sync_tree(conn, gyoker)
+        offline, kepek = conn.execute(
+            "SELECT f.offline, (SELECT COUNT(*) FROM photos p WHERE p.folder_id = f.id) "
+            "FROM folders f WHERE f.path = ?",
+            (str(mappa),),
+        ).fetchone()
+    assert offline == 1
+    assert kepek == 1

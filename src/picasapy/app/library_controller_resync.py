@@ -378,6 +378,23 @@ class _LibraryResyncMixin:
             self._on_output_written, Qt.ConnectionType.QueuedConnection
         )
 
+    @Slot(str)
+    def noteCaptureSaved(self, path: str) -> None:  # noqa: N802 — QML-stílusú név
+        """A Kamera panel pillanatképe a lemezen van — a mappája frissüljön (#6332).
+
+        A kamera eddig a `scanFolderOnce`-t hívta, ami FIGYELT gyökér alatt
+        szándékosan nem csinál semmit (a mappafigyelőre bízza). A tulajdonos
+        gépén a „Rögzített videoklipek” egy figyelt OneDrive-gyökér alatt van,
+        és a kép a PicasaPy-ben meg sem jelent. A kollázs és a film kimenete
+        ugyanezt a #1539 célzott újraolvasással oldja meg — a kamerakép is
+        ezt az utat kapja; a figyelt körön kívüli eset marad a
+        `scanFolderOnce`-é (a QML mindkettőt hívja)."""
+        helyi = normalize_path(to_local_path(path)) if path else ""
+        if not helyi:
+            return
+        self._ensure_output_resync_wired()
+        self.noteOutputWritten(helyi)
+
     def noteOutputWritten(self, path) -> None:  # noqa: N802 — QML-stílusú név
         """Bejelenti, hogy egy FRISSEN KIÍRT fájl a lemezen van (#1539).
 

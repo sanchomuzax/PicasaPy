@@ -12,6 +12,8 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 - Elérhetetlen hálózati (NAS) exportcél vagy mappa már nem lassítja az indulást: a program a megosztás elérhetőségét fél másodperces időkorláttal ellenőrzi, és egy percig megjegyzi, ahelyett hogy minden ellenőrzésnél 20–40 másodpercig várna (#6344).
 - Kilépéskor az ablakméret mentése nem ír hibát a naplóba, ha a beállítások már lezárultak (#6347).
 - Futás közben sem fagy le a felület percekre, és a program kiléptethető, ha egy NAS-mappa nem érhető el (#6349).
+- A háttér-szinkron az elérhetetlen hálózati mappát kihagyja és „nem elérhető”-nek jelöli, ahelyett hogy percekig bolyongana rajta és feltartaná a kilépést (#6349).
+- A Kamera panel pillanatképe a mentés után azonnal megjelenik a könyvtárban, a mappafigyelőtől függetlenül (#6332).
 - A kilépési kérdésben csak az eredeti két gomb látszik, a „Ne kérdezze meg újra” jelölő és a fölösleges Mégse gomb nélkül (#6350).
 
 ## [1.0.9] - 2026-11-01

@@ -298,10 +298,14 @@ Popup {
         function onSnapshotSaved(path) {
             panel.currentCapturePath = ""
             panel.statusMessage = qsTr("Snapshot saved")
-            // A nem figyelt kamera-mappát is egyszeri beolvasással vesszük
-            // fel; figyelt mappánál a meglévő watcher végzi a frissítést.
-            if (panel.storage && typeof controller !== "undefined" && controller)
+            // #6332: figyelt gyökér alatt a `scanFolderOnce` nem csinál semmit,
+            // ezért a mentett kép mappáját célzottan újraolvastatjuk (mint a
+            // kollázs és a film kimenetét); a figyelt körön kívüli mappát a
+            // `scanFolderOnce` veszi fel.
+            if (panel.storage && typeof controller !== "undefined" && controller) {
+                controller.noteCaptureSaved(String(path))
                 controller.scanFolderOnce(panel.storage.captureFolder)
+            }
         }
         function onCaptureFailed(message) {
             panel.currentCapturePath = ""

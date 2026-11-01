@@ -247,6 +247,21 @@ class TestAKimenetMegjelenikAFigyeloNelkul:
             "az ÚJ mappába mentett kollázs nem jelent meg a rácson"
         )
 
+    def test_a_kamera_pillanatkepe_a_figyelt_mappaban_megjelenik(self, egyseg, qt_app):
+        """#6332: a kamerakép a mappafigyelő nélkül is megjelenik — a mentés
+        utáni célzott újraolvasás (`noteCaptureSaved`) hozza be, ugyanúgy, mint
+        a kollázs és a film kimenetét."""
+        ctl, library = egyseg
+        kep = library / "forras" / "snapshot-001.jpg"
+        make_jpeg(kep)
+
+        ctl.noteCaptureSaved(str(kep))
+
+        assert _var(qt_app, lambda: ctl.photos.rowCount() == 3), (
+            "a kamerakép nem jelent meg a rácson — figyelő nélkül csak a "
+            "célzott újraolvasás hozhatja be"
+        )
+
     def test_az_uj_mappaba_exportalt_film_megjelenik(self, egyseg, qt_app):
         ctl, library = egyseg
         uj = library / "ujmappa"
