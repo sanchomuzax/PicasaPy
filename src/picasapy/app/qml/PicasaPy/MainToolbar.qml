@@ -663,6 +663,14 @@ Rectangle {
                 : updateTagVisible
                 ? toolbar.updateStrings.available.arg(toolbar.updateAgent.availableVersion)
                 : currentVersionText
+            // #6348: a felirat SOHA nem lóghat a mezőre — a mező mögötti sáv
+            // a felső határ, ami nem fér ki, „…”-tal zárul (a teljes címke a
+            // buboréksúgóban marad). A 0.0.0+ismeretlen csomagverzió e
+            // korlát nélkül balra kifutott, rá a keresőmezőre.
+            readonly property real maxWidth: Math.max(0,
+                toolbar.width - toolbar.searchBoxRight - anchors.rightMargin - 2)
+            width: Math.min(implicitWidth, maxWidth)
+            elide: Text.ElideRight
             font.pixelSize: 9
             font.bold: updateTagVisible
             // #706: rámutatásra és fókuszban aláhúzott — ránézésre is

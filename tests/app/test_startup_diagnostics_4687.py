@@ -89,3 +89,32 @@ def test_a_korai_hibanaplo_azonnal_ir_es_adatgyoker_valtaskor_atviszi_a_szakaszo
     final_log = tmp_path / "athelyezett-adatok" / "errorlog.txt"
     progress.install(final_log)
     assert "PySide6 és Qt verziója" in final_log.read_text(encoding="utf-8")
+
+
+def test_a_folyamat_kora_merheto_es_nem_negativ():
+    """#6344: a hibanapló a modulbetöltés ELŐTTI időt is mutassa."""
+    import sys
+
+    from picasapy.app.startup_diagnostics import process_age_ms
+
+    kor = process_age_ms()
+    if sys.platform == "win32" or sys.platform.startswith("linux"):
+        assert kor is not None
+        assert 0 <= kor < 24 * 3600 * 1000
+
+
+def test_a_folyamat_kora_hibanal_none_es_nem_dob(monkeypatch):
+    """#6344: a windowsos CI-n `ctypes.ArgumentError` állította meg a
+    csomagolt programot — a diagnosztika semmilyen hibával nem dobhat."""
+    import ctypes
+
+    from picasapy.app import startup_diagnostics
+
+    def hibas():
+        raise ctypes.ArgumentError("szimulált ctypes-hiba")
+
+    monkeypatch.setattr(startup_diagnostics, "_windows_process_age_ms", hibas)
+    monkeypatch.setattr(startup_diagnostics, "_linux_process_age_ms", hibas)
+    assert startup_diagnostics.process_age_ms(platform="win32") is None
+    assert startup_diagnostics.process_age_ms(platform="linux") is None
+    assert startup_diagnostics.process_age_ms(platform="ismeretlen") is None

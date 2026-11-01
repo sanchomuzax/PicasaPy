@@ -186,3 +186,34 @@ class TestThreadStartFailure:
         qt_app.processEvents()
         assert registry.activeCount == before, "a csík örökre pörögne"
         assert not worker.backgroundWorkersRunning()
+
+
+class TestHosszuPorgesNaplozva:
+    """#6349: a sokáig pörgő jelző a hibanaplóba írja, mi fut, és meddig."""
+
+    def test_a_hosszu_porges_neve_es_ideje_a_naploba_kerul(
+        self, qt_app, monkeypatch, caplog
+    ):
+        monkeypatch.setattr(busy_registry_module, "LONG_SPIN_LOG_MS", 60)
+        monkeypatch.setattr(
+            busy_registry_module, "_futo_munkak", lambda: ("picasapy-thumbs",)
+        )
+        reset_app_busy_registry()
+        registry = get_app_busy_registry()
+        caplog.set_level("WARNING", logger="picasapy.app.busy_registry")
+        registry.begin()
+        _wait_until(qt_app, lambda: "óta pörög" in caplog.text)
+        assert "picasapy-thumbs" in caplog.text
+        registry.end()
+        _wait_until(qt_app, lambda: not registry.visible)
+        assert "s-ig pörgött" in caplog.text
+
+    def test_rovid_munka_nem_naploz(self, qt_app, caplog):
+        reset_app_busy_registry()
+        registry = get_app_busy_registry()
+        caplog.set_level("WARNING", logger="picasapy.app.busy_registry")
+        registry.begin()
+        _wait_until(qt_app, lambda: registry.visible)
+        registry.end()
+        _wait_until(qt_app, lambda: not registry.visible)
+        assert "pörg" not in caplog.text

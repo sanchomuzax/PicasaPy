@@ -10,6 +10,7 @@ nem akadályozhatja az indulást.
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 from picasapy import __version__
@@ -21,12 +22,25 @@ from picasapy import __version__
 #: folyamatindításra is rákerül, amíg a teszt fut.
 _run = subprocess.run
 
+#: A futtató folyamat (`frozen`) — modulszintű fogantyú, hogy a teszt ezt
+#: cserélje, ne a globális `sys`-t.
+_futtato = sys
+
 # A repó gyökere: src/picasapy/version.py → parents[2]
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _git(*args: str) -> str | None:
-    """Egy git-parancs kimenete a repó gyökeréből, vagy None hiba esetén."""
+    """Egy git-parancs kimenete a repó gyökeréből, vagy None hiba esetén.
+
+    #6344: a PyInstaller-csomagban (`sys.frozen`) nincs git-tároló, tehát a
+    hívás eleve nem adhat build-azonosítót, az ára viszont az indulás
+    kritikus útjára esett. Az ablakos `.exe`-ből minden konzolos gyermek
+    (`git.exe`) saját konzolt kap; a windowsos CI-n a csomagolt program
+    ebben a szakaszban mérten ~0,5 s-mal lassabb volt a forrásból
+    indítottnál (két hívás)."""
+    if getattr(_futtato, "frozen", False):
+        return None
     try:
         out = _run(
             ["git", "-C", str(_REPO_ROOT), *args],

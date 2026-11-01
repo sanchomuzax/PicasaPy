@@ -52,7 +52,12 @@ from PySide6.QtQuick import (
     QQuickTextureFactory,
 )
 
-from picasapy.app.edit_controller import _EFFECT_INI_NAMES, _EFFECT_NAMES
+from picasapy.app.edit_controller import (
+    _EFFECT_INI_NAMES,
+    _EFFECT_PARAMS,
+    _EFFECT_NAMES,
+    _LEGACY_EFFECT_NAMES,
+)
 from picasapy.app.effect_params import format_param_values, resolve_effect_params
 from picasapy.ini import PhotoCropReader
 from picasapy.ini.filters import FilterOp, parse_filters
@@ -102,7 +107,11 @@ EFFECT_NAMES: tuple[str, ...] = _EFFECT_NAMES
 #: `test_all_catalogue_effects_render_without_crashing`) VÁLTOZATLAN marad —
 #: ez egy külön, csak a bélyegkép-validációhoz kombinált halmaz.
 _TOOL_PREVIEW_NAMES: tuple[str, ...] = ("redeye", "enhance", "autolight", "autocolor")
-_KNOWN_EFFECTS: frozenset[str] = frozenset(EFFECT_NAMES) | frozenset(_TOOL_PREVIEW_NAMES)
+_KNOWN_EFFECTS: frozenset[str] = (
+    frozenset(EFFECT_NAMES)
+    | frozenset(_TOOL_PREVIEW_NAMES)
+    | frozenset(_LEGACY_EFFECT_NAMES)
+)
 
 PhotoLookup = Callable[[str], "PhotoRecord | None"]
 
@@ -148,7 +157,11 @@ def _default_op(effect: str) -> FilterOp:
     params = resolve_effect_params(effect)
     nev = _EFFECT_INI_NAMES.get(effect, effect)
     if not params:
-        return FilterOp(name=nev, params=("1",))
+        # A vezérlő egykattintásos alapértékei közül a `fill` extra erősséget
+        # igényel. Ugyanezt a már közösen használt alapértéket tesszük a
+        # bélyegkép-láncba is, különben a renderelő hibás paraméter miatt
+        # kihagyja az effektet.
+        return FilterOp(name=nev, params=_EFFECT_PARAMS.get(effect, ("1",)))
     # #516: "color" vezérlőnél a hex-alapérték a kezdőérték, nem a (náluk
     # értelmezetlen) numerikus `default` mező — az `openParamPanel()` QML-
     # függvény ugyanígy dönt
