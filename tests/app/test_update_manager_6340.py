@@ -654,3 +654,57 @@ def test_sikertelen_letoltes_utan_visszaall_tetlenre(qt_app):
 
     assert eredmeny == [(False, "download-error")]
     assert controller.downloadState == "idle"
+
+
+class _ManifestesKliens(_ReleaseClient):
+    """A kiadás mellé `SHA256SUMS`-t is ad (vagy hibát, ha nincs)."""
+
+    def __init__(self, release, manifest: str | None):
+        super().__init__(release)
+        self.manifest = manifest
+
+    def download(self, asset, *, progress=None):
+        if self.manifest is None:
+            raise URLError("nincs SHA256SUMS")
+        return self.manifest.encode("utf-8")
+
+
+def _windows_vezerlo(client):
+    from picasapy.app.update_manager import UpdateController as _Vezerlo
+
+    return _Vezerlo(
+        "1.0.0",
+        settings=_MemorySettings({AUTO_CHECK_KEY: True}),
+        client=client,
+        pool=_InlinePool(),
+        schedule=False,
+        install_kind="windows",
+    )
+
+
+def test_hianyzo_windows_csomagnal_nem_ajanl_fel_kiadast(qt_app):
+    """#6389: a kiadási lap már kint, a windowsos zip még nincs fent."""
+    controller = _windows_vezerlo(_ManifestesKliens(_release("1.1.0"), "abc  x.whl\n"))
+    controller._automatic_check_if_due()
+    assert not controller.updateAvailable
+
+
+def test_zip_nelkuli_sha256sumsnal_nem_ajanl_fel_kiadast(qt_app):
+    from picasapy.app.update_manager import WINDOWS_ASSET_NAME
+
+    assert WINDOWS_ASSET_NAME == "PicasaPy-windows-x64.zip"
+    controller = _windows_vezerlo(
+        _ManifestesKliens(_windows_release("1.1.0"), "abc  picasapy-1.1.0.tar.gz\n")
+    )
+    controller._automatic_check_if_due()
+    assert not controller.updateAvailable
+
+
+def test_teljes_windows_kiadast_felajanl(qt_app):
+    from picasapy.app.update_manager import WINDOWS_ASSET_NAME
+
+    controller = _windows_vezerlo(
+        _ManifestesKliens(_windows_release("1.1.0"), f"{'a' * 64}  {WINDOWS_ASSET_NAME}\n")
+    )
+    controller._automatic_check_if_due()
+    assert controller.updateAvailable

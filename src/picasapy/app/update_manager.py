@@ -562,7 +562,27 @@ class UpdateController(QObject):
             if manual:
                 self.manualCheckFinished.emit(False, "error")
 
-        self._submit(lambda _progress: self._client.latest_release(), completed, failed)
+        self._submit(lambda _progress: self._letoltheto_kiadas(), completed, failed)
+
+    def _letoltheto_kiadas(self) -> ReleaseInfo | None:
+        """A legújabb kiadás, de windowsos telepítésnél csak ha letölthető.
+
+        #6389: a kiadási lap percekkel előbb nyilvános, mint ahogy a Package
+        feltölti a windowsos csomagot; addig nem ajánljuk fel, mert a
+        letöltés hibára futna. A következő keresés újra megnézi."""
+        release = self._client.latest_release()
+        if self._kind != "windows" or release is None:
+            return release
+        if release.asset(WINDOWS_ASSET_NAME) is None:
+            return None
+        manifest = release.asset(SHA256SUMS_NAME)
+        if manifest is None:
+            return None
+        try:
+            hashes = parse_sha256sums(self._client.download(manifest).decode("utf-8"))
+        except (OSError, ValueError, UnicodeDecodeError):
+            return None
+        return release if WINDOWS_ASSET_NAME in hashes else None
 
     @Slot()
     def skipAvailableVersion(self) -> None:  # noqa: N802
