@@ -49,6 +49,9 @@ adatok = [
     (str(APP / "qml"), "picasapy/app/qml"),
     (str(APP / "i18n"), "picasapy/app/i18n"),
     (str(APP / "assets"), "picasapy/app/assets"),
+    # #6392: a HTML-export sablonjai (.html/.tpl/.css/.svg/.xml) egyik
+    # mintába sem esnek bele; nélkülük üres a sablonlista
+    (str(GYOKER / "src" / "picasapy" / "webexport" / "templates"), "picasapy/webexport/templates"),
 ]
 # #6374: a build a Qt qmlcachegen eszközével előre fordítja az összes QML/JS
 # fájlt; az alkalmazás a felhasználó saját Qt-cache-ébe másolja azokat.

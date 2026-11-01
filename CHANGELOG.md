@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.13] - 2026-11-01
+
+- A Windows-csomag előre fordított QML-fájlokkal gyorsítja a frissítés utáni első indulást. (#6374).
+
 ## [1.0.12] - 2026-11-01
 
 - 1.0.12 integráció: gyors indulás, indulóablak, telepítő, betűköz, Google-bejelentkezés (#6375).
