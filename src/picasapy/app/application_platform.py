@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication
-from PySide6.QtGui import QFont, QFontDatabase, QGuiApplication, QIcon, QPixmap
+from PySide6.QtGui import QFontDatabase, QGuiApplication, QIcon, QPixmap
 
 from picasapy.render.text_fonts import clear_family_cache
 from ._application_constants import _SPLASH_MIN_VISIBLE_MS
@@ -27,10 +27,6 @@ def _force_qml_dialogs(platform: str = sys.platform) -> bool:
     csak abból érhetők el rendesen — a QML-es tartalék a meghajtó szintje
     fölé nem tud lépni."""
     return platform != "win32"
-
-#: az eredeti `fonttrack -1` (#6362)
-_UI_FONT_TRACKING = -1.0
-
 
 def _install_ui_font(app: QGuiApplication) -> None:
     """A csomagolt felület-betűtípus betöltése és beállítása (#526).
@@ -55,11 +51,6 @@ def _install_ui_font(app: QGuiApplication) -> None:
         return
     font = app.font()
     font.setFamily(_app._UI_FONT_FAMILY)
-    # #6362: az eredeti felület betűmakrói (`fontmacros_win.tre`, pl.
-    # `m_displayfont12`, `m_buttonfontC`) `fonttrack -1`-et írnak elő: a
-    # betűköz egy képponttal szűkebb. Enélkül a feliratok szélesebbek az
-    # eredetinél, és a szűk dobozokban két sorba törnek.
-    font.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, _UI_FONT_TRACKING)
     app.setFont(font)
 
 def _set_windows_app_id() -> None:

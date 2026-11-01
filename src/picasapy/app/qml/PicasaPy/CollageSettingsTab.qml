@@ -529,6 +529,8 @@ Item {
         font.family: Theme.uiFamily
         font.pixelSize: 12
         font.weight: Theme.fontWeightNormal
+        // `m_displayfont12`: fonttrack -1 (az eredeti betűköze egy képponttal szűkebb)
+        font.letterSpacing: -1
         color: Theme.ink
         wrapMode: Text.Wrap
         verticalAlignment: Text.AlignTop

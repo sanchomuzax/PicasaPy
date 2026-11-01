@@ -75,16 +75,6 @@ class TestFontRegistration:
         assert app_module._UI_FONT_FAMILY in QFontDatabase.families()
         assert qt_app.font().family() == app_module._UI_FONT_FAMILY
 
-    def test_the_original_tracking_is_applied(self, qt_app) -> None:
-        """#6362: az eredeti betűmakrók `fonttrack -1`-et írnak elő
-        (`fontmacros_win.tre`, pl. `m_displayfont12`, `m_buttonfontC`)."""
-        from PySide6.QtGui import QFont
-
-        app_module._install_ui_font(qt_app)
-        font = qt_app.font()
-        assert font.letterSpacingType() == QFont.SpacingType.AbsoluteSpacing
-        assert font.letterSpacing() == -1.0
-
     def test_missing_files_fall_back_silently(self, qt_app, monkeypatch) -> None:
         """Csonka telepítésnél némán a rendszer betűtípusánál maradunk —
         a felület ettől még használható."""

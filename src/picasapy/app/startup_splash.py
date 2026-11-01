@@ -207,6 +207,11 @@ def _make_splash(app: QGuiApplication, settings) -> IndulasAblak:
     return splash
 
 
+def _platform() -> str:
+    """A platform cserélhető fogantyúja (#1217)."""
+    return sys.platform
+
+
 def _alkalmazas_elotti_beallitasok() -> None:
     """Amit a Qt-alkalmazás LÉTREHOZÁSA ELŐTT kell beállítani.
 
@@ -214,7 +219,7 @@ def _alkalmazas_elotti_beallitasok() -> None:
     ismétlése ártalmatlan): Linuxon/macOS-en a saját QML-párbeszédek (#58),
     Windowson a tálca-azonosító (#67), hogy az indulóablak már a helyes
     ikonnal és csoportosítással jelenjen meg."""
-    if sys.platform != "win32":
+    if _platform() != "win32":
         QGuiApplication.setAttribute(Qt.ApplicationAttribute.AA_DontUseNativeDialogs)
         return
     try:
