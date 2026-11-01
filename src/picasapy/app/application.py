@@ -446,6 +446,32 @@ def _startup_step_smoke_test(state) -> None:
     state.edit_controller.waitForBackgroundWorkers(2.0)
 
 
+def _reszletes_idovonal_kell(argv: list[str]) -> bool:
+    """A részletes indexméret-adatok csak tesztüzemben kellenek (#1654, #1601)."""
+    return bool(
+        argv_tesztuzem(argv)
+        or tesztuzem_bekapcsolva(QSettings("PicasaPy", "PicasaPy"))
+        or timeline_enabled()
+    )
+
+
+def _jelentsd_az_indulast(timeline, state, roots, reszletes: bool, early_startup) -> None:
+    """Az indulási idővonal kiírása; a darabszámok csak részletes módban (#6385)."""
+    _jelentsd_az_idovonalat(
+        timeline,
+        (lambda: _indexelt_kepszamok(state.data_dir)) if reszletes else None,
+        (lambda: _takaritas_gyokerei(roots, QSettings())) if reszletes else None,
+        run_log=getattr(early_startup, "run_log", None),
+    )
+
+
+def _allitsd_le_az_akadasfigyelot(early_startup) -> None:
+    """Az első képkocka után az indulási akadásfigyelő már nem kell (#6385)."""
+    hang_traceback = getattr(early_startup, "hang_traceback", None)
+    if hang_traceback is not None:
+        hang_traceback.cancel()
+
+
 def run(argv: list[str], *, entry_at: float | None = None) -> int:
     """Az alkalmazás indítása.
 
@@ -467,15 +493,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     elso = _startup_step_read_arguments(argv, early_startup)
     progress_log, onellenorzes, startup_smoke = elso.progress_log, elso.onellenorzes, elso.startup_smoke
-    reszletes_idovonal = (
-        argv_tesztuzem(elso.argv)
-        or tesztuzem_bekapcsolva(QSettings("PicasaPy", "PicasaPy"))
-        or timeline_enabled()
-    )
+    reszletes_idovonal = _reszletes_idovonal_kell(elso.argv)
     timeline, argv = _indulasi_idovonal(
-        elso.argv,
-        entry_at=entry_at,
-        run_log=getattr(early_startup, "run_log", None),
+        elso.argv, entry_at=entry_at, run_log=getattr(early_startup, "run_log", None)
     )
     # #5762: a fájlok a viewer listájába, a könyvtárak a könyvtárnézet gyökerei közé
     from .quick_view import parse_launch_arguments
@@ -617,16 +637,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         elapsed_ms = (
             time.monotonic() - startup_state["first_frame_at"]
         ) * 1000
-        _jelentsd_az_idovonalat(
-            timeline,
-            (lambda: _indexelt_kepszamok(state.data_dir))
-            if reszletes_idovonal
-            else None,
-            (lambda: _takaritas_gyokerei(roots, QSettings()))
-            if reszletes_idovonal
-            else None,
-            run_log=getattr(early_startup, "run_log", None),
-        )
+        _jelentsd_az_indulast(timeline, state, roots, reszletes_idovonal, early_startup)
 
         def _finish_splash() -> None:
             progress_log.mark("A splash lezárása elkezdődött")
@@ -648,9 +659,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
             early_splash.close()
         timeline.mark("az ablak első kirajzolt képkockája")
         progress_log.mark("Első főablak-képkocka; a rács megjelent")
-        hang_traceback = getattr(early_startup, "hang_traceback", None)
-        if hang_traceback is not None:
-            hang_traceback.cancel()
+        _allitsd_le_az_akadasfigyelot(early_startup)
         QTimer.singleShot(0, _start_and_finish)
 
     app = state.app
