@@ -1,7 +1,7 @@
 # Ideiglenes diagnosztika (#6383 előzménye): a tulajdonos gépén az 1.0.11 -> 1.0.12
 # önfrissítés letöltött, de a csere után visszaállt az 1.0.11-re. Itt pontosan
 # ugyanazt játsszuk le: 1.0.11 Setup, majd a telepített segéd a valódi 1.0.12-es zippel.
-name: Diag - frissites 1.0.11 -> 1.0.12
+name: Diag - frissites 1.0.11 -> 1.0.12 es Defender
 
 on:
   push:
@@ -89,3 +89,45 @@ jobs:
             onell-*.txt
             seged-*.txt
           if-no-files-found: ignore
+
+  defender:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        vedelem: [ki, be]
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Defender valós idejű védelem
+        shell: pwsh
+        run: |
+          if ('${{ matrix.vedelem }}' -eq 'be') {
+            Set-MpPreference -DisableRealtimeMonitoring $false -ErrorAction Continue
+          } else {
+            Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction Continue
+          }
+          Get-MpComputerStatus | Select-Object AMServiceEnabled, AntivirusEnabled, RealTimeProtectionEnabled, OnAccessProtectionEnabled | Format-List | Out-String
+
+      - name: 1.0.12 telepítése a Setupból
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force d | Out-Null
+          gh release download v1.0.12 -R sanchomuzax/PicasaPy -p "PicasaPy-Setup-1.0.12.exe" -D d
+          $sw = [Diagnostics.Stopwatch]::StartNew()
+          $p = Start-Process "d\PicasaPy-Setup-1.0.12.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CURRENTUSER" -Wait -PassThru
+          "setup kilepes: $($p.ExitCode), ido: $($sw.Elapsed.TotalSeconds) s"
+          "DIR=$env:LOCALAPPDATA\Programs\PicasaPy" | Out-File -Append $env:GITHUB_ENV -Encoding utf8
+
+      - name: Első, második és harmadik indulás (önellenőrzés)
+        shell: pwsh
+        run: |
+          $exe = "$env:DIR\PicasaPy.exe"
+          $env:QT_QPA_PLATFORM = 'offscreen'; $env:QT_QUICK_BACKEND = 'software'
+          foreach ($i in 1..3) {
+            $sw = [Diagnostics.Stopwatch]::StartNew()
+            $p = Start-Process $exe -ArgumentList '--onellenorzes' -Wait -PassThru -NoNewWindow -RedirectStandardError "err$i.txt" -RedirectStandardOutput "out$i.txt"
+            "inditas $i (${{ matrix.vedelem }}): kilepes $($p.ExitCode), ido $([math]::Round($sw.Elapsed.TotalSeconds,1)) s"
+          }
+          Get-MpComputerStatus | Select-Object RealTimeProtectionEnabled | Format-List | Out-String
