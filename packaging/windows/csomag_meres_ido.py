@@ -308,16 +308,6 @@ def _kiserleti_resek(kimenet: str, db: int = 15) -> list[str]:
         ((b[0] - a[0], a, b) for a, b in zip(sorok, sorok[1:], strict=False)), reverse=True
     )[:db]
     ki = [f"{len(sorok)} időbélyeges sor"]
-    elso = next((i for i, (_t, sz) in enumerate(sorok) if "Populate family" in sz), None)
-    if elso is not None:
-        ki.append(f"első Populate family: {sorok[elso][0]:.3f}; előtte:")
-        ki.extend(f"   {t:.3f} {sz}" for t, sz in sorok[max(0, elso - 25):elso + 3])
-    jeles = [
-        (t, sz) for t, sz in sorok
-        if any(j in sz.casefold() for j in ("script", "fallback", "opentype", "fontfamilies", "families"))
-    ]
-    ki.append(f"script/fallback sorok: {len(jeles)}")
-    ki.extend(f"   {t:.3f} {sz}" for t, sz in jeles[:30])
     for res, a, b in resek:
         ki.append(f"{res:7.3f} s  {a[0]:.3f} {a[1]}  ==>  {b[1]}")
     return ki
