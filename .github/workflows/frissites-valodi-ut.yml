@@ -50,7 +50,10 @@ jobs:
           python-version: "3.12"
 
       - name: A mérő függőségei
-        run: python -m pip install --upgrade pip pillow
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install $(python scripts/print_dependencies.py)
 
       - name: A két kiadás kiválasztása
         id: verzio

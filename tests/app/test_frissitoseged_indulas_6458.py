@@ -26,7 +26,7 @@ def _vezerlo(monkeypatch, tmp_path):
         update_manager, "_futtato", SimpleNamespace(executable=str(telepites / "PicasaPy.exe"))
     )
     monkeypatch.setattr(update_manager, "mappa_irhato", lambda _m: True)
-    monkeypatch.setattr(update_manager.tempfile, "gettempdir", lambda: str(tmp_path / "tmp"))
+    monkeypatch.setattr(update_manager, "_tempdir", lambda: str(tmp_path / "tmp"))
     (tmp_path / "tmp").mkdir()
     vezerlo = UpdateController(
         "1.0.0",

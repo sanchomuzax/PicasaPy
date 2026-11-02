@@ -127,13 +127,17 @@ def _inditsd_a_segedet(args: list[str], *, emelt: bool) -> bool:
     return inditsd_a_segedet(args, emelt=emelt, platform=_platform())
 
 
+#: A `tempfile.gettempdir` modulszintű fogantyúja (#1375): a teszt EZT cserélje.
+_tempdir = tempfile.gettempdir
+
+
 def _seged_inditasi_helyek(install_dir: Path) -> list[Path]:
     """#6458: ahonnan a frissítősegéd indulhat, a próbálás sorrendjében.
 
     A testvérmappa ugyanabban a fában van, ahonnan maga a program is fut (ha
     ott futhat program, ott a segéd is); a csere a telepítési mappát
     átnevezi, ezért a segéd nem lehet annak a belsejében."""
-    return [install_dir.parent / "PicasaPy-update", Path(tempfile.gettempdir())]
+    return [install_dir.parent / "PicasaPy-update", Path(_tempdir())]
 
 
 def _masold_a_segedet(forras: Path, cel: Path) -> None:
