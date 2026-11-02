@@ -125,7 +125,10 @@ def _induloablak_kepe(hwnd: int) -> tuple[bytes | None, tuple[int, int, int] | N
     if jobb <= bal or also <= felso:
         return None, None, "az indulóablak képkockája üres"
     try:
-        kep = ImageGrab.grab(bbox=(bal, felso, jobb, also), all_screens=True).convert("RGB")
+        # az áttetsző splash réteges ablak: enélkül a mögötte levőt rögzítené (#6426)
+        kep = ImageGrab.grab(
+            bbox=(bal, felso, jobb, also), include_layered_windows=True, all_screens=True
+        ).convert("RGB")
     except OSError as hiba:
         return None, None, f"képernyőkép nem készült: {hiba}"
     puffer = io.BytesIO()

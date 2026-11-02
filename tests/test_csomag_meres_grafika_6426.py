@@ -315,3 +315,25 @@ def test_a_splash_eltunese_utan_nem_probalkozik_tovabb(tmp_path, monkeypatch):
     assert eredmeny["indulo_kep"] == b"rossz"
     assert eredmeny["indulo_kep_info"] is None
     assert eredmeny["indulo_kep_hiba"] == "a renderelt indulóképen nincs fehér kártya logóval"
+
+
+def test_a_splash_kepe_a_reteges_ablakot_is_rogziti():
+    """Az áttetsző splash réteges (layered) ablak; a Pillow alapértelmezésben
+    kihagyja, így a mérő a mögötte levő főablakot fényképezte (CI-kép, #6426)."""
+    import ast
+    import inspect
+
+    windows_modul = importlib.import_module("csomag_meres_windows")
+    fa = ast.parse(inspect.getsource(windows_modul._induloablak_kepe))
+    hivasok = [
+        csomopont
+        for csomopont in ast.walk(fa)
+        if isinstance(csomopont, ast.Call)
+        and isinstance(csomopont.func, ast.Attribute)
+        and csomopont.func.attr == "grab"
+    ]
+    assert hivasok, "a splash képe nem ImageGrab.grab-bal készül"
+    for hivas in hivasok:
+        kapcsolok = {k.arg: k.value for k in hivas.keywords}
+        assert "include_layered_windows" in kapcsolok
+        assert getattr(kapcsolok["include_layered_windows"], "value", None) is True
