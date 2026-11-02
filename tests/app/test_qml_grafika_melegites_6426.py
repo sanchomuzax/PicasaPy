@@ -55,9 +55,7 @@ def test_a_grafikai_elomelegites_ugyanazt_a_windowsos_grafikai_utvonalat_hasznal
     assert env["QT_QPA_PLATFORM"] == "offscreen"
 
 
-def test_a_grafikai_elomelegito_kivetelt_naploz_es_az_eloirt_koddal_kilep(
-    monkeypatch, tmp_path
-):
+def test_a_grafikai_elomelegito_kivetelt_naploz_es_az_eloirt_koddal_kilep(monkeypatch, tmp_path):
     from picasapy.app import qml_precompile
 
     naplo = tmp_path / "grafika.txt"
@@ -76,9 +74,7 @@ def test_a_grafikai_elomelegito_kivetelt_naploz_es_az_eloirt_koddal_kilep(
     assert "RuntimeError" in naplo.read_text(encoding="utf-8")
 
 
-def test_a_grafikai_elomelegito_egy_rejtett_qt_quick_kepkockara_var(
-    monkeypatch, tmp_path
-):
+def test_a_grafikai_elomelegito_egy_rejtett_qt_quick_kepkockara_var(monkeypatch, tmp_path):
     from picasapy.app import qml_precompile
 
     naplo = tmp_path / "grafika.txt"
@@ -87,6 +83,70 @@ def test_a_grafikai_elomelegito_egy_rejtett_qt_quick_kepkockara_var(
 
     qml_precompile._melegitsd_grafikat()
 
-    assert "grafikai előmelegítés kész: 1 képkocka" in naplo.read_text(
-        encoding="utf-8"
-    )
+    assert "grafikai előmelegítés kész: 1 képkocka" in naplo.read_text(encoding="utf-8")
+
+
+_QML_GYOKER = Path(__file__).resolve().parents[2] / "src" / "picasapy" / "app" / "qml"
+
+
+def _app_qt_moduljai() -> set[str]:
+    import re
+
+    minta = re.compile(r"^import\s+(Qt[A-Za-z0-9.]*)", re.M)
+    modulok: set[str] = set()
+    for fajl in _QML_GYOKER.rglob("*.qml"):
+        modulok.update(minta.findall(fajl.read_text(encoding="utf-8")))
+    return modulok
+
+
+def _elomelegito_importjai(qml: bytes) -> set[str]:
+    import re
+
+    return set(re.findall(r"^import\s+(\S+)", qml.decode("utf-8"), re.M))
+
+
+def test_a_grafikai_elomelegito_az_app_minden_qt_moduljat_betolti():
+    """Az első valódi indulásnál a hidegen töltődő modul-DLL-ek adták a késést."""
+    from picasapy.app import qml_precompile
+
+    hianyzik = _app_qt_moduljai() - _elomelegito_importjai(qml_precompile._grafika_qml())
+    assert not hianyzik, f"az előmelegítő nem tölti be: {sorted(hianyzik)}"
+
+
+def test_a_tartalek_elomelegito_csak_az_alapmodulokat_tolti_be():
+    from picasapy.app import qml_precompile
+
+    assert _elomelegito_importjai(qml_precompile._grafika_qml(teljes=False)) == {
+        "QtQuick",
+        "QtQuick.Controls",
+    }
+
+
+def test_az_elomelegito_komponens_a_hianyzo_modult_kihagyja(qt_app):
+    """Helyben a QtLocation nincs telepítve; a komponens ettől még betölthető."""
+    from PySide6.QtCore import QUrl
+    from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+    from picasapy.app import qml_precompile
+
+    engine = QQmlEngine()
+    engine.addImportPath(qml_precompile._qml_import_path())
+    component = qml_precompile._grafika_komponens(engine, QQmlComponent, QUrl)
+    assert component.status() != QQmlComponent.Status.Error
+    betoltve = qml_precompile._betoltheto_modulok(engine, QQmlComponent, QUrl)
+    assert {"QtQuick.Layouts", "QtQuick.Dialogs", "QtQml"} <= set(betoltve)
+
+
+def test_a_tartalek_elomelegito_qml_hiba_nelkul_betoltheto(qt_app):
+    from PySide6.QtCore import QUrl
+    from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+    from picasapy.app import qml_precompile
+
+    engine = QQmlEngine()
+    engine.addImportPath(qml_precompile._qml_import_path())
+    component = QQmlComponent(engine)
+    component.setData(qml_precompile._grafika_qml(teljes=False), QUrl())
+    assert component.status() != QQmlComponent.Status.Error, [
+        hiba.toString() for hiba in component.errors()
+    ]

@@ -123,9 +123,7 @@ def _qml_cache_konyvtar() -> Path:
     egyedi = os.environ.get("QML_DISK_CACHE_PATH")
     if egyedi:
         return Path(egyedi)
-    hely = QStandardPaths.writableLocation(
-        QStandardPaths.StandardLocation.CacheLocation
-    )
+    hely = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation)
     if not hely:
         raise RuntimeError("A Qt nem adott QML-cache könyvtárat")
     return Path(hely) / "qmlcache"
@@ -159,9 +157,7 @@ def _forditsd_le(cache_konyvtar: Path, fajlok: list[Path]) -> int:
     pyside = Path(PySide6.__file__).resolve().parent
     qt_bin = pyside / "Qt" / "bin"
     if _platform() == "win32":
-        kornyezet["PATH"] = os.pathsep.join(
-            (str(qt_bin), str(pyside), kornyezet.get("PATH", ""))
-        )
+        kornyezet["PATH"] = os.pathsep.join((str(qt_bin), str(pyside), kornyezet.get("PATH", "")))
     try:
         hatarido_mp = float(os.environ.get(HATARIDO_ENV, ALAP_HATARIDO_MP))
     except ValueError:
@@ -266,11 +262,37 @@ def _fordits() -> None:
     # bontását kihagyva lép ki.
 
 
-def _grafika_qml() -> bytes:
-    """Qt Quick Controls ablak, amely felállítja az alkalmazás grafikus útját."""
-    return b"""import QtQuick
-import QtQuick.Controls
-ApplicationWindow {
+_GRAFIKA_ALAPMODULOK = ("QtQuick", "QtQuick.Controls")
+# A főablak fájái ezeket a Qt-modulokat is betöltik. Az első valódi
+# indulásnál a hidegen olvasott (és víruskereső által átvizsgált) modul-DLL-ek
+# adták a késést, ezért a telepítő ezeket is betölti egyszer.
+_GRAFIKA_TOVABBI_MODULOK = (
+    "QtQml",
+    "QtQuick.Window",
+    "QtQuick.Layouts",
+    "QtQuick.Dialogs",
+    "QtQuick.Templates",
+    "QtQuick.Controls.impl",
+    "QtQuick.Controls.Fusion",
+    "QtMultimedia",
+    "QtPositioning",
+    "QtLocation",
+)
+
+
+def _grafika_qml(
+    *, teljes: bool = True, tovabbi: tuple[str, ...] = _GRAFIKA_TOVABBI_MODULOK
+) -> bytes:
+    """Qt Quick Controls ablak, amely felállítja az alkalmazás grafikus útját.
+
+    A `teljes` változat a `tovabbi` Qt-modulokat is importálja; a tartalék csak
+    az alapmodulokkal melegít.
+    """
+    modulok = _GRAFIKA_ALAPMODULOK + (tovabbi if teljes else ())
+    importok = "".join(f"import {modul}\n" for modul in modulok)
+    return (
+        importok
+        + """ApplicationWindow {
     width: 32
     height: 32
     visible: false
@@ -281,6 +303,20 @@ ApplicationWindow {
     }
 }
 """
+    ).encode("utf-8")
+
+
+def _betoltheto_modulok(engine, komponens_osztaly, url_osztaly) -> tuple[str, ...]:
+    """A további Qt-modulok közül azok, amelyek ebben a csomagban megvannak."""
+    megvan = []
+    for modul in _GRAFIKA_TOVABBI_MODULOK:
+        probe = komponens_osztaly(engine)
+        probe.setData(f"import {modul}\nimport QtQml\nQtObject {{}}\n".encode(), url_osztaly())
+        if probe.status() == komponens_osztaly.Status.Error:
+            _grafika_naplozz(f"grafikai előmelegítés: a(z) {modul} modul nem tölthető be")
+        else:
+            megvan.append(modul)
+    return tuple(megvan)
 
 
 def _grafika_hatarido_mp() -> float:
@@ -288,6 +324,20 @@ def _grafika_hatarido_mp() -> float:
         return max(0.0, float(os.environ.get(HATARIDO_ENV, ALAP_HATARIDO_MP)))
     except ValueError:
         return ALAP_HATARIDO_MP
+
+
+def _grafika_komponens(engine, komponens_osztaly, url_osztaly):
+    """A teljes előmelegítő komponens, hiba esetén az alapmodulos tartalék."""
+    tovabbi = _betoltheto_modulok(engine, komponens_osztaly, url_osztaly)
+    for teljes in (True, False):
+        component = komponens_osztaly(engine)
+        component.setData(_grafika_qml(teljes=teljes, tovabbi=tovabbi), url_osztaly())
+        if component.status() != komponens_osztaly.Status.Error:
+            return component
+        hibak = "; ".join(str(hiba.toString()) for hiba in component.errors())
+        valtozat = "teljes" if teljes else "tartalék"
+        _grafika_naplozz(f"grafikai előmelegítés hibás QML ({valtozat}): {hibak}")
+    raise RuntimeError("a grafikai előmelegítő QML nem tölthető be")
 
 
 def _melegitsd_grafikat() -> None:
@@ -307,12 +357,7 @@ def _melegitsd_grafikat() -> None:
 
     engine = QQmlEngine()
     engine.addImportPath(_qml_import_path())
-    component = QQmlComponent(engine)
-    component.setData(_grafika_qml(), QUrl())
-    if component.status() == QQmlComponent.Status.Error:
-        hibak = "; ".join(str(hiba.toString()) for hiba in component.errors())
-        _grafika_naplozz(f"grafikai előmelegítés hibás QML: {hibak}")
-        raise RuntimeError("a grafikai előmelegítő QML nem tölthető be")
+    component = _grafika_komponens(engine, QQmlComponent, QUrl)
 
     ablak = component.create()
     if not isinstance(ablak, QQuickWindow):
@@ -342,9 +387,7 @@ def _melegitsd_grafikat() -> None:
     ablak.close()
     if not kirajzolt:
         _grafika_naplozz("grafikai előmelegítés időtúllépés: nem érkezett képkocka")
-        raise subprocess.TimeoutExpired(
-            "--qml-grafika-melegites", _grafika_hatarido_mp()
-        )
+        raise subprocess.TimeoutExpired("--qml-grafika-melegites", _grafika_hatarido_mp())
     _grafika_naplozz("grafikai előmelegítés kész: 1 képkocka")
 
 
