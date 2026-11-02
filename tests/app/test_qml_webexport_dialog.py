@@ -4,14 +4,19 @@ bekötés, `webExportController` context property) az integrátoré."""
 
 from __future__ import annotations
 
+import time
+
 import pytest
 from PySide6.QtCore import (
     QMetaObject,
     QObject,
+    QPoint,
+    QPointF,
     Qt,
     Signal,
     Slot,
 )
+from PySide6.QtTest import QTest
 
 
 class FakeWebExportController(QObject):
@@ -147,6 +152,68 @@ class TestGenerateButtonEnablement:
 
 
 class TestStartExport:
+    def test_a_start_elott_foglalt_es_dupla_kattintasra_sem_indul_ujra(
+        self, dialog, qt_app
+    ):
+        window, fake, _qt_app2 = dialog
+        QMetaObject.invokeMethod(window, "open", Qt.ConnectionType.DirectConnection)
+        window.setProperty("targetFolder", "/tmp/webexport-cel")
+        qt_app.processEvents()
+        button = _child(window, "webExportGenerateButton")
+
+        _click(button)
+        assert window.property("exporting") is True, (
+            "a gomb csak a vezérlő előkészítő munkája után váltott foglaltra"
+        )
+        assert button.property("enabled") is False
+        _click(button)
+        assert len(fake.generate_calls) == 1
+
+    @pytest.mark.parametrize("magassag_elteres", (-5, 0, 5))
+    def test_a_kattintas_utan_a_folyamatjelzo_azonnal_kirajzolodik(
+        self, dialog, qt_app, magassag_elteres
+    ):
+        window, _fake, _qt_app2 = dialog
+        QMetaObject.invokeMethod(window, "open", Qt.ConnectionType.DirectConnection)
+        window.resize(window.width(), window.height() + magassag_elteres)
+        window.setProperty("targetFolder", "/tmp/webexport-cel")
+        qt_app.processEvents()
+        button = _child(window, "webExportGenerateButton")
+        before = window.grabWindow()
+        assert not before.isNull(), "az exportablak nyugalmi képe üres"
+
+        point = button.mapToScene(
+            QPointF(button.property("width") / 2, button.property("height") / 2)
+        )
+        QTest.mouseClick(
+            window,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+            QPoint(round(point.x()), round(point.y())),
+        )
+        deadline = time.monotonic() + 3.0
+        while time.monotonic() < deadline:
+            qt_app.processEvents()
+            if window.property("exporting"):
+                break
+            time.sleep(0.01)
+        assert window.property("exporting") is True
+        assert button.property("enabled") is False
+
+        after = window.grabWindow()
+        assert not after.isNull(), "az exportablak folyamatban lévő képe üres"
+        fill = _child(window, "webExportProgressFill")
+        track = fill.parent()
+        track_center = track.mapToScene(
+            QPointF(track.property("width") / 2, track.property("height") / 2)
+        )
+        dpr = after.devicePixelRatio()
+        x = round(track_center.x() * dpr)
+        y = round(track_center.y() * dpr)
+        assert before.pixelColor(x, y) != after.pixelColor(x, y), (
+            "a szöveg nélküli folyamatjelző-sáv képpontja nem jelent meg"
+        )
+
     def test_generate_button_forwards_settings_to_controller(self, dialog, qt_app):
         window, fake, _qt_app2 = dialog
         QMetaObject.invokeMethod(window, "open", Qt.ConnectionType.DirectConnection)

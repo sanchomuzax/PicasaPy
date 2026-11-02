@@ -127,6 +127,8 @@ Item {
         MouseArea {
             anchors.fill: parent
             onClicked: menu.expanded = !menu.expanded
+
+            PressFeedbackOverlay { pressSource: parent }
         }
         //: `format_menu` buboréksúgó (a hivatalos magyarral).
         ToolTip.text: qsTr("Select the relative width and height of your design")
@@ -224,6 +226,8 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: menu.choose(sor.modelData.key)
+
+                            PressFeedbackOverlay { pressSource: parent }
                         }
                     }
                 }
@@ -276,6 +280,8 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: menu.choose(menu.customKey(egyeni.modelData))
+
+                            PressFeedbackOverlay { pressSource: parent }
                         }
                     }
                 }
@@ -301,6 +307,8 @@ Item {
                             menu.expanded = false
                             menu.addCustomRequested()
                         }
+
+                        PressFeedbackOverlay { pressSource: parent }
                     }
                 }
             }

@@ -219,11 +219,14 @@ ColumnLayout {
                 Accessible.name: text
 
                 TapHandler {
+                    id: _pressFeedbackTap21
                     cursorShape: Qt.PointingHandCursor
                     onTapped: supportedRawFormatsDialog.open()
                 }
                 Keys.onReturnPressed: supportedRawFormatsDialog.open()
                 Keys.onEnterPressed: supportedRawFormatsDialog.open()
+
+                PressFeedbackOverlay { pressSource: _pressFeedbackTap21 }
             }
             Text {
                 text: ")"

@@ -117,6 +117,8 @@ Item {
                     onClicked: {
                         swatches.chooseColor(modelData)
                     }
+
+                    PressFeedbackOverlay { pressSource: parent }
                 }
             }
         }
@@ -159,6 +161,8 @@ Item {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             onClicked: swatches.openSpectrumPicker()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 
@@ -209,6 +213,8 @@ Item {
                     var color = parent.recentColor
                     swatches.chooseColor(color)
                 }
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
     }

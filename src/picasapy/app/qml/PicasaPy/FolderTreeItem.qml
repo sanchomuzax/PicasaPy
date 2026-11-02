@@ -83,6 +83,8 @@ Column {
                         egerEsemeny.accepted = true
                         root.toggleExpand()
                     }
+
+                    PressFeedbackOverlay { pressSource: parent }
                 }
             }
 
@@ -113,6 +115,8 @@ Column {
             anchors.fill: parent
             hoverEnabled: true
             onClicked: if (root.manager) root.manager.selectedPath = root.path
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 

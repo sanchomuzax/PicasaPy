@@ -36,6 +36,8 @@ Item {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton
         onClicked: if (canvas.controller) canvas.controller.selectNoNodes()
+
+        PressFeedbackOverlay { pressSource: parent }
     }
 
     // --- A VÁGÁS: `previewclip` (#1027) -------------------------------------

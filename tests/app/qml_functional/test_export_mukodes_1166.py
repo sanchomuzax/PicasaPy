@@ -7,8 +7,13 @@ szakasz. A mappa-export, az e-mail és a képernyővédő közös magja a
 """
 
 from pathlib import Path
+import threading
+import time
+from types import SimpleNamespace
 
-from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtCore import QMetaObject, QObject, QPoint, QPointF, Qt
+from PySide6.QtQuick import QQuickItem
+from PySide6.QtTest import QTest
 
 from support.halasztott_parbeszed import epitsd_fel
 
@@ -172,3 +177,78 @@ class TestHibaszovegek:
 
         assert uzenetek, "üres kötegre semmilyen jelzés nem ment ki"
         assert "No images were available to send." in uzenetek[0][0]
+
+
+class TestExportAzonnaliVisszajelzes:
+    def test_valodi_kattintasra_azonnal_folyamatjelzo_jelenik_meg(
+        self, qml_app, qt_app, tmp_path, monkeypatch
+    ):
+        """A háttérszálat visszatartjuk, hogy a kattintás utáni képkockát mérjük."""
+        window, _controller, _engine = qml_app
+        dialog = _megnyit(window, qt_app)
+        target_folder = tmp_path / f"cel-{time.monotonic_ns()}"
+        dialog.setProperty("targetFolder", target_folder.as_uri())
+        qt_app.processEvents()
+
+        started = threading.Event()
+        release = threading.Event()
+
+        def lassu_export(*_args, **_kwargs):
+            started.set()
+            release.wait(5)
+            return SimpleNamespace(exported=(), failed=(), reasons=(), error_kind="")
+
+        import picasapy.app.export_controller as export_controller
+
+        monkeypatch.setattr(export_controller, "export_photos", lassu_export)
+        export_buttons = [
+            item
+            for item in dialog.findChildren(QQuickItem)
+            if "Button" in item.metaObject().className()
+            and item.property("text") == "Export"
+            and item.isVisible()
+            and item.width() > 0
+            and item.height() > 0
+        ]
+        assert export_buttons, "a látható Export gomb nem található"
+        button = export_buttons[-1]
+        scene_point = button.mapToScene(
+            QPointF(button.width() / 2, button.height() / 2)
+        )
+        QTest.mouseClick(
+            window,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+            QPoint(round(scene_point.x()), round(scene_point.y())),
+        )
+
+        try:
+            hatarido = time.monotonic() + 3
+            while time.monotonic() < hatarido and not started.is_set():
+                qt_app.processEvents()
+                time.sleep(0.01)
+            assert started.is_set(), (
+                "az export háttérfeladata nem indult el; "
+                f"button={button.metaObject().className()} "
+                f"text={button.property('text')!r} enabled={button.isEnabled()} "
+                f"pos={scene_point.x():.1f},{scene_point.y():.1f}; "
+                f"dialogVisible={dialog.property('visible')} "
+                f"progressVisible={_elem(window, 'exportProgressDialog').property('visible')} "
+                f"overwriteVisible={_elem(window, 'exportOverwriteDialog').property('visible')}"
+            )
+            progress = _elem(window, "exportProgressDialog")
+            hatarido = time.monotonic() + 3
+            while time.monotonic() < hatarido and not progress.property("visible"):
+                qt_app.processEvents()
+                time.sleep(0.01)
+            assert progress.property("visible"), "a kattintás után nem nyílt folyamatjelző"
+            assert progress.property("modal") is True, "a folyamatjelző alatt újra kattintható maradt"
+            assert _elem(window, "exportProgressBusyIndicator").property("running")
+        finally:
+            release.set()
+
+        hatarido = time.monotonic() + 3
+        while time.monotonic() < hatarido and progress.property("visible"):
+            qt_app.processEvents()
+            time.sleep(0.01)
+        assert not progress.property("visible"), "a befejezett export folyamatjelzője nyitva maradt"

@@ -64,14 +64,18 @@ Item {
         // (Theme.selectionBlue) származtatott áttetsző rétegre váltva
         // mindkét témán kontrasztos marad, a hover halványabb az aktívnál.
         // #4062: letiltott csempe nem maradhat kék aktív állapotú.
-        color: tile.active && tile.enabled
+        color: tileMouse.pressed && tile.enabled
                ? Qt.rgba(Theme.selectionBlue.r, Theme.selectionBlue.g,
-                         Theme.selectionBlue.b, 0.45)
-               : (tileMouse.containsMouse && tile.enabled
+                         Theme.selectionBlue.b, 0.62)
+               : (tile.active && tile.enabled
                   ? Qt.rgba(Theme.selectionBlue.r, Theme.selectionBlue.g,
-                            Theme.selectionBlue.b, 0.18)
-                  : "transparent")
-        border.width: tile.active && tile.enabled ? 1 : 0
+                            Theme.selectionBlue.b, 0.45)
+                  : (tileMouse.containsMouse && tile.enabled
+                     ? Qt.rgba(Theme.selectionBlue.r, Theme.selectionBlue.g,
+                               Theme.selectionBlue.b, 0.18)
+                     : "transparent"))
+        border.width: tileMouse.pressed && tile.enabled ? 2
+                      : (tile.active && tile.enabled ? 1 : 0)
         border.color: Theme.selectionBlue
     }
 
@@ -80,6 +84,7 @@ Item {
     Item {
         id: tileThumbBox
         anchors.top: parent.top
+        anchors.topMargin: tileMouse.pressed ? 1 : 0
         anchors.horizontalCenter: parent.horizontalCenter
         // #741: a csempekép doboza PONTOSAN akkora, mint a kép — a mérés
         // ebből olvassa ki az oszlop- és sorközt (a cella körülötte áll).

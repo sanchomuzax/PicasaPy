@@ -78,6 +78,8 @@ Rectangle {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: importSourceController.rotateFile(
                             thumbFrame.modelData.path, -1)
+
+                        PressFeedbackOverlay { pressSource: parent }
                     }
                 }
                 Text {
@@ -91,6 +93,8 @@ Rectangle {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: importSourceController.rotateFile(
                             thumbFrame.modelData.path, 1)
+
+                        PressFeedbackOverlay { pressSource: parent }
                     }
                 }
             }
@@ -110,6 +114,8 @@ Rectangle {
                     cursorShape: Qt.PointingHandCursor
                     onClicked: importSourceController.toggleStar(
                         thumbFrame.modelData.path)
+
+                    PressFeedbackOverlay { pressSource: parent }
                 }
             }
 
@@ -136,6 +142,8 @@ Rectangle {
                             thumbFrame.modelData.path)
                     }
                 }
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
         ScrollBar.vertical: PicasaScrollBar {}

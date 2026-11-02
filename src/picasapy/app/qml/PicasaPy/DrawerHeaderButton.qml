@@ -20,7 +20,9 @@ Rectangle {
     width: 14
     height: 14
     radius: 2
-    color: lebegés.hovered ? Theme.chromeBorder : "transparent"
+    color: lenyomas.pressed
+           ? Qt.darker(Theme.chromeBg, 1.2)
+           : (lebegés.hovered ? Theme.chromeBorder : "transparent")
 
     Text {
         anchors.centerIn: parent
@@ -30,7 +32,10 @@ Rectangle {
     }
 
     HoverHandler { id: lebegés }
-    TapHandler { onTapped: gomb.kattintva() }
+    TapHandler {
+        id: lenyomas
+        onTapped: gomb.kattintva()
+    }
 
     ToolTip {
         id: sugoTooltip

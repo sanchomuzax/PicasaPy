@@ -94,6 +94,7 @@ Item {
         border.width: 2
 
         TapHandler {
+            id: _pressFeedbackTap27
             acceptedButtons: Qt.LeftButton
             onTapped: {
                 root.markerActivated(root.markerData.rows[0])
@@ -114,6 +115,8 @@ Item {
             sourceSize.width: 64
             sourceSize.height: 64
         }
+
+        PressFeedbackOverlay { pressSource: _pressFeedbackTap27 }
     }
 
     Rectangle {

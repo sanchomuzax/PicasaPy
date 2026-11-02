@@ -245,7 +245,12 @@ Rectangle {
             ToolTip.visible: newAlbumHover.hovered
             ToolTip.delay: Theme.tooltipDelay
             HoverHandler { id: newAlbumHover }
-            TapHandler { onTapped: toolbar.newAlbumRequested() }
+            TapHandler {
+                id: _pressFeedbackTap13
+                onTapped: toolbar.newAlbumRequested()
+            }
+
+            PressFeedbackOverlay { pressSource: _pressFeedbackTap13 }
         }
         // #1421: a `flatview` / `folderview` pár — a NÉZET már megvolt
         // (Nézet ▸ Mappanézet, #1454), csak gomb nem vezetett hozzá.
@@ -286,9 +291,12 @@ Rectangle {
                 ToolTip.delay: Theme.tooltipDelay
                 HoverHandler { id: flatViewHover }
                 TapHandler {
+                    id: _pressFeedbackTap14
                     //: #885: lenyomásra, nem felengedésre
                     onPressedChanged: if (pressed) toolbar.flatViewRequested()
                 }
+
+                PressFeedbackOverlay { pressSource: _pressFeedbackTap14 }
             }
             Rectangle {
                 objectName: "toolbarTreeViewButton"
@@ -313,9 +321,12 @@ Rectangle {
                 ToolTip.delay: Theme.tooltipDelay
                 HoverHandler { id: treeViewHover }
                 TapHandler {
+                    id: _pressFeedbackTap15
                     //: #885: lenyomásra, nem felengedésre
                     onPressedChanged: if (pressed) toolbar.treeViewRequested()
                 }
+
+                PressFeedbackOverlay { pressSource: _pressFeedbackTap15 }
             }
         }
         // #1421: a `folderviewpopup` — MÉRT méret 22 × 22, és a mérés
@@ -349,8 +360,11 @@ Rectangle {
             //: #885: `thumbui/folderviewpopup` — a menü LENYOMÁSRA nyílik
             //: (`Property mousedown 1`); menünyitásnál ez a mért viselkedés.
             TapHandler {
+                id: _pressFeedbackTap16
                 onPressedChanged: if (pressed) toolbar.folderViewMenuRequested(parent)
             }
+
+            PressFeedbackOverlay { pressSource: _pressFeedbackTap16 }
         }
         // #4137: belépés a kamera előnézetéhez. A vezérlő nélküli tesztkörnyezet
         // nem kínálja fel; a panel maga jelzi, ha a kamera nem érhető el.
@@ -376,6 +390,7 @@ Rectangle {
             ToolTip.delay: Theme.tooltipDelay
             HoverHandler { id: cameraCaptureHover }
             TapHandler {
+                id: _pressFeedbackTap17
                 onTapped: {
                     if (captureMoviePanelLoader.item)
                         captureMoviePanelLoader.item.open()
@@ -383,6 +398,8 @@ Rectangle {
                         captureMoviePanelLoader.active = true
                 }
             }
+
+            PressFeedbackOverlay { pressSource: _pressFeedbackTap17 }
         }
         Component {
             id: captureMoviePanelComponent
@@ -577,11 +594,14 @@ Rectangle {
                     ToolTip.delay: Theme.tooltipDelay
                     HoverHandler { id: searchClearHover }
                     TapHandler {
+                        id: _pressFeedbackTap18
                         onTapped: {
                             searchField.clear()
                             toolbar.searchCleared()
                         }
                     }
+
+                    PressFeedbackOverlay { pressSource: _pressFeedbackTap18 }
                 }
             }
         }
@@ -724,6 +744,7 @@ Rectangle {
                 cursorShape: Qt.PointingHandCursor
             }
             TapHandler {
+                id: _pressFeedbackTap19
                 objectName: "versionTap"
                 onTapped: versionLabel.openReleases()
             }
@@ -747,6 +768,8 @@ Rectangle {
                 border.width: 1
                 radius: 2
             }
+
+            PressFeedbackOverlay { pressSource: _pressFeedbackTap19 }
         }
         Rectangle {
             objectName: "versionUpdateHighlight"

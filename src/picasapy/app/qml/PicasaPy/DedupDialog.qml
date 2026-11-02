@@ -458,6 +458,8 @@ Window {
                                                 onClicked: dedupWindow.setKeep(
                                                     groupCard.index,
                                                     itemCell.modelData.path)
+
+                                                PressFeedbackOverlay { pressSource: parent }
                                             }
                                         }
 

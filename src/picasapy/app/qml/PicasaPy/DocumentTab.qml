@@ -53,6 +53,8 @@ Item {
     MouseArea {
         anchors.fill: parent
         onClicked: ful.activateRequested()
+
+        PressFeedbackOverlay { pressSource: parent }
     }
 
     Text {
@@ -99,6 +101,8 @@ Item {
             anchors.fill: parent
             hoverEnabled: true
             onClicked: ful.closeRequested()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 }

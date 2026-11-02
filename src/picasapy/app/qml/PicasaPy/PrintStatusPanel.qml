@@ -12,6 +12,7 @@ Flickable {
     Layout.maximumHeight: Math.max(60, printStatusPanel.printWindow.height / 3)
     visible: printStatusPanel.printWindow.lastSkipped.length > 0
              || printStatusPanel.printWindow.lastError.length > 0
+             || printStatusPanel.printWindow._printing
              || printStatusPanel.printWindow.printTotalPages > 0
              || printStatusPanel.printWindow.lastResult.length > 0
     clip: true
@@ -63,6 +64,14 @@ Flickable {
             color: Theme.textDark
             font.pixelSize: Theme.fontSize
             Layout.fillWidth: true
+        }
+
+        BusyIndicator {
+            objectName: "printStartingBusyIndicator"
+            visible: printStatusPanel.printWindow._printing
+                     && printStatusPanel.printWindow.printTotalPages === 0
+            running: visible
+            Layout.alignment: Qt.AlignHCenter
         }
 
         Text {

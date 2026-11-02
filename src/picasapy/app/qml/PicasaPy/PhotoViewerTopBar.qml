@@ -213,6 +213,7 @@ import QtQuick.Layouts
                 // ad. A KÉK a „Vissza a könyvtárhoz" gomb nyila
                 // (`#5A7BBB`) - két különböző elem.
                 PicasaButton {
+                    id: viewerPrevButton
                     objectName: "viewerPrevButton"
                     //: #885: a kép-léptetés LENYOMÁSRA hat az eredetiben
                     //: (`oneup/prev`, `oneup/next` - `Property mousedown 1`).
@@ -225,7 +226,11 @@ import QtQuick.Layouts
                     Layout.preferredHeight: 31
                     width: 30; height: 31
                     padding: 0
-                    background: null
+                    background: Rectangle {
+                        radius: 15
+                        color: viewerPrevButton.visiblyDown
+                               ? Qt.darker(Theme.chromeBg, 1.24) : "transparent"
+                    }
                     contentItem: Item {
                         Image {
                             objectName: "viewerPrevIcon"
@@ -271,6 +276,7 @@ import QtQuick.Layouts
                     Layout.preferredHeight: 28
                 }
                 PicasaButton {
+                    id: viewerNextButton
                     objectName: "viewerNextButton"
                     //: #885: a kép-léptetés LENYOMÁSRA hat az eredetiben
                     //: (`oneup/prev`, `oneup/next` - `Property mousedown 1`).
@@ -283,7 +289,11 @@ import QtQuick.Layouts
                     Layout.preferredHeight: 31
                     width: 30; height: 31
                     padding: 0
-                    background: null
+                    background: Rectangle {
+                        radius: 15
+                        color: viewerNextButton.visiblyDown
+                               ? Qt.darker(Theme.chromeBg, 1.24) : "transparent"
+                    }
                     contentItem: Item {
                         Image {
                             objectName: "viewerNextIcon"

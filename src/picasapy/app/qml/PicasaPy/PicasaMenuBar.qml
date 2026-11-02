@@ -217,6 +217,8 @@ MenuBar {
                         googlePhotosUnavailableDialog.open()
                     }
                 }
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
         Menu {
@@ -281,6 +283,8 @@ MenuBar {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: bar.ctl.setTesztuzemEnabled(false)
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
     }

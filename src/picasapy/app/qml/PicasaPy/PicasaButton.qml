@@ -56,7 +56,7 @@ Button {
     // A vízszintes marad `horizontalPadding`: azt egyetlen stílus sem
     // állítja explicit módon, és így a hívó oldalán felülírható maradhat
     // (a szűk kollázs-gombok élnek is ezzel).
-    topPadding: 0
+    topPadding: control.visiblyDown ? 1 : 0
     bottomPadding: 0
     horizontalPadding: 5
     // …a gomb IMPLICIT mérete viszont marad a régi, bőkezűbb kitöltésé:
@@ -72,8 +72,9 @@ Button {
     // gomb rétegét nem nevezi meg. A mért Windows-felvételen a keret semleges
     // (#bbbbbb), a kitöltés kékes, felül belső árnyékkal.
     property bool greyChecked: false
+    readonly property bool visiblyDown: control.down || lenyomoTerulet.pressed
     readonly property bool greyCheckedLook: control.greyChecked && control.checked
-        && !control.down && !control.accented
+        && !control.visiblyDown && !control.accented
 
     // --- a gomb tényleges színei (a background/contentItem ezeket használja) ---
     //
@@ -88,23 +89,24 @@ Button {
     // A LENYOMOTT iránya is javult: az eredeti MELEGÍT (`#A4A19D` … `#CBC6C2`,
     // R>G>B), a korábbi `Qt.darker` hideg szürkét adott — rossz irányba.
     //
-    // ⚠️ A ZÖLD (akcentusos) gomb az eredetiben MIND A HÁROM állapotban
-    // ugyanazt a képet használja (`b1_decrect_green_n`): se rámutatás-, se
-    // lenyomás-visszajelzése nincs, csak a szövege fehér. Nálunk eddig
-    // sötétedett — ez is eltérés volt.
+    // #6381: a feladat minden gombnál látható lenyomott képet kér. Ezért
+    // az akcentusos gomb is sötétedik, bár az eredeti Picasa zöld képe
+    // nem változott lenyomáskor.
     readonly property color surfaceTop: control.accented
-        ? Qt.lighter(control.accent, 1.25)
-        : (control.down ? Theme.buttonTopDown
+        ? (control.visiblyDown
+            ? Qt.darker(Qt.lighter(control.accent, 1.25), 1.2)
+            : Qt.lighter(control.accent, 1.25))
+        : (control.visiblyDown ? Theme.buttonTopDown
             : (control.greyCheckedLook ? Theme.buttonCheckedTop : Theme.buttonTopNormal))
     readonly property color surfaceBottom: control.accented
-        ? control.accent
-        : (control.down ? Theme.buttonBottomDown
+        ? (control.visiblyDown ? Qt.darker(control.accent, 1.2) : control.accent)
+        : (control.visiblyDown ? Theme.buttonBottomDown
             : (control.greyCheckedLook ? Theme.buttonCheckedBottom : Theme.buttonBottomNormal))
 
     //: a rámutatás-árnyék akkor látszik, ha a mutató a gombon van, a gomb
     //: nincs lenyomva, és nem az akcentusos (zöld) változat
     readonly property bool showingHoverShade:
-        control.hovered && !control.down && !control.accented
+        control.hovered && !control.visiblyDown && !control.accented
     readonly property color nyugalmiKeret: control.accented
         ? Qt.darker(control.accent, 1.3)
         : (control.checked && !control.greyChecked

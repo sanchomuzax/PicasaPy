@@ -412,6 +412,8 @@ Dialog {
                                 MouseArea {
                                     anchors.fill: parent
                                     onClicked: root.selectedAttachmentIndex = index
+
+                                    PressFeedbackOverlay { pressSource: parent }
                                 }
                             }
                         }

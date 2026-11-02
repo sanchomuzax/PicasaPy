@@ -178,4 +178,6 @@ MouseArea {
         y: retouchClickArea.mouseY - height / 2
         z: 3
     }
+
+    PressFeedbackOverlay { pressSource: parent }
 }

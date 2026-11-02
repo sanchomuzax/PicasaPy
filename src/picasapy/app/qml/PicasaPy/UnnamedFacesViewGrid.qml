@@ -84,6 +84,8 @@ GridView {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: viewRoot.toggleFace(faceCard.modelData.faceId)
+
+                    PressFeedbackOverlay { pressSource: parent }
                 }
 
                 Rectangle {
@@ -110,6 +112,8 @@ GridView {
                         anchors.margins: -2
                         onClicked: viewRoot.requestIgnore(
                             [faceCard.modelData.faceId])
+
+                        PressFeedbackOverlay { pressSource: parent }
                     }
                 }
 
@@ -146,6 +150,8 @@ GridView {
                                 anchors.margins: -4
                                 onClicked: viewRoot.acceptSuggestion(
                                     faceCard.modelData.faceId)
+
+                                PressFeedbackOverlay { pressSource: parent }
                             }
                         }
                     }
@@ -291,6 +297,8 @@ GridView {
                             faceCard.selectedSuggestionIndex = index
                             faceCard.submitName(parent.personName)
                         }
+
+                        PressFeedbackOverlay { pressSource: parent }
                     }
                 }
             }

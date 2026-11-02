@@ -11,6 +11,7 @@ import QtQuick.Controls
 // a teszt szerint összeomlott a főablak; a TabButton-nal nem.
 TabButton {
     id: control
+    topPadding: control.down ? 1 : 0
 
     contentItem: Text {
         text: control.text
@@ -27,11 +28,15 @@ TabButton {
         gradient: Gradient {
             GradientStop {
                 position: 0.0
-                color: control.checked ? Theme.movieTabSelected : Theme.movieTabFillTop
+                color: control.down
+                       ? Qt.darker(control.checked ? Theme.movieTabSelected : Theme.movieTabFillTop, 1.16)
+                       : (control.checked ? Theme.movieTabSelected : Theme.movieTabFillTop)
             }
             GradientStop {
                 position: 1.0
-                color: control.checked ? Theme.movieTabSelected : Theme.movieTabFillBottom
+                color: control.down
+                       ? Qt.darker(control.checked ? Theme.movieTabSelected : Theme.movieTabFillBottom, 1.16)
+                       : (control.checked ? Theme.movieTabSelected : Theme.movieTabFillBottom)
             }
         }
         // A kijelölt fül alja a lap felé nyílik: a szegélyt egy azonos színű

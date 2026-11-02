@@ -171,6 +171,8 @@ Item {
             enabled: gomb.buttonEnabled
             cursorShape: Qt.PointingHandCursor
             onClicked: gomb.buttonClicked()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 

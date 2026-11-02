@@ -278,7 +278,7 @@ QtObject {
     }
 
     function startPrint() {
-        if (!printController) return
+        if (!printController || hostWindow._printing) return
         hostWindow.lastError = ""
         hostWindow.lastResult = ""
         hostWindow.lastSkipped = []
@@ -296,11 +296,13 @@ QtObject {
                 return
             }
             if (hostWindow.contactSheet) {
+                hostWindow._printing = true
                 printController.renderContactSheetPdf(
                     hostWindow.rows, hostWindow.contactColumns,
                     hostWindow.pdfTarget)
                 return
             }
+            hostWindow._printing = true
             printController.renderPrintPreviewPdf(
                 hostWindow.rows, hostWindow.fitMode,
                 hostWindow.orientation, hostWindow.pdfTarget,
@@ -308,11 +310,13 @@ QtObject {
             return
         }
         if (hostWindow.contactSheet) {
+            hostWindow._printing = true
             printController.printContactSheet(
                 hostWindow.rows, hostWindow.printerName,
                 hostWindow.contactColumns)
             return
         }
+        hostWindow._printing = true
         printController.printRows(
             hostWindow.rows, hostWindow.printerName,
             hostWindow.fitMode, hostWindow.orientation, hostWindow.copies)

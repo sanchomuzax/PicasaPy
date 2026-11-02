@@ -152,8 +152,11 @@ Dialog {
                 }
 
                 TapHandler {
+                    id: _pressFeedbackTap7
                     onTapped: keywordList.currentIndex = keywordRow.index
                 }
+
+                PressFeedbackOverlay { pressSource: _pressFeedbackTap7 }
             }
             ScrollBar.vertical: PicasaScrollBar {}
         }

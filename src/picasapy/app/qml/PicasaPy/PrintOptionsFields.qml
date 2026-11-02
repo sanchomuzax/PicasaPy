@@ -38,6 +38,8 @@ Item {
                 enabled: panel.editable
                 cursorShape: Qt.PointingHandCursor
                 onClicked: panel.chooseColor(parent.paletteIndex, parent.textSwatch)
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
     }
@@ -269,6 +271,8 @@ Item {
                             enabled: parent.enabled
                             cursorShape: Qt.PointingHandCursor
                             onClicked: panel.openTextColorPicker()
+
+                            PressFeedbackOverlay { pressSource: parent }
                         }
                     }
                 }

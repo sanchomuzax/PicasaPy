@@ -70,12 +70,17 @@ import QtQuick.Layouts
             }
         }
         PicasaButton {
+            id: viewerQuickPrevButton
             objectName: "viewerQuickPrevButton"
             x: (parent.width - 1024) / 2 + 473
             y: parent.height - 800 + 739
             width: 29; height: 30
             padding: 0
-            background: null
+            background: Rectangle {
+                radius: 15
+                color: viewerQuickPrevButton.visiblyDown
+                       ? Qt.darker(Theme.chromeBg, 1.24) : "transparent"
+            }
             autoRepeat: true
             enabled: viewer.hasPrevious()
             onClicked: viewer.previous()
@@ -90,12 +95,17 @@ import QtQuick.Layouts
             }
         }
         PicasaButton {
+            id: viewerQuickPlayButton
             objectName: "viewerQuickPlayButton"
             x: (parent.width - 1024) / 2 + 494
             y: parent.height - 800 + 733
             width: 39; height: 35
             padding: 0
-            background: null
+            background: Rectangle {
+                radius: 15
+                color: viewerQuickPlayButton.visiblyDown
+                       ? Qt.darker(Theme.chromeBg, 1.24) : "transparent"
+            }
             text: "▶"
             Accessible.name: qsTr("Play Slideshow")
             ToolTip.text: qsTr("Play Slideshow")
@@ -104,12 +114,17 @@ import QtQuick.Layouts
             onClicked: viewer.playRequested()
         }
         PicasaButton {
+            id: viewerQuickNextButton
             objectName: "viewerQuickNextButton"
             x: (parent.width - 1024) / 2 + 523
             y: parent.height - 800 + 738
             width: 28; height: 30
             padding: 0
-            background: null
+            background: Rectangle {
+                radius: 15
+                color: viewerQuickNextButton.visiblyDown
+                       ? Qt.darker(Theme.chromeBg, 1.24) : "transparent"
+            }
             autoRepeat: true
             enabled: viewer.hasNext()
             onClicked: viewer.next()

@@ -179,6 +179,8 @@ Rectangle {
                 color: Theme.linkBlue
             }
         }
+
+        PressFeedbackOverlay { pressSource: parent }
     }
 
     //: `basedecrect` — a jobb oldali vezérlősáv.
@@ -219,6 +221,8 @@ Rectangle {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: cella.closed()
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
 
