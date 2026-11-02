@@ -7,6 +7,7 @@ futtatja, tehát egy elakadás ott is megakasztaná a folyamatot.
 
 from __future__ import annotations
 
+import io
 import subprocess
 import sys
 import types
@@ -132,10 +133,12 @@ def test_windowson_a_kilepes_kihagyja_a_dll_levalasztast(monkeypatch):
         def TerminateProcess(self, h, kod):  # noqa: N802
             hivasok.append((h, kod))
 
-    import ctypes
-
     monkeypatch.setattr(qml_precompile, "_platform", lambda: "win32")
-    monkeypatch.setattr(ctypes, "windll", types.SimpleNamespace(kernel32=_K32()), raising=False)
+    monkeypatch.setattr(
+        qml_precompile,
+        "_windll",
+        types.SimpleNamespace(kernel32=_K32()),
+    )
     monkeypatch.setattr(qml_precompile, "_os_exit", lambda kod: hivasok.append(("os_exit", kod)))
     qml_precompile._azonnali_kilepes(0)
     assert hivasok[0] == ("folyamat", 0)
@@ -144,12 +147,19 @@ def test_windowson_a_kilepes_kihagyja_a_dll_levalasztast(monkeypatch):
 class _NemKodolhato:
     """A windowsos cp1252-es kimenet: az „ő” betűre UnicodeEncodeError."""
 
+    def __init__(self):
+        self.encoding = "cp1252"
+        self.buffer = io.BytesIO()
+
     def write(self, szoveg):
-        szoveg.encode("cp1252")
+        self.buffer.write(szoveg.encode(self.encoding))
         return len(szoveg)
 
     def flush(self):
         pass
+
+    def reconfigure(self, *, encoding, errors):
+        self.encoding = encoding
 
 
 def _hamis_qt(monkeypatch, forditas=lambda _e, fajlok: 0):
@@ -164,11 +174,13 @@ def test_a_nem_kodolhato_kimenet_sem_akasztja_meg_a_kilepest(monkeypatch, tmp_pa
     PyInstaller-csomag hibaablakot nyitott, ami kattintásra várt (Package-mérés, 180 s)."""
     kilepesek = []
     monkeypatch.setattr(qml_precompile, "_kilepes", kilepesek.append)
-    monkeypatch.setattr(sys, "stdout", _NemKodolhato())
+    kimenet = _NemKodolhato()
+    monkeypatch.setattr(sys, "stdout", kimenet)
     monkeypatch.setenv(qml_precompile.NAPLO_ENV, str(tmp_path / "n.txt"))
     _hamis_qt(monkeypatch)
     qml_precompile.main()
     assert kilepesek == [0]
+    assert "QML-előfordítás:" in kimenet.buffer.getvalue().decode("utf-8")
 
 
 def test_hianyzo_kimenetnel_is_kilep(monkeypatch):
