@@ -14,9 +14,14 @@ Google Fiókkal** feliratra. Megnyílik a böngésző; jelentkezz be, és
 hagyd jóvá a hozzáférést. A bejelentkezés után a felirat a fiók állapotát
 mutatja. Rákattintva a megjelenő menüből kijelentkezhetsz.
 
-Ha a PicasaPy csomag nem tartalmaz beépített Google-klienst, a felirat
-a **Beállítások ▸ Google Fotók** fülre visz. A fül bejelentkezési gombja
-ugyanazt a beépített klienst használja.
+Ha a PicasaPy csomag nem tartalmaz beépített Google-klienst, a feliratra
+kattintva egy rövid üzenet jelzi: **A Google-bejelentkezés ebben a
+változatban még nem érhető el.** Az **OK** bezárja. A **Beállítások ▸
+Google Fotók** fül bejelentkezési gombja ugyanazt a beépített klienst
+használja.
+
+A fülön az **Adatvédelmi tájékoztató** és a **Felhasználási feltételek**
+hivatkozás is ott áll; a böngészőben nyílnak meg.
 
 ## Speciális: saját Google-kliens
 

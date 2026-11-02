@@ -12,13 +12,16 @@ Open it in any of these ways:
 - Press Shift+F1 to open help for the part of the interface under
   the pointer.
 
-The chapter list and search field are on the left; the selected chapter
-appears on the right. Choose **Close** to close the window.
+Help opens in a separate window next to the main window. While it is
+open, you can keep using the main window, so you can try out what a
+chapter describes while reading it. The chapter list and search field are
+on the left; the selected chapter appears on the right. Choose **Close**
+to close the window.
 
 Under **Help**, Keyboard Shortcuts opens the available shortcuts in the
 same window, grouped by menu. See [Keyboard Shortcuts](billentyuk.md) for
-an explanation. **Check for Updates** is disabled because the Google
-service it depended on has been discontinued.
+an explanation. Help ▸ **&Check for Updates**… looks for a new PicasaPy
+version; see [Options](beallitasok.md).
 
 ## Move between chapters
 
