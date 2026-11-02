@@ -472,7 +472,17 @@ def _melegitsd_splash_kepet() -> bool:
         from picasapy import __version__
         from picasapy.app import startup_splash
 
-        startup_splash._create_splash_pixmap(f"v{__version__}")
+        kep = startup_splash._create_splash_pixmap(f"v{__version__}")
+        # a réteges (áttetsző) splash-ablak első megjelenítése is lassú volt:
+        # egyszer, láthatatlanul, a képernyőn kívül megjelenítjük
+        ablak = startup_splash.IndulasAblak(kep)
+        ablak.setOpacity(0.0)
+        ablak.setPosition(-32000, -32000)
+        ablak.show()
+        from PySide6.QtGui import QGuiApplication
+
+        QGuiApplication.processEvents()
+        ablak.close()
     except Exception as hiba:  # noqa: BLE001 - csak gyorsítás, nem feltétel
         _grafika_naplozz(f"splash-előmelegítés kimaradt: {type(hiba).__name__}")
         return False

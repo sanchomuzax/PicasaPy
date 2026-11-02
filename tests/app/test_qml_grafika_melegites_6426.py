@@ -199,13 +199,34 @@ def test_a_melegites_a_splash_kepet_is_elkesziti(monkeypatch):
 
     hivasok = []
     monkeypatch.setattr(
-        startup_splash, "_create_splash_pixmap", lambda verzio, **_k: hivasok.append(verzio)
+        startup_splash, "_create_splash_pixmap",
+        lambda verzio, **_k: hivasok.append(verzio) or "kep",
     )
+
+    class HamisAblak:
+        def __init__(self, kep):
+            hivasok.append(("ablak", kep))
+
+        def setOpacity(self, ertek):  # noqa: N802
+            hivasok.append(("atlatszosag", ertek))
+
+        def setPosition(self, x, y):  # noqa: N802
+            hivasok.append(("hely", x < 0 and y < 0))
+
+        def show(self):
+            hivasok.append("megjelenik")
+
+        def close(self):
+            hivasok.append("bezar")
+
+    monkeypatch.setattr(startup_splash, "IndulasAblak", HamisAblak)
     naplo = []
     monkeypatch.setattr(qml_precompile, "_grafika_naplozz", naplo.append)
 
     assert qml_precompile._melegitsd_splash_kepet() is True
-    assert len(hivasok) == 1
+    assert len(hivasok) == 6
+    assert ("atlatszosag", 0.0) in hivasok and ("hely", True) in hivasok
+    assert hivasok[-2:] == ["megjelenik", "bezar"]
     assert any("splash" in sor for sor in naplo)
 
 
