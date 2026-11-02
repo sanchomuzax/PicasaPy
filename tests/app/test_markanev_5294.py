@@ -50,6 +50,8 @@ KIVETEL = {
     "older version of Picasa": "az eredeti Picasa régebbi verziója.",
     "older Picasa versions": "az eredeti Picasa régebbi verziói.",
     "Today's Picasa": "a mai eredeti Picasa képességei.",
+    "from the Picasa database": "#6440: munkanév, az eredeti Picasa adatbázisából importál.",
+    "for a Picasa library": "#6440: munkanév, az eredeti Picasa gyűjteményét keresi a gépen.",
     "Picasa can read this filter": "az eredeti Picasa képessége.",
     "Picasa engine": "az eredeti Picasa motorja.",
     "successor": "az eredeti Picasa utódjaként írja le magát (névjegy).",
