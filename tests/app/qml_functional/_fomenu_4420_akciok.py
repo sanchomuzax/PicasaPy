@@ -520,7 +520,10 @@ def _akcio(
 
     kepkesz = _kepernyokep(ablak, keput)
     hiba = False
-    if not elsult:
+    nyelv_megerositese_megnyilt = nyelvi_parancs and any(
+        "menuLanguageConfirmDialog" in hatas for hatas in hatasok
+    )
+    if not elsult and not nyelv_megerositese_megnyilt:
         eredmeny = "a menüsori kattintás nem bocsátott ki aktiválást"
         hiba = True
     elif not hatasok:

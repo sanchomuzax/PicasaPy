@@ -132,9 +132,15 @@ def _qml_cache_konyvtar() -> Path:
 
 
 def _qml_cache_nev_utbol(ut: PurePath) -> str:
-    """A Qt a `QUrl.toLocalFile()` alakot hasheli SHA-1-gyel, ami Windowson is
-    perjeles (`C:/...`); a natív, fordított perjeles alakból más név jönne ki."""
-    return sha1(ut.as_posix().encode("utf-8")).hexdigest() + ".qmlc"
+    """A Qt a perjeles helyi útvonalat SHA-1-gyel hasheli.
+
+    A QML bytecode neve `.qmlc`, az importált JavaScripté `.jsc`; Windowson is
+    a `QUrl.toLocalFile()` perjeles alakja adja a cache-kulcsot.
+    """
+    suffix = {".qml": ".qmlc", ".js": ".jsc"}.get(ut.suffix.casefold())
+    if suffix is None:
+        raise ValueError(f"Nem támogatott QML-cache forrásfájl: {ut}")
+    return sha1(ut.as_posix().encode("utf-8")).hexdigest() + suffix
 
 
 def _qml_cache_nev(fajl: Path) -> str:
@@ -249,7 +255,7 @@ def _fordits() -> None:
 
     qml_root = _qml_konyvtar()
     cache_konyvtar = _qml_cache_konyvtar()
-    fajlok = sorted(qml_root.rglob("*.qml"))
+    fajlok = sorted((*qml_root.rglob("*.qml"), *qml_root.rglob("*.js")))
     started = time.perf_counter()
     hibas = _forditsd_le(cache_konyvtar, fajlok)
     eltelt = time.perf_counter() - started

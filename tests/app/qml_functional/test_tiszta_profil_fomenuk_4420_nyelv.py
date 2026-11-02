@@ -11,6 +11,9 @@ from tests.app.qml_functional._fomenu_bejaro_4420 import (
     _parancsok,
     _varj,
 )
+from tests.app.qml_functional._language_menu_helpers_6426 import (
+    _aktivald_nyelv_almenut,
+)
 
 pytest_plugins = ("tests.app.qml_functional._fomenu_4420_akciok",)
 
@@ -23,6 +26,7 @@ def test_a_nyelv_almenu_utolso_parancsa_is_kattinthato(
     nyelv_magassag = _NYELV_ALMENU_MIN_MAGASSAG + eltolas
     ablak.setHeight(nyelv_magassag)
     assert _varj(qt_app, lambda: ablak.height() == nyelv_magassag)
+    _aktivald_nyelv_almenut(ablak, qt_app, nyelv_magassag)
     menu_bar = ablak.property("menuBar")
     tools_menu = _megnyit(menu_bar, qt_app, "&Tools")
     korean = next(

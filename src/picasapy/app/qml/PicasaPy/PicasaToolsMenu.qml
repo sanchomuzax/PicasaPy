@@ -344,6 +344,8 @@ PicasaMenu {
         id: languageMenu
         objectName: "menuToolsLanguage"
         title: qsTr("Language")
+        property bool additionalLanguageItemsActive: false
+        onAboutToShow: additionalLanguageItemsActive = true
         MenuItem {
             objectName: "menuLanguageSystem"
             text: controllerRef
@@ -389,6 +391,7 @@ PicasaMenu {
         }
         Instantiator {
             objectName: "menuLanguageAdditionalChoices"
+            active: languageMenu.additionalLanguageItemsActive
             model: controllerRef
                 ? controllerRef.availableLanguages.filter(
                     function (code) { return code !== "en" && code !== "hu" })

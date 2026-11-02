@@ -56,16 +56,11 @@ def test_az_elemzo_husz_fajlnal_tobbet_nem_ir_ki():
     assert len(ido_modul.qml_ujraforditott_fajlok("\n".join(sorok))) == 20
 
 
-def test_a_valodi_ablakos_meres_engedelyezi_a_qml_es_rhi_diagnosztikat(
-    monkeypatch, tmp_path
-):
+def _egy_inditas_kornyezete(monkeypatch, tmp_path, env):
     monkeypatch.setattr(
         ido_modul,
         "_profil",
-        lambda *_args, **_kwargs: (
-            {"QT_LOGGING_RULES": "*.debug=false"},
-            tmp_path / "library",
-        ),
+        lambda *_args, **_kwargs: (env, tmp_path / "library"),
     )
     monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _root: [])
     inditasok = []
@@ -81,12 +76,48 @@ def test_a_valodi_ablakos_meres_engedelyezi_a_qml_es_rhi_diagnosztikat(
         ablakkal=False,
         indulo_hatar_ms=1000,
     )
+    return inditasok[0]
 
-    szabalyok = inditasok[0]["QT_LOGGING_RULES"]
+
+def test_alapertelmezetten_kikapcsolt_a_nehez_qt_naplozas(monkeypatch, tmp_path):
+    monkeypatch.delenv("PICASAPY_MERES_QT_NAPLO", raising=False)
+    env = _egy_inditas_kornyezete(
+        monkeypatch,
+        tmp_path,
+        {
+            "QT_LOGGING_RULES": (
+                "*.debug=false;qt.qml.diskcache.debug=true;"
+                "qt.scenegraph.general.debug=true;qt.rhi.general.debug=true"
+            ),
+            "QT_FORCE_STDERR_LOGGING": "1",
+            "QSG_INFO": "1",
+        },
+    )
+
+    assert env["QT_LOGGING_RULES"] == "*.debug=false"
+    assert "QT_FORCE_STDERR_LOGGING" not in env
+    assert "QSG_INFO" not in env
+
+    monkeypatch.setenv("PICASAPY_MERES_QT_NAPLO", "1")
+    env = _egy_inditas_kornyezete(
+        monkeypatch, tmp_path, {"QT_LOGGING_RULES": "*.debug=false"}
+    )
+    szabalyok = env["QT_LOGGING_RULES"]
     assert szabalyok.startswith("*.debug=false;")
     assert "qt.qml.diskcache.debug=true" in szabalyok
     assert "qt.scenegraph.general.debug=true" in szabalyok
     assert "qt.rhi.general.debug=true" in szabalyok
+    assert env["QT_FORCE_STDERR_LOGGING"] == "1"
+    assert env["QSG_INFO"] == "1"
+
+    workflow = (_GYOKER / ".github/workflows/package.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "PICASAPY_MERES_QT_NAPLO" not in workflow
+    meres = (_GYOKER / "packaging/windows/csomag_meres_ido.py").read_text(
+        encoding="utf-8"
+    )
+    assert "PICASAPY_MERES_QT_NAPLO" in meres
 
 
 def test_a_meres_a_qml_es_a_grafikai_melegites_utan_indul_eloszor(
@@ -208,6 +239,7 @@ def test_valodi_ablaknal_a_qt_naplo_a_kimenetre_kerul(tmp_path, monkeypatch):
 
     monkeypatch.setattr(ido_modul, "_popen", _popen)
     monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _g: [])
+    monkeypatch.setenv("PICASAPY_MERES_QT_NAPLO", "1")
     ido_modul._egy_inditas(["x.exe"], tmp_path, ablakkal=True)
     assert elkapott["QT_FORCE_STDERR_LOGGING"] == "1"
     assert elkapott["QSG_INFO"] == "1"

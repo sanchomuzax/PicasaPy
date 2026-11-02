@@ -31,6 +31,12 @@ _QML_CACHE_HIBA = (
 )
 _popen = subprocess.Popen
 _GRAFIKA_KATEGORIAK = ("qt.rhi.general", "qt.scenegraph.general")
+_QT_NAPLO_KAPCSOLO = "PICASAPY_MERES_QT_NAPLO"
+_QT_NAPLOZASI_SZABALYOK = (
+    "qt.qml.diskcache.debug",
+    "qt.scenegraph.general.debug",
+    "qt.rhi.general.debug",
+)
 _GRAFIKA_HATTEREK = (
     (re.compile(r"\b(?:D3D11|Direct\s*3D\s*11(?:\.\d+)?)\b", re.I), "Direct3D 11"),
     (re.compile(r"\b(?:D3D12|Direct\s*3D\s*12(?:\.\d+)?)\b", re.I), "Direct3D 12"),
@@ -199,9 +205,13 @@ def _egy_inditas(
 ) -> dict:
     env, konyvtar = _profil(gyoker, kepek)
     valodi_ablak = ablakkal or indulo_hatar_ms is not None
+    qt_naplo_engedelyezve = (
+        valodi_ablak and os.environ.get(_QT_NAPLO_KAPCSOLO) == "1"
+    )
     if valodi_ablak:
         env.pop("QT_QPA_PLATFORM", None)
         env.pop("QT_QUICK_BACKEND", None)
+    if qt_naplo_engedelyezve:
         szabalyok = env.get("QT_LOGGING_RULES", "").strip().strip(";")
         env["QT_LOGGING_RULES"] = ";".join(
             elem
@@ -218,6 +228,23 @@ def _egy_inditas(
         env["QT_FORCE_STDERR_LOGGING"] = "1"
         env["QSG_INFO"] = "1"
     else:
+        # A szülőfolyamatból érkező diagnosztikai értékek se terheljék az
+        # időmérést; a kapcsoló nélkül csak a nem diagnosztikai szabályok
+        # maradnak érvényben.
+        szabalyok = [
+            szabaly.strip()
+            for szabaly in env.get("QT_LOGGING_RULES", "").split(";")
+            if szabaly.strip()
+            and szabaly.split("=", 1)[0].strip().casefold()
+            not in _QT_NAPLOZASI_SZABALYOK
+        ]
+        if szabalyok:
+            env["QT_LOGGING_RULES"] = ";".join(szabalyok)
+        else:
+            env.pop("QT_LOGGING_RULES", None)
+        env.pop("QT_FORCE_STDERR_LOGGING", None)
+        env.pop("QSG_INFO", None)
+    if not valodi_ablak:
         env["QT_QPA_PLATFORM"] = "offscreen"
         env["QT_QUICK_BACKEND"] = "software"
     korabbi = len(_naplo_sorai(gyoker))
