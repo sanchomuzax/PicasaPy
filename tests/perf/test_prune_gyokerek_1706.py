@@ -10,7 +10,8 @@ MÉRVE (#1706, ez a gép, helyi lemez): a `prune_foreign_folders` két
 egymástól FÜGGETLEN munkarészből áll —
 
 1. **a védett gyökerek FELOLDÁSA** (`normalize_path`, `Path.resolve()`) —
-   MINDEN gyökérre (figyelt mappa + nyilvántartott exportcél) lefut, és
+   MINDEN gyökérre (figyelt mappa, nyilvántartott exportcélok, Kollázsok,
+   rögzítési és képernyőfelvételi mappák) lefut, és
    rendszerhívást (`stat`/`lstat`) igényel minden útvonal-komponensre.
    Helyi lemezen 21 gyökér feloldása **83** ilyen hívást igényelt (~4/gyökér);
 2. **az összevetés** (`_is_under`, tiszta Python `Path.is_relative_to`) —
@@ -24,9 +25,9 @@ beágyazódás) különben is a FIGYELT GYÖKÉR ALATT keletkezik, tehát a prun
 `test_a_figyelt_gyoker_alatti_uj_mappa_nem_erinti_a_vedett_gyokerlistat`
 lent). A domináns tényező a NYILVÁNTARTOTT EXPORTCÉLOK LISTÁJÁNAK MÉRETE
 (`MAX_EXPORTED_FOLDERS = 20`), ami a `_takaritas_gyokerei`-n át kerül a
-prune-ba, és amelynek mérete FÜGGETLEN az „indexelt mappák" számától (egy
-nyilvántartott, de a lemezen nem létező exportcél is védett gyökér —
-#1560).
+prune-ba a rögzítési és képernyőfelvételi mappák mellett, és amelynek mérete
+FÜGGETLEN az „indexelt mappák" számától (egy nyilvántartott, de a lemezen
+nem létező exportcél is védett gyökér — #1560).
 
 ## Amit ez az őr javít
 
@@ -114,21 +115,21 @@ class TestAGyokerFeloldasNemIsmetliMagat:
             EXPORTED_FOLDERS_SETTINGS_KEY, [str(cel)] * 5,
         )
         gyokerek = _takaritas_gyokerei((str(gyoker),), settings)
-        # #1675: +1 a Kollázsok mappa, ami azóta szintén VÉDETT gyökér
-        assert len(gyokerek) == 7, (
+        assert len(gyokerek) == 9, (
             "az előfeltétel sérült: 1 figyelt gyökér + 5x ugyanaz az "
-            "exportcél + a Kollázsok mappa kell a nyers listában"
+            "exportcél + a Kollázsok, Rögzített videoklipek és "
+            "Képernyőfelvételek mappája kell a nyers listában"
         )
 
         with open_index(db) as conn:
             prune_foreign_folders(conn, gyokerek)
 
-        # #1675: 2 → 3 — a Kollázsok mappa azóta szintén védett gyökér,
-        # tehát egy további EGYEDI útvonal oldódik fel
-        assert feloldas_szamlalo.hivasok == 3, (
+        # A figyelt gyökér, exportcél, Kollázsok, Rögzített videoklipek és
+        # Képernyőfelvételek útvonala öt külön útvonal.
+        assert feloldas_szamlalo.hivasok == 5, (
             f"a `normalize_path` {feloldas_szamlalo.hivasok}-szor futott le "
-            "6 nyers gyökérre, pedig ezek közül csak 2 EGYEDI útvonal van "
-            "(a figyelt gyökér + az exportcél). Minden fölösleges hívás "
+            "9 nyers gyökérre, pedig ezek közül csak 5 EGYEDI útvonal van. "
+            "Minden fölösleges hívás "
             "fájlrendszer-szintű `stat`/`lstat`-ot jelent — hálózati "
             "megosztáson (a tulajdonos NAS-on tartja a könyvtárát) ez a "
             "költség dominál (#1706)."
@@ -173,9 +174,9 @@ class TestAGyokerFeloldasNemIsmetliMagat:
             EXPORTED_FOLDERS_SETTINGS_KEY, [str(cel), str(masik_cel)]
         )
         gyokerek = _takaritas_gyokerei((str(gyoker),), settings)
-        # #1675: +1 a Kollázsok mappa (azóta védett gyökér)
-        assert len(gyokerek) == 4, (
-            "1 figyelt gyökér + 2 KÜLÖNBÖZŐ exportcél + a Kollázsok mappa"
+        assert len(gyokerek) == 6, (
+            "1 figyelt gyökér + 2 KÜLÖNBÖZŐ exportcél + a Kollázsok, "
+            "Rögzített videoklipek és Képernyőfelvételek mappája"
         )
 
         # a builder (`sync_folder`) fenti hívása is a mért fogantyún megy —
@@ -185,8 +186,8 @@ class TestAGyokerFeloldasNemIsmetliMagat:
         with open_index(db) as conn:
             prune_foreign_folders(conn, gyokerek)
 
-        assert feloldas_szamlalo.hivasok == 4, (
-            f"4 EGYEDI gyökérre {feloldas_szamlalo.hivasok} feloldás futott "
+        assert feloldas_szamlalo.hivasok == 6, (
+            f"6 EGYEDI gyökérre {feloldas_szamlalo.hivasok} feloldás futott "
             "— a számláló nem azt méri, amit hiszünk, tehát a fenti "
             "dedup-állítás sem bizonyít semmit"
         )
@@ -231,15 +232,14 @@ class TestAzOsszevetesOlcso:
             "az előfeltétel sérült: a `folders` táblának ~50 sort kellett "
             "volna tartalmaznia a prune előtt"
         )
-        # A feloldás csak a 2 VÉDETT GYÖKÉRRE fut (figyelt gyökér +
-        # exportcél) — a folders tábla 50+ sora nem okoz további feloldást,
+        # A feloldás az 5 VÉDETT GYÖKÉRRE fut (figyelt gyökér, exportcél,
+        # Kollázsok, Rögzített videoklipek, Képernyőfelvételek) — a folders
+        # tábla 50+ sora nem okoz további feloldást,
         # mert az összevetés (`_is_under`) tiszta Python, nem hív
         # `normalize_path`-ot mappánként.
-        # #1675: 2 → 3 — a Kollázsok mappa azóta szintén védett gyökér,
-        # tehát egy további EGYEDI útvonal oldódik fel
-        assert feloldas_szamlalo.hivasok == 3, (
+        assert feloldas_szamlalo.hivasok == 5, (
             f"a `normalize_path` {feloldas_szamlalo.hivasok}-szor futott le "
-            f"{folder_count} indexelt mappa mellett, pedig csak 3 védett "
+            f"{folder_count} indexelt mappa mellett, pedig 5 védett "
             "gyökér van — az összevetésnek A GYÖKEREK SZÁMÁVAL kellene "
             "skáláznia, NEM a mappák számával (#1706 2. gyanúja)"
         )
