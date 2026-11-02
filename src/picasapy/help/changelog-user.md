@@ -4,6 +4,59 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-02
+
+**Frissítések**
+
+- Új verzió értesítése: a program jelzi, ha újabb PicasaPy jelent meg.
+  A **Súgó ▸ Frissítések keresése…** kézzel is keres. Windowson a
+  **Frissítés most** letölti és ellenőrzi az új verziót, majd
+  újraindításkor vagy kilépéskor telepíti; hiba esetén az előző verzió
+  marad meg. Lásd [Beállítások](features/beallitasok.md).
+- A program minden indításkor, és futás közben 6 óránként keres; a
+  napközben kiadott verziót is hamar jelzi.
+- A **Frissítés most** kattintásra azonnal folyamatjelzőre vált.
+- A frissítési ablakból kikerült a verzió kihagyása; egy újabb kiadást a
+  program mindig felajánl.
+
+**Indítás**
+
+- Indításkor azonnal megjelenik a keret nélküli, fehér PicasaPy
+  indulóablak, még a főablak előtt. Lásd [Első lépések](getting-started.md).
+- Elérhetetlen hálózati meghajtó (NAS) már nem lassítja az indulást, és
+  futás közben sem fagyasztja le a felületet.
+
+**Súgó és Névjegy**
+
+- A súgó külön ablakban nyílik, a főablak közben is használható. Lásd
+  [A beépített súgó](features/sugo.md).
+- A Névjegy megmutatja, honnan fut a program, és kattintható hivatkozás
+  vezet a honlapra, az adatvédelmi tájékoztatóra és a felhasználási
+  feltételekre.
+- Az arcok üdvözlőablakában a **További információ...** a program saját
+  súgójának Emberek fejezetét nyitja meg. Lásd [Emberek](features/emberek.md).
+
+**Google Fotók**
+
+- A menüsor **Bejelentkezés Google Fiókkal** felirata egy kattintással
+  elindítja a belépést; ha a csomagban nincs beépített Google-kliens, egy
+  rövid üzenet jelzi, hogy a bejelentkezés ebben a változatban még nem
+  érhető el. Lásd [Feltöltés a Google Fotókba](features/google-fotok.md).
+
+**Egyéb**
+
+- A kilépési kérdésben csak a **Kilépés most** és a **Folytatás** gomb
+  áll.
+- A webkamerás **Rögzítés** ablak pillanatképe megvárja, hogy a kamera készen álljon,
+  mentési hibánál kiírja a hibát, és a kép azonnal megjelenik a
+  könyvtárban.
+- A könyvtárból megnyitott kép nem méretezi át az ablakot, és a
+  visszatéréskor a rács ott marad, ahol hagytad.
+- A telepített windowsos programban az **Exportálás HTML-oldalként**
+  ablak ismét felsorolja a sablonokat.
+- A Helyek panel keresőgombja és térkép nélküli felirata kis ablakban is
+  a panelen belül marad.
+
 ## 2026-10-31
 
 **Indítás**

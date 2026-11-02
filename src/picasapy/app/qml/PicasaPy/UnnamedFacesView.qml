@@ -20,6 +20,9 @@ ColumnLayout {
     signal showUnnamedRequested()
     signal nameSubmitted(int faceId, string name)
     signal namedSuggestionAccepted()
+    // #6403: a „Learn more...” a BEÉPÍTETT súgó fejezetét kéri (nem külső
+    // címet nyit). A főablak (`MainLibraryCanvas`) a jelre nyitja a súgót.
+    signal helpRequested(string topic)
     // #26: „unnamed" = a Névtelenek album, „ignored" = a Mellőzött emberek
     // album (`CAlbumLabel::Ignored`). Az eredetiben ez két ALBUM volt
     // ugyanabban a listában, ezért ugyanaz a nézet szolgálja ki — csak a
@@ -134,15 +137,6 @@ ColumnLayout {
                     && !root.faceScanController.unnamedWelcomeHasBeenShown())
                 welcomeDialog.open()
         })
-    }
-
-    // #5185: a „Learn more...” a Picasa súgóját nyitja az alapértelmezett
-    // böngészőben (`instructionpanel/learn_more`, 19.2). A `hl` a felület
-    // nyelvéből jön; az üdvözlőablak a kattintás után is nyitva marad.
-    function learnMoreUrl() {
-        return "http://picasa.google.com/support/bin/answer.py?hl="
-            + (controller ? controller.helpLanguageCode : "")
-            + "&answer=156272"
     }
 
     Component.onCompleted: {
@@ -490,7 +484,7 @@ ColumnLayout {
                     text: qsTr("Learn more...")
                     Layout.preferredWidth: 86
                     Layout.preferredHeight: 28
-                    onClicked: Qt.openUrlExternally(root.learnMoreUrl())
+                    onClicked: root.helpRequested("features/emberek.md")
                     contentItem: Text {
                         text: parent.text
                         horizontalAlignment: Text.AlignHCenter

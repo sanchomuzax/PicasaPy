@@ -70,6 +70,10 @@ Windowson:
 python picasapy C:\Kepek
 ```
 
+Indításkor azonnal megjelenik a képernyő közepén egy keret és címsor
+nélküli kis indulóablak, fehér alapon a PicasaPy emblémájával és
+nevével. A főablak betöltése után magától eltűnik.
+
 Mappa megadása nélkül is elindul; a figyelt mappákat utólag is fel tudod
 venni (lásd [Mappakezelő](features/mappakezelo.md)).
 

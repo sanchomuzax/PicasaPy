@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .face_scan_controller_signals import FaceScanControllerSignalsMixin as _Signals
+from .hatter_prioritas import arckeres_szal_elokeszitese, arckeres_szal_lezarasa
 from .face_scan_controller_shared import (
     Property,
     Slot,
@@ -96,7 +97,9 @@ class FaceScanControllerEmbeddingMixin:
         suggest_step: int,
         cluster_step: int,
     ) -> None:
+        elozo_szalszam: int | None = None
         try:
+            elozo_szalszam = arckeres_szal_elokeszitese()
             with open_index(self._db_path) as conn:
                 pending = faces_missing_embedding(conn)
                 total = len(pending)
@@ -142,6 +145,7 @@ class FaceScanControllerEmbeddingMixin:
             self.embeddingFailed.emit(str(error))
             return
         finally:
+            arckeres_szal_lezarasa(elozo_szalszam)
             if self._embedding_stop_event is stop_event:
                 self._embedding_stop_event = None
             self._set_sorting_percent(-1)

@@ -85,25 +85,35 @@ def test_a_windowsos_kapu_a_renderelt_also_sort_is_ellenorzi():
     assert csomag_meres.indulo_hatar_hiba("csomagolt", van_kep, 1000) is None
 
 
-def test_a_renderelt_indulokepen_a_szovegmentes_also_savot_meri():
+def _indulokep(hatter: str, *, logo: bool) -> bytes:
     from io import BytesIO
 
-    from PIL import Image
+    from PIL import Image, ImageDraw
 
-    image = Image.new("RGB", (8, 8), "#568fb7")
-    image.putpixel((0, 6), (205, 205, 205))
+    image = Image.new("RGB", (668, 263), hatter)
+    rajz = ImageDraw.Draw(image)
+    if logo:
+        rajz.ellipse((55, 71, 178, 194), fill="#3478db")
+        for x in range(196, 600, 40):  # a szójel betűi
+            rajz.rectangle((x, 107, x + 12, 159), fill="#303743")
     buffer = BytesIO()
     image.save(buffer, "PNG")
-    assert csomag_meres._renderelt_indulokep_ellenorzese(buffer.getvalue()) == (
-        (8, 8, 2),
-        None,
+    return buffer.getvalue()
+
+
+def test_a_renderelt_indulokepen_a_feher_kartyat_es_a_logot_meri():
+    """#6378 óta az indulóablak fehér kártya logóval, kék sáv nélkül."""
+    info, error = csomag_meres._renderelt_indulokep_ellenorzese(
+        _indulokep("#ffffff", logo=True)
     )
+    assert error is None
+    assert info[:2] == (668, 263) and info[2] >= 2
 
-    image = Image.new("RGB", (8, 8), "#ffffff")
-    buffer = BytesIO()
-    image.save(buffer, "PNG")
-    info, error = csomag_meres._renderelt_indulokep_ellenorzese(buffer.getvalue())
-    assert info is None and "alsó sávja" in error
+
+def test_logo_nelkuli_vagy_nem_feher_indulokep_piros():
+    for kep in (_indulokep("#ffffff", logo=False), _indulokep("#000000", logo=True)):
+        info, error = csomag_meres._renderelt_indulokep_ellenorzese(kep)
+        assert info is None and "fehér kártya" in error
 
 
 def test_a_meresi_jelentes_kiirja_az_induloablak_ms_idejet():

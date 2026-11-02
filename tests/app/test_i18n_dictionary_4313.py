@@ -252,7 +252,8 @@ def test_google_photos_messages_have_finished_placeholder_safe_translations():
         "Failed to upload %1",
         "Close",
     }
-    assert len(google_photos_sources) == 23
+    # #6402: a bejelentkezés adatvédelmi tájékoztatója és feltételei két új felirat
+    assert len(google_photos_sources) == 25
     assert {
         "PicasaPy signs in with its built-in client. Use your own client only if needed.",
         "Advanced: use your own Google client (optional)",

@@ -21,7 +21,6 @@ from picasapy.app.update_manager import (
     installation_kind,
     parse_sha256sums,
     release_is_newer,
-    should_offer_release,
     verify_sha256,
 )
 from picasapy.app import update_swap_helper
@@ -51,11 +50,6 @@ def test_az_automatikus_kereses_nem_napi_korlathoz_kotott():
 
 def test_kikapcsolt_automatikus_ellenorzes_nem_indit_ellenorzest():
     assert not automatic_check_is_due(enabled=False)
-
-
-def test_kihagyott_verziot_tobbe_nem_ajanl_fel():
-    assert should_offer_release("1.2.0", skipped_version="1.2.0") is False
-    assert should_offer_release("1.2.1", skipped_version="1.2.0") is True
 
 
 def test_a_futtatasi_hely_alapjan_megkulonbozteti_a_windows_deb_es_pip_modot():
@@ -272,6 +266,9 @@ class _MemorySettings:
     def setValue(self, key, value):
         self.values[key] = value
 
+    def remove(self, key):
+        self.values.pop(key, None)
+
     def sync(self):
         pass
 
@@ -317,7 +314,8 @@ def test_offline_automatikus_hiba_csendben_marad_es_a_keresest_rogziti(qt_app):
     assert controller.autoCheckEnabled is True
 
 
-def test_kezi_ellenorzes_uj_verziot_jelez_de_a_kihagyottat_nem_ajanlja_fel(qt_app):
+def test_kezi_ellenorzes_a_regi_kihagyas_utan_is_felajanlja_a_legujabbat(qt_app):
+    """#6394: a korábban kihagyott verzió induláskor újra felkínálható."""
     settings = _MemorySettings({SKIPPED_VERSION_KEY: "1.2.0"})
     client = _ReleaseClient(_release("1.2.0"))
     controller = UpdateController(
@@ -330,8 +328,18 @@ def test_kezi_ellenorzes_uj_verziot_jelez_de_a_kihagyottat_nem_ajanlja_fel(qt_ap
 
     controller.checkForUpdates()
 
-    assert outcomes == [(False, "up-to-date")]
-    assert not controller.updateAvailable
+    assert outcomes == [(True, "available")]
+    assert controller.updateAvailable
+
+
+def test_induláskor_a_korabbi_kihagyas_torlodik(qt_app):
+    """#6394: a „Verzió kihagyása” már nincs; a régi beállítás induláskor törlődik."""
+    settings = _MemorySettings({SKIPPED_VERSION_KEY: "1.2.0"})
+    UpdateController(
+        "1.0.0", settings=settings, client=_ReleaseClient(), pool=_InlinePool(), schedule=False
+    )
+
+    assert SKIPPED_VERSION_KEY not in settings.values
 
 
 def test_automatikus_ellenorzes_minden_alkalommal_fut_de_csak_egyszer_ertesit(qt_app):
@@ -527,7 +535,7 @@ def test_a_segedet_csak_irhatatlan_mappanal_inditja_rendszergazdakent(
     monkeypatch.setattr(
         update_manager,
         "_inditsd_a_segedet",
-        lambda args, *, emelt: hivasok.append(emelt) or True,
+        lambda args, *, emelt: hivasok.append((emelt, "--uac-emelt" in args)) or True,
     )
     controller = UpdateController(
         "1.0.0",
@@ -543,7 +551,7 @@ def test_a_segedet_csak_irhatatlan_mappanal_inditja_rendszergazdakent(
     assert controller.installWhenExiting(False) is True
     monkeypatch.setattr(update_manager, "mappa_irhato", lambda _m: False)
     assert controller.installWhenExiting(False) is True
-    assert hivasok == [False, True]
+    assert hivasok == [(False, False), (True, True)]
 
 
 def test_rendszergazdai_segedbol_a_program_normal_jogokkal_indul(monkeypatch, tmp_path):
@@ -552,13 +560,26 @@ def test_rendszergazdai_segedbol_a_program_normal_jogokkal_indul(monkeypatch, tm
     exe = tmp_path / "PicasaPy.exe"
 
     monkeypatch.setattr(update_swap_helper, "_rendszergazda", lambda: True)
-    update_swap_helper.inditsd_a_felhasznalonak(exe)
+    update_swap_helper.inditsd_a_felhasznalonak(exe, uac_emelt=True)
     monkeypatch.setattr(update_swap_helper, "_rendszergazda", lambda: False)
-    update_swap_helper.inditsd_a_felhasznalonak(exe)
+    update_swap_helper.inditsd_a_felhasznalonak(exe, uac_emelt=True)
 
     assert inditasok[0][0] == "explorer.exe"
     assert Path(inditasok[0][1]) == exe
     assert [Path(elem) for elem in inditasok[1]] == [exe]
+
+
+def test_eleve_rendszergazdai_programnal_kozvetlenul_indul_6383(monkeypatch, tmp_path):
+    """#6383: ha nem mi emeltük UAC-cal a segédet, az Intézőn át indítás a
+    környezetet is elvesztené; ilyenkor közvetlenül indít."""
+    inditasok = []
+    monkeypatch.setattr(update_swap_helper, "_popen", lambda args, **k: inditasok.append(args))
+    monkeypatch.setattr(update_swap_helper, "_rendszergazda", lambda: True)
+    exe = tmp_path / "PicasaPy.exe"
+
+    update_swap_helper.inditsd_a_felhasznalonak(exe)
+
+    assert [Path(elem) for elem in inditasok[0]] == [exe]
 
 
 def test_sikertelen_kicsomagolas_utan_is_elindul_a_regi_program(monkeypatch, tmp_path):
@@ -570,7 +591,7 @@ def test_sikertelen_kicsomagolas_utan_is_elindul_a_regi_program(monkeypatch, tmp
     inditasok = []
     monkeypatch.setattr(update_swap_helper, "wait_for_process", lambda pid: None)
     monkeypatch.setattr(
-        update_swap_helper, "inditsd_a_felhasznalonak", lambda exe: inditasok.append(exe)
+        update_swap_helper, "inditsd_a_felhasznalonak", lambda exe, **_k: inditasok.append(exe)
     )
 
     import zipfile
@@ -708,3 +729,54 @@ def test_teljes_windows_kiadast_felajanl(qt_app):
     )
     controller._automatic_check_if_due()
     assert controller.updateAvailable
+
+
+def test_restart_now_utan_beragadt_lezarasnal_a_folyamat_kilep(qt_app, tmp_path, monkeypatch):
+    """#6383: a frissítősegéd a folyamat kilépésére vár; beragadt lezárásnál
+    a határidő után kényszerített kilépés jön, különben a csere sosem indul."""
+    from types import SimpleNamespace
+
+    from picasapy.app import update_manager
+
+    telepites = tmp_path / "PicasaPy"
+    telepites.mkdir()
+    (telepites / "PicasaPyUpdateHelper.exe").write_bytes(b"seged")
+    monkeypatch.setattr(
+        update_manager, "_futtato", SimpleNamespace(executable=str(telepites / "PicasaPy.exe"))
+    )
+    monkeypatch.setattr(update_manager, "_inditsd_a_segedet", lambda args, *, emelt: True)
+    monkeypatch.setattr(update_manager, "mappa_irhato", lambda _m: True)
+    halok = []
+    monkeypatch.setattr(
+        update_manager, "_kenyszeritett_kilepes_ha_beragad", lambda: halok.append("felhuzva")
+    )
+    from PySide6.QtCore import QCoreApplication
+
+    monkeypatch.setattr(QCoreApplication, "quit", staticmethod(lambda: halok.append("quit")))
+    controller = UpdateController(
+        "1.0.0",
+        settings=_MemorySettings(),
+        client=_ReleaseClient(),
+        pool=_InlinePool(),
+        schedule=False,
+        install_kind="windows",
+    )
+    controller._download_path = tmp_path / "csomag.zip"
+
+    assert controller.installWhenExiting(True) is True
+    assert halok == ["felhuzva", "quit"]
+
+
+def test_a_kenyszeritett_kilepes_a_hatarido_utan_os_exit(monkeypatch):
+    import threading
+
+    from picasapy.app import update_manager
+
+    kilepett = threading.Event()
+    kodok = []
+    monkeypatch.setattr(
+        update_manager, "_azonnali_kilepes", lambda kod: (kodok.append(kod), kilepett.set())
+    )
+    update_manager._kenyszeritett_kilepes_ha_beragad(0.05)
+    assert kilepett.wait(2.0)
+    assert kodok == [0]
