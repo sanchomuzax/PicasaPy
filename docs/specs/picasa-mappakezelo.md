@@ -1626,7 +1626,7 @@ X-overlay látszott. A kép nem rögzíti a hozzárendelt UNC-célt, a hiba oká
 **Cáfoló kör:** a „fájlrendszer-ellenőrzés nélkül, tehát minden leválasztott
 meghajtó megjelenik” állítással szemben az enumerátor típus-összehasonlítása
 (`0x006dace9`) és a hívó argumentumai (`0x007c9fee`) ellenőrizve lettek.
-A cáfolat fennmarad: a remote ág a volume/fájlrendszer-szűrést hagyja ki,
+A cáfolat fennmarad: a hálózati (remote) ág a kötet- és fájlrendszer-szűrést hagyja ki,
 de a logikai meghajtóbitet és a `GetDriveTypeA == 4` feltételt nem. A régi
 képernyőkép a látható P: sort alátámasztja, a pontos UNC/elérhetőség
 kapcsolatát viszont nem.
