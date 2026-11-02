@@ -123,18 +123,67 @@ def _qml_cache_konyvtar() -> Path:
     egyedi = os.environ.get("QML_DISK_CACHE_PATH")
     if egyedi:
         return Path(egyedi)
-    hely = QStandardPaths.writableLocation(
-        QStandardPaths.StandardLocation.CacheLocation
-    )
+    hely = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation)
     if not hely:
         raise RuntimeError("A Qt nem adott QML-cache könyvtárat")
     return Path(hely) / "qmlcache"
 
 
+#: #6436: a gyorsítótárat író változat jele a cache-könyvtárban
+CACHE_BELYEG = ".picasapy-verzio"
+_FORDITAS_KITERJESZTESEK = (".qmlc", ".jsc")
+
+
+def ird_be_a_cache_belyeget(verzio: str) -> None:
+    """Az előfordítás végén rögzíti, melyik változat írta a gyorsítótárat."""
+    konyvtar = _qml_cache_konyvtar()
+    konyvtar.mkdir(parents=True, exist_ok=True)
+    (konyvtar / CACHE_BELYEG).write_text(verzio, encoding="utf-8")
+
+
+def torold_az_elavult_cachet(verzio: str) -> int:
+    """Más (vagy ismeretlen) változat QML-fordításait törli; a törölt fájlok száma.
+
+    A qmlcachegen-nel fordított `.qmlc` a forrás változása után is érvényes
+    marad (mérve, #6436): a régi változat fordítása a régi felületet töltené be.
+    Csak a fordításokat törli; a jel ezután a futó változatot mutatja."""
+    try:
+        konyvtar = _qml_cache_konyvtar()
+    except RuntimeError:
+        return 0
+    if not konyvtar.is_dir():
+        return 0
+    belyeg = konyvtar / CACHE_BELYEG
+    try:
+        if belyeg.read_text(encoding="utf-8").strip() == verzio:
+            return 0
+    except OSError:
+        pass
+    torolt = 0
+    for fajl in konyvtar.iterdir():
+        if fajl.suffix.casefold() in _FORDITAS_KITERJESZTESEK and fajl.is_file():
+            try:
+                fajl.unlink()
+                torolt += 1
+            except OSError:
+                continue
+    try:
+        belyeg.write_text(verzio, encoding="utf-8")
+    except OSError:
+        pass
+    return torolt
+
+
 def _qml_cache_nev_utbol(ut: PurePath) -> str:
-    """A Qt a `QUrl.toLocalFile()` alakot hasheli SHA-1-gyel, ami Windowson is
-    perjeles (`C:/...`); a natív, fordított perjeles alakból más név jönne ki."""
-    return sha1(ut.as_posix().encode("utf-8")).hexdigest() + ".qmlc"
+    """A Qt a perjeles helyi útvonalat SHA-1-gyel hasheli.
+
+    A QML bytecode neve `.qmlc`, az importált JavaScripté `.jsc`; Windowson is
+    a `QUrl.toLocalFile()` perjeles alakja adja a cache-kulcsot.
+    """
+    suffix = {".qml": ".qmlc", ".js": ".jsc"}.get(ut.suffix.casefold())
+    if suffix is None:
+        raise ValueError(f"Nem támogatott QML-cache forrásfájl: {ut}")
+    return sha1(ut.as_posix().encode("utf-8")).hexdigest() + suffix
 
 
 def _qml_cache_nev(fajl: Path) -> str:
@@ -153,9 +202,7 @@ def _forditsd_le(cache_konyvtar: Path, fajlok: list[Path]) -> int:
     pyside = Path(PySide6.__file__).resolve().parent
     qt_bin = pyside / "Qt" / "bin"
     if _platform() == "win32":
-        kornyezet["PATH"] = os.pathsep.join(
-            (str(qt_bin), str(pyside), kornyezet.get("PATH", ""))
-        )
+        kornyezet["PATH"] = os.pathsep.join((str(qt_bin), str(pyside), kornyezet.get("PATH", "")))
     try:
         hatarido_mp = float(os.environ.get(HATARIDO_ENV, ALAP_HATARIDO_MP))
     except ValueError:
@@ -249,10 +296,13 @@ def _fordits() -> None:
 
     qml_root = _qml_konyvtar()
     cache_konyvtar = _qml_cache_konyvtar()
-    fajlok = sorted(qml_root.rglob("*.qml"))
+    fajlok = sorted((*qml_root.rglob("*.qml"), *qml_root.rglob("*.js")))
     started = time.perf_counter()
     hibas = _forditsd_le(cache_konyvtar, fajlok)
     eltelt = time.perf_counter() - started
+    from picasapy import __version__
+
+    ird_be_a_cache_belyeget(__version__)
     osszegzes = f"QML-előfordítás: {len(fajlok)} fájl, {hibas} hibás, {eltelt:.2f} s"
     _naplozz(osszegzes)
     _kiird(osszegzes)
@@ -260,11 +310,37 @@ def _fordits() -> None:
     # bontását kihagyva lép ki.
 
 
-def _grafika_qml() -> bytes:
-    """Qt Quick Controls ablak, amely felállítja az alkalmazás grafikus útját."""
-    return b"""import QtQuick
-import QtQuick.Controls
-ApplicationWindow {
+_GRAFIKA_ALAPMODULOK = ("QtQuick", "QtQuick.Controls")
+# A főablak fájái ezeket a Qt-modulokat is betöltik. Az első valódi
+# indulásnál a hidegen olvasott (és víruskereső által átvizsgált) modul-DLL-ek
+# adták a késést, ezért a telepítő ezeket is betölti egyszer.
+_GRAFIKA_TOVABBI_MODULOK = (
+    "QtQml",
+    "QtQuick.Window",
+    "QtQuick.Layouts",
+    "QtQuick.Dialogs",
+    "QtQuick.Templates",
+    "QtQuick.Controls.impl",
+    "QtQuick.Controls.Fusion",
+    "QtMultimedia",
+    "QtPositioning",
+    "QtLocation",
+)
+
+
+def _grafika_qml(
+    *, teljes: bool = True, tovabbi: tuple[str, ...] = _GRAFIKA_TOVABBI_MODULOK
+) -> bytes:
+    """Qt Quick Controls ablak, amely felállítja az alkalmazás grafikus útját.
+
+    A `teljes` változat a `tovabbi` Qt-modulokat is importálja; a tartalék csak
+    az alapmodulokkal melegít.
+    """
+    modulok = _GRAFIKA_ALAPMODULOK + (tovabbi if teljes else ())
+    importok = "".join(f"import {modul}\n" for modul in modulok)
+    return (
+        importok
+        + """ApplicationWindow {
     width: 32
     height: 32
     visible: false
@@ -275,6 +351,20 @@ ApplicationWindow {
     }
 }
 """
+    ).encode("utf-8")
+
+
+def _betoltheto_modulok(engine, komponens_osztaly, url_osztaly) -> tuple[str, ...]:
+    """A további Qt-modulok közül azok, amelyek ebben a csomagban megvannak."""
+    megvan = []
+    for modul in _GRAFIKA_TOVABBI_MODULOK:
+        probe = komponens_osztaly(engine)
+        probe.setData(f"import {modul}\nimport QtQml\nQtObject {{}}\n".encode(), url_osztaly())
+        if probe.status() == komponens_osztaly.Status.Error:
+            _grafika_naplozz(f"grafikai előmelegítés: a(z) {modul} modul nem tölthető be")
+        else:
+            megvan.append(modul)
+    return tuple(megvan)
 
 
 def _grafika_hatarido_mp() -> float:
@@ -282,6 +372,20 @@ def _grafika_hatarido_mp() -> float:
         return max(0.0, float(os.environ.get(HATARIDO_ENV, ALAP_HATARIDO_MP)))
     except ValueError:
         return ALAP_HATARIDO_MP
+
+
+def _grafika_komponens(engine, komponens_osztaly, url_osztaly):
+    """A teljes előmelegítő komponens, hiba esetén az alapmodulos tartalék."""
+    tovabbi = _betoltheto_modulok(engine, komponens_osztaly, url_osztaly)
+    for teljes in (True, False):
+        component = komponens_osztaly(engine)
+        component.setData(_grafika_qml(teljes=teljes, tovabbi=tovabbi), url_osztaly())
+        if component.status() != komponens_osztaly.Status.Error:
+            return component
+        hibak = "; ".join(str(hiba.toString()) for hiba in component.errors())
+        valtozat = "teljes" if teljes else "tartalék"
+        _grafika_naplozz(f"grafikai előmelegítés hibás QML ({valtozat}): {hibak}")
+    raise RuntimeError("a grafikai előmelegítő QML nem tölthető be")
 
 
 def _melegitsd_grafikat() -> None:
@@ -301,12 +405,7 @@ def _melegitsd_grafikat() -> None:
 
     engine = QQmlEngine()
     engine.addImportPath(_qml_import_path())
-    component = QQmlComponent(engine)
-    component.setData(_grafika_qml(), QUrl())
-    if component.status() == QQmlComponent.Status.Error:
-        hibak = "; ".join(str(hiba.toString()) for hiba in component.errors())
-        _grafika_naplozz(f"grafikai előmelegítés hibás QML: {hibak}")
-        raise RuntimeError("a grafikai előmelegítő QML nem tölthető be")
+    component = _grafika_komponens(engine, QQmlComponent, QUrl)
 
     ablak = component.create()
     if not isinstance(ablak, QQuickWindow):
@@ -336,10 +435,59 @@ def _melegitsd_grafikat() -> None:
     ablak.close()
     if not kirajzolt:
         _grafika_naplozz("grafikai előmelegítés időtúllépés: nem érkezett képkocka")
-        raise subprocess.TimeoutExpired(
-            "--qml-grafika-melegites", _grafika_hatarido_mp()
-        )
+        raise subprocess.TimeoutExpired("--qml-grafika-melegites", _grafika_hatarido_mp())
+    _melegitsd_betukeszleteket()
+    _melegitsd_splash_kepet()
     _grafika_naplozz("grafikai előmelegítés kész: 1 képkocka")
+
+
+def _melegitsd_betukeszleteket(adatbazis=None) -> int:
+    """Egyszer betölti a rendszer összes betűkészlet-családját.
+
+    Windowson az első indulásnál a Qt a Main.qml betöltése közben egyenként
+    végigjárta a családokat, és ez 4-15 s volt; a második indulástól a
+    rendszer betűkészlet-gyorsítótára már meleg (#6426). A hiba nem állítja
+    meg a grafikai előmelegítést.
+    """
+    try:
+        if adatbazis is None:
+            from PySide6.QtGui import QFontDatabase as adatbazis
+        csaladok = list(adatbazis.families())
+        for csalad in csaladok:
+            adatbazis.styles(csalad)
+    except Exception as hiba:  # noqa: BLE001 - csak gyorsítás, nem feltétel
+        _grafika_naplozz(f"betűkészlet-előmelegítés kimaradt: {type(hiba).__name__}")
+        return 0
+    _grafika_naplozz(f"betűkészlet-előmelegítés: {len(csaladok)} betűkészlet-család")
+    return len(csaladok)
+
+
+def _melegitsd_splash_kepet() -> bool:
+    """Egyszer elkészíti a splash képét (saját betűkészlet, logó), képernyő nélkül.
+
+    Az első windowsos indulásnál ez 1,5 s volt a szokásos 0,4 s helyett (#6426).
+    A hiba nem állítja meg a grafikai előmelegítést.
+    """
+    try:
+        from picasapy import __version__
+        from picasapy.app import startup_splash
+
+        kep = startup_splash._create_splash_pixmap(f"v{__version__}")
+        # a réteges (áttetsző) splash-ablak első megjelenítése is lassú volt:
+        # egyszer, láthatatlanul, a képernyőn kívül megjelenítjük
+        ablak = startup_splash.IndulasAblak(kep)
+        ablak.setOpacity(0.0)
+        ablak.setPosition(-32000, -32000)
+        ablak.show()
+        from PySide6.QtGui import QGuiApplication
+
+        QGuiApplication.processEvents()
+        ablak.close()
+    except Exception as hiba:  # noqa: BLE001 - csak gyorsítás, nem feltétel
+        _grafika_naplozz(f"splash-előmelegítés kimaradt: {type(hiba).__name__}")
+        return False
+    _grafika_naplozz("splash-előmelegítés kész")
+    return True
 
 
 def grafika_main() -> int:

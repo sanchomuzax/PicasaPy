@@ -65,6 +65,34 @@ def _ablakikonok(pid: int) -> dict[int, dict]:
     user32.EnumWindows(bejar, 0)
     return talalt
 
+def _splash_ablak(pid: int) -> int | None:
+    """A folyamat látható „PicasaPy startup” ablaka, üzenetküldés nélkül.
+
+    Az `_ablakikonok` ablakonként WM_GETICON-t küld, ami a QML-t töltő, foglalt
+    fő szálú programnál másodpercekig vár; a splash addigra a főablak alá kerül
+    (#6426). A `GetWindowTextW` más folyamat ablakánál nem küld üzenetet."""
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    talalt: list[int] = []
+
+    @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def bejar(hwnd, _):
+        tulaj = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(tulaj))
+        if tulaj.value != pid or not user32.IsWindowVisible(hwnd):
+            return True
+        cim = ctypes.create_unicode_buffer(256)
+        user32.GetWindowTextW(hwnd, cim, 256)
+        if cim.value.casefold().startswith("picasapy startup"):
+            talalt.append(int(hwnd))
+            return False
+        return True
+
+    user32.EnumWindows(bejar, 0)
+    return talalt[0] if talalt else None
+
 def _kepernyokep(hwnd: int | None) -> dict[str, bytes]:
     """A tálca és az ablak címsorának képe PNG-ben (#6345).
 
@@ -125,14 +153,18 @@ def _induloablak_kepe(hwnd: int) -> tuple[bytes | None, tuple[int, int, int] | N
     if jobb <= bal or also <= felso:
         return None, None, "az indulóablak képkockája üres"
     try:
-        kep = ImageGrab.grab(bbox=(bal, felso, jobb, also), all_screens=True).convert("RGB")
+        # az áttetsző splash réteges ablak: enélkül a mögötte levőt rögzítené (#6426)
+        kep = ImageGrab.grab(
+            bbox=(bal, felso, jobb, also), include_layered_windows=True, all_screens=True
+        ).convert("RGB")
     except OSError as hiba:
         return None, None, f"képernyőkép nem készült: {hiba}"
     puffer = io.BytesIO()
     kep.save(puffer, "PNG", optimize=True)
     png = puffer.getvalue()
     info, hiba = _renderelt_indulokep_ellenorzese(png)
-    return (png, info, hiba) if hiba is None else (None, None, hiba)
+    # a hibás kép is visszamegy: a jelentés megmutatja, mi látszott (#6426)
+    return png, info, hiba
 
 def _renderelt_indulokep_ellenorzese(
     png: bytes,
@@ -225,6 +257,7 @@ def ikon(futtatok: list[tuple[str, list[str]]], munka: Path, szigoru: bool) -> i
 
 __all__ = (
     "_ablakikonok",
+    "_splash_ablak",
     "_induloablak_kepe",
     "_kepernyokep",
     "_renderelt_indulokep_ellenorzese",

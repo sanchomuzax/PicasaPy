@@ -102,6 +102,7 @@ from csomag_meres_ido import (  # noqa: E402
 )
 from csomag_meres_windows import (  # noqa: E402
     _ablakikonok,
+    _splash_ablak,
     _induloablak_kepe,
     _kepernyokep,
     _renderelt_indulokep_ellenorzese,
@@ -144,6 +145,7 @@ __all__ = (
     "_about_menu",
     "_about_verzio_latszik",
     "_ablakikonok",
+    "_splash_ablak",
     "_bevar",
     "_csatolt_folyamatok_leallitasa",
     "_diagnosztika",

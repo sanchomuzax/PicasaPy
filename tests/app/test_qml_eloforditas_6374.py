@@ -169,6 +169,9 @@ def test_a_valodi_app_motor_nem_irja_ujra_az_eloreallitott_qml_cachet(tmp_path):
         return {
             str(path.relative_to(profile)): (path.stat().st_mtime_ns, path.stat().st_size)
             for path in profile.rglob("*.qmlc")
+        } | {
+            str(path.relative_to(profile)): (path.stat().st_mtime_ns, path.stat().st_size)
+            for path in profile.rglob("*.jsc")
         }
 
     elotte = qml_cache_allapot()
@@ -178,6 +181,12 @@ def test_a_valodi_app_motor_nem_irja_ujra_az_eloreallitott_qml_cachet(tmp_path):
     ).hexdigest() + ".qmlc"
     assert any(Path(nev).name == main_cache for nev in elotte), (
         "a Main.qml előre fordított cache-bejegyzése hiányzik"
+    )
+    selection_cache = sha1(
+        str((repo / "src/picasapy/app/qml/selection.js").resolve()).encode("utf-8")
+    ).hexdigest() + ".jsc"
+    assert any(Path(nev).name == selection_cache for nev in elotte), (
+        "a selection.js előre fordított JavaScript-cache-bejegyzése hiányzik"
     )
     indulas = subprocess.run(
         [sys.executable, str(repo / "picasapy"), "--indulasellenorzes", str(library)],
@@ -206,3 +215,18 @@ def test_a_valodi_app_motor_nem_irja_ujra_az_eloreallitott_qml_cachet(tmp_path):
         f"módosult/új={modositott[:20]}, "
         f"eltűnt={sorted(set(elotte) - set(utana))[:20]}"
     )
+
+
+def test_a_js_cache_kulcs_jsc_vegjun_perjeles_windows_utvonalon():
+    from hashlib import sha1
+    from pathlib import PureWindowsPath
+
+    from picasapy.app import qml_precompile
+
+    ut = PureWindowsPath(
+        r"C:\Program Files\PicasaPy\_internal\picasapy\app\qml\selection.js"
+    )
+    vart = sha1(
+        b"C:/Program Files/PicasaPy/_internal/picasapy/app/qml/selection.js"
+    ).hexdigest()
+    assert qml_precompile._qml_cache_nev_utbol(ut) == vart + ".jsc"
