@@ -1360,6 +1360,16 @@ picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Naložene fotografije so omejene na 1600 slikovnih pik po daljši stranici.</translation>
         </message>
+        <message>
+            <source>Privacy Policy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pravilnik o zasebnosti</translation>
+        </message>
+        <message>
+            <source>Terms of Service</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pogoji storitve</translation>
+        </message>
     </context>
     <context>
         <name>OptionsTabGeneral</name>
@@ -3835,6 +3845,21 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <source>Location: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Lokacija: %1</translation>
+        </message>
+        <message>
+            <source>Website</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Spletno mesto</translation>
+        </message>
+        <message>
+            <source>Privacy Policy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pravilnik o zasebnosti</translation>
+        </message>
+        <message>
+            <source>Terms of Service</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pogoji storitve</translation>
         </message>
     </context>
     <context>
@@ -11233,6 +11258,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <source>Signed in to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Prijavljeni ste v Google Foto</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>Google sign-in is not available in this version yet.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Prijava z Googlom v tej različici še ni na voljo.</translation>
         </message>
         <message>
             <source>Sign Out</source>

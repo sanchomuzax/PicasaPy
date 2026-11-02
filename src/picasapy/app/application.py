@@ -44,7 +44,11 @@ from PySide6.QtQuickControls2 import QQuickStyle as QQuickStyle
 
 from picasapy.index import open_index, prune_foreign_folders
 from picasapy.index.sync import sync_folder as sync_folder
-from picasapy.perf import default_log_dir as default_log_dir, start_startup_timeline as start_startup_timeline
+from picasapy.perf import (
+    default_log_dir as default_log_dir,
+    start_startup_timeline as start_startup_timeline,
+    timeline_enabled as timeline_enabled,
+)
 from picasapy.perf.logwriter import session_header as session_header
 from picasapy.perf.tesztuzem import (
     argv_kapcsolo_nelkul as argv_kapcsolo_nelkul,
@@ -442,6 +446,32 @@ def _startup_step_smoke_test(state) -> None:
     state.edit_controller.waitForBackgroundWorkers(2.0)
 
 
+def _reszletes_idovonal_kell(argv: list[str]) -> bool:
+    """A részletes indexméret-adatok csak tesztüzemben kellenek (#1654, #1601)."""
+    return bool(
+        argv_tesztuzem(argv)
+        or tesztuzem_bekapcsolva(QSettings("PicasaPy", "PicasaPy"))
+        or timeline_enabled()
+    )
+
+
+def _jelentsd_az_indulast(timeline, state, roots, reszletes: bool, early_startup) -> None:
+    """Az indulási idővonal kiírása; a darabszámok csak részletes módban (#6385)."""
+    _jelentsd_az_idovonalat(
+        timeline,
+        (lambda: _indexelt_kepszamok(state.data_dir)) if reszletes else None,
+        (lambda: _takaritas_gyokerei(roots, QSettings())) if reszletes else None,
+        run_log=getattr(early_startup, "run_log", None),
+    )
+
+
+def _allitsd_le_az_akadasfigyelot(early_startup) -> None:
+    """Az első képkocka után az indulási akadásfigyelő már nem kell (#6385)."""
+    hang_traceback = getattr(early_startup, "hang_traceback", None)
+    if hang_traceback is not None:
+        hang_traceback.cancel()
+
+
 def run(argv: list[str], *, entry_at: float | None = None) -> int:
     """Az alkalmazás indítása.
 
@@ -450,9 +480,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     maga a Python- és PySide6-import, mielőtt idáig eljutnánk. None
     esetén ez a szakasz kimarad a jelentésből; mérni nem kötelező.
 
-    Az idővonal alapból KI van kapcsolva; a tartós tesztüzem beállítás
-    (#1654), a --tesztuzem kapcsoló és a PICASAPY_STARTUP_TIMELINE=1
-    környezeti változó (#1601) kapcsolja be — ld. _indulasi_idovonal.
+    Az indulási idővonal minden futáskor készül. A tartós tesztüzem,
+    --tesztuzem és PICASAPY_STARTUP_TIMELINE=1 csak a részletes
+    indexméret-adatokat kapcsolja be.
     """
 
     early_startup = take_early_startup()
@@ -463,7 +493,10 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
     elso = _startup_step_read_arguments(argv, early_startup)
     progress_log, onellenorzes, startup_smoke = elso.progress_log, elso.onellenorzes, elso.startup_smoke
-    timeline, argv = _indulasi_idovonal(elso.argv, entry_at=entry_at)
+    reszletes_idovonal = _reszletes_idovonal_kell(elso.argv)
+    timeline, argv = _indulasi_idovonal(
+        elso.argv, entry_at=entry_at, run_log=getattr(early_startup, "run_log", None)
+    )
     # #5762: a fájlok a viewer listájába, a könyvtárak a könyvtárnézet gyökerei közé
     from .quick_view import parse_launch_arguments
     launch_arguments = parse_launch_arguments(argv)
@@ -604,11 +637,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         elapsed_ms = (
             time.monotonic() - startup_state["first_frame_at"]
         ) * 1000
-        _jelentsd_az_idovonalat(
-            timeline,
-            lambda: _indexelt_kepszamok(state.data_dir),
-            lambda: _takaritas_gyokerei(roots, QSettings()),
-        )
+        _jelentsd_az_indulast(timeline, state, roots, reszletes_idovonal, early_startup)
 
         def _finish_splash() -> None:
             progress_log.mark("A splash lezárása elkezdődött")
@@ -630,6 +659,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
             early_splash.close()
         timeline.mark("az ablak első kirajzolt képkockája")
         progress_log.mark("Első főablak-képkocka; a rács megjelent")
+        _allitsd_le_az_akadasfigyelot(early_startup)
         QTimer.singleShot(0, _start_and_finish)
 
     app = state.app

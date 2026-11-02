@@ -14,8 +14,8 @@ webexportnál is saját sablon (`webexport/templates/feher`) szállítunk. Amit
   leírását mutatja, benne a bélyegképpel és a felirattal;
 - a helyjelzők egy `<Folder>`-be kerülnek, `<open>1</open>`-nel.
 
-**Amit szándékosan NEM veszünk át:** az eredeti buborék alján egy
-`picasa.google.com`-ra mutató logó-hivatkozás áll. A szolgáltatás megszűnt, a
+**Amit szándékosan NEM veszünk át:** az eredeti buborék alján a
+Picasa egykori webes oldalára mutató logó-hivatkozás áll. A szolgáltatás megszűnt, a
 kép nem tölthető be — halott hivatkozást nem exportálunk. A dokumentum neve
 is a sajátunk.
 

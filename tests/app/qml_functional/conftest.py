@@ -381,6 +381,10 @@ def _build_qml_app(
     from picasapy.app.application_location import program_location
 
     engine.rootContext().setContextProperty("appLocation", program_location())
+    # #6402: a Névjegy és a Google-bejelentkezés külső hivatkozásai (application_startup_qml.py)
+    from picasapy.app.external_links import EXTERNAL_LINKS
+
+    engine.rootContext().setContextProperty("appLinks", EXTERNAL_LINKS)
     engine.rootContext().setContextProperty("confirmSettings", confirm_settings)
     # #1792: az album-fejléc gombsorának összeállítása — az application.py
     # bekötésének tükre. A fejléc `typeof`-őr mögül hivatkozik rá, tehát

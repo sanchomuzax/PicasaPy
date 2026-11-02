@@ -1358,6 +1358,16 @@ picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Le foto caricate sono limitate a 1600 pixel sul lato più lungo.</translation>
         </message>
+        <message>
+            <source>Privacy Policy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Norme sulla privacy</translation>
+        </message>
+        <message>
+            <source>Terms of Service</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Termini di servizio</translation>
+        </message>
     </context>
     <context>
         <name>OptionsTabGeneral</name>
@@ -3833,6 +3843,21 @@ picasapy-origin-key: stringres:AspectRatioList:Manual;stringres:EXIF::Manual</ex
             <source>Location: %1</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Percorso: %1</translation>
+        </message>
+        <message>
+            <source>Website</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sito web</translation>
+        </message>
+        <message>
+            <source>Privacy Policy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Norme sulla privacy</translation>
+        </message>
+        <message>
+            <source>Terms of Service</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Termini di servizio</translation>
         </message>
     </context>
     <context>
@@ -11203,6 +11228,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <source>Signed in to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Accesso a Google Foto effettuato</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaMenuBar.qml" line="0" />
+            <source>Google sign-in is not available in this version yet.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>L'accesso con Google non è ancora disponibile in questa versione.</translation>
         </message>
         <message>
             <source>Sign Out</source>

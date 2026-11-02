@@ -1,0 +1,1 @@
+- Visszavonva az 1.0.13 előre fordított QML-gyorsítótára: a tulajdonos gépén az indulást 7 másodperccel lassította, a felület betöltését nem gyorsította (#6374).

@@ -214,12 +214,22 @@ Item {
         }
     }
 
-    // #2054: a felhasználói súgó — F1. Halasztott, mint a többi:
+    // #2054: a felhasználói súgó, F1. Halasztott, mint a többi:
     // induláskor nem épül fel, csak az első megnyitáskor.
+    // #6387: a főablakból nyitott súgó NEM modális külön ablak (HelpWindow),
+    // így a főablak a súgó nyitva tartása mellett is kezelhető. Egyetlen
+    // példány van: a halasztott Loader egyszer építi fel.
     DeferredDialog {
         id: helpDialog
         anchors.fill: parent
-        sourceComponent: Component { HelpDialog { objectName: "helpDialog" } }
+        sourceComponent: Component {
+            HelpWindow {
+                objectName: "mainHelpWindow"
+                dialogObjectName: "helpDialog"
+                modality: Qt.NonModal
+                transientParent: dialogStack.hostWindow
+            }
+        }
     }
 
     //: #1792: a fejlec gombsoranak testreszabasa — halasztott toltes, a

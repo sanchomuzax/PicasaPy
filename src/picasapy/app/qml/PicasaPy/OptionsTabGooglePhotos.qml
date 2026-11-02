@@ -10,6 +10,8 @@ ColumnLayout {
 
     readonly property var prefs: (typeof controller !== "undefined" && controller)
         ? controller : null
+    // #6402: az adatvédelmi tájékoztató és a feltételek címe (external_links.py)
+    readonly property var links: typeof appLinks !== "undefined" ? appLinks : ({})
 
     function authStatusText() {
         if (!prefs)
@@ -83,6 +85,25 @@ ColumnLayout {
         font.pixelSize: Theme.fontSize
         wrapMode: Text.WordWrap
         Layout.fillWidth: true
+    }
+
+    // #6402: a bejelentkezésnél az adatvédelmi tájékoztató és a feltételek
+    RowLayout {
+        objectName: "googlePhotosLegalLinks"
+        Layout.fillWidth: true
+        spacing: 18
+
+        ExternalLinkText {
+            objectName: "googlePhotosPrivacyLink"
+            text: qsTr("Privacy Policy")
+            url: root.links.privacy || ""
+        }
+
+        ExternalLinkText {
+            objectName: "googlePhotosTermsLink"
+            text: qsTr("Terms of Service")
+            url: root.links.terms || ""
+        }
     }
 
     Text {
