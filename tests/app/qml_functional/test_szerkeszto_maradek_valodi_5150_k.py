@@ -666,18 +666,19 @@ class TestEmailValasztas:
         link = gyerek(window, "emailChoiceSignupLink")
         fogado = _UrlFogado()
         # a külső böngésző helyett a Qt URL-kezelője fogja fel a hívást: a tesztgépen nem indul program
-        QDesktopServices.setUrlHandler("http", fogado, "urlt_kapott")
+        # a link https-címre mutat (#6442): a titkosított séma kezelőjét fogjuk el
+        QDesktopServices.setUrlHandler("https", fogado, "urlt_kapott")
         try:
             kattints(window, qt_app, link)
 
             assert _varj(qt_app, lambda: len(fogado.hivasok) == 1), (
                 "a Gmail-regisztráció link nem kérte a levelezős oldal megnyitását"
             )
-            assert "mail.google.com" in fogado.hivasok[0], (
+            assert fogado.hivasok[0].startswith("https://mail.google.com"), (
                 f"rossz cím ment a böngészőnek: {fogado.hivasok[0]}"
             )
         finally:
-            QDesktopServices.unsetUrlHandler("http")
+            QDesktopServices.unsetUrlHandler("https")
 
     def test_a_valtas_gomb_tiltott_es_kattintasra_nincs_hatasa(self, qml_app_email, qt_app):
         window, _controller, engine = qml_app_email
