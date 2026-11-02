@@ -21,7 +21,9 @@ from pathlib import Path
 import re
 import sys
 import tempfile
+import time
 from collections.abc import Callable
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 from PySide6.QtCore import QObject, Property, QRunnable, QThreadPool, QTimer, Signal, Slot
@@ -38,6 +40,9 @@ SKIPPED_VERSION_KEY = "updates/skippedVersion"
 NOTIFIED_VERSION_KEY = "updates/notifiedVersion"
 DEFERRED_VERSION_KEY = "updates/deferredVersion"
 AUTO_CHECK_DELAY_MS = 30_000
+#: #6379: futás közben ennyi időnként keres újra (6 óra)
+AUTO_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
+UPDATE_API_ENV = "PICASAPY_UPDATE_API"
 
 
 #: a futtató folyamat (`executable`) — modulszintű fogantyú a tesztnek (#1375)
@@ -47,6 +52,36 @@ _futtato = sys
 def _platform() -> str:
     """Platformfogantyú, hogy a Windows-specifikus indítás helyettesíthető legyen."""
     return sys.platform
+
+
+def _latest_release_api_url(environ: dict[str, str] | None = None) -> str:
+    """Tesztben helyi API-ra irányít, éles alapértéket változatlanul hagyva."""
+    source = os.environ if environ is None else environ
+    override = str(source.get(UPDATE_API_ENV, "") or "").strip()
+    if not override:
+        return LATEST_RELEASE_API
+    try:
+        parsed = urlsplit(override)
+        host = (parsed.hostname or "").casefold()
+        port = parsed.port
+    except ValueError as error:
+        raise ValueError(
+            "A PICASAPY_UPDATE_API csak helyi (127.0.0.1 vagy localhost) "
+            "http-címet fogadhat el"
+        ) from error
+    if (
+        parsed.scheme != "http"
+        or host not in {"127.0.0.1", "localhost"}
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.fragment
+        or (port is not None and not 1 <= port <= 65535)
+    ):
+        raise ValueError(
+            "A PICASAPY_UPDATE_API csak helyi (127.0.0.1 vagy localhost) "
+            "http-címet fogadhat el"
+        )
+    return override
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,24 +129,14 @@ def release_is_newer(latest: str, current: str) -> bool:
     return (left, newest[1], newest[2]) > (right, installed[1], installed[2])
 
 
-def automatic_check_is_due(
-    last_check_date: object,
-    now: datetime | None = None,
-    *,
-    enabled: bool = True,
-) -> bool:
-    """Naponta legfeljebb egyszer engedi az indulás utáni automatikus kört."""
-    if not enabled:
-        return False
-    now = now or datetime.now(timezone.utc)
-    if now.tzinfo is None:
-        now = now.replace(tzinfo=timezone.utc)
-    return str(last_check_date or "") != now.astimezone(timezone.utc).date().isoformat()
+def automatic_check_is_due(*, enabled: bool = True) -> bool:
+    """Az automatikus keresés minden indításkor és időzítéskor fut, ha be van kapcsolva.
 
-
-def should_offer_release(version: str, *, skipped_version: str = "") -> bool:
-    """A kihagyott kiadást többé nem ajánlja fel."""
-    return bool(version) and version != skipped_version
+    #6379: a korábbi napi korlát miatt a napközben kiadott verziót a program
+    csak másnap vette észre. Az értesítés verziónként egyszer jön
+    (`NOTIFIED_VERSION_KEY`), így a gyakoribb keresés nem tolakodó.
+    """
+    return enabled
 
 
 _HTML_MEGJEGYZES = re.compile(r"<!--.*?-->", re.DOTALL)
@@ -187,7 +212,7 @@ class GitHubReleaseClient:
 
     def latest_release(self) -> ReleaseInfo:
         """A GitHub `releases/latest` végpontjáról beolvassa a kiadás adatait."""
-        raw = json.loads(self._read(LATEST_RELEASE_API).decode("utf-8"))
+        raw = json.loads(self._read(_latest_release_api_url()).decode("utf-8"))
         assets = tuple(
             ReleaseAsset(str(asset["name"]), str(asset["browser_download_url"]))
             for asset in raw.get("assets", [])
@@ -324,6 +349,31 @@ def mappa_irhato(folder: Path) -> bool:
     return True
 
 
+#: Ennyi idő jut a rendes lezárásra a „Restart now” után (#6383).
+KILEPESI_HATARIDO_MP = 20.0
+#: A kényszerített kilépés cserélhető fogantyúja (#1375, #6383).
+_azonnali_kilepes = os._exit
+
+
+def _kenyszeritett_kilepes_ha_beragad(hatarido_mp: float = KILEPESI_HATARIDO_MP) -> None:
+    """Ha a lezárás beragad, a folyamat a határidő után kilép (#6383).
+
+    A frissítősegéd addig vár, amíg ez a folyamat él; egy beragadt háttérszál
+    miatt a csere soha nem indulna el. A démonszálas időzítő az értelmező
+    leállása közben is lefut, ezért a nem démon szálakra várakozást is
+    átvágja. A rendes lezárás (index, beállítások) a határidőn belül végez."""
+    import threading
+
+    def _kilepes() -> None:
+        logger.warning("A lezárás %.0f s alatt nem fejeződött be; kilépés a frissítéshez", hatarido_mp)
+        logging.shutdown()
+        _azonnali_kilepes(0)
+
+    idozito = threading.Timer(hatarido_mp, _kilepes)
+    idozito.daemon = True
+    idozito.start()
+
+
 def _inditsd_a_segedet(args: list[str], *, emelt: bool) -> bool:
     """A frissítő segéd indítása; UAC-ot csak akkor kér, ha `emelt` (#6340)."""
     import subprocess
@@ -373,6 +423,10 @@ class UpdateController(QObject):
         from PySide6.QtCore import QSettings
 
         self._settings = settings or QSettings("PicasaPy", "PicasaPy")
+        #: #6394: a „Verzió kihagyása” megszűnt; a régi kihagyást egyszer töröljük,
+        #: hogy a korábban kihagyott verzió újra felkínálható legyen
+        self._settings.remove(SKIPPED_VERSION_KEY)
+        self._settings.sync()
         self._client = client or GitHubReleaseClient()
         self._pool = pool or QThreadPool.globalInstance()
         self._current_version = current_version.removeprefix("v")
@@ -385,7 +439,6 @@ class UpdateController(QObject):
         self._checking = False
         self._progress = 0
         self._progress_total = 0
-        self._download_running = False
         self._download_path: Path | None = None
         self._workers: dict[int, _Worker] = {}
         self._worker_callbacks: dict[
@@ -393,6 +446,10 @@ class UpdateController(QObject):
         ] = {}
         self._next_job_id = 0
         self._automatic_check_started = False
+        self._download_requested = False
+        self._periodic_check_timer = QTimer(self)
+        self._periodic_check_timer.setInterval(AUTO_CHECK_INTERVAL_MS)
+        self._periodic_check_timer.timeout.connect(self._automatic_check_if_due)
         self._restart_pending = False
         from .update_cleanup import start_startup_cleanup
 
@@ -400,6 +457,14 @@ class UpdateController(QObject):
         self._restart_timer = QTimer(self)
         self._restart_timer.setInterval(250)
         self._restart_timer.timeout.connect(self._restart_when_idle)
+        self._test_diagnostic_timer: QTimer | None = None
+        self._last_test_diagnostic = ""
+        if os.environ.get("PICASAPY_UPDATE_TEST_DIAGNOSTICS") == "1":
+            self._test_diagnostic_timer = QTimer(self)
+            self._test_diagnostic_timer.setInterval(100)
+            self._test_diagnostic_timer.timeout.connect(self._write_test_diagnostics)
+            self._test_diagnostic_timer.start()
+            QTimer.singleShot(0, self._write_test_diagnostics)
         if schedule:
             self.start_automatic_check()
 
@@ -454,7 +519,8 @@ class UpdateController(QObject):
     def downloadState(self) -> str:  # noqa: N802
         if self._download_path is not None:
             return "ready"
-        if self._download_running:
+        # #6380: a kattintás pillanatától "downloading", ne csak az első adag után
+        if self._download_requested or self._progress_total or self._progress:
             return "downloading"
         return "idle"
 
@@ -502,21 +568,130 @@ class UpdateController(QObject):
 
     @Slot()
     def _automatic_check_if_due(self) -> None:
-        if not automatic_check_is_due(
-            self._settings.value(LAST_AUTO_CHECK_KEY), enabled=self.autoCheckEnabled
-        ):
+        if not automatic_check_is_due(enabled=self.autoCheckEnabled):
             return
-        today = datetime.now(timezone.utc).date().isoformat()
-        self._settings.setValue(LAST_AUTO_CHECK_KEY, today)
+        most = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        self._settings.setValue(LAST_AUTO_CHECK_KEY, most)
         self._settings.sync()
         self._check_latest(manual=False)
 
     def start_automatic_check(self) -> None:
-        """A főablak betöltése után egyszer elindítja a 30 másodperces várást."""
+        """A főablak betöltése után 30 másodperccel keres, utána 6 óránként."""
         if self._automatic_check_started:
             return
         self._automatic_check_started = True
         QTimer.singleShot(AUTO_CHECK_DELAY_MS, self._automatic_check_if_due)
+        self._periodic_check_timer.start()
+
+    def _write_test_diagnostics(self) -> None:
+        """A Windows-csomagpróba számára helyi QML-elemkoordinátákat ír ki.
+
+        Kizárólag a külön, tesztben beállított környezeti jelzővel fut; az
+        eredmény PID-nkénti fájlba kerül, hogy az updater által újraindított
+        folyamat is külön követhető legyen.
+        """
+        directory = os.environ.get("PICASAPY_UPDATE_TEST_DIAGNOSTICS_DIR")
+        if os.environ.get("PICASAPY_UPDATE_TEST_DIAGNOSTICS") != "1" or not directory:
+            return
+        try:
+            from PySide6.QtCore import QPointF, QObject
+            from PySide6.QtGui import QGuiApplication
+            from PySide6.QtQuick import QQuickItem  # noqa: F401 - a contentItem átalakítója
+
+            app = QGuiApplication.instance()
+            if app is None:
+                return
+            watched_names = {
+                "versionLabel",
+                "updateDialog",
+                "updateDialogDownloadButton",
+                "updateDialogRestartButton",
+                "aboutDialog",
+                "initialScanContinue",
+            }
+            objects: list[dict[str, object]] = []
+            for window in app.allWindows():
+                # A QML-ben az ablakba írt elemek Qt-szülője maga az ablak, nem
+                # a tartalomelem: mindkét fát be kell járni (#6383). Nem
+                # Quick-ablaknak (pl. az indulóablak) nincs tartalomeleme.
+                root = window.property("contentItem")
+                if not isinstance(root, QObject):
+                    root = None
+                fak = [window.findChildren(QObject)]
+                if root is not None:
+                    fak.insert(0, [root, *root.findChildren(QObject)])
+                bejart: dict[int, QObject] = {}
+                for fa in fak:
+                    for item in fa:
+                        bejart.setdefault(id(item), item)
+                for item in bejart.values():
+                    try:
+                        name = str(item.objectName() or "")
+                        text = str(item.property("text") or "")
+                        title = str(item.property("title") or "")
+                        current_version_text = str(
+                            item.property("currentVersionText") or ""
+                        )
+                        normalized = text.replace("&", "").strip().casefold()
+                        normalized_title = title.replace("&", "").strip().casefold()
+                        interesting = (
+                            name in watched_names
+                            or normalized in {"help", "about picasapy"}
+                            or normalized_title in {"help", "about picasapy"}
+                            or text.startswith("PicasaPy ")
+                        )
+                        if not interesting:
+                            continue
+                        visible_value = item.property("visible")
+                        visible = (
+                            bool(visible_value)
+                            if visible_value is not None
+                            else bool(item.isVisible())
+                        )
+                        rect: dict[str, float] | None = None
+                        if callable(getattr(item, "mapToGlobal", None)):
+                            point = item.mapToGlobal(QPointF(0, 0))
+                            ratio = float(window.devicePixelRatio() or 1.0)
+                            rect = {
+                                "x": float(point.x()) * ratio,
+                                "y": float(point.y()) * ratio,
+                                "width": float(item.property("width") or 0.0) * ratio,
+                                "height": float(item.property("height") or 0.0) * ratio,
+                            }
+                        objects.append(
+                            {
+                                "name": name,
+                                "text": text,
+                                "title": title,
+                                "current_version_text": current_version_text,
+                                "visible": visible,
+                                "rect": rect,
+                            }
+                        )
+                    except (AttributeError, RuntimeError, TypeError, ValueError):
+                        continue
+            snapshot = {
+                "at": time.time(),
+                "pid": os.getpid(),
+                "test_mode": any(
+                    option in sys.argv
+                    for option in ("--onellenorzes", "--indulasellenorzes")
+                ),
+                "update_available": self.updateAvailable,
+                "available_version": self.availableVersion,
+                "download_state": self.downloadState,
+                "objects": objects,
+            }
+            encoded = json.dumps(snapshot, ensure_ascii=False, separators=(",", ":"))
+            if encoded == self._last_test_diagnostic:
+                return
+            target = Path(directory) / f"{os.getpid()}.jsonl"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with target.open("a", encoding="utf-8") as output:
+                output.write(encoded + "\n")
+            self._last_test_diagnostic = encoded
+        except Exception:  # noqa: BLE001 - diagnosztika nem állíthatja le az alkalmazást
+            logger.debug("A frissítési tesztdiagnosztika nem írható", exc_info=True)
 
     @Slot()
     def checkForUpdates(self) -> None:  # noqa: N802
@@ -534,10 +709,7 @@ class UpdateController(QObject):
             self.checkingChanged.emit()
             release = value if isinstance(value, ReleaseInfo) else None
             is_newer = bool(release and release_is_newer(release.version, self._current_version))
-            if is_newer and release and should_offer_release(
-                release.version,
-                skipped_version=str(self._settings.value(SKIPPED_VERSION_KEY, "") or ""),
-            ):
+            if is_newer and release:
                 self._release = release
                 self.updateAvailableChanged.emit()
                 if manual:
@@ -562,16 +734,27 @@ class UpdateController(QObject):
             if manual:
                 self.manualCheckFinished.emit(False, "error")
 
-        self._submit(lambda _progress: self._client.latest_release(), completed, failed)
+        self._submit(lambda _progress: self._letoltheto_kiadas(), completed, failed)
 
-    @Slot()
-    def skipAvailableVersion(self) -> None:  # noqa: N802
-        if self._release is None:
-            return
-        self._settings.setValue(SKIPPED_VERSION_KEY, self._release.version)
-        self._settings.sync()
-        self._release = None
-        self.updateAvailableChanged.emit()
+    def _letoltheto_kiadas(self) -> ReleaseInfo | None:
+        """A legújabb kiadás, de windowsos telepítésnél csak ha letölthető.
+
+        #6389: a kiadási lap percekkel előbb nyilvános, mint ahogy a Package
+        feltölti a windowsos csomagot; addig nem ajánljuk fel, mert a
+        letöltés hibára futna. A következő keresés újra megnézi."""
+        release = self._client.latest_release()
+        if self._kind != "windows" or release is None:
+            return release
+        if release.asset(WINDOWS_ASSET_NAME) is None:
+            return None
+        manifest = release.asset(SHA256SUMS_NAME)
+        if manifest is None:
+            return None
+        try:
+            hashes = parse_sha256sums(self._client.download(manifest).decode("utf-8"))
+        except (OSError, ValueError, UnicodeDecodeError):
+            return None
+        return release if WINDOWS_ASSET_NAME in hashes else None
 
     @Slot()
     def deferAvailableVersion(self) -> None:  # noqa: N802
@@ -582,8 +765,6 @@ class UpdateController(QObject):
     @Slot()
     def downloadUpdate(self) -> None:  # noqa: N802
         """A Windows portable csomagot és SHA256SUMS-t háttérben ellenőrzi."""
-        if self._download_running:
-            return
         release = self._release
         if not release or self._kind != "windows":
             return
@@ -593,8 +774,8 @@ class UpdateController(QObject):
             self.downloadFinished.emit(False, "missing-assets")
             return
         self._progress = self._progress_total = 0
-        self._download_running = True
         self._download_path = None
+        self._download_requested = True
         self.progressChanged.emit()
 
         def download(report_progress: Callable[[int, int], None]) -> Path:
@@ -613,16 +794,17 @@ class UpdateController(QObject):
             return destination
 
         def complete(path: object) -> None:
+            self._download_requested = False
             self._download_path = Path(path)
-            self._download_running = False
             self._progress = self._progress_total = 1
             self.progressChanged.emit()
             self.downloadFinished.emit(True, "ready")
 
         def failed(message: str) -> None:
             logger.warning("A frissítés letöltése nem sikerült: %s", message)
+            self._download_requested = False
+            self._progress = self._progress_total = 0
             self._download_path = None
-            self._download_running = False
             self.progressChanged.emit()
             self.downloadFinished.emit(False, "integrity-error" if "SHA-256" in message else "download-error")
 
@@ -674,10 +856,14 @@ class UpdateController(QObject):
             "--executable",
             Path(_futtato.executable).name,
         ]
-        if not _inditsd_a_segedet(args, emelt=not mappa_irhato(install_dir.parent)):
+        emelt = not mappa_irhato(install_dir.parent)
+        if emelt:
+            args.append("--uac-emelt")
+        if not _inditsd_a_segedet(args, emelt=emelt):
             return False
         if restart_now:
             from PySide6.QtCore import QCoreApplication
 
+            _kenyszeritett_kilepes_ha_beragad()
             QCoreApplication.quit()
         return True

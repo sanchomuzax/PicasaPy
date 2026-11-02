@@ -68,8 +68,12 @@ The privacy link opens Google's privacy page in your browser.
 **Check for updates automatically** is on by default. When enabled, PicasaPy
 checks the PicasaPy GitHub releases page at
 https://github.com/sanchomuzax/PicasaPy/releases/ for a newer version
-about 30 seconds after startup, at most once per day.
-Network errors and offline use stay quiet. You can also choose Help ▸
+every time it starts, about 30 seconds after the main window appears,
+and then every 6 hours while it runs. A version released during the
+day is therefore noticed quickly. You are notified about the same version
+only once. Network errors and offline use stay quiet. In the Windows
+build, a version is offered only after its downloadable package has been
+published with the release. You can also choose Help ▸
 **Check for Updates**… at any time; a manual check reports when no newer
 version is available.
 
@@ -78,14 +82,17 @@ highlighted. A small notice appears in the bottom bar the first time; the
 program does not open a window by itself. If you are editing, running a
 slideshow, exporting, or uploading, the notice waits until the program is
 idle. Click the label to read the short release notes. **Later** closes the
-window and does not reopen it automatically for that release. **Skip this
-version** stops the program from offering that release again.
+window and does not reopen it automatically for that release. Versions
+cannot be skipped: a newer release is always offered, including one you
+skipped in an earlier version.
 
 In the Windows PyInstaller build, **Update now** downloads the package in
-the background while PicasaPy remains usable. Before installation it checks
+the background while PicasaPy remains usable. As soon as you click it, a
+progress bar replaces the button, so you can see that the download has
+started. Before installation it checks
 the fingerprint in the release's `SHA256SUMS` file. A failed check prevents
-replacement. After a successful download, choose to restart now or install
-when you exit. Restarting waits for background work to finish. The previous
+replacement. After a successful download, choose **Restart now** or
+**Install on exit**. Restarting waits for background work to finish. The previous
 version is kept, and the updater restores it if the new copy fails to start.
 
 On Linux (`.deb`) and `pip` installations, the dialog shows the release page
@@ -337,8 +344,15 @@ start the application.
 
 ## About PicasaPy
 
-The About entry under Help shows the exact program version. Include it when
-you report a problem.
+Help ▸ **About PicasaPy** shows the exact program version. Include it when
+you report a problem. The **Location: %1** line (with the actual folder in
+place of %1) shows which folder the program runs from.
+
+At the bottom of the window there are three clickable links: **Website**,
+**Privacy Policy** and **Terms of Service**. They open PicasaPy's own pages
+in your browser, so they need an internet connection. (The similarly named
+items in the **Help** menu pointed to the original Picasa's discontinued
+pages and do not work.)
 
 ## Performance and diagnostic information
 

@@ -23,7 +23,6 @@ Rectangle {
         openReleases: qsTr("View releases on GitHub"),
         updateNow: qsTr("Update now"),
         later: qsTr("Later"),
-        skip: qsTr("Skip this version"),
         restart: qsTr("Restart now"),
         helperError: qsTr("Update helper could not start."),
         installOnExit: qsTr("Install on exit"),

@@ -7,6 +7,29 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.14] - 2026-11-02
+
+- 1.0.14 integráció: frissítési napló és végponttól végpontig próba, gyorsabb indulás, eredeti indulóablak (#6399).
+- Visszavonva az 1.0.13 előre fordított QML-gyorsítótára: a tulajdonos gépén az indulást 7 másodperccel lassította, a felület betöltését nem gyorsította (#6374).
+- Az indulóablak keret nélküli, fehér PicasaPy képpel jelenik meg. (#6378).
+- A program minden indításkor, és futás közben 6 óránként keres új verziót; a napközben kiadott verziót is azonnal jelzi (#6379).
+- A frissítési ablak „Frissítés most” gombja kattintásra azonnal folyamatjelzőre vált, nem tűnik halottnak, amíg a letöltés elindul (#6380).
+- A Windowsos önfrissítés a telepített programon is végigfut a csomagolási ellenőrzésben. (#6383).
+- A program minden indításkor lépésenkénti naplót készít, az elakadást veremállapottal rögzíti, a frissítősegéd pedig naplózza az ellenőrzés és visszaállás eredményét (#6385).
+- A főablakból nyitott súgó külön, nem modális ablakban nyílik, mellette a főablak továbbra is kezelhető (#6387).
+- A Google-bejelentkezés kliensadatok nélkül is egyértelmű visszajelzést ad, beépített klienssel pedig közvetlenül elindítja a belépést (#6388).
+- A program csak akkor jelez új verziót, ha a windowsos csomag már letölthető a kiadás mellett (#6389).
+- A telepített programban az „Exportálás HTML-oldalként” ablak ismét felsorolja a sablonokat, így az exportálás elindítható (#6392).
+- A frissítési ablakból kikerült a „Verzió kihagyása” gomb; egy korábban kihagyott verziót a program újra felajánl (#6394).
+- A Névjegyben kattintható linkek vezetnek a honlapra, az adatvédelmi tájékoztatóra és a felhasználási feltételekre, a Google-bejelentkezésnél pedig az adatvédelmi tájékoztatóra és a feltételekre (#6402).
+- Az arcok üdvözlőablakában a „További információ...” a Google-oldal helyett a program saját súgójának Emberek fejezetét nyitja meg (#6403).
+- Az arckeresés háttérszálai alacsony prioritással és egy OpenCV-szállal futnak (#6404).
+- A windowsos tesztláb időszakos összeomlásai (arcfilm-teszt, átnevezés-teszt), a háttérprioritás-teszt szálfüggése és a filmkészítő haladásjelzőjének bontáskori figyelmeztetése javítva (#6407).
+
+## [1.0.13] - 2026-11-01
+
+- A Windows-csomag előre fordított QML-fájlokkal gyorsítja a frissítés utáni első indulást. (#6374).
+
 ## [1.0.12] - 2026-11-01
 
 - 1.0.12 integráció: gyors indulás, indulóablak, telepítő, betűköz, Google-bejelentkezés (#6375).

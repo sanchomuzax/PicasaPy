@@ -20,8 +20,11 @@ def _walk(item: QQuickItem):
 
 
 def _nevre(window, nev: str) -> list:
-    gyoker = window.contentItem() if hasattr(window, "contentItem") else window
-    return [e for e in _walk(gyoker) if e.objectName() == nev]
+    # #6387: a súgó a SAJÁT ablakában él (nem a főablak vizuális fájában),
+    # így a találatsorokat a súgóablak tartalmában keressük.
+    sugo_ablak = window.findChild(QObject, "mainHelpWindow")
+    assert sugo_ablak is not None, "nincs főablaki súgóablak"
+    return [e for e in _walk(sugo_ablak.contentItem()) if e.objectName() == nev]
 
 
 def _var(qt_app, feltetel, masodperc: float = 10.0) -> bool:

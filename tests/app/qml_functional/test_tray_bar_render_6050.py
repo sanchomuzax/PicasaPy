@@ -314,10 +314,23 @@ def _tartalom_menet(qml_app, qt_app, tmp_path, ablakmagassag_eltolas: int) -> No
 @pytest.fixture
 def rogzitett_datum(monkeypatch):
     """A `qml_app` ELŐTT kell futnia: az induláskori fejléc is ezt használja."""
-    eredeti = formatting.long_date
-    monkeypatch.setattr(
-        formatting, "long_date", lambda _iso, locale: eredeti(_ROGZITETT_NAP, locale)
-    )
+    from picasapy.app import formatting_dates, formatting_status
+
+    eredeti = formatting_dates.long_date
+
+    from PySide6.QtCore import QLocale
+
+    angol = QLocale.c()  # a CI és a golden nyelvi beállítása
+
+    def rogzitett(_iso, _locale):
+        # a golden angol nyelvű futáson készült; a gép nyelvétől se függjön
+        return eredeti(_ROGZITETT_NAP, angol)
+
+    # #6400: az állapotsor a `formatting_status`-ban közvetlenül importálja a
+    # függvényt; ha csak a `formatting`-ot cseréljük, a tálca fejléce a futás
+    # napját írja, és a felirat hossza naponta változik.
+    for modul in (formatting, formatting_dates, formatting_status):
+        monkeypatch.setattr(modul, "long_date", rogzitett)
 
 
 @pytest.mark.parametrize("ablakmagassag_eltolas", _ABLAKMAGASSAG_ELTOLASOK)

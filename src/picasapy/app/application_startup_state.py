@@ -58,5 +58,10 @@ def _startup_step_prepare_state(elso, argv: list[str], timeline, launch_argument
 
 def _zard_be_az_induloablakot(early_startup) -> None:
     """A korai indulóablak bezárása, ha az indulás idő előtt véget ér (#6367)."""
-    if early_startup is not None and early_startup.splash is not None:
+    if early_startup is None:
+        return
+    hang_traceback = getattr(early_startup, "hang_traceback", None)
+    if hang_traceback is not None:
+        hang_traceback.cancel()
+    if early_startup.splash is not None:
         early_startup.splash.close()

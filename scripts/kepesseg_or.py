@@ -211,7 +211,8 @@ _JELZESKEZELO = re.compile(r"on[A-Z]")
 #: regisztráció megállítja az őrt (2-es kilépési kód), ahelyett hogy némán
 #: kimaradna a mérésből. Az `appVersion` a `version_string()` eredménye,
 #: azaz sztring; az `appLocation` futási útvonalat tartalmazó sztring.
-_NEM_QOBJECT = frozenset({"appVersion", "appLocation"})
+#: Az `appLinks` a honlap, az adatvédelem és a feltételek címének szótára (#6402).
+_NEM_QOBJECT = frozenset({"appVersion", "appLocation", "appLinks"})
 
 #: SOSEM alias, akkor sem, ha a jobb oldala pont egy kontextus-objektum.
 #:

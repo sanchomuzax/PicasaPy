@@ -5,6 +5,8 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
+import pytest
+
 from PySide6.QtCore import (
     QEventLoop,
     QObject,
@@ -34,6 +36,19 @@ _KEEP_ALIVE: list[QObject] = []
 
 
 _FILM_VARAKOZAS_MP = 90
+
+
+@pytest.fixture(autouse=True)
+def _szemetgyujtes_elo_alkalmazas_mellett(qt_app):
+    """#6407: a teszt után még élő Qt-objektumokat az alkalmazás életében
+    gyűjtjük össze. Különben a pytest végső szemétgyűjtése szedte össze őket,
+    és Windowson access violationnel omlott össze."""
+    yield
+    import gc
+
+    _szondak_leszerelese(qt_app)
+    gc.collect()
+    qt_app.processEvents()
 
 
 def _anna_kepei(lib) -> None:
@@ -112,6 +127,22 @@ Item {
     assert proba is not None, [hiba.toString() for hiba in komponens.errors()]
     _KEEP_ALIVE.extend((komponens, proba))
     return proba
+
+
+def _szondak_leszerelese(qt_app) -> None:
+    """A szondák a QML-motor bontása ELŐTT válnak le a célról (#4871, #6407).
+
+    A motor lebontása után is élő szonda a pytest végső szemétgyűjtésében
+    Windowson memóriahibával omlott össze (access violation)."""
+    for obj in _KEEP_ALIVE:
+        try:
+            if obj.property("targetItem") is not None:
+                obj.setProperty("targetItem", None)
+            obj.deleteLater()
+        except RuntimeError:
+            pass
+    _KEEP_ALIVE.clear()
+    qt_app.processEvents()
 
 
 def _kattints(ablak, qt_app, elem: QQuickItem) -> None:
@@ -304,6 +335,7 @@ def test_a_film_menu_kijelolt_kepei_arcfilmkent_filmet_hoznak_letre(
             parbeszed = ablak.findChild(QObject, nev)
             if parbeszed is not None:
                 parbeszed.close()
+        _szondak_leszerelese(qt_app)
         try:
             gen.close()
         except RuntimeError:
@@ -553,6 +585,7 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
             motor.retranslate()
             ablak.setHeight(eredeti_magassag)
     finally:
+        _szondak_leszerelese(qt_app)
         try:
             gen.close()
         except RuntimeError:

@@ -70,10 +70,6 @@ class _FakeUpdateController(QObject):
         pass
 
     @Slot()
-    def skipAvailableVersion(self):  # noqa: N802
-        pass
-
-    @Slot()
     def downloadUpdate(self):  # noqa: N802
         pass
 

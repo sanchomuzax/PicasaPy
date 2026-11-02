@@ -136,7 +136,8 @@ Dialog {
                 height: parent.height
                 radius: parent.radius
                 color: Theme.picasaGreen
-                width: movieProgressDialog.total > 0
+                // #6407: a párbeszéd bontásakor a kötés még kiértékelődhet
+                width: movieProgressDialog && movieProgressDialog.total > 0
                        ? parent.width * movieProgressDialog.done
                          / movieProgressDialog.total
                        : 0

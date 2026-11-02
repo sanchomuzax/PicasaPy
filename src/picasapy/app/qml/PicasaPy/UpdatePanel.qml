@@ -144,7 +144,8 @@ Dialog {
             Layout.preferredWidth: 400
             visible: root.updateAgent
                 && root.updateAgent.downloadState === "downloading"
-            indeterminate: visible && root.updateAgent.downloadProgress <= 0
+            // #6380: amíg a méret nem ismert, határozatlan (látszik, hogy dolgozik)
+            indeterminate: !root.updateAgent || root.updateAgent.downloadProgress <= 0
             value: root.updateAgent
                 ? root.updateAgent.downloadProgress / 100 : 0
         }
@@ -184,10 +185,7 @@ Dialog {
                     && root.updateAgent.oneClickUpdateSupported !== undefined)
                     ? root.updateAgent.oneClickUpdateSupported === true
                         && root.updateAgent.downloadState !== undefined
-                        && (root.updateAgent.downloadState === "idle"
-                            || root.updateAgent.downloadState === "downloading") : false
-                enabled: root.updateAgent
-                    && root.updateAgent.downloadState === "idle"
+                        && root.updateAgent.downloadState === "idle" : false
                 text: root.strings.updateNow
                 accent: Theme.picasaGreen
                 onClicked: root.updateAgent.downloadUpdate()
@@ -201,18 +199,6 @@ Dialog {
                 text: root.strings.later
                 onClicked: {
                     root.updateAgent.deferAvailableVersion()
-                    root.close()
-                }
-            }
-            PicasaButton {
-                objectName: "updateDialogSkipButton"
-                visible: (root.updateAgent && root.updateAgent.updateAvailable !== undefined)
-                    ? root.updateAgent.updateAvailable === true
-                        && root.updateAgent.downloadState !== undefined
-                        && root.updateAgent.downloadState === "idle" : false
-                text: root.strings.skip
-                onClicked: {
-                    root.updateAgent.skipAvailableVersion()
                     root.close()
                 }
             }

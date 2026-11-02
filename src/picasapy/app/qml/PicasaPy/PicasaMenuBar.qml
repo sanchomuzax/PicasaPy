@@ -155,6 +155,23 @@ MenuBar {
                 }
             }
         }
+        Dialog {
+            id: googlePhotosUnavailableDialog
+            objectName: "googlePhotosUnavailableDialog"
+            modal: true
+            focus: true
+            anchors.centerIn: parent ? Overlay.overlay : undefined
+            standardButtons: Dialog.Ok
+
+            contentItem: Text {
+                objectName: "googlePhotosUnavailableMessage"
+                text: qsTr("Google sign-in is not available in this version yet.")
+                color: Theme.ink
+                font.pixelSize: Theme.fontSize
+                wrapMode: Text.WordWrap
+                width: 400
+            }
+        }
         Rectangle {
             anchors.bottom: parent.bottom
             width: parent.width; height: 1
@@ -197,7 +214,7 @@ MenuBar {
                             && bar.ctl.googlePhotosCanSignIn) {
                         bar.ctl.signInGooglePhotos()
                     } else {
-                        bar.googlePhotosOptionsRequested()
+                        googlePhotosUnavailableDialog.open()
                     }
                 }
 

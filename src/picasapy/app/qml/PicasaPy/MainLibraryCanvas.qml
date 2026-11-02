@@ -394,6 +394,10 @@ Rectangle {
                     onNameSubmitted: function(faceId, name) {
                         hostPeoplePanel.nameFaceFromPanel(faceId, name, true)
                     }
+                    // #6403: a „Learn more...” a beépített súgó fejezetét nyitja
+                    onHelpRequested: function(topic) {
+                        hostWindow.nyisdASugot(topic)
+                    }
                     onNamedSuggestionAccepted: Qt.callLater(
                         function() {
                             hostPeoplePanel.refreshHeaderPeopleSnapshot(true)

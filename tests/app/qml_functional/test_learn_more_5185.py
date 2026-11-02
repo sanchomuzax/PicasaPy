@@ -1,33 +1,31 @@
-"""A Név nélküliek üdvözlőablakának „Learn more...” gombja VALÓDI kattintással (#5185).
+"""A Név nélküliek üdvözlőablakának „Learn more...” gombja VALÓDI kattintással.
 
-Az eredetiben a gomb (`instructionpanel/learn_more`, a 19.2 kutatási szakasz)
-a Picasa súgócímét nyitja az alapértelmezett böngészőben, és közben az
-üdvözlőablak nyitva marad:
-`http://picasa.google.com/support/bin/answer.py?hl=<nyelv>&answer=156272`.
-A `hl` a FELÜLET nyelvéből jön, a Picasa 45 bejegyzéses nyelvtáblája szerint.
+#5185 a gombot a Google Picasa-súgójának címére kötötte. #6403 óta a gomb a
+BEÉPÍTETT súgó Emberek fejezetét kéri: a nézet `helpRequested` jelet küld, a
+főablak (`MainLibraryCanvas`) viszi tovább a súgóhoz. Ez a teszt a nézetet
+önmagában méri; a teljes láncot a `test_learn_more_emberek_6403.py` méri.
 
 Lefedve:
-- a gomb valódi kattintása a fenti címet nyitja, a `hl` a beállított nyelv
-  Picasa-kódja (`hu`, `en`, `pt-BR`; az `enUK` a táblában `en-GB`);
-- a kattintás után az üdvözlőablak nyitva marad;
-- minden támogatott nyelvnek van `hl`-kódja a táblában.
+- a gomb valódi kattintása pontosan egyszer kéri az Emberek fejezetet;
+- nem nyit külső címet (sem a Picasa-súgót, sem mást);
+- a kattintás után az üdvözlőablak nyitva marad.
 
-A megnyitást a `QDesktopServices` url-kezelője fogja meg (ld. #706): a
+A külső megnyitást a `QDesktopServices` url-kezelője fogja meg (ld. #706): a
 `Qt.openUrlExternally` valódi útját méri, és közben egyetlen böngésző sem indul.
 """
 
 from __future__ import annotations
 
-import pytest
 from PySide6.QtCore import QMetaObject, QObject, QSettings, QUrl, Slot
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 from PySide6.QtQuick import QQuickWindow
-from PySide6.QtTest import QTest
+from PySide6.QtTest import QSignalSpy, QTest
 
 from tests.app.qml_functional._utolso_maradek_5150_helpers import kattint_elemre, varj
 
-CIM_SABLON = "http://picasa.google.com/support/bin/answer.py?hl={hl}&answer=156272"
+EMBEREK_FEJEZET = "features/emberek.md"
+HELP_JEL = "helpRequested(QString)"
 
 _KEEPALIVE: list = []
 
@@ -151,28 +149,27 @@ def _latszo_elem(qt_app, ablak, nev):
     return talalt[0]
 
 
-@pytest.mark.parametrize(
-    ("nyelv", "hl"),
-    [("hu", "hu"), ("en", "en"), ("pt-BR", "pt-BR"), ("enUK", "en-GB")],
-)
-def test_learn_more_click_opens_the_picasa_help_in_the_ui_language(
-    qt_app, tmp_path, nyelv, hl
-):
-    ablak, nezet = _montaz(qt_app, tmp_path, nyelv)
+def test_learn_more_click_asks_for_the_emberek_help_chapter(qt_app, tmp_path):
+    ablak, nezet = _montaz(qt_app, tmp_path, "hu")
     udvozlo = nezet.findChild(QObject, "unnamedWelcomeDialog")
     assert varj(
         qt_app, lambda: udvozlo is not None and udvozlo.property("visible") is True
     ), "az üdvözlőablak nem nyílt meg"
     gomb = _latszo_elem(qt_app, ablak, "unnamedWelcomeLearnMoreButton")
 
+    jel_index = nezet.metaObject().indexOfSignal(HELP_JEL)
+    assert jel_index >= 0, "a Név nélküliek nézetnek nincs helpRequested jele"
+    jelek = QSignalSpy(nezet, nezet.metaObject().method(jel_index))
+
     fogo = _UrlFogo()
     QDesktopServices.setUrlHandler("http", fogo, "kezel")
     try:
         kattint_elemre(ablak, qt_app, gomb)
-        assert varj(qt_app, lambda: bool(fogo.cimek)), (
-            "a „Learn more...” gomb nem nyitott címet"
+        assert varj(qt_app, lambda: jelek.count() > 0), (
+            "a „Learn more...” gomb nem kérte a súgót"
         )
-        assert fogo.cimek == [CIM_SABLON.format(hl=hl)]
+        assert [jelek.at(i)[0] for i in range(jelek.count())] == [EMBEREK_FEJEZET]
+        assert fogo.cimek == [], "a „Learn more...” külső címet nyitott"
         assert udvozlo.property("visible") is True, (
             "a „Learn more...” kattintás bezárta az üdvözlőablakot"
         )
@@ -183,12 +180,3 @@ def test_learn_more_click_opens_the_picasa_help_in_the_ui_language(
         QMetaObject.invokeMethod(udvozlo, "close")
         varj(qt_app, lambda: udvozlo.property("visible") is False)
         ablak.close()
-
-
-def test_every_supported_language_has_a_picasa_help_code():
-    from picasapy.app.language_controller import (
-        PICASA_HELP_LANGUAGE,
-        SUPPORTED_LANGUAGES,
-    )
-
-    assert set(PICASA_HELP_LANGUAGE) == set(SUPPORTED_LANGUAGES)

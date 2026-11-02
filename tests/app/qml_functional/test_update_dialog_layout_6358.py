@@ -40,8 +40,7 @@ def test_a_gombok_az_ablakon_belul_egymas_mellett_allnak(qml_app, qt_app):
     tartalom = dialog.property("contentItem")
     hatter = dialog.property("background")
     ablak = _keret(hatter, tartalom)
-    nevek = ("updateDialogDownloadButton", "updateDialogLaterButton",
-             "updateDialogSkipButton")
+    nevek = ("updateDialogDownloadButton", "updateDialogLaterButton")
     gombok = [_keret(window.findChild(QObject, n), tartalom) for n in nevek]
 
     for nev, (bal, fent, jobb, lent) in zip(nevek, gombok, strict=True):
@@ -115,4 +114,22 @@ def test_a_frissitesi_gombsor_a_renderelt_kereten_belul_latszik(
     assert tartalom.property("height") > 0
     dialog.close()
     engine.rootContext().setContextProperty("updateController", None)
+    del fake
+
+
+def test_nincs_verzio_kihagyasa_gomb(qml_app, qt_app):
+    """#6394: tulajdonosi döntés - a „Verzió kihagyása” gomb kikerül az ablakból."""
+    window, _controller, engine = qml_app
+    window.resize(1280, 800)
+    fake = _EgykattintasosFake()
+    engine.rootContext().setContextProperty("updateController", fake)
+    dialog = window.findChild(QObject, "updateDialog")
+    dialog.open()
+    _wait_for(qt_app, lambda: bool(dialog.property("opened")), "az ablak nem nyílt meg")
+    for _ in range(5):
+        qt_app.processEvents()
+
+    assert window.findChild(QObject, "updateDialogSkipButton") is None
+    assert window.findChild(QObject, "updateDialogLaterButton").property("visible")
+    dialog.close()
     del fake

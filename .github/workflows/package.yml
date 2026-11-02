@@ -284,21 +284,28 @@ jobs:
           pip install pyinstaller
           if [ -f scripts/build_qm.py ]; then python scripts/build_qm.py; else echo "Régi kiadási tag (#4825): a .qm még a fában van, nincs mit építeni."; fi  # #4817
 
-      - name: PyInstaller-csomagolás
+      - name: Google-bejelentkezés kliensének ellenőrzése
         if: steps.tag.outputs.skip != 'true'
         shell: bash
         env:
           PICASAPY_GOOGLE_CLIENT_ID: ${{ secrets.PICASAPY_GOOGLE_CLIENT_ID }}
           PICASAPY_GOOGLE_CLIENT_SECRET: ${{ secrets.PICASAPY_GOOGLE_CLIENT_SECRET }}
         run: |
-          # #6374: régi kiadási tagben még nincs előfordító; ott a sima csomagolás fut
-          if [ ! -f packaging/windows/build_qml_cache.py ]; then pyinstaller --noconfirm packaging/windows/picasapy.spec; exit 0; fi
-          QML_CACHE_DIR="$RUNNER_TEMP/picasapy-qmlcache"
-          python packaging/windows/build_qml_cache.py \
-            --qml-root src/picasapy/app/qml \
-            --output "$QML_CACHE_DIR"
-          PICASAPY_QML_CACHE_DIR="$QML_CACHE_DIR" \
-            pyinstaller --noconfirm packaging/windows/picasapy.spec
+          if [[ -z "$PICASAPY_GOOGLE_CLIENT_ID" || -z "$PICASAPY_GOOGLE_CLIENT_SECRET" ]]; then
+            uzenet="⚠️ A Google-bejelentkezés beépített kliensének egyik titka hiányzik; a csomagban a bejelentkezés nem lesz elérhető."
+            echo "::warning title=Hiányzó Google-bejelentkezési kliens::$uzenet"
+          else
+            uzenet="✅ A Google-bejelentkezés beépített kliensének mindkét titka meg van adva."
+          fi
+          echo "$uzenet" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: PyInstaller-csomagolás
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          PICASAPY_GOOGLE_CLIENT_ID: ${{ secrets.PICASAPY_GOOGLE_CLIENT_ID }}
+          PICASAPY_GOOGLE_CLIENT_SECRET: ${{ secrets.PICASAPY_GOOGLE_CLIENT_SECRET }}
+        run: pyinstaller --noconfirm packaging/windows/picasapy.spec
 
       - name: Frissítő segédprogram csomagolása
         if: steps.tag.outputs.skip != 'true'
@@ -330,6 +337,12 @@ jobs:
           QT_QPA_PLATFORM: offscreen
           QT_QUICK_BACKEND: software
         run: |
+          # #6392: a HTML-export sablonjai a csomagban (régi tagben nincs őr)
+          if [ -f tests/packaging/test_csomag_adatfajlok_6392.py ]; then
+            n=$(find dist/PicasaPy -path "*picasapy/webexport/templates/*" -name "*.html" | wc -l)
+            echo "HTML-sablonfájlok a csomagban: $n"
+            [ "$n" -gt 0 ] || { echo "a webexport-sablonok hiányoznak a csomagból"; exit 1; }
+          fi
           # A csomag hiányossága csak INDÍTÁSKOR derül ki. A kapcsoló a
           # felület felépülése után kilép, eseményciklus nélkül.
           # ⚠️ KEMÉNY időkorlát: ha a csomagolt program nem lép ki, a job
@@ -463,7 +476,7 @@ jobs:
             --munka "$RUNNER_TEMP/csomag-meres" \
             --kepek 2000 --inditasok 3 \
             --halozati-export '\\192.0.2.1\picasa\export\album' \
-            --hatar-mp 5
+            --hatar-mp 5 --elso-hatar-mp 10
 
       # #6367: a külön indulóablak valódi ablakkal, a folyamat indításától
       # mérve; a kapu a három indítás középértékére 1000 ms
@@ -643,6 +656,36 @@ jobs:
           python packaging/windows/csomag_meres.py ikon --szigoru \
             --futtato "forras=@python,picasapy" \
             --futtato "telepitett=$EXE" --munka "$RUNNER_TEMP/csomag-meres"
+
+      # #6383: az önfrissítés a ténylegesen telepített Windows-programon,
+      # loopback hamis kiadással fut végig. A mérő mindegyik állapotot
+      # képernyőképként menti; egy hiányzó lépés vagy 60 s-os határ piros.
+      - name: Mérés — a telepített program önfrissítése
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          if [ ! -f packaging/windows/csomag_meres.py ] \
+             || ! grep -q -- 'choices=("ido", "ikon", "frissites")' packaging/windows/csomag_meres.py; then
+            echo "Régi kiadási tag: nincs önfrissítési végponttól végpontig mérés."
+            exit 0
+          fi
+          EXE="$RUNNER_TEMP/PicasaPy-installed/PicasaPy.exe"
+          python packaging/windows/csomag_meres.py frissites \
+            --futtato "telepitett=$EXE" \
+            --munka "$RUNNER_TEMP/csomag-frissites" \
+            --kepernyokep-mappa "$RUNNER_TEMP/PicasaPy-update-screenshots" \
+            --elvart-verzio "${{ steps.tag.outputs.verzio }}"
+
+      - name: A frissítési képernyőképek csatolása
+        if: always() && steps.tag.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-update-screenshots
+          path: ${{ runner.temp }}/PicasaPy-update-screenshots/
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: A telepítő feltöltése a kiadásra
         if: steps.tag.outputs.skip != 'true' && github.event_name != 'pull_request'

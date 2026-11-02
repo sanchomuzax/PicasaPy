@@ -18,8 +18,7 @@ a csomag tényleg teljes-e, azt a CI méri: a felépített `.exe`-t
 
 ## Használat
 
-    python packaging/windows/build_qml_cache.py --qml-root src/picasapy/app/qml --output .tmp/picasapy-qmlcache
-    PICASAPY_QML_CACHE_DIR=.tmp/picasapy-qmlcache pyinstaller --noconfirm packaging/windows/picasapy.spec
+    pyinstaller --noconfirm packaging/windows/picasapy.spec
 
 Kimenet: `dist/PicasaPy/PicasaPy.exe` (mappás csomag — Qt-programnál ez
 indul gyorsabban, mint az egyfájlos, mert nincs kicsomagolás minden
@@ -49,16 +48,10 @@ adatok = [
     (str(APP / "qml"), "picasapy/app/qml"),
     (str(APP / "i18n"), "picasapy/app/i18n"),
     (str(APP / "assets"), "picasapy/app/assets"),
+    # #6392: a HTML-export sablonjai (.html/.tpl/.css/.svg/.xml) egyik
+    # mintába sem esnek bele; nélkülük üres a sablonlista
+    (str(GYOKER / "src" / "picasapy" / "webexport" / "templates"), "picasapy/webexport/templates"),
 ]
-# #6374: a build a Qt qmlcachegen eszközével előre fordítja az összes QML/JS
-# fájlt; az alkalmazás a felhasználó saját Qt-cache-ébe másolja azokat.
-_QML_CACHE = Path(os.environ.get("PICASAPY_QML_CACHE_DIR", ""))
-if not _QML_CACHE.is_dir() or not (_QML_CACHE / "manifest.json").is_file():
-    raise SystemExit(
-        "Hiányzik az előre fordított QML-cache; futtasd előbb "
-        "a packaging/windows/build_qml_cache.py szkriptet."
-    )
-adatok.append((str(_QML_CACHE), "picasapy/app/qmlcache"))
 #: #6348: a csomagban se `pyproject.toml`, se telepítési metaadat nincs —
 #: a verziót a build írja egy fájlba, amit a `picasapy/__init__.py` olvas.
 #: E nélkül a program `0.0.0+ismeretlen`-t mutatott.
