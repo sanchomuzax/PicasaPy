@@ -15,6 +15,13 @@ class QmlWarmupError(RuntimeError):
     """A QML-előfordító gyermekfolyamata nem tudott elindulni vagy befejeződni."""
 
 
+def _naplo_vege(naplo: Path, sorok: int = 8) -> str:
+    try:
+        return "\n".join(naplo.read_text(encoding="utf-8").splitlines()[-sorok:])
+    except OSError:
+        return "(a napló nem olvasható)"
+
+
 def melegitsd_qml_cache(
     parancs: Sequence[str],
     kornyezet: Mapping[str, str],
@@ -25,6 +32,10 @@ def melegitsd_qml_cache(
     env = dict(kornyezet)
     env["QT_QPA_PLATFORM"] = "offscreen"
     env["QT_QUICK_BACKEND"] = "software"
+    naplo = Path(env.get("TEMP") or env.get("TMPDIR") or "/tmp") / "picasapy-qml-elofordit.txt"
+    naplo.parent.mkdir(parents=True, exist_ok=True)
+    naplo.write_text("", encoding="utf-8")
+    env["PICASAPY_QML_ELOFORDIT_NAPLO"] = str(naplo)
     try:
         result = subprocess.run(
             [*(str(elem) for elem in parancs), "--qml-elofordit"],
@@ -38,10 +49,14 @@ def melegitsd_qml_cache(
             check=False,
         )
     except (OSError, subprocess.TimeoutExpired) as error:
-        raise QmlWarmupError("a QML-előfordítás nem fejeződött be") from error
+        raise QmlWarmupError(
+            "a QML-előfordítás nem fejeződött be; a haladásnapló vége:\n"
+            + _naplo_vege(naplo)
+        ) from error
     if result.returncode != 0:
         raise QmlWarmupError(
-            f"a QML-előfordítás {result.returncode} kilépőkóddal állt le"
+            f"a QML-előfordítás {result.returncode} kilépőkóddal állt le; "
+            "a haladásnapló vége:\n" + _naplo_vege(naplo)
         )
     return result.stdout.strip()
 
