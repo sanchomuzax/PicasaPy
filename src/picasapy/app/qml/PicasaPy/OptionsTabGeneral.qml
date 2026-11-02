@@ -31,7 +31,8 @@ import QtQuick.Layouts
 // Az egykattintásos kilépés a #4458-ban azonosított videó-előnézet
 // kattintására hat; az állóképes dupla kattintás változatlan.
 // A #6340 óta a frissítés-ellenőrzés külön, PicasaPy saját funkciója; az
-// eredeti Google-statisztika és a kamera-esemény itt továbbra is tiltott.
+// eredeti Google-statisztika sora a #6441 óta nincs a fülön, a kamera-esemény
+// itt továbbra is tiltott.
 ColumnLayout {
     id: root
     spacing: 0
@@ -262,81 +263,9 @@ ColumnLayout {
         color: Theme.chromeBorder
     }
 
-    // ---- Részvétel a fejlesztésben (labelgroup16) ------------------------
-    RowLayout {
-        Layout.fillWidth: true
-        Layout.topMargin: 7
-        spacing: 0
-
-        Text {
-            objectName: "optionsGeneralParticipationHeading"
-            text: qsTr("Help improve PicasaPy:")
-            font.pixelSize: Theme.fontSize
-            color: Theme.ink
-            // A lefordított cím a szokásos címkefülke szélességénél hosszabb
-            // lehet. A szöveg saját szélességet kap, hogy ne vágódjon le.
-            Layout.minimumWidth: Math.max(176, implicitWidth)
-            Layout.preferredWidth: Math.max(176, implicitWidth)
-            Layout.maximumWidth: Math.max(176, implicitWidth)
-            horizontalAlignment: Text.AlignRight
-            verticalAlignment: Text.AlignVCenter
-        }
-        // nincs semmilyen használati-statisztika/telemetria a PicasaPy-ban
-        CompactCheckBox {
-            objectName: "optionsUsageStatsCheck"
-            text: qsTr("Send anonymous usage statistics")
-            enabled: false
-            Layout.fillWidth: true
-            // #3661: a hivatalos magyar felirat („Névtelen használati
-            // statisztikák küldése a Google részére") 455 px-es implicit
-            // szélessége a legkisebb ablakon (456 px) 1 px-es tartalékkal
-            // fért csak el — a #3572 mintája szerint tördelődik, hogy ne
-            // legyen betűkészlet-függő élen egyensúlyozó méret.
-            Layout.preferredWidth: 0
-            contentItem: Text {
-                leftPadding: parent.indicator.width + parent.spacing
-                text: parent.text
-                font: parent.font
-                color: parent.palette.windowText
-                wrapMode: Text.WordWrap
-                verticalAlignment: Text.AlignVCenter
-            }
-        }
-    }
-    Button {
-        id: privacyLink
-        objectName: "optionsPrivacyLink"
-        text: qsTr("Privacy...")
-        flat: true
-        padding: 0
-        Layout.leftMargin: 176
-        Layout.topMargin: 3
-        Layout.preferredWidth: 414
-        // #3572: a normál szélességen megmarad a 414 px-es igazítás, de
-        // keskeny ablakban a 176 px-es bal margó mellett összehúzódhat.
-        Layout.minimumWidth: 0
-        Layout.maximumWidth: 414
-        Layout.fillWidth: true
-        Layout.preferredHeight: 24
-        Layout.minimumHeight: 24
-        Accessible.role: Accessible.Link
-        contentItem: Text {
-            text: privacyLink.text
-            font.pixelSize: Theme.fontSize
-            color: Theme.linkBlue
-            horizontalAlignment: Text.AlignRight
-            verticalAlignment: Text.AlignVCenter
-            font.underline: true
-        }
-        onClicked: Qt.openUrlExternally("https://policies.google.com/privacy")
-    }
-    Rectangle {
-        objectName: "optionsGeneralParticipationDivider"
-        Layout.fillWidth: true
-        Layout.topMargin: 1
-        Layout.preferredHeight: 1
-        color: Theme.chromeBorder
-    }
+    // #6441: a „Részvétel a fejlesztésben” sor (labelgroup16: Google-statisztika
+    // és „Adatvédelem…” hivatkozás) tulajdonosi döntésre kikerült: a PicasaPy
+    // nem gyűjt és nem is fog gyűjteni használati statisztikát.
 
     // ---- Frissítés-ellenőrzés (#6340) -------------------------------------
     // Az előző helyfoglaló sor objektumneve megmarad, hogy a régi QML-határ

@@ -187,7 +187,7 @@ Dialog {
                         objectName: "emailChoiceSignupLink"
                         flat: true
                         Layout.alignment: Qt.AlignLeft
-                        onClicked: Qt.openUrlExternally("http://mail.google.com")
+                        onClicked: Qt.openUrlExternally("https://mail.google.com")
                         contentItem: Label {
                             objectName: "emailChoiceSignupLabel"
                             text: qsTr("Don't have Gmail? Get a free account.")
