@@ -53,20 +53,9 @@ Ez CI-eszköz, nem termékkód: a csomag nem tartalmazza.
 from __future__ import annotations
 
 import argparse
-# A kiemelt függvények globális nevei a régi modulon keresztüli monkeypatch-ekhez kellenek.
-import base64  # noqa: F401
-import hashlib  # noqa: F401
-import json  # noqa: F401
-import os  # noqa: F401
-import re  # noqa: F401
-import shutil  # noqa: F401
-import subprocess  # noqa: F401
 import sys
 import tempfile
-import time  # noqa: F401
-from datetime import datetime  # noqa: F401
 from pathlib import Path
-import zipfile  # noqa: F401
 
 # A szkript közvetlen futtatásakor ez a könyvtár már a sys.path elején van;
 # tesztből betöltve is tegyük elérhetővé a mellette lévő kis segédmodult.
@@ -74,41 +63,132 @@ _MERES_MODULOK = str(Path(__file__).resolve().parent)
 if _MERES_MODULOK not in sys.path:
     sys.path.insert(0, _MERES_MODULOK)
 
-#: a program saját sikerjelzése a hibanaplóban (`_StartupSmokeProbe`)
-# Az indulásmérés modul melegíti elő a profilt a melegitsd_qml_cache hívással;
-# a frissítési modul az indulás utáni frissitesi_indulasi_kapu ellenőrzést végzi.
-import types as _types  # noqa: E402
+# Az indulásmérés a melegitsd_qml_cache hívással készíti elő a profilt;
+# a frissítési mérés a frissitesi_indulasi_kapu ellenőrzést végzi.
+# A régi közvetlen hívásokhoz a modulnevek újraexportként megmaradnak; a
+# függvényobjektumok a saját moduljuk globális névterét használják.
+from csomag_meres_kozos import (  # noqa: E402
+    _BEALLITAS_KULCS,
+    _EXPORT_ERTEK,
+    _HelyiKiadasszerver,
+    _IDOKORLAT_MP,
+    _INDULOABLAK,
+    _KEP_MAPPANKENT,
+    _SIKER,
+    _SOR,
+    _futtatok,
+    _keszits_frissitesi_zip,
+    _platform,
+    _resz,
+    _sha256_fajl,
+)
+from csomag_meres_ido import (  # noqa: E402
+    _bevar,
+    _egy_inditas,
+    _exportcelok_beallitasa,
+    _exportcelok_visszaallitasa,
+    _ido_futtato,
+    _indulo_jelentes,
+    _jelentes,
+    _kepekkel_tolt,
+    _naplo_sorai,
+    _profil,
+    foablak_mp,
+    hatar_hiba,
+    ido,
+    indulo_hatar_hiba,
+    indulo_kozepertek_hiba,
+    induloablak_ms,
+)
+from csomag_meres_windows import (  # noqa: E402
+    _ablakikonok,
+    _induloablak_kepe,
+    _kepernyokep,
+    _renderelt_indulokep_ellenorzese,
+    ikon,
+)
+from csomag_meres_frissites import (  # noqa: E402
+    _NYUGALOM_MP,
+    _about_menu,
+    _about_verzio_latszik,
+    _csatolt_folyamatok_leallitasa,
+    _diagnosztika,
+    _eloterbe_hoz,
+    _elso_inditasi_kerdes_lezarasa,
+    _falido,
+    _frissites_utana_indulasi_kapu,
+    _help_menu,
+    _kepernyokep_mentese,
+    _kilepes_diagnosztika,
+    _kovetkezo_verzio,
+    _lathato_koordinataval,
+    _objektum,
+    _stabil_kattintas,
+    _szunet,
+    _uj_folyamat_diagnosztika,
+    _valodi_eger_kattintas,
+    _varjon_diagnosztikara,
+    frissites,
+)
 
-import csomag_meres_kozos as _kozos  # noqa: E402
-import csomag_meres_ido as _ido_modul  # noqa: E402
-import csomag_meres_windows as _windows_modul  # noqa: E402
-import csomag_meres_frissites as _frissites_modul  # noqa: E402
-from csomag_meres_kozos import _futtatok  # noqa: E402
-from csomag_meres_ido import ido  # noqa: E402
-from csomag_meres_windows import ikon  # noqa: E402
-from csomag_meres_frissites import frissites  # noqa: E402
-
-
-def _tegye_elerhetove(modul) -> None:
-    """A régi modulneveket megtartja, és a monkeypatch-elt globálisokat használja."""
-    for nev in modul.__all__:
-        ertek = getattr(modul, nev)
-        if isinstance(ertek, _types.FunctionType):
-            regi = ertek
-            ertek = _types.FunctionType(
-                regi.__code__, globals(), nev, regi.__defaults__, regi.__closure__
-            )
-            ertek.__kwdefaults__ = regi.__kwdefaults__
-            ertek.__annotations__ = regi.__annotations__
-            ertek.__dict__.update(regi.__dict__)
-            ertek.__doc__ = regi.__doc__
-            ertek.__module__ = regi.__module__
-            ertek.__qualname__ = regi.__qualname__
-        globals()[nev] = ertek
-
-
-for _modul in (_kozos, _ido_modul, _windows_modul, _frissites_modul):
-    _tegye_elerhetove(_modul)
+__all__ = (
+    "_BEALLITAS_KULCS",
+    "_EXPORT_ERTEK",
+    "_HelyiKiadasszerver",
+    "_IDOKORLAT_MP",
+    "_INDULOABLAK",
+    "_KEP_MAPPANKENT",
+    "_NYUGALOM_MP",
+    "_SIKER",
+    "_SOR",
+    "_about_menu",
+    "_about_verzio_latszik",
+    "_ablakikonok",
+    "_bevar",
+    "_csatolt_folyamatok_leallitasa",
+    "_diagnosztika",
+    "_egy_inditas",
+    "_eloterbe_hoz",
+    "_elso_inditasi_kerdes_lezarasa",
+    "_exportcelok_beallitasa",
+    "_exportcelok_visszaallitasa",
+    "_falido",
+    "_frissites_utana_indulasi_kapu",
+    "_futtatok",
+    "_help_menu",
+    "_ido_futtato",
+    "_indulo_jelentes",
+    "_induloablak_kepe",
+    "_jelentes",
+    "_kepernyokep",
+    "_kepernyokep_mentese",
+    "_kepekkel_tolt",
+    "_keszits_frissitesi_zip",
+    "_kilepes_diagnosztika",
+    "_kovetkezo_verzio",
+    "_lathato_koordinataval",
+    "_naplo_sorai",
+    "_objektum",
+    "_platform",
+    "_profil",
+    "_renderelt_indulokep_ellenorzese",
+    "_resz",
+    "_sha256_fajl",
+    "_stabil_kattintas",
+    "_szunet",
+    "_uj_folyamat_diagnosztika",
+    "_valodi_eger_kattintas",
+    "_varjon_diagnosztikara",
+    "foablak_mp",
+    "frissites",
+    "hatar_hiba",
+    "ido",
+    "ikon",
+    "indulo_hatar_hiba",
+    "indulo_kozepertek_hiba",
+    "induloablak_ms",
+    "main",
+)
 
 
 def main(argv: list[str] | None = None) -> int:

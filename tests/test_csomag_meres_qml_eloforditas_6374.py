@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import importlib.util
+import importlib
 from datetime import datetime, timezone
 import os
 from pathlib import Path
@@ -17,6 +17,7 @@ _MERES_UT = _GYOKER / "packaging/windows/csomag_meres.py"
 _SPEC = importlib.util.spec_from_file_location("csomag_meres_6374", _MERES_UT)
 csomag_meres = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(csomag_meres)
+ido_modul = importlib.import_module("csomag_meres_ido")
 
 
 def test_a_meroseged_telepitett_picasapy_nelkul_is_importalhato():
@@ -49,7 +50,7 @@ def test_a_melegites_ugyanazt_a_profilt_hasznalja_es_a_meres_elott_tortenik(
     env = {"LOCALAPPDATA": str(tmp_path / "local")}
     events = []
     monkeypatch.setattr(
-        csomag_meres,
+        ido_modul,
         "_profil",
         lambda root, kepek=0: (events.append(("profil", root, kepek)) or env, root / "library"),
     )
@@ -60,7 +61,7 @@ def test_a_melegites_ugyanazt_a_profilt_hasznalja_es_a_meres_elott_tortenik(
             ("qml", command, passed_env["LOCALAPPDATA"])
         ),
     )
-    monkeypatch.setattr(csomag_meres, "_bevar", lambda result: result)
+    monkeypatch.setattr(ido_modul, "_bevar", lambda result: result)
 
     def inditas(command, root, **kw):
         events.append(("meres", command, root, kw["kepek"]))
@@ -74,9 +75,9 @@ def test_a_melegites_ugyanazt_a_profilt_hasznalja_es_a_meres_elott_tortenik(
             "indulo_kep_kotelezo": False,
         }
 
-    monkeypatch.setattr(csomag_meres, "_egy_inditas", inditas)
-    monkeypatch.setattr(csomag_meres, "hatar_hiba", lambda *_args: None)
-    monkeypatch.setattr(csomag_meres, "indulo_kozepertek_hiba", lambda *_args: None)
+    monkeypatch.setattr(ido_modul, "_egy_inditas", inditas)
+    monkeypatch.setattr(ido_modul, "hatar_hiba", lambda *_args: None)
+    monkeypatch.setattr(ido_modul, "indulo_kozepertek_hiba", lambda *_args: None)
 
     assert (
         csomag_meres._ido_futtato(
