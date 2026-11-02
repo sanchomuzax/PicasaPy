@@ -199,6 +199,10 @@ def _egy_inditas(
             )
             if elem
         )
+        # Windowson az ablakos program a Qt naplóját OutputDebugString-re írná;
+        # így a kimenetre kerül, és a QSG_INFO a grafikus hátteret is kiírja
+        env["QT_FORCE_STDERR_LOGGING"] = "1"
+        env["QSG_INFO"] = "1"
     else:
         env["QT_QPA_PLATFORM"] = "offscreen"
         env["QT_QUICK_BACKEND"] = "software"
@@ -271,6 +275,7 @@ def _bevar(futas: dict) -> dict:
         "indulo_kep": indulo_kep,
         "indulo_kep_info": indulo_kep_info,
         "indulo_kep_hiba": indulo_kep_hiba,
+        "valodi_ablak": futas.get("valodi_ablak", False),
     }
 
 def _jelentes(nev: str, sorszam: int, eredmeny: dict) -> str:
@@ -484,6 +489,12 @@ def _ido_futtato(
 
             for sor in uj_fajlok(gyoker / "profile", inditas_elott):
                 print(f"  profilba írt: {sor}", flush=True)
+            from profil_valtozas import qmlc_nevek
+
+            gyoker_qml = Path(parancs[0]).resolve().parent
+            nevek = qmlc_nevek(gyoker / "profile", inditas_elott, gyoker_qml)
+            if nevek:
+                print(f"  futás közben írt .qmlc: {', '.join(nevek)}", flush=True)
         if sorszam == 1 and eredmeny.get("indulo_kep"):
             print(f"  KÉP {nev}/induloablak {len(eredmeny['indulo_kep'])} bájt", flush=True)
             print("  -----KEP-KEZDET induloablak-----", flush=True)

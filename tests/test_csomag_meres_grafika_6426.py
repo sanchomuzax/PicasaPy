@@ -174,3 +174,40 @@ def test_az_induloablak_lepesen_is_ot_masodperces_fokapu_van():
     indulo = workflow.split("- name: Mérés — az indulóablak megjelenése", 1)[1]
     assert "--indulo-hatar-ms 1000" in indulo
     assert "--hatar-mp 5" in indulo
+
+
+class _KeszFolyamat:
+    returncode = 0
+    pid = 1
+
+    def communicate(self, timeout=None):
+        return (b"qt.rhi.general: Created D3D11 device\n", b"")
+
+
+def test_a_valodi_ablak_jelzo_es_a_kimenet_eljut_a_jelentesig(tmp_path, monkeypatch):
+    """A Package-mérésen a jelentés üres maradt: a `_bevar` nem adta tovább a
+    `valodi_ablak` jelzőt, ezért a diagnosztika egyetlen sort sem írt."""
+    monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _g: [])
+    futas = {"folyamat": _KeszFolyamat(), "indult": datetime.now(timezone.utc), "kezdet": 0.0,
+             "korabbi": 0, "gyoker": tmp_path, "indulo_hatar_ms": None,
+             "indulo_kep_kotelezo": False, "valodi_ablak": True}
+    eredmeny = ido_modul._bevar(futas)
+    assert eredmeny["valodi_ablak"] is True
+    sorok = ido_modul._indulasi_grafikai_jelentes(1, eredmeny)
+    assert any("grafikus háttér" in s for s in sorok)
+
+
+def test_valodi_ablaknal_a_qt_naplo_a_kimenetre_kerul(tmp_path, monkeypatch):
+    """Windowson az ablakos program a Qt naplóját OutputDebugString-re írja;
+    a `QT_FORCE_STDERR_LOGGING=1` nélkül a mérés semmit nem lát belőle."""
+    elkapott = {}
+
+    def _popen(parancs, *, env, **_kw):
+        elkapott.update(env)
+        return _KeszFolyamat()
+
+    monkeypatch.setattr(ido_modul, "_popen", _popen)
+    monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _g: [])
+    ido_modul._egy_inditas(["x.exe"], tmp_path, ablakkal=True)
+    assert elkapott["QT_FORCE_STDERR_LOGGING"] == "1"
+    assert elkapott["QSG_INFO"] == "1"
