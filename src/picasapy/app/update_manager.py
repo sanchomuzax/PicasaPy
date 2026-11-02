@@ -126,6 +126,11 @@ def _inditsd_a_segedet(args: list[str], *, emelt: bool) -> bool:
     return inditsd_a_segedet(args, emelt=emelt, platform=_platform())
 
 
+#: #6436: az „Újraindítás most” legfeljebb ennyit vár a háttérmunka végére;
+#: utána akkor is újraindul, ha a munka még fut (a tulajdonos gépén sosem ért véget)
+UJRAINDITAS_MAX_VARAKOZAS_MS = 4000
+
+
 class UpdateController(QObject):
     """Napi frissítésellenőrzés és a QML-frissítőablak állapotforrása."""
 
@@ -195,6 +200,11 @@ class UpdateController(QObject):
             self._test_diagnostic_timer.timeout.connect(self._write_test_diagnostics)
             self._test_diagnostic_timer.start()
             QTimer.singleShot(0, self._write_test_diagnostics)
+            if os.environ.get("PICASAPY_UPDATE_TEST_BUSY") == "1":
+                # #6436: a CI-próba soha véget nem érő háttérmunkát utánoz
+                from .busy_registry import get_app_busy_registry
+
+                get_app_busy_registry().begin()
         if schedule:
             self.start_automatic_check()
 
@@ -550,6 +560,7 @@ class UpdateController(QObject):
 
             if get_app_busy_registry().activeCount > 0:
                 self._restart_pending = True
+                self._restart_hatarido = time.monotonic() + UJRAINDITAS_MAX_VARAKOZAS_MS / 1000
                 self._restart_timer.start()
                 return True
         return self._start_helper(restart_now)
@@ -561,8 +572,13 @@ class UpdateController(QObject):
             return
         from .busy_registry import get_app_busy_registry
 
-        if get_app_busy_registry().activeCount > 0:
+        if (
+            get_app_busy_registry().activeCount > 0
+            and time.monotonic() < getattr(self, "_restart_hatarido", 0.0)
+        ):
             return
+        if get_app_busy_registry().activeCount > 0:
+            logger.warning("Újraindítás frissítéshez a még futó háttérmunka ellenére (#6436)")
         self._restart_pending = False
         self._restart_timer.stop()
         self._start_helper(True)

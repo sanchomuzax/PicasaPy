@@ -129,6 +129,51 @@ def _qml_cache_konyvtar() -> Path:
     return Path(hely) / "qmlcache"
 
 
+#: #6436: a gyorsítótárat író változat jele a cache-könyvtárban
+CACHE_BELYEG = ".picasapy-verzio"
+_FORDITAS_KITERJESZTESEK = (".qmlc", ".jsc")
+
+
+def ird_be_a_cache_belyeget(verzio: str) -> None:
+    """Az előfordítás végén rögzíti, melyik változat írta a gyorsítótárat."""
+    konyvtar = _qml_cache_konyvtar()
+    konyvtar.mkdir(parents=True, exist_ok=True)
+    (konyvtar / CACHE_BELYEG).write_text(verzio, encoding="utf-8")
+
+
+def torold_az_elavult_cachet(verzio: str) -> int:
+    """Más (vagy ismeretlen) változat QML-fordításait törli; a törölt fájlok száma.
+
+    A qmlcachegen-nel fordított `.qmlc` a forrás változása után is érvényes
+    marad (mérve, #6436): a régi változat fordítása a régi felületet töltené be.
+    Csak a fordításokat törli; a jel ezután a futó változatot mutatja."""
+    try:
+        konyvtar = _qml_cache_konyvtar()
+    except RuntimeError:
+        return 0
+    if not konyvtar.is_dir():
+        return 0
+    belyeg = konyvtar / CACHE_BELYEG
+    try:
+        if belyeg.read_text(encoding="utf-8").strip() == verzio:
+            return 0
+    except OSError:
+        pass
+    torolt = 0
+    for fajl in konyvtar.iterdir():
+        if fajl.suffix.casefold() in _FORDITAS_KITERJESZTESEK and fajl.is_file():
+            try:
+                fajl.unlink()
+                torolt += 1
+            except OSError:
+                continue
+    try:
+        belyeg.write_text(verzio, encoding="utf-8")
+    except OSError:
+        pass
+    return torolt
+
+
 def _qml_cache_nev_utbol(ut: PurePath) -> str:
     """A Qt a perjeles helyi útvonalat SHA-1-gyel hasheli.
 
@@ -255,6 +300,9 @@ def _fordits() -> None:
     started = time.perf_counter()
     hibas = _forditsd_le(cache_konyvtar, fajlok)
     eltelt = time.perf_counter() - started
+    from picasapy import __version__
+
+    ird_be_a_cache_belyeget(__version__)
     osszegzes = f"QML-előfordítás: {len(fajlok)} fájl, {hibas} hibás, {eltelt:.2f} s"
     _naplozz(osszegzes)
     _kiird(osszegzes)
