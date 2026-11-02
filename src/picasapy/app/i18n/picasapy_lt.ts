@@ -12006,6 +12006,12 @@ picasapy-origin-key: eula:eula/toslink.title;stringres:INSTALLRES_TosText;string
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Bandomasis režimas (įrašoma kito paleidimo eiga)</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaHelpMenu.qml" line="45" />
+            <source>Show background work in the status bar</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Rodyti foninį darbą būsenos juostoje</translation>
+        </message>
     </context>
     <context>
         <name>PicasaPictureMenu</name>
@@ -20298,6 +20304,303 @@ picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Labe
 picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>Kvadratas</translation>
+        </message>
+    </context>
+    <context>
+        <name>BusyActivity</name>
+        <message>
+            <location filename="../busy_activity.py" line="21" />
+            <source>Working in the background</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Darbas fone</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="22" />
+            <source>%1 (+%2 more)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 (+dar %2)</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="26" />
+            <source>Scanning folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aplankų peržiūra</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="27" />
+            <source>Syncing changed folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pakeistų aplankų sinchronizavimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="28" />
+            <source>Moving the library</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Bibliotekos perkėlimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="29" />
+            <source>Saving the index</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Indekso įrašymas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="30" />
+            <source>Generating thumbnails</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Miniatiūrų kūrimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="31" />
+            <source>Printing</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Spausdinimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="32" />
+            <source>Planning backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atsarginės kopijos planavimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="33" />
+            <source>Running backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atsarginės kopijos kūrimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="34" />
+            <source>Creating backup image</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atsarginės kopijos atvaizdo kūrimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="35" />
+            <source>Restoring backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atsarginės kopijos atkūrimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="36" />
+            <source>Renaming photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nuotraukų pervadinimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="37" />
+            <source>Creating movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Filmo kūrimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="38" />
+            <source>Searching for duplicates</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Dublikatų paieška</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="39" />
+            <source>Scanning faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Veidų peržiūra</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="40" />
+            <source>Downloading face model</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Veidų modelio atsisiuntimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="41" />
+            <source>Searching for a Picasa library</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Picasa bibliotekos paieška</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="43" />
+            <source>Exporting photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nuotraukų eksportavimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="44" />
+            <source>Exporting to Google Earth</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Eksportavimas į Google Earth</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="45" />
+            <source>Scanning import source</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Importavimo šaltinio peržiūra</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="47" />
+            <source>Importing photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nuotraukų importavimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="48" />
+            <source>Rendering edit preview</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Redagavimo peržiūros atvaizdavimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="49" />
+            <source>Finding similar photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Panašių nuotraukų paieška</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="50" />
+            <source>Preparing passport photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Paso nuotraukos paruošimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="51" />
+            <source>Applying effects to photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Efektų taikymas nuotraukoms</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="52" />
+            <source>Compacting database</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Duomenų bazės glaudinimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="53" />
+            <source>Exporting movie clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Filmo įrašo eksportavimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="54" />
+            <source>Creating web album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Žiniatinklio albumo kūrimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="55" />
+            <source>Publishing web album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Žiniatinklio albumo publikavimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="56" />
+            <source>Rendering collage</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Koliažo atvaizdavimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="57" />
+            <source>Saving copy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kopijos įrašymas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="58" />
+            <source>Listing backup folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atsarginės kopijos aplankų sąrašas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="59" />
+            <source>Rendering collage preview</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Koliažo peržiūros atvaizdavimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="60" />
+            <source>Creating collage</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Koliažo kūrimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="63" />
+            <source>Loading folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aplankų įkėlimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="64" />
+            <source>Loading subfolders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Poaplankių įkėlimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="65" />
+            <source>Capturing movie frame</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Filmo kadro fiksavimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="66" />
+            <source>Checking folders for changes</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aplankų pakeitimų tikrinimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="67" />
+            <source>Saving photo details</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nuotraukos informacijos įrašymas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="69" />
+            <source>Writing face names to photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Veidų vardų įrašymas į nuotraukas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="70" />
+            <source>Importing from the Picasa database</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Importavimas iš Picasa duomenų bazės</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="71" />
+            <source>Creating poster</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Plakato kūrimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="72" />
+            <source>Restoring photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nuotraukų atkūrimas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="73" />
+            <source>Saving changes to photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nuotraukų pakeitimų įrašymas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="74" />
+            <source>Startup maintenance</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Priežiūra paleidžiant</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="75" />
+            <source>Connecting to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Jungiamasi prie „Google“ nuotraukos</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="76" />
+            <source>Disconnecting from Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atsijungiama nuo „Google“ nuotraukos</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="77" />
+            <source>Uploading to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Įkeliama į „Google“ nuotraukos</translation>
         </message>
     </context>
 </TS>

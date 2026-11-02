@@ -11976,6 +11976,12 @@ picasapy-origin-key: eula:eula/toslink.title;stringres:INSTALLRES_TosText;string
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Modo de teste (registra a próxima inicialização)</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaHelpMenu.qml" line="45" />
+            <source>Show background work in the status bar</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mostrar o trabalho em segundo plano na barra de status</translation>
+        </message>
     </context>
     <context>
         <name>PicasaPictureMenu</name>
@@ -20267,6 +20273,303 @@ picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Labe
 picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>Quadrado</translation>
+        </message>
+    </context>
+    <context>
+        <name>BusyActivity</name>
+        <message>
+            <location filename="../busy_activity.py" line="21" />
+            <source>Working in the background</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Trabalho em segundo plano</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="22" />
+            <source>%1 (+%2 more)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 (+%2 mais)</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="26" />
+            <source>Scanning folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Verificando pastas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="27" />
+            <source>Syncing changed folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Sincronizando pastas alteradas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="28" />
+            <source>Moving the library</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Movendo a biblioteca</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="29" />
+            <source>Saving the index</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Salvando o índice</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="30" />
+            <source>Generating thumbnails</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Gerando miniaturas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="31" />
+            <source>Printing</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Imprimindo</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="32" />
+            <source>Planning backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Planejando o backup</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="33" />
+            <source>Running backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Executando o backup</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="34" />
+            <source>Creating backup image</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Criando imagem de backup</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="35" />
+            <source>Restoring backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Restaurando o backup</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="36" />
+            <source>Renaming photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Renomeando fotos</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="37" />
+            <source>Creating movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Criando filme</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="38" />
+            <source>Searching for duplicates</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Procurando duplicatas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="39" />
+            <source>Scanning faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Verificando rostos</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="40" />
+            <source>Downloading face model</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Baixando modelo facial</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="41" />
+            <source>Searching for a Picasa library</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Procurando uma biblioteca do Picasa</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="43" />
+            <source>Exporting photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Exportando fotos</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="44" />
+            <source>Exporting to Google Earth</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Exportando para o Google Earth</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="45" />
+            <source>Scanning import source</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Verificando a origem da importação</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="47" />
+            <source>Importing photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Importando fotos</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="48" />
+            <source>Rendering edit preview</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Renderizando prévia da edição</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="49" />
+            <source>Finding similar photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Encontrando fotos semelhantes</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="50" />
+            <source>Preparing passport photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Preparando foto para passaporte</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="51" />
+            <source>Applying effects to photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aplicando efeitos às fotos</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="52" />
+            <source>Compacting database</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Compactando o banco de dados</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="53" />
+            <source>Exporting movie clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Exportando trecho de filme</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="54" />
+            <source>Creating web album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Criando álbum da Web</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="55" />
+            <source>Publishing web album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Publicando álbum da Web</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="56" />
+            <source>Rendering collage</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Renderizando colagem</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="57" />
+            <source>Saving copy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Salvando cópia</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="58" />
+            <source>Listing backup folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Listando pastas de backup</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="59" />
+            <source>Rendering collage preview</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Renderizando prévia da colagem</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="60" />
+            <source>Creating collage</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Criando colagem</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="63" />
+            <source>Loading folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Carregando pastas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="64" />
+            <source>Loading subfolders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Carregando subpastas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="65" />
+            <source>Capturing movie frame</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Capturando quadro do filme</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="66" />
+            <source>Checking folders for changes</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Verificando alterações nas pastas</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="67" />
+            <source>Saving photo details</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Salvando detalhes da foto</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="69" />
+            <source>Writing face names to photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Gravando nomes dos rostos nas fotos</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="70" />
+            <source>Importing from the Picasa database</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Importando do banco de dados do Picasa</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="71" />
+            <source>Creating poster</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Criando pôster</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="72" />
+            <source>Restoring photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Restaurando fotos</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="73" />
+            <source>Saving changes to photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Salvando alterações nas fotos</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="74" />
+            <source>Startup maintenance</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Manutenção na inicialização</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="75" />
+            <source>Connecting to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Conectando ao Google Fotos</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="76" />
+            <source>Disconnecting from Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Desconectando do Google Fotos</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="77" />
+            <source>Uploading to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Enviando para Google Fotos</translation>
         </message>
     </context>
 </TS>

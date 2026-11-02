@@ -37,9 +37,8 @@ class ActivityStatusMixin:
         """Az AppController.__init__ hívja (a mixinek nem definiálnak saját
         `__init__`-et, ez a konvenció a repóban)."""
         self._status_activity_on = activity_status_enabled_from(self._get_settings())
-        registry = get_app_busy_registry()
-        registry.visibleChanged.connect(self.statusActivityChanged)
-        registry.activityChanged.connect(self.statusActivityChanged)
+        get_app_busy_registry().visibleChanged.connect(self.statusActivityChanged)
+        get_app_busy_registry().activityChanged.connect(self.statusActivityChanged)
 
     # -- QML-nek kitett állapot ---------------------------------------------
 
@@ -65,7 +64,6 @@ class ActivityStatusMixin:
     def toggleStatusActivity(self) -> None:
         self.setStatusActivityEnabled(not self._status_activity_on)
 
-    @Slot(bool)
     def setStatusActivityEnabled(self, enabled: bool) -> None:
         """A kapcsoló átállítása, TARTÓSAN (a `sync()` a kilépés előtt is megmarad)."""
         enabled = bool(enabled)

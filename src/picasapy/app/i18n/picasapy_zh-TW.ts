@@ -11976,6 +11976,12 @@ picasapy-origin-key: eula:eula/toslink.title;stringres:INSTALLRES_TosText;string
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>測試模式（記錄下次啟動）</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaHelpMenu.qml" line="45" />
+            <source>Show background work in the status bar</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>在狀態列顯示背景工作</translation>
+        </message>
     </context>
     <context>
         <name>PicasaPictureMenu</name>
@@ -20267,6 +20273,303 @@ picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Labe
 picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>正方形</translation>
+        </message>
+    </context>
+    <context>
+        <name>BusyActivity</name>
+        <message>
+            <location filename="../busy_activity.py" line="21" />
+            <source>Working in the background</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在背景處理</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="22" />
+            <source>%1 (+%2 more)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1（另有%2項）</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="26" />
+            <source>Scanning folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在掃描資料夾</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="27" />
+            <source>Syncing changed folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在同步已變更的資料夾</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="28" />
+            <source>Moving the library</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在移動圖庫</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="29" />
+            <source>Saving the index</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在儲存索引</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="30" />
+            <source>Generating thumbnails</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在產生縮圖</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="31" />
+            <source>Printing</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在列印</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="32" />
+            <source>Planning backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在規劃備份</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="33" />
+            <source>Running backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在執行備份</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="34" />
+            <source>Creating backup image</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在建立備份映像</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="35" />
+            <source>Restoring backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在還原備份</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="36" />
+            <source>Renaming photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在重新命名相片</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="37" />
+            <source>Creating movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在建立影片</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="38" />
+            <source>Searching for duplicates</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在尋找重複項目</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="39" />
+            <source>Scanning faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在掃描臉孔</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="40" />
+            <source>Downloading face model</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在下載臉孔模型</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="41" />
+            <source>Searching for a Picasa library</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在尋找 Picasa 圖庫</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="43" />
+            <source>Exporting photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在匯出相片</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="44" />
+            <source>Exporting to Google Earth</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在匯出至 Google Earth</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="45" />
+            <source>Scanning import source</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在掃描匯入來源</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="47" />
+            <source>Importing photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在匯入相片</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="48" />
+            <source>Rendering edit preview</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在轉譯編輯預覽</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="49" />
+            <source>Finding similar photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在尋找相似相片</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="50" />
+            <source>Preparing passport photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在準備護照相片</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="51" />
+            <source>Applying effects to photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在套用效果至相片</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="52" />
+            <source>Compacting database</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在壓縮資料庫</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="53" />
+            <source>Exporting movie clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在匯出影片片段</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="54" />
+            <source>Creating web album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在建立網路相簿</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="55" />
+            <source>Publishing web album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在發布網路相簿</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="56" />
+            <source>Rendering collage</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在轉譯拼貼</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="57" />
+            <source>Saving copy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在儲存副本</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="58" />
+            <source>Listing backup folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在列出備份資料夾</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="59" />
+            <source>Rendering collage preview</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在轉譯拼貼預覽</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="60" />
+            <source>Creating collage</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在建立拼貼</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="63" />
+            <source>Loading folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在載入資料夾</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="64" />
+            <source>Loading subfolders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在載入子資料夾</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="65" />
+            <source>Capturing movie frame</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在擷取影片影格</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="66" />
+            <source>Checking folders for changes</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在檢查資料夾變更</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="67" />
+            <source>Saving photo details</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在儲存相片詳細資料</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="69" />
+            <source>Writing face names to photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在將臉孔名稱寫入相片</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="70" />
+            <source>Importing from the Picasa database</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在從 Picasa 資料庫匯入</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="71" />
+            <source>Creating poster</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在建立海報</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="72" />
+            <source>Restoring photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在還原相片</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="73" />
+            <source>Saving changes to photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在儲存相片變更</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="74" />
+            <source>Startup maintenance</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>啟動維護</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="75" />
+            <source>Connecting to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在連線至 Google 相簿</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="76" />
+            <source>Disconnecting from Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在中斷與 Google 相簿 的連線</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="77" />
+            <source>Uploading to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>正在上傳至 Google 相簿</translation>
         </message>
     </context>
 </TS>

@@ -12051,6 +12051,12 @@ picasapy-origin-key: eula:eula/toslink.title;stringres:INSTALLRES_TosText;string
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>وضع الاختبار (يسجل بدء التشغيل التالي)</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaHelpMenu.qml" line="45" />
+            <source>Show background work in the status bar</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>إظهار العمل في الخلفية في شريط الحالة</translation>
+        </message>
     </context>
     <context>
         <name>PicasaPictureMenu</name>
@@ -20346,6 +20352,303 @@ picasapy-origin-key: stringres:AspectRatioList::A4Page:Description;tooltips:Labe
 picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>مربع</translation>
+        </message>
+    </context>
+    <context>
+        <name>BusyActivity</name>
+        <message>
+            <location filename="../busy_activity.py" line="21" />
+            <source>Working in the background</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>جارٍ العمل في الخلفية</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="22" />
+            <source>%1 (+%2 more)</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>%1 (+%2 أخرى)</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="26" />
+            <source>Scanning folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>فحص المجلدات</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="27" />
+            <source>Syncing changed folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>مزامنة المجلدات المتغيرة</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="28" />
+            <source>Moving the library</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>نقل المكتبة</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="29" />
+            <source>Saving the index</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>حفظ الفهرس</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="30" />
+            <source>Generating thumbnails</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>إنشاء الصور المصغرة</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="31" />
+            <source>Printing</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>الطباعة</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="32" />
+            <source>Planning backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تخطيط النسخ الاحتياطي</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="33" />
+            <source>Running backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تنفيذ النسخ الاحتياطي</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="34" />
+            <source>Creating backup image</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>إنشاء صورة النسخة الاحتياطية</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="35" />
+            <source>Restoring backup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>استعادة النسخة الاحتياطية</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="36" />
+            <source>Renaming photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>إعادة تسمية الصور</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="37" />
+            <source>Creating movie</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>إنشاء فيلم</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="38" />
+            <source>Searching for duplicates</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>البحث عن الملفات المكررة</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="39" />
+            <source>Scanning faces</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>فحص الوجوه</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="40" />
+            <source>Downloading face model</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تنزيل نموذج الوجوه</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="41" />
+            <source>Searching for a Picasa library</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>البحث عن مكتبة Picasa</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="43" />
+            <source>Exporting photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تصدير الصور</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="44" />
+            <source>Exporting to Google Earth</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>التصدير إلى Google Earth</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="45" />
+            <source>Scanning import source</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>فحص مصدر الاستيراد</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="47" />
+            <source>Importing photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>استيراد الصور</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="48" />
+            <source>Rendering edit preview</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>إنشاء معاينة التعديل</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="49" />
+            <source>Finding similar photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>البحث عن صور مشابهة</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="50" />
+            <source>Preparing passport photo</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تجهيز صورة جواز السفر</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="51" />
+            <source>Applying effects to photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تطبيق التأثيرات على الصور</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="52" />
+            <source>Compacting database</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ضغط قاعدة البيانات</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="53" />
+            <source>Exporting movie clip</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تصدير مقطع فيديو</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="54" />
+            <source>Creating web album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>إنشاء ألبوم ويب</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="55" />
+            <source>Publishing web album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>نشر ألبوم ويب</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="56" />
+            <source>Rendering collage</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>إنشاء صورة مجمعة</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="57" />
+            <source>Saving copy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>حفظ نسخة</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="58" />
+            <source>Listing backup folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>عرض مجلدات النسخ الاحتياطي</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="59" />
+            <source>Rendering collage preview</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>إنشاء معاينة الصورة المجمعة</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="60" />
+            <source>Creating collage</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>إنشاء صورة مجمعة</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="63" />
+            <source>Loading folders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تحميل المجلدات</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="64" />
+            <source>Loading subfolders</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تحميل المجلدات الفرعية</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="65" />
+            <source>Capturing movie frame</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>التقاط إطار من الفيلم</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="66" />
+            <source>Checking folders for changes</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>التحقق من تغييرات المجلدات</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="67" />
+            <source>Saving photo details</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>حفظ تفاصيل الصور</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="69" />
+            <source>Writing face names to photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>كتابة أسماء الوجوه على الصور</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="70" />
+            <source>Importing from the Picasa database</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>استيراد من قاعدة بيانات Picasa</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="71" />
+            <source>Creating poster</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>إنشاء ملصق</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="72" />
+            <source>Restoring photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>استعادة الصور</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="73" />
+            <source>Saving changes to photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>حفظ التغييرات على الصور</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="74" />
+            <source>Startup maintenance</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>صيانة بدء التشغيل</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="75" />
+            <source>Connecting to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>الاتصال بـ ‏صور Google</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="76" />
+            <source>Disconnecting from Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>قطع الاتصال بـ ‏صور Google</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="77" />
+            <source>Uploading to Google Photos</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>التحميل إلى ‏صور Google</translation>
         </message>
     </context>
 </TS>
