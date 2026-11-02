@@ -69,6 +69,12 @@ from datetime import datetime
 from pathlib import Path
 import zipfile
 
+# A szkript közvetlen futtatásakor ez a könyvtár már a sys.path elején van;
+# tesztből betöltve is tegyük elérhetővé a mellette lévő kis segédmodult.
+_MERES_MODULOK = str(Path(__file__).resolve().parent)
+if _MERES_MODULOK not in sys.path:
+    sys.path.insert(0, _MERES_MODULOK)
+
 #: a program saját sikerjelzése a hibanaplóban (`_StartupSmokeProbe`)
 _SIKER = "A főablak a splash után megjelent"
 _INDULOABLAK = "Az indulóablak megjelent"
@@ -544,7 +550,6 @@ def ido(
     halozati_export: list[str] | None = None,
     hatar_mp: float | None = None,
     indulo_hatar_ms: float | None = None,
-    elso_hatar_mp: float | None = None,
 ) -> int:
     if indulo_hatar_ms is not None and sys.platform != "win32":
         raise SystemExit("--indulo-hatar-ms csak Windowson mérhető")
@@ -561,7 +566,6 @@ def ido(
                 kepek,
                 hatar_mp,
                 indulo_hatar_ms,
-                elso_hatar_mp,
             )
     finally:
         if halozati_export:
@@ -578,10 +582,15 @@ def _ido_futtato(
     kepek: int,
     hatar_mp: float | None,
     indulo_hatar_ms: float | None,
-    elso_hatar_mp: float | None = None,
 ) -> int:
     hiba = 0
     gyoker = munka / (f"ido-{nev}-{kepek}kep" if kepek else f"ido-{nev}")
+    # Az önálló előfordítás ugyanazzal a profillal modellezi az Inno Setup
+    # futását, közvetlenül az első mért indítás előtt.
+    from qml_cache_warmup import melegitsd_qml_cache
+
+    profil_env, _konyvtar = _profil(gyoker, kepek)
+    melegitsd_qml_cache(parancs, profil_env)
     eredmeny: dict = {}
     indulo_eredmenyek: list[dict] = []
     for sorszam in range(1, inditasok + 1):
@@ -610,12 +619,7 @@ def _ido_futtato(
             if not any(s == sor for _, s in eredmeny["sorok"]):
                 print(f"  ❌ {nev}: a naplóban nincs „{sor}”", flush=True)
                 hiba = 1
-        # a határ MINDEN indításra vonatkozik: a CI első mérésén épp az első
-        # indulás volt 24,9 s (elérhetetlen hálózati gyökér), a többi 4,1 s.
-        # Az első indulásnak (friss profil) külön határa lehet: ilyenkor a Qt
-        # a felület QML-fájljait egyszer lefordítja és eltárolja (#6374).
-        hatar = elso_hatar_mp if sorszam == 1 and elso_hatar_mp is not None else hatar_mp
-        uzenet = hatar_hiba(f"{nev} #{sorszam}", eredmeny, hatar)
+        uzenet = hatar_hiba(f"{nev} #{sorszam}", eredmeny, hatar_mp)
         if uzenet is not None:
             print(f"  ❌ {uzenet}", flush=True)
             hiba = 1
@@ -1111,6 +1115,12 @@ def _csatolt_folyamatok_leallitasa(diag_mappa: Path, kezdo_pid: int) -> None:
         )
 
 
+def _frissites_utana_indulasi_kapu(naplo: Path) -> int:
+    from qml_cache_warmup import frissitesi_indulasi_kapu
+
+    return 0 if frissitesi_indulasi_kapu(naplo) else 1
+
+
 def frissites(
     futtatok: list[tuple[str, list[str]]],
     munka: Path,
@@ -1342,6 +1352,10 @@ def frissites(
             _kepernyokep_mentese(
                 kepernyokep_mappa / "07-nevjegy-uj-verzio.png", uj_pid
             )
+            from qml_cache_warmup import windows_indulasi_naplo
+
+            if _frissites_utana_indulasi_kapu(windows_indulasi_naplo(env)):
+                raise RuntimeError("a frissítés utáni első indulás túllépte az 5 s-os határt")
             print(
                 f"✅ frissites: {elvart_verzio} -> {uj_verzio}; "
                 f"a Névjegy az új verziót mutatja (PID {uj_pid})",
@@ -1370,7 +1384,6 @@ def main(argv: list[str] | None = None) -> int:
     ertelmezo.add_argument("--kepek", type=int, default=0)
     ertelmezo.add_argument("--halozati-export", action="append", default=None)
     ertelmezo.add_argument("--hatar-mp", type=float, default=None)
-    ertelmezo.add_argument("--elso-hatar-mp", type=float, default=None)
     ertelmezo.add_argument("--indulo-hatar-ms", type=float, default=None)
     ertelmezo.add_argument("--kepernyokep-mappa", type=Path, default=None)
     args = ertelmezo.parse_args(argv)
@@ -1387,7 +1400,6 @@ def main(argv: list[str] | None = None) -> int:
             kepek=args.kepek,
             halozati_export=args.halozati_export,
             hatar_mp=args.hatar_mp,
-            elso_hatar_mp=args.elso_hatar_mp,
             indulo_hatar_ms=args.indulo_hatar_ms,
         )
     if args.mod == "frissites":

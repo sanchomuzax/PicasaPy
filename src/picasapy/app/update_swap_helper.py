@@ -23,6 +23,7 @@ from picasapy.perf.tesztuzem import tarolo_tipusa
 
 _kill = os.kill
 _run = subprocess.run
+_mkdtemp = tempfile.mkdtemp
 _POSIX_PATH = re.compile(r"(?<![\w.])/(?:[^\r\n\"']+)")
 _QUOTED_WINDOWS_PATH = re.compile(r"(['\"])(?:[A-Za-z]:[\\/]|\\\\).*?\1")
 _WINDOWS_PATH = re.compile(r"(?<![\w])(?:[A-Za-z]:[\\/]|\\\\)[^\s\"']+")
@@ -284,6 +285,21 @@ def _onellenorzes(executable: Path, *, timeout: float = 180.0) -> bool:
     return eredmeny.returncode == 0
 
 
+def _qml_elofordit(executable: Path, *, timeout: float = 180.0) -> bool:
+    """A friss telepítés QML-cache-ét melegíti; hiba esetén csak naplóz."""
+    try:
+        from .qml_cache_warmup import melegitsd_qml_cache
+
+        output = melegitsd_qml_cache(
+            [str(executable)], os.environ, timeout=timeout
+        )
+    except Exception as error:  # noqa: BLE001 - a cache-hiba nem vonhatja vissza a cserét
+        _log_update(f"QML-gyorsítótár előmelegítése sikertelen: {_sanitized_log_message(error)}")
+        return False
+    _log_update(f"QML-gyorsítótár előmelegítése kész: {output or 'nincs kimenet'}")
+    return True
+
+
 def _rendszergazda() -> bool:
     """Rendszergazdai (emelt) jogokkal fut-e a segéd — csak Windowson igaz."""
     if _platform() != "win32":
@@ -341,7 +357,7 @@ def install_after_exit(
         raise
     try:
         stage_root = Path(
-            tempfile.mkdtemp(prefix="PicasaPy-update-", dir=install_dir.parent)
+            _mkdtemp(prefix="PicasaPy-update-", dir=install_dir.parent)
         )
     except Exception as error:
         _log_update("Visszaállás oka: a frissítési munkamappa nem hozható létre")
@@ -367,6 +383,12 @@ def install_after_exit(
             _log_update(
                 "Visszaállás oka: az új változat önellenőrzése nem jelzett sikert"
             )
+        elif uac_emelt and _rendszergazda():
+            _log_update(
+                "Emelt frissítés: a QML-gyorsítótárat az új program első indulása készíti el"
+            )
+        else:
+            _qml_elofordit(install_dir / executable, timeout=180.0)
         return sikerult
     except Exception as error:
         _log_update("Visszaállás oka: a frissítési lépés kivétellel állt le")

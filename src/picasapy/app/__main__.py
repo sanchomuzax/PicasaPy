@@ -27,6 +27,11 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
 def main() -> int:
     """A telepített `picasapy` parancs belépési pontja."""
+    if "--qml-elofordit" in sys.argv[1:]:
+        from .qml_precompile import main as qml_precompile_main
+
+        return qml_precompile_main()
+
     early = start_early_startup(sys.argv)
     try:
         return run(early.argv, entry_at=_ENTRY_AT)
