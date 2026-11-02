@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.26] - 2026-11-03
+
+- Az „Újraindítás most” a frissítősegédet a program mellől indítja, és ha ez nem megy, az ideiglenes mappából; ha egyik sem sikerül, a hibaüzenet megmondja az okát. A telepített program névjegyén nincs többé „(dev)” felirat (#6458).
+- A windowsos telepítőpróba a főablak 5 másodperces határát a három indítás középértékén méri, így a futtatógép lassú hideg indulása nem állítja meg a kiadást; egy indítás 8 másodperc fölött továbbra is piros (#6461).
+
 ## [1.0.25] - 2026-11-02
 
 - Két képernyős gépen az értesítő a PicasaPy ablakának képernyőjén jelenik meg (#6435).
