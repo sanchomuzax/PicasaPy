@@ -211,3 +211,9 @@ def test_valodi_ablaknal_a_qt_naplo_a_kimenetre_kerul(tmp_path, monkeypatch):
     ido_modul._egy_inditas(["x.exe"], tmp_path, ablakkal=True)
     assert elkapott["QT_FORCE_STDERR_LOGGING"] == "1"
     assert elkapott["QSG_INFO"] == "1"
+
+
+def test_a_qt_naplo_nyers_relevans_sorai_kiirodnak():
+    kimenet = "valami\nqt.rhi.general: Created D3D11 device\nQSG: threaded render loop\nmás\n"
+    assert ido_modul.qt_naplo_sorok(kimenet) == [
+        "qt.rhi.general: Created D3D11 device", "QSG: threaded render loop"]

@@ -43,10 +43,11 @@ def qmlc_nevek(profil: Path, ota: float, qml_gyoker: Path, korlat: int = 20) -> 
     if not profil.is_dir():
         return []
     irtak = []
-    for ut in profil.rglob("*.qmlc"):
+    # a kiterjesztéstől függetlenül: a windowsos futáson a *.qmlc minta semmit nem talált
+    for ut in (u for u in profil.rglob("*") if "qmlcache" in u.parts and u.is_file()):
         try:
             if ut.stat().st_mtime >= ota:
-                irtak.append(ut.stem)
+                irtak.append(ut.name.split(".")[0])
         except OSError:
             continue
     if not irtak:

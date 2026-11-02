@@ -173,7 +173,21 @@ def _indulasi_grafikai_jelentes(sorszam: int, eredmeny: dict) -> list[str]:
     return [
         f"  futás közben forrásból fordított QML: {qml}",
         f"  grafikus háttér: {hatter}",
+        *(f"  qt-napló: {sor}" for sor in qt_naplo_sorok(eredmeny.get("kimenet", ""))),
     ]
+
+
+def qt_naplo_sorok(kimenet: str, korlat: int = 25) -> list[str]:
+    """A Qt-napló nyers, releváns sorai (#6426): az elemzők a windowsos futáson
+    semmit nem ismertek fel, ezért a döntéshez a nyers sor kell."""
+    jelek = ("qt.", "qsg", "rhi", "cache", "d3d", "opengl", "vulkan")
+    ki = []
+    for sor in kimenet.splitlines():
+        if any(jel in sor.casefold() for jel in jelek):
+            ki.append(sor.strip()[:200])
+            if len(ki) >= korlat:
+                break
+    return ki
 
 def _egy_inditas(
     parancs: list[str],
