@@ -72,10 +72,12 @@ Window {
     //: A hívó főablaka külön `Window`; a sáv ezért megjegyzi annak utolsó
     //: használható képernyőjét, ha a főablak rejtett vagy épp méret nélküli.
     property var _hostWindow: null
-    // Sima érték, NEM kötés: csak a használható főablak képernyője írja felül.
-    // Kötésként a még méret nélküli induló ablaknál sosem szakadna el, és a
-    // rejtett vagy tálcára tett főablak képernyőjét is követné.
-    property var _lastKnownScreen: null
+    // Az utolsó használható képernyő MÁSOLATA (név és téglalap), nem a
+    // képernyő-objektum: a Qt 6.11-ben a `Window.screen` élő objektum, amely
+    // az ablakkal együtt vándorol, így eltárolva a rejtett vagy tálcára tett
+    // főablak új képernyőjét mutatná. Sima érték, nem kötés.
+    property string _lastKnownScreenName: ""
+    property rect _lastKnownScreenRect: Qt.rect(0, 0, 0, 0)
 
     function _foablakKepernyojeHasznalhato() {
         return _hostWindow && _hostWindow.screen && _hostWindow.visible
@@ -83,34 +85,46 @@ Window {
                 && _hostWindow.width > 1 && _hostWindow.height > 1
     }
 
-    function _utolsoKepernyoMegjegyzese() {
-        if (_foablakKepernyojeHasznalhato())
-            _lastKnownScreen = _hostWindow.screen
+    function _kepernyoTeglalap(kepernyo) {
+        return Qt.rect(kepernyo.virtualX, kepernyo.virtualY,
+                       kepernyo.width, kepernyo.height)
     }
 
-    readonly property var _pozicioKepernyoje:
-        _foablakKepernyojeHasznalhato() ? _hostWindow.screen
-        : (_lastKnownScreen ? _lastKnownScreen
-           : (_hostWindow && _hostWindow.screen ? _hostWindow.screen : notifier.screen))
+    function _utolsoKepernyoMegjegyzese() {
+        if (!_foablakKepernyojeHasznalhato())
+            return
+        _lastKnownScreenName = _hostWindow.screen.name
+        _lastKnownScreenRect = _kepernyoTeglalap(_hostWindow.screen)
+    }
 
-    //: A QQuickScreenInfo nem ad availableGeometry-t, ezért az alkalmazás
-    //: QScreen-jeit a név alapján kérdezzük le. Önálló QML-tesztnél a valódi
-    //: QQuickScreenInfo képernyő-koordinátái adják a helyi tartalékértéket.
+    // A pozíció forrása: {nev, teglalap}. Használható főablaknál annak mostani
+    // képernyője, különben az utolsó megjegyzett, végső esetben a mostani.
+    readonly property var _pozicioKepernyoje: {
+        if (_foablakKepernyojeHasznalhato())
+            return { nev: _hostWindow.screen.name,
+                     teglalap: _kepernyoTeglalap(_hostWindow.screen) }
+        if (_lastKnownScreenName !== "")
+            return { nev: _lastKnownScreenName, teglalap: _lastKnownScreenRect }
+        const kepernyo = (_hostWindow && _hostWindow.screen)
+            ? _hostWindow.screen : notifier.screen
+        return kepernyo
+            ? { nev: kepernyo.name, teglalap: _kepernyoTeglalap(kepernyo) }
+            : { nev: "", teglalap: Qt.rect(0, 0, Screen.width, Screen.height) }
+    }
+
+    //: A QQuickScreenInfo nem ad availableGeometry-t (tálca nélküli részt),
+    //: ezért az alkalmazás QScreen-jeit a név alapján kérdezzük le. Önálló
+    //: QML-tesztnél a képernyő téglalapja a tartalék.
     readonly property var _munkaterulet: {
-        if (_pozicioKepernyoje
+        const forras = _pozicioKepernyoje
+        if (forras.nev !== ""
                 && typeof notifierScreenGeometry !== "undefined"
                 && notifierScreenGeometry) {
-            const elerheto = notifierScreenGeometry.availableGeometryForName(
-                _pozicioKepernyoje.name)
+            const elerheto = notifierScreenGeometry.availableGeometryForName(forras.nev)
             if (elerheto && elerheto.width > 0 && elerheto.height > 0)
                 return elerheto
         }
-        return _pozicioKepernyoje
-            ? Qt.rect(_pozicioKepernyoje.virtualX,
-                      _pozicioKepernyoje.virtualY,
-                      _pozicioKepernyoje.width,
-                      _pozicioKepernyoje.height)
-            : Qt.rect(0, 0, Screen.width, Screen.height)
+        return forras.teglalap
     }
     readonly property int munkateruletX: _munkaterulet.x
     readonly property int munkateruletY: _munkaterulet.y

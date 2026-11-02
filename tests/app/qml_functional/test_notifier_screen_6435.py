@@ -91,11 +91,11 @@ def vart_pozicio(screen):
 
 def ellenoriz_poziciot(screen, leiras):
     x, y = vart_pozicio(screen)
-    lk = notifier.property("_lastKnownScreen")
+    lk = notifier.property("_lastKnownScreenName")
     allapot = (
         f"főablak: visible={foablak.isVisible()} visibility={foablak.visibility()} "
         f"{foablak.width()}x{foablak.height()} képernyő={foablak.screen().name()}; "
-        f"utolsó={lk.property('name') if lk else None}"
+        f"utolsó={lk!r}"
     )
     assert notifier.x() == x, f"{leiras}: x={notifier.x()}, várt x={x}; {allapot}"
     assert notifier.y() == y, f"{leiras}: y={notifier.y()}, várt y={y}"
