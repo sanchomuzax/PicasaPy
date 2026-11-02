@@ -62,7 +62,12 @@ Rectangle {
                 text: "×"
                 color: Theme.textGray
                 font.pixelSize: Theme.fontSize + 4
-                TapHandler { onTapped: panel.closeRequested() }
+                TapHandler {
+                    id: _pressFeedbackTap6
+                    onTapped: panel.closeRequested()
+                }
+
+                PressFeedbackOverlay { pressSource: _pressFeedbackTap6 }
             }
         }
 

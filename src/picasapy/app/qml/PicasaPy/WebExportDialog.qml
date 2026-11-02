@@ -251,9 +251,15 @@ Window {
     }
 
     function startExport() {
+        if (webExportWindow.exporting) return
         if ((!webExportWindow.ftpMode && webExportWindow.targetFolder.length === 0)
             || webExportWindow.templateId.length === 0) return
+        if (typeof webExportController === "undefined" || !webExportController)
+            return
         webExportWindow.lastError = ""
+        webExportWindow.exporting = true
+        webExportWindow.progressDone = 0
+        webExportWindow.progressTotal = 0
         if (webExportWindow.ftpMode) {
             if (webExportWindow.selectedFtpAccountId.length === 0) return
             webExportController.publishWebExport(

@@ -275,6 +275,7 @@ Window {
     // feladat (ilyenkor a sor sem látszik).
     property int printDonePages: 0
     property int printTotalPages: 0
+    property bool _printing: false
     // a feladatból kimaradt képek nevei (videó/RAW: a `QImage` nem nyitja
     // meg őket, a rácsban viszont látszanak) — ld. `printSkipped`
     property var lastSkipped: []
@@ -283,6 +284,7 @@ Window {
         printWindow.printCtl !== null
         && printWindow.rows.length > 0
         && (!printWindow.pdfSelected || printWindow.pdfTarget.length > 0)
+        && !printWindow._printing
 
     //: #1401: a bezárt nézet nem hagyhatja a vezérlőt útlevél-módban —
     //: a következő nyomtatás különben a kivágott képet nyomtatná.
@@ -305,6 +307,7 @@ Window {
     Connections {
         target: printWindow.printCtl
         function onPrintFinished(target) {
+            printWindow._printing = false
             printWindow.lastError = ""
             printWindow.lastResult = target
             // a feladat véget ért: a haladás-sor eltűnik
@@ -312,6 +315,7 @@ Window {
             printWindow.printDonePages = 0
         }
         function onPrintFailed(message) {
+            printWindow._printing = false
             printWindow.lastResult = ""
             printWindow.lastError = message
             printWindow.printTotalPages = 0

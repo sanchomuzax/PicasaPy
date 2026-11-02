@@ -42,8 +42,11 @@ Item {
         //: jelzi, ezért a lenyomás-átmenetre kötjük; a `pressed`
         //: visszaváltása nem sülhet el másodszor.
         TapHandler {
+            id: _pressFeedbackTap10
             onPressedChanged: if (pressed) header.playRequested()
         }
+
+        PressFeedbackOverlay { pressSource: _pressFeedbackTap10 }
     }
     // #1823: eddig ez egy néma díszcsempe volt - se neve, se
     // kezelője. Most a mért `select_star` gomb: a jelenlegi mappa

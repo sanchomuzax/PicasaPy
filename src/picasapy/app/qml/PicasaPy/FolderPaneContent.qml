@@ -116,6 +116,8 @@ Flickable {
                     }
                     folderPane.unnamedFacesChosen()
                 }
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
 
@@ -185,6 +187,8 @@ Flickable {
                         }
                         folderPane.personChosen(personItem.modelData.name)
                     }
+
+                    PressFeedbackOverlay { pressSource: parent }
                 }
             }
         }
@@ -232,6 +236,8 @@ Flickable {
                     }
                     folderPane.ignoredFacesChosen()
                 }
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
 
@@ -495,6 +501,8 @@ Flickable {
                                 }
                                 folderPane.folderChosen(customFolderItem.modelData)
                             }
+
+                            PressFeedbackOverlay { pressSource: parent }
                         }
                     }
                 }

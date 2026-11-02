@@ -57,15 +57,19 @@ Rectangle {
     // nincs layout-kötés, csak implicit alapérték.
     implicitHeight: 25
     implicitWidth: 39
-    color: panel.activeTab === tabIndex ? Theme.contentPanel : Theme.panelHeaderBg
+    color: tabMouse.pressed
+           ? Qt.darker(panel.activeTab === tabIndex
+                       ? Theme.contentPanel : Theme.panelHeaderBg, 1.16)
+           : (panel.activeTab === tabIndex ? Theme.contentPanel : Theme.panelHeaderBg)
     border.width: 1
-    border.color: panel.activeTab === tabIndex ? Theme.selectionBlue : Theme.chromeBorder
+    border.color: tabMouse.pressed || panel.activeTab === tabIndex
+                  ? Theme.selectionBlue : Theme.chromeBorder
 
     EditTabIcon {
         objectName: tbtn.objectName ? tbtn.objectName + "Icon" : ""
         // #4552: vízszintesen a fül közepén, a tetejétől 4 képpontra
         x: Math.round((tbtn.width - width) / 2)
-        y: tbtn.iconTop
+        y: tbtn.iconTop + (tabMouse.pressed ? 1 : 0)
         // #741/#4552: az eredeti fülikonok 16–19 képpont magasak (fülönként
         // 15 × 16 … 25 × 19) — a méretet a gazda adja át.
         width: tbtn.iconWidth; height: tbtn.iconHeight

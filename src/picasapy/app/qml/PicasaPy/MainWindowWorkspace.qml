@@ -310,7 +310,12 @@ Item {
         anchors.bottom: mainSplit.bottom
         anchors.right: jobbFiok.visible ? jobbFiok.left : parent.right
         color: "transparent"
-        TapHandler { onTapped: jobbFiokFogo.kattints() }
+        TapHandler {
+            id: _pressFeedbackTap20
+            onTapped: jobbFiokFogo.kattints()
+        }
+
+        PressFeedbackOverlay { pressSource: _pressFeedbackTap20 }
     }
 
     // #985: a Kollázs LAP tartalma — a Könyvtár lapjának TESTVÉRE, ugyanazon

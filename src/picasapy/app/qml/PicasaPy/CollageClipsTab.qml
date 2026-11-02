@@ -316,6 +316,8 @@ Item {
                     }
                     tab.trayValasztas = wanted
                 }
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
     }

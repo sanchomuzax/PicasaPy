@@ -7,6 +7,20 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.16] - 2026-11-02
+
+- A gombok lenyomáskor azonnali visszajelzést adnak, a hosszú műveletek pedig rögtön folyamatjelzőt mutatnak (#6381).
+- Az önfrissítés kódja kisebb részekre bontva, a működés változatlan (#6417).
+
+## [1.0.15] - 2026-11-02
+
+- Az 1.0.15 köteg: háttérjelző, kameranapló, közeli arcok, kiadási lánc, Mappakezelő-spec (#6405, #6390, #6386, #6414, #6389, #6391) (#6391).
+- Az arcfelismerés a képet kitöltő, közeli arcokat is megtalálja (#6386).
+- Az új kiadás csak akkor látszik a programban, amikor a windowsos csomag és az ellenőrzőösszeg is felkerült: addig előzetes kiadásként rejtve marad (#6389).
+- A Rögzítés panel üres kamerabemenetnél ellenőrzési javaslatokat mutat, az indulási napló pedig rögzíti a Qt multimédia-bemenetek számát és hátterét (#6390).
+- A háttérművelet-jelző most a könyvtárnézet paneljének jobb felső sarkában jelenik meg (#6405).
+- A csomagoló akkor is megépíti a linuxos csomagokat és a verziószámos windowsos csomagot, ha a kiadáson már ott a kiadáskép (#6414).
+
 ## [1.0.14] - 2026-11-02
 
 - 1.0.14 integráció: frissítési napló és végponttól végpontig próba, gyorsabb indulás, eredeti indulóablak (#6399).

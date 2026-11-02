@@ -108,6 +108,7 @@ import QtQuick.Window
                     }
                     HoverHandler { id: starFilter }
                     TapHandler {
+                        id: _pressFeedbackTap31
                         //: #885: lenyomásra, nem felengedésre
                         onPressedChanged: if (pressed
                                               && typeof controller !== "undefined"
@@ -117,6 +118,8 @@ import QtQuick.Window
                                 : controller.showStarred()
                         }
                     }
+
+                    PressFeedbackOverlay { pressSource: _pressFeedbackTap31 }
                 }
                 Item {   // #1830: „arcos képek" — az eredeti `facesearch`
                     objectName: "faceFilter"
@@ -164,6 +167,7 @@ import QtQuick.Window
                     // felirat helyén jelenik meg (`hottip`, ld. ott)
                     HoverHandler { id: faceFilterHover }
                     TapHandler {
+                        id: _pressFeedbackTap32
                         //: #885: lenyomásra, nem felengedésre
                         onPressedChanged: if (pressed
                                               && typeof controller !== "undefined"
@@ -173,6 +177,8 @@ import QtQuick.Window
                                 : controller.showFacesOnly()
                         }
                     }
+
+                    PressFeedbackOverlay { pressSource: _pressFeedbackTap32 }
                 }
                 Item {   // #1830: „csak filmek" — az eredeti `moviesearch`
                     objectName: "movieFilter"
@@ -207,6 +213,7 @@ import QtQuick.Window
                     // felirat helyén jelenik meg (`hottip`, ld. ott)
                     HoverHandler { id: movieFilterHover }
                     TapHandler {
+                        id: _pressFeedbackTap33
                         //: #885: lenyomásra, nem felengedésre
                         onPressedChanged: if (pressed
                                               && typeof controller !== "undefined"
@@ -216,6 +223,8 @@ import QtQuick.Window
                                 : controller.showVideosOnly()
                         }
                     }
+
+                    PressFeedbackOverlay { pressSource: _pressFeedbackTap33 }
                 }
                 Item {   // #2174: a duplikátum-kapcsoló (`searchoptions/
                          // dupesearch`). MÉRVE, hogy alapból REJTETT: a
@@ -256,6 +265,7 @@ import QtQuick.Window
                     // felirat helyén jelenik meg (`hottip`, ld. ott)
                     HoverHandler { id: dupeFilterHover }
                     TapHandler {
+                        id: _pressFeedbackTap34
                         // KÖZÖS út a menüparanccsal (#1398): az eredetiben a
                         // kapcsoló és az `ID_DUPES` bitre ugyanazt hívja.
                         //: #885: lenyomásra, nem felengedésre
@@ -267,6 +277,8 @@ import QtQuick.Window
                                 : controller.showDuplicateFiles()
                         }
                     }
+
+                    PressFeedbackOverlay { pressSource: _pressFeedbackTap34 }
                 }
                 Item {   // geo-szűrő (#30) — csak akkor él, ha van geocímkés kép
                     objectName: "geoFilter"
@@ -331,6 +343,7 @@ import QtQuick.Window
                     // felirat helyén jelenik meg (`hottip`, ld. ott)
                     HoverHandler { id: geoFilterHover }
                     TapHandler {
+                        id: _pressFeedbackTap35
                         enabled: parent.ctlCanShowGeo
                         //: #885: lenyomásra, nem felengedésre
                         onPressedChanged: if (pressed
@@ -341,6 +354,8 @@ import QtQuick.Window
                                 : controller.showGeotagged()
                         }
                     }
+
+                    PressFeedbackOverlay { pressSource: _pressFeedbackTap35 }
                 }
                 // #4532: a korábbi kezelő nélküli „▤" jel innen kikerült —
                 // az eredeti szűrőkeresőben nincs ilyen elem, a mozgófilm

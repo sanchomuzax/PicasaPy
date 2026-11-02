@@ -443,6 +443,7 @@ Item {
                 //: felengedésre sül el, mint a `PicasaButton`
                 //: alapesete (nem `lenyomasra`)
                 TapHandler {
+                    id: _pressFeedbackTap37
                     acceptedButtons: Qt.LeftButton
                     gesturePolicy: TapHandler.ReleaseWithinBounds
                     onSingleTapped: {
@@ -467,6 +468,8 @@ Item {
                     //: bekapcsoltat az opacitás jelzi
                     opacity: trayLoupeButton.aktiv ? 1.0 : 0.65
                 }
+
+                PressFeedbackOverlay { pressSource: _pressFeedbackTap37 }
             }
             //: #3729: a `scaleslider` CSALÁD (`respack.yt`
             //: `scaleslider/sliderbase`+`thumb`) — ugyanaz a

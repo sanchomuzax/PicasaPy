@@ -11,6 +11,7 @@ AbstractButton {
     id: control
 
     property bool selected: control.checked
+    topPadding: control.down ? 1 : 0
 
     contentItem: Text {
         text: control.text
@@ -23,9 +24,11 @@ AbstractButton {
     }
 
     background: Rectangle {
-        color: control.selected ? Theme.contentPanel : Theme.chromeBg
+        color: control.down
+               ? Qt.darker(control.selected ? Theme.contentPanel : Theme.chromeBg, 1.14)
+               : (control.selected ? Theme.contentPanel : Theme.chromeBg)
         border.width: 1
-        border.color: Theme.chromeBorder
+        border.color: control.down ? Theme.selectionBlue : Theme.chromeBorder
         // a kiválasztott fül alja „kinyílik" a lap felé: a szegélyt egy
         // azonos színű csík takarja el
         Rectangle {

@@ -119,6 +119,7 @@ Item {
                 }
             }
             TapHandler {
+                id: _pressFeedbackTap25
                 enabled: parent.mappaKepen
                 //: #3014: AB módban az AKTÍV oldal képét
                 //: cseréljük - ez a válogató munkafolyamat
@@ -135,6 +136,8 @@ Item {
                     }
                 }
             }
+
+            PressFeedbackOverlay { pressSource: _pressFeedbackTap25 }
         }
     }
 }

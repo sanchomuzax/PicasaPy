@@ -75,6 +75,8 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: printReviewList.currentIndex = index
+
+                    PressFeedbackOverlay { pressSource: parent }
                 }
             }
         }

@@ -132,6 +132,8 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 onClicked: box.pickMode(radio.modeKey)
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
 
@@ -154,6 +156,8 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 onClicked: box.pickMode("solid")
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
 
@@ -176,6 +180,8 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 onClicked: box.pickMode("image")
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
     }
@@ -207,6 +213,8 @@ Item {
         MouseArea {
             anchors.fill: parent
             onClicked: box.togglePalette()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 
@@ -226,6 +234,8 @@ Item {
         MouseArea {
             anchors.fill: parent
             onClicked: box.togglePalette()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 

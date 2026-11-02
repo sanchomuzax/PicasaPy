@@ -10,30 +10,49 @@ hogy a működés GitHub-hozzáférés nélkül is mérhető legyen.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime, timezone
-import hashlib
 import hmac
 import json
 import logging
 import os
 from pathlib import Path
-import re
 import sys
 import tempfile
 import time
 from collections.abc import Callable
-from urllib.parse import urlsplit
-from urllib.request import Request, urlopen
 
 from PySide6.QtCore import QObject, Property, QRunnable, QThreadPool, QTimer, Signal, Slot
 
+from . import update_checksums as _update_checksums
+from . import update_release_client as _update_release_client
+from .update_checksums import SHA256SUMS_NAME, parse_sha256sums
+from .update_helper import (
+    KILEPESI_HATARIDO_MP,
+    inditsd_a_segedet,
+    installation_kind,
+    kenyszeritett_kilepes_ha_beragad,
+    mappa_irhato,
+    update_command,
+)
+from .update_release_client import (
+    WINDOWS_ASSET_NAME,
+    GitHubReleaseClient,
+    ReleaseInfo,
+    automatic_check_is_due,
+    olvashato_jegyzet,
+    release_is_newer,
+)
+
+LATEST_RELEASE_API = _update_release_client.LATEST_RELEASE_API
+REPOSITORY = _update_release_client.REPOSITORY
+UPDATE_API_ENV = _update_release_client.UPDATE_API_ENV
+ReleaseAsset = _update_release_client.ReleaseAsset
+_latest_release_api_url = _update_release_client._latest_release_api_url
+_version_parts = _update_release_client._version_parts
+verify_sha256 = _update_checksums.verify_sha256
+
 logger = logging.getLogger(__name__)
 
-REPOSITORY = "sanchomuzax/PicasaPy"
-LATEST_RELEASE_API = f"https://api.github.com/repos/{REPOSITORY}/releases/latest"
-SHA256SUMS_NAME = "SHA256SUMS"
-WINDOWS_ASSET_NAME = "PicasaPy-windows-x64.zip"
 AUTO_CHECK_KEY = "updates/autoCheck"
 LAST_AUTO_CHECK_KEY = "updates/lastAutomaticCheckDate"
 SKIPPED_VERSION_KEY = "updates/skippedVersion"
@@ -42,7 +61,6 @@ DEFERRED_VERSION_KEY = "updates/deferredVersion"
 AUTO_CHECK_DELAY_MS = 30_000
 #: #6379: futás közben ennyi időnként keres újra (6 óra)
 AUTO_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
-UPDATE_API_ENV = "PICASAPY_UPDATE_API"
 
 
 #: a futtató folyamat (`executable`) — modulszintű fogantyú a tesztnek (#1375)
@@ -52,227 +70,6 @@ _futtato = sys
 def _platform() -> str:
     """Platformfogantyú, hogy a Windows-specifikus indítás helyettesíthető legyen."""
     return sys.platform
-
-
-def _latest_release_api_url(environ: dict[str, str] | None = None) -> str:
-    """Tesztben helyi API-ra irányít, éles alapértéket változatlanul hagyva."""
-    source = os.environ if environ is None else environ
-    override = str(source.get(UPDATE_API_ENV, "") or "").strip()
-    if not override:
-        return LATEST_RELEASE_API
-    try:
-        parsed = urlsplit(override)
-        host = (parsed.hostname or "").casefold()
-        port = parsed.port
-    except ValueError as error:
-        raise ValueError(
-            "A PICASAPY_UPDATE_API csak helyi (127.0.0.1 vagy localhost) "
-            "http-címet fogadhat el"
-        ) from error
-    if (
-        parsed.scheme != "http"
-        or host not in {"127.0.0.1", "localhost"}
-        or parsed.username is not None
-        or parsed.password is not None
-        or parsed.fragment
-        or (port is not None and not 1 <= port <= 65535)
-    ):
-        raise ValueError(
-            "A PICASAPY_UPDATE_API csak helyi (127.0.0.1 vagy localhost) "
-            "http-címet fogadhat el"
-        )
-    return override
-
-
-@dataclass(frozen=True, slots=True)
-class ReleaseAsset:
-    name: str
-    download_url: str
-
-
-@dataclass(frozen=True, slots=True)
-class ReleaseInfo:
-    version: str
-    notes: str
-    url: str
-    assets: tuple[ReleaseAsset, ...]
-
-    def asset(self, name: str) -> ReleaseAsset | None:
-        return next((asset for asset in self.assets if asset.name == name), None)
-
-
-def _version_parts(value: str) -> tuple[tuple[int, ...], int, int] | None:
-    """A kiadási verzió számait és előkiadási rangját adja vissza."""
-    match = re.fullmatch(
-        r"v?(\d+(?:\.\d+)*)(?:(?:-|\.)?(dev|a|alpha|b|beta|rc)(?:[.-]?(\d+))?)?"
-        r"(?:\+[0-9A-Za-z.-]+)?",
-        value.strip(),
-        flags=re.IGNORECASE,
-    )
-    if not match:
-        return None
-    numbers = tuple(int(part) for part in match.group(1).split("."))
-    stage = (match.group(2) or "").lower()
-    stage_rank = {"dev": 0, "a": 1, "alpha": 1, "b": 2, "beta": 2, "rc": 3}
-    return numbers, stage_rank.get(stage, 4), int(match.group(3) or 0)
-
-
-def release_is_newer(latest: str, current: str) -> bool:
-    """Igaz, ha a latest szemantikus kiadásverziója nagyobb a futónál."""
-    newest = _version_parts(latest)
-    installed = _version_parts(current)
-    if newest is None or installed is None:
-        return False
-    width = max(len(newest[0]), len(installed[0]))
-    left = (*newest[0], *(0 for _ in range(width - len(newest[0]))))
-    right = (*installed[0], *(0 for _ in range(width - len(installed[0]))))
-    return (left, newest[1], newest[2]) > (right, installed[1], installed[2])
-
-
-def automatic_check_is_due(*, enabled: bool = True) -> bool:
-    """Az automatikus keresés minden indításkor és időzítéskor fut, ha be van kapcsolva.
-
-    #6379: a korábbi napi korlát miatt a napközben kiadott verziót a program
-    csak másnap vette észre. Az értesítés verziónként egyszer jön
-    (`NOTIFIED_VERSION_KEY`), így a gyakoribb keresés nem tolakodó.
-    """
-    return enabled
-
-
-_HTML_MEGJEGYZES = re.compile(r"<!--.*?-->", re.DOTALL)
-_KEPHIVATKOZAS = re.compile(r"!\[[^\]]*\]\([^)]*\)")
-_HIVATKOZAS = re.compile(r"\[([^\]]+)\]\([^)]*\)")
-_KIEMELES = re.compile(r"(\*\*|__|`)")
-_LISTAJEL = re.compile(r"^(\s*)[*+-]\s+")
-_CIMSOR = re.compile(r"^\s*#{1,6}\s*")
-
-
-def olvashato_jegyzet(body: str) -> str:
-    """A GitHub-kiadás Markdown-leírása olvasható sima szövegként (#6358).
-
-    A frissítési ablak sima szöveget mutat: a címsor- és listajel, a
-    kiemelés, a képhivatkozás és a rejtett megjegyzés kimarad, a
-    hivatkozásból a felirata marad. Az egymást követő üres sorok egyre
-    rövidülnek."""
-    szoveg = _HTML_MEGJEGYZES.sub("", body or "")
-    sorok: list[str] = []
-    for sor in szoveg.splitlines():
-        sor = _KEPHIVATKOZAS.sub("", sor)
-        sor = _HIVATKOZAS.sub(r"\1", sor)
-        sor = _CIMSOR.sub("", sor)
-        sor = _LISTAJEL.sub(lambda m: m.group(1) + "• ", sor)
-        sor = _KIEMELES.sub("", sor).rstrip()
-        if not sor.strip() and (not sorok or not sorok[-1]):
-            continue
-        sorok.append(sor if sor.strip() else "")
-    return "\n".join(sorok).strip()
-
-
-def parse_sha256sums(manifest: str) -> dict[str, str]:
-    """GNU sha256sum formátumú manifesztből fájlnév → hex digest térképet ad."""
-    result: dict[str, str] = {}
-    for line in manifest.splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        match = re.fullmatch(r"([0-9a-fA-F]{64})\s+\*?(.+)", line)
-        if not match:
-            raise ValueError("Érvénytelen SHA256SUMS sor")
-        result[match.group(2).strip()] = match.group(1).lower()
-    return result
-
-
-def verify_sha256(payload: bytes, expected: str) -> bool:
-    """Eltérésnél kivételt dob, hogy hibás fájl ne juthasson telepítésig."""
-    actual = hashlib.sha256(payload).hexdigest()
-    if not hmac.compare_digest(actual, expected.lower()):
-        raise ValueError("A letöltött fájl SHA-256 ujjlenyomata nem egyezik")
-    return True
-
-
-class GitHubReleaseClient:
-    """A GitHub Releases API és asset letöltésének behelyettesíthető kliensrétege."""
-
-    def __init__(
-        self,
-        *,
-        opener: Callable[..., object] | None = None,
-        timeout: float = 8.0,
-    ) -> None:
-        self._opener = opener or urlopen
-        self.timeout = timeout
-
-    def _read(self, url: str, *, accept: str = "application/vnd.github+json") -> bytes:
-        request = Request(
-            url,
-            headers={"Accept": accept, "User-Agent": "PicasaPy-updater"},
-        )
-        with self._opener(request, timeout=self.timeout) as response:
-            return response.read()
-
-    def latest_release(self) -> ReleaseInfo:
-        """A GitHub `releases/latest` végpontjáról beolvassa a kiadás adatait."""
-        raw = json.loads(self._read(_latest_release_api_url()).decode("utf-8"))
-        assets = tuple(
-            ReleaseAsset(str(asset["name"]), str(asset["browser_download_url"]))
-            for asset in raw.get("assets", [])
-            if asset.get("name") and asset.get("browser_download_url")
-        )
-        tag = str(raw.get("tag_name", "")).strip()
-        if not tag:
-            raise ValueError("A GitHub-kiadás nem tartalmaz verziócímkét")
-        return ReleaseInfo(
-            version=tag.removeprefix("v"),
-            notes=str(raw.get("body", "") or ""),
-            url=str(raw.get("html_url", "") or f"https://github.com/{REPOSITORY}/releases/latest"),
-            assets=assets,
-        )
-
-    def download(self, asset: ReleaseAsset, *, progress: Callable[[int, int], None] | None = None) -> bytes:
-        """Darabokban tölti le az assetet, opcionális bájt-haladás jelzéssel."""
-        request = Request(asset.download_url, headers={"User-Agent": "PicasaPy-updater"})
-        chunks: list[bytes] = []
-        received = 0
-        with self._opener(request, timeout=self.timeout) as response:
-            total = int(response.headers.get("Content-Length", "0") or 0)
-            while True:
-                chunk = response.read(128 * 1024)
-                if not chunk:
-                    break
-                chunks.append(chunk)
-                received += len(chunk)
-                if progress:
-                    progress(received, total)
-        return b"".join(chunks)
-
-    def download_to(
-        self,
-        asset: ReleaseAsset,
-        destination: Path,
-        *,
-        progress: Callable[[int, int], None] | None = None,
-    ) -> str:
-        """Közvetlenül fájlba tölt, menet közben számolt SHA-256-tal (#6340).
-
-        A Windows-csomag ~200 MB: a memóriába gyűjtés (`download`) a darabok
-        és az összefűzött másolat miatt ennek a kétszeresét foglalná."""
-        request = Request(asset.download_url, headers={"User-Agent": "PicasaPy-updater"})
-        digest = hashlib.sha256()
-        received = 0
-        with self._opener(request, timeout=self.timeout) as response, destination.open(
-            "wb"
-        ) as out:
-            total = int(response.headers.get("Content-Length", "0") or 0)
-            while True:
-                chunk = response.read(128 * 1024)
-                if not chunk:
-                    break
-                out.write(chunk)
-                digest.update(chunk)
-                received += len(chunk)
-                if progress:
-                    progress(received, total)
-        return digest.hexdigest()
 
 
 def _as_bool(value: object, default: bool) -> bool:
@@ -306,51 +103,6 @@ class _Worker(QRunnable):
             self.signals.failed.emit(self.job_id, str(error))
 
 
-def installation_kind(
-    *,
-    frozen: bool | None = None,
-    platform: str | None = None,
-    executable: str | None = None,
-    package_path: str | Path | None = None,
-) -> str:
-    """A csomagfajtát futásidőben azonosítja: `windows`, `deb` vagy `pip`."""
-    frozen = bool(getattr(sys, "frozen", False)) if frozen is None else frozen
-    platform = os.name if platform is None else platform
-    executable = sys.executable if executable is None else executable
-    if frozen and platform == "nt":
-        return "windows"
-    executable_path = Path(executable).resolve()
-    installed_module = Path(package_path or __file__).resolve().as_posix()
-    if platform != "nt" and (
-        "/usr/lib/python3/dist-packages/" in installed_module
-        or ("/usr/lib/python3." in installed_module and "/dist-packages/" in installed_module)
-        or "/usr/lib/python3/dist-packages" in executable_path.as_posix()
-        or Path("/usr/share/doc/picasapy").is_dir()
-    ):
-        return "deb"
-    return "pip"
-
-
-def mappa_irhato(folder: Path) -> bool:
-    """Írhat-e a felhasználó a mappába — kipróbálva, nem az ACL-ből találgatva.
-
-    A telepítési mappa cseréje a SZÜLŐ mappába ír (átnevezés). A felhasználói
-    telepítésnél (`%LOCALAPPDATA%\\Programs`) ez UAC nélkül megy; csak a
-    `Program Files` alá telepített program kér rendszergazdai jogot."""
-    try:
-        fd, proba = tempfile.mkstemp(prefix=".picasapy-irasproba-", dir=folder)
-    except OSError:
-        return False
-    os.close(fd)
-    try:
-        os.unlink(proba)
-    except OSError:
-        pass
-    return True
-
-
-#: Ennyi idő jut a rendes lezárásra a „Restart now” után (#6383).
-KILEPESI_HATARIDO_MP = 20.0
 #: A kényszerített kilépés cserélhető fogantyúja (#1375, #6383).
 _azonnali_kilepes = os._exit
 
@@ -362,38 +114,16 @@ def _kenyszeritett_kilepes_ha_beragad(hatarido_mp: float = KILEPESI_HATARIDO_MP)
     miatt a csere soha nem indulna el. A démonszálas időzítő az értelmező
     leállása közben is lefut, ezért a nem démon szálakra várakozást is
     átvágja. A rendes lezárás (index, beállítások) a határidőn belül végez."""
-    import threading
-
-    def _kilepes() -> None:
-        logger.warning("A lezárás %.0f s alatt nem fejeződött be; kilépés a frissítéshez", hatarido_mp)
-        logging.shutdown()
-        _azonnali_kilepes(0)
-
-    idozito = threading.Timer(hatarido_mp, _kilepes)
-    idozito.daemon = True
-    idozito.start()
+    kenyszeritett_kilepes_ha_beragad(
+        hatarido_mp,
+        azonnali_kilepes=_azonnali_kilepes,
+        logger=logger,
+    )
 
 
 def _inditsd_a_segedet(args: list[str], *, emelt: bool) -> bool:
     """A frissítő segéd indítása; UAC-ot csak akkor kér, ha `emelt` (#6340)."""
-    import subprocess
-
-    if _platform() != "win32":
-        subprocess.Popen(args, close_fds=True)
-        return True
-    import ctypes
-
-    params = subprocess.list2cmdline(args[1:])
-    result = ctypes.windll.shell32.ShellExecuteW(
-        None, "runas" if emelt else "open", str(args[0]), params, None, 0
-    )
-    return result > 32
-
-
-def update_command(kind: str) -> str:
-    if kind == "deb":
-        return "sudo apt update && sudo apt install --only-upgrade picasapy"
-    return "python -m pip install --upgrade picasapy"
+    return inditsd_a_segedet(args, emelt=emelt, platform=_platform())
 
 
 class UpdateController(QObject):

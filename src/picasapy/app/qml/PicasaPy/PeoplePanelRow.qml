@@ -41,6 +41,8 @@ Rectangle {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: row.chosen()
+
+        PressFeedbackOverlay { pressSource: parent }
     }
 
     Image {
@@ -191,6 +193,8 @@ Rectangle {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             onClicked: row.suggestionAccepted(row.faceId)
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 
@@ -219,6 +223,8 @@ Rectangle {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             onClicked: row.suggestionRejected(row.faceId)
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 
@@ -265,6 +271,8 @@ Rectangle {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: row.ignoreRequested(row.faceId)
+
+            PressFeedbackOverlay { pressSource: parent }
         }
         ToolTip.visible: ignoreMouse.containsMouse
         ToolTip.text: qsTr("Ignore person")

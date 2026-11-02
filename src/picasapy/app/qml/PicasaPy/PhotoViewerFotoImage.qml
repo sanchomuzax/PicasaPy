@@ -76,6 +76,7 @@ Image {
     //: `neutralPickArea`/`paintMaskArea` marad kivétel
     //: MINDKÉT irányban — ld. a `photoElotte` párját.
     TapHandler {
+        id: _pressFeedbackTap26
         enabled: photoArea.hostViewer.layoutMode !== "1up"
             && !photoArea.hostEditorPanel.neutralPickerActive
             && photoArea.hostEditorPanel.effectColorPickerTarget < 0
@@ -87,4 +88,6 @@ Image {
                      || photoArea.hostEditorPanel.textActive))
         onTapped: photoArea.hostViewer.fokuszValt("jobb")
     }
+
+    PressFeedbackOverlay { pressSource: _pressFeedbackTap26 }
 }

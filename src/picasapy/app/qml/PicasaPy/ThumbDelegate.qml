@@ -370,6 +370,8 @@ Item {
             cell.handleClicked(event.button, event.modifiers, event.x, event.y)
         }
         onDoubleClicked: cell.opened(cell.index)
+
+        PressFeedbackOverlay { pressSource: parent }
     }
 
     // a tényleges elágazás külön, hívható függvényben (nem az onClicked

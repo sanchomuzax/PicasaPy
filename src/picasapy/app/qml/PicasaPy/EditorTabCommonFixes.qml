@@ -231,10 +231,13 @@ ColumnLayout {
                 y: 0
                 width: 14
                 height: 14
-                color: showTextCheckbox.checked
-                       ? Theme.selectionBlue : Theme.chromeBg
+                color: showTextCheckbox.down
+                       ? Qt.darker(showTextCheckbox.checked
+                                   ? Theme.selectionBlue : Theme.chromeBg, 1.2)
+                       : (showTextCheckbox.checked
+                          ? Theme.selectionBlue : Theme.chromeBg)
                 border.width: 1
-                border.color: showTextCheckbox.hovered
+                border.color: showTextCheckbox.down || showTextCheckbox.hovered
                              ? Theme.selectionBlue : Theme.chromeBorder
             }
             contentItem: Text {

@@ -73,6 +73,7 @@ Rectangle {
                         color: Theme.picasaGreen
                     }
                     TapHandler {
+                        id: _pressFeedbackTap11
                         // #4531: keresésből a mező is ürüljön, és a bal
                         // hasáb is álljon vissza a teljes mappalistára —
                         // ugyanaz az út, mint a keresőmező ✕ gombja
@@ -87,6 +88,8 @@ Rectangle {
                             }
                         }
                     }
+
+                    PressFeedbackOverlay { pressSource: _pressFeedbackTap11 }
                 }
                 Text {
                     // #305: null-őr
@@ -140,8 +143,11 @@ Rectangle {
                         color: Theme.picasaGreen
                     }
                     TapHandler {
+                        id: _pressFeedbackTap12
                         onTapped: hostController.clearSimilarity()
                     }
+
+                    PressFeedbackOverlay { pressSource: _pressFeedbackTap12 }
                 }
                 // #1398: a másodpéldány-mód jelzése a sávon (az
                 // eredetiben a keresési sáv rejtett `dupesearch`

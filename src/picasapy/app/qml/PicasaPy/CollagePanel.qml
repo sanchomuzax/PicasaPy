@@ -219,6 +219,7 @@ Item {
     PicasaButton {
         objectName: "collageMakeDesktopButton"
         x: 10; y: 415; width: 127; height: 28
+        enabled: !panel._saving
         text: qsTr("Desktop Background")
         //: `collage::makedesktopbutton` — az eredeti buboréksúgója: a kép
         //: elkészül ÉS a háttér be is áll (#1005).
@@ -230,6 +231,7 @@ Item {
     PicasaButton {
         objectName: "collageShareButton"
         x: 147; y: 415; width: 133; height: 28
+        enabled: !panel._saving
         // #2438/#2450: ez az eredeti `collagepanel/sharebutton`-jának
         // megfelelője — a 13 pulzáló elem egyike, tehát PULZÁL.
         //
@@ -339,6 +341,7 @@ Item {
     //: A folyamatban lévő mentés paraméterei, amíg egy kérdés áll a képen.
     property bool pendingDesktop: false
     property bool pendingReplace: false
+    property bool _saving: false
 
     //: #1168: a felhasználó a „Piszkozat mentése" gombbal indult BEZÁRNI —
     //: a lap a piszkozat tényleges kiírására vár (spec 16.2/a).
@@ -364,14 +367,17 @@ Item {
     }
 
     function startSave(ignoreFormatMismatch) {
-        if (panel.controller)
-            panel.controller.createCollage(panel.pendingDesktop,
-                                           ignoreFormatMismatch === true,
-                                           panel.pendingReplace)
+        if (!panel.controller || panel._saving) return
+        panel._saving = true
+        progressOverlay.visible = true
+        panel.controller.createCollage(panel.pendingDesktop,
+                                       ignoreFormatMismatch === true,
+                                       panel.pendingReplace)
     }
 
     /** A sikeres mentés zárása: jelzés a gazdának, majd önzáródás. */
     function finishSave(path) {
+        panel._saving = false
         progressOverlay.visible = false
         panel.collageSaved(path)
         panel.requestClose(true)
@@ -469,11 +475,16 @@ Item {
         // folyamatjelzőt, és a felhasználó semmit nem látott — se képet, se
         // okot; órákig kideríthetetlen volt, miért nincs mentett kollázs.
         function onCollageFailed(message) {
+            panel._saving = false
             progressOverlay.visible = false
             dialogs.showFailed(message)
         }
-        function onCollageCanceled() { progressOverlay.visible = false }
+        function onCollageCanceled() {
+            panel._saving = false
+            progressOverlay.visible = false
+        }
         function onCollageNoImages() {
+            panel._saving = false
             progressOverlay.visible = false
             // #1168: a mentés elmaradt, tehát a bezárási szándék is elévül —
             // különben a következő, SIKERES piszkozat zárná be a lapot
@@ -492,10 +503,15 @@ Item {
                 panel.controller.closeCollage()
         }
         function onCollageFormatMismatch() {
+            panel._saving = false
             progressOverlay.visible = false
             dialogs.askFormatMismatch()
         }
         function onCollageMissingImages(count) { dialogs.showMissing(count) }
-        function onCollageNeedsSelection() { dialogs.showSelectionRequired() }
+        function onCollageNeedsSelection() {
+            panel._saving = false
+            progressOverlay.visible = false
+            dialogs.showSelectionRequired()
+        }
     }
 }

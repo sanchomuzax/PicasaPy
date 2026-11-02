@@ -450,6 +450,33 @@ class _AssetClient(_ReleaseClient):
         return hashlib.sha256(self.payload).hexdigest()
 
 
+def test_a_letoltes_allapota_a_hattermunka_inditasa_elott_foglalt(qt_app):
+    """A hálózat/manifest előkészítése alatt se maradjon `idle` az állapot."""
+
+    class _QueuedPool:
+        def __init__(self):
+            self.workers = []
+
+        def start(self, worker):
+            self.workers.append(worker)
+
+    pool = _QueuedPool()
+    controller = UpdateController(
+        "1.0.0",
+        settings=_MemorySettings(),
+        client=_AssetClient(_windows_release(), b"zip", ""),
+        pool=pool,
+        schedule=False,
+        install_kind="windows",
+    )
+    controller._release = _windows_release()
+
+    controller.downloadUpdate()
+
+    assert controller.downloadState == "downloading"
+    assert len(pool.workers) == 1
+
+
 def test_a_letoltes_fajlba_megy_es_az_ujjlenyomat_egyezik(qt_app):
     payload = b"PK-zip-tartalom"
     controller = _letolto_vezerlo(payload, hashlib.sha256(payload).hexdigest())

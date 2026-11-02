@@ -97,6 +97,8 @@ Popup {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
                     onClicked: picker.colorPicked(parent.modelData)
+
+                    PressFeedbackOverlay { pressSource: parent }
                 }
             }
         }
@@ -113,6 +115,8 @@ Popup {
                 if (pressed)
                     picker._pickPalettePixel(mouse.x, mouse.y)
             }
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 
@@ -141,6 +145,8 @@ Popup {
                 enabled: parent.recentColor !== ""
                 cursorShape: Qt.PointingHandCursor
                 onClicked: picker.colorPicked(parent.recentColor)
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
     }

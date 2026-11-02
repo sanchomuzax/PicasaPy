@@ -100,6 +100,8 @@ Item {
                     anchors.fill: parent
                     onClicked: if (picker.controller)
                                    picker.controller.setCollageBorder(gomb.modelData.key)
+
+                    PressFeedbackOverlay { pressSource: parent }
                 }
             }
         }

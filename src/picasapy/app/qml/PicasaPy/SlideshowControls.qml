@@ -40,6 +40,8 @@ Item {
         height: 14
         acceptedButtons: Qt.LeftButton
         onClicked: slideshow.togglePause()
+
+        PressFeedbackOverlay { pressSource: parent }
     }
     WheelHandler {
         enabled: slideshow.screensaverMode && slideshow.screensaverInputArmed

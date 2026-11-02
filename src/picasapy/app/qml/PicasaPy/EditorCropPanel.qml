@@ -116,6 +116,8 @@ ColumnLayout {
             MouseArea {
                 anchors.fill: parent
                 onClicked: aspectList.visible = !aspectList.visible
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
         Image {
@@ -149,6 +151,8 @@ ColumnLayout {
                         "deleteCustomAspectRatio",
                         qsTr("Delete this custom aspect ratio?"))
                 }
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
     }
@@ -241,11 +245,14 @@ ColumnLayout {
                         }
                         HoverHandler { id: aspectRowHover }
                         TapHandler {
+                            id: _pressFeedbackTap3
                             onTapped: {
                                 panel.selectAspect(aspectRow.index)
                                 aspectList.visible = false
                             }
                         }
+
+                        PressFeedbackOverlay { pressSource: _pressFeedbackTap3 }
                     }
                 }
             }
@@ -270,11 +277,14 @@ ColumnLayout {
                 }
                 HoverHandler { id: addAspectRowHover }
                 TapHandler {
+                    id: _pressFeedbackTap4
                     onTapped: {
                         aspectList.visible = false
                         addCustomAspectRatioDialog.open()
                     }
                 }
+
+                PressFeedbackOverlay { pressSource: _pressFeedbackTap4 }
             }
         }
     }

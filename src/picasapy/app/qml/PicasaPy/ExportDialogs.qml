@@ -9,6 +9,7 @@ import QtQuick.Layouts
 Item {
     id: dialogs
     anchors.fill: parent
+    property bool _exporting: false
 
     // a főablak (a kijelölt sorok forrása)
     required property var appWindow
@@ -26,6 +27,7 @@ Item {
     // #1589: `viewAfter === true` esetén a kiírás UTÁN megnyitjuk a fájlt
     // (`ID_VIEW_EARTH`), egyébként csak kiírjuk (`ID_EXPORT_EARTH`).
     function openGoogleEarth(viewAfter) {
+        if (dialogs._exporting) return
         // ⚠️ #1589: kijelölés nélkül ez a függvény korábban NÉMÁN
         // visszatért — a felhasználó rákattintott a menüpontra, és nem
         // történt semmi. Az eredeti ilyenkor MEGSZÓLAL
@@ -117,6 +119,7 @@ Item {
         }
 
         function openForSelection() {
+            if (dialogs._exporting) return
             // #455: tartott képekkel a tálca a forrás — ilyenkor a rácsban
             // nem is kell kijelölésnek lennie
             if (exportDialog.requestedRows !== null) {
@@ -228,6 +231,9 @@ Item {
         // törli. A kérdést az elfogadás UTÁN, de az indítás ELŐTT tesszük
         // fel — a válasz dönti el, ürítünk-e.
         function startExport(purgeExisting) {
+            if (dialogs._exporting) return
+            dialogs._exporting = true
+            exportProgressDialog.open()
             var presetKey = qualityPresetKeys[exportQualityPreset.currentIndex]
             controller.rememberExportLocation(exportDialog.targetFolder)
             var quality = controller.resolveExportQuality(
@@ -571,6 +577,21 @@ Item {
         }
     }
 
+    // A háttérszálas munka a beállításablak bezárása után is látható marad.
+    Dialog {
+        id: exportProgressDialog
+        objectName: "exportProgressDialog"
+        title: qsTr("Export")
+        modal: true
+        closePolicy: Popup.NoAutoClose
+        anchors.centerIn: parent
+        BusyIndicator {
+            objectName: "exportProgressBusyIndicator"
+            running: exportProgressDialog.visible
+            anchors.centerIn: parent
+        }
+    }
+
     FolderDialog {
         id: exportTargetDialog
         title: qsTr("Export Picture to Folder...")
@@ -645,6 +666,9 @@ Item {
                : qsTr("Export to Google Earth File")
         onAccepted: {
             if (typeof controller === "undefined" || !controller) return
+            if (dialogs._exporting) return
+            dialogs._exporting = true
+            exportProgressDialog.open()
             // ⚠️ #1626: a `file://` előtag NYERS levágása Windowson
             // `/C:/Users/…`-t hagy maga után (a `file:///C:/…` alakból),
             // amiből a Python `Path` `\C:\Users\…` lesz — a `mkdir` ezen
@@ -708,6 +732,8 @@ Item {
     }
 
     function jelezdAzExportVeget(done, failed) {
+        dialogs._exporting = false
+        exportProgressDialog.close()
         var message = failed > 0
             ? qsTr("%1 pictures exported, %2 failed.").arg(done).arg(failed)
             : qsTr("%1 pictures exported.").arg(done)
@@ -722,6 +748,8 @@ Item {
     //: felhasználónak tudnia kell, miért kevesebb a helyjelző, mint a
     //: kijelölés (koordináta nélküli képet nincs hova tenni a térképen).
     function jelezdAzEarthExportVeget(kmlPath, placemarks, skipped) {
+        dialogs._exporting = false
+        exportProgressDialog.close()
         var message = kmlPath.length > 0
             ? qsTr("%1 pictures written to the Google Earth file.")
                 .arg(placemarks)
@@ -737,6 +765,8 @@ Item {
     //: SZÁNDÉKOSAN a főszálon kérjük — a háttérszálból indított
     //: `QDesktopServices.openUrl` nem biztonságos.
     function nyisdMegAzEarthFajlt(kmlPath, placemarks, skipped) {
+        dialogs._exporting = false
+        exportProgressDialog.close()
         if (kmlPath.length === 0) {
             earthResultDialog.message = qsTr("No geotagged images to export.")
             earthResultDialog.open()

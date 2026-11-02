@@ -78,6 +78,8 @@ ListView {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: viewRoot.toggleFace(ignoredFaceCard.modelData.faceId)
+
+                            PressFeedbackOverlay { pressSource: parent }
                         }
 
                         // A mellőzött nézetben az eredeti sem mutatja a mellőző X-et.
