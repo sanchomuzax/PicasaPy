@@ -8,7 +8,7 @@ from PySide6.QtQml import QQmlApplicationEngine
 from picasapy.version import version_string
 from . import application as _app
 from . import display_photo_provider
-from .application_location import program_location
+from .application_location import _qml_import_path, program_location
 from .color_palette import ColorPaletteProvider
 from .external_links import EXTERNAL_LINKS
 from .option_settings import initialize_option_settings
@@ -61,7 +61,7 @@ def _startup_step_create_qml_engine(state):
     # fotót nem dekódoljuk újra minden indításkor.
     folder_cover_provider = _app._create_folder_cover_provider(data_dir, thumb_cache)
     engine.addImageProvider("foldercover", folder_cover_provider)
-    engine.addImportPath(str(_app._APP_DIR / "qml"))
+    engine.addImportPath(_qml_import_path())
     # #1653: idáig tart a motor felállítása (konstruktor + kép-szolgáltatók
     # + import-útvonal); innentől már csak kontextus-bekötés következik.
     timeline.mark("QML-motor létrehozása és import-útvonalak")

@@ -18,4 +18,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 from picasapy.app.application import run
 
 if __name__ == "__main__":
+    # #6374: a csomag belépője (`picasapy.app.__main__`) ezt korán kezeli; a repó
+    # indítója közvetlenül a `run`-t hívná, és a teljes program indulna el.
+    if "--qml-elofordit" in sys.argv[1:]:
+        from picasapy.app.qml_precompile import main as qml_precompile_main
+
+        sys.exit(qml_precompile_main())
     sys.exit(run(sys.argv, entry_at=_ENTRY_AT))

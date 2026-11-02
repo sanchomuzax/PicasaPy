@@ -482,7 +482,7 @@ jobs:
             --munka "$RUNNER_TEMP/csomag-meres" \
             --kepek 2000 --inditasok 3 \
             --halozati-export '\\192.0.2.1\picasa\export\album' \
-            --hatar-mp 5 --elso-hatar-mp 10
+            --hatar-mp 5
 
       # #6367: a külön indulóablak valódi ablakkal, a folyamat indításától
       # mérve; a kapu a három indítás középértékére 1000 ms
@@ -496,7 +496,7 @@ jobs:
           python packaging/windows/csomag_meres.py ido \
             --futtato "indulo=dist/PicasaPy/PicasaPy.exe" \
             --munka "$RUNNER_TEMP/csomag-meres" \
-            --inditasok 3 --indulo-hatar-ms 1000
+            --inditasok 3 --hatar-mp 5 --indulo-hatar-ms 1000
 
       # ⚠️ PowerShell, nem bash: a Git-bash MSYS-útvonalátírása a
       # `/DMyAppVersion=...` argumentumot fájlútvonalnak vette, és az ISCC
