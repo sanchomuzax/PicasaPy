@@ -11226,6 +11226,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>此版本尚不支援 Google 登入。</translation>
         </message>
         <message>
+            <source>Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label1ES</extracomment>
+            <translation>Google 相簿</translation>
+        </message>
+        <message>
             <source>Sign Out</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>

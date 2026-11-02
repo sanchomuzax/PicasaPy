@@ -11226,6 +11226,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>Masuk dengan Google belum tersedia di versi ini.</translation>
         </message>
         <message>
+            <source>Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label1ES</extracomment>
+            <translation>Google Foto</translation>
+        </message>
+        <message>
             <source>Sign Out</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>

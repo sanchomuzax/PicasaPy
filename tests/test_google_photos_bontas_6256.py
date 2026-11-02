@@ -28,7 +28,10 @@ _EREDETI_FORRAS_SHA256 = {
     "HttpTransport": "33706b061402884ad6d109b4c1b5f45ea7b0285885c03b475060e6bccff7b82f",
     "UrllibTransport": "70dd0b0e2601316626b1769c094d66d4676f657bf94fcdf3954245b3da001362",
     "GooglePhotosApiClient": "25d11c4ba61ed5fd04635f3d45ed505809f9a64110a72b664a8e048fe6da02c0",
-    "OAuthClient": "1d251b86ced95b097d948fd0419a5d6ab2ce2f04fed927320605f50e761b41f5",
+    # #6446: a belépés az `openid email` hatókört is kéri (`GOOGLE_OAUTH_SCOPE`),
+    # ezért az `authorization_url` szándékosan változott: ettől a ponttól a
+    # változás utáni forrás a referencia.
+    "OAuthClient": "4d527454a047eb22591611f1b9631f3793e412aa59aa523df7ddffea9a6ba8a7",
     "CredentialStore": "6c7f2e4dfbfc7ede1c2615cddb95be262e261d98cd7a5ed997c1f6e81d92e064",
     "LoopbackOAuthSession": "060d96502193a7fbc2b78027b130c043bc51991187d04ddfdd8dba98d788dba0",
     "_prepare_photo": "3877bc02e88016d9640b1fd8c56162a822ed164fbf9ef0d9b02a58173282c2cc",

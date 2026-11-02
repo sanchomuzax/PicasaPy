@@ -8,11 +8,14 @@ from pathlib import Path
 from PySide6.QtCore import Property, QUrl, Slot
 from PySide6.QtGui import QDesktopServices
 
+from ..google_photos_fiok import account_email_from_tokens
 from .tray_state_controller import _TraySignalsMixin
 
 
 googlePhotosChanged = _TraySignalsMixin.googlePhotosChanged
 photosUploadChanged = _TraySignalsMixin.photosUploadChanged
+#: #6446: a belépett fiók e-mail-címe; a tokennel együtt törlődik.
+_FIOK_KULCS = "googlePhotos/accountEmail"
 
 
 class TrayGooglePhotosMixin(_TraySignalsMixin):
@@ -68,6 +71,20 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
     def googlePhotosCanSignIn(self) -> bool:
         self._ensure_google_photos_wired()
         return self._effective_google_photos_credentials() is not None
+
+    @Property(str, notify=googlePhotosChanged)
+    def googlePhotosAccount(self) -> str:
+        """A belépett fiók e-mail-címe; üres, ha nincs fiók vagy a belépés régi."""
+        self._ensure_google_photos_wired()
+        return str(self._get_settings().value(_FIOK_KULCS, "") or "")
+
+    def _set_google_photos_account(self, account: str) -> None:
+        """Eltárolja a fiók címét; üres érték törli."""
+        settings = self._get_settings()
+        if account:
+            settings.setValue(_FIOK_KULCS, account)
+        else:
+            settings.remove(_FIOK_KULCS)
 
     def _effective_google_photos_credentials(self) -> tuple[str, str] | None:
         """A mentett saját vagy a beépített klienspárt választja ki."""
@@ -150,6 +167,7 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
             return False
         if previous_id != client_id:
             self._google_photos_credentials.delete_secret("refresh_token")
+            self._set_google_photos_account("")
         settings.setValue("googlePhotos/clientId", client_id)
         if client_secret.strip():
             self._google_photos_credentials.set_secret("client_secret", client_secret)
@@ -204,11 +222,12 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
                 refresh_token = str(tokens.get("refresh_token", "") or "")
                 if not refresh_token:
                     raise GooglePhotosError("auth_failed")
-                self.googlePhotosAuthResultReported.emit(refresh_token, "")
+                account = account_email_from_tokens(tokens)
+                self.googlePhotosAuthResultReported.emit(refresh_token, "", account)
             except GooglePhotosError as error:
-                self.googlePhotosAuthResultReported.emit("", error.code)
+                self.googlePhotosAuthResultReported.emit("", error.code, "")
             except Exception:
-                self.googlePhotosAuthResultReported.emit("", "auth_failed")
+                self.googlePhotosAuthResultReported.emit("", "auth_failed", "")
 
         self._start_background(
             finish_authorization,
@@ -225,6 +244,7 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
             flow.cancel()
         refresh_token = self._google_photos_credentials.get_secret("refresh_token")
         self._google_photos_credentials.delete_secret("refresh_token")
+        self._set_google_photos_account("")
         self._google_photos_auth_busy = False
         self._google_photos_auth_error = ""
         self.googlePhotosChanged.emit()
@@ -351,15 +371,18 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
         self.photosUploadChanged.emit()
         if error == "token_expired":
             self._google_photos_credentials.delete_secret("refresh_token")
+            self._set_google_photos_account("")
         self.googlePhotosChanged.emit()
 
-    @Slot(str, str)
-    def _on_google_photos_auth_result(self, refresh_token: str, error: str) -> None:
+    @Slot(str, str, str)
+    def _on_google_photos_auth_result(self, refresh_token: str, error: str, account: str) -> None:
         self._ensure_google_photos_wired()
         if refresh_token:
             self._google_photos_credentials.set_secret("refresh_token", refresh_token)
+            self._set_google_photos_account(account)
             self._google_photos_auth_error = ""
         else:
+            self._set_google_photos_account("")
             self._google_photos_auth_error = error or "auth_failed"
         self._google_photos_auth_busy = False
         self._google_photos_auth_flow = None

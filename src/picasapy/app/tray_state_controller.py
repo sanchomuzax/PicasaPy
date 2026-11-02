@@ -20,7 +20,8 @@ class _TraySignalsMixin:
     googlePhotosProgressReported = Signal(str, int, int)
     googlePhotosCurrentFileReported = Signal(str)
     googlePhotosUploadResultReported = Signal(str, bool, int)
-    googlePhotosAuthResultReported = Signal(str, str)
+    # (refresh_token, hibakód, fiók e-mail-címe; #6446)
+    googlePhotosAuthResultReported = Signal(str, str, str)
 
 
 

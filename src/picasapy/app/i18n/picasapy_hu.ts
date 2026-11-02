@@ -11246,6 +11246,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>A Google-bejelentkezés ebben a változatban még nem érhető el.</translation>
         </message>
         <message>
+            <source>Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label1ES</extracomment>
+            <translation>Google Fotók</translation>
+        </message>
+        <message>
             <source>Sign Out</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>

@@ -146,9 +146,10 @@ def test_kliens_nelkul_a_menusori_kattintas_egyszeru_uzenetet_mutat(
 
 
 @pytest.mark.parametrize("height_delta", (-5, 0, 5))
-def test_bejelentkezve_a_menusori_fiokmenubol_lehet_kijelentkezni(
+def test_bejelentkezve_a_sor_kijelentkezes_linkjevel_lehet_kilepni(
     google_photos_app, qt_app, monkeypatch, height_delta
 ):
+    # #6446: a fiókmenü megszűnt, a Kijelentkezés hivatkozás a sorban van.
     window, controller, _engine = google_photos_app
     window.setProperty("height", window.property("height") + height_delta)
     qt_app.processEvents()
@@ -161,11 +162,7 @@ def test_bejelentkezve_a_menusori_fiokmenubol_lehet_kijelentkezni(
     )
     controller.googlePhotosChanged.emit()
 
-    kattinthato = _gyerek(window, "menuBarSignInArea")
-    _kattints(qt_app, kattinthato)
-    menu = _gyerek(window, "googlePhotosAccountMenu", QObject)
-    assert _varj(qt_app, lambda: menu.property("visible") is True)
-    kilepes = _gyerek(menu, "googlePhotosSignOutMenuItem")
+    kilepes = _gyerek(window, "menuBarSignOutLink")
     _kattints(qt_app, kilepes)
 
     assert _varj(qt_app, lambda: controller.googlePhotosSignedIn is False)
