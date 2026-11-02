@@ -486,6 +486,35 @@ def hatar_hiba(nev: str, eredmeny: dict, hatar_mp: float | None) -> str | None:
         return f"{nev}: a főablak {mert:.2f} s alatt jelent meg, a határ {hatar_mp:.1f} s"
     return None
 
+# #6461: egy-egy indítás csak a határ ennyiszerese fölött bukik el; a határ
+# maga a középértékre vonatkozik (foablak_kozepertek_hiba). A windowsos
+# futtatógépen az első, hideg indulás a kód változása nélkül 3 és 7 s között
+# szórt, a plafon ennél lazább, de a valóban lassú indulást megfogja.
+_EGYEDI_PLAFON_SZORZO = 1.6
+
+
+def egyedi_plafon_mp(hatar_mp: float | None) -> float | None:
+    """Egyetlen indítás felső határa, másodpercben (#6461)."""
+    return None if hatar_mp is None else round(hatar_mp * _EGYEDI_PLAFON_SZORZO, 2)
+
+
+def foablak_kozepertek_hiba(
+    nev: str, eredmenyek: list[dict], hatar_mp: float | None
+) -> str | None:
+    """A főablak kapuja több indítás KÖZÉPÉRTÉKÉRE (#6461).
+
+    Minden indításnál meg kell jelennie; a határ a középértékre vonatkozik."""
+    if hatar_mp is None or not eredmenyek:
+        return None
+    idok = [foablak_mp(eredmeny) for eredmeny in eredmenyek]
+    if any(ido is None for ido in idok):
+        return f"{nev}: a főablak nem jelent meg minden indításnál"
+    kozep = sorted(idok)[len(idok) // 2]
+    if kozep > hatar_mp:
+        return f"{nev}: a főablak középértéke {kozep:.2f} s, a határ {hatar_mp:.1f} s"
+    return None
+
+
 def ido(
     futtatok: list[tuple[str, list[str]]],
     inditasok: int,
@@ -578,7 +607,7 @@ def _ido_futtato(
             if not any(s == sor for _, s in eredmeny["sorok"]):
                 print(f"  ❌ {nev}: a naplóban nincs „{sor}”", flush=True)
                 hiba = 1
-        uzenet = hatar_hiba(f"{nev} #{sorszam}", eredmeny, hatar_mp)
+        uzenet = hatar_hiba(f"{nev} #{sorszam}", eredmeny, egyedi_plafon_mp(hatar_mp))
         if uzenet is not None:
             print(f"  ❌ {uzenet}", flush=True)
             hiba = 1
@@ -586,6 +615,10 @@ def _ido_futtato(
     # az indulóablak kapuja a mérések KÖZÉPÉRTÉKÉT nézi: a windowsos CI-gép
     # valódi ablakos módban egy-egy indításnál 8 s-os kiugrást mutatott
     # (a többi 0,4-0,8 s), ami a futtatógép zaja, nem a programé
+    foablak_uzenet = foablak_kozepertek_hiba(nev, indulo_eredmenyek, hatar_mp)
+    if foablak_uzenet is not None:
+        print(f"  ❌ {foablak_uzenet}", flush=True)
+        hiba = 1
     indulo_uzenet = indulo_kozepertek_hiba(nev, indulo_eredmenyek, indulo_hatar_ms)
     if indulo_uzenet is not None:
         print(f"  ❌ {indulo_uzenet}", flush=True)
@@ -605,6 +638,8 @@ __all__ = (
     "_naplo_sorai",
     "_profil",
     "foablak_mp",
+    "egyedi_plafon_mp",
+    "foablak_kozepertek_hiba",
     "hatar_hiba",
     "ido",
     "indulo_hatar_hiba",
