@@ -19,12 +19,10 @@ from picasapy.perf import start_startup_timeline
 from picasapy.perf.logwriter import session_header
 from picasapy.perf.tesztuzem import (
     argv_kapcsolo_nelkul,
-    argv_tesztuzem,
     irj_indulasi_naplot,
     konyvtar_merete,
     naplo_szovege,
     tarolo_tipusa,
-    tesztuzem_bekapcsolva,
 )
 from picasapy.version import version_string
 from . import application as _app
@@ -221,19 +219,16 @@ def _indexelt_kepszamok(data_dir: Path) -> tuple[int, ...]:
         )
         return ()
 
-def _jelentsd_az_idovonalat(timeline, kepszamok=None, vedett_gyokerek=None) -> None:
-    """#1601/#1654: az indulási napló kiírása — kikapcsolva NEM CSINÁL SEMMIT.
+def _jelentsd_az_idovonalat(
+    timeline, kepszamok=None, vedett_gyokerek=None, *, run_log=None
+) -> None:
+    """#6385: az indulási idővonal és a tárolótípus naplózása minden futáskor.
 
-    Két helyre megy, mert két különböző igényt szolgál ki: a `stderr`-re a
-    fejlesztő/terminálból indító lát azonnal, a fájlt pedig a felhasználó
-    tudja **átküldeni** (`Súgó ▸ Napló elküldése`, #1654) — az útvonalát
-    ezért kiírjuk.
+    Az alap napló a korai, rotáló futásfájlba kerül. A részletes tesztüzem
+    továbbra is ír átadható, időbélyeges naplót is.
 
-    A napló három rétegből áll (#1654/3): a `perf/logwriter.py`
-    session-fejléce, a #1601 szakaszos bontása, és a könyvtár mérete
-    darabszámban. A `kepszamok` egy KÉSLELTETETT hívható (a mappánkénti
-    képdarabszámokat adja) — kikapcsolt mérésnél meg sem hívjuk, tehát az
-    indexlekérdezés költsége sem merül fel.
+    A `kepszamok` és `vedett_gyokerek` késleltetett hívók: csak a részletes
+    tesztüzem kéri le ezeket, hogy a szokásos indulás ne nyisson indexet.
 
     A jelentés nem tartalmaz fájlnevet, teljes útvonalat és
     felhasználónevet, ld. `perf/tesztuzem.py` (`utvonalmentes`).
@@ -245,27 +240,37 @@ def _jelentsd_az_idovonalat(timeline, kepszamok=None, vedett_gyokerek=None) -> N
     try:
         from PySide6.QtCore import qVersion
 
-        szoveg = naplo_szovege(
-            idovonal_jelentes=timeline.render(app_version=version_string(), qt_version=qVersion()),
-            fejlec=session_header(version_string(), qVersion() or ""),
-            meret=konyvtar_merete(kepszamok() if kepszamok is not None else ()),
-            # #1712: a #1706 szerint EZ a szám a domináns tényező, nem a
-            # mappáké — késleltetve hívjuk, hogy kikapcsolt tesztüzemben
-            # ne kerüljön semmibe.
-            vedett_gyokerek=(len(vedett_gyokerek()) if vedett_gyokerek is not None else None),
-            # #1660: a tároló TÍPUSA — a #1653 zárásához hiányzó
-            # bizonyíték. Két helyet nézünk: ahol a PROGRAM fut (a modulok
-            # ~290 MB-ja innen olvasódik minden induláskor), és ahol a
-            # KÖNYVTÁR van. ⚠️ Csak a típus, sosem az útvonal.
-            tarolo={
-                "a program helye": tarolo_tipusa(Path(__file__).resolve()),
-                "a könyvtár helye": tarolo_tipusa(_app._data_dir()),
-            },
-        )
-        print(szoveg, file=sys.stderr)
-        target = irj_indulasi_naplot(szoveg, _app.default_log_dir())
-        if target is not None:
-            print(f"Az indulási napló ide került: {target}", file=sys.stderr)
+        verzio = version_string()
+        qt_verzio = qVersion() or ""
+        tarolo = {
+            "a program helye": tarolo_tipusa(Path(__file__).resolve()),
+            "a könyvtár helye": tarolo_tipusa(_app._data_dir()),
+        }
+        if kepszamok is None and vedett_gyokerek is None:
+            # A szokásos indulás csak a szakaszokat, időket és tárhelytípust
+            # rögzíti; az indexméret lekérdezése a részletes tesztüzemé.
+            szoveg = timeline.render(app_version=verzio, qt_version=qt_verzio)
+            szoveg += "\nA tároló típusa (útvonal nélkül):\n"
+            szoveg += "".join(f"  {cimke}: {tipus}\n" for cimke, tipus in tarolo.items())
+        else:
+            szoveg = naplo_szovege(
+                idovonal_jelentes=timeline.render(
+                    app_version=verzio, qt_version=qt_verzio
+                ),
+                fejlec=session_header(verzio, qt_verzio),
+                meret=konyvtar_merete(kepszamok() if kepszamok is not None else ()),
+                vedett_gyokerek=(
+                    len(vedett_gyokerek()) if vedett_gyokerek is not None else None
+                ),
+                tarolo=tarolo,
+            )
+        if run_log is not None:
+            run_log.write(szoveg)
+        if run_log is None or kepszamok is not None or vedett_gyokerek is not None:
+            print(szoveg, file=sys.stderr)
+            target = irj_indulasi_naplot(szoveg, _app.default_log_dir())
+            if target is not None:
+                print(f"Az indulási napló ide került: {target}", file=sys.stderr)
     except Exception:  # noqa: BLE001 - a diagnosztika sosem viheti el az appot
         logging.getLogger(__name__).warning(
             "az indulási idővonal kiírása hibára futott", exc_info=True
@@ -277,11 +282,15 @@ def _indulasi_idovonal(
     settings=None,
     environ: Mapping[str, str] | None = None,
     entry_at: float | None = None,
+    run_log=None,
     clock=time.perf_counter,
 ) -> tuple[object, list[str]]:
     """A `run()` LEGELSŐ érdemi lépése: mérünk-e, és mivel indulunk (#1654).
 
-    Három, egyenrangú bekapcsolási út van — bármelyik elég:
+    Az idővonal minden indításkor aktív, mert a hibaelhárításhoz a
+    következő indulásból is kell adat.
+
+    Három út kapcsolja be a részletes, indexméretet is tartalmazó mérést:
 
     * a **tartós tesztüzem** (`QSettings`), amit a `Súgó ▸ Tesztüzem`
       menüpont állít, és ami TÚLÉLI a kilépést. Ez az a bejárat, amit a
@@ -299,10 +308,13 @@ def _indulasi_idovonal(
     ⚠️ Az `entry_at` szakaszát ITT zárjuk le, közvetlenül a példány
     létrehozása után: a naplózás így az ELSŐ ezredmásodperctől — a Python-
     és PySide6-importoktól — fut, nem csak innentől."""
-    if settings is None:
-        settings = QSettings("PicasaPy", "PicasaPy")
-    tesztuzem = argv_tesztuzem(argv) or tesztuzem_bekapcsolva(settings)
-    timeline = start_startup_timeline(environ, forced=tesztuzem, clock=clock)
+    timeline = start_startup_timeline(environ, forced=True, clock=clock)
+    if run_log is not None:
+        timeline._set_mark_observer(
+            lambda label, elapsed_ms: run_log.mark(
+                f"{label} ({elapsed_ms:.1f} ms)"
+            )
+        )
     if entry_at is not None:
         timeline.mark_from(entry_at, "Python- és PySide6-modulok betöltése")
     return timeline, argv_kapcsolo_nelkul(argv)

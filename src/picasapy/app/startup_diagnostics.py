@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import faulthandler
 import os
 import re
 import socket
 import sys
 import threading
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -349,8 +351,113 @@ class StartupProgressLog:
                 self._write_failure_reported = True
 
 
+class StartupRunLog:
+    """A futás teljes idejére nyitva tartott, rotáló indulási napló."""
+
+    def __init__(self, directory: str | Path) -> None:
+        self.path = Path(directory) / "indulas-utolso.txt"
+        self.previous_path = Path(directory) / "indulas-elozo.txt"
+        self._started = time.perf_counter()
+        self._lock = threading.Lock()
+        self._file = None
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            if self.path.exists():
+                self.path.replace(self.previous_path)
+            self._file = self.path.open("w", encoding="utf-8", buffering=1)
+        except OSError:
+            self._file = None
+
+    @property
+    def file(self):
+        """A faulthandler számára használható, nyitott fájlobjektum."""
+        return self._file
+
+    def mark(self, stage: str) -> None:
+        """Rögzít egy statikus indulási lépést és a kezdettől eltelt időt."""
+        clean_stage = " ".join(str(stage).splitlines())
+        elapsed_ms = (time.perf_counter() - self._started) * 1000.0
+        self.write(f"{elapsed_ms:10.1f} ms  {clean_stage}\n")
+
+    def write(self, text: str) -> None:
+        """Szöveget fűz a naplóhoz; fájlhiba esetén nem állítja meg az appot."""
+        if self._file is None:
+            return
+        try:
+            with self._lock:
+                self._file.write(text)
+                self._file.flush()
+        except (OSError, UnicodeError):
+            return
+
+    def close(self) -> None:
+        """A teszt és a rendezett kilépés számára lezárja a fájlt."""
+        if self._file is None:
+            return
+        try:
+            self._file.flush()
+            self._file.close()
+        except OSError:
+            pass
+        self._file = None
+
+
+class StartupHangTraceback:
+    """Két, 15 másodperces késleltetésű veremkiírás, első képkockáig."""
+
+    def __init__(
+        self,
+        file,
+        *,
+        dump_later=faulthandler.dump_traceback_later,
+        cancel_dump=faulthandler.cancel_dump_traceback_later,
+        timer_factory=threading.Timer,
+    ) -> None:
+        self._file = file
+        self._dump_later = dump_later
+        self._cancel_dump = cancel_dump
+        self._timer_factory = timer_factory
+        self._lock = threading.Lock()
+        self._active = file is not None
+        self._timer = None
+        if not self._active:
+            return
+        try:
+            self._dump_later(15, repeat=False, file=self._file)
+            self._timer = self._timer_factory(15, self._arm_second_dump)
+            self._timer.daemon = True
+            self._timer.start()
+        except Exception:  # noqa: BLE001 - a diagnosztika nem akadályozhatja az indulást
+            self.cancel()
+
+    def _arm_second_dump(self) -> None:
+        with self._lock:
+            if not self._active:
+                return
+            try:
+                self._dump_later(15, repeat=False, file=self._file)
+            except Exception:  # noqa: BLE001 - a diagnosztika nem akadályozhatja az indulást
+                return
+
+    def cancel(self) -> None:
+        """A főablak első képkockáján leállítja mindkét időzítést."""
+        with self._lock:
+            was_active = self._active
+            self._active = False
+            timer = self._timer
+        if timer is not None:
+            timer.cancel()
+        if was_active:
+            try:
+                self._cancel_dump()
+            except Exception:  # noqa: BLE001 - a diagnosztika nem akadályozhatja az indulást
+                pass
+
+
 __all__ = [
+    "StartupHangTraceback",
     "StartupProgressLog",
+    "StartupRunLog",
     "pyside6_is_supported",
     "runtime_version_messages",
     "write_console",

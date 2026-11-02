@@ -1,12 +1,16 @@
 """A korai, külön indulóablak regressziós tesztjei (#6367)."""
 
+# rontás-kontroll: picasapy.app.startup_splash._SZOJEL = "" → 1 failed
+
 from __future__ import annotations
 
+import hashlib
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 from PySide6.QtCore import QPoint, QRect, QSize, Qt
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QColor, QGuiApplication
 
 from picasapy.app.startup_splash import (
     _center_splash_position,
@@ -29,6 +33,15 @@ def _app():
     if _APP is None:
         _APP = QGuiApplication.instance() or QGuiApplication(["splash-test"])
     return _APP
+
+
+def _feher_a_terulet(image, rect: QRect) -> bool:
+    feher = QColor("#ffffff")
+    return all(
+        image.pixelColor(x, y) == feher
+        for y in range(rect.top(), rect.bottom() + 1)
+        for x in range(rect.left(), rect.right() + 1)
+    )
 
 
 class _Beallitasok:
@@ -99,7 +112,7 @@ def test_kikapcsolaskor_a_qml_allapot_hidja_keszre_all():
 @pytest.mark.parametrize("height_delta", (-5, 0, 5))
 def test_a_munkaterulet_kozepet_hasznalja(height_delta: int) -> None:
     munkaterulet = QRect(23, 37, 1360, 760 + height_delta)
-    ablakmeret = QSize(420, 248)
+    ablakmeret = QSize(668, 263)
     vart = QPoint(
         munkaterulet.x() + (munkaterulet.width() - ablakmeret.width()) // 2,
         munkaterulet.y() + (munkaterulet.height() - ablakmeret.height()) // 2,
@@ -107,15 +120,66 @@ def test_a_munkaterulet_kozepet_hasznalja(height_delta: int) -> None:
     assert _center_splash_position(munkaterulet, ablakmeret) == vart
 
 
-def test_a_raszteres_indulokep_a_meglevo_logot_es_verziot_hasznalja() -> None:
+def test_a_raszteres_indulokep_a_meret_es_a_feher_kepteruletet_tartja() -> None:
     _app()
     pixmap = _create_splash_pixmap("0.9-test")
     assert not pixmap.isNull()
+    assert pixmap.size() == QSize(668, 263)
+
     image = pixmap.toImage()
-    bar = image.pixelColor(image.width() // 2, image.height() - 2)
-    panel = image.pixelColor(image.width() // 2, image.height() - 20)
-    assert bar.blue() > max(bar.red(), bar.green())
-    assert bar != panel
+    assert image.pixelColor(0, 0).alpha() == 0
+    assert image.pixelColor(1, image.height() // 2).alpha() > 0
+    assert image.pixelColor(13, image.height() // 2).alpha() > 0
+    assert image.pixelColor(14, image.height() // 2) == QColor("#ffffff")
+    assert image.pixelColor(14, 14) == QColor("#ffffff")
+    assert _feher_a_terulet(image, QRect(14, 14, 640, 10))
+    assert _feher_a_terulet(image, QRect(14, 248, 640, 1))
+    assert _feher_a_terulet(image, QRect(14 + 523, 14 + 189, 100, 35))
+
+
+def test_a_sajat_emblema_a_meresi_dobozban_van_es_a_felirat_nincs_raszterhez_kotve():
+    _app()
+    image = _create_splash_pixmap("v9.9.9").toImage()
+
+    # A színes saját embléma képpontjai a Picasa-embléma mért befoglaló dobozán belül maradnak.
+    logo_box = QRect(14 + 41, 14 + 57, 123, 123)
+    colored = [
+        (x, y)
+        for y in range(logo_box.top(), logo_box.bottom() + 1)
+        for x in range(logo_box.left(), logo_box.right() + 1)
+        if image.pixelColor(x, y).rgb() != QColor("#ffffff").rgb()
+    ]
+    assert len(colored) > 500
+    assert min(x for x, _ in colored) >= logo_box.left()
+    assert max(x for x, _ in colored) <= logo_box.right()
+    assert min(y for _, y in colored) >= logo_box.top()
+    assert max(y for _, y in colored) <= logo_box.bottom()
+
+    text_box = QRect(14 + 182, 14 + 93, 458, 52)
+    assert any(
+        image.pixelColor(x, y).rgb() != QColor("#ffffff").rgb()
+        for y in range(text_box.top(), text_box.bottom() + 1)
+        for x in range(text_box.left(), text_box.right() + 1)
+    )
+
+    # A betű rasterizált mérete platformfüggő; a forrás őrzi a mért rectet,
+    # családot, méretet és színt.
+    source = (
+        Path(__file__).resolve().parents[2] / "src/picasapy/app/startup_splash.py"
+    ).read_text(encoding="utf-8")
+    assert "_EMBLEMA_HELYE = QRect(41, 57, 123, 123)" in source
+    assert "_SZOJEL_HELYE = QRect(182, 93, 458, 52)" in source
+    assert '_SZOJEL_SZIN = QColor("#4C5B5E")' in source
+    assert '_SZOJEL_BETUCSALAD = "Open Sans"' in source
+    assert "_SZOJEL_BETUMERET = 53" in source
+
+
+def test_a_felso_es_jobb_also_resz_cim_es_google_jel_nelkul_marad() -> None:
+    _app()
+    image = _create_splash_pixmap("v9.9.9").toImage()
+    assert _feher_a_terulet(image, QRect(14, 14, 640, 10))
+    assert _feher_a_terulet(image, QRect(14 + 523, 14 + 189, 100, 35))
+    assert _feher_a_terulet(image, QRect(14 + 182, 14 + 160, 330, 28))
     assert not _logo_pixmap().isNull()
     assert _version_label("v0.9-test") == "v0.9-test"
 
@@ -126,6 +190,7 @@ def test_a_kulon_ablak_keret_nelkuli_es_nem_kattinthato() -> None:
     assert flags & Qt.WindowType.SplashScreen
     assert flags & Qt.WindowType.WindowTransparentForInput
     assert flags & Qt.WindowType.WindowDoesNotAcceptFocus
+    assert not flags & Qt.WindowType.WindowStaysOnTopHint
 
 
 def test_az_induloablak_a_kep_meretevel_es_a_jelzokkel_jon_letre() -> None:
@@ -133,11 +198,53 @@ def test_az_induloablak_a_kep_meretevel_es_a_jelzokkel_jon_letre() -> None:
     pixmap = _create_splash_pixmap("v0.9-test")
     ablak = IndulasAblak(pixmap)
     try:
-        assert ablak.size() == pixmap.size()
+        assert ablak.size() == QSize(668, 263)
         assert ablak.flags() & Qt.WindowType.FramelessWindowHint
         assert ablak.flags() & Qt.WindowType.WindowTransparentForInput
     finally:
         ablak.destroy()
+
+
+def test_a_nativ_ablak_paint_esemenye_alpha_nelkul_is_vegrehajthato() -> None:
+    _app()
+    ablak = IndulasAblak(_create_splash_pixmap("ignored-version"))
+    try:
+        ablak._alpha_supported = False
+        ablak.paintEvent(None)
+    finally:
+        ablak.destroy()
+
+
+def test_az_ablak_megjelenes_elott_frissitest_ker(monkeypatch) -> None:
+    _app()
+    frissitesek = []
+    monkeypatch.setattr(IndulasAblak, "requestUpdate", lambda self: frissitesek.append(self))
+    ablak = IndulasAblak(_create_splash_pixmap("ignored-version"))
+    try:
+        assert frissitesek == [ablak]
+    finally:
+        ablak.destroy()
+
+
+def test_a_repot_es_a_csomag_forrasat_nem_szennyezi_splashbk_fajl() -> None:
+    gyoker = Path(__file__).resolve().parents[2]
+    atirt_hash = "a25cf9995bc198418d5b513db1a5ea272dd871fd109313f7f04e5bb5db8276f0"
+    kihagyott = {".git", ".tmp", ".bt", ".venv", "__pycache__", ".pytest_cache"}
+    talalatok = []
+
+    for path in gyoker.rglob("*"):
+        if any(resz in kihagyott for resz in path.relative_to(gyoker).parts):
+            continue
+        if path.is_symlink() or not path.is_file():
+            continue
+        if path.stem.casefold() == "splashbk":
+            talalatok.append(f"splashbk nevű fájl: {path.relative_to(gyoker)}")
+        if path.stat().st_size == 44195:
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            if digest == atirt_hash:
+                talalatok.append(f"az eredeti fájllal bájtra egyező: {path.relative_to(gyoker)}")
+
+    assert not talalatok, "\n".join(talalatok)
 
 
 def test_az_elso_fokocka_utan_egyszer_bezarja_a_kulon_ablakot() -> None:

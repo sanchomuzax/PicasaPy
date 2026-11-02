@@ -249,6 +249,15 @@ def wait_for_photo_op(controller, action, *, qt_app=None) -> None:
     timeout_ms = DEFAULT_TIMEOUT_MS
     idle_rounds = 0
     deadline = time.monotonic() + timeout_ms / 1000
+    # #6407: EGY hurok és EGY időzítő az egész várakozásra. Körönként új
+    # QEventLoop-ot létrehozva a háttérszál futása közben sok Qt-burkoló
+    # került a szemétgyűjtőhöz, és Windowson a gyűjtés ritkán access
+    # violationnel omlott össze (test_rename_many_controller).
+    loop = QEventLoop()
+    ketyeges = QTimer(loop)
+    ketyeges.setSingleShot(True)
+    ketyeges.setInterval(10)
+    ketyeges.timeout.connect(loop.quit)
     action()
     while True:
         app.processEvents()
@@ -263,9 +272,9 @@ def wait_for_photo_op(controller, action, *, qt_app=None) -> None:
                 "a kép-művelet háttérmunkája nem állt le "
                 f"{timeout_ms / 1000:g} másodperc alatt"
             )
-        loop = QEventLoop()
-        QTimer.singleShot(10, loop.quit)
+        ketyeges.start()
         loop.exec()
+    ketyeges.stop()
     app.processEvents()
 
 

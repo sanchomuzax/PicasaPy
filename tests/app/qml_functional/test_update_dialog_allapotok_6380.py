@@ -110,7 +110,7 @@ def _ment(window, nev):
 
 
 _GOMBOK = ("updateDialogDownloadButton", "updateDialogLaterButton",
-           "updateDialogSkipButton", "updateDialogRestartButton",
+           "updateDialogRestartButton",
            "updateDialogInstallOnExitButton", "updateDialogCloseButton",
            "updateDialogProgress")
 
@@ -118,8 +118,7 @@ _GOMBOK = ("updateDialogDownloadButton", "updateDialogLaterButton",
 def test_minden_allapotban_a_gombsor_az_ablakon_belul_marad(qml_app, qt_app):
     window, dialog, fake = _megnyit(qml_app, qt_app)
     vart = {
-        "idle": {"updateDialogDownloadButton", "updateDialogLaterButton",
-                 "updateDialogSkipButton"},
+        "idle": {"updateDialogDownloadButton", "updateDialogLaterButton"},
         "downloading": {"updateDialogLaterButton", "updateDialogProgress"},
         "ready": {"updateDialogRestartButton", "updateDialogInstallOnExitButton"},
     }

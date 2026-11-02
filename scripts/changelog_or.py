@@ -480,6 +480,15 @@ def main(
         return 1
     for fajl in (darab_utvonalak.stdout or "").splitlines():
         if not _DARAB_UTVONAL.fullmatch(fajl):
+            # #6374: a `6374-visszavonas.md` név csendben átment, és a kiadó
+            # automata a mainen akadt el rajta; a darab neve csak jegyszám lehet
+            if fajl.startswith("changelog.d/") and fajl.endswith(".md"):
+                print(
+                    "::error title=Hibás CHANGELOG-darabnév::"
+                    f"{fajl}: a changelog.d darab neve csak a jegyszám lehet "
+                    "(pl. changelog.d/1234.md)"
+                )
+                return 1
             continue
         tartalom = runner(["git", "show", f"{beallitas.head}:{fajl}"])
         if tartalom.returncode != 0:
