@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.23] - 2026-11-02
+
+- A windowsos QML-előfordítás összesítő sora nem vész el többé, és a gombnyomás képi próbája nem függ a platform alapstílusától (#6448).
+
 ## [1.0.22] - 2026-11-02
 
 - A háttérmunka-jelző (pörgő homokóra) az eredeti Picasa szerint az eszközsávban, a keresőmezőtől jobbra, vele egy sorban áll, nem a mappafejléc szinkronkapcsolója mellett (#6405).
