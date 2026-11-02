@@ -102,9 +102,28 @@ Item {
         Dialog {
             id: googlePhotosUploadDialog
             objectName: "googlePhotosUploadDialog"
+            // #6422: a főablak rétege legyen a viszonyítási alap, ne az
+            // alsó tálcasáv, így a párbeszédablak felfelé nyitható.
+            parent: Overlay.overlay
             title: qsTr("Upload to Google Photos")
             modal: true
-            width: 390
+            width: Math.min(390, parent ? Math.max(0, parent.width - 16) : 390)
+            height: parent
+                ? Math.min(implicitHeight, Math.max(0, parent.height - 16))
+                : implicitHeight
+            readonly property point uploadButtonTopLeft: parent
+                ? trayUploadBtn.mapToItem(parent, 0, 0)
+                : Qt.point(0, 0)
+            x: parent
+                ? Math.max(8, Math.min(
+                    parent.width - width - 8,
+                    uploadButtonTopLeft.x + (trayUploadBtn.width - width) / 2))
+                : 8
+            y: parent
+                ? Math.max(8, Math.min(
+                    parent.height - height - 8,
+                    uploadButtonTopLeft.y - height - 8))
+                : 8
             standardButtons: Dialog.NoButton
 
             contentItem: ColumnLayout {

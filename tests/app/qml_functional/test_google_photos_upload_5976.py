@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from PySide6.QtCore import QPointF
 from PySide6.QtQuick import QQuickItem
 
 import picasapy.google_photos as google_photos
@@ -127,3 +128,38 @@ def test_zold_gomb_valodi_kattintasa_a_talcat_sorrendben_tolti_fel(
     ]
     assert names == ["b.jpg", "a.jpg"]
     assert controller.photosUploadError == ""
+
+    dialog = _gyerek(window, "googlePhotosUploadDialog")
+    assert _varj(qt_app, lambda: dialog.property("visible")), (
+        "a befejezett feltöltés párbeszédablakának látszania kell"
+    )
+    tartalom = window.contentItem()
+    dialog_szulo = dialog.property("parent")
+    assert isinstance(dialog_szulo, QQuickItem)
+    dialog_bal_felso = dialog_szulo.mapToItem(
+        tartalom,
+        QPointF(dialog.property("x"), dialog.property("y")),
+    )
+    dialog_also = dialog_bal_felso.y() + dialog.property("height")
+    dialog_jobb = dialog_bal_felso.x() + dialog.property("width")
+    assert dialog_bal_felso.y() >= 0, "a párbeszédablak teteje a főablak fölé lóg"
+    assert dialog_also <= tartalom.height() - 8, (
+        f"a párbeszédablak alja kilóg: {dialog_also=} "
+        f"{tartalom.height()=}, {height_delta=}"
+    )
+    assert dialog_bal_felso.x() >= 0, "a párbeszédablak bal széle kilóg"
+    assert dialog_jobb <= tartalom.width(), "a párbeszédablak jobb széle kilóg"
+
+    zaras = _gyerek(window, "googlePhotosUploadCancelButton", QQuickItem)
+    assert zaras.isVisible(), "a befejezett feltöltés Bezárás gombja látszódjon"
+    zaras_bal_felso = zaras.mapToItem(tartalom, QPointF(0, 0))
+    assert zaras_bal_felso.y() >= 0
+    assert zaras_bal_felso.y() + zaras.height() <= tartalom.height(), (
+        "a Bezárás gomb teljes magasságában legyen a főablakban"
+    )
+    assert zaras_bal_felso.x() >= 0
+    assert zaras_bal_felso.x() + zaras.width() <= tartalom.width()
+    _kattints(qt_app, zaras)
+    assert _varj(qt_app, lambda: not dialog.property("visible")), (
+        "a Bezárás gomb valódi kattintás után zárja be a párbeszédablakot"
+    )
