@@ -185,10 +185,7 @@ Dialog {
                     && root.updateAgent.oneClickUpdateSupported !== undefined)
                     ? root.updateAgent.oneClickUpdateSupported === true
                         && root.updateAgent.downloadState !== undefined
-                        && (root.updateAgent.downloadState === "idle"
-                            || root.updateAgent.downloadState === "downloading") : false
-                enabled: root.updateAgent
-                    && root.updateAgent.downloadState === "idle"
+                        && root.updateAgent.downloadState === "idle" : false
                 text: root.strings.updateNow
                 accent: Theme.picasaGreen
                 onClicked: root.updateAgent.downloadUpdate()

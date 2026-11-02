@@ -165,7 +165,7 @@ class _LetoltesreValtoFake(_FakeUpdateController):
 def test_a_frissites_gomb_elso_kattintasa_azonnali_foglalt_allapotot_ad(
     qml_app, qt_app, magassag_elteres
 ):
-    """A gomb ne tűnjön el: maradjon látható, letiltva, mozgó folyamatsávval."""
+    """A kattintásra azonnal mozgó folyamatsáv jelenik meg a gomb helyén (#6380)."""
     window, _controller, engine = qml_app
     window.resize(window.width(), 800 + magassag_elteres)
     fake = _LetoltesreValtoFake()
@@ -194,8 +194,7 @@ def test_a_frissites_gomb_elso_kattintasa_azonnali_foglalt_allapotot_ad(
         qt_app, lambda: bool(progress.property("visible")), 3.0
     ), "a letöltés folyamatsávja nem jelent meg"
     assert progress.property("indeterminate"), "a 0%-os folyamatsáv nem mozgott"
-    assert button.property("visible"), "a letöltés gombja eltűnt a folyamat alatt"
-    assert not button.property("enabled"), "a letöltés újraindítható maradt"
+    assert not button.property("visible"), "a letöltés újraindítható maradt"
 
     utana = window.grabWindow()
     dpr = utana.width() / window.width()
