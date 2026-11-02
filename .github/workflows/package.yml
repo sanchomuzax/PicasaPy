@@ -484,10 +484,8 @@ jobs:
             --halozati-export '\\192.0.2.1\picasa\export\album' \
             --hatar-mp 5
 
-      # #6367: a külön indulóablak valódi ablakkal, a folyamat indításától
-      # mérve; a kapu a három indítás középértékére 1000 ms. A valódi ablakos
-      # első indulás főablak-ideje (6 s) a #6426 tárgya; addig itt nincs
-      # főablak-határ, az 5 s-os határ a fenti, 2000 képes lépésen él.
+      # #6367/#6426: a telepítőhöz hasonló grafikai előmelegítés után valódi
+      # ablakkal mérjük a külön indulóablakot és az első főablak 5 s-os határát.
       - name: Mérés — az indulóablak megjelenése
         if: steps.tag.outputs.skip != 'true'
         shell: bash
@@ -498,7 +496,7 @@ jobs:
           python packaging/windows/csomag_meres.py ido \
             --futtato "indulo=dist/PicasaPy/PicasaPy.exe" \
             --munka "$RUNNER_TEMP/csomag-meres" \
-            --inditasok 3 --indulo-hatar-ms 1000
+            --inditasok 3 --hatar-mp 5 --indulo-hatar-ms 1000
 
       # ⚠️ PowerShell, nem bash: a Git-bash MSYS-útvonalátírása a
       # `/DMyAppVersion=...` argumentumot fájlútvonalnak vette, és az ISCC

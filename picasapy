@@ -24,4 +24,8 @@ if __name__ == "__main__":
         from picasapy.app.qml_precompile import main as qml_precompile_main
 
         sys.exit(qml_precompile_main())
+    if "--qml-grafika-melegites" in sys.argv[1:]:
+        from picasapy.app.qml_precompile import grafika_main
+
+        sys.exit(grafika_main())
     sys.exit(run(sys.argv, entry_at=_ENTRY_AT))

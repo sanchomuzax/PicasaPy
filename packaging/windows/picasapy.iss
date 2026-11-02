@@ -71,6 +71,7 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; \
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--qml-elofordit"; Flags: runhidden waituntilterminated runasoriginaluser
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--qml-grafika-melegites"; Flags: runhidden waituntilterminated runasoriginaluser
 Filename: "{app}\{#MyAppExeName}"; \
     Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; \
     Flags: nowait postinstall skipifsilent

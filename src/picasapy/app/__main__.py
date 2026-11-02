@@ -31,6 +31,10 @@ def main() -> int:
         from .qml_precompile import main as qml_precompile_main
 
         return qml_precompile_main()
+    if "--qml-grafika-melegites" in sys.argv[1:]:
+        from .qml_precompile import grafika_main
+
+        return grafika_main()
 
     early = start_early_startup(sys.argv)
     try:
