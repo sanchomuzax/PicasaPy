@@ -95,7 +95,7 @@ def test_a_frisitesi_indulasi_meres_mindket_idot_kiirja_es_ot_mp_folott_pirossa(
     naplo = tmp_path / "indulas-utolso.txt"
     naplo.write_text(
         "  6100.0 ms  QML betöltése (Main.qml) (5300.0 ms)\n"
-        "  7200.0 ms  A főablak a splash után megjelent (400.0 ms)\n",
+        "  7200.0 ms  az ablak első kirajzolt képkockája (400.0 ms)\n",
         encoding="utf-8",
     )
 

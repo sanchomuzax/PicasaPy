@@ -658,8 +658,6 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         splash_state["started"] = True
         if early_splash is not None and early_splash.isVisible():
             early_splash.close()
-        if early_splash is not None:
-            timeline.mark("A főablak a splash után megjelent")
         timeline.mark("az ablak első kirajzolt képkockája")
         progress_log.mark("Első főablak-képkocka; a rács megjelent")
         _allitsd_le_az_akadasfigyelot(early_startup)

@@ -39,5 +39,5 @@ def test_a_meroszkript_elomelegiti_a_profilt_es_mer_frissites_utan():
     assert "frissitesi_indulasi_kapu" in meres
     assert "--qml-elofordit" in helper
     assert "QML betöltése (Main.qml)" in helper
-    assert "A főablak a splash után megjelent" in helper
+    assert "az ablak első kirajzolt képkockája" in helper
     assert "hatar_mp: float = 5.0" in helper

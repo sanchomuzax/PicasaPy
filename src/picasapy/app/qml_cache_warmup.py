@@ -58,7 +58,8 @@ _QML_SOR = re.compile(
     r"^\s*([\d.]+) ms\s+QML betöltése \(Main\.qml\) \(([\d.]+) ms\)\s*$"
 )
 _FOABLAK_SOR = re.compile(
-    r"^\s*([\d.]+) ms\s+A főablak a splash után megjelent(?:\s+\([\d.]+ ms\))?\s*$"
+    # a főablak első kirajzolt képkockája az indulási idővonalon (application.run)
+    r"^\s*([\d.]+) ms\s+az ablak első kirajzolt képkockája(?:\s+\([\d.]+ ms\))?\s*$"
 )
 
 
