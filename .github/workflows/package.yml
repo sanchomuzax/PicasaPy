@@ -24,6 +24,7 @@ on:
   pull_request:
     paths:
       - "packaging/windows/**"
+      - "packaging/macos/**"
       - ".github/workflows/package.yml"
       - "src/picasapy/app/application*.py"
       - "src/picasapy/halozati_ut.py"
@@ -769,3 +770,107 @@ jobs:
           FAJL="packaging/dist/PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe"
           test -f "$FAJL" || { echo "::error::nincs kész telepítő: $FAJL"; exit 1; }
           ls -l "$FAJL"
+
+  # ------------------------------------------------------------------------
+  # macOS application packaging: Apple Silicon (M1/arm64) & Universal
+  # ------------------------------------------------------------------------
+  macos-telepito:
+    needs: build-and-upload
+    if: >-
+      always()
+      && (github.event_name == 'pull_request'
+          || (needs.build-and-upload.result == 'success'
+              && (github.event_name != 'workflow_run'
+                  || github.event.workflow_run.conclusion == 'success')))
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verzió és tag meghatározása
+        id: tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            VERZIO="$(grep -m1 '^version = ' pyproject.toml | sed -E 's/version = "(.*)"/\1/')"
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "verzio=$VERZIO" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          TAG="${{ github.event.release.tag_name }}"
+          if [ -z "$TAG" ]; then TAG="${{ inputs.tag }}"; fi
+          if [ -z "$TAG" ]; then
+            TAG="$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 1 --json tagName -q '.[0].tagName // ""')"
+          fi
+          if [ -z "$TAG" ]; then
+            echo "::error::nem sikerült feloldani a kiadás tagjét"
+            exit 1
+          fi
+          git fetch --tags --force origin
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            TAG_SHA="$(git rev-parse "refs/tags/$TAG^{commit}")"
+            if [ "$TAG_SHA" != "${{ github.event.workflow_run.head_sha }}" ]; then
+              echo "::notice title=Nincs új kiadás::A legfrissebb kiadás ($TAG) a $TAG_SHA commiton készült."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          git checkout --detach "refs/tags/$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "verzio=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python 3.12
+        if: steps.tag.outputs.skip != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Függőségek + PyInstaller
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install $(python scripts/print_dependencies.py)
+          pip install pyinstaller
+          if [ -f scripts/build_qm.py ]; then python scripts/build_qm.py; fi
+
+      - name: macOS csomagolás (Apple Silicon arm64)
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        run: |
+          chmod +x packaging/macos/build_macos.sh
+          ./packaging/macos/build_macos.sh arm64
+
+      - name: Füstpróba — a felépített macOS program elindul
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
+        run: |
+          ./dist/PicasaPy.app/Contents/MacOS/PicasaPy --onellenorzes > fustproba.txt 2>&1 || {
+            KOD=$?
+            echo "::error::a csomagolt macOS program nem indult el (kód: $KOD)"
+            cat fustproba.txt
+            exit 1
+          }
+          cat fustproba.txt
+          grep -q "onellenorzes" fustproba.txt || {
+            echo "::error::a felület nem épült fel a csomagból"
+            exit 1
+          }
+
+      - name: macOS DMG feltöltése a release-hez
+        if: steps.tag.outputs.skip != 'true' && github.event_name != 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          DMG="packaging/dist/PicasaPy-${{ steps.tag.outputs.verzio }}-macOS-arm64.dmg"
+          test -f "$DMG" || { echo "::error::nincs kész DMG: $DMG"; exit 1; }
+          gh release upload "$TAG" "$DMG" --repo "$GITHUB_REPOSITORY" --clobber

@@ -1,11 +1,12 @@
 # PicasaPy — csomagolás (#4)
 
-Ez a könyvtár a PicasaPy három telepítési módját fedi le:
+Ez a könyvtár a PicasaPy telepítési és csomagolási módjait fedi le:
 
 1. **pip/pipx** — a `pyproject.toml` build-rendszere adja (nincs itt külön
    szkript, ld. lentebb).
 2. **Debian-csomag (.deb)** RPi/Debian/Ubuntu célra — `build_deb.sh`.
-3. **Windows-zip** — `build_windows_zip.sh`.
+3. **Windows-zip és Windows-telepítő** — `build_windows_zip.sh`, illetve `windows/` (PyInstaller + Inno Setup).
+4. **macOS-csomag (.app / .dmg)** — `macos/` (PyInstaller M1/arm64 és Universal 2 támogatással, `build_macos.sh`).
 
 Egyik módszer sem igényel önálló `.exe`-t vagy embeddable Python-bundle-t
 (pragmatikus MVP-döntés, ld. az egyes szakaszok indoklását) — mindegyik a
@@ -235,9 +236,15 @@ packaging/
 │   ├── picasapy.desktop               — desktop-entry (Exec=picasapy)
 │   ├── postinst                       — venv létrehozása + wheel telepítése
 │   └── postrm                         — venv + szimlink eltávolítása
-└── windows/
-    ├── install.bat.template           — egykattintásos telepítő (CRLF)
-    └── README-WINDOWS.template.txt    — kézi telepítési útmutató (magyar)
+├── windows/
+│   ├── install.bat.template           — egykattintásos telepítő (CRLF)
+│   └── README-WINDOWS.template.txt    — kézi telepítési útmutató (magyar)
+└── macos/
+    ├── README.md                      — macOS csomagolási leírás (angol)
+    ├── build_macos.sh                 — macOS bundle és DMG építő (arm64 / universal)
+    ├── merge_universal.py             — lipo alapú Universal 2 egyesítő segéd
+    ├── picasapy.spec                  — PyInstaller macOS bundle specifikáció
+    └── picasapy_launcher.py           — macOS belépési pont (relatív importok nélkül)
 ```
 
 ## Ismert korlátok (összefoglalva)
