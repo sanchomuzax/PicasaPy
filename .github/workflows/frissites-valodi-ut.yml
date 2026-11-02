@@ -36,6 +36,12 @@ jobs:
           && startsWith(github.event.workflow_run.head_commit.message, 'chore(release)'))
     runs-on: windows-latest
     timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        # 1 = az utolsó előtti kiadás, 2 = az azelőtti: aki egy-két verzióval
+        # le van maradva, annak is frissülnie kell
+        hanyadik: [1, 2]
     steps:
       - uses: actions/checkout@v4
 
@@ -59,7 +65,8 @@ jobs:
             regi=${REGI#v}
           else
             regi=$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-pre-releases --limit 10 \
-                     --json tagName -q '.[].tagName' | sed 's/^v//' | grep -vx "$uj" | head -1)
+                     --json tagName -q '.[].tagName' | sed 's/^v//' | grep -vx "$uj" \
+                     | sed -n "${{ matrix.hanyadik }}p")
           fi
           echo "regi=$regi" >> "$GITHUB_OUTPUT"
           echo "uj=$uj" >> "$GITHUB_OUTPUT"
@@ -112,7 +119,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: frissites-valodi-ut
+          name: frissites-valodi-ut-${{ matrix.hanyadik }}
           path: |
             ${{ runner.temp }}/frissites-kepek
             ${{ runner.temp }}/frissites/diagnosztika
