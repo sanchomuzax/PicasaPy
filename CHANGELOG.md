@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.25] - 2026-11-02
+
+- Két képernyős gépen az értesítő a PicasaPy ablakának képernyőjén jelenik meg (#6435).
+
 ## [1.0.24] - 2026-11-02
 
 - Az állapotsáv kiírja, min dolgozik a program; a Súgó menüből kapcsolható (#6440).
