@@ -20,6 +20,20 @@ def test_a_telepito_rejtve_varva_es_eredeti_felhasznalokent_fordit():
     assert "Parameters: \"--qml-elofordit\"" in fordits_sor
 
 
+def test_a_pyinstaller_csomag_tartalmazza_a_qt_qmlcachegen_eszt():
+    spec = (_GYOKER / "packaging/windows/picasapy.spec").read_text(
+        encoding="utf-8"
+    )
+    elofordito = (_GYOKER / "src/picasapy/app/qml_precompile.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "qmlcachegen" in spec
+    assert "binaries=_QMLCACHEGEN_BINARIES" in spec
+    assert "--only-bytecode" in elofordito
+    assert "QML_DISK_CACHE_PATH" in elofordito
+
+
 def test_a_package_meres_minden_indulashoz_ot_masodperces_hatart_hasznal():
     workflow = (_GYOKER / ".github/workflows/package.yml").read_text(
         encoding="utf-8"

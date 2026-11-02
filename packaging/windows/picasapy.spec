@@ -30,6 +30,8 @@ import os
 import sys
 from pathlib import Path
 
+import PySide6
+
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 #: a repó gyökere — a spec a `packaging/windows/` alatt él
@@ -42,6 +44,21 @@ from _windows_version_resource import write_version_info  # noqa: E402
 #: elemzésre hat. Enélkül a CI-n „'picasapy' … is not a package” mellett
 #: üres listát adtak, és a csomagból modulok és adatfájlok maradtak ki.
 sys.path.insert(0, str(GYOKER / "src"))
+
+# A felhasználói cache előállítása a Qt saját bytecode-fordítójával történik.
+# A PySide6 wrapper ezt a platformonkénti útvonalat használja; a natív eszközt
+# külön be kell tenni a mappás csomagba, mert az Inno Setup az exe-t hívja meg.
+_PYSIDE_DIR = Path(PySide6.__file__).resolve().parent
+_QMLCACHEGEN = (
+    _PYSIDE_DIR / "qmlcachegen.exe"
+    if sys.platform == "win32"
+    else _PYSIDE_DIR / "Qt" / "libexec" / "qmlcachegen"
+)
+if not _QMLCACHEGEN.is_file():
+    raise FileNotFoundError(f"A PySide6 qmlcachegen eszköze hiányzik: {_QMLCACHEGEN}")
+_QMLCACHEGEN_BINARIES = [
+    (str(_QMLCACHEGEN), "PySide6" if sys.platform == "win32" else "PySide6/Qt/libexec")
+]
 
 #: a QML-fa, a fordítás, az ikonok és a súgó: adatok, nem importok
 adatok = [
@@ -99,7 +116,7 @@ adatok += collect_data_files(
 a = Analysis(
     [str(Path(SPECPATH) / "picasapy_launcher.py")],
     pathex=[str(GYOKER / "src")],
-    binaries=[],
+    binaries=_QMLCACHEGEN_BINARIES,
     datas=adatok,
     #: ⚠️ A saját csomag MINDEN modulja: az indulást gyorsító lusta
     #: (függvényen belüli) importokat a PyInstaller nem látja, és a
