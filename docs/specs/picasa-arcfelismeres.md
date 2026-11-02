@@ -2325,3 +2325,25 @@ majd a `0x1bc0`–`0x20a0` tartomány tagjainak regisztrálója — ugyanazzal a
 
 `1 nyílt · 2 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 „csak nyitva”`
 (nyílt: a 18.4; lezárva: a jóváhagyás kezelője és a tárolójának fajtája.)
+
+## Megjegyzés a PicasaPy saját YuNet-detektorához (#6386)
+
+Ez a megjegyzés a PicasaPy megvalósítását rögzíti, nem az eredeti Picasa
+működését. A `FaceDetector.detect()` első, sikertelen menete után a képet
+80%-ra kicsinyíti, oldalanként 40%-os élismétlő paddinget ad hozzá, majd a
+második bemenetet legfeljebb 720 px-re méretezi. Az arc keretét és öt
+jellemzőpontját visszaszámolja az eredeti bemenet koordinátáira. A
+0,9-es pontszámküszöb nem változott.
+
+A [#6386-os tesztképek](../../tests/fixtures/arcok_6386/FORRASOK.md) valódi
+YuNet-modellel mért találatai:
+
+| Mintacsoport | Javítás előtt | Javítás után |
+|---|---:|---:|
+| 8 egész portré | 5/8 | 7/8 |
+| 8 szoros arckivágás | 4/8 | 6/8 |
+| 8 poszterizált, szemüveges 280 × 280-as kép | 3/8 | 4/8 |
+| Arc nélküli üres és színábra-kontroll | 0/2 | 0/2 |
+
+A repóban nem voltak elérhetők a #4348 tájképei; a kontrollt meglévő,
+arc nélküli tesztképekkel végeztük.
