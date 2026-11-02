@@ -1401,7 +1401,7 @@ origójához és nem a külső ablakkerethez.
 fő UI inicializálása `0x00403db6`-nál hívja, majd `0x00403e33`-nál a
 `0x0040bf70` inicializálót. Ennek hívásláncában `0x0040c3df` hívja a
 `0x005733f0`-et, amely `0x00573a2e`-nél a `0x00572820` bekötőfüggvényhez
-jut. A bekötő a spinner elemet `0x00572bf3`-nál, a megszakító gombot
+jut. A bekötő a pörgő jelzőt (`activity/spinner`) `0x00572bf3`-nál, a megszakító gombot
 `0x00572c39`-nél keresi meg. Külön, közvetlen C++ allokáló hívóhelyet az
 `activitycontainer` erőforrás-elemhez ez a kutatás nem talált: a szülőjét a
 `.tre` fa adja meg, a natív kód pedig a `CThumbUI` könyvtárnézet-fájához
