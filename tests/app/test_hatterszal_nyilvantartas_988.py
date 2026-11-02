@@ -193,10 +193,10 @@ class TestABevarasVerdiktjeIgaz:
         elengedheto = threading.Event()
         eredeti_end = busy_registry.AppBusyRegistry.end
 
-        def lassu_end(maga):
+        def lassu_end(maga, jegy=0):
             benne_van.set()
             elengedheto.wait(10.0)
-            return eredeti_end(maga)
+            return eredeti_end(maga, jegy)
 
         monkeypatch.setattr(busy_registry.AppBusyRegistry, "end", lassu_end)
 

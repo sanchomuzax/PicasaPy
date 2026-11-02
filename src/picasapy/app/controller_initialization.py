@@ -50,9 +50,10 @@ def initialize_controller_state(
     # szinkron végén be kell hozni a lemaradást (ld. a
     # `_on_folders_dirty` és a `_flush_pending_dirty` docstringjét)
     self._pending_dirty: set[object] = set()
-    #: #1458: hány FELHASZNÁLÓI kérés vár a `_pending_dirty`-ben nyitott
-    #: foglaltság-bejegyzéssel. A `_flush_pending_dirty` ennyit zár.
-    self._pending_busy: int = 0
+    #: #1458: a FELHASZNÁLÓI kérések vár a `_pending_dirty`-ben nyitott
+    #: foglaltság-bejegyzéseinek jegyei. A `_flush_pending_dirty` mindet zárja.
+    #: (#6440: jegy, hogy a munka a nevével együtt záródjon.)
+    self._pending_busy: list[int] = []
     self._view_mode = ("folder", "")  # (mód, paraméter) az újratöltéshez
     self._filter_active = False
     self._filter_status = ""
@@ -98,6 +99,8 @@ def initialize_controller_state(
     self._init_perf_monitor()
     # #1654: tartós tesztüzem — két olcsó olvasás, semmi több
     self._init_tesztuzem()
+    # #6440: háttérmunka az állapotsávon, tartós pipa, alapból BE
+    self._init_activity_status()
     # #28: sötét téma kapcsoló — alapból világos, QSettings-ből visszaáll
     self._init_appearance()
     self._init_editor_controls()

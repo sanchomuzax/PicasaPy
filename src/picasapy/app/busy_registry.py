@@ -88,6 +88,9 @@ class AppBusyRegistry(QObject):
     #: felületi műveletek ehhez kötődhetnek, a 300 ms-os csíkküszöb nélkül.
     activeCountChanged = Signal()
 
+    #: A NYITOTT munkák NEVEI változtak (#6440): az állapotsáv ezt figyeli.
+    activityChanged = Signal()
+
     #: A MEGSZAKÍTHATÓSÁG változott (#2966): az imént jelentkezett be az
     #: első leállítható munka, vagy az utolsó kijelentkezett. A jobb-felső
     #: sarki jelző megszakítás-gombjának láthatósága erre köt.
@@ -96,12 +99,17 @@ class AppBusyRegistry(QObject):
     # belső, szál-határon átmenő "kérés" jelzések (ld. modul docstring) —
     # a begin()/end() csak ezeket emitálja, a tényleges állapotváltás a
     # rájuk kötött _on_begin/_on_end slotban, a regisztrátum szálán fut.
-    _beginRequested = Signal()
-    _endRequested = Signal()
+    _beginRequested = Signal(int, str)
+    _endRequested = Signal(int)
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._active = 0
+        # #6440: a nyitott munkák NEVE, indulási sorrendben (a legrégebbi elöl).
+        # Csak a GUI-szálon változik (`_on_begin`/`_on_end`), ezért nem kell rá zár.
+        self._munkak: dict[int, str] = {}
+        self._jegy_lock = threading.Lock()
+        self._jegy_counter = itertools.count(1)
         self._visible = False
         # a min-láthatósági időzítő lejártakor még mindig el kell-e
         # rejteni (mert az end() a min-ablakban érkezett)
@@ -138,18 +146,32 @@ class AppBusyRegistry(QObject):
         teszteknek, a UI ezt NEM olvassa (a küszöbölt `visible`-t igen)."""
         return self._active
 
-    def begin(self) -> None:
-        """Egy háttérmunka indul. BÁRMELY szálról hívható."""
-        self._emit_ha_el(self._beginRequested)
+    def begin(self, label: str = "") -> int:
+        """Egy háttérmunka indul. BÁRMELY szálról hívható.
 
-    def end(self) -> None:
+        A visszaadott jegy az `end` bemenete. A `label` az emberi nyelvű név,
+        amit az állapotsáv mutat (#6440); üresen az általános szöveg jelenik meg."""
+        with self._jegy_lock:
+            jegy = next(self._jegy_counter)
+        self._emit_ha_el(self._beginRequested, jegy, label)
+        return jegy
+
+    def end(self, jegy: int = 0) -> None:
         """Egy háttérmunka véget ért — HIBÁVAL leálló munkánál is hívandó
         (a hívó felelőssége `try`/`finally`-ben zárni, ld.
         `BackgroundWorkerMixin._start_background`), különben a számláló
-        soha nem éri el a nullát, és a csík örökre pörögne."""
-        self._emit_ha_el(self._endRequested)
+        soha nem éri el a nullát, és a csík örökre pörögne.
 
-    def _emit_ha_el(self, jelzes: object) -> None:
+        A `jegy` a `begin` visszatérési értéke. `0` (jegy nélkül) a LEGRÉGEBBI
+        még nyitott munkát zárja, így a jegy nélküli régi hívók is működnek."""
+        self._emit_ha_el(self._endRequested, jegy)
+
+    def aktiv_munkak(self) -> tuple[str, ...]:
+        """A még nyitott munkák nevei, a legrégebbi elöl (#6440).
+        Csak a GUI-szálról olvasandó."""
+        return tuple(self._munkak.values())
+
+    def _emit_ha_el(self, jelzes: object, *args: object) -> None:
         """A belső kérés-jelzés kibocsátása, ha a C++ oldal MÉG LÉTEZIK (#1457).
 
         ⛔ **Ezt mérés kényszerítette ki, nem óvatosság.** A 2026-09-15-i
@@ -179,7 +201,7 @@ class AppBusyRegistry(QObject):
         if not shiboken6.isValid(self):
             return
         try:
-            jelzes.emit()
+            jelzes.emit(*args)
         except RuntimeError:
             # az isValid óta szűnt meg — ld. fent
             return
@@ -234,15 +256,23 @@ class AppBusyRegistry(QObject):
 
     # -- belső: MINDIG a regisztrátum szálán fut (ld. modul docstring) ------
 
-    def _on_begin(self) -> None:
-        self._active += 1
+    def _on_begin(self, jegy: int, label: str) -> None:
+        self._munkak[jegy] = label
+        self._active = len(self._munkak)
         self.activeCountChanged.emit()
+        self.activityChanged.emit()
         if self._active == 1 and not self._visible and not self._show_timer.isActive():
             self._show_timer.start(SHOW_DELAY_MS)
 
-    def _on_end(self) -> None:
-        self._active = max(0, self._active - 1)
+    def _on_end(self, jegy: int) -> None:
+        if jegy == 0 and self._munkak:
+            jegy = next(iter(self._munkak))
+        if jegy not in self._munkak:
+            return  # kétszeri vagy ismeretlen zárás: nincs mit csökkenteni
+        del self._munkak[jegy]
+        self._active = len(self._munkak)
         self.activeCountChanged.emit()
+        self.activityChanged.emit()
         if self._active > 0:
             return
         self._show_timer.stop()

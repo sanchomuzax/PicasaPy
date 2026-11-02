@@ -42,6 +42,7 @@ from concurrent.futures import CancelledError as FutureCancelledError
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
+from .busy_activity import munka_neve
 from .busy_registry import get_app_busy_registry
 
 _log = logging.getLogger(__name__)
@@ -283,7 +284,8 @@ class BackgroundWorkerMixin:
         Callback nélkül a traceback továbbra is a naplóba kerül."""
         workers = self._bg_worker_set()
         registry = get_app_busy_registry()
-        registry.begin()
+        # #6440: a munka neve az állapotsávon a szálnévből lesz (ld. busy_activity.py)
+        munka_jegy = registry.begin(munka_neve(name))
         # #2966: ha a hívó adott leállítót, a munka a jobb-felső sarki
         # jelzőn MEGSZAKÍTHATÓKÉNT jelenik meg. A bejelentkezés — a
         # `begin()`-hez hasonlóan — a hívó szálán, a szálindítás ELŐTT
@@ -373,7 +375,7 @@ class BackgroundWorkerMixin:
                 try:
                     if cancel_jegy is not None:
                         registry.unregister_cancel(cancel_jegy)
-                    registry.end()
+                    registry.end(munka_jegy)
                 finally:
                     workers.discard(thread)
                     # #988/#999: a folyamat-szintű nyilvántartásból is
@@ -396,7 +398,7 @@ class BackgroundWorkerMixin:
                 _ALL_WORKERS.discard(thread)
             if cancel_jegy is not None:
                 registry.unregister_cancel(cancel_jegy)
-            registry.end()
+            registry.end(munka_jegy)
             raise
         return thread
 

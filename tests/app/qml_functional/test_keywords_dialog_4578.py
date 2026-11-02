@@ -138,6 +138,13 @@ def test_cimkek_parbeszed_kattintassal_megjelenit_es_ini_be_ir(
         f"activeDrawerTab={window.property('activeDrawerTab')}"
     )
     info_bar = _item(window, "trayInfoText")
+    # #6440: háttérmunka (itt a színes bélyegképek gyártása) közben a sáv a
+    # munka nevét mutatná; ez a teszt a címkék feliratát méri, ezért a
+    # munkanév-kijelzést kikapcsolja.
+    controller.setStatusActivityEnabled(False)
+    assert _wait_for(
+        qt_app, lambda: len(str(info_bar.property("nyersSzoveg")).split("   ")) >= 3
+    ), f"az alap felirat nem jött vissza: {info_bar.property('nyersSzoveg')!r}"
     kezdo_status = str(info_bar.property("nyersSzoveg"))
     kezdo_datum = _status_date(kezdo_status)
     assert "2099" in kezdo_datum

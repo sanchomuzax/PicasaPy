@@ -220,6 +220,9 @@ VART: dict[str, list[str]] = {
         SZ,
         "Check for Updates",
         SZ,
+        # #6440: SAJÁT funkció, saját csoportban (ld. ELTERESEK)
+        "Show background work in the status bar",
+        SZ,
         "Performance Monitor",
         "Test Mode (logs the next startup)",
         "Send Log...",
@@ -275,6 +278,13 @@ ELTERESEK = {
         "választotta (2026-09-18: „A menüpont”), és a MÉRT sorrend UTÁN, "
         "külön csoportban áll, tehát az eredeti szerkezetéből semmit nem "
         "told el."
+    ),
+    "&Help · háttérmunka az állapotsávon": (
+        "SAJÁT funkció (#6440): az alsó állapotsáv a háttérben futó munka "
+        "nevét mutatja. Az eredeti Picasában nincs ilyen kijelzés, ezért "
+        "nincs megfelelője a mért menüben. A helyét a mért csoportok UTÁN, "
+        "a fejlesztői tételek ELÉ, külön csoportba tettük, így az eredeti "
+        "sorrendjéből semmit nem told el."
     ),
     "&Help · fejlesztői tételek": (
         "Teljesítménymérő, tesztmód, naplóküldés — a mi eszközeink; az "

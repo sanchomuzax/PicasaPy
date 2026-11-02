@@ -74,13 +74,13 @@ class _RegistryKemlelo:
         eredeti_begin = registry.begin
         eredeti_end = registry.end
 
-        def begin_szamlalo():
+        def begin_szamlalo(label=""):
             self.begin += 1
-            eredeti_begin()
+            return eredeti_begin(label)
 
-        def end_szamlalo():
+        def end_szamlalo(jegy=0):
             self.end += 1
-            eredeti_end()
+            eredeti_end(jegy)
 
         monkeypatch.setattr(registry, "begin", begin_szamlalo)
         monkeypatch.setattr(registry, "end", end_szamlalo)
