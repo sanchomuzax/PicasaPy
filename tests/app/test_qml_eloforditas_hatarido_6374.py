@@ -92,3 +92,20 @@ def test_az_osszegzes_utan_azonnal_kilep_a_bontas_nelkul(monkeypatch, capsys):
     assert qml_precompile.main() == 0
     assert kilepesek == [0]
     assert "QML-előfordítás:" in capsys.readouterr().out
+
+
+def test_a_meres_nem_csovon_var_es_a_naplobol_osszegez(monkeypatch, tmp_path):
+    """A csomagolt exe kilépés után is nyitva hagyott csővégeket örökített (Package-mérés)."""
+    hivasok = []
+
+    def _fut(parancs, *, env, **kw):
+        hivasok.append(kw)
+        with open(env[qml_precompile.NAPLO_ENV], "a", encoding="utf-8") as f:
+            f.write("fordítás: x.qml\nQML-előfordítás: 3 fájl, 0 hibás, 0.10 s\n")
+        return subprocess.CompletedProcess(parancs, 0)
+
+    monkeypatch.setattr(qml_cache_warmup.subprocess, "run", _fut)
+    ki = qml_cache_warmup.melegitsd_qml_cache([sys.executable], {"TEMP": str(tmp_path)})
+    assert ki == "QML-előfordítás: 3 fájl, 0 hibás, 0.10 s"
+    assert hivasok[0]["stdout"] is subprocess.DEVNULL and hivasok[0]["stderr"] is subprocess.DEVNULL
+    assert "capture_output" not in hivasok[0]

@@ -36,15 +36,17 @@ def melegitsd_qml_cache(
     naplo.parent.mkdir(parents=True, exist_ok=True)
     naplo.write_text("", encoding="utf-8")
     env["PICASAPY_QML_ELOFORDIT_NAPLO"] = str(naplo)
+    # Cső helyett a haladásnaplóból olvasunk: a csomagolt exe a fordítás és a
+    # kilépés után is nyitva hagyott csővégeket örökített, és a `communicate()`
+    # 180 s-ig várt rájuk (Package-mérés, #6374). A folyamat végét így a
+    # kilépés jelzi, nem a csövek lezárása.
     try:
         result = subprocess.run(
             [*(str(elem) for elem in parancs), "--qml-elofordit"],
             env=env,
             stdin=subprocess.DEVNULL,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
             timeout=timeout,
             check=False,
         )
@@ -58,7 +60,11 @@ def melegitsd_qml_cache(
             f"a QML-előfordítás {result.returncode} kilépőkóddal állt le; "
             "a haladásnapló vége:\n" + _naplo_vege(naplo)
         )
-    return result.stdout.strip()
+    return next(
+        (sor for sor in reversed(_naplo_vege(naplo, 20).splitlines())
+         if sor.startswith("QML-előfordítás:")),
+        "",
+    )
 
 
 @dataclass(frozen=True)
