@@ -72,7 +72,10 @@ Window {
     //: A hívó főablaka külön `Window`; a sáv ezért megjegyzi annak utolsó
     //: használható képernyőjét, ha a főablak rejtett vagy épp méret nélküli.
     property var _hostWindow: null
-    property var _lastKnownScreen: _hostWindow ? _hostWindow.screen : null
+    // Sima érték, NEM kötés: csak a használható főablak képernyője írja felül.
+    // Kötésként a még méret nélküli induló ablaknál sosem szakadna el, és a
+    // rejtett vagy tálcára tett főablak képernyőjét is követné.
+    property var _lastKnownScreen: null
 
     function _foablakKepernyojeHasznalhato() {
         return _hostWindow && _hostWindow.screen && _hostWindow.visible
@@ -87,7 +90,8 @@ Window {
 
     readonly property var _pozicioKepernyoje:
         _foablakKepernyojeHasznalhato() ? _hostWindow.screen
-        : (_lastKnownScreen ? _lastKnownScreen : notifier.screen)
+        : (_lastKnownScreen ? _lastKnownScreen
+           : (_hostWindow && _hostWindow.screen ? _hostWindow.screen : notifier.screen))
 
     //: A QQuickScreenInfo nem ad availableGeometry-t, ezért az alkalmazás
     //: QScreen-jeit a név alapján kérdezzük le. Önálló QML-tesztnél a valódi
