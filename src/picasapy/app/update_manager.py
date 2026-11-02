@@ -201,10 +201,10 @@ class UpdateController(QObject):
             self._test_diagnostic_timer.start()
             QTimer.singleShot(0, self._write_test_diagnostics)
             if os.environ.get("PICASAPY_UPDATE_TEST_BUSY") == "1":
-                # #6436: a CI-próba soha véget nem érő háttérmunkát utánoz
-                from .busy_registry import get_app_busy_registry
-
-                get_app_busy_registry().begin()
+                # #6436: a CI-próba a letöltés után soha véget nem érő
+                # háttérmunkát indít: a tulajdonos gépén az „Újraindítás most”
+                # megnyomásakor ilyen futott (a jelzés munka közben rejtett)
+                self.downloadFinished.connect(self._teszt_vegtelen_munka)
         if schedule:
             self.start_automatic_check()
 
@@ -564,6 +564,14 @@ class UpdateController(QObject):
                 self._restart_timer.start()
                 return True
         return self._start_helper(restart_now)
+
+    @Slot(bool, str)
+    def _teszt_vegtelen_munka(self, sikeres: bool, _ok: str) -> None:
+        if sikeres and not getattr(self, "_teszt_munka_fut", False):
+            from .busy_registry import get_app_busy_registry
+
+            self._teszt_munka_fut = True
+            get_app_busy_registry().begin()
 
     @Slot()
     def _restart_when_idle(self) -> None:

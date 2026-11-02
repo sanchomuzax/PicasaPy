@@ -82,7 +82,7 @@ def test_ha_a_hattermunka_hamar_veget_er_nem_var_a_hataridoig(qt_app, tmp_path, 
         reset_app_busy_registry()
 
 
-def test_a_probakornyezet_vegtelen_hattermunkat_indithat(qt_app, monkeypatch):
+def test_a_probakornyezet_a_letoltes_utan_vegtelen_hattermunkat_indit(qt_app, monkeypatch):
     """A CI önfrissítési próbája ezzel mutatja meg, hogy a soha véget nem érő
     háttérmunka mellett is megtörténik az újraindítás (a tulajdonos esete)."""
     reset_app_busy_registry()
@@ -91,10 +91,15 @@ def test_a_probakornyezet_vegtelen_hattermunkat_indithat(qt_app, monkeypatch):
     monkeypatch.setenv("PICASAPY_UPDATE_TEST_BUSY", "1")
     monkeypatch.setattr(UpdateController, "_write_test_diagnostics", lambda self: None)
     try:
-        UpdateController(
+        vezerlo = UpdateController(
             "1.0.0", settings=_Beallitasok(), client=_Kliens(), schedule=False,
             install_kind="windows",
         )
+        # a frissítés jelzése munka közben rejtett: a munka csak a letöltés után indul
+        assert get_app_busy_registry().activeCount == 0
+        vezerlo.downloadFinished.emit(True, "ready")
+        assert get_app_busy_registry().activeCount == 1
+        vezerlo.downloadFinished.emit(True, "ready")
         assert get_app_busy_registry().activeCount == 1
     finally:
         reset_app_busy_registry()
