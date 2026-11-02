@@ -1,0 +1,129 @@
+name: Önfrissítés a felhasználó útján
+
+# #6458: a tulajdonos útja, lépésről lépésre: a KORÁBBI kiadás Setup-ját
+# telepíti az alapértelmezett helyre (felhasználói telepítés, mint a
+# tulajdonosnál), elindítja, a VALÓDI GitHub-kiadásból letölti az újat, és
+# valódi egérkattintással megnyomja az „Újraindítás most” gombot. A próba
+# akkor zöld, ha utána az új verzió fut, és a Névjegy is azt mutatja.
+
+on:
+  workflow_dispatch:
+    inputs:
+      regi_verzio:
+        description: "A telepítendő korábbi kiadás (pl. 1.0.21); üresen az utolsó előtti"
+        required: false
+        default: ""
+  workflow_run:
+    workflows: ["Package"]
+    types: [completed]
+    branches: [main]
+  pull_request:
+    paths:
+      - ".github/workflows/frissites-valodi-ut.yml"
+      - "packaging/windows/csomag_meres*.py"
+      - "src/picasapy/app/update_*.py"
+      - "packaging/windows/picasapy_update_helper*"
+
+permissions:
+  contents: read
+
+jobs:
+  frissites:
+    # kiadás után fut (a Package a kiadási commiton), vagy kézi/PR-indításra
+    if: >-
+      github.event_name != 'workflow_run'
+      || (github.event.workflow_run.conclusion == 'success'
+          && startsWith(github.event.workflow_run.head_commit.message, 'chore(release)'))
+    runs-on: windows-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        # 1 = az utolsó előtti kiadás, 2 = az azelőtti: aki egy-két verzióval
+        # le van maradva, annak is frissülnie kell
+        hanyadik: [1, 2]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: A mérő függőségei
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install $(python scripts/print_dependencies.py)
+
+      - name: A két kiadás kiválasztása
+        id: verzio
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REGI: ${{ github.event.inputs.regi_verzio }}
+        run: |
+          uj=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)
+          uj=${uj#v}
+          if [ -n "$REGI" ]; then
+            regi=${REGI#v}
+          else
+            regi=$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-pre-releases --limit 10 \
+                     --json tagName -q '.[].tagName' | sed 's/^v//' | grep -vx "$uj" \
+                     | sed -n "${{ matrix.hanyadik }}p")
+          fi
+          echo "regi=$regi" >> "$GITHUB_OUTPUT"
+          echo "uj=$uj" >> "$GITHUB_OUTPUT"
+          echo "Korábbi kiadás: $regi -> legújabb kiadás: $uj"
+
+      - name: A korábbi kiadás Setup-jának letöltése
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/setup"
+          gh release download "v${{ steps.verzio.outputs.regi }}" --repo "$GITHUB_REPOSITORY" \
+            --pattern "PicasaPy-Setup-${{ steps.verzio.outputs.regi }}.exe" --dir "$RUNNER_TEMP/setup"
+          ls -la "$RUNNER_TEMP/setup"
+
+      - name: Telepítés az alapértelmezett helyre (mint a tulajdonosnál)
+        id: telepites
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $setup = Join-Path $env:RUNNER_TEMP "setup\PicasaPy-Setup-${{ steps.verzio.outputs.regi }}.exe"
+          # nincs /DIR: a Setup a saját alapértelmezett helyére telepít
+          $p = Start-Process -FilePath $setup -ArgumentList @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/CURRENTUSER") -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "a telepítés nem futott le: $($p.ExitCode)" }
+          $dir = Join-Path $env:LOCALAPPDATA "Programs\PicasaPy"
+          $exe = Join-Path $dir "PicasaPy.exe"
+          if (-not (Test-Path $exe)) {
+            Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA "Programs") -ErrorAction SilentlyContinue | Format-Table Name
+            throw "a telepített PicasaPy.exe nincs az alapértelmezett helyen: $exe"
+          }
+          Write-Host "Telepítve: $dir"
+          Get-ChildItem -Path $dir -File | Select-Object Name, Length | Format-Table
+          $helper = Join-Path $dir "PicasaPyUpdateHelper.exe"
+          Write-Host "Frissítősegéd a telepítésben: $(Test-Path $helper)"
+          "exe=$exe" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Önfrissítés valódi kattintással, a valódi GitHub-kiadásból
+        shell: bash
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          python packaging/windows/csomag_meres.py frissites \
+            --futtato "telepitett=${{ steps.telepites.outputs.exe }}" \
+            --munka "$RUNNER_TEMP/frissites" \
+            --kepernyokep-mappa "$RUNNER_TEMP/frissites-kepek" \
+            --elvart-verzio "${{ steps.verzio.outputs.regi }}" \
+            --valodi-cel-verzio "${{ steps.verzio.outputs.uj }}"
+
+      - name: Képernyőképek és diagnosztika csatolása
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frissites-valodi-ut-${{ matrix.hanyadik }}
+          path: |
+            ${{ runner.temp }}/frissites-kepek
+            ${{ runner.temp }}/frissites/diagnosztika
+          if-no-files-found: warn

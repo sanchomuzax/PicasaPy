@@ -206,6 +206,8 @@ def main(argv: list[str] | None = None) -> int:
     ertelmezo.add_argument("--hatar-mp", type=float, default=None)
     ertelmezo.add_argument("--indulo-hatar-ms", type=float, default=None)
     ertelmezo.add_argument("--kepernyokep-mappa", type=Path, default=None)
+    # #6458: valódi GitHub-kiadásra frissít (a korábbi kiadás Setup-jából)
+    ertelmezo.add_argument("--valodi-cel-verzio", default=None)
     args = ertelmezo.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -228,6 +230,7 @@ def main(argv: list[str] | None = None) -> int:
             munka,
             args.elvart_verzio,
             args.kepernyokep_mappa,
+            valodi_cel_verzio=args.valodi_cel_verzio,
         )
     return ikon(futtatok, munka, args.szigoru)
 
