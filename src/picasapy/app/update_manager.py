@@ -29,6 +29,7 @@ from .update_checksums import SHA256SUMS_NAME, parse_sha256sums
 from .update_helper import (
     KILEPESI_HATARIDO_MP,
     inditsd_a_segedet,
+    utolso_inditasi_hiba,
     installation_kind,
     kenyszeritett_kilepes_ha_beragad,
     mappa_irhato,
@@ -126,6 +127,20 @@ def _inditsd_a_segedet(args: list[str], *, emelt: bool) -> bool:
     return inditsd_a_segedet(args, emelt=emelt, platform=_platform())
 
 
+def _seged_inditasi_helyek(install_dir: Path) -> list[Path]:
+    """#6458: ahonnan a frissítősegéd indulhat, a próbálás sorrendjében.
+
+    A testvérmappa ugyanabban a fában van, ahonnan maga a program is fut (ha
+    ott futhat program, ott a segéd is); a csere a telepítési mappát
+    átnevezi, ezért a segéd nem lehet annak a belsejében."""
+    return [install_dir.parent / "PicasaPy-update", Path(tempfile.gettempdir())]
+
+
+def _masold_a_segedet(forras: Path, cel: Path) -> None:
+    cel.parent.mkdir(parents=True, exist_ok=True)
+    cel.write_bytes(forras.read_bytes())
+
+
 #: #6436: az „Újraindítás most” legfeljebb ennyit vár a háttérmunka végére;
 #: utána akkor is újraindul, ha a munka még fut (a tulajdonos gépén sosem ért véget)
 UJRAINDITAS_MAX_VARAKOZAS_MS = 4000
@@ -175,6 +190,7 @@ class UpdateController(QObject):
         self._progress = 0
         self._progress_total = 0
         self._download_path: Path | None = None
+        self._helper_error = ""
         self._workers: dict[int, _Worker] = {}
         self._worker_callbacks: dict[
             int, tuple[Callable[[object], None], Callable[[str], None]]
@@ -254,6 +270,15 @@ class UpdateController(QObject):
         if self._progress_total <= 0:
             return 0
         return min(100, round(self._progress * 100 / self._progress_total))
+
+    @Property(str, notify=progressChanged)
+    def helperErrorDetail(self) -> str:  # noqa: N802
+        """#6458: miért nem indult el a frissítősegéd (üres, ha nincs hiba)."""
+        return self._helper_error
+
+    def _set_helper_error(self, szoveg: str) -> None:
+        self._helper_error = szoveg
+        self.progressChanged.emit()
 
     @Property(str, notify=progressChanged)
     def downloadState(self) -> str:  # noqa: N802
@@ -592,28 +617,45 @@ class UpdateController(QObject):
         self._start_helper(True)
 
     def _start_helper(self, restart_now: bool) -> bool:
-        helper = Path(_futtato.executable).resolve().with_name("PicasaPyUpdateHelper.exe")
+        exe = Path(_futtato.executable).resolve()
+        helper = exe.with_name("PicasaPyUpdateHelper.exe")
         if not helper.is_file():
+            self._set_helper_error(f"hiányzik: {helper.name}")
             self.downloadFinished.emit(False, "missing-helper")
             return False
-        copied = Path(tempfile.gettempdir()) / f"PicasaPyUpdateHelper-{os.getpid()}.exe"
-        copied.write_bytes(helper.read_bytes())
-        install_dir = Path(_futtato.executable).resolve().parent
-        args = [
-            str(copied),
-            "--pid",
-            str(os.getpid()),
-            "--archive",
-            str(self._download_path),
-            "--install-dir",
-            str(install_dir),
-            "--executable",
-            Path(_futtato.executable).name,
-        ]
+        install_dir = exe.parent
         emelt = not mappa_irhato(install_dir.parent)
-        if emelt:
-            args.append("--uac-emelt")
-        if not _inditsd_a_segedet(args, emelt=emelt):
+        hibak: list[str] = []
+        # #6458: előbb a program mellől (a telepítési mappa testvérmappájából),
+        # mert céges gépen a %TEMP%-ből induló programok gyakran tiltottak
+        for mappa in _seged_inditasi_helyek(install_dir):
+            cel = mappa / f"PicasaPyUpdateHelper-{os.getpid()}.exe"
+            try:
+                _masold_a_segedet(helper, cel)
+            except OSError as hiba:
+                hibak.append(f"{mappa}: {hiba}")
+                continue
+            args = [
+                str(cel),
+                "--pid",
+                str(os.getpid()),
+                "--archive",
+                str(self._download_path),
+                "--install-dir",
+                str(install_dir),
+                "--executable",
+                exe.name,
+            ]
+            if emelt:
+                args.append("--uac-emelt")
+            if _inditsd_a_segedet(args, emelt=emelt):
+                self._set_helper_error("")
+                break
+            hibak.append(f"{mappa}: az indítás nem sikerült ({utolso_inditasi_hiba()})")
+        else:
+            self._set_helper_error("; ".join(hibak) or "ismeretlen ok")
+            logger.warning("A frissítősegéd nem indult el: %s", self._helper_error)
+            self.downloadFinished.emit(False, "helper-start-failed")
             return False
         if restart_now:
             from PySide6.QtCore import QCoreApplication

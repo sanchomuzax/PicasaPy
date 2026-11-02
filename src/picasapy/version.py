@@ -78,5 +78,11 @@ def build_label() -> str:
 
 
 def version_string() -> str:
-    """A fejlécben megjelenő címke, pl. ``"v0.4.0 (81.3706d78)"``."""
+    """A fejlécben megjelenő címke, pl. ``"v0.4.0 (81.3706d78)"``.
+
+    #6458: a telepített (csomagolt) programban nincs git, ott a build-címke
+    „dev” lenne, ami a felhasználónak fejlesztői változatot sugall; ott csak a
+    verziószám áll."""
+    if getattr(_futtato, "frozen", False):
+        return f"v{__version__}"
     return f"v{__version__} ({build_label()})"

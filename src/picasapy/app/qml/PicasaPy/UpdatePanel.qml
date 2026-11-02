@@ -210,6 +210,8 @@ Dialog {
                 onClicked: {
                     if (!root.updateAgent.installWhenExiting(true))
                         root.feedback = root.strings.helperError
+                            + ((root.updateAgent.helperErrorDetail || "") !== ""
+                               ? "\n" + root.updateAgent.helperErrorDetail : "")
                     else
                         root.close()
                 }
@@ -221,6 +223,8 @@ Dialog {
                 onClicked: {
                     if (!root.updateAgent.installWhenExiting(false))
                         root.feedback = root.strings.helperError
+                            + ((root.updateAgent.helperErrorDetail || "") !== ""
+                               ? "\n" + root.updateAgent.helperErrorDetail : "")
                     else
                         root.close()
                 }
