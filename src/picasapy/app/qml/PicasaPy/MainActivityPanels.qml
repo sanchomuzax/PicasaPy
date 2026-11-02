@@ -33,22 +33,6 @@ Item {
         y: 56
     }
 
-    // #2966: közös háttérmunka-jelző a jobb-felső sarokban. Alapból rejtve;
-    // bármely nyilvántartott háttérmunka megjeleníti.
-    ActivityBadge {
-        id: activityBadge
-        objectName: "activityBadge"
-        z: 95
-        working: (hostController && hostController.isWorking !== undefined)
-            ? hostController.isWorking : false
-        cancellable: (hostController && hostController.activityCancellable !== undefined)
-            ? hostController.activityCancellable : false
-        // a mért hely: felülről 5, jobbról 5 képpont (#3112)
-        x: parent.width - width - 5
-        y: 5
-        onCancelRequested: hostActivityCancelConfirm.ask()
-    }
-
     // #1403: az XMP-arcírás folyamat-panelje — MEGSZAKÍTHATÓ; a már kiírt
     // sidecarok érvényesek maradnak.
     XmpFacesProgressPanel {

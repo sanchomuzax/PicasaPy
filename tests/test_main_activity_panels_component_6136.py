@@ -8,6 +8,7 @@ _QML = Path(__file__).resolve().parent.parent / "src/picasapy/app/qml"
 _MAIN = _QML / "Main.qml"
 _PERIPHERAL_LAYERS = _QML / "PicasaPy/MainWindowPeripheralLayers.qml"
 _COMPONENT = _QML / "PicasaPy/MainActivityPanels.qml"
+_LIBRARY_CANVAS = _QML / "PicasaPy/MainLibraryCanvas.qml"
 _QMLDIR = _QML / "PicasaPy/qmldir"
 
 
@@ -20,6 +21,7 @@ def test_a_folyamatjelzok_komponense_regisztralt_es_megorzott_nevekkel_kotott():
     main = _MAIN.read_text(encoding="utf-8")
     peripheral = _PERIPHERAL_LAYERS.read_text(encoding="utf-8")
     component = _COMPONENT.read_text(encoding="utf-8")
+    library_canvas = _LIBRARY_CANVAS.read_text(encoding="utf-8")
     assert re.search(
         r"MainActivityPanels\s*\{\s*id:\s*activityPanels", peripheral, re.DOTALL
     )
@@ -35,7 +37,6 @@ def test_a_folyamatjelzok_komponense_regisztralt_es_megorzott_nevekkel_kotott():
 
     for object_name in (
         "importProgressPanel",
-        "activityBadge",
         "xmpFacesProgressPanel",
         "batchEditProgressPanel",
         "saveProgressPanel",
@@ -44,3 +45,10 @@ def test_a_folyamatjelzok_komponense_regisztralt_es_megorzott_nevekkel_kotott():
         assert f'objectName: "{object_name}"' in component, (
             f"megváltozott vagy eltűnt a nyilvános objectName: {object_name}"
         )
+
+    assert 'objectName: "activityBadge"' not in component, (
+        "az ActivityBadge még mindig a teljes ablakréteghez tartozik"
+    )
+    assert 'objectName: "activityBadge"' in library_canvas, (
+        "az ActivityBadge nem került át a könyvtárnézet paneljére"
+    )
