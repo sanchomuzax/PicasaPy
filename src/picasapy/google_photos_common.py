@@ -12,6 +12,10 @@ from urllib.request import Request, urlopen
 
 GOOGLE_PHOTOS_SCOPE = "https://www.googleapis.com/auth/photoslibrary.appendonly"
 
+# #6446: az `openid email` a belépési válaszba (`id_token`) teszi a fiók
+# e-mail-címét, hogy a menüsor megmutathassa, melyik fiókba léptünk be.
+GOOGLE_OAUTH_SCOPE = " ".join((GOOGLE_PHOTOS_SCOPE, "openid", "email"))
+
 
 GOOGLE_PHOTOS_API_BASE_URL = "https://photoslibrary.googleapis.com/v1"
 

@@ -28,6 +28,22 @@ MenuBar {
     property bool searchOptionsOpen: false
     signal searchOptionsToggleRequested()
 
+    // #6446: a jobb felső Google-fiók-sor feliratai. A GooglePhotosSignInRow
+    // ezeket a menüsor (bar) tulajdonságaiként éri el: a fordítás így a
+    // PicasaMenuBar környezetéhez kötött marad.
+    readonly property string signInLinkText: qsTr("Sign in with Google Account")
+    readonly property string authBusyText: qsTr("Waiting for Google authorization…")
+    readonly property string signedInFallbackText: qsTr("Signed in to Google Photos")
+    // A belépett fiók szövege; régi belépésnél (nincs eltárolt cím) az általános felirat.
+    readonly property string googleAccountText:
+        (ctl && ctl.googlePhotosAccount) ? ctl.googlePhotosAccount : signedInFallbackText
+    //: picasapy-origin: picasa
+    //: picasapy-origin-key: stringres:NCWebAlbums::Label1ES
+    readonly property string googlePhotosLinkText: qsTr("Google Photos")
+    //: picasapy-origin: picasa
+    //: picasapy-origin-key: stringres:NCWebAlbums::Label2
+    readonly property string signOutLinkText: qsTr("Sign Out")
+
     // #3555: a nyelvváltás megerősítő kérdése a Main.qml-ben él (a
     // ConfirmDialog nem fér el egy MenuBar gyermekeként — annak a default
     // property-je `list<Menu>`). A menütétel csak jelez, ha a választás
@@ -177,61 +193,17 @@ MenuBar {
             width: parent.width; height: 1
             color: Theme.chromeBorder
         }
-        Text {
-            id: signInLink
-            objectName: "menuBarSignInLink"
+        // #6446: a jobb felső Google-fiók-sor (belépve: fiók, Google Fotók,
+        // Kijelentkezés; kilépve: bejelentkezés). A részletei a
+        // GooglePhotosSignInRow.qml-ben élnek; a feliratok itt, a menüsor
+        // fordítási környezetében vannak.
+        GooglePhotosSignInRow {
+            id: googleSignInRow
+            bar: bar
             anchors.right: parent.right
             anchors.rightMargin: 10
             anchors.verticalCenter: parent.verticalCenter
-            text: {
-                if (bar.ctl && bar.ctl.googlePhotosAuthBusy !== undefined
-                        && bar.ctl.googlePhotosAuthBusy)
-                    return qsTr("Waiting for Google authorization…")
-                if (bar.ctl && bar.ctl.googlePhotosSignedIn !== undefined
-                        && bar.ctl.googlePhotosSignedIn)
-                    return qsTr("Signed in to Google Photos")
-                return qsTr("Sign in with Google Account")
-            }
-            color: Theme.linkBlue
-            font.pixelSize: Theme.fontSize
-            font.underline: true
-
-            MouseArea {
-                objectName: "menuBarSignInArea"
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                enabled: !(bar.ctl && bar.ctl.googlePhotosAuthBusy !== undefined
-                    && bar.ctl.googlePhotosAuthBusy)
-                onClicked: {
-                    if (bar.ctl && bar.ctl.googlePhotosSignedIn !== undefined
-                            && bar.ctl.googlePhotosSignedIn) {
-                        googlePhotosAccountMenu.popup(
-                            signInLink,
-                            Math.max(0, signInLink.width
-                                - googlePhotosAccountMenu.implicitWidth),
-                            signInLink.height)
-                    } else if (bar.ctl && bar.ctl.googlePhotosCanSignIn !== undefined
-                            && bar.ctl.googlePhotosCanSignIn) {
-                        bar.ctl.signInGooglePhotos()
-                    } else {
-                        googlePhotosUnavailableDialog.open()
-                    }
-                }
-
-                PressFeedbackOverlay { pressSource: parent }
-            }
-        }
-        Menu {
-            id: googlePhotosAccountMenu
-            objectName: "googlePhotosAccountMenu"
-
-            MenuItem {
-                objectName: "googlePhotosSignOutMenuItem"
-                //: picasapy-origin: picasa
-                //: picasapy-origin-key: stringres:NCWebAlbums::Label2
-                text: qsTr("Sign Out")
-                onTriggered: if (bar.ctl) bar.ctl.signOutGooglePhotos()
-            }
+            onSignInUnavailable: googlePhotosUnavailableDialog.open()
         }
         // #1654: a tesztüzem LÁTHATÓ állapot. A menüben ülő pipa ehhez
         // kevés — ahhoz ki kell nyitni a menüt. A felhasználó ne felejtse
@@ -253,7 +225,7 @@ MenuBar {
             // A `parent` futásidejű átállítása megkerüli a `Container`
             // alapértelmezett tulajdonságát (különben menütétel lenne
             // belőle), és plain vizuális gyerekként a `z` már a tételek
-            // fölé emeli. Emiatt viszont a `signInLink` MÁR NEM testvér,
+            // fölé emeli. Emiatt viszont a `googleSignInRow` MÁR NEM testvér,
             // tehát a jobb margót számolni kell.
             // ⚠️ #1697: az `anchors` a `bar`-ra hivatkozva figyelmeztetést
             // dobott MINDEN induláskor („Cannot anchor to an item that isn't
@@ -267,7 +239,7 @@ MenuBar {
             Component.onCompleted: parent = bar
             z: 3
             anchors.right: parent.right
-            anchors.rightMargin: signInLink.width + 26  // 10 (signIn) + 16 (rés)
+            anchors.rightMargin: googleSignInRow.width + 26  // 10 (jobb margó) + 16 (rés)
             anchors.verticalCenter: parent.verticalCenter
             visible: (bar.ctl && bar.ctl.tesztuzemEnabled !== undefined)
                 ? bar.ctl.tesztuzemEnabled : false

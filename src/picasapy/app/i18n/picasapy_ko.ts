@@ -11226,6 +11226,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>이 버전에서는 아직 Google 로그인을 사용할 수 없습니다.</translation>
         </message>
         <message>
+            <source>Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label1ES</extracomment>
+            <translation>Google 포토</translation>
+        </message>
+        <message>
             <source>Sign Out</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>

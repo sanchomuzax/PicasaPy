@@ -11,8 +11,8 @@ from urllib.parse import urlencode
 from .google_photos_common import (
     GOOGLE_OAUTH_AUTH_URL,
     GOOGLE_OAUTH_REVOKE_URL,
+    GOOGLE_OAUTH_SCOPE,
     GOOGLE_OAUTH_TOKEN_URL,
-    GOOGLE_PHOTOS_SCOPE,
     GooglePhotosError,
     HttpTransport,
     UrllibTransport,
@@ -52,7 +52,7 @@ class OAuthClient:
                 "client_id": client_id,
                 "redirect_uri": redirect_uri,
                 "response_type": "code",
-                "scope": GOOGLE_PHOTOS_SCOPE,
+                "scope": GOOGLE_OAUTH_SCOPE,
                 "access_type": "offline",
                 "prompt": "consent",
                 "state": state,

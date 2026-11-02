@@ -322,3 +322,4 @@ MainWindowCommands 1.0 MainWindowCommands.qml
 MainWindowWorkspace 1.0 MainWindowWorkspace.qml
 MainWindowPeripheralLayers 1.0 MainWindowPeripheralLayers.qml
 MainWindowLibraryActions 1.0 MainWindowLibraryActions.qml
+GooglePhotosSignInRow 1.0 GooglePhotosSignInRow.qml

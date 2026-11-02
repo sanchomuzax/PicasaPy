@@ -14,13 +14,13 @@ from PIL import Image
 
 import picasapy.google_photos as google_photos
 from picasapy.google_photos import (
-    GOOGLE_PHOTOS_SCOPE,
     GooglePhotosApiClient,
     GooglePhotosError,
     HttpResponse,
     LoopbackOAuthSession,
     OAuthClient,
 )
+from picasapy.google_photos_common import GOOGLE_OAUTH_SCOPE, GOOGLE_PHOTOS_SCOPE
 
 
 class FakePhotosServer:
@@ -181,7 +181,10 @@ def test_asztali_oauth_url_loopback_pkce_es_appendonly_jogosultsag():
         hashlib.sha256(verifier.encode()).digest()
     ).decode().rstrip("=")
     assert params["redirect_uri"] == ["http://127.0.0.1:49152"]
-    assert params["scope"] == [GOOGLE_PHOTOS_SCOPE]
+    # #6446: a fiók e-mail-címe az id_token-ből jön, ezért az openid és az
+    # email hatókör is kell; a fotó-jogosultság (appendonly) változatlan.
+    assert params["scope"] == [GOOGLE_OAUTH_SCOPE]
+    assert set(params["scope"][0].split()) == {GOOGLE_PHOTOS_SCOPE, "openid", "email"}
     assert params["access_type"] == ["offline"]
     assert params["code_challenge_method"] == ["S256"]
     assert params["code_challenge"] == [expected_challenge]

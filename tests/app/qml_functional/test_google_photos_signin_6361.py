@@ -146,11 +146,15 @@ def test_kliens_nelkul_a_menusori_kattintas_egyszeru_uzenetet_mutat(
 
 
 @pytest.mark.parametrize("height_delta", (-5, 0, 5))
-def test_bejelentkezve_a_menusori_fiokmenubol_lehet_kijelentkezni(
+def test_bejelentkezve_a_sor_kijelentkezes_linkjevel_lehet_kilepni(
     google_photos_app, qt_app, monkeypatch, height_delta
 ):
+    # #6446: a fiókmenü megszűnt, a Kijelentkezés hivatkozás a sorban van.
     window, controller, _engine = google_photos_app
     window.setProperty("height", window.property("height") + height_delta)
+    # A belépett sor (általános felirat + két hivatkozás) széles: keskeny
+    # ablakban a menüsor tételei fölé csúszhat, és a kattintást azok kapnák.
+    window.setProperty("width", max(int(window.property("width")), 1280))
     qt_app.processEvents()
     monkeypatch.setenv("PICASAPY_GOOGLE_CLIENT_ID", "test-client-id")
     monkeypatch.setenv("PICASAPY_GOOGLE_CLIENT_SECRET", "test-client-secret")
@@ -161,11 +165,21 @@ def test_bejelentkezve_a_menusori_fiokmenubol_lehet_kijelentkezni(
     )
     controller.googlePhotosChanged.emit()
 
-    kattinthato = _gyerek(window, "menuBarSignInArea")
-    _kattints(qt_app, kattinthato)
-    menu = _gyerek(window, "googlePhotosAccountMenu", QObject)
-    assert _varj(qt_app, lambda: menu.property("visible") is True)
-    kilepes = _gyerek(menu, "googlePhotosSignOutMenuItem")
+    kilepes = _gyerek(window, "menuBarSignOutLink")
+    # A belépett sor a jel után épül újra: a kattintás csak akkor menjen,
+    # amikor a hivatkozás látszik, és a helye két egymás utáni képkockán át
+    # változatlan (a jobbra igazított sor szélessége közben még nőhet).
+    assert _varj(qt_app, lambda: kilepes.isVisible() and kilepes.width() > 0)
+    elozo = [None]
+
+    def _all_a_helye():
+        hely = kilepes.mapToScene(QPointF(0, 0))
+        most = (round(hely.x()), round(hely.y()), round(kilepes.width()))
+        stabil = most == elozo[0]
+        elozo[0] = most
+        return stabil
+
+    assert _varj(qt_app, _all_a_helye)
     _kattints(qt_app, kilepes)
 
     assert _varj(qt_app, lambda: controller.googlePhotosSignedIn is False)

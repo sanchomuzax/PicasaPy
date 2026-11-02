@@ -11241,6 +11241,12 @@ picasapy-origin-key: stringres:NCWebAlbums::Label3</extracomment>
             <translation>L'accesso con Google non è ancora disponibile in questa versione.</translation>
         </message>
         <message>
+            <source>Google Photos</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:NCWebAlbums::Label1ES</extracomment>
+            <translation>Google Foto</translation>
+        </message>
+        <message>
             <source>Sign Out</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:NCWebAlbums::Label2</extracomment>
