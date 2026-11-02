@@ -49,6 +49,12 @@ def test_a_folyamatjelzok_komponense_regisztralt_es_megorzott_nevekkel_kotott():
     assert 'objectName: "activityBadge"' not in component, (
         "az ActivityBadge még mindig a teljes ablakréteghez tartozik"
     )
-    assert 'objectName: "activityBadge"' in library_canvas, (
-        "az ActivityBadge nem került át a könyvtárnézet paneljére"
+    # #6405: az eredeti képernyőkép szerint a jelző az eszközsávban, a
+    # keresőmezőtől jobbra áll, nem a könyvtárnézet paneljén
+    assert 'objectName: "activityBadge"' not in library_canvas, (
+        "az ActivityBadge még mindig a könyvtárnézet paneljén áll"
+    )
+    toolbar = (_QML / "PicasaPy/MainWindowToolbar.qml").read_text(encoding="utf-8")
+    assert 'objectName: "activityBadge"' in toolbar, (
+        "az ActivityBadge nem került az eszközsávba"
     )

@@ -1,8 +1,15 @@
-"""A háttérmunka-jelző a könyvtárnézet paneljéhez igazodik (#6405)."""
+"""A háttérmunka-jelző a keresőmezőtől jobbra, vele egy sorban áll (#6405).
+
+Mérce: az eredeti Picasa képernyőképe (`research/testdata/screenshot/
+2026-07-17 20 54 38.png`): az 1920 széles ablakban a keresőmező vége
+x≈1872, a pörgő jelző x≈1888-1908, a mezővel egy sorban (y≈62). A mappafejléc
+„Szinkronizálás az internettel” kapcsolója NEM a jelző szomszédja.
+"""
 
 from __future__ import annotations
 
 import math
+import os
 
 import pytest
 from PySide6.QtCore import QPointF, QRectF
@@ -50,84 +57,70 @@ def _item_rect(item, scene_root) -> QRectF:
 
 
 @pytest.mark.parametrize("height_offset", _HEIGHT_OFFSETS)
-def test_a_jelzo_a_konyvtari_panelhez_igazodik_es_nem_takar_vezerlot(
-    qml_app, qt_app, height_offset
-):
+def test_a_jelzo_a_keresomezotol_jobbra_vele_egy_sorban_all(qml_app, qt_app, height_offset):
     window, _controller, _engine = qml_app
     base_height = window.height()
     target_height = base_height + height_offset
     window.resize(window.width(), target_height)
     _wait(qt_app, lambda: window.height() == target_height, "az ablakmagasság nem állt be")
 
-    window.setProperty("unnamedFacesOpen", True)
-    badge = _find_item(window.contentItem(), "activityBadge")
-    face_view = _find_item(window.contentItem(), "unnamedFacesView")
-    face_header = _find_item(window.contentItem(), "unknownFaceViewHeader")
+    root = window.contentItem().parentItem() or window.contentItem()
+    badge = _find_item(root, "activityBadge")
+    toolbar = _find_item(root, "mainToolbar")
+    search_box = _find_item(root, "toolbarSearchBox")
+    version = _find_item(root, "versionLabel")
     assert badge is not None, "az ActivityBadge nem épült fel"
-    assert face_view is not None, "a könyvtárnézet tartalma nem épült fel"
-    assert face_header is not None, "az Emberek-nézet fejléce nem épült fel"
-    panel = badge.parentItem()
-
-    _wait(qt_app, face_view.isVisible, "az Emberek-nézet nem vált láthatóvá")
-    _wait(qt_app, face_header.isVisible, "az Emberek-nézet fejléce nem látható")
-    assert panel != window.contentItem(), "a jelző a teljes ablakrétegben maradt"
-    assert _contains(panel, face_view), "a jelző szülője nem a könyvtárnézet panelje"
+    assert toolbar is not None and search_box is not None and version is not None
+    assert _contains(toolbar, badge), "a jelző nem az eszközsáv része"
 
     registry = get_app_busy_registry()
     registry.begin()
     try:
         _wait(qt_app, badge.isVisible, "a működő háttérmunka nem mutatta a jelzőt")
-        _wait(
-            qt_app,
-            lambda: face_header.width() <= face_view.width() - 40,
-            "az Emberek-fejléc nem hagyott helyet a jelzőnek",
-        )
+        badge_rect = _item_rect(badge, root)
+        search_rect = _item_rect(search_box, root)
+        toolbar_rect = _item_rect(toolbar, root)
+        assert badge.width() == 35 and badge.height() == 28
+        # egy sorban: a függőleges közép egyezik
+        assert abs(badge_rect.center().y() - search_rect.center().y()) <= 2
+        # a mezőtől jobbra, rés nélküli ráfedés nélkül, az eszközsáv jobb szélén
+        assert badge_rect.left() >= search_rect.right() + 3
+        assert abs(badge_rect.right() - (toolbar_rect.right() - 5)) <= 2
+        # a verziófelirat átadja a helyét
+        assert not version.isVisible(), "a verziófelirat a jelzővel együtt látszik"
 
-        local = badge.mapToItem(panel, QPointF(0, 0))
-        assert abs(local.x() - (panel.width() - 40)) <= 3
-        assert abs(local.y() - 5) <= 3
-        assert badge.width() == 35
-        assert badge.height() == 28
-
-        badge_rect = _item_rect(badge, window.contentItem()).adjusted(-3, -3, 3, 3)
-        neighbors = (
-            "searchField",
-            "toolbarImportButton",
-            "toolbarNewAlbumButton",
-            "toolbarFolderViewToggle",
-            "toolbarFolderViewPopupButton",
-            "toolbarWebcamCaptureButton",
-            "unknownFaceViewHeader",
-        )
-        for name in neighbors:
-            item = _find_item(window.contentItem(), name)
+        for name in ("searchField", "toolbarImportButton", "toolbarNewAlbumButton"):
+            item = _find_item(root, name)
             assert item is not None, f"a szomszédos elem nem található: {name}"
             if item.isVisible() and item.width() > 0 and item.height() > 0:
-                assert not badge_rect.intersects(_item_rect(item, window.contentItem())), (
-                    f"a jelző ráfed a(z) {name} elemre"
-                )
+                assert not badge_rect.adjusted(-2, -2, 2, 2).intersects(
+                    _item_rect(item, root)
+                ), f"a jelző ráfed a(z) {name} elemre"
 
-        people_panel_header = _find_item(window.contentItem(), "peoplePanelHeader")
-        if people_panel_header is not None and people_panel_header.isVisible():
-            assert not badge_rect.intersects(
-                _item_rect(people_panel_header, window.contentItem())
-            ), "a jelző ráfed az Emberek panel fejlécére"
+        spinner = _find_item(root, "activityBadgeSpinner")
+        assert spinner is not None and spinner.isVisible(), "a pörgő ábra nem látszik"
+        from PySide6.QtTest import QTest
 
+        QTest.qWait(400)  # a pörgő animáció néhány képkockája, hogy a képen is látsszon
         window.update()
         image = window.grabWindow()
         assert not image.isNull(), "a főablak renderelése üres"
-        badge_scene = badge.mapToScene(QPointF(0, 0))
         scale_x = image.width() / window.width()
         scale_y = image.height() / window.height()
-        left = max(0, math.floor(badge_scene.x() * scale_x))
-        top = max(0, math.floor(badge_scene.y() * scale_y))
-        right = min(image.width(), math.ceil((badge_scene.x() + badge.width()) * scale_x))
-        bottom = min(image.height(), math.ceil((badge_scene.y() + badge.height()) * scale_y))
+        left = max(0, math.floor(badge_rect.left() * scale_x))
+        top = max(0, math.floor(badge_rect.top() * scale_y))
+        right = min(image.width(), math.ceil(badge_rect.right() * scale_x))
+        bottom = min(image.height(), math.ceil(badge_rect.bottom() * scale_y))
         rendered_colors = {
             image.pixelColor(x, y).rgba()
             for y in range(top, bottom)
             for x in range(left, right)
         }
         assert len(rendered_colors) > 1, "a jelző nem látszik a kirajzolt főablakban"
+        celfajl = os.environ.get("PICASAPY_BIZONYITEK_KEP")
+        if celfajl and height_offset == 0:
+            image.save(celfajl)
     finally:
         registry.end()
+    _wait(qt_app, lambda: not badge.isVisible(), "a munka végén a jelző nem tűnt el")
+    _wait(qt_app, version.isVisible, "a munka végén a verziófelirat nem jött vissza")

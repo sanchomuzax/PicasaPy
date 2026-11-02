@@ -645,6 +645,12 @@ ApplicationWindow {
     header: MainWindowToolbar {
         id: toolbar
         hostWindow: window
+        activityWorking: typeof controller !== "undefined" && controller
+            && controller.isWorking !== undefined ? controller.isWorking : false
+        activityCancellable: typeof controller !== "undefined" && controller
+            && controller.activityCancellable !== undefined
+            ? controller.activityCancellable : false
+        onActivityCancelRequested: window.activityCancelConfirm.ask()
         hostRefs: ({
             searchSuggestionsBox: searchSuggestionsBox,
             suggestionsTimer: suggestionsTimer,

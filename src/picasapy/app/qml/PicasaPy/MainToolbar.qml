@@ -12,6 +12,7 @@ Rectangle {
     readonly property bool searchOptionsOpen: searchOptionsPopup.opened
     readonly property alias searchBoxItem: searchBox
     property var updateOwnerWindow: null
+    property bool versionHidden: false // #6405: a háttérjelző foglalja a helyét
     readonly property var updateAgent:
         typeof updateController !== "undefined" ? updateController : null
     readonly property var updateStrings: ({
@@ -666,6 +667,7 @@ Rectangle {
         Text {
             id: versionLabel
             objectName: "versionLabel"
+            visible: !toolbar.versionHidden
             anchors.right: content.right
             anchors.rightMargin: 4
             anchors.verticalCenter: content.verticalCenter
