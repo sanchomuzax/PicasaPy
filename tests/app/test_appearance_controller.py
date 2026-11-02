@@ -6,11 +6,12 @@ Picasa-paritás szerint a világos az igazi alapállapot.
 """
 
 import pytest
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QSettings, Qt
 
 from picasapy.app.appearance_controller import (
     DARK_THEME_KEY,
     DISPOSE_PREVIEWS_ON_EXIT_KEY,
+    apply_qt_color_scheme,
     coerce_dark_flag,
 )
 
@@ -169,3 +170,91 @@ class TestAppearanceMixin:
         assert seen == []
         controller.setSingleClickExitEnabled(True)
         assert seen == [True]
+
+
+class TestApplyQtColorScheme:
+    def test_apply_qt_color_scheme_updates_style_hints(self, qt_app, monkeypatch):
+        schemes = []
+        monkeypatch.setattr(
+            qt_app.styleHints(), "setColorScheme", lambda s: schemes.append(s)
+        )
+        apply_qt_color_scheme(True)
+        assert schemes == [Qt.ColorScheme.Dark]
+        apply_qt_color_scheme(False)
+        assert schemes == [Qt.ColorScheme.Dark, Qt.ColorScheme.Light]
+
+    def test_apply_qt_color_scheme_safe_when_no_app(self, monkeypatch):
+        from PySide6.QtGui import QGuiApplication
+
+        monkeypatch.setattr(QGuiApplication, "instance", staticmethod(lambda: None))
+        # Nem dobhat kivételt app hiányában sem
+        apply_qt_color_scheme(True)
+
+    def test_apply_qt_color_scheme_safe_when_attribute_error(self, qt_app, monkeypatch):
+        class _BrokenHints:
+            def setColorScheme(self, scheme):
+                raise AttributeError("unsupported")
+
+        monkeypatch.setattr(qt_app, "styleHints", lambda: _BrokenHints())
+        apply_qt_color_scheme(True)
+
+    def test_set_dark_theme_syncs_qt_color_scheme(self, qt_app, tmp_path, monkeypatch):
+        from PySide6.QtCore import QObject
+
+        from picasapy.app.appearance_controller import AppearanceMixin
+
+        schemes = []
+        monkeypatch.setattr(
+            qt_app.styleHints(), "setColorScheme", lambda s: schemes.append(s)
+        )
+
+        class _Probe(AppearanceMixin, QObject):
+            def __init__(self, settings):
+                super().__init__()
+                self._settings = settings
+                self._init_appearance()
+
+            def _get_settings(self):
+                return self._settings
+
+        settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+        probe = _Probe(settings)
+        # Az alapértelmezett világos inicializáláskor beállítja a Light sémát
+        assert schemes == [Qt.ColorScheme.Light]
+
+        probe.setDarkTheme(True)
+        assert schemes[-1] == Qt.ColorScheme.Dark
+
+        probe.setDarkTheme(False)
+        assert schemes[-1] == Qt.ColorScheme.Light
+
+    def test_restored_setting_applies_qt_color_scheme(
+        self, qt_app, tmp_path, monkeypatch
+    ):
+        from PySide6.QtCore import QObject
+
+        from picasapy.app.appearance_controller import AppearanceMixin
+
+        schemes = []
+        monkeypatch.setattr(
+            qt_app.styleHints(), "setColorScheme", lambda s: schemes.append(s)
+        )
+
+        class _Probe(AppearanceMixin, QObject):
+            def __init__(self, settings):
+                super().__init__()
+                self._settings = settings
+                self._init_appearance()
+
+            def _get_settings(self):
+                return self._settings
+
+        path = str(tmp_path / "settings.ini")
+        first = QSettings(path, QSettings.Format.IniFormat)
+        _Probe(first).setDarkTheme(True)
+        first.sync()
+
+        schemes.clear()
+        second = QSettings(path, QSettings.Format.IniFormat)
+        _Probe(second)
+        assert schemes == [Qt.ColorScheme.Dark]
