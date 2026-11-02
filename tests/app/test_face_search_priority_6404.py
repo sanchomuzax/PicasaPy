@@ -181,11 +181,15 @@ def test_scan_continues_after_priority_error_and_uses_one_opencv_thread(
         arrived, _args = _run(ctl.scanFinished, ctl.scanForFaces)
         assert arrived is True
         assert ctl.waitForBackgroundWorkers(5.0)
-        assert len(priority_calls) == 1
-        assert priority_calls[0][0] == _prio_process()
-        assert priority_calls[0][2] == 10
-        assert cv2_calls == [(1, priority_calls[0][1]), (previous, priority_calls[0][1])]
-        assert observed == [(1, priority_calls[0][1])]
+        # #6407: a keresés után az arclenyomat-szál is elindulhat (Windowson
+        # mérve), és az is alacsony prioritást kér; az elvárás szálanként él
+        assert observed, "a kereső szál nem futott"
+        szal = observed[0][1]
+        assert observed == [(1, szal)]
+        assert priority_calls
+        assert all(c[0] == _prio_process() and c[2] == 10 for c in priority_calls)
+        assert any(c[1] == szal for c in priority_calls)
+        assert [c for c in cv2_calls if c[1] == szal] == [(1, szal), (previous, szal)]
     finally:
         cv2_module.setNumThreads(previous)
 
@@ -207,11 +211,15 @@ def test_embedding_continues_after_priority_error_and_uses_one_opencv_thread(
         arrived, _args = _run(ctl.embeddingFinished, ctl.computeEmbeddings)
         assert arrived is True
         assert ctl.waitForBackgroundWorkers(5.0)
-        assert len(priority_calls) == 1
-        assert priority_calls[0][0] == _prio_process()
-        assert priority_calls[0][2] == 10
-        assert cv2_calls == [(1, priority_calls[0][1]), (previous, priority_calls[0][1])]
-        assert observed == [(1, priority_calls[0][1])]
+        # #6407: a keresés után az arclenyomat-szál is elindulhat (Windowson
+        # mérve), és az is alacsony prioritást kér; az elvárás szálanként él
+        assert observed, "a kereső szál nem futott"
+        szal = observed[0][1]
+        assert observed == [(1, szal)]
+        assert priority_calls
+        assert all(c[0] == _prio_process() and c[2] == 10 for c in priority_calls)
+        assert any(c[1] == szal for c in priority_calls)
+        assert [c for c in cv2_calls if c[1] == szal] == [(1, szal), (previous, szal)]
     finally:
         cv2_module.setNumThreads(previous)
 
