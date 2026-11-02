@@ -267,28 +267,6 @@ def _egy_inditas(
         "indulo_kep_kotelezo": sys.platform == "win32" and indulo_hatar_ms is not None,
     }
 
-
-def _kiserleti_eloolvasas(gyoker: Path, parancs: list[str]) -> None:
-    """KÍSÉRLET (#6426), beolvasztás előtt törlendő: hidegek-e a fájlok."""
-    if os.environ.get("PICASAPY_KISERLET_ELOOLVASAS") != "1":
-        return
-    celok = (
-        ("qmlcache", [u for u in gyoker.rglob("*") if "qmlcache" in u.parts]),
-        ("csomag", [u for u in Path(parancs[0]).parent.rglob("*")
-                    if u.suffix.lower() in (".dll", ".pyd")]),
-    )
-    for nev, fajlok in celok:
-        kezdet = time.perf_counter()
-        bajt = 0
-        for ut in fajlok:
-            try:
-                if ut.is_file():
-                    bajt += len(ut.read_bytes())
-            except OSError:
-                continue
-        ms = (time.perf_counter() - kezdet) * 1000
-        print(f"  KÍSÉRLET előolvasás {nev}: {len(fajlok)} fájl, {bajt} bájt, {ms:.0f} ms", flush=True)
-
 def _bevar(futas: dict) -> dict:
     ablakikonok = globals().get("_ablakikonok")
     induloablak_kepe = globals().get("_induloablak_kepe")
@@ -543,7 +521,6 @@ def _ido_futtato(
     melegitsd_qml_cache(parancs, profil_env)
     if indulo_hatar_ms is not None:
         melegitsd_qml_grafikat(parancs, profil_env)
-        _kiserleti_eloolvasas(gyoker, parancs)
     eredmeny: dict = {}
     indulo_eredmenyek: list[dict] = []
     for sorszam in range(1, inditasok + 1):

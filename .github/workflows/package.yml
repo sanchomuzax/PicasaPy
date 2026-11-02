@@ -491,7 +491,6 @@ jobs:
         shell: bash
         env:
           PYTHONIOENCODING: utf-8
-          PICASAPY_KISERLET_ELOOLVASAS: "1"
         run: |
           if ! grep -q -- "--indulo-hatar-ms" packaging/windows/csomag_meres.py; then echo "Régi kiadási tag: nincs indulóablak-mérés."; exit 0; fi
           python packaging/windows/csomag_meres.py ido \
