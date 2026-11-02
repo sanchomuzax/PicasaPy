@@ -268,11 +268,11 @@ def _egy_inditas(
     }
 
 def _bevar(futas: dict) -> dict:
-    ablakikonok = globals().get("_ablakikonok")
+    splash_ablak = globals().get("_splash_ablak")
     induloablak_kepe = globals().get("_induloablak_kepe")
-    if ablakikonok is None or induloablak_kepe is None:
-        from csomag_meres_windows import _ablakikonok as ablakikonok
+    if splash_ablak is None or induloablak_kepe is None:
         from csomag_meres_windows import _induloablak_kepe as induloablak_kepe
+        from csomag_meres_windows import _splash_ablak as splash_ablak
 
     folyamat = futas["folyamat"]
     indulo_kep = None
@@ -292,14 +292,7 @@ def _bevar(futas: dict) -> dict:
                 # A splash első felsorolásakor az ablak még nincs kirajzolva:
                 # amíg látszik, újra próbáljuk, az első sikeres képig (#6426).
                 if indulo_kep_info is None and not splash_eltunt:
-                    splash = next(
-                        (
-                            hwnd
-                            for hwnd, ablak in ablakikonok(folyamat.pid).items()
-                            if ablak["cim"].casefold().startswith("picasapy startup")
-                        ),
-                        None,
-                    )
+                    splash = splash_ablak(folyamat.pid)
                     if splash is not None:
                         induloablak_latszott = True
                         kep, indulo_kep_info, indulo_kep_hiba = induloablak_kepe(splash)

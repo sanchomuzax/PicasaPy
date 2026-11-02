@@ -279,8 +279,7 @@ def test_a_splash_kepet_addig_probalja_amig_ki_nem_rajzolodik(tmp_path, monkeypa
     """A splash első felsorolásakor az ablak még nincs kirajzolva; egyetlen
     próbával a gyors indulásoknál a mérés hamisan piros lett (#6426)."""
     monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _g: [])
-    monkeypatch.setattr(ido_modul, "_ablakikonok",
-                        lambda _pid: {7: {"cim": "PicasaPy Startup"}}, raising=False)
+    monkeypatch.setattr(ido_modul, "_splash_ablak", lambda _pid: 7, raising=False)
     probak = []
 
     def kep(hwnd):
@@ -298,10 +297,9 @@ def test_a_splash_kepet_addig_probalja_amig_ki_nem_rajzolodik(tmp_path, monkeypa
 
 def test_a_splash_eltunese_utan_nem_probalkozik_tovabb(tmp_path, monkeypatch):
     monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _g: [])
-    ablakok = [{7: {"cim": "PicasaPy Startup"}}, {7: {"cim": "PicasaPy Startup"}}]
-    monkeypatch.setattr(ido_modul, "_ablakikonok",
-                        lambda _pid: ablakok.pop(0) if ablakok else {8: {"cim": "PicasaPy"}},
-                        raising=False)
+    ablakok = [7, 7]
+    monkeypatch.setattr(ido_modul, "_splash_ablak",
+                        lambda _pid: ablakok.pop(0) if ablakok else None, raising=False)
     probak = []
 
     def kep(hwnd):
@@ -343,9 +341,9 @@ def test_a_splash_probak_osszegzese_es_az_elso_kep_megmarad(tmp_path, monkeypatc
     """A CI csak az utolsó (a főablak alatti) képet mutatta; a döntéshez az
     első kép és a próbák időrendje kell (#6426)."""
     monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _g: [])
-    ablakok = [{7: {"cim": "PicasaPy Startup"}}] * 3
-    monkeypatch.setattr(ido_modul, "_ablakikonok",
-                        lambda _pid: ablakok.pop(0) if ablakok else {}, raising=False)
+    ablakok = [7, 7, 7]
+    monkeypatch.setattr(ido_modul, "_splash_ablak",
+                        lambda _pid: ablakok.pop(0) if ablakok else None, raising=False)
     kepek = iter([b"elso", b"masodik", b"harmadik"])
     monkeypatch.setattr(
         ido_modul, "_induloablak_kepe",
@@ -358,3 +356,16 @@ def test_a_splash_probak_osszegzese_es_az_elso_kep_megmarad(tmp_path, monkeypatc
     osszegzes = ido_modul.indulokep_probak_sora(eredmeny["indulo_kep_probak"])
     assert osszegzes.startswith("  indulókép-próbák: 3")
     assert "első" in osszegzes and "utolsó" in osszegzes
+
+
+def test_a_splash_keresese_nem_kuld_uzenetet_az_ablaknak():
+    """Az ikonlekérő `_ablakikonok` ablakonként WM_GETICON-t küld, ami a QML
+    betöltése alatt foglalt fő szálú programnál másodpercekig vár: a CI-ben az
+    első splash-próba 2363 ms-nál jött, holott a splash 665 ms-nál kint volt."""
+    import inspect
+
+    windows_modul = importlib.import_module("csomag_meres_windows")
+    forras = inspect.getsource(windows_modul._splash_ablak)
+    assert "SendMessage" not in forras
+    assert "picasapy startup" in forras.casefold()
+    assert "_ablakikonok" not in inspect.getsource(ido_modul._bevar)
