@@ -1,3 +1,5 @@
+For contributions not related to MacOS, I would recommend you do them on the main branch.
+
 # Közreműködés
 
 Köszönjük az érdeklődést! A PicasaPy GPL-3.0 licencű, a fejlesztés a
