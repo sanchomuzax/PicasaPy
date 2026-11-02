@@ -97,6 +97,10 @@ def main() -> int:
     osszegzes = f"QML-előfordítás: {len(fajlok)} fájl, {hibas} hibás, {eltelt:.2f} s"
     _naplozz(osszegzes)
     print(osszegzes, flush=True)
+    # A csomagolt windowsos exe a fordítás után a Qt-objektumok bontásánál
+    # elakadt (Package-mérés: 0,83 s fordítás, majd 180 s várakozás). A
+    # gyorsítótár a fordításkor már a lemezre került, ezért a bontást kihagyjuk.
+    _kilepes(0)
     return 0
 
 

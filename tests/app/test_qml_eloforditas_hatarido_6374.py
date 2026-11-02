@@ -77,3 +77,18 @@ def test_idotullepeskor_a_meres_kiirja_a_naplo_veget(monkeypatch, tmp_path):
     with pytest.raises(qml_cache_warmup.QmlWarmupError) as hiba:
         qml_cache_warmup.melegitsd_qml_cache([sys.executable], {"TEMP": str(tmp_path)}, timeout=1)
     assert "PlacesMap.qml" in str(hiba.value)
+
+
+def test_az_osszegzes_utan_azonnal_kilep_a_bontas_nelkul(monkeypatch, capsys):
+    """A csomagolt exe a fordítás után a Qt-bontásnál akadt el (0,83 s + 180 s)."""
+    kilepesek = []
+    monkeypatch.setattr(qml_precompile, "_kilepes", kilepesek.append)
+    monkeypatch.setattr(qml_precompile, "_inditsd_a_hataridot", lambda: None)
+    monkeypatch.setattr(qml_precompile, "QGuiApplication", lambda _argv: type("A", (), {
+        "setApplicationName": lambda *_: None, "setOrganizationName": lambda *_: None})())
+    monkeypatch.setattr(qml_precompile, "QQmlEngine", lambda: type("E", (), {
+        "addImportPath": lambda *_: None})())
+    monkeypatch.setattr(qml_precompile, "_forditsd_le", lambda _e, fajlok: 0)
+    assert qml_precompile.main() == 0
+    assert kilepesek == [0]
+    assert "QML-előfordítás:" in capsys.readouterr().out

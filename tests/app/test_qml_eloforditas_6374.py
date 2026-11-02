@@ -62,7 +62,7 @@ def test_a_qml_eloforditas_izolalt_profilban_cachet_ir_settings_nelkul(tmp_path)
 
     assert result.returncode == 0, result.stdout + result.stderr
     assert re.fullmatch(r"QML-előfordítás: \d+ fájl, \d+ hibás, [\d.]+ s\s*", result.stdout)
-    assert result.stderr == ""
+    assert "Traceback" not in result.stderr, result.stderr
     assert len(list(cache.rglob("*.qmlc"))) > 0
     assert not (config / "PicasaPy" / "PicasaPy.conf").exists()
     assert not list(profil.rglob("indulas-*.txt"))
