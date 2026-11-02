@@ -8,6 +8,10 @@ import sys
 import threading
 
 
+#: Windowson nincs `os.PRIO_PROCESS`; a Linux-ág próbái ott is futnak (#6407).
+_PRIO_PROCESS = getattr(os, "PRIO_PROCESS", 0)
+
+
 def _platform() -> str:
     """A futó platform cserélhető fogantyúja (#1217)."""
     return sys.platform
@@ -45,7 +49,7 @@ def kerjafonal_alacsony_prioritasa() -> None:
     try:
         platform = _platform()
         if platform.startswith("linux"):
-            _linux_setpriority(os.PRIO_PROCESS, _native_thread_id(), 10)
+            _linux_setpriority(_PRIO_PROCESS, _native_thread_id(), 10)
         elif platform.startswith("win"):
             _windows_thread_below_normal()
     except (AttributeError, OSError):

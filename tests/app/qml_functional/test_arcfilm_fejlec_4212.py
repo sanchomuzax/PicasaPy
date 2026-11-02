@@ -114,6 +114,22 @@ Item {
     return proba
 
 
+def _szondak_leszerelese(qt_app) -> None:
+    """A szondák a QML-motor bontása ELŐTT válnak le a célról (#4871, #6407).
+
+    A motor lebontása után is élő szonda a pytest végső szemétgyűjtésében
+    Windowson memóriahibával omlott össze (access violation)."""
+    for obj in _KEEP_ALIVE:
+        try:
+            if obj.property("targetItem") is not None:
+                obj.setProperty("targetItem", None)
+            obj.deleteLater()
+        except RuntimeError:
+            pass
+    _KEEP_ALIVE.clear()
+    qt_app.processEvents()
+
+
 def _kattints(ablak, qt_app, elem: QQuickItem) -> None:
     kozep = elem.mapToScene(QPointF(elem.width() / 2, elem.height() / 2)).toPoint()
     QTest.mouseMove(ablak, kozep, 10)
@@ -304,6 +320,7 @@ def test_a_film_menu_kijelolt_kepei_arcfilmkent_filmet_hoznak_letre(
             parbeszed = ablak.findChild(QObject, nev)
             if parbeszed is not None:
                 parbeszed.close()
+        _szondak_leszerelese(qt_app)
         try:
             gen.close()
         except RuntimeError:
@@ -553,6 +570,7 @@ def test_a_ket_arcfilm_gomb_minden_szemelykepet_a_meglevo_filmkeszitobe_adja(
             motor.retranslate()
             ablak.setHeight(eredeti_magassag)
     finally:
+        _szondak_leszerelese(qt_app)
         try:
             gen.close()
         except RuntimeError:

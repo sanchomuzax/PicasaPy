@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 import importlib
-import os
 import threading
 
 import numpy as np
 
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import hangos_hurok
+
+
+def _prio_process() -> int:
+    from picasapy.app import hatter_prioritas
+
+    return hatter_prioritas._PRIO_PROCESS
 
 
 class _Detector:
@@ -118,7 +123,7 @@ def test_linux_priority_uses_native_thread_id_and_nice_10(monkeypatch):
 
     hatter_prioritas.kerjafonal_alacsony_prioritasa()
 
-    assert calls == [(os.PRIO_PROCESS, 731, 10)]
+    assert calls == [(_prio_process(), 731, 10)]
 
 
 def test_windows_priority_sets_current_thread_below_normal(monkeypatch):
@@ -177,7 +182,7 @@ def test_scan_continues_after_priority_error_and_uses_one_opencv_thread(
         assert arrived is True
         assert ctl.waitForBackgroundWorkers(5.0)
         assert len(priority_calls) == 1
-        assert priority_calls[0][0] == os.PRIO_PROCESS
+        assert priority_calls[0][0] == _prio_process()
         assert priority_calls[0][2] == 10
         assert cv2_calls == [(1, priority_calls[0][1]), (previous, priority_calls[0][1])]
         assert observed == [(1, priority_calls[0][1])]
@@ -203,7 +208,7 @@ def test_embedding_continues_after_priority_error_and_uses_one_opencv_thread(
         assert arrived is True
         assert ctl.waitForBackgroundWorkers(5.0)
         assert len(priority_calls) == 1
-        assert priority_calls[0][0] == os.PRIO_PROCESS
+        assert priority_calls[0][0] == _prio_process()
         assert priority_calls[0][2] == 10
         assert cv2_calls == [(1, priority_calls[0][1]), (previous, priority_calls[0][1])]
         assert observed == [(1, priority_calls[0][1])]
