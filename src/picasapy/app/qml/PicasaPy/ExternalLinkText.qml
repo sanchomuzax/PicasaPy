@@ -15,5 +15,7 @@ Text {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         onClicked: Qt.openUrlExternally(root.url)
+
+        PressFeedbackOverlay { pressSource: parent }
     }
 }

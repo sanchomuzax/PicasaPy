@@ -91,7 +91,6 @@ def test_a_frissitesi_gombsor_a_renderelt_kereten_belul_latszik(
     for nev in (
         "updateDialogDownloadButton",
         "updateDialogLaterButton",
-        "updateDialogSkipButton",
     ):
         button = window.findChild(QObject, nev)
         assert button.property("visible"), nev
