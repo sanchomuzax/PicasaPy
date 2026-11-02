@@ -238,7 +238,7 @@ def _multimedia_device_snapshot() -> _MultimediaDeviceSnapshot:
         video_count = len(QMediaDevices.videoInputs())
         if _linux_audio_service_available():
             audio_count = len(QMediaDevices.audioInputs())
-    except Exception as error:  # noqa: BLE001; diagnosztika nem állíthatja meg az indulást
+    except Exception as error:  # noqa: BLE001 - diagnosztika nem állíthatja meg az indulást
         import logging
 
         logging.getLogger("picasapy.startup").warning(
@@ -248,12 +248,12 @@ def _multimedia_device_snapshot() -> _MultimediaDeviceSnapshot:
         if logging_category is not None and old_filter_rules is not None:
             try:
                 logging_category.setFilterRules(old_filter_rules)
-            except Exception:  # noqa: BLE001; diagnosztikai takarítás
+            except Exception:  # noqa: BLE001 - diagnosztikai takarítás
                 pass
         if handler_installed:
             try:
                 qInstallMessageHandler(old_handler)
-            except Exception:  # noqa: BLE001; diagnosztikai takarítás
+            except Exception:  # noqa: BLE001 - diagnosztikai takarítás
                 pass
 
     return _MultimediaDeviceSnapshot(
