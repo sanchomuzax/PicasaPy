@@ -389,6 +389,7 @@ def _melegitsd_grafikat() -> None:
         _grafika_naplozz("grafikai előmelegítés időtúllépés: nem érkezett képkocka")
         raise subprocess.TimeoutExpired("--qml-grafika-melegites", _grafika_hatarido_mp())
     _melegitsd_betukeszleteket()
+    _melegitsd_splash_kepet()
     _grafika_naplozz("grafikai előmelegítés kész: 1 képkocka")
 
 
@@ -411,6 +412,24 @@ def _melegitsd_betukeszleteket(adatbazis=None) -> int:
         return 0
     _grafika_naplozz(f"betűkészlet-előmelegítés: {len(csaladok)} betűkészlet-család")
     return len(csaladok)
+
+
+def _melegitsd_splash_kepet() -> bool:
+    """Egyszer elkészíti a splash képét (saját betűkészlet, logó), képernyő nélkül.
+
+    Az első windowsos indulásnál ez 1,5 s volt a szokásos 0,4 s helyett (#6426).
+    A hiba nem állítja meg a grafikai előmelegítést.
+    """
+    try:
+        from picasapy import __version__
+        from picasapy.app import startup_splash
+
+        startup_splash._create_splash_pixmap(f"v{__version__}")
+    except Exception as hiba:  # noqa: BLE001 - csak gyorsítás, nem feltétel
+        _grafika_naplozz(f"splash-előmelegítés kimaradt: {type(hiba).__name__}")
+        return False
+    _grafika_naplozz("splash-előmelegítés kész")
+    return True
 
 
 def grafika_main() -> int:

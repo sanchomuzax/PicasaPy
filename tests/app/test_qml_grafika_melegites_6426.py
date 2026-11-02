@@ -190,3 +190,34 @@ def test_a_betukeszlet_melegites_hibaja_nem_allitja_meg_a_melegitest(monkeypatch
 
     assert qml_precompile._melegitsd_betukeszleteket(HibasAdatbazis) == 0
     assert any("betűkészlet" in sor for sor in naplo)
+
+
+def test_a_melegites_a_splash_kepet_is_elkesziti(monkeypatch):
+    """Az első indulásnál a splash elkészítése 1,5 s volt (máskor 0,4 s): a
+    saját betűkészlet és a logó első betöltése. A telepítő ezt is előre végzi."""
+    from picasapy.app import qml_precompile, startup_splash
+
+    hivasok = []
+    monkeypatch.setattr(
+        startup_splash, "_create_splash_pixmap", lambda verzio, **_k: hivasok.append(verzio)
+    )
+    naplo = []
+    monkeypatch.setattr(qml_precompile, "_grafika_naplozz", naplo.append)
+
+    assert qml_precompile._melegitsd_splash_kepet() is True
+    assert len(hivasok) == 1
+    assert any("splash" in sor for sor in naplo)
+
+
+def test_a_splash_melegites_hibaja_nem_allitja_meg(monkeypatch):
+    from picasapy.app import qml_precompile, startup_splash
+
+    def hibas(_verzio, **_k):
+        raise OSError("nincs logó")
+
+    monkeypatch.setattr(startup_splash, "_create_splash_pixmap", hibas)
+    naplo = []
+    monkeypatch.setattr(qml_precompile, "_grafika_naplozz", naplo.append)
+
+    assert qml_precompile._melegitsd_splash_kepet() is False
+    assert any("kimaradt" in sor for sor in naplo)
