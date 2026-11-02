@@ -5,6 +5,8 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
+import pytest
+
 from PySide6.QtCore import (
     QEventLoop,
     QObject,
@@ -34,6 +36,19 @@ _KEEP_ALIVE: list[QObject] = []
 
 
 _FILM_VARAKOZAS_MP = 90
+
+
+@pytest.fixture(autouse=True)
+def _szemetgyujtes_elo_alkalmazas_mellett(qt_app):
+    """#6407: a teszt után még élő Qt-objektumokat az alkalmazás életében
+    gyűjtjük össze. Különben a pytest végső szemétgyűjtése szedte össze őket,
+    és Windowson access violationnel omlott össze."""
+    yield
+    import gc
+
+    _szondak_leszerelese(qt_app)
+    gc.collect()
+    qt_app.processEvents()
 
 
 def _anna_kepei(lib) -> None:
