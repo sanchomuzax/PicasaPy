@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.22] - 2026-11-02
+
+- A háttérmunka-jelző (pörgő homokóra) az eredeti Picasa szerint az eszközsávban, a keresőmezőtől jobbra, vele egy sorban áll, nem a mappafejléc szinkronkapcsolója mellett (#6405).
+- A Beállítások Általános fülén nincs többé a névtelen használati statisztika sora és a Google adatvédelmi oldalára mutató „Adatvédelem…” hivatkozás: a PicasaPy nem gyűjt statisztikát (#6441).
+- A Gmail-hivatkozás titkosított (https) címre mutat, és őr-teszt akadályozza meg, hogy régi Picasa- vagy Google-oldalra mutató hivatkozás kerüljön a programba (#6442).
+
 ## [1.0.21] - 2026-11-02
 
 - Windowson gyorsabb az első indulás a telepítés után: a telepítő előre betölti a rendszer betűkészleteit, a splash képét és a program moduljait, a JavaScript-fájlok gyorsítótárát is elkészíti (#6426).
