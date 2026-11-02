@@ -31,6 +31,12 @@ _QML_CACHE_HIBA = (
 )
 _popen = subprocess.Popen
 _GRAFIKA_KATEGORIAK = ("qt.rhi.general", "qt.scenegraph.general")
+_QT_NAPLO_KAPCSOLO = "PICASAPY_MERES_QT_NAPLO"
+_QT_NAPLOZASI_SZABALYOK = (
+    "qt.qml.diskcache.debug",
+    "qt.scenegraph.general.debug",
+    "qt.rhi.general.debug",
+)
 _GRAFIKA_HATTEREK = (
     (re.compile(r"\b(?:D3D11|Direct\s*3D\s*11(?:\.\d+)?)\b", re.I), "Direct3D 11"),
     (re.compile(r"\b(?:D3D12|Direct\s*3D\s*12(?:\.\d+)?)\b", re.I), "Direct3D 12"),
@@ -199,9 +205,13 @@ def _egy_inditas(
 ) -> dict:
     env, konyvtar = _profil(gyoker, kepek)
     valodi_ablak = ablakkal or indulo_hatar_ms is not None
+    qt_naplo_engedelyezve = (
+        valodi_ablak and os.environ.get(_QT_NAPLO_KAPCSOLO) == "1"
+    )
     if valodi_ablak:
         env.pop("QT_QPA_PLATFORM", None)
         env.pop("QT_QUICK_BACKEND", None)
+    if qt_naplo_engedelyezve:
         szabalyok = env.get("QT_LOGGING_RULES", "").strip().strip(";")
         env["QT_LOGGING_RULES"] = ";".join(
             elem
@@ -218,6 +228,23 @@ def _egy_inditas(
         env["QT_FORCE_STDERR_LOGGING"] = "1"
         env["QSG_INFO"] = "1"
     else:
+        # A szülőfolyamatból érkező diagnosztikai értékek se terheljék az
+        # időmérést; a kapcsoló nélkül csak a nem diagnosztikai szabályok
+        # maradnak érvényben.
+        szabalyok = [
+            szabaly.strip()
+            for szabaly in env.get("QT_LOGGING_RULES", "").split(";")
+            if szabaly.strip()
+            and szabaly.split("=", 1)[0].strip().casefold()
+            not in _QT_NAPLOZASI_SZABALYOK
+        ]
+        if szabalyok:
+            env["QT_LOGGING_RULES"] = ";".join(szabalyok)
+        else:
+            env.pop("QT_LOGGING_RULES", None)
+        env.pop("QT_FORCE_STDERR_LOGGING", None)
+        env.pop("QSG_INFO", None)
+    if not valodi_ablak:
         env["QT_QPA_PLATFORM"] = "offscreen"
         env["QT_QUICK_BACKEND"] = "software"
     korabbi = len(_naplo_sorai(gyoker))
@@ -241,17 +268,20 @@ def _egy_inditas(
     }
 
 def _bevar(futas: dict) -> dict:
-    ablakikonok = globals().get("_ablakikonok")
+    splash_ablak = globals().get("_splash_ablak")
     induloablak_kepe = globals().get("_induloablak_kepe")
-    if ablakikonok is None or induloablak_kepe is None:
-        from csomag_meres_windows import _ablakikonok as ablakikonok
+    if splash_ablak is None or induloablak_kepe is None:
         from csomag_meres_windows import _induloablak_kepe as induloablak_kepe
+        from csomag_meres_windows import _splash_ablak as splash_ablak
 
     folyamat = futas["folyamat"]
     indulo_kep = None
     indulo_kep_info = None
     indulo_kep_hiba = None
     induloablak_latszott = False
+    splash_eltunt = False
+    probak: list[tuple[int, str]] = []
+    elso_kep = None
     if futas["indulo_kep_kotelezo"]:
         hatarido = time.monotonic() + _IDOKORLAT_MP
         while True:
@@ -259,17 +289,28 @@ def _bevar(futas: dict) -> dict:
                 kimenet, _ = folyamat.communicate(timeout=0.05)
                 break
             except subprocess.TimeoutExpired:
-                if not induloablak_latszott:
-                    for hwnd, ablak in ablakikonok(folyamat.pid).items():
-                        if not ablak["cim"].casefold().startswith("picasapy startup"):
-                            continue
+                # A splash első felsorolásakor az ablak még nincs kirajzolva:
+                # amíg látszik, újra próbáljuk, az első sikeres képig (#6426).
+                if indulo_kep_info is None and not splash_eltunt:
+                    splash = splash_ablak(folyamat.pid)
+                    if splash is not None:
                         induloablak_latszott = True
-                        indulo_kep, indulo_kep_info, indulo_kep_hiba = induloablak_kepe(hwnd)
-                        break
+                        kep, indulo_kep_info, indulo_kep_hiba = induloablak_kepe(splash)
+                        eltelt_ms = round((time.perf_counter() - futas["kezdet"]) * 1000)
+                        probak.append((eltelt_ms, indulo_kep_hiba or "rendben"))
+                        if elso_kep is None:
+                            elso_kep = kep
+                        if indulo_kep_info is not None:
+                            indulo_kep = kep
+                    elif induloablak_latszott:
+                        splash_eltunt = True
                 if time.monotonic() >= hatarido:
                     folyamat.kill()
                     kimenet, _ = folyamat.communicate()
                     break
+        if indulo_kep_info is None:
+            # a hibás esetben az ELSŐ kép mutatja, mit látott a mérő a splash helyén
+            indulo_kep = elso_kep
     else:
         try:
             kimenet, _ = folyamat.communicate(timeout=_IDOKORLAT_MP)
@@ -289,6 +330,7 @@ def _bevar(futas: dict) -> dict:
         "indulo_kep": indulo_kep,
         "indulo_kep_info": indulo_kep_info,
         "indulo_kep_hiba": indulo_kep_hiba,
+        "indulo_kep_probak": probak if futas["indulo_kep_kotelezo"] else [],
         "valodi_ablak": futas.get("valodi_ablak", False),
     }
 
@@ -354,7 +396,19 @@ def _indulo_jelentes(eredmeny: dict) -> list[str]:
             "  renderelt indulókép ellenőrzése sikertelen: "
             + str(eredmeny.get("indulo_kep_hiba") or "nem készült képernyőkép")
         )
+    if eredmeny.get("indulo_kep_probak"):
+        reszletek.append(indulokep_probak_sora(eredmeny["indulo_kep_probak"]))
     return reszletek
+
+
+def indulokep_probak_sora(probak: list[tuple[int, str]]) -> str:
+    """A splash-képpróbák rövid időrendje (#6426)."""
+    elso_ms, elso = probak[0]
+    utolso_ms, utolso = probak[-1]
+    return (
+        f"  indulókép-próbák: {len(probak)}; első {elso_ms} ms: {elso}; "
+        f"utolsó {utolso_ms} ms: {utolso}"
+    )
 
 def induloablak_ms(eredmeny: dict) -> float | None:
     """Az indulóablak naplójelzésének ideje a folyamat indításától, ms-ban."""

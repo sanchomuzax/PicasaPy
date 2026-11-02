@@ -10,6 +10,24 @@ MainToolbar {
     id: toolbar
     objectName: "mainToolbar"
     updateOwnerWindow: hostWindow
+    property bool activityWorking: false
+    property bool activityCancellable: false
+    signal activityCancelRequested()
+    versionHidden: activityBadge.visible
+
+    // #6405: a háttérmunka-jelző a keresőmezőtől jobbra, vele egy sorban, az
+    // eszközsáv jobb szélén (az eredeti képernyőkép szerint, ld. ActivityBadge.qml).
+    ActivityBadge {
+        id: activityBadge
+        objectName: "activityBadge"
+        z: 3
+        working: toolbar.activityWorking
+        cancellable: toolbar.activityCancellable
+        x: toolbar.width - width - 5
+        y: toolbar.searchBoxItem.y
+            + Math.round((toolbar.searchBoxItem.height - height) / 2)
+        onCancelRequested: toolbar.activityCancelRequested()
+    }
     // #741/4: a nézőben (és így a szerkesztőben) NINCS alkalmazás-szintű
     // eszköztár. A binárisban a szerkesztő felső 40 képpontos sávjában
     // egyetlen elem van, az `editpanel/albumview` („Vissza a

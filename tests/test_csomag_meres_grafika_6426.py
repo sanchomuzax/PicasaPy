@@ -56,16 +56,11 @@ def test_az_elemzo_husz_fajlnal_tobbet_nem_ir_ki():
     assert len(ido_modul.qml_ujraforditott_fajlok("\n".join(sorok))) == 20
 
 
-def test_a_valodi_ablakos_meres_engedelyezi_a_qml_es_rhi_diagnosztikat(
-    monkeypatch, tmp_path
-):
+def _egy_inditas_kornyezete(monkeypatch, tmp_path, env):
     monkeypatch.setattr(
         ido_modul,
         "_profil",
-        lambda *_args, **_kwargs: (
-            {"QT_LOGGING_RULES": "*.debug=false"},
-            tmp_path / "library",
-        ),
+        lambda *_args, **_kwargs: (env, tmp_path / "library"),
     )
     monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _root: [])
     inditasok = []
@@ -81,12 +76,48 @@ def test_a_valodi_ablakos_meres_engedelyezi_a_qml_es_rhi_diagnosztikat(
         ablakkal=False,
         indulo_hatar_ms=1000,
     )
+    return inditasok[0]
 
-    szabalyok = inditasok[0]["QT_LOGGING_RULES"]
+
+def test_alapertelmezetten_kikapcsolt_a_nehez_qt_naplozas(monkeypatch, tmp_path):
+    monkeypatch.delenv("PICASAPY_MERES_QT_NAPLO", raising=False)
+    env = _egy_inditas_kornyezete(
+        monkeypatch,
+        tmp_path,
+        {
+            "QT_LOGGING_RULES": (
+                "*.debug=false;qt.qml.diskcache.debug=true;"
+                "qt.scenegraph.general.debug=true;qt.rhi.general.debug=true"
+            ),
+            "QT_FORCE_STDERR_LOGGING": "1",
+            "QSG_INFO": "1",
+        },
+    )
+
+    assert env["QT_LOGGING_RULES"] == "*.debug=false"
+    assert "QT_FORCE_STDERR_LOGGING" not in env
+    assert "QSG_INFO" not in env
+
+    monkeypatch.setenv("PICASAPY_MERES_QT_NAPLO", "1")
+    env = _egy_inditas_kornyezete(
+        monkeypatch, tmp_path, {"QT_LOGGING_RULES": "*.debug=false"}
+    )
+    szabalyok = env["QT_LOGGING_RULES"]
     assert szabalyok.startswith("*.debug=false;")
     assert "qt.qml.diskcache.debug=true" in szabalyok
     assert "qt.scenegraph.general.debug=true" in szabalyok
     assert "qt.rhi.general.debug=true" in szabalyok
+    assert env["QT_FORCE_STDERR_LOGGING"] == "1"
+    assert env["QSG_INFO"] == "1"
+
+    workflow = (_GYOKER / ".github/workflows/package.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "PICASAPY_MERES_QT_NAPLO" not in workflow
+    meres = (_GYOKER / "packaging/windows/csomag_meres_ido.py").read_text(
+        encoding="utf-8"
+    )
+    assert "PICASAPY_MERES_QT_NAPLO" in meres
 
 
 def test_a_meres_a_qml_es_a_grafikai_melegites_utan_indul_eloszor(
@@ -208,6 +239,7 @@ def test_valodi_ablaknal_a_qt_naplo_a_kimenetre_kerul(tmp_path, monkeypatch):
 
     monkeypatch.setattr(ido_modul, "_popen", _popen)
     monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _g: [])
+    monkeypatch.setenv("PICASAPY_MERES_QT_NAPLO", "1")
     ido_modul._egy_inditas(["x.exe"], tmp_path, ablakkal=True)
     assert elkapott["QT_FORCE_STDERR_LOGGING"] == "1"
     assert elkapott["QSG_INFO"] == "1"
@@ -217,3 +249,123 @@ def test_a_qt_naplo_nyers_relevans_sorai_kiirodnak():
     kimenet = "valami\nqt.rhi.general: Created D3D11 device\nQSG: threaded render loop\nmás\n"
     assert ido_modul.qt_naplo_sorok(kimenet) == [
         "qt.rhi.general: Created D3D11 device", "QSG: threaded render loop"]
+
+
+class _LassanKilepoFolyamat:
+    """`communicate` az első néhány hívásra még fut (időtúllépés)."""
+
+    pid = 4242
+    returncode = 0
+
+    def __init__(self, futo_korok: int):
+        self.maradek = futo_korok
+
+    def communicate(self, timeout=None):
+        import subprocess
+
+        if self.maradek > 0:
+            self.maradek -= 1
+            raise subprocess.TimeoutExpired("PicasaPy.exe", timeout)
+        return (b"", b"")
+
+
+def _splash_futas(tmp_path, folyamat):
+    return {"folyamat": folyamat, "indult": datetime.now(timezone.utc), "kezdet": 0.0,
+            "korabbi": 0, "gyoker": tmp_path, "indulo_hatar_ms": 1000,
+            "indulo_kep_kotelezo": True, "valodi_ablak": True}
+
+
+def test_a_splash_kepet_addig_probalja_amig_ki_nem_rajzolodik(tmp_path, monkeypatch):
+    """A splash első felsorolásakor az ablak még nincs kirajzolva; egyetlen
+    próbával a gyors indulásoknál a mérés hamisan piros lett (#6426)."""
+    monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _g: [])
+    monkeypatch.setattr(ido_modul, "_splash_ablak", lambda _pid: 7, raising=False)
+    probak = []
+
+    def kep(hwnd):
+        probak.append(hwnd)
+        if len(probak) < 3:
+            return b"rossz", None, "a renderelt indulóképen nincs fehér kártya logóval"
+        return b"png", (668, 263, 45), None
+
+    monkeypatch.setattr(ido_modul, "_induloablak_kepe", kep, raising=False)
+    eredmeny = ido_modul._bevar(_splash_futas(tmp_path, _LassanKilepoFolyamat(10)))
+    assert len(probak) == 3
+    assert eredmeny["indulo_kep"] == b"png"
+    assert eredmeny["indulo_kep_hiba"] is None
+
+
+def test_a_splash_eltunese_utan_nem_probalkozik_tovabb(tmp_path, monkeypatch):
+    monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _g: [])
+    ablakok = [7, 7]
+    monkeypatch.setattr(ido_modul, "_splash_ablak",
+                        lambda _pid: ablakok.pop(0) if ablakok else None, raising=False)
+    probak = []
+
+    def kep(hwnd):
+        probak.append(hwnd)
+        return b"rossz", None, "a renderelt indulóképen nincs fehér kártya logóval"
+
+    monkeypatch.setattr(ido_modul, "_induloablak_kepe", kep, raising=False)
+    eredmeny = ido_modul._bevar(_splash_futas(tmp_path, _LassanKilepoFolyamat(10)))
+    assert len(probak) == 2
+    # a hibás kép is megmarad, hogy a jelentés megmutathassa, mi látszott
+    assert eredmeny["indulo_kep"] == b"rossz"
+    assert eredmeny["indulo_kep_info"] is None
+    assert eredmeny["indulo_kep_hiba"] == "a renderelt indulóképen nincs fehér kártya logóval"
+
+
+def test_a_splash_kepe_a_reteges_ablakot_is_rogziti():
+    """Az áttetsző splash réteges (layered) ablak; a Pillow alapértelmezésben
+    kihagyja, így a mérő a mögötte levő főablakot fényképezte (CI-kép, #6426)."""
+    import ast
+    import inspect
+
+    windows_modul = importlib.import_module("csomag_meres_windows")
+    fa = ast.parse(inspect.getsource(windows_modul._induloablak_kepe))
+    hivasok = [
+        csomopont
+        for csomopont in ast.walk(fa)
+        if isinstance(csomopont, ast.Call)
+        and isinstance(csomopont.func, ast.Attribute)
+        and csomopont.func.attr == "grab"
+    ]
+    assert hivasok, "a splash képe nem ImageGrab.grab-bal készül"
+    for hivas in hivasok:
+        kapcsolok = {k.arg: k.value for k in hivas.keywords}
+        assert "include_layered_windows" in kapcsolok
+        assert getattr(kapcsolok["include_layered_windows"], "value", None) is True
+
+
+def test_a_splash_probak_osszegzese_es_az_elso_kep_megmarad(tmp_path, monkeypatch):
+    """A CI csak az utolsó (a főablak alatti) képet mutatta; a döntéshez az
+    első kép és a próbák időrendje kell (#6426)."""
+    monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _g: [])
+    ablakok = [7, 7, 7]
+    monkeypatch.setattr(ido_modul, "_splash_ablak",
+                        lambda _pid: ablakok.pop(0) if ablakok else None, raising=False)
+    kepek = iter([b"elso", b"masodik", b"harmadik"])
+    monkeypatch.setattr(
+        ido_modul, "_induloablak_kepe",
+        lambda _h: (next(kepek), None, "a renderelt indulóképen nincs fehér kártya logóval"),
+        raising=False,
+    )
+    eredmeny = ido_modul._bevar(_splash_futas(tmp_path, _LassanKilepoFolyamat(10)))
+    assert eredmeny["indulo_kep"] == b"elso"
+    assert len(eredmeny["indulo_kep_probak"]) == 3
+    osszegzes = ido_modul.indulokep_probak_sora(eredmeny["indulo_kep_probak"])
+    assert osszegzes.startswith("  indulókép-próbák: 3")
+    assert "első" in osszegzes and "utolsó" in osszegzes
+
+
+def test_a_splash_keresese_nem_kuld_uzenetet_az_ablaknak():
+    """Az ikonlekérő `_ablakikonok` ablakonként WM_GETICON-t küld, ami a QML
+    betöltése alatt foglalt fő szálú programnál másodpercekig vár: a CI-ben az
+    első splash-próba 2363 ms-nál jött, holott a splash 665 ms-nál kint volt."""
+    import inspect
+
+    windows_modul = importlib.import_module("csomag_meres_windows")
+    forras = inspect.getsource(windows_modul._splash_ablak)
+    assert "SendMessage" not in forras
+    assert "picasapy startup" in forras.casefold()
+    assert "_ablakikonok" not in inspect.getsource(ido_modul._bevar)

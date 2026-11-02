@@ -333,8 +333,6 @@ BEALLITASOK = {
          "options/SupportMovies.title"),
     ("OptionsTabFileTypes", "Quicktime Movies (.MOV)"): (
         "Quicktime-filmek (.MOV)", "options/SupportQuicktime.title"),
-    ("OptionsTabGeneral", "Help improve PicasaPy:"): (
-        "Részvétel a PicasaPy fejlesztésében:", "options/labelgroup16.title"),
     ("OptionsTabGeneral", "Save imported pictures in:"): (
         "Importált képek mentési helye:", "options/labelgroup34.title"),
     ("OptionsTabGeneral", "Detect duplicates while importing"): (
@@ -343,9 +341,6 @@ BEALLITASOK = {
     ("OptionsTabGeneral", "Clear cache files"): (
         "Gyorsítótárban lévő fájlok törlése",
         "options/disposepreviews.title"),
-    ("OptionsTabGeneral", "Send anonymous usage statistics"): (
-        "Névtelen használati statisztikák küldése a Google részére",
-        "options/usagestats.title"),
     ("OptionsTabGeneral", "Single-click to exit Edit View"): (
         "Szerkesztési nézetből való kilépés egy kattintással",
         "options/SingleClickExit.title"),

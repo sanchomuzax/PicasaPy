@@ -66,20 +66,18 @@ class TestHatterjelzo:
         assert jelzo.property("height") == 28
 
     def test_a_jobb_felso_sarokban_all(self, qml_app, qt_app):
-        """A jelző a könyvtárnézet paneljéhez tartozik (#3112, #6405)."""
+        """A jelző az eszközsáv jobb szélén, a keresőmezőtől jobbra áll (#3112,
+        #6405; mérce az eredeti képernyőkép)."""
         window, _controller, _lib, _engine = qml_app
         jelzo = _gyerek(window, "activityBadge")
-        szulo = jelzo.parentItem()
-        tartalom = _gyerek(window, "unnamedFacesView")
-        assert szulo is not None
-        assert szulo != window.contentItem(), "a jelző még mindig a teljes ablakhoz tartozik"
-        assert _qml_item_benne(szulo, tartalom.objectName()), (
-            "a jelző szülője nem a könyvtárnézet-panel"
-        )
-        assert jelzo.property("y") == 5
-        assert (
-            szulo.property("width") - jelzo.property("x") - jelzo.property("width")
-        ) == 5
+        sav = _gyerek(window, "mainToolbar")
+        kereso = _gyerek(window, "toolbarSearchBox")
+        assert jelzo.parentItem() == sav, "a jelző nem az eszközsáv gyereke"
+        assert (sav.property("width") - jelzo.property("x") - jelzo.property("width")) == 5
+        assert jelzo.property("x") >= kereso.property("x") + kereso.property("width") + 3
+        kozep_jelzo = jelzo.property("y") + jelzo.property("height") / 2
+        kozep_kereso = kereso.property("y") + kereso.property("height") / 2
+        assert abs(kozep_jelzo - kozep_kereso) <= 2
 
     def test_hattermunkara_megjelenik(self, qml_app, qt_app):
         window, controller, _lib, _engine = qml_app

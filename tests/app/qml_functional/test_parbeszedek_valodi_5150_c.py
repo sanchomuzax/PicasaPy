@@ -6,9 +6,8 @@ a hatást a vezérlő és a mögötte álló beállítás állapotán mérjük.
 
 Lefedve:
 - Általános: `optionsSkipDeleteConfirmCheck` (a törlés-megerősítés tára),
-  `optionsAutoExcludeCheck` (az importáló `autoExclude` állapota),
-  `optionsPrivacyLink` (a külső böngésző helyett a `https`-kezelő kapja a címet).
-  Az `optionsUsageStatsCheck` tiltott: a kattintás nem vált.
+  `optionsAutoExcludeCheck` (az importáló `autoExclude` állapota).
+  A statisztika-sor és az Adatvédelem hivatkozás a #6441 óta nincs a fülön.
 - Hálózat: a proxy-csoport tiltott (`enabled: false`), így az
   `optionsNetworkAutoDetectCheck` kattintása nem vált. A naplózási vezérlők
   (#5145) működnek, azokat a `test_halozat_naplozas_valodi_5145.py` méri.
@@ -37,7 +36,6 @@ from __future__ import annotations
 
 import pytest
 from PySide6.QtCore import QObject, QSettings, QUrl, Slot
-from PySide6.QtGui import QDesktopServices
 
 from conftest import _build_qml_app
 from tests.app.qml_functional._fomenu_4420_menu import _megnyit
@@ -171,39 +169,6 @@ class TestAltalanosFul:
             "a kikapcsolt Duplikátumok jelölő értéke nem került a lemezre"
         )
         _zar(qt_app, beallitasok)
-
-    def test_a_statisztika_jelolo_tiltott_a_kattintas_nem_valt(self, parbeszed_app, qt_app):
-        window, controller, _engine = parbeszed_app
-        _elokeszit(window, qt_app, controller)
-        beallitasok = _beallitasok_megnyit(window, qt_app)
-        jelolo = _gyerek(beallitasok, "optionsUsageStatsCheck")
-        assert jelolo.property("enabled") is False, "a statisztika jelölőnek tiltottnak kell lennie"
-        elotte = jelolo.property("checked")
-
-        _klikk_ablakban(qt_app, beallitasok, jelolo)
-
-        assert jelolo.property("checked") == elotte, "a tiltott statisztika jelölő átváltott"
-        _zar(qt_app, beallitasok)
-
-    def test_az_adatvedelem_hivatkozas_valodi_kattintassal_a_bongeszot_hivna(
-        self, parbeszed_app, qt_app
-    ):
-        window, controller, _engine = parbeszed_app
-        _elokeszit(window, qt_app, controller)
-        beallitasok = _beallitasok_megnyit(window, qt_app)
-        fogo = _UrlFogo()
-        # a böngésző helyettesítője: a Qt URL-kezelője a fogót hívja, nem indít programot
-        QDesktopServices.setUrlHandler("https", fogo, "kezel")
-        try:
-            _klikk_ablakban(qt_app, beallitasok, _gyerek(beallitasok, "optionsPrivacyLink"))
-            assert _varj(qt_app, lambda: len(fogo.cimek) == 1), (
-                "az Adatvédelem hivatkozás nem adta át a címet a böngészőnek"
-            )
-        finally:
-            QDesktopServices.unsetUrlHandler("https")
-        assert fogo.cimek == ["https://policies.google.com/privacy"]
-        _zar(qt_app, beallitasok)
-
 
 class TestHalozatFul:
     def test_a_tiltott_proxy_jelolo_kattintasa_nem_valt(self, parbeszed_app, qt_app):

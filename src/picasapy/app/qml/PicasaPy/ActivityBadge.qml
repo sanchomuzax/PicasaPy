@@ -1,8 +1,12 @@
 import QtQuick
 import QtQuick.Controls
 
-// #2966/#6405: közös háttérművelet-jelző a könyvtárnézet-panel jobb felső
-// sarkában, a főablak egészéhez rögzített sarok helyett.
+// #2966/#6405: közös háttérművelet-jelző az eszközsáv jobb szélén, a
+// keresőmezőtől jobbra, vele egy sorban (a helyét a MainToolbar adja). Mérce az
+// eredeti képernyőkép (`research/testdata/screenshot/2026-07-17 20 54 38.png`):
+// az 1920 széles ablakban a mező vége x≈1872, a jelző x≈1888-1908, y≈62. Nem a
+// mappafejléc szinkronkapcsolója mellett áll; munka közben a verziófelirat
+// helyét foglalja el.
 //
 // Az eredeti Picasa a `thumbui/mainuipanel` vásznán tartott egy kis widgetet:
 // alapból REJTVE, és csak háttérművelet közben jelent meg, pörgő jelzővel és

@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.21] - 2026-11-02
+
+- Windowson gyorsabb az első indulás a telepítés után: a telepítő előre betölti a rendszer betűkészleteit, a splash képét és a program moduljait, a JavaScript-fájlok gyorsítótárát is elkészíti (#6426).
+- Az „Újraindítás most” a frissítés után akkor is újraindítja a programot, ha háttérmunka fut (legfeljebb néhány másodpercet vár), és indításkor a program törli a régebbi változatból maradt előre fordított felületet, így a frissítés után biztosan az új felület jelenik meg (#6436).
+
 ## [1.0.20] - 2026-11-02
 
 - A telepítő előre bemelegíti a grafikus réteget, így valódi ablakkal az első indulás is gyorsabb (#6426).

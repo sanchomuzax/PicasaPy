@@ -301,6 +301,9 @@ def frissites(
     env.pop("QT_QUICK_BACKEND", None)
     env["PICASAPY_UPDATE_TEST_DIAGNOSTICS"] = "1"
     env["PICASAPY_UPDATE_TEST_DIAGNOSTICS_DIR"] = str(diag_mappa)
+    # #6436: a tulajdonos gépén a háttérmunka sosem ért véget; az újraindításnak
+    # ilyenkor is meg kell történnie
+    env["PICASAPY_UPDATE_TEST_BUSY"] = "1"
     if konyvtar:
         konyvtar.mkdir(parents=True, exist_ok=True)
 

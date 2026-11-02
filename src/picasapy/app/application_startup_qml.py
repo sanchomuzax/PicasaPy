@@ -226,6 +226,13 @@ def _startup_step_load_qml(state):
     screen_capture_controller = state.screen_capture_controller
     timeline = state.timeline
 
+    # #6436: a régi változat előre fordított felülete nem töltődhet be
+    from picasapy import __version__
+    from picasapy.app.qml_precompile import torold_az_elavult_cachet
+
+    torolt = torold_az_elavult_cachet(__version__)
+    if torolt:
+        progress_log.mark(f"Elavult QML-gyorsítótár törölve: {torolt} fájl")
     progress_log.mark("Main.qml betöltése elkezdődött")
     # #6349: a tulajdonos gépén ez a hívás 25–46 s (a CI-n 1–2 s) — a
     # figyelő a hibanaplóba írja, melyik kódsoron várt közben a fő szál
