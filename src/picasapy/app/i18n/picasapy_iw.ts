@@ -10129,6 +10129,11 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
             <translation>לא זמין</translation>
         </message>
         <message>
+            <source>Check Windows camera privacy settings and close other apps that may be using the camera.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>בדוק את הגדרות הפרטיות של המצלמה ב-Windows וסגור יישומים אחרים שעשויים להשתמש במצלמה.</translation>
+        </message>
+        <message>
             <source>Snapshot saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>התמונה נשמרה</translation>

@@ -10113,6 +10113,11 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
             <translation>Không sẵn có</translation>
         </message>
         <message>
+            <source>Check Windows camera privacy settings and close other apps that may be using the camera.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kiểm tra cài đặt quyền riêng tư camera của Windows và đóng các ứng dụng khác có thể đang dùng camera.</translation>
+        </message>
+        <message>
             <source>Snapshot saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Đã lưu ảnh chụp</translation>

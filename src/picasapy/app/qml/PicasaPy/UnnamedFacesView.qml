@@ -211,6 +211,11 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.preferredHeight: 36
         Layout.topMargin: -root.spacing
+        // #6405: a könyvtárpanel jobb felső sarkában megjelenő jelző helyét
+        // csak háttérmunka alatt hagyja szabadon.
+        Layout.rightMargin: typeof controller !== "undefined"
+            && controller && controller.isWorking !== undefined
+            && controller.isWorking ? 43 : 0
         spacing: 5
 
         RowLayout {

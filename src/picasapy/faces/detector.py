@@ -48,6 +48,13 @@ _DEFAULT_TOP_K = 5000
 # skálázzák vissza.
 MAX_DETECTION_DIMENSION = 960
 
+# Ha az első menet üres, egy kisebb arcot mutató, körben kipótolt képen is
+# próbálunk. A 720-as vászon a 960 pixeles fő bemenetnél 0,75-ös méretet ad;
+# kisebb kivágásoknál a 80%-os előkicsinyítés és a padding marad a mérvadó.
+_SECOND_PASS_SCALE = 0.8
+_SECOND_PASS_PADDING = 0.4
+_SECOND_PASS_MAX_DIMENSION = MAX_DETECTION_DIMENSION * 3 // 4
+
 
 def default_model_dir() -> Path:
     """A letöltött modellek felhasználói mappája — SOHA nem a repóban."""
@@ -169,11 +176,28 @@ def rescale_face_detection(
     )
 
 
+def _unpad_point(
+    point: tuple[float, float],
+    offset_x: float,
+    offset_y: float,
+    width: int,
+    height: int,
+) -> tuple[float, float]:
+    """Egy pont a padding nélküli kép koordinátáira, a képbe vágva."""
+    return (
+        min(float(width), max(0.0, point[0] - offset_x)),
+        min(float(height), max(0.0, point[1] - offset_y)),
+    )
+
+
 class FaceDetector:
     """`cv2.FaceDetectorYN` hiánytűrő becsomagolása.
 
     Modell/API hiányában `available=False`, a `detect()` üres tuple-t ad —
-    NINCS kivétel, NINCS crash a hívóig (ld. modul-docstring)."""
+    NINCS kivétel, NINCS crash a hívóig (ld. modul-docstring). Ha az első
+    YuNet-menet nem talál arcot, a képet kisebb méretben, élismétlő paddinggel
+    egyszer újrapróbálja, majd a találatokat visszateszi a bemenet
+    koordinátáira."""
 
     def __init__(
         self,
@@ -228,16 +252,122 @@ class FaceDetector:
             return ()
         if image_bgr is None or image_bgr.size == 0:
             return ()
-        height, width = image_bgr.shape[:2]
         try:
-            self._detector.setInputSize((width, height))
-            _count, faces = self._detector.detect(image_bgr)
+            detections = self._detect_once(image_bgr)
+            if detections:
+                return detections
+            return self._detect_with_padding(image_bgr)
         except cv2.error as error:  # pragma: no cover — hibás kép/dekódolás
             logger.warning("Arc-detektálás sikertelen: %s", error)
             return ()
+
+    def _detect_once(self, image_bgr: np.ndarray) -> tuple[FaceDetection, ...]:
+        height, width = image_bgr.shape[:2]
+        self._detector.setInputSize((width, height))
+        _count, faces = self._detector.detect(image_bgr)
         if faces is None:
             return ()
         return tuple(_parse_row(row) for row in faces)
+
+    def _detect_with_padding(
+        self, image_bgr: np.ndarray
+    ) -> tuple[FaceDetection, ...]:
+        """Az üres első menet kisebb, élismétléssel kipótolt bemenete.
+
+        A keret és az öt jellegzetes pont koordinátáját visszaváltja az
+        eredeti BGR kép rácsára, és a padding területéről érkező találatot
+        eldobja.
+        """
+        height, width = image_bgr.shape[:2]
+        small_width = max(1, round(width * _SECOND_PASS_SCALE))
+        small_height = max(1, round(height * _SECOND_PASS_SCALE))
+        smaller = cv2.resize(
+            image_bgr,
+            (small_width, small_height),
+            interpolation=cv2.INTER_AREA,
+        )
+        pad_x = max(1, round(small_width * _SECOND_PASS_PADDING))
+        pad_y = max(1, round(small_height * _SECOND_PASS_PADDING))
+        padded = cv2.copyMakeBorder(
+            smaller,
+            pad_y,
+            pad_y,
+            pad_x,
+            pad_x,
+            cv2.BORDER_REPLICATE,
+        )
+
+        padded_height, padded_width = padded.shape[:2]
+        target_dimension = min(
+            _SECOND_PASS_MAX_DIMENSION,
+            max(1, int(max(width, height) * 0.99)),
+        )
+        scale = min(1.0, target_dimension / max(padded_width, padded_height))
+        if scale < 1.0:
+            detector_width = max(1, round(padded_width * scale))
+            detector_height = max(1, round(padded_height * scale))
+            detector_image = cv2.resize(
+                padded,
+                (detector_width, detector_height),
+                interpolation=cv2.INTER_AREA,
+            )
+        else:
+            detector_image = padded
+            detector_height, detector_width = padded_height, padded_width
+
+        detections = self._detect_once(detector_image)
+        if not detections:
+            return ()
+
+        scale_x = (padded_width / detector_width) * (width / small_width)
+        scale_y = (padded_height / detector_height) * (height / small_height)
+        offset_x = pad_x * (width / small_width)
+        offset_y = pad_y * (height / small_height)
+        mapped: list[FaceDetection] = []
+        for detection in detections:
+            unpadded = rescale_face_detection(detection, scale_x, scale_y)
+            left = unpadded.left - offset_x
+            top = unpadded.top - offset_y
+            right = unpadded.right - offset_x
+            bottom = unpadded.bottom - offset_y
+            if right <= 0 or bottom <= 0 or left >= width or top >= height:
+                continue
+
+            left = max(0.0, left)
+            top = max(0.0, top)
+            right = min(float(width), right)
+            bottom = min(float(height), bottom)
+            if right <= left or bottom <= top:
+                continue
+
+            landmarks = unpadded.landmarks
+            mapped.append(
+                FaceDetection(
+                    left=left,
+                    top=top,
+                    right=right,
+                    bottom=bottom,
+                    score=unpadded.score,
+                    landmarks=FaceLandmarks(
+                        right_eye=_unpad_point(
+                            landmarks.right_eye, offset_x, offset_y, width, height
+                        ),
+                        left_eye=_unpad_point(
+                            landmarks.left_eye, offset_x, offset_y, width, height
+                        ),
+                        nose=_unpad_point(
+                            landmarks.nose, offset_x, offset_y, width, height
+                        ),
+                        mouth_right=_unpad_point(
+                            landmarks.mouth_right, offset_x, offset_y, width, height
+                        ),
+                        mouth_left=_unpad_point(
+                            landmarks.mouth_left, offset_x, offset_y, width, height
+                        ),
+                    ),
+                )
+            )
+        return tuple(mapped)
 
 
 def _parse_row(row: np.ndarray) -> FaceDetection:

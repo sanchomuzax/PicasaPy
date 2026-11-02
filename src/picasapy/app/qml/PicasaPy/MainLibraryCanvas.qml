@@ -18,6 +18,22 @@ Rectangle {
     color: Theme.lightboxBg
     SplitView.fillWidth: true
 
+    // #6405: az eredeti ActivityBadge a thumbui/mainuipanelhez igazodik,
+    // nem a teljes ablakhoz. A megerősítő továbbra is a főablak meglévő
+    // hivatkozásán keresztül nyílik meg.
+    ActivityBadge {
+        id: activityBadge
+        objectName: "activityBadge"
+        z: 95
+        working: (hostController && hostController.isWorking !== undefined)
+            ? hostController.isWorking : false
+        cancellable: (hostController && hostController.activityCancellable !== undefined)
+            ? hostController.activityCancellable : false
+        x: parent.width - width - 5
+        y: 5
+        onCancelRequested: hostWindow.activityCancelConfirm.ask()
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0

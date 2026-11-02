@@ -1,4 +1,4 @@
-"""#2966 — a jobb-felső sarki, KÖZÖS háttérművelet-jelző felülete.
+"""#2966 - a könyvtárnézet-panel jobb felső sarkában álló közös jelző.
 
 Amit a jegy „Kész, ha" listája kér, és amit ez a fájl mér:
 
@@ -11,8 +11,8 @@ Amit a jegy „Kész, ha" listája kér, és amit ez a fájl mér:
 * a megszakítás tényleg leállítja a műveletet (a bejelentkezett visszahívás
   meghívódik).
 
-A geometriát (35 × 28, felülről 5, jobbról 5) a `respack.yt` mérése adja.
-⚠️ A LÁTVÁNYT ez a teszt nem méri — arra referencia-képernyőkép kellene.
+Geometria: 35 × 28 px, a könyvtárnézet-panel tetejétől és jobb szélétől 5 px.
+A panelhez viszonyított renderelt elhelyezést a #6405 tesztje is ellenőrzi.
 """
 
 
@@ -42,6 +42,12 @@ def _gyerek(window, name):
     return obj
 
 
+def _qml_item_benne(root, name):
+    if root.objectName() == name:
+        return True
+    return any(_qml_item_benne(child, name) for child in root.childItems())
+
+
 def _varj(qt_app, feltetel, timeout_s=10.0):
     return var_feltetelre(qt_app, feltetel, timeout_s)
 
@@ -60,10 +66,16 @@ class TestHatterjelzo:
         assert jelzo.property("height") == 28
 
     def test_a_jobb_felso_sarokban_all(self, qml_app, qt_app):
-        """Felülről 5, jobbról 5 képpont (a `respack.yt` mérése, #3112)."""
+        """A jelző a könyvtárnézet paneljéhez tartozik (#3112, #6405)."""
         window, _controller, _lib, _engine = qml_app
         jelzo = _gyerek(window, "activityBadge")
-        szulo = jelzo.parent()
+        szulo = jelzo.parentItem()
+        tartalom = _gyerek(window, "unnamedFacesView")
+        assert szulo is not None
+        assert szulo != window.contentItem(), "a jelző még mindig a teljes ablakhoz tartozik"
+        assert _qml_item_benne(szulo, tartalom.objectName()), (
+            "a jelző szülője nem a könyvtárnézet-panel"
+        )
         assert jelzo.property("y") == 5
         assert (
             szulo.property("width") - jelzo.property("x") - jelzo.property("width")

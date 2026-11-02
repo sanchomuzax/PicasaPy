@@ -309,6 +309,10 @@ def ensure_release(
                 "--repo", repo,
                 "--target", target,
                 "--title", f"PicasaPy {version}",
+                # #6389: előzetesként születik; a `releases/latest` így nem
+                # adja ki a régi programoknak, amíg a Package a windowsos
+                # csomag és a SHA256SUMS feltöltése után nyilvánossá nem teszi.
+                "--prerelease",
             ]
             # Embernek írt jegyzet a CHANGELOG-ból; ha nincs szakasz,
             # EMBERI tartalék megy ki — gépi lista SOHA (ld.

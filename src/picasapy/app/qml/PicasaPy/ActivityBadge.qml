@@ -1,12 +1,13 @@
 import QtQuick
 import QtQuick.Controls
 
-// #2966: KÖZÖS háttérművelet-jelző a főablak jobb-felső sarkában.
+// #2966/#6405: közös háttérművelet-jelző a könyvtárnézet-panel jobb felső
+// sarkában, a főablak egészéhez rögzített sarok helyett.
 //
-// Az eredeti Picasa ugyanitt tartott egy kis widgetet: alapból REJTVE, és
-// csak háttérművelet közben jelent meg — pörgő jelzővel és egy gombbal,
-// amivel a művelet megszakítható volt. A #3112 kimérte a geometriáját a
-// `respack.yt`-ból (a könyvtárnézet 800 × 534-es tervezővásznán):
+// Az eredeti Picasa a `thumbui/mainuipanel` vásznán tartott egy kis widgetet:
+// alapból REJTVE, és csak háttérművelet közben jelent meg, pörgő jelzővel és
+// a megszakítást kérő gombbal. A #3112 a geometriáját a `respack.yt`-ból
+// mérte (a könyvtárnézet 800 × 534-es tervezővásznán):
 //
 //   a jelző helye   x 760–795, y 5–33  ⇒ jobb felül, felülről 5, jobbról 5
 //   a jelző mérete  35 × 28            (a maszk és a keret MINDIG látszik)

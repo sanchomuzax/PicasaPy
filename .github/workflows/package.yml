@@ -73,7 +73,9 @@ jobs:
             # fel, és semmi nem jelezte. Ezért újrapróbálkozunk, és
             # megkülönböztetjük az „üres repó"-t a „nem érhető el"-től.
             for kiserlet in 1 2 3 4 5; do
-              if TAG="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName 2>/tmp/gh_hiba)"; then
+              # #6389: a kiadás előzetesként születik, a `gh release view`
+              # (legújabb kiadás) azt nem látja; a legutóbb létrehozott kell.
+              if TAG="$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 1 --json tagName -q '.[0].tagName // ""' 2>/tmp/gh_hiba)"; then
                 break
               fi
               TAG=""
@@ -109,17 +111,20 @@ jobs:
               exit 0
             fi
           fi
-          # Ha a release-en már vannak assetek, ne buildeljünk duplán
+          # Ha a release-en már ott a wheel, ne buildeljünk duplán
           # (kézi dispatch-nél a --clobber miatt felül szeretnénk írni,
           # ezért az ellenőrzés csak a workflow_run ágon fut).
+          # #6414: a SAJÁT csomagunkat keressük, nem a mellékletek számát:
+          # a kiadási automata a kiadásképet (toolbar.png) előbb tölti fel,
+          # mint ahogy ez a job elindul, és az 1.0.14-nél emiatt semmi nem épült.
           if [ "${{ github.event_name }}" = "workflow_run" ]; then
             # #896: ha a lekérdezés átmeneti hibába fut, a COUNT üres maradna,
             # és a `[ "" -gt 0 ]` hibára futtatná a lépést. Ilyenkor inkább
             # ÉPÍTÜNK: a feltöltés `--clobber`-rel megy, tehát a fölösleges
             # újraépítés ártalmatlan — a kimaradó feltöltés nem az.
-            COUNT="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets | length' 2>/dev/null || echo 0)"
+            COUNT="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '[.assets[] | select(.name | endswith(".whl"))] | length' 2>/dev/null || echo 0)"
             if [ "${COUNT:-0}" -gt 0 ]; then
-              echo "A(z) $TAG release-en már van $COUNT asset — kihagyva."
+              echo "A(z) $TAG release-en már ott a wheel - kihagyva."
               echo "skip=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
@@ -247,7 +252,8 @@ jobs:
           TAG="${{ github.event.release.tag_name }}"
           if [ -z "$TAG" ]; then TAG="${{ inputs.tag }}"; fi
           if [ -z "$TAG" ]; then
-            TAG="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)"
+            # #6389: az előzetes kiadást is lássuk (ld. build-and-upload).
+            TAG="$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 1 --json tagName -q '.[0].tagName // ""')"
           fi
           if [ -z "$TAG" ]; then
             echo "::error::nem sikerült feloldani a kiadás tagjét"
@@ -734,6 +740,26 @@ jobs:
             sleep $((kiserlet * 20))
           done
           echo "::error::a telepítőt öt kísérlet után sem sikerült feltölteni"
+          exit 1
+
+      # #6389: a kiadás előzetesként született; csak most, a windowsos csomag
+      # és a teljes SHA256SUMS után lesz nyilvános és legújabb. Ha bármelyik
+      # korábbi lépés bukik, a kiadás előzetes marad, a programok nem látják.
+      - name: A kiadás nyilvánossá tétele
+        if: steps.tag.outputs.skip != 'true' && github.event_name != 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          for kiserlet in 1 2 3 4 5; do
+            if gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --prerelease=false --latest; then
+              exit 0
+            fi
+            echo "A nyilvánossá tétel nem sikerült (${kiserlet}.), újra."
+            sleep $((kiserlet * 20))
+          done
+          echo "::error::a(z) $TAG kiadás öt kísérlet után is előzetes maradt"
           exit 1
 
       - name: A telepítő elkészült (PR-ág)

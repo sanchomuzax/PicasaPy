@@ -1386,6 +1386,48 @@ nem csak pörgőt mutat, hanem a feldolgozott elem képét is.
 | `activitycapture` | `capturemoviepanelpopup` és `canoncapturemoviepanelpopup` |
 | `editpanelactivity` | `editpanel/clip(editpanelactivity)` |
 
+### #6405 - a koordináta a könyvtárnézet vásznához tartozik
+
+**1. Szülő és hely.** A `respack.yt` `thumbui/docbounds` rétege
+(`3235550`) `(0,0)-(800,534)`. A `thumbui/clip(activity)` (`3262712`) az
+`activitycontainer` keretét `(760,5)-(795,33)`-ra teszi. A `thumbui.tre`
+szerint az `activitycontainer` szülője `thumbui/mainuipanel` (`m_offsetRT`);
+ez a `thumbui/basepanel` gyereke. A `panelroot.tre` `panelroot/mainuipanel`
+eleme a fő könyvtárnézet panelje. A koordináta tehát ennek a panelnek a jobb
+felső sarkához tartozik: 5 px felülről és jobbról; nem a bélyegképrács
+origójához és nem a külső ablakkerethez.
+
+**2. Natív bekötés és szülő.** A `CThumbUI` konstruktora `0x005643e0`; a
+fő UI inicializálása `0x00403db6`-nál hívja, majd `0x00403e33`-nál a
+`0x0040bf70` inicializálót. Ennek hívásláncában `0x0040c3df` hívja a
+`0x005733f0`-et, amely `0x00573a2e`-nél a `0x00572820` bekötőfüggvényhez
+jut. A bekötő a pörgő jelzőt (`activity/spinner`) `0x00572bf3`-nál, a megszakító gombot
+`0x00572c39`-nél keresi meg. Külön, közvetlen C++ allokáló hívóhelyet az
+`activitycontainer` erőforrás-elemhez ez a kutatás nem talált: a szülőjét a
+`.tre` fa adja meg, a natív kód pedig a `CThumbUI` könyvtárnézet-fájához
+köti a jelző elemeit.
+
+**3. Arckeresési haladás.** A `CAlbumList` `0x00763150` függvénye használja
+a `CAlbumList::Finding0` (`0x00cb27bc`) és
+`CAlbumList::Findingprogress` (`0x00cb27e4`) üzenetkulcsokat. A szövegek
+címe `0x00cb27a4` (*Scanning for faces...*) és `0x00cb27d4` (*%d%%
+complete*); a `0x00cb2800` címen a *Scanning,* töredék áll. A bináris tehát
+az albumlistában mutatja az arckeresés állapotát és százalékát. A részletes
+számláló és hátralévő idő a `CUnnamedProgress` `0x00749820` rutinjából jön
+(`0x00cb0ef0`: csoportok, `0x00cb0f1c`: arcok, `0x00cb0f44`: vizsgálandó
+arcok, `0x00cb0f70`: hátralévő idő). A csoportosítás üzenete
+`0x0074c200` / `0x00cb12fc`; a PeoplePanel `0x00647df0` rutinjában a
+*Sorting face data...* és *Looking for other people...* szövegek címe
+`0x00ca1100` és `0x00ca11b4`.
+
+**Eltérés és javítás.** A PicasaPy `ActivityBadge` korábban a
+`MainWindowPeripheralLayers` teljes ablakrétegében ült. Most közvetlenül a
+`MainLibraryCanvas` panelben van, 35 x 28 px mérettel, a panel jobb szélétől
+5 px-re és tetejétől 5 px-re. Az Emberek-nézet csak akkor hagy 43 px helyet
+a fejléc jobb szélén, amikor a jelző látható; ez megelőzi az átfedést. A
+láthatóság, a megszakító gomb és a megerősítő párbeszéd meglévő bekötése
+változatlan.
+
 Az `editpanelactivity` **szűkített**: csak `spinner` + `spinnermask`, se
 gomb, se bélyegkép. ⇒ a szerkesztőben a jelző **nem megszakítható**.
 
