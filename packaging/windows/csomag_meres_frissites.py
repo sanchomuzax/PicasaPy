@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import contextlib
+
 import json
 import re
 import shutil
@@ -270,6 +272,7 @@ def frissites(
     munka: Path,
     elvart_verzio: str | None,
     kepernyokep_mappa: Path | None = None,
+    valodi_cel_verzio: str | None = None,
 ) -> int:
     """Teljes, valódi egérkattintásos Windows-frissítési próba (#6383)."""
     if _platform() != "win32":
@@ -286,12 +289,18 @@ def frissites(
     telepitesi_mappa = exe.parent
     if exe.name.casefold() != "picasapy.exe":
         raise SystemExit("frissites: a futtatónak PicasaPy.exe útvonalra kell mutatnia")
-    uj_verzio = _kovetkezo_verzio(elvart_verzio)
-    archive = _keszits_frissitesi_zip(
-        telepitesi_mappa,
-        munka / "release" / "PicasaPy-windows-x64.zip",
-        uj_verzio,
-    )
+    # #6458: a tulajdonos útja: a KORÁBBI kiadás Setup-pal telepítve, a valódi
+    # GitHub-kiadásból frissít. Ilyenkor nincs helyi ál-szerver és saját zip.
+    if valodi_cel_verzio:
+        uj_verzio = valodi_cel_verzio
+        archive = None
+    else:
+        uj_verzio = _kovetkezo_verzio(elvart_verzio)
+        archive = _keszits_frissitesi_zip(
+            telepitesi_mappa,
+            munka / "release" / "PicasaPy-windows-x64.zip",
+            uj_verzio,
+        )
     kepernyokep_mappa = Path(kepernyokep_mappa or munka / "kepernyokepek").resolve()
     diag_mappa = munka / "diagnosztika"
     shutil.rmtree(diag_mappa, ignore_errors=True)
@@ -309,8 +318,13 @@ def frissites(
 
     folyamat = None
     try:
-        with _HelyiKiadasszerver(archive, uj_verzio) as szerver:
-            env["PICASAPY_UPDATE_API"] = szerver.api_url
+        szerver_kornyezet = (
+            contextlib.nullcontext(None) if archive is None
+            else _HelyiKiadasszerver(archive, uj_verzio)
+        )
+        with szerver_kornyezet as szerver:
+            if szerver is not None:
+                env["PICASAPY_UPDATE_API"] = szerver.api_url
             folyamat = subprocess.Popen(
                 [str(exe), str(konyvtar)],
                 env=env,
@@ -319,7 +333,7 @@ def frissites(
             )
             print(
                 f"[frissites] {elvart_verzio} -> {uj_verzio}; "
-                f"helyi API {szerver.api_url}; PID {folyamat.pid}",
+                f"API {szerver.api_url if szerver else 'valódi GitHub'}; PID {folyamat.pid}",
                 flush=True,
             )
             available, _ = _varjon_diagnosztikara(
