@@ -607,6 +607,7 @@ class UpdateController(QObject):
                 "updateDialogDownloadButton",
                 "updateDialogRestartButton",
                 "aboutDialog",
+                "initialScanContinue",
             }
             objects: list[dict[str, object]] = []
             for window in app.allWindows():

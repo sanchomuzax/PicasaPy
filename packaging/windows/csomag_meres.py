@@ -1037,6 +1037,28 @@ def _stabil_kattintas(diag_mappa: Path, pid: int, kivalaszto, leiras: str) -> di
     raise TimeoutError(f"30 másodpercen belül nem állt meg a felület: {leiras}")
 
 
+def _elso_inditasi_kerdes_lezarasa(diag_mappa: Path, pid: int, varakozas_mp: float = 20.0) -> bool:
+    """Az újraindított programban feljövő első keresési kérdés lezárása (#6383).
+
+    A segéd a frissített programot könyvtár-paraméter nélkül indítja, ezért
+    az az első indítás kérdésével nyílik („ready to search for pictures”).
+    Ez modális, eltakarja a menüt; a próba úgy zárja le, ahogy a felhasználó:
+    a Continue gombbal. Ha 20 s alatt nem jelenik meg, nincs teendő."""
+    hatarido = time.monotonic() + varakozas_mp
+    while time.monotonic() < hatarido:
+        sajat = [s for s in _diagnosztika(diag_mappa) if s.get("pid") == pid]
+        if sajat and _lathato_koordinataval(_objektum(sajat[-1], "initialScanContinue")):
+            _stabil_kattintas(
+                diag_mappa,
+                pid,
+                lambda s: _objektum(s, "initialScanContinue"),
+                "első indítás Continue gombja",
+            )
+            return True
+        _szunet(0.2)
+    return False
+
+
 def _kepernyokep_mentese(cel: Path, pid: int) -> None:
     from PIL import ImageGrab
 
@@ -1277,6 +1299,7 @@ def frissites(
             _kepernyokep_mentese(
                 kepernyokep_mappa / "06-uj-verzio-elindult.png", uj_pid
             )
+            _elso_inditasi_kerdes_lezarasa(diag_mappa, uj_pid)
 
             help_state, _ = _varjon_diagnosztikara(
                 diag_mappa,

@@ -143,3 +143,37 @@ def test_a_mozgo_gombra_csak_megallas_utan_kattint(monkeypatch, tmp_path):
 
     assert kattintasok == [608]
     assert obj["rect"]["x"] == 608
+
+
+def test_az_ujrainditott_program_elso_kerdeset_continue_zarja(monkeypatch, tmp_path):
+    """#6383: a frissített program könyvtár-paraméter nélkül indul, ezért az
+    első indítás modális kérdése eltakarja a menüt; a próba lezárja."""
+    gomb = {
+        "name": "initialScanContinue",
+        "visible": True,
+        "rect": {"x": 730, "y": 463, "width": 78, "height": 24},
+    }
+    most = 1000.0
+    pillanatok = [{"pid": 9, "at": most - d, "objects": [gomb]} for d in (0.5, 0.3, 0.1)]
+    monkeypatch.setattr(csomag_meres, "_diagnosztika", lambda _m: pillanatok)
+    monkeypatch.setattr(csomag_meres, "_falido", lambda: most)
+    monkeypatch.setattr(csomag_meres, "_szunet", lambda _mp: None)
+    kattintasok = []
+    monkeypatch.setattr(
+        csomag_meres, "_valodi_eger_kattintas", lambda obj, pid: kattintasok.append(obj["name"])
+    )
+
+    assert csomag_meres._elso_inditasi_kerdes_lezarasa(tmp_path, 9) is True
+    assert kattintasok == ["initialScanContinue"]
+
+
+def test_kerdes_nelkul_nincs_kattintas(monkeypatch, tmp_path):
+    monkeypatch.setattr(csomag_meres, "_diagnosztika", lambda _m: [])
+    monkeypatch.setattr(csomag_meres, "_szunet", lambda _mp: None)
+    kattintasok = []
+    monkeypatch.setattr(
+        csomag_meres, "_valodi_eger_kattintas", lambda obj, pid: kattintasok.append(obj)
+    )
+
+    assert csomag_meres._elso_inditasi_kerdes_lezarasa(tmp_path, 9, varakozas_mp=0.05) is False
+    assert kattintasok == []
