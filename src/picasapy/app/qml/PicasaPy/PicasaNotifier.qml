@@ -94,7 +94,8 @@ Window {
     //: QQuickScreenInfo képernyő-koordinátái adják a helyi tartalékértéket.
     readonly property var _munkaterulet: {
         if (_pozicioKepernyoje
-                && typeof notifierScreenGeometry !== "undefined") {
+                && typeof notifierScreenGeometry !== "undefined"
+                && notifierScreenGeometry) {
             const elerheto = notifierScreenGeometry.availableGeometryForName(
                 _pozicioKepernyoje.name)
             if (elerheto && elerheto.width > 0 && elerheto.height > 0)

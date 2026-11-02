@@ -157,9 +157,7 @@ def test_az_inditas_a_kepernyosegedet_a_qml_kornyezetbe_regisztralja() -> None:
 def test_a_valodi_foablak_kepernyojen_renderel_es_megtartja_az_utolsot(
     screen_name: str, height_delta: int
 ) -> None:
-    with tempfile.TemporaryDirectory(
-        prefix="notifier-screen-6435-", dir=_ROOT / ".tmp"
-    ) as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="notifier-screen-6435-") as temp_dir:
         config_path = Path(temp_dir) / "ket-kepernyo.json"
         config_path.write_text(
             json.dumps(
