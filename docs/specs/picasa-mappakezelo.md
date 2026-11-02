@@ -1835,7 +1835,7 @@ sem a fában, sem a kizárási listában **nem találtunk vizsgálatot**.
   név/viselkedés feszültség pedig **szerkesztői összevonás** (`/OPT:ICF`),
   nem szemantikai rejtély.
 
-### 13.9 #6391 — P: gyökérsor, állapot és „Eltávolítás”
+### 13.9 #6391 - P: gyökérsor, állapot és „Eltávolítás”
 
 #### Eredeti Picasa
 
@@ -1843,7 +1843,7 @@ sem a fában, sem a kizárási listában **nem találtunk vizsgálatot**.
 |---|---|---|
 | gyökér-meghajtók | A felsoroló `C:`-től `Z:`-ig lép; a Mappakezelő hívója `3` (fix), `4` (távoli), `2` (cserélhető) típusra hívja. `5`-ös CD-ROM-hívás nincs e három Mappakezelő-hívás között. | `0x006dabf0`, `0x007c9e70`, import/xref |
 | gyökérnév | Az enumerátor `X:\` útvonalat állít elő; a korábbi élő képen `P:\` látszik. UNC-megosztásnevet az enumerátor nem fűz az útvonalhoz. | `0x006dac42` körüli `:\` konstans; 2026-08-20-i képernyőkép |
-| hálózati ellenőrzés | A távoli ág `checkFilesystem=0`, tehát nincs `GetVolumeInformationA`/FAT-fájlrendszer-szűrés; a maszkbit- és `GetDriveTypeA == 4` kapu megmarad. | `0x007c9fee`; `0x006dace3`–`0x006dacf0` |
+| hálózati ellenőrzés | A távoli ág `checkFilesystem=0`, tehát nincs `GetVolumeInformationA`/FAT-fájlrendszer-szűrés; a maszkbit- és `GetDriveTypeA == 4` kapu megmarad. | `0x007c9fee`; `0x006dace3`-`0x006dacf0` |
 | P: képernyőn | A korábbi élő Picasa-képen a `P:\` sor, a hálózati meghajtóikon piros X-overlaye, a piros állapotjel és az összecsukott expander látható. A kép nem azonosít UNC-célt; tényleges kinyitási kísérletet nem tartalmaz. | `mappakezelo-nagyitott.png`, a spec forrásjegyzéke szerint tulajdonosi Picasa 3.9.141-kép |
 | állapot forrása | A rádióállapot útvonalanként frissül. A beolvasási állapot a `scanlist.txt`-hez, a folyamatos figyelés a `watchedfolders.txt`-hez tartozó könyvtárlistákból jön; `frexcludefolders.txt` az arcfelismerés külön állapota. E körben nem találtam radioállapotot olvasó registry-útvonalat. | `0x007c60d0` → `0x007c5c40`; fájlíró/olvasó: `0x004f61c0`/`0x004f6380`, `0x004f5960`/`0x004f5a30` |
 | kiinduló rádió | A `foldermgr.tre` kezdeti `scan_once` benyomása nem jelent minden meghajtóra érvényes alapállapotot: sor kijelölésekor a `0x007c60d0` útvonalanként újraszámol. A P: soron a régi képen a piros állapotjel látszik; azt, hogy ezt a konkrét listafájlban mely bejegyzés okozta, a kép nem rögzíti. | `foldermgr.tre` `setpressed=1`; `0x007c60d0`; 2026-08-20-i képernyőkép |
@@ -1851,13 +1851,13 @@ sem a fában, sem a kizárási listában **nem találtunk vizsgálatot**.
 
 #### PicasaPy jelenlegi forrása
 
-`folder_tree_controller.py` a `GetLogicalDrives` összes A:–Z: bitjét megtartja,
+`folder_tree_controller.py` a `GetLogicalDrives` összes A:-Z: bitjét megtartja,
 és `GetDriveTypeW` eredményét csak a megosztásnév-lekéréshez használja.
 Sikeres `WNetGetConnectionW` esetén a felirat `P: (\\gép\megosztás)`,
 hibánál a `P:` betűjel akkor is bent marad. A gyökereket `hasChildren=True`
 értékkel adja át; sikertelen `scandir` üres gyereklistát eredményez. A
 `FolderManagerDialog.stateFor` ismeretlen útvonalra `none`-t ad, amit a
-`FolderStateBadge` piros áthúzott **állapotjelként** rajzol — ez a kód nem
+`FolderStateBadge` piros áthúzott **állapotjelként** rajzol - ez a kód nem
 méri a hálózati elérhetőséget. Az OK utáni `removeFolder` PicasaPy
 könyvtár-/indexállapotot módosít; a Windows meghajtógyökerek modelljét nem
 szűri ki.
@@ -1866,13 +1866,13 @@ szűri ki.
 
 | Eredeti | PicasaPy jelenleg | teendő |
 |---|---|---|
-| A:–Z: között csak a Mappakezelő által kért `DRIVE_FIXED=3`, `DRIVE_REMOTE=4`, `DRIVE_REMOVABLE=2` típusok kerülnek a felsorolásba; `X:\` a gyökérútvonal. | Minden `GetLogicalDrives` bit bekerül; UNC-feliratot is próbál hozzáadni. | A Windows-gyökérépítő szűrjön a három igazolt típusra, a gyökér felirata legyen `X:\`; ne kerüljön rá nem igazolt UNC-kiegészítés. |
+| A:-Z: között csak a Mappakezelő által kért `DRIVE_FIXED=3`, `DRIVE_REMOTE=4`, `DRIVE_REMOVABLE=2` típusok kerülnek a felsorolásba; `X:\` a gyökérútvonal. | Minden `GetLogicalDrives` bit bekerül; UNC-feliratot is próbál hozzáadni. | A Windows-gyökérépítő szűrjön a három igazolt típusra, a gyökér felirata legyen `X:\`; ne kerüljön rá nem igazolt UNC-kiegészítés. |
 | Az „Eltávolítás a Picasából” a Picasa-nyilvántartást módosítja; nem a meghajtó-hozzárendelést, ezért az OS által továbbra is felsorolt gyökérsort nem törli. | A mentés a PicasaPy index/figyelt állapotát módosítja; a drive root külön modellből jön. | A meghajtó sorát ne távolítsuk el a fából. A piros „Eltávolítás” állapotjel maradjon elkülönítve a Windows ikon elérhetőségi overlayétől. |
 | A képernyőkép P:-nél hálózati ikon-overlayt és kinyitható jelzést mutat, de nem igazolja a pontos UNC-hiba esetén a sikeres kinyitást. | A gyökér minden esetben kap kinyitónyilat; sikertelen könyvtárlista üres eredménnyé válik. | Ne állítsunk be új „hiba” állapotot a piros Picasa-állapotjelből. A leválasztott hálózati gyökér tényleges megjelenését, ikonját és gyermeklekérését Colab/Wine vagy eredeti Windows mérés döntse el, mielőtt további viselkedés kerül a kódba. |
 
 **Kész, ha**
 
-1. Windows alatt az enumerált gyökerek típusa a binárisból igazolt `3`/`4`/`2` halmazra korlátozódik, a C:–Z: ciklussal.
+1. Windows alatt az enumerált gyökerek típusa a binárisból igazolt `3`/`4`/`2` halmazra korlátozódik, a C:-Z: ciklussal.
 2. A megjelenített meghajtó-gyökér `X:\`; nem jelenik meg nem igazolt UNC-szöveg.
 3. Az „Eltávolítás” nem törli az OS által továbbra is enumerált gyökérsort, és nem próbálja leválasztani a meghajtót.
 4. A piros Picasa-állapotjel nem szolgál hálózati elérhetetlenség-jelzőként.
