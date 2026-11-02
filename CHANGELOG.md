@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.24] - 2026-11-02
+
+- Az állapotsáv kiírja, min dolgozik a program; a Súgó menüből kapcsolható (#6440).
+- A jobb felső sarok belépve az eredetihez hasonlóan a fiók nevét, a Google Fotók és a Kijelentkezés hivatkozást mutatja (#6446).
+
 ## [1.0.23] - 2026-11-02
 
 - A windowsos QML-előfordítás összesítő sora nem vész el többé, és a gombnyomás képi próbája nem függ a platform alapstílusától (#6448).
