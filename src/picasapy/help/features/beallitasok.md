@@ -74,11 +74,14 @@ böngészőben.
 ### Frissítések keresése
 
 A **Frissítések keresése automatikusan** jelölő alapból be van kapcsolva.
-Bekapcsolva a PicasaPy indulás után körülbelül 30 másodperccel, naponta
-legfeljebb egyszer a PicasaPy GitHub-kiadáslistájához
-(https://github.com/sanchomuzax/PicasaPy/releases/) fordul, hogy talál-e újabb
-verziót. Hálózati hiba vagy offline állapot
-esetén csendben folytatja a működést. A Súgó ▸ **Frissítések keresése…**
+Bekapcsolva a PicasaPy **minden indításkor**, körülbelül 30 másodperccel
+a főablak megjelenése után, majd futás közben **6 óránként** a PicasaPy
+GitHub-kiadáslistájához (https://github.com/sanchomuzax/PicasaPy/releases/)
+fordul, hogy talál-e újabb verziót. Így a napközben kiadott verziót is
+hamar észreveszi. Ugyanarról a verzióról csak egyszer kapsz értesítést.
+Hálózati hiba vagy offline állapot esetén csendben folytatja a működést.
+A windowsos programnál csak olyan verziót jelez, amelynek a letölthető
+csomagja már fent van a kiadás mellett. A Súgó ▸ **Frissítések keresése…**
 paranccsal bármikor kézzel is kérhetsz ellenőrzést; ilyenkor azt is kiírja,
 ha nincs újabb verzió.
 
@@ -88,14 +91,17 @@ felugró ablakot magától. Ha éppen szerkesztesz, diavetítés, exportálás v
 feltöltés fut, az értesítés megvárja, amíg a program nyugalmi állapotba
 kerül. A címkére kattintva elolvashatod a kiadás rövid leírását. A
 **Később** bezárja az ablakot, és ugyanaz az értesítés magától nem nyílik
-meg újra; **Ezt a verziót kihagyom** után a program többé nem ajánlja fel
-azt a kiadást.
+meg újra. Verziót kihagyni nem lehet: egy újabb kiadást a program mindig
+felajánl, a régebben kihagyottat is.
 
 Windowsos PyInstaller-programnál a **Frissítés most** a háttérben tölti le
-a csomagot, miközben tovább használhatod a PicasaPy-t. Telepítés előtt
+a csomagot, miközben tovább használhatod a PicasaPy-t. A gomb helyén
+kattintás után azonnal folyamatjelző sáv jelenik meg, tehát látod, hogy a
+letöltés elindult. Telepítés előtt
 ellenőrzi a kiadáshoz közzétett `SHA256SUMS` ujjlenyomatot. Ha az ellenőrzés
 nem sikerül, nem cserél fájlt. Sikeres letöltés után választhatsz az
-azonnali újraindítás és a kilépéskori telepítés között. Az azonnali
+azonnali újraindítás (**Újraindítás most**) és a kilépéskori telepítés
+(**Telepítés kilépéskor**) között. Az azonnali
 újraindítás megvárja a futó háttérmunkát; a csere után az előző verzió
 megmarad, és ha az új példány nem indul el, a program visszaállítja.
 
@@ -370,7 +376,14 @@ indításnál újra be kell állítani.
 ## A PicasaPy névjegye
 
 A **Súgó ▸ A PicasaPy névjegye** megmutatja a program pontos verzióját.
-Ezt érdemes megadni, ha hibát jelentesz.
+Ezt érdemes megadni, ha hibát jelentesz. A **Hely:** sor azt mutatja,
+melyik mappából fut a program.
+
+Az ablak alján három kattintható hivatkozás áll: **Honlap**,
+**Adatvédelmi tájékoztató** és **Felhasználási feltételek**. Ezek a
+PicasaPy saját oldalait nyitják meg a böngésződben, ezért internet kell
+hozzájuk. (A **Súgó** menü hasonló nevű tételei az eredeti Picasa
+megszűnt oldalaira mutattak, azok nem működnek.)
 
 ## Teljesítmény-monitor
 
