@@ -280,6 +280,8 @@ def _bevar(futas: dict) -> dict:
     indulo_kep_hiba = None
     induloablak_latszott = False
     splash_eltunt = False
+    probak: list[tuple[int, str]] = []
+    elso_kep = None
     if futas["indulo_kep_kotelezo"]:
         hatarido = time.monotonic() + _IDOKORLAT_MP
         while True:
@@ -300,13 +302,22 @@ def _bevar(futas: dict) -> dict:
                     )
                     if splash is not None:
                         induloablak_latszott = True
-                        indulo_kep, indulo_kep_info, indulo_kep_hiba = induloablak_kepe(splash)
+                        kep, indulo_kep_info, indulo_kep_hiba = induloablak_kepe(splash)
+                        eltelt_ms = round((time.perf_counter() - futas["kezdet"]) * 1000)
+                        probak.append((eltelt_ms, indulo_kep_hiba or "rendben"))
+                        if elso_kep is None:
+                            elso_kep = kep
+                        if indulo_kep_info is not None:
+                            indulo_kep = kep
                     elif induloablak_latszott:
                         splash_eltunt = True
                 if time.monotonic() >= hatarido:
                     folyamat.kill()
                     kimenet, _ = folyamat.communicate()
                     break
+        if indulo_kep_info is None:
+            # a hibás esetben az ELSŐ kép mutatja, mit látott a mérő a splash helyén
+            indulo_kep = elso_kep
     else:
         try:
             kimenet, _ = folyamat.communicate(timeout=_IDOKORLAT_MP)
@@ -326,6 +337,7 @@ def _bevar(futas: dict) -> dict:
         "indulo_kep": indulo_kep,
         "indulo_kep_info": indulo_kep_info,
         "indulo_kep_hiba": indulo_kep_hiba,
+        "indulo_kep_probak": probak if futas["indulo_kep_kotelezo"] else [],
         "valodi_ablak": futas.get("valodi_ablak", False),
     }
 
@@ -391,7 +403,19 @@ def _indulo_jelentes(eredmeny: dict) -> list[str]:
             "  renderelt indulókép ellenőrzése sikertelen: "
             + str(eredmeny.get("indulo_kep_hiba") or "nem készült képernyőkép")
         )
+    if eredmeny.get("indulo_kep_probak"):
+        reszletek.append(indulokep_probak_sora(eredmeny["indulo_kep_probak"]))
     return reszletek
+
+
+def indulokep_probak_sora(probak: list[tuple[int, str]]) -> str:
+    """A splash-képpróbák rövid időrendje (#6426)."""
+    elso_ms, elso = probak[0]
+    utolso_ms, utolso = probak[-1]
+    return (
+        f"  indulókép-próbák: {len(probak)}; első {elso_ms} ms: {elso}; "
+        f"utolsó {utolso_ms} ms: {utolso}"
+    )
 
 def induloablak_ms(eredmeny: dict) -> float | None:
     """Az indulóablak naplójelzésének ideje a folyamat indításától, ms-ban."""

@@ -337,3 +337,24 @@ def test_a_splash_kepe_a_reteges_ablakot_is_rogziti():
         kapcsolok = {k.arg: k.value for k in hivas.keywords}
         assert "include_layered_windows" in kapcsolok
         assert getattr(kapcsolok["include_layered_windows"], "value", None) is True
+
+
+def test_a_splash_probak_osszegzese_es_az_elso_kep_megmarad(tmp_path, monkeypatch):
+    """A CI csak az utolsó (a főablak alatti) képet mutatta; a döntéshez az
+    első kép és a próbák időrendje kell (#6426)."""
+    monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _g: [])
+    ablakok = [{7: {"cim": "PicasaPy Startup"}}] * 3
+    monkeypatch.setattr(ido_modul, "_ablakikonok",
+                        lambda _pid: ablakok.pop(0) if ablakok else {}, raising=False)
+    kepek = iter([b"elso", b"masodik", b"harmadik"])
+    monkeypatch.setattr(
+        ido_modul, "_induloablak_kepe",
+        lambda _h: (next(kepek), None, "a renderelt indulóképen nincs fehér kártya logóval"),
+        raising=False,
+    )
+    eredmeny = ido_modul._bevar(_splash_futas(tmp_path, _LassanKilepoFolyamat(10)))
+    assert eredmeny["indulo_kep"] == b"elso"
+    assert len(eredmeny["indulo_kep_probak"]) == 3
+    osszegzes = ido_modul.indulokep_probak_sora(eredmeny["indulo_kep_probak"])
+    assert osszegzes.startswith("  indulókép-próbák: 3")
+    assert "első" in osszegzes and "utolsó" in osszegzes
