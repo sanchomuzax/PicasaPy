@@ -10129,6 +10129,11 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
             <translation>Inte tillgänglig</translation>
         </message>
         <message>
+            <source>Check Windows camera privacy settings and close other apps that may be using the camera.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kontrollera sekretessinställningarna för kameran i Windows och stäng andra appar som kan använda kameran.</translation>
+        </message>
+        <message>
             <source>Snapshot saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ögonblicksbild sparad</translation>

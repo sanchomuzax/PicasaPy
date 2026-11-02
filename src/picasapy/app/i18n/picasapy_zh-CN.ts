@@ -10114,6 +10114,11 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
             <translation>不可用</translation>
         </message>
         <message>
+            <source>Check Windows camera privacy settings and close other apps that may be using the camera.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>请检查 Windows 相机隐私设置，并关闭可能正在使用相机的其他应用。</translation>
+        </message>
+        <message>
             <source>Snapshot saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>快照已保存</translation>

@@ -10114,6 +10114,11 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
             <translation>موجود نیست</translation>
         </message>
         <message>
+            <source>Check Windows camera privacy settings and close other apps that may be using the camera.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تنظیمات حریم خصوصی دوربین Windows را بررسی کنید و برنامه‌های دیگری را که ممکن است از دوربین استفاده کنند ببندید.</translation>
+        </message>
+        <message>
             <source>Snapshot saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>عکس فوری ذخیره شد</translation>

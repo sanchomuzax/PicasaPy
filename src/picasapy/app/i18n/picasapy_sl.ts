@@ -10159,6 +10159,11 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
             <translation>Ni na voljo</translation>
         </message>
         <message>
+            <source>Check Windows camera privacy settings and close other apps that may be using the camera.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Preverite nastavitve zasebnosti kamere v sistemu Windows in zaprite druge aplikacije, ki morda uporabljajo kamero.</translation>
+        </message>
+        <message>
             <source>Snapshot saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Posnetek je shranjen</translation>

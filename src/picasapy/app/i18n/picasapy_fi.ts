@@ -10129,6 +10129,11 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
             <translation>Ei käytettävissä</translation>
         </message>
         <message>
+            <source>Check Windows camera privacy settings and close other apps that may be using the camera.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tarkista Windowsin kameran tietosuoja-asetukset ja sulje muut sovellukset, jotka saattavat käyttää kameraa.</translation>
+        </message>
+        <message>
             <source>Snapshot saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Tilannevedos tallennettu</translation>

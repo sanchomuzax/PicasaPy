@@ -10144,6 +10144,11 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
             <translation>Negalima</translation>
         </message>
         <message>
+            <source>Check Windows camera privacy settings and close other apps that may be using the camera.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Patikrinkite „Windows“ kameros privatumo parametrus ir uždarykite kitas programas, kurios gali naudoti kamerą.</translation>
+        </message>
+        <message>
             <source>Snapshot saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Momentinė nuotrauka išsaugota</translation>

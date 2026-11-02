@@ -432,6 +432,7 @@ Popup {
                     }
                 }
                 Text {
+                    id: captureMovieAvailabilityText
                     objectName: "captureMovieAvailabilityText"
                     anchors.centerIn: parent
                     visible: !panel.settingsPage
@@ -441,6 +442,21 @@ Popup {
                           : (panel.statusMessage || qsTr("Connecting to camera"))
                     color: Theme.ink
                     font.pixelSize: Theme.fontSize
+                }
+                Text {
+                    objectName: "captureMovieCameraHelpText"
+                    anchors.top: captureMovieAvailabilityText.bottom
+                    anchors.topMargin: 8
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: Math.min(parent.width - 32, 480)
+                    visible: Qt.platform.os === "windows"
+                             && !panel.settingsPage
+                             && !panel.cameraAvailable
+                    text: qsTr("Check Windows camera privacy settings and close other apps that may be using the camera.")
+                    color: Theme.ink
+                    font.pixelSize: Theme.fontSize - 1
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.Wrap
                 }
                 Rectangle {
                     id: settingsPanel
