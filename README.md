@@ -7,9 +7,9 @@
 <p align="center"><strong>Miért csinálom ezt? Olvasd el a Substack-en: <a href="https://substack.com/@sanchomuzax/p-211538466">https://substack.com/@sanchomuzax/p-211538466</a></strong></p>
 
 <p align="center">
-  <a href="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml"><img src="https://github.com/sanchomuzax/PicasaPy/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/JonasNowak/PicasaPy-for-mac/actions/workflows/ci.yml"><img src="https://github.com/JonasNowak/PicasaPy-for-mac/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License: GPL-3.0"></a>
-  <a href="https://github.com/sanchomuzax/PicasaPy/releases"><img src="https://img.shields.io/github/v/release/sanchomuzax/PicasaPy?color=orange&label=version" alt="Latest release"></a>
+  <a href="https://github.com/JonasNowak/PicasaPy-for-mac/releases"><img src="https://img.shields.io/github/v/release/JonasNowak/PicasaPy-for-mac?color=orange&label=version" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+">
 </p>
 
@@ -44,16 +44,16 @@ This is a fork of [PicasaPy](https://github.com/sanchomuzax/PicasaPy) specifical
 
 ## Installation and running
 
-- **macOS (Apple Silicon — M1/M2/M3/M4):** download the `PicasaPy-…-macOS-arm64.dmg` disk image from [Releases](https://github.com/JonasNowak/PicasaPy/releases), open it, and drag `PicasaPy.app` to `Applications`. Python is not required.
-- **macOS (Universal — Apple Silicon & Intel):** download the `PicasaPy-…-macOS-universal.dmg` disk image from [Releases](https://github.com/JonasNowak/PicasaPy/releases), open it, and drag `PicasaPy.app` to `Applications`. Python is not required.
+- **macOS (Apple Silicon — M1/M2/M3/M4):** download the `PicasaPy-…-macOS-arm64.dmg` disk image from [Releases](https://github.com/JonasNowak/PicasaPy-for-mac/releases), open it, and drag `PicasaPy.app` to `Applications`. Python is not required.
+- **macOS (Universal — Apple Silicon & Intel):** download the `PicasaPy-…-macOS-universal.dmg` disk image from [Releases](https://github.com/JonasNowak/PicasaPy-for-mac/releases), open it, and drag `PicasaPy.app` to `Applications`. Python is not required.
 
 ### Run from source on macOS
 
 Install Git and Python 3.12 or newer, then run:
 
 ```bash
-git clone https://github.com/JonasNowak/PicasaPy.git
-cd PicasaPy
+git clone https://github.com/JonasNowak/PicasaPy-for-mac.git
+cd PicasaPy-for-mac
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install .
@@ -93,16 +93,16 @@ A PicasaPy független projekt: nem kapcsolódik a Google-höz, és a Google nem 
 
 ## Telepítés és futtatás
 
-- **macOS (Apple Silicon — M1/M2/M3/M4):** töltsd le a `PicasaPy-…-macOS-arm64.dmg` lemezképet a [Releases](https://github.com/JonasNowak/PicasaPy/releases) oldalról, nyisd meg, és húzd a `PicasaPy.app` alkalmazást az `Applications` mappába. Pythont nem kell külön telepítened.
-- **macOS (Universal — Apple Silicon és Intel):** töltsd le a `PicasaPy-…-macOS-universal.dmg` lemezképet a [Releases](https://github.com/JonasNowak/PicasaPy/releases) oldalról, nyisd meg, és húzd a `PicasaPy.app` alkalmazást az `Applications` mappába. Pythont nem kell külön telepítened.
+- **macOS (Apple Silicon — M1/M2/M3/M4):** töltsd le a `PicasaPy-…-macOS-arm64.dmg` lemezképet a [Releases](https://github.com/JonasNowak/PicasaPy-for-mac/releases) oldalról, nyisd meg, és húzd a `PicasaPy.app` alkalmazást az `Applications` mappába. Pythont nem kell külön telepítened.
+- **macOS (Universal — Apple Silicon és Intel):** töltsd le a `PicasaPy-…-macOS-universal.dmg` lemezképet a [Releases](https://github.com/JonasNowak/PicasaPy-for-mac/releases) oldalról, nyisd meg, és húzd a `PicasaPy.app` alkalmazást az `Applications` mappába. Pythont nem kell külön telepítened.
 
 ### Futtatás forrásból macOS-en
 
 Telepítsd a Gitet és a Python 3.12-es vagy újabb változatát, majd futtasd:
 
 ```bash
-git clone https://github.com/JonasNowak/PicasaPy.git
-cd PicasaPy
+git clone https://github.com/JonasNowak/PicasaPy-for-mac.git
+cd PicasaPy-for-mac
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install .

@@ -235,6 +235,7 @@ jobs:
     needs: build-and-upload
     if: >-
       always()
+      && github.repository == 'sanchomuzax/PicasaPy'
       && (github.event_name == 'pull_request'
           || (needs.build-and-upload.result == 'success'
               && (github.event_name != 'workflow_run'
@@ -831,13 +832,17 @@ jobs:
           git fetch --tags --force origin
           if [ "${{ github.event_name }}" = "workflow_run" ]; then
             TAG_SHA="$(git rev-parse "refs/tags/$TAG^{commit}")"
-            if [ "$TAG_SHA" != "${{ github.event.workflow_run.head_sha }}" ]; then
-              echo "::notice title=Nincs új kiadás::A legfrissebb kiadás ($TAG) a $TAG_SHA commiton készült; ez a Release-futás (${{ github.event.workflow_run.head_sha }}) nem hozott új kiadást — nincs mit csomagolni."
+            DMG_COUNT="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '[.assets[] | select(.name | endswith(".dmg"))] | length' 2>/dev/null || echo 0)"
+            if [ "$TAG_SHA" != "${{ github.event.workflow_run.head_sha }}" ] && [ "${DMG_COUNT:-0}" -ge 2 ]; then
+              echo "::notice title=Nincs új kiadás::A legfrissebb kiadás ($TAG) a $TAG_SHA commiton készült, és a macOS DMG csomagok már fent vannak — nincs mit csomagolni."
               echo "skip=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
           fi
           git checkout --detach "refs/tags/$TAG"
+          if [ ! -f packaging/macos/build_macos.sh ]; then
+            git checkout "${{ github.sha }}" -- packaging/macos src/picasapy/app/assets/icon.icns
+          fi
           # Ha címke-push indította a futást és a GitHub Release még nem létezik, létrehozzuk
           if [ "${{ github.event_name }}" = "push" ]; then
             python3 scripts/ensure_release.py \
