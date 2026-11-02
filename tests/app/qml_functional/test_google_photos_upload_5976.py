@@ -149,6 +149,19 @@ def test_zold_gomb_valodi_kattintasa_a_talcat_sorrendben_tolti_fel(
     )
     assert dialog_bal_felso.x() >= 0, "a párbeszédablak bal széle kilóg"
     assert dialog_jobb <= tartalom.width(), "a párbeszédablak jobb széle kilóg"
+    # #6422: a referencia szerint a gomb FÖLÖTT nyílik, nem a főablak sarkában
+    gomb = _gyerek(window, "trayUploadButton", QQuickItem)
+    gomb_bal_felso = gomb.mapToItem(tartalom, QPointF(0, 0))
+    assert dialog_also <= gomb_bal_felso.y(), (
+        f"a párbeszédablak a gomb fölött nyíljon: {dialog_also=} {gomb_bal_felso.y()=}"
+    )
+    assert gomb_bal_felso.y() - dialog_also <= 16, (
+        f"a párbeszédablak közvetlenül a gomb fölött legyen: {dialog_also=} {gomb_bal_felso.y()=}"
+    )
+    gomb_kozep = gomb_bal_felso.x() + gomb.width() / 2
+    assert dialog_bal_felso.x() <= gomb_kozep <= dialog_jobb, (
+        "a párbeszédablak vízszintesen a gomb fölött legyen"
+    )
 
     zaras = _gyerek(window, "googlePhotosUploadCancelButton", QQuickItem)
     assert zaras.isVisible(), "a befejezett feltöltés Bezárás gombja látszódjon"
