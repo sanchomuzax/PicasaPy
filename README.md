@@ -31,6 +31,8 @@ PicasaPy is an open-source photo manager and editor built with Python, PySide6, 
 
 PicasaPy is an independent project. It is not affiliated with, endorsed by, or sponsored by Google; Picasa is a trademark of Google LLC.
 
+This is a fork of [PicasaPy](https://github.com/sanchomuzax/PicasaPy) specifically for mac, all credit goes to the original creators.
+
 ## Features
 
 - **Library management and browsing:** scan and watch folders, browse albums and collections, search and filter photos, import from folders or removable devices, organize files, and manage stars, captions, and tags.
