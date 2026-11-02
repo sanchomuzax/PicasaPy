@@ -34,6 +34,10 @@ def main() -> int:
         if early.splash is not None:
             early.splash.close()
         raise
+    finally:
+        hang_traceback = getattr(early, "hang_traceback", None)
+        if hang_traceback is not None:
+            hang_traceback.cancel()
 
 
 if __name__ == "__main__":

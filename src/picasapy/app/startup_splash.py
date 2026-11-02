@@ -12,21 +12,39 @@ from PySide6.QtCore import QPoint, QRect, QSize, Qt, QSettings
 from PySide6.QtGui import (
     QColor,
     QFont,
+    QFontDatabase,
+    QFontMetrics,
     QGuiApplication,
     QPainter,
     QPixmap,
     QRasterWindow,
+    QSurfaceFormat,
 )
 
 from picasapy import __version__
-from .startup_diagnostics import StartupProgressLog
+from .startup_diagnostics import (
+    StartupHangTraceback,
+    StartupProgressLog,
+    StartupRunLog,
+)
 
 
 _NOSPLASH = "/nosplash"
 _ONELLENORZES = "--onellenorzes"
 _KEPERNYOVEDO = "--screensaver"
-_SPLASH_MERET = QSize(420, 248)
-_LOGO_MAGASSAG = 72
+_TARTALOM_MERET = QSize(640, 235)
+_ARNYEKSAV = 14
+_SPLASH_MERET = QSize(
+    _TARTALOM_MERET.width() + 2 * _ARNYEKSAV,
+    _TARTALOM_MERET.height() + 2 * _ARNYEKSAV,
+)
+_EMBLEMA_HELYE = QRect(41, 57, 123, 123)
+_SZOJEL_HELYE = QRect(182, 93, 458, 52)
+_SZOJEL_SZIN = QColor("#4C5B5E")
+_SZOJEL_BETUCSALAD = "Open Sans"
+_SZOJEL_BETUMERET = 53
+_SZOJEL = "PicasaPy"
+_FONT_AZONOSITO: int | None = None
 
 
 @dataclass
@@ -38,6 +56,8 @@ class EarlyStartup:
     splash: "IndulasAblak | None"
     qml_splash_enabled: bool
     progress_log: StartupProgressLog
+    run_log: StartupRunLog | None
+    hang_traceback: StartupHangTraceback | None
 
 
 _EARLY_STARTUP: EarlyStartup | None = None
@@ -110,68 +130,74 @@ def _logo_pixmap() -> QPixmap:
 
 
 def _create_splash_pixmap(version: str, *, dark: bool = False) -> QPixmap:
-    """A meglévő QML-splash statikus, QML nélküli raszteres párja."""
-    canvas = QColor("#232323" if dark else "#eaeaea")
-    panel = QColor("#2e2e2e" if dark else "#ffffff")
-    topbar = QColor("#303030" if dark else "#e2e2e2")
-    border = QColor("#4a4a4a" if dark else "#cdcdcd")
-    ink = QColor("#ececea" if dark else "#1c1b19")
-    subdued = QColor("#b0aca4" if dark else "#5a5750")
-    bar = QColor("#3c6382" if dark else "#568fb7")
-
+    """A Picasa elrendezésű, témafüggetlen, QML nélküli indulókép."""
     pixmap = QPixmap(_SPLASH_MERET)
-    pixmap.fill(canvas)
+    pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    painter.setPen(border)
-    painter.setBrush(panel)
-    painter.drawRoundedRect(QRect(0, 0, pixmap.width() - 1, pixmap.height() - 1), 6, 6)
-
-    painter.setPen(Qt.PenStyle.NoPen)
-    painter.setBrush(topbar)
-    painter.drawRoundedRect(QRect(1, 1, pixmap.width() - 2, 34), 5, 5)
-    painter.fillRect(QRect(1, 28, pixmap.width() - 2, 7), topbar)
-
-    title_font = QFont()
-    title_font.setBold(True)
-    painter.setFont(title_font)
-    painter.setPen(ink)
-    painter.drawText(QRect(8, 1, pixmap.width() - 16, 33), Qt.AlignmentFlag.AlignCenter, "PicasaPy")
+    kartya = QRect(
+        _ARNYEKSAV,
+        _ARNYEKSAV,
+        _TARTALOM_MERET.width(),
+        _TARTALOM_MERET.height(),
+    )
+    _draw_splash_shadow(painter, kartya)
+    painter.fillRect(kartya, QColor("#ffffff"))
 
     logo = _logo_pixmap()
     if not logo.isNull():
-        logo = logo.scaledToHeight(_LOGO_MAGASSAG, Qt.TransformationMode.SmoothTransformation)
-        logo_rect = QRect(
-            (pixmap.width() - logo.width()) // 2,
-            66,
-            logo.width(),
-            logo.height(),
+        if logo.width() > logo.height() * 2:
+            logo = logo.copy(QRect(0, 0, logo.height(), logo.height()))
+        logo = logo.scaled(
+            _EMBLEMA_HELYE.size(),
+            Qt.AspectRatioMode.IgnoreAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
         )
-        if dark:
-            painter.setBrush(QColor("#ffffff"))
-            painter.drawRoundedRect(logo_rect.adjusted(-2, -2, 2, 2), 8, 8)
-        painter.drawPixmap(logo_rect, logo)
+        painter.drawPixmap(_EMBLEMA_HELYE.translated(kartya.topLeft()), logo)
 
-    version_font = QFont()
-    version_font.setPointSizeF(max(8.0, version_font.pointSizeF() - 1.0))
-    painter.setFont(version_font)
-    painter.setPen(subdued)
-    painter.drawText(
-        QRect(16, 160, pixmap.width() - 32, 28),
-        Qt.AlignmentFlag.AlignCenter,
-        _version_label(version),
+    font = _splash_wordmark_font()
+    metrics = QFontMetrics(font)
+    text_bounds = metrics.tightBoundingRect(_SZOJEL)
+    text_x = _SZOJEL_HELYE.left() - text_bounds.left()
+    text_y = (
+        _SZOJEL_HELYE.top()
+        + (_SZOJEL_HELYE.height() - text_bounds.height()) // 2
+        - text_bounds.top()
     )
-
-    painter.fillRect(QRect(1, pixmap.height() - 14, pixmap.width() - 2, 13), bar)
+    painter.setFont(font)
+    painter.setPen(_SZOJEL_SZIN)
+    painter.drawText(
+        kartya.topLeft() + QPoint(text_x, text_y),
+        _SZOJEL,
+    )
     painter.end()
     return pixmap
+
+
+def _draw_splash_shadow(painter: QPainter, kartya: QRect) -> None:
+    """14 képpontos, finom alpha-sávot rajzol a fehér kép köré."""
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    for inset in range(_ARNYEKSAV, 0, -1):
+        alpha = round(26 * ((15 - inset) / _ARNYEKSAV) ** 2)
+        painter.setPen(QColor(0, 0, 0, alpha))
+        painter.drawRect(kartya.adjusted(-inset, -inset, inset, inset))
+
+
+def _splash_wordmark_font() -> QFont:
+    global _FONT_AZONOSITO
+    if _FONT_AZONOSITO is None:
+        font_path = Path(__file__).resolve().parent / "assets" / "fonts" / "OpenSans-Regular.ttf"
+        _FONT_AZONOSITO = QFontDatabase.addApplicationFont(str(font_path))
+    families = QFontDatabase.applicationFontFamilies(_FONT_AZONOSITO)
+    font = QFont(families[0] if families else _SZOJEL_BETUCSALAD)
+    font.setPixelSize(_SZOJEL_BETUMERET)
+    return font
 
 
 def _splash_window_flags():
     return (
         Qt.WindowType.SplashScreen
         | Qt.WindowType.FramelessWindowHint
-        | Qt.WindowType.WindowStaysOnTopHint
         | Qt.WindowType.WindowDoesNotAcceptFocus
         | Qt.WindowType.WindowTransparentForInput
     )
@@ -187,14 +213,29 @@ class IndulasAblak(QRasterWindow):
     def __init__(self, pixmap: QPixmap) -> None:
         super().__init__()
         self._pixmap = pixmap
+        surface_format = QSurfaceFormat(self.format())
+        surface_format.setAlphaBufferSize(8)
+        self.setFormat(surface_format)
         self.setFlags(_splash_window_flags())
+        # keret nélkül a cím nem látszik; a csomagmérő erről ismeri fel
         self.setTitle("PicasaPy startup")
         self.resize(pixmap.size())
+        self.create()
+        self._alpha_supported = self.format().alphaBufferSize() >= 8
+        self.requestUpdate()
 
     def paintEvent(self, _event) -> None:  # noqa: N802 - Qt-felülírás
         painter = QPainter(self)
-        painter.drawPixmap(0, 0, self._pixmap)
-        painter.end()
+        try:
+            window_rect = QRect(QPoint(0, 0), self.size())
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+            painter.fillRect(window_rect, Qt.GlobalColor.transparent)
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceOver)
+            if not self._alpha_supported:
+                painter.fillRect(window_rect, QColor("#ffffff"))
+            painter.drawPixmap(0, 0, self._pixmap)
+        finally:
+            painter.end()
 
 
 def _make_splash(app: QGuiApplication, settings) -> IndulasAblak:
@@ -234,6 +275,26 @@ def start_early_startup(argv: list[str]) -> EarlyStartup:
     """Qt-alkalmazást és indulóablakot hoz létre az alkalmazásimport előtt."""
     global _EARLY_STARTUP
 
+    run_log = None
+    try:
+        from .platform_storage import default_storage_paths
+
+        run_log = StartupRunLog(default_storage_paths(_platform()).data)
+    except Exception:  # noqa: BLE001 - a diagnosztika nem akadályozhatja az indulást
+        pass
+    if run_log is not None:
+        run_log.mark("Korai indulás elkezdődött")
+    hang_traceback = StartupHangTraceback(run_log.file if run_log is not None else None)
+    if run_log is not None:
+        try:
+            from picasapy.perf.tesztuzem import tarolo_tipusa
+
+            run_log.write(
+                f"Tároló típusa: {tarolo_tipusa(run_log.path.parent)}\n"
+            )
+        except Exception:  # noqa: BLE001 - a diagnosztika nem akadályozhatja az indulást
+            pass
+
     progress_log = StartupProgressLog()
     progress_log.mark("Qt-alkalmazás létrehozása elkezdődött")
     settings = QSettings("PicasaPy", "PicasaPy")
@@ -248,6 +309,8 @@ def start_early_startup(argv: list[str]) -> EarlyStartup:
     app.setDesktopFileName("picasapy")
     app.setQuitOnLastWindowClosed(True)
     progress_log.mark("Qt-alkalmazás létrehozva")
+    if run_log is not None:
+        run_log.mark("Qt-alkalmazás létrehozva")
 
     splash = None
     if show_splash:
@@ -255,9 +318,17 @@ def start_early_startup(argv: list[str]) -> EarlyStartup:
         splash.show()
         app.processEvents()
         progress_log.mark("Az indulóablak megjelent")
+        if run_log is not None:
+            run_log.mark("Az indulóablak megjelent")
 
     _EARLY_STARTUP = EarlyStartup(
-        _strip_nosplash(argv), app, splash, qml_splash_enabled, progress_log
+        _strip_nosplash(argv),
+        app,
+        splash,
+        qml_splash_enabled,
+        progress_log,
+        run_log,
+        hang_traceback,
     )
     return _EARLY_STARTUP
 

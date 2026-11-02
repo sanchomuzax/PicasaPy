@@ -32,7 +32,7 @@ from __future__ import annotations
 # őre joggal bukik rá, ha ugyanaz a név mást jelent.
 import platform as _platform_modul
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -90,7 +90,14 @@ class StartupTimeline:
     TELJES idő — ez SZÁNDÉKOSAN nem a szakaszok összege: a nem mért rés
     így nem tűnik el, hanem a különbségben látszik."""
 
-    __slots__ = ("_enabled", "_clock", "_started", "_last", "_phases")
+    __slots__ = (
+        "_enabled",
+        "_clock",
+        "_started",
+        "_last",
+        "_phases",
+        "_mark_observer",
+    )
 
     def __init__(
         self,
@@ -103,6 +110,22 @@ class StartupTimeline:
         self._started = clock() if self._enabled else 0.0
         self._last = self._started
         self._phases: list[tuple[str, float]] = []
+        self._mark_observer: Callable[[str, float], None] | None = None
+
+    def _set_mark_observer(
+        self, observer: Callable[[str, float], None] | None
+    ) -> None:
+        """Opcionális, élő jelzés a külső indulásnapló számára (#6385)."""
+        self._mark_observer = observer
+
+    def _notify_mark(self, label: str, elapsed_ms: float) -> None:
+        observer = self._mark_observer
+        if observer is None:
+            return
+        try:
+            observer(label, elapsed_ms)
+        except Exception:  # noqa: BLE001 - a diagnosztika nem akadályozhatja az indulást
+            return
 
     @property
     def enabled(self) -> bool:
@@ -129,8 +152,10 @@ class StartupTimeline:
         if not self._enabled:
             return
         now = self._clock()
-        self._phases.append((label, (now - self._last) * 1000.0))
+        elapsed_ms = (now - self._last) * 1000.0
+        self._phases.append((label, elapsed_ms))
         self._last = now
+        self._notify_mark(label, elapsed_ms)
 
     def mark_from(self, started: float, label: str) -> None:
         """Egy MÁR ELKEZDŐDÖTT szakasz lezárása a megadott kezdőpillanattól.
@@ -144,9 +169,11 @@ class StartupTimeline:
         if not self._enabled:
             return
         now = self._clock()
-        self._phases.append((label, (now - started) * 1000.0))
+        elapsed_ms = (now - started) * 1000.0
+        self._phases.append((label, elapsed_ms))
         self._started = min(self._started, started)
         self._last = now
+        self._notify_mark(label, elapsed_ms)
 
     def phase(self, label: str):
         """A blokk idejét mérő kontextuskezelő.
@@ -164,8 +191,10 @@ class StartupTimeline:
             yield
         finally:
             now = self._clock()
-            self._phases.append((label, (now - started) * 1000.0))
+            elapsed_ms = (now - started) * 1000.0
+            self._phases.append((label, elapsed_ms))
             self._last = now
+            self._notify_mark(label, elapsed_ms)
 
     # -- jelentés ------------------------------------------------------------
 

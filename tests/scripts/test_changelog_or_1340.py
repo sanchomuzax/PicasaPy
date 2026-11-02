@@ -305,6 +305,32 @@ class TestParancssor:
         assert "changelog.d/4165.md" in kimenet
         assert hibas_sor in kimenet
 
+    def test_nem_jegyszamos_darabnev_bukik(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """#6374: a `6374-visszavonas.md` csendben átment, és a kiadó automata
+        a mainen akadt el rajta. A darab neve csak jegyszám lehet."""
+        naplo = tmp_path / "CHANGELOG.md"
+        naplo.write_text("# Változásnapló\n\n## [Nem kiadott]\n", encoding="utf-8")
+
+        def futtat(args: list[str]) -> subprocess.CompletedProcess[str]:
+            egy = " ".join(args)
+            if "--name-only" in egy:
+                kimenet = "changelog.d/6374-visszavonas.md\n"
+            elif args[:2] == ["git", "show"]:
+                kimenet = "- Visszavonva a gyorsítótár (#6374).\n"
+            else:
+                kimenet = ""
+            return subprocess.CompletedProcess(args, 0, kimenet, "")
+
+        kod = cor.main(
+            ["--base", "a", "--head", "b", "--changelog", str(naplo)],
+            runner=futtat,
+        )
+
+        assert kod == 1
+        assert "changelog.d/6374-visszavonas.md" in capsys.readouterr().out
+
     def test_belso_valtozas_atmegy_bejegyzes_nelkul(self, tmp_path: Path) -> None:
         naplo = tmp_path / "CHANGELOG.md"
         naplo.write_text("# Változásnapló\n\n## [Nem kiadott]\n", encoding="utf-8")

@@ -69,6 +69,11 @@ On Windows:
 python picasapy C:\Pictures
 ```
 
+When you start the program, a small startup window without a frame or
+title bar appears immediately in the middle of the screen, showing the
+PicasaPy emblem and name on a white background. It disappears by itself
+once the main window has loaded.
+
 The application also starts without a folder argument. You can add watched
 folders later in [Folder Manager](features/mappakezelo.md).
 

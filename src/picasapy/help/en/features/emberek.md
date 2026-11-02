@@ -4,6 +4,11 @@ PicasaPy finds faces in your pictures, groups faces that may belong to
 the same person, and lets you name them. Names are stored in
 `.picasa.ini`, so the original Picasa can read them too.
 
+Each named person gets an album in the People group. These albums exist
+only in PicasaPy: there is no folder for them on disk, and the pictures
+stay in their original folders. Removing a picture from a person's album
+does not delete it from disk.
+
 ## Find faces
 
 Choose **Tools** ▸ **Find Faces** to open the face-search dialog. It has
@@ -113,12 +118,10 @@ number of unnamed faces and is included in the group's total.
 
 The first time you open the album, a welcome dialog explains how to
 name or ignore a face and where to find suggestions. Choose **Close**;
-it will not appear again. **Learn more...** opens the corresponding
-original Picasa help page in your default browser, if that service is
-still available. Picasa's online help has been discontinued, so the
-information may no longer be there. A reference to signing in to a
-Google account in that guide does not apply to PicasaPy. If the album is
-empty, the same guide is shown in the People panel.
+it will not appear again. **Learn more...** opens this help chapter;
+the welcome dialog stays open. The guide mentions signing in to a Google
+account; naming faces does not require it. If the album is empty, the
+same guide is shown in the People panel.
 
 The album opens with faces grouped by likely person. Use **Expand
 groups** to open the groups or **Group by face** to collapse them. The

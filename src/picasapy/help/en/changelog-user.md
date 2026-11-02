@@ -2,6 +2,56 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-02
+
+### Updates
+
+- New version notifications: the program tells you when a newer PicasaPy
+  is released. Help ▸ **&Check for Updates**… also checks by hand. On
+  Windows, **Update now** downloads and verifies the new version, then
+  installs it on restart or when you exit; if something goes wrong, the
+  previous version is kept. See [Options](features/beallitasok.md).
+- The program checks every time it starts, and every 6 hours while it
+  runs, so a version released during the day is noticed quickly.
+- **Update now** switches to a progress bar as soon as you click it.
+- The update window no longer offers to skip a version; a newer release is
+  always offered.
+
+### Startup
+
+- A frameless, white PicasaPy startup window appears immediately, before
+  the main window. See [Getting started](getting-started.md).
+- An unreachable network drive (NAS) no longer slows down startup or
+  freezes the interface while the program runs.
+
+### Help and About
+
+- Help opens in a separate window; the main window stays usable. See
+  [Built-in Help](features/sugo.md).
+- The About window shows where the program runs from, and has clickable
+  links to the website, the privacy policy and the terms of service.
+- In the faces welcome window, **Learn more...** opens the People chapter
+  of the program's own help. See [People and faces](features/emberek.md).
+
+### Google Photos
+
+- **Sign in with Google Account** in the menu bar starts sign-in with one
+  click. If the package has no built-in Google client, a short message
+  says that sign-in is not available in this version yet. See
+  [Upload to Google Photos](features/google-fotok.md).
+
+### Other
+
+- The exit question shows only the **Exit Now** and **Keep Going** buttons.
+- The webcam window's snapshot waits until the camera is ready, reports a
+  save error, and the picture appears in the library right away.
+- A picture opened from the library no longer resizes the window, and the
+  grid stays where you left it when you return.
+- In the installed Windows program, **Export as HTML Page...** lists the
+  templates again.
+- The Places panel's search button and its no-map caption stay inside the
+  panel in a small window as well.
+
 ## 2026-10-31
 
 ### Startup

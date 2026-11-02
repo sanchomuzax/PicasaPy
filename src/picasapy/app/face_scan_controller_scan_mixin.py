@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .face_scan_controller_signals import FaceScanControllerSignalsMixin as _Signals
+from .hatter_prioritas import arckeres_szal_elokeszitese, arckeres_szal_lezarasa
 from .face_scan_controller_shared import (
     Path,
     PhotoRecord,
@@ -213,7 +214,9 @@ class FaceScanControllerScanMixin:
         stop_event: threading.Event,
         scoped_photos: tuple[PhotoRecord, ...] | None = None,
     ) -> None:
+        elozo_szalszam: int | None = None
         try:
+            elozo_szalszam = arckeres_szal_elokeszitese()
             with open_index(self._db_path) as conn:
                 # #4887: a szkennelés a rejtett mappák képein is fut (az
                 # eredménye a megjelenítéskor szűrődik)
@@ -291,6 +294,7 @@ class FaceScanControllerScanMixin:
             self.scanFailed.emit(str(error))
             return
         finally:
+            arckeres_szal_lezarasa(elozo_szalszam)
             self._ini_ignored_cache = None
             with self._pending_lock:
                 owner = self._owns_scan(stop_event)
