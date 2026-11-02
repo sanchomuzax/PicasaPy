@@ -11,6 +11,10 @@ import subprocess
 import time
 
 
+#: Modulszintű fogantyú: a tesztek ezt cserélik, nem a `subprocess.run`-t (#1375).
+_run = subprocess.run
+
+
 class QmlWarmupError(RuntimeError):
     """A QML-előfordító gyermekfolyamata nem tudott elindulni vagy befejeződni."""
 
@@ -41,7 +45,7 @@ def melegitsd_qml_cache(
     # 180 s-ig várt rájuk (Package-mérés, #6374). A folyamat végét így a
     # kilépés jelzi, nem a csövek lezárása.
     try:
-        result = subprocess.run(
+        result = _run(
             [*(str(elem) for elem in parancs), "--qml-elofordit"],
             env=env,
             stdin=subprocess.DEVNULL,

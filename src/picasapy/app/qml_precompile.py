@@ -23,6 +23,9 @@ NAPLO_ENV = "PICASAPY_QML_ELOFORDIT_NAPLO"
 HATARIDO_ENV = "PICASAPY_QML_ELOFORDIT_HATARIDO"
 ALAP_HATARIDO_MP = 120.0
 HATARIDO_KOD = 3
+#: Modulszintű fogantyúk: a tesztek ezeket cserélik, nem a standard modult (#1375).
+_Timer = threading.Timer
+_os_exit = os._exit
 
 
 def _platform() -> str:
@@ -42,7 +45,7 @@ def _azonnali_kilepes(kod: int) -> None:
 
         kernel32 = ctypes.windll.kernel32
         kernel32.TerminateProcess(kernel32.GetCurrentProcess(), kod)
-    os._exit(kod)
+    _os_exit(kod)
 
 
 _kilepes = _azonnali_kilepes
@@ -69,7 +72,7 @@ def _inditsd_a_hataridot() -> None:
         mp = float(os.environ.get(HATARIDO_ENV, ALAP_HATARIDO_MP))
     except ValueError:
         mp = ALAP_HATARIDO_MP
-    idozito = threading.Timer(mp, _hatarido_lejart)
+    idozito = _Timer(mp, _hatarido_lejart)
     idozito.daemon = True
     idozito.start()
 

@@ -62,7 +62,7 @@ def test_a_hatarido_kornyezetbol_allithato_es_hatter_szalon_fut(monkeypatch):
         def start(self):
             idozitok.append(self.daemon)
 
-    monkeypatch.setattr(qml_precompile.threading, "Timer", _Idozito)
+    monkeypatch.setattr(qml_precompile, "_Timer", _Idozito)
     monkeypatch.setenv(qml_precompile.HATARIDO_ENV, "7")
     qml_precompile._inditsd_a_hataridot()
     assert idozitok == [(7.0, qml_precompile._hatarido_lejart), True]
@@ -74,7 +74,7 @@ def test_idotullepeskor_a_meres_kiirja_a_naplo_veget(monkeypatch, tmp_path):
             f.write("fordítás: C:/x/PlacesMap.qml\n")
         raise subprocess.TimeoutExpired(parancs, 1)
 
-    monkeypatch.setattr(qml_cache_warmup.subprocess, "run", _lassu)
+    monkeypatch.setattr(qml_cache_warmup, "_run", _lassu)
     with pytest.raises(qml_cache_warmup.QmlWarmupError) as hiba:
         qml_cache_warmup.melegitsd_qml_cache([sys.executable], {"TEMP": str(tmp_path)}, timeout=1)
     assert "PlacesMap.qml" in str(hiba.value)
@@ -105,7 +105,7 @@ def test_a_meres_nem_csovon_var_es_a_naplobol_osszegez(monkeypatch, tmp_path):
             f.write("fordítás: x.qml\nQML-előfordítás: 3 fájl, 0 hibás, 0.10 s\n")
         return subprocess.CompletedProcess(parancs, 0)
 
-    monkeypatch.setattr(qml_cache_warmup.subprocess, "run", _fut)
+    monkeypatch.setattr(qml_cache_warmup, "_run", _fut)
     ki = qml_cache_warmup.melegitsd_qml_cache([sys.executable], {"TEMP": str(tmp_path)})
     assert ki == "QML-előfordítás: 3 fájl, 0 hibás, 0.10 s"
     assert hivasok[0]["stdout"] is subprocess.DEVNULL and hivasok[0]["stderr"] is subprocess.DEVNULL
@@ -127,6 +127,6 @@ def test_windowson_a_kilepes_kihagyja_a_dll_levalasztast(monkeypatch):
 
     monkeypatch.setattr(qml_precompile, "_platform", lambda: "win32")
     monkeypatch.setattr(ctypes, "windll", types.SimpleNamespace(kernel32=_K32()), raising=False)
-    monkeypatch.setattr(qml_precompile.os, "_exit", lambda kod: hivasok.append(("os_exit", kod)))
+    monkeypatch.setattr(qml_precompile, "_os_exit", lambda kod: hivasok.append(("os_exit", kod)))
     qml_precompile._azonnali_kilepes(0)
     assert hivasok[0] == ("folyamat", 0)
