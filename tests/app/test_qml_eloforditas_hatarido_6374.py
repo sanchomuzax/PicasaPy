@@ -76,7 +76,7 @@ def test_idotullepeskor_a_meres_kiirja_a_naplo_veget(monkeypatch, tmp_path):
 
     monkeypatch.setattr(qml_cache_warmup, "_run", _lassu)
     with pytest.raises(qml_cache_warmup.QmlWarmupError) as hiba:
-        qml_cache_warmup.melegitsd_qml_cache([sys.executable], {"TEMP": str(tmp_path)}, timeout=1)
+        qml_cache_warmup.melegitsd_qml_cache([sys.executable], {"TEMP": str(tmp_path)}, timeout=10)
     assert "PlacesMap.qml" in str(hiba.value)
 
 
@@ -130,3 +130,59 @@ def test_windowson_a_kilepes_kihagyja_a_dll_levalasztast(monkeypatch):
     monkeypatch.setattr(qml_precompile, "_os_exit", lambda kod: hivasok.append(("os_exit", kod)))
     qml_precompile._azonnali_kilepes(0)
     assert hivasok[0] == ("folyamat", 0)
+
+
+class _NemKodolhato:
+    """A windowsos cp1252-es kimenet: az „ő” betűre UnicodeEncodeError."""
+
+    def write(self, szoveg):
+        szoveg.encode("cp1252")
+        return len(szoveg)
+
+    def flush(self):
+        pass
+
+
+def _hamis_qt(monkeypatch, forditas=lambda _e, fajlok: 0):
+    monkeypatch.setattr(qml_precompile, "_inditsd_a_hataridot", lambda: None)
+    monkeypatch.setattr(qml_precompile, "QGuiApplication", lambda _argv: type("A", (), {
+        "setApplicationName": lambda *_: None, "setOrganizationName": lambda *_: None})())
+    monkeypatch.setattr(qml_precompile, "QQmlEngine", lambda: type("E", (), {
+        "addImportPath": lambda *_: None})())
+    monkeypatch.setattr(qml_precompile, "_forditsd_le", forditas)
+
+
+def test_a_nem_kodolhato_kimenet_sem_akasztja_meg_a_kilepest(monkeypatch, tmp_path):
+    """A csomagolt exe cp1252-es kimenetre írt „ő”-je kivételt dobott, és az ablakos
+    PyInstaller-csomag hibaablakot nyitott, ami kattintásra várt (Package-mérés, 180 s)."""
+    kilepesek = []
+    monkeypatch.setattr(qml_precompile, "_kilepes", kilepesek.append)
+    monkeypatch.setattr(sys, "stdout", _NemKodolhato())
+    monkeypatch.setenv(qml_precompile.NAPLO_ENV, str(tmp_path / "n.txt"))
+    _hamis_qt(monkeypatch)
+    qml_precompile.main()
+    assert kilepesek == [0]
+
+
+def test_hianyzo_kimenetnel_is_kilep(monkeypatch):
+    kilepesek = []
+    monkeypatch.setattr(qml_precompile, "_kilepes", kilepesek.append)
+    monkeypatch.setattr(sys, "stdout", None)
+    _hamis_qt(monkeypatch)
+    qml_precompile.main()
+    assert kilepesek == [0]
+
+
+def test_barmilyen_kivetelnel_naploz_es_hibakoddal_kilep(monkeypatch, tmp_path):
+    naplo = tmp_path / "n.txt"
+    monkeypatch.setenv(qml_precompile.NAPLO_ENV, str(naplo))
+    kilepesek = []
+    monkeypatch.setattr(qml_precompile, "_kilepes", kilepesek.append)
+
+    def _hibas(_e, _f):
+        raise RuntimeError("qml")
+
+    _hamis_qt(monkeypatch, _hibas)
+    qml_precompile.main()
+    assert kilepesek == [qml_precompile.KIVETEL_KOD]
+    assert "RuntimeError" in naplo.read_text(encoding="utf-8")

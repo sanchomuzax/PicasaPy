@@ -23,6 +23,7 @@ NAPLO_ENV = "PICASAPY_QML_ELOFORDIT_NAPLO"
 HATARIDO_ENV = "PICASAPY_QML_ELOFORDIT_HATARIDO"
 ALAP_HATARIDO_MP = 120.0
 HATARIDO_KOD = 3
+KIVETEL_KOD = 4
 #: Modulszintű fogantyúk: a tesztek ezeket cserélik, nem a standard modult (#1375).
 _Timer = threading.Timer
 _os_exit = os._exit
@@ -98,8 +99,35 @@ def _forditsd_le(engine: QQmlEngine, fajlok: list[Path]) -> int:
     return hibas
 
 
+def _kiird(sor: str) -> None:
+    """Konzolra írás, ami soha nem dob kivételt.
+
+    A csomagolt windowsos exe kimenete cp1252-es: az „ő” betű kiírása
+    `UnicodeEncodeError`-t dobott, az ablakos PyInstaller-csomag pedig a
+    kezeletlen kivételre hibaablakot nyitott, ami kattintásra várt, ezért
+    a folyamat nem lépett ki (Package-mérés, 180 s)."""
+    try:
+        print(sor, flush=True)
+    except (OSError, ValueError, AttributeError):
+        pass
+
+
 def main() -> int:
-    """Fordítja a QML-fájlokat, a hibákat összesíti és sikeres kóddal kilép."""
+    """Fordítja a QML-fájlokat, a hibákat összesíti és kilép.
+
+    Kezeletlen kivétel nem hagyhatja el: az ablakos csomagban az hibaablakot
+    nyitna, ami a telepítőt és az önfrissítést is megakasztaná."""
+    try:
+        _fordits()
+    except Exception as hiba:  # noqa: BLE001 - lásd a docstringet
+        _naplozz(f"kivétel: {type(hiba).__name__}")
+        _kilepes(KIVETEL_KOD)
+        return KIVETEL_KOD
+    _kilepes(0)
+    return 0
+
+
+def _fordits() -> None:
     _inditsd_a_hataridot()
     _naplozz("előfordítás indul")
     os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -121,12 +149,9 @@ def main() -> int:
     eltelt = time.perf_counter() - started
     osszegzes = f"QML-előfordítás: {len(fajlok)} fájl, {hibas} hibás, {eltelt:.2f} s"
     _naplozz(osszegzes)
-    print(osszegzes, flush=True)
-    # A csomagolt windowsos exe a fordítás után a Qt-objektumok bontásánál
-    # elakadt (Package-mérés: 0,83 s fordítás, majd 180 s várakozás). A
-    # gyorsítótár a fordításkor már a lemezre került, ezért a bontást kihagyjuk.
-    _kilepes(0)
-    return 0
+    _kiird(osszegzes)
+    # A gyorsítótár a fordításkor már a lemezre került; a hívó a Qt-objektumok
+    # bontását kihagyva lép ki.
 
 
 if __name__ == "__main__":
