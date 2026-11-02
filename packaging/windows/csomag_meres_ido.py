@@ -334,6 +334,7 @@ def _bevar(futas: dict) -> dict:
     indulo_kep_info = None
     indulo_kep_hiba = None
     induloablak_latszott = False
+    splash_eltunt = False
     if futas["indulo_kep_kotelezo"]:
         hatarido = time.monotonic() + _IDOKORLAT_MP
         while True:
@@ -341,13 +342,22 @@ def _bevar(futas: dict) -> dict:
                 kimenet, _ = folyamat.communicate(timeout=0.05)
                 break
             except subprocess.TimeoutExpired:
-                if not induloablak_latszott:
-                    for hwnd, ablak in ablakikonok(folyamat.pid).items():
-                        if not ablak["cim"].casefold().startswith("picasapy startup"):
-                            continue
+                # A splash első felsorolásakor az ablak még nincs kirajzolva:
+                # amíg látszik, újra próbáljuk, az első sikeres képig (#6426).
+                if indulo_kep is None and not splash_eltunt:
+                    splash = next(
+                        (
+                            hwnd
+                            for hwnd, ablak in ablakikonok(folyamat.pid).items()
+                            if ablak["cim"].casefold().startswith("picasapy startup")
+                        ),
+                        None,
+                    )
+                    if splash is not None:
                         induloablak_latszott = True
-                        indulo_kep, indulo_kep_info, indulo_kep_hiba = induloablak_kepe(hwnd)
-                        break
+                        indulo_kep, indulo_kep_info, indulo_kep_hiba = induloablak_kepe(splash)
+                    elif induloablak_latszott:
+                        splash_eltunt = True
                 if time.monotonic() >= hatarido:
                     folyamat.kill()
                     kimenet, _ = folyamat.communicate()

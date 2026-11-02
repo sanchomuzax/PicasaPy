@@ -249,3 +249,67 @@ def test_a_qt_naplo_nyers_relevans_sorai_kiirodnak():
     kimenet = "valami\nqt.rhi.general: Created D3D11 device\nQSG: threaded render loop\nmás\n"
     assert ido_modul.qt_naplo_sorok(kimenet) == [
         "qt.rhi.general: Created D3D11 device", "QSG: threaded render loop"]
+
+
+class _LassanKilepoFolyamat:
+    """`communicate` az első néhány hívásra még fut (időtúllépés)."""
+
+    pid = 4242
+    returncode = 0
+
+    def __init__(self, futo_korok: int):
+        self.maradek = futo_korok
+
+    def communicate(self, timeout=None):
+        import subprocess
+
+        if self.maradek > 0:
+            self.maradek -= 1
+            raise subprocess.TimeoutExpired("PicasaPy.exe", timeout)
+        return (b"", b"")
+
+
+def _splash_futas(tmp_path, folyamat):
+    return {"folyamat": folyamat, "indult": datetime.now(timezone.utc), "kezdet": 0.0,
+            "korabbi": 0, "gyoker": tmp_path, "indulo_hatar_ms": 1000,
+            "indulo_kep_kotelezo": True, "valodi_ablak": True}
+
+
+def test_a_splash_kepet_addig_probalja_amig_ki_nem_rajzolodik(tmp_path, monkeypatch):
+    """A splash első felsorolásakor az ablak még nincs kirajzolva; egyetlen
+    próbával a gyors indulásoknál a mérés hamisan piros lett (#6426)."""
+    monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _g: [])
+    monkeypatch.setattr(ido_modul, "_ablakikonok",
+                        lambda _pid: {7: {"cim": "PicasaPy Startup"}}, raising=False)
+    probak = []
+
+    def kep(hwnd):
+        probak.append(hwnd)
+        if len(probak) < 3:
+            return None, None, "a renderelt indulóképen nincs fehér kártya logóval"
+        return b"png", (668, 263, 45), None
+
+    monkeypatch.setattr(ido_modul, "_induloablak_kepe", kep, raising=False)
+    eredmeny = ido_modul._bevar(_splash_futas(tmp_path, _LassanKilepoFolyamat(10)))
+    assert len(probak) == 3
+    assert eredmeny["indulo_kep"] == b"png"
+    assert eredmeny["indulo_kep_hiba"] is None
+
+
+def test_a_splash_eltunese_utan_nem_probalkozik_tovabb(tmp_path, monkeypatch):
+    monkeypatch.setattr(ido_modul, "_naplo_sorai", lambda _g: [])
+    ablakok = [{7: {"cim": "PicasaPy Startup"}}, {7: {"cim": "PicasaPy Startup"}}]
+    monkeypatch.setattr(ido_modul, "_ablakikonok",
+                        lambda _pid: ablakok.pop(0) if ablakok else {8: {"cim": "PicasaPy"}},
+                        raising=False)
+    probak = []
+
+    def kep(hwnd):
+        probak.append(hwnd)
+        return None, None, "a renderelt indulóképen nincs fehér kártya logóval"
+
+    monkeypatch.setattr(ido_modul, "_induloablak_kepe", kep, raising=False)
+    eredmeny = ido_modul._bevar(_splash_futas(tmp_path, _LassanKilepoFolyamat(10)))
+    assert len(probak) == 2
+    assert eredmeny["indulo_kep"] is None
+    assert eredmeny["indulo_kep_hiba"] == "a renderelt indulóképen nincs fehér kártya logóval"
