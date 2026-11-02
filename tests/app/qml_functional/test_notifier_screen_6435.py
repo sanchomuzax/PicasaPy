@@ -1,146 +1,229 @@
-"""#6435: az értesítősáv a főablak képernyőjén jelenik meg."""
+"""#6435: az értesítősáv a valódi főablak képernyőjére kerül."""
 
 from __future__ import annotations
 
+import json
+import os
 from pathlib import Path
+import subprocess
+import sys
+import tempfile
 
-from PySide6.QtCore import QObject, Property, QRect, Signal
-from PySide6.QtQml import QQmlComponent, QQmlEngine
 import pytest
-from tests.support.qt_wait import varj_feltetelre
 
 
-class FakeScreen(QObject):
-    geometryChanged = Signal()
+_ROOT = Path(__file__).resolve().parents[3]
+_QML_DIR = _ROOT / "src" / "picasapy" / "app" / "qml"
+_STARTUP_QML = _ROOT / "src" / "picasapy" / "app" / "application_startup_qml.py"
+_CHILD = r'''
+import json
+import sys
+import time
 
-    def __init__(self, geometry: QRect):
-        super().__init__()
-        self._geometry = geometry
-
-    @Property(QRect, notify=geometryChanged)
-    def availableGeometry(self):
-        return self._geometry
-
-
-class FakeMainWindow(QObject):
-    screenChanged = Signal()
-    visibleChanged = Signal()
-    visibilityChanged = Signal()
-    widthChanged = Signal()
-    heightChanged = Signal()
-
-    def __init__(self, screen: FakeScreen, height: int):
-        super().__init__()
-        self._screen = screen
-        self._visible = True
-        self._width = 1200
-        self._height = height
-
-    @Property(QObject, notify=screenChanged)
-    def screen(self):
-        return self._screen
-
-    @Property(bool, notify=visibleChanged)
-    def visible(self):
-        return self._visible
-
-    @Property(int, notify=visibilityChanged)
-    def visibility(self):
-        return 0
-
-    @Property(int, notify=widthChanged)
-    def width(self):
-        return self._width
-
-    @Property(int, notify=heightChanged)
-    def height(self):
-        return self._height
-
-    def setScreen(self, screen: FakeScreen) -> None:
-        self._screen = screen
-        self.screenChanged.emit()
-
-    def setVisible(self, visible: bool) -> None:
-        self._visible = visible
-        self.visibleChanged.emit()
-
-    def setSize(self, width: int, height: int) -> None:
-        self._width = width
-        self._height = height
-        self.widthChanged.emit()
-        self.heightChanged.emit()
+from PySide6.QtCore import QUrl
+from PySide6.QtGui import QGuiApplication
+from PySide6.QtQuick import QQuickWindow
+from PySide6.QtQml import QQmlComponent, QQmlEngine
+from picasapy.app.notifier_screen_geometry import NotifierScreenGeometry
 
 
+config_path, target_name, height_delta, qml_dir = sys.argv[1:]
+app = QGuiApplication([])
+screens = {screen.name(): screen for screen in app.screens()}
+assert set(screens) == {"BAL", "JOBB"}, sorted(screens)
+assert screens["BAL"].geometry().getRect() == (0, 0, 1920, 1080)
+assert screens["JOBB"].geometry().getRect() == (1920, 0, 1920, 1080)
+
+
+def varj_feltetelre(feltetel, leiras):
+    hatarido = time.monotonic() + 3.0
+    while time.monotonic() < hatarido:
+        app.processEvents()
+        if feltetel():
+            return
+        time.sleep(0.05)
+    raise AssertionError(f"Időtúllépés: {leiras}")
+
+
+celozott = screens[target_name]
+masik_nev = "JOBB" if target_name == "BAL" else "BAL"
+masik = screens[masik_nev]
+engine = QQmlEngine()
+engine.addImportPath(qml_dir)
+screen_geometry = NotifierScreenGeometry()
+engine.rootContext().setContextProperty(
+    "notifierScreenGeometry", screen_geometry
+)
+foablak_component = QQmlComponent(engine)
+foablak_component.setData(
+    b'import QtQuick; import QtQuick.Window; '
+    b'Window { objectName: "mainWindow"; visible: false; '
+    b'width: 640; height: 600 }',
+    QUrl(),
+)
+foablak = foablak_component.create()
+assert isinstance(foablak, QQuickWindow), foablak_component.errorString()
+foablak.setGeometry(
+    celozott.geometry().x() + 100,
+    celozott.geometry().y() + 100,
+    640,
+    600 + int(height_delta),
+)
+foablak.show()
+varj_feltetelre(
+    lambda: foablak.screen().name() == target_name,
+    f"a főablak a {target_name} képernyőre kerüljön",
+)
+component = QQmlComponent(
+    engine, qml_dir + "/PicasaPy/PicasaNotifier.qml"
+)
+notifier = component.createWithInitialProperties({"_hostWindow": foablak})
+assert notifier is not None, component.errorString()
+
+
+def vart_pozicio(screen):
+    area = screen.availableGeometry()
+    return (
+        area.x() + area.width() - notifier.width(),
+        area.y() + area.height() - notifier.property("anchorOffsetPx"),
+    )
+
+
+def ellenoriz_poziciot(screen, leiras):
+    x, y = vart_pozicio(screen)
+    assert notifier.x() == x, f"{leiras}: x={notifier.x()}, várt x={x}"
+    assert notifier.y() == y, f"{leiras}: y={notifier.y()}, várt y={y}"
+
+
+try:
+    ellenoriz_poziciot(celozott, f"induláskor a {target_name} képernyőn")
+    notifier.notify("screen-test", "Rendered", "", "")
+    varj_feltetelre(
+        lambda: notifier.isVisible(),
+        "az értesítő megjelenjen",
+    )
+    oszlop = notifier.contentItem().childItems()[0]
+    varj_feltetelre(
+        lambda: oszlop.opacity() >= 0.99,
+        "az értesítő megjelenési animációja befejeződjön",
+    )
+    kep = notifier.grabWindow()
+    assert not kep.isNull(), "az értesítő ablakáról készüljön renderelt kép"
+
+    # Rejtett főablaknál a legutóbbi használható képernyő maradjon meg.
+    foablak.hide()
+    foablak.setPosition(masik.geometry().x() + 100, masik.geometry().y() + 100)
+    app.processEvents()
+    ellenoriz_poziciot(celozott, "rejtett főablaknál")
+
+    # A látható, használható főablak képernyőváltása költöztesse az értesítőt.
+    foablak.show()
+    foablak.setPosition(masik.geometry().x() + 100, masik.geometry().y() + 100)
+    varj_feltetelre(
+        lambda: foablak.screen().name() == masik_nev,
+        f"a főablak a {masik_nev} képernyőre kerüljön",
+    )
+    varj_feltetelre(
+        lambda: notifier.x() == vart_pozicio(masik)[0],
+        f"az értesítő a {masik_nev} képernyőre kerüljön",
+    )
+    ellenoriz_poziciot(masik, "képernyőváltás után")
+
+    # Az 1x1-es, használhatatlan főablak képernyőváltása se írja felül az
+    # utolsó használható képernyőt.
+    foablak.setWidth(1)
+    foablak.setHeight(1)
+    foablak.setPosition(celozott.geometry().x() + 100, celozott.geometry().y() + 100)
+    app.processEvents()
+    ellenoriz_poziciot(masik, "kis méretű főablaknál")
+    print(json.dumps({"target": target_name, "height_delta": int(height_delta)}))
+finally:
+    notifier.close()
+    foablak.close()
+    engine.deleteLater()
+    app.processEvents()
+'''
+
+
+def test_az_inditas_a_kepernyosegedet_a_qml_kornyezetbe_regisztralja() -> None:
+    startup = _STARTUP_QML.read_text(encoding="utf-8")
+    assert "notifier_screen_geometry = NotifierScreenGeometry(parent=app)" in startup
+    assert '"notifierScreenGeometry", notifier_screen_geometry' in startup
+    assert "state.notifier_screen_geometry = notifier_screen_geometry" in startup
+
+
+@pytest.mark.parametrize("screen_name", ["BAL", "JOBB"])
 @pytest.mark.parametrize("height_delta", [-5, 0, 5])
-def test_a_masodik_kepernyon_allo_foablaknal_oda_renderelodik_az_ertesito(
-    qt_app, height_delta: int
-):
-    import picasapy.app.application as app_module
-
-    primary = FakeScreen(QRect(0, 0, 1920, 1080))
-    second = FakeScreen(QRect(1920, 75, 1440, 900))
-    assert primary.availableGeometry != second.availableGeometry
-    main_window = FakeMainWindow(second, 800 + height_delta)
-
-    qml_dir = Path(app_module._APP_DIR) / "qml"
-    engine = QQmlEngine()
-    engine.addImportPath(str(qml_dir))
-    component = QQmlComponent(
-        engine, str(qml_dir / "PicasaPy" / "PicasaNotifier.qml")
-    )
-    notifier = component.createWithInitialProperties(
-        {"_hostWindow": main_window}
-    )
-    assert notifier is not None, component.errorString()
-
-    try:
-        assert notifier.property("x") == (
-            second.availableGeometry.x()
-            + second.availableGeometry.width()
-            - notifier.property("width")
+def test_a_valodi_foablak_kepernyojen_renderel_es_megtartja_az_utolsot(
+    screen_name: str, height_delta: int
+) -> None:
+    with tempfile.TemporaryDirectory(
+        prefix="notifier-screen-6435-", dir=_ROOT / ".tmp"
+    ) as temp_dir:
+        config_path = Path(temp_dir) / "ket-kepernyo.json"
+        config_path.write_text(
+            json.dumps(
+                {
+                    "synchronousWindowSystemEvents": False,
+                    "windowFrameMargins": False,
+                    "screens": [
+                        {
+                            "name": "BAL",
+                            "x": 0,
+                            "y": 0,
+                            "width": 1920,
+                            "height": 1080,
+                            "logicalDpi": 96,
+                            "logicalBaseDpi": 96,
+                            "dpr": 1,
+                        },
+                        {
+                            "name": "JOBB",
+                            "x": 1920,
+                            "y": 0,
+                            "width": 1920,
+                            "height": 1080,
+                            "logicalDpi": 96,
+                            "logicalBaseDpi": 96,
+                            "dpr": 1,
+                        },
+                    ],
+                }
+            ),
+            encoding="utf-8",
         )
-        assert notifier.property("y") == (
-            second.availableGeometry.y()
-            + second.availableGeometry.height()
-            - notifier.property("anchorOffsetPx")
+        kornyezet = os.environ.copy()
+        kornyezet["QT_QPA_PLATFORM"] = f"offscreen:configfile={config_path}"
+        kornyezet["QT_QUICK_BACKEND"] = "software"
+        pythonpath = [str(_ROOT / "src"), str(_ROOT / "tests")]
+        if kornyezet.get("PYTHONPATH"):
+            pythonpath.append(kornyezet["PYTHONPATH"])
+        kornyezet["PYTHONPATH"] = os.pathsep.join(pythonpath)
+        eredmeny = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                _CHILD,
+                str(config_path),
+                screen_name,
+                str(height_delta),
+                str(_QML_DIR),
+            ],
+            cwd=_ROOT,
+            env=kornyezet,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=20,
+            check=False,
         )
-
-        notifier.notify("screen-test", "Rendered", "", "")
-        assert varj_feltetelre(qt_app, lambda: notifier.property("visible"))
-        tartalom = notifier.contentItem().childItems()[0]
-        assert varj_feltetelre(
-            qt_app, lambda: tartalom.property("opacity") >= 0.99
+        assert eredmeny.returncode == 0, (
+            f"A {screen_name} képernyőre célzott QML-próba elbukott "
+            f"({eredmeny.returncode}).\nstdout:\n{eredmeny.stdout}"
+            f"\nstderr:\n{eredmeny.stderr}"
         )
-        assert not notifier.grabWindow().isNull()
-
-        main_window.setVisible(False)
-        main_window.setScreen(primary)
-        assert varj_feltetelre(
-            qt_app,
-            lambda: notifier.property("x")
-            == second.availableGeometry.x()
-            + second.availableGeometry.width()
-            - notifier.property("width"),
-        )
-
-        main_window.setVisible(True)
-        assert varj_feltetelre(
-            qt_app,
-            lambda: notifier.property("x")
-            == primary.availableGeometry.x()
-            + primary.availableGeometry.width()
-            - notifier.property("width"),
-        )
-        main_window.setSize(1, 1)
-        main_window.setScreen(second)
-        assert varj_feltetelre(
-            qt_app,
-            lambda: notifier.property("x")
-            == primary.availableGeometry.x()
-            + primary.availableGeometry.width()
-            - notifier.property("width"),
-        )
-    finally:
-        notifier.deleteLater()
-        engine.deleteLater()
-        qt_app.processEvents()
+        assert json.loads(eredmeny.stdout.strip().splitlines()[-1]) == {
+            "target": screen_name,
+            "height_delta": height_delta,
+        }

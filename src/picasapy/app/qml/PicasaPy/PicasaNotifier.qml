@@ -89,13 +89,24 @@ Window {
         _foablakKepernyojeHasznalhato() ? _hostWindow.screen
         : (_lastKnownScreen ? _lastKnownScreen : notifier.screen)
 
-    //: A QScreen elérhető területe a virtuális asztal koordinátáit adja,
-    //: így a képernyő bal és felső eltolása is megmarad.
-    readonly property var _munkaterulet:
-        _pozicioKepernyoje && _pozicioKepernyoje.availableGeometry
-        ? _pozicioKepernyoje.availableGeometry
-        : Qt.rect(0, 0, Screen.desktopAvailableWidth,
-                  Screen.desktopAvailableHeight)
+    //: A QQuickScreenInfo nem ad availableGeometry-t, ezért az alkalmazás
+    //: QScreen-jeit a név alapján kérdezzük le. Önálló QML-tesztnél a valódi
+    //: QQuickScreenInfo képernyő-koordinátái adják a helyi tartalékértéket.
+    readonly property var _munkaterulet: {
+        if (_pozicioKepernyoje
+                && typeof notifierScreenGeometry !== "undefined") {
+            const elerheto = notifierScreenGeometry.availableGeometryForName(
+                _pozicioKepernyoje.name)
+            if (elerheto && elerheto.width > 0 && elerheto.height > 0)
+                return elerheto
+        }
+        return _pozicioKepernyoje
+            ? Qt.rect(_pozicioKepernyoje.virtualX,
+                      _pozicioKepernyoje.virtualY,
+                      _pozicioKepernyoje.width,
+                      _pozicioKepernyoje.height)
+            : Qt.rect(0, 0, Screen.width, Screen.height)
+    }
     readonly property int munkateruletX: _munkaterulet.x
     readonly property int munkateruletY: _munkaterulet.y
     readonly property int munkateruletSzelesseg: _munkaterulet.width
