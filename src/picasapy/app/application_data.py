@@ -166,10 +166,10 @@ def _ujraindexelt_exportcelok(conn, settings: QSettings) -> None:
 def _takaritas_gyokerei(roots: tuple[str | Path, ...], settings: QSettings) -> tuple[str, ...]:
     """A #58 induláskori takarítás VÉDETT gyökerei (#1667).
 
-    A figyelt gyökerek mellé a **nyilvántartott exportcélok** is bekerülnek.
-    Az exportcél a #1565 óta SAJÁT GYÖKÉRKÉNT van indexelve — a takarítás
-    szempontjából tehát pontosan olyan jogos horgony, mint egy figyelt
-    mappa, nem „ottragadt idegen mappa".
+    A figyelt gyökerek mellé a **nyilvántartott exportcélok**, a Kollázsok,
+    a Rögzített videoklipek és a Képernyőfelvételek mappája is bekerül.
+    Ezek a program saját kimenetei, saját gyökérként indexelve, ezért a
+    takarítás számára jogos horgonyok, nem „ottragadt idegen mappák".
 
     ## Miért ez a #1667 javítása
 
@@ -188,12 +188,37 @@ def _takaritas_gyokerei(roots: tuple[str | Path, ...], settings: QSettings) -> t
     továbbra is kitakarítódik. A nyilvántartott, de a lemezen épp nem
     látható cél viszont bent marad: a hiány nem bizonyíték (#1560), és a
     listát szándékosan nem szűrjük létezésre — ld.
-    `registered_exported_folders`."""
+    `registered_exported_folders`.
+
+    A rögzítési és képernyőfelvételi útvonalat a meglévő célmappa-függvények
+    adják; így az aktuális nyelvi alak mellett egy korábban létrehozott
+    másik nyelvű mappa is védett marad."""
     return (
         *(str(root) for root in roots),
         *registered_exported_folders(settings.value(EXPORTED_FOLDERS_SETTINGS_KEY)),
         *_kollazs_gyoker(settings),
+        *_rogzitesi_gyokerek(),
     )
+
+def _rogzitesi_gyokerek() -> tuple[str, ...]:
+    """A rögzítés és képernyőfelvétel automatikus projektmappái (#6423).
+
+    A képek a `Pictures/Picasa` alatt vannak, tehát nem feltétlenül esnek a
+    WatchedFolders.txt gyökerei alá. A meglévő célmappa-függvények a már
+    létrehozott, más nyelvű mappaalakot választják, ezért ugyanaz az út
+    kerül védelem alá, ahová a rögzítés ténylegesen ment.
+    """
+    try:
+        from .frame_capture_controller import capture_folder
+        from .screen_capture import screen_capture_folder
+
+        return str(capture_folder()), str(screen_capture_folder())
+    except Exception:  # noqa: BLE001 - a takarítás hibája ne akadályozza az indulást
+        logging.getLogger(__name__).warning(
+            "a rögzítési mappák nem oldhatók fel védett gyökérként",
+            exc_info=True,
+        )
+        return ()
 
 def _kollazs_gyoker(settings: QSettings) -> tuple[str, ...]:
     """A Kollázsok mappa mint VÉDETT gyökér (#1675).

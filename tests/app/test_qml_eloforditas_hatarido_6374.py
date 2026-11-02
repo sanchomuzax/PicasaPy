@@ -10,10 +10,24 @@ from __future__ import annotations
 import subprocess
 import sys
 import types
+from pathlib import Path
 
 import pytest
 
 from picasapy.app import qml_cache_warmup, qml_precompile
+
+
+class _HamisQCoreApplication:
+    def __init__(self, _argv):
+        pass
+
+    @staticmethod
+    def setApplicationName(*_args):  # noqa: N802
+        pass
+
+    @staticmethod
+    def setOrganizationName(*_args):  # noqa: N802
+        pass
 
 
 def test_a_haladas_naplo_minden_fajlt_a_betoltes_elott_rogzit(tmp_path, monkeypatch):
@@ -21,23 +35,20 @@ def test_a_haladas_naplo_minden_fajlt_a_betoltes_elott_rogzit(tmp_path, monkeypa
     monkeypatch.setenv(qml_precompile.NAPLO_ENV, str(naplo))
     betoltott = []
 
-    class _Komponens:
-        def __init__(self, _engine):
-            pass
+    def _futtat(command, **_kwargs):
+        source = command[-1]
+        assert source in naplo.read_text(encoding="utf-8")
+        cel = Path(command[command.index("-o") + 1])
+        cel.parent.mkdir(parents=True, exist_ok=True)
+        cel.write_bytes(b"compiled")
+        betoltott.append(source)
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
 
-        def loadUrl(self, url, _mode):  # noqa: N802
-            betoltott.append(url.toLocalFile())
-            assert url.toLocalFile() in naplo.read_text(encoding="utf-8")
-
-        def status(self):
-            return qml_precompile.QQmlComponent.Status.Ready
-
-    valodi = qml_precompile.QQmlComponent
-    monkeypatch.setattr(qml_precompile, "QQmlComponent", _Komponens)
-    _Komponens.Status = valodi.Status
-    _Komponens.CompilationMode = valodi.CompilationMode
+    monkeypatch.setattr(qml_precompile, "_qmlcachegen_exe", lambda: tmp_path / "qmlcachegen")
+    monkeypatch.setattr(qml_precompile, "_qml_import_path", lambda: str(tmp_path))
+    monkeypatch.setattr(qml_precompile, "_run", _futtat)
     fajlok = [tmp_path / "A.qml", tmp_path / "B.qml"]
-    assert qml_precompile._forditsd_le(object(), fajlok) == 0
+    assert qml_precompile._forditsd_le(tmp_path / "cache", fajlok) == 0
     assert len(betoltott) == 2
 
 
@@ -85,11 +96,9 @@ def test_az_osszegzes_utan_azonnal_kilep_a_bontas_nelkul(monkeypatch, capsys):
     kilepesek = []
     monkeypatch.setattr(qml_precompile, "_kilepes", kilepesek.append)
     monkeypatch.setattr(qml_precompile, "_inditsd_a_hataridot", lambda: None)
-    monkeypatch.setattr(qml_precompile, "QGuiApplication", lambda _argv: type("A", (), {
-        "setApplicationName": lambda *_: None, "setOrganizationName": lambda *_: None})())
-    monkeypatch.setattr(qml_precompile, "QQmlEngine", lambda: type("E", (), {
-        "addImportPath": lambda *_: None})())
-    monkeypatch.setattr(qml_precompile, "_forditsd_le", lambda _e, fajlok: 0)
+    monkeypatch.setattr(qml_precompile, "QCoreApplication", _HamisQCoreApplication)
+    monkeypatch.setattr(qml_precompile, "_qml_cache_konyvtar", lambda: Path("cache"))
+    monkeypatch.setattr(qml_precompile, "_forditsd_le", lambda _cache, fajlok: 0)
     assert qml_precompile.main() == 0
     assert kilepesek == [0]
     assert "QML-előfordítás:" in capsys.readouterr().out
@@ -145,10 +154,8 @@ class _NemKodolhato:
 
 def _hamis_qt(monkeypatch, forditas=lambda _e, fajlok: 0):
     monkeypatch.setattr(qml_precompile, "_inditsd_a_hataridot", lambda: None)
-    monkeypatch.setattr(qml_precompile, "QGuiApplication", lambda _argv: type("A", (), {
-        "setApplicationName": lambda *_: None, "setOrganizationName": lambda *_: None})())
-    monkeypatch.setattr(qml_precompile, "QQmlEngine", lambda: type("E", (), {
-        "addImportPath": lambda *_: None})())
+    monkeypatch.setattr(qml_precompile, "QCoreApplication", _HamisQCoreApplication)
+    monkeypatch.setattr(qml_precompile, "_qml_cache_konyvtar", lambda: Path("cache"))
     monkeypatch.setattr(qml_precompile, "_forditsd_le", forditas)
 
 
@@ -186,3 +193,14 @@ def test_barmilyen_kivetelnel_naploz_es_hibakoddal_kilep(monkeypatch, tmp_path):
     qml_precompile.main()
     assert kilepesek == [qml_precompile.KIVETEL_KOD]
     assert "RuntimeError" in naplo.read_text(encoding="utf-8")
+
+
+def test_a_cache_kulcs_windowson_is_perjeles_utvonalbol_keszul():
+    """A Qt a `QUrl.toLocalFile()` alakot hasheli, ami Windowson is `C:/...`;
+    a natív `C:\\...` alakból számolt név egyetlen bejegyzéssel sem egyezne."""
+    from hashlib import sha1
+    from pathlib import PureWindowsPath
+
+    ut = PureWindowsPath(r"C:\Program Files\PicasaPy\_internal\picasapy\app\qml\PicasaPy\Main.qml")
+    vart = sha1(b"C:/Program Files/PicasaPy/_internal/picasapy/app/qml/PicasaPy/Main.qml").hexdigest()
+    assert qml_precompile._qml_cache_nev_utbol(ut) == vart + ".qmlc"

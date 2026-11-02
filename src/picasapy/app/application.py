@@ -375,7 +375,8 @@ def _ottragadt_mappak_takaritasa(
     """A #58 takarítás SAJÁT kapcsolaton, az első képkocka UTÁN (#1716).
 
     Eddig ez a lépés a kritikus úton futott: a védett gyökerek (figyelt
-    mappák + nyilvántartott exportcélok) száma × a hálózati `stat` ára —
+    mappák, nyilvántartott exportcélok és automatikus projektmappák) száma
+    × a hálózati `stat` ára —
     a tulajdonos gépén MÉRVE 2 293,9 ms (a #1706 modellje szerint 10
     gyökér × ~4 `lstat`, NAS-on ~47 ms/hívás). A feloldás ára ELKERÜL-
     HETETLEN (#1706/#1667 óta a nyilvántartott exportcélokat létezés-

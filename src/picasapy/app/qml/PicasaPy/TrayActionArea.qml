@@ -102,9 +102,28 @@ Item {
         Dialog {
             id: googlePhotosUploadDialog
             objectName: "googlePhotosUploadDialog"
+            // #6422: a főablak rétege legyen a viszonyítási alap, ne az
+            // alsó tálcasáv, így a párbeszédablak felfelé nyitható.
+            parent: Overlay.overlay
             title: qsTr("Upload to Google Photos")
             modal: true
-            width: 390
+            width: Math.min(390, parent ? Math.max(0, parent.width - 16) : 390)
+            height: parent
+                ? Math.min(implicitHeight, Math.max(0, parent.height - 16))
+                : implicitHeight
+            // A gomb helyét megnyitáskor olvassuk ki: a mapToItem-kötés nem
+            // frissül az elrendezéskor, és a (0,0)-s kezdőhelyen ragadna.
+            function igazitsdAGombFole() {
+                if (!parent)
+                    return
+                const gomb = trayUploadBtn.mapToItem(parent, 0, 0)
+                x = Math.max(8, Math.min(parent.width - width - 8,
+                                         gomb.x + (trayUploadBtn.width - width) / 2))
+                y = Math.max(8, Math.min(parent.height - height - 8,
+                                         gomb.y - height - 8))
+            }
+            onAboutToShow: igazitsdAGombFole()
+            onHeightChanged: if (visible) igazitsdAGombFole()
             standardButtons: Dialog.NoButton
 
             contentItem: ColumnLayout {

@@ -594,6 +594,7 @@ def _ido_futtato(
     eredmeny: dict = {}
     indulo_eredmenyek: list[dict] = []
     for sorszam in range(1, inditasok + 1):
+        inditas_elott = time.time()
         eredmeny = _bevar(
             _egy_inditas(
                 parancs,
@@ -604,6 +605,11 @@ def _ido_futtato(
             )
         )
         print(_jelentes(nev, sorszam, eredmeny), flush=True)
+        if sorszam == 1:
+            from profil_valtozas import uj_fajlok
+
+            for sor in uj_fajlok(gyoker / "profile", inditas_elott):
+                print(f"  profilba írt: {sor}", flush=True)
         if sorszam == 1 and eredmeny.get("indulo_kep"):
             print(f"  KÉP {nev}/induloablak {len(eredmeny['indulo_kep'])} bájt", flush=True)
             print("  -----KEP-KEZDET induloablak-----", flush=True)
