@@ -39,7 +39,10 @@ def test_a_package_meres_minden_indulashoz_ot_masodperces_hatart_hasznal():
         encoding="utf-8"
     )
     assert "--elso-hatar-mp" not in workflow
-    assert workflow.count("--hatar-mp 5") >= 2
+    # a #6374 elfogadása: a 2000 képes, hálózati exportcélos mérőlépés minden
+    # indítására 5 s; a valódi ablakos indulóablak-lépés főablak-határa a #6426-é
+    lepes = workflow.split("--kepek 2000 --inditasok 3", 1)[1].split("\n\n", 1)[0]
+    assert "--hatar-mp 5" in lepes
 
 
 def test_a_meroszkript_elomelegiti_a_profilt_es_mer_frissites_utan():
