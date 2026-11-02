@@ -1203,26 +1203,12 @@ class TestFaceDetectionOption:
         assert controller.persist_face_to_file is False
 
     @pytest.mark.parametrize(
-        "control_name",
-        [
-            # #2893: az `optionsAutoExcludeCheck` KIKERÜLT innen — a
-            # másodpéldány-észlelés ÉLŐ lett (ld.
-            # `TestGeneralTabAutoExclude`). Vezérlő NÉLKÜL viszont továbbra
-            # is tiltott, ezt ott állítjuk.
-            # #5897: a cache-takarítás kapcsolója ÉLŐ, állapot- és
-            # kilépési útját a `test_cache_disposal_5897.py` fedi.
-            # #3539: az `optionsSkipRemoveConfirmCheck` KIKERÜLT innen — az
-            # albumból eltávolítás megerősítése ÉLŐ lett, ld.
-            # `TestGeneralTabLiveRemoveFromAlbumConfirmSuppression`.
-            "optionsUsageStatsCheck",
-        ],
+        "control_name", ["optionsUsageStatsCheck", "optionsPrivacyLink"]
     )
-    def test_general_tab_placeholder_controls_disabled(self, dialog, control_name):
-        """A General fülön is csak a nyelv + törlés-megerősítés élő —
-        a többi vezérlő ott is tiltott."""
+    def test_general_tab_has_no_usage_statistics_row(self, dialog, control_name):
+        """#6441: a PicasaPy nem gyűjt használati statisztikát; a sor kikerült."""
         window, *_ = dialog
-        control = _child(window, control_name)
-        assert control.property("enabled") is False
+        assert window.findChild(QObject, control_name) is None
 
     def test_general_tab_live_controls_are_enabled(self, dialog):
         window, *_ = dialog

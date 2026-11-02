@@ -97,27 +97,10 @@ def test_beallitasbol_kattintva_menti_es_importnal_felkinalja(
         "a Fájlok csoport elválasztója nem a referencia szerinti helyen van: "
         f"{files_to_divider:.1f} px az utolsó sor közepétől"
     )
-    participation_first = _elem(options, "optionsUsageStatsCheck")
-    participation_from_divider = _kozep_y(participation_first) - files_divider_y
-    assert abs(participation_from_divider - 20) <= 3, (
-        "a Részvétel csoport térköze eltér a referencia 20 px-es értékétől: "
-        f"{participation_from_divider:.1f} px"
-    )
-    participation_divider = _elem(options, "optionsGeneralParticipationDivider")
-    participation_divider_y = participation_divider.mapToScene(QPointF(0, 0)).y()
-    privacy_link = _elem(options, "optionsPrivacyLink")
-    privacy_gap = _kozep_y(privacy_link) - _kozep_y(participation_first)
-    assert abs(privacy_gap - 27) <= 3, (
-        "az Adatvédelem link és a Részvétel sora közti térköz eltér a "
-        f"referencia 27 px-es értékétől: {privacy_gap:.1f} px"
-    )
-    privacy_to_divider = participation_divider_y - _kozep_y(privacy_link)
-    assert abs(privacy_to_divider - 13) <= 3, (
-        "a második elválasztó nem a referencia szerinti helyen van: "
-        f"{privacy_to_divider:.1f} px az Adatvédelem link közepétől"
-    )
     update_mode = _elem(options, "optionsUpdateModeCombo")
-    update_from_divider = _kozep_y(update_mode) - participation_divider_y
+    # #6441: a Részvétel csoport kikerült, a frissítés sora a Fájlok
+    # elválasztója után jön, ugyanazzal a referencia-térközzel
+    update_from_divider = _kozep_y(update_mode) - files_divider_y
     assert abs(update_from_divider - 23) <= 3, (
         "az Automatikus frissítések sora eltér a referencia 23 px-es "
         f"elválasztóközétől: {update_from_divider:.1f} px"
