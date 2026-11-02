@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ctypes
 from hashlib import sha1
 import os
 from pathlib import Path, PurePath
@@ -30,6 +31,7 @@ GRAFIKA_NAPLO_ENV = "PICASAPY_QML_GRAFIKA_MELEGITES_NAPLO"
 _Timer = threading.Timer
 _os_exit = os._exit
 _run = subprocess.run
+_windll = getattr(ctypes, "windll", None)
 
 
 def _platform() -> str:
@@ -45,9 +47,7 @@ def _azonnali_kilepes(kod: int) -> None:
     DLL-t leválaszt, és ez lefagyhat. A `TerminateProcess` ezt kihagyja; a
     gyorsítótár a fordításkor már a lemezen van."""
     if _platform() == "win32":
-        import ctypes
-
-        kernel32 = ctypes.windll.kernel32
+        kernel32 = _windll.kernel32
         kernel32.TerminateProcess(kernel32.GetCurrentProcess(), kod)
     _os_exit(kod)
 
@@ -254,14 +254,32 @@ def _forditsd_le(cache_konyvtar: Path, fajlok: list[Path]) -> int:
 
 
 def _kiird(sor: str) -> None:
-    """Konzolra írás, ami soha nem dob kivételt.
+    """Konzolra ír; nem támogatott kódolásnál UTF-8-ra vált.
 
-    A csomagolt windowsos exe kimenete cp1252-es: az „ő” betű kiírása
-    `UnicodeEncodeError`-t dobott, az ablakos PyInstaller-csomag pedig a
-    kezeletlen kivételre hibaablakot nyitott, ami kattintásra várt, ezért
-    a folyamat nem lépett ki (Package-mérés, 180 s)."""
+    A Windows cp1252-es kimenetén az „ő” `UnicodeEncodeError`-t okoz. Ez
+    `ValueError`-ból származik, ezért az eddigi széles kivételkezelés némán
+    elnyelte az összesítő sort. Az UTF-8-as újrapróbálás megtartja a sort
+    pipe-ba irányítva is; ablakos csomagban továbbra is megengedett a
+    kimenet hiánya."""
     try:
         print(sor, flush=True)
+    except UnicodeEncodeError:
+        kimenet = sys.stdout
+        ujrakodol = getattr(kimenet, "reconfigure", None)
+        if callable(ujrakodol):
+            try:
+                ujrakodol(encoding="utf-8", errors="strict")
+                print(sor, flush=True)
+                return
+            except (OSError, ValueError, AttributeError):
+                pass
+        try:
+            puffer = getattr(kimenet, "buffer", None)
+            if puffer is not None:
+                puffer.write((sor + os.linesep).encode("utf-8"))
+                puffer.flush()
+        except (OSError, ValueError, AttributeError):
+            pass
     except (OSError, ValueError, AttributeError):
         pass
 

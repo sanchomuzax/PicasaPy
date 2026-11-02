@@ -11,9 +11,24 @@ import pytest
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt, QUrl
 from PySide6.QtQml import QQmlComponent
 from PySide6.QtQuick import QQuickItem, QQuickView
+from PySide6.QtQuickControls2 import QQuickStyle
 from PySide6.QtTest import QTest
 
 _QML = Path(__file__).resolve().parents[3] / "src" / "picasapy" / "app" / "qml"
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _qt_button_style(qt_app):
+    """A termékben használt Fusion tartalékot rögzíti a képpróbákhoz.
+
+    A Qt alapértelmezett stílusa platformonként változik; a Windows stílus
+    offscreen megjelenítője a `Button.down` állapotot is rajzolhatja azonos
+    képkockával. Az alkalmazás Fusion tartalékstílust használ, ezért a
+    pixeles próba is ezt állítja be az első QML-motor előtt.
+    """
+    QQuickStyle.setStyle("Fusion")
+
+
 _QML_TIPUSOK = (
     "PicasaButton",
     "Button",
