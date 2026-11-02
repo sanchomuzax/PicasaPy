@@ -855,7 +855,10 @@ class UpdateController(QObject):
             "--executable",
             Path(_futtato.executable).name,
         ]
-        if not _inditsd_a_segedet(args, emelt=not mappa_irhato(install_dir.parent)):
+        emelt = not mappa_irhato(install_dir.parent)
+        if emelt:
+            args.append("--uac-emelt")
+        if not _inditsd_a_segedet(args, emelt=emelt):
             return False
         if restart_now:
             from PySide6.QtCore import QCoreApplication

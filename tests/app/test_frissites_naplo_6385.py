@@ -17,7 +17,7 @@ def _elokeszit(monkeypatch, tmp_path):
     monkeypatch.setattr(helper, "_update_log_path", lambda: naplo)
     monkeypatch.setattr(helper, "wait_for_process", lambda _pid: None)
     monkeypatch.setattr(helper, "extract_update_archive", lambda _zip, _stage: tmp_path)
-    monkeypatch.setattr(helper, "inditsd_a_felhasznalonak", lambda _exe: None)
+    monkeypatch.setattr(helper, "inditsd_a_felhasznalonak", lambda _exe, **_k: None)
     monkeypatch.setattr(helper, "tarolo_tipusa", lambda _path: "helyi")
     monkeypatch.setattr(
         helper,

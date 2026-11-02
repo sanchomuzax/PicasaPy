@@ -535,7 +535,7 @@ def test_a_segedet_csak_irhatatlan_mappanal_inditja_rendszergazdakent(
     monkeypatch.setattr(
         update_manager,
         "_inditsd_a_segedet",
-        lambda args, *, emelt: hivasok.append(emelt) or True,
+        lambda args, *, emelt: hivasok.append((emelt, "--uac-emelt" in args)) or True,
     )
     controller = UpdateController(
         "1.0.0",
@@ -551,7 +551,7 @@ def test_a_segedet_csak_irhatatlan_mappanal_inditja_rendszergazdakent(
     assert controller.installWhenExiting(False) is True
     monkeypatch.setattr(update_manager, "mappa_irhato", lambda _m: False)
     assert controller.installWhenExiting(False) is True
-    assert hivasok == [False, True]
+    assert hivasok == [(False, False), (True, True)]
 
 
 def test_rendszergazdai_segedbol_a_program_normal_jogokkal_indul(monkeypatch, tmp_path):
@@ -560,13 +560,26 @@ def test_rendszergazdai_segedbol_a_program_normal_jogokkal_indul(monkeypatch, tm
     exe = tmp_path / "PicasaPy.exe"
 
     monkeypatch.setattr(update_swap_helper, "_rendszergazda", lambda: True)
-    update_swap_helper.inditsd_a_felhasznalonak(exe)
+    update_swap_helper.inditsd_a_felhasznalonak(exe, uac_emelt=True)
     monkeypatch.setattr(update_swap_helper, "_rendszergazda", lambda: False)
-    update_swap_helper.inditsd_a_felhasznalonak(exe)
+    update_swap_helper.inditsd_a_felhasznalonak(exe, uac_emelt=True)
 
     assert inditasok[0][0] == "explorer.exe"
     assert Path(inditasok[0][1]) == exe
     assert [Path(elem) for elem in inditasok[1]] == [exe]
+
+
+def test_eleve_rendszergazdai_programnal_kozvetlenul_indul_6383(monkeypatch, tmp_path):
+    """#6383: ha nem mi emeltük UAC-cal a segédet, az Intézőn át indítás a
+    környezetet is elvesztené; ilyenkor közvetlenül indít."""
+    inditasok = []
+    monkeypatch.setattr(update_swap_helper, "_popen", lambda args, **k: inditasok.append(args))
+    monkeypatch.setattr(update_swap_helper, "_rendszergazda", lambda: True)
+    exe = tmp_path / "PicasaPy.exe"
+
+    update_swap_helper.inditsd_a_felhasznalonak(exe)
+
+    assert [Path(elem) for elem in inditasok[0]] == [exe]
 
 
 def test_sikertelen_kicsomagolas_utan_is_elindul_a_regi_program(monkeypatch, tmp_path):
@@ -578,7 +591,7 @@ def test_sikertelen_kicsomagolas_utan_is_elindul_a_regi_program(monkeypatch, tmp
     inditasok = []
     monkeypatch.setattr(update_swap_helper, "wait_for_process", lambda pid: None)
     monkeypatch.setattr(
-        update_swap_helper, "inditsd_a_felhasznalonak", lambda exe: inditasok.append(exe)
+        update_swap_helper, "inditsd_a_felhasznalonak", lambda exe, **_k: inditasok.append(exe)
     )
 
     import zipfile

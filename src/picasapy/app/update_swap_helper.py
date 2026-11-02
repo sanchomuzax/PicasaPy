@@ -300,20 +300,26 @@ def _rendszergazda() -> bool:
 _popen = subprocess.Popen
 
 
-def inditsd_a_felhasznalonak(executable: Path) -> None:
+def inditsd_a_felhasznalonak(executable: Path, *, uac_emelt: bool = False) -> None:
     """A frissített program indítása a felhasználó NORMÁL jogaival (#6340).
 
-    Ha a segéd rendszergazdaként fut (UAC), a közvetlen indítás az új
-    PicasaPy-t is rendszergazdaként futtatná: a létrehozott fájlok a
-    rendszergazdáé lennének, és az Intézőből húzás sem működne. A Windows
-    héja (`explorer.exe`) a bejelentkezett felhasználó jogaival indít."""
-    if _rendszergazda():
+    Ha a segédet a program UAC-cal emelte rendszergazdává, a közvetlen
+    indítás az új PicasaPy-t is rendszergazdaként futtatná: a létrehozott
+    fájlok a rendszergazdáé lennének, és az Intézőből húzás sem működne. A
+    Windows héja (`explorer.exe`) a bejelentkezett felhasználó jogaival indít.
+
+    #6383: csak akkor, ha MI emeltük (`uac_emelt`). Ha a régi program eleve
+    rendszergazdaként futott, a segéd is az, és az Intézőn át indítás
+    elvesztené a környezetet (a folyamat nem a mi szülőnktől öröklődne)."""
+    if uac_emelt and _rendszergazda():
         _popen(["explorer.exe", str(executable)], close_fds=True)
     else:
         _popen([str(executable)], close_fds=True)
 
 
-def install_after_exit(pid: int, archive: Path, install_dir: Path, executable: str) -> bool:
+def install_after_exit(
+    pid: int, archive: Path, install_dir: Path, executable: str, *, uac_emelt: bool = False
+) -> bool:
     """Vár, kicsomagol, cserél, ellenőriz, szükség esetén visszaáll, majd indít."""
     _log_update(
         "A frissítősegéd elindult; várakozás a főfolyamat kilépésére",
@@ -372,7 +378,8 @@ def install_after_exit(pid: int, archive: Path, install_dir: Path, executable: s
         # indul — mindkettő a felhasználó jogaival; a program tehát a
         # frissítés kudarca után sem marad bezárva
         try:
-            inditsd_a_felhasznalonak(install_dir / executable)
+            inditsd_a_felhasznalonak(install_dir / executable, uac_emelt=uac_emelt)
+            _log_update("Az új program elindítva" + (" az Intézőn át" if uac_emelt else ""))
         except OSError as error:
             _log_update(f"Újraindítási kivétel: {_sanitized_log_message(error)}")
 
@@ -383,9 +390,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--archive", type=Path, required=True)
     parser.add_argument("--install-dir", type=Path, required=True)
     parser.add_argument("--executable", required=True)
+    parser.add_argument("--uac-emelt", action="store_true")
     args = parser.parse_args(argv)
     try:
-        install_after_exit(args.pid, args.archive, args.install_dir, args.executable)
+        install_after_exit(
+            args.pid,
+            args.archive,
+            args.install_dir,
+            args.executable,
+            uac_emelt=args.uac_emelt,
+        )
     except Exception as error:  # noqa: BLE001 - az elkülönített helper hibája konzolra kerül
         print(f"A PicasaPy-frissítés nem sikerült: {error}", file=sys.stderr)
         return 1
