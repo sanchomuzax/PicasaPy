@@ -563,11 +563,6 @@ def _ido_futtato(
 
             for sor in uj_fajlok(gyoker / "profile", inditas_elott):
                 print(f"  profilba írt: {sor}", flush=True)
-            if os.environ.get("PICASAPY_KISERLET_ELOOLVASAS") == "1":
-                for naplo in gyoker.rglob("errorlog.txt"):
-                    for sor in naplo.read_text(encoding="utf-8", errors="replace").splitlines():
-                        if "foszal_figyelo" in sor or "perf" in sor:
-                            print(f"  KÍSÉRLET napló: {sor[:600]}", flush=True)
             from profil_valtozas import qmlc_nevek
 
             gyoker_qml = Path(parancs[0]).resolve().parent
