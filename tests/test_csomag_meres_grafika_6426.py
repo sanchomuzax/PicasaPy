@@ -286,7 +286,7 @@ def test_a_splash_kepet_addig_probalja_amig_ki_nem_rajzolodik(tmp_path, monkeypa
     def kep(hwnd):
         probak.append(hwnd)
         if len(probak) < 3:
-            return None, None, "a renderelt indulóképen nincs fehér kártya logóval"
+            return b"rossz", None, "a renderelt indulóképen nincs fehér kártya logóval"
         return b"png", (668, 263, 45), None
 
     monkeypatch.setattr(ido_modul, "_induloablak_kepe", kep, raising=False)
@@ -306,10 +306,12 @@ def test_a_splash_eltunese_utan_nem_probalkozik_tovabb(tmp_path, monkeypatch):
 
     def kep(hwnd):
         probak.append(hwnd)
-        return None, None, "a renderelt indulóképen nincs fehér kártya logóval"
+        return b"rossz", None, "a renderelt indulóképen nincs fehér kártya logóval"
 
     monkeypatch.setattr(ido_modul, "_induloablak_kepe", kep, raising=False)
     eredmeny = ido_modul._bevar(_splash_futas(tmp_path, _LassanKilepoFolyamat(10)))
     assert len(probak) == 2
-    assert eredmeny["indulo_kep"] is None
+    # a hibás kép is megmarad, hogy a jelentés megmutathassa, mi látszott
+    assert eredmeny["indulo_kep"] == b"rossz"
+    assert eredmeny["indulo_kep_info"] is None
     assert eredmeny["indulo_kep_hiba"] == "a renderelt indulóképen nincs fehér kártya logóval"

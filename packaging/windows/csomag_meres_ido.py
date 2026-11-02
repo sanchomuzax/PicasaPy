@@ -289,7 +289,7 @@ def _bevar(futas: dict) -> dict:
             except subprocess.TimeoutExpired:
                 # A splash első felsorolásakor az ablak még nincs kirajzolva:
                 # amíg látszik, újra próbáljuk, az első sikeres képig (#6426).
-                if indulo_kep is None and not splash_eltunt:
+                if indulo_kep_info is None and not splash_eltunt:
                     splash = next(
                         (
                             hwnd

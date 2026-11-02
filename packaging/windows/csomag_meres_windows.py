@@ -132,7 +132,8 @@ def _induloablak_kepe(hwnd: int) -> tuple[bytes | None, tuple[int, int, int] | N
     kep.save(puffer, "PNG", optimize=True)
     png = puffer.getvalue()
     info, hiba = _renderelt_indulokep_ellenorzese(png)
-    return (png, info, hiba) if hiba is None else (None, None, hiba)
+    # a hibás kép is visszamegy: a jelentés megmutatja, mi látszott (#6426)
+    return png, info, hiba
 
 def _renderelt_indulokep_ellenorzese(
     png: bytes,
