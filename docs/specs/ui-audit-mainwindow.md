@@ -557,7 +557,8 @@ jobbra:
 6. **Keresőmező** — fehér, nagyítóval, jobb szélén villogó frissítés-
    ikon (szinkron-jelző).
 7. Jobb felül, a menün kívül: „Bejelentkezés Google Fiókkal" hivatkozás
-   (ez a menüsorban van, nem az eszköztárban).
+   (ez a menüsorban van, nem az eszköztárban). A belépett és kilépett állapot
+   részletei: a lap végi „A jobb felső hivatkozássor” szakasz (#6438).
 
 ### 4.2 Nálunk (`MainToolbar.qml`)
 
@@ -2072,3 +2073,116 @@ szabad a deklarált méretből látható UI-ra következtetni.
 Fejlesztői jegyek: a korábbi felirat-eltérések **#3476**; a CD-kimenet és az
 Időrend csak a saját meglévő terméki jegyeikben folytatandó, új duplikált jegy
 e körben nem nyílt.
+
+---
+
+## A jobb felső hivatkozássor: kilépett és belépett állapot (#6438)
+
+**Kérdés:** mi változik a főablak jobb felső sarkában, ha a felhasználó belépett a Google-fiókjába, és mi jelzi a belépést?
+
+**Rövid válasz (binárisból igazolva, a részletek lent):**
+
+- A sort egyetlen függvény (`0x0059af60`) építi, és a két felirat ugyanabban a függvényben van. Kilépett állapotban „Bejelentkezés Google Fiókkal” (`NCWebAlbums::Label3`), belépett állapotban „Kijelentkezés” (`NCWebAlbums::Label2`) áll a helyén.
+- A belépett ágban a sor egy további, kattintás nélküli elemet is kap: a szöveg a Gaia-állapot-objektum `+4` mezőjéből jön. Hogy ez fióknév vagy e-mail-cím, a binárisból NEM igazolható (6. szakasz).
+- A bináris ASCII-sztringjei között nincs „Signed in as”, „Logged in as” vagy más, név szerint belépést jelző felirat (nyers pásztázás, 6. szakasz).
+- A „Google Fotók” / „Webalbumok” link belépett állapotban jelenik meg, de a két szöveg közti választást nem a belépés dönti el, hanem a `0x00431290` (LastUserESState) predikátum (lásd `picasa-fo-ablak-elrendezes.md`, 13. szakasz, 6. pont).
+
+### 1. Feliratok és sztring-azonosítók
+
+| Azonosító | Kulcs címe | Angol felirat | Felirat címe | Magyar felirat (`stringres-en-hu.tsv`) | Állapot |
+|---|---|---|---|---|---|
+| `NCWebAlbums::Label3` | `0x00c92410` | Sign in with Google Account | `0x00c923f4` | Bejelentkezés Google Fiókkal | kilépett |
+| `NCWebAlbums::Label2` | `0x00c923e0` | Sign Out | `0x00c923d4` | Kijelentkezés | belépett |
+| `NCWebAlbums::Label1ES` | `0x00c923a8` | Google Photos | `0x00c92398` | Google Fotók | belépett, ES-ág |
+| `NCWebAlbums::Label1` | `0x00c923c0` | Web Albums | `0x00c7ec40` | Webalbumok | belépett, nem ES-ág |
+| `NCWebAlbums::Survey` | `0x00c92384` | Take our survey | `0x00c92374` | Töltse ki kérdőívünket | mindkettő |
+| `FeedbackLink` | `0x00c92440` | (URL: `http://go/caprica-feedback`, `0x00c92424`) | - | a `NCWebAlbums::Label5` kulcs: Visszajelzés | mindkettő |
+
+A magyar oszlop a referencia `stringres-en-hu.tsv` 2044-2051. soraiból való; a bináris `NCWebAlbums::*` kulcsai szó szerint megegyeznek a TSV azonosítóival. A „Feedback” angol felirat címe a binárisban nincs megtalálva. Az elválasztó sztring `"  |  "` (`0x00c92450`).
+
+### 2. Hívóhelyek
+
+| Cím | Méret | Szerep | Bizonyítottság |
+|---|---|---|---|
+| `0x0059c410` | 925 bájt | eseménykezelő: rajzolás, egérmozgás és kattintás; az indexben nincs közvetlen hívója (üzenet- vagy vtábla-hívás) | erős |
+| `0x0059bd00` | 1004 bájt | sor-újraépítés és festés; a `0x0059af60`-at csak akkor hívja, ha `[this+0x26c] != [this+0x270]` (`0x0059bd08`-`0x0059bd1e`), utána `[this+0x26c] = [this+0x270]` | megerősített |
+| `0x0059af60` | 2447 bájt (`0x0059af60`-`0x0059b8cf`) | a feliratok és a kattintható elemek felépítése | megerősített |
+| `0x0059bbc0` | 305 bájt | kattintás-szétosztó: az elem azonosítója (kind) alapján hajt végre műveletet | megerősített |
+| `0x00926c20` | 152 bájt | a Gaia-állapot singletonja: 0x60 bájtos objektum, globális `0x00d676e8`, konstruktor `0x00960f60`, vtábla `0x00cd66f0` | megerősített |
+| `0x00431290` | 205 bájt | LastUserESState-predikátum (Google Fotók / Webalbumok felirat) | a `picasa-fo-ablak-elrendezes.md` 13. szakasza |
+
+### 3. Elágazás a feliratépítőben
+
+1. **`[this+0x26c] != 1`** (`0x0059b19e`, `0x0059b1a5`): a `0x0059b701` ág. Csak a „Bejelentkezés Google Fiókkal” felirat épül; nincs Google Fotók / Webalbumok link.
+2. **`[this+0x26c] == 1`:**
+   - `A` = a singleton `vtábla+0x04` metódusának kimenete (`0x0059af6b`-`0x0059af7c`; a `0x00960ed0` metódus a `SOFTWARE\Google\Picasa\Picasa2` sztringet használja);
+   - `B` = `A` `vtábla+0x4c` metódusának kimenete (`0x0059b1ab`-`0x0059b1b8`);
+   - **belépett ág** (`0x0059b23a`), ha `B ≠ 0`, `[B]` felső 24 bitje nem nulla, és `byte[B+4] ≠ 0` (`0x0059b1c1`-`0x0059b20b`). Ekkor épül a Google Fotók / Webalbumok link (a `0x00431290` döntése szerint), a „Kijelentkezés” felirat és a fiók-szöveg eleme (forrás: `B+4`, azonosító: `0`; `0x0059b29a`-`0x0059b2ae`);
+   - **egyéb ág** (`0x0059b20d`), ha `B` hiányzik vagy üres: nem épül felirat-elem, és a `this+0x264` objektum vtábla-hívása következik. Ennek a célja NINCS MEG.
+
+### 4. Kattintás
+
+Útvonal: a `0x0059c410` `0xa2`-es ága (`0x0059c632`, `cmp eax, 0xa2`). Ha a `0x0059af10` tiltó feltétel igaz (`0x0059c63f`-`0x0059c646`), a kattintás eldobódik. Egyébként a pont a sor téglalapjában van-e (`[this+0x280]`-`[this+0x28c]`, `0x0059c684`-`0x0059c6ac`), és ha igen, `0x0059bbc0(this, &pont)` hívódik (`0x0059c6b1`).
+
+Az elem-rekord 0x1c bájt: `+4` az azonosító (kind), `+0x0c` bal, `+0x10` felső, `+0x14` jobb, `+0x18` alsó (`0x0059bbe4`-`0x0059bbfd`).
+
+| Kind | Felirat | Célfüggvény | Mit csinál (mért) | Bizonyítottság |
+|---|---|---|---|---|
+| 5 | Take our survey | `0x007a0020` | a `Preferences`, `UserSurveyUrl`, `ClientStatsId`, `client_id` sztringeket használja; számlálója `0x00d357b8` | erős (az 5-ös kind a `0x0059b02f` tárolásból); a felmérés URL-je NINCS MEG |
+| 3 | Google Fotók / Webalbumok | `0x0059b900` | egyetlen URL-t tartalmaz: `https://photos.google.com`; a singletont hívja | erős az URL-re; a Webalbumok ág célja NINCS MEG |
+| 2 | Kijelentkezés | `0x0059bae0` | a singleton `+0x04` állapot-lekérdezése; ha nem nulla, a singleton `+0x10` metódusát hívja kimeneti mutatóval és `0` argumentummal; számláló `0x00d35758` | feltételes: a kind-hozzárendelés a feliratból és a hívási alakból; a metódus neve NINCS MEG |
+| 1 | Bejelentkezés Google Fiókkal | `0x0059ba30` | a singleton `+0x14` metódusát (`0x00961340`) hívja: első argumentuma `2`, a `[this+0x268]+0x2b4` címet adja át, a kimenet a harmadik argumentum; számláló `0x00d35738`; várakozási számláló `0x00d6793c` | feltételes; a `0x00cb712c` cím nem ASCII-sztring, tartalma NINCS MEG |
+| 6 | Visszajelzés | `0x0059bcad` | `FeedbackLink` → `http://go/caprica-feedback`; a `0x00981860` indítja (`iexplore.exe`, `-nohome` sztringekkel) | erős |
+| 0 | fiók-szöveg (belépett) | nincs | az 1-6 tartományon kívül; nincs művelet | erős |
+
+Sorrend a feliratépítő létrehozási sorrendjében: Survey → (belépett: fiók-szöveg → Google Fotók / Webalbumok → Kijelentkezés; kilépett: Bejelentkezés Google Fiókkal). A Visszajelzés (kind 6) elem létrehozóját nem azonosítottam, a képernyőbeli sorrendet nem követtem végig. A kind 4 (`0x00531ac0`, képernyővédő-telepítés) a szétosztóban van, de ez a feliratépítő nem állítja elő.
+
+### 5. Saját rajzolású szövegsor, nem Windows-vezérlő
+
+A `0x0059bd00` és a `0x0059c410` IAT-hívásainak nevei a PE import-táblából (csak olvasás):
+
+- GDI32: `SetTextAlign`, `SelectObject`, `SetBkColor`, `SetTextColor`
+- USER32: `GetDCEx`, `ReleaseDC`, `GetCursorPos`, `GetClientRect`, `GetWindowRect`, `MapWindowPoints`, `IsWindow`, `IsWindowVisible`
+
+A `0x0059c410` ágainak kódjai (`0x85`, `0x86`, `0xa0`, `0xa2`) megegyeznek a Win32 nem-kliens üzenetek kódjaival (WM_NCPAINT, WM_NCACTIVATE, WM_NCMOUSEMOVE, WM_NCLBUTTONUP); az üzenet-struktúra nincs igazolva.
+
+### 6. Hol kerestem, és mi NEM igazolható
+
+- **Nyers pásztázás** a `Picasa3.exe` NUL-terminált ASCII sztringjeire, az indextől függetlenül: `Sign Out` egyszer (`0x00c923d4`), `Sign in with Google Account` egyszer (`0x00c923f4`), `NCWebAlbums::Label2` és `NCWebAlbums::Label3` egyszer-egyszer. **Nincs találat:** `Logout`, `Log out`, `Signed in`, `Signed in as`, `Logged in as`, `Sign in`, `Sign In`, `DisplayLoginInfo`, `Bejelentkez`, `Kijelentkez`. Az UTF-16 sztringeket nem pásztáztam.
+- **A feliratépítő sztringjei** (az indexben 10 db) között nincs fióknév- vagy e-mail-formátum. A „Your account: %s (Free)” (`0x00cb646c`) és a „(Paid Storage)” (`0x00cb643c`) a `0x007add30` feltöltési párbeszédhez tartozik, nem ehhez a sorhoz.
+- **A fiók-szöveg (B+4) tartalma és írója: NINCS MEG.** A `B` objektum konstruktora és feltöltője nincs követve.
+- **A Webalbumok ág URL-je: NINCS MEG.** A `0x0059b900` csak a Google Fotók URL-jét tartalmazza.
+- **A kind 1 és 2 metódusneve: NINCS MEG.** A GaiaManager vtábla `+0x10` (`0x00961240`) és `+0x14` (`0x00961340`) metódusai nincsenek szimbólummal. A „kijelentkezés / bejelentkezés” jelentés a feliratból és a hívási alakból következik, nem a metódus nevéből.
+- **A `[this+0x270]` író és a `[this+0x26c] == 1` jelentése:** az állapotváltás eseményét nem követtem. Az `1` = belépett értelmezés a feliratból erős, de közvetlenül nincs igazolva.
+- **A tulajdonos osztálya** (`0x0059c410`) és a sor képernyőbeli helye (`[this+0x280]`-`[this+0x28c]`, futásidőben állítódik be): NINCS MEG. A `ui-audit-mainwindow.md` 4.1/7. pontjának „menüsor jobb széle” állítása ebből nem igazolható.
+- **A `0x0059af10` tiltó feltétel** jelentése: NINCS MEG (csak a hívási alakját mértem).
+- **A számlálók** (`0x00d35738`, `0x00d35758`, `0x00d357b8`, `0x00d35798`, `0x00d6793c`) rendeltetése nincs igazolva.
+
+### 7. A PicasaPy-ban
+
+A PicasaPy eszköztárában nincs Google-fiókos hivatkozás (4.2. pont). A Google-fiókos út a paritás-lap szerint nem cél (`paritas-ellenorzes.md`: a Google Mail, a Change User és a „Use my Google Account” sorai). Ha ez változik, a fenti két felirat, a kattintási célok és a nyitott pontok adják a munka alapját.
+
+### 8. Bizonyítottsági fok és nyitott kérdések
+
+**Bizonyítottsági fok:**
+
+- **megerősített:** a két felirat, a kulcsaik és címeik; a belépési elágazás feltétele; a kattintás-szétosztó és a kind-tábla; a GDI-hívások;
+- **erős:** a belépett állapot = „Kijelentkezés” ág; a 3-as és a 6-os kind célja; a fiók-szöveg elem a belépett ágban;
+- **feltételes:** az 1-es és a 2-es kind jelentése (bejelentkezés, kijelentkezés);
+- **feltételes:** a fiók-szöveg megjelenése a kirajzolt sorban (a feliratépítő beírja, a festés láncát nem követtem végig).
+
+**Nyitott kérdések mérlege:** `3 nyílt · 4 lezárva · 1 blokkolt · 0 hatókörön kívül · 0 csak-nyitva`
+
+- **Lezárva (4):** (1) a két felirat, kulcsaik és címeik; (2) a belépési elágazás feltétele; (3) a kattintás-szétosztó és a kind-tábla; (4) a nyers ASCII-pásztázás eredménye.
+- **Nyílt (3), a következő gépi lépés megnevezve:** (5) a fiók-szöveg (B+4) tartalmának és írójának követése a Gaia-objektum feltöltőin, valamint a `0x00960ed0`, `0x00961240`, `0x00961340` metódusokon át; (6) az 1-es és 2-es kind metódusainak azonosítása a hívott API-k és sztringjeik alapján; (7) a `[this+0x270]` író, a `0x0059c410` tulajdonos-osztálya és a sor képernyőbeli helye.
+- **Blokkolt (1), felhasználóra-vár:** (8) **a belépett állapot képernyőképe.** A tulajdonos egy képet ad a Picasa 3.9 főablakának jobb felső sarkáról, belépett fiókkal. Ebből dől el, hogy a fiók-szöveg látszik-e, és mi áll benne. Gépi úton nem igazolható.
+
+### 9. Vizsgálati lépések (újrafuttathatók)
+
+1. Sztringek: `referencia/stringres-en-hu.tsv` (2044-2051. sor); `referencia/binary-index/string_xrefs.csv` (a `0x0059af60` sztringjei).
+2. Hívási gráf és függvénylista: `referencia/binary-index/picasa3-index.sqlite` (`functions`, `xrefs`, `string_xrefs`).
+3. Diszasszembly: `picasapy-agent/eszkozok/binaris/picasa_dis.py <cím>`, a projekt venv-jével (`venv/bin/python3`; a rendszer-Pythonban nincs capstone).
+4. IAT-nevek: a PE import-könyvtár olvasása, csak olvasásra; a `pefile` nincs telepítve.
+5. Nyers pásztázás: a `Picasa3.exe` ASCII-sztringjei (`bytes.find`, NUL-terminált egyezés).
+
+A `Picasa3.exe` helyi kutatási példánya nem a repó része; nem másoltam és nem commitoltam.
