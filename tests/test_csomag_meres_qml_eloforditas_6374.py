@@ -77,6 +77,7 @@ def test_a_melegites_ugyanazt_a_profilt_hasznalja_es_a_meres_elott_tortenik(
 
     monkeypatch.setattr(ido_modul, "_egy_inditas", inditas)
     monkeypatch.setattr(ido_modul, "hatar_hiba", lambda *_args: None)
+    monkeypatch.setattr(ido_modul, "foablak_kozepertek_hiba", lambda *_args: None)
     monkeypatch.setattr(ido_modul, "indulo_kozepertek_hiba", lambda *_args: None)
 
     assert (
