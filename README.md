@@ -42,34 +42,20 @@ PicasaPy is an independent project. It is not affiliated with, endorsed by, or s
 
 ## Installation and running
 
-- **Windows:** download the `PicasaPy-Setup-….exe` installer from [Releases](https://github.com/sanchomuzax/PicasaPy/releases) and run it. Python is not required.
-- **Linux:** run PicasaPy from source, as described below.
+- **macOS (Apple Silicon — M1/M2/M3/M4):** download the `PicasaPy-…-macOS-arm64.dmg` disk image from [Releases](https://github.com/JonasNowak/PicasaPy/releases), open it, and drag `PicasaPy.app` to `Applications`. Python is not required.
+- **macOS (Universal — Apple Silicon & Intel):** download the `PicasaPy-…-macOS-universal.dmg` disk image from [Releases](https://github.com/JonasNowak/PicasaPy/releases), open it, and drag `PicasaPy.app` to `Applications`. Python is not required.
 
-### Run from source on Linux
+### Run from source on macOS
 
 Install Git and Python 3.12 or newer, then run:
 
 ```bash
-git clone https://github.com/sanchomuzax/PicasaPy.git
+git clone https://github.com/JonasNowak/PicasaPy.git
 cd PicasaPy
-sudo apt-get install -y $(python3 scripts/print_dependencies.py --apt)
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install .
 picasapy ~/Pictures
-```
-
-### Run from source on Windows
-
-Install Git and Python 3.12 or newer, then run these commands in PowerShell:
-
-```powershell
-git clone https://github.com/sanchomuzax/PicasaPy.git
-cd PicasaPy
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install .
-picasapy "C:\Users\felhasznalo\Pictures"
 ```
 
 The `picasapy` command opens the photo folder passed to it. The package dependencies are declared in `pyproject.toml` and are installed by `pip install .`.
@@ -105,34 +91,20 @@ A PicasaPy független projekt: nem kapcsolódik a Google-höz, és a Google nem 
 
 ## Telepítés és futtatás
 
-- **Windows:** töltsd le a `PicasaPy-Setup-….exe` telepítőt a [Releases](https://github.com/sanchomuzax/PicasaPy/releases) oldalról, és indítsd el. Pythont nem kell külön telepítened.
-- **Linux:** a PicasaPy forrásból futtatható, az alábbiak szerint.
+- **macOS (Apple Silicon — M1/M2/M3/M4):** töltsd le a `PicasaPy-…-macOS-arm64.dmg` lemezképet a [Releases](https://github.com/JonasNowak/PicasaPy/releases) oldalról, nyisd meg, és húzd a `PicasaPy.app` alkalmazást az `Applications` mappába. Pythont nem kell külön telepítened.
+- **macOS (Universal — Apple Silicon és Intel):** töltsd le a `PicasaPy-…-macOS-universal.dmg` lemezképet a [Releases](https://github.com/JonasNowak/PicasaPy/releases) oldalról, nyisd meg, és húzd a `PicasaPy.app` alkalmazást az `Applications` mappába. Pythont nem kell külön telepítened.
 
-### Futtatás forrásból Linuxon
+### Futtatás forrásból macOS-en
 
 Telepítsd a Gitet és a Python 3.12-es vagy újabb változatát, majd futtasd:
 
 ```bash
-git clone https://github.com/sanchomuzax/PicasaPy.git
+git clone https://github.com/JonasNowak/PicasaPy.git
 cd PicasaPy
-sudo apt-get install -y $(python3 scripts/print_dependencies.py --apt)
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install .
 picasapy ~/Pictures
-```
-
-### Futtatás forrásból Windowson
-
-Telepítsd a Gitet és a Python 3.12-es vagy újabb változatát, majd PowerShellben futtasd:
-
-```powershell
-git clone https://github.com/sanchomuzax/PicasaPy.git
-cd PicasaPy
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install .
-picasapy "C:\Users\felhasznalo\Pictures"
 ```
 
 A `picasapy` parancs a megadott fotómappát nyitja meg. A futáshoz szükséges Python-csomagokat a `pyproject.toml` sorolja fel; a `pip install .` telepíti őket.

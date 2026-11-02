@@ -35,6 +35,7 @@ jobs:
           # csak ide írva kap befésülési jogot. (agent-#32: az OpenCode saját
           # bot-neve ide jön, ha megkapja a saját App-ját.)
           ELFOGADOTT="
+          JonasNowak
           sanchomuzax
           picasapy-claude-agent[bot]
           picasapy-codex-agent[bot]

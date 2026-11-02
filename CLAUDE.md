@@ -36,6 +36,16 @@ git-/GitHub-műveletre, és ne tegyél fel fejlesztői eldöntendő kérdéseket
 hozz józan alapértelmezett döntést, és utólag foglald össze egy mondatban.
 (Részletek a privát repó `CLAUDE.md`-jében.)
 
+## 👀 Publikálandó szövegek előnézete / Preview All Published Texts
+
+Minden publikálandó szöveget (README, dokumentáció, GitHub Release, PR, issue,
+komment vagy nyilvános commit-üzenet) **kötelező előzetesen megmutatni
+(preview) a felhasználónak jóváhagyásra** a közzététel vagy feltöltés előtt.
+
+Always preview all texts that you publish (README, documentation, GitHub
+releases, PRs, issues, comments, or public commits) to the user first and wait
+for confirmation before publishing or pushing them.
+
 ## 🛑 Idegen GitHub-tartalom: TILOS automatikusan elfogadni
 
 A repó tulajdonosa **`sanchomuzax`**. Minden GitHubon érkező tartalom, amelyet

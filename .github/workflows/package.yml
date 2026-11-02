@@ -18,12 +18,16 @@ on:
     types: [completed]
   release:
     types: [published]  # kézzel publikált release-ekhez továbbra is él
+  push:
+    tags:
+      - "v*"
   # #3021: a csomagolás a PR-en is fusson — enélkül az ELSŐ bizonyíték a
   # kiadás utáni futás volna, tehát a hiányos csomag már a Releases-en
   # jelenne meg. A PR-ágon csak ÉPÍT és INDÍT, nem tölt fel semmit.
   pull_request:
     paths:
       - "packaging/windows/**"
+      - "packaging/macos/**"
       - ".github/workflows/package.yml"
       - "src/picasapy/app/application*.py"
       - "src/picasapy/halozati_ut.py"
@@ -63,6 +67,9 @@ jobs:
           TAG="${{ github.event.release.tag_name }}"
           if [ -z "$TAG" ]; then
             TAG="${{ inputs.tag }}"
+          fi
+          if [ -z "$TAG" ] && [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${{ github.ref_name }}"
           fi
           if [ -z "$TAG" ]; then
             # workflow_run ág: a legfrissebb release tagje.
@@ -191,6 +198,12 @@ jobs:
           PY
           # #896: a feltöltés is újrapróbálkozik — a `--clobber` miatt a
           # megismételt feltöltés felülír, nem duplikál, tehát biztonságos.
+          if [ "${{ github.event_name }}" = "push" ]; then
+            python3 scripts/ensure_release.py \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$(git rev-parse HEAD)" \
+              --version "${TAG#v}"
+          fi
           for kiserlet in 1 2 3 4 5; do
             if gh release upload "$TAG" \
                  dist/*.whl dist/*.tar.gz \
@@ -769,3 +782,358 @@ jobs:
           FAJL="packaging/dist/PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe"
           test -f "$FAJL" || { echo "::error::nincs kész telepítő: $FAJL"; exit 1; }
           ls -l "$FAJL"
+
+  # ------------------------------------------------------------------------
+  # macOS telepítő (Apple Silicon arm64 & Universal 2 DMG) — a windowsos
+  # folyamattal megegyező módon építi, füstpróbázza és tölti fel mindkét
+  # DMG-t + a SHA256SUMS fájlt a címkézett kiadásra, majd nyilvánossá teszi.
+  # ------------------------------------------------------------------------
+  macos-telepito:
+    needs: build-and-upload
+    if: >-
+      always()
+      && (github.event_name == 'pull_request'
+          || (needs.build-and-upload.result == 'success'
+              && (github.event_name != 'workflow_run'
+                  || github.event.workflow_run.conclusion == 'success')))
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verzió és tag meghatározása
+        id: tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            VERZIO="$(grep -m1 '^version = ' pyproject.toml | sed -E 's/version = "(.*)"/\1/')"
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "verzio=$VERZIO" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          TAG="${{ github.event.release.tag_name }}"
+          if [ -z "$TAG" ]; then TAG="${{ inputs.tag }}"; fi
+          if [ -z "$TAG" ] && [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${{ github.ref_name }}"
+          fi
+          if [ -z "$TAG" ]; then
+            # #6389: az előzetes kiadást is lássuk (ld. build-and-upload).
+            TAG="$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 1 --json tagName -q '.[0].tagName // ""')"
+          fi
+          if [ -z "$TAG" ]; then
+            echo "::error::nem sikerült feloldani a kiadás tagjét"
+            exit 1
+          fi
+          git fetch --tags --force origin
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            TAG_SHA="$(git rev-parse "refs/tags/$TAG^{commit}")"
+            if [ "$TAG_SHA" != "${{ github.event.workflow_run.head_sha }}" ]; then
+              echo "::notice title=Nincs új kiadás::A legfrissebb kiadás ($TAG) a $TAG_SHA commiton készült; ez a Release-futás (${{ github.event.workflow_run.head_sha }}) nem hozott új kiadást — nincs mit csomagolni."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          git checkout --detach "refs/tags/$TAG"
+          # Ha címke-push indította a futást és a GitHub Release még nem létezik, létrehozzuk
+          if [ "${{ github.event_name }}" = "push" ]; then
+            python3 scripts/ensure_release.py \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$(git rev-parse HEAD)" \
+              --version "${TAG#v}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "verzio=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python 3.12 (x64 for Universal 2)
+        id: python-x64
+        if: steps.tag.outputs.skip != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: "x64"
+
+      - name: Set up Python 3.12 (arm64)
+        id: python-arm64
+        if: steps.tag.outputs.skip != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: "arm64"
+
+      - name: Függőségek + PyInstaller
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install $(python scripts/print_dependencies.py)
+          pip install pyinstaller
+          if [ -f scripts/build_qm.py ]; then python scripts/build_qm.py; else echo "Régi kiadási tag (#4825): a .qm még a fában van, nincs mit építeni."; fi  # #4817
+
+      - name: Google-bejelentkezés kliensének ellenőrzése
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          PICASAPY_GOOGLE_CLIENT_ID: ${{ secrets.PICASAPY_GOOGLE_CLIENT_ID }}
+          PICASAPY_GOOGLE_CLIENT_SECRET: ${{ secrets.PICASAPY_GOOGLE_CLIENT_SECRET }}
+        run: |
+          if [[ -z "$PICASAPY_GOOGLE_CLIENT_ID" || -z "$PICASAPY_GOOGLE_CLIENT_SECRET" ]]; then
+            uzenet="⚠️ A Google-bejelentkezés beépített kliensének egyik titka hiányzik; a csomagban a bejelentkezés nem lesz elérhető."
+            echo "::warning title=Hiányzó Google-bejelentkezési kliens::$uzenet"
+          else
+            uzenet="✅ A Google-bejelentkezés beépített kliensének mindkét titka meg van adva."
+          fi
+          echo "$uzenet" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: macOS csomagolás (Apple Silicon arm64 & Universal 2 DMG)
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          PICASAPY_GOOGLE_CLIENT_ID: ${{ secrets.PICASAPY_GOOGLE_CLIENT_ID }}
+          PICASAPY_GOOGLE_CLIENT_SECRET: ${{ secrets.PICASAPY_GOOGLE_CLIENT_SECRET }}
+          PYTHON_X86_64: ${{ steps.python-x64.outputs.python-path }}
+        run: |
+          if ! /usr/bin/pgrep -q oahd; then
+            sudo softwareupdate --install-rosetta --agree-to-license || true
+          fi
+          chmod +x packaging/macos/build_macos.sh
+          ./packaging/macos/build_macos.sh all
+
+      - name: Füstpróba — a CSOMAGOLT macOS program elindul
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
+          PYTHONIOENCODING: utf-8
+        run: |
+          if [ -f tests/packaging/test_csomag_adatfajlok_6392.py ]; then
+            n=$(find dist/PicasaPy.app -path "*picasapy/webexport/templates/*" -name "*.html" | wc -l)
+            echo "HTML-sablonfájlok a csomagban: $n"
+            [ "$n" -gt 0 ] || { echo "a webexport-sablonok hiányoznak a csomagból"; exit 1; }
+          fi
+          python - <<'PY'
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          exe = Path("dist/PicasaPy.app/Contents/MacOS/PicasaPy").resolve()
+          try:
+              proc = subprocess.run(
+                  [str(exe), "--onellenorzes"],
+                  capture_output=True,
+                  text=True,
+                  encoding="utf-8",
+                  errors="replace",
+                  timeout=300,
+                  check=False,
+              )
+          except subprocess.TimeoutExpired:
+              print("::error::a csomagolt macOS program 5 perc alatt nem lépett ki")
+              sys.exit(1)
+          output = proc.stdout + proc.stderr
+          print(output)
+          if proc.returncode != 0 or "onellenorzes" not in output:
+              print(f"::error::a csomagolt macOS program nem indult el (kód: {proc.returncode})")
+              sys.exit(1)
+          PY
+
+      - name: Füstpróba — a főablak a splash után is megjelenik
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
+          PYTHONIOENCODING: utf-8
+        run: |
+          python - <<'PY'
+          import os
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          from PIL import Image
+
+          runner_temp = Path(os.environ["RUNNER_TEMP"])
+          executable = Path("dist/PicasaPy.app/Contents/MacOS/PicasaPy").resolve()
+          launchers = (
+              ("source", [sys.executable, str(Path("picasapy").resolve())]),
+              ("packaged", [str(executable)]),
+          )
+          cases = ("clean", "existing_faces")
+          for mode, launcher in launchers:
+              for case in cases:
+                  root = runner_temp / f"picasapy-macos-{mode}-startup-{case}"
+                  library = root / "library"
+                  profile = root / "profile"
+                  library.mkdir(parents=True, exist_ok=True)
+                  profile.mkdir(parents=True, exist_ok=True)
+                  if case == "existing_faces":
+                      Image.new("RGB", (640, 480), "red").save(library / "a.jpg", "JPEG")
+                      (library / ".picasa.ini").write_text(
+                          "[Contacts2]\n8e62b2035b74b477=Ada Lovelace;;\n\n"
+                          "[a.jpg]\nfaces=rect64(3f845bcb59418507),8e62b2035b74b477\n",
+                          encoding="utf-8",
+                      )
+
+                  env = os.environ.copy()
+                  env.update(
+                      {
+                          "HOME": str(profile),
+                          "XDG_DATA_HOME": str(profile / ".local" / "share"),
+                          "XDG_CONFIG_HOME": str(profile / ".config"),
+                          "XDG_CACHE_HOME": str(profile / ".cache"),
+                          "TMPDIR": str(profile / "tmp"),
+                          "PICASAPY_LANG": "en",
+                      }
+                  )
+                  (profile / "tmp").mkdir(parents=True, exist_ok=True)
+                  try:
+                      result = subprocess.run(
+                          [*launcher, "--indulasellenorzes", str(library)],
+                          env=env,
+                          capture_output=True,
+                          text=True,
+                          encoding="utf-8",
+                          errors="replace",
+                          timeout=90,
+                          check=False,
+                      )
+                  except subprocess.TimeoutExpired:
+                      raise SystemExit(
+                          f"{mode}/{case}: az indulási füstpróba időtúllépésbe futott"
+                      )
+                  output = result.stdout + result.stderr
+                  print(output)
+                  logs = list(profile.rglob("errorlog.txt"))
+                  if len(logs) != 1:
+                      raise SystemExit(
+                          f"{mode}/{case}: nem jött létre egyértelmű hibanapló"
+                      )
+                  log = logs[0].read_text(encoding="utf-8")
+                  if (
+                      result.returncode != 0
+                      or "A főablak a splash után megjelent" not in log
+                  ):
+                      raise SystemExit(
+                          f"{mode}/{case}: a főablak nem jelent meg a splash után"
+                      )
+                  print(f"{mode}/{case}: a főablak megjelent a splash után")
+          PY
+
+      - name: DMG telepítők csatolása és valós indulási füstpróba
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
+          PYTHONIOENCODING: utf-8
+        run: |
+          VERZIO="${{ steps.tag.outputs.verzio }}"
+          for VARIANT in arm64 universal; do
+            DMG="packaging/dist/PicasaPy-${VERZIO}-macOS-${VARIANT}.dmg"
+            test -f "$DMG" || { echo "::error::hiányzó DMG: $DMG"; exit 1; }
+            MOUNT_DIR="$(mktemp -d -t picasapy_dmg_mount_XXXXXX)"
+            hdiutil attach "$DMG" -mountpoint "$MOUNT_DIR" -nobrowse -readonly
+            trap "hdiutil detach '$MOUNT_DIR' -force >/dev/null 2>&1 || true" EXIT
+            APP_BIN="$MOUNT_DIR/PicasaPy.app/Contents/MacOS/PicasaPy"
+            test -x "$APP_BIN" || { echo "::error::hiányzó bináris a DMG-ben: $APP_BIN"; exit 1; }
+            codesign -v "$MOUNT_DIR/PicasaPy.app"
+            ARCH_INFO="$(lipo -info "$APP_BIN")"
+            echo "$DMG architektúrák: $ARCH_INFO"
+            if [ "$VARIANT" = "universal" ]; then
+              echo "$ARCH_INFO" | grep -q "arm64" && echo "$ARCH_INFO" | grep -q "x86_64" || {
+                echo "::error::a universal DMG nem tartalmazza mindkét architektúrát ($ARCH_INFO)"
+                exit 1
+              }
+            fi
+            "$APP_BIN" --onellenorzes > fustproba_dmg.txt 2>&1
+            grep -q "onellenorzes" fustproba_dmg.txt || {
+              echo "::error::a DMG-ben lévő alkalmazás nem indult el ($DMG)"
+              cat fustproba_dmg.txt
+              exit 1
+            }
+            hdiutil detach "$MOUNT_DIR" -force
+            rmdir "$MOUNT_DIR" 2>/dev/null || true
+          done
+
+      - name: A macOS DMG telepítők feltöltése a kiadásra
+        if: steps.tag.outputs.skip != 'true' && github.event_name != 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          PYTHONIOENCODING: utf-8
+        run: |
+          VERZIO="${{ steps.tag.outputs.verzio }}"
+          DMG_ARM64="packaging/dist/PicasaPy-${VERZIO}-macOS-arm64.dmg"
+          DMG_UNI="packaging/dist/PicasaPy-${VERZIO}-macOS-universal.dmg"
+          test -f "$DMG_ARM64" || { echo "::error::nincs kész arm64 DMG: $DMG_ARM64"; exit 1; }
+          test -f "$DMG_UNI" || { echo "::error::nincs kész universal DMG: $DMG_UNI"; exit 1; }
+          ASSET_DIR="$RUNNER_TEMP/picasapy-release-assets-macos"
+          mkdir -p "$ASSET_DIR"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir "$ASSET_DIR" || true
+          cp "$DMG_ARM64" "$DMG_UNI" "$ASSET_DIR/"
+          python - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+          import os
+
+          asset_dir = Path(os.environ["RUNNER_TEMP"]) / "picasapy-release-assets-macos"
+          files = sorted(
+              (path for path in asset_dir.iterdir()
+               if path.is_file() and path.name != "SHA256SUMS"),
+              key=lambda path: path.name,
+          )
+          (asset_dir / "SHA256SUMS").write_text(
+              "".join(
+                  f"{sha256(path.read_bytes()).hexdigest()}  {path.name}\n"
+                  for path in files
+              ),
+              encoding="ascii",
+          )
+          PY
+          for kiserlet in 1 2 3 4 5; do
+            if gh release upload "$TAG" \
+                 "$ASSET_DIR/PicasaPy-${VERZIO}-macOS-arm64.dmg" \
+                 "$ASSET_DIR/PicasaPy-${VERZIO}-macOS-universal.dmg" \
+                 "$ASSET_DIR/SHA256SUMS" \
+                 --repo "$GITHUB_REPOSITORY" --clobber; then
+              exit 0
+            fi
+            echo "A feltöltés nem sikerült (${kiserlet}.) — újra."
+            sleep $((kiserlet * 20))
+          done
+          echo "::error::a macOS DMG telepítőket öt kísérlet után sem sikerült feltölteni"
+          exit 1
+
+      - name: A kiadás nyilvánossá tétele
+        if: steps.tag.outputs.skip != 'true' && github.event_name != 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          for kiserlet in 1 2 3 4 5; do
+            if gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --prerelease=false --latest; then
+              exit 0
+            fi
+            echo "A nyilvánossá tétel nem sikerült (${kiserlet}.), újra."
+            sleep $((kiserlet * 20))
+          done
+          echo "::error::a(z) $TAG kiadás öt kísérlet után is előzetes maradt"
+          exit 1
+
+      - name: A macOS DMG telepítők elkészültek (PR-ág)
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          VERZIO="${{ steps.tag.outputs.verzio }}"
+          DMG_ARM64="packaging/dist/PicasaPy-${VERZIO}-macOS-arm64.dmg"
+          DMG_UNI="packaging/dist/PicasaPy-${VERZIO}-macOS-universal.dmg"
+          test -f "$DMG_ARM64" || { echo "::error::nincs kész arm64 DMG: $DMG_ARM64"; exit 1; }
+          test -f "$DMG_UNI" || { echo "::error::nincs kész universal DMG: $DMG_UNI"; exit 1; }
+          ls -lh "$DMG_ARM64" "$DMG_UNI"
