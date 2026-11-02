@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.18] - 2026-11-02
+
+- 1.0.17 (#6374).
+- A Google Fotók feltöltési ablaka a főablak határain belül marad (#6422).
+- A Rögzített videoklipek és a Képernyőfelvételek mappája újraindítás után is megmarad a mappalistában (#6423).
+
 ## [1.0.17] - 2026-11-02
 
 - A telepítés és az önfrissítés előre elkészíti a QML-gyorsítótárat, így az első indítás is gyorsabban jeleníti meg a főablakot (#6374).
