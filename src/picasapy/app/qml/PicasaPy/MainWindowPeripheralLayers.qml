@@ -154,6 +154,7 @@ Item {
     // (a sáv nélküli üzemmód tartaléka).
     PicasaNotifier {
         id: picasaNotifier
+        _hostWindow: layers.hostWindow
         onActivated: function (kind, payload) {
             if (kind === "collage")
                 hostWindow.openCollageNodeInEditor(payload)

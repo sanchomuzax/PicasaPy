@@ -69,10 +69,46 @@ Window {
     //: `0x00657369` — eltolás a munkaterület ALSÓ élétől.
     readonly property int anchorOffsetPx: 144
 
-    //: A munkaterület (`SPI_GETWORKAREA`), nem a teljes képernyő — a
-    //: tálcát tiszteletben tartjuk, ahogy az eredeti is.
-    readonly property int munkateruletSzelesseg: Screen.desktopAvailableWidth
-    readonly property int munkateruletMagassag: Screen.desktopAvailableHeight
+    //: A hívó főablaka külön `Window`; a sáv ezért megjegyzi annak utolsó
+    //: használható képernyőjét, ha a főablak rejtett vagy épp méret nélküli.
+    property var _hostWindow: null
+    property var _lastKnownScreen: _hostWindow ? _hostWindow.screen : null
+
+    function _foablakKepernyojeHasznalhato() {
+        return _hostWindow && _hostWindow.screen && _hostWindow.visible
+                && _hostWindow.visibility !== Window.Minimized
+                && _hostWindow.width > 1 && _hostWindow.height > 1
+    }
+
+    function _utolsoKepernyoMegjegyzese() {
+        if (_foablakKepernyojeHasznalhato())
+            _lastKnownScreen = _hostWindow.screen
+    }
+
+    readonly property var _pozicioKepernyoje:
+        _foablakKepernyojeHasznalhato() ? _hostWindow.screen
+        : (_lastKnownScreen ? _lastKnownScreen : notifier.screen)
+
+    //: A QScreen elérhető területe a virtuális asztal koordinátáit adja,
+    //: így a képernyő bal és felső eltolása is megmarad.
+    readonly property var _munkaterulet:
+        _pozicioKepernyoje && _pozicioKepernyoje.availableGeometry
+        ? _pozicioKepernyoje.availableGeometry
+        : Qt.rect(0, 0, Screen.desktopAvailableWidth,
+                  Screen.desktopAvailableHeight)
+    readonly property int munkateruletX: _munkaterulet.x
+    readonly property int munkateruletY: _munkaterulet.y
+    readonly property int munkateruletSzelesseg: _munkaterulet.width
+    readonly property int munkateruletMagassag: _munkaterulet.height
+
+    Connections {
+        target: notifier._hostWindow
+        function onScreenChanged() { notifier._utolsoKepernyoMegjegyzese() }
+        function onVisibleChanged() { notifier._utolsoKepernyoMegjegyzese() }
+        function onVisibilityChanged() { notifier._utolsoKepernyoMegjegyzese() }
+        function onWidthChanged() { notifier._utolsoKepernyoMegjegyzese() }
+        function onHeightChanged() { notifier._utolsoKepernyoMegjegyzese() }
+    }
 
     // ------------------------------------------------------------------
     // Időzítés
@@ -181,16 +217,20 @@ Window {
 
     width: cellWidth
     height: Math.max(cellHeight, cellak.count * cellHeight)
-    //: A jobb szélre, a MUNKATERÜLET aljától 144 képponttal feljebb.
-    x: munkateruletSzelesseg - width
-    y: munkateruletMagassag - anchorOffsetPx
+    //: A főablak képernyőjének jobb szélére, a munkaterület aljától
+    //: 144 képponttal feljebb.
+    x: munkateruletX + munkateruletSzelesseg - width
+    y: munkateruletY + munkateruletMagassag - anchorOffsetPx
     color: Theme.chromeBg
 
     //: Az eltűnés animációja alatt még kint kell lennie, különben az
     //: ablak a kihalványulás első képkockájánál eltűnne.
     visible: notifier.hasCells || elhalvanyulas.running
 
-    Component.onCompleted: NotifierBus.attached = true
+    Component.onCompleted: {
+        notifier._utolsoKepernyoMegjegyzese()
+        NotifierBus.attached = true
+    }
     Component.onDestruction: NotifierBus.attached = false
 
     Column {
