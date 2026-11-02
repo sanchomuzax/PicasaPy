@@ -20,7 +20,7 @@ import json
 import sys
 import time
 
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QSize, QUrl
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQuick import QQuickWindow
 from PySide6.QtQml import QQmlComponent, QQmlEngine
@@ -131,8 +131,15 @@ try:
 
     # Az 1x1-es, használhatatlan főablak képernyőváltása se írja felül az
     # utolsó használható képernyőt.
+    foablak.setMinimumSize(QSize(1, 1))
     foablak.setWidth(1)
     foablak.setHeight(1)
+    # A méretváltás a platformon aszinkron is lehet: a képernyőváltás csak
+    # azután jöjjön, hogy a főablak már ténylegesen 1x1-es.
+    varj_feltetelre(
+        lambda: foablak.width() <= 1 and foablak.height() <= 1,
+        "a főablak 1x1-es legyen a képernyőváltás előtt",
+    )
     foablak.setPosition(celozott.geometry().x() + 100, celozott.geometry().y() + 100)
     app.processEvents()
     ellenoriz_poziciot(masik, "kis méretű főablaknál")
