@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.16] - 2026-11-02
+
+- A gombok lenyomáskor azonnali visszajelzést adnak, a hosszú műveletek pedig rögtön folyamatjelzőt mutatnak (#6381).
+- Az önfrissítés kódja kisebb részekre bontva, a működés változatlan (#6417).
+
 ## [1.0.15] - 2026-11-02
 
 - Az 1.0.15 köteg: háttérjelző, kameranapló, közeli arcok, kiadási lánc, Mappakezelő-spec (#6405, #6390, #6386, #6414, #6389, #6391) (#6391).
