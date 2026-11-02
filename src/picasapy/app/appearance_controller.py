@@ -47,6 +47,28 @@ def coerce_dark_flag(value) -> bool:
     return False
 
 
+def apply_qt_color_scheme(dark: bool) -> None:
+    """A Qt-alkalmazás színvilágának beállítása (világos vagy sötét téma).
+
+    Qt 6.5+-on a `setColorScheme` közvetlenül vezérli a macOS / Windows / Linux
+    ablakkeret és címsor megjelenését (macOS-en NSAppearanceDarkAqua,
+    Windowson DWMWA_USE_IMMERSIVE_DARK_MODE).
+    """
+    from PySide6.QtGui import QGuiApplication
+
+    app = QGuiApplication.instance()
+    if app is None:
+        return
+    try:
+        hints = app.styleHints()
+        if hasattr(hints, "setColorScheme"):
+            hints.setColorScheme(
+                Qt.ColorScheme.Dark if dark else Qt.ColorScheme.Light
+            )
+    except (AttributeError, RuntimeError):
+        pass
+
+
 def coerce_ui_preference_flag(value, default: bool) -> bool:
     """A felületi kapcsolók bool/string értékét értelmezi; hibás érték = alap."""
     if isinstance(value, bool):
@@ -83,6 +105,7 @@ class AppearanceMixin(FolderPhotoSortMixin):
         """Az AppController.__init__ hívja (a mixinek nem definiálnak saját
         __init__-et — ez a repó konvenciója, ld. PerfMonitorMixin)."""
         self._dark_theme = coerce_dark_flag(self._get_settings().value(DARK_THEME_KEY))
+        apply_qt_color_scheme(self._dark_theme)
         settings = self._get_settings()
         self._ui_transitions_enabled = coerce_ui_preference_flag(
             settings.value(UI_TRANSITIONS_KEY, True), default=True
@@ -155,6 +178,7 @@ class AppearanceMixin(FolderPhotoSortMixin):
         if dark == self._dark_theme:
             return
         self._dark_theme = dark
+        apply_qt_color_scheme(dark)
         self._get_settings().setValue(DARK_THEME_KEY, "true" if dark else "false")
         self.darkThemeChanged.emit()
 

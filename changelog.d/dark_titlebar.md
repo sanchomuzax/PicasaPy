@@ -1,0 +1,1 @@
+- Sötét témában az ablak címsora és kerete is sötét megjelenést kap (Windows 11, Linux).
