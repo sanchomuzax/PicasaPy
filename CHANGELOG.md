@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.17] - 2026-11-02
+
+- A telepítés és az önfrissítés előre elkészíti a QML-gyorsítótárat, így az első indítás is gyorsabban jeleníti meg a főablakot (#6374).
+
 ## [1.0.16] - 2026-11-02
 
 - A gombok lenyomáskor azonnali visszajelzést adnak, a hosszú műveletek pedig rögtön folyamatjelzőt mutatnak (#6381).
