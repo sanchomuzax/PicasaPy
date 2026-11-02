@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
 import importlib.util
 from io import BytesIO
 import json
@@ -13,6 +14,7 @@ _UT = Path(__file__).resolve().parents[1] / "packaging" / "windows" / "csomag_me
 _spec = importlib.util.spec_from_file_location("csomag_meres_6383", _UT)
 csomag_meres = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(csomag_meres)
+frissites_modul = importlib.import_module("csomag_meres_frissites")
 
 
 def _csomag(gyoker: Path) -> Path:
@@ -92,7 +94,7 @@ def test_a_helyi_http_szerver_a_kiadast_a_zipet_es_a_sha256sumst_adja(tmp_path):
 
 
 def test_a_frissites_alparancs_windowson_kivul_tiszta_kihagyas(tmp_path, monkeypatch):
-    monkeypatch.setattr(csomag_meres, "_platform", lambda: "linux")
+    monkeypatch.setattr(frissites_modul, "_platform", lambda: "linux")
 
     assert csomag_meres.main(
         [
@@ -129,12 +131,12 @@ def test_a_mozgo_gombra_csak_megallas_utan_kattint(monkeypatch, tmp_path):
             [_pillanat(most - 0.5, 608), _pillanat(most - 0.3, 608), _pillanat(most - 0.1, 608)],
         ]
     )
-    monkeypatch.setattr(csomag_meres, "_diagnosztika", lambda _m: next(korok))
-    monkeypatch.setattr(csomag_meres, "_falido", lambda: most)
-    monkeypatch.setattr(csomag_meres, "_szunet", lambda _mp: None)
+    monkeypatch.setattr(frissites_modul, "_diagnosztika", lambda _m: next(korok))
+    monkeypatch.setattr(frissites_modul, "_falido", lambda: most)
+    monkeypatch.setattr(frissites_modul, "_szunet", lambda _mp: None)
     kattintasok = []
     monkeypatch.setattr(
-        csomag_meres, "_valodi_eger_kattintas", lambda obj, pid: kattintasok.append(obj["rect"]["x"])
+        frissites_modul, "_valodi_eger_kattintas", lambda obj, pid: kattintasok.append(obj["rect"]["x"])
     )
 
     obj = csomag_meres._stabil_kattintas(
@@ -155,12 +157,12 @@ def test_az_ujrainditott_program_elso_kerdeset_continue_zarja(monkeypatch, tmp_p
     }
     most = 1000.0
     pillanatok = [{"pid": 9, "at": most - d, "objects": [gomb]} for d in (0.5, 0.3, 0.1)]
-    monkeypatch.setattr(csomag_meres, "_diagnosztika", lambda _m: pillanatok)
-    monkeypatch.setattr(csomag_meres, "_falido", lambda: most)
-    monkeypatch.setattr(csomag_meres, "_szunet", lambda _mp: None)
+    monkeypatch.setattr(frissites_modul, "_diagnosztika", lambda _m: pillanatok)
+    monkeypatch.setattr(frissites_modul, "_falido", lambda: most)
+    monkeypatch.setattr(frissites_modul, "_szunet", lambda _mp: None)
     kattintasok = []
     monkeypatch.setattr(
-        csomag_meres, "_valodi_eger_kattintas", lambda obj, pid: kattintasok.append(obj["name"])
+        frissites_modul, "_valodi_eger_kattintas", lambda obj, pid: kattintasok.append(obj["name"])
     )
 
     assert csomag_meres._elso_inditasi_kerdes_lezarasa(tmp_path, 9) is True
@@ -168,11 +170,11 @@ def test_az_ujrainditott_program_elso_kerdeset_continue_zarja(monkeypatch, tmp_p
 
 
 def test_kerdes_nelkul_nincs_kattintas(monkeypatch, tmp_path):
-    monkeypatch.setattr(csomag_meres, "_diagnosztika", lambda _m: [])
-    monkeypatch.setattr(csomag_meres, "_szunet", lambda _mp: None)
+    monkeypatch.setattr(frissites_modul, "_diagnosztika", lambda _m: [])
+    monkeypatch.setattr(frissites_modul, "_szunet", lambda _mp: None)
     kattintasok = []
     monkeypatch.setattr(
-        csomag_meres, "_valodi_eger_kattintas", lambda obj, pid: kattintasok.append(obj)
+        frissites_modul, "_valodi_eger_kattintas", lambda obj, pid: kattintasok.append(obj)
     )
 
     assert csomag_meres._elso_inditasi_kerdes_lezarasa(tmp_path, 9, varakozas_mp=0.05) is False
