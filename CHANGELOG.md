@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.20] - 2026-11-02
+
+- A telepítő előre bemelegíti a grafikus réteget, így valódi ablakkal az első indulás is gyorsabb (#6426).
+
 ## [1.0.19] - 2026-11-02
 
 - A Windowsos csomagmérő indulásmérési, Windows-segéd és frissítési modulokra bomlott (#6428).
