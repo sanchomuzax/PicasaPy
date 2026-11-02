@@ -43,6 +43,10 @@ def test_a_package_meres_minden_indulashoz_ot_masodperces_hatart_hasznal():
     # indítására 5 s; a valódi ablakos indulóablak-lépés főablak-határa a #6426-é
     lepes = workflow.split("--kepek 2000 --inditasok 3", 1)[1].split("\n\n", 1)[0]
     assert "--hatar-mp 5" in lepes
+    indulo = workflow.split("--indulo-hatar-ms 1000", 1)[0].rsplit(
+        "- name: Mérés — az indulóablak megjelenése", 1
+    )[1]
+    assert "--hatar-mp 5" in indulo
 
 
 def test_a_meroszkript_elomelegiti_a_profilt_es_mer_frissites_utan():

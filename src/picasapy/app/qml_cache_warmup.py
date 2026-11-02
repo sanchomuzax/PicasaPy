@@ -71,6 +71,50 @@ def melegitsd_qml_cache(
     )
 
 
+def melegitsd_qml_grafikat(
+    parancs: Sequence[str],
+    kornyezet: Mapping[str, str],
+    *,
+    timeout: float = 180.0,
+) -> str:
+    """Rejtett, valódi platformablakban kirajzol egy Qt Quick képkockát."""
+    env = dict(kornyezet)
+    env.pop("QT_QPA_PLATFORM", None)
+    env.pop("QT_QUICK_BACKEND", None)
+    temp = env.get("TEMP") or env.get("TMPDIR")
+    if not temp:
+        raise QmlWarmupError("a QML-grafikai előmelegítéshez nincs ideiglenes könyvtár")
+    naplo = Path(temp) / "picasapy-qml-grafika-melegites.txt"
+    naplo.parent.mkdir(parents=True, exist_ok=True)
+    naplo.write_text("", encoding="utf-8")
+    env["PICASAPY_QML_GRAFIKA_MELEGITES_NAPLO"] = str(naplo)
+    try:
+        result = _run(
+            [*(str(elem) for elem in parancs), "--qml-grafika-melegites"],
+            env=env,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=timeout,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise QmlWarmupError(
+            "a QML-grafikai előmelegítés nem fejeződött be; a haladásnapló vége:\n"
+            + _naplo_vege(naplo)
+        ) from error
+    naplo_vege = _naplo_vege(naplo, 20)
+    if (
+        result.returncode != 0
+        or "grafikai előmelegítés kész: 1 képkocka" not in naplo_vege
+    ):
+        raise QmlWarmupError(
+            f"a QML-grafikai előmelegítés {result.returncode} kilépőkóddal állt le; "
+            "a haladásnapló vége:\n" + naplo_vege
+        )
+    return naplo_vege
+
+
 @dataclass(frozen=True)
 class FrissitesiIndulasiIdok:
     """A sikeres önfrissítést követő indulás két naplózott ideje."""

@@ -300,6 +300,24 @@ def _qml_elofordit(executable: Path, *, timeout: float = 180.0) -> bool:
     return True
 
 
+def _qml_grafika_melegites(executable: Path, *, timeout: float = 180.0) -> bool:
+    """A frissítés után előkészíti a Qt Quick grafikus útvonalát, hiba nélkül visszaállva."""
+    try:
+        from .qml_cache_warmup import melegitsd_qml_grafikat
+
+        output = melegitsd_qml_grafikat(
+            [str(executable)], os.environ, timeout=timeout
+        )
+    except Exception as error:  # noqa: BLE001 - az előmelegítés nem vonhatja vissza a cserét
+        _log_update(
+            "QML-grafikai előmelegítés sikertelen: "
+            + _sanitized_log_message(error)
+        )
+        return False
+    _log_update(f"QML-grafikai előmelegítés kész: {output or 'nincs kimenet'}")
+    return True
+
+
 def _rendszergazda() -> bool:
     """Rendszergazdai (emelt) jogokkal fut-e a segéd — csak Windowson igaz."""
     if _platform() != "win32":
@@ -389,6 +407,7 @@ def install_after_exit(
             )
         else:
             _qml_elofordit(install_dir / executable, timeout=180.0)
+            _qml_grafika_melegites(install_dir / executable, timeout=180.0)
         return sikerult
     except Exception as error:
         _log_update("Visszaállás oka: a frissítési lépés kivétellel állt le")

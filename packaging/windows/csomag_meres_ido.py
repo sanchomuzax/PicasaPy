@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import base64
 import os
+import re
 import subprocess
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 from csomag_meres_kozos import (
     _BEALLITAS_KULCS,
@@ -19,6 +21,27 @@ from csomag_meres_kozos import (
     _SIKER,
     _SOR,
 )
+
+_QML_CACHE_URL = re.compile(r"['\"]((?:file|qrc|https?)://[^'\"]+\.qml)['\"]", re.I)
+_QML_CACHE_HIBA = (
+    "error loading",
+    "checksum mismatch",
+    "failed to create property caches for",
+    "error saving cached version of",
+)
+_popen = subprocess.Popen
+_GRAFIKA_KATEGORIAK = ("qt.rhi.general", "qt.scenegraph.general")
+_GRAFIKA_HATTEREK = (
+    (re.compile(r"\b(?:D3D11|Direct\s*3D\s*11(?:\.\d+)?)\b", re.I), "Direct3D 11"),
+    (re.compile(r"\b(?:D3D12|Direct\s*3D\s*12(?:\.\d+)?)\b", re.I), "Direct3D 12"),
+    (re.compile(r"\bVulkan\b", re.I), "Vulkan"),
+    (re.compile(r"\bMetal\b", re.I), "Metal"),
+    (re.compile(r"\bOpenGL\s*ES\b", re.I), "OpenGL ES"),
+    (re.compile(r"\bOpenGL\b", re.I), "OpenGL"),
+    (re.compile(r"\bSoftware\b", re.I), "Software"),
+    (re.compile(r"\bNull\b", re.I), "Null"),
+)
+_GRAFIKA_AKTIV_JELEK = ("graphics api:", "using qrhi", "created ", "backend:")
 
 def _kepekkel_tolt(konyvtar: Path, darab: int) -> None:
     """`darab` kis JPEG, mappánként `_KEP_MAPPANKENT`; a meglévőt nem írja újra."""
@@ -96,6 +119,76 @@ def _naplo_sorai(profil_gyoker: Path) -> list[tuple[datetime, str]]:
                 continue
     return sorok
 
+
+def qml_ujraforditott_fajlok(kimenet: str, korlat: int = 20) -> list[str]:
+    """A Qt lemez-cache hibasorai alapján megkeresi a forrásból lefordított QML-t."""
+    fajlok = []
+    latott = set()
+    for sor in kimenet.splitlines():
+        kisbetus = sor.casefold()
+        if "qt.qml.diskcache" not in kisbetus or not any(
+            hiba in kisbetus for hiba in _QML_CACHE_HIBA
+        ):
+            continue
+        talalat = _QML_CACHE_URL.search(sor)
+        if talalat is None:
+            continue
+        url = talalat.group(1)
+        ut = unquote(urlsplit(url).path).replace("\\", "/")
+        kis_ut = ut.casefold()
+        if "/qml/" in kis_ut:
+            ut = ut[kis_ut.index("/qml/") + len("/qml/") :]
+        else:
+            ut = ut.rsplit("/", 1)[-1]
+        if ut not in latott:
+            fajlok.append(ut)
+            latott.add(ut)
+    return fajlok[: max(0, min(20, korlat))]
+
+
+def grafikus_hatter_nev(kimenet: str) -> str | None:
+    """Kiveszi a RHI- vagy scenegraph-naplóból az aktív grafikus API nevét."""
+    for sor in kimenet.splitlines():
+        kisbetus = sor.casefold()
+        if not any(kategoria in kisbetus for kategoria in _GRAFIKA_KATEGORIAK):
+            continue
+        if not any(jel in kisbetus for jel in _GRAFIKA_AKTIV_JELEK):
+            continue
+        if "warp" in kisbetus and any(
+            minta.search(sor) for minta, nev in _GRAFIKA_HATTEREK[:2] if nev == "Direct3D 11"
+        ):
+            return "Direct3D 11 / WARP"
+        for minta, nev in _GRAFIKA_HATTEREK:
+            if minta.search(sor):
+                return nev
+    return None
+
+
+def _indulasi_grafikai_jelentes(sorszam: int, eredmeny: dict) -> list[str]:
+    if sorszam != 1 or not eredmeny.get("valodi_ablak"):
+        return []
+    fajlok = qml_ujraforditott_fajlok(eredmeny.get("kimenet", ""))
+    qml = ", ".join(fajlok) if fajlok else "nem észlelt cache-misst"
+    hatter = grafikus_hatter_nev(eredmeny.get("kimenet", "")) or "nem derült ki"
+    return [
+        f"  futás közben forrásból fordított QML: {qml}",
+        f"  grafikus háttér: {hatter}",
+        *(f"  qt-napló: {sor}" for sor in qt_naplo_sorok(eredmeny.get("kimenet", ""))),
+    ]
+
+
+def qt_naplo_sorok(kimenet: str, korlat: int = 25) -> list[str]:
+    """A Qt-napló nyers, releváns sorai (#6426): az elemzők a windowsos futáson
+    semmit nem ismertek fel, ezért a döntéshez a nyers sor kell."""
+    jelek = ("qt.", "qsg", "rhi", "cache", "d3d", "opengl", "vulkan")
+    ki = []
+    for sor in kimenet.splitlines():
+        if any(jel in sor.casefold() for jel in jelek):
+            ki.append(sor.strip()[:200])
+            if len(ki) >= korlat:
+                break
+    return ki
+
 def _egy_inditas(
     parancs: list[str],
     gyoker: Path,
@@ -109,13 +202,28 @@ def _egy_inditas(
     if valodi_ablak:
         env.pop("QT_QPA_PLATFORM", None)
         env.pop("QT_QUICK_BACKEND", None)
+        szabalyok = env.get("QT_LOGGING_RULES", "").strip().strip(";")
+        env["QT_LOGGING_RULES"] = ";".join(
+            elem
+            for elem in (
+                szabalyok,
+                "qt.qml.diskcache.debug=true",
+                "qt.scenegraph.general.debug=true",
+                "qt.rhi.general.debug=true",
+            )
+            if elem
+        )
+        # Windowson az ablakos program a Qt naplóját OutputDebugString-re írná;
+        # így a kimenetre kerül, és a QSG_INFO a grafikus hátteret is kiírja
+        env["QT_FORCE_STDERR_LOGGING"] = "1"
+        env["QSG_INFO"] = "1"
     else:
         env["QT_QPA_PLATFORM"] = "offscreen"
         env["QT_QUICK_BACKEND"] = "software"
     korabbi = len(_naplo_sorai(gyoker))
     indult = datetime.now().astimezone()
     kezdet = time.perf_counter()
-    folyamat = subprocess.Popen(
+    folyamat = _popen(
         [*parancs, "--indulasellenorzes", str(konyvtar)],
         env=env,
         stdout=subprocess.PIPE,
@@ -127,6 +235,7 @@ def _egy_inditas(
         "kezdet": kezdet,
         "korabbi": korabbi,
         "gyoker": gyoker,
+        "valodi_ablak": valodi_ablak,
         "indulo_hatar_ms": indulo_hatar_ms,
         "indulo_kep_kotelezo": sys.platform == "win32" and indulo_hatar_ms is not None,
     }
@@ -180,6 +289,7 @@ def _bevar(futas: dict) -> dict:
         "indulo_kep": indulo_kep,
         "indulo_kep_info": indulo_kep_info,
         "indulo_kep_hiba": indulo_kep_hiba,
+        "valodi_ablak": futas.get("valodi_ablak", False),
     }
 
 def _jelentes(nev: str, sorszam: int, eredmeny: dict) -> str:
@@ -190,6 +300,7 @@ def _jelentes(nev: str, sorszam: int, eredmeny: dict) -> str:
     )
     if not sorok:
         reszletek = _indulo_jelentes(eredmeny)
+        reszletek.extend(_indulasi_grafikai_jelentes(sorszam, eredmeny))
         return (
             fej
             + "\n  (a hibanaplóban nincs indulási jelzés)\n"
@@ -211,6 +322,7 @@ def _jelentes(nev: str, sorszam: int, eredmeny: dict) -> str:
         fej,
         f"  indítótól az első saját sorig (indító + modulbetöltés): {elso:.0f} ms",
         *_indulo_jelentes(eredmeny),
+        *_indulasi_grafikai_jelentes(sorszam, eredmeny),
         "  főablak a splash után: "
         + (f"{siker:.2f} s" if siker is not None else "NEM jelent meg"),
         "  a hat leghosszabb szakasz:",
@@ -366,10 +478,12 @@ def _ido_futtato(
     gyoker = munka / (f"ido-{nev}-{kepek}kep" if kepek else f"ido-{nev}")
     # Az önálló előfordítás ugyanazzal a profillal modellezi az Inno Setup
     # futását, közvetlenül az első mért indítás előtt.
-    from qml_cache_warmup import melegitsd_qml_cache
+    from qml_cache_warmup import melegitsd_qml_cache, melegitsd_qml_grafikat
 
     profil_env, _konyvtar = _profil(gyoker, kepek)
     melegitsd_qml_cache(parancs, profil_env)
+    if indulo_hatar_ms is not None:
+        melegitsd_qml_grafikat(parancs, profil_env)
     eredmeny: dict = {}
     indulo_eredmenyek: list[dict] = []
     for sorszam in range(1, inditasok + 1):
@@ -389,6 +503,12 @@ def _ido_futtato(
 
             for sor in uj_fajlok(gyoker / "profile", inditas_elott):
                 print(f"  profilba írt: {sor}", flush=True)
+            from profil_valtozas import qmlc_nevek
+
+            gyoker_qml = Path(parancs[0]).resolve().parent
+            nevek = qmlc_nevek(gyoker / "profile", inditas_elott, gyoker_qml)
+            if nevek:
+                print(f"  futás közben írt .qmlc: {', '.join(nevek)}", flush=True)
         if sorszam == 1 and eredmeny.get("indulo_kep"):
             print(f"  KÉP {nev}/induloablak {len(eredmeny['indulo_kep'])} bájt", flush=True)
             print("  -----KEP-KEZDET induloablak-----", flush=True)
@@ -425,6 +545,7 @@ __all__ = (
     "_exportcelok_visszaallitasa",
     "_ido_futtato",
     "_indulo_jelentes",
+    "_indulasi_grafikai_jelentes",
     "_jelentes",
     "_kepekkel_tolt",
     "_naplo_sorai",
@@ -435,4 +556,6 @@ __all__ = (
     "indulo_hatar_hiba",
     "indulo_kozepertek_hiba",
     "induloablak_ms",
+    "grafikus_hatter_nev",
+    "qml_ujraforditott_fajlok",
 )

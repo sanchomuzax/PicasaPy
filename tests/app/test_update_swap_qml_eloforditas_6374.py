@@ -30,6 +30,12 @@ def _csere_futtatasa(monkeypatch, tmp_path: Path, *, elevated: bool, admin: bool
     )
     monkeypatch.setattr(
         helper,
+        "_qml_grafika_melegites",
+        lambda _exe, **_kw: esemenyek.append("grafika") or True,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        helper,
         "inditsd_a_felhasznalonak",
         lambda _exe, **_kw: esemenyek.append("inditas"),
     )
@@ -52,6 +58,7 @@ def test_a_nem_emelt_frissites_az_uj_program_inditasa_elott_fordit(monkeypatch, 
 
     assert siker is True
     assert esemenyek.index("ellenorzes") < esemenyek.index("qml") < esemenyek.index("inditas")
+    assert esemenyek.index("qml") < esemenyek.index("grafika") < esemenyek.index("inditas")
 
 
 def test_az_emelt_rendszergazdai_frissites_atadja_a_melegitest_az_elso_indulasnak(

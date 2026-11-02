@@ -25,6 +25,7 @@ HATARIDO_ENV = "PICASAPY_QML_ELOFORDIT_HATARIDO"
 ALAP_HATARIDO_MP = 120.0
 HATARIDO_KOD = 3
 KIVETEL_KOD = 4
+GRAFIKA_NAPLO_ENV = "PICASAPY_QML_GRAFIKA_MELEGITES_NAPLO"
 #: Modulszintű fogantyúk: a tesztek ezeket cserélik, nem a standard modult (#1375).
 _Timer = threading.Timer
 _os_exit = os._exit
@@ -65,8 +66,27 @@ def _naplozz(sor: str) -> None:
         pass
 
 
+def _grafika_naplozz(sor: str) -> None:
+    ut = os.environ.get(GRAFIKA_NAPLO_ENV) or os.environ.get(NAPLO_ENV)
+    if not ut:
+        ideiglenes = os.environ.get("TEMP") or os.environ.get("TMP")
+        if ideiglenes:
+            ut = str(Path(ideiglenes) / "picasapy-qml-grafika-melegites.txt")
+    if not ut:
+        _kiird(sor)
+        return
+    try:
+        Path(ut).parent.mkdir(parents=True, exist_ok=True)
+        with open(ut, "a", encoding="utf-8") as naplo:
+            naplo.write(sor + "\n")
+    except OSError:
+        pass
+
+
 def _hatarido_lejart() -> None:
-    _naplozz("időtúllépés: az előfordítás nem fejeződött be, kilépés")
+    sor = "időtúllépés: az előfordítás nem fejeződött be, kilépés"
+    _naplozz(sor)
+    _grafika_naplozz(sor)
     _kilepes(HATARIDO_KOD)
 
 
@@ -238,6 +258,105 @@ def _fordits() -> None:
     _kiird(osszegzes)
     # A gyorsítótár a fordításkor már a lemezre került; a hívó a Qt-objektumok
     # bontását kihagyva lép ki.
+
+
+def _grafika_qml() -> bytes:
+    """Qt Quick Controls ablak, amely felállítja az alkalmazás grafikus útját."""
+    return b"""import QtQuick
+import QtQuick.Controls
+ApplicationWindow {
+    width: 32
+    height: 32
+    visible: false
+    color: "transparent"
+    Button {
+        anchors.fill: parent
+        text: " "
+    }
+}
+"""
+
+
+def _grafika_hatarido_mp() -> float:
+    try:
+        return max(0.0, float(os.environ.get(HATARIDO_ENV, ALAP_HATARIDO_MP)))
+    except ValueError:
+        return ALAP_HATARIDO_MP
+
+
+def _melegitsd_grafikat() -> None:
+    """Rejtett Qt Quick Controls ablakban megvár egy kirajzolt képkockát."""
+    from PySide6.QtCore import QEventLoop, QTimer, QUrl, Qt
+    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtQml import QQmlComponent, QQmlEngine
+    from PySide6.QtQuick import QQuickWindow
+
+    QCoreApplication.setOrganizationName("PicasaPy")
+    QCoreApplication.setApplicationName("PicasaPy")
+    app = QGuiApplication.instance()
+    if app is None:
+        app = QGuiApplication([sys.argv[0]])
+    if not isinstance(app, QGuiApplication):
+        raise RuntimeError("a grafikai előmelegítéshez QGuiApplication szükséges")
+
+    engine = QQmlEngine()
+    engine.addImportPath(_qml_import_path())
+    component = QQmlComponent(engine)
+    component.setData(_grafika_qml(), QUrl())
+    if component.status() == QQmlComponent.Status.Error:
+        hibak = "; ".join(str(hiba.toString()) for hiba in component.errors())
+        _grafika_naplozz(f"grafikai előmelegítés hibás QML: {hibak}")
+        raise RuntimeError("a grafikai előmelegítő QML nem tölthető be")
+
+    ablak = component.create()
+    if not isinstance(ablak, QQuickWindow):
+        _grafika_naplozz("grafikai előmelegítés: nem jött létre Qt Quick ablak")
+        raise RuntimeError("nem jött létre Qt Quick ablak")
+
+    ablak.setFlag(Qt.WindowType.Tool, True)
+    ablak.setOpacity(0.0)
+    ablak.setPosition(-32000, -32000)
+    ciklus = QEventLoop()
+    idozito = QTimer()
+    idozito.setSingleShot(True)
+    kirajzolt = False
+
+    def _kepkesz() -> None:
+        nonlocal kirajzolt
+        kirajzolt = True
+        ciklus.quit()
+
+    ablak.frameSwapped.connect(_kepkesz)
+    ablak.show()
+    if not kirajzolt:
+        idozito.timeout.connect(ciklus.quit)
+        idozito.start(max(1, int(_grafika_hatarido_mp() * 1000)))
+        ciklus.exec()
+    idozito.stop()
+    ablak.close()
+    if not kirajzolt:
+        _grafika_naplozz("grafikai előmelegítés időtúllépés: nem érkezett képkocka")
+        raise subprocess.TimeoutExpired(
+            "--qml-grafika-melegites", _grafika_hatarido_mp()
+        )
+    _grafika_naplozz("grafikai előmelegítés kész: 1 képkocka")
+
+
+def grafika_main() -> int:
+    """A telepítő rejtett grafikai előmelegítőjének belépési pontja."""
+    try:
+        _inditsd_a_hataridot()
+        _melegitsd_grafikat()
+    except subprocess.TimeoutExpired:
+        _hatarido_lejart()
+        return HATARIDO_KOD
+    except Exception as hiba:  # noqa: BLE001 - ablakos csomagban nem nyílhat hibaablak
+        _grafika_naplozz(f"kivétel: {type(hiba).__name__}")
+        _kilepes(KIVETEL_KOD)
+        return KIVETEL_KOD
+    _kiird("QML-grafikai előmelegítés: kész")
+    _kilepes(0)
+    return 0
 
 
 if __name__ == "__main__":
