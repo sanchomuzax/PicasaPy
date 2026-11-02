@@ -36,6 +36,27 @@ PicasaMenu {
         onTriggered: menuHelp.updateCheckRequested()
     }
     MenuSeparator {}
+    // SAJÁT FUNKCIÓ (#6440): az alsó állapotsáv a háttérben futó munka nevét
+    // mutatja. Tartós pipa (ld. ActivityStatusMixin); kikapcsolva a sáv a mostani.
+    PicasaMenuItem {
+        objectName: "menuHelpActivityStatus"
+        placeholder: false
+        sajat: true
+        text: qsTr("Show background work in the status bar")
+        checkable: true
+        checked: (controllerRef && controllerRef.statusActivityEnabled !== undefined)
+            ? controllerRef.statusActivityEnabled : false
+        onTriggered: {
+            controllerRef.toggleStatusActivity()
+            // #2377: a `checkable` MenuItem kattintáskor MAGA billenti a
+            // `checked`-et, ezért a kötést minden kattintás után visszaállítjuk.
+            checked = Qt.binding(function () {
+                return (controllerRef && controllerRef.statusActivityEnabled !== undefined)
+                    ? controllerRef.statusActivityEnabled : false
+            })
+        }
+    }
+    MenuSeparator {}
     // SAJÁT FUNKCIÓ (#1364): a Teljesítmény-monitor az eredeti Picasa
     // 3.9 Súgó menüjében NEM létezik (`docs/specs/ui-audit-menus.md`) —
     // a mi fejlesztői eszközünk, tehát a bináris-egyezés ide nem

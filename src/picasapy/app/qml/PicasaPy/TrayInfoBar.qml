@@ -100,9 +100,18 @@ Rectangle {
                   trayInfoLabel.nyersSzoveg, trayInfoLabel.width,
                   trayInfoLabel.szelessege)
 
+        // #6440: háttérmunka közben a munka neve, ha a Súgó pipa be van kapcsolva
+        // (a `statusActivityText` üres, ha nincs mit mutatni). A `typeof` a
+        // hiányzó tulajdonságra véd, a próbák stub-vezérlőjén nincs meg (#1572).
+        readonly property string munkaSzoveg:
+              (infoBar.trayController
+               && typeof infoBar.trayController.statusActivityText === "string")
+              ? infoBar.trayController.statusActivityText : ""
+
         /** A sáv szövege LEÉPÜLÉS NÉLKÜL — ebből dolgozik az InfoSav. */
         readonly property string nyersSzoveg:
-              (!infoBar.trayController || !trayRoot.appWindow) ? ""
+              munkaSzoveg !== "" ? munkaSzoveg
+              : (!infoBar.trayController || !trayRoot.appWindow) ? ""
               : (trayRoot.photoRevision,
                  (infoBar.trayController.collageRendering === true
                   ? trayRoot.collageWaitText

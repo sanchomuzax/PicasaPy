@@ -10,6 +10,7 @@ from PySide6.QtCore import Slot
 from picasapy.index import open_index, remove_folder_tree
 from picasapy.scanner import DirectoryChange
 
+from .busy_activity import munka_neve
 from .busy_registry import get_app_busy_registry
 from .library_controller_sync import _legacy
 
@@ -62,8 +63,9 @@ class _LibrarySyncDirtyMixin:
             # `watcherDirty` kapcsolaton át hív, argumentum nélkül — tehát
             # az alapértelmezés a helyes viselkedése.
             if felhasznaloi:
-                get_app_busy_registry().begin()
-                self._pending_busy += 1
+                self._pending_busy.append(
+                    get_app_busy_registry().begin(munka_neve("picasapy-sync-dirty"))
+                )
             return
 
         enabled_filetypes = getattr(self, "_filetype_scan_snapshot", None)
@@ -244,9 +246,9 @@ class _LibrarySyncDirtyMixin:
         # A `_on_folders_dirty` alább ÚJ bejegyzést nyithat (ha megint nem
         # tud indulni), ezért a lezárás ELŐBB történik — különben a két
         # bejegyzés egymásra torlódna, és a sáv sosem állna meg.
-        varakozo, self._pending_busy = self._pending_busy, 0
-        for _ in range(varakozo):
-            get_app_busy_registry().end()
+        varakozo, self._pending_busy = self._pending_busy, []
+        for jegy in varakozo:
+            get_app_busy_registry().end(jegy)
         try:
             self._on_folders_dirty(folders)
         except BaseException:

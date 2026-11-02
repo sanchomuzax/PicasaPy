@@ -9,6 +9,7 @@ from PySide6.QtPrintSupport import QPrinter
 from collections.abc import Sequence
 from .formatting import to_local_path
 from pathlib import Path
+from picasapy.app.busy_activity import munka_neve
 from picasapy.app.busy_registry import get_app_busy_registry
 from picasapy.index import PhotoRecord
 from picasapy.printing.contact_sheet import DEFAULT_COLUMNS, header_rect, sheet_pages
@@ -464,7 +465,8 @@ class PrintControllerOutputMixin:
         # bejelentkezik, hogy az alsó sáv animáljon — a `finally` zárja,
         # hibára futó feladatnál is (különben a csík örökre pörögne).
         nyilvantartas = get_app_busy_registry()
-        nyilvantartas.begin()
+        # #6440: a nyomtatás neve az állapotsávon (ld. busy_activity.py)
+        nyomtatas_jegy = nyilvantartas.begin(munka_neve("picasapy-print"))
         self._nyomtatas_folyamatban = True
         # #3016: minden feladat SAJAT ritkitas-orat kap — igy az ELSO lap
         # jelzese mindig azonnal kimegy (a felhasznalo lassa, hogy elindult),
@@ -499,7 +501,7 @@ class PrintControllerOutputMixin:
             return False
         finally:
             self._nyomtatas_folyamatban = False
-            nyilvantartas.end()
+            nyilvantartas.end(nyomtatas_jegy)
         return True
 
     @staticmethod

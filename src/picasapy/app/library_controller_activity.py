@@ -14,6 +14,7 @@ from picasapy.index.dedup_folders import merge_duplicate_folders
 from picasapy.paths import normalize_path, path_key
 from picasapy.scanner import LibraryWatcher
 
+from .busy_activity import munka_neve
 from .busy_registry import get_app_busy_registry
 
 
@@ -47,9 +48,12 @@ class _LibraryActivityMixin:
         self._thumb_active = count
         is_active = count > 0
         if is_active and not was_active:
-            get_app_busy_registry().begin()
+            # #6440: a bélyegkép-munka neve az állapotsávon (ld. busy_activity.py)
+            self._thumb_busy_jegy = get_app_busy_registry().begin(
+                munka_neve("picasapy-thumbnails")
+            )
         elif was_active and not is_active:
-            get_app_busy_registry().end()
+            get_app_busy_registry().end(getattr(self, "_thumb_busy_jegy", 0))
 
     # -- „Importálás" folyamat-panel (#209) ----------------------------------
 

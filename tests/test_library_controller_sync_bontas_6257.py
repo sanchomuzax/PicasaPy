@@ -11,9 +11,11 @@ from pathlib import Path
 _GYOKER = Path(__file__).resolve().parents[1]
 _APP = _GYOKER / "src" / "picasapy" / "app"
 
+# #6440: ez a két függvény SZÁNDÉKOSAN változott: a háttérmunka-jegy és a
+# munkanév az állapotsávnak szól. A többi lenyomat változatlan.
 _MOZGATOTT_FORRASOK = {
     ("library_controller_sync_dirty.py", "_LibrarySyncDirtyMixin", "_on_folders_dirty"):
-        "0147de2ec6bf83dc87e4a3f0d47e279676916e93166200f0dccf764841a3cc6c",
+        "0acf2349abf73a6e802ade0846dcf5702b9b434bc542e1db9cca6f693f5501cc",
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_root_for_folder"):
         "f5afe5e6920a3047137f970df48e26bd2eeec92e67c8b544b126859d86d66efd",
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_poll_current_folder"):
@@ -40,7 +42,7 @@ _MOZGATOTT_FORRASOK = {
         "library_controller_sync_dirty.py",
         "_LibrarySyncDirtyMixin",
         "_flush_pending_dirty",
-    ): "b1f76856b52af4e06d2a250edd2fd034b536c85e68bcc27d7be590f219401bde",
+    ): "7dc1a0a72d68dab3d1980fb825db9d06e89e1b10ae7b2bfe91b88244e980ced9",
     (
         "library_controller_sync_dirty.py",
         "_LibrarySyncDirtyMixin",

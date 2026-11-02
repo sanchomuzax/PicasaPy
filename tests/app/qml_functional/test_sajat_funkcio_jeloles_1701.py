@@ -33,6 +33,8 @@ _QML_DIR = Path(picasapy.app.__file__).parent / "qml"
 SAJAT_TETELEK = (
     "menuHelpTesztuzem",
     "menuHelpSendLog",
+    # #6440: a háttérmunka megjelenítése az állapotsávon (az eredetiben nincs)
+    "menuHelpActivityStatus",
     # #1398: a duplikátum-KEZELŐ párbeszéd (#287) — az eredetiben nincs
     "menuToolsDedupManager",
 )

@@ -75,6 +75,7 @@ from .people_controller import PeopleMixin
 from .project_folders_controller import ProjectFoldersMixin
 from .perf_controller import PerfMonitorMixin
 from .tesztuzem_controller import TesztuzemMixin
+from .activity_status_mixin import ActivityStatusMixin
 from .photo_ops_controller import PhotoOpsMixin, _WRITE_ERRORS
 from .timestamp_controller import TimestampAdjustmentMixin
 from .dupe_search_controller import DupeSearchMixin
@@ -161,6 +162,8 @@ class AppController(
     # #1654: TARTÓS tesztüzem — a #211-gyel szemben túléli a kilépést,
     # és a KÖVETKEZŐ indulást naplózza az első ezredmásodperctől
     TesztuzemMixin,
+    # #6440: háttérmunka az állapotsávon, tartós pipa a Súgó menüben
+    ActivityStatusMixin,
     AppearanceMixin,
     ColorManagementMixin,
     ViewerStartupMixin,
