@@ -388,7 +388,29 @@ def _melegitsd_grafikat() -> None:
     if not kirajzolt:
         _grafika_naplozz("grafikai előmelegítés időtúllépés: nem érkezett képkocka")
         raise subprocess.TimeoutExpired("--qml-grafika-melegites", _grafika_hatarido_mp())
+    _melegitsd_betukeszleteket()
     _grafika_naplozz("grafikai előmelegítés kész: 1 képkocka")
+
+
+def _melegitsd_betukeszleteket(adatbazis=None) -> int:
+    """Egyszer betölti a rendszer összes betűkészlet-családját.
+
+    Windowson az első indulásnál a Qt a Main.qml betöltése közben egyenként
+    végigjárta a családokat, és ez 4-15 s volt; a második indulástól a
+    rendszer betűkészlet-gyorsítótára már meleg (#6426). A hiba nem állítja
+    meg a grafikai előmelegítést.
+    """
+    try:
+        if adatbazis is None:
+            from PySide6.QtGui import QFontDatabase as adatbazis
+        csaladok = list(adatbazis.families())
+        for csalad in csaladok:
+            adatbazis.styles(csalad)
+    except Exception as hiba:  # noqa: BLE001 - csak gyorsítás, nem feltétel
+        _grafika_naplozz(f"betűkészlet-előmelegítés kimaradt: {type(hiba).__name__}")
+        return 0
+    _grafika_naplozz(f"betűkészlet-előmelegítés: {len(csaladok)} betűkészlet-család")
+    return len(csaladok)
 
 
 def grafika_main() -> int:

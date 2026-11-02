@@ -150,3 +150,43 @@ def test_a_tartalek_elomelegito_qml_hiba_nelkul_betoltheto(qt_app):
     assert component.status() != QQmlComponent.Status.Error, [
         hiba.toString() for hiba in component.errors()
     ]
+
+
+def test_a_betukeszlet_melegites_minden_csaladot_betolt(monkeypatch):
+    """Windowson az első indulásnál a Qt egyenként betölti az összes
+    betűkészlet-családot (CI-napló, #6426); a telepítő ezt előre elvégzi."""
+    from picasapy.app import qml_precompile
+
+    betoltve = []
+
+    class HamisAdatbazis:
+        @staticmethod
+        def families():
+            return ["Arial", "Nirmala UI", "Yu Gothic"]
+
+        @staticmethod
+        def styles(csalad):
+            betoltve.append(csalad)
+            return ["Regular"]
+
+    naplo = []
+    monkeypatch.setattr(qml_precompile, "_grafika_naplozz", naplo.append)
+
+    assert qml_precompile._melegitsd_betukeszleteket(HamisAdatbazis) == 3
+    assert betoltve == ["Arial", "Nirmala UI", "Yu Gothic"]
+    assert any("3 betűkészlet-család" in sor for sor in naplo)
+
+
+def test_a_betukeszlet_melegites_hibaja_nem_allitja_meg_a_melegitest(monkeypatch):
+    from picasapy.app import qml_precompile
+
+    class HibasAdatbazis:
+        @staticmethod
+        def families():
+            raise RuntimeError("nincs betűkészlet-adatbázis")
+
+    naplo = []
+    monkeypatch.setattr(qml_precompile, "_grafika_naplozz", naplo.append)
+
+    assert qml_precompile._melegitsd_betukeszleteket(HibasAdatbazis) == 0
+    assert any("betűkészlet" in sor for sor in naplo)
