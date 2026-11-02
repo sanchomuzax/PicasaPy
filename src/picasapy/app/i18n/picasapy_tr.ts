@@ -10089,6 +10089,11 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
             <translation>Kullanılamıyor</translation>
         </message>
         <message>
+            <source>Check Windows camera privacy settings and close other apps that may be using the camera.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Windows kamera gizlilik ayarlarını denetleyin ve kamerayı kullanıyor olabilecek diğer uygulamaları kapatın.</translation>
+        </message>
+        <message>
             <source>Snapshot saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Anlık görüntü kaydedildi</translation>

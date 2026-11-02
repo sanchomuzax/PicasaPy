@@ -10119,6 +10119,11 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
             <translation>Nav pieejams</translation>
         </message>
         <message>
+            <source>Check Windows camera privacy settings and close other apps that may be using the camera.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pārbaudiet Windows kameras konfidencialitātes iestatījumus un aizveriet citas lietotnes, kas var izmantot kameru.</translation>
+        </message>
+        <message>
             <source>Snapshot saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Ekrānuzņēmums saglabāts</translation>

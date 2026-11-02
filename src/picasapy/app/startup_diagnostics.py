@@ -2,15 +2,24 @@
 
 from __future__ import annotations
 
+import os
 import re
+import socket
 import sys
 import threading
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 _PYSIDE6_MAX_MINOR = 12
 _VERSION_PREFIX = re.compile(r"^\s*(\d+)\.(\d+)(?:\.|$)")
+_thread = threading.Thread
+
+
+def _platform(platform: str = sys.platform) -> str:
+    """A platform-ellenőrzés egyetlen tesztelhető fogantyúja (#1217)."""
+    return platform
 
 
 def pyside6_is_supported(version: str) -> bool:
@@ -104,6 +113,192 @@ def write_console(message: str, *, error: bool = False) -> None:
     except (OSError, UnicodeError):
         # GUI-csomagban hiányozhat a konzol, vagy megszűnhet a cső.
         return
+
+
+@dataclass(frozen=True)
+class _MultimediaDeviceSnapshot:
+    """Qt multimédia-eszközök száma és a ténylegesen betöltött háttér neve."""
+
+    video_input_count: int | None
+    audio_input_count: int | None
+    backend_name: str
+
+
+def _multimedia_backend_name(messages: list[str] | tuple[str, ...]) -> str:
+    """A Qt qt.multimedia.plugin naplójából kivett betöltött háttérnév."""
+    backend = "ismeretlen"
+    for message in messages:
+        match = re.search(
+            r'Loading media backend\s+["\']?([A-Za-z0-9_.-]+)',
+            str(message),
+            re.IGNORECASE,
+        )
+        if match is not None:
+            backend = match.group(1)
+    return backend
+
+
+def _multimedia_device_summary(snapshot: _MultimediaDeviceSnapshot) -> str:
+    """Eszköznevek nélkül adja meg a bemenetek számát és a Qt-hátteret."""
+    video_count = (
+        str(snapshot.video_input_count)
+        if snapshot.video_input_count is not None
+        else "nem mérhető"
+    )
+    audio_count = (
+        str(snapshot.audio_input_count)
+        if snapshot.audio_input_count is not None
+        else "nem mérhető"
+    )
+    return (
+        "Qt multimédia: "
+        f"videóbemenetek={video_count}; "
+        f"hangbemenetek={audio_count}; "
+        f"háttér={snapshot.backend_name}"
+    )
+
+
+def _linux_audio_service_available() -> bool:
+    """Kerülje el a PulseAudio-hívás több másodperces várakozását socket nélkül.
+
+    Mérés: a helyi, hangszolgáltatás nélküli környezetben a közvetlen
+    QMediaDevices.audioInputs() 8 másodperc alatt sem tért vissza (#6390).
+    """
+    if not _platform().startswith("linux") or os.environ.get("PULSE_SERVER"):
+        return True
+
+    runtime_dir = Path(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}"))
+    for relative_path in ("pipewire-0", "pulse/native"):
+        path = runtime_dir / relative_path
+        if not path.exists():
+            continue
+        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        client.settimeout(0.1)
+        try:
+            if client.connect_ex(str(path)) == 0:
+                return True
+        except OSError:
+            continue
+        finally:
+            client.close()
+    return False
+
+
+def _multimedia_device_snapshot() -> _MultimediaDeviceSnapshot:
+    """Felsorolja a Qt bemeneteit, és a plugin naplójából azonosítja a hátteret.
+
+    A Qt nyilvános API-ja nem adja vissza a backend nevét. A Qt által
+    dokumentált qt.multimedia.plugin naplókategória betöltési sorát olvassuk,
+    és csak a bemenetek darabszámát írjuk tovább.
+    """
+    logging_category = None
+    old_filter_rules = None
+    old_handler = None
+    handler_installed = False
+    backend_messages: list[str] = []
+    video_count: int | None = None
+    audio_count: int | None = None
+
+    try:
+        from PySide6.QtCore import (
+            QLoggingCategory,
+            qFormatLogMessage,
+            qInstallMessageHandler,
+        )
+        from PySide6.QtMultimedia import QMediaDevices
+
+        logging_category = QLoggingCategory
+        old_filter_rules = os.environ.get("QT_LOGGING_RULES", "")
+
+        def receive_qt_message(message_type, context, message: str) -> None:
+            category_name = getattr(context, "category", "")
+            if str(category_name).startswith("qt.multimedia"):
+                if category_name == "qt.multimedia.plugin":
+                    backend_messages.append(str(message))
+                return
+            if old_handler is not None:
+                old_handler(message_type, context, message)
+                return
+            stream = sys.stderr
+            if stream is not None:
+                try:
+                    print(qFormatLogMessage(message_type, context, message), file=stream)
+                except (OSError, UnicodeError):
+                    pass
+
+        old_handler = qInstallMessageHandler(receive_qt_message)
+        handler_installed = True
+        rules = old_filter_rules.strip()
+        if rules:
+            rules += ";"
+        logging_category.setFilterRules(rules + "qt.multimedia.plugin.debug=true")
+
+        video_count = len(QMediaDevices.videoInputs())
+        if _linux_audio_service_available():
+            audio_count = len(QMediaDevices.audioInputs())
+    except Exception as error:  # noqa: BLE001; diagnosztika nem állíthatja meg az indulást
+        import logging
+
+        logging.getLogger("picasapy.startup").warning(
+            "Qt multimédia-eszközfelsorolás nem sikerült (%s)", type(error).__name__
+        )
+    finally:
+        if logging_category is not None and old_filter_rules is not None:
+            try:
+                logging_category.setFilterRules(old_filter_rules)
+            except Exception:  # noqa: BLE001; diagnosztikai takarítás
+                pass
+        if handler_installed:
+            try:
+                qInstallMessageHandler(old_handler)
+            except Exception:  # noqa: BLE001; diagnosztikai takarítás
+                pass
+
+    return _MultimediaDeviceSnapshot(
+        video_input_count=video_count,
+        audio_input_count=audio_count,
+        backend_name=_multimedia_backend_name(backend_messages),
+    )
+
+
+def _log_multimedia_device_diagnostics(
+    progress_log: StartupProgressLog,
+) -> _MultimediaDeviceSnapshot:
+    """Az eszközszámokat és az üres kamerabemenet lehetséges okait naplózza."""
+    snapshot = _multimedia_device_snapshot()
+    progress_log.mark(_multimedia_device_summary(snapshot))
+    if snapshot.video_input_count == 0:
+        if _platform().startswith("win"):
+            progress_log.mark(
+                "A Qt nem talált kamerabemenetet; ellenőrizd a Windows "
+                "kamera-adatvédelmi hozzáférését, és hogy másik program nem "
+                "használja-e a kamerát."
+            )
+        else:
+            progress_log.mark(
+                "A Qt nem talált kamerabemenetet; ellenőrizd a kamera "
+                "csatlakozását, és hogy másik program nem használja-e."
+            )
+    elif snapshot.video_input_count is None:
+        progress_log.mark("A Qt kamerabemenet-felsorolása nem sikerült.")
+    return snapshot
+
+
+def _schedule_multimedia_device_diagnostics(
+    progress_log: StartupProgressLog,
+) -> None:
+    """Az első főablak-képkocka után, késleltetve és háttérszálon mérjen."""
+    from PySide6.QtCore import QTimer
+
+    def start_worker() -> None:
+        _thread(
+            target=_log_multimedia_device_diagnostics,
+            args=(progress_log,),
+            name="multimedia-device-diagnostics",
+            daemon=True,
+        ).start()
+
+    QTimer.singleShot(2000, start_worker)
 
 
 class StartupProgressLog:

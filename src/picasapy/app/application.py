@@ -115,6 +115,7 @@ from .application_startup_state import (
 )
 from .startup_splash import _close_after_first_frame, take_early_startup
 from .startup_diagnostics import (
+    _schedule_multimedia_device_diagnostics as _schedule_multimedia_device_diagnostics,
     runtime_version_messages as runtime_version_messages,
     write_console,
 )
@@ -630,6 +631,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
             early_splash.close()
         timeline.mark("az ablak első kirajzolt képkockája")
         progress_log.mark("Első főablak-képkocka; a rács megjelent")
+        _schedule_multimedia_device_diagnostics(progress_log)
         QTimer.singleShot(0, _start_and_finish)
 
     app = state.app

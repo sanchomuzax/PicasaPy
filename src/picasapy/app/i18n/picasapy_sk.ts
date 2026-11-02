@@ -10119,6 +10119,11 @@ picasapy-origin-key: stringres:CCaptureMoviePanel::unavail</extracomment>
             <translation>Nedostupné</translation>
         </message>
         <message>
+            <source>Check Windows camera privacy settings and close other apps that may be using the camera.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Skontrolujte nastavenia ochrany osobných údajov kamery vo Windows a zatvorte ostatné aplikácie, ktoré môžu kameru používať.</translation>
+        </message>
+        <message>
             <source>Snapshot saved</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Snímka bola uložená</translation>
