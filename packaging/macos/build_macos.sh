@@ -145,7 +145,10 @@ build_x86_64_under_rosetta() {
   if [ -n "${PYTHON_X86_64:-}" ]; then
     arch -x86_64 "$py_x86" -m venv "$venv_x86"
     arch -x86_64 "$venv_x86/bin/python" -m pip install --upgrade pip
-    arch -x86_64 "$venv_x86/bin/pip" install $(python scripts/print_dependencies.py) pyinstaller
+    # rawpy>=0.26 dropped macosx_x86_64 wheels on PyPI; pin rawpy==0.25.1 (latest with
+    # both arm64 and x86_64 macOS wheels) and use --prefer-binary so pip never attempts
+    # to compile LibRaw from source against arm64 Homebrew dylibs under Rosetta 2.
+    arch -x86_64 "$venv_x86/bin/pip" install --prefer-binary $(python scripts/print_dependencies.py) "rawpy==0.25.1" pyinstaller
     arch -x86_64 "$venv_x86/bin/pyinstaller" --noconfirm --clean \
       --workpath "$STAGE_DIR/build" \
       --distpath "$STAGE_DIR/dist" \

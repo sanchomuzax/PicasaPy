@@ -840,9 +840,7 @@ jobs:
             fi
           fi
           git checkout --detach "refs/tags/$TAG"
-          if [ ! -f packaging/macos/build_macos.sh ]; then
-            git checkout "${{ github.sha }}" -- packaging/macos src/picasapy/app/assets/icon.icns
-          fi
+          git checkout "${{ github.sha }}" -- packaging/macos src/picasapy/app/assets/icon.icns
           # Ha címke-push indította a futást és a GitHub Release még nem létezik, létrehozzuk
           if [ "${{ github.event_name }}" = "push" ]; then
             python3 scripts/ensure_release.py \
@@ -874,7 +872,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          pip install $(python scripts/print_dependencies.py)
+          pip install --prefer-binary $(python scripts/print_dependencies.py) "rawpy==0.25.1"
           pip install pyinstaller
           if [ -f scripts/build_qm.py ]; then python scripts/build_qm.py; else echo "Régi kiadási tag (#4825): a .qm még a fában van, nincs mit építeni."; fi  # #4817
 

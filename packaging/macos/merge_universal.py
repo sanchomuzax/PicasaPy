@@ -19,11 +19,26 @@ import sys
 from pathlib import Path
 
 
+_MACHO_MAGICS = {
+    b"\xfe\xed\xfa\xce",
+    b"\xce\xfa\xed\xfe",
+    b"\xfe\xed\xfa\xcf",
+    b"\xcf\xfa\xed\xfe",
+    b"\xca\xfe\xba\xbe",
+    b"\xbe\xba\xfe\xca",
+    b"\xca\xfe\xba\xbf",
+    b"\xbf\xba\xfe\xca",
+}
+
+
 def is_macho(path: Path) -> bool:
     """Return True if path is a Mach-O binary recognised by lipo."""
     if not path.is_file() or path.is_symlink():
         return False
     try:
+        with path.open("rb") as fh:
+            if fh.read(4) not in _MACHO_MAGICS:
+                return False
         proc = subprocess.run(
             ["lipo", "-info", str(path)],
             stdout=subprocess.PIPE,
