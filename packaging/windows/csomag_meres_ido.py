@@ -247,13 +247,6 @@ def _egy_inditas(
     if not valodi_ablak:
         env["QT_QPA_PLATFORM"] = "offscreen"
         env["QT_QUICK_BACKEND"] = "software"
-    if valodi_ablak and os.environ.get("PICASAPY_KISERLET_ELOOLVASAS") == "1":
-        env["QT_LOGGING_RULES"] = (
-            "qt.qml.import=true;qt.multimedia*=true;qt.network*=true;"
-            "qt.positioning*=true;qt.location*=true;qt.text.font.db=true;qt.qpa.fonts=true"
-        )
-        env["QT_FORCE_STDERR_LOGGING"] = "1"
-        env["QT_MESSAGE_PATTERN"] = "%{time process} %{category}: %{message}"
     korabbi = len(_naplo_sorai(gyoker))
     indult = datetime.now().astimezone()
     kezdet = time.perf_counter()
@@ -295,22 +288,6 @@ def _kiserleti_eloolvasas(gyoker: Path, parancs: list[str]) -> None:
                 continue
         ms = (time.perf_counter() - kezdet) * 1000
         print(f"  KÍSÉRLET előolvasás {nev}: {len(fajlok)} fájl, {bajt} bájt, {ms:.0f} ms", flush=True)
-
-
-def _kiserleti_resek(kimenet: str, db: int = 15) -> list[str]:
-    """KÍSÉRLET (#6426): a Qt-napló időbélyegei közti legnagyobb rések."""
-    sorok = []
-    for sor in kimenet.splitlines():
-        talalat = re.match(r"\s*(\d+\.\d+)\s+(.*)", sor)
-        if talalat:
-            sorok.append((float(talalat.group(1)), talalat.group(2)[:220]))
-    resek = sorted(
-        ((b[0] - a[0], a, b) for a, b in zip(sorok, sorok[1:], strict=False)), reverse=True
-    )[:db]
-    ki = [f"{len(sorok)} időbélyeges sor"]
-    for res, a, b in resek:
-        ki.append(f"{res:7.3f} s  {a[0]:.3f} {a[1]}  ==>  {b[1]}")
-    return ki
 
 def _bevar(futas: dict) -> dict:
     ablakikonok = globals().get("_ablakikonok")
@@ -587,8 +564,6 @@ def _ido_futtato(
             for sor in uj_fajlok(gyoker / "profile", inditas_elott):
                 print(f"  profilba írt: {sor}", flush=True)
             if os.environ.get("PICASAPY_KISERLET_ELOOLVASAS") == "1":
-                for sor in _kiserleti_resek(eredmeny.get("kimenet", "")):
-                    print(f"  KÍSÉRLET rés: {sor}", flush=True)
                 for naplo in gyoker.rglob("errorlog.txt"):
                     for sor in naplo.read_text(encoding="utf-8", errors="replace").splitlines():
                         if "foszal_figyelo" in sor or "perf" in sor:
