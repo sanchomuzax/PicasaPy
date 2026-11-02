@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.19] - 2026-11-02
+
+- A Windowsos csomagmérő indulásmérési, Windows-segéd és frissítési modulokra bomlott (#6428).
+
 ## [1.0.18] - 2026-11-02
 
 - 1.0.17 (#6374).
