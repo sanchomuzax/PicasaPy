@@ -23,7 +23,29 @@ NAPLO_ENV = "PICASAPY_QML_ELOFORDIT_NAPLO"
 HATARIDO_ENV = "PICASAPY_QML_ELOFORDIT_HATARIDO"
 ALAP_HATARIDO_MP = 120.0
 HATARIDO_KOD = 3
-_kilepes = os._exit
+
+
+def _platform() -> str:
+    """A futó platform fogantyúja (a tesztek ezt cserélik, nem a `sys.platform`-ot)."""
+    return sys.platform
+
+
+def _azonnali_kilepes(kod: int) -> None:
+    """Kilépés a bontás és (Windowson) a DLL-leválasztás nélkül.
+
+    A Package-mérésen a csomagolt exe a fordítás (1,23 s) után az `os._exit`
+    hívásnál is elakadt: Windowson az `ExitProcess` minden betöltött DLL-t
+    leválaszt, és ez lefagyhat. A `TerminateProcess` ezt kihagyja; a
+    gyorsítótár a fordításkor már a lemezen van."""
+    if _platform() == "win32":
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        kernel32.TerminateProcess(kernel32.GetCurrentProcess(), kod)
+    os._exit(kod)
+
+
+_kilepes = _azonnali_kilepes
 
 
 def _naplozz(sor: str) -> None:

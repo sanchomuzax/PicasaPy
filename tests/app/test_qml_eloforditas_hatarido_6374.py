@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import types
 
 import pytest
 
@@ -109,3 +110,23 @@ def test_a_meres_nem_csovon_var_es_a_naplobol_osszegez(monkeypatch, tmp_path):
     assert ki == "QML-előfordítás: 3 fájl, 0 hibás, 0.10 s"
     assert hivasok[0]["stdout"] is subprocess.DEVNULL and hivasok[0]["stderr"] is subprocess.DEVNULL
     assert "capture_output" not in hivasok[0]
+
+
+def test_windowson_a_kilepes_kihagyja_a_dll_levalasztast(monkeypatch):
+    """Az `os._exit` a csomagolt windowsos exe-ben is elakadt (ExitProcess)."""
+    hivasok = []
+
+    class _K32:
+        def GetCurrentProcess(self):  # noqa: N802
+            return "folyamat"
+
+        def TerminateProcess(self, h, kod):  # noqa: N802
+            hivasok.append((h, kod))
+
+    import ctypes
+
+    monkeypatch.setattr(qml_precompile, "_platform", lambda: "win32")
+    monkeypatch.setattr(ctypes, "windll", types.SimpleNamespace(kernel32=_K32()), raising=False)
+    monkeypatch.setattr(qml_precompile.os, "_exit", lambda kod: hivasok.append(("os_exit", kod)))
+    qml_precompile._azonnali_kilepes(0)
+    assert hivasok[0] == ("folyamat", 0)
