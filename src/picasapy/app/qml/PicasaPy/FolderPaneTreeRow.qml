@@ -323,6 +323,8 @@ Rectangle {
             }
             folderPane.folderChosen(path)
         }
+
+        PressFeedbackOverlay { pressSource: parent }
     }
     // #5007: csak a rács saját fotóhúzását fogadjuk el; a
     // külső fájlok importálása továbbra is az ImportDropArea

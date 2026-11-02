@@ -129,6 +129,8 @@ Item {
                             faceItem.personName, false)
                     }
                 }
+
+                PressFeedbackOverlay { pressSource: parent }
             }
             Rectangle {
                 objectName: "faceDeleteButton_" + faceItem.index
@@ -152,6 +154,8 @@ Item {
                     onClicked: overlay.removeFace(
                         faceItem.relLeft, faceItem.relTop,
                         faceItem.relRight, faceItem.relBottom)
+
+                    PressFeedbackOverlay { pressSource: parent }
                 }
             }
         }
@@ -307,6 +311,8 @@ Item {
         MouseArea {
             anchors.fill: parent
             onClicked: overlay.openDraftEditor()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 
@@ -464,6 +470,8 @@ Item {
                             nameField.text = modelData
                             overlay.commitEditor()
                         }
+
+                        PressFeedbackOverlay { pressSource: parent }
                     }
                 }
             }

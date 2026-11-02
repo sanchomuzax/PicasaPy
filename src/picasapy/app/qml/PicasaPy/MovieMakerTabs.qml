@@ -522,6 +522,8 @@ Item {
                                     mouse.accepted = false
                                 }
                                 onDoubleClicked: movieDialog.editTextSlide(index)
+
+                                PressFeedbackOverlay { pressSource: parent }
                             }
                         }
                     }

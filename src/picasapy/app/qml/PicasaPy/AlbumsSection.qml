@@ -167,6 +167,8 @@ ColumnLayout {
             anchors.fill: parent
             hoverEnabled: true
             onClicked: section.starredChosen()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 
@@ -235,6 +237,8 @@ ColumnLayout {
                     }
                     section.albumChosen(albumItem.modelData.token)
                 }
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
     }

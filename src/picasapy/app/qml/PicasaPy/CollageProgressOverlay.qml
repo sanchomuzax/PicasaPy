@@ -118,5 +118,7 @@ Item {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         onClicked: overlay.clicked()
+
+        PressFeedbackOverlay { pressSource: parent }
     }
 }

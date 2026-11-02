@@ -30,4 +30,6 @@ MouseArea {
         }
         photoArea.hostEditorPanel.effectColorPickerTarget = -1
     }
+
+    PressFeedbackOverlay { pressSource: parent }
 }

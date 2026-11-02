@@ -576,6 +576,8 @@ Item {
             x: 76; y: 101; width: 159; height: 29
             cursorShape: Qt.PointingHandCursor
             onClicked: feltoltesMod1.click()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
         RadioButton {
             id: feltoltesMod2
@@ -607,6 +609,8 @@ Item {
             x: 76; y: 132; width: 159; height: 29
             cursorShape: Qt.PointingHandCursor
             onClicked: feltoltesMod2.click()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
         RadioButton {
             id: feltoltesMod3
@@ -638,6 +642,8 @@ Item {
             x: 76; y: 163; width: 159; height: 29
             cursorShape: Qt.PointingHandCursor
             onClicked: feltoltesMod3.click()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
         ComboBox {
             objectName: "publishUploadAllSize"

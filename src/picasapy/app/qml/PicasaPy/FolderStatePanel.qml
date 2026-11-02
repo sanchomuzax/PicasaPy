@@ -152,6 +152,8 @@ ColumnLayout {
                     onClicked: if (panel.manager)
                                    panel.manager.setState(
                                        panel.selectedPath, optionRow.modelData.state)
+
+                    PressFeedbackOverlay { pressSource: parent }
                 }
             }
         }
@@ -227,6 +229,8 @@ ColumnLayout {
             objectName: "faceDetectionToggleArea"
             anchors.fill: parent
             onClicked: faceDetectionRow.toggle()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 
@@ -273,9 +277,12 @@ ColumnLayout {
                            ? "#ffffff" : Theme.ink
                 }
                 TapHandler {
+                    id: _pressFeedbackTap5
                     onTapped: if (panel.manager)
                                   panel.manager.selectedPath = modelData
                 }
+
+                PressFeedbackOverlay { pressSource: _pressFeedbackTap5 }
             }
             ScrollBar.vertical: PicasaScrollBar {}
         }

@@ -368,6 +368,8 @@ Item {
                     tab.controller.deleteCustomAspectRatio(
                         arany.name, arany.width, arany.height)
             }
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 
@@ -513,6 +515,8 @@ Item {
         MouseArea {
             anchors.fill: parent
             onClicked: doboz.toggled()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 
@@ -538,6 +542,8 @@ Item {
         MouseArea {
             anchors.fill: parent
             onClicked: felirat.toggled()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 

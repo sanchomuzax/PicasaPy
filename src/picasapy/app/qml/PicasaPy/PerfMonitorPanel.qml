@@ -58,7 +58,12 @@ Rectangle {
                 text: "×"
                 color: Theme.textGray
                 font.pixelSize: Theme.fontSize + 4
-                TapHandler { onTapped: panel.closeRequested() }
+            TapHandler {
+                id: _pressFeedbackTap22
+                onTapped: panel.closeRequested()
+            }
+
+                PressFeedbackOverlay { pressSource: _pressFeedbackTap22 }
             }
         }
 
@@ -118,6 +123,7 @@ Rectangle {
             }
 
             TapHandler {
+                id: _pressFeedbackTap23
                 objectName: "perfPanelSavedPathTap"
                 onTapped: savedPathText.openSavedPathFolder()
             }
@@ -125,6 +131,8 @@ Rectangle {
                 id: savedPathHover
                 cursorShape: Qt.PointingHandCursor
             }
+
+            PressFeedbackOverlay { pressSource: _pressFeedbackTap23 }
         }
     }
 

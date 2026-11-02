@@ -290,6 +290,8 @@ Item {
                 exitAfterDoubleClick = false
                 Qt.callLater(function() { viewer.kerBezaras() })
             }
+
+            PressFeedbackOverlay { pressSource: parent }
         }
 
         BusyIndicator {
@@ -539,6 +541,7 @@ Item {
             }
 
             ToolButton {
+                id: captionTrashButton
                 objectName: "captionTrashButton"
                 anchors.right: parent.right
                 anchors.rightMargin: 3
@@ -561,7 +564,11 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
-                background: Item {}
+                background: Rectangle {
+                    radius: 3
+                    color: captionTrashButton.down
+                           ? Qt.darker(Theme.chromeBg, 1.24) : "transparent"
+                }
                 // #1816 DÖNTÉS: NINCS megerősítés. Az eredetiben ez
                 // szemetes-ikon közvetlen hatással, és a művelet nem
                 // lemezromboló: a felirat egyetlen mező,
@@ -637,6 +644,8 @@ Item {
                 anchors.margins: -5
                 hoverEnabled: true
                 onClicked: viewer.billentsdAFeliratot()
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
 
@@ -672,6 +681,7 @@ Item {
         // #4183: a bal fiók függőleges peremén marad, és becsukás
         // után is visszanyitható. A méretet az eredeti mérés adja.
         ToolButton {
+            id: toggleLeftDrawerButton
             objectName: "toggle_left_drawer"
             visible: !viewer.quickViewerMode
             x: 1
@@ -691,7 +701,11 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
-            background: Item {}
+            background: Rectangle {
+                radius: 3
+                color: toggleLeftDrawerButton.down
+                       ? Qt.darker(Theme.chromeBg, 1.24) : "transparent"
+            }
             onClicked: viewer.toggleEditorDrawer()
         }
 }

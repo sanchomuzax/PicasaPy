@@ -87,6 +87,8 @@ Item {
             anchors.fill: parent
             hoverEnabled: true
             onClicked: root.cancelRequested()
+
+            PressFeedbackOverlay { pressSource: parent }
         }
 
         ToolTip.visible: egerEsemeny.containsMouse

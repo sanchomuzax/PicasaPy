@@ -246,6 +246,7 @@ Item {
                     }
 
                     TapHandler {
+                        id: _pressFeedbackTap36
                         objectName: "trayThumbTap"
                         acceptedButtons: Qt.LeftButton
                         gesturePolicy: TapHandler.ReleaseWithinBounds
@@ -336,6 +337,8 @@ Item {
                         anchors.bottom: parent.bottom
                         anchors.margins: 2
                     }
+
+                    PressFeedbackOverlay { pressSource: _pressFeedbackTap36 }
                 }
             }
         }

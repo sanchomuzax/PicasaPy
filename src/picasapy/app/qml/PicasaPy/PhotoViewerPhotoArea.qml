@@ -639,6 +639,8 @@ Item {
                 editController.previewNewTextPlacement(
                     mouse.x / width, mouse.y / height)
         }
+
+        PressFeedbackOverlay { pressSource: parent }
     }
     // #4545: a mentett szövegdobozok áttetsző, kattintható
     // találati területei a raszter-előnézet fölött vannak.
@@ -693,6 +695,8 @@ Item {
                     if (typeof editController !== "undefined" && editController)
                         editController.selectTextOverlay(modelData.index)
                 }
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
     }

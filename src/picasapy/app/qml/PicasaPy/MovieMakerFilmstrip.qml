@@ -108,6 +108,8 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 onClicked: movieDialog.selectMovieFilmstripItem(index)
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
     }

@@ -1,4 +1,5 @@
 module PicasaPy
+internal PressFeedbackOverlay PressFeedbackOverlay.qml
 singleton Theme 1.0 Theme.qml
 SelectionDim 1.0 SelectionDim.qml
 FolderPane 1.0 FolderPane.qml

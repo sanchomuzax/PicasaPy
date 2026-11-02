@@ -229,6 +229,8 @@ Item {
                         anchors.fill: parent
                         enabled: row.modelData.hasChildren && !root.mentesSzuroAktiv
                         onClicked: root.toggle(row.modelData.path)
+
+                        PressFeedbackOverlay { pressSource: parent }
                     }
                 }
 
@@ -382,6 +384,8 @@ Item {
                     root.choose(row.modelData.path)
                 }
                 onDoubleClicked: root.toggle(row.modelData.path)
+
+                PressFeedbackOverlay { pressSource: parent }
             }
 
             DropArea {

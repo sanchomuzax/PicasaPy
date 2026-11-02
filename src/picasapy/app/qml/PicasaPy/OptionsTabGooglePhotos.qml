@@ -109,6 +109,8 @@ ColumnLayout {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             onClicked: advancedToggle.checked = !advancedToggle.checked
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 
@@ -181,6 +183,8 @@ ColumnLayout {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: if (root.openGooglePhotosHelp)
                     root.openGooglePhotosHelp()
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
 

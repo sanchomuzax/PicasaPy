@@ -135,7 +135,12 @@ Rectangle {
                     }
                 }
                 HoverHandler { id: rowHover }
-                TapHandler { onTapped: box.choose(index) }
+                    TapHandler {
+                        id: _pressFeedbackTap28
+                        onTapped: box.choose(index)
+                    }
+
+                PressFeedbackOverlay { pressSource: _pressFeedbackTap28 }
             }
         }
     }

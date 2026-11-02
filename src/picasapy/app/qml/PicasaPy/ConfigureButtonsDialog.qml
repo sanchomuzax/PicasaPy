@@ -122,8 +122,11 @@ Dialog {
             color: ListView.view.currentIndex === index
                    ? Theme.panelSelectionText : Theme.ink
             TapHandler {
+                id: _pressFeedbackTap2
                 onSingleTapped: parent.ListView.view.currentIndex = parent.index
             }
+
+            PressFeedbackOverlay { pressSource: _pressFeedbackTap2 }
         }
         highlight: Rectangle { color: Theme.panelSelectionActive }
     }

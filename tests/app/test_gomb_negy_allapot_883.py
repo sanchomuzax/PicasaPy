@@ -107,16 +107,15 @@ class TestAFeliratAlfaja:
 
 
 class TestAZoldGombNemReagal:
-    """Az eredetiben mind a három állapotban ugyanaz a kép
-    (`b1_decrect_green_n`) — csak a szövege fehér."""
+    """A #6381 minden gombnál látható, külön lenyomott állapotot kér."""
 
     def test_lenyomva_sem_valtozik(self, app_module, qt_app):
         alap, _f1, _e1 = _load_button(app_module, qt_app, {"accent": "#3a8a3a"})
         lenyomott, _f2, _e2 = _load_button(
             app_module, qt_app, {"accent": "#3a8a3a", "down": True}
         )
-        assert _szin(alap, "surfaceTop") == _szin(lenyomott, "surfaceTop")
-        assert _szin(alap, "surfaceBottom") == _szin(lenyomott, "surfaceBottom")
+        assert _szin(alap, "surfaceTop") != _szin(lenyomott, "surfaceTop")
+        assert _szin(alap, "surfaceBottom") != _szin(lenyomott, "surfaceBottom")
 
     def test_ramutataskor_nincs_arnyek(self, app_module, qt_app):
         zold, _f, _e = _load_button(app_module, qt_app, {"accent": "#3a8a3a"})

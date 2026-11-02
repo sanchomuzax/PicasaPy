@@ -28,4 +28,6 @@ MouseArea {
             mouse.y / Math.max(1, height))
         photoArea.hostEditorPanel.neutralPickerActive = false
     }
+
+    PressFeedbackOverlay { pressSource: parent }
 }

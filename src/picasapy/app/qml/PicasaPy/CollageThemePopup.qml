@@ -160,6 +160,8 @@ Item {
         MouseArea {
             anchors.fill: parent
             onClicked: control.expanded = !control.expanded
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 
@@ -222,6 +224,8 @@ Item {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: control.chooseTheme(row.modelData.key)
+
+                        PressFeedbackOverlay { pressSource: parent }
                     }
                 }
             }

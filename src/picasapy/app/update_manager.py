@@ -385,6 +385,7 @@ class UpdateController(QObject):
         self._checking = False
         self._progress = 0
         self._progress_total = 0
+        self._download_running = False
         self._download_path: Path | None = None
         self._workers: dict[int, _Worker] = {}
         self._worker_callbacks: dict[
@@ -453,7 +454,7 @@ class UpdateController(QObject):
     def downloadState(self) -> str:  # noqa: N802
         if self._download_path is not None:
             return "ready"
-        if self._progress_total or self._progress:
+        if self._download_running:
             return "downloading"
         return "idle"
 
@@ -581,6 +582,8 @@ class UpdateController(QObject):
     @Slot()
     def downloadUpdate(self) -> None:  # noqa: N802
         """A Windows portable csomagot és SHA256SUMS-t háttérben ellenőrzi."""
+        if self._download_running:
+            return
         release = self._release
         if not release or self._kind != "windows":
             return
@@ -590,6 +593,7 @@ class UpdateController(QObject):
             self.downloadFinished.emit(False, "missing-assets")
             return
         self._progress = self._progress_total = 0
+        self._download_running = True
         self._download_path = None
         self.progressChanged.emit()
 
@@ -610,6 +614,7 @@ class UpdateController(QObject):
 
         def complete(path: object) -> None:
             self._download_path = Path(path)
+            self._download_running = False
             self._progress = self._progress_total = 1
             self.progressChanged.emit()
             self.downloadFinished.emit(True, "ready")
@@ -617,6 +622,7 @@ class UpdateController(QObject):
         def failed(message: str) -> None:
             logger.warning("A frissítés letöltése nem sikerült: %s", message)
             self._download_path = None
+            self._download_running = False
             self.progressChanged.emit()
             self.downloadFinished.emit(False, "integrity-error" if "SHA-256" in message else "download-error")
 

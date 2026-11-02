@@ -104,5 +104,7 @@ Rectangle {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         onClicked: notice.clicked()
+
+        PressFeedbackOverlay { pressSource: parent }
     }
 }

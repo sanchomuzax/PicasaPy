@@ -101,6 +101,8 @@ ColumnLayout {
                     }
                     section.folderChosen(projectItem.modelData.path)
                 }
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
     }
@@ -167,6 +169,8 @@ ColumnLayout {
                     }
                     section.folderChosen(exportedItem.modelData.path)
                 }
+
+                PressFeedbackOverlay { pressSource: parent }
             }
         }
     }

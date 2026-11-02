@@ -481,6 +481,7 @@ ColumnLayout {
             RowLayout {
                 Layout.fillWidth: true
                 Button {
+                    id: unnamedWelcomeLearnMoreButton
                     objectName: "unnamedWelcomeLearnMoreButton"
                     text: qsTr("Learn more...")
                     Layout.preferredWidth: 86
@@ -495,14 +496,18 @@ ColumnLayout {
                         color: Theme.panelSelectionText
                     }
                     background: Rectangle {
-                        color: "transparent"
-                        border.color: Theme.unnamedWelcomeButtonBorder
-                        border.width: 1
                         radius: 6
+                        color: unnamedWelcomeLearnMoreButton.down
+                               ? Qt.darker(Theme.chromeBg, 1.2) : "transparent"
+                        border.color: unnamedWelcomeLearnMoreButton.down
+                                     ? Theme.selectionBlue
+                                     : Theme.unnamedWelcomeButtonBorder
+                        border.width: 1
                     }
                 }
                 Item { Layout.fillWidth: true }
                 Button {
+                    id: unnamedWelcomeCloseButton
                     objectName: "unnamedWelcomeCloseButton"
                     text: qsTr("Close")
                     Layout.preferredWidth: 82
@@ -523,10 +528,13 @@ ColumnLayout {
                         color: Theme.panelSelectionText
                     }
                     background: Rectangle {
-                        color: "transparent"
-                        border.color: Theme.unnamedWelcomeButtonBorder
-                        border.width: 1
                         radius: 6
+                        color: unnamedWelcomeCloseButton.down
+                               ? Qt.darker(Theme.chromeBg, 1.2) : "transparent"
+                        border.color: unnamedWelcomeCloseButton.down
+                                     ? Theme.selectionBlue
+                                     : Theme.unnamedWelcomeButtonBorder
+                        border.width: 1
                     }
                 }
             }

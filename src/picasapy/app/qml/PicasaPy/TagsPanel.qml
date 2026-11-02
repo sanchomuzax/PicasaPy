@@ -190,8 +190,11 @@ Rectangle {
                             }
                             HoverHandler { id: removeHover }
                             TapHandler {
+                                id: _pressFeedbackTap29
                                 onTapped: panel.removeRequested(tagRow.modelData)
                             }
+
+                            PressFeedbackOverlay { pressSource: _pressFeedbackTap29 }
                         }
                     }
                     HoverHandler { id: rowHover }
@@ -242,12 +245,15 @@ Rectangle {
                 }
                 HoverHandler { id: gearHover }
                 TapHandler {
+                    id: _pressFeedbackTap30
                     onTapped: quickTagsConfigDialog.open()
                 }
                 //: #4577: `tagpanel/quick_config` (súgó) — az eredetiben a fogaskerék buboréksúgója
                 ToolTip.text: qsTr("Configure Quick Tags")
                 ToolTip.visible: gearHover.hovered
                 ToolTip.delay: Theme.tooltipDelay
+
+                PressFeedbackOverlay { pressSource: _pressFeedbackTap30 }
             }
         }
 

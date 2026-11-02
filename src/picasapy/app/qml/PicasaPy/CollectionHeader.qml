@@ -72,9 +72,12 @@ Rectangle {
             font.pixelSize: 9
             color: Theme.panelHeaderText
             TapHandler {
+                id: _pressFeedbackTap1
                 gesturePolicy: TapHandler.ReleaseWithinBounds
                 onTapped: header.closeToggled()
             }
+
+            PressFeedbackOverlay { pressSource: _pressFeedbackTap1 }
         }
     }
     MouseArea {
@@ -82,6 +85,8 @@ Rectangle {
         onClicked: header.toggled()
         // #461: a BEZÁRT gyűjtemény a nevére duplán kattintva is nyílik
         onDoubleClicked: if (header.closed) header.closeToggled()
+
+        PressFeedbackOverlay { pressSource: parent }
     }
     // #422: jobbklikk a gyűjtemény-menühöz — a mappasor/albumsor
     // mintáját követve TapHandler-rel (ReleaseWithinBounds), hogy a

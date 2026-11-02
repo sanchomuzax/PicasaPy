@@ -69,6 +69,7 @@ Rectangle {
 
     HoverHandler { id: lebegés }
     TapHandler {
+        id: _pressFeedbackTap8
         onPressedChanged: if (pressed && szegmens.lenyomasra) szegmens.kattints()
         onTapped: if (!szegmens.lenyomasra) szegmens.kattints()
     }
@@ -76,4 +77,6 @@ Rectangle {
     ToolTip.text: szegmens.sugo
     ToolTip.visible: lebegés.hovered && szegmens.sugo !== ""
     ToolTip.delay: Theme.tooltipDelay
+
+    PressFeedbackOverlay { pressSource: _pressFeedbackTap8 }
 }

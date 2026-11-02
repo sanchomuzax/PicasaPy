@@ -159,9 +159,12 @@ Item {
                                 }
 
                                 TapHandler {
+                                    id: _pressFeedbackTap9
                                     onDoubleTapped: feed.openRequested(
                                         Number(modelData.row))
                                 }
+
+                                PressFeedbackOverlay { pressSource: _pressFeedbackTap9 }
                             }
                         }
                     }

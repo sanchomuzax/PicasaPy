@@ -144,6 +144,7 @@ Dialog {
             Layout.preferredWidth: 400
             visible: root.updateAgent
                 && root.updateAgent.downloadState === "downloading"
+            indeterminate: visible && root.updateAgent.downloadProgress <= 0
             value: root.updateAgent
                 ? root.updateAgent.downloadProgress / 100 : 0
         }
@@ -183,7 +184,10 @@ Dialog {
                     && root.updateAgent.oneClickUpdateSupported !== undefined)
                     ? root.updateAgent.oneClickUpdateSupported === true
                         && root.updateAgent.downloadState !== undefined
-                        && root.updateAgent.downloadState === "idle" : false
+                        && (root.updateAgent.downloadState === "idle"
+                            || root.updateAgent.downloadState === "downloading") : false
+                enabled: root.updateAgent
+                    && root.updateAgent.downloadState === "idle"
                 text: root.strings.updateNow
                 accent: Theme.picasaGreen
                 onClicked: root.updateAgent.downloadUpdate()
