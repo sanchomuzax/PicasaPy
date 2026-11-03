@@ -45,7 +45,7 @@ def _forras_olvashato(path) -> bool:
 def _hianyzo_belyegkep(provider, photo, path) -> QImage:
     """A bélyegkép nem készült el: sérült kép csak olvashatatlan forrásnál (#6481)."""
     if _forras_olvashato(path):
-        _log.warning("#6481: a bélyegkép nem készült el, de a forrás ép; nem jelöljük sérültnek")
+        _log.warning("thumbnail nem készült el, de a forrás ép, nem jelöljük sérültnek (#6481): %s", path)
         return QImage()
     _log.warning("thumbnail nem készült el: %s", path)
     provider.brokenImageDetected.emit(str(photo.id))
