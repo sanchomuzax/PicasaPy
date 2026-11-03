@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from pathlib import Path
 
 from PySide6.QtGui import QImage, QTransform
@@ -15,6 +16,40 @@ from .thumb_level_url import szint_from_thumb_id
 from .thumbnail_provider_jobs import _placeholder
 
 _log = logging.getLogger("picasapy.app.thumbnail_provider")
+#: #6481: az újrapróba előtti várakozás fogantyúja (a teszt cseréli)
+_varakozas = time.sleep
+_UJRAPROBA_VARAKOZAS_S = 0.25
+
+
+def _forras_olvashato(path) -> bool:
+    """Dekódolható-e maga a forráskép (#6481).
+
+    A bélyegkép elmaradása (a gyorstár None-t ad) önmagában nem bizonyítja,
+    hogy a fotó sérült: Windowson a gyorstár-fájl cseréje egy párhuzamos
+    olvasás miatt átmenetileg elbukhat, a forrást pedig a felhőszinkron is
+    foghatja. Sérültnek csak az számít, aminek a forrása sem olvasható."""
+    try:
+        import cv2
+
+        from picasapy.cvimage import read_image_bytes
+
+        adat = read_image_bytes(Path(path))
+        if adat is None:
+            return False
+        kep = cv2.imdecode(adat, cv2.IMREAD_REDUCED_COLOR_8)
+        return kep is not None
+    except Exception:  # noqa: BLE001 - kétség esetén a régi viselkedés (jelzés) marad
+        return False
+
+
+def _hianyzo_belyegkep(provider, photo, path) -> QImage:
+    """A bélyegkép nem készült el: sérült kép csak olvashatatlan forrásnál (#6481)."""
+    if _forras_olvashato(path):
+        _log.warning("#6481: a bélyegkép nem készült el, de a forrás ép; nem jelöljük sérültnek")
+        return QImage()
+    _log.warning("thumbnail nem készült el: %s", path)
+    provider.brokenImageDetected.emit(str(photo.id))
+    return QImage()
 
 
 def _request_image(provider, photo_id, size, requested_size):
@@ -179,9 +214,11 @@ def _render(provider, photo_id: str, cache_reader) -> QImage:
 
     thumb = kesz_thumb()
     if thumb is None:
-        _log.warning("thumbnail nem készült el: %s", path)
-        provider.brokenImageDetected.emit(str(photo.id))
-        return QImage()
+        # #6481: egy átmeneti hiba (párhuzamos gyorstár-írás) után még egyszer
+        _varakozas(_UJRAPROBA_VARAKOZAS_S)
+        thumb = kesz_thumb()
+    if thumb is None:
+        return _hianyzo_belyegkep(provider, photo, path)
     image = cache_reader(thumb)
     if image.isNull():
         # A cache-fájl olvashatatlansága nem a fotó sérülése (#5553): a
@@ -190,9 +227,7 @@ def _render(provider, photo_id: str, cache_reader) -> QImage:
         thumb.unlink(missing_ok=True)
         thumb = kesz_thumb()
         if thumb is None:
-            _log.warning("thumbnail nem készült el: %s", path)
-            provider.brokenImageDetected.emit(str(photo.id))
-            return QImage()
+            return _hianyzo_belyegkep(provider, photo, path)
         image = cache_reader(thumb)
     if image.isNull():
         _log.warning("cache-elt thumbnail nem olvasható: %s", thumb)

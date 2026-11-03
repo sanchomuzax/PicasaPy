@@ -33,7 +33,7 @@ def test_a_mentes_utan_a_projektek_alatt_kirajzolodik(qml_app, qt_app, tmp_path)
 
     window, controller, _engine = qml_app
     window.resize(1280, 800)
-    cel = tmp_path / "Kepek" / "Picasa" / "Képernyőfelvételek"
+    cel = tmp_path / "Rendszerkepek" / "Picasa" / "Képernyőfelvételek"
     kep = QImage(320, 200, QImage.Format.Format_RGB888)
     kep.fill(QColor(30, 120, 200))
     ut = save_screenshot(kep, cel, "Jegyzettomb", datetime(2026, 11, 3, 10, 0))
