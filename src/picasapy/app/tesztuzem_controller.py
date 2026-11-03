@@ -238,16 +238,25 @@ class TesztuzemMixin:
             return False
 
         self._tesztuzem_elteszi(forras)
-        mappa = kiindulo_naplo_mappa(
-            megjegyzett=self._tesztuzem_megjegyzett_mappa(),
-            megosztas=_megosztas_gyokere(),
-            dokumentumok=_dokumentumok(),
-        )
-        self.tesztuzemMentesKert.emit(
-            UZENET_VALASSZ_HELYET,
-            QUrl.fromLocalFile(str(mappa)).toString(),
-            naplo_fajlneve(_most()),
-        )
+        megjegyzett = self._tesztuzem_megjegyzett_mappa()
+        dokumentumok = _dokumentumok()
+        fajlnev = naplo_fajlneve(_most())
+
+        def munka() -> None:
+            # #6476: a megosztás (hálózati út) vizsgálata másodpercekig tarthat,
+            # ezért nem a felület szálán fut; a jelzés sorba állítva ér vissza
+            mappa = kiindulo_naplo_mappa(
+                megjegyzett=megjegyzett,
+                megosztas=_megosztas_gyokere(),
+                dokumentumok=dokumentumok,
+            )
+            self.tesztuzemMentesKert.emit(
+                UZENET_VALASSZ_HELYET,
+                QUrl.fromLocalFile(str(mappa)).toString(),
+                fajlnev,
+            )
+
+        self._start_background(munka, name="picasapy-tesztuzem-megosztas")
         return True
 
     def _tesztuzem_megjegyzett_mappa(self) -> str | None:

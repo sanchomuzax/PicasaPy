@@ -14,8 +14,9 @@ _APP = _GYOKER / "src" / "picasapy" / "app"
 # #6440: ez a két függvény SZÁNDÉKOSAN változott: a háttérmunka-jegy és a
 # munkanév az állapotsávnak szól. A többi lenyomat változatlan.
 _MOZGATOTT_FORRASOK = {
+    # #6476: szándékos változás, a változatlan mappa célzott szinkronja kimarad
     ("library_controller_sync_dirty.py", "_LibrarySyncDirtyMixin", "_on_folders_dirty"):
-        "0acf2349abf73a6e802ade0846dcf5702b9b434bc542e1db9cca6f693f5501cc",
+        "9956e23223b860974e1258a8500b34307cd0ac5d62740b8fdf93131ad78bcaf2",
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_root_for_folder"):
         "f5afe5e6920a3047137f970df48e26bd2eeec92e67c8b544b126859d86d66efd",
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_poll_current_folder"):

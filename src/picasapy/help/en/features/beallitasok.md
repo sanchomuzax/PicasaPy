@@ -92,7 +92,7 @@ progress bar replaces the button, so you can see that the download has
 started. Before installation it checks
 the fingerprint in the release's `SHA256SUMS` file. A failed check prevents
 replacement. After a successful download, choose **Restart now** or
-**Install on exit**. Restarting waits for background work to finish. The previous
+**Update on exit**. Restarting waits for background work to finish. The previous
 version is kept, and the updater restores it if the new copy fails to start.
 
 On Linux (`.deb`) and `pip` installations, the dialog shows the release page
