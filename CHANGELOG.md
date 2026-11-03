@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.33] - 2026-11-03
+
+- A windowsos telepítő ismét felkerül a kiadás mellé: az 1.0.32-ből a csomagolás egyik próbája miatt kimaradt, mert a próba nem a PicasaPy ablakára kattintott (#6487).
+
 ## [1.0.32] - 2026-11-03
 
 - A windowsos telepítő végén bepipált „PicasaPy indítása” után a program néhány másodpercen belül indulóképet mutat, és a telepítés már előre betölti a programot, így az első indulás nem lassú (#6472).
