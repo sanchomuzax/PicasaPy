@@ -40,7 +40,6 @@ KNOWN_UNRENDERED_OPS = frozenset(
         # (ld. a `chain_native_handlers` docstringjeit) — a `triple`
         # kivételével, aminek az egyetlen mérőesete paraméter nélküli
         # (tehát azonosság) volt.
-        "colorfix",
         # #5304: a `rainbow` kikerült a kalibrálatlanok közül; a teljes
         # algoritmus a `render/rainbow.py`-ban, a #5296 spec szerint fut.
         # `linblur` és `dir_sharp` a #623-ban KIKERÜLT innen: a natív magok
@@ -52,7 +51,6 @@ KNOWN_UNRENDERED_OPS = frozenset(
         # A `blur` a #1142-ben KIKERÜLT innen: a `merokit-2` szett három
         # csúszkaállása kimérte, hogy a csúszkatartományon KÍVÜLI küszöbnél
         # valódi, σ = 4,0 szórású elmosást ad (ld. `render/blur.py`).
-        "whitept",
         "debug",
     }
 )
@@ -70,28 +68,11 @@ KNOWN_UNRENDERED_OPS = frozenset(
 #: és a saját handlerén fut. A kettőt szándékosan nem vezetjük egy kulcsra.
 DEAD_LEGACY_OPS = frozenset({"focalpixelate"})
 
-#: #687 — MÉRTEN TÉTLEN szűrőnevek: a #685 mérőszettjében (178 kép, egyetlen
-#: valódi Picasa-export) maga a Picasa sem változtatott rajtuk (átlagos
-#: ΔE ≤ 1,0, ami a JPEG-újratömörítés szintje), holott a lánc a
-#: `filterdesc.xml` szerinti alap-, felső és alsó csúszkaállásokat is
-#: tartalmazta.
-#:
-#: **Ez NEM azonos a `DEAD_LEGACY_OPS`-szal.** Ezeknek a natív regiszterben
-#: VAN feldolgozójuk (a `colorfix`/`whitept` a `0x0090eda0` fehérpont-magot
-#: hívja) — csak a mérésben nem hatottak.
-#: Két magyarázat áll nyitva, és a mérés egyik mellett sem dönt:
-#: vagy tényleg tétlenek a 3.9.141.259-ben, vagy a mérőszett által
-#: generált paraméter-alak nem az, amit a Picasa olvas (a `colorfix` és a
-#: `whitept` PIPETTA-színt vár, amit a szett a lánc végére írt). Ezért a
-#: bejegyzés célja pusztán annyi, hogy a következő mérés ne HIÁNYNAK
-#: olvassa őket: a felhasználó a lánc kihagyásakor megkapja az okot is.
-#:
-#: ⚠️ A `blur` a #1142-ben KIKERÜLT innen. A #685-ös mérés csak a
-#: `filterdesc.xml` csúszkatartományát (`[-0,5; 0,5]`) járta be, és ott
-#: tényleg tétlen — a `merokit-2` szett viszont a tartományon KÍVÜLI
-#: `blur=1,2.000000;` alakot is kimérte, és az VALÓDI elmosást ad. A
-#: „mérten tétlen" tehát a MÉRT tartományra szólt, nem a szűrőre.
-MEASURED_IDLE_OPS = frozenset({"colorfix", "whitept"})
+#: #687 történeti állapota: a #685 mérőszett a colorfix/whitept ágakat
+#: hatástalannak mérte, mert nem a visszafejtett pipettaszín-paraméterrel
+#: futtatta őket. A #6443-ban megvalósult helyes, színes láncalakok
+#: renderelnek; a régi neveket külön állapotkészlet már nem tartalmazza.
+MEASURED_IDLE_OPS = frozenset()
 
 #: #1142 — MÉRTEN NEM FUTÓ szűrőnevek: a `merokit-2` szettben az eredeti
 #: Picasa a FORRÁST adta vissza rájuk, miközben nálunk volt hozzájuk

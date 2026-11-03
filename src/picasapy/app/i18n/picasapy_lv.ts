@@ -16700,6 +16700,12 @@ picasapy-origin-key: stringres:CThumbUI::Artistic</extracomment>
             <translation>Mantotie efekti</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/EditorTabBar.qml" />
+            <source>Forgotten or deprecated effects brought back to life</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aizmirsti vai pārtraukti efekti, atdzīvināti</translation>
+        </message>
+        <message>
             <source>Commonly needed fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Bieži vajadzīgie labojumi</translation>
@@ -17063,6 +17069,13 @@ picasapy-origin-key: stringres:ImageFilters::Brightness</extracomment>
             <source>Color Mix</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Krāsu sajaukšana</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Color Temperature</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_colorfix_label2</extracomment>
+            <translation>Krāsu temperatūra</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -20607,6 +20620,27 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>Uploading to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Augšupielāde uz Google fotoattēli</translation>
+        </message>
+    </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Iepriekšējo atjauninājumu neizdevās instalēt. Joprojām darbojas iepriekšējā versija.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Programmas failu izmantoja cits process (piemēram, pretvīrusu programma vai cits PicasaPy logs). Aizveriet visus PicasaPy logus un mēģiniet vēlreiz vai manuāli instalējiet jaunāko instalētāju.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Instalēšana netika pabeigta, tāpēc tika atjaunota iepriekšējā versija. Manuāli instalējiet jaunāko instalētāju.</translation>
         </message>
     </context>
 </TS>

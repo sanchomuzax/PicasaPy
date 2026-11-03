@@ -22,7 +22,12 @@ a = Analysis(
     pathex=[str(GYOKER / "src")],
     binaries=[],
     datas=[],
-    hiddenimports=["picasapy.app.update_swap_helper"],
+    hiddenimports=[
+        "picasapy.app.update_swap_helper",
+        "picasapy.app.update_folyamatok",
+        "picasapy.app.update_eredmeny",
+        "picasapy.app.update_ablak",
+    ],
     hookspath=[],
     runtime_hooks=[],
     excludes=["tkinter", "pytest"],

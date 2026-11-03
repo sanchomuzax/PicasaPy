@@ -16684,6 +16684,12 @@ picasapy-origin-key: stringres:CThumbUI::Artistic</extracomment>
             <translation>Vanhat tehosteet</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/EditorTabBar.qml" />
+            <source>Forgotten or deprecated effects brought back to life</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Unohdetut tai poistetut tehosteet herätetty henkiin</translation>
+        </message>
+        <message>
             <source>Commonly needed fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Useimmin tarvittavat korjaukset</translation>
@@ -17047,6 +17053,13 @@ picasapy-origin-key: stringres:ImageFilters::Brightness</extracomment>
             <source>Color Mix</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Värisekoitus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Color Temperature</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_colorfix_label2</extracomment>
+            <translation>Värilämpötila</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -20591,6 +20604,27 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>Uploading to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Lähetetään palveluun Google Kuvat</translation>
+        </message>
+    </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Edellistä päivitystä ei voitu asentaa. Aiempi versio on edelleen käynnissä.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Toinen prosessi käytti ohjelman tiedostoa (esimerkiksi virustorjunta tai toinen PicasaPy-ikkuna). Sulje kaikki PicasaPy-ikkunat ja yritä uudelleen, tai asenna uusin asennusohjelma käsin.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Asennus ei valmistunut, joten aiempi versio palautettiin. Asenna uusin asennusohjelma käsin.</translation>
         </message>
     </context>
 </TS>

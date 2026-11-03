@@ -12,6 +12,7 @@ from .application_location import _qml_import_path, program_location
 from .color_palette import ColorPaletteProvider
 from .external_links import EXTERNAL_LINKS
 from .option_settings import initialize_option_settings
+from .notifier_screen_geometry import NotifierScreenGeometry
 
 def _startup_step_create_qml_engine(state):
     controller = state.controller
@@ -98,6 +99,7 @@ def _startup_step_register_qml_context(state):
     timeline_controller = state.timeline_controller
     _lathato_fotok = state._lathato_fotok
     web_export_controller = state.web_export_controller
+    notifier_screen_geometry = NotifierScreenGeometry(parent=app)
 
     ScreenCaptureController = _app._lazy_app_symbol("ScreenCaptureController")
     screen_capture_controller = ScreenCaptureController(
@@ -105,6 +107,9 @@ def _startup_step_register_qml_context(state):
     )
     app.aboutToQuit.connect(screen_capture_controller.shutdown)
     engine.rootContext().setContextProperty("controller", controller)
+    engine.rootContext().setContextProperty(
+        "notifierScreenGeometry", notifier_screen_geometry
+    )
     engine.rootContext().setContextProperty("screenCaptureController", screen_capture_controller)
     engine.rootContext().setContextProperty("cameraCaptureController", camera_capture_controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
@@ -213,6 +218,7 @@ def _startup_step_register_qml_context(state):
     progress_log.mark("QML-kontextus és vezérlők regisztrálva")
 
     state.screen_capture_controller = screen_capture_controller
+    state.notifier_screen_geometry = notifier_screen_geometry
     state.passport_controller = passport_controller
     state.compact_controller = compact_controller
     state.picasa_import_controller = picasa_import_controller

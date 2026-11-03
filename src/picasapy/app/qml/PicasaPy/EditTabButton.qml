@@ -46,7 +46,7 @@ Rectangle {
     //: Korábban a buboréksúgó a `label`-t ismételte, vagyis a
     //: felhasználó ugyanazt a szót kapta másodszor, semmi újat. Az
     //: eredeti Picasa öt fülének leírása a `docs/specs/`-ben kimért
-    //: `editpanel/tabN` szövegekből jön; a 6.–7. fül a mi többletünk
+    //: `editpanel/tabN` szövegekből jön; a 6. fül a mi többletünk
     //: (`docs/decisions/szerkeszto-bal-panel.md`), oda saját szöveg kell.
     //: Üresen hagyva a súgó a régi módon a feliratot mutatja — így egy
     //: bekötetlen hívóhely nem marad néma.
@@ -74,8 +74,8 @@ Rectangle {
         // 15 × 16 … 25 × 19) — a méretet a gazda adja át.
         width: tbtn.iconWidth; height: tbtn.iconHeight
         kind: tbtn.iconKind
-        // Az eredeti Picasa első öt ikonja fix tintát használ; a két saját
-        // fül marad a témaszínű.
+        // Az eredeti Picasa első öt ikonja fix tintát használ; a saját
+        // összevont fül marad a témaszínű.
         strokeColor: tbtn.tabIndex < 5 ? "#373535" : Theme.iconInk
         accentColor: tbtn.iconAccent
         fleckColor: tbtn.iconFleck

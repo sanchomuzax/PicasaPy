@@ -8,9 +8,9 @@ tolta — a 684-es kitben így a `finetune`, `finetune2`, `colorfix` és
 `finetune2=1,0.5,0.5,0.5,00000000,0.24` a `0.5, 0.24, 0.24, 0.0` helyett).
 
 A mezősorrend a `finetune`/`finetune2`-nél bizonyított (`picasa-ini-format.md`
-143. és 257. sor). A `colorfix` és a `whitept` is pipettás, de a mezőszámuk a
-spec szerint nem dönthető el, és nem renderelődnek — rájuk ez a próba nem
-állít semmit.
+143. és 257. sor). A `colorfix` és a `whitept` mezőit később a #6443 bináris
+visszafejtése alapján vezettük be; ez a próba továbbra is csak a finomhangolás
+láncát ellenőrzi, a két legacy effektet nem.
 """
 
 from __future__ import annotations

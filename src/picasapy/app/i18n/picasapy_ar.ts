@@ -16748,6 +16748,12 @@ picasapy-origin-key: stringres:CThumbUI::Artistic</extracomment>
             <translation>التأثيرات القديمة</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/EditorTabBar.qml" />
+            <source>Forgotten or deprecated effects brought back to life</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تأثيرات منسية أو متوقفة أُعيد إحياؤها</translation>
+        </message>
+        <message>
             <source>Commonly needed fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>إصلاحات مطلوبة عادةً</translation>
@@ -17111,6 +17117,13 @@ picasapy-origin-key: stringres:ImageFilters::Brightness</extracomment>
             <source>Color Mix</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>مزج الألوان</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Color Temperature</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_colorfix_label2</extracomment>
+            <translation>درجة حرارة الألوان</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
@@ -20655,6 +20668,27 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>Uploading to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>التحميل إلى ‏صور Google</translation>
+        </message>
+    </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>تعذّر تثبيت التحديث السابق. لا يزال الإصدار السابق قيد التشغيل.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>كان أحد ملفات البرنامج قيد الاستخدام من قِبل عملية أخرى (مثل برنامج مكافحة الفيروسات أو نافذة أخرى من PicasaPy). أغلق جميع نوافذ PicasaPy وحاول مرة أخرى، أو ثبّت أحدث برنامج إعداد يدويًا.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>لم يكتمل التثبيت، لذلك تمت استعادة الإصدار السابق. ثبّت أحدث برنامج إعداد يدويًا.</translation>
         </message>
     </context>
 </TS>

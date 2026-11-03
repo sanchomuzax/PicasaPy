@@ -69,16 +69,15 @@ GOMB_FORRASA = {
 def _gomb_blokkja(gomb: str) -> str:
     return _blokk(GOMB_FORRASA.get(gomb, _NEZO), gomb)
 
-#: A hét szerkesztő-fül és a LEÍRÁSA. Az első öt az eredeti Picasa kimért
-#: `editpanel/tabN` szövege; a 6.–7. a mi többletünk, saját szöveggel.
+#: A hat szerkesztő-fül és a LEÍRÁSA. Az első öt az eredeti Picasa kimért
+#: `editpanel/tabN` szövege; a 6. a mi összevont fülünk.
 HET_FUL = {
     "editTabFixes": "Commonly needed fixes",
     "editTabFinetune": "Finely-tuned lighting and color fixes",
     "editTabEffects": "Fun and useful image processing",
     "editTabEffects2": "More fun and useful image processing",
     "editTabEffects3": "Even more fun and useful image processing",
-    "editTabEffects4": "Glimmer effects beyond the three known tabs",
-    "editTabLegacy": "Filters left in the Picasa engine but not on its surface",
+    "editTabEffects4": "Forgotten or deprecated effects brought back to life",
 }
 
 

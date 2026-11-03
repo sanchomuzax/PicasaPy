@@ -1,13 +1,9 @@
-"""Az ÖRÖKÖLT (a mai Picasa felületén nem elérhető) szűrők katalógusa (#571).
+"""A régi Picasa-szűrők katalógusa (#571, #6443).
 
-A Picasa 3.9 motorja rengeteg olyan szűrőt ismer, amelynek **nincs
-kezelőfelülete**: régebbi verziókból maradtak bent. A motor egy régi
-`.picasa.ini`-ből még elolvassa és alkalmazza őket, de a felhasználó nem
-tudja előhívni — és ezért **lemérni sem** az eredeti programban.
-
-A PicasaPy ezért **tudatosan többet ad**, mint az eredeti: külön fület kap
-ez a készlet. Ez az egyetlen olyan pont, ahol szándékosan eltérünk a Picasa
-felületétől; egy későbbi „hűségjavítás" ne vegye ki (ld. #571).
+A mai Picasa felületén nem elérhető szűrők régebbi verziókból maradtak a
+motorban. A PicasaPy egyetlen fülön kínálja azokat, amelyekre van valódi
+renderelője; a natív regiszterben nem létező `focalpixelate` a lánc
+felismeréséhez marad a katalógusban, de a fül nem jeleníti meg.
 
 Ez a modul csak a NÉVSORT és a felületi feliratokat tartja — a vezérlők
 (csúszkák, tartományok, alapértékek) a `filterdesc.xml`-ből származó
@@ -32,9 +28,9 @@ class LegacyEffect(NamedTuple):
     label: str
 
 
-#: A fülre kerülő szűrők, a #571-es jegy sorrendjében: elöl azok, amelyeknek
-#: a natív visszafejtésből MÁR van modellje, utánuk azok, amelyek csak régi
-#: `.picasa.ini`-ből olvashatók.
+#: A régi szűrők ismert nevei a #571-es katalógussorrendben. A felület a
+#: működő neveket kínálja; a dead `focalpixelate` név marad az ini-lánc
+#: figyeléséhez, és a QML katalógusából kiszűrjük (#6443).
 #:
 #: A `debug` („For debugging") SZÁNDÉKOSAN kimarad: fejlesztői eszköz volt,
 #: nem felhasználói effekt.
@@ -71,7 +67,7 @@ LEGACY_EFFECTS: tuple[LegacyEffect, ...] = (
     LegacyEffect("dir_sat", "Directional Saturation"),
     LegacyEffect("dir_brite", "Directional Brightness"),
     LegacyEffect("dir_sharp", "Directional Sharpen"),
-    # --- csak régi ini-ből olvasható, natív kód még megfejtetlen ---------
+    # --- további visszafejtett régi korrekciók ---------------------------
     LegacyEffect("triple", "Lighting Fixes (v1)"),
     LegacyEffect("triple2", "Lighting Fixes (v2)"),
     LegacyEffect("triple3", "Lighting Fixes (v3)"),
@@ -85,9 +81,9 @@ LEGACY_EFFECTS: tuple[LegacyEffect, ...] = (
     LegacyEffect("backlight", "Backlight Fix"),
     LegacyEffect("rainbow", "Rainbow"),
     LegacyEffect("autocontrast", "Auto Contrast"),
-    # --- halott (legacy) bejegyzés: a natív regiszterben SINCS hozzá
-    #     feldolgozó (#567). Azért látszik, mert egy régi láncban
-    #     előfordulhat — de más magyarázatot kap, mint a fentiek. --------
+    # --- halott (legacy) bejegyzés: a felületre nem kerül, de a natív
+    #     regiszterben nincs hozzá feldolgozó (#567), és egy régi láncban
+    #     előfordulhat — a láncjelzőknek meg kell őrizniük. ---------------
     LegacyEffect("focalpixelate", "Focal Pixelate (legacy)"),
 )
 

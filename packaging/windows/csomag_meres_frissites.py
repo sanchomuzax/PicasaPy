@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import contextlib
+
 import json
 import re
 import shutil
@@ -270,8 +272,14 @@ def frissites(
     munka: Path,
     elvart_verzio: str | None,
     kepernyokep_mappa: Path | None = None,
+    valodi_cel_verzio: str | None = None,
+    kozben_inditas: bool = False,
 ) -> int:
-    """Teljes, valódi egérkattintásos Windows-frissítési próba (#6383)."""
+    """Teljes, valódi egérkattintásos Windows-frissítési próba (#6383).
+
+    `kozben_inditas` (#6458): a régi program kilépése után a próba azonnal
+    újraindítja a régi programot, ahogy a tulajdonos tette, mert a frissítés
+    alatt semmi nem látszott. A frissítésnek ekkor is végig kell mennie."""
     if _platform() != "win32":
         print("frissites: csak Windowson mérhető", flush=True)
         return 0
@@ -286,12 +294,18 @@ def frissites(
     telepitesi_mappa = exe.parent
     if exe.name.casefold() != "picasapy.exe":
         raise SystemExit("frissites: a futtatónak PicasaPy.exe útvonalra kell mutatnia")
-    uj_verzio = _kovetkezo_verzio(elvart_verzio)
-    archive = _keszits_frissitesi_zip(
-        telepitesi_mappa,
-        munka / "release" / "PicasaPy-windows-x64.zip",
-        uj_verzio,
-    )
+    # #6458: a tulajdonos útja: a KORÁBBI kiadás Setup-pal telepítve, a valódi
+    # GitHub-kiadásból frissít. Ilyenkor nincs helyi ál-szerver és saját zip.
+    if valodi_cel_verzio:
+        uj_verzio = valodi_cel_verzio
+        archive = None
+    else:
+        uj_verzio = _kovetkezo_verzio(elvart_verzio)
+        archive = _keszits_frissitesi_zip(
+            telepitesi_mappa,
+            munka / "release" / "PicasaPy-windows-x64.zip",
+            uj_verzio,
+        )
     kepernyokep_mappa = Path(kepernyokep_mappa or munka / "kepernyokepek").resolve()
     diag_mappa = munka / "diagnosztika"
     shutil.rmtree(diag_mappa, ignore_errors=True)
@@ -308,9 +322,15 @@ def frissites(
         konyvtar.mkdir(parents=True, exist_ok=True)
 
     folyamat = None
+    kozbeni = None
     try:
-        with _HelyiKiadasszerver(archive, uj_verzio) as szerver:
-            env["PICASAPY_UPDATE_API"] = szerver.api_url
+        szerver_kornyezet = (
+            contextlib.nullcontext(None) if archive is None
+            else _HelyiKiadasszerver(archive, uj_verzio)
+        )
+        with szerver_kornyezet as szerver:
+            if szerver is not None:
+                env["PICASAPY_UPDATE_API"] = szerver.api_url
             folyamat = subprocess.Popen(
                 [str(exe), str(konyvtar)],
                 env=env,
@@ -319,7 +339,7 @@ def frissites(
             )
             print(
                 f"[frissites] {elvart_verzio} -> {uj_verzio}; "
-                f"helyi API {szerver.api_url}; PID {folyamat.pid}",
+                f"API {szerver.api_url if szerver else 'valódi GitHub'}; PID {folyamat.pid}",
                 flush=True,
             )
             available, _ = _varjon_diagnosztikara(
@@ -425,6 +445,21 @@ def frissites(
             if folyamat.poll() is None:
                 _kilepes_diagnosztika(diag_mappa, folyamat.pid, kattintas, munka / "futas")
                 raise TimeoutError("a Frissítés most kattintás után a régi program nem lépett ki")
+            time.sleep(3.0)
+            _kepernyokep_mentese(
+                kepernyokep_mappa / "05b-frissites-folyamatban-ablak.png", 0
+            )
+            if kozben_inditas:
+                kozbeni = subprocess.Popen(
+                    [str(exe), str(konyvtar)],
+                    env=env,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.STDOUT,
+                )
+                print(
+                    f"  a régi program újraindítva a frissítés közben (PID {kozbeni.pid})",
+                    flush=True,
+                )
 
             try:
                 uj_pid_state, _ = _varjon_diagnosztikara(
@@ -513,6 +548,8 @@ def frissites(
         print(f"❌ frissites: {error}", flush=True)
         return 1
     finally:
+        if kozbeni is not None and kozbeni.poll() is None:
+            kozbeni.terminate()
         kezdo_pid = folyamat.pid if folyamat is not None else 0
         if folyamat is not None and folyamat.poll() is None:
             folyamat.terminate()

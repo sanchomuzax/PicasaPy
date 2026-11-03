@@ -46,9 +46,8 @@ def _filters(photo):
     return (section.get("filters") if section else None) or ""
 
 
-# #1142: a gomb állapotát a `can_offer_filter_control` dönti el, nem a
-# `can_render_filter` — a `blur` renderel a láncból, gombként mégsem
-# kínálható (a csúszkatartományán mérten nincs hatása).
+# #6443: a `blur` a csúszka tartományán belül is vezérelhető lett; az aktív
+# kulcsokat továbbra is a `can_offer_filter_control` adja.
 ENABLED_KEYS = [
     effect.key for effect in LEGACY_EFFECTS if can_offer_filter_control(effect.key)
 ]

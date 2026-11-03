@@ -87,7 +87,20 @@ def inditsd_a_segedet(args: list[str], *, emelt: bool, platform: str) -> bool:
     result = ctypes.windll.shell32.ShellExecuteW(
         None, "runas" if emelt else "open", str(args[0]), params, None, 0
     )
-    return result > 32
+    if result <= 32:
+        _UTOLSO_HIBA["szoveg"] = f"ShellExecute {result}"
+        return False
+    _UTOLSO_HIBA["szoveg"] = ""
+    return True
+
+
+#: #6458: az utolsó sikertelen segédindítás oka, a hibaüzenetbe
+_UTOLSO_HIBA = {"szoveg": ""}
+
+
+def utolso_inditasi_hiba() -> str:
+    """Az utolsó sikertelen frissítősegéd-indítás oka (pl. „ShellExecute 5”)."""
+    return _UTOLSO_HIBA["szoveg"] or "ismeretlen ok"
 
 
 def update_command(kind: str) -> str:

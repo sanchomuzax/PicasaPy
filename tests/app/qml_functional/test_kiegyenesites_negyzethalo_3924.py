@@ -36,6 +36,21 @@ def _vizualis_item(gyoker, nev: str):
     raise AssertionError(f"{nev} nem található a kirajzolt fában")
 
 
+def _effektcsempe_lathato(window, nev: str):
+    """A görgethető összevont rácsban a kattintás előtt láthatóvá teszi a csempét."""
+    from PySide6.QtCore import QPointF
+
+    racs = _item(window, "effectsGrid4")
+    nezet = _item(window, "effectsGrid4Viewport")
+    gomb = _vizualis_item(racs, nev)
+    pozicio = gomb.mapToItem(racs, QPointF(0, 0))
+    elerheto_magassag = float(nezet.property("height")) - float(gomb.property("height"))
+    nezet.setProperty(
+        "contentY", max(0.0, pozicio.y() - max(0.0, elerheto_magassag) / 2)
+    )
+    return gomb
+
+
 def _kep_mentese(
     path: Path,
     size: int | tuple[int, int],
@@ -366,10 +381,10 @@ def _assert_racs_szelen(
         ("radsat", "editTabEffects", "effectRadsat", False),
         ("dir_tint", "editTabEffects", "effectDirTint", False),
         ("radtint", "editTabEffects", "effectDirTint", True),
-        ("linblur", "editTabLegacy", "legacyEffect_linblur", False),
-        ("dir_sat", "editTabLegacy", "legacyEffect_dir_sat", False),
-        ("dir_brite", "editTabLegacy", "legacyEffect_dir_brite", False),
-        ("dir_sharp", "editTabLegacy", "legacyEffect_dir_sharp", False),
+        ("linblur", "editTabEffects4", "legacyEffect_linblur", False),
+        ("dir_sat", "editTabEffects4", "legacyEffect_dir_sat", False),
+        ("dir_brite", "editTabEffects4", "legacyEffect_dir_brite", False),
+        ("dir_sharp", "editTabEffects4", "legacyEffect_dir_sharp", False),
     ],
 )
 def test_forcefit_szuro_nyitasa_illesztesre_valt(
@@ -387,12 +402,12 @@ def test_forcefit_szuro_nyitasa_illesztesre_valt(
     assert viewer.property("zoomFactor") > 1.01, "a próbaképnek nagyítva kell lennie"
 
     _kattint(window, _item(window, tab_name), qt_app)
-    if tab_name == "editTabLegacy":
-        assert panel.property("activeTab") == 6
+    if tab_name == "editTabEffects4" and button_name.startswith("legacyEffect_"):
+        assert panel.property("activeTab") == 5
         legacy_column = _item(window, "legacyEffectsColumn")
-        assert legacy_column.property("visible") is True
+        assert _item(window, "effectsColumn4").property("visible") is True
         assert legacy_column.property("effects"), "a régi effektfül katalógusa üres"
-        button = _vizualis_item(legacy_column, button_name)
+        button = _effektcsempe_lathato(window, button_name)
     else:
         button = _item(window, button_name)
     if shift:

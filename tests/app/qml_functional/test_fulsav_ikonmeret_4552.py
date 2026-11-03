@@ -2,7 +2,7 @@
 
 Spec: `docs/specs/ui-audit-editor.md`, „A fülsáv ikonjai — sorrend és méret":
 tab1 15×16 · tab2 17×18 · tab3 20×19 · tab4 25×19 · tab5 25×19. A `.tre`
-horgony alapján a felső él `round((25 - magasság) / 2 - 1)`; a 6.–7. fül a
+horgony alapján a felső él `round((25 - magasság) / 2 - 1)`; a 6. fül a
 3–5. fül 25×19-es ikonméretét kapja.
 
 A teszt a QML-geometriából ellenőrzi a méretet, középre igazítást és horgonyt.
@@ -23,9 +23,8 @@ MERT = (
     ("editTabEffects", 20, 19),
     ("editTabEffects2", 25, 19),
     ("editTabEffects3", 25, 19),
-    # a 6. és 7. fül a mi többletünk: a 3–5. fül ikonméretét kapja
+    # a 6. fül a mi többletünk: a 3–5. fül ikonméretét kapja
     ("editTabEffects4", 25, 19),
-    ("editTabLegacy", 25, 19),
 )
 
 TURES = 3

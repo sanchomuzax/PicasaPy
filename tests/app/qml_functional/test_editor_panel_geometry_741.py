@@ -16,9 +16,9 @@ Mit állítunk és mit nem — a spec 0. szakasza szerint:
   állítjuk;
 * **abszolút `y` a panel tetejétől**: tervezővászon-érték, NEM állítjuk.
 
-Az egyetlen tudatos eltérés az eredetitől a fülek SZÁMA (hét öt helyett, a
-tulajdonos döntése: `docs/decisions/szerkeszto-bal-panel.md`); a fülsáv
-magassága és a hézagmentes kitöltés erre is érvényes.
+Az egyetlen tudatos eltérés az eredetitől a fülek SZÁMA (hat öt helyett,
+a Glimmer és régi effektek összevonva); a fülsáv magassága és a hézagmentes
+kitöltés erre is érvényes.
 """
 
 from __future__ import annotations
@@ -34,13 +34,12 @@ _KEEPALIVE: list[object] = []
 PANEL_SZELESSEG = 280
 #: A tartalom-oszlop (`editcontrols`/`edittabbase`/`fxthumbs`), x 3..279.
 TARTALOM_SZELESSEG = 276
-#: A hét fül szélessége — `276 / 7` egészre osztva, a maradék hátulról
-#: elosztva (spec 2. szakasz).
-FUL_SZELESSEGEK = (39, 39, 40, 39, 40, 39, 40)
+#: A hat fül szélessége — a kumulált egész határok egyenletes 46 px-et adnak.
+FUL_SZELESSEGEK = (46, 46, 46, 46, 46, 46)
 
 FULEK = (
     "editTabFixes", "editTabFinetune", "editTabEffects", "editTabEffects2",
-    "editTabEffects3", "editTabEffects4", "editTabLegacy",
+    "editTabEffects3", "editTabEffects4",
 )
 
 #: Az 1. fül nyolc eszközcsempéje, sorfolytonosan (spec 3. szakasz).
@@ -177,7 +176,7 @@ class TestAPanelVaza:
 
 
 # ==========================================================================
-# 2. A hét fül (spec 2. szakasz — a tulajdonosi kivétel számszerűsítve)
+# 2. A hat fül (spec 2. szakasz — az összevont füllel)
 # ==========================================================================
 class TestAHetFul:
     def test_a_fulek_szelessege_a_spec_szerinti(self, qt_app) -> None:
@@ -189,7 +188,7 @@ class TestAHetFul:
 
         assert szelessegek == list(FUL_SZELESSEGEK), (
             f"a fülek szélessége {szelessegek}, az elvárt "
-            f"{list(FUL_SZELESSEGEK)} — 39·39·40·39·40·39·40 = 276 (spec 2.)"
+            f"{list(FUL_SZELESSEGEK)} — 6 × 46 = 276 (spec 2.)"
         )
 
     def test_a_fulek_kozott_nincs_hezag(self, qt_app) -> None:
@@ -215,7 +214,7 @@ class TestAHetFul:
 
         teljes = (utolso[0] + utolso[2]) - elso[0]
         assert abs(teljes - TARTALOM_SZELESSEG) <= 1, (
-            f"a hét fül együtt {teljes:.0f} px-t foglal a 276 helyett"
+            f"a hat fül együtt {teljes:.0f} px-t foglal a 276 helyett"
         )
 
     @pytest.mark.parametrize("nev", FULEK)

@@ -168,6 +168,7 @@ def test_a_meres_a_qml_es_a_grafikai_melegites_utan_indul_eloszor(
 
     monkeypatch.setattr(ido_modul, "_egy_inditas", inditas)
     monkeypatch.setattr(ido_modul, "hatar_hiba", lambda *_args: None)
+    monkeypatch.setattr(ido_modul, "foablak_kozepertek_hiba", lambda *_args: None)
     monkeypatch.setattr(ido_modul, "indulo_kozepertek_hiba", lambda *_args: None)
 
     assert (

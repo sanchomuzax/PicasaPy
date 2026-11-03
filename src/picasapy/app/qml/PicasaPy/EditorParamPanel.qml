@@ -52,6 +52,8 @@ Flickable {
         case "Blur Radius": return qsTr("Blur Radius")
         case "Brightness": return qsTr("Brightness")
         case "Color Mix": return qsTr("Color Mix")
+        //: #6443: az újraélesztett colorfix csúszkájának hivatalos felirata
+        case "Color Temperature": return qsTr("Color Temperature")
         //: #4556: a Képregény csúszkái — az eredeti `ImageFilters::BlurXY`,
         //: `DotContrast` és `DotFade` feliratai (ld. picasa-effekt-feliratok.md)
         case "Color Brush": return qsTr("Color Brush")
