@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.29] - 2026-11-03
+
+- A Glimmer és a régi effektek egy fülre kerültek, négy és fél soros előnézeti ráccsal; a Színjavítás és a Fehérpont újra működik, a Homályosítás kattintható, a működésképtelen Fókuszpixelezés kikerült a rácsból (#6443).
+
 ## [1.0.28] - 2026-11-03
 
 - Az arcfelismerés több kis, nehezen felismerhető arcot is megtalál, ha a második keresési menet megerősíti a találatot (#6439).
