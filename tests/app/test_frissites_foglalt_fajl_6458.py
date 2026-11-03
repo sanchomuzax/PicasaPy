@@ -204,7 +204,8 @@ def test_a_seged_kudarcnal_okkodot_ir_a_jelzobe(tmp_path, monkeypatch):
     with pytest.raises(OSError):
         update_swap_helper.install_after_exit(1, tmp_path / "x.zip", app, "PicasaPy.exe")
 
-    assert json.loads(jelzo.read_text(encoding="utf-8")) == {"siker": False, "ok": "fajl-foglalt"}
+    adat = json.loads(jelzo.read_text(encoding="utf-8"))
+    assert (adat["siker"], adat["ok"]) == (False, "fajl-foglalt")
 
 
 def test_a_vezerlo_induláskor_kiolvassa_az_elozo_kudarcot(qt_app, tmp_path, monkeypatch):
