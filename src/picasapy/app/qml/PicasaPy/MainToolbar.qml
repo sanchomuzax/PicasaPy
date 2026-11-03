@@ -176,7 +176,7 @@ Rectangle {
         activityReserve,
         updateAgent && updateAgent.updateAvailable !== undefined
             && updateAgent.updateAvailable && updateNoticeIsAllowed()
-            ? versionLabel.implicitWidth + 8 : 47)
+            ? versionLabel.implicitWidth + 28 : 47) // #6473: 10 belső + 4 köz + 14 margó
     Item {
         id: content
         anchors.fill: parent
@@ -669,7 +669,7 @@ Rectangle {
             objectName: "versionLabel"
             visible: !toolbar.versionHidden
             anchors.right: content.right
-            anchors.rightMargin: 4
+            anchors.rightMargin: updateTagVisible ? 14 : 4
             anchors.verticalCenter: content.verticalCenter
             readonly property string fullText: appVersion
             readonly property bool updateTagVisible: toolbar.updateAgent
@@ -703,7 +703,8 @@ Rectangle {
             font.bold: updateTagVisible || installScheduled
             // #706: aláhúzással jelzi, hogy a verzió hivatkozás.
             font.underline: versionHover.hovered || versionLabel.activeFocus
-            color: updateTagVisible || installScheduled ? Theme.canvasBg : Theme.textGray
+            color: updateTagVisible || installScheduled || downloadingVisible
+                ? Theme.panelSelectionText : Theme.textGray
             opacity: updateTagVisible || installScheduled ? 1 : 0.6
             z: 2
             // billentyűzettel is elérhető (Tab), és Enterrel/szóközzel
@@ -773,10 +774,10 @@ Rectangle {
         Rectangle {
             objectName: "versionUpdateHighlight"
             anchors.centerIn: versionLabel
-            width: versionLabel.implicitWidth + 8
+            width: versionLabel.implicitWidth + 20
             height: 18
-            radius: 3
-            color: Theme.linkBlue
+            radius: 3 // a márkakézikönyv címkeformája (#6473)
+            color: Theme.brandbookBlue
             visible: versionLabel.updateTagVisible
                      || versionLabel.installScheduled
                      || (toolbar.updateNoticeIsAllowed()

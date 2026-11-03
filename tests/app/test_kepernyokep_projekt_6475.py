@@ -68,7 +68,7 @@ def _ment(cel: Path) -> Path:
 
 
 def test_az_elso_kepernyomentes_utan_megjelenik_a_projektmappa(controller, qt_app, tmp_path):
-    cel = tmp_path / "Kepek" / "Picasa" / "Képernyőfelvételek"
+    cel = tmp_path / "Rendszerkepek" / "Picasa" / "Képernyőfelvételek"
     ut = _ment(cel)
     assert controller._root_for_folder(str(cel)) is None, "a cél a figyelt körön kívül van"
 
@@ -84,7 +84,7 @@ def test_az_elso_kepernyomentes_utan_megjelenik_a_projektmappa(controller, qt_ap
 
 def test_a_figyelt_mappak_nem_bovulnek(controller, qt_app, tmp_path):
     elotte = tuple(controller._roots)
-    ut = _ment(tmp_path / "Kepek" / "Picasa" / "Képernyőfelvételek")
+    ut = _ment(tmp_path / "Rendszerkepek" / "Picasa" / "Képernyőfelvételek")
 
     controller.indexScreenCapture(str(ut))
     assert controller.waitForBackgroundWorkers(15.0)
