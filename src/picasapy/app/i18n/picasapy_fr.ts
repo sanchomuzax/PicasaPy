@@ -9920,24 +9920,6 @@ picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMo
             <translation>Installer en quittant</translation>
         </message>
         <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
-            <source>The previous update could not be installed. The earlier version is still running.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>La mise à jour précédente n'a pas pu être installée. L'ancienne version est toujours en cours d'exécution.</translation>
-        </message>
-        <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
-            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Un fichier du programme était utilisé par un autre processus (par exemple un antivirus ou une autre fenêtre PicasaPy). Fermez toutes les fenêtres PicasaPy et réessayez, ou installez manuellement le dernier programme d'installation.</translation>
-        </message>
-        <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
-            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>L'installation n'a pas abouti, l'ancienne version a donc été restaurée. Installez manuellement le dernier programme d'installation.</translation>
-        </message>
-        <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="944" />
             <source>No newer version found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -20607,6 +20589,27 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>Uploading to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Envoi vers Google Photos</translation>
+        </message>
+    </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>La mise à jour précédente n'a pas pu être installée. L'ancienne version est toujours en cours d'exécution.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Un fichier du programme était utilisé par un autre processus (par exemple un antivirus ou une autre fenêtre PicasaPy). Fermez toutes les fenêtres PicasaPy et réessayez, ou installez manuellement le dernier programme d'installation.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>L'installation n'a pas abouti, l'ancienne version a donc été restaurée. Installez manuellement le dernier programme d'installation.</translation>
         </message>
     </context>
 </TS>

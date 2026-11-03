@@ -29,11 +29,7 @@ Rectangle {
         installOnExit: qsTr("Install on exit"),
         upToDate: qsTr("No newer version found."),
         integrityError: qsTr("SHA-256 check failed. Update not installed."),
-        downloadError: qsTr("Update download failed."),
-        // #6458: ha az előző frissítés visszaállt, a következő induláskor kiírjuk
-        previousFailed: qsTr("The previous update could not be installed. The earlier version is still running."),
-        previousFailedBusy: qsTr("A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually."),
-        previousFailedOther: qsTr("The installation did not finish, so the earlier version was restored. Install the latest Setup manually.")
+        downloadError: qsTr("Update download failed.")
     })
 
     function updateNoticeIsAllowed() {

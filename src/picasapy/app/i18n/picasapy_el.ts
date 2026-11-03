@@ -9920,24 +9920,6 @@ picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMo
             <translation>Εγκατάσταση κατά την έξοδο</translation>
         </message>
         <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
-            <source>The previous update could not be installed. The earlier version is still running.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Δεν ήταν δυνατή η εγκατάσταση της προηγούμενης ενημέρωσης. Εξακολουθεί να εκτελείται η παλαιότερη έκδοση.</translation>
-        </message>
-        <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
-            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ένα αρχείο του προγράμματος χρησιμοποιούνταν από άλλη διεργασία (για παράδειγμα ένα πρόγραμμα προστασίας από ιούς ή άλλο παράθυρο του PicasaPy). Κλείστε όλα τα παράθυρα του PicasaPy και δοκιμάστε ξανά ή εγκαταστήστε χειροκίνητα το πιο πρόσφατο πρόγραμμα εγκατάστασης.</translation>
-        </message>
-        <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
-            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Η εγκατάσταση δεν ολοκληρώθηκε, γι' αυτό επαναφέρθηκε η παλαιότερη έκδοση. Εγκαταστήστε χειροκίνητα το πιο πρόσφατο πρόγραμμα εγκατάστασης.</translation>
-        </message>
-        <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="944" />
             <source>No newer version found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -20607,6 +20589,27 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>Uploading to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Μεταφόρτωση στο Google Photos</translation>
+        </message>
+    </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Δεν ήταν δυνατή η εγκατάσταση της προηγούμενης ενημέρωσης. Εξακολουθεί να εκτελείται η παλαιότερη έκδοση.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ένα αρχείο του προγράμματος χρησιμοποιούνταν από άλλη διεργασία (για παράδειγμα ένα πρόγραμμα προστασίας από ιούς ή άλλο παράθυρο του PicasaPy). Κλείστε όλα τα παράθυρα του PicasaPy και δοκιμάστε ξανά ή εγκαταστήστε χειροκίνητα το πιο πρόσφατο πρόγραμμα εγκατάστασης.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Η εγκατάσταση δεν ολοκληρώθηκε, γι' αυτό επαναφέρθηκε η παλαιότερη έκδοση. Εγκαταστήστε χειροκίνητα το πιο πρόσφατο πρόγραμμα εγκατάστασης.</translation>
         </message>
     </context>
 </TS>

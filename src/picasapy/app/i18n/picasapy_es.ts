@@ -9935,24 +9935,6 @@ picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMo
             <translation>Instalar al salir</translation>
         </message>
         <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
-            <source>The previous update could not be installed. The earlier version is still running.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>No se pudo instalar la actualización anterior. Sigue ejecutándose la versión anterior.</translation>
-        </message>
-        <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
-            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Otro proceso estaba usando un archivo del programa (por ejemplo, un antivirus u otra ventana de PicasaPy). Cierre todas las ventanas de PicasaPy e inténtelo de nuevo, o instale manualmente el instalador más reciente.</translation>
-        </message>
-        <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
-            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>La instalación no terminó, por lo que se restauró la versión anterior. Instale manualmente el instalador más reciente.</translation>
-        </message>
-        <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="944" />
             <source>No newer version found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -20622,6 +20604,27 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>Uploading to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Subiendo a Google Fotos</translation>
+        </message>
+    </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>No se pudo instalar la actualización anterior. Sigue ejecutándose la versión anterior.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Otro proceso estaba usando un archivo del programa (por ejemplo, un antivirus u otra ventana de PicasaPy). Cierre todas las ventanas de PicasaPy e inténtelo de nuevo, o instale manualmente el instalador más reciente.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>La instalación no terminó, por lo que se restauró la versión anterior. Instale manualmente el instalador más reciente.</translation>
         </message>
     </context>
 </TS>

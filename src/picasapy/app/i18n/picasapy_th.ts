@@ -9920,24 +9920,6 @@ picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMo
             <translation>ติดตั้งเมื่อออก</translation>
         </message>
         <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
-            <source>The previous update could not be installed. The earlier version is still running.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ไม่สามารถติดตั้งการอัปเดตครั้งก่อนได้ เวอร์ชันเดิมยังคงทำงานอยู่</translation>
-        </message>
-        <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
-            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ไฟล์ของโปรแกรมถูกใช้งานโดยกระบวนการอื่น (เช่น โปรแกรมป้องกันไวรัสหรือหน้าต่าง PicasaPy อื่น) ปิดหน้าต่าง PicasaPy ทั้งหมดแล้วลองอีกครั้ง หรือติดตั้งตัวติดตั้งล่าสุดด้วยตนเอง</translation>
-        </message>
-        <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
-            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
-            <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>การติดตั้งไม่เสร็จสมบูรณ์ จึงคืนค่าเป็นเวอร์ชันเดิม ติดตั้งตัวติดตั้งล่าสุดด้วยตนเอง</translation>
-        </message>
-        <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="944" />
             <source>No newer version found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -20607,6 +20589,27 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>Uploading to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>กำลังอัปโหลดไปยัง Google รูปภาพ</translation>
+        </message>
+    </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไม่สามารถติดตั้งการอัปเดตครั้งก่อนได้ เวอร์ชันเดิมยังคงทำงานอยู่</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ไฟล์ของโปรแกรมถูกใช้งานโดยกระบวนการอื่น (เช่น โปรแกรมป้องกันไวรัสหรือหน้าต่าง PicasaPy อื่น) ปิดหน้าต่าง PicasaPy ทั้งหมดแล้วลองอีกครั้ง หรือติดตั้งตัวติดตั้งล่าสุดด้วยตนเอง</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>การติดตั้งไม่เสร็จสมบูรณ์ จึงคืนค่าเป็นเวอร์ชันเดิม ติดตั้งตัวติดตั้งล่าสุดด้วยตนเอง</translation>
         </message>
     </context>
 </TS>

@@ -15,6 +15,12 @@ Dialog {
             ? updateAgent.updateAvailable === true : false
 
     property bool previousFailureShown: false
+    readonly property string previousFailedText:
+        qsTr("The previous update could not be installed. The earlier version is still running.")
+    readonly property string previousFailedBusyText:
+        qsTr("A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.")
+    readonly property string previousFailedOtherText:
+        qsTr("The installation did not finish, so the earlier version was restored. Install the latest Setup manually.")
 
     // #6458: az előző, visszaállt frissítés okát induláskor egyszer kiírjuk
     function showPreviousFailure() {
@@ -23,9 +29,9 @@ Dialog {
                 || updateAgent.previousUpdateFailure === "")
             return
         previousFailureShown = true
-        feedback = strings.previousFailed + "\n"
+        feedback = previousFailedText + "\n"
             + (updateAgent.previousUpdateFailure === "fajl-foglalt"
-               ? strings.previousFailedBusy : strings.previousFailedOther)
+               ? previousFailedBusyText : previousFailedOtherText)
         open()
     }
 
