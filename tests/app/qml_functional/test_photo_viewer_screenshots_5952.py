@@ -323,6 +323,47 @@ def test_capture_waits_past_a_late_preview_frame() -> None:
     _assert_capture_waits_past_a_late_preview_frame()
 
 
+def test_capture_varja_a_modal_parbeszed_atmeneteinek_vegere() -> None:
+    class _Parbeszed:
+        def __init__(self) -> None:
+            self.visible = False
+            self.opened = False
+
+        def property(self, name: str) -> bool:
+            return bool(getattr(self, name))
+
+    class _Alkalmazas:
+        def __init__(self, parbeszed: _Parbeszed) -> None:
+            self.parbeszed = parbeszed
+            self.esemenyek = 0
+
+        def processEvents(self) -> None:
+            self.esemenyek += 1
+            if self.esemenyek == 2:
+                self.parbeszed.visible = True
+            elif self.esemenyek == 4:
+                self.parbeszed.opened = True
+            elif self.esemenyek == 6:
+                self.parbeszed.opened = False
+            elif self.esemenyek == 8:
+                self.parbeszed.visible = False
+
+    parbeszed = _Parbeszed()
+    alkalmazas = _Alkalmazas(parbeszed)
+
+    screenshot_script._var_modal_parbeszed_allapotara(
+        alkalmazas, parbeszed, nyitva=True, allapot="nyitás"
+    )
+    assert parbeszed.visible and parbeszed.opened
+    assert alkalmazas.esemenyek == 4
+
+    screenshot_script._var_modal_parbeszed_allapotara(
+        alkalmazas, parbeszed, nyitva=False, allapot="bezárás"
+    )
+    assert not parbeszed.visible and not parbeszed.opened
+    assert alkalmazas.esemenyek == 8
+
+
 def test_compare_reports_exact_pixel_count_rectangle_and_diff(tmp_path: Path) -> None:
     before = tmp_path / "elotte"
     after = tmp_path / "utana"
