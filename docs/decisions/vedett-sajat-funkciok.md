@@ -73,11 +73,11 @@ kódtól).
   elhelyezésünk tehát tudatos hozzáadás, nem eltérés-hiba. A `webview`
   kihagyásának indoklása a hivatkozott döntés-lapon.
 - `src/picasapy/app/qml/PicasaPy/EditorPanel.qml` (#422, #571) — A
-  szerkesztő 7 effekt-füle az eredeti 5 helyett: a 2–4. index az eredeti
-  három effekt-fül, az 5. („további effektek", #422) és a 6. („Régi
-  effektek", #571) index a mi hozzáadásunk.
-- `src/picasapy/app/qml/PicasaPy/EditorLegacyTab.qml` (#571) — a 7. fül
-  maga: a motor ismer egy sor szűrőt (`radtint`, `linblur`, `dir_sat`
+  szerkesztő 6 füle az eredeti 5 helyett: a 2–4. index az eredeti
+  három effekt-fül, az 5. index a mi hozzáadásunk: a Glimmer (#422) és a
+  régi effektek (#571) közös füle (#6443).
+- `src/picasapy/app/qml/PicasaPy/EditorLegacyTab.qml` (#571) — a közös
+  fül régi effektjei: a motor ismer egy sor szűrőt (`radtint`, `linblur`, `dir_sat`
   stb.), amit a Picasa 3.9 felülete sosem mutatott. Mi tudatosan
   előhívhatóvá tettük. Részletes indoklás: ADR-003,
   `docs/decisions/legacy-effects-tab.md`.

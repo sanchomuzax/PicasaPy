@@ -1,5 +1,10 @@
 import QtQuick
 
+// SAJÁT FUNKCIÓ (#571) - TUDATOS ELTÉRÉS AZ EREDETITŐL. A motorban benne
+// maradt egy sor régi szűrő, amit a 3.9 felülete nem mutat; mi tudatosan
+// előhívhatóvá tesszük őket (#6443 óta a Glimmer effektekkel közös fülön).
+// Egy későbbi „hűségjavítás" ezt NE vegye ki. Lista:
+// docs/decisions/vedett-sajat-funkciok.md, indoklás: ADR-003.
 // A korábbi külön fül csempéi most az összevont rácsban jelennek meg.
 // A renderelő dönti el, melyik bejegyzés használható; a natív regiszterben
 // nem létező focalpixelate csak a régi lánc figyelésében marad meg.

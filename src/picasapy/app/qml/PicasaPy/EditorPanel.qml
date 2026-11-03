@@ -47,6 +47,11 @@ Rectangle {
     readonly property real undoRowBottom: globalUndoRow.y + globalUndoRow.height
 
     // 0–4: eredeti fülek; 5: Glimmer és régi effektek összevont saját füle.
+    // SAJÁT FUNKCIÓ (#1187): a szerkesztő 6 fülből csak 5 (0-4. index) van meg
+    // az eredeti Picasában; az 5. index (#422 Glimmer és #571 régi effektek,
+    // #6443 óta egy fülön) a MI hozzáadásunk. A bináris-egyezés erre a fülre
+    // NEM vonatkozik: hogy az eredetiben nincs ilyen fül, nem hiba. Lista:
+    // docs/decisions/vedett-sajat-funkciok.md
     property int activeTab: 0
 
     property alias cropActive: toolsState.cropActive
