@@ -4,7 +4,7 @@ zoom-csúszka zsugorodjon, és SEMMI ne lógjon ki a sáv jobb széléből
 (önálló TrayBar, controller nélkül).
 
 #1345: a kimeneti gombok (Nyomtatás, E-mail, Exportálás, Kollázs, Film,
-Megosztás) MÁR NEM esnek vissza ikon-only módra — fix 55 × 36 képpontos
+Megosztás) MÁR NEM esnek vissza ikon-only módra: fix 53 × 36 képpontos (#6499)
 gombok lettek, amelyekben a felirat az ikon alatt, a gombon BELÜL ül,
 tehát nem szélesítik a sávot. Szűk ablakban helyettük a két
 csoportelválasztó marad el.
@@ -12,7 +12,7 @@ csoportelválasztó marad el.
 #1420: a sáv EGYETLEN `RowLayout`-ja megszűnt — a 36,5 %-os osztópont
 mentén két rész lett belőle (képtálca | jobb sáv két sorral), ezért a
 kilógás-őr nem egy sor gyerekeit járja be, hanem a sáv TELJES
-elemfáját. A zöld gomb pedig fix 141 × 35, tehát nincs többé ikon-only
+elemfáját. A zöld gomb pedig fix 141 × 36 (#6499), tehát nincs többé ikon-only
 kompakt módja: a felirata a gombon BELÜL tördel két sorba, ahogy az
 eredetin. Ami maradt kompaktnak: a nagyítás-csúszka és a két
 csoportelválasztó."""
@@ -184,7 +184,7 @@ class TestTrayBarNoOverflowAtNarrowWidth:
         """#1345: a sáv LEGBŐVEBB alakja — a két csoportelválasztóval.
 
         A #1116 eredeti változata a Kollázs felirat saját küszöbén mért;
-        az a küszöb a #1345-tel megszűnt (a gomb fix 55 × 36, a felirata
+        az a küszöb a #1345-tel megszűnt (a gomb fix 53 × 36 (#6499), a felirata
         nem szélesíti a sávot, ezért mindig látszik). A legdrágább eset
         azóta az, amikor a két elválasztó cellája (2 × 59 px) is bekerül
         — a szélességet ezért ennek a küszöbnek a széléről vesszük, nem
@@ -267,7 +267,7 @@ class TestTrayBarIconOnlyModeStillWorks:
         Ez a #1116-os őr utódja. Az eredeti azt állította, hogy a Kollázs
         gomb kompakt módban ikon-only marad — annak akkor volt értelme,
         amikor a felirat a gomb MELLETT ült, és így szélesítette a sávot.
-        A #1345 óta a gomb fix 55 × 36 képpont, a felirat pedig az ikon
+        A #1345 óta a gomb fix 53 × 36 képpont (#6499), a felirat pedig az ikon
         ALATT, a gombon belül: elrejtésével egyetlen képpontot sem
         nyernénk, csak információt veszítenénk. A #1116 célja (legyen a
         Kollázs gombnak felirata, mint a Nyomtatásnak) így erősebben

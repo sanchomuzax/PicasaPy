@@ -444,8 +444,8 @@ Column {
         }
 
         // #1367 ÚJRAMÉRVE (#1420): a sáv szélesség-igénye. A #1345 óta
-        // minden kimeneti gomb FIX 55 × 36 egy 59 × 40-es cellában, a zöld
-        // gomb pedig (#1420) fix 141 × 35 — vagyis a sáv igénye TISZTA
+        // minden kimeneti gomb FIX 53 × 36 (#6499; a lépés 55) egy 55 × 40-es
+        // cellában, a zöld gomb pedig (#1420, #6499) fix 141 × 36, vagyis a sáv igénye TISZTA
         // GEOMETRIA lett: feliratszélesség NINCS benne.
         //
         // Ez érdemi javulás a korábbi, betűfüggő becsléshez képest: a

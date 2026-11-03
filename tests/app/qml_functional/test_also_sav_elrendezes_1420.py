@@ -23,7 +23,7 @@ sáv 105 helyett 103 képpontja):
 ## Melyik állítás beégetett és melyik relatív — és miért
 
 - **Beégetett** minden olyan méret, ami a QML-ben literálként áll és nem
-  felirat-szélességből származik: 105 · 20 · 85 · 81 · 141 × 35 ·
+  felirat-szélességből származik: 105 · 20 · 85 · 81 · 141 × 36 (#6499) ·
   145 × 44 (ld. `TestAZoldGomb`) · 59. Ezek betűtől és
   platformtól függetlenek.
 - **Relatív** az osztópont: nem képpontszám, hanem az ablakszélesség
@@ -219,8 +219,9 @@ class TestAzOsztopont:
 
 
 class TestAZoldGomb:
-    """`webupload` 141 × 35 egy `webupload_rect` 145 × 44-es helyen, az
-    osztóponttól 5 képponttal balra kezdve.
+    """`webupload` 141 × 36 egy `webupload_rect` 145 × 44-es helyen, az
+    osztóponttól 5 képponttal balra kezdve (#6499: a mért 35 helyett 36,
+    hogy a magassága a szürke műveletgombokkal egyezzen).
 
     145 = a kényszerek (`0,.365,-5`…`1,.365,140`); a respack-fejléc 147-e
     nem a doboz szélessége."""
@@ -239,12 +240,15 @@ class TestAZoldGomb:
             osztopont - 5, abs=TURES
         )
 
-    def test_a_gomb_141x35(self, qml_app_module, qt_app):
+    def test_a_gomb_141x36(self, qml_app_module, qt_app):
+        """#6499: 36 magas (nem a mért 35): a 35 alacsonyabbnak látszott a
+        mellette lévő szürke gomboknál. A magasság egyezését a renderelt
+        teszt (test_also_sav_gombok_res_6499.py) méri a képen is."""
         window, _, _ = qml_app_module
         _szelesseg(window, qt_app, 1280)
         gomb = _elem(window, "trayUploadButton")
         assert gomb.property("width") == 141
-        assert gomb.property("height") == 35
+        assert gomb.property("height") == 36
 
     def test_a_gomb_felirata_tordel_es_nem_csonkul(self, qml_app_module, qt_app):
         """A felirat KÉT SORBA tördel a 141 képpontos gombban — pontosan

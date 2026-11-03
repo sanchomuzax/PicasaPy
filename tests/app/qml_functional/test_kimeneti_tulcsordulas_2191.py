@@ -170,8 +170,8 @@ class TestALathatoGombokSzama:
         )
 
     def test_a_gombok_NEM_nyomodnak_ossze(self, qml_app, qt_app):
-        """A mért 55 × 36 a gombokra kötelező — a szűk hely nem
-        zsugoríthatja őket, azért van a túlcsordulás-gomb."""
+        """A fix gombméret (#6499: 53 × 36) a gombokra kötelező, a szűk
+        hely nem zsugoríthatja őket, azért van a túlcsordulás-gomb."""
         window, _c, _e = qml_app
         assert _var(qt_app, lambda: window.findChild(QObject, "trayPrintButton"))
         _szelesites(window, qt_app, SZUK)
@@ -179,7 +179,7 @@ class TestALathatoGombokSzama:
             gomb = window.findChild(QObject, nev)
             if gomb is None or not gomb.isVisible():
                 continue
-            assert gomb.width() >= 55, f"{nev} összenyomódott: {gomb.width()}"
+            assert gomb.width() >= 53, f"{nev} összenyomódott: {gomb.width()}"
 
 
 class TestAFelugroLista:
