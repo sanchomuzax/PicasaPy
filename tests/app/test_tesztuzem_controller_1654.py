@@ -7,6 +7,8 @@ mappa útvonala fogantyún (`_megosztas_gyokere`) érkezik, és a tesztek
 
 from __future__ import annotations
 
+import threading
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -15,6 +17,7 @@ from PySide6.QtCore import QObject, QSettings
 
 from picasapy.app import tesztuzem_controller as modul
 from picasapy.app.tesztuzem_controller import TesztuzemMixin
+from picasapy.app.worker_thread import BackgroundWorkerMixin
 from picasapy.perf.tesztuzem import (
     NAPLO_ALMAPPA,
     NAPLO_MAPPA_BEALLITAS_KULCS,
@@ -35,6 +38,17 @@ class _Probe(TesztuzemMixin, QObject):
 
     def _get_settings(self):
         return self._settings
+
+    def _start_background(self, target, *, name=None, **_kwargs):
+        """A régi tesztek a LOGIKÁT mérik: a háttérmunka itt helyben fut.
+        A valódi szálat a `TestAMegosztasNemAFoSzalon` (#6476) méri."""
+        target()
+
+
+class _SzalasProbe(BackgroundWorkerMixin, _Probe):
+    """Valódi háttérszálas indító (#6476)."""
+
+    _start_background = BackgroundWorkerMixin._start_background
 
 
 @pytest.fixture
@@ -349,3 +363,41 @@ class TestNemIrElesbe:
         assert (
             modul._megosztas_gyokere(tmp_path, ismount=lambda _p: True) == tmp_path
         )
+
+
+class TestAMegosztasNemAFoSzalon:
+    """#6476: a tulajdonos gépén a megosztás vizsgálata 3,8 s-ra megakasztotta
+    a felületet (`megosztas_elerheto` a fő szálon, elérhetetlen hálózati út)."""
+
+    def test_a_megosztas_vizsgalata_hatterszalon_fut(
+        self, qt_app, ini, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr(modul, "_argv", lambda: ["pytest"])
+        naplok = tmp_path / "cache" / "perf"
+        _keszits_naplot(naplok)
+        dok = tmp_path / "dokumentumok"
+        dok.mkdir()
+        szalak: list[bool] = []
+
+        def megosztas():
+            szalak.append(threading.current_thread() is threading.main_thread())
+            return None
+
+        monkeypatch.setattr(modul, "_naplo_mappa", lambda: naplok)
+        monkeypatch.setattr(modul, "_megosztas_gyokere", megosztas)
+        monkeypatch.setattr(modul, "_dokumentumok", lambda: dok)
+        controller = _SzalasProbe(QSettings(str(ini), QSettings.Format.IniFormat))
+        kerések: list[str] = []
+        controller.tesztuzemMentesKert.connect(
+            lambda _uzenet, mappa, _nev: kerések.append(mappa)
+        )
+
+        assert controller.tesztuzemNaploAtadasa() is True
+        assert controller.waitForBackgroundWorkers(10.0)
+        hatarido = time.monotonic() + 5.0
+        while not kerések and time.monotonic() < hatarido:
+            qt_app.processEvents()
+            time.sleep(0.01)
+
+        assert szalak == [False], "a megosztás vizsgálata a fő szálon futott"
+        assert kerések and kerések[0].endswith(dok.name)
