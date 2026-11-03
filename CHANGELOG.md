@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.35] - 2026-11-03
+
+- Az önfrissítési próba minden új kiadási Setup feltöltése után elindul, akkor is, ha közben új commit került a főágra (#6492).
+- A csomag indulásmérése az első hideg futás kiugrását 24 s-ig csak figyelmeztetésként jelzi, a meleg futások és a nagyon lassú első indulás továbbra is bukik (#6495).
+
 ## [1.0.34] - 2026-11-03
 
 - A képernyőkép-felvevő megvárja a modális párbeszédek megnyitásának és bezárásának végét, így a felvételek tartalma ismételhető (#6489).
