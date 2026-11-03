@@ -170,8 +170,9 @@ Rectangle {
     readonly property real searchContainerLeft: width * 0.4
     readonly property real searchContainerRight: width - 70
     // a látható mező (`searchbase`) jobb széle: a konténeren túl 23-mal
+    property real activityReserve: 47 // #6474: a háttérjelző igénye (szélesebb, ha megszakítható)
     readonly property real searchBoxRight: width - Math.max(
-        47,
+        activityReserve,
         updateAgent && updateAgent.updateAvailable !== undefined
             && updateAgent.updateAvailable && updateNoticeIsAllowed()
             ? versionLabel.implicitWidth + 8 : 47)
