@@ -49,16 +49,20 @@ def test_a_windows_ci_elobb_felteszi_a_felhasznaloi_regi_peldanyt_aztan_eltavoli
         if step.get("name") == "Telepítő telepítése és valós indulási füstpróba"
     )
     script = install["run"]
+    click_trial = (
+        _GYOKER / "packaging/windows/telepito_proba_6472.ps1"
+    ).read_text(encoding="utf-8")
 
     assert "/CURRENTUSER" in script
-    assert "/ALLUSERS" in script
     assert "PicasaPy-legacy-installed" in script
-    assert "[Microsoft.Win32.RegistryView]::Registry32" in script
-    assert "[Microsoft.Win32.RegistryView]::Registry64" in script
+    assert "telepito_proba_6472.ps1" in script
+    assert "/ALLUSERS" in click_trial
+    assert "[Microsoft.Win32.RegistryView]::Registry32" in click_trial
+    assert "[Microsoft.Win32.RegistryView]::Registry64" in click_trial
     assert "régi telepítés" in script
-    assert "PicasaPy.exe" in script
-    assert script.count("Test-PicasaPyUninstallEntry") >= 3
-    assert "Test-Path $legacyExe" in script
+    assert "PicasaPy.exe" in click_trial
+    assert "Get-CurrentUserUninstallEntry" in click_trial
+    assert "Test-Path $legacyExe" in click_trial
 
 
 def test_a_verzioeroforras_segedje_a_pyproject_verziojabol_ir(tmp_path):

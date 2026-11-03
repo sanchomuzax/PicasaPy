@@ -522,8 +522,6 @@ jobs:
         if: steps.tag.outputs.skip != 'true'
         shell: pwsh
         env:
-          QT_QPA_PLATFORM: offscreen
-          QT_QUICK_BACKEND: software
           # #4825: ugyanaz, mint a csomagolt program füstpróbájánál (#4824) —
           # a cp1252-es konzol a cserekaraktert nem tudja kiírni
           PYTHONIOENCODING: utf-8
@@ -569,22 +567,8 @@ jobs:
           }
 
           $installDir = Join-Path $env:RUNNER_TEMP "PicasaPy-installed"
-          $arguments = @(
-            "/VERYSILENT",
-            "/SUPPRESSMSGBOXES",
-            "/NORESTART",
-            "/SP-",
-            "/ALLUSERS",
-            "/DIR=$installDir"
-          )
-          $install = Start-Process -FilePath $installer -ArgumentList $arguments -Wait -PassThru
-          if ($install.ExitCode -ne 0) {
-            Write-Error "a telepítő nem futott le: $($install.ExitCode)"
-            exit 1
-          }
-          if ((Test-Path $legacyExe) -or (Test-PicasaPyUninstallEntry)) {
-            throw "a régi telepítés a frissítés után is megmaradt"
-          }
+          & "packaging\windows\telepito_proba_6472.ps1" `
+            -Installer $installer -InstallDir $installDir -LegacyExe $legacyExe
           $env:PICASAPY_INSTALLED_EXE = Join-Path $installDir "PicasaPy.exe"
           @'
           import os
@@ -618,6 +602,9 @@ jobs:
                       "TEMP": str(profile / "Temp"),
                       "TMP": str(profile / "Temp"),
                       "PICASAPY_LANG": "en",
+                      "QT_QPA_PLATFORM": "offscreen",
+                      "QT_QUICK_BACKEND": "software",
+                      "PYINSTALLER_SUPPRESS_SPLASH_SCREEN": "1",
                   }
               )
               try:
@@ -656,9 +643,10 @@ jobs:
           if [ ! -f packaging/windows/csomag_meres.py ]; then echo "Régi kiadási tag: nincs mérőszkript."; exit 0; fi
           EXE="$RUNNER_TEMP/PicasaPy-installed/PicasaPy.exe"
           # #6348: a telepített program a valódi verzióját írja a naplóba
-          python packaging/windows/csomag_meres.py ido \
+          PYINSTALLER_SUPPRESS_SPLASH_SCREEN=1 python packaging/windows/csomag_meres.py ido \
             --futtato "telepitett=$EXE" --munka "$RUNNER_TEMP/csomag-meres" \
-            --elvart-verzio "${{ steps.tag.outputs.verzio }}"
+            --elvart-verzio "${{ steps.tag.outputs.verzio }}" \
+            --inditasok 3 --hatar-mp 5
           # #6345: KAPU — ha a telepített program ablakának nincs ikonja, piros
           python packaging/windows/csomag_meres.py ikon --szigoru \
             --futtato "forras=@python,picasapy" \

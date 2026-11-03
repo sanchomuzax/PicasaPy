@@ -138,8 +138,20 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
+# A `Splash` a Python-interpreter előtt jelenik meg. A később létrejövő Qt
+# indulóablak ugyanennek a képnek a finomabb változata; addig ez jelzi, hogy
+# a lassú, első vírusellenőrzés alatt is elindult a program.
+splash = Splash(
+    str(Path(SPECPATH) / "startup-splash.png"),
+    binaries=a.binaries,
+    datas=a.datas,
+    center="primary",
+    always_on_top=True,
+)
+
 exe = EXE(
     pyz,
+    splash,
     a.scripts,
     [],
     exclude_binaries=True,
@@ -155,6 +167,7 @@ exe = EXE(
 )
 coll = COLLECT(
     exe,
+    splash.binaries,
     a.binaries,
     a.datas,
     strip=False,
