@@ -59,3 +59,41 @@ def test_egy_inditas_a_plafon_folott_akkor_is_piros_ha_a_kozepertek_jo():
 
 def test_plafon_hatar_nelkul_sincs():
     assert csomag_meres.egyedi_plafon_mp(None) is None
+
+
+def test_a_hideg_elso_futas_plafon_feletti_ideje_figyelmeztetes_csak():
+    hiba, figyelmeztetes = csomag_meres.egyedi_hatar_dontes(
+        "indulo #1", _eredmeny(18.26), 8.0, 1
+    )
+
+    assert hiba is None
+    assert figyelmeztetes is not None
+    assert "18.26 s" in figyelmeztetes
+    assert "hideg első" in figyelmeztetes
+
+
+def test_a_meleg_futas_plafon_feletti_ideje_tovabbra_is_piros():
+    hiba, figyelmeztetes = csomag_meres.egyedi_hatar_dontes(
+        "indulo #2", _eredmeny(8.01), 8.0, 2
+    )
+
+    assert hiba is not None and "8.01 s" in hiba
+    assert figyelmeztetes is None
+
+
+def test_az_elso_futas_hianyzo_foablaka_tovabbra_is_piros():
+    hiba, figyelmeztetes = csomag_meres.egyedi_hatar_dontes(
+        "indulo #1", _eredmeny(None), 8.0, 1
+    )
+
+    assert hiba is not None and "nem jelent meg" in hiba
+    assert figyelmeztetes is None
+
+
+def test_a_hideg_elso_futas_a_harmas_plafon_folott_piros():
+    hiba, figyelmeztetes = csomag_meres.egyedi_hatar_dontes(
+        "indulo #1", _eredmeny(41.0), 8.0, 1
+    )
+
+    assert hiba is not None and "41.00 s" in hiba and "24.0 s" in hiba
+    assert figyelmeztetes is None

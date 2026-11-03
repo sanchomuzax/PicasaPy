@@ -751,6 +751,27 @@ jobs:
           echo "::error::a(z) $TAG kiadás öt kísérlet után is előzetes maradt"
           exit 1
 
+      # #6492: a következő workflow_run esemény head commitja a main aktuális
+      # feje lehet, ezért a próba számára a ténylegesen csomagolt tagot adjuk
+      # át a Package-futás saját artefaktumában. Csak az éles Setup feltöltése
+      # és a kiadás nyilvánossá tétele után készül el.
+      - name: A csomagolt Setup jelölése a próba számára
+        if: steps.tag.outputs.skip != 'true' && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/setup-release-marker"
+          printf '%s\n' "${{ steps.tag.outputs.tag }}" > "$RUNNER_TEMP/setup-release-marker/tag"
+          printf '%s\n' "${{ steps.tag.outputs.verzio }}" > "$RUNNER_TEMP/setup-release-marker/verzio"
+
+      - name: A Package-futás jelölőjének csatolása
+        if: steps.tag.outputs.skip != 'true' && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: setup-release-marker
+          path: ${{ runner.temp }}/setup-release-marker/
+          if-no-files-found: error
+          retention-days: 90
+
       - name: A telepítő elkészült (PR-ág)
         if: github.event_name == 'pull_request'
         shell: bash
