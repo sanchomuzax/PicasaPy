@@ -104,5 +104,15 @@ def test_a_kattintas_ellenorzi_hogy_a_pont_a_picasapy_ablakara_esik():
     kattintas = forras.split("def _valodi_eger_kattintas", 1)[1].split("\ndef ", 1)[0]
     pont = forras.split("def _pont_folyamata", 1)[1].split("\ndef ", 1)[0]
     assert "_pont_folyamata(" in kattintas and "gazda != pid" in kattintas
+    assert 'startswith("Qt")' in kattintas
     assert "WindowFromPoint" in pont
     assert "_eloterbe_hoz(pid)" in kattintas
+
+
+def test_ablak_nelkuli_pidnel_a_regi_viselkedes_marad(monkeypatch):
+    """Az önfrissítési próbában a PID-hez néha nincs látható ablak; ilyenkor nem bukhat."""
+    user32 = _HamisUser32()
+    monkeypatch.setattr(frissites_modul, "_ablakikonok", lambda _pid: {})
+
+    assert frissites_modul._eloterbe_hoz(1234, user32=user32, kernel32=_HamisKernel32()) is None
+    assert user32.hivasok == []

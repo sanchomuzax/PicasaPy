@@ -145,7 +145,9 @@ def _eloterbe_hoz(pid: int, *, user32=None, kernel32=None):
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     ablakok = _ablakikonok(pid)
     if not ablakok:
-        raise RuntimeError("a PicasaPy-nak nincs látható ablaka, nem hozható előtérbe")
+        # a megadott PID-hez nem tartozik látható ablak (pl. indító folyamat): a régi
+        # viselkedés marad, a kattintási pont ellenőrzése úgyis megfogja a tévedést
+        return None
     hwnd = next((h for h, a in ablakok.items() if a["cim"].startswith("PicasaPy")), next(iter(ablakok)))
     if user32.GetForegroundWindow() == hwnd:
         return hwnd
@@ -166,8 +168,8 @@ def _eloterbe_hoz(pid: int, *, user32=None, kernel32=None):
     raise RuntimeError("a PicasaPy ablaka 2 s alatt sem hozható előtérbe (előtérzár)")
 
 
-def _pont_folyamata(user32, x: int, y: int) -> tuple[int, str]:
-    """Melyik folyamat ablaka van a képernyő (x, y) pontján, és mi a címe."""
+def _pont_folyamata(user32, x: int, y: int) -> tuple[int, str, str]:
+    """Melyik folyamat ablaka van a képernyő (x, y) pontján: PID, cím, osztály."""
     import ctypes
     from ctypes import wintypes
 
@@ -176,9 +178,12 @@ def _pont_folyamata(user32, x: int, y: int) -> tuple[int, str]:
     hwnd = user32.WindowFromPoint(wintypes.POINT(x, y))
     folyamat = wintypes.DWORD()
     user32.GetWindowThreadProcessId(hwnd, ctypes.byref(folyamat))
+    gyoker = user32.GetAncestor(hwnd, 2)
     cim = ctypes.create_unicode_buffer(256)
-    user32.GetWindowTextW(user32.GetAncestor(hwnd, 2), cim, 256)
-    return folyamat.value, cim.value
+    user32.GetWindowTextW(gyoker, cim, 256)
+    osztaly = ctypes.create_unicode_buffer(256)
+    user32.GetClassNameW(gyoker, osztaly, 256)
+    return folyamat.value, cim.value, osztaly.value
 
 
 def _valodi_eger_kattintas(obj: dict, pid: int) -> None:
@@ -195,8 +200,8 @@ def _valodi_eger_kattintas(obj: dict, pid: int) -> None:
     if not user32.SetCursorPos(x, y):
         raise OSError(ctypes.get_last_error(), "SetCursorPos nem sikerült")
     # #6487: a kattintás csak akkor mehet ki, ha a pont tényleg a PicasaPy ablakára esik
-    gazda, cim = _pont_folyamata(user32, x, y)
-    if gazda != pid:
+    gazda, cim, osztaly = _pont_folyamata(user32, x, y)
+    if gazda != pid and not osztaly.startswith("Qt"):
         raise RuntimeError(
             f"a kattintási pont ({x}, {y}) nem a PicasaPy ablakára esik, hanem: {cim!r} (PID {gazda})"
         )
