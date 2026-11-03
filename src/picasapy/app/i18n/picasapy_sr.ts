@@ -16984,7 +16984,7 @@ picasapy-origin-key: stringres:filter_dir_brite_label1;stringres:filter_dir_sat_
             <source>Top to Bottom</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:filter_dir_brite_label2;stringres:filter_dir_sat_label2;stringres:filter_dir_sharp_label2</extracomment>
-            <translation type="unfinished" />
+            <translation>Одозго надоле</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />

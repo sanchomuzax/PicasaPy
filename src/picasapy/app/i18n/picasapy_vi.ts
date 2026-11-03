@@ -16945,14 +16945,14 @@ picasapy-origin-key: stringres:filter_triple_label1</extracomment>
             <source>Left to Right</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:filter_dir_brite_label1;stringres:filter_dir_sat_label1;stringres:filter_dir_sharp_label1</extracomment>
-            <translation type="unfinished" />
+            <translation>Trái sang phải</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Top to Bottom</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:filter_dir_brite_label2;stringres:filter_dir_sat_label2;stringres:filter_dir_sharp_label2</extracomment>
-            <translation type="unfinished" />
+            <translation>Trên xuống dưới</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />

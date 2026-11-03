@@ -16991,7 +16991,7 @@ picasapy-origin-key: stringres:filter_dir_brite_label2;stringres:filter_dir_sat_
             <source>Fill Light</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill_label0;stringres:filter_finetune2_label1;stringres:filter_finetune_label1;stringres:filter_triple2_label1;stringres:filter_triple3_label1;stringres:filter_triple_label3;tooltips:Label(editpanel/filllightlabel)</extracomment>
-            <translation type="unfinished" />
+            <translation>Doplňkové světlo</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
