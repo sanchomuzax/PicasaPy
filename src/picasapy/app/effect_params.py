@@ -58,6 +58,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
+from picasapy.render.chain import can_offer_filter_control
+from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS
+from picasapy.render.registry import FILTER_REGISTRY
+
 
 @dataclass(frozen=True)
 class EffectParam:
@@ -66,10 +70,11 @@ class EffectParam:
     A `label` ANGOL kulcsszöveg; a fordítást a QML végzi (a felület nyelvi
     rétege ott él, `qsTr`-rel — így a Linguist-eszközök is megtalálják).
 
-    `kind`: `"slider"` (számtartomány), `"checkbox"` (jelölőnégyzet) vagy
-    `"color"` (színválasztó). `minimum`/`maximum`/`default`/`step` csak
-    `"slider"`-nél értelmezett (checkboxnál `default` 0.0/1.0); `color` csak
-    `"color"`-nál értelmezett (`"#rrggbb"` alak).
+    `kind`: `"slider"` (számtartomány), `"checkbox"` (jelölőnégyzet),
+    `"color"` (színválasztó) vagy `"puck"` (képen húzható, nem látható
+    koordinátamező). `minimum`/`maximum`/`default`/`step` csak numerikus
+    fajtáknál értelmezett; `color` csak `"color"`-nál értelmezett
+    (`"#rrggbb"` alak).
 
     `max_formula`/`default_formula`: képfüggő tartományok jelzői — a
     tényleges min(W,H)/H értéket `resolve_effect_params()` számolja ki, itt
@@ -130,6 +135,45 @@ def _checkbox(key, label, default=False) -> EffectParam:
 
 def _color(key, label, color) -> EffectParam:
     return EffectParam(key, label, "color", 0.0, 1.0, 0.0, 1.0, color=color)
+
+
+def _legacy_registry_params(name: str) -> tuple[EffectParam, ...]:
+    """A kézzel katalógusba nem vett, renderelhető régi effektek vezérlői.
+
+    A filterdesc nem minden csúszkához ad meg `default` attribútumot; ilyen
+    esetben a natív, semleges nulla értékből indulunk. A `linblur` kurzoros
+    koordinátái a mentett láncban a csúszkák előtt állnak, míg a három
+    irányított effekt korongja közvetlenül a két csúszkát vezérli.
+    """
+    if name not in LEGACY_EFFECT_KEYS or not can_offer_filter_control(name):
+        return ()
+    spec = FILTER_REGISTRY.get(name)
+    if spec is None:
+        return ()
+
+    params: list[EffectParam] = []
+    if name == "linblur":
+        params.extend(
+            (
+                EffectParam("x", "", "puck", 0.0, 1.0, 0.5, 0.01),
+                EffectParam("y", "", "puck", 0.0, 1.0, 0.5, 0.01),
+            )
+        )
+
+    for slider in sorted(spec.sliders, key=lambda item: item.index):
+        if slider.hidden:
+            continue
+        params.append(
+            _slider(
+                f"slider_{slider.index}",
+                slider.label,
+                slider.minimum,
+                slider.maximum,
+                0.0 if slider.default is None else slider.default,
+                step=0.01,
+            )
+        )
+    return tuple(params)
 
 
 #: A paraméteres effektek vezérlői, a lánc-paraméterek SORRENDJÉBEN (az első
@@ -465,7 +509,9 @@ def effect_params(name: str) -> tuple[EffectParam, ...]:
     """
     if not isinstance(name, str):
         return ()
-    return _CATALOGUE.get(name.casefold(), ())
+    key = name.casefold()
+    catalogue = _CATALOGUE.get(key)
+    return catalogue if catalogue is not None else _legacy_registry_params(key)
 
 
 def resolve_effect_params(

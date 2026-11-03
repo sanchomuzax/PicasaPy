@@ -24,7 +24,13 @@ _EFFEKTEK = [
         "picnikfocalpixelate", 4, "effectPixelate", True,
         id="PicnikFocalPixelate",
     ),
+    pytest.param("linblur", 5, "legacyEffect_linblur", False, id="linblur"),
+    pytest.param("dir_sat", 5, "legacyEffect_dir_sat", False, id="dir_sat"),
+    pytest.param("dir_brite", 5, "legacyEffect_dir_brite", False, id="dir_brite"),
+    pytest.param("dir_sharp", 5, "legacyEffect_dir_sharp", False, id="dir_sharp"),
 ]
+
+_IRANYITOTT_EFFEKTEK = {"dir_sat", "dir_brite", "dir_sharp"}
 
 
 def _kepeket_keszit(konyvtar):
@@ -82,8 +88,7 @@ def test_a_fokuszpuck_huzasa_mozgatja_a_pontot_es_a_csuszkat(
         "az effektfül nem váltott át",
     )
 
-    gomb = ablak.findChild(QObject, csempe)
-    assert gomb is not None, f"a {kulcs} effekt csempéje hiányzik"
+    gomb = _child(ablak.contentItem(), csempe)
     QTest.mouseClick(
         ablak,
         Qt.MouseButton.LeftButton,
@@ -97,14 +102,18 @@ def test_a_fokuszpuck_huzasa_mozgatja_a_pontot_es_a_csuszkat(
     )
     assert panel.property("paramEffectName") == kulcs
 
-    puck = ablak.findChild(QObject, "viewerEffectFocalPuck")
-    assert puck is not None, f"a {kulcs} fókuszpuckja nem jelent meg a képen"
+    puck = _child(ablak.contentItem(), "viewerEffectFocalPuck")
     assert puck.property("visible") is True
     assert puck.width() > 0 and puck.height() > 0
 
     eredeti_magassag = ablak.height()
+    celpontok = (
+        ((0.92, 0.08), (0.18, 0.84), (0.81, 0.20))
+        if kulcs in _IRANYITOTT_EFFEKTEK
+        else ((0.68, 0.34), (0.32, 0.67), (0.61, 0.72))
+    )
     for magassag_elteres, (cel_x, cel_y) in zip(
-        (-5, 0, 5), ((0.68, 0.34), (0.32, 0.67), (0.61, 0.72)), strict=True
+        (-5, 0, 5), celpontok, strict=True
     ):
         ablak.resize(ablak.width(), eredeti_magassag + magassag_elteres)
         _varj(
@@ -114,8 +123,16 @@ def test_a_fokuszpuck_huzasa_mozgatja_a_pontot_es_a_csuszkat(
             "az ablak nem vette fel a kért magasságot",
         )
         ertekek_elotte = list(_as_list(panel.property("paramEffectValues")))
+        irany_x = (
+            (ertekek_elotte[0] + 1.0) / 2.0
+            if kulcs in _IRANYITOTT_EFFEKTEK else ertekek_elotte[0]
+        )
+        irany_y = (
+            (ertekek_elotte[1] + 1.0) / 2.0
+            if kulcs in _IRANYITOTT_EFFEKTEK else ertekek_elotte[1]
+        )
         kezdo = puck.mapToScene(
-            QPointF(puck.width() * ertekek_elotte[0], puck.height() * ertekek_elotte[1])
+            QPointF(puck.width() * irany_x, puck.height() * irany_y)
         )
         cel = puck.mapToScene(QPointF(puck.width() * cel_x, puck.height() * cel_y))
         QTest.mousePress(
@@ -134,12 +151,45 @@ def test_a_fokuszpuck_huzasa_mozgatja_a_pontot_es_a_csuszkat(
         qt_app.processEvents()
 
         ertekek = list(_as_list(panel.property("paramEffectValues")))
-        assert ertekek[0] == pytest.approx(cel_x, abs=0.01)
-        assert ertekek[1] == pytest.approx(cel_y, abs=0.01)
-        x_csuszka = _child(panel, "effectParamSlider0")
-        y_csuszka = _child(panel, "effectParamSlider1")
-        assert x_csuszka.property("value") == pytest.approx(ertekek[0])
-        assert y_csuszka.property("value") == pytest.approx(ertekek[1])
+        vart_x = cel_x * 2.0 - 1.0 if kulcs in _IRANYITOTT_EFFEKTEK else cel_x
+        vart_y = cel_y * 2.0 - 1.0 if kulcs in _IRANYITOTT_EFFEKTEK else cel_y
+        assert ertekek[0] == pytest.approx(vart_x, abs=0.01)
+        assert ertekek[1] == pytest.approx(vart_y, abs=0.01)
+
+        if kulcs == "linblur":
+            vart_mennyiseg = {
+                -5: 2.0,
+                0: 5.0,
+                5: 8.0,
+            }[magassag_elteres]
+            panel.updateParamValue(2, vart_mennyiseg)
+            _varj(
+                qt_app,
+                lambda cel=vart_mennyiseg:
+                    _as_list(panel.property("paramEffectValues"))[2] == cel,
+                "a linblur mennyiségértéke nem állt be",
+            )
+            x_csuszka = _child(panel, "effectParamSlider0")
+            y_csuszka = _child(panel, "effectParamSlider1")
+            amount_csuszka = _child(panel, "effectParamSlider2")
+            amount_cimke = _child(panel, "effectParamLabel2")
+            assert x_csuszka.property("visible") is False
+            assert y_csuszka.property("visible") is False
+            assert amount_csuszka.property("value") == pytest.approx(
+                vart_mennyiseg
+            )
+            assert amount_cimke.property("visible") is True
+            assert amount_cimke.property("text") == "Amount"
+        else:
+            x_csuszka = _child(panel, "effectParamSlider0")
+            y_csuszka = _child(panel, "effectParamSlider1")
+            x_cimke = _child(panel, "effectParamLabel0")
+            y_cimke = _child(panel, "effectParamLabel1")
+            assert x_csuszka.property("value") == pytest.approx(ertekek[0])
+            assert y_csuszka.property("value") == pytest.approx(ertekek[1])
+            if kulcs in _IRANYITOTT_EFFEKTEK:
+                assert x_cimke.property("text") == "Left to Right"
+                assert y_cimke.property("text") == "Top to Bottom"
 
         if kulcs == "dir_tint":
             assert puck.property("directional") is True
@@ -148,6 +198,9 @@ def test_a_fokuszpuck_huzasa_mozgatja_a_pontot_es_a_csuszkat(
             )
         else:
             assert puck.property("directional") is False
+        assert puck.property("directionalAxes") is (
+            kulcs in _IRANYITOTT_EFFEKTEK
+        )
 
         # A valódi, kirajzolt nézőkép bizonyítéka; a görgetés és a betűk
         # platformfüggő geometriáját a teszt nem méri.

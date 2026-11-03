@@ -16935,6 +16935,105 @@ picasapy-origin-key: stringres:CThumbUI::ReadOnlyPrompt</extracomment>
         <name>EditorParamPanel</name>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Brightness</source>
+            <comment>Legacy Lighting Fixes</comment>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_triple_label1</extracomment>
+            <translation>Lysstyrke</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Left to Right</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_dir_brite_label1;stringres:filter_dir_sat_label1;stringres:filter_dir_sharp_label1</extracomment>
+            <translation>Venstre mot høyre</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Top to Bottom</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_dir_brite_label2;stringres:filter_dir_sat_label2;stringres:filter_dir_sharp_label2</extracomment>
+            <translation>Topp til bunn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Fill Light</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_autobacklight_label0;stringres:filter_fill_label0;stringres:filter_finetune2_label1;stringres:filter_finetune_label1;stringres:filter_triple2_label1;stringres:filter_triple3_label1;stringres:filter_triple_label3;tooltips:Label(editpanel/filllightlabel)</extracomment>
+            <translation>Utfyllingslys</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Black Point</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_triple2_label2</extracomment>
+            <translation>Svartpunkt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>White Point</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_triple2_label3</extracomment>
+            <translation>Hvitpunkt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Highlights</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_triple3_label2</extracomment>
+            <translation>Lyse områder</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Shadows</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_triple3_label3</extracomment>
+            <translation>Skygger</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Shadow %</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_shadow_label2</extracomment>
+            <translation>Skygge %</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Highlight %</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_shadow_label3</extracomment>
+            <translation>Uthev %</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Level</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_gamma_label1</extracomment>
+            <translation>Nivå</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Cool to Warm</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_colortemp_label1</extracomment>
+            <translation>Kald til varm</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>White Shift</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_colortemp_label2</extracomment>
+            <translation>Hvitskiftet</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Threshold</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_blur_label1</extracomment>
+            <translation>Terskel</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
             <source>Amount</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:ImageFilters::Amount;stringres:filter_backlight_label1;stringres:filter_linblur_label1;stringres:filter_radblur_label2;stringres:filter_sat_label1;stringres:filter_unsharp2_label1;stringres:filter_unsharp_label1</extracomment>

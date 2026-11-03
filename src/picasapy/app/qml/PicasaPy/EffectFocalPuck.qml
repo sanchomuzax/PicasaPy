@@ -23,12 +23,23 @@ Item {
         || effectKey === "dir_tint" || effectKey === "radtint"
         || effectKey === "focalzoom"
         || effectKey === "picnikfocalpixelate"
+        || effectKey === "linblur"
+        || directionalAxes
     readonly property bool directional: effectKey === "dir_tint"
+    readonly property bool directionalAxes:
+        effectKey === "dir_sat" || effectKey === "dir_brite"
+        || effectKey === "dir_sharp"
     readonly property var values: panel ? panel.paramEffectValues : []
     readonly property real focusX:
-        values && values.length > 0 ? Number(values[0]) : 0.5
+        values && values.length > 0
+            ? (directionalAxes ? (Number(values[0]) + 1.0) / 2.0
+                               : Number(values[0]))
+            : 0.5
     readonly property real focusY:
-        values && values.length > 1 ? Number(values[1]) : 0.5
+        values && values.length > 1
+            ? (directionalAxes ? (Number(values[1]) + 1.0) / 2.0
+                               : Number(values[1]))
+            : 0.5
     // A natív `dir_tint` 0-s negyedében a puck x koordinátája adja a ±15°-os
     // szöget; ezt a tengelyt ugyanúgy forgatjuk, ahogy a képen húzott puck.
     readonly property real directionAngle: (focusX - 0.5) * 30.0
@@ -45,8 +56,14 @@ Item {
 
     function beallitFokuszt(x, y) {
         if (!panel || !panel.updateParamValue) return
-        panel.updateParamValue(0, korlat(x / Math.max(1, width)))
-        panel.updateParamValue(1, korlat(y / Math.max(1, height)))
+        var normalizedX = korlat(x / Math.max(1, width))
+        var normalizedY = korlat(y / Math.max(1, height))
+        if (directionalAxes) {
+            normalizedX = normalizedX * 2.0 - 1.0
+            normalizedY = normalizedY * 2.0 - 1.0
+        }
+        panel.updateParamValue(0, normalizedX)
+        panel.updateParamValue(1, normalizedY)
     }
 
     MouseArea {
