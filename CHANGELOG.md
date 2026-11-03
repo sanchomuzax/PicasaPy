@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.31] - 2026-11-03
+
+- A frissítési jelvény a márkakézikönyv kék címkeformáját kapta (fehér felirat, 3 px sarok), és a keresőmezőtől ugyanakkora a távolsága, mint az ablak jobb szélétől (#6473).
+- Szerkesztés közben az ép, épp szerkesztett képre már nem ugrik fel a „sérült fájlok elrejtése” ablak, ha egy előnézet egyszer nem készült el; a program újrapróbálja, és csak valóban olvashatatlan képnél kérdez (#6481).
+
 ## [1.0.30] - 2026-11-03
 
 - Az önfrissítés nem bukik el, ha frissítés közben a régi programot újraindítják: a segéd kivárja, majd leállítja, foglalt fájlnál újrapróbál, és a munka idejére ablakban jelzi, hogy a frissítés fut; ha mégis visszaáll, a program a következő induláskor kiírja az okát (#6458).
