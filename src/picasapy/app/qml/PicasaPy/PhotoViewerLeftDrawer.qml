@@ -75,6 +75,9 @@ Rectangle {
         hostCropOverlay: leftDrawer.hostCropOverlay
         hostCopyCaptionConfirmLoader: leftDrawer.hostCopyCaptionConfirmLoader
         hostUndoDataLossDialogLoader: leftDrawer.hostUndoDataLossDialogLoader
+        // #6477: a panel tartalma a hisztogram fölött érjen véget
+        bottomReserve: viewerHistogramBox.visible
+            ? viewerHistogramBox.height + viewerHistogramBox.anchors.bottomMargin : 0
     }
 
     // #3234: a döntés-csúszka a KÉP FÖLÖTTI sávba költözött
@@ -94,6 +97,7 @@ Rectangle {
     // kezdődik (`insetleft`, 1421). A 238 × 144-es doboz így a
     // 280 px-es fiók sávján belülre esik.
     HistogramBox {
+        id: viewerHistogramBox
         objectName: "viewerHistogramBox"
         anchors.bottom: parent.bottom
         // #1905/3: MÉRVE a tulajdonos egymás mellé tett
