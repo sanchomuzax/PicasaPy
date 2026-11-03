@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.32] - 2026-11-03
+
+- A windowsos telepítő végén bepipált „PicasaPy indítása” után a program néhány másodpercen belül indulóképet mutat, és a telepítés már előre betölti a programot, így az első indulás nem lassú (#6472).
+
 ## [1.0.31] - 2026-11-03
 
 - A frissítési jelvény a márkakézikönyv kék címkeformáját kapta (fehér felirat, 3 px sarok), és a keresőmezőtől ugyanakkora a távolsága, mint az ablak jobb szélétől (#6473).
