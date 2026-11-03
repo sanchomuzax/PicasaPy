@@ -55,6 +55,15 @@ _SECOND_PASS_SCALE = 0.8
 _SECOND_PASS_PADDING = 0.4
 _SECOND_PASS_MAX_DIMENSION = MAX_DETECTION_DIMENSION * 3 // 4
 
+# #6439: a 0,9 alatti jelölt akkor is arc, ha a második menet ugyanott,
+# ugyanilyen alsó küszöbbel is talál arcot. A kis, stilizált vagy részben
+# takart arcok első menetben gyakran 0,85-0,90 közé esnek; az arc nélküli
+# képek legjobb jelöltjei ennél jóval alatta maradnak (a mérés: tájképek
+# és fű-minták legfeljebb 0,7). A két független menet egyezése a védelem,
+# a küszöb önmagában nem.
+_CONSENSUS_SCORE_FLOOR = 0.8
+_CONSENSUS_MIN_IOU = 0.3
+
 
 def default_model_dir() -> Path:
     """A letöltött modellek felhasználói mappája — SOHA nem a repóban."""
@@ -190,6 +199,21 @@ def _unpad_point(
     )
 
 
+def _box_area(face: FaceDetection) -> float:
+    return max(0.0, face.right - face.left) * max(0.0, face.bottom - face.top)
+
+
+def _boxes_overlap(first: FaceDetection, second: FaceDetection) -> bool:
+    """Két keret IoU-ja eléri a `_CONSENSUS_MIN_IOU` küszöböt (#6439)."""
+    inter_width = min(first.right, second.right) - max(first.left, second.left)
+    inter_height = min(first.bottom, second.bottom) - max(first.top, second.top)
+    if inter_width <= 0 or inter_height <= 0:
+        return False
+    intersection = inter_width * inter_height
+    union = _box_area(first) + _box_area(second) - intersection
+    return union > 0 and intersection / union >= _CONSENSUS_MIN_IOU
+
+
 class FaceDetector:
     """`cv2.FaceDetectorYN` hiánytűrő becsomagolása.
 
@@ -197,7 +221,9 @@ class FaceDetector:
     NINCS kivétel, NINCS crash a hívóig (ld. modul-docstring). Ha az első
     YuNet-menet nem talál arcot, a képet kisebb méretben, élismétlő paddinggel
     egyszer újrapróbálja, majd a találatokat visszateszi a bemenet
-    koordinátáira."""
+    koordinátáira. Ha a két 0,9-es menet is üres, a 0,8-0,9 közti jelöltek
+    csak akkor számítanak arcnak, ha a második menet ugyanott megerősíti őket
+    (#6439, `_detect_consensus`)."""
 
     def __init__(
         self,
@@ -208,6 +234,7 @@ class FaceDetector:
     ) -> None:
         self.available = False
         self._detector = None
+        self._consensus_engine = None
         self.model_path = model_path if model_path is not None else resolve_model_path()
         if self.model_path is None:
             logger.info(
@@ -253,24 +280,65 @@ class FaceDetector:
         if image_bgr is None or image_bgr.size == 0:
             return ()
         try:
-            detections = self._detect_once(image_bgr)
-            if detections:
-                return detections
-            return self._detect_with_padding(image_bgr)
+            return self._detect_any(image_bgr)
         except cv2.error as error:  # pragma: no cover — hibás kép/dekódolás
             logger.warning("Arc-detektálás sikertelen: %s", error)
             return ()
 
-    def _detect_once(self, image_bgr: np.ndarray) -> tuple[FaceDetection, ...]:
+    def _detect_any(self, image_bgr: np.ndarray) -> tuple[FaceDetection, ...]:
+        """Az 0,9-es menetek, majd az egyetértési sáv (#6439). Az első
+        nem üres eredmény nyer; a sáv csak akkor fut, ha a két 0,9-es menet
+        üres."""
+        return (
+            self._detect_once(image_bgr)
+            or self._detect_with_padding(image_bgr)
+            or self._detect_consensus(image_bgr)
+        )
+
+    def _detect_consensus(self, image_bgr: np.ndarray) -> tuple[FaceDetection, ...]:
+        """#6439: a 0,8 és 0,9 közötti első menetbeli jelölt csak akkor számít
+        arcnak, ha a kicsinyített, paddingelt második menet ugyanott, ugyanilyen
+        alsó küszöbön is talál arcot. Egyetlen menet bizonyítéka nem elég."""
+        engine = self._consensus_detector()
+        candidates = self._detect_once(image_bgr, engine)
+        if not candidates:
+            return ()
+        confirmations = self._detect_with_padding(image_bgr, engine)
+        return tuple(
+            candidate
+            for candidate in candidates
+            if any(_boxes_overlap(candidate, other) for other in confirmations)
+        )
+
+    def _consensus_detector(self):
+        """A `_CONSENSUS_SCORE_FLOOR` küszöbű motor, az első szükség esetén
+        példányosítva. A 0,9-es motor (és a default konstruktor) változatlan
+        marad; a sáv csak az üres képeken kerül elő, így a költség is csak
+        ott nő."""
+        if self._consensus_engine is None:
+            self._consensus_engine = cv2.FaceDetectorYN.create(
+                str(self.model_path),
+                "",
+                (0, 0),
+                score_threshold=_CONSENSUS_SCORE_FLOOR,
+                nms_threshold=_DEFAULT_NMS_THRESHOLD,
+                top_k=_DEFAULT_TOP_K,
+            )
+        return self._consensus_engine
+
+    def _detect_once(
+        self, image_bgr: np.ndarray, engine=None
+    ) -> tuple[FaceDetection, ...]:
+        engine = self._detector if engine is None else engine
         height, width = image_bgr.shape[:2]
-        self._detector.setInputSize((width, height))
-        _count, faces = self._detector.detect(image_bgr)
+        engine.setInputSize((width, height))
+        _count, faces = engine.detect(image_bgr)
         if faces is None:
             return ()
         return tuple(_parse_row(row) for row in faces)
 
     def _detect_with_padding(
-        self, image_bgr: np.ndarray
+        self, image_bgr: np.ndarray, engine=None
     ) -> tuple[FaceDetection, ...]:
         """Az üres első menet kisebb, élismétléssel kipótolt bemenete.
 
@@ -315,7 +383,7 @@ class FaceDetector:
             detector_image = padded
             detector_height, detector_width = padded_height, padded_width
 
-        detections = self._detect_once(detector_image)
+        detections = self._detect_once(detector_image, engine)
         if not detections:
             return ()
 
