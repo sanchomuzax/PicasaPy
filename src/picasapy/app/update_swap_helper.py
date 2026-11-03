@@ -20,6 +20,7 @@ import time
 import zipfile
 
 from picasapy.perf.tesztuzem import tarolo_tipusa
+from picasapy.app import update_ablak, update_eredmeny, update_folyamatok
 
 _kill = os.kill
 _run = subprocess.run
@@ -146,9 +147,10 @@ def swap_update_directory(
         shutil.rmtree(backup_dir)
     had_previous = install_dir.exists()
     if had_previous:
-        install_dir.rename(backup_dir)
+        # #6458: foglalt fájlnál (víruskereső, indexelő) nem áll vissza azonnal
+        update_folyamatok.atnevez_ujraprobalva(install_dir, backup_dir)
     try:
-        staged_dir.rename(install_dir)
+        update_folyamatok.atnevez_ujraprobalva(staged_dir, install_dir)
         if not launch():
             if install_dir.exists():
                 install_dir.rename(failed_dir)
@@ -354,7 +356,16 @@ def inditsd_a_felhasznalonak(executable: Path, *, uac_emelt: bool = False) -> No
 def install_after_exit(
     pid: int, archive: Path, install_dir: Path, executable: str, *, uac_emelt: bool = False
 ) -> bool:
-    """Vár, kicsomagol, cserél, ellenőriz, szükség esetén visszaáll, majd indít."""
+    """Vár, kicsomagol, cserél, ellenőriz, szükség esetén visszaáll, majd indít.
+
+    #6458: a munka teljes ideje alatt egy kis ablak jelzi, hogy a frissítés fut."""
+    with update_ablak.FrissitesiAblak():
+        return _telepites(pid, archive, install_dir, executable, uac_emelt=uac_emelt)
+
+
+def _telepites(
+    pid: int, archive: Path, install_dir: Path, executable: str, *, uac_emelt: bool
+) -> bool:
     _log_update(
         "A frissítősegéd elindult; várakozás a főfolyamat kilépésére",
         include_storage=True,
@@ -386,6 +397,9 @@ def install_after_exit(
         _log_update("Kicsomagolás elkezdődött")
         staged = extract_update_archive(Path(archive), stage_root / "new")
         _log_update(f"Kicsomagolás kész; idő: {time.monotonic() - started:.2f} s")
+        leallitott = update_folyamatok.varj_vagy_allitsd_le(install_dir)
+        if leallitott:
+            _log_update(f"A telepítési mappából futó maradék folyamatok leállítva: {leallitott}")
         started = time.monotonic()
         _log_update("Csere és önellenőrzés elkezdődött")
         sikerult = swap_update_directory(
@@ -396,6 +410,11 @@ def install_after_exit(
         elapsed = time.monotonic() - started
         _log_update(
             f"Csere {'sikeres' if sikerult else 'sikertelen'}; idő: {elapsed:.2f} s"
+        )
+        update_eredmeny.ird(
+            update_eredmeny.jelzo_utvonal(),
+            siker=sikerult,
+            ok="" if sikerult else update_eredmeny.ONELLENORZES,
         )
         if not sikerult:
             _log_update(
@@ -410,6 +429,9 @@ def install_after_exit(
             _qml_grafika_melegites(install_dir / executable, timeout=180.0)
         return sikerult
     except Exception as error:
+        update_eredmeny.ird(
+            update_eredmeny.jelzo_utvonal(), siker=False, ok=update_eredmeny.ok_kod(error)
+        )
         _log_update("Visszaállás oka: a frissítési lépés kivétellel állt le")
         _log_update(f"Kivétel: {_sanitized_log_message(error)}")
         raise

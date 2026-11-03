@@ -9935,6 +9935,24 @@ picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMo
             <translation>Beim Beenden installieren</translation>
         </message>
         <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Das letzte Update konnte nicht installiert werden. Die bisherige Version läuft weiterhin.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Eine Programmdatei wurde von einem anderen Prozess verwendet (zum Beispiel einem Virenscanner oder einem anderen PicasaPy-Fenster). Schließen Sie alle PicasaPy-Fenster und versuchen Sie es erneut, oder installieren Sie das neueste Setup manuell.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Die Installation wurde nicht abgeschlossen, daher wurde die bisherige Version wiederhergestellt. Installieren Sie das neueste Setup manuell.</translation>
+        </message>
+        <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="944" />
             <source>No newer version found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>

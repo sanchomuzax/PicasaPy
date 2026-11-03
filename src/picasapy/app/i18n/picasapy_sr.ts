@@ -9950,6 +9950,24 @@ picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMo
             <translation>Instaliraj pri izlasku</translation>
         </message>
         <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Претходно ажурирање није могло да се инсталира. И даље ради ранија верзија.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Датотеку програма користио је други процес (на пример антивирусни програм или други прозор PicasaPy). Затворите све прозоре PicasaPy и покушајте поново или ручно инсталирајте најновији инсталациони програм.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Инсталација није завршена, па је враћена ранија верзија. Ручно инсталирајте најновији инсталациони програм.</translation>
+        </message>
+        <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="944" />
             <source>No newer version found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>

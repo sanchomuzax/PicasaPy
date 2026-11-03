@@ -9935,6 +9935,24 @@ picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMo
             <translation>Installera när programmet avslutas</translation>
         </message>
         <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Den föregående uppdateringen kunde inte installeras. Den tidigare versionen körs fortfarande.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>En programfil användes av en annan process (till exempel ett antivirusprogram eller ett annat PicasaPy-fönster). Stäng alla PicasaPy-fönster och försök igen, eller installera den senaste installationsfilen manuellt.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Installationen slutfördes inte, så den tidigare versionen återställdes. Installera den senaste installationsfilen manuellt.</translation>
+        </message>
+        <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="944" />
             <source>No newer version found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>

@@ -9950,6 +9950,24 @@ picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMo
             <translation>Įdiegti uždarant</translation>
         </message>
         <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ankstesnio naujinimo įdiegti nepavyko. Vis dar veikia ankstesnė versija.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Programos failą naudojo kitas procesas (pavyzdžiui, antivirusinė programa arba kitas PicasaPy langas). Uždarykite visus PicasaPy langus ir bandykite dar kartą arba rankiniu būdu įdiekite naujausią diegimo programą.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="33" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Diegimas nebuvo baigtas, todėl atkurta ankstesnė versija. Rankiniu būdu įdiekite naujausią diegimo programą.</translation>
+        </message>
+        <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="944" />
             <source>No newer version found.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>

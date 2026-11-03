@@ -72,6 +72,13 @@ jobs:
                      | sed -n "${{ matrix.hanyadik }}p")
           fi
           echo "regi=$regi" >> "$GITHUB_OUTPUT"
+          # #6458: az 1.0.30 frissítősegédje már kivárja/leállítja a frissítés
+          # közben kézzel újraindított régi programot; attól kezdve ezt is próbáljuk
+          if [ "$(printf '%s\n' 1.0.30 "$regi" | sort -V | head -1)" = "1.0.30" ]; then
+            echo "kozben=--kozben-inditas" >> "$GITHUB_OUTPUT"
+          else
+            echo "kozben=" >> "$GITHUB_OUTPUT"
+          fi
           echo "uj=$uj" >> "$GITHUB_OUTPUT"
           echo "Korábbi kiadás: $regi -> legújabb kiadás: $uj"
 
@@ -116,7 +123,8 @@ jobs:
             --munka "$RUNNER_TEMP/frissites" \
             --kepernyokep-mappa "$RUNNER_TEMP/frissites-kepek" \
             --elvart-verzio "${{ steps.verzio.outputs.regi }}" \
-            --valodi-cel-verzio "${{ steps.verzio.outputs.uj }}"
+            --valodi-cel-verzio "${{ steps.verzio.outputs.uj }}" \
+            ${{ steps.verzio.outputs.kozben }}
 
       - name: Képernyőképek és diagnosztika csatolása
         if: always()

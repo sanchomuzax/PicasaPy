@@ -14,6 +14,24 @@ Dialog {
         (updateAgent && updateAgent.updateAvailable !== undefined)
             ? updateAgent.updateAvailable === true : false
 
+    property bool previousFailureShown: false
+
+    // #6458: az előző, visszaállt frissítés okát induláskor egyszer kiírjuk
+    function showPreviousFailure() {
+        if (previousFailureShown || !updateAgent
+                || updateAgent.previousUpdateFailure === undefined
+                || updateAgent.previousUpdateFailure === "")
+            return
+        previousFailureShown = true
+        feedback = strings.previousFailed + "\n"
+            + (updateAgent.previousUpdateFailure === "fajl-foglalt"
+               ? strings.previousFailedBusy : strings.previousFailedOther)
+        open()
+    }
+
+    Component.onCompleted: Qt.callLater(showPreviousFailure)
+    onUpdateAgentChanged: Qt.callLater(showPreviousFailure)
+
     function checkForUpdates() {
         feedback = ""
         open()
