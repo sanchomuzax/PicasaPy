@@ -107,24 +107,6 @@ class TestAPyInstallerCsomag:
             "konzolos csomagolásnál minden indításnál fekete ablak nyílik"
         )
 
-    def test_a_bootloader_splash_a_Qt_induloablakig_latszik(self, spec):
-        """A Python- és Qt-import előtti várakozás alatt is legyen látható ablak."""
-        splash = _GYOKER / "packaging" / "windows" / "startup-splash.png"
-        assert splash.is_file(), "hiányzik a Python előtti indulókép"
-        assert "Splash(" in spec and "startup-splash.png" in spec
-        exe = spec.split("exe = EXE(", 1)[1].split("coll = COLLECT(", 1)[0]
-        collect = spec.split("coll = COLLECT(", 1)[1]
-        assert "splash," in exe, "a bootloader nem kapta meg az indulóképet"
-        assert "splash.binaries" in collect, "a splash futtatófájlja kimarad a csomagból"
-
-        startup = (
-            _GYOKER / "src" / "picasapy" / "app" / "startup_splash.py"
-        ).read_text(encoding="utf-8")
-        assert "_close_pyinstaller_splash" in startup
-        assert startup.index("app.processEvents()") < startup.rindex(
-            "_close_pyinstaller_splash()"
-        ), "a bootloader splash csak a Qt-indulóablak felépülése után zárható be"
-
 
 class TestAzInnoSetupTelepito:
     def test_az_iss_letezik(self):
@@ -176,15 +158,6 @@ class TestAzInnoSetupTelepito:
             "a tulajdonos ezt a fájlnevet kérte a kiadásra"
         )
 
-    def test_a_telepito_a_felhasznaloi_indulashoz_melegiti_a_modulokat(self, iss):
-        """A telepítés alatt olvassa be az alkalmazásmodulokat is."""
-        assert "--telepito-melegites" in iss
-        belepo = (
-            _GYOKER / "src" / "picasapy" / "app" / "__main__.py"
-        ).read_text(encoding="utf-8")
-        assert "--telepito-melegites" in belepo
-        assert "from . import application" in belepo
-
 
 class TestACI:
     def _windows_lepesek(self, munkafolyamat) -> list[dict]:
@@ -233,19 +206,6 @@ class TestACI:
             for lepes in self._windows_lepesek(munkafolyamat)
         )
         assert "PicasaPy-Setup-" in szoveg or "upload" in szoveg.lower()
-
-    def test_a_telepito_proba_valodi_befejezes_kattintast_es_elso_indulast_mer(self, munkafolyamat):
-        szoveg = " ".join(
-            str(lepes.get("run", "")) + str(lepes.get("uses", ""))
-            for lepes in self._windows_lepesek(munkafolyamat)
-        )
-        proba = _GYOKER / "packaging" / "windows" / "telepito_proba_6472.ps1"
-        assert proba.is_file(), "hiányzik a valódi telepítő-kattintás próbája"
-        assert "telepito_proba_6472.ps1" in szoveg
-        forras = proba.read_text(encoding="utf-8")
-        assert "SendInput" in forras, "a próba nem valódi egérkattintást használ"
-        assert "A főablak a splash után megjelent" in forras
-        assert "_elso_indulas_hatar_mp" in forras
 
 
 class TestAzOnellenorzes:

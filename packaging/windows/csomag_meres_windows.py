@@ -75,17 +75,6 @@ def _splash_ablak(pid: int) -> int | None:
     from ctypes import wintypes
 
     user32 = ctypes.WinDLL("user32", use_last_error=True)
-    user32.GetWindowThreadProcessId.argtypes = [
-        wintypes.HWND,
-        ctypes.POINTER(wintypes.DWORD),
-    ]
-    user32.GetWindowThreadProcessId.restype = wintypes.DWORD
-    user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
-    user32.GetWindowTextW.restype = ctypes.c_int
-    user32.GetClassNameW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
-    user32.GetClassNameW.restype = ctypes.c_int
-    user32.IsWindowVisible.argtypes = [wintypes.HWND]
-    user32.IsWindowVisible.restype = wintypes.BOOL
     talalt: list[int] = []
 
     @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
@@ -96,12 +85,7 @@ def _splash_ablak(pid: int) -> int | None:
             return True
         cim = ctypes.create_unicode_buffer(256)
         user32.GetWindowTextW(hwnd, cim, 256)
-        osztaly = ctypes.create_unicode_buffer(256)
-        user32.GetClassNameW(hwnd, osztaly, 256)
-        if cim.value.casefold().startswith("picasapy startup") or osztaly.value.casefold() in {
-            "tktoplevel",
-            "tk",
-        }:
+        if cim.value.casefold().startswith("picasapy startup"):
             talalt.append(int(hwnd))
             return False
         return True

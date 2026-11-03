@@ -15,10 +15,7 @@ import time
 #: óraolvasás, tehát kikapcsolva sem kerül semmibe.
 _ENTRY_AT = time.monotonic()
 
-from .startup_splash import (  # noqa: E402 — az időbélyeg elé nem kerülhet
-    _close_pyinstaller_splash,
-    start_early_startup,
-)
+from .startup_splash import start_early_startup  # noqa: E402 — az időbélyeg elé nem kerülhet
 
 
 def run(argv: list[str], *, entry_at: float | None = None) -> int:
@@ -30,18 +27,11 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
 
 def main() -> int:
     """A telepített `picasapy` parancs belépési pontja."""
-    if "--telepito-melegites" in sys.argv[1:]:
-        _close_pyinstaller_splash()
-        from . import application  # noqa: F401 — a teljes főmodul előtöltése
-
-        return 0
     if "--qml-elofordit" in sys.argv[1:]:
-        _close_pyinstaller_splash()
         from .qml_precompile import main as qml_precompile_main
 
         return qml_precompile_main()
     if "--qml-grafika-melegites" in sys.argv[1:]:
-        _close_pyinstaller_splash()
         from .qml_precompile import grafika_main
 
         return grafika_main()
