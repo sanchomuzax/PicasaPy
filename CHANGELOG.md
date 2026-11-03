@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.30] - 2026-11-03
+
+- Az önfrissítés nem bukik el, ha frissítés közben a régi programot újraindítják: a segéd kivárja, majd leállítja, foglalt fájlnál újrapróbál, és a munka idejére ablakban jelzi, hogy a frissítés fut; ha mégis visszaáll, a program a következő induláskor kiírja az okát (#6458).
+- A frissítési ablak „Telepítés kilépéskor” gombja „Frissítés kilépéskor” lett; megnyomása után a jobb felső verziójelző mutatja, hogy a frissítés a program bezárásakor települ, és ha a frissítés félbemarad vagy mégis a régi változat indul, a következő indulás kiírja (#6471).
+- A jobb felső háttérművelet-jelzőn a megszakító „×” a pörgő mellé került, nem takarja az animációt, és a keresőmező előtte véget ér (#6474).
+- A képernyőmentés (Print Screen) után a bal hasáb Projektek része alatt megjelenik a Képernyőfelvételek mappa a mentett képpel (#6475).
+- A könyvtár változás nélkül nem szinkronizál újra tíz másodpercenként, így a felület nem akad meg; a Súgó menü naplóátadása sem fagyasztja le a programot, ha a hálózati megosztás nem érhető el (#6476).
+- A szerkesztő Glimmer és régi effektek fülén kis ablakmagasságnál a csemperács a hisztogram fölött ér véget és görgethető, a Visszavonás/Újra sor sem kerül a hisztogram alá (#6477).
+
 ## [1.0.29] - 2026-11-03
 
 - A Glimmer és a régi effektek egy fülre kerültek, négy és fél soros előnézeti ráccsal; a Színjavítás és a Fehérpont újra működik, a Homályosítás kattintható, a működésképtelen Fókuszpixelezés kikerült a rácsból (#6443).
