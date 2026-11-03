@@ -26,14 +26,77 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
+  dontes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      futtat: ${{ steps.dontes.outputs.futtat }}
+    steps:
+      - name: A csomagfutás Setup-jának ellenőrzése
+        id: dontes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          PACKAGE_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          PACKAGE_RUN_ID: ${{ github.event.workflow_run.id }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          # Kézi indításnál és a javító PR-en nincs Package-futás, de a próba
+          # ilyenkor is fusson a legfrissebb valódi kiadással.
+          if [ "$EVENT_NAME" != "workflow_run" ]; then
+            echo "futtat=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "futtat=false" >> "$GITHUB_OUTPUT"
+          if [ "$PACKAGE_CONCLUSION" != "success" ]; then
+            echo "::notice title=A Package-futás nem sikerült::Az önfrissítési próba kimarad."
+            exit 0
+          fi
+
+          # A futásszintű jelölő a Package pontos tagjét őrzi meg. Enélkül a
+          # régi kiadás Setup-ja egy új kiadás nélküli Package után is
+          # tévesen elindítaná a próbát.
+          if ! artifact_id="$(gh api "repos/$REPOSITORY/actions/runs/$PACKAGE_RUN_ID/artifacts" \
+            --jq '[.artifacts[] | select(.name == "setup-release-marker" and .expired == false) | .id][0] // ""')"; then
+            echo "::error::A Package-futás jelölője nem ellenőrizhető."
+            exit 1
+          fi
+          if [ -z "$artifact_id" ]; then
+            echo "::notice title=Nincs új Setup::Ez a Package-futás nem csomagolt kiadási Setup-ot."
+            exit 0
+          fi
+
+          marker_dir="$RUNNER_TEMP/setup-release-marker"
+          mkdir -p "$marker_dir"
+          gh run download "$PACKAGE_RUN_ID" --repo "$REPOSITORY" \
+            --name setup-release-marker --dir "$marker_dir"
+          tag="$(cat "$marker_dir/tag")"
+          verzio="$(cat "$marker_dir/verzio")"
+          if [ -z "$tag" ] || ! [[ "$verzio" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$ ]]; then
+            echo "::error::A Package futásának Setup-jelölője hibás."
+            exit 1
+          fi
+
+          setup_nev="PicasaPy-Setup-$verzio.exe"
+          if ! asset_nevek="$(gh release view "$tag" --repo "$REPOSITORY" --json assets --jq '.assets[].name')"; then
+            echo "::error::A(z) $tag kiadás Setup-eszköze nem ellenőrizhető."
+            exit 1
+          fi
+          if printf '%s\n' "$asset_nevek" | grep -Fxq "$setup_nev"; then
+            echo "futtat=true" >> "$GITHUB_OUTPUT"
+            echo "A(z) $tag kiadáson megtalálható a $setup_nev, indul az önfrissítési próba."
+          else
+            echo "::notice title=Hiányzó Setup::A(z) $tag kiadáson nincs $setup_nev, a próba kimarad."
+          fi
+
   frissites:
-    # kiadás után fut (a Package a kiadási commiton), vagy kézi/PR-indításra
-    if: >-
-      github.event_name != 'workflow_run'
-      || (github.event.workflow_run.conclusion == 'success'
-          && startsWith(github.event.workflow_run.head_commit.message, 'chore(release)'))
+    needs: dontes
+    if: needs.dontes.outputs.futtat == 'true'
     runs-on: windows-latest
     timeout-minutes: 40
     strategy:
