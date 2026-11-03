@@ -89,6 +89,9 @@ Thumbs.db
 desktop.ini
 
 # === Projekt-specifikus (Picasa/képek) ===
+# QML futásidejű gyorsítótár és verziójel (nem forrásfájlok)
+/cache/
+
 # Teszt- és mintaképek, generált thumbnailek
 *.tmp
 tmp/

@@ -94,6 +94,13 @@ def test_a_repo_indito_is_csak_eloforditja_a_qml_t(tmp_path):
             "PICASAPY_LANG": "en",
         }
     )
+    for variable in (
+        "QML_DISK_CACHE_PATH",
+        "QML_DISABLE_DISK_CACHE",
+        "QML_FORCE_DISK_CACHE",
+        "QML_DISK_CACHE",
+    ):
+        env.pop(variable, None)
     result = subprocess.run(
         [sys.executable, str(repo / "picasapy"), "--qml-elofordit"],
         cwd=repo,
@@ -123,6 +130,7 @@ def test_a_valodi_app_motor_nem_irja_ujra_az_eloreallitott_qml_cachet(tmp_path):
             "PYTHONPATH": str(repo / "src"),
             "QT_QPA_PLATFORM": "offscreen",
             "QT_QUICK_BACKEND": "software",
+            "XDG_CACHE_HOME": str(profile / "cache"),
             "PICASAPY_LANG": "en",
         }
     )
@@ -230,3 +238,9 @@ def test_a_js_cache_kulcs_jsc_vegjun_perjeles_windows_utvonalon():
         b"C:/Program Files/PicasaPy/_internal/picasapy/app/qml/selection.js"
     ).hexdigest()
     assert qml_precompile._qml_cache_nev_utbol(ut) == vart + ".jsc"
+
+
+def test_a_repo_gyokerben_nem_marad_cache_konyvtar():
+    repo = Path(__file__).resolve().parents[2]
+
+    assert not (repo / "cache").exists(), "a QML-cache ne a repó gyökerében jöjjön létre"
