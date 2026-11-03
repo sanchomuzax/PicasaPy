@@ -129,20 +129,57 @@ def _varjon_diagnosztikara(
     )
     raise TimeoutError(f"{timeout:.0f} másodpercen belül nem teljesült: {leiras}")
 
-def _eloterbe_hoz(pid: int) -> None:
+def _eloterbe_hoz(pid: int, *, user32=None, kernel32=None):
+    """A PicasaPy ablakát előtérbe hozza, és ellenőrzi is (#6487).
+
+    A Windows előtérzára (foreground lock) a sima `SetForegroundWindow`-t
+    megtagadja, ha közben más folyamat kapott valódi bemenetet (például a
+    kattintásos telepítőpróba után). Ezért a hívó szálat ideiglenesen az
+    előtérben lévő ablak szálához csatoljuk, és megnézzük, sikerült-e.
+    """
     import ctypes
 
-    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    if user32 is None:
+        user32 = ctypes.WinDLL("user32", use_last_error=True)
+    if kernel32 is None:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     ablakok = _ablakikonok(pid)
-    for hwnd, adat in ablakok.items():
-        if adat["cim"].startswith("PicasaPy"):
+    if not ablakok:
+        raise RuntimeError("a PicasaPy-nak nincs látható ablaka, nem hozható előtérbe")
+    hwnd = next((h for h, a in ablakok.items() if a["cim"].startswith("PicasaPy")), next(iter(ablakok)))
+    if user32.GetForegroundWindow() == hwnd:
+        return hwnd
+    sajat = kernel32.GetCurrentThreadId()
+    for _ in range(20):
+        elol = user32.GetForegroundWindow()
+        cel = user32.GetWindowThreadProcessId(elol, None)
+        user32.AttachThreadInput(sajat, cel, True)
+        try:
             user32.ShowWindow(hwnd, 9)
+            user32.BringWindowToTop(hwnd)
             user32.SetForegroundWindow(hwnd)
-            return
-    if ablakok:
-        hwnd = next(iter(ablakok))
-        user32.ShowWindow(hwnd, 9)
-        user32.SetForegroundWindow(hwnd)
+        finally:
+            user32.AttachThreadInput(sajat, cel, False)
+        if user32.GetForegroundWindow() == hwnd:
+            return hwnd
+        _szunet(0.1)
+    raise RuntimeError("a PicasaPy ablaka 2 s alatt sem hozható előtérbe (előtérzár)")
+
+
+def _pont_folyamata(user32, x: int, y: int) -> tuple[int, str]:
+    """Melyik folyamat ablaka van a képernyő (x, y) pontján, és mi a címe."""
+    import ctypes
+    from ctypes import wintypes
+
+    user32.WindowFromPoint.argtypes = [wintypes.POINT]
+    user32.WindowFromPoint.restype = wintypes.HWND
+    hwnd = user32.WindowFromPoint(wintypes.POINT(x, y))
+    folyamat = wintypes.DWORD()
+    user32.GetWindowThreadProcessId(hwnd, ctypes.byref(folyamat))
+    cim = ctypes.create_unicode_buffer(256)
+    user32.GetWindowTextW(user32.GetAncestor(hwnd, 2), cim, 256)
+    return folyamat.value, cim.value
+
 
 def _valodi_eger_kattintas(obj: dict, pid: int) -> None:
     """Windows egér-eseménnyel kattint, QML-slotot nem hív közvetlenül."""
@@ -157,6 +194,12 @@ def _valodi_eger_kattintas(obj: dict, pid: int) -> None:
     _eloterbe_hoz(pid)
     if not user32.SetCursorPos(x, y):
         raise OSError(ctypes.get_last_error(), "SetCursorPos nem sikerült")
+    # #6487: a kattintás csak akkor mehet ki, ha a pont tényleg a PicasaPy ablakára esik
+    gazda, cim = _pont_folyamata(user32, x, y)
+    if gazda != pid:
+        raise RuntimeError(
+            f"a kattintási pont ({x}, {y}) nem a PicasaPy ablakára esik, hanem: {cim!r} (PID {gazda})"
+        )
     user32.mouse_event(0x0002, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTDOWN
     user32.mouse_event(0x0004, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTUP
     print(f"  valódi egérkattintás: {obj.get('name') or obj.get('text')} ({x}, {y})", flush=True)
