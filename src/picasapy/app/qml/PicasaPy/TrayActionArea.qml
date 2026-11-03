@@ -22,7 +22,9 @@ Item {
         }
 
         // `thumbui/webupload_rect`: 145 × 44 az osztóponttól 5
-        // képponttal balra, benne a 141 × 35-ös gomb.
+        // képponttal balra, benne a 141 × 36-os gomb. (#6499: a mért
+        // 35 helyett 36, hogy a magassága a mellette lévő szürke
+        // gombokéval egyezzen; a kép szerint a 35 alacsonyabbnak látszott.)
         //
         // 145 = a kényszerek (`0, .365, -5` … `1, .365, 140`); a
         // respack-fejléc 147-e nem a doboz szélessége.
@@ -40,7 +42,8 @@ Item {
                 objectName: "trayUploadButton"
                 anchors.centerIn: parent
                 width: 141
-                height: 35
+                // #6499: 36 (nem 35), a szürke műveletgombokkal egy magasság
+                height: 36
                 //: picasapy-origin: picasa
                 //: picasapy-origin-key: stringres:CThumbUI::ShareButtonLabelEs
                 text: qsTr("Upload to Google Photos")
@@ -57,7 +60,7 @@ Item {
                 ToolTip.text: qsTr("Upload photos in the Photo Tray to Google Photos")
                 ToolTip.visible: trayUploadBtn.hovered
                 ToolTip.delay: Theme.tooltipDelay
-                // #1420: a gomb FIX 141 × 35, a felirat pedig KÉT SORBA
+                // #1420: a gomb FIX 141 × 36 (#6499), a felirat pedig KÉT SORBA
                 // tördel benne — pontosan úgy, ahogy az eredetin
                 // („Feltöltés a Google / Fotókba"). A `PicasaButton`
                 // `Text.Wrap` + `Text.Fit` + `clip` hármasa (#992) itt
@@ -190,9 +193,10 @@ Item {
 
         // `thumbui/outputs`: `XConstraint 0, .365, 140` … `1, 1, -10`
         //
-        // #1345: a cellák EGYMÁS MELLETT, külön térköz nélkül — az
-        // eredetiben a 2-2 képpontos cellamargó ADJA a gombok közötti
-        // hézagot, a sáv `spacing`-je nem adódik hozzá.
+        // #1345: a cellák EGYMÁS MELLETT, külön térköz nélkül; a sáv
+        // `spacing`-je nem adódik hozzá. #6499: a gombok közti rést a
+        // cellán belüli 1-1 képpontos vízszintes margó adja (a gomb 53
+        // széles, a lépés 55), a függőleges 2-2 képpontos margó mellé.
         Row {
             id: trayActionRow
             objectName: "trayActionRow"
@@ -313,9 +317,9 @@ Item {
             }
 
             // #1345: a kimeneti sáv gombjai a `respack.yt` MÉRT
-            // geometriájával — mindegyik **55 × 36** képpont, egy
-            // **59 × 40**-es cellában (`TrayActionCell`;
-            // `docs/specs/picasa-keptalca.md` 11.).
+            // geometriájával: mindegyik **55 × 36** képpont (#6499: a
+            // gomb 53 széles, a rés miatt), egy **59 × 40**-es cellában
+            // (`TrayActionCell`; `docs/specs/picasa-keptalca.md` 11.).
             //
             // A sorrend a respack DEKLARÁCIÓS sorrendje (spec 7.):
             // print → email → export → [shop] → hello → [blog] →

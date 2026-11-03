@@ -88,7 +88,7 @@ class TestKompaktKuszob:
         sáv. Ez akkor helyes volt.
 
         A #1420-ban a sáv a binárisból mért elrendezést kapta: a zöld
-        „Feltöltés" gomb is FIX méretű (141 × 35 egy 147 × 44-es helyen),
+        „Feltöltés" gomb is FIX méretű (141 × 36 egy 147 × 44-es helyen, #6499),
         tehát a sávban **egyetlen felirat sem szélesít semmit**. A küszöb
         ezért tiszta geometria lett — és ez nem visszalépés, hanem épp azt a
         csapdát szünteti meg, amin a #1367 elbukott: ott a mért szélesség

@@ -6,9 +6,11 @@ eredeti kimeneti sávjának MINDEN gombjára ugyanazt adják: a gomb
 GRAFIKA mérete, **nem az osztásköz** — a lépés a gomb saját doboza, **55**
 (az eredeti elrendezője a gyerek elrendezés utáni befoglalójából számol,
 `0x0059883e`–`0x00598863`, és a #1420 a kirajzolt képernyőképen is 55-öt
-mért). Ezért a cellánk vízszintesen 55, függőlegesen 40: a 2-2 képpontos
-margó CSAK függőlegesen marad. Az
-elválasztó a cellán belül **2 × 27**, vízszintesen középen, felülről 8
+mért). A cellánk ezért vízszintesen 55, függőlegesen 40.
+⚠️ #6499: a GOMB vízszintesen 53 (nem 55), 1-1 képpont margóval, hogy a
+szomszédos gombok között rés legyen; az eredetiben érintkeztek, a
+tulajdonos szerint ez hibás elrendezés volt. A függőleges 2-2 margó marad.
+Az elválasztó a cellán belül **2 × 27**, vízszintesen középen, felülről 8
 képpont behúzással.
 
 Nálunk a mérés (2026-08-24, 1280 px-es ablak) ezt adta: E-mail 75 × 29,
@@ -80,7 +82,9 @@ class FakeAppWindow(QObject):
 
 #: A mért geometria (spec 11.) — egyetlen helyen, hogy a bukás
 #: üzenetéből is látsszon, mihez képest mérünk.
-GOMB_SZELESSEG = 55
+#: #6499: a gomb 53 széles (a mért 55 helyett), hogy a szomszédok közt
+#: legyen rés; a lépés (CELLA_SZELESSEG) 55 marad.
+GOMB_SZELESSEG = 53
 GOMB_MAGASSAG = 36
 #: #1504: az OSZTÁSKÖZ, nem a `docbounds` grafika 59-e
 CELLA_SZELESSEG = 55
@@ -142,10 +146,10 @@ def _child(root: QQuickItem, name: str) -> QQuickItem:
 def _cella(gomb: QQuickItem) -> QQuickItem:
     """A gombot befoglaló `TrayActionCell` — az ősláncban felfelé keresve.
 
-    Nem a KÖZVETLEN szülőt kérdezzük: a cella egy belső, 55 × 36-os
-    dobozba teszi a gombját (ott áll elő a 2-2 képpontos margó), tehát a
-    `parentItem()` ezt a dobozt adná. A cellát a saját, mért geometriát
-    kiíró `cellWidth` tulajdonságáról ismerjük fel.
+    Nem a KÖZVETLEN szülőt kérdezzük: a cella egy belső, 53 × 36-os
+    dobozba teszi a gombját (ott áll elő a margó), tehát a `parentItem()`
+    ezt a dobozt adná. A cellát a saját, mért geometriát kiíró
+    `cellWidth` tulajdonságáról ismerjük fel.
     """
     csomopont = gomb.parentItem()
     while csomopont is not None and csomopont.property("cellWidth") is None:
@@ -185,11 +189,12 @@ def _tray(qt_app, width: int):
     return root
 
 
-class TestMindenMuveletgomb55x36:
-    """A jegy fő állítása: a hat meglévő műveletgomb MÉRETE azonos."""
+class TestMindenMuveletgomb53x36:
+    """A jegy fő állítása: a hat meglévő műveletgomb MÉRETE azonos (#6499:
+    53 × 36, a rés miatt)."""
 
     @pytest.mark.parametrize("szelesseg", ABLAKSZELESSEGEK)
-    def test_a_gombok_pontosan_55x36_kepponton_allnak(self, qt_app, szelesseg):
+    def test_a_gombok_pontosan_53x36_kepponton_allnak(self, qt_app, szelesseg):
         root = _tray(qt_app, szelesseg)
 
         mert = {}
@@ -228,8 +233,8 @@ class TestMindenMuveletgomb55x36:
 class TestACella:
     """Minden gomb 55 × 40-es cellában ül (#1504).
 
-    A vízszintes margó 0 — az osztásköz a gomb saját szélessége —, a
-    függőleges marad 2-2 (40 − 36).
+    A vízszintes margó 1-1 (#6499: a gomb 53 széles, a lépés 55), a
+    függőleges marad 2-2 (40 - 36).
     """
 
     @pytest.mark.parametrize("respack_nev,object_name", MUVELETGOMBOK)
@@ -249,14 +254,15 @@ class TestACella:
             f"— a mért érték {CELLA_SZELESSEG}×{CELLA_MAGASSAG}"
         )
 
-        # #1504: a margó IRÁNYONKÉNT más. Vízszintesen 0 — az osztásköz a
-        # gomb saját szélessége (55), tehát a gombok ÉRINTKEZNEK, ahogy az
-        # eredetin; függőlegesen marad a mért 2 (40 − 36) / 2.
+        # #1504: a margó IRÁNYONKÉNT más. #6499: vízszintesen 1 (55 - 53) / 2,
+        # így a két szomszéd között 2 képpont rés marad (a rést a renderelt
+        # teszt, a test_also_sav_gombok_res_6499.py méri); függőlegesen a
+        # mért 2 ((40 - 36) / 2) marad.
         bal_felso = gomb.mapToItem(cella, 0, 0)
-        assert (round(bal_felso.x()), round(bal_felso.y())) == (0, 2), (
+        assert (round(bal_felso.x()), round(bal_felso.y())) == (1, 2), (
             f"{respack_nev} gombja a cellán belül "
             f"({bal_felso.x():.0f}, {bal_felso.y():.0f})-nál kezdődik — "
-            "a mért érték (0, 2)"
+            "a várt érték (1, 2)"
         )
 
 
@@ -323,7 +329,7 @@ class TestAValodiFoablakban:
     oszlopa, a valódi controller és kijelölés) elmozdítsa a méretet.
     """
 
-    def test_a_foablakban_is_55x36_minden_muveletgomb(self, qml_app, qt_app):
+    def test_a_foablakban_is_53x36_minden_muveletgomb(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
         for _ in range(3):
             qt_app.processEvents()

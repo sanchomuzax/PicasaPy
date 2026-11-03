@@ -9,9 +9,9 @@ import QtQuick
 // a feliratot az ikon ALÁ. Így a 36 képpontos magasságba kényelmesen
 // belefér az ikon és egy sor szöveg.
 //
-// A gomb a `TrayActionCell` belső, 55 × 36-os dobozába kerül
-// (`anchors.fill: parent`), tehát a méretet NEM itt kötjük meg: egy
-// helyen, a cellában él.
+// A gomb a `TrayActionCell` belső, 53 × 36-os dobozába kerül (#6499: a
+// régi 55 helyett, a szomszédok közti rés miatt), tehát a méretet NEM itt
+// kötjük meg: egy helyen, a cellában él.
 PicasaButton {
     id: actionButton
 
@@ -24,10 +24,10 @@ PicasaButton {
     readonly property bool labelShown: actionButton.text !== ""
 
     //: felirat mellett kisebb ikon, felirat nélkül nagyobb — a gomb
-    //: doboza mindkét esetben ugyanaz az 55 × 36
+    //: doboza mindkét esetben ugyanaz az 53 × 36
     property int iconSize: actionButton.labelShown ? 16 : 24
 
-    // Az 55 képpontból minél több jusson a feliratnak: az öröklött 5-ös
+    // Az 53 képpontból minél több jusson a feliratnak: az öröklött 5-ös
     // oldalmargó itt 10 képpontot venne el. (A függőleges kitöltés a
     // PicasaButton-ban már 0.)
     horizontalPadding: 1
