@@ -129,7 +129,7 @@ def test_a_csere_a_foglalt_mappat_ujraprobalva_vegzi_el(tmp_path, monkeypatch):
     stage.mkdir()
     (stage / "PicasaPy.exe").write_text("uj")
     ora = _Ora()
-    eredeti = update_folyamatok.os.rename
+    eredeti = update_folyamatok._rename
     probak = []
 
     def rename(forras, cel):
@@ -138,9 +138,9 @@ def test_a_csere_a_foglalt_mappat_ujraprobalva_vegzi_el(tmp_path, monkeypatch):
             raise _foglalt()
         eredeti(forras, cel)
 
-    monkeypatch.setattr(update_folyamatok.os, "rename", rename)
-    monkeypatch.setattr(update_folyamatok.time, "sleep", ora.alszik)
-    monkeypatch.setattr(update_folyamatok.time, "monotonic", ora)
+    monkeypatch.setattr(update_folyamatok, "_rename", rename)
+    monkeypatch.setattr(update_folyamatok, "_alszik", ora.alszik)
+    monkeypatch.setattr(update_folyamatok, "_ora", ora)
 
     assert swap_update_directory(stage, app, launch=lambda: True)
     assert (app / "PicasaPy.exe").read_text(encoding="utf-8") == "uj"
@@ -236,8 +236,8 @@ def test_a_vezerlo_induláskor_kiolvassa_az_elozo_kudarcot(qt_app, tmp_path, mon
 def test_a_frissitesi_ablak_a_munka_idejere_latszik_es_a_vegen_bezarul():
     naplo = []
     ablak = update_ablak.FrissitesiAblak(
-        megjelenit=lambda szoveg, cim: naplo.append(("nyit", cim)),
-        bezar=lambda cim: naplo.append(("zar", cim)),
+        megjelenit=lambda kod, cim: naplo.append(("nyit", cim)) or "fogantyu",
+        bezar=lambda cim, fogantyu: naplo.append(("zar", cim, fogantyu)),
         windows=True,
     )
     with ablak:
@@ -245,6 +245,32 @@ def test_a_frissitesi_ablak_a_munka_idejere_latszik_es_a_vegen_bezarul():
 
     assert naplo[0][0] == "nyit" and naplo[-1][0] == "zar"
     assert naplo[0][1] == naplo[-1][1] != "PicasaPy"
+    assert naplo[-1][2] == "fogantyu", "a bezárás a megnyitott folyamatot kapja"
+
+
+def test_a_frissitesi_ablak_kulon_folyamatban_fut_nem_szalon():
+    """#988: nyers szál helyett a segéd önmagát indítja ablak-üzemmódban."""
+    parancs = update_ablak.ablak_parancs("hu")
+    assert parancs[-2:] == [update_ablak.ABLAK_KAPCSOLO, "hu"]
+
+
+def test_a_seged_ablak_uzemmodban_csak_az_ablakot_mutatja(monkeypatch):
+    hivas = []
+    monkeypatch.setattr(update_ablak, "ablak_foprogram", lambda kod: hivas.append(kod) or 0)
+    monkeypatch.setattr(update_swap_helper, "install_after_exit",
+                        lambda *a, **k: hivas.append("telepites"))
+
+    assert update_swap_helper.main([update_ablak.ABLAK_KAPCSOLO, "hu"]) == 0
+    assert hivas == ["hu"]
+
+
+def test_a_frissitesi_ablak_nem_windowson_semmit_nem_nyit(monkeypatch):
+    monkeypatch.setattr(update_ablak, "_platform", lambda: "linux")
+    naplo = []
+    with update_ablak.FrissitesiAblak(megjelenit=lambda *a: naplo.append(a),
+                                      bezar=lambda *a: naplo.append(a)):
+        pass
+    assert naplo == []
 
 
 def test_a_frissitesi_ablak_szovege_magyar_windowson_magyar():

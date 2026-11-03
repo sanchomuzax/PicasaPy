@@ -448,13 +448,17 @@ def _telepites(
 
 
 def main(argv: list[str] | None = None) -> int:
+    argumentumok = sys.argv[1:] if argv is None else argv
+    if argumentumok[:1] == [update_ablak.ABLAK_KAPCSOLO]:
+        # #6458: a frissítési ablak a segéd saját gyerekfolyamatában fut
+        return update_ablak.ablak_foprogram((argumentumok[1:] or ["en"])[0])
     parser = argparse.ArgumentParser(description="PicasaPy frissítés telepítő segéd")
     parser.add_argument("--pid", type=int, required=True)
     parser.add_argument("--archive", type=Path, required=True)
     parser.add_argument("--install-dir", type=Path, required=True)
     parser.add_argument("--executable", required=True)
     parser.add_argument("--uac-emelt", action="store_true")
-    args = parser.parse_args(argv)
+    args = parser.parse_args(argumentumok)
     try:
         install_after_exit(
             args.pid,

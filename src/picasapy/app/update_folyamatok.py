@@ -15,6 +15,11 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
+#: modulszintű fogantyúk (#1375): a teszt ezeket cseréli, nem a globális `os`/`time`-ot
+_rename = os.rename
+_alszik = time.sleep
+_ora = time.monotonic
+
 #: Windows: ERROR_ACCESS_DENIED (5) és ERROR_SHARING_VIOLATION (32).
 _FOGLALT_WINERROR = frozenset({5, 32})
 ATNEVEZESI_HATARIDO_MP = 60.0
@@ -38,9 +43,9 @@ def atnevez_ujraprobalva(
     ora: Callable[[], float] | None = None,
 ) -> None:
     """Átnevez; foglalt fájlnál növekvő szünetekkel újrapróbál a határidőig."""
-    rename = rename or os.rename
-    alszik = alszik or time.sleep
-    ora = ora or time.monotonic
+    rename = rename or _rename
+    alszik = alszik or _alszik
+    ora = ora or _ora
     kezdet = ora()
     szunet = 0.25
     while True:
@@ -70,8 +75,8 @@ def varj_vagy_allitsd_le(
     sajat_pid = os.getpid() if sajat_pid is None else sajat_pid
     lista = lista or telepitesi_folyamatok
     leallit = leallit or _leallit
-    alszik = alszik or time.sleep
-    ora = ora or time.monotonic
+    alszik = alszik or _alszik
+    ora = ora or _ora
     kezdet = ora()
     while lista(install_dir, sajat_pid):
         if ora() - kezdet >= hatarido:
@@ -86,9 +91,14 @@ def varj_vagy_allitsd_le(
     return len(maradek)
 
 
+def _platform() -> str:
+    """Platformfogantyú (#1217): a teszt ezt írja át, nem a `sys.platform`-ot."""
+    return sys.platform
+
+
 def telepitesi_folyamatok(install_dir: Path, sajat_pid: int) -> list[int]:
     """A telepítési mappán belüli programfájlból futó folyamatok (csak Windowson)."""
-    if sys.platform != "win32":
+    if _platform() != "win32":
         return []
     try:
         gyoker = os.path.normcase(str(Path(install_dir).resolve())) + os.sep
