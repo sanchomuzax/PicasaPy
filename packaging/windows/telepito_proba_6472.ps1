@@ -302,8 +302,12 @@ try {
             "$($_.ClassName):$(Normalize-Caption $_.Text):enabled=$($_.Enabled)"
         } | Sort-Object)
         $stateSignature = "wizard:$($wizard.Text)|$($wizardControls -join '|')"
+        # A varázsló „Select Destination Location” lapja is említi a „different folder”-t
+        # (Browse...), ezért csak a varázslón KÍVÜLI ablak egyedi üzenetére figyelünk
+        # (picasapy.iss: RemoveOtherInstallation).
         $folderPrompt = $windows | Where-Object {
-            $_.Visible -and (Normalize-Caption $_.Text) -match "different folder|another folder|másik mappába telepített"
+            $_.Visible -and $_.TopLevelHandle.ToInt64() -ne $wizard.Handle.ToInt64() -and
+            (Normalize-Caption $_.Text) -match "installed in a different folder|másik mappába telepített PicasaPy"
         } | Select-Object -First 1
         if ($folderPrompt) {
             $promptTop = $windows | Where-Object {

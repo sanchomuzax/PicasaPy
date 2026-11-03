@@ -70,3 +70,14 @@ def test_a_varazslo_minden_oldalat_valodi_kattintassal_lepteti():
     assert "$lastActionSignature" in forras
     assert "$promptSignature" in forras
     assert "LastClickError" in forras
+
+
+def test_a_masik_mappas_kerdest_nem_teveszti_ossze_a_celmappa_lappal():
+    """A „Select Destination Location” lap szövege is tartalmazza a „different
+    folder” kifejezést; a próba ezt a 2026-11-03-i CI-futásban tévesen a
+    megerősítő kérdésnek nézte, és ott kereste az Igen gombot."""
+    forras = _PROBA.read_text(encoding="utf-8")
+    blokk = forras.split("$folderPrompt = $windows", 1)[1].split("Select-Object", 1)[0]
+    assert "installed in a different folder" in blokk
+    assert '"different folder|' not in blokk
+    assert "-ne $wizard.Handle" in blokk
