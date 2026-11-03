@@ -20591,4 +20591,25 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>Nag-a-upload sa Google Photos</translation>
         </message>
     </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hindi ma-install ang nakaraang update. Tumatakbo pa rin ang naunang bersyon.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ginagamit ng ibang proseso ang isang file ng programa (halimbawa, isang antivirus o ibang window ng PicasaPy). Isara ang lahat ng window ng PicasaPy at subukang muli, o i-install nang mano-mano ang pinakabagong Setup.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hindi natapos ang pag-install, kaya ibinalik ang naunang bersyon. I-install nang mano-mano ang pinakabagong Setup.</translation>
+        </message>
+    </context>
 </TS>

@@ -20591,4 +20591,25 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>Google फ़ोटो पर अपलोड हो रहा है</translation>
         </message>
     </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>पिछला अपडेट इंस्टॉल नहीं हो सका। पिछला संस्करण अभी भी चल रहा है।</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>प्रोग्राम की एक फ़ाइल किसी दूसरी प्रक्रिया द्वारा उपयोग में थी (उदाहरण के लिए कोई एंटीवायरस या PicasaPy की कोई दूसरी विंडो)। PicasaPy की सभी विंडो बंद करके फिर से प्रयास करें, या नवीनतम सेटअप मैन्युअल रूप से इंस्टॉल करें।</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>इंस्टॉलेशन पूरा नहीं हुआ, इसलिए पिछला संस्करण बहाल कर दिया गया। नवीनतम सेटअप मैन्युअल रूप से इंस्टॉल करें।</translation>
+        </message>
+    </context>
 </TS>

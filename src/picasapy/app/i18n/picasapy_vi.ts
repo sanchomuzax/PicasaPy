@@ -20590,4 +20590,25 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>Đang tải lên Google Photos</translation>
         </message>
     </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Không thể cài đặt bản cập nhật trước. Phiên bản cũ vẫn đang chạy.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Một tệp của chương trình đang được tiến trình khác sử dụng (ví dụ phần mềm diệt vi-rút hoặc một cửa sổ PicasaPy khác). Hãy đóng mọi cửa sổ PicasaPy rồi thử lại, hoặc tự cài đặt trình cài đặt mới nhất.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Quá trình cài đặt chưa hoàn tất nên phiên bản cũ đã được khôi phục. Hãy tự cài đặt trình cài đặt mới nhất.</translation>
+        </message>
+    </context>
 </TS>

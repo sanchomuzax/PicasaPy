@@ -20638,4 +20638,25 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>Nalaganje v Google Foto</translation>
         </message>
     </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Prejšnje posodobitve ni bilo mogoče namestiti. Še vedno teče prejšnja različica.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Datoteko programa je uporabljal drug proces (na primer protivirusni program ali drugo okno PicasaPy). Zaprite vsa okna PicasaPy in poskusite znova ali ročno namestite najnovejši namestitveni program.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Namestitev se ni dokončala, zato je bila obnovljena prejšnja različica. Ročno namestite najnovejši namestitveni program.</translation>
+        </message>
+    </context>
 </TS>

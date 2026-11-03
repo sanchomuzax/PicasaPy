@@ -20612,4 +20612,25 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
             <translation>Feltöltés a Google Fotókba</translation>
         </message>
     </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Az előző frissítés nem települt fel. Továbbra is a korábbi változat fut.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A program egyik fájlját egy másik folyamat használta (például víruskereső vagy egy másik PicasaPy-ablak). Zárj be minden PicasaPy-ablakot, és próbáld újra, vagy telepítsd kézzel a legújabb Setupot.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A telepítés nem fejeződött be, ezért a korábbi változat állt vissza. Telepítsd kézzel a legújabb Setupot.</translation>
+        </message>
+    </context>
 </TS>

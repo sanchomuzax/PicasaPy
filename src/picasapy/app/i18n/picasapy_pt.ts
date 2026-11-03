@@ -20591,4 +20591,25 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>A carregar para Google Fotos</translation>
         </message>
     </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Não foi possível instalar a atualização anterior. A versão anterior continua em execução.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Um ficheiro do programa estava a ser usado por outro processo (por exemplo, um antivírus ou outra janela do PicasaPy). Feche todas as janelas do PicasaPy e tente novamente, ou instale manualmente o instalador mais recente.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A instalação não terminou, por isso foi reposta a versão anterior. Instale manualmente o instalador mais recente.</translation>
+        </message>
+    </context>
 </TS>

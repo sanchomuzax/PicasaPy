@@ -20622,4 +20622,25 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>Încărcare în Google Foto</translation>
         </message>
     </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Actualizarea anterioară nu a putut fi instalată. Rulează în continuare versiunea anterioară.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Un fișier al programului era folosit de alt proces (de exemplu un antivirus sau altă fereastră PicasaPy). Închideți toate ferestrele PicasaPy și încercați din nou sau instalați manual cel mai recent program de instalare.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Instalarea nu s-a încheiat, așa că a fost restaurată versiunea anterioară. Instalați manual cel mai recent program de instalare.</translation>
+        </message>
+    </context>
 </TS>

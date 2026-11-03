@@ -195,6 +195,12 @@ class UpdateController(QObject):
         self._progress_total = 0
         self._download_path: Path | None = None
         self._helper_error = ""
+        from . import update_eredmeny
+
+        #: #6458: ha az előző frissítés visszaállt, az okát egyszer kiírjuk
+        self._elozo_hiba = update_eredmeny.olvasd_es_torold(update_eredmeny.jelzo_utvonal())
+        if self._elozo_hiba:
+            logger.warning("Az előző frissítés nem sikerült (#6458): %s", self._elozo_hiba)
         self._workers: dict[int, _Worker] = {}
         self._worker_callbacks: dict[
             int, tuple[Callable[[object], None], Callable[[str], None]]
@@ -274,6 +280,11 @@ class UpdateController(QObject):
         if self._progress_total <= 0:
             return 0
         return min(100, round(self._progress * 100 / self._progress_total))
+
+    @Property(str, constant=True)
+    def previousUpdateFailure(self) -> str:  # noqa: N802
+        """#6458: az előző, visszaállt frissítés okkódja (üres, ha nem volt ilyen)."""
+        return self._elozo_hiba
 
     @Property(str, notify=progressChanged)
     def helperErrorDetail(self) -> str:  # noqa: N802

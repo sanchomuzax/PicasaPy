@@ -20591,4 +20591,25 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>Google 포토에 업로드 중</translation>
         </message>
     </context>
+    <context>
+        <name>UpdatePanel</name>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The previous update could not be installed. The earlier version is still running.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>이전 업데이트를 설치하지 못했습니다. 이전 버전이 계속 실행 중입니다.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>A program file was in use by another process (for example an antivirus scanner or another PicasaPy window). Close every PicasaPy window and try again, or install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>프로그램 파일을 다른 프로세스(예: 바이러스 백신 또는 다른 PicasaPy 창)가 사용 중이었습니다. 모든 PicasaPy 창을 닫고 다시 시도하거나 최신 설치 프로그램을 직접 설치하세요.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="18" />
+            <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>설치가 완료되지 않아 이전 버전으로 복원했습니다. 최신 설치 프로그램을 직접 설치하세요.</translation>
+        </message>
+    </context>
 </TS>
