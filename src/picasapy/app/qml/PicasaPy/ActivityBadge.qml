@@ -13,28 +13,41 @@ import QtQuick.Controls
 // a megszakítást kérő gombbal. A #3112 a geometriáját a `respack.yt`-ból
 // mérte (a könyvtárnézet 800 × 534-es tervezővásznán):
 //
-//   a jelző helye   x 760–795, y 5–33  ⇒ jobb felül, felülről 5, jobbról 5
+//   a jelző helye   x 760-795, y 5-33  ⇒ jobb felül, felülről 5, jobbról 5
 //   a jelző mérete  35 × 28            (a maszk és a keret MINDIG látszik)
 //   pörgő           26 × 26, középre, alapból rejtett
 //   gomb            22 × 28, alapból rejtett
 //
-// A pörgő és a gomb ugyanabban a 35 × 28-as dobozban ÁLL EGYMÁSON — a
+// A pörgő és a gomb ugyanabban a 35 × 28-as dobozban ÁLL EGYMÁSON - a
 // szélességük összege nagyobb a dobozénál, tehát nem egymás mellett voltak.
+// A tulajdonos döntése (2026-11-03, #6474) szerint a gomb a pörgő mellé kerül,
+// mert a fedés rosszul néz ki: megszakítható munkánál a jelző szélesebb, a
+// pörgő balra, a gomb jobbra áll (lásd a szélesség-konstansokat lent).
 //
 // ⚠️ Amit ez a komponens NEM állít: hogy a látvány megegyezik az
 // eredetivel. A helye és a mérete mért, a rajzolat (maszk, keret, ikon)
-// nem — arra referencia-képernyőkép kellene.
+// nem - arra referencia-képernyőkép kellene.
 Item {
     id: root
 
     //: fut-e háttérmunka (a küszöbölt busy-állapot)
     property bool working: false
-    //: leállítható-e a futó munka — CSAK ettől jelenik meg a gomb
+    //: leállítható-e a futó munka - CSAK ettől jelenik meg a gomb
     property bool cancellable: false
 
     signal cancelRequested()
 
-    width: 35
+    // #6474: megszakíthatatlan munkánál a mért 35 × 28; megszakítható munkánál
+    // a pörgő és a gomb EGYMÁS MELLETT áll (pörgő x 4-30, gomb x 32-54), köztük
+    // 2 px rés, így a gomb nem fedi a pörgőt.
+    readonly property int porgoMeret: 26
+    readonly property int gombSzelesseg: 22
+    readonly property int szegely: 4
+    readonly property int koz: 2
+    readonly property int keskenyMeret: 35
+    readonly property int szelesMeret: szegely + porgoMeret + koz + gombSzelesseg
+
+    width: root.cancellable ? root.szelesMeret : root.keskenyMeret
     height: 28
     visible: root.working
 
@@ -52,20 +65,22 @@ Item {
     BusyIndicator {
         id: porgo
         objectName: "activityBadgeSpinner"
-        width: 26
-        height: 26
-        anchors.centerIn: parent
+        width: root.porgoMeret
+        height: root.porgoMeret
+        // középen, ha nincs gomb; megszakítható munkánál a bal szélen
+        x: root.cancellable ? root.szegely : (root.width - width) / 2
+        y: (root.height - height) / 2
         running: root.working
         visible: root.working
     }
 
-    // a megszakítás gombja — az eredetiben a szerkesztő saját példánya
+    // a megszakítás gombja - az eredetiben a szerkesztő saját példánya
     // (`editpanelactivity`) GOMB NÉLKÜLI, ezért itt sem mindig látszik:
     // csak akkor, ha a futó munkának tényleg van leállítója.
     Item {
         id: gomb
         objectName: "activityBadgeCancel"
-        width: 22
+        width: root.gombSzelesseg
         height: 28
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
@@ -78,7 +93,7 @@ Item {
             radius: 2
             color: egerEsemeny.containsMouse ? Theme.chromeBorder : "transparent"
 
-            // × jel — a megszakítás jele, felirat nélkül (a doboz 22 × 28)
+            // × jel - a megszakítás jele, felirat nélkül (a doboz 22 × 28)
             Text {
                 anchors.centerIn: parent
                 text: "✕"
