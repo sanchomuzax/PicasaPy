@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.27] - 2026-11-03
+
+- Az előfordítási tesztek külön tesztprofilba írják a QML-gyorsítótárat, a repó gyökerét pedig védik a futásidejű cache-től (#6455).
+
 ## [1.0.26] - 2026-11-03
 
 - Az „Újraindítás most” a frissítősegédet a program mellől indítja, és ha ez nem megy, az ideiglenes mappából; ha egyik sem sikerül, a hibaüzenet megmondja az okát. A telepített program névjegyén nincs többé „(dev)” felirat (#6458).
