@@ -498,6 +498,29 @@ def egyedi_plafon_mp(hatar_mp: float | None) -> float | None:
     return None if hatar_mp is None else round(hatar_mp * _EGYEDI_PLAFON_SZORZO, 2)
 
 
+# #6495: a futtatógépen az első, hideg indulás egyszer 18,3 s lett (a 2. és 3.
+# futás 3,2 s), kódváltozás nélkül. Az első futás ezért az egyedi plafon fölött
+# csak figyelmeztet, de ennek a szorzónak a fölött továbbra is bukik: a
+# tulajdonosnál mért valódi hiba (41 s-os első indulás, #6472) így is piros.
+_HIDEG_ELSO_PLAFON_SZORZO = 3.0
+
+
+def egyedi_hatar_dontes(
+    nev: str, eredmeny: dict, hatar_mp: float | None, sorszam: int
+) -> tuple[str | None, str | None]:
+    """Visszaadja az egyedi hibát és az első hideg futás figyelmeztetését (#6495)."""
+    uzenet = hatar_hiba(nev, eredmeny, hatar_mp)
+    if uzenet is None:
+        return None, None
+    if sorszam == 1 and foablak_mp(eredmeny) is not None:
+        hideg_plafon = round(hatar_mp * _HIDEG_ELSO_PLAFON_SZORZO, 2)
+        hideg_hiba = hatar_hiba(nev, eredmeny, hideg_plafon)
+        if hideg_hiba is not None:
+            return f"{hideg_hiba} (hideg első futás)", None
+        return None, f"{uzenet} (hideg első futás, csak figyelmeztetés)"
+    return uzenet, None
+
+
 def foablak_kozepertek_hiba(
     nev: str, eredmenyek: list[dict], hatar_mp: float | None
 ) -> str | None:
@@ -607,9 +630,13 @@ def _ido_futtato(
             if not any(s == sor for _, s in eredmeny["sorok"]):
                 print(f"  ❌ {nev}: a naplóban nincs „{sor}”", flush=True)
                 hiba = 1
-        uzenet = hatar_hiba(f"{nev} #{sorszam}", eredmeny, egyedi_plafon_mp(hatar_mp))
-        if uzenet is not None:
-            print(f"  ❌ {uzenet}", flush=True)
+        egyedi_hiba, figyelmeztetes = egyedi_hatar_dontes(
+            f"{nev} #{sorszam}", eredmeny, egyedi_plafon_mp(hatar_mp), sorszam
+        )
+        if figyelmeztetes is not None:
+            print(f"  ⚠️ {figyelmeztetes}", flush=True)
+        if egyedi_hiba is not None:
+            print(f"  ❌ {egyedi_hiba}", flush=True)
             hiba = 1
         indulo_eredmenyek.append(eredmeny)
     # az indulóablak kapuja a mérések KÖZÉPÉRTÉKÉT nézi: a windowsos CI-gép
@@ -638,6 +665,7 @@ __all__ = (
     "_naplo_sorai",
     "_profil",
     "foablak_mp",
+    "egyedi_hatar_dontes",
     "egyedi_plafon_mp",
     "foablak_kozepertek_hiba",
     "hatar_hiba",
