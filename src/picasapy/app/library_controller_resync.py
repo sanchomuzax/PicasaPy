@@ -456,6 +456,31 @@ class _LibraryResyncMixin:
             return  # figyelt körön kívül — a #1565 exportcél-ága viszi
         self.resyncFolder(mappa)
 
+    # SZÁNDÉKOSAN nincs `@Slot`: a hívó a `ScreenCaptureController` jelzése
+    # (Python-oldali bekötés), a QML soha nem hívja.
+    def indexScreenCapture(self, path) -> None:  # noqa: N802 - QML-stílusú név
+        """A képernyőmentés mappájának felvétele az indexbe (#6475).
+
+        A Képernyőfelvételek mappa (`<Képek>/Picasa/Képernyőfelvételek`)
+        tipikusan egyetlen figyelt gyökér alatt sincs, ezért a mentés után
+        semmi nem vette fel, és a Projektek alatt nem jelent meg. A kollázs
+        mintája szerint (`_index_saved_collage`) a gyökér MAGA a célmappa: csak
+        ez az egy mappa kerül be, a figyelt mappákhoz nem nyúlunk. A munka
+        háttérszálon fut, a végén a `syncFinished` frissíti a hasábot."""
+        helyi = to_local_path(path) or str(path)
+        mappa = Path(normalize_path(helyi)).parent
+        szurok = getattr(self, "_filetype_scan_snapshot", None)
+
+        def munka() -> None:
+            from picasapy.index.sync import sync_folder
+
+            opciok = {} if szurok is None else {"enabled_filetypes": szurok}
+            with open_index(self._db_path) as conn:
+                sync_folder(conn, mappa, mappa, **opciok)
+            self.syncFinished.emit()
+
+        self._start_background(munka, name="picasapy-sync-dirty")
+
     # SZÁNDÉKOSAN nincs `@Slot`: a hívó PYTHON-oldali (`_on_output_written`),
     # a QML soha nem hívja — ugyanaz a döntés, mint a `resyncOutputFolder`-nél.
     def indexExportedFolder(self, path) -> None:  # noqa: N802 — QML-stílusú név
