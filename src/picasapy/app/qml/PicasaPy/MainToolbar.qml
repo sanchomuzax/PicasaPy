@@ -710,6 +710,7 @@ Rectangle {
             // aktiválható — ld. lent a Keys.onPressed ágat
             activeFocusOnTab: true
 
+            // SAJÁT FUNKCIÓ (#706): a verziószám a GitHub-kiadásokra mutató hivatkozás.
             // #706: a kiadások listájára visz, fejlesztői verzióból is.
             readonly property string releasesUrl:
                 "https://github.com/sanchomuzax/PicasaPy/releases/"
