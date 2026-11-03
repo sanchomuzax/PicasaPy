@@ -62,8 +62,10 @@ RowLayout {
         var lathatoAlja = panel.visibleHeight - height - 10
         if (!tabArea.visible)
             return Math.max(0, lathatoAlja)
+        // #6477: a füleknél a fiók aljára dokkolt hisztogram nem takarhatja;
+        // az eszközmódok (szöveg, vágás...) saját elrendezése változatlan
         var tartalomAlatt = tabArea.y + panel.tabContentHeight + 8
-        return Math.max(0, Math.min(lathatoAlja, tartalomAlatt))
+        return Math.max(0, Math.min(lathatoAlja - panel.bottomReserve, tartalomAlatt))
     }
     spacing: 5
     // #4062: Kiegyenesítésnél a sor nem rajzolódik ki. #4068: a

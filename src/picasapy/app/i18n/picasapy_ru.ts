@@ -9944,10 +9944,16 @@ picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMo
             <translation>Не удалось запустить помощник обновления.</translation>
         </message>
         <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="924" />
-            <source>Install on exit</source>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="29" />
+            <source>Update on exit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Установить при выходе</translation>
+            <translation>Обновить при выходе</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="30" />
+            <source>Update will be installed when PicasaPy closes.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Обновление будет установлено при закрытии PicasaPy.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="944" />
@@ -20605,6 +20611,12 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
         </message>
         <message>
             <location filename="../busy_activity.py" line="75" />
+            <source>Preparing the startup log</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Подготовка журнала запуска</translation>
+        </message>
+        <message>
+            <location filename="../busy_activity.py" line="75" />
             <source>Connecting to Google Photos</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Подключение к Google Фото</translation>
@@ -20641,6 +20653,18 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Установка не завершилась, поэтому восстановлена прежняя версия. Установите последний установщик вручную.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="25" />
+            <source>The update stopped before it finished. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Обновление остановилось, не завершившись. Установите последний установщик вручную.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="27" />
+            <source>The update reported success, but an earlier version started. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Обновление сообщило об успехе, но запустилась прежняя версия. Установите последний установщик вручную.</translation>
         </message>
     </context>
 </TS>

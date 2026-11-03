@@ -18,8 +18,10 @@ ColumnLayout {
     anchors.topMargin: 10
     spacing: 0
 
-    // A mért csempeosztásból indul: a viewport mindig pontosan 4,5 sort
-    // mutat, a rács további sorai pedig görgethetők.
+    // A mért csempeosztásból indul: a viewport 4,5 sort mutat, a rács
+    // további sorai pedig görgethetők. #6477: kis ablakban kevesebbet, hogy
+    // a rács és alatta a Visszavonás/Újra sor a hisztogram fölött érjen
+    // véget; legalább egy sor mindig látszik.
     readonly property real rowPitch: effectRoundedEdges.y > effectMatte.y
         ? effectRoundedEdges.y - effectMatte.y
         : effectMatte.implicitHeight + effectsGrid4.rowSpacing
@@ -28,8 +30,12 @@ ColumnLayout {
         id: effectsGrid4Viewport
         objectName: "effectsGrid4Viewport"
         Layout.fillWidth: true
-        Layout.preferredHeight: effectsTab4.rowPitch * 4.5
-        Layout.minimumHeight: effectsTab4.rowPitch * 4.5
+        readonly property real elerheto: panel.visibleHeight - panel.bottomReserve
+            - 10 - panel.undoRowHeight - 8
+            - ((effectsTab4.parent ? effectsTab4.parent.y : 0) + effectsTab4.y)
+        Layout.preferredHeight: Math.max(effectsTab4.rowPitch,
+            Math.min(effectsTab4.rowPitch * 4.5, elerheto))
+        Layout.minimumHeight: Layout.preferredHeight
         contentWidth: width
         contentHeight: effectsGrid4.implicitHeight
         clip: true

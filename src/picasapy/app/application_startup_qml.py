@@ -106,6 +106,8 @@ def _startup_step_register_qml_context(state):
         settings=QSettings("PicasaPy", "PicasaPy"), parent=app
     )
     app.aboutToQuit.connect(screen_capture_controller.shutdown)
+    # #6475: a mentett képernyőkép mappája a Projektek alatt is megjelenjen
+    screen_capture_controller.screenCaptureSaved.connect(controller.indexScreenCapture)
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty(
         "notifierScreenGeometry", notifier_screen_geometry

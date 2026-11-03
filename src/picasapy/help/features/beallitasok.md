@@ -101,7 +101,7 @@ letöltés elindult. Telepítés előtt
 ellenőrzi a kiadáshoz közzétett `SHA256SUMS` ujjlenyomatot. Ha az ellenőrzés
 nem sikerül, nem cserél fájlt. Sikeres letöltés után választhatsz az
 azonnali újraindítás (**Újraindítás most**) és a kilépéskori telepítés
-(**Telepítés kilépéskor**) között. Az azonnali
+(**Frissítés kilépéskor**) között. Az azonnali
 újraindítás megvárja a futó háttérmunkát; a csere után az előző verzió
 megmarad, és ha az új példány nem indul el, a program visszaállítja.
 

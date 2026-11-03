@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
 import stat
 from pathlib import Path
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QMetaObject, Qt, Slot
 from picasapy.index import open_index, remove_folder_tree
 from picasapy.scanner import DirectoryChange
 
 from .busy_activity import munka_neve
 from .busy_registry import get_app_busy_registry
+from .folder_freshness import folder_fingerprint
 from .library_controller_sync import _legacy
 
 
@@ -70,7 +72,12 @@ class _LibrarySyncDirtyMixin:
 
         enabled_filetypes = getattr(self, "_filetype_scan_snapshot", None)
 
+        ujjlenyomatok = self._dirty_ujjlenyomatok_tar()
+
         def worker():
+            # #6476: ha MINDEN mappa ujjlenyomata változatlan, nincs mit
+            # újratölteni, tehát `syncFinished` sem megy ki
+            osszes = kihagyott = 0
             errors = []
             locked_folders = []
             synced_folders = []
@@ -79,6 +86,9 @@ class _LibrarySyncDirtyMixin:
                     for folder in _legacy()._coalesce_watcher_changes(paths):
                         change = folder if isinstance(folder, DirectoryChange) else None
                         folder_path = change.path if change is not None else str(folder)
+                        osszes += 1
+                        if change is not None:
+                            _ujjlenyomat_felejtes(ujjlenyomatok, folder_path)
                         root = self._root_for_folder(folder_path)
                         if root is None:
                             continue  # már nem figyelt gyökér alatt — kihagyva
@@ -115,6 +125,15 @@ class _LibrarySyncDirtyMixin:
                                     else:
                                         remove_folder_tree(conn, folder_path)
                             else:
+                                ujj = folder_fingerprint(folder_path)
+                                if (
+                                    not felhasznaloi
+                                    and ujj is not None
+                                    and ujjlenyomatok.get(folder_path) == ujj
+                                ):
+                                    kihagyott += 1
+                                    continue  # #6476: a mappa nem változott
+                                ujjlenyomatok.pop(folder_path, None)
                                 should_stop = self._make_should_stop(root)
                                 # #216: eltávolított gyökér mappája már ne íródjon
                                 _legacy().sync_folder(
@@ -125,6 +144,8 @@ class _LibrarySyncDirtyMixin:
                                     should_stop=should_stop,
                                     **sync_options,
                                 )
+                                if ujj is not None:
+                                    ujjlenyomatok[folder_path] = ujj
                             synced_folders.append(folder_path)
                         except (OSError, RuntimeError):
                             pass  # eltűnt mappa — a periodikus rescan rendezi
@@ -178,7 +199,13 @@ class _LibrarySyncDirtyMixin:
                         messages.append("; ".join(errors))
                     if messages:
                         self.syncFailed.emit("\n".join(messages))
-                    self.syncFinished.emit()
+                    if osszes and kihagyott == osszes and not messages:
+                        # #6476: nincs újratöltés, de a várólistát be kell hozni
+                        QMetaObject.invokeMethod(
+                            self, "_flush_pending_dirty", Qt.ConnectionType.QueuedConnection
+                        )
+                    else:
+                        self.syncFinished.emit()
                 except RuntimeError:
                     # ugyanaz a védelem, mint a sweep-workerében (#1435):
                     # leállás közben a C++ oldal már eltűnhetett
@@ -208,6 +235,14 @@ class _LibrarySyncDirtyMixin:
             self._dirty_running = False
             raise
 
+
+    def _dirty_ujjlenyomatok_tar(self) -> dict[str, object]:
+        """A célzott szinkron mappánkénti ujjlenyomatai (#6476); lustán jön létre."""
+        try:
+            return self._dirty_ujjlenyomatok
+        except AttributeError:
+            self._dirty_ujjlenyomatok = {}
+            return self._dirty_ujjlenyomatok
 
     @Slot()
     def _flush_pending_dirty(self) -> None:
@@ -261,3 +296,10 @@ class _LibrarySyncDirtyMixin:
         """A rövid várakozás után újra sorra veszi a zár miatt félretett mappákat."""
         self._locked_dirty_retry_pending = False
         self._flush_pending_dirty()
+
+
+def _ujjlenyomat_felejtes(ujjlenyomatok: dict[str, object], ut: str) -> None:
+    """Könyvtár-változásnál az út alatti ujjlenyomatok elavulnak (#6476)."""
+    elotag = os.path.join(ut, "")
+    for kulcs in [k for k in ujjlenyomatok if k == ut or k.startswith(elotag)]:
+        ujjlenyomatok.pop(kulcs, None)

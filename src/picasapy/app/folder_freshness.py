@@ -48,6 +48,8 @@ from picasapy.scanner.walker import PICASA_INI_LEGACY_NAME, PICASA_INI_NAME
 #: a fájlmegnyitás és a pytest saját gépezete is — a csere az egész teszt
 #: idejére eltéríti őket.
 _stat = os.stat
+#: Az `os.scandir` modulszintű fogantyúja (#1375, #6476).
+_scandir = os.scandir
 
 # (mappa mtime_ns, ini mtime_ns vagy None, ha nincs ini)
 FolderStamp = tuple[int, int | None]
@@ -132,3 +134,32 @@ def next_sweep_batch(
     start = cursor % len(folders)
     batch = tuple(folders[(start + i) % len(folders)] for i in range(count))
     return batch, (start + count) % len(folders)
+
+
+#: A mappa közvetlen tartalma: (név, mtime_ns, méret) bejegyzésenként (#6476).
+FolderFingerprint = frozenset[tuple[str, int, int]]
+
+
+def folder_fingerprint(folder: str | Path) -> FolderFingerprint | None:
+    """A mappa közvetlen tartalmának ujjlenyomata, vagy None, ha nem olvasható.
+
+    A célzott szinkron ezzel dönti el, hogy egyáltalán kell-e futnia (#6476):
+    a tulajdonos gépén a látott mappa tízmásodpercenkénti lekérdezése (#1275)
+    és a felhőszinkron metaadat-frissítései változás nélkül is teljes
+    szinkront és felület-újratöltést indítottak. A pecséttel (#1435)
+    ellentétben a helyben átírt fájlt is látja, mert a fájl ideje és mérete
+    is benne van.
+
+    KÖLTSÉG: egy `scandir`; Windowson a stat-adat ingyen jön vele, Linuxon
+    bejegyzésenként egy `lstat`, ugyanannyi, mint a szinkron saját listázása.
+    """
+    try:
+        with _scandir(folder) as bejegyzesek:
+            return frozenset(_bejegyzes(elem) for elem in bejegyzesek)
+    except OSError:
+        return None
+
+
+def _bejegyzes(elem: os.DirEntry) -> tuple[str, int, int]:
+    adat = elem.stat(follow_symlinks=False)
+    return (elem.name, adat.st_mtime_ns, adat.st_size)
