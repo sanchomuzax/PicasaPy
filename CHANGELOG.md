@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.28] - 2026-11-03
+
+- Az arcfelismerés több kis, nehezen felismerhető arcot is megtalál, ha a második keresési menet megerősíti a találatot (#6439).
+
 ## [1.0.27] - 2026-11-03
 
 - Az előfordítási tesztek külön tesztprofilba írják a QML-gyorsítótárat, a repó gyökerét pedig védik a futásidejű cache-től (#6455).
