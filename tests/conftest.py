@@ -176,6 +176,20 @@ def nem_ir_a_rendszer_kepmappajaba(request, tmp_path_factory, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def nem_nyul_a_valodi_frissitesi_jelzohoz(tmp_path_factory, monkeypatch):
+    """A frissítés eredményjelzője a teszt idejére ideiglenes fájl (#6471).
+
+    Az `UpdateController` induláskor kiolvassa és TÖRLI a jelzőt (#6458), a
+    segéd indítása pedig írja (#6471). Eltérítés nélkül minden ilyen teszt a
+    felhasználó valódi profiljában olvasna, törölne és írna."""
+    from picasapy.app import update_eredmeny
+
+    jelzo = tmp_path_factory.mktemp("frissites-jelzo") / "frissites-eredmeny.json"
+    monkeypatch.setattr(update_eredmeny, "jelzo_utvonal", lambda: jelzo)
+    yield
+
+
+@pytest.fixture(autouse=True)
 def tiszta_beallitasok(nem_nyul_a_valodi_beallitasokhoz):
     """Minden teszt ÜRES beállításokkal indul.
 

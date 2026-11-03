@@ -9914,10 +9914,16 @@ picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMo
             <translation>Δεν ήταν δυνατή η εκκίνηση του βοηθητικού προγράμματος ενημέρωσης.</translation>
         </message>
         <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="924" />
-            <source>Install on exit</source>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="29" />
+            <source>Update on exit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Εγκατάσταση κατά την έξοδο</translation>
+            <translation>Ενημέρωση κατά την έξοδο</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="30" />
+            <source>Update will be installed when PicasaPy closes.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Η ενημέρωση θα εγκατασταθεί όταν κλείσει το PicasaPy.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="944" />
@@ -20610,6 +20616,18 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Η εγκατάσταση δεν ολοκληρώθηκε, γι' αυτό επαναφέρθηκε η παλαιότερη έκδοση. Εγκαταστήστε χειροκίνητα το πιο πρόσφατο πρόγραμμα εγκατάστασης.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="25" />
+            <source>The update stopped before it finished. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Η ενημέρωση σταμάτησε πριν ολοκληρωθεί. Εγκαταστήστε χειροκίνητα το πιο πρόσφατο πρόγραμμα εγκατάστασης.</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="27" />
+            <source>The update reported success, but an earlier version started. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Η ενημέρωση ανέφερε επιτυχία, αλλά ξεκίνησε παλαιότερη έκδοση. Εγκαταστήστε χειροκίνητα το πιο πρόσφατο πρόγραμμα εγκατάστασης.</translation>
         </message>
     </context>
 </TS>

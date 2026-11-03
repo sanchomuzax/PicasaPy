@@ -198,7 +198,11 @@ class UpdateController(QObject):
         from . import update_eredmeny
 
         #: #6458: ha az előző frissítés visszaállt, az okát egyszer kiírjuk
-        self._elozo_hiba = update_eredmeny.olvasd_es_torold(update_eredmeny.jelzo_utvonal())
+        self._elozo_hiba = update_eredmeny.olvasd_es_torold(
+            update_eredmeny.jelzo_utvonal(), self._current_version
+        )
+        #: #6471: a „Frissítés kilépéskor” után a verziójelző ezt mutatja
+        self._install_scheduled = False
         if self._elozo_hiba:
             logger.warning("Az előző frissítés nem sikerült (#6458): %s", self._elozo_hiba)
         self._workers: dict[int, _Worker] = {}
@@ -280,6 +284,13 @@ class UpdateController(QObject):
         if self._progress_total <= 0:
             return 0
         return min(100, round(self._progress * 100 / self._progress_total))
+
+    installScheduledChanged = Signal()
+
+    @Property(bool, notify=installScheduledChanged)
+    def installScheduled(self) -> bool:  # noqa: N802
+        """#6471: a frissítés a program bezárásakor települ."""
+        return self._install_scheduled
 
     @Property(str, constant=True)
     def previousUpdateFailure(self) -> str:  # noqa: N802
@@ -641,6 +652,11 @@ class UpdateController(QObject):
         install_dir = exe.parent
         emelt = not mappa_irhato(install_dir.parent)
         hibak: list[str] = []
+        from . import update_eredmeny
+
+        # #6471: ha a segéd el sem jut a végéig, a következő indulás ebből tudja meg
+        jelzo = update_eredmeny.jelzo_utvonal()
+        update_eredmeny.ird_varakozik(jelzo, self.availableVersion)
         # #6458: előbb a program mellől (a telepítési mappa testvérmappájából),
         # mert céges gépen a %TEMP%-ből induló programok gyakran tiltottak
         for mappa in _seged_inditasi_helyek(install_dir):
@@ -668,10 +684,14 @@ class UpdateController(QObject):
                 break
             hibak.append(f"{mappa}: az indítás nem sikerült ({utolso_inditasi_hiba()})")
         else:
+            update_eredmeny.torold(jelzo)
             self._set_helper_error("; ".join(hibak) or "ismeretlen ok")
             logger.warning("A frissítősegéd nem indult el: %s", self._helper_error)
             self.downloadFinished.emit(False, "helper-start-failed")
             return False
+        if not restart_now:
+            self._install_scheduled = True
+            self.installScheduledChanged.emit()
         if restart_now:
             from PySide6.QtCore import QCoreApplication
 

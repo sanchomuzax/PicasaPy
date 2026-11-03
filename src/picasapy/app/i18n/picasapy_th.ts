@@ -9914,10 +9914,16 @@ picasapy-origin-key: stringres:CCaptureMovieDialog::capture;stringres:CCaptureMo
             <translation>เริ่มตัวช่วยอัปเดตไม่สำเร็จ</translation>
         </message>
         <message>
-            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="924" />
-            <source>Install on exit</source>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="29" />
+            <source>Update on exit</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>ติดตั้งเมื่อออก</translation>
+            <translation>อัปเดตเมื่อออก</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="30" />
+            <source>Update will be installed when PicasaPy closes.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>การอัปเดตจะถูกติดตั้งเมื่อปิด PicasaPy</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainToolbar.qml" line="944" />
@@ -20610,6 +20616,18 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>The installation did not finish, so the earlier version was restored. Install the latest Setup manually.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>การติดตั้งไม่เสร็จสมบูรณ์ จึงคืนค่าเป็นเวอร์ชันเดิม ติดตั้งตัวติดตั้งล่าสุดด้วยตนเอง</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="25" />
+            <source>The update stopped before it finished. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>การอัปเดตหยุดก่อนเสร็จสมบูรณ์ ติดตั้งตัวติดตั้งล่าสุดด้วยตนเอง</translation>
+        </message>
+        <message>
+            <location filename="../src/picasapy/app/qml/PicasaPy/UpdatePanel.qml" line="27" />
+            <source>The update reported success, but an earlier version started. Install the latest Setup manually.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>การอัปเดตรายงานว่าสำเร็จ แต่เวอร์ชันเดิมเริ่มทำงาน ติดตั้งตัวติดตั้งล่าสุดด้วยตนเอง</translation>
         </message>
     </context>
 </TS>
