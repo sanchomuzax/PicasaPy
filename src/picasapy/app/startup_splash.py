@@ -253,6 +253,17 @@ def _platform() -> str:
     return sys.platform
 
 
+def _close_pyinstaller_splash() -> None:
+    """A PyInstaller korai képét a Qt-ablak felépülése után zárja be."""
+    try:
+        import pyi_splash
+
+        if pyi_splash.is_alive():
+            pyi_splash.close()
+    except Exception:  # noqa: BLE001 — a korai jelzés nem akadályozhatja az indulást
+        return
+
+
 def _alkalmazas_elotti_beallitasok() -> None:
     """Amit a Qt-alkalmazás LÉTREHOZÁSA ELŐTT kell beállítani.
 
@@ -320,6 +331,7 @@ def start_early_startup(argv: list[str]) -> EarlyStartup:
         progress_log.mark("Az indulóablak megjelent")
         if run_log is not None:
             run_log.mark("Az indulóablak megjelent")
+    _close_pyinstaller_splash()
 
     _EARLY_STARTUP = EarlyStartup(
         _strip_nosplash(argv),

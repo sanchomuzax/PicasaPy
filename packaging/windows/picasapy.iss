@@ -70,6 +70,7 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; \
     AppUserModelID: "{#MyAppUserModelID}"; Tasks: desktopicon
 
 [Run]
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--telepito-melegites"; Flags: runhidden waituntilterminated runasoriginaluser
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--qml-elofordit"; Flags: runhidden waituntilterminated runasoriginaluser
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--qml-grafika-melegites"; Flags: runhidden waituntilterminated runasoriginaluser
 Filename: "{app}\{#MyAppExeName}"; \
