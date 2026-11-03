@@ -21,8 +21,9 @@ három érhető el a felületről (`radtint` a 12. csempén Shifttel,
 gombján ALT-tal), és azok is KÜLÖN helyeken. Az eredetinek tehát sosem
 kellett megkülönböztetnie őket egymástól.
 
-A mi 7. fülünk viszont **saját szerkezet** (#571): ott mind a húsz egymás
-alatt áll. A toldat a MI igényünk, nem az eredeti hiánya — ezért marad.
+A #571 saját effektfüle a Picasa eredeti felületének szerkezetétől eltér:
+az összevont fülön a Glimmer csempék után áll a régi katalógus. A toldat a
+MI igényünk, nem az eredeti hiánya — ezért marad.
 """
 
 from __future__ import annotations

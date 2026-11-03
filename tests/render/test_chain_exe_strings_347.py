@@ -36,14 +36,14 @@ from picasapy.render.chain import KNOWN_UNRENDERED_OPS, apply_filters
 #: `radtint` a #565-ben. A regiszter viszont NEM ürült ki — a #382-es
 #: filterdesc-nevek még benne állnak, azokon marad a szerződés (felismerés +
 #: jelentés vizuális modell nélkül).
-#: #687: a `triple` (és a `shadow`) is renderel — a még modell nélküli
-#: nevek a `colorfix`, a `rainbow` és a `whitept`.
+#: #687: a `triple` (és a `shadow`) is renderel. A #6443 a `colorfix` és
+#: `whitept` aktív natív ágát is bekötötte, a #5304 pedig a `rainbow`-t.
 #: #1142: a `blur` KIKERÜLT innen — a `merokit-2` mérése szerint a
 #: csúszkatartomány fölötti küszöbnél valódi elmosást ad, ezért kapott
 #: modellt (`render/blur.py`, `tests/render/test_lanc_tagok_1142.py`).
 #: #5304: a `rainbow` kikerült innen; a lánc most a natív callback
 #: specifikációját alkalmazza (`render/rainbow.py`).
-_STILL_UNRENDERED_KEYS = ("colorfix",)
+_STILL_UNRENDERED_KEYS = ("debug",)
 
 
 @pytest.fixture
@@ -69,11 +69,9 @@ class TestKnownUnrenderedRegistry:
     def test_vegyes_lanc_a_tobbi_effekt_azert_lefut(self, sample):
         # egy ismert (renderelt) effekt + egy felismert-de-renderelhetetlen
         # egy láncban: az ismert effekt hasson, a másik csak jelentve legyen
-        result, skipped = apply_filters(
-            sample, parse_filters("Invert=1;colorfix=1;")
-        )
+        result, skipped = apply_filters(sample, parse_filters("Invert=1;debug=1;"))
         assert not np.array_equal(result, sample), "az Invert lefutott"
-        assert skipped == ("colorfix",)
+        assert skipped == ("debug",)
 
 
 class TestGlimmerNowRendered:

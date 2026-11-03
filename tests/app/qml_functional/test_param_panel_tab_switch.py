@@ -138,7 +138,6 @@ class TestEveryTabHidesUnderTheParamPanel:
         [
             (2, "effectsColumn", "effectVignette"),
             (5, "effectsColumn4", None),
-            (6, "legacyEffectsColumn", None),
         ],
     )
     def test_the_tab_content_hides(self, qml_engine, qt_app, tab, column, button):

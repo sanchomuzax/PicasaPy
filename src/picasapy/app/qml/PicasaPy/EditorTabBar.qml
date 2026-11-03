@@ -1,6 +1,6 @@
 import QtQuick
 
-// A szerkesztő FÜLSÁVJA (#20, #328, #338, #422, #571, #741): hét ikonos
+// A szerkesztő FÜLSÁVJA (#20, #328, #338, #422, #571, #6443, #741): hat ikonos
 // fül, hézag nélkül. Csak „tools" módban látszik — vágásnál nincs értelme.
 //
 // #496: az `EditorPanel.qml`-ből kiemelve — a fájl a 800 soros korlát fölé
@@ -22,8 +22,8 @@ Item {
     //: a gazda EditorPanel — a fülgombok ezen át állítják az aktív fület
     required property var panel
 
-    //: hány fül van — a tulajdonosi kivétel (hét, az eredeti öt helyett)
-    readonly property int tabCount: 7
+    //: hány fül van — a Glimmer és régi effektek egyetlen fület kapnak
+    readonly property int tabCount: 6
 
     // #741: a fülsáv MÉRT magassága 25 képpont (`respack.yt`: `tabs`,
     // 276 × 25). A gazda csak vízszintesen horgonyozza, a magasság itt dől el.
@@ -32,8 +32,8 @@ Item {
     height: tabBarRoot.savMagassag
 
     // #741: az eredeti öt fül hézag nélkül tölti ki a 276 képpontos
-    // oszlopot (55 + 55 + 56 + 55 + 55). Hét fülre ugyanez a szabály
-    // `39 · 39 · 40 · 39 · 40 · 39 · 40 = 276`-ot ad.
+    // oszlopot (55 + 55 + 56 + 55 + 55). Hat fülre ugyanez a szabály
+    // `46 · 46 · 46 · 46 · 46 · 46 = 276`-ot ad.
     //
     // A képlet a KUMULÁLT határok egészre csonkítása: a szomszédos fülek
     // határa így mindig ugyanaz a szám, tehát sem hézag, sem átfedés nem
@@ -47,10 +47,10 @@ Item {
 
     // #4552: a fülikonok MÉRT mérete (`docs/specs/ui-audit-editor.md`,
     // „A fülsáv ikonjai — sorrend és méret": tab1 15×16, tab2 17×18,
-    // tab3 20×19, tab4 25×19, tab5 25×19). A 6. és 7. fül a mi többletünk
-    // (nincs mért párja), a 3–5. fül ikonméretét kapja. Egy helyen él.
+    // tab3 20×19, tab4 25×19, tab5 25×19). A 6. fül a mi többletünk
+    // (nincs mért párja), az 5. fül ikonméretét kapja. Egy helyen él.
     readonly property var ikonMeretek: [
-        [15, 16], [17, 18], [20, 19], [25, 19], [25, 19], [25, 19], [25, 19]
+        [15, 16], [17, 18], [20, 19], [25, 19], [25, 19], [25, 19]
     ]
     // #5959: a Picasa két tájképes ikonjának eltérő, mért felhőszíne.
     readonly property color felhoSzin: "#f8faf7"
@@ -133,10 +133,8 @@ Item {
         iconAccent: Theme.brandBlue
         iconFleck: "#f5f9fc"
     }
-    // #422 (felhasználói döntés): 6. fül — azok a Glimmer-effektek,
-    // amelyek NEM szerepelnek a 3–5. fül igazolt listáján. Külön fülön,
-    // hogy a három ismert fül pontosan az eredeti gombkészletét
-    // tartalmazza (és görgetés nélkül kiférjen).
+    // #6443: a Glimmer és a Picasa régi, újraélesztett effektjei közös fület
+    // kapnak; az utolsó külön fül megszűnik.
     EditTabButton {
         panel: tabBarRoot.panel
         objectName: "editTabEffects4"
@@ -146,27 +144,10 @@ Item {
         x: tabBarRoot.tabHatar(5)
         width: tabBarRoot.tabWidth(5)
         height: tabBarRoot.height
-        label: qsTr("More Effects")
-        description: qsTr("Glimmer effects beyond the three known tabs")
+        label: qsTr("Legacy Effects")
+        description: qsTr("Forgotten or deprecated effects brought back to life")
         iconKind: "brush"
         iconAccent: Theme.textGray
-    }
-    // #571 (felhasználói döntés: „Régi effektek"): 7. fül — a Picasa
-    // motorjában benne maradt, de a 3.9 felületén NEM elérhető szűrők.
-    // TUDATOS eltérés az eredetitől, ld. EditorLegacyTab.qml.
-    EditTabButton {
-        panel: tabBarRoot.panel
-        objectName: "editTabLegacy"
-        tabIndex: 6
-        iconWidth: tabBarRoot.ikonSzelesseg(6)
-        iconHeight: tabBarRoot.ikonMagassag(6)
-        x: tabBarRoot.tabHatar(6)
-        width: tabBarRoot.tabWidth(6)
-        height: tabBarRoot.height
-        label: qsTr("Legacy Effects")
-        description: qsTr("Filters left in the Picasa engine but not on its surface")
-        iconKind: "brush"
-        iconAccent: Theme.chromeBorder
         marked: tabBarRoot.panel.legacyEffectsPresent
     }
 }

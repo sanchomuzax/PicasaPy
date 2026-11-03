@@ -104,9 +104,9 @@ class TestDeadLegacyFocalPixelate:
     def test_a_regular_unrendered_name_gets_no_legacy_warning(self, sample):
         """A „még nincs modellünk" és a „halott bejegyzés" két külön ok — a
         `skipped` mindkettőt tartalmazza, a `legacy_warnings` csak az
-        utóbbit. A #5304 óta a rainbow már renderelt, a colorfix külön
-        mérten tétlen figyelmeztetést kap, ezért itt a debug képviseli a
-        pusztán modell nélküli nevet."""
+        utóbbit. A #5304 óta a rainbow már renderelt, a #6443 óta pedig a
+        colorfix/whitept binárisból visszafejtett aktív útvonalon fut; ezért
+        itt a debug képviseli a pusztán modell nélküli nevet."""
         report = apply_filters(sample, parse_filters("debug=1;"))
         assert report.skipped == ("debug",)
         assert report.legacy_warnings == ()

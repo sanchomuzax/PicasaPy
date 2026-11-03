@@ -34,8 +34,8 @@ from tests.support.qml_blokk import blokk_horgony_utan
 
 _KEEPALIVE = []
 
-#: a fülek indexe a `EditorTabBar` sorrendjében (7 fül: 5 eredeti + #422 + #571)
-MINDEN_FUL = (0, 1, 2, 3, 4, 5, 6)
+#: a fülek indexe a `EditorTabBar` sorrendjében (5 eredeti + #6443 összevont fül)
+MINDEN_FUL = (0, 1, 2, 3, 4, 5)
 
 _QML_DIR = (
     Path(__file__).resolve().parents[3]

@@ -160,8 +160,10 @@ class TestSyncRender:
 
 class TestLegacyEffectThumbnails:
     def test_enabled_legacy_effects_render_real_thumbnails(self, qt_app, tmp_path):
-        """A 7. fül engedélyezett nevei is a közös effekt-renderen mennek át."""
+        """Az összevont effektfül engedélyezett nevei is renderelődnek."""
         from picasapy.app.edit_controller import _LEGACY_EFFECT_NAMES
+
+        assert "blur" in _LEGACY_EFFECT_NAMES
 
         records = _minta_library(tmp_path)
         provider = _provider(records)
@@ -183,7 +185,7 @@ class TestLegacyEffectThumbnails:
             assert max(image.width(), image.height()) > 16, (
                 f"{effect}: placeholder jött a valódi előnézet helyett"
             )
-            if effect in {"autobacklight", "fill"}:
+            if effect in {"autobacklight", "fill", "blur"}:
                 assert not np.array_equal(_rgb_pixels(image), source_pixels), (
                     f"{effect}: az előnézet nem alkalmazta az alapértelmezett effektet"
                 )

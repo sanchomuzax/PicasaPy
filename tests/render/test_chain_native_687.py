@@ -179,23 +179,25 @@ class TestTartomanyValidacio:
         assert len(report.range_warnings) == 1
 
 
-class TestMertenTetlenBejegyzesek:
-    #: A #685 mérésben a Picasa MAGA sem változtatott ezeken (ΔE ≤ 1,0).
-    #: A `blur` a #1142-ben KIKERÜLT: a #685 szett csak a csúszkatartományt
-    #: járta be, a `merokit-2` viszont a tartományon kívüli
-    #: `blur=1,2.000000;` alakot is — és az valódi elmosást ad.
-    TETLEN = ("colorfix", "whitept")
+class TestFeherpontEffektekRenderelese:
+    @pytest.mark.parametrize(
+        "chain",
+        (
+            "colorfix=1,ffd27840,0.125000;",
+            "whitept=1,ffd27840;",
+        ),
+    )
+    def test_aktiv_pipettaszinnel_a_lanc_renderel(self, sample, chain):
+        report = apply_filters(sample, parse_filters(chain))
+        assert report.skipped == ()
+        assert report.legacy_warnings == ()
+        assert not np.array_equal(report.image, sample)
 
-    @pytest.mark.parametrize("name", TETLEN)
-    def test_a_tetlen_nevek_jelolve_vannak(self, name):
-        assert name in MEASURED_IDLE_OPS
-
-    @pytest.mark.parametrize("name", TETLEN)
-    def test_a_lanc_figyelmeztet_rajuk(self, sample, name):
-        report = apply_filters(sample, parse_filters(f"{name}=1,0.500000;"))
-        assert report.skipped == (name,)
-        assert len(report.legacy_warnings) == 1
-        assert name in report.legacy_warnings[0]
+    @pytest.mark.parametrize("name", ("colorfix", "whitept"))
+    def test_mar_nem_tetlen_vagy_kihagyott_regisztertag(self, name):
+        assert name not in MEASURED_IDLE_OPS
+        assert name not in KNOWN_UNRENDERED_OPS
+        assert can_render_filter(name)
 
     def test_a_focalpixelate_marad_halott_legacy(self, sample):
         # #567: ennél a natív regiszterben SINCS feldolgozó — más ok, más üzenet
