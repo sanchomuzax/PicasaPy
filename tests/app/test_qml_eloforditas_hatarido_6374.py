@@ -92,13 +92,13 @@ def test_idotullepeskor_a_meres_kiirja_a_naplo_veget(monkeypatch, tmp_path):
     assert "PlacesMap.qml" in str(hiba.value)
 
 
-def test_az_osszegzes_utan_azonnal_kilep_a_bontas_nelkul(monkeypatch, capsys):
+def test_az_osszegzes_utan_azonnal_kilep_a_bontas_nelkul(monkeypatch, capsys, tmp_path):
     """A csomagolt exe a fordítás után a Qt-bontásnál akadt el (0,83 s + 180 s)."""
     kilepesek = []
     monkeypatch.setattr(qml_precompile, "_kilepes", kilepesek.append)
     monkeypatch.setattr(qml_precompile, "_inditsd_a_hataridot", lambda: None)
     monkeypatch.setattr(qml_precompile, "QCoreApplication", _HamisQCoreApplication)
-    monkeypatch.setattr(qml_precompile, "_qml_cache_konyvtar", lambda: Path("cache"))
+    monkeypatch.setattr(qml_precompile, "_qml_cache_konyvtar", lambda: tmp_path / "cache")
     monkeypatch.setattr(qml_precompile, "_forditsd_le", lambda _cache, fajlok: 0)
     assert qml_precompile.main() == 0
     assert kilepesek == [0]
@@ -162,10 +162,10 @@ class _NemKodolhato:
         self.encoding = encoding
 
 
-def _hamis_qt(monkeypatch, forditas=lambda _e, fajlok: 0):
+def _hamis_qt(monkeypatch, tmp_path, forditas=lambda _e, fajlok: 0):
     monkeypatch.setattr(qml_precompile, "_inditsd_a_hataridot", lambda: None)
     monkeypatch.setattr(qml_precompile, "QCoreApplication", _HamisQCoreApplication)
-    monkeypatch.setattr(qml_precompile, "_qml_cache_konyvtar", lambda: Path("cache"))
+    monkeypatch.setattr(qml_precompile, "_qml_cache_konyvtar", lambda: tmp_path / "cache")
     monkeypatch.setattr(qml_precompile, "_forditsd_le", forditas)
 
 
@@ -177,17 +177,17 @@ def test_a_nem_kodolhato_kimenet_sem_akasztja_meg_a_kilepest(monkeypatch, tmp_pa
     kimenet = _NemKodolhato()
     monkeypatch.setattr(sys, "stdout", kimenet)
     monkeypatch.setenv(qml_precompile.NAPLO_ENV, str(tmp_path / "n.txt"))
-    _hamis_qt(monkeypatch)
+    _hamis_qt(monkeypatch, tmp_path)
     qml_precompile.main()
     assert kilepesek == [0]
     assert "QML-előfordítás:" in kimenet.buffer.getvalue().decode("utf-8")
 
 
-def test_hianyzo_kimenetnel_is_kilep(monkeypatch):
+def test_hianyzo_kimenetnel_is_kilep(monkeypatch, tmp_path):
     kilepesek = []
     monkeypatch.setattr(qml_precompile, "_kilepes", kilepesek.append)
     monkeypatch.setattr(sys, "stdout", None)
-    _hamis_qt(monkeypatch)
+    _hamis_qt(monkeypatch, tmp_path)
     qml_precompile.main()
     assert kilepesek == [0]
 
@@ -201,7 +201,7 @@ def test_barmilyen_kivetelnel_naploz_es_hibakoddal_kilep(monkeypatch, tmp_path):
     def _hibas(_e, _f):
         raise RuntimeError("qml")
 
-    _hamis_qt(monkeypatch, _hibas)
+    _hamis_qt(monkeypatch, tmp_path, _hibas)
     qml_precompile.main()
     assert kilepesek == [qml_precompile.KIVETEL_KOD]
     assert "RuntimeError" in naplo.read_text(encoding="utf-8")
