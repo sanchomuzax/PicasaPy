@@ -23,8 +23,8 @@ from PySide6.QtQuick import QQuickItem
 from support.jpeg_factory import make_minta_jpeg
 from tests.app.qml_functional.conftest import (
     _build_qml_app,
-    _module_qml_warnings,  # noqa: F401 — modul-fixture
-    _module_user_folder_guard,  # noqa: F401 — modul-fixture
+    _module_qml_warnings,  # noqa: F401 - modul-fixture
+    _module_user_folder_guard,  # noqa: F401 - modul-fixture
 )
 from tests.support.varakozas import var_feltetelre
 
