@@ -59,7 +59,8 @@ RowLayout {
     // Így a gombsor ott van, ahol a felhasználó keresi, és szűk ablakban
     // sem csúszik ki.
     y: {
-        var lathatoAlja = panel.visibleHeight - height - 10
+        // #6477: a fiók aljára dokkolt hisztogram nem takarhatja
+        var lathatoAlja = panel.visibleHeight - panel.bottomReserve - height - 10
         if (!tabArea.visible)
             return Math.max(0, lathatoAlja)
         var tartalomAlatt = tabArea.y + panel.tabContentHeight + 8

@@ -277,9 +277,14 @@ def test_combined_effect_tab_renders_four_and_half_rows_of_real_previews(
         window, "effectMatte"
     ).y()
     assert row_pitch > 0
-    assert viewport.height() / row_pitch == pytest.approx(
-        EXPECTED_VISIBLE_ROWS, abs=0.03
-    )
+    # #6477: a 4,5 sor a FELSŐ határ; ha az ablak ennél kisebb, a rács a
+    # hisztogram fölött ér véget (a régi elvárás épp a takarást rögzítette)
+    assert 1.0 - 0.03 <= viewport.height() / row_pitch <= EXPECTED_VISIBLE_ROWS + 0.03
+    histogram = _item(window, "viewerHistogramBox")
+    assert (
+        viewport.mapToScene(QPointF(0, viewport.height())).y()
+        <= histogram.mapToScene(QPointF(0, 0)).y() + 0.5
+    ), "a rács a hisztogram alá csúszott"
 
     if height_delta == 0:
         viewport.setProperty("contentY", 0)

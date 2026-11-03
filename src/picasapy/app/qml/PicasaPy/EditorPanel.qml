@@ -45,6 +45,11 @@ Rectangle {
 
     // #641: a Visszavonás/Újra sor alja a panelen belül.
     readonly property real undoRowBottom: globalUndoRow.y + globalUndoRow.height
+    readonly property real undoRowHeight: globalUndoRow.height
+
+    //: #6477: a panel aljából ennyit takar a fiók aljára dokkolt hisztogram;
+    //: a fül tartalma és a Visszavonás/Újra sor e fölött ér véget
+    property real bottomReserve: 0
 
     // 0–4: eredeti fülek; 5: Glimmer és régi effektek összevont saját füle.
     // SAJÁT FUNKCIÓ (#1187): a szerkesztő 6 fülből csak 5 (0-4. index) van meg
