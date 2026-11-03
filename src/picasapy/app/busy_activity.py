@@ -72,6 +72,7 @@ MUNKANEVEK: dict[str, str] = {
     "picasapy-save-restore": QT_TRANSLATE_NOOP(KONTEXTUS, "Restoring photos"),
     "picasapy-save": QT_TRANSLATE_NOOP(KONTEXTUS, "Saving changes to photos"),
     "picasapy-startup-maintenance": QT_TRANSLATE_NOOP(KONTEXTUS, "Startup maintenance"),
+    "picasapy-tesztuzem-megosztas": QT_TRANSLATE_NOOP(KONTEXTUS, "Preparing the startup log"),
     "picasapy-google-photos-oauth": QT_TRANSLATE_NOOP(KONTEXTUS, "Connecting to Google Photos"),
     "picasapy-google-photos-revoke": QT_TRANSLATE_NOOP(KONTEXTUS, "Disconnecting from Google Photos"),
     "picasapy-google-photos-upload": QT_TRANSLATE_NOOP(KONTEXTUS, "Uploading to Google Photos"),
