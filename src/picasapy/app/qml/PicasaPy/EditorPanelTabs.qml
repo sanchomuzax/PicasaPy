@@ -1,7 +1,7 @@
 import QtQuick
 import PicasaPy
 
-// A szerkesztő fülsávja, a hét fül és a paraméteres effekt-alpanel (#6177).
+// A szerkesztő fülsávja, a hat fül és a paraméteres effekt-alpanel (#6177).
 // A panel állapotát a gazda adja át; a közös layout geometriája változatlan.
 Item {
     id: tabSections

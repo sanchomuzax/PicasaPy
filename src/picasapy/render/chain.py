@@ -294,6 +294,8 @@ _HANDLERS = {
     "triple": native.apply_triple_op,
     "triple2": native.apply_triple2_op,
     "triple3": native.apply_triple3_op,
+    "colorfix": native.apply_colorfix_op,
+    "whitept": native.apply_whitept_op,
     # --- Glimmer-effektek: EGZAKT csővezetékek a filterdesc.xml szerint
     # (#381, `chain_glimmer_handlers.py` + `glimmer_*` modulok). Az `IR`
     # kivétel: a `IRImageOperation` belső kernele a filterdesc.xml-ben sem
@@ -368,15 +370,10 @@ def can_render_filter(name: str) -> bool:
     key = name.casefold()
     return key in _HANDLERS or key in _FRAME_EFFECTS or key == "crop64"
 
-#: #1142 — VAN modellünk, de a felületen mégsem kínálunk hozzá vezérlőt.
-#:
-#: ⚠️ #3493: a korábbi indok („a csúszkatartományban tétlen") MEGDŐLT — a
-#: kiolvasott natív lánc valódi, zajos tartalmon a csúszka tartományában
-#: is simít; a mért tétlenség a kétszínű 762-es ábra sajátja volt. A
-#: `blur`-nek viszont az eredetiben SINCS felületi belépési pontja (#3485):
-#: a lánc idegen vagy régi `.picasa.ini`-ből kapja, ezért a LÁNC rendereli,
-#: de gombot nem adunk rá — az eredeti sem ad.
-UI_INERT_RANGE_OPS = frozenset({"blur"})
+#: A `blur` csúszkája a `filterdesc.xml` szerint [-0,5; 0,5], alapértéke 0,1.
+#: A #3493 zajos képen ezt a tartományt is igazolta; a korábbi tétlenségi
+#: lelet csak a kétszínű mérőábrára szólt, ezért a #6443 feloldotta a UI-tiltást.
+UI_INERT_RANGE_OPS = frozenset()
 
 def can_offer_filter_control(name: str) -> bool:
     """Kínálhatjuk-e a szűrőt a felületen ÁLLÍTHATÓ vezérlőként (#1142)?

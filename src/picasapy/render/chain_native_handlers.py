@@ -17,6 +17,10 @@ from __future__ import annotations
 import numpy as np
 
 from picasapy.ini.filters import FilterOp
+from picasapy.render.autocolor_matrix import (
+    apply_autocolor_matrix,
+    autocolor_matrix_16_16,
+)
 from picasapy.render.native_colortemp import apply_native_colortemp
 from picasapy.render.native_tone import (
     apply_gamma,
@@ -25,6 +29,7 @@ from picasapy.render.native_tone import (
 )
 from picasapy.render.ops import apply_autocontrast
 from picasapy.render.shadow_highlight import apply_shadow_highlight
+from picasapy.render.tinting import parse_rgb_hex
 from picasapy.render.tone import apply_fill
 
 #: A `triple2` Fehérpont csúszkájának alapértéke a `filterdesc.xml` szerint.
@@ -80,6 +85,56 @@ def apply_colortemp_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
     return apply_native_colortemp(
         image, cool_to_warm=_slider(op, 0), white_shift=_slider(op, 1)
     )
+
+
+def _whitepoint_color(op: FilterOp) -> str | None:
+    """A régi láncban a pipettaszín opcionális, és külön mezőben is állhat."""
+    for value in op.params[1:]:
+        if len(value.strip()) < 6:
+            continue
+        try:
+            parse_rgb_hex(value)
+        except ValueError:
+            continue
+        return value
+    return None
+
+
+def _apply_whitepoint(image: np.ndarray, color: str) -> np.ndarray:
+    red, green, blue = parse_rgb_hex(color)
+    if red == green == blue == 0:
+        return image.copy()
+    return apply_autocolor_matrix(
+        image, autocolor_matrix_16_16(red, green, blue)
+    )
+
+
+def apply_whitept_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    """`whitept=1,Fehérpontszín` — `0x008f9270`.
+
+    A natív callback a színmátrixot csak nemsemleges, nem nulla
+    `colorcircle`-értéknél futtatja. A láncban ezt a színparamétert
+    AARRGGBB mezőként kezeljük.
+    """
+    color = _whitepoint_color(op)
+    if color is None:
+        return image.copy()
+    return _apply_whitepoint(image, color)
+
+
+def apply_colorfix_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
+    """`colorfix=1,Fehérpontszín,Hőmérséklet` — `0x008f9190`.
+
+    A visszafejtett callback előbb a kiválasztott fehérpont-mátrixot
+    alkalmazza, majd a színhő workerét nulla fehérváltással. Ha csak az
+    egyik beállítás aktív, csak az ahhoz tartozó lépés fut.
+    """
+    color = _whitepoint_color(op)
+    temperature = _slider(op, 1)
+    result = _apply_whitepoint(image, color) if color else image
+    if temperature != 0.0:
+        return apply_native_colortemp(result, temperature, 0.0)
+    return result.copy() if result is image else result
 
 
 def apply_backlight_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
@@ -180,6 +235,7 @@ def apply_triple3_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 __all__ = [
     "apply_autocontrast_op",
     "apply_backlight_op",
+    "apply_colorfix_op",
     "apply_colortemp_op",
     "apply_contrast_op",
     "apply_gamma_op",
@@ -187,4 +243,5 @@ __all__ = [
     "apply_triple2_op",
     "apply_triple3_op",
     "apply_triple_op",
+    "apply_whitept_op",
 ]

@@ -45,7 +45,6 @@ ALLAPOTOK = (
     "szerkeszto-3",
     "szerkeszto-4",
     "szerkeszto-5",
-    "szerkeszto-6",
     "arcreteg",
     "teljes-kepernyo",
 )
@@ -190,7 +189,6 @@ def test_capture_creates_visible_main_and_viewer_states(
             "editTabEffects2",
             "editTabEffects3",
             "editTabEffects4",
-            "editTabLegacy",
         )
     ):
         required[f"szerkeszto-{index}"] = {"photoViewer", "viewerEditorPanel", tab_name}
@@ -215,8 +213,8 @@ def test_capture_creates_visible_main_and_viewer_states(
     assert records["alapnezet"]["left_drawer_width"] <= 2
     assert records["bal-fiok-nyitva"]["left_drawer_width"] > 200
     assert records["filmcsik"]["filmstrip_count"] > 0
-    assert [records[f"szerkeszto-{index}"]["active_tab"] for index in range(7)] == list(
-        range(7)
+    assert [records[f"szerkeszto-{index}"]["active_tab"] for index in range(6)] == list(
+        range(6)
     )
     assert records["arcreteg"]["face_count"] > 0
     assert records["teljes-kepernyo"]["fullscreen"] is True

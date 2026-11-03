@@ -16669,6 +16669,12 @@ picasapy-origin-key: stringres:CThumbUI::Artistic</extracomment>
             <translation>이전 효과</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/EditorTabBar.qml" />
+            <source>Forgotten or deprecated effects brought back to life</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>잊히거나 중단된 효과를 되살림</translation>
+        </message>
+        <message>
             <source>Commonly needed fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>자주 사용하는 수정</translation>
@@ -17032,6 +17038,13 @@ picasapy-origin-key: stringres:ImageFilters::Brightness</extracomment>
             <source>Color Mix</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>색상 혼합</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Color Temperature</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_colorfix_label2</extracomment>
+            <translation>색상 온도</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />

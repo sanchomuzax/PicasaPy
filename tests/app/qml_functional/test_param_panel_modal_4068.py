@@ -171,7 +171,6 @@ def test_a_hat_effektpanel_fulkattintasra_letilt_es_escape_megse(
         3: "editTabEffects2",
         4: "editTabEffects3",
         5: "editTabEffects4",
-        6: "editTabLegacy",
     }
 
     for label, key, tab, tile_name, tool_tab, screenshot_name in _TOOLS:

@@ -1,5 +1,4 @@
-"""#571 — az „Régi effektek" fül: a Picasa motorjában benne maradt, de a
-3.9 felületén NEM elérhető szűrők.
+"""#571/#6443 — a régi effektek a Glimmer csempékkel közös fülre kerültek.
 
 Ez TUDATOS eltérés az eredetitől — a fül léte maga is szerződés, ezért
 teszttel őrizzük. A gombok a katalógusból generálódnak, és hogy melyik ÉL,
@@ -25,7 +24,7 @@ def qml_engine(qt_app):
     engine.deleteLater()
 
 
-def _make_panel(engine, active_tab=6):
+def _make_panel(engine, active_tab=5):
     component = QQmlComponent(engine)
     component.setData(
         (
@@ -44,23 +43,27 @@ def _make_panel(engine, active_tab=6):
 
 
 class TestLegacyTabExists:
-    def test_tab_button_is_present(self, qml_engine, qt_app):
+    def test_combined_tab_is_present_and_old_separate_tab_is_gone(self, qml_engine, qt_app):
         panel = _make_panel(qml_engine)
         qt_app.processEvents()
-        assert panel.findChild(QObject, "editTabLegacy") is not None
+        assert panel.findChild(QObject, "editTabEffects4") is not None
+        assert panel.findChild(QObject, "editTabLegacy") is None
 
     def test_tab_label_is_not_truncated(self, qml_engine, qt_app):
-        # #318 tanulság: tördelés, nem vágás — a hetedik fül sem veszíthet
-        # szöveget a szűkebb fülsávban
+        # #318 tanulság: tördelés, nem vágás — az összevont fül sem
+        # veszíthet szöveget a szűkebb fülsávban.
         panel = _make_panel(qml_engine)
         qt_app.processEvents()
-        label = panel.findChild(QObject, "editTabLegacyLabel")
+        label = panel.findChild(QObject, "editTabEffects4Label")
         assert label is not None
         assert label.property("truncated") is False
+        tab = panel.findChild(QObject, "editTabEffects4")
+        assert tab.property("description") == (
+            "Forgotten or deprecated effects brought back to life"
+        )
 
     def test_tab_bar_still_fits_the_panel_width(self, qml_engine, qt_app):
-        """A hetedik fül nem lóghat ki: az egész sávnak a panel
-        szélességében kell maradnia (a #328 4. pontjának megfelelően)."""
+        """A hat fül hézag nélkül kitölti a sávot."""
         panel = _make_panel(qml_engine)
         qt_app.processEvents()
         tab_bar = panel.findChild(QObject, "editTabBar")
@@ -71,38 +74,34 @@ class TestLegacyTabExists:
             "editTabEffects2",
             "editTabEffects3",
             "editTabEffects4",
-            "editTabLegacy",
         )
         total = sum(panel.findChild(QObject, n).property("width") for n in names)
         assert total <= tab_bar.property("width") + 5
 
-    def test_column_visible_only_on_its_own_tab(self, qml_engine, qt_app):
-        panel = _make_panel(qml_engine, active_tab=6)
+    def test_combined_effect_column_is_visible_on_its_tab(self, qml_engine, qt_app):
+        panel = _make_panel(qml_engine, active_tab=5)
         qt_app.processEvents()
-        column = panel.findChild(QObject, "legacyEffectsColumn")
+        column = panel.findChild(QObject, "effectsColumn4")
         assert column is not None
         assert column.property("visible") is True
 
         other = _make_panel(qml_engine, active_tab=2)
         qt_app.processEvents()
-        assert other.findChild(QObject, "legacyEffectsColumn").property(
+        assert other.findChild(QObject, "effectsColumn4").property(
             "visible"
         ) is False
 
-    def test_intro_line_explains_the_tab(self, qml_engine, qt_app):
-        # #571 2. pont: a fül teteje egy sorban mondja ki, mi ez a készlet
+    def test_no_gray_intro_header(self, qml_engine, qt_app):
         panel = _make_panel(qml_engine)
         qt_app.processEvents()
-        intro = panel.findChild(QObject, "legacyEffectsIntro")
-        assert intro is not None
-        assert intro.property("text")
+        assert panel.findChild(QObject, "legacyEffectsIntro") is None
 
     def test_no_dot_without_a_controller(self, qml_engine, qt_app):
         # controller nélkül (izolált teszt) nincs lánc — nincs jelzés sem
         panel = _make_panel(qml_engine)
         qt_app.processEvents()
         assert panel.property("legacyEffectsPresent") is False
-        mark = panel.findChild(QObject, "editTabLegacyMark")
+        mark = panel.findChild(QObject, "editTabEffects4Mark")
         assert mark is not None and mark.property("visible") is False
 
 
@@ -145,27 +144,12 @@ class TestLegacyCatalogue:
         ):
             assert can_render_filter(key)
 
-    def test_a_megfejtetlen_nevek_kozul_csak_a_colorfix_nem_renderelheto(self):
-        # #5304 óta a rainbow renderelhető, a colorfix natív magja továbbra
-        # sem ismert: a felületen nem lehet aktívnak látszó, de nem ható gomb.
-        from picasapy.render.chain import can_render_filter
+    def test_colorfix_whitept_and_blur_are_rendered_and_offer_controls(self):
+        from picasapy.render.chain import can_offer_filter_control, can_render_filter
 
-        assert not can_render_filter("colorfix")
-        assert can_render_filter("rainbow")
-
-    def test_a_blur_renderel_de_gombkent_nem_kinalhato(self):
-        """#1142 — a `blur` a LÁNCBÓL renderel (egy idegen ini-ben állhat a
-        csúszkatartományon kívüli küszöb), a fülön viszont szürke marad: a
-        `filterdesc.xml` szerinti `[-0,5; 0,5]` tartományon a mérés szerint
-        maga az eredeti Picasa sem változtat a képen, tehát a csúszka
-        minden állásában hatástalan gomb lenne."""
-        from picasapy.render.chain import (
-            can_offer_filter_control,
-            can_render_filter,
-        )
-
-        assert can_render_filter("blur")
-        assert not can_offer_filter_control("blur")
+        for key in ("colorfix", "whitept", "blur"):
+            assert can_render_filter(key)
+            assert can_offer_filter_control(key)
 
     def test_debug_is_deliberately_absent(self):
         # a `debug` („For debugging") fejlesztői eszköz volt, nem
@@ -178,7 +162,7 @@ class TestLegacyCatalogue:
         from picasapy.render.chain import DEAD_LEGACY_OPS
         from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS
 
-        # a halott név LÁTSZIK a fülön (egy régi láncban előfordulhat),
-        # de a felület más magyarázatot ad rá (#567)
+        # a halott név felismerhető marad a láncban, de a #6443 kivezette
+        # a használhatatlan csempét a felületről.
         assert "focalpixelate" in LEGACY_EFFECT_KEYS
         assert "focalpixelate" in DEAD_LEGACY_OPS

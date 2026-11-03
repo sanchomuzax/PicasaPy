@@ -153,13 +153,4 @@ Rectangle {
         anchors.right: parent.right
     }
 
-    // ---------------- 7. fül: örökölt, felület nélküli szűrők (#571) ---
-    EditorLegacyTab {
-        id: legacyTab
-        panel: tabHost.panel
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-    }
-
 }

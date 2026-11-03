@@ -16684,6 +16684,12 @@ picasapy-origin-key: stringres:CThumbUI::Artistic</extracomment>
             <translation>Vanhat tehosteet</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/EditorTabBar.qml" />
+            <source>Forgotten or deprecated effects brought back to life</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Unohdetut tai poistetut tehosteet herätetty henkiin</translation>
+        </message>
+        <message>
             <source>Commonly needed fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Useimmin tarvittavat korjaukset</translation>
@@ -17047,6 +17053,13 @@ picasapy-origin-key: stringres:ImageFilters::Brightness</extracomment>
             <source>Color Mix</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Värisekoitus</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Color Temperature</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_colorfix_label2</extracomment>
+            <translation>Värilämpötila</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />

@@ -20,11 +20,9 @@ végigjárva a jelenetet: **a felhasználó lássa a tartalmat**, azaz
 
 ## Amit MA mér (2026-09-17)
 
-Mind a három invariáns **teljesül** — két nevesített kivétellel
-(`legacyEffectsIntro` → #3278, `trayCollageLabel` → #3279; lásd
-`_KIVETELEK`: mindkettő a fejlesztői gépen elfér, a CI betűmetrikájával
-viszont levágódik) — a vizsgált nyolc állapotban: a rácson, a
-nézőben és a szerkesztő mind a hét fülén **nulla** találat. Az őr tehát
+Mind a három invariáns **teljesül** — a vizsgált nyolc állapotban: a rácson, a
+nézőben és a szerkesztő mind a hat fülén **nulla** találat. A #6443 eltávolította
+a korábbi szürke bevezetőt. Az őr tehát
 REGRESSZIÓT fog: a #703/#3247 körökben kitakarított hibaosztály nem jöhet
 vissza némán.
 
@@ -141,11 +139,8 @@ def _esemeny_elem(elem: QObject) -> bool:
 
 #: ⭐ ÜRES — és ez a lényeg.
 #:
-#: Egyetlen nevesített kivétel volt, a `legacyEffectsIntro`: a fejlesztői
-#: gépen elfért két sorban, a CI mindkét lábán (nagyobb rendszerbetű)
-#: elidálódott. A #3278 lezárta — a bevezető rövidebb mondat lett, a
-#: kivett fél mondat pedig a buboréksúgóba került —, tehát a kivétel
-#: megszűnt. MINDEN levágás piros.
+#: A `legacyEffectsIntro` megszűnt a #6443-ban, így az őr minden feliratot
+#: mérhet. MINDEN levágás piros.
 #:
 #: ⛔ Ha ide új név kerül, tartozzon hozzá NYITOTT jegy és indoklás: a
 #: kivétel nélküli üres lista az alapállapot, nem a kényelmes kiindulás.
@@ -264,9 +259,8 @@ def _elem_leletei(elem: QObject) -> list[str]:
         minta in elem.metaObject().className() for minta in _GORGETHETO
     )
     # A Flickable contentHeight-je görgethető tartalom, nem a kirajzolt
-    # keret. Mért ellenpélda (#4183 futás): legacyEffectsScroll keret 262×244,
-    # contentHeight=666, viewerLeftDrawer=615 magas; a látható keret y=68..312,
-    # az elgörgethető tartalom vége y=68..734. Csak a keret túllógása lenne hiba.
+    # keret. Mért ellenpélda (#4183 futás): az összevont effekt-rács viewportja
+    # rövidebb a teljes görgethető tartalomnál; csak a keret túllógása lenne hiba.
     szelesseg = _meret(elem, "width")
     magassag = _meret(elem, "height")
     if not gorgetheto:
@@ -348,9 +342,9 @@ class TestARacsEsANezo:
 
 
 class TestASzerkesztoMindenFule:
-    """A hét fül külön ÁLLAPOT — a hiba fülenként más lehet."""
+    """A hat fül külön ÁLLAPOT — a hiba fülenként más lehet."""
 
-    @pytest.mark.parametrize("lap", range(7))
+    @pytest.mark.parametrize("lap", range(6))
     def test_a_fulon_nincs_tulcsordulas_es_levagas(self, lap, qml_app, qt_app):
         window, _controller, _engine = qml_app
         _nezot_nyit(window, qt_app)

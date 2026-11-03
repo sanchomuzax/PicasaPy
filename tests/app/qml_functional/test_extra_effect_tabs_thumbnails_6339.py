@@ -1,11 +1,14 @@
-"""#6339: a 6. és 7. effektfül használható gombjai valódi előnézetet mutatnak."""
+"""#6443: az összevont Glimmer/legacy fül gombjai előnézetet mutatnak."""
 
 from __future__ import annotations
+
+from pathlib import Path
 
 import numpy as np
 import pytest
 from PySide6.QtCore import QObject, QPointF, Qt
 from PySide6.QtGui import QImage
+from PySide6.QtQml import QQmlEngine, QQmlExpression
 from PySide6.QtQuick import QQuickItem
 
 from support.jpeg_factory import make_minta_jpeg
@@ -29,7 +32,9 @@ _PIXEL_CHECKS = {
     "effectLocalContrast",
     "legacyEffect_fill",
     "legacyEffect_autobacklight",
+    "legacyEffect_colorfix",
 }
+EXPECTED_VISIBLE_ROWS = 4.5
 
 
 def _make_photo(folder):
@@ -68,11 +73,15 @@ def _walk(item: QQuickItem):
         yield from _walk(child)
 
 
-def _item(window, name: str):
+def _maybe_item(window, name: str):
     for item in _walk(window.contentItem()):
         if item.objectName() == name:
             return item
-    found = window.findChild(QObject, name)
+    return window.findChild(QObject, name)
+
+
+def _item(window, name: str):
+    found = _maybe_item(window, name)
     assert found is not None, f"{name} nincs a kirajzolt felületen"
     return found
 
@@ -83,8 +92,11 @@ def _source(item) -> str:
 
 
 def _ready_thumb(item) -> bool:
+    context = QQmlEngine.contextForObject(item)
+    status_ready = QQmlExpression(context, item, "status === 1").evaluate()
     return (
         bool(item.property("visible"))
+        and bool(status_ready)
         and item.property("paintedWidth") > 0
         and max(item.property("implicitWidth"), item.property("implicitHeight")) > 16
     )
@@ -92,6 +104,31 @@ def _ready_thumb(item) -> bool:
 
 def _wait(qt_app, predicate, message: str) -> None:
     assert var_feltetelre(qt_app, predicate, 10.0), message
+
+
+def _scroll_into_view(qt_app, viewport, item) -> None:
+    """A képpontmérés előtt a görgethető csempe kerüljön a viewportba."""
+    y = item.mapToItem(viewport, 0, 0).y()
+    height = item.height()
+    viewport_height = viewport.height()
+    current = viewport.property("contentY")
+    if y < 0:
+        target = current + y
+    elif y + height > viewport_height:
+        target = current + y + height - viewport_height
+    else:
+        return
+    maximum = max(0.0, viewport.property("contentHeight") - viewport_height)
+    viewport.setProperty("contentY", min(max(0.0, target), maximum))
+    _wait(
+        qt_app,
+        lambda: (
+            item.mapToItem(viewport, 0, 0).y() >= -0.5
+            and item.mapToItem(viewport, 0, 0).y() + item.height()
+                <= viewport.height() + 0.5
+        ),
+        f"{item.objectName()} nem került be a görgethető nézetbe",
+    )
 
 
 def _rgb(image: QImage) -> np.ndarray:
@@ -144,7 +181,6 @@ def _assert_pixels_are_effected(window, thumb, provider) -> None:
     photo_id = image_id.split("/", 1)[0]
     record = provider._lookup(photo_id)
     assert record is not None
-    from pathlib import Path
     from picasapy.app import effect_thumbnails as mod
 
     source = provider._source_for(
@@ -159,8 +195,8 @@ def _assert_pixels_are_effected(window, thumb, provider) -> None:
 
 
 @pytest.mark.parametrize("height_delta", [-5, 0, 5])
-def test_sixth_and_legacy_effect_tabs_render_real_effect_previews(
-    app, qt_app, height_delta
+def test_combined_effect_tab_renders_four_and_half_rows_of_real_previews(
+    app, qt_app, height_delta, tmp_path
 ):
     window, controller, provider, initial_height = app
     window.resize(window.width(), initial_height + height_delta)
@@ -175,60 +211,94 @@ def test_sixth_and_legacy_effect_tabs_render_real_effect_previews(
     panel = _item(window, "viewerEditorPanel")
 
     panel.setProperty("activeTab", 5)
-    _wait(
-        qt_app,
-        lambda: all(
-            _ready_thumb(_item(window, name + "Thumb"))
-            for name in _TAB_6_BUTTONS
-            if _item(window, name) is not None
-        )
-        and all(_item(window, name) is not None for name in _TAB_6_BUTTONS),
-        "a 6. fül valamelyik gombján nem töltődött be valódi effekt-előnézet",
-    )
-    for name in _TAB_6_BUTTONS:
-        button = _item(window, name)
-        thumb = _item(window, name + "Thumb")
-        assert _source(thumb).startswith("image://effectthumb/")
-        if name in _PIXEL_CHECKS:
-            _assert_pixels_are_effected(window, thumb, provider)
-
-    panel.setProperty("activeTab", 6)
     legacy_effects = {
         effect["key"]: effect for effect in controller.legacyEffects
     }
-    legacy_names = {f"legacyEffect_{key}" for key in legacy_effects}
+    assert _maybe_item(window, "legacyEffect_focalpixelate") is None
+    assert all(
+        effect["enabled"]
+        for key, effect in legacy_effects.items()
+        if key != "focalpixelate"
+    )
+    combined_names = _TAB_6_BUTTONS + tuple(
+        f"legacyEffect_{key}" for key in legacy_effects
+        if key != "focalpixelate"
+    )
+    def all_previews_ready() -> bool:
+        for name in combined_names:
+            button = _maybe_item(window, name)
+            thumb = _maybe_item(window, name + "Thumb")
+            if button is None or thumb is None or not _ready_thumb(thumb):
+                return False
+        return True
+
     _wait(
         qt_app,
-        lambda: legacy_names.issubset(
-            {item.objectName() for item in _walk(window.contentItem())}
-        ),
-        "a 7. fül örökölt effektgombjai nem épültek fel",
+        all_previews_ready,
+        "az összevont fül valamelyik gombján nem töltődött be valódi előnézet",
     )
-    legacy_buttons = {name: _item(window, name) for name in legacy_names}
-    enabled = {
-        f"legacyEffect_{key}": legacy_buttons[f"legacyEffect_{key}"]
-        for key, effect in legacy_effects.items()
-        if effect["enabled"]
-    }
-    disabled = {
-        f"legacyEffect_{key}": legacy_buttons[f"legacyEffect_{key}"]
-        for key, effect in legacy_effects.items()
-        if not effect["enabled"]
-    }
-    assert enabled, "a 7. fülön nincs engedélyezett effektgomb"
-    assert disabled, "a 7. fül letiltott effektgombjai eltűntek"
-    _wait(
-        qt_app,
-        lambda: all(_ready_thumb(_item(window, name + "Thumb")) for name in enabled),
-        "a 7. fül valamelyik engedélyezett gombján nincs valódi előnézet",
-    )
-    for name in enabled:
+    viewport = _item(window, "effectsGrid4Viewport")
+    for name in combined_names:
+        button = _item(window, name)
         thumb = _item(window, name + "Thumb")
+        assert button.property("enabled") is True
         assert _source(thumb).startswith("image://effectthumb/")
         if name in _PIXEL_CHECKS:
+            _scroll_into_view(qt_app, viewport, thumb)
             _assert_pixels_are_effected(window, thumb, provider)
-    for name, button in disabled.items():
-        thumb = _item(window, name + "Thumb")
-        assert button.property("opacity") == pytest.approx(0.45)
-        assert _source(thumb) == ""
-        assert not thumb.property("visible")
+
+    grid = _item(window, "effectsGrid4")
+    glimmer_last_position = max(
+        (
+            _item(window, name).mapToItem(grid, 0, 0).y(),
+            _item(window, name).mapToItem(grid, 0, 0).x(),
+        )
+        for name in _TAB_6_BUTTONS
+    )
+    legacy_first_position = min(
+        (
+            _item(window, name).mapToItem(grid, 0, 0).y(),
+            _item(window, name).mapToItem(grid, 0, 0).x(),
+        )
+        for name in combined_names
+        if name.startswith("legacyEffect_")
+    )
+    assert legacy_first_position > glimmer_last_position
+
+    tab = _item(window, "editTabEffects4")
+    assert tab.property("description") == (
+        "Forgotten or deprecated effects brought back to life"
+    )
+    assert not any(
+        item.objectName() in {"editTabLegacy", "legacyEffectsIntro"}
+        for item in _walk(window.contentItem())
+    )
+    row_pitch = _item(window, "effectRoundedEdges").y() - _item(
+        window, "effectMatte"
+    ).y()
+    assert row_pitch > 0
+    assert viewport.height() / row_pitch == pytest.approx(
+        EXPECTED_VISIBLE_ROWS, abs=0.03
+    )
+
+    if height_delta == 0:
+        viewport.setProperty("contentY", 0)
+        _wait(
+            qt_app,
+            lambda: abs(viewport.property("contentY")) <= 0.5,
+            "az összevont effektlista nem állt vissza a tetejére",
+        )
+        frame = window.grabWindow()
+        scene_origin = panel.mapToScene(QPointF(0, 0))
+        scale_x = frame.width() / window.width()
+        scale_y = frame.height() / window.height()
+        crop = frame.copy(
+            round(scene_origin.x() * scale_x),
+            round(scene_origin.y() * scale_y),
+            round(panel.width() * scale_x),
+            round(panel.height() * scale_y),
+        )
+        assert crop.save(str(tmp_path / "6443-editor-effects.png"))
+
+
+# rontás-kontroll: tests.app.qml_functional.test_extra_effect_tabs_thumbnails_6339.EXPECTED_VISIBLE_ROWS = 2.5 → 1 failed

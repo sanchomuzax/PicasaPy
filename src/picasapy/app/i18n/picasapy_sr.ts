@@ -16700,6 +16700,12 @@ picasapy-origin-key: stringres:CThumbUI::Artistic</extracomment>
             <translation>Наслијеђени ефекти</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/EditorTabBar.qml" />
+            <source>Forgotten or deprecated effects brought back to life</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Заборављени или укинути ефекти, поново оживљени</translation>
+        </message>
+        <message>
             <source>Commonly needed fixes</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Често потребни исправци</translation>
@@ -17063,6 +17069,13 @@ picasapy-origin-key: stringres:ImageFilters::Brightness</extracomment>
             <source>Color Mix</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Мијешање боја</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EditorParamPanel.qml" />
+            <source>Color Temperature</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:filter_colorfix_label2</extracomment>
+            <translation>Температура боја</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EditorParamPanel.qml" />

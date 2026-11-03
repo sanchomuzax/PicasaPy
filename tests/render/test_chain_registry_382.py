@@ -4,8 +4,8 @@ dokumentált szűrőnév felvétele.
 Öt közülük (`save`, `rot`, `crop`, `moviestart`, `movieend`) NEM képi
 művelet (`mode="history"` vagy mozi-vágás-jelölő) — ezek a `picnik=1;`
 mintájára néma no-op-ként nyelődnek el, NEM kerülnek a `skipped` listába. A
-maradék 21 a `KNOWN_UNRENDERED_OPS`-ba kerül: felismerve, de vizuális
-modell nélkül — a `skipped` listában jelennek meg (#347 mintája).
+korábbi modell nélküli nevek a `KNOWN_UNRENDERED_OPS`-ba kerültek; a későbbi
+jegyek (köztük a #6443) a megfejtett effekteket fokozatosan kiemelik belőle.
 
 Mindegyikre round-trip tesztet is futtatunk: a `.picasa.ini`
 parszer/serializer szintjén (`picasapy.ini.filters`) ezek a nevek bitre
@@ -74,6 +74,7 @@ _NOOP_NAMES = ("save", "rot", "crop", "moviestart", "movieend")
 #: #1142: a `blur` is átkerült — a `merokit-2` szett három csúszkaállása
 #: kimérte, hogy a csúszkatartomány FÖLÖTTI küszöbnél valódi elmosást ad
 #: (ld. `render/blur.py`).
+#: #6443: a `colorfix` és a `whitept` natív aktív ágát bekötöttük.
 #: #5304: a `rainbow` a #5296 spec szerint renderel, a 853 soros k08 export
 #: hat vízszintes sávjával és a natív paletta-/gamma-keveréssel.
 _NOW_RENDERED_NAMES = (
@@ -94,6 +95,8 @@ _NOW_RENDERED_NAMES = (
     "backlight",
     "shadow",
     "rainbow",
+    "colorfix",
+    "whitept",
 )
 
 #: A 26-ból az, amelyik HALOTT legacy névnek bizonyult (#567): a natív
@@ -126,11 +129,12 @@ class TestAll26NamesCovered:
         # `radtint` (#565), az `autobacklight` (#567), az irányított család
         # négy tagja (#623), majd a natív tónus-/szín-szűrők nyolcasa (#687)
         # átkerült a renderelők közé, a `focalpixelate` pedig halott legacy
-        # névnek bizonyult (#567). A `rainbow` is renderel a #5304 óta.
+        # névnek bizonyult (#567). A `rainbow` is renderel a #5304 óta,
+        # a `colorfix` és `whitept` aktív ága pedig a #6443-ban.
         assert len(_NOOP_NAMES) == 5
-        assert len(_NOW_RENDERED_NAMES) == 17
+        assert len(_NOW_RENDERED_NAMES) == 19
         assert len(_DEAD_LEGACY_KEYS) == 1
-        assert len(_UNRENDERED_NAMES) == 3
+        assert len(_UNRENDERED_NAMES) == 1
         assert (
             set(_NOOP_NAMES)
             | set(_NOW_RENDERED_NAMES)
