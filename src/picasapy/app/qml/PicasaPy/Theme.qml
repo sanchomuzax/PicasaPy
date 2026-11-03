@@ -55,6 +55,8 @@ QtObject {
         readonly property color brandBlue: "#448afd"
         readonly property color brandPurple: "#9b479f"
         readonly property color brandSlate: "#4b5d5f"
+        // a dizájnkézikönyv kékje (docs/assets/brandbook): a frissítési jelvény (#6473)
+        readonly property color brandbookBlue: "#3478db"
 
         // ------- felület: semleges keret -------
         readonly property color canvasBg: tema.dark ? "#232323" : "#eaeaea"       // vászon (app-háttér)
@@ -592,6 +594,7 @@ QtObject {
     readonly property color brandBlue: tema._szin("brandBlue", nyersTokenek.brandBlue)
     readonly property color brandPurple: tema._szin("brandPurple", nyersTokenek.brandPurple)
     readonly property color brandSlate: tema._szin("brandSlate", nyersTokenek.brandSlate)
+    readonly property color brandbookBlue: tema._szin("brandbookBlue", nyersTokenek.brandbookBlue)
     readonly property color canvasBg: tema._szin("canvasBg", nyersTokenek.canvasBg)
     readonly property color contentPanel: tema._szin("contentPanel", nyersTokenek.contentPanel)
     readonly property color panelBg: tema._szin("panelBg", nyersTokenek.panelBg)
