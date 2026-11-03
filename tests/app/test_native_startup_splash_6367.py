@@ -10,15 +10,18 @@ from types import SimpleNamespace
 
 import pytest
 from PySide6.QtCore import QPoint, QRect, QSize, Qt
-from PySide6.QtGui import QColor, QGuiApplication
+from PySide6.QtGui import QColor, QFontMetrics, QGuiApplication
 
 from picasapy.app.startup_splash import (
     _center_splash_position,
     _close_after_first_frame,
     _create_splash_pixmap,
+    _logo_csoport_helyei,
     _logo_pixmap,
     _splash_is_enabled,
     _splash_preference_enabled,
+    _splash_wordmark_font,
+    _SZOJEL,
     IndulasAblak,
     _splash_window_flags,
     _strip_nosplash,
@@ -42,6 +45,12 @@ def _feher_a_terulet(image, rect: QRect) -> bool:
         for y in range(rect.top(), rect.bottom() + 1)
         for x in range(rect.left(), rect.right() + 1)
     )
+
+
+def _szojel_mert_szelessege() -> int:
+    """A szójel befoglaló szélessége a futó platform betűképével (#6498)."""
+    _app()
+    return QFontMetrics(_splash_wordmark_font()).tightBoundingRect(_SZOJEL).width()
 
 
 class _Beallitasok:
@@ -140,13 +149,15 @@ def test_a_raszteres_indulokep_a_meret_es_a_feher_kepteruletet_tartja() -> None:
 def test_a_sajat_emblema_a_meresi_dobozban_van_es_a_felirat_nincs_raszterhez_kotve():
     _app()
     image = _create_splash_pixmap("v9.9.9").toImage()
+    emblema_helye, szojel_helye = _logo_csoport_helyei(_szojel_mert_szelessege())
 
-    # A színes saját embléma képpontjai a Picasa-embléma mért befoglaló dobozán belül maradnak.
-    logo_box = QRect(14 + 41, 14 + 57, 123, 123)
+    # A színes saját embléma képpontjai a középre igazított embléma befoglaló dobozán belül
+    # maradnak. A szójel bal széléig keresünk, így a szójel képpontjai nem számítanak bele.
+    logo_box = emblema_helye.translated(14, 14)
     colored = [
         (x, y)
         for y in range(logo_box.top(), logo_box.bottom() + 1)
-        for x in range(logo_box.left(), logo_box.right() + 1)
+        for x in range(14, 14 + szojel_helye.left())
         if image.pixelColor(x, y).rgb() != QColor("#ffffff").rgb()
     ]
     assert len(colored) > 500
@@ -155,7 +166,7 @@ def test_a_sajat_emblema_a_meresi_dobozban_van_es_a_felirat_nincs_raszterhez_kot
     assert min(y for _, y in colored) >= logo_box.top()
     assert max(y for _, y in colored) <= logo_box.bottom()
 
-    text_box = QRect(14 + 182, 14 + 93, 458, 52)
+    text_box = szojel_helye.translated(14, 14)
     assert any(
         image.pixelColor(x, y).rgb() != QColor("#ffffff").rgb()
         for y in range(text_box.top(), text_box.bottom() + 1)
@@ -167,8 +178,11 @@ def test_a_sajat_emblema_a_meresi_dobozban_van_es_a_felirat_nincs_raszterhez_kot
     source = (
         Path(__file__).resolve().parents[2] / "src/picasapy/app/startup_splash.py"
     ).read_text(encoding="utf-8")
-    assert "_EMBLEMA_HELYE = QRect(41, 57, 123, 123)" in source
-    assert "_SZOJEL_HELYE = QRect(182, 93, 458, 52)" in source
+    assert "_EMBLEMA_MERET = QSize(123, 123)" in source
+    assert "_EMBLEMA_FELSO = 57" in source
+    assert "_SZOJEL_FELSO = 93" in source
+    assert "_SZOJEL_MAGASSAG = 52" in source
+    assert "_EMBLEMA_SZOJEL_RES = 18" in source
     assert '_SZOJEL_SZIN = QColor("#4C5B5E")' in source
     assert '_SZOJEL_BETUCSALAD = "Open Sans"' in source
     assert "_SZOJEL_BETUMERET = 53" in source
@@ -177,9 +191,11 @@ def test_a_sajat_emblema_a_meresi_dobozban_van_es_a_felirat_nincs_raszterhez_kot
 def test_a_felso_es_jobb_also_resz_cim_es_google_jel_nelkul_marad() -> None:
     _app()
     image = _create_splash_pixmap("v9.9.9").toImage()
+    _, szojel_helye = _logo_csoport_helyei(_szojel_mert_szelessege())
     assert _feher_a_terulet(image, QRect(14, 14, 640, 10))
     assert _feher_a_terulet(image, QRect(14 + 523, 14 + 189, 100, 35))
-    assert _feher_a_terulet(image, QRect(14 + 182, 14 + 160, 330, 28))
+    # a szójel alatti fehér sáv a szójel (#6498 után középre tolt) bal széléhez igazodik
+    assert _feher_a_terulet(image, QRect(14 + szojel_helye.left(), 14 + 160, 330, 28))
     assert not _logo_pixmap().isNull()
     assert _version_label("v0.9-test") == "v0.9-test"
 
