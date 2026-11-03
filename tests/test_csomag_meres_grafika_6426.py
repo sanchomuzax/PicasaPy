@@ -369,4 +369,5 @@ def test_a_splash_keresese_nem_kuld_uzenetet_az_ablaknak():
     forras = inspect.getsource(windows_modul._splash_ablak)
     assert "SendMessage" not in forras
     assert "picasapy startup" in forras.casefold()
+    assert "tktoplevel" in forras.casefold(), "a bootloader indulóablaka is mérendő"
     assert "_ablakikonok" not in inspect.getsource(ido_modul._bevar)
