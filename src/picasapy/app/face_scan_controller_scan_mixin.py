@@ -190,7 +190,7 @@ class FaceScanControllerScanMixin:
         automatic: bool,
         photos: tuple[PhotoRecord, ...] | None = None,
     ) -> None:
-        if not self._detector.available:
+        if not automatic and not self._detector.available:
             # #4517: a felület jelzése mellett a hibanaplóba is kerüljön,
             # különben a „nem talál arcot” okát semmi nem rögzíti.
             if not self._unavailable_logged:
@@ -232,8 +232,12 @@ class FaceScanControllerScanMixin:
         Az eredeti `FRAddSuggesetions` kapcsolója az egész csoportosítási/
         javaslati lépést kapuzza. A kézi csoportosítás változatlanul elérhető
         kikapcsolt beállítás mellett; az automatikus út a küszöböket a már
-        meglévő `computeEmbeddings()` híváson keresztül veszi át.
+        meglévő `computeEmbeddings()` híváson keresztül veszi át. Üres
+        keresési eredménynél nincs új csoportosítandó adat, ezért ne indítsuk
+        el az SFace/OpenCV betöltését sem.
         """
+        if not _found and not _scanned:
+            return
         if self.suggestionsEnabled():
             self.computeEmbeddings()
 
@@ -255,7 +259,6 @@ class FaceScanControllerScanMixin:
     ) -> None:
         elozo_szalszam: int | None = None
         try:
-            elozo_szalszam = arckeres_szal_elokeszitese()
             with open_index(self._db_path) as conn:
                 # #4887: a szkennelés a rejtett mappák képein is fut (az
                 # eredménye a megjelenítéskor szűrődik)
@@ -272,6 +275,20 @@ class FaceScanControllerScanMixin:
                         pending = set()
                     self._pending_paths = pending
                 self._set_unchecked_files(len(pending))
+                if pending and not self._detector.available:
+                    # Automatikus szinkron után gyakori, hogy nincs új fotó.
+                    # Ilyenkor ne töltsük be az OpenCV-t pusztán az állapot
+                    # lekérdezéséért; a detektor csak valódi munkánál kell.
+                    if not self._unavailable_logged:
+                        self._unavailable_logged = True
+                        _log.warning(
+                            "az arcfelismerés nem indul: %s",
+                            self.unavailableReason(),
+                        )
+                    self.modelUnavailable.emit()
+                    return
+                if pending:
+                    elozo_szalszam = arckeres_szal_elokeszitese()
                 found = 0
                 scanned = 0
                 for done, photo in enumerate(photos, start=1):
