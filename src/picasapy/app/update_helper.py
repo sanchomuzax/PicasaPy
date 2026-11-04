@@ -5,9 +5,12 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
+import subprocess
 import tempfile
 
 KILEPESI_HATARIDO_MP = 20.0
+#: modulszintű fogantyú (#1375): a teszt ezt cseréli, nem a globális subprocess-t
+_popen = subprocess.Popen
 
 
 def installation_kind(
@@ -76,14 +79,12 @@ def kenyszeritett_kilepes_ha_beragad(
 
 def inditsd_a_segedet(args: list[str], *, emelt: bool, platform: str) -> bool:
     """A frissítő segéd indítása; UAC-ot csak akkor kér, ha `emelt` (#6340)."""
-    import subprocess
-
     # #6534: a segéd munkamappája a saját mappája legyen, ne a miénk. A programot
     # az Intéző a telepítési mappából indítja, és Windowson egy mappa nem
     # nevezhető át, amíg bármely folyamat munkamappája benne van (WinError 32).
     munkamappa = str(Path(args[0]).parent)
     if platform != "win32":
-        subprocess.Popen(args, close_fds=True, cwd=munkamappa)
+        _popen(args, close_fds=True, cwd=munkamappa)
         return True
     import ctypes
 

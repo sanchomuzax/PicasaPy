@@ -18,12 +18,10 @@ from picasapy.app import update_folyamatok, update_helper, update_swap_helper
 
 def test_a_seged_munkamappaja_nem_windowson_a_seged_sajat_mappaja(monkeypatch, tmp_path):
     hivasok = []
-    import subprocess
-
-    monkeypatch.setattr(subprocess, "Popen", lambda args, **kw: hivasok.append(kw))
+    monkeypatch.setattr(update_helper, "_popen", lambda args, **kw: hivasok.append(kw))
     seged = tmp_path / "PicasaPy-update" / "PicasaPyUpdateHelper-1.exe"
     assert update_helper.inditsd_a_segedet([str(seged), "--pid", "1"], emelt=False, platform="linux")
-    assert hivasok[0]["cwd"] == str(seged.parent)
+    assert Path(hivasok[0]["cwd"]) == seged.parent
 
 
 def test_windowson_a_shellexecute_megkapja_a_seged_mappajat(monkeypatch, tmp_path):
@@ -36,8 +34,8 @@ def test_windowson_a_shellexecute_megkapja_a_seged_mappajat(monkeypatch, tmp_pat
     assert update_helper.inditsd_a_segedet([str(seged), "--pid", "1"], emelt=True, platform="win32")
     _hwnd, ige, fajl, _param, munkamappa, _mutat = hivasok[0]
     assert ige == "runas"
-    assert fajl == str(seged)
-    assert munkamappa == str(seged.parent)
+    assert Path(fajl) == seged
+    assert Path(munkamappa) == seged.parent
 
 
 def test_a_csomagolt_seged_legelso_lepese_a_munkamappa_athelyezese(monkeypatch, tmp_path):
@@ -68,7 +66,7 @@ def test_az_onellenorzes_ablak_es_indulokep_nelkul_fut_a_telepitesen_kivul(monke
     )
     exe = tmp_path / "PicasaPy" / "PicasaPy.exe"
     assert update_swap_helper._onellenorzes(exe)
-    assert hivas["cwd"] == str(tmp_path)
+    assert Path(hivas["cwd"]) == tmp_path
     assert hivas["env"]["PYINSTALLER_SUPPRESS_SPLASH_SCREEN"] == "1"
     assert hivas["env"]["QT_QPA_PLATFORM"] == "offscreen"
 
@@ -91,7 +89,7 @@ def test_az_uj_program_ugy_indul_mint_az_intezobol(monkeypatch, tmp_path):
     monkeypatch.setattr(update_swap_helper, "_popen", lambda args, **kw: hivas.update(kw, args=args))
     exe = tmp_path / "PicasaPy" / "PicasaPy.exe"
     update_swap_helper.inditsd_a_felhasznalonak(exe)
-    assert hivas["cwd"] == str(exe.parent)
+    assert Path(hivas["cwd"]) == exe.parent
     assert "PYINSTALLER_SUPPRESS_SPLASH_SCREEN" not in hivas.get("env", os.environ)
 
 
