@@ -597,7 +597,7 @@ A #4398 elején megadott 53-as szám a #4339 korábbi pillanatfelvétele volt; a
 | 24 | `Main.qml` — címkékpanel | `Ctrl+T` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
 | 25 | `Main.qml` — tulajdonságpanel | `Alt+Return` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
 | 26 | `Main.qml`: Időrend-bemutató | `Ctrl+5` | Aktív, ha a néző és a diavetítés nem nyitott; kijelölés nélkül is megnyitja a teljes képernyős bemutatót (#5377). |
-| 27 | `Main.qml` — átnevezés | `F2` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. A kijelölés kezelőfeltétel, nem külön `Shortcut`-kapu. |
+| 27 | `MainKeyboardShortcuts.qml` — átnevezés | `F2` | Könyvtárnézet és néző (#6530: a menüsáv `0xd6da28` rekordja a nézőben is él); nincs fókuszban szövegmező, nem fut diavetítés. A nézőben a látott képet nevezi át. |
 | 28 | `Main.qml` — exportálás mappába | `Ctrl+Shift+S` | Könyvtárnézet; `viewerOpen == false`, nincs fókuszban szövegmező. |
 | 29 | `Main.qml` — `shortcutDeleteFromDiskGrid` | `Ctrl+Delete` | Könyvtárnézet; `viewerOpen == false`, nincs szövegfókusz és van kijelölt sor. |
 | 30 | `Main.qml` — `shortcutDeleteFromDiskViewer` | `Ctrl+Delete` | Néző; `viewerOpen == true`, nincs szövegfókusz és van aktuális kép. |
