@@ -38,8 +38,11 @@ _SPLASH_MERET = QSize(
     _TARTALOM_MERET.width() + 2 * _ARNYEKSAV,
     _TARTALOM_MERET.height() + 2 * _ARNYEKSAV,
 )
-_EMBLEMA_HELYE = QRect(41, 57, 123, 123)
-_SZOJEL_HELYE = QRect(182, 93, 458, 52)
+_EMBLEMA_MERET = QSize(123, 123)
+_EMBLEMA_FELSO = 57
+_SZOJEL_FELSO = 93
+_SZOJEL_MAGASSAG = 52
+_EMBLEMA_SZOJEL_RES = 18
 _SZOJEL_SZIN = QColor("#4C5B5E")
 _SZOJEL_BETUCSALAD = "Open Sans"
 _SZOJEL_BETUMERET = 53
@@ -121,6 +124,23 @@ def _version_label(version: str) -> str:
     return version
 
 
+def _logo_csoport_helyei(szojel_szelesseg: int) -> tuple[QRect, QRect]:
+    """Az embléma és a szójel helye: a csoport (embléma + rés + szójel) vízszintes közepén.
+
+    A függőleges helyzet változatlan. A szójel szélessége a mért befoglaló
+    téglalap szélessége, így a csoport a tényleges betűképhez igazodik (#6498)."""
+    csoport_szelesseg = _EMBLEMA_MERET.width() + _EMBLEMA_SZOJEL_RES + szojel_szelesseg
+    bal = (_TARTALOM_MERET.width() - csoport_szelesseg) // 2
+    emblema = QRect(QPoint(bal, _EMBLEMA_FELSO), _EMBLEMA_MERET)
+    szojel = QRect(
+        bal + _EMBLEMA_MERET.width() + _EMBLEMA_SZOJEL_RES,
+        _SZOJEL_FELSO,
+        szojel_szelesseg,
+        _SZOJEL_MAGASSAG,
+    )
+    return emblema, szojel
+
+
 def _logo_pixmap() -> QPixmap:
     assets = Path(__file__).resolve().parent / "assets"
     logo = QPixmap(str(assets / "logo.svg"))
@@ -144,24 +164,26 @@ def _create_splash_pixmap(version: str, *, dark: bool = False) -> QPixmap:
     _draw_splash_shadow(painter, kartya)
     painter.fillRect(kartya, QColor("#ffffff"))
 
+    font = _splash_wordmark_font()
+    metrics = QFontMetrics(font)
+    text_bounds = metrics.tightBoundingRect(_SZOJEL)
+    emblema_helye, szojel_helye = _logo_csoport_helyei(text_bounds.width())
+
     logo = _logo_pixmap()
     if not logo.isNull():
         if logo.width() > logo.height() * 2:
             logo = logo.copy(QRect(0, 0, logo.height(), logo.height()))
         logo = logo.scaled(
-            _EMBLEMA_HELYE.size(),
+            emblema_helye.size(),
             Qt.AspectRatioMode.IgnoreAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
         )
-        painter.drawPixmap(_EMBLEMA_HELYE.translated(kartya.topLeft()), logo)
+        painter.drawPixmap(emblema_helye.translated(kartya.topLeft()), logo)
 
-    font = _splash_wordmark_font()
-    metrics = QFontMetrics(font)
-    text_bounds = metrics.tightBoundingRect(_SZOJEL)
-    text_x = _SZOJEL_HELYE.left() - text_bounds.left()
+    text_x = szojel_helye.left() - text_bounds.left()
     text_y = (
-        _SZOJEL_HELYE.top()
-        + (_SZOJEL_HELYE.height() - text_bounds.height()) // 2
+        szojel_helye.top()
+        + (szojel_helye.height() - text_bounds.height()) // 2
         - text_bounds.top()
     )
     painter.setFont(font)

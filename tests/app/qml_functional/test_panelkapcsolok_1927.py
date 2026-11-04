@@ -19,9 +19,11 @@ A tálca függőleges méretei 1:1-ben képpontok.
 | `tags_toggle` | 665…725 | 60×24 |
 | `properties_toggle` | 725…785 | 60×24 |
 
-A négy gomb **érintkezik** (nincs köztük rés), és a típusneveik a
-szegmens-szerepet is megadják: `buttcon_LS_` · `_MS_` · `_MS_` · `_RS_`
-⇒ összefüggő szegmenssáv, nem négy különálló gomb.
+A fenti méretek az eredeti Picasa rétegei; a cellák ma is érintkeznek. A
+#6499 javítása óta mind a négy gomb kerete két oldalt 1-1 képponttal beljebb
+fut, így önálló, lekerekített gombként, 2 képpontos réssel látszanak; a
+kirajzolt réseket és sarkokat a
+`test_also_sav_felso_sor_res_6499b.py` ellenőrzi.
 
 ## ⚠️ Amit ez az őr NEM állít
 
@@ -99,13 +101,15 @@ class TestAGeometria:
             f"{csoport.width()} a mért `metadata_group` 240 helyett"
         )
 
-    def test_a_gombok_ERINTKEZNEK(self, qml_app, qt_app):
-        """A mérés szerint nincs köztük rés (545→605→665→725→785)."""
+    def test_a_cellak_erintkeznek_a_keretek_beljebb_futnak(self, qml_app, qt_app):
+        """A cellák érintkeznek; a látható 2 px rést az 1-1 px-es behúzás adja."""
         window, _c, _e = qml_app
         gombok = [_elem(window, f"trayPanelToggle_{n}") for n in _NEVEK]
         for elozo, kovetkezo in zip(gombok, gombok[1:], strict=False):
             res = kovetkezo.x() - (elozo.x() + elozo.width())
-            assert res == 0.0, f"{res} képpont rés a gombok közt"
+            assert res == 0.0, f"{res} képpont rés a cellák közt"
+            assert elozo.property("rightInset") == 1
+            assert kovetkezo.property("leftInset") == 1
 
 
 class TestABekotes:

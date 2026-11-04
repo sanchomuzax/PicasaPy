@@ -27,6 +27,11 @@ Flickable {
     // vékony `paramLabel()`-je ezt hívja tovább, hogy a meglévő tesztek
     // változatlanul a panelen szólíthassák meg.
     function paramLabel(key) {
+        if (key === "Brightness" && panel.paramEffectName === "triple") {
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: stringres:filter_triple_label1
+            return qsTr("Brightness", "Legacy Lighting Fixes")
+        }
         switch (key) {
         case "Amount": return qsTr("Amount")
         case "Saturation": return qsTr("Saturation")
@@ -83,6 +88,45 @@ Flickable {
         case "Shadow Color": return qsTr("Shadow Color")
         case "Background Color": return qsTr("Background Color")
         case "Lighten": return qsTr("Lighten")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:filter_dir_sat_label1;stringres:filter_dir_brite_label1;stringres:filter_dir_sharp_label1
+        case "Left to Right": return qsTr("Left to Right")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:filter_dir_sat_label2;stringres:filter_dir_brite_label2;stringres:filter_dir_sharp_label2
+        case "Top to Bottom": return qsTr("Top to Bottom")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:filter_triple_label3;stringres:filter_triple2_label1;stringres:filter_triple3_label1
+        case "Fill Light": return qsTr("Fill Light")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:filter_triple2_label2
+        case "Black Point": return qsTr("Black Point")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:filter_triple2_label3;stringres:EXIF::WhitePoint
+        case "White Point": return qsTr("White Point")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:filter_triple3_label2
+        case "Highlights": return qsTr("Highlights")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:filter_triple3_label3
+        case "Shadows": return qsTr("Shadows")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:filter_shadow_label2
+        case "Shadow %": return qsTr("Shadow %")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:filter_shadow_label3
+        case "Highlight %": return qsTr("Highlight %")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:filter_gamma_label1
+        case "Level": return qsTr("Level")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:filter_colortemp_label1
+        case "Cool to Warm": return qsTr("Cool to Warm")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:filter_colortemp_label2
+        case "White Shift": return qsTr("White Shift")
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:filter_blur_label1
+        case "Threshold": return qsTr("Threshold")
         // #600: a Picasa saját szótárából (`Picasa3i18n.dll`,
         // `ImageFilters`) átvett feliratok — ld.
         // `docs/specs/picasa-effekt-feliratok.md`
@@ -219,6 +263,7 @@ Flickable {
                 //: Az oszlop szélessége horgonyból jön, tehát kötésmentes.
                 Layout.preferredWidth: effectParamColumn.width
                 spacing: 2
+                visible: paramRow.controlKind !== "puck"
 
                 // #650: a `kind` szerinti láthatóság. A delegate mindhárom
                 // ágat TARTALMAZZA (ez adja a Repeater stabil indexelését),
@@ -233,7 +278,8 @@ Flickable {
                 // katalógus túlnyomó többsége, és így egy jövőbeli, még nem
                 // ismert fajta sem tünteti el a vezérlőt nyomtalanul.
                 readonly property string controlKind:
-                    paramRow.modelData.kind === "checkbox"
+                    paramRow.modelData.kind === "puck" ? "puck"
+                    : paramRow.modelData.kind === "checkbox"
                     || paramRow.modelData.kind === "color"
                         ? paramRow.modelData.kind : "slider"
 

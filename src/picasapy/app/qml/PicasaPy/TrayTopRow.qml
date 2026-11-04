@@ -20,9 +20,8 @@ Item {
     }
 
     // `startoggle` · `rotateleft` · `rotateright`: 36 × 22
-    // egyenként, a csillag után 5 képpont hézag, a két forgatás
-    // 37 képpontos osztásközzel (mérve: 697…732 · 738…773 ·
-    // 775…810 egy 1918 képpontos ablakban).
+    // egyenként; a csillag után 5, a forgatógombok között 2
+    // képpont háttérrel. A jobbra gomb egy képponttal jobbra kerül.
     Row {
         id: trayStarGroup
         objectName: "trayStarGroup"
@@ -32,7 +31,7 @@ Item {
         //: képernyőképén 698 = 700,07 − 3).
         x: -3
         height: parent.height
-        spacing: 1
+        spacing: 0
 
         PicasaButton {
             id: trayStar
@@ -101,9 +100,8 @@ Item {
             }
             }
         }
-        //: #3602: a csillag utáni rés `S+38 − (S−3) − 36 = 5`
-        //: (a `spacing` 1-ből kettő már megvan a két oldalán)
-        Item { width: 3; height: 1 }
+        //: #6499: az 5 képpontos csillagköz külön spacerrel marad meg.
+        Item { width: 5; height: 1 }
         PicasaButton {
             id: trayRotateLeftBtn
             objectName: "trayRotateLeft"
@@ -149,6 +147,8 @@ Item {
             }
             }
         }
+        //: #6499: a két forgatógomb között pontosan 2 képpont háttér.
+        Item { width: 2; height: 1 }
         PicasaButton {
             id: trayRotateRightBtn
             objectName: "trayRotateRight"
@@ -201,12 +201,13 @@ Item {
     //   tags_toggle        665..725             →   60×24
     //   properties_toggle  725..785             →   60×24
     //
-    // A négy gomb ÉRINTKEZIK (545→605→665→725→785, nincs rés),
-    // és a típusneveik a szegmens-szerepet is megadják:
-    // `buttcon_LS_` (bal szélső) · `_MS_` (két középső) ·
-    // `_RS_` (jobb szélső) ⇒ ÖSSZEFÜGGŐ SZEGMENSSÁV, nem négy
-    // különálló gomb. A `_text_RC` utótag: az ikon balra, a
-    // felirat tőle jobbra, függőlegesen középre.
+    //: Az eredeti 60×24-es rétegek érintkeznek. A #6499 a négy
+    //: gombot különálló, lekerekített vezérlőként rajzolja: a cellák
+    //: továbbra is 60×24-esek és érintkeznek (a csoport 240 px, a jobb
+    //: széle és a csúszka helye marad), de mindegyik kerete két oldalt
+    //: 1-1 képponttal beljebb fut, így a szomszédok között 2 px rés látszik.
+    //: A `_text_RC` utótag az eredeti ikon + felirat elrendezését jelöli;
+    //: nálunk a gombok ikonosak, a felirat a súgóban és az elérhető névben él.
     //
     // A panelek MEGVANNAK (`activeDrawerTab`: people/places/
     // tags/properties) — itt csak a MÁSODIK belépési pont
@@ -238,7 +239,7 @@ Item {
         anchors.right: parent.right
         anchors.rightMargin: 5
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 0            // a gombok ÉRINTKEZNEK (mérve)
+        spacing: 0
 
         readonly property var kapcsolok: [
             { nev: "people", ikon: "panel-emberek.svg",
@@ -269,11 +270,6 @@ Item {
                 lenyomasra: true
                 width: 60
                 height: 24
-                //: a szegmens-szerep: a szélsők lekerekítve, a
-                //: középsők nem — így áll össze az összefüggő sáv
-                readonly property bool balSzelso: index === 0
-                readonly property bool jobbSzelso:
-                    index === trayMetadataGroup.kapcsolok.length - 1
                 //: #3709: a sáv KÜLSŐ kerete 1 képponttal
                 //: beljebb fut, mint a 60 × 24-es cella. A
                 //: `globalbuttons/left_segment_n`,
@@ -289,8 +285,8 @@ Item {
                 //: 1844/1845, a keret 22 sor magas a 24-ből.
                 topInset: 1
                 bottomInset: 1
-                leftInset: balSzelso ? 1 : 0
-                rightInset: jobbSzelso ? 1 : 0
+                leftInset: 1
+                rightInset: 1
                 //: #718-minta: a főablak átmenetileg null lehet
                 //: az engine leépítésekor.
                 //:

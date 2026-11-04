@@ -423,14 +423,10 @@ def test_forcefit_szuro_nyitasa_illesztesre_valt(
 
     if filter_id == "tilt":
         assert panel.property("tiltActive") is True
-    elif filter_id in {"radblur", "radsat", "dir_tint", "radtint"}:
+    else:
+        # #6497: a négy régi effekt is beállítópanelt nyit (csúszka + puck).
         assert panel.property("paramPanelActive") is True
         assert panel.property("paramEffectName") == filter_id
-    else:
-        effect_counts = viewer.property("editCtl").property("effectChainCounts")
-        assert effect_counts.get(filter_id, 0) == 1, (
-            f"a {filter_id} legacy eszköz felületi kattintása nem alkalmazódott"
-        )
 
     assert viewer.property("zoomValue") == 0, (
         f"a {filter_id} eszköz megnyitása után a néző maradjon kitöltő nézetben"

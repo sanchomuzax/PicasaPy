@@ -19,8 +19,13 @@ import QtQuick.Layouts
 // adja az akkumulátorhoz — vagyis a lépés a gomb saját doboza: **55**.
 // Ezért nincs hézag a gombok között az eredetiben.
 //
-// A cella tehát VÍZSZINTESEN pontosan akkora, mint a gomb (55), és csak
-// FÜGGŐLEGESEN marad a 2-2 képpontos margó (40 − 36). Ez a komponens ezt
+// #6499: a mért 55-ös LÉPÉS megmarad, de a gomb vízszintesen 53 képpont,
+// 1-1 képpont margóval mindkét oldalon. Így a szomszédos gombok keretei
+// között 2 képpont háttér van. Az eredeti kirajzolás szerint a gombok
+// érintkeztek; a tulajdonos ezt hibás elrendezésnek jelezte, nem
+// Picasa-viselkedésnek, ezért tértünk el tőle. A cella-lépés (55) és az
+// ablakszélesség-modell változatlan, a sáv többi eleme nem mozdul.
+// Függőlegesen a 2-2 képpontos margó marad (40 - 36). Ez a komponens ezt
 // a két dobozt valósítja meg, hogy a méret EGY helyen éljen: a hívó csak
 // beleteszi a gombját, és az méret szerint garantáltan egységes lesz a
 // szomszédaival.
@@ -34,13 +39,15 @@ Item {
     //: a mért geometria — a hívók és a tesztek is innen olvashatják
     //: #1504: a cella SZÉLESSÉGE az OSZTÁSKÖZ (55), nem a `docbounds`
     //: grafika 59-e; a MAGASSÁGA marad a mért 40.
+    //: #6499: a gomb 53 széles (nem 55), hogy a szomszédos gombok között
+    //: legyen rés; a lépés (cellWidth) 55 marad.
     readonly property int cellWidth: 55
     readonly property int cellHeight: 40
-    readonly property int buttonWidth: 55
+    readonly property int buttonWidth: 53
     readonly property int buttonHeight: 36
-    //: a margó IRÁNYONKÉNT külön (#1504): vízszintesen (55 − 55) / 2 = 0,
-    //: függőlegesen (40 − 36) / 2 = 2. Egyetlen `buttonMargin` mindkettőre
-    //: hamis volna — a vízszintes rés épp az, ami az eredetiben NINCS.
+    //: a margó IRÁNYONKÉNT külön: vízszintesen (55 - 53) / 2 = 1 (#6499),
+    //: függőlegesen (40 - 36) / 2 = 2 (#1504). Egyetlen `buttonMargin`
+    //: mindkettőre hamis volna.
     readonly property int buttonMarginX: (cell.cellWidth - cell.buttonWidth) / 2
     readonly property int buttonMarginY:
         (cell.cellHeight - cell.buttonHeight) / 2

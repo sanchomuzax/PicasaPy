@@ -21,6 +21,9 @@ téglalapjaitól és a tulajdonos 1920 px széles Picasa-képernyőképétől
 Ez a fájl KIRAJZOLT ablakban, jelenet-koordinátában (a `trayMainBar`
 saját koordinátarendszerében, `mapToItem`-mel) méri mindezt, két
 ablakszélességen — a `test_also_sav_elrendezes_1420.py` mintáját követve.
+A #6499b a jobbra forgatógombot egy képponttal eltolja (`S + 76`), hogy a
+két forgatás között két kirajzolt háttérképpont legyen; a csillag és a
+balra forgatógomb mért helye változatlan.
 """
 
 from __future__ import annotations
@@ -87,14 +90,14 @@ class TestACsillagEsAForgatas:
         )
 
     @pytest.mark.parametrize("ablak", ABLAKOK)
-    def test_a_jobbra_forgatas_bal_szele_S_plusz_75(
+    def test_a_jobbra_forgatas_bal_szele_S_plusz_76(
         self, qml_app_module, qt_app, ablak
     ):
         window, _, _ = qml_app_module
         _szelesseg(window, qt_app, ablak)
         osztopont = _elem(window, "trayMainBar").property("splitX")
         assert _x_a_savban(window, "trayRotateRight") == pytest.approx(
-            osztopont + 75, abs=TURES
+            osztopont + 76, abs=TURES
         )
 
 
