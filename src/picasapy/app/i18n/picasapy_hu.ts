@@ -20971,7 +20971,7 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
             <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
             <source>The effect's deviation on an even gray field with a fixed random seed.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Egy egyszínű szürke felület eltérése az effekt után, rögzített véletlenmaggal.</translation>
+            <translation>Egy egyszínű szürke felület eltérése az effekt után, mindig ugyanazzal a véletlen mintával.</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/EffectSliceBox.qml" />

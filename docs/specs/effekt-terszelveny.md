@@ -15,7 +15,7 @@ A megjelenített felületet a tényleges renderlánc méri memóriabeli próbak�
 - **Színkocka:** az 5³ pontos RGB-rács minden pontja oda kerül és olyan színű lesz, ahová és amilyenre az effekt viszi; a szaggatott kocka és a szürke átló az eredeti színtér.
 - **Képsík-térkép:** az effekt által megváltoztatott képpontok helye és mértéke. A próba a hatás fajtája szerint egyenletes szürke (fokozatos fényerő), telített mező (telítettség-jellegű effektek) vagy sakktábla (szerkezetet módosító effektek, köztük a Picasa „Vignette” lágyító effektje, amely egyenletes mezőn nem változtat).
 - **Pontválasz:** egyetlen világos pont hatása a szomszédos pixelekre.
-- **Szemcse-domborzat:** rögzített véletlenmagú szürke próbakép eltérése.
+- **Szemcse-domborzat:** egy egyenletes szürke próbakép eltérése; a szemcse mindig ugyanazzal a véletlen mintával készül.
 - **Nincs térszelvény:** az adott effekt nem tartozik a fenti vizuális típusok egyikébe.
 
 Vegyes láncnál a fejléc gombjával a láncban előforduló nézettípusok között lehet váltani. A helyi tónusleképezések és automatikus effektek kicsinyített fotón alapulnak; a nézet ezeknél közelítés.
