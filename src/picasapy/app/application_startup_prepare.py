@@ -13,6 +13,11 @@ from PySide6.QtGui import QGuiApplication
 from picasapy.index import open_index
 from picasapy.scanner import read_exclude_folders
 from . import application as _app
+from .appearance_controller import (
+    DARK_THEME_KEY,
+    apply_qt_color_scheme,
+    coerce_dark_flag,
+)
 from .application_data import (
     _exclude_folders_path,
     _fuggo_koltozes_indulaskor,
@@ -52,9 +57,8 @@ def _startup_step_log_and_qt_setup(state):
     progress_log.install(early_error_log)
     progress_log.mark("Korai indulási hibanapló elérhető")
 
-    # A PicasaPy egyelőre MINDENHOL világos (a sötét téma V3-feature):
-    # Fusion stílus + explicit világos paletta; Linuxon/macOS-en a saját,
-    # világos QML-dialógusok a rendszer sötét mappaválasztója helyett.
+    # A PicasaPy felülete alapból világos, a sötét téma beállításból jön.
+    # Linuxon/macOS-en a saját QML-dialógusok a rendszer mappaválasztója helyett.
     # Windowson natív dialógus kell — ld. _force_qml_dialogs (#58).
     if _force_qml_dialogs():
         QGuiApplication.setAttribute(Qt.ApplicationAttribute.AA_DontUseNativeDialogs)
@@ -82,10 +86,10 @@ def _startup_step_log_and_qt_setup(state):
         progress_log.mark("A Qt-alkalmazás már létezik")
     app.setApplicationName("PicasaPy")
     app.setOrganizationName("PicasaPy")
-    try:
-        app.styleHints().setColorScheme(Qt.ColorScheme.Light)
-    except AttributeError:
-        pass  # régebbi Qt: a paletta (Main.qml) így is világost kényszerít
+    initial_dark = coerce_dark_flag(
+        QSettings("PicasaPy", "PicasaPy").value(DARK_THEME_KEY)
+    )
+    apply_qt_color_scheme(initial_dark)
     app.setDesktopFileName("picasapy")  # Wayland app_id → tálca-ikon
     icon_path = _window_icon_path()
     app.setWindowIcon(_load_window_icon(icon_path))
