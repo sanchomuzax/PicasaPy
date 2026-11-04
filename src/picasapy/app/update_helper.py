@@ -78,14 +78,18 @@ def inditsd_a_segedet(args: list[str], *, emelt: bool, platform: str) -> bool:
     """A frissítő segéd indítása; UAC-ot csak akkor kér, ha `emelt` (#6340)."""
     import subprocess
 
+    # #6534: a segéd munkamappája a saját mappája legyen, ne a miénk. A programot
+    # az Intéző a telepítési mappából indítja, és Windowson egy mappa nem
+    # nevezhető át, amíg bármely folyamat munkamappája benne van (WinError 32).
+    munkamappa = str(Path(args[0]).parent)
     if platform != "win32":
-        subprocess.Popen(args, close_fds=True)
+        subprocess.Popen(args, close_fds=True, cwd=munkamappa)
         return True
     import ctypes
 
     params = subprocess.list2cmdline(args[1:])
     result = ctypes.windll.shell32.ShellExecuteW(
-        None, "runas" if emelt else "open", str(args[0]), params, None, 0
+        None, "runas" if emelt else "open", str(args[0]), params, munkamappa, 0
     )
     if result <= 32:
         _UTOLSO_HIBA["szoveg"] = f"ShellExecute {result}"

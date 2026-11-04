@@ -22,8 +22,11 @@ _ora = time.monotonic
 
 #: Windows: ERROR_ACCESS_DENIED (5) és ERROR_SHARING_VIOLATION (32).
 _FOGLALT_WINERROR = frozenset({5, 32})
-ATNEVEZESI_HATARIDO_MP = 60.0
-FOLYAMAT_HATARIDO_MP = 20.0
+#: #6534: a 60 / 20 mp-es néma várakozás nem segített, mert a fő ok a segéd
+#: saját munkamappája volt (ld. `update_helper.inditsd_a_segedet`); rövid
+#: várakozás után a mappát fogó folyamatokat leállítjuk.
+ATNEVEZESI_HATARIDO_MP = 10.0
+FOLYAMAT_HATARIDO_MP = 5.0
 
 
 def foglalt_hiba(hiba: BaseException) -> bool:
@@ -41,8 +44,12 @@ def atnevez_ujraprobalva(
     rename: Callable[[Path, Path], None] | None = None,
     alszik: Callable[[float], None] | None = None,
     ora: Callable[[], float] | None = None,
+    foglaltnal: Callable[[], object] | None = None,
 ) -> None:
-    """Átnevez; foglalt fájlnál növekvő szünetekkel újrapróbál a határidőig."""
+    """Átnevez; foglalt fájlnál növekvő szünetekkel újrapróbál a határidőig.
+
+    #6534: az első foglalt hibánál egyszer lefut a `foglaltnal` (a mappát fogó
+    folyamatok leállítása), csak utána jön az újrapróbálás."""
     rename = rename or _rename
     alszik = alszik or _alszik
     ora = ora or _ora
@@ -55,8 +62,11 @@ def atnevez_ujraprobalva(
         except OSError as hiba:
             if not foglalt_hiba(hiba) or ora() - kezdet >= hatarido:
                 raise
+            if foglaltnal is not None:
+                foglaltnal()
+                foglaltnal = None
         alszik(szunet)
-        szunet = min(szunet * 2, 5.0)
+        szunet = min(szunet * 2, 2.0)
 
 
 def varj_vagy_allitsd_le(

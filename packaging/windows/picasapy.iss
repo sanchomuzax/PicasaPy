@@ -70,14 +70,29 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; \
     AppUserModelID: "{#MyAppUserModelID}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Parameters: "--telepito-melegites"; Flags: runhidden waituntilterminated runasoriginaluser
+; #6534: az előmelegítő futások alatt a PyInstaller-indulókép ne villanjon fel
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--telepito-melegites"; Flags: runhidden waituntilterminated runasoriginaluser; BeforeInstall: IndulokepTiltas(True)
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--qml-elofordit"; Flags: runhidden waituntilterminated runasoriginaluser
-Filename: "{app}\{#MyAppExeName}"; Parameters: "--qml-grafika-melegites"; Flags: runhidden waituntilterminated runasoriginaluser
+Filename: "{app}\{#MyAppExeName}"; Parameters: "--qml-grafika-melegites"; Flags: runhidden waituntilterminated runasoriginaluser; AfterInstall: IndulokepTiltas(False)
 Filename: "{app}\{#MyAppExeName}"; \
     Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; \
     Flags: nowait postinstall skipifsilent
 
 [Code]
+// #6534: a PyInstaller a PYINSTALLER_SUPPRESS_SPLASH_SCREEN=1 környezeti
+// változóra nem mutatja az indulóképet. A telepítő csak a rejtett
+// előmelegítő futások idejére állítja be; a végső, látható indításnál már nincs.
+function SetEnvironmentVariable(lpName: String; lpValue: String): BOOL;
+  external 'SetEnvironmentVariableW@kernel32.dll stdcall';
+
+procedure IndulokepTiltas(Be: Boolean);
+begin
+  if Be then
+    SetEnvironmentVariable('PYINSTALLER_SUPPRESS_SPLASH_SCREEN', '1')
+  else
+    SetEnvironmentVariable('PYINSTALLER_SUPPRESS_SPLASH_SCREEN', '0');
+end;
+
 const
   PicasaPyUninstallKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{9F3C1D28-7C4E-4E2B-9A55-3B1D6A0C77E1}_is1';
   SilentUninstallParameters = '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART';

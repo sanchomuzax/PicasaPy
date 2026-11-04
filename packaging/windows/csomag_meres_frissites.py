@@ -402,9 +402,12 @@ def frissites(
         with szerver_kornyezet as szerver:
             if szerver is not None:
                 env["PICASAPY_UPDATE_API"] = szerver.api_url
+            # #6534: úgy indul, ahogy az Intézőből vagy a parancsikonról: a
+            # munkamappa a telepítési mappa (ez fogta a cserét WinError 32-vel)
             folyamat = subprocess.Popen(
                 [str(exe), str(konyvtar)],
                 env=env,
+                cwd=str(exe.parent),
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.STDOUT,
             )
