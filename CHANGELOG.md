@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.37] - 2026-11-04
+
+- belső: A Windowsos QML-tesztek útvonalkezelése javult (#6505).
+
 ## [1.0.36] - 2026-11-04
 
 - A régi effektek (például Lineáris homályosítás, Irányított telítettség) megkapták az eredeti csúszkáit és a képen húzható korongot, a beállítások megmaradnak (#6497).
