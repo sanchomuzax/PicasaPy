@@ -42,7 +42,10 @@ _NEZETEK = {
         "blur", "dir_sharp", "linblur", "radblur", "soften", "unsharp", "unsharp2",
     },
     "tone": {
-        "autobacklight", "autocontrast", "autolight", "backlight", "contrast", "fill",
+        # #6536: az `enhance` (Jó napom van) automatikus tónus- és színjavítás,
+        # a fotón mérve; a képsík-nézetben a mérőképen lapos lapot mutatott
+        "autobacklight", "autocontrast", "autolight", "backlight", "contrast", "enhance",
+        "fill",
         "finetune", "finetune2", "gamma", "hdr", "localcontrast", "shadow", "triple",
         "triple2", "triple3",
     },
@@ -53,7 +56,7 @@ _NEZETEK = {
         "twotone", "warm", "whitept",
     },
     "image": {
-        "boost", "comicize", "dir_brite", "dir_sat", "enhance", "focalpixelate",
+        "boost", "comicize", "dir_brite", "dir_sat", "focalpixelate",
         "focalzoom", "glow", "glow2", "neon", "orton", "pencilsketch", "picnik",
         "picnikfocalpixelate", "pixelate", "sixties", "vignette",
     },
@@ -159,6 +162,7 @@ class EffectSliceController(QObject):
         self._surface_revision = 0
         self._available_views = ["tone"]
         self._selected_view = "tone"
+        self._view_effect = ""
         self._active_effect = ""
         self._active_values: list = []
         self._depth_index = 0
@@ -305,6 +309,12 @@ class EffectSliceController(QObject):
         if not views:
             views.add("tone")
         self._available_views = [view for view in _VIEW_ORDER if view in views]
+        # #6536: új szerkesztett effektnél annak a saját nézete jön, nem a korábbi
+        # (a QML a régi nézetet adja vissza, ami az új effektre hamis képet ad)
+        if self._active_effect != self._view_effect:
+            self._view_effect = self._active_effect
+            if self._active_effect:
+                preferred_view = classify_effect(self._active_effect)
         if preferred_view in self._available_views:
             self._selected_view = preferred_view
         elif self._selected_view not in self._available_views:

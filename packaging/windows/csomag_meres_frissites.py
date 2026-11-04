@@ -402,9 +402,15 @@ def frissites(
         with szerver_kornyezet as szerver:
             if szerver is not None:
                 env["PICASAPY_UPDATE_API"] = szerver.api_url
+            # #6534: a saját buildünk úgy indul, ahogy az Intézőből vagy a
+            # parancsikonról: a munkamappa a telepítési mappa (ez fogta a cserét
+            # WinError 32-vel). A valódi kiadásokon futó út (archive nélkül) a
+            # már kiadott, javítás előtti segéddel indul; ott ez csak a javított
+            # kiadás után kapcsolható be, addig a régi hibát mérné újra.
             folyamat = subprocess.Popen(
                 [str(exe), str(konyvtar)],
                 env=env,
+                cwd=str(exe.parent) if archive is not None else None,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.STDOUT,
             )

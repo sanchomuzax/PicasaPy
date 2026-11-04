@@ -304,8 +304,8 @@ effect you are editing, or the photo's complete edit chain, does to the
 picture.
 
 In **View** ▸ **Effect Slice**, **Always** shows it for every photo, **While
-Editing** shows it only while an effect settings panel or the Fine Tuning tab
-is open (the default), and **Never** hides it. With no effect being edited
+Editing** shows it on every tab of the editing panel (Basic Fixes, Fine
+Tuning and the effect grid tabs; the default), and **Never** hides it. With no effect being edited
 the box shows the photo's whole chain; with an empty chain it shows the
 straight diagonal and the "No applied effect" note.
 

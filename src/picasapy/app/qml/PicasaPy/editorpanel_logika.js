@@ -340,6 +340,23 @@ function lathatoMagassag() {
 }
 
 
+// SAJÁT FUNKCIÓ (#6522, #6535): a térszelvény helyfoglalásához a látható fül
+// tényleges alja; a rácsos fülök implicitHeight-ja kevesebb lehet a csempéknél.
+function fulTartalomAlja() {
+    var tallest = 0
+    var kids = panelTabs.tabAreaItem.children
+    for (var i = 0; i < kids.length; ++i) {
+        if (!kids[i].visible)
+            continue
+        var also = kids[i].termeszetesAlja !== undefined
+            ? kids[i].y + kids[i].termeszetesAlja
+            : kids[i].y + Math.max(kids[i].implicitHeight, kids[i].childrenRect.height)
+        if (also > tallest)
+            tallest = also
+    }
+    return tallest
+}
+
 function fulTartalomMagassag() {
     var tallest = 0
     var kids = panelTabs.tabAreaItem.children
