@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import pytest
 from PySide6.QtCore import QObject, QPoint, QPointF, Qt
+from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 from tests.support.varakozas import var_feltetelre
 
@@ -46,6 +47,19 @@ def _elem(window, nev: str) -> QObject:
     obj = window.findChild(QObject, nev)
     assert obj is not None, f"{nev} nem található a kirajzolt fában"
     return obj
+
+
+def _walk(item: QQuickItem):
+    for child in item.childItems():
+        yield child
+        yield from _walk(child)
+
+
+def _qml_elem(window, nev: str) -> QQuickItem:
+    for item in _walk(window.contentItem()):
+        if item.objectName() == nev:
+            return item
+    raise AssertionError(f"{nev} nem található a kirajzolt fában")
 
 
 def _szelesseg(window, qt_app, szelesseg: int) -> None:
@@ -125,9 +139,9 @@ class TestANagyito:
         assert (ikon.width(), ikon.height()) == (23.0, 16.0)
 
 
-def _kep(window, qt_app, szelesseg: int):
+def _kep(window, qt_app, szelesseg: int, magassag: int = 1030):
     _szelesseg(window, qt_app, szelesseg)
-    window.setProperty("height", 1030)
+    window.setProperty("height", magassag)
     for _ in range(6):
         qt_app.processEvents()
     return window.grabWindow()
@@ -148,6 +162,40 @@ def _keret_oszlopok(kep, xek, y, hatter) -> list[int]:
 
 def _keret_sorok(kep, x, yok, hatter) -> list[int]:
     return [y for y in yok if hatter - _osszeg(kep, x, y) > KERET_SOTETSEG]
+
+
+def _negy_gomb_szelei_latszanak(kep, window, szel: int) -> None:
+    csoport = _elem(window, "trayMetadataGroup")
+    teteje = csoport.mapToScene(QPointF(0, 0)).y()
+    # A keret alsó sora fölött: a 16 képpontos ikonok (y 4…19) alatt.
+    y = round(teteje + 21)
+    hatter = _osszeg(kep, szel - 262, y)
+    keret = _keret_oszlopok(kep, range(szel - 262, szel - 8), y, hatter)
+    mer_szelek = []
+    for nev in (
+        "trayPanelToggle_people",
+        "trayPanelToggle_places",
+        "trayPanelToggle_tags",
+        "trayPanelToggle_properties",
+    ):
+        gomb = _qml_elem(window, nev)
+        bal = gomb.mapToScene(QPointF(0, 0)).x()
+        jobb = gomb.mapToScene(QPointF(gomb.width(), 0)).x()
+        # A bal keret a cella határán vagy utána, a jobb keret a határ
+        # előtt fut: a 2 px-es résnél így a két szomszéd nem ugyanazt az
+        # oszlopot kapja.
+        for oldal, kozeli in (
+            ("bal", [x for x in keret if bal <= x <= bal + 3]),
+            ("jobb", [x for x in keret if jobb - 3 <= x < jobb]),
+        ):
+            assert kozeli, (
+                f"{nev} {oldal} kerete nem látszik az elem tényleges "
+                f"geometriája mellett (bal={bal:.1f}, jobb={jobb:.1f}, mért keretek={keret})"
+            )
+            mer_szelek.append(kozeli[0] if oldal == "bal" else kozeli[-1])
+    assert len(set(mer_szelek)) == 8, (
+        f"nem külön keretként látszik mind a nyolc gombszél: {mer_szelek}, keretek={keret}"
+    )
 
 
 class TestAKirajzoltKep:
@@ -172,26 +220,13 @@ class TestAKirajzoltKep:
         )
 
     @pytest.mark.parametrize("szel", ABLAKOK)
-    def test_a_kapcsolosav_keretoszlopai(self, qml_app_module, qt_app, szel):
+    def test_mind_a_negy_kulon_gomb_kerete_latszik(
+        self, qml_app_module, qt_app, szel
+    ):
         window, _, _ = qml_app_module
-        kep = _kep(window, qt_app, szel)
-        csoport = _elem(window, "trayMetadataGroup")
-        teteje = csoport.mapToScene(QPointF(0, 0)).y()
-        # a keret alsó sora fölött: a 16 képpontos ikonok (y 4…19) alatt
-        y = round(teteje + 21)
-        hatter = _osszeg(kep, szel - 262, y)
-        keret = _keret_oszlopok(kep, range(szel - 262, szel - 8), y, hatter)
-        vart = [
-            szel - 254,
-            szel - 196, szel - 195,
-            szel - 136, szel - 135,
-            szel - 76, szel - 75,
-            szel - 17,
-        ]
-        assert keret == vart, (
-            f"a kapcsolósáv keretoszlopai {keret}, az eredetiben {vart} "
-            "(1920-on 1666 · 1724/1725 · 1784/1785 · 1844/1845 · 1903)"
-        )
+        for magassag_eltolas in (-5, 0, 5):
+            kep = _kep(window, qt_app, szel, 1030 + magassag_eltolas)
+            _negy_gomb_szelei_latszanak(kep, window, szel)
 
     @pytest.mark.parametrize("szel", ABLAKOK)
     def test_a_kapcsolosav_kerete_22_sor(self, qml_app_module, qt_app, szel):
