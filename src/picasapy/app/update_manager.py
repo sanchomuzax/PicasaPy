@@ -231,6 +231,11 @@ class UpdateController(QObject):
             int, tuple[Callable[[object], None], Callable[[str], None]]
         ] = {}
         self._next_job_id = 0
+        # #6526: a letöltés saját munkaszáma; a közben induló ellenőrzés nem
+        # veheti át a haladásjelzést
+        self._download_job_id = 0
+        # #6526: futó automatikus ellenőrzés alatt kért kézi ellenőrzés is választ kap
+        self._pending_manual = False
         self._automatic_check_started = False
         self._download_requested = False
         self._periodic_check_timer = QTimer(self)
@@ -345,7 +350,7 @@ class UpdateController(QObject):
         action: Callable[[Callable[[int, int], None]], object],
         done: Callable[[object], None],
         failed: Callable[[str], None],
-    ) -> None:
+    ) -> int:
         self._next_job_id += 1
         job_id = self._next_job_id
         worker = _Worker(job_id, action)
@@ -356,6 +361,7 @@ class UpdateController(QObject):
         worker_signals.failed.connect(self._on_worker_failed)
         worker_signals.progress.connect(self._on_worker_progress)
         self._pool.start(worker)
+        return job_id
 
     @Slot(int, object)
     def _on_worker_finished(self, job_id: int, value: object) -> None:
@@ -373,7 +379,7 @@ class UpdateController(QObject):
 
     @Slot(int, int, int)
     def _on_worker_progress(self, job_id: int, received: int, total: int) -> None:
-        if job_id != self._next_job_id:
+        if job_id != self._download_job_id:
             return
         self._progress, self._progress_total = received, total
         self.progressChanged.emit()
@@ -510,43 +516,69 @@ class UpdateController(QObject):
         """Kézi ellenőrzés, a napi automatikus korláttól függetlenül."""
         self._check_latest(manual=True)
 
+    def _frissites_folyamatban(self) -> bool:
+        """#6526: elindított letöltés, kész csomag vagy kilépéskori telepítés."""
+        return (
+            self._download_requested
+            or self._download_path is not None
+            or self._install_scheduled
+        )
+
     def _check_latest(self, *, manual: bool) -> None:
         if self._checking:
+            # #6526: a futó ellenőrzés eredménye a kézi kérésre is válasz
+            self._pending_manual = self._pending_manual or manual
             return
         self._checking = True
         self.checkingChanged.emit()
 
         def completed(value: object) -> None:
+            manual_any = manual or self._pending_manual
+            self._pending_manual = False
             self._checking = False
             self.checkingChanged.emit()
-            release = value if isinstance(value, ReleaseInfo) else None
-            is_newer = bool(release and release_is_newer(release.version, self._current_version))
-            if is_newer and release:
-                self._release = release
-                self.updateAvailableChanged.emit()
-                if manual:
+            if self._frissites_folyamatban():
+                # #6526: az elindított frissítés kiadását semmilyen későbbi
+                # ellenőrzés nem cseréli le és nem törli, jelzést sem küld
+                if manual_any:
                     self.manualCheckFinished.emit(True, "available")
-                else:
-                    notified = str(self._settings.value(NOTIFIED_VERSION_KEY, "") or "")
-                    if notified != release.version:
-                        self._settings.setValue(NOTIFIED_VERSION_KEY, release.version)
-                        self._settings.sync()
-                        self.notificationRequested.emit()
-            else:
-                if self._release is not None:
-                    self._release = None
-                    self.updateAvailableChanged.emit()
-                if manual:
-                    self.manualCheckFinished.emit(False, "up-to-date")
+                return
+            self._report_release(value, manual=manual_any)
 
         def failed(message: str) -> None:
+            manual_any = manual or self._pending_manual
+            self._pending_manual = False
             logger.debug("Frissítésellenőrzés nem sikerült: %s", message)
             self._checking = False
             self.checkingChanged.emit()
-            if manual:
+            if manual_any and self._frissites_folyamatban():
+                self.manualCheckFinished.emit(True, "available")
+            elif manual_any:
                 self.manualCheckFinished.emit(False, "error")
 
         self._submit(lambda _progress: self._letoltheto_kiadas(), completed, failed)
+
+    def _report_release(self, value: object, *, manual: bool) -> None:
+        """Az ellenőrzés eredményének közzététele, ha nincs folyamatban frissítés."""
+        release = value if isinstance(value, ReleaseInfo) else None
+        is_newer = bool(release and release_is_newer(release.version, self._current_version))
+        if is_newer and release:
+            self._release = release
+            self.updateAvailableChanged.emit()
+            if manual:
+                self.manualCheckFinished.emit(True, "available")
+            else:
+                notified = str(self._settings.value(NOTIFIED_VERSION_KEY, "") or "")
+                if notified != release.version:
+                    self._settings.setValue(NOTIFIED_VERSION_KEY, release.version)
+                    self._settings.sync()
+                    self.notificationRequested.emit()
+        else:
+            if self._release is not None:
+                self._release = None
+                self.updateAvailableChanged.emit()
+            if manual:
+                self.manualCheckFinished.emit(False, "up-to-date")
 
     def _letoltheto_kiadas(self) -> ReleaseInfo | None:
         """A legújabb kiadás, de windowsos telepítésnél csak ha letölthető.
@@ -585,6 +617,9 @@ class UpdateController(QObject):
         if archive is None or manifest is None:
             self.downloadFinished.emit(False, "missing-assets")
             return
+        if self._download_requested or self._download_path is not None:
+            # #6526: a futó vagy kész letöltést egy második kérés nem kezdi újra
+            return
         self._progress = self._progress_total = 0
         self._download_path = None
         self._download_requested = True
@@ -620,7 +655,7 @@ class UpdateController(QObject):
             self.progressChanged.emit()
             self.downloadFinished.emit(False, "integrity-error" if "SHA-256" in message else "download-error")
 
-        self._submit(download, complete, failed)
+        self._download_job_id = self._submit(download, complete, failed)
 
     @Slot(bool, result=bool)
     def installWhenExiting(self, restart_now: bool = False) -> bool:  # noqa: N802
