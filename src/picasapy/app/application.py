@@ -662,8 +662,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         timeline.mark("az ablak első kirajzolt képkockája")
         progress_log.mark("Első főablak-képkocka; a rács megjelent")
         _allitsd_le_az_akadasfigyelot(early_startup)
-        # #6510: a multimédia-eszközlistát a Rögzítés panel első megnyitása
-        # naplózza; induláskor a felsorolás a QtMultimedia modult is betöltené.
+        # #6510: a multimédia-eszközlistát a Rögzítés panel naplózza
         QTimer.singleShot(0, _start_and_finish)
 
     app = state.app
