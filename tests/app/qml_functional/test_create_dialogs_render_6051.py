@@ -216,7 +216,7 @@ def _varj_foablak_kepstabilizalodasara(ablak, qt_app) -> QImage:
         assert maradek > 0, "a főablak renderképe nem stabilizálódott 3 s alatt"
 
         kirajzolt = QSignalSpy(ablak.frameSwapped)
-        ablak.requestUpdate()
+        ablak.update()
         assert var_feltetelre(
             qt_app,
             hibaturo_feltetel(lambda spy=kirajzolt: spy.count() > 0),
