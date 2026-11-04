@@ -20735,4 +20735,87 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>A atualização indicou sucesso, mas foi iniciada uma versão anterior. Instale manualmente o instalador mais recente.</translation>
         </message>
     </context>
+    <context>
+        <name>UpdateController</name>
+        <message>
+            <source>Waiting for the previous version to exit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A aguardar que a versão anterior termine</translation>
+        </message>
+        <message>
+            <source>Extracting update files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A extrair os ficheiros de atualização</translation>
+        </message>
+        <message>
+            <source>Closing another running copy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A fechar outra cópia em execução</translation>
+        </message>
+        <message>
+            <source>Replacing application files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A substituir os ficheiros do programa</translation>
+        </message>
+        <message>
+            <source>Checking the new version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A verificar a nova versão</translation>
+        </message>
+        <message>
+            <source>Preparing startup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A preparar o arranque</translation>
+        </message>
+        <message>
+            <source>Preparing graphics</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A preparar os gráficos</translation>
+        </message>
+        <message>
+            <source>Starting the new version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A iniciar a nova versão</translation>
+        </message>
+        <message>
+            <source>Waiting for the new version window</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A aguardar a janela da nova versão</translation>
+        </message>
+        <message>
+            <source>Elapsed: {seconds} s</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Decorrido: {seconds} s</translation>
+        </message>
+        <message>
+            <source>The update failed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A atualização falhou</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fechar</translation>
+        </message>
+        <message>
+            <source>An unexpected error interrupted the update.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Um erro inesperado interrompeu a atualização.</translation>
+        </message>
+        <message>
+            <source>Details: {details}</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Detalhes: {details}</translation>
+        </message>
+        <message>
+            <source>The new version failed its startup check. The previous version will restart.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A nova versão falhou a verificação de arranque. A versão anterior será reiniciada.</translation>
+        </message>
+        <message>
+            <source>The new version did not show a window within 180 seconds.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A nova versão não mostrou nenhuma janela em 180 segundos.</translation>
+        </message>
+    </context>
 </TS>

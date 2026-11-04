@@ -20735,4 +20735,87 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>การอัปเดตรายงานว่าสำเร็จ แต่เวอร์ชันเดิมเริ่มทำงาน ติดตั้งตัวติดตั้งล่าสุดด้วยตนเอง</translation>
         </message>
     </context>
+    <context>
+        <name>UpdateController</name>
+        <message>
+            <source>Waiting for the previous version to exit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังรอให้เวอร์ชันก่อนหน้าปิด</translation>
+        </message>
+        <message>
+            <source>Extracting update files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังแตกไฟล์อัปเดต</translation>
+        </message>
+        <message>
+            <source>Closing another running copy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังปิดสำเนาอื่นที่ทำงานอยู่</translation>
+        </message>
+        <message>
+            <source>Replacing application files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังแทนที่ไฟล์โปรแกรม</translation>
+        </message>
+        <message>
+            <source>Checking the new version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังตรวจสอบเวอร์ชันใหม่</translation>
+        </message>
+        <message>
+            <source>Preparing startup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังเตรียมการเริ่มทำงาน</translation>
+        </message>
+        <message>
+            <source>Preparing graphics</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังเตรียมกราฟิก</translation>
+        </message>
+        <message>
+            <source>Starting the new version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังเริ่มเวอร์ชันใหม่</translation>
+        </message>
+        <message>
+            <source>Waiting for the new version window</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>กำลังรอหน้าต่างของเวอร์ชันใหม่</translation>
+        </message>
+        <message>
+            <source>Elapsed: {seconds} s</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ผ่านไป: {seconds} วินาที</translation>
+        </message>
+        <message>
+            <source>The update failed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>การอัปเดตล้มเหลว</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>ปิด</translation>
+        </message>
+        <message>
+            <source>An unexpected error interrupted the update.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เกิดข้อผิดพลาดที่ไม่คาดคิดซึ่งขัดจังหวะการอัปเดต</translation>
+        </message>
+        <message>
+            <source>Details: {details}</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>รายละเอียด: {details}</translation>
+        </message>
+        <message>
+            <source>The new version failed its startup check. The previous version will restart.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เวอร์ชันใหม่ไม่ผ่านการตรวจสอบการเริ่มทำงาน เวอร์ชันก่อนหน้าจะเริ่มใหม่</translation>
+        </message>
+        <message>
+            <source>The new version did not show a window within 180 seconds.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>เวอร์ชันใหม่ไม่แสดงหน้าต่างภายใน 180 วินาที</translation>
+        </message>
+    </context>
 </TS>
