@@ -10,8 +10,8 @@ _MAX_RENDER_THREADS = 4
 # Az értelmezett filters-láncok cache-korlátja; túlcsordulásnál ürítünk.
 _OPS_CACHE_CAPACITY = 4096
 
-# 256 px-es JPEG QImage-je kb. 256 KB; a korlát legfeljebb kb. 32 MB.
-_FILTERED_MEMO_CAPACITY = 128
+# 256 px-es QImage-je legfeljebb 256 KB; a korlát legfeljebb 16 MB.
+_FILTERED_MEMO_CAPACITY = 64
 
 # A látható Image-kérések előzik meg a háttér-előtöltéseket.
 _VISIBLE_THUMB_PRIORITY = 1

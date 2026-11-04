@@ -63,6 +63,27 @@ AUTO_CHECK_DELAY_MS = 30_000
 #: #6379: futás közben ennyi időnként keres újra (6 óra)
 AUTO_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
 
+_UPDATE_HELPER_FELIRATOK = {
+    "varakozas": "Waiting for the previous version to exit",
+    "kicsomagolas": "Extracting update files",
+    "maradek_folyamatok": "Closing another running copy",
+    "csere": "Replacing application files",
+    "onellenorzes": "Checking the new version",
+    "qml_cache": "Preparing startup",
+    "qml_grafika": "Preparing graphics",
+    "inditas": "Starting the new version",
+    "ablak_varakozas": "Waiting for the new version window",
+    "elapsed": "Elapsed: {seconds} s",
+    "error_title": "The update failed",
+    "close": "Close",
+    "unexpected_error": "An unexpected error interrupted the update.",
+    "error_details": "Details: {details}",
+    "startup_check_failed": (
+        "The new version failed its startup check. The previous version will restart."
+    ),
+    "window_timeout": "The new version did not show a window within 180 seconds.",
+}
+
 
 #: a futtató folyamat (`executable`) — modulszintű fogantyú a tesztnek (#1375)
 _futtato = sys
@@ -676,6 +697,14 @@ class UpdateController(QObject):
                 str(install_dir),
                 "--executable",
                 exe.name,
+                "--ui-strings",
+                json.dumps(
+                    {
+                        key: self.tr(source)
+                        for key, source in _UPDATE_HELPER_FELIRATOK.items()
+                    },
+                    ensure_ascii=False,
+                ),
             ]
             if emelt:
                 args.append("--uac-emelt")
