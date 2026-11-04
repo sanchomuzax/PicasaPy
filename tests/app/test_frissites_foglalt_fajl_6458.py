@@ -234,8 +234,11 @@ def test_a_vezerlo_induláskor_kiolvassa_az_elozo_kudarcot(qt_app, tmp_path, mon
     assert not jelzo.exists()
 
 
-def test_a_frissitesi_ablak_a_munka_idejere_latszik_es_a_vegen_bezarul():
+def test_a_frissitesi_ablak_a_munka_idejere_latszik_es_a_vegen_bezarul(
+    monkeypatch, tmp_path
+):
     naplo = []
+    monkeypatch.setattr(update_ablak, "_status_utvonal", lambda: tmp_path / "status.json")
     ablak = update_ablak.FrissitesiAblak(
         megjelenit=lambda kod, cim: naplo.append(("nyit", cim)) or "fogantyu",
         bezar=lambda cim, fogantyu: naplo.append(("zar", cim, fogantyu)),
@@ -257,7 +260,8 @@ def test_a_frissitesi_ablak_kulon_folyamatban_fut_nem_szalon():
 
 def test_a_seged_ablak_uzemmodban_csak_az_ablakot_mutatja(monkeypatch):
     hivas = []
-    monkeypatch.setattr(update_ablak, "ablak_foprogram", lambda kod: hivas.append(kod) or 0)
+    monkeypatch.setattr(update_ablak, "ablak_foprogram",
+                        lambda kod, _status=None: hivas.append(kod) or 0)
     monkeypatch.setattr(update_swap_helper, "install_after_exit",
                         lambda *a, **k: hivas.append("telepites"))
 
@@ -279,10 +283,29 @@ def test_a_frissitesi_ablak_szovege_magyar_windowson_magyar():
     assert "being updated" in update_ablak.szoveg(0x0409)
 
 
+def test_a_frissitesi_ablak_hibaja_es_lepese_olvashato_allapotot_ir(monkeypatch, tmp_path):
+    status_ut = tmp_path / "segitseg.json"
+    monkeypatch.setattr(update_ablak, "_status_utvonal", lambda: status_ut)
+    ablak = update_ablak.FrissitesiAblak(windows=True, megjelenit=lambda *_a: object())
+
+    with ablak:
+        ablak.lepes("csere")
+        ablak.hiba(ablak.uzenet("startup_check_failed"))
+
+    allapot = update_ablak._status_olvasas(status_ut)
+    assert allapot["stage"] == "csere"
+    assert "failed its startup check" in allapot["error"]
+    assert update_ablak.felirat("elapsed", "en").format(seconds=12) == "Elapsed: 12 s"
+    status_ut.unlink(missing_ok=True)
+
+
 def test_a_seged_a_teljes_munkat_az_ablakban_vegzi(tmp_path, monkeypatch):
     sorrend = []
 
     class _Ablak:
+        def __init__(self, **_kwargs):
+            pass
+
         def __enter__(self):
             sorrend.append("nyit")
             return self
@@ -296,6 +319,78 @@ def test_a_seged_a_teljes_munkat_az_ablakban_vegzi(tmp_path, monkeypatch):
 
     assert update_swap_helper.install_after_exit(1, tmp_path / "x.zip", tmp_path, "P.exe")
     assert sorrend == ["nyit", "munka", "zar"]
+
+
+def test_a_seged_lepesei_a_valos_sorrendben_jelennek_meg(tmp_path, monkeypatch):
+    """A felhasználó látja, hogy a segéd éppen melyik műveletnél tart."""
+    lepesek = []
+
+    class _JelzoAblak:
+        van_hibaja = False
+
+        def __init__(self, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_a):
+            pass
+
+        def lepes(self, kulcs):
+            lepesek.append(kulcs)
+
+        def hiba(self, uzenet):
+            lepesek.append(("hiba", uzenet))
+
+    monkeypatch.setattr(update_ablak, "FrissitesiAblak", _JelzoAblak)
+    monkeypatch.setattr(update_swap_helper, "wait_for_process", lambda _pid: None)
+    monkeypatch.setattr(update_swap_helper, "_mkdtemp", lambda **_kw: str(tmp_path / "stage"))
+    (tmp_path / "stage").mkdir()
+    monkeypatch.setattr(
+        update_swap_helper, "extract_update_archive", lambda _zip, stage: stage
+    )
+    monkeypatch.setattr(update_folyamatok, "varj_vagy_allitsd_le", lambda *_a, **_k: 0)
+    monkeypatch.setattr(
+        update_swap_helper,
+        "swap_update_directory",
+        lambda _stage, _install, *, launch: launch() and True,
+    )
+    monkeypatch.setattr(update_swap_helper, "_onellenorzes", lambda _exe: True)
+    monkeypatch.setattr(update_swap_helper, "_rendszergazda", lambda: False)
+    monkeypatch.setattr(update_swap_helper, "_qml_elofordit", lambda *_a, **_k: True)
+    monkeypatch.setattr(update_swap_helper, "_qml_grafika_melegites", lambda *_a, **_k: True)
+    monkeypatch.setattr(update_eredmeny, "ird", lambda *_a, **_k: None)
+    monkeypatch.setattr(update_swap_helper, "inditsd_a_felhasznalonak", lambda *_a, **_k: None)
+    monkeypatch.setattr(update_swap_helper, "_log_update", lambda *_a, **_k: None)
+    monkeypatch.setattr(update_swap_helper, "varj_uj_ablakra", lambda *_a, **_k: True)
+
+    assert update_swap_helper.install_after_exit(
+        1, tmp_path / "frissites.zip", tmp_path / "PicasaPy", "PicasaPy.exe"
+    )
+
+    assert lepesek == [
+        "varakozas",
+        "kicsomagolas",
+        "maradek_folyamatok",
+        "csere",
+        "onellenorzes",
+        "qml_cache",
+        "qml_grafika",
+        "inditas",
+        "ablak_varakozas",
+    ]
+    assert [update_ablak.lepes_szovege(k, "hu") for k in lepesek] == [
+        "A régi program kilépésére vár",
+        "A frissítési fájlok kicsomagolása",
+        "Másik futó példány bezárása",
+        "Fájlok cseréje",
+        "Az új verzió ellenőrzése",
+        "Az indulás előkészítése",
+        "A grafika előkészítése",
+        "Az új verzió indítása",
+        "Az új verzió ablakára vár",
+    ]
 
 
 _CSAK_WINDOWS = pytest.mark.skipif(

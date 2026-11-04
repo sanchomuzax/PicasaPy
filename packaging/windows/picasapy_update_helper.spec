@@ -23,6 +23,8 @@ a = Analysis(
     binaries=[],
     datas=[],
     hiddenimports=[
+        "tkinter",
+        "tkinter.ttk",
         "picasapy.app.update_swap_helper",
         "picasapy.app.update_folyamatok",
         "picasapy.app.update_eredmeny",
@@ -30,7 +32,7 @@ a = Analysis(
     ],
     hookspath=[],
     runtime_hooks=[],
-    excludes=["tkinter", "pytest"],
+    excludes=["pytest"],
     noarchive=False,
 )
 pyz = PYZ(a.pure)

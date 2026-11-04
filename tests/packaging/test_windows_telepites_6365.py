@@ -97,3 +97,12 @@ def test_mindket_windows_spec_a_pyprojectbol_epiti_be_a_verzioeroforrast(spec_pa
     assert "_windows_version_resource" in spec
     assert "_VERZIO_EROFORRAS" in spec
     assert "version=str(_VERZIO_EROFORRAS)" in spec
+
+
+def test_a_folyamatos_frissitesi_ablak_tk_fuggosege_a_segedbe_kerul():
+    spec = _HELPER_SPEC.read_text(encoding="utf-8")
+
+    assert '"tkinter"' in spec
+    assert '"tkinter.ttk"' in spec
+    assert 'excludes=["pytest"]' in spec
+    assert 'excludes=["tkinter", "pytest"]' not in spec
