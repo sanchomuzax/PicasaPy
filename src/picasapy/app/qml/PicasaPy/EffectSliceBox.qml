@@ -16,14 +16,23 @@ Rectangle {
     readonly property bool paramEditing: hostEditorPanel
         && hostEditorPanel.paramPanelActive
     // a Finomhangolás fül négy csúszkája a finetune2 effekt beállító panele
-    readonly property bool tuningEditing: hostEditorPanel
-        && hostEditorPanel.effectSliceTuningActive === true
+    readonly property bool tuningEditing: hostEditorPanel !== null
+        && hostEditorPanel.activeTab === 1 && !hostEditorPanel.paramPanelActive
+    readonly property var tuningValues: tuningEditing && hostEditorPanel.finetunePanel
+        ? [hostEditorPanel.finetunePanel.fillSlider.value,
+           hostEditorPanel.finetunePanel.highlightsSlider.value,
+           hostEditorPanel.finetunePanel.shadowsSlider.value,
+           hostEditorPanel.finetunePanel.tempSlider.value]
+        : []
+    // új beállító panel nyílásakor a mélységtengely az első csúszka
+    onParamEditingChanged: if (paramEditing) hostEditorPanel.effectSliceDepthIndex = 0
+    onTuningEditingChanged: if (tuningEditing) hostEditorPanel.effectSliceDepthIndex = 0
     readonly property bool editingEffect: paramEditing || tuningEditing
     readonly property string activeEffectName: paramEditing
         ? hostEditorPanel.paramEffectName : (tuningEditing ? "finetune2" : "")
     readonly property var activeEffectValues: paramEditing
         ? hostEditorPanel.paramEffectValues
-        : (tuningEditing ? hostEditorPanel.effectSliceTuningValues : [])
+        : tuningValues
     readonly property int depthIndex: hostEditorPanel
         ? hostEditorPanel.effectSliceDepthIndex : 0
     readonly property string photoPath: hostViewer ? hostViewer.currentFilePath : ""

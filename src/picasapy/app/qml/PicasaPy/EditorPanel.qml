@@ -9,8 +9,6 @@ import "editorpanel_logika.js" as Logika
 // megtartja a hívók által használt tulajdonságokat, jeleket és függvényeket.
 Rectangle {
     id: panel
-    // SAJÁT FUNKCIÓ (#6522): a térszelvény mélységtengelye az utoljára mozgatott effektcsúszkát követi.
-    property int effectSliceDepthIndex: 0
     objectName: "editorPanel"
     //: #3463: a Shift+F1 fejezete (ld. `Main.qml` `helpTopicUnderCursor`)
     property string helpTopic: "features/szerkeszto.md"
@@ -191,27 +189,11 @@ Rectangle {
     signal effectRequested(string name)
 
     property alias paramPanelActive: effectState.paramPanelActive
-    onParamPanelActiveChanged: {
-        if (panel.paramPanelActive) panel.effectSliceDepthIndex = 0
-    }
-    // SAJÁT FUNKCIÓ (#6522): a Finomhangolás fül is beállító panel a térszelvénynek.
-    readonly property bool effectSliceTuningActive: activeTab === 1 && !paramPanelActive
-    readonly property var effectSliceTuningValues: finetunePanel
-        ? [finetunePanel.fillSlider.value, finetunePanel.highlightsSlider.value,
-           finetunePanel.shadowsSlider.value, finetunePanel.tempSlider.value]
-        : []
-    onEffectSliceTuningActiveChanged: {
-        if (panel.effectSliceTuningActive) panel.effectSliceDepthIndex = 0
-    }
-    //: a látható tartalom alja (panel-koordinátában): a térszelvény csak e fölé
-    //: nem kerülhet; a Visszavonás sor szűkített helye helyett a tartalom szerinti
-    //: helyet nézi, különben a foglalás és a láthatóság egymásra hivatkozna
-    readonly property real effectSliceContentBottom: {
-        var param = panelTabs.effectParamPanel
-        if (panel.paramPanelActive && param)
-            return panelTabs.y + param.y + param.contentHeight
-        return panelTabs.tabAreaItem.y + panel.tabContentHeight + 8 + globalUndoRow.height
-    }
+    // SAJÁT FUNKCIÓ (#6522): a térszelvény mélységtengely-csúszkája és a látható tartalom alja
+    property int effectSliceDepthIndex: 0
+    readonly property real effectSliceContentBottom: paramPanelActive && panelTabs.effectParamPanel
+        ? panelTabs.effectParamPanel.y + panelTabs.effectParamPanel.contentHeight
+        : panelTabs.tabAreaItem.y + tabContentHeight + 8 + globalUndoRow.height
     property alias paramPanelSuspended: effectState.paramPanelSuspended
     readonly property bool paramPanelContentBlurred:
         effectState.paramPanelContentBlurred

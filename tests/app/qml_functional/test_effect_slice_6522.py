@@ -127,3 +127,30 @@ def test_a_doboz_sosem_takarja_az_effektpanel_alkalmaz_gombjat(qml_app, qt_app, 
     if magassag == 940:
         # elég magas ablakban a doboz szerkesztés közben meg is jelenik
         assert box.isVisible()
+
+
+def test_a_finomhangolas_ful_csuszkaja_is_a_melysegtengelyre_kerul(qml_app, qt_app):
+    window, _app_controller, engine = qml_app
+    effect_controller = engine.rootContext().contextProperty("effectSliceController")
+    effect_controller.setMode("editing")
+    window.resize(1280, 940)
+    window.show()
+    window.setProperty("viewerOpen", True)
+    window.setProperty("selectedIndex", 0)
+    viewer = window.findChild(QObject, "photoViewer")
+    assert QMetaObject.invokeMethod(
+        viewer, "show", Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", 0)
+    )
+    panel = window.findChild(QObject, "viewerEditorPanel")
+    box = window.findChild(QObject, "viewerEffectSliceBox")
+    assert QMetaObject.invokeMethod(
+        panel, "selectTab", Qt.ConnectionType.DirectConnection, Q_ARG("QVariant", 1)
+    )
+    assert var_feltetelre(qt_app, lambda: box.isVisible(), 3.0)
+    window.findChild(QObject, "finetuneTempSlider").setProperty("value", 0.5)
+    panel.setProperty("effectSliceDepthIndex", 3)
+
+    assert var_feltetelre(
+        qt_app, lambda: effect_controller.property("sliderLabel") == "Color Temperature", 3.0
+    )
+    assert effect_controller.property("sliderValue") == pytest.approx(0.5)
