@@ -203,8 +203,10 @@ Button {
             || controller.uiTransitionsEnabled === undefined
             ? true : controller.uiTransitionsEnabled
 
+    // A rejtett rétegben álló, folyamatos pulzálás láthatatlanul is ébresztette
+    // a Qt Quick animációs szálát (#6510). Csak megjelenő gomb animálhat.
     readonly property bool throbFut:
-        control.throbbing && control.uiTransitionsEnabled
+        control.visible && control.throbbing && control.uiTransitionsEnabled
         && control.enabled && !control.down
         && !control._throbMegnyomva
 
