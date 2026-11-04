@@ -6,7 +6,7 @@
 
 A néző bal fiókjában, a hisztogram fölött jelenik meg egy 238 × 144 képpontos doboz 4 képpont réssel. A Nézet ▸ Effekt-térszelvény almenü kizáró módjai: Mindig, Szerkesztés közben (alapérték) és Soha. A módot a `view/effectSlice` QSettings-kulcs őrzi. A doboz forgása a `view/effectSliceSpin` kulccsal marad meg.
 
-Mindig módban a teljes `filters=` láncot mutatja; üres láncnál az azonossági átlót és a „Nincs alkalmazott effekt” feliratot. Szerkesztés közben módban csak akkor látszik, amikor egy effektparaméter-panel vagy a Finomhangolás fül nyitva van; a Finomhangolás fül a finetune2 effekt négy csúszkája (Derítőfény, Csúcsfények, Árnyékok, Színhőmérséklet). Soha módban a doboz rejtett, a hisztogram elrendezése változatlan.
+Mindig módban a teljes `filters=` láncot mutatja; üres láncnál az azonossági átlót és a „Nincs alkalmazott effekt” feliratot. Szerkesztés közben módban a szerkesztőpanel minden fülén látszik (#6535: Gyakori javítások, Finomhangolás, effektrácsos fülök); konkrét effekt nélkül a fotó láncát mutatja. Effektváltáskor az új effekt saját nézettípusa jön, nem a korábbi (#6536); a Jó napom van (`enhance`) tónusnézetű, a fotón mérve; a Finomhangolás fül a finetune2 effekt négy csúszkája (Derítőfény, Csúcsfények, Árnyékok, Színhőmérséklet). Soha módban a doboz rejtett, a hisztogram elrendezése változatlan.
 
 ## Mérés és nézettípusok
 

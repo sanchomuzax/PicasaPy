@@ -44,6 +44,11 @@ Rectangle {
     onParamEditingChanged: if (paramEditing) hostEditorPanel.effectSliceDepthIndex = 0
     onTuningEditingChanged: if (tuningEditing) hostEditorPanel.effectSliceDepthIndex = 0
     readonly property bool editingEffect: paramEditing || tuningEditing
+    // #6535: a szerkesztőpanel bármely fülén (Gyakori javítások, rácsos fülök is)
+    // szerkesztés folyik; konkrét effekt nélkül a fotó teljes láncát mutatja
+    readonly property bool editorOpen: hostEditorPanel !== null && hostEditorPanel.visible
+    readonly property string sessionChain: (hostEditCtl && hostEditCtl.chainValue !== undefined)
+        ? String(hostEditCtl.chainValue) : ""
     readonly property string activeEffectName: paramEditing
         ? hostEditorPanel.paramEffectName : (tuningEditing ? "finetune2" : "")
     readonly property var activeEffectValues: paramEditing
@@ -55,6 +60,8 @@ Rectangle {
     readonly property string chainValue: {
         if (editingEffect && hostEditCtl)
             return hostEditCtl.chainValue
+        if (editorOpen && sessionChain.length > 0)
+            return sessionChain
         var model = hostViewer ? hostViewer.photosModel : null
         if (!model || typeof model.filtersAt !== "function") return ""
         return (model.revision, model.filtersAt(hostViewer.currentIndex))
@@ -87,7 +94,7 @@ Rectangle {
     property bool hasRoom: true
     visible: hostViewer !== null && !hostViewer.isCurrentVideo && hasRoom
         && (ctlMode === "always"
-            || (ctlMode === "editing" && editingEffect))
+            || (ctlMode === "editing" && (editingEffect || editorOpen)))
     radius: 3
     color: Theme.chromeBg
     border.width: 1
@@ -117,7 +124,7 @@ Rectangle {
     Connections {
         target: box.hostEditCtl
         ignoreUnknownSignals: true
-        function onRevisionChanged() { if (box.editingEffect) box.requestCurrent() }
+        function onRevisionChanged() { if (box.visible) box.requestCurrent() }
     }
 
     Text {
