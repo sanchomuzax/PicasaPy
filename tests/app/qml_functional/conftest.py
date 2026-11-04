@@ -17,6 +17,8 @@ A `qt_app` (session-scope) a szülő conftestből öröklődik, azt itt nem kell
 újradefiniálni.
 """
 
+from pathlib import Path
+
 import pytest
 
 from picasapy.index import open_index, sync_tree
@@ -515,9 +517,11 @@ def _proba_kepek(lib) -> None:
     minta = [("a.jpg", PROBA_HATTER), ("b.jpg", PROBA_FEHER)]
     for nev, tonus in minta:
         kep = np.full((160, 320, 3), tonus, dtype=np.uint8)
-        assert cv2.imwrite(
-            str(lib / nev), kep, [int(cv2.IMWRITE_JPEG_QUALITY), 100]
-        ), nev
+        _cv2_kepet_menti(
+            lib / nev,
+            kep,
+            (int(cv2.IMWRITE_JPEG_QUALITY), 100),
+        )
 
 
 #: A #1657 próbaképeinek egyenletes SZÍNE. A #1596 két képe szürke, azon a
@@ -548,9 +552,20 @@ def _szines_proba_kepek(lib) -> None:
     for nev, szin in minta:
         # az OpenCV BGR-ben ír, a megadott tónus RGB-ben értendő
         kep = np.full((160, 320, 3), tuple(reversed(szin)), dtype=np.uint8)
-        assert cv2.imwrite(
-            str(lib / nev), kep, [int(cv2.IMWRITE_JPEG_QUALITY), 100]
-        ), nev
+        _cv2_kepet_menti(
+            lib / nev,
+            kep,
+            (int(cv2.IMWRITE_JPEG_QUALITY), 100),
+        )
+
+
+def _cv2_kepet_menti(ut: Path, kep, parameterek: tuple[int, ...] = ()) -> None:
+    """OpenCV-képet Windows-kompatibilis útvonalkezeléssel ment."""
+    import cv2
+
+    siker, kodolt = cv2.imencode(ut.suffix, kep, list(parameterek))
+    assert siker, f"nem kódolható próbakép: {ut.name}"
+    ut.write_bytes(kodolt.tobytes())
 
 
 @pytest.fixture
