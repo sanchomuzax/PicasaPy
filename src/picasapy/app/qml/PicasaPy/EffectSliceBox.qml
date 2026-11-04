@@ -49,7 +49,7 @@ Rectangle {
     // a szerkesztőeszközök (vágás, vörösszem, szöveg, kiegyenesítés) nem effektek:
     // használatuk közben a doboz nem takarhatja az eszköz vezérlőit
     readonly property bool editorOpen: hostEditorPanel !== null && hostEditorPanel.visible
-        && !hostEditorPanel.modeToolActive
+        && !hostEditorPanel.modeToolActive && !hostEditorPanel.tiltActive
     readonly property string sessionChain: (hostEditCtl && hostEditCtl.chainValue !== undefined)
         ? String(hostEditCtl.chainValue) : ""
     readonly property string activeEffectName: paramEditing
