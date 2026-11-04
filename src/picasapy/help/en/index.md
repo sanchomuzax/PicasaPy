@@ -30,7 +30,7 @@ available yet.
 
 ## Editing
 
-- [The editor and its seven tabs](features/szerkeszto.md)
+- [The editor and its six tabs](features/szerkeszto.md)
 - [List of effects](features/effektek.md)
 - [Batch editing and the effects clipboard](features/csoportos-szerkesztes.md)
 - [Save, restore, and undo](features/mentes.md)

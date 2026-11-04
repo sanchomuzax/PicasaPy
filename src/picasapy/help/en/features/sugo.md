@@ -23,6 +23,14 @@ same window, grouped by menu. See [Keyboard Shortcuts](billentyuk.md) for
 an explanation. Help ▸ **&Check for Updates**… looks for a new PicasaPy
 version; see [Options](beallitasok.md).
 
+Help ▸ **Show background work in the status bar** is a check item. When it
+is on (the default), the blue strip in the bottom bar shows what the
+program is doing in the background, for example **Scanning folders** or
+**Generating thumbnails**. When several tasks run at once, the latest one
+is shown together with the number of others, for example "(+2 more)". When
+it is off, the strip shows the usual selection details. Your choice is
+kept the next time you start the program.
+
 ## Move between chapters
 
 - Select a chapter in the list on the left to open it.

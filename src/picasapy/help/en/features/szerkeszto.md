@@ -1,4 +1,4 @@
-# The Editor and its seven tabs
+# The Editor and its six tabs
 
 ## Non-destructive editing
 
@@ -10,7 +10,7 @@ until you save an edited copy (see [Save and Revert](mentes.md)).
 ## Open the editor
 
 Open a picture in the viewer. The panel on the left is the editor; it
-has seven tabs:
+has six tabs:
 
 | Tab | Purpose |
 |---|---|
@@ -19,10 +19,9 @@ has seven tabs:
 | **Effects** | The standard set of effects |
 | **Creative** | Additional effects |
 | **Artistic** | Stronger effects for a particular look |
-| **More Effects** | Effects available in the engine but not in the original Picasa interface |
-| **Legacy Effects** | Filters carried over from older Picasa versions |
+| **Legacy Effects** | Effects available in the engine but without a button in the original Picasa interface, plus filters carried over from older Picasa versions |
 
-A blue badge on tiles in tabs 3-7 marks one-click effects. See
+A blue badge on tiles in tabs 3-6 marks one-click effects. See
 [Effects](effektek.md) for the full list and details.
 
 The detailed list is available in [Effects](effektek.md).

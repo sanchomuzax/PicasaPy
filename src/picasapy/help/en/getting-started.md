@@ -151,12 +151,14 @@ in the thumbnail grid.
 
 ### Background activity indicator
 
-A small indicator in the upper-right
-corner appears only while the application is working in the background,
-for example, scanning, searching for faces, or building the color index. A
-spinner shows that work is in progress. If the operation can be stopped, a
-stop button appears beside it; the application asks for confirmation before
-stopping.
+A small indicator in the toolbar, to the right of the **Search** field and
+in line with it, appears only while the application is working in the
+background, for example, scanning, searching for faces, or building the
+color index. A spinner shows that work is in progress. If the operation can
+be stopped, a × stop button appears next to the spinner; the
+application asks for confirmation before stopping. The blue strip in the
+bottom bar can also show what is running; see [Built-in
+Help](features/sugo.md).
 
 ### Thumbnail grid
 

@@ -37,7 +37,6 @@ See [Settings](beallitasok.md) for details.
 - Proxy fields and the **Automatically detect network settings**
   checkbox on **Network**.
 - **Web Albums**, because Picasa Web Albums has been discontinued.
-- The **Send anonymous usage statistics** checkbox on **General**.
 - **Send inline photos and captions (Outlook only)** on **E-Mail**.
 
 ## Discontinued online services

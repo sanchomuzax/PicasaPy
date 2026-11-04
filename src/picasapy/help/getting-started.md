@@ -148,12 +148,14 @@ elérhető.
 **Bal hasáb** — a mappák, albumok, gyűjtemények és projektek listája.
 Innen választod ki, mit mutasson a rács.
 
-**Háttérművelet-jelző** — az ablak jobb felső sarkában egy kis jelző,
-ami **csak akkor látszik, ha a program a háttérben dolgozik**
-(beolvasás, arckeresés, színindex). Pörgővel mutatja, hogy fut valami, és
-ha a munka leállítható, megjelenik mellette a leállító gomb is: „A
-háttérművelet leállítása". A leállítás előtt a program rákérdez, aztán
-tényleg megállítja a munkát.
+**Háttérművelet-jelző**: az eszköztárban, a **Keresés** mezőtől jobbra,
+vele egy sorban álló kis jelző, ami **csak akkor látszik, ha a program a
+háttérben dolgozik** (beolvasás, arckeresés, színindex). Pörgővel mutatja,
+hogy fut valami, és ha a munka leállítható, a pörgő mellett megjelenik a
+× leállító gomb is: „A háttérművelet leállítása". A leállítás előtt a
+program rákérdez, aztán tényleg megállítja a munkát. Hogy épp mi fut, azt
+az alsó sáv kék csíkja is kiírhatja, lásd [A beépített
+súgó](features/sugo.md).
 
 **Rács** — a kiválasztott mappa vagy album indexképei. Egy képre kattintva
 kijelölöd, duplán kattintva megnyitod a nézőben.

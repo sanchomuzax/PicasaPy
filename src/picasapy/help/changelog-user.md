@@ -4,6 +4,79 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-04
+
+**Szerkesztő**
+
+- A **Régi effektek** fül egybeolvadt a korábbi **További effektek**
+  füllel: a szerkesztőnek most hat füle van. Az új fülön elöl a Matt, az
+  Éjjellátó, a Helyi kontraszt, a Kerekített élek és a Filmszemcse áll,
+  utánuk a régi szűrők, görgethető, négy és fél soros rácsban. Lásd
+  [Effektek](features/effektek.md).
+- Mind a húsz régi szűrő használható: a **Színjavítások** és a
+  **Fehérpont** újra működik, az **Elhomályosítás** kattintható. A
+  működésképtelen fókuszos képpontosító csempe kikerült a rácsból.
+- A régi szűrők az eredeti Picasa csúszkáit kapták (például az irányított
+  effektek **Balról jobbra** és **Felülről lefelé** csúszkáját), a
+  **Lineáris homályosítás** helyét pedig a képen húzható korong adja. A
+  beállítások mentés után is megmaradnak.
+- Kis ablakmagasságnál az effektrács és a **Visszavonás**/**Újra** sor a
+  hisztogram fölött ér véget.
+
+**Főablak**
+
+- A háttérművelet-jelző a **Keresés** mezőtől jobbra, vele egy sorban áll,
+  és a × leállító gomb a pörgő mellett van, nem takarja el. Lásd
+  [Első lépések](getting-started.md).
+- Az alsó sáv kék csíkja kiírja, min dolgozik a program a háttérben. Ki-
+  és bekapcsolni a **Súgó ▸ Háttérmunka megjelenítése az állapotsávon**
+  tétellel lehet. Lásd [A beépített súgó](features/sugo.md).
+- Az alsó sáv gombjai nem érnek össze: a kimeneti gombok, a két
+  forgatógomb és a panelkapcsolók között rés van, és a zöld feltöltés-gomb
+  ugyanolyan magas, mint a többi.
+- Az indulóképen a PicasaPy-logó középre került.
+- Két képernyős gépen az értesítő azon a képernyőn jelenik meg, ahol a
+  PicasaPy ablaka van.
+- A gombok lenyomáskor láthatóan benyomódnak, a hosszú műveletek pedig
+  azonnal visszajeleznek.
+
+**Google Fotók**
+
+- Bejelentkezve a menüsor jobb szélén a fiókod e-mail-címe, a **Google
+  Fotók** és a **Kijelentkezés** hivatkozás áll. Lásd [Feltöltés a Google
+  Fotókba](features/google-fotok.md).
+- A feltöltési ablak a főablakon belül, a gomb fölött nyílik.
+
+**Beállítások**
+
+- Az **Általános** fülről kikerült a névtelen használati statisztika sora
+  és a Google adatvédelmi oldalára mutató hivatkozás: a PicasaPy nem gyűjt
+  statisztikát. Lásd [Beállítások](features/beallitasok.md).
+
+**Frissítés**
+
+- A frissítési ablak **Telepítés kilépéskor** gombja **Frissítés
+  kilépéskor** lett. Megnyomása után a jobb felső verziófelirat mutatja,
+  hogy a frissítés a program bezárásakor települ.
+- Ha egy frissítés félbemarad, vagy mégis a régi változat indul el, a
+  következő indításkor a program kiírja, és a legújabb Setup kézi
+  telepítését kéri.
+- A frissítés akkor sem bukik el, ha közben újraindítod a régi programot.
+- A frissítési jelvény kék címke lett, fehér felirattal.
+
+**Egyéb**
+
+- Az arcfelismerés több kicsi és több, a képet kitöltő közeli arcot is
+  megtalál.
+- Szerkesztés közben az ép képre nem ugrik fel többé a sérült fájlokról
+  szóló kérdés csak azért, mert egy előnézet egyszer nem készült el.
+- A **Rögzített videoklipek** és a **Képernyőfelvételek** mappa
+  újraindítás után is megmarad a bal hasábban.
+- Változás nélkül a könyvtár nem szinkronizál újra és újra, így a felület
+  nem akad meg.
+- Windowson gyorsabb a telepítés utáni első indulás, és a telepítő végén
+  indított program néhány másodpercen belül indulóképet mutat.
+
 ## 2026-11-02
 
 **Frissítések**

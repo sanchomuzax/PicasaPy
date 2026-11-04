@@ -11,9 +11,8 @@ Seven tabs have working controls: General, E-Mail, File Types, Slideshow,
 Print, Name Tags, and Google Photos. On the Network tab, only logging works;
 the proxy controls are disabled. The Web Albums tab does not work because
 Picasa Web Albums has been discontinued; it remains to match the original
-Picasa layout. The anonymous-usage-statistics control on the General tab is
-disabled. The **Check for updates automatically** control works and is on by
-default.
+Picasa layout. The **Check for updates automatically** control works and is
+on by default.
 
 Two buttons appear at the bottom of the dialog, as in Picasa:
 
@@ -61,7 +60,9 @@ is your Pictures folder by default. Choose **Browse...** to select another
 folder; that folder is then used when you open the Import window. See
 [Import](importalas.md).
 
-The privacy link opens Google's privacy page in your browser.
+The original Picasa's anonymous usage statistics row and the link to
+Google's privacy page are not on this tab: PicasaPy does not collect usage
+statistics.
 
 ### Checking for updates
 
@@ -94,6 +95,14 @@ the fingerprint in the release's `SHA256SUMS` file. A failed check prevents
 replacement. After a successful download, choose **Restart now** or
 **Update on exit**. Restarting waits for background work to finish. The previous
 version is kept, and the updater restores it if the new copy fails to start.
+
+After **Update on exit**, the version label in the upper-right corner shows a
+circular arrow and the new version number, so you can see the update is
+waiting. Its tooltip reads **Update will be installed when PicasaPy closes.**
+While the update runs, a small window shows that the work is in progress. If
+the update stops before it finishes, or an earlier version starts after all,
+the program tells you at the next start and asks you to install the latest
+Setup manually.
 
 On Linux (`.deb`) and `pip` installations, the dialog shows the release page
 and the exact update command. PicasaPy does not replace itself on those

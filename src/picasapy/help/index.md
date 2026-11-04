@@ -28,7 +28,7 @@ szerkesztő fülei ugyanott vannak.
 
 ## Szerkesztés
 
-- [A szerkesztő és a hét fül](features/szerkeszto.md)
+- [A szerkesztő és a hat fül](features/szerkeszto.md)
 - [Effektek listája](features/effektek.md)
 - [Csoportos szerkesztés és az effektus-vágólap](features/csoportos-szerkesztes.md)
 - [Mentés, visszaállítás, visszavonás](features/mentes.md)

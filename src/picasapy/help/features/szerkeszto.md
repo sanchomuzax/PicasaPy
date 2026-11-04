@@ -1,4 +1,4 @@
-# A szerkesztő és a hét fül
+# A szerkesztő és a hat fül
 
 ## Nem-destruktív szerkesztés
 
@@ -10,7 +10,7 @@ visszaállítás](mentes.md)).
 
 ## A szerkesztő megnyitása
 
-Nyisd meg a képet a nézőben; a bal oldali panel a szerkesztő. Hét fül van
+Nyisd meg a képet a nézőben; a bal oldali panel a szerkesztő. Hat fül van
 benne, balról jobbra:
 
 | fül | mire való |
@@ -20,10 +20,9 @@ benne, balról jobbra:
 | **Effektek** | az alap effektkészlet |
 | **Kreatív** | további effektek |
 | **Művészi** | hangulatos, erősebb effektek |
-| **További effektek** | ami a motorban megvan, de az eredeti Picasa felületén nem volt |
-| **Régi effektek** | régi Picasa-változatokból örökölt szűrők |
+| **Régi effektek** | a motorban meglévő, de az eredeti Picasa felületén gomb nélküli effektek, és a régi Picasa-változatokból örökölt szűrők |
 
-A 3–7. fül csempéin a **kék jelvény** az egykattintásos effekteket
+A 3-6. fül csempéin a **kék jelvény** az egykattintásos effekteket
 jelöli — lásd [Effektek](effektek.md).
 
 Az effektek részletes listája: [Effektek](effektek.md).
