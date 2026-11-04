@@ -105,3 +105,24 @@ dekódolt képkészlet összevetése is megerősíti.
 Nyitott: a Feladatkezelő aktuális Windows-verzión, DPI-n és nézetben kért
 ikonmérete, valamint az ahhoz rendelt RT_ICON-képkocka. Ezt a helyi
 Linux-mérés és az áttekintett Microsoft Win32 dokumentáció nem dönti el.
+
+## A PicasaPy ikonrajzának előállítása (#6514)
+
+A közös színes jel a `src/picasapy/app/assets/logo.svg` fájl
+`picasapy-icon-mark` csoportja. A logó ezt a csoportot közvetlenül használja,
+az `scripts/generate_app_icon.py` pedig ugyanebből a csoportból rajzolja újra
+az ikonokat. Az eredeti Picasa képei és útvonalai nem részei a forrásnak.
+
+A színes jel átmérője az eredeti képkockákon (telített képpontok befoglalója):
+16 px-en 14, 32 px-en 29, 48 px-en 42, 256 px-en 210 px. A PicasaPy ikonja
+ugyanezeket a méreteket veszi át: a fehér körlap átmérője és középpontja a
+fenti alfa-befoglaló adatokat követi (32: 30, 48: 44, 256: 226 px), a színes
+jel pedig akkora, mint az eredetiben. A 24, 64 és 128 px-es képkockák a
+256 px-es méreteket `méret / 256` arányban követik.
+
+A 16 px-es változat világos (`#f9f9f9`), teljesen fedett, négyzetes csempe,
+mint az eredeti, rajta a 14 px-es színes jel. A SVG-kör sugara a kívánt
+átmérő felénél 1 px-lel nagyobb, mert a raszterezés szélső élsimított
+pixelei nem teljesen fedettek; így a `alpha == 255` befoglaló a célméretet adja.
+Mind a hét ICO-képkocka ugyanabból a közös SVG-jelből készül; az `icon.png`
+képpontjai a 256 px-es ICO-képkockával azonosak.
