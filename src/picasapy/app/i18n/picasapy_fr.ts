@@ -12626,6 +12626,32 @@ picasapy-origin-key: stringres:eMenuView::ThumbnailCaption</extracomment>
 picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
             <translation>Utiliser la gestion des couleurs</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaViewMenu.qml" />
+            <source>Effect Slice</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Coupe de l'effet</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaViewMenu.qml" />
+            <source>Always</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_download:gpuploader_download/always_btn.title;gpuploader_manage_devices:gpuploader_manage_devices/whitelist.title</extracomment>
+            <translation>Toujours</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaViewMenu.qml" />
+            <source>While Editing</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Pendant la modification</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaViewMenu.qml" />
+            <source>Never</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_download:gpuploader_download/never_btn.title;gpuploader_manage_devices:gpuploader_manage_devices/blacklist.title</extracomment>
+            <translation>Jamais</translation>
+        </message>
     </context>
     <context>
         <name>PlacesMap</name>
@@ -20816,6 +20842,129 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>The new version did not show a window within 180 seconds.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>La nouvelle version n'a affiché aucune fenêtre en 180 secondes.</translation>
+        </message>
+    </context>
+    <context>
+        <name>EffectSliceBox</name>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Chain · %1 steps</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Chaîne · %1 étapes</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Switch the view type</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Changer le type de vue</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>3D</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>3D</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Pause the 3D rotation</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Mettre la rotation 3D en pause</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Resume the 3D rotation</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Reprendre la rotation 3D</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>This effect has no slice</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Cet effet n'a pas de coupe</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>No applied effect</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Aucun effet appliqué</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x: input · depth: %1 · z: output</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x: entrée · profondeur: %1 · z: sortie</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x: input · z: output</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x: entrée · z: sortie</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>RGB cube · point = output color</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Cube RGB · point = couleur de sortie</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x-y: image plane · z: effect strength</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x-y: plan de l'image · z: intensité de l'effet</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x-y: neighborhood · z: weight</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x-y: voisinage · z: poids</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x-y: image plane · z: deviation</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x-y: plan de l'image · z: écart</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Horizontally: input brightness; in depth: the full range of the %1 slider; vertically: output brightness. The orange line marks its current position.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>À l'horizontale : luminosité d'entrée ; en profondeur : toute la plage du curseur %1 ; à la verticale : luminosité de sortie. La ligne orange marque sa position actuelle.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>The RGB color-space grid: each point lands where the effect takes that color, and takes on the new color. The dashed cube is the original color space.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>La grille de l'espace colorimétrique RGB : chaque point arrive là où l'effet emmène cette couleur et prend la nouvelle couleur. Le cube en pointillés est l'espace colorimétrique d'origine.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>A top view of the image: height shows where and how strongly the effect changes it.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Vue de dessus de l'image : la hauteur montre où et avec quelle force l'effet la modifie.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>The effect's response to one bright pixel: a blur spreads into a mound; sharpening may add a dark ring.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>La réponse de l'effet à un seul pixel clair : un flou l'étale en monticule ; la netteté peut ajouter un anneau sombre.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>The effect's deviation on an even gray field with a fixed random seed.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>L'écart de l'effet sur un champ gris uniforme avec une graine aléatoire fixe.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>This effect has no slice.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Cet effet n'a pas de coupe.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Click: pause or resume spin. Drag: rotate.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Clic : pause ou reprise de la rotation. Glisser : pivoter.</translation>
         </message>
     </context>
 </TS>

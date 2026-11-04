@@ -12625,6 +12625,32 @@ picasapy-origin-key: stringres:eMenuView::ThumbnailCaption</extracomment>
 picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
             <translation>Sử dụng quản lý màu</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaViewMenu.qml" />
+            <source>Effect Slice</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Lát cắt hiệu ứng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaViewMenu.qml" />
+            <source>Always</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_download:gpuploader_download/always_btn.title;gpuploader_manage_devices:gpuploader_manage_devices/whitelist.title</extracomment>
+            <translation>Luôn luôn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaViewMenu.qml" />
+            <source>While Editing</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Khi đang chỉnh sửa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaViewMenu.qml" />
+            <source>Never</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_download:gpuploader_download/never_btn.title;gpuploader_manage_devices:gpuploader_manage_devices/blacklist.title</extracomment>
+            <translation>Không bao giờ</translation>
+        </message>
     </context>
     <context>
         <name>PlacesMap</name>
@@ -20815,6 +20841,129 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>The new version did not show a window within 180 seconds.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Phiên bản mới không hiển thị cửa sổ nào trong vòng 180 giây.</translation>
+        </message>
+    </context>
+    <context>
+        <name>EffectSliceBox</name>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Chain · %1 steps</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Chuỗi · %1 bước</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Switch the view type</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Đổi kiểu xem</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>3D</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>3D</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Pause the 3D rotation</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tạm dừng xoay 3D</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Resume the 3D rotation</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tiếp tục xoay 3D</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>This effect has no slice</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hiệu ứng này không có lát cắt</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>No applied effect</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Chưa áp dụng hiệu ứng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x: input · depth: %1 · z: output</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x: đầu vào · độ sâu: %1 · z: đầu ra</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x: input · z: output</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x: đầu vào · z: đầu ra</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>RGB cube · point = output color</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Khối RGB · điểm = màu đầu ra</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x-y: image plane · z: effect strength</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x-y: mặt phẳng ảnh · z: cường độ hiệu ứng</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x-y: neighborhood · z: weight</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x-y: vùng lân cận · z: trọng số</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x-y: image plane · z: deviation</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x-y: mặt phẳng ảnh · z: độ lệch</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Horizontally: input brightness; in depth: the full range of the %1 slider; vertically: output brightness. The orange line marks its current position.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Chiều ngang: độ sáng đầu vào; theo chiều sâu: toàn bộ dải của thanh trượt %1; chiều dọc: độ sáng đầu ra. Đường màu cam đánh dấu vị trí hiện tại của thanh trượt.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>The RGB color-space grid: each point lands where the effect takes that color, and takes on the new color. The dashed cube is the original color space.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Lưới không gian màu RGB: mỗi điểm rơi vào nơi hiệu ứng đưa màu đó tới và nhận màu mới. Khối nét đứt là không gian màu gốc.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>A top view of the image: height shows where and how strongly the effect changes it.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ảnh nhìn từ trên xuống: độ cao cho thấy hiệu ứng thay đổi ảnh ở đâu và mạnh đến mức nào.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>The effect's response to one bright pixel: a blur spreads into a mound; sharpening may add a dark ring.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Phản ứng của hiệu ứng với một điểm ảnh sáng: làm mờ dàn nó thành một gò, làm nét có thể thêm một vòng tối.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>The effect's deviation on an even gray field with a fixed random seed.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Độ lệch của hiệu ứng trên nền xám đồng nhất với hạt giống ngẫu nhiên cố định.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>This effect has no slice.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Hiệu ứng này không có lát cắt.</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Click: pause or resume spin. Drag: rotate.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nhấp: tạm dừng hoặc tiếp tục xoay. Kéo: xoay.</translation>
         </message>
     </context>
 </TS>

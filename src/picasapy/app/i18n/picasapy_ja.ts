@@ -12626,6 +12626,32 @@ picasapy-origin-key: stringres:eMenuView::ThumbnailCaption</extracomment>
 picasapy-origin-key: stringres:eMenuView::ID_VIEW_COLOR_MANAGED</extracomment>
             <translation>色の管理を使用</translation>
         </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaViewMenu.qml" />
+            <source>Effect Slice</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>エフェクト断面</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaViewMenu.qml" />
+            <source>Always</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_download:gpuploader_download/always_btn.title;gpuploader_manage_devices:gpuploader_manage_devices/whitelist.title</extracomment>
+            <translation>常時</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaViewMenu.qml" />
+            <source>While Editing</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>編集中のみ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PicasaViewMenu.qml" />
+            <source>Never</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: gpuploader_download:gpuploader_download/never_btn.title;gpuploader_manage_devices:gpuploader_manage_devices/blacklist.title</extracomment>
+            <translation>表示しない</translation>
+        </message>
     </context>
     <context>
         <name>PlacesMap</name>
@@ -20816,6 +20842,129 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>The new version did not show a window within 180 seconds.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>新しいバージョンが 180 秒以内にウィンドウを表示しませんでした。</translation>
+        </message>
+    </context>
+    <context>
+        <name>EffectSliceBox</name>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Chain · %1 steps</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>チェーン · %1 ステップ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Switch the view type</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>表示タイプを切り替え</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>3D</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>3D</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Pause the 3D rotation</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>3D回転を一時停止</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Resume the 3D rotation</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>3D回転を再開</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>This effect has no slice</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>このエフェクトには断面がありません</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>No applied effect</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>適用されたエフェクトはありません</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x: input · depth: %1 · z: output</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x: 入力 · 奥行き: %1 · z: 出力</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x: input · z: output</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x: 入力 · z: 出力</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>RGB cube · point = output color</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>RGBキューブ · 点 = 出力色</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x-y: image plane · z: effect strength</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x-y: 画像平面 · z: エフェクトの強さ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x-y: neighborhood · z: weight</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x-y: 近傍 · z: 重み</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>x-y: image plane · z: deviation</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>x-y: 画像平面 · z: 偏差</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Horizontally: input brightness; in depth: the full range of the %1 slider; vertically: output brightness. The orange line marks its current position.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>横方向: 入力の明るさ、奥行き方向: スライダー %1 の全範囲、縦方向: 出力の明るさ。オレンジの線は現在の位置を示します。</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>The RGB color-space grid: each point lands where the effect takes that color, and takes on the new color. The dashed cube is the original color space.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>RGB色空間のグリッド: 各点はエフェクトがその色を移す先に移動し、新しい色になります。破線のキューブは元の色空間です。</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>A top view of the image: height shows where and how strongly the effect changes it.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>画像の真上からの表示: 高さは、エフェクトがどこをどの程度強く変えるかを示します。</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>The effect's response to one bright pixel: a blur spreads into a mound; sharpening may add a dark ring.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>1つの明るいピクセルに対するエフェクトの応答: ぼかしは山のように広げ、シャープでは暗いリングが加わることがあります。</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>The effect's deviation on an even gray field with a fixed random seed.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>固定の乱数シードによる均一なグレー面に対するエフェクトの偏差。</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>This effect has no slice.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>このエフェクトには断面がありません。</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/EffectSliceBox.qml" />
+            <source>Click: pause or resume spin. Drag: rotate.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>クリック: 回転の一時停止/再開。ドラッグ: 回転。</translation>
         </message>
     </context>
 </TS>

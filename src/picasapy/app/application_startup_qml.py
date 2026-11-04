@@ -101,6 +101,16 @@ def _startup_step_register_qml_context(state):
     web_export_controller = state.web_export_controller
     notifier_screen_geometry = NotifierScreenGeometry(parent=app)
 
+    # SAJÁT FUNKCIÓ (#6522): a menü QSettings-állapotát és a háttérmérést egy vezérlő
+    # tartja, a képet a képszolgáltatója rajzolja.
+    from .effect_slice import EffectSliceController, EffectSliceImageProvider
+
+    effect_slice_controller = EffectSliceController(
+        edit_controller, settings=QSettings("PicasaPy", "PicasaPy"), parent=app
+    )
+    app.aboutToQuit.connect(effect_slice_controller.shutdown)
+    engine.addImageProvider("effectslice", EffectSliceImageProvider(effect_slice_controller))
+
     ScreenCaptureController = _app._lazy_app_symbol("ScreenCaptureController")
     screen_capture_controller = ScreenCaptureController(
         settings=QSettings("PicasaPy", "PicasaPy"), parent=app
@@ -115,6 +125,7 @@ def _startup_step_register_qml_context(state):
     engine.rootContext().setContextProperty("screenCaptureController", screen_capture_controller)
     engine.rootContext().setContextProperty("cameraCaptureController", camera_capture_controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
+    engine.rootContext().setContextProperty("effectSliceController", effect_slice_controller)
     engine.rootContext().setContextProperty("secondPreview", second_preview)
     engine.rootContext().setContextProperty("fileOpsController", fileops_controller)
     engine.rootContext().setContextProperty("confirmSettings", confirm_settings)

@@ -57,8 +57,8 @@ EXCLUDED_FROM_REVERSE_CHECK = {
     "docs/specs/binaris-regeszet-modszertan.md",
 }
 
-#: `- \`path/to/file.ext\` (#123[, #456]) — leírás`
-_ENTRY = re.compile(r"^- `([^`]+)`\s*\(([^)]+)\)\s*—\s*(.+)$", re.M)
+#: `- \`path/to/file.ext\` (#123[, #456]) — leírás` (#6522: sima kötőjellel is)
+_ENTRY = re.compile(r"^- `([^`]+)`\s*\(([^)]+)\)\s*(?:—|-)\s*(.+)$", re.M)
 
 
 @dataclass(frozen=True)

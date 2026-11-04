@@ -1,5 +1,7 @@
 """A képrács soraihoz tartozó QML-adatok és útvonal-lekérdezések."""
 
+# SAJÁT FUNKCIÓ (#6522): a néző a kijelölt kép filters= láncát mutatja a saját térszelvényén.
+
 from __future__ import annotations
 
 import os
@@ -16,6 +18,12 @@ from .model_helpers import _felbontas, _has_edits
 
 
 class PhotoGridAccess:
+    def filtersAt(self, row: int) -> str:
+        """A kijelölt fotó szerkesztési lánca a néző-effekt térszelvényéhez."""
+        if not 0 <= row < len(self._photos):
+            return ""
+        return self._photos[row].filters or ""
+
     def thumbUrlAt(self, row: int) -> str:
         """Thumbnail-URL a kijelölés-tálca miniatűrjeihez."""
         if not 0 <= row < len(self._photos):
@@ -229,4 +237,3 @@ class PhotoGridAccess:
             return ""
         photo = self._photos[row]
         return f"{photo.folder_path}/{photo.name}"
-

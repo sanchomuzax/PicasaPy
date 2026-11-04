@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+// SAJÁT FUNKCIÓ (#6522): az effekt-térszelvény a hisztogram fölötti külön doboz.
 Rectangle {
     id: leftDrawer
     property var hostViewer: null
@@ -75,9 +76,11 @@ Rectangle {
         hostCropOverlay: leftDrawer.hostCropOverlay
         hostCopyCaptionConfirmLoader: leftDrawer.hostCopyCaptionConfirmLoader
         hostUndoDataLossDialogLoader: leftDrawer.hostUndoDataLossDialogLoader
-        // #6477: a panel tartalma a hisztogram fölött érjen véget
+        // SAJÁT FUNKCIÓ (#6522): látható térszelvénynél mindkét doboz és a 4 px-es rés lefoglalt.
         bottomReserve: viewerHistogramBox.visible
-            ? viewerHistogramBox.height + viewerHistogramBox.anchors.bottomMargin : 0
+            ? viewerHistogramBox.height + viewerHistogramBox.anchors.bottomMargin
+                + (effectSliceBox.visible ? effectSliceBox.height + 4 : 0)
+            : 0
     }
 
     // #3234: a döntés-csúszka a KÉP FÖLÖTTI sávba költözött
@@ -96,6 +99,23 @@ Rectangle {
     // szélessége; a képterület `LEFTDRAWEROFFSET + 279`-nél
     // kezdődik (`insetleft`, 1421). A 238 × 144-es doboz így a
     // 280 px-es fiók sávján belülre esik.
+    EffectSliceBox {
+        id: effectSliceBox
+        objectName: "viewerEffectSliceBox"
+        anchors.bottom: viewerHistogramBox.top
+        anchors.bottomMargin: 4
+        anchors.left: parent.left
+        anchors.leftMargin: 20
+        width: 238
+        height: 144
+        hostViewer: leftDrawer.hostViewer
+        hostEditCtl: leftDrawer.hostEditCtl
+        hostEditorPanel: editorPanel
+        // szűk ablakban a doboz nem takarhatja a szerkesztőpanel tartalmát (Alkalmaz gomb)
+        hasRoom: editorPanel.y + editorPanel.effectSliceContentBottom
+            <= viewerHistogramBox.y - 4 - height - 4
+    }
+
     HistogramBox {
         id: viewerHistogramBox
         objectName: "viewerHistogramBox"

@@ -135,6 +135,8 @@ VART: dict[str, list[str]] = {
         SZ,
         "Thumbnail Caption >",
         "Folder View >",
+        SZ,
+        "Effect Slice >",
     ],
     "F&older": [
         "Edit Description...",
@@ -256,6 +258,11 @@ ELTERESEK = {
         "Sötét téma — nálunk van, az eredetiben nincs. A mért 7. csoport "
         "(Színkezelés + Megjelenítési mód) végére került, mert "
         "megjelenítési beállítás, nem nézetváltó."
+    ),
+    "&View · Effect Slice >": (
+        "Effekt-térszelvény - saját PicasaPy-funkció (#6522), az eredetiben "
+        "nincs. A Nézet menü végére, saját csoportba került, hogy a mért "
+        "eredeti csoportok sorrendje és tartalma érintetlen maradjon."
     ),
     "&Tools · Find Faces...": (
         "Az eredeti Eszközök menüjében NINCS arckereső parancs: a „Find "

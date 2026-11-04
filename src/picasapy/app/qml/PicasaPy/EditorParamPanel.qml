@@ -372,7 +372,11 @@ Flickable {
                     // húzás/kattintás közben élő előnézet (#316) — a
                     // programozott kezdőérték-beállítás NEM vált ki `moved`
                     // jelet, csak a valódi felhasználói interakció
-                    onMoved: panel.updateParamValue(paramRow.index, paramSlider.value)
+                    // SAJÁT FUNKCIÓ (#6522): a legutóbb mozgatott csúszka a térszelvény mélységtengelye.
+                    onMoved: {
+                        panel.effectSliceDepthIndex = paramRow.index
+                        panel.updateParamValue(paramRow.index, paramSlider.value)
+                    }
                 }
                 CheckBox {
                     id: paramCheckbox

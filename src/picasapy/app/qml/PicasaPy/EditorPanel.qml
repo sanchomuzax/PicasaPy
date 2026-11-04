@@ -189,6 +189,11 @@ Rectangle {
     signal effectRequested(string name)
 
     property alias paramPanelActive: effectState.paramPanelActive
+    // SAJÁT FUNKCIÓ (#6522): a térszelvény mélységtengely-csúszkája és a látható tartalom alja
+    property int effectSliceDepthIndex: 0
+    readonly property real effectSliceContentBottom: paramPanelActive && panelTabs.effectParamPanel
+        ? panelTabs.effectParamPanel.y + panelTabs.effectParamPanel.contentHeight
+        : panelTabs.tabAreaItem.y + tabContentHeight + 8 + globalUndoRow.height
     property alias paramPanelSuspended: effectState.paramPanelSuspended
     readonly property bool paramPanelContentBlurred:
         effectState.paramPanelContentBlurred
