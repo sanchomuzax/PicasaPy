@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.39] - 2026-11-04
+
+- A frissítés újraindítása közben egy kis ablak mutatja, melyik lépésnél tart a frissítés, és mennyi idő telt el (#6508).
+- Tétlenül a PicasaPy már nem használja folyamatosan a processzort: egy rejtett gomb pulzáló animációja láthatatlanul is futott (#6510).
+- A PicasaPy indítóikonjában a kör és a színes jel pontosan akkora, mint az eredeti Picasa ikonjában, a 16 pixeles változat pedig világos, négyzetes csempe (#6514).
+
 ## [1.0.38] - 2026-11-04
 
 - Sötét témában az ablak címsora és kerete sötét megjelenést kap, a Qt színvilága pedig követi a témát (#6511).
