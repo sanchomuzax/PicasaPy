@@ -245,7 +245,7 @@ kódtól).
 - `tests/app/qml_functional/_fomenu_4420_menu.py` (#6522) - a főmenü-bejáró a három új térszelvény-parancsútvonalat számolja.
 - `tests/app/test_effect_slice_6522.py` (#6522) - a regiszter, csúszkasöprés és valódi renderlánc térszelvény-őrtesztjei.
 - `tests/app/test_effect_slice_qml_6522.py` (#6522) - a térszelvény komponensének és QML-bekötésének forrásőrei.
-- `tests/app/qml_functional/test_effect_slice_6522.py` (#6522) - a kirajzolt térszelvény helyét, rést, alsó tartalékot és lánc nélküli nézetet méri.
+- `tests/app/qml_functional/test_effect_slice_felulet_6522.py` (#6522) - a kirajzolt térszelvény helyét, rést, alsó tartalékot és lánc nélküli nézetet méri.
 
 ## Tervezett, még nem implementált saját funkciók
 
