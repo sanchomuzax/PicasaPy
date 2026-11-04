@@ -38,6 +38,27 @@ _RELATIVE_PATH = re.compile(
 # #6508: tesztben cserélhető óra és várakozás (a globális time modult ne írják át)
 _monotonic = time.monotonic
 _sleep = time.sleep
+_chdir = os.chdir
+#: #6534: a PyInstaller-bootloader indulóképe a segéd ablak nélküli
+#: gyermekfutásaiban ne villanjon fel (PyInstaller: Splash screen)
+_SPLASH_TILTAS = "PYINSTALLER_SUPPRESS_SPLASH_SCREEN"
+
+
+def biztonsagos_munkamappa() -> Path:
+    """A segéd és gyermekei munkamappája: a segéd exe mappája, ha az nem érhető el, a %TEMP%.
+
+    #6534: Windowson egy mappa nem nevezhető át, amíg bármely folyamat
+    munkamappája benne van; a telepítési mappa ezért senkinek nem lehet az."""
+    sajat = Path(sys.executable).resolve().parent
+    return sajat if sajat.is_dir() else Path(tempfile.gettempdir())
+
+
+def gyermek_kornyezet(alap: dict[str, str] | None = None) -> dict[str, str]:
+    """A segéd által indított ablak nélküli PicasaPy-futások környezete."""
+    env = dict(os.environ if alap is None else alap)
+    env[_SPLASH_TILTAS] = "1"
+    return env
+
 
 def _update_log_path() -> Path:
     """A segéd saját, helyi alkalmazásadat-naplója."""
@@ -154,7 +175,14 @@ def swap_update_directory(
     had_previous = install_dir.exists()
     if had_previous:
         # #6458: foglalt fájlnál (víruskereső, indexelő) nem áll vissza azonnal
-        update_folyamatok.atnevez_ujraprobalva(install_dir, backup_dir)
+        update_folyamatok.atnevez_ujraprobalva(
+            install_dir,
+            backup_dir,
+            # #6534: foglalt mappánál a belőle futó folyamatok azonnal leállnak
+            foglaltnal=lambda: update_folyamatok.varj_vagy_allitsd_le(
+                install_dir, hatarido=0.0
+            ),
+        )
     try:
         update_folyamatok.atnevez_ujraprobalva(staged_dir, install_dir)
         if not launch():
@@ -255,7 +283,7 @@ def _onellenorzes(executable: Path, *, timeout: float = 180.0) -> bool:
     kilép; ugyanezt futtatja a CI a csomagon. Ablakot nem nyit, tehát a
     rendszergazdai jogú segéd is futtathatja anélkül, hogy a felhasználó
     elé rendszergazdaként futó program kerülne."""
-    env = os.environ.copy()
+    env = gyermek_kornyezet()
     env["QT_QPA_PLATFORM"] = "offscreen"
     env["QT_QUICK_BACKEND"] = "software"
     started = time.monotonic()
@@ -263,6 +291,7 @@ def _onellenorzes(executable: Path, *, timeout: float = 180.0) -> bool:
         eredmeny = _run(
             [str(executable), "--onellenorzes"],
             env=env,
+            cwd=str(biztonsagos_munkamappa()),
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -299,7 +328,7 @@ def _qml_elofordit(executable: Path, *, timeout: float = 180.0) -> bool:
         from .qml_cache_warmup import melegitsd_qml_cache
 
         output = melegitsd_qml_cache(
-            [str(executable)], os.environ, timeout=timeout
+            [str(executable)], gyermek_kornyezet(), timeout=timeout
         )
     except Exception as error:  # noqa: BLE001 - a cache-hiba nem vonhatja vissza a cserét
         _log_update(f"QML-gyorsítótár előmelegítése sikertelen: {_sanitized_log_message(error)}")
@@ -314,7 +343,7 @@ def _qml_grafika_melegites(executable: Path, *, timeout: float = 180.0) -> bool:
         from .qml_cache_warmup import melegitsd_qml_grafikat
 
         output = melegitsd_qml_grafikat(
-            [str(executable)], os.environ, timeout=timeout
+            [str(executable)], gyermek_kornyezet(), timeout=timeout
         )
     except Exception as error:  # noqa: BLE001 - az előmelegítés nem vonhatja vissza a cserét
         _log_update(
@@ -356,7 +385,8 @@ def inditsd_a_felhasznalonak(executable: Path, *, uac_emelt: bool = False) -> No
     if uac_emelt and _rendszergazda():
         _popen(["explorer.exe", str(executable)], close_fds=True)
     else:
-        _popen([str(executable)], close_fds=True)
+        # #6534: úgy indul, ahogy az Intézőből: a munkamappa a program mappája
+        _popen([str(executable)], close_fds=True, cwd=str(executable.parent))
 
 
 def varj_uj_ablakra(
@@ -564,7 +594,18 @@ def _telepites(
             hiba("unexpected_error", details=_sanitized_log_message(error))
 
 
+def _munkamappa_a_telepitesen_kivulre() -> None:
+    """#6534: a csomagolt segéd legelső lépése; a telepítési mappát ne fogja."""
+    if not getattr(sys, "frozen", False):
+        return
+    try:
+        _chdir(biztonsagos_munkamappa())
+    except OSError as error:
+        _log_update(f"A munkamappa áthelyezése nem sikerült: {_sanitized_log_message(error)}")
+
+
 def main(argv: list[str] | None = None) -> int:
+    _munkamappa_a_telepitesen_kivulre()
     argumentumok = sys.argv[1:] if argv is None else argv
     if argumentumok[:1] == [update_ablak.ABLAK_KAPCSOLO]:
         # #6458: a frissítési ablak a segéd saját gyerekfolyamatában fut
