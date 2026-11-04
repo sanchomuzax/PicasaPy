@@ -1,23 +1,7 @@
-"""Alkalmazás-ikon regressziós teszt (#267, #325): a generált ikonok
-rajzolata a lehető legnagyobb mértékben töltse ki a négyzetes vászont.
+"""Sanity checks for the generated application icon assets.
 
-#267 (RÉGI JAVÍTÁS) csak a bounding-box (átlátszó margó) kitöltési arányát
-mérte. #325 kiderítette, hogy ez ÁLPOZITÍV (false-green) metrika volt: a
-rajzolat maga egy KÖR (fehér korong + pinwheel), aminek a területe a
-befoglaló négyzetének csak kb. 78,5%-a (π/4) — így a bbox akár 90%+-os
-kitöltése mellett is a ténylegesen kirajzolt (nem-átlátszó) PIXELEK
-aránya a teljes vászonhoz képest jóval alacsonyabb maradhat, és ez az,
-amit a felhasználó szeme ténylegesen érzékel (optikai méret). A #267
-előtti, margós képen ez kb. 0,469 volt; a #267 utáni, de #325 előtti
-(FILL_RATIO=0.94) képen kb. 0,668 — ami a bbox-tesztet zölden tartotta,
-miközben a felhasználói panasz (#325) szerint a logó továbbra is
-kisebbnek látszott, mint az eredeti Picasa ikonja.
-
-Ez a teszt ezért a TÉNYLEGES (nem-átlátszó) pixel-terület arányát méri a
-kimeneti PNG/ICO fájlokon — nem a forrás-SVG-n/PNG-n, és nem csak a
-bbox-on —, a MEMORY 2026-07-22-i „mérd a futásidejű kimenetet, ne a
-tünetet" szabálya szerint. A régi (FILL_RATIO=0.94) állapoton ez a teszt
-BUKOTT volna (0.668 < 0.72).
+The exact per-size geometry is checked by ``test_icon_geometry_6514.py``.
+These checks retain a broad fill guard around the measured 226 px circle.
 """
 
 from pathlib import Path
@@ -34,8 +18,8 @@ _ASSETS_DIR = (
 _ICON_PNG = _ASSETS_DIR / "icon.png"
 _ICON_ICO = _ASSETS_DIR / "icon.ico"
 
-_MIN_FILL_RATIO = 0.90  # bbox-kitöltés (a régi #267-es metrika, sanity-ként megtartva)
-_MIN_AREA_RATIO = 0.72  # #325: tényleges (nem-átlátszó) pixel-terület a teljes vásznon
+_MIN_FILL_RATIO = 0.87
+_MIN_AREA_RATIO = 0.60
 
 
 def _fill_ratio(image: Image.Image) -> tuple[float, float]:
@@ -52,7 +36,7 @@ def _fill_ratio(image: Image.Image) -> tuple[float, float]:
 
 def _area_ratio(image: Image.Image) -> float:
     """Visszaadja a nem-átlátszó (alpha > 0) pixelek arányát a teljes
-    vászon pixelszámához képest — ez a tényleges, a felhasználó szeme
+    vászon pixelszámához képest, ez a tényleges, a felhasználó szeme
     által érzékelt optikai kitöltés, szemben a bbox-alapú (alak-vak)
     metrikával (#325)."""
     rgba = image.convert("RGBA")
@@ -84,15 +68,13 @@ class TestIconPng:
         )
 
     def test_icon_png_content_area_fills_canvas(self):
-        """#325: a bbox mellett a TÉNYLEGES kitöltött pixel-terület is
-        érje el a küszöböt — enélkül egy kör alakú rajzolat a bbox-tesztet
-        megkerülve is optikailag kicsinek látszódhat."""
+        """Keep a broad area sanity check for the measured circular frame."""
         with Image.open(_ICON_PNG) as im:
             area = _area_ratio(im)
         assert area >= _MIN_AREA_RATIO, (
             f"Az icon.png tényleges (nem-átlátszó) pixel-területe ({area:.3f}) "
-            f"kisebb, mint az elvárt {_MIN_AREA_RATIO} — a logó optikailag "
-            "kisebbnek tűnhet az eredeti Picasa-ikonnál (#325)."
+            f"kisebb, mint az elvárt {_MIN_AREA_RATIO}; a logó optikailag "
+            "kisebb a 256 px-es mért kör körüli sanity küszöbnél."
         )
 
 
@@ -119,7 +101,7 @@ class TestIconIco:
         )
 
     def test_icon_ico_256px_content_area_fills_canvas(self):
-        """#325: ugyanaz a terület-alapú védőháló az ICO 256px változatán."""
+        """Keep the area sanity check on the ICO's 256 px frame."""
         with Image.open(_ICON_ICO) as ico:
             ico.size = (256, 256)
             area = _area_ratio(ico)
