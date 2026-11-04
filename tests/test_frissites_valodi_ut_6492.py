@@ -8,6 +8,7 @@ from pathlib import Path
 _GYOKER = Path(__file__).resolve().parents[1]
 _FRISSITES = _GYOKER / ".github/workflows/frissites-valodi-ut.yml"
 _PACKAGE = _GYOKER / ".github/workflows/package.yml"
+_FRISSITES_MERES = _GYOKER / "packaging/windows/csomag_meres_frissites.py"
 
 
 def _job(fajl: Path, nev: str) -> str:
@@ -60,3 +61,20 @@ def test_a_package_csak_a_feltoltott_setup_utani_sikeres_futashoz_ad_jelolot():
     assert "steps.tag.outputs.skip != 'true'" in windows[jelolo:]
     assert "github.event_name != 'pull_request'" in windows[jelolo:]
     assert "PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe" in package
+
+
+def test_a_valodi_proba_kepe_a_jelzoablakot_menti_es_a_kiadasba_kerul():
+    workflow_job = _job(_FRISSITES, "frissites")
+    release_job = _job(_FRISSITES, "kep-a-kiadasba")
+    meres = _FRISSITES_MERES.read_text(encoding="utf-8")
+
+    assert "_varjon_frissitesi_ablakra(timeout=30.0)" in meres
+    assert "05b-frissites-folyamatban-ablak.png" in meres
+    assert "actions/upload-artifact@v4" in workflow_job
+    assert "needs: frissites" in release_job
+    assert "github.event_name == 'workflow_run'" in release_job
+    assert "contents: write" in release_job
+    assert "actions/download-artifact@v4" in release_job
+    assert "05b-frissites-folyamatban-ablak.png" in release_job
+    assert "gh release upload" in release_job
+    assert "PicasaPy-frissitesi-folyamat.png" in release_job

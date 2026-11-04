@@ -20766,4 +20766,87 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>Naujinimas pranešė apie sėkmę, bet paleista ankstesnė versija. Rankiniu būdu įdiekite naujausią diegimo programą.</translation>
         </message>
     </context>
+    <context>
+        <name>UpdateController</name>
+        <message>
+            <source>Waiting for the previous version to exit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Laukiama, kol ankstesnė versija užsidarys</translation>
+        </message>
+        <message>
+            <source>Extracting update files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Išpakuojami atnaujinimo failai</translation>
+        </message>
+        <message>
+            <source>Closing another running copy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Uždaroma kita veikianti kopija</translation>
+        </message>
+        <message>
+            <source>Replacing application files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Keičiami programos failai</translation>
+        </message>
+        <message>
+            <source>Checking the new version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tikrinama nauja versija</translation>
+        </message>
+        <message>
+            <source>Preparing startup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ruošiamas paleidimas</translation>
+        </message>
+        <message>
+            <source>Preparing graphics</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ruošiama grafika</translation>
+        </message>
+        <message>
+            <source>Starting the new version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Paleidžiama nauja versija</translation>
+        </message>
+        <message>
+            <source>Waiting for the new version window</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Laukiama naujos versijos lango</translation>
+        </message>
+        <message>
+            <source>Elapsed: {seconds} s</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Praėjo: {seconds} s</translation>
+        </message>
+        <message>
+            <source>The update failed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Atnaujinti nepavyko</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Uždaryti</translation>
+        </message>
+        <message>
+            <source>An unexpected error interrupted the update.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Netikėta klaida nutraukė atnaujinimą.</translation>
+        </message>
+        <message>
+            <source>Details: {details}</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Išsami informacija: {details}</translation>
+        </message>
+        <message>
+            <source>The new version failed its startup check. The previous version will restart.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nauja versija neišlaikė paleidimo patikros. Ankstesnė versija bus paleista iš naujo.</translation>
+        </message>
+        <message>
+            <source>The new version did not show a window within 180 seconds.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Nauja versija per 180 sekundžių neparodė lango.</translation>
+        </message>
+    </context>
 </TS>

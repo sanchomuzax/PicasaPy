@@ -272,6 +272,29 @@ def _kepernyokep_mentese(cel: Path, pid: int) -> None:
     kep.save(cel, "PNG", optimize=True)
     print(f"  képernyőkép: {cel.name} ({kep.width}×{kep.height})", flush=True)
 
+
+def _varjon_frissitesi_ablakra(timeout: float = 30.0) -> int:
+    """Határidőig keresi a külön folyamatú frissítésjelző ablakot."""
+    import ctypes
+    from ctypes import wintypes
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    find_window = user32.FindWindowW
+    find_window.argtypes = (wintypes.LPCWSTR, wintypes.LPCWSTR)
+    find_window.restype = wintypes.HWND
+    is_window_visible = user32.IsWindowVisible
+    is_window_visible.argtypes = (wintypes.HWND,)
+    is_window_visible.restype = wintypes.BOOL
+    cimkek = ("PicasaPy frissítése", "PicasaPy update")
+    hatarido = time.monotonic() + timeout
+    while time.monotonic() < hatarido:
+        for cim in cimkek:
+            hwnd = find_window(None, cim)
+            if hwnd and is_window_visible(hwnd):
+                return int(hwnd)
+        time.sleep(0.05)
+    raise TimeoutError(f"{timeout:.0f} s alatt nem jelent meg a frissítési jelzőablak")
+
 def _help_menu(adat: dict) -> dict | None:
     for obj in reversed(adat.get("objects", [])):
         cimke = str(obj.get("text") or obj.get("title") or "")
@@ -493,7 +516,7 @@ def frissites(
             if folyamat.poll() is None:
                 _kilepes_diagnosztika(diag_mappa, folyamat.pid, kattintas, munka / "futas")
                 raise TimeoutError("a Frissítés most kattintás után a régi program nem lépett ki")
-            time.sleep(3.0)
+            _varjon_frissitesi_ablakra(timeout=30.0)
             _kepernyokep_mentese(
                 kepernyokep_mappa / "05b-frissites-folyamatban-ablak.png", 0
             )

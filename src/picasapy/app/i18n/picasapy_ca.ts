@@ -20750,4 +20750,87 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>L'actualització ha indicat que s'ha fet correctament, però s'ha iniciat una versió anterior. Instal·leu manualment l'instal·lador més recent.</translation>
         </message>
     </context>
+    <context>
+        <name>UpdateController</name>
+        <message>
+            <source>Waiting for the previous version to exit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>S'està esperant que es tanqui la versió anterior</translation>
+        </message>
+        <message>
+            <source>Extracting update files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>S'estan extraient els fitxers d'actualització</translation>
+        </message>
+        <message>
+            <source>Closing another running copy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>S'està tancant una altra còpia en execució</translation>
+        </message>
+        <message>
+            <source>Replacing application files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>S'estan substituint els fitxers del programa</translation>
+        </message>
+        <message>
+            <source>Checking the new version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>S'està comprovant la versió nova</translation>
+        </message>
+        <message>
+            <source>Preparing startup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>S'està preparant l'inici</translation>
+        </message>
+        <message>
+            <source>Preparing graphics</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>S'estan preparant els gràfics</translation>
+        </message>
+        <message>
+            <source>Starting the new version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>S'està iniciant la versió nova</translation>
+        </message>
+        <message>
+            <source>Waiting for the new version window</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>S'està esperant la finestra de la versió nova</translation>
+        </message>
+        <message>
+            <source>Elapsed: {seconds} s</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Temps transcorregut: {seconds} s</translation>
+        </message>
+        <message>
+            <source>The update failed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>L'actualització ha fallat</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Tanca</translation>
+        </message>
+        <message>
+            <source>An unexpected error interrupted the update.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Un error inesperat ha interromput l'actualització.</translation>
+        </message>
+        <message>
+            <source>Details: {details}</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Detalls: {details}</translation>
+        </message>
+        <message>
+            <source>The new version failed its startup check. The previous version will restart.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>La versió nova no ha superat la comprovació d'inici. Es reiniciarà la versió anterior.</translation>
+        </message>
+        <message>
+            <source>The new version did not show a window within 180 seconds.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>La versió nova no ha mostrat cap finestra en 180 segons.</translation>
+        </message>
+    </context>
 </TS>

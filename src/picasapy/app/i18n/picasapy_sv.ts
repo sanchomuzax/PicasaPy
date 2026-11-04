@@ -20750,4 +20750,87 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>Uppdateringen rapporterade att den lyckades, men en tidigare version startade. Installera den senaste installationsfilen manuellt.</translation>
         </message>
     </context>
+    <context>
+        <name>UpdateController</name>
+        <message>
+            <source>Waiting for the previous version to exit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Väntar på att den tidigare versionen avslutas</translation>
+        </message>
+        <message>
+            <source>Extracting update files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Packar upp uppdateringsfiler</translation>
+        </message>
+        <message>
+            <source>Closing another running copy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Stänger en annan körande kopia</translation>
+        </message>
+        <message>
+            <source>Replacing application files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ersätter programfiler</translation>
+        </message>
+        <message>
+            <source>Checking the new version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Kontrollerar den nya versionen</translation>
+        </message>
+        <message>
+            <source>Preparing startup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Förbereder start</translation>
+        </message>
+        <message>
+            <source>Preparing graphics</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Förbereder grafiken</translation>
+        </message>
+        <message>
+            <source>Starting the new version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Startar den nya versionen</translation>
+        </message>
+        <message>
+            <source>Waiting for the new version window</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Väntar på den nya versionens fönster</translation>
+        </message>
+        <message>
+            <source>Elapsed: {seconds} s</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Förfluten tid: {seconds} s</translation>
+        </message>
+        <message>
+            <source>The update failed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Uppdateringen misslyckades</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Stäng</translation>
+        </message>
+        <message>
+            <source>An unexpected error interrupted the update.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Ett oväntat fel avbröt uppdateringen.</translation>
+        </message>
+        <message>
+            <source>Details: {details}</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Detaljer: {details}</translation>
+        </message>
+        <message>
+            <source>The new version failed its startup check. The previous version will restart.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Den nya versionen klarade inte startkontrollen. Den tidigare versionen startas om.</translation>
+        </message>
+        <message>
+            <source>The new version did not show a window within 180 seconds.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Den nya versionen visade inget fönster inom 180 sekunder.</translation>
+        </message>
+    </context>
 </TS>

@@ -20756,4 +20756,87 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
             <translation>A frissítés sikert jelzett, mégis egy korábbi változat indult el. Telepítsd kézzel a legújabb Setupot.</translation>
         </message>
     </context>
+    <context>
+        <name>UpdateController</name>
+        <message>
+            <source>Waiting for the previous version to exit</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A régi program kilépésére vár</translation>
+        </message>
+        <message>
+            <source>Extracting update files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A frissítési fájlok kicsomagolása</translation>
+        </message>
+        <message>
+            <source>Closing another running copy</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Másik futó példány bezárása</translation>
+        </message>
+        <message>
+            <source>Replacing application files</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Fájlok cseréje</translation>
+        </message>
+        <message>
+            <source>Checking the new version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Az új verzió ellenőrzése</translation>
+        </message>
+        <message>
+            <source>Preparing startup</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Az indulás előkészítése</translation>
+        </message>
+        <message>
+            <source>Preparing graphics</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A grafika előkészítése</translation>
+        </message>
+        <message>
+            <source>Starting the new version</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Az új verzió indítása</translation>
+        </message>
+        <message>
+            <source>Waiting for the new version window</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Az új verzió ablakára vár</translation>
+        </message>
+        <message>
+            <source>Elapsed: {seconds} s</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Eltelt idő: {seconds} mp</translation>
+        </message>
+        <message>
+            <source>The update failed</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>A frissítés nem sikerült</translation>
+        </message>
+        <message>
+            <source>Close</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Bezárás</translation>
+        </message>
+        <message>
+            <source>An unexpected error interrupted the update.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Váratlan hiba történt a frissítés közben.</translation>
+        </message>
+        <message>
+            <source>Details: {details}</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Részletek: {details}</translation>
+        </message>
+        <message>
+            <source>The new version failed its startup check. The previous version will restart.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Az új verzió ellenőrzése nem sikerült. A régi verzió indul.</translation>
+        </message>
+        <message>
+            <source>The new version did not show a window within 180 seconds.</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>Az új verzió 180 másodpercen belül nem nyitott ablakot.</translation>
+        </message>
+    </context>
 </TS>
