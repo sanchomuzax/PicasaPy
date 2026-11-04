@@ -100,3 +100,30 @@ def test_soha_allasban_a_bal_fiok_a_regi_helyen_marad(qml_app, qt_app):
     assert not box.isVisible()
     effect_controller.setMode("always")
     assert var_feltetelre(qt_app, lambda: box.isVisible(), 3.0)
+
+
+@pytest.mark.parametrize("magassag", (800, 940))
+def test_a_doboz_sosem_takarja_az_effektpanel_alkalmaz_gombjat(qml_app, qt_app, magassag):
+    from tests.app.qml_functional.test_alapertek_felirat_4559 import (
+        _child,
+        _nyisd_meg_az_effektet,
+    )
+
+    window, _app_controller, engine = qml_app
+    engine.rootContext().contextProperty("effectSliceController").setMode("editing")
+    window.resize(1280, magassag)
+    window.show()
+    assert var_feltetelre(qt_app, lambda: abs(window.height() - magassag) < 1, 5.0)
+    panel = window.findChild(QObject, "viewerEditorPanel")
+    _nyisd_meg_az_effektet(window, panel, qt_app, "effectDirTint", "dir_tint")
+    for _ in range(20):
+        qt_app.processEvents()
+    gomb = _child(panel, "effectParamApplyButton")
+    box = window.findChild(QObject, "viewerEffectSliceBox")
+    gomb_alja = gomb.mapToScene(QPointF(0, gomb.property("height"))).y()
+    box_teteje = box.mapToScene(QPointF(0, 0)).y()
+
+    assert (not box.isVisible()) or box_teteje >= gomb_alja
+    if magassag == 940:
+        # elég magas ablakban a doboz szerkesztés közben meg is jelenik
+        assert box.isVisible()

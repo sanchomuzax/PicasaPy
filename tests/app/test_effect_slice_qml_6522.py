@@ -31,7 +31,9 @@ def test_a_nezet_menu_aljan_sajat_radio_almenu_tartozik():
 def test_a_doboz_python_festett_3d_elemre_epul_canvas_nelkul():
     box = (QML / "EffectSliceBox.qml").read_text(encoding="utf-8")
 
-    assert "EffectSliceSurface {" in box
+    assert "EffectSliceSurfaceHost.qml" in box
+    host = (QML / "EffectSliceSurfaceHost.qml").read_text(encoding="utf-8")
+    assert "EffectSliceSurface {" in host
     assert "Canvas {" not in box
     assert "Theme.chromeBg" in box
     assert "Theme.chromeBorder" in box

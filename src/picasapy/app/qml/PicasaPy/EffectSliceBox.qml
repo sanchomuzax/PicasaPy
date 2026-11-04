@@ -73,7 +73,9 @@ Rectangle {
     objectName: "viewerEffectSliceBox"
     width: 238
     height: 144
-    visible: hostViewer !== null && !hostViewer.isCurrentVideo
+    //: a gazda fiók számolja: van-e hely a szerkesztőpanel tartalma alatt
+    property bool hasRoom: true
+    visible: hostViewer !== null && !hostViewer.isCurrentVideo && hasRoom
         && (sliceController.mode === "always"
             || (sliceController.mode === "editing" && editingEffect))
     radius: 3
@@ -156,22 +158,35 @@ Rectangle {
         ToolTip.delay: Theme.tooltipDelay
     }
 
-    EffectSliceSurface {
+    // A festett elem csak valódi vezérlő mellett töltődik be: a típusát ugyanaz a
+    // lépés regisztrálja, amelyik a vezérlőt létrehozza (application_startup_qml).
+    Loader {
         id: surface
-        objectName: "effectSliceSurface"
         x: 13
         y: 17
         width: box.width - 26
         height: 105
-        surfaceData: sliceController.surfaceData
-        angle: box.angle
+        active: box.sliceController !== fallbackController
+        source: "EffectSliceSurfaceHost.qml"
+        Binding {
+            target: surface.item
+            property: "surfaceData"
+            value: box.sliceController.surfaceData
+            when: surface.item !== null
+        }
+        Binding {
+            target: surface.item
+            property: "angle"
+            value: box.angle
+            when: surface.item !== null
+        }
     }
 
     Text {
         objectName: "effectSliceUnavailable"
         anchors.centerIn: surface
         width: surface.width - 16
-        visible: box.editingEffect && sliceController.surfaceData.kind === "none"
+        visible: box.editingEffect && sliceController.selectedViewType === "none"
         text: qsTr("This effect has no slice")
         color: Theme.textGray
         horizontalAlignment: Text.AlignHCenter

@@ -203,6 +203,15 @@ Rectangle {
     onEffectSliceTuningActiveChanged: {
         if (panel.effectSliceTuningActive) panel.effectSliceDepthIndex = 0
     }
+    //: a látható tartalom alja (panel-koordinátában): a térszelvény csak e fölé
+    //: nem kerülhet; a Visszavonás sor szűkített helye helyett a tartalom szerinti
+    //: helyet nézi, különben a foglalás és a láthatóság egymásra hivatkozna
+    readonly property real effectSliceContentBottom: {
+        var param = panelTabs.effectParamPanel
+        if (panel.paramPanelActive && param)
+            return panelTabs.y + param.y + param.contentHeight
+        return panelTabs.tabAreaItem.y + panel.tabContentHeight + 8 + globalUndoRow.height
+    }
     property alias paramPanelSuspended: effectState.paramPanelSuspended
     readonly property bool paramPanelContentBlurred:
         effectState.paramPanelContentBlurred

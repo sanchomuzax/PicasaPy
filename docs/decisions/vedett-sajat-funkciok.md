@@ -233,6 +233,7 @@ kódtól).
 - `src/picasapy/app/photo_grid_access.py` (#6522) - a kijelölt fotó teljes `filters=` láncát teszi elérhetővé a saját térszelvény számára.
 - `src/picasapy/app/photo_grid_model.py` (#6522) - QML-híd a saját Effekt-térszelvény teljes láncának lekérdezéséhez.
 - `src/picasapy/app/qml/PicasaPy/EffectSliceBox.qml` (#6522) - a hisztogram fölötti forgatható mini 3D effekt-nézet, az eredeti Picasában nincs.
+- `src/picasapy/app/qml/PicasaPy/EffectSliceSurfaceHost.qml` (#6522) - a térszelvény Python festett elemének betöltője.
 - `src/picasapy/app/qml/PicasaPy/PhotoViewerLeftDrawer.qml` (#6522) - a saját térszelvény helye és a két dobozhoz számított szerkesztőpanel-tartalék.
 - `src/picasapy/app/qml/PicasaPy/PicasaViewMenu.qml` (#6522) - a Nézet menü saját térszelvény-módválasztója.
 - `src/picasapy/app/qml/PicasaPy/EditorPanel.qml` (#6522) - a saját térszelvény az utoljára mozgatott effektcsúszka indexét követi.

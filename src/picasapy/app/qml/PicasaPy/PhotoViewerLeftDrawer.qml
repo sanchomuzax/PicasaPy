@@ -111,6 +111,9 @@ Rectangle {
         hostViewer: leftDrawer.hostViewer
         hostEditCtl: leftDrawer.hostEditCtl
         hostEditorPanel: editorPanel
+        // szűk ablakban a doboz nem takarhatja a szerkesztőpanel tartalmát (Alkalmaz gomb)
+        hasRoom: editorPanel.y + editorPanel.effectSliceContentBottom
+            <= viewerHistogramBox.y - 4 - height - 4
     }
 
     HistogramBox {
