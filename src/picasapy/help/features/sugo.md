@@ -22,6 +22,14 @@ magyarázata a [Billentyűparancsok](billentyuk.md) lapon van. A **Súgó ▸
 Frissítések keresése…** a PicasaPy új verzióját keresi; lásd
 [Beállítások](beallitasok.md).
 
+A **Súgó ▸ Háttérmunka megjelenítése az állapotsávon** pipás kapcsoló.
+Bekapcsolva (ez az alapállás) az alsó sáv kék csíkja kiírja, min dolgozik
+éppen a program a háttérben, például **Mappák átnézése** vagy
+**Bélyegképek készítése**. Ha egyszerre több munka fut, a legutóbbi neve
+mellett az is látszik, hány további van, például „(+2 további)".
+Kikapcsolva a csík a szokásos kijelölési adatokat mutatja. A választásod a
+következő indításkor is megmarad.
+
 ## Mozgás a fejezetek közt
 
 - A bal oldali listában egy fejezetre kattintva megnyitod.

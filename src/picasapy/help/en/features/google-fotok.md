@@ -10,8 +10,14 @@ unavailable; see [Features not yet available](meg-nem-erheto-el.md).
 ## Sign in
 
 Click **Sign in with Google Account** at the right side of the menu bar.
-A browser opens. Sign in there and grant access. After sign-in, the menu
-bar shows your account status. Click it to open the menu and sign out.
+A browser opens. Sign in there and grant access. After sign-in, the link
+is replaced by three items separated by vertical bars:
+
+- your Google account's email address (not clickable; if your sign-in is
+  left over from an earlier version, **Signed in to Google Photos** appears
+  instead),
+- **Google Photos**: opens the Google Photos website in your browser,
+- **Sign Out**: removes the saved sign-in.
 
 If the PicasaPy package does not include a built-in Google client,
 clicking the link shows a short message: **Google sign-in is not available

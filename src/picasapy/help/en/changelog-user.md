@@ -2,6 +2,79 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-04
+
+### Editor
+
+- The **Legacy Effects** tab and the former additional-effects tab are now
+  one tab, so the editor has six tabs. The new tab starts with Matte,
+  Night Vision, Local Contrast, Rounded Edges, and Film Grain, followed by
+  the old filters in a scrollable grid four and a half rows tall. See
+  [Effects](features/effektek.md).
+- All twenty old filters can be applied: **Color Fixes** and
+  **Whitepoint** work again, and **Blur** can be clicked. The focal
+  pixelate tile that did not work has been removed from the grid.
+- The old filters have the original Picasa sliders (for example, the
+  **Left to Right** and **Top to Bottom** sliders of the directional
+  effects), and you place **Linear Blur** with a handle you drag on the
+  photo. The settings are kept after saving.
+- In a short window, the effects grid and the **Undo**/**Redo** row end
+  above the histogram.
+
+### Main window
+
+- The background activity indicator sits to the right of the **Search**
+  field, in line with it, and the × stop button is next to the
+  spinner instead of covering it. See [Getting started](getting-started.md).
+- The blue strip in the bottom bar shows what the program is doing in the
+  background. Turn it on or off with Help ▸ **Show background work in the
+  status bar**. See [Built-in Help](features/sugo.md).
+- The bottom bar buttons no longer touch: there are gaps between the
+  output buttons, the two rotate buttons, and the panel switches, and the
+  green upload button is as tall as the others.
+- The PicasaPy logo is centered on the startup screen.
+- On a computer with two screens, notifications appear on the screen that
+  shows the PicasaPy window.
+- Buttons visibly press down when you click them, and long operations give
+  feedback right away.
+
+### Google Photos
+
+- When you are signed in, the right side of the menu bar shows your
+  account's email address and the **Google Photos** and **Sign Out**
+  links. See [Upload to Google Photos](features/google-fotok.md).
+- The upload window opens inside the main window, above the button.
+
+### Options
+
+- The anonymous usage statistics row and the link to Google's privacy page
+  have been removed from the **General** tab: PicasaPy does not collect
+  statistics. See [Options](features/beallitasok.md).
+
+### Updates
+
+- The update window's install-on-exit button is now called **Update on
+  exit**. After you click it, the version label in the upper-right corner
+  shows that the update will be installed when the program closes.
+- If an update stops before it finishes, or an earlier version starts
+  after all, the program tells you at the next start and asks you to
+  install the latest Setup manually.
+- An update no longer fails if you restart the old program while it runs.
+- The update badge is now a blue label with white text.
+
+### Other
+
+- Face detection finds more small faces and more close-up faces that fill
+  the photo.
+- While you edit, the question about damaged files no longer pops up for
+  an intact photo just because one preview was not created.
+- The captured video clips and screen captures folders stay in the left
+  pane after a restart.
+- The library no longer syncs again and again when nothing has changed,
+  so the interface does not stall.
+- On Windows, the first start after installation is faster, and a program
+  started at the end of setup shows a startup screen within a few seconds.
+
 ## 2026-11-02
 
 ### Updates

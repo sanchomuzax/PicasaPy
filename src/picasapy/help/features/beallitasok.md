@@ -13,9 +13,8 @@ Picasáé, a **Google Fotók** fül a PicasaPy saját kiegészítése.
 > A **Hálózat** fülön csak a naplózás működik, a proxy-beállítások
 > szürkék. A **Webalbumok** fül **nem működik**: a Picasa Webalbumok
 > megszűnt szolgáltatás, a fül csak az eredeti Picasa elrendezését követi.
-> Az Általános fülön szürke a **Névtelen használati statisztikák
-> küldése a Google részére**. A **Frissítések keresése automatikusan**
-> kapcsoló működik; alapból be van kapcsolva.
+> A **Frissítések keresése automatikusan** kapcsoló működik; alapból be
+> van kapcsolva.
 
 Az ablak alján két gomb áll, ahogy az eredeti Picasában:
 
@@ -68,8 +67,9 @@ célmappája. Alapból a **Képek** mappád. A **Tallózás…** gombbal másik
 mappát választasz; ezzel nyílik meg ezután az **Importálás** ablak
 ([Importálás](importalas.md)).
 
-Az **Adatvédelem…** hivatkozás a Google adatvédelmi oldalát nyitja meg a
-böngészőben.
+Az eredeti Picasa névtelen használati statisztikáról szóló sora és a
+Google adatvédelmi oldalára mutató hivatkozás ezen a fülön nincs meg: a
+PicasaPy nem gyűjt használati statisztikát.
 
 ### Frissítések keresése
 
@@ -104,6 +104,13 @@ azonnali újraindítás (**Újraindítás most**) és a kilépéskori telepíté
 (**Frissítés kilépéskor**) között. Az azonnali
 újraindítás megvárja a futó háttérmunkát; a csere után az előző verzió
 megmarad, és ha az új példány nem indul el, a program visszaállítja.
+
+A **Frissítés kilépéskor** után a jobb felső verziófelirat egy környíllal
+és az új verziószámmal jelzi, hogy a frissítés vár; fölé víve az egeret
+ezt olvasod: **A frissítés a PicasaPy bezárásakor települ.** Frissítés
+közben egy kis ablak jelzi, hogy a munka fut. Ha a frissítés félbemarad,
+vagy a végén mégis a régi változat indul el, a következő indításkor a
+program kiírja, és azt kéri, hogy telepítsd kézzel a legújabb Setupot.
 
 Linuxon (`.deb`) és `pip`-telepítésnél a párbeszédablak megmutatja a
 kiadási oldalt és a pontos parancsot. A program ezeken a rendszereken nem

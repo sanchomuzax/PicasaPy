@@ -1,6 +1,6 @@
 # Effects
 
-The effects are on tabs 3-7 of the editor. They are non-destructive: you
+The effects are on tabs 3-6 of the editor. They are non-destructive: you
 can undo them at any time, and they do not change the original file.
 
 For an effect with sliders, its controls appear in the panel after you
@@ -123,36 +123,62 @@ the photo with the pixelated version. These are the original Picasa
 blend modes. Their names do not appear on the slider; the handle's
 position shows which one is selected.
 
-## Additional effects (tab 6)
+## Legacy Effects (tab 6)
 
-These effects are available in the Picasa engine, but did not have
-buttons in the original Picasa 3.9 interface:
+The tab's tooltip reads **Forgotten or deprecated effects brought back to
+life**. It holds a single scrollable grid that shows about four and a half
+rows at a time; scroll to reach the rest. In a short window, the grid ends
+above the histogram, and the **Undo**/**Redo** row does not slide under the
+histogram either.
+
+The grid starts with five effects that are available in the Picasa engine
+but had no button in the original Picasa 3.9 interface:
 
 | Effect | What it does |
 |---|---|
-| Film Grain | Same as the effect on the Effects tab (listed twice) |
-| Local Contrast | Emphasizes local detail |
 | Matte | Adds a muted, matte finish |
 | Night Vision | Adds a green night-vision look |
+| Local Contrast | Emphasizes local detail |
 | Rounded Edges | Rounds the corners |
+| Film Grain | Same as the effect on the Effects tab (listed twice) |
 
-## Legacy effects (tab 7)
-
-These filters come from older Picasa versions. Most no longer have a
+They are followed by filters from older Picasa versions. They have no
 button in the current Picasa interface, but they may still be present in
-older `.picasa.ini` files. PicasaPy recognizes and preserves them.
+older `.picasa.ini` files, and PicasaPy recognizes and preserves them.
+There are twenty such tiles, and all of them can be applied:
 
-The tab lists 21 such filters. Sixteen can be applied: select one just
-as you would another effect. The remaining five stay visible but are
-disabled because their pixel-level behavior has not yet been
-reverse-engineered. They remain visible so you know when an older photo
-contains one of them.
+**Radial Tint**, **Fill Light (one-click)**, **Fill Light (slider)**,
+**Linear Blur**, **Directional Saturation**, **Directional Brightness**,
+**Directional Sharpen**, **Lighting Fixes (v1)**, **Lighting Fixes (v2)**,
+**Lighting Fixes (v3)**,
+**Color Fixes**, **Shadow & Highlight**, **Whitepoint**, **Gamma
+Correct**, **Contrast**, **Color Temperature**, **Blur**, **Backlight
+Fix**, **Rainbow**, and **Auto Contrast**.
 
-**Linear Blur** previously had no visible effect on most photos; it now
-works. It keeps one side sharp and blurs the other, with a transition
-between them. The strength depends on where the handle is positioned
-horizontally. Moving it only up and down along the center line does
-not apply blur. The original Picasa behaved the same way.
+Where the original Picasa offered sliders, PicasaPy offers the same ones,
+with the same range and default value. Some examples:
+
+- **Directional Saturation**, **Brightness**, and **Sharpen**: **Left to
+  Right** and **Top to Bottom** sliders;
+- **Lighting Fixes (v1)**: **Brightness**, **Contrast**, **Fill Light**;
+  **Lighting Fixes (v2)**: **Fill Light**, **Black Point**, **White Point**;
+  **Lighting Fixes (v3)**:
+  **Fill Light**, **Highlights**, **Shadows**;
+- **Shadow & Highlight**: radius, **Shadow %**, and **Highlight %**;
+- **Gamma Correct**: **Level**;
+- **Color Temperature**: **Cool to Warm** and **White Shift**;
+- **Blur**: **Threshold**.
+
+**Color Fixes** and **Whitepoint** offer a color picker (use it to pick
+what should be neutral in the photo), and **Color Fixes** also has a color
+temperature slider. Both **Fill Light** tiles and **Auto Contrast** are
+one-click effects. The values you set are kept after saving and reopening.
+
+**Linear Blur** keeps one side sharp and blurs the other, with a
+transition between them. You set its amount in the panel and its position
+with a handle you drag on the photo. The strength depends on where the
+handle is positioned horizontally. Moving it only up and down along the
+center line does not apply blur. The original Picasa behaved the same way.
 
 ## Drag the focus point on the photo
 
@@ -213,7 +239,7 @@ way.
 | Artistic | Vignette | Matte |
 | Artistic | Border | Rounded Edges |
 | Artistic | Pixelate | Focal Pixelate |
-| Additional effects | Film Grain | Film Grain (Old) |
+| Legacy Effects | Film Grain | Film Grain (Old) |
 
 **Glow (Old)** opens a slider panel like other effects; adjust it with
 **Intensity** and **Radius**.

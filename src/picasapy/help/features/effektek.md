@@ -1,6 +1,6 @@
 # Effektek listája
 
-Az effektek a szerkesztő 3–7. fülén vannak. Mindegyik nem-destruktív:
+Az effektek a szerkesztő 3-6. fülén vannak. Mindegyik nem-destruktív:
 bármikor visszavonható, és az eredeti fájlt nem érinti.
 
 Ha egy effektnek csúszkái vannak, azok a gomb megnyomása után jelennek
@@ -126,38 +126,64 @@ változat egyszerűen eltakarja a fotót. A nevek az eredeti Picasa keverési
 módjai; a csúszkán nem jelennek meg, csak a fogantyú helye mutatja, melyiket
 választottad.
 
-## További effektek (6. fül)
+## Régi effektek (6. fül)
 
-Ezek megvannak a Picasa motorjában, de az eredeti Picasa 3.9 felületén
-nem volt hozzájuk gomb:
+A fül buboréksúgója: **Régi elfeledett vagy kivezetett effektek
+újraélesztve**. Egyetlen görgethető rács, amelyből egyszerre nagyjából
+négy és fél sor látszik; a többit görgetéssel éred el. Kis
+ablakmagasságnál a rács a hisztogram fölött ér véget, és a
+**Visszavonás**/**Újra** sor sem csúszik a hisztogram alá.
+
+A rács elején öt effekt áll, amely megvan a Picasa motorjában, de az
+eredeti Picasa 3.9 felületén nem volt hozzá gomb:
 
 | effekt | mit csinál |
 |---|---|
-| Filmszemcse | ugyanaz, mint az Effektek fülön (kétszer szerepel) |
-| Helyi kontraszt | a részletek helyi kiemelése |
 | Matt | matt, tompított felület |
 | Éjjellátó | zöldes, éjjellátó-szerű kép |
+| Helyi kontraszt | a részletek helyi kiemelése |
 | Kerekített élek | lekerekített sarkú kép |
+| Filmszemcse | ugyanaz, mint az Effektek fülön (kétszer szerepel) |
 
-## Régi effektek (7. fül)
+Utánuk jönnek a régebbi Picasa-változatokból származó szűrők. A mai
+Picasa felületén nincs saját gombjuk, de a régi `.picasa.ini` fájljaidban
+előfordulhatnak, és a PicasaPy felismeri és megőrzi őket. **Húsz** ilyen
+csempe van, és mindegyik használható:
 
-Régebbi Picasa-változatokból származó szűrők. A mai Picasa felületén
-többségüknek nincs saját gombja, de a régi `.picasa.ini` fájljaidban
-előfordulhatnak — a PicasaPy felismeri és megőrzi őket.
+**Sugaras árnyalás**, **Derítőfény (egykattintásos)**, **Derítőfény
+(csúszka)**, **Lineáris homályosítás**, **Irányított telítettség**,
+**Irányított fényesség**, **Irányított élesítés**, **Megvilágítási
+javítások (v1)**, **Megvilágítási javítások (v2)**, **Megvilágítási
+javítások (v3)**, **Színjavítások**, **Árnyék és
+kiemelés**, **Fehérpont**, **Gammakorrekció**, **Kontraszt**,
+**Színhőmérséklet**, **Elhomályosítás**, **Háttérfényjavítás**,
+**Szivárvány** és **Automatikus kontraszt**.
 
-A fülön **huszonegy** ilyen szűrő van felsorolva. **Tizenhat** ma
-használható is: rájuk kattintva ugyanúgy alkalmazhatod őket, mint a
-többi effektet. A maradék **öt szürkén**, de láthatóan marad: a
-képpontonkénti működésük még nincs visszafejtve, ezért nem
-alkalmazhatók. Azért látszanak mégis, mert egy régi képeden ott lehet a
-szerkesztésben, és tudnod kell róla.
+Ahol az eredeti Picasa csúszkát adott, ott a PicasaPy is azt adja,
+ugyanazzal a tartománnyal és alapértékkel. Néhány példa:
 
-A **Lineáris homályosítás** eddig a legtöbb képen nem csinált semmit;
-mostantól látszik a hatása. Ez az effekt a kép egyik oldalát élesen
-hagyja, a másikat elmossa, és a kettő közt átmenetet ad. Az elmosás
-erőssége attól függ, **hol áll a korong vízszintesen** — ha csak
-fel-le mozgatod, a középvonalon hagyva, az effekt nem mos. Az eredeti
-Picasa is így viselkedik.
+- az **Irányított telítettség**, **fényesség** és **élesítés**:
+  **Balról jobbra** és **Felülről lefelé** csúszka;
+- a **Megvilágítási javítások (v1)**: **Fényesség**, **Kontraszt**,
+  **Derítőfény**; a **(v2)** változat: **Derítőfény**, **Feketepont**,
+  **Fehérpont**; a **(v3)** változat: **Derítőfény**, **Kiemelések**,
+  **Árnyékok**;
+- az **Árnyék és kiemelés**: sugár, **Árnyék %** és **Kiemelés %**;
+- a **Gammakorrekció**: **Szint**;
+- a **Színhőmérséklet**: **Hidegtől a melegig** és **Fehérváltás**;
+- az **Elhomályosítás**: **Küszöbérték**.
+
+A **Színjavítások** és a **Fehérpont** színválasztót ad (ezzel a képen
+jelölheted ki, minek kellene semlegesnek lennie), a **Színjavítások**
+mellé színhőmérséklet-csúszka is jár. Egykattintásos a két **Derítőfény**
+és az **Automatikus kontraszt**. A beállított értékek mentés és
+újranyitás után is megmaradnak.
+
+A **Lineáris homályosítás** a kép egyik oldalát élesen hagyja, a másikat
+elmossa, és a kettő közt átmenetet ad. A panelen a mértékét állítod, a
+helyét pedig a képen húzható koronggal adod meg. Az elmosás erőssége
+attól függ, **hol áll a korong vízszintesen**; ha csak fel-le mozgatod a
+középvonalon, az effekt nem mos. Az eredeti Picasa is így viselkedik.
 
 ## A fókuszpont húzása a képen
 
@@ -220,7 +246,7 @@ tehát látod, mit kapsz. Ezt az eredeti Picasa is így csinálta.
 | Művészi | Vignetta | Matt |
 | Művészi | Szegély | Kerekített élek |
 | Művészi | Képpontnagyítás | Képpontnövelés |
-| További effektek | Filmszemcse | Régi filmszemcse |
+| Régi effektek | Filmszemcse | Régi filmszemcse |
 
 A **Ragyogás (régi)** csúszkás panelt nyit, mint a többi effekt: az
 **Intenzitás** és a **Sugár** csúszkával állíthatod.

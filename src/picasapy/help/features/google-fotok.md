@@ -11,8 +11,14 @@ tételek (például **Eszközök ▸ Feltöltés**) továbbra sem működnek, l�
 
 A bejelentkezéshez kattints a menüsor jobb szélén a **Bejelentkezés
 Google Fiókkal** feliratra. Megnyílik a böngésző; jelentkezz be, és
-hagyd jóvá a hozzáférést. A bejelentkezés után a felirat a fiók állapotát
-mutatja. Rákattintva a megjelenő menüből kijelentkezhetsz.
+hagyd jóvá a hozzáférést. A bejelentkezés után a felirat helyén három
+elem áll, függőleges vonallal elválasztva:
+
+- a Google-fiókod e-mail-címe (erre nem lehet kattintani; ha a
+  bejelentkezés még egy korábbi verzióból maradt, helyette **Bejelentkezve
+  a Google Fotókba** áll),
+- **Google Fotók**: a böngészőben megnyitja a Google Fotók oldalát,
+- **Kijelentkezés**: törli a mentett bejelentkezést.
 
 Ha a PicasaPy csomag nem tartalmaz beépített Google-klienst, a feliratra
 kattintva egy rövid üzenet jelzi: **A Google-bejelentkezés ebben a
