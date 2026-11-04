@@ -234,6 +234,7 @@ kódtól).
 - `src/picasapy/app/photo_grid_model.py` (#6522) - QML-híd a saját Effekt-térszelvény teljes láncának lekérdezéséhez.
 - `src/picasapy/app/qml/PicasaPy/EffectSliceBox.qml` (#6522) - a hisztogram fölötti forgatható mini 3D effekt-nézet, az eredeti Picasában nincs.
 - `src/picasapy/app/qml/PicasaPy/PhotoViewerLeftDrawer.qml` (#6522) - a saját térszelvény helye és a két dobozhoz számított szerkesztőpanel-tartalék.
+- `src/picasapy/app/qml/PicasaPy/EditorEffectsTab4.qml` (#6535) - a 6. fül rácsának természetes (4,5 soros) magassága a saját térszelvény helyfoglalásához.
 - `src/picasapy/app/qml/PicasaPy/PicasaViewMenu.qml` (#6522) - a Nézet menü saját térszelvény-módválasztója.
 - `src/picasapy/app/qml/PicasaPy/EditorPanel.qml` (#6522) - a saját térszelvény az utoljára mozgatott effektcsúszka indexét követi.
 - `src/picasapy/app/qml/PicasaPy/EditorParamPanel.qml` (#6522) - az effektcsúszka-mozgatás átadja a mélységtengelyhez tartozó indexet.
