@@ -41,6 +41,11 @@ Item {
         if (keyboard.hostViewer.isCurrentVideo
                 && keyboard.hostViewer.videoLoader.item)
             keyboard.hostViewer.videoLoader.item.togglePlayback()
+        else
+            // #6531: a OneUp Space az automatikus lejátszás útja. Az
+            // állóképes néző meglévő Lejátszás-jelzése az aktuális képtől
+            // indítja a vetítést; a videó saját lejátszója a fenti ág marad.
+            keyboard.hostViewer.playRequested()
     }
     Keys.onPressed: function(event) {
         if (keyboard.hostViewer.textEntryHasFocus)
