@@ -19,28 +19,15 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
-from PySide6.QtGui import QPainter
-from PySide6.QtQuick import QQuickPaintedItem
-from PySide6.QtQml import qmlRegisterType
+from PySide6.QtGui import QImage
+from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.app.effect_params import resolve_effect_params
 from picasapy.ini.filters import FilterOp, parse_filters
 from picasapy.render.registry import FILTER_REGISTRY
 
 from . import edit_preview_source
-from .effect_slice_paint import (
-    BASE_AZIMUTH,
-    CHANNEL_COLORS,
-    DIMENSIONS,
-    ELEVATION,
-    MARKER_COLOR,
-    interpolate_row,
-    make_projection,
-    paint_color_cube,
-    paint_frame,
-    paint_polyline,
-    paint_surface,
-)
+from .effect_slice_paint import render_slice_image
 from .effect_slice_render import render_surface
 
 # SAJÁT FUNKCIÓ (#6522): mind a PicasaPy filterdesc-regiszterének 84 effektje nézettípust kap.
@@ -169,6 +156,7 @@ class EffectSliceController(QObject):
             self._mode = "editing"
         self._spinning = self._settings.value("view/effectSliceSpin", True, type=bool)
         self._surface_data = {"kind": "none", "rows": [], "message": "none"}
+        self._surface_revision = 0
         self._available_views = ["tone"]
         self._selected_view = "tone"
         self._active_effect = ""
@@ -199,10 +187,6 @@ class EffectSliceController(QObject):
     def spinning(self) -> bool:
         return self._spinning
 
-    @Property("QVariantMap", notify=surfaceChanged)
-    def surfaceData(self) -> dict:
-        return self._surface_data
-
     @Property("QVariantList", notify=viewTypeChanged)
     def availableViewTypes(self) -> list[str]:
         return list(self._available_views)
@@ -210,6 +194,14 @@ class EffectSliceController(QObject):
     @Property(str, notify=viewTypeChanged)
     def selectedViewType(self) -> str:
         return self._selected_view
+
+    @Property(int, notify=surfaceChanged)
+    def surfaceRevision(self) -> int:  # noqa: N802
+        return self._surface_revision
+
+    def surface_snapshot(self) -> dict:
+        """A képszolgáltató (más szálon is) ezt olvassa: a dict cseréje atomi."""
+        return self._surface_data
 
     @Property(int, notify=surfaceChanged)
     def chainLength(self) -> int:
@@ -356,6 +348,7 @@ class EffectSliceController(QObject):
             data = dict(cached)
             self._set_marker(data, target)
             self._surface_data = data
+            self._surface_revision += 1
             self.surfaceChanged.emit()
             return {"cached": True}
         try:
@@ -505,6 +498,7 @@ class EffectSliceController(QObject):
                 self._cache.popitem(last=False)
         self._set_marker(data, self._last_target)
         self._surface_data = data
+        self._surface_revision += 1
         self.surfaceChanged.emit()
 
     def _set_marker(self, data: dict, target) -> None:
@@ -525,103 +519,28 @@ class EffectSliceController(QObject):
         data["hasMarker"] = True
         data["current"] = target["current"]
 
-class EffectSliceSurface(QQuickPaintedItem):
-    """Mesh-rajzoló QQuickPaintedItem; a QML Canvas-t nem használja."""
+class EffectSliceImageProvider(QQuickImageProvider):
+    """`image://effectslice/<szög>/<revízió>`: a térszelvény képe a vezérlő adatából.
 
-    surfaceDataChanged = Signal()
-    angleChanged = Signal()
+    Képszolgáltató, nem regisztrált QML-típus: a Pythonban származtatott
+    QQuickItem kilépéskor a Python-burok lebontása után omlott össze (CI).
+    """
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._surface_data = {"kind": "none", "rows": []}
-        self._angle = 0.0
-        self.setAntialiasing(True)
+    def __init__(self, controller: EffectSliceController) -> None:
+        super().__init__(QQuickImageProvider.ImageType.Image)
+        self._controller = controller
 
-    @Property("QVariantMap", notify=surfaceDataChanged)
-    def surfaceData(self) -> dict:
-        return self._surface_data
-
-    @surfaceData.setter
-    def surfaceData(self, value: dict) -> None:
-        self._surface_data = dict(value or {})
-        self.surfaceDataChanged.emit()
-        self.update()
-
-    @Property(float, notify=angleChanged)
-    def angle(self) -> float:
-        return self._angle
-
-    @angle.setter
-    def angle(self, value: float) -> None:
-        self._angle = float(value) % 360.0
-        self.angleChanged.emit()
-        self.update()
-
-    def paint(self, painter: QPainter) -> None:
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        data = self._surface_data
-        kind = data.get("kind", "none")
-        if kind == "none":
-            return
-        dims = DIMENSIONS.get(kind, DIMENSIONS["tone"])
-        project = make_projection(
-            dims, BASE_AZIMUTH + self._angle, ELEVATION, self.boundingRect()
+    def requestImage(self, image_id: str, size, requested_size) -> QImage:  # noqa: N802
+        try:
+            angle = float(str(image_id).split("/", 1)[0])
+        except ValueError:
+            angle = 0.0
+        width = requested_size.width() if requested_size.width() > 0 else 424
+        height = requested_size.height() if requested_size.height() > 0 else 210
+        image = render_slice_image(
+            self._controller.surface_snapshot(), angle, width, height, 2.0
         )
-        if kind == "color":
-            paint_color_cube(painter, project, data.get("points") or [])
-            return
-        paint_frame(painter, project)
-        if kind == "identity":
-            # üres lánc: az azonos leképezés egyenes átlója
-            paint_polyline(painter, project, 0.5, (0.0, 1.0), MARKER_COLOR, 1.5)
-            return
-        rows = data.get("rows") or []
-        paint_surface(painter, project, rows, dims)
-        if kind == "tone":
-            self._paint_tone_marker(painter, project, rows)
-        elif kind == "point" and rows:
-            # a középen átmenő metszet
-            paint_polyline(painter, project, 0.5, rows[len(rows) // 2], MARKER_COLOR, 1.2)
-
-    def _paint_tone_marker(self, painter: QPainter, project, rows: list) -> None:
-        data = self._surface_data
-        if not data.get("hasMarker") or len(rows) < 2:
-            return
-        span = float(data.get("maximum", 1.0)) - float(data.get("minimum", 0.0))
-        position = (
-            (float(data.get("current", 0.0)) - float(data.get("minimum", 0.0))) / span
-            if span
-            else 0.0
-        )
-        channels = data.get("channels") or []
-        if len(channels) == len(rows) and all(len(row) == 3 for row in channels):
-            per_channel = [
-                interpolate_row([row[index] for row in channels], position)
-                for index in range(3)
-            ]
-            spread = max(
-                (
-                    max(abs(r - g), abs(g - b), abs(r - b))
-                    for r, g, b in zip(*per_channel, strict=False)
-                ),
-                default=0.0,
-            )
-            if spread >= 0.01:
-                for heights, color in zip(per_channel, CHANNEL_COLORS, strict=True):
-                    paint_polyline(painter, project, position, heights, color, 1.2)
-                return
-        paint_polyline(
-            painter, project, position, interpolate_row(rows, position), MARKER_COLOR, 1.5
-        )
-
-
-_QML_TYPES_REGISTERED = False
-
-
-def register_qml_types() -> None:
-    """A Python festett elemet a QML import előtt regisztrálja."""
-    global _QML_TYPES_REGISTERED
-    if _QML_TYPES_REGISTERED:
-        return
-    qmlRegisterType(EffectSliceSurface, "PicasaPy", 1, 0, "EffectSliceSurface")
-    _QML_TYPES_REGISTERED = True
+        if size is not None:
+            size.setWidth(image.width())
+            size.setHeight(image.height())
+        return image

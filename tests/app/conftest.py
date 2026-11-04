@@ -171,7 +171,7 @@ def _build_qml_app(qt_app, tmp_path):
     from picasapy.app.drop_import_controller import DropImportController
     from picasapy.app.edit_controller import EditController
     # SAJÁT FUNKCIÓ (#6522): a QML-harness az éles indulással azonosan regisztrálja és beköti a térszelvényt.
-    from picasapy.app.effect_slice import EffectSliceController, register_qml_types
+    from picasapy.app.effect_slice import EffectSliceController, EffectSliceImageProvider
     from picasapy.app.edit_preview import EditPreviewProvider
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.app.faces_helper import FacesHelper
@@ -219,7 +219,6 @@ def _build_qml_app(qt_app, tmp_path):
     confirm_settings = ConfirmSettingsBridge(settings=settings)
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
-    register_qml_types()
     effect_slice_controller = EffectSliceController(edit_controller, settings=settings)
     # megjelenítési mód (#1575/#1576) — az application.py bekötésének tükre.
     # A név életben tartja az átvezetőt, amíg a motor él.
@@ -289,6 +288,7 @@ def _build_qml_app(qt_app, tmp_path):
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
     engine.rootContext().setContextProperty("effectSliceController", effect_slice_controller)
+    engine.addImageProvider("effectslice", EffectSliceImageProvider(effect_slice_controller))
     engine.rootContext().setContextProperty(
         "fileOpsController", fileops_controller
     )

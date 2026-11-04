@@ -23,11 +23,6 @@ def _startup_step_create_qml_engine(state):
     thumb_cache = state.thumb_cache
     timeline = state.timeline
 
-    # SAJÁT FUNKCIÓ (#6522): a Python festett térszelvény-elemet a QML-import előtt regisztráljuk.
-    from .effect_slice import register_qml_types
-
-    register_qml_types()
-
     # #1653: a QML-MOTOR létrehozása külön szakasz. Az eddigi közös
     # mérőpont („a többi vezérlő létrehozása és regisztrálása") egyben
     # mérte a vezérlők konstruktorait, a `QQmlApplicationEngine()`-t és a
@@ -106,13 +101,15 @@ def _startup_step_register_qml_context(state):
     web_export_controller = state.web_export_controller
     notifier_screen_geometry = NotifierScreenGeometry(parent=app)
 
-    # SAJÁT FUNKCIÓ (#6522): a menü QSettings-állapotát és a háttérmérést egy vezérlő tartja.
-    from .effect_slice import EffectSliceController
+    # SAJÁT FUNKCIÓ (#6522): a menü QSettings-állapotát és a háttérmérést egy vezérlő
+    # tartja, a képet a képszolgáltatója rajzolja.
+    from .effect_slice import EffectSliceController, EffectSliceImageProvider
 
     effect_slice_controller = EffectSliceController(
         edit_controller, settings=QSettings("PicasaPy", "PicasaPy"), parent=app
     )
     app.aboutToQuit.connect(effect_slice_controller.shutdown)
+    engine.addImageProvider("effectslice", EffectSliceImageProvider(effect_slice_controller))
 
     ScreenCaptureController = _app._lazy_app_symbol("ScreenCaptureController")
     screen_capture_controller = ScreenCaptureController(

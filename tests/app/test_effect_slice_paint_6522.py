@@ -146,3 +146,34 @@ def test_a_finomhangolas_ful_utoljara_mozgatott_csuszkaja_a_melysegtengely(qt_ap
     assert controller.sliderValue == pytest.approx(0.5)
     assert controller.chainLength == 2
     controller.shutdown()
+
+
+def test_a_kepszolgaltato_a_vezerlo_adatabol_nem_ures_kepet_rajzol(qt_app, tmp_path):
+    from PySide6.QtCore import QSize
+
+    from picasapy.app.effect_slice import EffectSliceImageProvider
+
+    controller = _controller(tmp_path)
+    ops = tuple(parse_filters("contrast=1,0.1;"))
+    target = EffectSliceController._chain_depth_target(ops, "tone")
+    depth = {key: target[key] for key in ("operationIndex", "parameterIndex", "minimum", "maximum", "current")}
+    controller._surface_data = render_surface(None, ops, "tone", depth=depth)
+    controller._set_marker(controller._surface_data, target)
+    provider = EffectSliceImageProvider(controller)
+    size = QSize()
+
+    image = provider.requestImage("35/1", size, QSize(424, 210))
+
+    assert (image.width(), image.height()) == (424, 210)
+    assert (size.width(), size.height()) == (424, 210)
+    # a felület kék, a jelölő narancs: mindkét szín megjelenik
+    kek = narancs = 0
+    for x in range(0, 424, 3):
+        for y in range(0, 210, 3):
+            pixel = image.pixelColor(x, y)
+            if pixel.alpha() > 200 and pixel.blue() > pixel.red() + 40:
+                kek += 1
+            if pixel.alpha() > 200 and pixel.red() > 180 and pixel.blue() < 80:
+                narancs += 1
+    assert kek > 200
+    assert narancs > 5

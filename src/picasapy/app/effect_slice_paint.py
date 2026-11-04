@@ -14,7 +14,7 @@ import math
 from collections.abc import Callable, Sequence
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QPainter, QPen, QPolygonF
+from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPolygonF
 
 ELEVATION = 28.0
 BASE_AZIMUTH = -32.0
@@ -243,3 +243,66 @@ def paint_color_cube(painter: QPainter, project: Projector, points: Sequence[dic
         painter.setBrush(QColor(int(rgb[0]), int(rgb[1]), int(rgb[2])))
         painter.drawEllipse(_point(projected[index]), 2.1, 2.1)
     painter.setBrush(Qt.BrushStyle.NoBrush)
+
+
+def render_slice_image(
+    data: dict, angle: float, width: int, height: int, scale: float = 2.0
+) -> QImage:
+    """A térszelvény teljes képe: átlátszó háttér, a doboz krómja a QML-é."""
+    image = QImage(max(1, int(width)), max(1, int(height)), QImage.Format.Format_ARGB32_Premultiplied)
+    image.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(image)
+    try:
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.scale(scale, scale)
+        rect = QRectF(0.0, 0.0, image.width() / scale, image.height() / scale)
+        paint_slice(painter, data or {}, angle, rect)
+    finally:
+        painter.end()
+    return image
+
+
+def paint_slice(painter: QPainter, data: dict, angle: float, rect: QRectF) -> None:
+    """A nézettípus szerinti rajz a megadott téglalapba."""
+    kind = data.get("kind", "none")
+    if kind == "none":
+        return
+    dims = DIMENSIONS.get(kind, DIMENSIONS["tone"])
+    project = make_projection(dims, BASE_AZIMUTH + angle, ELEVATION, rect)
+    if kind == "color":
+        paint_color_cube(painter, project, data.get("points") or [])
+        return
+    paint_frame(painter, project)
+    if kind == "identity":
+        # üres lánc: az azonos leképezés egyenes átlója
+        paint_polyline(painter, project, 0.5, (0.0, 1.0), MARKER_COLOR, 1.5)
+        return
+    rows = data.get("rows") or []
+    paint_surface(painter, project, rows, dims)
+    if kind == "tone":
+        _paint_tone_marker(painter, project, data, rows)
+    elif kind == "point" and rows:
+        # a középen átmenő metszet
+        paint_polyline(painter, project, 0.5, rows[len(rows) // 2], MARKER_COLOR, 1.2)
+
+
+def _paint_tone_marker(painter: QPainter, project: Projector, data: dict, rows) -> None:
+    if not data.get("hasMarker") or len(rows) < 2:
+        return
+    minimum = float(data.get("minimum", 0.0))
+    span = float(data.get("maximum", 1.0)) - minimum
+    position = (float(data.get("current", 0.0)) - minimum) / span if span else 0.0
+    channels = data.get("channels") or []
+    if len(channels) == len(rows) and all(len(row) == 3 for row in channels):
+        per_channel = [
+            interpolate_row([row[index] for row in channels], position) for index in range(3)
+        ]
+        spread = max(
+            (max(abs(r - g), abs(g - b), abs(r - b)) for r, g, b in zip(*per_channel, strict=False)),
+            default=0.0,
+        )
+        if spread >= 0.01:
+            for heights, color in zip(per_channel, CHANNEL_COLORS, strict=True):
+                paint_polyline(painter, project, position, heights, color, 1.2)
+            return
+    paint_polyline(painter, project, position, interpolate_row(rows, position), MARKER_COLOR, 1.5)

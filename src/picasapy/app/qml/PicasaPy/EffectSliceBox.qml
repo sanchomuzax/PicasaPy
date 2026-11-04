@@ -14,14 +14,20 @@ Rectangle {
         (typeof effectSliceController !== "undefined" && effectSliceController)
             ? effectSliceController : null
     // a vezérlő nélküli (és a lebontás alatti) állapot biztonságos alapértékei
-    readonly property string ctlMode: ctl ? ctl.mode : "never"
-    readonly property bool ctlSpinning: ctl ? ctl.spinning : false
-    readonly property var ctlSurface: ctl ? ctl.surfaceData : ({kind: "none", rows: []})
-    readonly property var ctlViews: ctl ? ctl.availableViewTypes : ["tone"]
-    readonly property string ctlView: ctl ? ctl.selectedViewType : "tone"
-    readonly property int ctlChainLength: ctl ? ctl.chainLength : 0
-    readonly property string ctlSliderLabel: ctl ? ctl.sliderLabel : ""
-    readonly property real ctlSliderValue: ctl ? ctl.sliderValue : 0
+    readonly property string ctlMode: (ctl && ctl.mode !== undefined) ? ctl.mode : "never"
+    readonly property bool ctlSpinning: (ctl && ctl.spinning !== undefined) ? ctl.spinning : false
+    readonly property var ctlViews: (ctl && ctl.availableViewTypes !== undefined)
+        ? ctl.availableViewTypes : ["tone"]
+    readonly property string ctlView: (ctl && ctl.selectedViewType !== undefined)
+        ? ctl.selectedViewType : "tone"
+    readonly property int ctlChainLength: (ctl && ctl.chainLength !== undefined)
+        ? ctl.chainLength : 0
+    readonly property int ctlSurfaceRevision: (ctl && ctl.surfaceRevision !== undefined)
+        ? ctl.surfaceRevision : 0
+    readonly property string ctlSliderLabel: (ctl && ctl.sliderLabel !== undefined)
+        ? ctl.sliderLabel : ""
+    readonly property real ctlSliderValue: (ctl && ctl.sliderValue !== undefined)
+        ? ctl.sliderValue : 0
     function setSpin(on) { if (ctl) ctl.setSpinning(on) }
     readonly property bool paramEditing: hostEditorPanel
         && hostEditorPanel.paramPanelActive
@@ -105,10 +111,7 @@ Rectangle {
     onDepthIndexChanged: requestCurrent()
     onPhotoPathChanged: requestCurrent()
     onChainValueChanged: requestCurrent()
-    Component.onCompleted: {
-        surface.active = box.ctl !== null
-        requestCurrent()
-    }
+    Component.onCompleted: requestCurrent()
 
     // a szerkesztés-munkamenet később indulhat, mint a panel: a revízió újrakér
     Connections {
@@ -165,30 +168,21 @@ Rectangle {
         ToolTip.delay: Theme.tooltipDelay
     }
 
-    // A festett elem csak valódi vezérlő mellett töltődik be: a típusát ugyanaz a
-    // lépés regisztrálja, amelyik a vezérlőt létrehozza (application_startup_qml).
-    Loader {
+    // A képet a Python képszolgáltató rajzolja (image://effectslice/<szög>/<revízió>);
+    // fél fokos lépésben kér új képet, a revízió a mért adat változását jelzi.
+    Image {
         id: surface
+        objectName: "effectSliceSurface"
         x: 13
         y: 17
         width: box.width - 26
         height: 105
-        // egyszer, betöltéskor dől el (nem kötés): kilépéskor a vezérlő lebontása
-        // így nem tölti ki újra a félig lebontott felületen (CI SIGSEGV)
-        active: false
-        source: "EffectSliceSurfaceHost.qml"
-        Binding {
-            target: surface.item
-            property: "surfaceData"
-            value: box.ctlSurface
-            when: surface.item !== null
-        }
-        Binding {
-            target: surface.item
-            property: "angle"
-            value: box.angle
-            when: surface.item !== null
-        }
+        cache: false
+        smooth: true
+        sourceSize: Qt.size(width * 2, height * 2)
+        source: box.ctl
+            ? "image://effectslice/" + (Math.round(box.angle * 2) / 2) + "/" + box.ctlSurfaceRevision
+            : ""
     }
 
     Text {

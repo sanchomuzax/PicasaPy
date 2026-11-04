@@ -57,10 +57,7 @@ def test_a_doboz_a_histogram_felett_marad_es_nem_takarja_a_szerkeszto_sorat(
 
     assert var_feltetelre(
         qt_app,
-        lambda: window.findChild(QObject, "effectSliceSurface")
-        .property("surfaceData")
-        .get("kind")
-        == "identity",
+        lambda: effect_controller.surface_snapshot().get("kind") == "identity",
         3.0,
     )
     image = window.grabWindow()
