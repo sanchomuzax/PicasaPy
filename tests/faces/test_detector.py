@@ -157,5 +157,7 @@ class TestDefaultScoreThreshold:
             FaceDetectorYN=SimpleNamespace(create=fake_create), error=RuntimeError
         )
         monkeypatch.setattr("picasapy.faces.detector.cv2", fake_cv2)
-        FaceDetector(model_path=model)
+        detector = FaceDetector(model_path=model)
+        assert captured == {}, "a modell inicializálása konstrukciókor korai"
+        assert detector.available
         assert captured["score_threshold"] == pytest.approx(0.9)

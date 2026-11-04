@@ -87,7 +87,7 @@ def test_u_res_kamerabemenetet_a_naplo_nevezze_meg_az_ellenorizendo_okokat(
     assert any("másik program" in line for line in progress.messages)
 
 
-def test_a_multimedia_diagnosztika_az_elso_kepkocka_utan_indul():
+def test_a_multimedia_diagnosztika_nem_indul_el_az_alapinditaskor():
     prepare_path = (
         Path(__file__).resolve().parents[2]
         / "src/picasapy/app/application_startup_prepare.py"
@@ -101,7 +101,7 @@ def test_a_multimedia_diagnosztika_az_elso_kepkocka_utan_indul():
     application_source = application_path.read_text(encoding="utf-8")
     first_frame_handler = application_source.split("def _on_first_frame()", 1)[1]
     first_frame_handler = first_frame_handler.split("\n    app = state.app", 1)[0]
-    assert "_schedule_multimedia_device_diagnostics(progress_log)" in first_frame_handler
+    assert "_schedule_multimedia_device_diagnostics(progress_log)" not in first_frame_handler
 
 
 def test_a_multimedia_diagnosztika_kesleltetve_hatterben_indul(monkeypatch):
@@ -208,3 +208,39 @@ def test_a_korai_alkalmazas_mellett_az_eszkozfelsorolas_megegyezik_a_regivel():
     assert early["audio_input_count"] == legacy["audio_input_count"]
     if sys.platform == "win32":
         assert isinstance(early["audio_input_count"], int)
+
+
+def test_a_rogzites_panel_megnyitasa_egyszer_naplozza_az_eszkozoket(monkeypatch):
+    """#6510: az induláskori felsorolás helyett a panel első megnyitása mér."""
+    from picasapy.app import camera_capture_controller as modul
+    from picasapy.app import startup_diagnostics
+
+    hivasok = []
+    monkeypatch.setattr(
+        startup_diagnostics,
+        "_log_multimedia_device_diagnostics",
+        lambda naplo: hivasok.append(naplo),
+    )
+
+    class _AzonnaliSzal:
+        def __init__(self, target, args, name, daemon):
+            self._target, self._args = target, args
+
+        def start(self):
+            self._target(*self._args)
+
+    monkeypatch.setattr(startup_diagnostics, "_thread", _AzonnaliSzal)
+    naplo = object()
+    vezerlo = modul.CameraCaptureController(progress_log=naplo)
+    vezerlo.logDeviceDiagnostics()
+    vezerlo.logDeviceDiagnostics()
+    assert hivasok == [naplo]
+
+
+def test_a_rogzites_panel_megnyitaskor_keri_a_diagnosztikat():
+    qml = (
+        Path(__file__).resolve().parents[2]
+        / "src/picasapy/app/qml/PicasaPy/CaptureMoviePanelPopup.qml"
+    ).read_text(encoding="utf-8")
+    nyitas = qml.split("onOpened: {", 1)[1].split("\n    }", 1)[0]
+    assert "logDeviceDiagnostics()" in nyitas

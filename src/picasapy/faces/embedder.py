@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 from pathlib import Path
 
 import numpy as np
@@ -128,38 +129,62 @@ class FaceEmbedder:
     """`cv2.FaceRecognizerSF` hiánytűrő becsomagolása.
 
     Modell/API hiányában `available=False`, a `compute()` `None`-t ad —
-    NINCS kivétel, NINCS crash a hívóig (ld. modul-docstring)."""
+    NINCS kivétel, NINCS crash a hívóig (ld. modul-docstring). Az elérhetőség
+    ellenőrzése és a modell betöltése csak az első lekérdezéskor történik."""
 
     def __init__(self, model_path: Path | None = None) -> None:
-        self.available = False
+        self._initialized = False
+        self._available = False
+        self._init_lock = threading.Lock()
         self._recognizer = None
         self.model_path = model_path if model_path is not None else resolve_model_path()
         if self.model_path is None:
-            logger.info(
-                "Arc-lenyomat modell nem található — a funkció kikapcsolva "
-                "(a %s környezeti változóval vagy a %s helyre másolva "
-                "adható meg; ld. picasapy.faces.embedder.download_model).",
-                MODEL_ENV_VAR,
-                default_model_path(),
-            )
-            return
-        if cv2 is None or not hasattr(cv2, "FaceRecognizerSF"):
-            logger.warning(
-                "A telepített OpenCV build nem tartalmazza a "
-                "FaceRecognizerSF API-t — a lenyomat-számítás kikapcsolva."
-            )
-            return
-        try:
-            self._recognizer = cv2.FaceRecognizerSF.create(str(self.model_path), "")
-        except cv2.error as error:  # pragma: no cover — sérült modellfájl
-            logger.warning(
-                "Az arc-lenyomat modell betöltése sikertelen (%s) — a "
-                "funkció kikapcsolva.",
-                error,
-            )
-            self._recognizer = None
-            return
-        self.available = True
+            self._initialize()
+
+    @property
+    def available(self) -> bool:
+        """Igaz, ha a modell betölthető; az ellenőrzés csak első kérésre fut."""
+        self._initialize()
+        return self._available
+
+    @available.setter
+    def available(self, value: bool) -> None:
+        self._available = bool(value)
+        self._initialized = True
+
+    def _initialize(self) -> None:
+        with self._init_lock:
+            if self._initialized:
+                return
+            self._initialized = True
+            if self.model_path is None:
+                logger.info(
+                    "Arc-lenyomat modell nem található — a funkció kikapcsolva "
+                    "(a %s környezeti változóval vagy a %s helyre másolva "
+                    "adható meg; ld. picasapy.faces.embedder.download_model).",
+                    MODEL_ENV_VAR,
+                    default_model_path(),
+                )
+                return
+            if cv2 is None or not hasattr(cv2, "FaceRecognizerSF"):
+                logger.warning(
+                    "A telepített OpenCV build nem tartalmazza a "
+                    "FaceRecognizerSF API-t — a lenyomat-számítás kikapcsolva."
+                )
+                return
+            try:
+                self._recognizer = cv2.FaceRecognizerSF.create(
+                    str(self.model_path), ""
+                )
+            except cv2.error as error:  # pragma: no cover — sérült modellfájl
+                logger.warning(
+                    "Az arc-lenyomat modell betöltése sikertelen (%s) — a "
+                    "funkció kikapcsolva.",
+                    error,
+                )
+                self._recognizer = None
+                return
+            self._available = True
 
     def compute(
         self, image_bgr: np.ndarray | None, detection: FaceDetection

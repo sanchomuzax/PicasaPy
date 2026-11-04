@@ -143,11 +143,11 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
         self._pool = QThreadPool()
         self._pool.setMaxThreadCount(1)
         self._pool.setExpiryTimeout(30_000)
+        self._font_warmup_started = False
         self._generation = 0
         self._running = False
         self._pending: _TransitionRequest | None = None
         register_pool_owner(self)
-        self._pool.start(_FontWarmupJob())
 
     def request_transition(
         self,
@@ -169,6 +169,12 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
     ) -> int:
         """Azonnal visszatér; a két alapképet és az átmenetet a pool készíti."""
         with self._lock:
+            if not self._font_warmup_started:
+                # A betűkészlet-bemelegítés a `cv2`-t is behozza. Ez csak
+                # akkor kell, amikor a felhasználó ténylegesen megnyitotta a
+                # film-előnézetet; tétlen indításkor ne dolgozzon a pool.
+                self._font_warmup_started = True
+                self._pool.start(_FontWarmupJob())
             self._generation += 1
             generation = self._generation
             request = _TransitionRequest(
