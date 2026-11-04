@@ -82,8 +82,53 @@ def _gray_ramp() -> np.ndarray:
     return np.repeat(ramp[None, :, None], 3, axis=2)
 
 
+_LUMA = (0.2126, 0.7152, 0.0722)
+#: #6536: a fotón mért átviteli görbe mintája (sor, oszlop)
+_FOTO_MINTA = (96, 128)
+
+
+def _atviteli_gorbe(bemenet: np.ndarray, kimenet: np.ndarray) -> list[float]:
+    """Mért átviteli görbe: minden bemenő szinthez a kimenő szintek átlaga (0-1).
+
+    #6536: az automatikus effektek (Jó napom van) képfüggők, ezért a fotón
+    mérjük őket; a hiányzó szinteket a szomszédos mért szintek közt interpoláljuk."""
+    oszlopok = TONE_COLUMNS
+    be = np.clip(bemenet.astype(np.float64).ravel() / 255.0, 0.0, 1.0)
+    ki = np.clip(kimenet.astype(np.float64).ravel() / 255.0, 0.0, 1.0)
+    rekesz = np.rint(be * (oszlopok - 1)).astype(int)
+    darab = np.bincount(rekesz, minlength=oszlopok)
+    osszeg = np.bincount(rekesz, weights=ki, minlength=oszlopok)
+    van = darab > 0
+    if not van.any():
+        return np.linspace(0.0, 1.0, oszlopok).tolist()
+    helyek = np.flatnonzero(van)
+    ertekek = osszeg[van] / darab[van]
+    return np.interp(np.arange(oszlopok), helyek, ertekek).tolist()
+
+
+def _foto_atvitel(input_image: np.ndarray, output: np.ndarray) -> tuple[list[float], list[list[float]]]:
+    """A fotón mért fényesség- és csatornánkénti átviteli görbe."""
+    kimenet = _fit_rgb(output, input_image.shape[:2])
+    sor = _atviteli_gorbe(input_image @ np.array(_LUMA), kimenet @ np.array(_LUMA))
+    csatornak = [_atviteli_gorbe(input_image[:, :, c], kimenet[:, :, c]) for c in range(3)]
+    return sor, csatornak
+
+
+def _foto_minta(source) -> np.ndarray:
+    """A fotó mintája alján egy keskeny szürke ékkel: minden bemenő szint mérhető.
+
+    Egyszínű vagy szűk tónusú fotón az ék nélkül csak egy-két szint lenne
+    mérhető, és a görbe lapos lenne; a 4 soros ék a képfüggő effekt
+    statisztikáját alig mozdítja."""
+    sorok, oszlopok = _FOTO_MINTA
+    foto = _fit_rgb(source, (sorok - 4, oszlopok))
+    ek = np.repeat(np.linspace(0, 255, oszlopok, dtype=np.uint8)[None, :, None], 3, axis=2)
+    return np.vstack([foto, np.repeat(ek, 4, axis=0)])
+
+
 def _tone_surface(source, operations, depth, probe_kind) -> dict:
-    input_image = _probe_source(source, probe_kind)
+    foto = probe_kind == "photo" and source is not None and np.asarray(source).size
+    input_image = _foto_minta(source) if foto else _probe_source(source, probe_kind)
     if depth and depth.get("operationIndex") is not None:
         points = slider_sweep(
             depth["minimum"], depth["maximum"], depth["current"], count=SLICE_STEPS
@@ -104,6 +149,11 @@ def _tone_surface(source, operations, depth, probe_kind) -> dict:
                 point,
             )
         output = _apply(input_image, sampled_ops)
+        if foto:
+            sor, csatornak = _foto_atvitel(input_image, output)
+            rows.append(sor)
+            channels.append(csatornak)
+            continue
         fitted = _fit_rgb(output, (1, TONE_COLUMNS))
         channels.append(
             [[float(value) / 255.0 for value in fitted[0, :, channel]] for channel in range(3)]

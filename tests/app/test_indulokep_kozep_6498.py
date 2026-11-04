@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QRect, QSize
+from PySide6.QtCore import QRect
 from PySide6.QtGui import QColor, QGuiApplication, QImage
 
 from picasapy.app.startup_splash import (
@@ -44,12 +44,12 @@ def _lathato_tinta_hatara(image: QImage, rect: QRect) -> tuple[int, int]:
     return min(oszlopok), max(oszlopok)
 
 
-def _vizszintesen_kozepre_esik(image: QImage) -> None:
+def _vizszintesen_kozepre_esik(image: QImage, kartya: QRect | None = None) -> None:
     """Az embléma bal széle és a szójel jobb széle a kártya középvonalára szimmetrikus.
 
     A két legkülső látható elem: az embléma a bal, a szójel a jobb szélen zár.
     A bal és a jobb oldali fehér sáv szélessége legfeljebb 2 képponttal térhet el."""
-    kartya = _kartya()
+    kartya = kartya or _kartya()
     embleme_bal, szojel_jobb = _lathato_tinta_hatara(image, kartya)
     bal_sav = embleme_bal - kartya.left()
     jobb_sav = kartya.right() - szojel_jobb
@@ -65,6 +65,8 @@ def test_az_embleme_bal_szele_es_a_szojel_jobb_szele_a_kartya_kozepere_szimmetri
 
 
 def test_a_csomagolt_png_logoja_is_a_kartya_kozepen_van() -> None:
+    # #6533: a bootloader-kép maga a kártya, árnyéksáv nélkül: a félig átlátszó
+    # árnyékot a PyInstaller Windowson bíbor keretként rajzolja ki
     image = QImage(str(_PNG)).convertToFormat(QImage.Format.Format_ARGB32)
-    assert image.size() == QSize(668, 263)
-    _vizszintesen_kozepre_esik(image)
+    assert image.size() == _TARTALOM_MERET
+    _vizszintesen_kozepre_esik(image, QRect(0, 0, image.width(), image.height()))
