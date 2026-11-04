@@ -225,6 +225,35 @@ def test_every_language_has_all_messages_of_the_hungarian_catalog_4863():
     )
 
 
+def test_update_helper_feliratai_minden_nyelvben_befejezettek():
+    from picasapy.app.update_manager import _UPDATE_HELPER_FELIRATOK
+
+    failures = []
+    for code in SUPPORTED_LANGUAGES:
+        root = ET.parse(_I18N / f"picasapy_{code}.ts").getroot()
+        context = next(
+            (
+                ctx
+                for ctx in root.findall("context")
+                if ctx.findtext("name") == "UpdateController"
+            ),
+            None,
+        )
+        assert context is not None, f"{code}: hiányzik az UpdateController fordítási környezete"
+        found = {message.findtext("source"): message for message in context.findall("message")}
+        for source in _UPDATE_HELPER_FELIRATOK.values():
+            message = found.get(source)
+            translation = None if message is None else message.find("translation")
+            if (
+                translation is None
+                or translation.get("type") in {"unfinished", "obsolete", "vanished"}
+                or not "".join(translation.itertext()).strip()
+            ):
+                failures.append(f"{code}: {source!r}")
+
+    assert not failures, "befejezetlen frissítőablak-feliratok: " + ", ".join(failures)
+
+
 def test_google_photos_messages_have_finished_placeholder_safe_translations():
     """A #5976 és a #6361 Google Fotók-feliratai minden nyelven kész, Qt-helyőrzőkkel szerepelnek."""
     google_photos_sources = {

@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.38] - 2026-11-04
+
+- Sötét témában az ablak címsora és kerete sötét megjelenést kap, a Qt színvilága pedig követi a témát (#6511).
+
 ## [1.0.37] - 2026-11-04
 
 - belső: A Windowsos QML-tesztek útvonalkezelése javult (#6505).
