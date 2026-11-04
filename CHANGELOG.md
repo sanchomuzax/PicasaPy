@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.40] - 2026-11-04
+
+- Ha a frissítés után az új program nem indul el, a frissítési ablak fél percen belül jelzi, nem vár rá három percig (#6508).
+- Tétlenül sokkal kevesebb memóriát használ: a film-előnézet, az arcfelismerés és a kameraeszközök csak első használatkor töltődnek be (Linuxon mérve kb. 480 MB helyett kb. 280 MB) (#6510).
+
 ## [1.0.39] - 2026-11-04
 
 - A frissítés újraindítása közben egy kis ablak mutatja, melyik lépésnél tart a frissítés, és mennyi idő telt el (#6508).
