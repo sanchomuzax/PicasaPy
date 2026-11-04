@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import sqlite3
+from contextlib import closing
+
 from .face_scan_controller_signals import FaceScanControllerSignalsMixin as _Signals
 from .hatter_prioritas import arckeres_szal_elokeszitese, arckeres_szal_lezarasa
 from .face_scan_controller_shared import (
@@ -117,6 +120,42 @@ class FaceScanControllerScanMixin:
             self._pending_paths.discard(key)
             remaining = len(self._pending_paths)
         self._set_unchecked_files(remaining)
+
+
+    def _log_database_error_diagnostics(self) -> None:
+        """Rögzíti az index állapotát útvonalak nélkül egy arcindex-hibánál."""
+        db_path = Path(self._db_path)
+        try:
+            with closing(sqlite3.connect(db_path, timeout=0.5)) as conn:
+                rows = [str(row[0]) for row in conn.execute("PRAGMA quick_check")]
+            quick_check = "; ".join(rows) if rows else "nincs eredmény"
+        except Exception as diagnostic_error:  # noqa: BLE001 — az őr ne fedje el az eredeti hibát
+            quick_check = f"nem futott le ({type(diagnostic_error).__name__})"
+        _log.error("arc-index quick_check: %s", quick_check)
+
+        meretek = []
+        fajlok = (
+            ("index.db", db_path),
+            ("-wal", Path(f"{db_path}-wal")),
+            ("-shm", Path(f"{db_path}-shm")),
+        )
+        for cimke, fajl in fajlok:
+            try:
+                meretek.append(f"{cimke}={fajl.stat().st_size} bájt")
+            except FileNotFoundError:
+                meretek.append(f"{cimke}=nincs")
+            except OSError:
+                meretek.append(f"{cimke}=nem olvasható")
+        _log.error("arc-index fájlméretek: %s", ", ".join(meretek))
+
+        try:
+            from .worker_thread import running_background_workers
+
+            munkak = running_background_workers()
+            nevek = ", ".join(munkak) if munkak else "nincs"
+        except Exception as diagnostic_error:  # noqa: BLE001 — diagnosztikai hiba esetén is őrizzük az eredetit
+            nevek = f"nem olvasható ({type(diagnostic_error).__name__})"
+        _log.error("élő háttérmunkák: %s", nevek)
 
 
     @Slot()
@@ -306,8 +345,13 @@ class FaceScanControllerScanMixin:
                         # a `continue` ágak is kivéve a függők közül (#4586)
                         self._mark_checked(photo_path, stop_event)
                 conn.commit()
+        except sqlite3.DatabaseError as error:
+            _log.exception("arc-detektálás adatbázishiba")
+            self._log_database_error_diagnostics()
+            self.scanFailed.emit(str(error))
+            return
         except Exception as error:  # noqa: BLE001 — index-hiba se fagyassza a UI-t
-            _log.exception("arc-detektálás hiba: %s", self._db_path)
+            _log.exception("arc-detektálás hiba")
             self.scanFailed.emit(str(error))
             return
         finally:

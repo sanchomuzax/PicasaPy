@@ -151,6 +151,51 @@ class TestModelUnavailable:
         assert sorok[0].levelname == "WARNING"
 
 
+class TestDatabaseErrorDiagnostics:
+    def test_database_error_logs_safe_index_diagnostics(
+        self, qt_app, tmp_path, monkeypatch, caplog
+    ):
+        import sqlite3
+
+        import picasapy.app.face_scan_controller_scan_mixin as scan_mixin
+        from picasapy.index import open_index, sync_tree
+
+        root = tmp_path / "photos"
+        root.mkdir()
+        make_jpeg(root / "a.jpg")
+        ctl = _make_controller(qt_app, tmp_path, root)
+
+        private_profile = tmp_path / "private-user-name"
+        private_profile.mkdir()
+        db_path = private_profile / "index.db"
+        with open_index(db_path) as conn:
+            sync_tree(conn, root)
+        ctl._db_path = db_path
+
+        def fail_mark_face_scan(*_args, **_kwargs):
+            raise sqlite3.DatabaseError("database disk image is malformed")
+
+        monkeypatch.setattr(scan_mixin, "mark_face_scan", fail_mark_face_scan)
+        with caplog.at_level(
+            "ERROR", logger="picasapy.app.face_scan_controller_shared"
+        ):
+            ctl.scanForFaces()
+            assert ctl.waitForBackgroundWorkers(10.0)
+
+        messages = "\n".join(
+            record.getMessage()
+            for record in caplog.records
+            if record.name == "picasapy.app.face_scan_controller_shared"
+        )
+        assert "quick_check" in messages
+        assert "ok" in messages
+        assert "index.db=" in messages and "-wal=" in messages and "-shm=" in messages
+        assert "bájt" in messages
+        assert "picasapy-face-scan" in messages
+        assert str(db_path) not in messages
+        assert "private-user-name" not in messages
+
+
 class TestResetFacesForPhotos:
     def test_reset_matches_windows_separator_variants(
         self, qt_app, tmp_path, monkeypatch

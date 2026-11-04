@@ -432,6 +432,24 @@ def _lep_arcfelismeres_inditasa_letoltes_nelkul(tiszta_app, qt_app):
     assert dialog.property("embedderAvailable") is True, (
         "a tiszta profilban nincs elérhető arc-embedder; a felület letöltést kér"
     )
+    # Az export háttérszála az `outputWritten` jelzést is kiküldi; a GUI-s
+    # fogadó az exportcél indexelését külön, szinkron SQLite-munkaként végzi.
+    # A jelzés kézbesítése későbbre maradhat, ezért a várakozás előtt
+    # eseményt dolgozunk fel, majd a jelzések által indított munkákat is
+    # bevárjuk. A kezdeti `sync_tree` a QML-fixture-ben még a vezérlő előtt,
+    # szinkron módon fut; a csillag/felirat írásai szintén befejeződnek a
+    # felületi érték megjelenése előtt.
+    from picasapy.app.worker_thread import (
+        running_background_workers,
+        wait_for_all_background_workers,
+    )
+
+    for _ in range(3):
+        qt_app.processEvents()
+        assert wait_for_all_background_workers(30.0), (
+            "az arcfelismerés előtti háttérmunkák nem álltak le: "
+            + ", ".join(running_background_workers())
+        )
     scan = engine.rootContext().contextProperty("faceScanController")
     befejezett = []
     scan.scanFinished.connect(lambda *args: befejezett.append(args))

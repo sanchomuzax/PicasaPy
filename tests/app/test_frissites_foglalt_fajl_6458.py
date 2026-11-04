@@ -453,3 +453,19 @@ def test_windowson_a_telepitesi_mappabol_futo_folyamatot_megtalalja_es_leallitja
     finally:
         if regi.poll() is None:
             regi.kill()
+
+
+def test_az_uj_ablakra_varas_nem_var_ha_az_uj_program_el_sem_indult(monkeypatch, tmp_path):
+    """#6508: futó folyamat nélkül nem várunk a teljes 180 másodpercig."""
+    from picasapy.app import update_folyamatok
+
+    monkeypatch.setattr(update_swap_helper, "_platform", lambda: "win32")
+    monkeypatch.setattr(update_folyamatok, "telepitesi_folyamatok", lambda *_a: [])
+    ora = iter(float(t) for t in range(0, 1000))
+    monkeypatch.setattr(update_swap_helper, "_monotonic", lambda: next(ora))
+    monkeypatch.setattr(update_swap_helper, "_sleep", lambda _s: None)
+
+    assert update_swap_helper.varj_uj_ablakra(
+        tmp_path, timeout=180.0, inditasi_turelem=30.0
+    ) is False
+    assert next(ora) < 40

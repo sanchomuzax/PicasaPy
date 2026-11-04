@@ -34,6 +34,11 @@ _RELATIVE_PATH = re.compile(
 )
 
 
+
+# #6508: tesztben cserélhető óra és várakozás (a globális time modult ne írják át)
+_monotonic = time.monotonic
+_sleep = time.sleep
+
 def _update_log_path() -> Path:
     """A segéd saját, helyi alkalmazásadat-naplója."""
     from .platform_storage import default_storage_paths
@@ -359,21 +364,33 @@ def varj_uj_ablakra(
     *,
     timeout: float = 180.0,
     poll_interval: float = 0.2,
+    inditasi_turelem: float = 30.0,
 ) -> bool:
-    """Megvárja, hogy a frissen indított PicasaPy megjelenítsen egy ablakot."""
+    """Megvárja, hogy a frissen indított PicasaPy megjelenítsen egy ablakot.
+
+    Ha `inditasi_turelem` másodpercig egyetlen folyamat sem fut a telepítési
+    mappából, az új program el sem indult: nem vár tovább a teljes időkorlátig.
+    """
     if _platform() != "win32":
         return True
     from . import update_folyamatok
 
-    hatarido = time.monotonic() + timeout
+    kezdet = _monotonic()
+    hatarido = kezdet + timeout
+    latott_folyamatot = False
     while True:
-        for pid in update_folyamatok.telepitesi_folyamatok(Path(install_dir), os.getpid()):
+        folyamatok = update_folyamatok.telepitesi_folyamatok(Path(install_dir), os.getpid())
+        for pid in folyamatok:
+            latott_folyamatot = True
             if update_ablak.van_lathato_ablaka(pid):
                 return True
-        maradek = hatarido - time.monotonic()
+        most = _monotonic()
+        if not latott_folyamatot and most - kezdet >= inditasi_turelem:
+            return False
+        maradek = hatarido - most
         if maradek <= 0:
             return False
-        time.sleep(min(poll_interval, maradek))
+        _sleep(min(poll_interval, maradek))
 
 
 def install_after_exit(
