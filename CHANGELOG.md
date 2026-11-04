@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.41] - 2026-11-04
+
+- Ha a menüből indított frissítés közben megérkezik az automatikus frissítésjelzés is, a letöltés már nem akad meg, és nem jelez idő előtt készet: a megkezdett frissítés zavartalanul végigmegy, az újraindítás után az új verzió indul (#6526).
+
 ## [1.0.40] - 2026-11-04
 
 - Ha a frissítés után az új program nem indul el, a frissítési ablak fél percen belül jelzi, nem vár rá három percig (#6508).
