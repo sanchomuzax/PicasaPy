@@ -155,11 +155,14 @@ def test_a_finomhangolas_ful_csuszkaja_is_a_melysegtengelyre_kerul(qml_app, qt_a
 
 @pytest.mark.parametrize("ful", (0, 2, 3, 4, 5))
 def test_szerkesztes_kozben_minden_effektfulon_latszik(qml_app, qt_app, ful):
-    """#6535: a tulajdonos szerint a Gyakori javítások és a rácsos fülök is effektek."""
+    """#6535: a tulajdonos szerint a Gyakori javítások és a rácsos fülök is effektek.
+
+    Teljes HD képernyőn teljes méretű ablak (1040 px magas): a 6. fül rácsa a
+    mért 4,5 sorát megtartja, és mellette a doboz is kifér."""
     window, _app_controller, engine = qml_app
     effect_controller = engine.rootContext().contextProperty("effectSliceController")
     effect_controller.setMode("editing")
-    window.resize(1280, 940)
+    window.resize(1280, 1040)
     window.show()
     window.setProperty("viewerOpen", True)
     window.setProperty("selectedIndex", 0)

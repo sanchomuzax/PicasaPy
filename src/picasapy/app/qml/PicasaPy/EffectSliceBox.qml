@@ -46,7 +46,10 @@ Rectangle {
     readonly property bool editingEffect: paramEditing || tuningEditing
     // #6535: a szerkesztőpanel bármely fülén (Gyakori javítások, rácsos fülök is)
     // szerkesztés folyik; konkrét effekt nélkül a fotó teljes láncát mutatja
+    // a szerkesztőeszközök (vágás, vörösszem, szöveg, kiegyenesítés) nem effektek:
+    // használatuk közben a doboz nem takarhatja az eszköz vezérlőit
     readonly property bool editorOpen: hostEditorPanel !== null && hostEditorPanel.visible
+        && !hostEditorPanel.modeToolActive
     readonly property string sessionChain: (hostEditCtl && hostEditCtl.chainValue !== undefined)
         ? String(hostEditCtl.chainValue) : ""
     readonly property string activeEffectName: paramEditing
