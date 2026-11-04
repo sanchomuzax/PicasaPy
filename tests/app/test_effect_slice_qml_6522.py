@@ -37,4 +37,4 @@ def test_a_doboz_python_festett_3d_elemre_epul_canvas_nelkul():
     assert "Canvas {" not in box
     assert "Theme.chromeBg" in box
     assert "Theme.chromeBorder" in box
-    assert "sliceController.setSpinning" in box
+    assert "ctl.setSpinning" in box

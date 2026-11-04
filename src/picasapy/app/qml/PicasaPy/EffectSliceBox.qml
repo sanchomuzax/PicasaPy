@@ -10,9 +10,19 @@ Rectangle {
     required property var hostViewer
     required property var hostEditCtl
     required property var hostEditorPanel
-    readonly property var sliceController:
+    readonly property var ctl:
         (typeof effectSliceController !== "undefined" && effectSliceController)
-            ? effectSliceController : fallbackController
+            ? effectSliceController : null
+    // a vezérlő nélküli (és a lebontás alatti) állapot biztonságos alapértékei
+    readonly property string ctlMode: ctl ? ctl.mode : "never"
+    readonly property bool ctlSpinning: ctl ? ctl.spinning : false
+    readonly property var ctlSurface: ctl ? ctl.surfaceData : ({kind: "none", rows: []})
+    readonly property var ctlViews: ctl ? ctl.availableViewTypes : ["tone"]
+    readonly property string ctlView: ctl ? ctl.selectedViewType : "tone"
+    readonly property int ctlChainLength: ctl ? ctl.chainLength : 0
+    readonly property string ctlSliderLabel: ctl ? ctl.sliderLabel : ""
+    readonly property real ctlSliderValue: ctl ? ctl.sliderValue : 0
+    function setSpin(on) { if (ctl) ctl.setSpinning(on) }
     readonly property bool paramEditing: hostEditorPanel
         && hostEditorPanel.paramPanelActive
     // a Finomhangolás fül négy csúszkája a finetune2 effekt beállító panele
@@ -46,38 +56,23 @@ Rectangle {
     readonly property string effectTitle: paramEditing
         ? hostEditorPanel.paramEffectTitle
         : tuningEditing ? qsTranslate("EditorTabBar", "Fine Tuning")
-        : qsTr("Chain · %1 steps").arg(sliceController.chainLength)
+        : qsTr("Chain · %1 steps").arg(ctlChainLength)
     readonly property string activeSliderLabel: {
         if (tuningEditing)
-            return qsTranslate("EditorFinetunePanel", sliceController.sliderLabel)
+            return qsTranslate("EditorFinetunePanel", ctlSliderLabel)
         if (paramEditing && hostEditorPanel.paramEffectParams
                 && depthIndex >= 0
                 && depthIndex < hostEditorPanel.paramEffectParams.length) {
             var label = hostEditorPanel.paramEffectParams[depthIndex].label
             return hostEditorPanel.paramLabel(label)
         }
-        return hostEditorPanel.paramLabel(sliceController.sliderLabel)
+        return hostEditorPanel.paramLabel(ctlSliderLabel)
     }
     property real angle: 0
     property real pressX: 0
     property real lastX: 0
     property bool wasSpinning: true
 
-    QtObject {
-        id: fallbackController
-        property string mode: "never"
-        property bool spinning: false
-        property var surfaceData: ({kind: "none", rows: []})
-        property var availableViewTypes: ["tone"]
-        property string selectedViewType: "tone"
-        property int chainLength: 0
-        property string sliderLabel: ""
-        property real sliderValue: 0
-        function request() {}
-        function cycleViewType() {}
-        function setSpinning(_spinning) {}
-        function toggleSpinning() {}
-    }
 
     objectName: "viewerEffectSliceBox"
     width: 238
@@ -85,8 +80,8 @@ Rectangle {
     //: a gazda fiók számolja: van-e hely a szerkesztőpanel tartalma alatt
     property bool hasRoom: true
     visible: hostViewer !== null && !hostViewer.isCurrentVideo && hasRoom
-        && (sliceController.mode === "always"
-            || (sliceController.mode === "editing" && editingEffect))
+        && (ctlMode === "always"
+            || (ctlMode === "editing" && editingEffect))
     radius: 3
     color: Theme.chromeBg
     border.width: 1
@@ -94,12 +89,12 @@ Rectangle {
     clip: true
 
     function requestCurrent() {
-        if (!visible || !sliceController) return
-        sliceController.request(
+        if (!visible || !ctl) return
+        ctl.request(
             activeEffectName,
             activeEffectValues,
             depthIndex,
-            sliceController.selectedViewType,
+            ctlView,
             photoPath,
             chainValue)
     }
@@ -110,7 +105,10 @@ Rectangle {
     onDepthIndexChanged: requestCurrent()
     onPhotoPathChanged: requestCurrent()
     onChainValueChanged: requestCurrent()
-    Component.onCompleted: requestCurrent()
+    Component.onCompleted: {
+        surface.active = box.ctl !== null
+        requestCurrent()
+    }
 
     // a szerkesztés-munkamenet később indulhat, mint a panel: a revízió újrakér
     Connections {
@@ -140,11 +138,11 @@ Rectangle {
         y: 1
         width: 19
         height: 15
-        visible: sliceController.availableViewTypes.length > 1
+        visible: ctlViews.length > 1
         text: "↻"
         padding: 0
         font.pixelSize: 11
-        onClicked: sliceController.cycleViewType()
+        onClicked: if (ctl) ctl.cycleViewType()
         ToolTip.text: qsTr("Switch the view type")
         ToolTip.visible: hovered
         ToolTip.delay: Theme.tooltipDelay
@@ -157,11 +155,11 @@ Rectangle {
         y: 1
         width: 34
         height: 15
-        text: qsTr("3D") + (sliceController.spinning ? " Ⅱ" : " ▶")
+        text: qsTr("3D") + (ctlSpinning ? " Ⅱ" : " ▶")
         padding: 0
         font.pixelSize: 8
-        onClicked: sliceController.toggleSpinning()
-        ToolTip.text: sliceController.spinning
+        onClicked: if (ctl) ctl.toggleSpinning()
+        ToolTip.text: ctlSpinning
             ? qsTr("Pause the 3D rotation") : qsTr("Resume the 3D rotation")
         ToolTip.visible: hovered
         ToolTip.delay: Theme.tooltipDelay
@@ -175,12 +173,14 @@ Rectangle {
         y: 17
         width: box.width - 26
         height: 105
-        active: box.sliceController !== fallbackController
+        // egyszer, betöltéskor dől el (nem kötés): kilépéskor a vezérlő lebontása
+        // így nem tölti ki újra a félig lebontott felületen (CI SIGSEGV)
+        active: false
         source: "EffectSliceSurfaceHost.qml"
         Binding {
             target: surface.item
             property: "surfaceData"
-            value: box.sliceController.surfaceData
+            value: box.ctlSurface
             when: surface.item !== null
         }
         Binding {
@@ -195,7 +195,7 @@ Rectangle {
         objectName: "effectSliceUnavailable"
         anchors.centerIn: surface
         width: surface.width - 16
-        visible: box.editingEffect && sliceController.selectedViewType === "none"
+        visible: box.editingEffect && ctlView === "none"
         text: qsTr("This effect has no slice")
         color: Theme.textGray
         horizontalAlignment: Text.AlignHCenter
@@ -212,9 +212,9 @@ Rectangle {
         width: box.width - 74
         height: 13
         text: {
-            if (!box.editingEffect && sliceController.chainLength === 0)
+            if (!box.editingEffect && ctlChainLength === 0)
                 return qsTr("No applied effect")
-            switch (sliceController.selectedViewType) {
+            switch (ctlView) {
             case "tone":
                 return box.activeSliderLabel.length > 0
                     ? qsTr("x: input · depth: %1 · z: output").arg(box.activeSliderLabel)
@@ -238,8 +238,8 @@ Rectangle {
         y: 124
         width: 45
         height: 13
-        text: sliceController.sliderLabel.length > 0
-            ? Number(sliceController.sliderValue).toLocaleString(Qt.locale(), "f", 2) : ""
+        text: ctlSliderLabel.length > 0
+            ? Number(ctlSliderValue).toLocaleString(Qt.locale(), "f", 2) : ""
         color: "#b23c0a"
         font.bold: true
         horizontalAlignment: Text.AlignRight
@@ -264,8 +264,8 @@ Rectangle {
         onPressed: function(mouse) {
             box.pressX = mouse.x
             box.lastX = mouse.x
-            box.wasSpinning = sliceController.spinning
-            sliceController.setSpinning(false)
+            box.wasSpinning = ctlSpinning
+            setSpin(false)
         }
         onPositionChanged: function(mouse) {
             if (!pressed || Math.abs(mouse.x - box.pressX) < 3) return
@@ -274,9 +274,9 @@ Rectangle {
         }
         onReleased: function(mouse) {
             if (Math.abs(mouse.x - box.pressX) < 3)
-                sliceController.setSpinning(!box.wasSpinning)
+                setSpin(!box.wasSpinning)
             else
-                sliceController.setSpinning(false)
+                setSpin(false)
         }
     }
 
@@ -289,13 +289,13 @@ Rectangle {
             && box.Window.window.visible
             && box.Window.window.visibility !== Window.Hidden
             && box.Window.window.visibility !== Window.Minimized
-            && sliceController.spinning
+            && ctlSpinning
         onTriggered: box.angle = (box.angle + 0.4) % 360
     }
 
     ToolTip.text: {
         var description = ""
-        switch (sliceController.selectedViewType) {
+        switch (ctlView) {
         case "tone":
             description = qsTr(
                 "Horizontally: input brightness; in depth: the full range of the %1 slider; vertically: output brightness. The orange line marks its current position.").arg(box.activeSliderLabel)

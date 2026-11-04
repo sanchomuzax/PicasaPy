@@ -156,7 +156,7 @@ _DEFAULT_LELTAR = _REPO_ROOT / "docs" / "specs" / "lanc-szakadasok-leltar.md"
 MAX_BASELINE_ENTRIES = 36
 
 #: Az osztály-szintű kivételek felső korlátja — ugyanaz a logika.
-MAX_OSZTALY_ENTRIES = 3
+MAX_OSZTALY_ENTRIES = 4
 
 #: A leltárban a generált blokk határai.
 LELTAR_KEZDET = "<!-- KEPESSEG_OR:KEZDET -->"

@@ -107,14 +107,14 @@ def _file_mtime(path: Path | None) -> int | None:
         return None
 
 
-class _TaskSignals(QObject):
+class RenderSignals(QObject):
     finished = Signal(int, object)
 
 
 class _RenderTask(QRunnable):
     """A kis próbaképeket háttérszálon futtató feladat."""
 
-    def __init__(self, job: int, request: dict, signals: _TaskSignals) -> None:
+    def __init__(self, job: int, request: dict, signals: RenderSignals) -> None:
         super().__init__()
         self.job = job
         self.request = request
@@ -186,8 +186,6 @@ class EffectSliceController(QObject):
         self._cache: OrderedDict[tuple, dict] = OrderedDict()
         self._pool = QThreadPool(self)
         self._pool.setMaxThreadCount(1)
-        self._signals = _TaskSignals(self)
-        self._signals.finished.connect(self._on_render_finished)
         self._timer = QTimer(self)
         self._timer.setSingleShot(True)
         self._timer.setInterval(60)
@@ -247,7 +245,6 @@ class EffectSliceController(QObject):
     def toggleSpinning(self) -> None:
         self.setSpinning(not self._spinning)
 
-    @Slot()
     def shutdown(self) -> None:
         """Kilépéskor leállítja a késleltetést és az esetleg futó mintamérést."""
         self._timer.stop()
@@ -487,9 +484,11 @@ class EffectSliceController(QObject):
             return
         self._last_cache_key = request["cacheKey"]
         self._last_target = request["target"]
-        task_signals = _TaskSignals()
-        task_signals.finished.connect(self._on_render_finished, Qt.ConnectionType.QueuedConnection)
-        self._pool.start(_RenderTask(self._job, request, task_signals))
+        render_signals = RenderSignals()
+        render_signals.finished.connect(
+            self._on_render_finished, Qt.ConnectionType.QueuedConnection
+        )
+        self._pool.start(_RenderTask(self._job, request, render_signals))
 
     @Slot(int, object)
     def _on_render_finished(self, job: int, data: dict) -> None:
