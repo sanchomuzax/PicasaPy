@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.42] - 2026-11-04
+
+- Új PicasaPy-funkció, az Effekt-térszelvény: a néző bal oldalán, a hisztogram fölött egy kis forgó 3D ábra mutatja, mit csinál a képpel a szerkesztett effekt vagy a fotó teljes szerkesztési lánca. A Nézet menüben állítható, mikor látszik: mindig, szerkesztés közben vagy soha (#6522).
+
 ## [1.0.41] - 2026-11-04
 
 - Ha a menüből indított frissítés közben megérkezik az automatikus frissítésjelzés is, a letöltés már nem akad meg, és nem jelez idő előtt készet: a megkezdett frissítés zavartalanul végigmegy, az újraindítás után az új verzió indul (#6526).
