@@ -462,8 +462,8 @@ def test_az_uj_ablakra_varas_nem_var_ha_az_uj_program_el_sem_indult(monkeypatch,
     monkeypatch.setattr(update_swap_helper, "_platform", lambda: "win32")
     monkeypatch.setattr(update_folyamatok, "telepitesi_folyamatok", lambda *_a: [])
     ora = iter(float(t) for t in range(0, 1000))
-    monkeypatch.setattr(update_swap_helper.time, "monotonic", lambda: next(ora))
-    monkeypatch.setattr(update_swap_helper.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(update_swap_helper, "_monotonic", lambda: next(ora))
+    monkeypatch.setattr(update_swap_helper, "_sleep", lambda _s: None)
 
     assert update_swap_helper.varj_uj_ablakra(
         tmp_path, timeout=180.0, inditasi_turelem=30.0

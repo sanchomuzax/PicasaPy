@@ -34,6 +34,11 @@ _RELATIVE_PATH = re.compile(
 )
 
 
+
+# #6508: tesztben cserélhető óra és várakozás (a globális time modult ne írják át)
+_monotonic = time.monotonic
+_sleep = time.sleep
+
 def _update_log_path() -> Path:
     """A segéd saját, helyi alkalmazásadat-naplója."""
     from .platform_storage import default_storage_paths
@@ -370,7 +375,7 @@ def varj_uj_ablakra(
         return True
     from . import update_folyamatok
 
-    kezdet = time.monotonic()
+    kezdet = _monotonic()
     hatarido = kezdet + timeout
     latott_folyamatot = False
     while True:
@@ -379,13 +384,13 @@ def varj_uj_ablakra(
             latott_folyamatot = True
             if update_ablak.van_lathato_ablaka(pid):
                 return True
-        most = time.monotonic()
+        most = _monotonic()
         if not latott_folyamatot and most - kezdet >= inditasi_turelem:
             return False
         maradek = hatarido - most
         if maradek <= 0:
             return False
-        time.sleep(min(poll_interval, maradek))
+        _sleep(min(poll_interval, maradek))
 
 
 def install_after_exit(
