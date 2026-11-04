@@ -19,6 +19,8 @@ def _elokeszit(monkeypatch, tmp_path):
     monkeypatch.setattr(helper, "extract_update_archive", lambda _zip, _stage: tmp_path)
     monkeypatch.setattr(helper, "inditsd_a_felhasznalonak", lambda _exe, **_k: None)
     monkeypatch.setattr(helper, "tarolo_tipusa", lambda _path: "helyi")
+    # #6508: Windowson a segéd az új program ablakát várja; itt nincs új program.
+    monkeypatch.setattr(helper, "varj_uj_ablakra", lambda *_a, **_k: True)
     monkeypatch.setattr(
         helper,
         "swap_update_directory",

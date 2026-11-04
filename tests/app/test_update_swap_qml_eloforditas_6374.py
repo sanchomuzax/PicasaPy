@@ -40,6 +40,8 @@ def _csere_futtatasa(monkeypatch, tmp_path: Path, *, elevated: bool, admin: bool
         lambda _exe, **_kw: esemenyek.append("inditas"),
     )
     monkeypatch.setattr(helper, "_log_update", lambda *_args, **_kw: None)
+    # #6508: Windowson a segéd az új program ablakát várja; itt nincs új program.
+    monkeypatch.setattr(helper, "varj_uj_ablakra", lambda *_a, **_k: True)
 
     siker = helper.install_after_exit(
         123,
