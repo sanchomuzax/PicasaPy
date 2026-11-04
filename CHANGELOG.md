@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.36] - 2026-11-04
+
+- A régi effektek (például Lineáris homályosítás, Irányított telítettség) megkapták az eredeti csúszkáit és a képen húzható korongot, a beállítások megmaradnak (#6497).
+- Az indulóképen a PicasaPy-logó középre került (#6498).
+- A főablak alsó sávjában a gombok már nem érnek össze: a kimeneti gombok, a két forgatógomb és a négy panelkapcsoló között is rés van, a panelkapcsolók külön, lekerekített gombok, és a zöld feltöltés-gomb a többivel egy magasságú (#6499).
+
 ## [1.0.35] - 2026-11-03
 
 - Az önfrissítési próba minden új kiadási Setup feltöltése után elindul, akkor is, ha közben új commit került a főágra (#6492).
