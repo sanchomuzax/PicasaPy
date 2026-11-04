@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -218,6 +219,7 @@ class FaceDetector:
     """`cv2.FaceDetectorYN` hiánytűrő becsomagolása.
 
     Modell/API hiányában `available=False`, a `detect()` üres tuple-t ad —
+    az elérhetőség ellenőrzése és a modell betöltése csak első kéréskor fut.
     NINCS kivétel, NINCS crash a hívóig (ld. modul-docstring). Ha az első
     YuNet-menet nem talál arcot, a képet kisebb méretben, élismétlő paddinggel
     egyszer újrapróbálja, majd a találatokat visszateszi a bemenet
@@ -232,43 +234,72 @@ class FaceDetector:
         nms_threshold: float = _DEFAULT_NMS_THRESHOLD,
         top_k: int = _DEFAULT_TOP_K,
     ) -> None:
-        self.available = False
+        self._initialized = False
+        self._available = False
+        self._init_lock = threading.Lock()
         self._detector = None
         self._consensus_engine = None
+        self._score_threshold = score_threshold
+        self._nms_threshold = nms_threshold
+        self._top_k = top_k
         self.model_path = model_path if model_path is not None else resolve_model_path()
         if self.model_path is None:
-            logger.info(
-                "Arcfelismerő modell nem található — a funkció kikapcsolva "
-                "(a %s környezeti változóval vagy a %s helyre másolva "
-                "adható meg; ld. picasapy.faces.download_model).",
-                MODEL_ENV_VAR,
-                default_model_path(),
-            )
-            return
-        if cv2 is None or not hasattr(cv2, "FaceDetectorYN"):
-            logger.warning(
-                "A telepített OpenCV build nem tartalmazza a FaceDetectorYN "
-                "API-t — az arcfelismerés kikapcsolva."
-            )
-            return
-        try:
-            self._detector = cv2.FaceDetectorYN.create(
-                str(self.model_path),
-                "",
-                (0, 0),
-                score_threshold=score_threshold,
-                nms_threshold=nms_threshold,
-                top_k=top_k,
-            )
-        except cv2.error as error:  # pragma: no cover — sérült modellfájl
-            logger.warning(
-                "Az arcfelismerő modell betöltése sikertelen (%s) — a "
-                "funkció kikapcsolva.",
-                error,
-            )
-            self._detector = None
-            return
-        self.available = True
+            self._initialize()
+
+    @property
+    def available(self) -> bool:
+        """Igaz, ha a modell ténylegesen betölthető.
+
+        Az alkalmazás induláskor létrehozza ezt a szolgáltatót, de a
+        könyvtárnézethez nincs szükség OpenCV-re; a kérdés első megválaszolása
+        indítja el a modell/API ellenőrzését.
+        """
+        self._initialize()
+        return self._available
+
+    @available.setter
+    def available(self, value: bool) -> None:
+        self._available = bool(value)
+        self._initialized = True
+
+    def _initialize(self) -> None:
+        with self._init_lock:
+            if self._initialized:
+                return
+            self._initialized = True
+            if self.model_path is None:
+                logger.info(
+                    "Arcfelismerő modell nem található — a funkció kikapcsolva "
+                    "(a %s környezeti változóval vagy a %s helyre másolva "
+                    "adható meg; ld. picasapy.faces.download_model).",
+                    MODEL_ENV_VAR,
+                    default_model_path(),
+                )
+                return
+            if cv2 is None or not hasattr(cv2, "FaceDetectorYN"):
+                logger.warning(
+                    "A telepített OpenCV build nem tartalmazza a FaceDetectorYN "
+                    "API-t — az arcfelismerés kikapcsolva."
+                )
+                return
+            try:
+                self._detector = cv2.FaceDetectorYN.create(
+                    str(self.model_path),
+                    "",
+                    (0, 0),
+                    score_threshold=self._score_threshold,
+                    nms_threshold=self._nms_threshold,
+                    top_k=self._top_k,
+                )
+            except cv2.error as error:  # pragma: no cover — sérült modellfájl
+                logger.warning(
+                    "Az arcfelismerő modell betöltése sikertelen (%s) — a "
+                    "funkció kikapcsolva.",
+                    error,
+                )
+                self._detector = None
+                return
+            self._available = True
 
     def detect(self, image_bgr: np.ndarray | None) -> tuple[FaceDetection, ...]:
         """Detektálás a MÁR dekódolt BGR képen — nincs extra fájlolvasás.

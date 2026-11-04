@@ -90,7 +90,8 @@ def _startup_step_create_edit_and_file_controllers(state):
     # #4137: a webkamerapanelhez tartozó beállítások és kimeneti útvonalak.
     CameraCaptureController = _app._lazy_app_symbol("CameraCaptureController")
     camera_capture_controller = CameraCaptureController(
-        QSettings("PicasaPy", "PicasaPy")
+        QSettings("PicasaPy", "PicasaPy"),
+        progress_log=getattr(state, "progress_log", None),
     )
 
     # #1792: az album-fejléc gombsorának összeállítása — ugyanabba a

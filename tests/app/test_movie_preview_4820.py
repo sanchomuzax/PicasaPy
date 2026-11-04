@@ -181,9 +181,18 @@ def test_a_szovegdia_betukeresese_a_provider_pooljaban_melegszik(monkeypatch):
 
     monkeypatch.setattr(movie_preview, "render_text_slide", fake_render)
     provider = MovieTransitionPreviewProvider()
+    monkeypatch.setattr(
+        provider,
+        "_render_request",
+        lambda _request: np.zeros((16, 16, 3), dtype=np.uint8),
+    )
+    monkeypatch.setattr(provider, "_finish_request", lambda _generation, _frame: None)
     try:
+        provider.request_transition(
+            "", "", "fade", 0.5, 16, 16, False, False, False, "", "", False
+        )
         assert provider.wait_for_done(2_000), "a betű-előmelegítő beragadt"
-        assert render_threads, "a provider létrehozása nem melegítette be a betűkeresést"
+        assert render_threads, "az első előnézetkérés nem melegítette be a betűkeresést"
         assert all(thread != gui_thread for thread in render_threads)
     finally:
         provider.wait_for_done(2_000)

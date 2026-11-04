@@ -33,11 +33,33 @@ class CameraCaptureController(QObject):
     capturePathFailed = Signal(str)
     captureSettingsChanged = Signal()
 
-    def __init__(self, settings: QSettings | None = None, parent=None) -> None:
+    def __init__(
+        self, settings: QSettings | None = None, parent=None, progress_log=None
+    ) -> None:
         super().__init__(parent)
         self._settings = (
             settings if settings is not None else QSettings("PicasaPy", "PicasaPy")
         )
+        self._progress_log = progress_log
+        self._eszkozok_naplozva = False
+
+    @Slot()
+    def logDeviceDiagnostics(self) -> None:
+        """A kamera- és mikrofonszámot a panel első megnyitásakor naplózza (#6390, #6510).
+
+        Induláskor nem fut, mert a felsorolás a QtMultimedia modult is betölti.
+        """
+        if self._eszkozok_naplozva or self._progress_log is None:
+            return
+        self._eszkozok_naplozva = True
+        from . import startup_diagnostics
+
+        startup_diagnostics._thread(
+            target=startup_diagnostics._log_multimedia_device_diagnostics,
+            args=(self._progress_log,),
+            name="multimedia-device-diagnostics",
+            daemon=True,
+        ).start()
 
     @Property(str, notify=captureSettingsChanged)
     def captureSize(self) -> str:

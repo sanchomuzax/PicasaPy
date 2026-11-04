@@ -147,6 +147,9 @@ Popup {
     anchors.centerIn: parent
 
     onOpened: {
+        // #6510: az eszközlista naplózása csak itt fut, induláskor nem
+        if (storage && typeof storage.logDeviceDiagnostics === "function")
+            storage.logDeviceDiagnostics()
         settingsPage = false
         statusMessage = ""
         if (mediaRuntime)
