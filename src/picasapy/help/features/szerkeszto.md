@@ -403,8 +403,8 @@ hisztogram fölötti kis doboz lassan forgó 3D felületen mutatja, mit csinál 
 képpel a szerkesztett effekt, illetve a fotó teljes szerkesztési lánca.
 
 A **Nézet ▸ Effekt-térszelvény** almenüben a **Mindig** minden nézőképnél
-megjeleníti, a **Szerkesztés közben** csak akkor mutatja, amikor egy effekt
-beállítópanele vagy a Finomhangolás fül nyitva van (ez az alapérték), a
+megjeleníti, a **Szerkesztés közben** a szerkesztőpanel minden fülén mutatja
+(Gyakori javítások, Finomhangolás és az effektrácsos fülök; ez az alapérték), a
 **Soha** pedig elrejti. Szerkesztett effekt nélkül a doboz a fotó teljes
 láncát mutatja, üres láncnál az egyenes átlót és a „Nincs alkalmazott effekt”
 feliratot.

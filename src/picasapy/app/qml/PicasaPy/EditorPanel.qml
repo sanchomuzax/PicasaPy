@@ -193,7 +193,7 @@ Rectangle {
     property int effectSliceDepthIndex: 0
     readonly property real effectSliceContentBottom: paramPanelActive && panelTabs.effectParamPanel
         ? panelTabs.effectParamPanel.y + panelTabs.effectParamPanel.contentHeight
-        : panelTabs.tabAreaItem.y + tabContentHeight + 8 + globalUndoRow.height
+        : panelTabs.tabAreaItem.y + Logika.fulTartalomAlja() + 8 + globalUndoRow.height
     property alias paramPanelSuspended: effectState.paramPanelSuspended
     readonly property bool paramPanelContentBlurred:
         effectState.paramPanelContentBlurred

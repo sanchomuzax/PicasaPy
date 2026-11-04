@@ -22,6 +22,10 @@ ColumnLayout {
     // további sorai pedig görgethetők. #6477: kis ablakban kevesebbet, hogy
     // a rács és alatta a Visszavonás/Újra sor a hisztogram fölött érjen
     // véget; legalább egy sor mindig látszik.
+    // SAJÁT FUNKCIÓ (#6535): a térszelvény helyfoglalása a rács természetes
+    // (4,5 soros) magasságával számol, nem a doboz miatt összenyomottal
+    readonly property real termeszetesAlja: anchors.topMargin
+        + Math.min(rowPitch * 4.5, effectsGrid4.implicitHeight)
     readonly property real rowPitch: effectRoundedEdges.y > effectMatte.y
         ? effectRoundedEdges.y - effectMatte.y
         : effectMatte.implicitHeight + effectsGrid4.rowSpacing
