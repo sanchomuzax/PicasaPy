@@ -7,7 +7,6 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-import tempfile
 
 import pytest
 
@@ -16,9 +15,12 @@ _ROOT = Path(__file__).resolve().parents[3]
 _QML_DIR = _ROOT / "src" / "picasapy" / "app" / "qml"
 _STARTUP_QML = _ROOT / "src" / "picasapy" / "app" / "application_startup_qml.py"
 _CHILD = r'''
+import faulthandler
 import json
 import sys
 import time
+
+faulthandler.enable()
 
 from PySide6.QtCore import QSize, QUrl
 from PySide6.QtGui import QGuiApplication
@@ -27,8 +29,10 @@ from PySide6.QtQml import QQmlComponent, QQmlEngine
 from picasapy.app.notifier_screen_geometry import NotifierScreenGeometry
 
 
-config_path, target_name, height_delta, qml_dir = sys.argv[1:]
+target_name, height_delta, qml_dir = sys.argv[1:]
+print("notifier-test: QGuiApplication indul", file=sys.stderr, flush=True)
 app = QGuiApplication([])
+print("notifier-test: QGuiApplication kész", file=sys.stderr, flush=True)
 screens = {screen.name(): screen for screen in app.screens()}
 assert set(screens) == {"BAL", "JOBB"}, sorted(screens)
 assert screens["BAL"].geometry().getRect() == (0, 0, 1920, 1080)
@@ -79,6 +83,7 @@ component = QQmlComponent(
 )
 notifier = component.createWithInitialProperties({"_hostWindow": foablak})
 assert notifier is not None, component.errorString()
+print("notifier-test: QML értesítő felépült", file=sys.stderr, flush=True)
 
 
 def vart_pozicio(screen):
@@ -168,73 +173,76 @@ def test_az_inditas_a_kepernyosegedet_a_qml_kornyezetbe_regisztralja() -> None:
 @pytest.mark.parametrize("screen_name", ["BAL", "JOBB"])
 @pytest.mark.parametrize("height_delta", [-5, 0, 5])
 def test_a_valodi_foablak_kepernyojen_renderel_es_megtartja_az_utolsot(
-    screen_name: str, height_delta: int
+    screen_name: str, height_delta: int, tmp_path: Path
 ) -> None:
-    with tempfile.TemporaryDirectory(prefix="notifier-screen-6435-") as temp_dir:
-        config_path = Path(temp_dir) / "ket-kepernyo.json"
-        config_path.write_text(
-            json.dumps(
-                {
-                    "synchronousWindowSystemEvents": False,
-                    "windowFrameMargins": False,
-                    "screens": [
-                        {
-                            "name": "BAL",
-                            "x": 0,
-                            "y": 0,
-                            "width": 1920,
-                            "height": 1080,
-                            "logicalDpi": 96,
-                            "logicalBaseDpi": 96,
-                            "dpr": 1,
-                        },
-                        {
-                            "name": "JOBB",
-                            "x": 1920,
-                            "y": 0,
-                            "width": 1920,
-                            "height": 1080,
-                            "logicalDpi": 96,
-                            "logicalBaseDpi": 96,
-                            "dpr": 1,
-                        },
-                    ],
-                }
-            ),
-            encoding="utf-8",
-        )
-        kornyezet = os.environ.copy()
-        kornyezet["QT_QPA_PLATFORM"] = f"offscreen:configfile={config_path}"
-        kornyezet["QT_QUICK_BACKEND"] = "software"
-        pythonpath = [str(_ROOT / "src"), str(_ROOT / "tests")]
-        if kornyezet.get("PYTHONPATH"):
-            pythonpath.append(kornyezet["PYTHONPATH"])
-        kornyezet["PYTHONPATH"] = os.pathsep.join(pythonpath)
-        eredmeny = subprocess.run(
-            [
-                sys.executable,
-                "-c",
-                _CHILD,
-                str(config_path),
-                screen_name,
-                str(height_delta),
-                str(_QML_DIR),
-            ],
-            cwd=_ROOT,
-            env=kornyezet,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=20,
-            check=False,
-        )
-        assert eredmeny.returncode == 0, (
-            f"A {screen_name} képernyőre célzott QML-próba elbukott "
-            f"({eredmeny.returncode}).\nstdout:\n{eredmeny.stdout}"
-            f"\nstderr:\n{eredmeny.stderr}"
-        )
-        assert json.loads(eredmeny.stdout.strip().splitlines()[-1]) == {
-            "target": screen_name,
-            "height_delta": height_delta,
-        }
+    config_path = tmp_path / "ket-kepernyo.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "synchronousWindowSystemEvents": False,
+                "windowFrameMargins": False,
+                "screens": [
+                    {
+                        "name": "BAL",
+                        "x": 0,
+                        "y": 0,
+                        "width": 1920,
+                        "height": 1080,
+                        "logicalDpi": 96,
+                        "logicalBaseDpi": 96,
+                        "dpr": 1,
+                    },
+                    {
+                        "name": "JOBB",
+                        "x": 1920,
+                        "y": 0,
+                        "width": 1920,
+                        "height": 1080,
+                        "logicalDpi": 96,
+                        "logicalBaseDpi": 96,
+                        "dpr": 1,
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    kornyezet = os.environ.copy()
+    # A Qt a QPA platform nevét és a plugin argumentumait kettőspont mentén
+    # bontja. A Windows abszolút útvonalában álló meghajtójel ezért félbevágja
+    # a configfile értékét; a gyerek munkakönyvtárából relatív fájlnév stabil.
+    kornyezet["QT_QPA_PLATFORM"] = "offscreen:configfile=ket-kepernyo.json"
+    kornyezet["QT_QUICK_BACKEND"] = "software"
+    kornyezet["QT_DEBUG_PLUGINS"] = "1"
+    kornyezet["PYTHONFAULTHANDLER"] = "1"
+    pythonpath = [str(_ROOT / "src"), str(_ROOT / "tests")]
+    if kornyezet.get("PYTHONPATH"):
+        pythonpath.append(kornyezet["PYTHONPATH"])
+    kornyezet["PYTHONPATH"] = os.pathsep.join(pythonpath)
+    eredmeny = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            _CHILD,
+            screen_name,
+            str(height_delta),
+            str(_QML_DIR),
+        ],
+        cwd=tmp_path,
+        env=kornyezet,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=20,
+        check=False,
+    )
+    assert eredmeny.returncode == 0, (
+        f"A {screen_name} képernyőre célzott QML-próba elbukott "
+        f"({eredmeny.returncode}).\nstdout:\n{eredmeny.stdout}"
+        f"\nstderr:\n{eredmeny.stderr}"
+    )
+    assert json.loads(eredmeny.stdout.strip().splitlines()[-1]) == {
+        "target": screen_name,
+        "height_delta": height_delta,
+    }

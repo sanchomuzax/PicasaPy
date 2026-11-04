@@ -13,6 +13,30 @@ from pathlib import Path
 import pytest
 
 
+def _profilhoz_kornyezet(env: dict[str, str], profil: Path) -> None:
+    """A Qt cache/config útvonalait a tesztprofil alá tereli platform szerint."""
+    if os.name == "nt":
+        ideiglenes = profil / "Temp"
+        ideiglenes.mkdir(parents=True, exist_ok=True)
+        env.update(
+            {
+                "USERPROFILE": str(profil),
+                "APPDATA": str(profil / "AppData" / "Roaming"),
+                "LOCALAPPDATA": str(profil / "AppData" / "Local"),
+                "TEMP": str(ideiglenes),
+                "TMP": str(ideiglenes),
+            }
+        )
+    else:
+        env.update(
+            {
+                "XDG_CACHE_HOME": str(profil / "cache"),
+                "XDG_CONFIG_HOME": str(profil / "config"),
+                "XDG_DATA_HOME": str(profil / "data"),
+            }
+        )
+
+
 def test_a_qml_kapcsolo_a_korai_indulas_elott_ter_vissza(monkeypatch):
     from picasapy.app import __main__ as belepo
 
@@ -34,20 +58,16 @@ def test_a_qml_kapcsolo_a_korai_indulas_elott_ter_vissza(monkeypatch):
 def test_a_qml_eloforditas_izolalt_profilban_cachet_ir_settings_nelkul(tmp_path):
     repo = Path(__file__).resolve().parents[2]
     profil = tmp_path / "profil"
-    cache = profil / "cache"
-    config = profil / "config"
     env = os.environ.copy()
     env.update(
         {
             "PYTHONPATH": str(repo / "src"),
             "QT_QPA_PLATFORM": "offscreen",
             "QT_QUICK_BACKEND": "software",
-            "XDG_CACHE_HOME": str(cache),
-            "XDG_CONFIG_HOME": str(config),
-            "XDG_DATA_HOME": str(profil / "data"),
             "PICASAPY_LANG": "en",
         }
     )
+    _profilhoz_kornyezet(env, profil)
     for variable in (
         "QML_DISK_CACHE_PATH",
         "QML_DISABLE_DISK_CACHE",
@@ -71,8 +91,8 @@ def test_a_qml_eloforditas_izolalt_profilban_cachet_ir_settings_nelkul(tmp_path)
     assert result.returncode == 0, result.stdout + result.stderr
     assert re.fullmatch(r"QML-előfordítás: \d+ fájl, \d+ hibás, [\d.]+ s\s*", result.stdout)
     assert "Traceback" not in result.stderr, result.stderr
-    assert len(list(cache.rglob("*.qmlc"))) > 0
-    assert not (config / "PicasaPy" / "PicasaPy.conf").exists()
+    assert len(list(profil.rglob("*.qmlc"))) > 0
+    assert not list(profil.rglob("PicasaPy.conf"))
     assert not list(profil.rglob("indulas-*.txt"))
 
 
@@ -88,12 +108,10 @@ def test_a_repo_indito_is_csak_eloforditja_a_qml_t(tmp_path):
         {
             "QT_QPA_PLATFORM": "offscreen",
             "QT_QUICK_BACKEND": "software",
-            "XDG_CACHE_HOME": str(profil / "cache"),
-            "XDG_CONFIG_HOME": str(profil / "config"),
-            "XDG_DATA_HOME": str(profil / "data"),
             "PICASAPY_LANG": "en",
         }
     )
+    _profilhoz_kornyezet(env, profil)
     for variable in (
         "QML_DISK_CACHE_PATH",
         "QML_DISABLE_DISK_CACHE",
@@ -130,7 +148,6 @@ def test_a_valodi_app_motor_nem_irja_ujra_az_eloreallitott_qml_cachet(tmp_path):
             "PYTHONPATH": str(repo / "src"),
             "QT_QPA_PLATFORM": "offscreen",
             "QT_QUICK_BACKEND": "software",
-            "XDG_CACHE_HOME": str(profile / "cache"),
             "PICASAPY_LANG": "en",
         }
     )
@@ -141,24 +158,7 @@ def test_a_valodi_app_motor_nem_irja_ujra_az_eloreallitott_qml_cachet(tmp_path):
         "QML_DISK_CACHE",
     ):
         env.pop(variable, None)
-    if os.name == "nt":
-        env.update(
-            {
-                "USERPROFILE": str(profile),
-                "APPDATA": str(profile / "AppData" / "Roaming"),
-                "LOCALAPPDATA": str(profile / "AppData" / "Local"),
-                "TEMP": str(profile / "Temp"),
-                "TMP": str(profile / "Temp"),
-            }
-        )
-    else:
-        env.update(
-            {
-                "XDG_CACHE_HOME": str(profile / "cache"),
-                "XDG_CONFIG_HOME": str(profile / "config"),
-                "XDG_DATA_HOME": str(profile / "data"),
-            }
-        )
+    _profilhoz_kornyezet(env, profile)
 
     eloforditas = subprocess.run(
         [sys.executable, "-m", "picasapy.app", "--qml-elofordit"],
@@ -185,13 +185,16 @@ def test_a_valodi_app_motor_nem_irja_ujra_az_eloreallitott_qml_cachet(tmp_path):
     elotte = qml_cache_allapot()
     assert elotte, "az előfordítás nem készített QML-cache-t"
     main_cache = sha1(
-        str((repo / "src/picasapy/app/qml/Main.qml").resolve()).encode("utf-8")
+        (repo / "src/picasapy/app/qml/Main.qml").resolve().as_posix().encode("utf-8")
     ).hexdigest() + ".qmlc"
     assert any(Path(nev).name == main_cache for nev in elotte), (
         "a Main.qml előre fordított cache-bejegyzése hiányzik"
     )
     selection_cache = sha1(
-        str((repo / "src/picasapy/app/qml/selection.js").resolve()).encode("utf-8")
+        (repo / "src/picasapy/app/qml/selection.js")
+        .resolve()
+        .as_posix()
+        .encode("utf-8")
     ).hexdigest() + ".jsc"
     assert any(Path(nev).name == selection_cache for nev in elotte), (
         "a selection.js előre fordított JavaScript-cache-bejegyzése hiányzik"

@@ -287,7 +287,7 @@ class TestReSKetGomb:
             f"{MIN_RES_KEPPONT} képpont (a kirajzolt képen): " + "; ".join(hibak)
         )
 
-    def test_a_rések_egyformak_a_gombsorban(self, alsosav):
+    def test_a_resek_egyformak_a_gombsorban(self, alsosav):
         window, kep = alsosav
         sor = _lathato_sor_gombok(window)
         elvalaszto = _elvalaszto_x(window)
