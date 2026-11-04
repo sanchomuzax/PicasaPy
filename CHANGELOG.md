@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.43] - 2026-11-04
+
+- Megnyitott képnél is működik az F2: megnyitja az átnevezést a látott képre, ahogy az eredeti Picasában (#6530).
+- Az indulókép körül nincs többé lila keret: a kép széle nem átlátszó, mert a Windows a félig átlátszó szélt bíbor szegélyként rajzolta ki (#6533).
+- A Windowsos önfrissítés végigmegy: a frissítősegéd már nem a program mappájából fut, ezért nem fogja azt a mappát, amit le kell cserélnie (a "WinError 32" hiba és a percekig tartó "Fájlok cseréje" megszűnt). A mappát fogó maradék folyamatokat azonnal leállítja, és a frissítés közbeni rejtett indítások nem villantják fel az indulóképet (#6534).
+- Az Effekt-térszelvény szerkesztés közben a szerkesztőpanel minden fülén megjelenik: a Gyakori javításokon és az effektrácsos füleken is, konkrét effekt nélkül a fotó teljes láncát mutatva (#6535).
+- A Jó napom van után a Finomhangolás fülön az Effekt-térszelvény nem lapos lapot mutat, hanem a valódi tónusfelületet; effektváltáskor mindig az új effekthez illő nézet jön (#6536).
+
 ## [1.0.42] - 2026-11-04
 
 - Új PicasaPy-funkció, az Effekt-térszelvény: a néző bal oldalán, a hisztogram fölött egy kis forgó 3D ábra mutatja, mit csinál a képpel a szerkesztett effekt vagy a fotó teljes szerkesztési lánca. A Nézet menüben állítható, mikor látszik: mindig, szerkesztés közben vagy soha (#6522).
