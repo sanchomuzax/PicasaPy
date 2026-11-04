@@ -370,12 +370,14 @@ Item {
         onActivated: hostWindow.toggleTimeline()
     }
 
-    // Picasa: F2 = átnevezés, Ctrl+Shift+S = exportálás mappába
+    // Picasa: F2 = átnevezés, Ctrl+Shift+S = exportálás mappába.
+    // #6530: az F2 a menüsáv rekordja (`0xd6da28`, `cmd 0x9d4f`), tehát a
+    // nézőben is él; ott a látott képet nevezi át (photoActionRows).
     Shortcut {
         id: shortcutRename
         sequence: "F2"
-        enabled: hostWindow._konyvtariGyorsbillentyuEngedelyezve
-        onActivated: if (!hostWindow.viewerOpen && hostWindow.photoActionRows().length > 0)
+        enabled: !hostWindow._szovegmezoneVanFokusz && !hostSlideshow.visible
+        onActivated: if (hostWindow.photoActionRows().length > 0)
                          hostFileOpsDialogs.ensure().openRenameMany(
                              hostWindow.photoActionRows())
     }
