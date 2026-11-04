@@ -1,5 +1,7 @@
 """#4420: a tiszta profil főmenü-parancsainak kattintásos bejárása."""
 
+# SAJÁT FUNKCIÓ (#6522): a View menü bejárója a térszelvény három új parancsát is számolja.
+
 from __future__ import annotations
 
 import re
@@ -28,7 +30,7 @@ _MENUK = (
     ("File", "&File"),
 )
 _MENU_UTVONAL_DARAB = {
-    "View": 51,
+    "View": 54,
     "Folder": 16,
     "Picture": 20,
     "Edit": 13,
@@ -42,8 +44,9 @@ _MENU_UTVONAL_DARAB = {
 # 4 Shortcuts-gyökér); maga az almenücím nem külön parancsútvonal.
 # #5156: a Mappa ▸ Rendezés ▸ Recent changes újra kattintható, ezért a Mappa menü 16.
 # #6440: a Súgó menü új pipás tétele (háttérmunka az állapotsávon) bejárható.
-assert sum(_MENU_UTVONAL_DARAB.values()) == 204
-_VIEW_UTVONAL_DARAB_CSOPORTONKENT = {"egyeb": 31, "mappanezet": 20}
+# #6522: a Nézet menü Effekt-térszelvény almenüje három új parancsútvonal.
+assert sum(_MENU_UTVONAL_DARAB.values()) == 207
+_VIEW_UTVONAL_DARAB_CSOPORTONKENT = {"egyeb": 34, "mappanezet": 20}
 assert sum(_VIEW_UTVONAL_DARAB_CSOPORTONKENT.values()) == _MENU_UTVONAL_DARAB[
     "View"
 ]

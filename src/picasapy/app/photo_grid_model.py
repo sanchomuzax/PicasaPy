@@ -1,5 +1,7 @@
 """A QML által használt képrács-modell összeállítása."""
 
+# SAJÁT FUNKCIÓ (#6522): a nézőnek a teljes filters= láncot adja át a saját térszelvényhez.
+
 from __future__ import annotations
 
 from PySide6.QtCore import QAbstractListModel, Property, Qt, Signal, Slot
@@ -69,6 +71,10 @@ class PhotoGridModel(QAbstractListModel):
     @Slot(int, result=str)
     def thumbUrlAt(self, row: int) -> str:
         return PhotoGridAccess.thumbUrlAt(self, row)
+
+    @Slot(int, result=str)
+    def filtersAt(self, row: int) -> str:
+        return PhotoGridAccess.filtersAt(self, row)
 
     @Slot(int, result="QVariantMap")
     def itemAt(self, row: int) -> dict:

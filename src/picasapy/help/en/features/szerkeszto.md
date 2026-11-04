@@ -296,6 +296,46 @@ length and its 35 mm equivalent, shutter speed, aperture, and ISO. If
 the file has no EXIF information, PicasaPy reports that. Flash
 information is in the Properties panel, as it was in Picasa.
 
+## Effect Slice
+
+This is a PicasaPy feature; the original Picasa has no Effect Slice. The small
+box above the histogram shows, on a slowly rotating 3D surface, what the
+effect you are editing, or the photo's complete edit chain, does to the
+picture.
+
+In **View ▸ Effect Slice**, **Always** shows it for every photo, **While
+Editing** shows it only while an effect settings panel or the Fine Tuning tab
+is open (the default), and **Never** hides it. With no effect being edited
+the box shows the photo's whole chain; with an empty chain it shows the
+straight diagonal and the "No applied effect" note.
+
+There are five view types:
+
+- **Tone surface:** input brightness horizontally, output brightness
+  vertically, and the full range of the slider in depth. The orange line is
+  the slider's current position. If the chain also shifts color, separate
+  red, green and blue lines replace it.
+- **Color cube:** the grid of the RGB color space. Each point lands where the
+  effect takes that color and takes on the new color; the dashed cube is the
+  original color space.
+- **Image plane map:** a top view of the image; height shows where and how
+  strongly the effect changes it.
+- **Point response:** what the effect does to one bright pixel: a blur
+  spreads it into a mound, sharpening may add a dark ring.
+- **Grain terrain:** the effect's deviation on an even gray field.
+
+For effects with several sliders (such as the four Fine Tuning sliders) the
+depth axis always follows the slider you moved last; its name appears in the
+bottom row of the box. In a mixed chain, the small header button cycles
+through the view types the chain contains. Local tone mapping effects (such
+as HDR-ish and Orton-ish) and automatic effects are
+measured on a reduced copy of the photo, so their slices are approximations.
+Where a surface makes no sense (crop, border, straighten) the box says so.
+
+Click the box to pause the rotation and click again to resume; drag
+horizontally with the button held down to rotate by hand. The **3D** button
+also pauses or resumes the rotation, and the program remembers its state.
+
 ## Undo
 
 **Undo** and **Redo** in the viewer move backward and forward through

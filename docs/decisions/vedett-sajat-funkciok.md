@@ -226,6 +226,26 @@ kódtól).
 - `src/picasapy/app/qml/PicasaPy/MainToolbar.qml` (#706, jegyzékbe véve
   #2921) — a sarokban álló **verziószám a GitHub-kiadásokra mutató
   hivatkozás**. Az eredetinek nincs nyilvános kiadáslistája.
+- `src/picasapy/app/effect_slice.py` (#6522) - a szerkesztési láncot próbaképeken mérő Effekt-térszelvény vezérlője és festett 3D felülete; az eredeti Picasában ilyen nézet nincs.
+- `src/picasapy/app/effect_slice_render.py` (#6522) - az Effekt-térszelvény memóriabeli próbaképeit a valódi renderláncon futtatja, az eredeti Picasában nincs ilyen mérőnézet.
+- `src/picasapy/app/effect_slice_paint.py` (#6522) - az Effekt-térszelvény 3D rajza a tulajdonos mintája szerint: keret, árnyalt felület, színkocka, jelölővonalak.
+- `src/picasapy/app/application_startup_qml.py` (#6522) - a saját térszelvény Python-rajzolójának és QSettings-vezérlőjének QML-bekötése.
+- `src/picasapy/app/photo_grid_access.py` (#6522) - a kijelölt fotó teljes `filters=` láncát teszi elérhetővé a saját térszelvény számára.
+- `src/picasapy/app/photo_grid_model.py` (#6522) - QML-híd a saját Effekt-térszelvény teljes láncának lekérdezéséhez.
+- `src/picasapy/app/qml/PicasaPy/EffectSliceBox.qml` (#6522) - a hisztogram fölötti forgatható mini 3D effekt-nézet, az eredeti Picasában nincs.
+- `src/picasapy/app/qml/PicasaPy/PhotoViewerLeftDrawer.qml` (#6522) - a saját térszelvény helye és a két dobozhoz számított szerkesztőpanel-tartalék.
+- `src/picasapy/app/qml/PicasaPy/PicasaViewMenu.qml` (#6522) - a Nézet menü saját térszelvény-módválasztója.
+- `src/picasapy/app/qml/PicasaPy/EditorPanel.qml` (#6522) - a saját térszelvény az utoljára mozgatott effektcsúszka indexét követi.
+- `src/picasapy/app/qml/PicasaPy/EditorParamPanel.qml` (#6522) - az effektcsúszka-mozgatás átadja a mélységtengelyhez tartozó indexet.
+- `src/picasapy/app/qml/PicasaPy/EditorFinetunePanel.qml` (#6522) - a Finomhangolás fül csúszkái is a térszelvény mélységtengelyét választják.
+- `tests/app/test_effect_slice_paint_6522.py` (#6522) - a térszelvény rajzgeometriájának, színkockájának és tartós menüállapotának őrei.
+- `docs/specs/effekt-terszelveny.md` (#6522) - az eredeti Picasában nem létező Effekt-térszelvény viselkedési specifikációja.
+- `tests/app/conftest.py` (#6522) - a QML-tesztek az éles alkalmazással egyező térszelvény-regisztrációt és vezérlőt kapnak.
+- `tests/app/qml_functional/conftest.py` (#6522) - a QML-funkcionális tesztmotor a térszelvény vezérlőjét és Python-típusát is megkapja.
+- `tests/app/qml_functional/_fomenu_4420_menu.py` (#6522) - a főmenü-bejáró a három új térszelvény-parancsútvonalat számolja.
+- `tests/app/test_effect_slice_6522.py` (#6522) - a regiszter, csúszkasöprés és valódi renderlánc térszelvény-őrtesztjei.
+- `tests/app/test_effect_slice_qml_6522.py` (#6522) - a térszelvény komponensének és QML-bekötésének forrásőrei.
+- `tests/app/qml_functional/test_effect_slice_6522.py` (#6522) - a kirajzolt térszelvény helyét, rést, alsó tartalékot és lánc nélküli nézetet méri.
 
 ## Tervezett, még nem implementált saját funkciók
 

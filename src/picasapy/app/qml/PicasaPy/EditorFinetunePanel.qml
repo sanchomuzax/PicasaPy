@@ -130,6 +130,8 @@ ColumnLayout {
     EditorSlider {
         id: finetuneFillSlider
         objectName: "finetuneFillSlider"
+        // SAJÁT FUNKCIÓ (#6522): a térszelvény mélységtengelye ezt a csúszkát követi.
+        onMoved: panel.effectSliceDepthIndex = 0
         Layout.fillWidth: false
         Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
         Layout.preferredHeight: finetunePanel.csuszkaMagassag
@@ -154,6 +156,8 @@ ColumnLayout {
             EditorSlider {
                 id: finetuneHighlightsSlider
                 objectName: "finetuneHighlightsSlider"
+                // SAJÁT FUNKCIÓ (#6522): a térszelvény mélységtengelye ezt a csúszkát követi.
+                onMoved: panel.effectSliceDepthIndex = 1
                 Layout.fillWidth: false
                 Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
                 Layout.preferredHeight: finetunePanel.csuszkaMagassag
@@ -174,6 +178,8 @@ ColumnLayout {
             EditorSlider {
                 id: finetuneShadowsSlider
                 objectName: "finetuneShadowsSlider"
+                // SAJÁT FUNKCIÓ (#6522): a térszelvény mélységtengelye ezt a csúszkát követi.
+                onMoved: panel.effectSliceDepthIndex = 2
                 Layout.fillWidth: false
                 Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
                 Layout.preferredHeight: finetunePanel.csuszkaMagassag
@@ -203,6 +209,8 @@ ColumnLayout {
     EditorSlider {
         id: finetuneTempSlider
         objectName: "finetuneTempSlider"
+        // SAJÁT FUNKCIÓ (#6522): a térszelvény mélységtengelye ezt a csúszkát követi.
+        onMoved: panel.effectSliceDepthIndex = 3
         Layout.fillWidth: false
         Layout.preferredWidth: finetunePanel.csuszkaSzelesseg
         Layout.preferredHeight: finetunePanel.csuszkaMagassag

@@ -156,6 +156,8 @@ def _build_qml_app(
     from picasapy.app.controller import AppController
     from picasapy.app.discovery_controller import DiscoveryController
     from picasapy.app.edit_controller import EditController
+    # SAJÁT FUNKCIÓ (#6522): a QML-harness az éles indulással azonosan regisztrálja és beköti a térszelvényt.
+    from picasapy.app.effect_slice import EffectSliceController, register_qml_types
     from picasapy.app.edit_preview import EditPreviewProvider
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.app.faces_helper import FacesHelper
@@ -223,6 +225,8 @@ def _build_qml_app(
     # szerkesztő-híd (#19) — az application.py bekötésének tükre
     edit_preview = EditPreviewProvider()
     edit_controller = EditController(edit_preview)
+    register_qml_types()
+    effect_slice_controller = EffectSliceController(edit_controller, settings=settings)
     # #3187: a kettős nézet MÁSODIK felének vezérlője — az application.py
     # bekötésének tükre. Itt (a `wire_display_mode` ELŐTT) kell létrejönnie,
     # hogy a #3837 javítása (mindkét fél frissül módváltáskor) a
@@ -303,6 +307,7 @@ def _build_qml_app(
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
+    engine.rootContext().setContextProperty("effectSliceController", effect_slice_controller)
     # #3187: a kettős nézet második felének vezérlője (fent, a
     # `wire_display_mode` előtt létrehozva, #3837) — az application.py
     # bekötésének tükre (ld. a szolgáltató-listánál írt figyelmeztetést)
@@ -405,6 +410,7 @@ def _build_qml_app(
     controller.selectFolder(str(lib))
     qt_app.processEvents()
     yield window, controller, engine
+    effect_slice_controller.shutdown()
     # #438: minden nyilvántartott daemon-szál bevárása, AMÍG a controllerek
     # és a QML-motor még él — a #430 SIGSEGV-osztály elkerülése (ld.
     # picasapy.app.worker_thread.BackgroundWorkerMixin).

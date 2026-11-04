@@ -396,6 +396,47 @@ Ha a fájlban nincs EXIF-információ, ezt írja: „Nincs elérhető EXIF-adat.
 A vaku adata **nem** itt van, hanem a Tulajdonságok panelen — az eredeti
 Picasában is ott volt.
 
+## Effekt-térszelvény
+
+Ez a PicasaPy saját nézete, az eredeti Picasában nincs Effekt-térszelvény. A
+hisztogram fölötti kis doboz lassan forgó 3D felületen mutatja, mit csinál a
+képpel a szerkesztett effekt, illetve a fotó teljes szerkesztési lánca.
+
+A **Nézet ▸ Effekt-térszelvény** almenüben a **Mindig** minden nézőképnél
+megjeleníti, a **Szerkesztés közben** csak akkor mutatja, amikor egy effekt
+beállítópanele vagy a Finomhangolás fül nyitva van (ez az alapérték), a
+**Soha** pedig elrejti. Szerkesztett effekt nélkül a doboz a fotó teljes
+láncát mutatja, üres láncnál az egyenes átlót és a „Nincs alkalmazott effekt”
+feliratot.
+
+Öt nézettípus van:
+
+- **Tónus-felület:** vízszintesen a bemenő fényesség, magasságban a kimenő
+  fényesség, hátrafelé a csúszka teljes tartománya. A narancs vonal a
+  csúszka mostani állása. Ha a lánc színt is tol, helyette külön piros,
+  zöld és kék vonal látszik.
+- **Színkocka:** az RGB-színtér rácsa. Minden pont oda kerül és olyan színű
+  lesz, ahová és amilyenre az effekt viszi; a szaggatott kocka az eredeti
+  színtér.
+- **Képsík-térkép:** a kép felülnézete, a magasság mutatja, hol és mennyire
+  hat az effekt.
+- **Pontválasz:** mit csinál az effekt egyetlen fényes képponttal:
+  homályosításnál szétfolyó domb, élesítésnél sötét gyűrű is lehet körülötte.
+- **Szemcse-domborzat:** egy egyszínű szürke felület eltérése az effekt után.
+
+Több csúszkás effektnél (például a Finomhangolás négy csúszkája) a
+mélységtengelyre mindig az utoljára mozgatott csúszka kerül, a neve a doboz
+alsó sorában olvasható. Vegyes láncnál a fejléc kis gombjával válthatsz a
+láncban előforduló nézettípusok között. A helyi tónusleképezések (például a
+HDR-szerű és az Orton-szerű) és az automatikus effektek a
+fotó kicsinyített változatán mérődnek, ezért ezek a térszelvények
+közelítések. Ahol a felületnek nincs értelme (vágás, keret, kiegyenesítés),
+a doboz ezt kiírja.
+
+A dobozra kattintva a forgás megáll, újabb kattintásra indul; lenyomott
+egérgombbal vízszintesen húzva kézzel forgathatod. A **3D** gomb is a
+forgást állítja meg vagy indítja, és a program megjegyzi az állapotát.
+
 ## Visszavonás
 
 A nézőben lévő **Visszavonás** és **Újra** gomb lépésenként veszi vissza,

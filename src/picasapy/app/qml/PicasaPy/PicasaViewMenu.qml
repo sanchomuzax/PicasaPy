@@ -2,9 +2,12 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+// SAJÁT FUNKCIÓ (#6522): a Nézet menü új térszelvény-almenüje a PicasaPy kiegészítése.
 PicasaMenu {
     id: menuView
     property var bar: null
+    readonly property var effectSliceControllerRef:
+        typeof effectSliceController !== "undefined" ? effectSliceController : null
     property var controllerRef:
         (typeof controller !== "undefined" && controller)
             ? controller : null
@@ -546,4 +549,68 @@ PicasaMenu {
             id: folderViewMenu
             bar: menuView.bar
         }
+    MenuSeparator {}
+    PicasaMenu {
+        id: effectSliceMenu
+        objectName: "menuViewEffectSlice"
+        title: qsTr("Effect Slice")
+        ButtonGroup {
+            id: effectSliceModeGroup
+            exclusive: true
+        }
+        PicasaMenuItem {
+            objectName: "menuViewEffectSliceAlways"
+            placeholder: false
+            sajat: true
+            text: qsTr("Always")
+            checkable: true
+            ButtonGroup.group: effectSliceModeGroup
+            checked: menuView.effectSliceControllerRef
+                && menuView.effectSliceControllerRef.mode === "always"
+            onTriggered: {
+                if (menuView.effectSliceControllerRef) {
+                    menuView.effectSliceControllerRef.setMode("always")
+                    checked = Qt.binding(function () {
+                        return menuView.effectSliceControllerRef.mode === "always"
+                    })
+                }
+            }
+        }
+        PicasaMenuItem {
+            objectName: "menuViewEffectSliceEditing"
+            placeholder: false
+            sajat: true
+            text: qsTr("While Editing")
+            checkable: true
+            ButtonGroup.group: effectSliceModeGroup
+            checked: menuView.effectSliceControllerRef
+                && menuView.effectSliceControllerRef.mode === "editing"
+            onTriggered: {
+                if (menuView.effectSliceControllerRef) {
+                    menuView.effectSliceControllerRef.setMode("editing")
+                    checked = Qt.binding(function () {
+                        return menuView.effectSliceControllerRef.mode === "editing"
+                    })
+                }
+            }
+        }
+        PicasaMenuItem {
+            objectName: "menuViewEffectSliceNever"
+            placeholder: false
+            sajat: true
+            text: qsTr("Never")
+            checkable: true
+            ButtonGroup.group: effectSliceModeGroup
+            checked: menuView.effectSliceControllerRef
+                && menuView.effectSliceControllerRef.mode === "never"
+            onTriggered: {
+                if (menuView.effectSliceControllerRef) {
+                    menuView.effectSliceControllerRef.setMode("never")
+                    checked = Qt.binding(function () {
+                        return menuView.effectSliceControllerRef.mode === "never"
+                    })
+                }
+            }
+        }
+    }
 }

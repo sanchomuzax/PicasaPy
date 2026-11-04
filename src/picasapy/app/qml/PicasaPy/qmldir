@@ -302,6 +302,7 @@ ActivityBadge 1.0 ActivityBadge.qml
 EditorSlider 1.0 EditorSlider.qml
 EditorSliderCaption 1.0 EditorSliderCaption.qml
 PhotoViewerLeftDrawer 1.0 PhotoViewerLeftDrawer.qml
+EffectSliceBox 1.0 EffectSliceBox.qml
 PhotoViewerPhotoArea 1.0 PhotoViewerPhotoArea.qml
 MainSlideshow 1.0 MainSlideshow.qml
 MainWindowToolbar 1.0 MainWindowToolbar.qml
