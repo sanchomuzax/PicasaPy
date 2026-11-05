@@ -2261,7 +2261,23 @@ Az alábbi sorok az eredeti Picasa számára **teszttervek, nem végrehajtott pr
 | Videó | `kattint [NINCS MEG - videóbélyegkép]` → `billentyu Enter` → `var NINCS MEG`; majd egyenként `billentyu /`, `billentyu ,`, `billentyu .` és mindegyik után `var NINCS MEG` | Lejátszás/szünet, vissza- és előrelépés külön képernyőképe; a lejátszó fókuszát a képen ellenőrizze. |
 | Párbeszéd | Könyvtárból: `billentyu ctrl+O` → `var NINCS MEG` → `billentyu Esc` | A fájlmegnyitó párbeszéd megjelenik-e és az Esc bezárja-e. Másik dialogus kiválasztott billentyűútja **NINCS MEG**. |
 
-**Körhatár:** a Colab-futtatás nem történt meg. A PicasaPy meglévő billentyűtesztjeinek helyi eredménye a §12.4-ben szerepel; egyik próbasor sem tekinthető a teljes nézetenkénti leltár kész bizonyítékának.
+**Futáspróba (picasa-colab-jobs #375, 2026-11-05).** Az eredeti Picasa 3.9-ben, az `idorend` mintakészlettel, egy kijelölt bélyegképpel a Szerkesztő, a Diavetítés és a Párbeszéd sorát lefuttattam; minden lépés előtt képernyőkép és ablaklista készült (26 kép).
+
+| billentyű | az eredetiben (a lépés utáni kép) | PicasaPy |
+|---|---|---|
+| `Ctrl+3` kijelölt képpel | megnyílik a szerkesztőnézet az Alapvető javítások lappal (7. kép) | ugyanez: `MainKeyboardShortcuts.qml` `Ctrl+3`, valódi leütéssel tesztelve (`test_gyorsbillentyuk_valodi_5150_n.py`) |
+| `F8`, `F9` a szerkesztőben | semmi nem változik: a 8-12. kép képpontra azonos | nálunk sincs módosító nélküli F8/F9-kezelő (§12.4), tehát egyezik |
+| `Escape` a szerkesztőben | vissza a könyvtárnézetbe (13. kép) | egyezik |
+| `Ctrl+4` | teljes képernyős diavetítés indul, magától lapoz (15. és 16. kép eltér) | egyezik (`test_gyorsbillentyu_matrix_6531.py`) |
+| első `Space` | a vetítés megáll: a 17. és a 4 mp-cel későbbi 18. kép azonos, a beállított lapozási idő 3 mp | egyezik: `SlideshowView.qml` `Keys.onSpacePressed` → `togglePause()` |
+| második `Space` | a vetítés továbbmegy (19. és 20. kép eltér) | egyezik |
+| `Escape` a vetítésben | vissza a könyvtárnézetbe (21. kép) | egyezik |
+| `Ctrl+O` | megnyílik az „Open” fájlválasztó, fájltípus „Picture and Movie Files” (ablaklista a 23. lépés előtt `['Open', 'Picasa 3']`) | a Fájl ▸ Fájl felvétele (`Ctrl+O`) natív fájlválasztót nyit |
+| `Escape` a fájlválasztóban | a párbeszéd bezárul (25. kép) | a natív párbeszéd saját viselkedése |
+
+**Csak mérés, eltérés:** szünetben az eredetiben a vetítés alján látszik a vezérlősáv (17-18. kép), a második Space után eltűnik (19. kép); nálunk a sáv csak egérmozgásra jelenik meg. A szünet ágát a binárisban megnéztem: a `0x00801130` a `[+0x3bb]` lejátszásjelzőt fordítja, szünetnél a `0x00802230` frissítőt hívja és újrarajzol, folytatásnál a `0x00802c20`-at; a sáv megjelenítése egyik ágban sincs. Amíg a sáv szünetbeli megjelenésének bináris forrása nincs meg, a PicasaPy-on nem változtatunk; a következő irány a `oneup.tre` `auto` gombjának kezelője (`0x00803486`, `0x00803110`) körül a sáv láthatóságát író mező keresése.
+
+**Körhatár:** a videós `/`, `,`, `.` sor nem futott: a végrehajtó ezeket a billentyűket videólejátszóban nem tudja megbízhatóan leütni. A PicasaPy meglévő billentyűtesztjeinek helyi eredménye a §12.4-ben szerepel.
 
 ### 12.4 PicasaPy - meglévő valódi billentyűpróbák (2026-11-05)
 
