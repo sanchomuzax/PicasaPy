@@ -1349,3 +1349,75 @@ Vagyis a kártya képernyőhelyét és méretét az `r` rekord `+0xa4..+0xcc` me
 **Nyitott.** A `0x00803c10` és a `0x00803b50` tartalma; ha ezek sem formáznak dátumot, a következő lépés a virtuális táblán át hívott formázók mintára pásztázása a kártyaépítő láncban.
 
 **Fejlesztői átadás.** Nincs új, binárisból igazolt megvalósítási elem.
+
+#### 38.2.92 A qshow szövegrajzoló helyeinek teljes leltára (#6532, 2026-11-05)
+
+**Forrás.** Ghidra-dekompilálás a `0x008014d0` teljes hosszára és a `0x007fc7c0`-ra, hívottakkal: `referencia/ghidra/2026-11-05-idorend-6532-kartyakeszlet.txt` (privát `picasapy-agent` repó, 620 sor). A leltár a helyi `Picasa3.exe` bájtjain készült (ugyanaz a programfájl, mint a 38.2.86-ban: PE-verzió `3.9.141.259`, SHA-256 `644b7bec...ddc96`, egyezik a bináris indexével; a videóban futó példány azonossága továbbra sem igazolt, a bináris-állítások a helyi fájlra szólnak). Eszköz: `pe_dis.py` és kis capstone-szkriptek, a PE import-táblájából saját kiolvasással az IAT-nevek (a bináris index `imports.csv` a névtábla címét adja, nem a hívott IAT-rést).
+
+**Módszer és hatókör.** A pásztázás a `0x007f0000`-`0x00808000` tartomány egészére szól, nem jelöltenként. Négy független út:
+
+1. *Nyers hívásbájtok* (`e8` + relatív eltolás) a tartomány minden bájtján, nem csak a bináris index xrefs-én: a betűobjektum-készítőre (`0x00a48e10`), a képrajzolóra (`0x009e6df0`) és a két dátumformázóra (`0x0098c780`, `0x0098c670`).
+2. *Nyers címhivatkozások* (32 bites érték) a két betűnév-szövegre, és a programfájl **összes** betűnév-szövegére (`Helvetica...`, `Arial`, `Arial Unicode MS`, `Lucida Console`, `Georgia`, `Times`, `Tahoma`, `Impact`), valamint a szövegosztályok virtuálistábla-címeire (`ytSkiaTextRender`, `ytVectorTextNode`, `ytMultiTextNode`, `ytTextSettings`, `CTextCaptionCreator`, `ytFontCache`).
+3. *Utasítás-pásztázás* a bináris index mind a 247 függvényén (`functions.csv`, `.text`, ebben a tartományban): minden közvetett hívás (`call reg`, `call [reg+...]`), amely előtt két darab `sub esp, 0x10` blokk áll. Ez a szövegrajzoló hívás alakja: két 16 bájtos szerkezet a veremben, négy érték, két nulla; a hívott függvény `ret 0x38`-cal tér vissza. A virtuális hívásokat az xrefs nem látja, ez igen.
+4. *Az összes Win32 szöveg-hívás* (`TextOut*`, `ExtTextOut*`, `DrawText*`, `CreateFont*`, `SetWindowText*`, `SendMessage*`) a PE import-táblája szerint feloldva.
+
+A betűobjektum osztálya: a `0x00a48e10` visszatérési értékének virtuális táblája `+0x2c` helyén `0x007ff141`-nél a hívott függvény a `ytFontCache::vftable` (`0x00ce400c`) 12. bejegyzése, a `0x00a46bb0` (`ret 0x38`, azaz 14 szó argumentum). Az, hogy a `0x00a48e10` által adott objektum ennek az osztálynak a példánya, olvasat: az argumentumszám egyezik, és az osztály neve (`ytFontCache`) az RTTI-táblából jön; az objektum létrehozását és azt, hogy a `0x00a48e10` valóban ilyen példányt ad, nem követtem végig.
+
+**Hatókörön kívül maradt:** a függvényhatárokon kívüli bájtok (a `functions.csv` nem sorol fel mindent), a tartományon kívüli hívók, és az olyan szövegrajzolás, amely nem a `0x00a46bb0`-n, hanem függvénymutatón vagy a `ytSkia` / `ytVectorTextNode` úton megy (a tartomány nem hivatkozik ezek táblájára: a 2. pontban a vtábla-címekre nulla találat).
+
+**Eredmény: a betűobjektum-készítő összes hívása és a szövegrajzoló összes hívása.**
+
+| Cím | Függvény | Mit csinál | Melyik képre | Forrás |
+|---|---|---|---|---|
+| `0x007fef21`, `0x007fef43`, `0x007fef69` | `0x007fee70` | Három betű: `HelveticaNeue MediumCond` (0x190, 0x1c, méret `0.7142857`), `HelveticaNeue Condensed` (0x190, 0x14), `HelveticaNeue MediumCond` (0x190, 0x0e, méret `1.4`). | nincs (betűkészítés) | bináris (nyers hívásbájt és utasítás) |
+| `0x007ff148`, `0x007ff1eb` | `0x007fee70` | Gyűjtemény neve (a `[this+0x510]` indexű gyűjtemény, `CThumbDB+0x48` virtuális tábla `+0x18`): fekete árnyék `(x+1, y+1)`, majd szöveg `(x, y)`, `y = 130`. | célkép (a `0x007ffc90` adja) | bináris (38.2.89, itt újra megtalálva) |
+| `0x007ff376`, `0x007ff3f5` | `0x007fee70` | Hónap és év (`ytDateTime::Format2`, `%s %d`): árnyék, majd szöveg, `y = 158`. | célkép | bináris |
+| `0x007ff67f` | `0x007fee70` | A dátumvonal bal vége: az első rekord hónapja és éve. | célkép | bináris |
+| `0x007ff761` | `0x007fee70` | A dátumvonal jobb vége: az utolsó rekord hónapja és éve. | célkép | bináris |
+| `0x00801dc6`, `0x00801f14` | `0x00801cf0` | Egy betű (`HelveticaNeue MediumCond`, 0x190, 0x1c) és egyetlen szövegrajzolás: a `[this+0x50c]` indexű gyűjtemény neve, szín `0xcfcfcfcf`. Más szöveg és dátumformázó nincs benne. | a `[this+0x46c]` gyorsítótár-kép | bináris |
+| `0x007f0ec7` | `0x007f0d90` | Egy `Arial` betű (0x190, 0x24, méret `1.4`), az objektum `+0x250` mezője `-4`. A függvényben szövegrajzoló hívás **nincs**; a névjegy-ablak szövegeit (`IDS_ABOUT1`, `IDS_ABOUT_LINUX`) Win32-vezérlők kapják (`GetDlgItem`, `SendMessageA`). Nem qshow. | nincs | bináris |
+
+A tartományban tehát **7 szövegrajzoló hívás van, két függvényben** (`0x007fee70`: 6, `0x00801cf0`: 1), és **5 betűobjektum-készítő hívás** (ebből 1 a névjegy-ablaké). Más hely nem hívja a `0x00a48e10`-et, nem hivatkozik a `HelveticaNeue` szövegekre, és nem hívja a `0x00a46bb0`-t (sem közvetlenül, sem a fenti hívásalakkal). A nyers `e8`-keresés és az utasítás-pásztázás ugyanezt a halmazt adta.
+
+**Ami szöveggel foglalkozik, de nem ezzel a rajzolóval:**
+
+| Cím | Mit csinál | Miért nem a kérdés |
+|---|---|---|
+| `0x007f9880` | `0x0098c670` (`MMM d, yyyy`) dátumszöveg soronként, továbbadva egy listának. | Nem rajzol (38.2.91). |
+| `0x00802ff0` | `OneUpUI::Format` (`%d %s`, "second"/"seconds"): a másodperc-felirat az egyképes diavetítés UI `oneup/tps` elemére. | Más osztály (OneUp UI), a szöveget a UI-elem kapja, nem a betűobjektum. |
+| `0x00802c60`, `0x00802ec0` | A OneUp UI konstruktora (`i18n\oneuptext.xml`, `oneup/caption`, `oneup/stripback`) és a képaláírás-frissítő: a `[this+0x260]` szolgáltatótól kér szöveget (virtuális tábla `+0x14`), és a `oneup/caption` elemnek adja. | A szöveg forrását (a szolgáltató) nem olvastam. Nyitott. |
+| `0x007f1270` | `CreateFontIndirectA`, `GetTextFaceA`, `SetTextColor`: Win32-betűsegéd. | Ablakos vezérlő, nem qshow. A tartalmát nem olvastam végig. |
+| `0x007f0000`-`0x007f9700` többi függvénye | Névjegy-ablak, webes exportálás, RSS-letöltő, Google Fotók import: szövegeik üzenetablakok és sztringtábla-kulcsok (`CAboutBox::...`, `CWebExportNotify::...`). | Ablakos felületek, nincs betűobjektum. |
+
+A tartomány dátumformázói közül hívást kap: `0x0098c780` (`%s %d`, 3 hely, mind a `0x007fee70`-ben) és `0x0098c670` (1 hely, a `0x007f9880`). Más dátum- vagy időformátum-szöveg (`%Y-%m-%d`, `%.2d:%.2d`, `HH:mm`) a tartomány függvényeiből nem hivatkozott. A tartományban álló `%` formátumok: `%s %d`, `%d %s`, `%s%s_f`, `%I64u`, `%s%s%s%s%s`, `%s%s\%s\%s\`, `%d` darabszámok; egyik sem dátum-idő.
+
+**Mit csinál a `0x008014d0` és a `0x007fc7c0` (a feladat 1. része).**
+
+- `0x008014d0` (kártyakészlet-építő): felszabadítja a régi kártyakészletet (`0x00803c10`), majd a `[this+0x3ec]` azonosító-listán végigmenve minden azonosítóra a `[this+0x2e4]` objektum 0. virtuális metódusát hívja `(azonosító, rekord, 1)` argumentumokkal; ez tölti az elem rekordját. Ezután új `0xf8` bájtos kártyarekordot kezd (`0x007fa5b0`), és a `0x00a6aa00` hívással az elem rekordjának képét **teljes téglalappal** (`-1, -1, -1, -1`) másolja a kártyarekord `+4` képébe. A kártya véletlen eltolását és irányát `rand`-ból számolja. Szöveget nem rajzol. A `[this+0x2e4]` egyetlen írója a tartományban a qshow konstruktor (`0x007fa81e`: `mov [ebp+0x2e4], ecx`), tehát az objektumot a konstruktor kapja kívülről.
+- `0x007fc7c0` (rekordsáv-építő, a `0x008037e0` egyetlen hívása): törli a régi rekordokat és időket, majd a gyűjtemény elemlistáján (`[[this+0xac]+0x158]`, 0x38 bájtos elemek, darabszám `+0x15c >> 1`) végigmegy a `0x004ae4e0`-nel: ez az `index`-edik elem adatait másolja egy helyi rekordba (zár alatt, a `0x004ae600` másol). Csak azoknak az elemeknek az azonosítóját gyűjti be, amelyeknél a rekord típusmezője 1, és egy bájtos jelzője nulla (a dekompilálás szerint; a mezők jelentését nem vizsgáltam). Minden azonosítóra a `CThumbDB+0x48` virtuális tábla `+0x20` helyét hívja (ez a `0x0044f7c0`, az idő f64-ként), az idők a `[this+0x88]` tömbbe kerülnek. A `0x007fc4c0` ebből számol: az idők tömbjén a `0x0098ba30`, `0x0098b9e0`, `0x0098b550` hívásokkal egy-egy időt alakít át, a `[this+0x90]` tömbbe egy-egy összegző értéket ír az idők közötti eltérésekből; szöveget és képet nem érint. Utána minden azonosítóra: `0x004ae430(azonosító, rekord)` lekéri az elem rekordját (a `[[this+0xac]+0xc4]` objektum, a `CThumbDB` elsődleges virtuális táblájának `+0x20` helye, `0x00423300`, amely az azonosító alapján keres rekordot), `0x007fa5b0` új kártyarekordot kezd, és a `0x00a6aa00` ismét teljes téglalappal másolja az elem rekordjának képét a kártyarekord `+4` képébe. A rekord `+0` helyére az azonosító kerül. A függvény a fókuszkártya sorszámát (az `[this+4]`-gyel egyező azonosítót) a `[this+0x20]` eltolásba számolja (`[this+8] - sorszám * [this+0x30]`).
+- **A kártya `+4` képe tehát az elem rekordjának másolata** (`0x00a6aa00`, `eax` = a forrás rekord, első veremargumentum = a cél kép; a forrás szélességét és magasságát a `[+8]`, `[+0xc]` adja, teljes téglalapnál a `0x009a8ca0` másolja a pixeleket). Mindkét helyen (`0x007fcca7`, `0x008015a8`) a forrás a hívás előtt a `0x004ae430`, illetve a `[this+0x2e4]` metódusa által töltött helyi rekord. Hogy ez a rekord kész bélyegképet tartalmaz-e, és honnan jön (adatbázis-gyorsítótár vagy fájlbetöltés), azt nem olvastam: a `0x00423300` (rekordkeresés a `0x00448fb0`-val, majd `0x004114e0` másolás), a `[this+0x2e4]` osztálya és a `0x00448fb0` ebben a körben nincs végigolvasva.
+- Egyik sem hív szövegrajzolót vagy dátumformázót; a `0x007fc7c0` hívottjai között (`0x00401000`, `0x004ae430`, `0x004ae4e0`, `0x007fa5b0`, `0x007fc4c0`, `0x00803b50`, `0x00803c10`, `0x0097c810`, `0x0097caf0`, `0x009a8bc0`, `0x00a6aa00`, `0x00c0769f`, `_free`) nincs ilyen. A `0x00803c10` és `0x00803b50` a kártyarekord szabadítója és másolója (a `0x007fcdb3`-nál a ciklus a `+0x30`... mezőket szabadítja és a `0x009a8bc0`-t hívja); szöveget nem érintenek.
+
+**Következtetés.**
+
+1. **Bináris, a hatókör megjelölésével:** a `0x007f0000`-`0x00808000` tartományban a betűobjektum szövegrajzolóját (`0x00a46bb0`) összesen 7 hely hívja, mind a `0x007fee70`-ben (6) és a `0x00801cf0`-ban (1). Ezek közül egyik sem rajzolja a `YYYY-MM-DD hh:mm` alakot: a `0x007fee70` gyűjteménynevet, hónap-évet (`%s %d`) és a dátumvonal két végének hónap-évét rajzolja; a `0x00801cf0` csak a gyűjtemény nevét. A tartomány egyetlen dátumformázó hívásai a `%s %d` (3) és az `MMM d, yyyy` (1, nem rajzol). **A qshow-tartomány tehát nem rajzol teljes dátum-időt a kártyára.** A hatókör: a tartomány 247 függvénye és nyers bájtjai; a függvényhatárokon kívüli kód, a tartományon kívüli rajzolók és a függvénymutatón át hívott rajzolók nincsenek lefedve.
+2. **Bináris:** a nagy kártya képe (`+4`) az elem rekordjából másolt kép (`0x00a6aa00`, teljes téglalap). A qshow-tartomány ezután nem ír szöveget erre a képre (a tartomány két rajzolója a célképre, illetve a `[this+0x46c]` képre ír, nem a kártyaképre).
+3. **Következtetés a kódból, becslés nélkül:** ha a felvételen a nagy kártyán a dátum-idő látszik, a kód alapján két helyről jöhet. (a) A kártya forráskép-rekordjából, vagyis a `0x004ae430` / `[this+0x2e4]` által töltött elem rekordjából (a bélyegkép-szolgáltató oldaláról, a qshow-tartományon kívül); ennek eldöntése a `0x00423300` és a `[this+0x2e4]` osztály végigolvasását kéri. (b) A qshow-n kívüli közös rajzolóból: a OneUp UI képaláírása (`oneup/caption`, a `0x00802ec0` a `[this+0x260]` szolgáltatótól kér szöveget), amelyet a `0x008037e0` (a `qshow` és `oneup/timeline` sztringeket is használja) kapcsol a qshow-hoz. Egyik sem bizonyított, a kód csak a két helyet mutatja.
+
+**Nyitott.**
+
+- A `0x00423300` (rekordkeresés, `0x00448fb0`, `0x004114e0`): mit tölt a rekordba, és van-e benne kész kép vagy szöveg.
+- A `[this+0x2e4]` objektum osztálya: a qshow konstruktor hívója adja át; a `0x007fa7f0` hívói és a paraméter eredete nincs végigkövetve.
+- A OneUp UI képaláírás-szolgáltatója (`[this+0x260]`, virtuális tábla `+0x14`, `0x00802ec0`): milyen szöveget ad (név, dátum, időpont?).
+- A felvétel (38.2.81) vizsgálata: a `2009-05-14 10:00` felirat a qshow ablakban a nagy kártyán belül van-e, vagy a OneUp UI képaláírása.
+- A `0x007f1270` és a `0x007f4640` (`SendMessageA`) tartalma: ablakos segédek, nem olvastam.
+
+**Fejlesztői átadás (csak binárisból igazolt elemek).**
+
+| Eredeti | Teendő |
+|---|---|
+| A nagy kártya képe az elem rekordjának teljes másolata (`0x00a6aa00`, teljes téglalap; `0x007fcca7`, `0x008015a8`) | A kártyakép a bélyegképből készül, külön vágás nélkül; a PicasaPy-ban a kártya képforrása ugyanez legyen (átvehető, mérettől független). |
+| A qshow-tartomány 7 szövegrajzolása: gyűjtemény neve, hónap-év, dátumvonal két vége (`0x007fee70`), gyűjteménynév a gyorsítótár-képre (`0x00801cf0`) | A korábbi átadások (38.2.89, 38.2.90) érvényesek; ebben a körben új tétel nincs. |
+| A teljes `YYYY-MM-DD hh:mm` felirat rajzolója | Nincs: a qshow-tartományban nem létezik. Átvehető teendő nincs; a forrás a fenti nyitott pontok szerint a rekord képe vagy a OneUp UI képaláírása. |
+
+**Új kutatási jegyjavaslat.** Nincs; a nyitott pontok a #6532 hatókörében maradnak. A következő célzott kör: `0x00423300` és a `[this+0x2e4]` osztály, valamint a OneUp UI `0x00802ec0` szolgáltatója.
