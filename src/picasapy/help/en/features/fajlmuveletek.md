@@ -15,6 +15,8 @@ command is disabled until a photo is selected.
 ## Rename
 
 Choose **File** ▸ **Rename...** (`F2`), or use the photo's context menu.
+`F2` also works in the open viewer, where it renames the photo you are
+looking at.
 The **Rename Files** window opens for one photo or several. With one
 photo, its current name, without the extension, is selected in the name
 field so you can replace it. Type the new name. When renaming several

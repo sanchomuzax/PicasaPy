@@ -97,7 +97,8 @@ felajánl, a régebben kihagyottat is.
 Windowsos PyInstaller-programnál a **Frissítés most** a háttérben tölti le
 a csomagot, miközben tovább használhatod a PicasaPy-t. A gomb helyén
 kattintás után azonnal folyamatjelző sáv jelenik meg, tehát látod, hogy a
-letöltés elindult. Telepítés előtt
+letöltés elindult. A megkezdett letöltést az időközben lefutó
+frissítéskeresés nem szakítja félbe. Telepítés előtt
 ellenőrzi a kiadáshoz közzétett `SHA256SUMS` ujjlenyomatot. Ha az ellenőrzés
 nem sikerül, nem cserél fájlt. Sikeres letöltés után választhatsz az
 azonnali újraindítás (**Újraindítás most**) és a kilépéskori telepítés
@@ -107,8 +108,13 @@ megmarad, és ha az új példány nem indul el, a program visszaállítja.
 
 A **Frissítés kilépéskor** után a jobb felső verziófelirat egy környíllal
 és az új verziószámmal jelzi, hogy a frissítés vár; fölé víve az egeret
-ezt olvasod: **A frissítés a PicasaPy bezárásakor települ.** Frissítés
-közben egy kis ablak jelzi, hogy a munka fut. Ha a frissítés félbemarad,
+ezt olvasod: **A frissítés a PicasaPy bezárásakor települ.**
+
+Frissítés közben a **PicasaPy frissítése** ablak kiírja, melyik lépésnél
+tart a munka (például a fájlok cseréje vagy az új verzió ellenőrzése), és
+mennyi idő telt el. Ne indítsd el közben a programot: a frissítés végén
+magától újraindul. Ha valami elromlik, az ablak megírja, mi történt, és a
+**Bezárás** gombbal zárhatod be. Ha a frissítés félbemarad,
 vagy a végén mégis a régi változat indul el, a következő indításkor a
 program kiírja, és azt kéri, hogy telepítsd kézzel a legújabb Setupot.
 
@@ -316,6 +322,8 @@ következő indításig.
 
 Bekapcsolva a felület egésze sötét színekkel rajzol: a gombok, a
 beviteli mezők, az idővonal, a címkepanel és a videolejátszó vezérlői is.
+A program a rendszernek is jelzi a sötét témát, így ahol az operációs
+rendszer ezt támogatja, az ablak kerete és címsora is sötét lesz.
 
 ## Megjelenítési mód
 

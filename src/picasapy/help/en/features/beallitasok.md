@@ -90,7 +90,8 @@ skipped in an earlier version.
 In the Windows PyInstaller build, **Update now** downloads the package in
 the background while PicasaPy remains usable. As soon as you click it, a
 progress bar replaces the button, so you can see that the download has
-started. Before installation it checks
+started. An update check that runs meanwhile does not interrupt a download
+that has already started. Before installation it checks
 the fingerprint in the release's `SHA256SUMS` file. A failed check prevents
 replacement. After a successful download, choose **Restart now** or
 **Update on exit**. Restarting waits for background work to finish. The previous
@@ -99,7 +100,11 @@ version is kept, and the updater restores it if the new copy fails to start.
 After **Update on exit**, the version label in the upper-right corner shows a
 circular arrow and the new version number, so you can see the update is
 waiting. Its tooltip reads **Update will be installed when PicasaPy closes.**
-While the update runs, a small window shows that the work is in progress. If
+While the update runs, a small window shows which step it is on (for
+example replacing files or checking the new version) and how much time has
+passed. Do not start the program meanwhile: it restarts by itself when the
+update is finished. If something goes wrong, the window tells you what
+happened, and you can close it with its **Close** button. If
 the update stops before it finishes, or an earlier version starts after all,
 the program tells you at the next start and asks you to install the latest
 Setup manually.
@@ -291,7 +296,9 @@ checkboxes:
 ## Dark appearance
 
 PicasaPy includes a dark appearance option that can be turned on or off.
-Your choice is saved for the next launch.
+Your choice is saved for the next launch. PicasaPy also tells the system
+that it uses a dark appearance, so where the operating system supports
+it, the window frame and title bar turn dark too.
 
 ## Display mode
 
