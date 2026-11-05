@@ -12,12 +12,16 @@ Item {
     anchors.fill: parent
     z: 1
 
-    // vezérlő-overlay: egérmozgásra jelenik meg, pár másodperc múlva
-    // magától eltűnik (Picasa-minta) — a vetítést nem takarja feleslegesen
+    // A mutató 50 képpontos mozgására jelenik meg. Fél másodpercnyi
+    // tétlenség új vonatkoztatási pontot vesz fel.
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: slideshow.screensaverMode ? Qt.AllButtons : Qt.NoButton
+        property real mozgasReferenciaX: 0
+        property real mozgasReferenciaY: 0
+        property double elozoMozgasIdeje: 0
+        property bool vanMozgasReferencia: false
         // Lejátszáskor a képfelületen rejtjük el a kurzort. A sáv saját
         // lebegés-figyelője visszaadja a nyilat, hogy a gombok használhatók
         // maradjanak; a képernyővédő mód a korábbi látható kurzort tartja.
@@ -25,12 +29,27 @@ Item {
             && !savLebeges.hovered ? Qt.BlankCursor : Qt.ArrowCursor
         onPressed: if (slideshow.screensaverMode && slideshow.screensaverInputArmed)
                        slideshow.stop()
-        onPositionChanged: {
+        onPositionChanged: function(mouse) {
             if (slideshow.screensaverMode) {
                 if (slideshow.screensaverInputArmed) slideshow.stop()
             } else {
-                controlsBar.shown = true
-                hideTimer.restart()
+                var most = Date.now()
+                if (!vanMozgasReferencia || most - elozoMozgasIdeje > 500) {
+                    mozgasReferenciaX = mouse.x
+                    mozgasReferenciaY = mouse.y
+                    vanMozgasReferencia = true
+                }
+                var dx = mouse.x - mozgasReferenciaX
+                var dy = mouse.y - mozgasReferenciaY
+                var kuszobFelett = dx * dx + dy * dy > 2500
+                elozoMozgasIdeje = most
+
+                // 0x005c4a10: küszöb feletti mozgás, vagy a már látható sáv
+                // (eltűnés közben a sáv már nem számít láthatónak).
+                if (kuszobFelett || controlsBar.shown) {
+                    controlsBar.shown = true
+                    hideTimer.restart()
+                }
             }
         }
     }
@@ -78,7 +97,7 @@ Item {
     Timer {
         id: hideTimer
         objectName: "slideshowHideTimer"
-        interval: 2500
+        interval: 1500
         //: #2992: a mutató alatt NEM rejtünk el. A lejáró időzítő így nem
         //: kapja el a sávot épp akkor, amikor a felhasználó a gombot
         //: célozza — az újraindítás a `slideshowControlsHover` dolga.
@@ -106,9 +125,33 @@ Item {
             //: enélkül a sáv a vetítés végéig kint maradna
             onHoveredChanged: if (!hovered) hideTimer.restart()
         }
-        visible: !slideshow.screensaverMode && opacity > 0
-        opacity: shown ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: 200 } }
+        // A rejtett végértéken a sáv ne fogja el az egérmozgást a teljes
+        // vetítőt fedő MouseArea elől; áttűnés közben és láthatóan marad aktív.
+        visible: !slideshow.screensaverMode && (shown || opacity > (1 / 256))
+        opacity: 1 / 256
+        state: shown ? "controlsShown" : "controlsHidden"
+        states: [
+            State {
+                name: "controlsShown"
+                PropertyChanges { target: controlsBar; opacity: 1 }
+            },
+            State {
+                name: "controlsHidden"
+                PropertyChanges { target: controlsBar; opacity: 1 / 256 }
+            }
+        ]
+        transitions: [
+            Transition {
+                from: "controlsHidden"
+                to: "controlsShown"
+                NumberAnimation { properties: "opacity"; duration: 250 }
+            },
+            Transition {
+                from: "controlsShown"
+                to: "controlsHidden"
+                NumberAnimation { properties: "opacity"; duration: 1200 }
+            }
+        ]
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 24
