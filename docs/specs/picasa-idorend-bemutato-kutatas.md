@@ -1443,3 +1443,44 @@ A tartomány dátumformázói közül hívást kap: `0x0098c780` (`%s %d`, 3 hel
 **Fejlesztői átadás.** A PicasaPy Időrend-nézete **ne rajzoljon** saját dátum-idő feliratot és csíkozott hátteret: ezek a mérésben a kép tartalmából jöttek. Binárisból igazolt elem ebben az alszakaszban nincs; a háttérkép szürkítése és keverése a fenti címeken olvasat.
 
 **Módszertani tanulság.** Mielőtt egy felvételen látott elem rajzolóját a programfájlban keressük, a mintakészlet képeinek saját tartalmát kell megnézni: öt Ghidra-kör kereste a tesztképbe írt szöveg rajzolóját.
+
+#### 38.2.94 A háttérkép: szürkítés, automatikus javítás, világosító görbe és ráterített fedőkép (#6532, 2026-11-05)
+
+**Forrás.** Helyi, indextől független pásztázás a teljes `.text`-en (capstone, minden `[reg+eltolás]` és közvetlen érték, ahol az eltolás `0x5f8`, `0x620`, `0x46c`, `0x444`), utána utasításszintű olvasás. Dekompilátum nem kellett.
+
+**a) A `+0x5f8` és a `+0x620` kép üres marad.** A teljes programban ezekre az eltolásokra a qshow-ból csak a konstruktor (`0x007fa7f0`, `0x007fab2c`, `0x007fab5b`: üres, 0x0-s tároló, `0x009a8a30`), a felszabadító (`0x007fb5a0`) és a rajzoló (`0x007ffc90`) hivatkozik. A qshow-tartományban (`0x007f0000`-`0x00808000`) nincs indexelt (`[reg+reg*k+eltolás]`, `0x500`-`0x760` közötti eltolással) és nincs `0x28`-as szorzású hozzáférés, a `0x5f8`/`0x620` közvetlen értékként sem szerepel. Az erőforrás-betöltő (`0x007fb210`) a `+0x530`, `+0x558`, `+0x5a8`, `+0x5d0`, `+0x580`, `+0x6c0`, `+0x6e8`, `+0x710`, `+0x738` tárolót tölti, a `+0x5f8`-at és a `+0x620`-at nem. A `0x009a8a30` 0 szélességnél nem foglal (`0x009a8a4b`), és a rajzoló `0x009ab690` vágója (`0x009aaae0`) üres téglalapnál kihagyja a rajzolást. **Következtetés:** a két kép a mért Picasában üres, a `0x007ffc90` ezeknél nem rajzol semmit. Átvehető teendő nincs.
+
+**b) A `+0x46c` a teljes képkocka, nem a háttér forrása.** A `0x008001c0(this, &this[0x46c], téglalap)` a teljes jelenetet ebbe a képbe rajzolja (hívói: `0x007fb86b`, `0x00802ab6`, `0x00802b06`); a `0x00801cf0` a gyűjtemény nevét is ide írja. A `0x00802230` frissítő előbb a régi kockát a `+0x444`-be menti (`0x00802516`-`0x00802525`), majd a `[this+0x2e4]` képszolgáltató virtuális `+8` hívásával (`0x008023ad`-`0x008023f8`) kért képet a kocka közepére másolja (`(+0x474 - szélesség) / 2`, `(+0x478 - magasság) / 2`, `0x0080255b`-`0x0080259f`, `0x009aabf0`).
+
+**c) A szürke, fakított háttér: a `0x00802180`.** A `0x00802230` második (bájt) argumentuma dönt: ha nem 0, a másolás után a `0x00802180` fut (`0x008025a4`-`0x008025af`). A hívóhelyek argumentuma:
+
+| hívóhely | függvény | második argumentum |
+|---|---|---|
+| `0x007fb56c` | `0x007fb540` (ha `[this+0x51a]` nem 0) | 1 |
+| `0x007fda4f` | `0x007fda00` (a megnyitás, a mutatót is elrejti) | 1 |
+| `0x00801178` | `0x00801130` (szünet-ág) | 0 |
+| `0x00801d05` | `0x00801cf0` (gyűjteménynév) | 0 |
+| `0x008026e9` | `0x00802630` | `ebx` (a hívó állapota) |
+
+A `0x00802180` lépései, sorrendben:
+
+| lépés | cím | mit csinál |
+|---|---|---|
+| 1. szürkítés | `0x0080218f` → `0x00802130` | minden képpont `G * 0x10101`: a zöld bájt kerül mindhárom csatornába, az alfa-bájt 0 lesz (`0x00802152`-`0x0080215c`) |
+| 2. automatikus javítás | `0x008021b1` → `0x00407a20` (`Preferences/CarefulEnhance`), `0x008021cb` → `0x009db610` | ugyanaz a vágó-nyújtó, mint a `enhance` szűrőé: a `-1,0` jelző miatt `keverés = 0,30`, a `CarefulEnhance` beállítással 252-es felső korlát (`filters-decoded.md`) |
+| 3. világosító görbe | `0x008021d0`-`0x008021e1` → `0x00aa40a0(3,0, 0)` | 8 bites gamma-tábla, kitevő `1/3`: `LUT[i] = rint(255 * (i/255)^(1/3))`, mindhárom csatornán (a táblaépítőt lásd `picasa-native-filter-workers.md` 5.3/b) |
+| 4. fedőkép | `0x008021f2`-`0x00802207` → `0x009ab410(&this[0x46c], &this[0x648], teljes)` | a `+0x648` képet a teljes kockára keveri |
+
+A `+0x648` a `0x007fb210` betöltőben készül: a `layer:overlays/overlay` erőforrást (`0x00cbd3e8`, 640x480 RGBA, alfa 179-255, 38.2.85) a qshow ablakméretére méretezi (`0x009a9c90` a `[this+0x2d0]-[this+0x2c8]` szélességgel, `0x007fb4bb`-`0x007fb4c4`), majd újramintavételezi (`0x00a42c20`).
+
+**Következtetés.** (1) Bináris: megnyitáskor a háttér a képszolgáltatótól kért kép a kocka közepén, szürkítve (zöld csatorna), `enhance`-szerűen nyújtva (0,30), `1/3` kitevőjű görbével erősen világosítva, és rajta az ablakméretre nyújtott `overlays/overlay` fedőkép. (2) Bináris: szünetkor és gyűjteménynév-frissítéskor a frissítő ezt a fakítást nem futtatja. (3) Kizárva: a `+0x5f8`/`+0x620` mint háttérforrás (üres tárolók). (4) Nem igazolt: hogy a képszolgáltató a kijelölt elem képét adja; a 38.2.93 képkockája ezt mutatja, a `[this+0x2e4]` osztály virtuális `+8` célja nincs feloldva.
+
+**Fejlesztői átadás.**
+
+| Eredeti | Teendő a PicasaPy-ban |
+|---|---|
+| Háttér: a kép középre, szürkítés a zöld csatornából, `enhance`-nyújtás 0,30 keveréssel, gamma `1/3` (`0x00802180`) | A `TimelinePanel.qml` egyszínű `#8a888b` alapja helyett ezt a háttérképet kell rajzolni. A meglévő elemek: `render/ops_levels.py::apply_enhance` (a `0x009db610`), `render/native_tone.py::native_gamma_lut` (a `0x00aa40a0`). |
+| Fedőkép: `overlays/overlay`, ablakméretre nyújtva (`+0x648`) | Az eredeti erőforrás nem másolható; saját rajzolással kell újraalkotni (ovális sötét felület, halvány külső ív, alsó sáv, alfa 179-255, 38.2.85), a mért alfatartományt megtartva. |
+| `+0x5f8`, `+0x620` | Nincs teendő: üresek. |
+
+**Nyitott.** A `[this+0x2e4]` képszolgáltató virtuális `+8` célja (melyik elem képét adja, milyen méretben; a méretkérés `f32 [0xd35808]`-ból jön). A 38.2.93 nyitott pontjai közül a `+0x46c` kitöltője és a halványítás mértéke ezzel lezárva.
