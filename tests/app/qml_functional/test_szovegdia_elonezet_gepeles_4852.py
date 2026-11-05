@@ -46,12 +46,21 @@ def _open_movie_dialog(window, qt_app, height):
 
 
 
-def _elonezet_allapot(dialog, kerelmek) -> str:
-    """#6560: windowson időnként itt bukik; a hibaüzenet mondja meg, melyik számláló áll."""
+def _elonezet_allapot(dialog, kerelmek, provider=None) -> str:
+    """#6560: windowson időnként itt bukik; a hibaüzenet mondja meg, melyik számláló áll.
+
+    A háttérrenderelő állapota is kell: ha a QML-oldal számlálói rendben vannak,
+    a renderelő sora (fut-e, vár-e kérés, hány szál dolgozik) mutatja meg, hol akad el."""
     nevek = ("previewDisplayedGeneration", "previewLatestRequestGeneration",
              "previewGenerationFloor", "previewIndex", "previewAwaitingTransitionFrame",
              "previewTransitionServiceAvailable", "visible")
-    return ", ".join(f"{n}={dialog.property(n)}" for n in nevek) + f", kerelmek={len(kerelmek)}"
+    szoveg = ", ".join(f"{n}={dialog.property(n)}" for n in nevek) + f", kerelmek={len(kerelmek)}"
+    if provider is not None:
+        szoveg += (f", renderelo_fut={provider._running}"
+                   f", renderelo_var={provider._pending is not None}"
+                   f", renderelo_generacio={provider._generation}"
+                   f", renderelo_szalak={provider._pool.activeThreadCount()}")
+    return szoveg
 
 
 def test_a_gepeles_billentyuleutesenkent_egy_kerest_indit_es_gyorsan_frissul(
@@ -90,7 +99,7 @@ def test_a_gepeles_billentyuleutesenkent_egy_kerest_indit_es_gyorsan_frissul(
             lambda: int(dialog.property("previewDisplayedGeneration"))
             >= int(dialog.property("previewLatestRequestGeneration")),
             timeout=10.0,
-        ), _elonezet_allapot(dialog, kerelmek)
+        ), _elonezet_allapot(dialog, kerelmek, provider)
 
         field = _elem(window, "movieSlideText")
         point = field.mapToScene(
