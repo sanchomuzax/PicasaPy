@@ -5,7 +5,7 @@ from __future__ import annotations
 import threading
 from collections import OrderedDict
 
-import cv2
+from picasapy.lazy_cv2 import cv2
 import numpy as np
 from PySide6.QtCore import QSize, QRectF, Qt
 from PySide6.QtGui import (
