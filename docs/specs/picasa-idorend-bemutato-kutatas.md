@@ -1484,3 +1484,25 @@ A `+0x648` a `0x007fb210` betöltőben készül: a `layer:overlays/overlay` erő
 | `+0x5f8`, `+0x620` | Nincs teendő: üresek. |
 
 **Nyitott.** A `[this+0x2e4]` képszolgáltató virtuális `+8` célja (melyik elem képét adja, milyen méretben; a méretkérés `f32 [0xd35808]`-ból jön). A 38.2.93 nyitott pontjai közül a `+0x46c` kitöltője és a halványítás mértéke ezzel lezárva.
+
+#### 38.2.95 A `[this+0x2e4]` képszolgáltató forrása (#6532, 2026-11-05)
+
+**Forrás.** Utasításszintű olvasás: a qshow konstruktora (`0x007fa7f0`) és egyetlen hívója, a `0x008037e0`, valamint ennek hívója, a `0x005e8a70` (a bélyegkép-nézet vetítésindítója); teljes `.text`-pásztázás a `+0x2e4` eltolásra.
+
+**Mérés.** A qshow-tartományban a `[this+0x2e4]` mezőt egyetlen utasítás írja: `0x007fa81e` a konstruktorban. A konstruktor egy paraméterrekordból tölt (`edi`): `+0xc` → `[this+0x2e0]`, `+0x10` → `[this+0x2e4]`, `+8` → `[this+0x2e8]` (`0x007fa812`-`0x007fa827`). A rekordot a `0x005e8a70` építi a veremben (`esp+0x64`), és a `0x005e9787`-nél adja a `0x008037e0`-nak:
+
+| rekordmező | érték | utasítás |
+|---|---|---|
+| `+0` | bájt (`al`) | `0x005e96f1` |
+| `+1` | bájt, a hívó `[ebp+0xc]`-je | `0x005e9706`-`0x005e9713` |
+| `+4` | `[[ebx+0xeac]+0x3c0]` | `0x005e96eb`-`0x005e9709` |
+| `+8` | `&ebx[0x27c]` (→ qshow `+0x2e8`) | `0x005e971b`, `0x005e973d` |
+| `+0xc` | `&ebx[0x270]` (→ qshow `+0x2e0`) | `0x005e9721`, `0x005e9741` |
+| `+0x10` | `[ebx+0x2bc] + 0x4c`, vagy 0, ha `[ebx+0x2bc]` üres (→ qshow `+0x2e4`) | `0x005e970d`-`0x005e9750` |
+| `+0x24`, `+0x28` | `0x400`, `0x300` (1024×768) | `0x005e9727`, `0x005e9732` |
+
+**Következtetés.** (1) Bináris: a vetítés képszolgáltatója a bélyegkép-nézet `[+0x2bc]` objektumának `+0x4c`-n beágyazott felülete; a `0x00802230` ennek virtuális `+8` hívásával kéri a háttérképet (38.2.94 b). (2) Nem igazolt: hogy a `[+0x2bc]` objektum melyik osztály, így az sem, hogy a kért kép a kijelölt elem bélyegképe vagy teljes képe. A 38.2.93 képkockáján a háttér a kijelölt kép, ez mérés.
+
+**Fejlesztői átadás.** A #6577 a kijelölt fotó bélyegkép-szolgáltatójából kéri a háttérképet; a fenti lelet ezt nem cáfolja, és a 1024×768-as rekordmező miatt a forrás felbontása a panelnél nagyobb lehet. Új teendő nincs.
+
+**Nyitott, a következő felvehető irány.** A bélyegkép-nézet `[+0x2bc]` mezőjének írója (a `0x005e`-tartományban `mov [reg+0x2bc], reg` alakú utasítás), és az ott tárolt objektum vtáblájának `+0x4c` alatti beágyazott felülete.
