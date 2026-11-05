@@ -57,8 +57,21 @@ HATARIDO_PERC = 60
 #: előző körben át is lépte a határt.
 PLAFON_PERC = HATARIDO_PERC * 0.8
 
-#: A darabok száma (a CI-mátrix).
-DARABOK = 4
+import teszt_valasztas  # noqa: E402
+
+
+def _darabszam(idok: dict[str, float]) -> int:
+    """A main teljes windows-futásának TÉNYLEGES darabszáma (#6583).
+
+    A CI a darabszámot a `teszt_valasztas.tervezz_darabokat`-tal, a mért
+    időkből számolja (main-pushon legfeljebb 16). Az őr korábban rögzített
+    4 darabbal számolt, miközben a main már 16 windows-darabon futott; így
+    minden új tesztfájl a soha nem futó 4 darabos felosztás plafonját
+    lépte át. A plafon (a határidő 80%-a) változatlan.
+    """
+    return teszt_valasztas.tervezz_darabokat(
+        _egysegek(), idok, teljes=True
+    ).darabszam
 
 
 @pytest.fixture(scope="module")
@@ -82,15 +95,16 @@ def _terhelesek(idok: dict[str, float]) -> list[float]:
     számít (nem nullával) — az egyensúly és a határidő így a becsült
     egységekkel együtt is őrzött."""
     egysegek = _egysegek()
+    darabok = _darabszam(idok)
     becsult = run_tests.becsult_idok(egysegek, teljes=True)
     return [
         sum(
             becsult[nev]
             for nev in run_tests._kiegyensulyozott_darab(
-                egysegek, i, DARABOK, teljes=True
+                egysegek, i, darabok, teljes=True
             )
         )
-        for i in range(1, DARABOK + 1)
+        for i in range(1, darabok + 1)
     ]
 
 
