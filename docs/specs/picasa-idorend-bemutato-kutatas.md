@@ -1506,3 +1506,27 @@ A `+0x648` a `0x007fb210` betöltőben készül: a `layer:overlays/overlay` erő
 **Fejlesztői átadás.** A #6577 a kijelölt fotó bélyegkép-szolgáltatójából kéri a háttérképet; a fenti lelet ezt nem cáfolja, és a 1024×768-as rekordmező miatt a forrás felbontása a panelnél nagyobb lehet. Új teendő nincs.
 
 **Nyitott, a következő felvehető irány.** A bélyegkép-nézet `[+0x2bc]` mezőjének írója (a `0x005e`-tartományban `mov [reg+0x2bc], reg` alakú utasítás), és az ott tárolt objektum vtáblájának `+0x4c` alatti beágyazott felülete.
+
+#### 38.2.96 A körhinta lépésköze, a fókusz kezdőhelye és a lap magassága (#6595, 2026-11-06)
+
+**Kérdés.** A 38.2.24 §1 szerint a kártyák `t_i = i·S + O` paraméteren állnak a `0x007fbab0` görbén, de az `S` írója nyitott volt (B1). A tulajdonos tíz teljes képernyős felvétele (1920×1080, 2009-2026 közötti gyűjtemények, a tulajdonos helyi mappájában, a repóba nem kerül) azt mutatja, hogy minden gyűjtemény egy köteg a görbén, a régebbiek balra-hátra kicsinyednek, az újabbak jobbra állnak, és lapozáskor az egész sor átúszik.
+
+**Módszer.** A út: a qshow-kódterület (`0x007f9000`-`0x00804000`) függvényeinek indexfüggetlen, capstone-os bejárása a `+0x30` eltolású írásokra (`fst*`/`mov`, a veremre mutatók nélkül); egyetlen találat: `0x007fba9a`. Ezután a `0x007fb9f0` és a `0x007fbd90` vége utasításonként. B út: a konstansok nyers PE-olvasása.
+
+**1. Az `S` írója: a sáv konstruktora, `0x007fb9f0` - megerősített.** A függvény az `esi` objektum (a qshow `+0x2f8` sávja, P) mezőit nullázza (`+0x40`, `+0x50`…`+0x7c`, `+0x80`…`+0xbc`, `+0x20`, `+0x18`, `+0x10`), a `[P]`-be `-1`-et ír, majd:
+
+| utasítás | hatás |
+|---|---|
+| `0x007fba94` `fld qword [0x00cf4e30]`, `0x007fba9a` `fstp qword [esi+0x30]` | `S = 0.04999999888241291` (az f32 `0.05` dupla pontosságú alakja) |
+| `0x007fba9d` `fld1`, `0x007fba9f` `fstp qword [esi+0x28]` | `Z = 1.0` (a kártyalépték szorzója) |
+| `0x007fbaa2` `call 0x007fbd90` | a `runtime\bezier.txt` betöltése |
+
+**2. A fókusz kezdőhelye: `0x007fbd90` vége - megerősített.** A négy vezérlőpont beolvasása után (`0x007fbe53`-`0x007fbe70`) a `0x007fbe74` hívja a `0x007fbce0`-t (a görbe azon `t*` paramétere, ahol az x a legközelebb van `0.666`-hoz), majd az eredményt `0x007fbe87` `fst dword [ebx+8]` a `P+8`-ba, `0x007fbe8a` `fstp qword [ebx+0x20]` az `O`-ba írja. A `0x007fc010` korlátai (`O ≤ [P+8]`, `O ≥ [P+8] - (n-1)·S`, 38.2.24 §2) így azt jelentik: induláskor és a lista elején az első gyűjtemény áll a fókuszban (x ≈ 0.666), a többi jobbra; a lista végén az utolsó áll ott, a többi balra. A 38.2.61 vezérlőpontjaival `t* ≈ 0.925`.
+
+**3. Egyezés a felvételekkel - mérés.** A panel bal felső sarkához mért, 480 px magas lapon a kötegek egymást 0,05-ös paraméterlépésben követik: a fókuszkötegtől balra eső kötegek helye a `t* - k·0.05` görbepontok sorát, a jobbra esőké a `t* + k·0.05` pontokét követi; a fókuszköteg vízszintes helye a lap szélességének 0,66-a, ahogy a `0.666`-os fókuszfeltétel adja. Az első felvételen (az első gyűjtemény) a fókusz mellett csak jobbra van köteg, az utolsón (Legutóbb frissítve) csak balra; ez a 2. pont korlátaival egyezik. A felvételek egy része két háttér keverékét mutatja: a gyűjteményváltáskor a háttér átúszik.
+
+**4. A lap mérete - mérés, nem bináris.** A tulajdonos 1920×1080-as felvételein az Időrend lapja 852×480 px a fekete képernyő közepén; a korábbi job-217 1280×1024-es felvételén 600×480 px. Mindkettő 480 px magas, és a szélessége `480 · képernyőszélesség / képernyőmagasság`. A lapméretet kiszámoló utasítást ebben a körben nem kerestem meg. **Termékdöntés (tulajdonos, 2026-11-05):** a PicasaPy Időrendje a teljes képernyőt töltse ki; ehhez a 480 px magas logikai lapot egyenletesen a képernyő magasságára nagyítjuk, így a képarány az eredetié marad, és nincs fekete sáv.
+
+**Következtetés.** (1) Bináris: `S = 0.05`, `Z = 1.0` a `0x007fb9f0`-ból, `O = P+8 = t*` a `0x007fbd90`-ből; ezzel a 38.2.24 B1 lezárva. (2) A teljes körhinta-elrendezés (hely, lépték, átlátszóság, láthatóság, korlátok, fókusz, animátor) binárisból adott; a megvalósítás a #6595. (3) Mérés: a lap 480 px magas, szélessége a képernyő arányát követi.
+
+**Nyitott, a következő felvehető irány.** A lapméret kiszámítása a binárisban: a `0x00801f50` `GetClientRect` utáni `0x009b49c0(&rect)` elrendező hívása, ahol a 480-as konstans (`0x1e0`) vagy a magasságarány várható.
