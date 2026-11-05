@@ -1356,7 +1356,7 @@ Vagyis a kártya képernyőhelyét és méretét az `r` rekord `+0xa4..+0xcc` me
 
 **Módszer és hatókör.** A pásztázás a `0x007f0000`-`0x00808000` tartomány egészére szól, nem jelöltenként. Négy független út:
 
-1. *Nyers hívásbájtok* (`e8` + relatív eltolás) a tartomány minden bájtján, nem csak a bináris index xrefs-én: a betűobjektum-készítőre (`0x00a48e10`), a képrajzolóra (`0x009e6df0`) és a két dátumformázóra (`0x0098c780`, `0x0098c670`).
+1. *Nyers hívóutasítások* (`e8` + relatív eltolás) a tartomány minden bájtján, nem csak a bináris index xrefs-én: a betűobjektum-készítőre (`0x00a48e10`), a képrajzolóra (`0x009e6df0`) és a két dátumformázóra (`0x0098c780`, `0x0098c670`).
 2. *Nyers címhivatkozások* (32 bites érték) a két betűnév-szövegre, és a programfájl **összes** betűnév-szövegére (`Helvetica...`, `Arial`, `Arial Unicode MS`, `Lucida Console`, `Georgia`, `Times`, `Tahoma`, `Impact`), valamint a szövegosztályok virtuálistábla-címeire (`ytSkiaTextRender`, `ytVectorTextNode`, `ytMultiTextNode`, `ytTextSettings`, `CTextCaptionCreator`, `ytFontCache`).
 3. *Utasítás-pásztázás* a bináris index mind a 247 függvényén (`functions.csv`, `.text`, ebben a tartományban): minden közvetett hívás (`call reg`, `call [reg+...]`), amely előtt két darab `sub esp, 0x10` blokk áll. Ez a szövegrajzoló hívás alakja: két 16 bájtos szerkezet a veremben, négy érték, két nulla; a hívott függvény `ret 0x38`-cal tér vissza. A virtuális hívásokat az xrefs nem látja, ez igen.
 4. *Az összes Win32 szöveg-hívás* (`TextOut*`, `ExtTextOut*`, `DrawText*`, `CreateFont*`, `SetWindowText*`, `SendMessage*`) a PE import-táblája szerint feloldva.
@@ -1369,7 +1369,7 @@ A betűobjektum osztálya: a `0x00a48e10` visszatérési értékének virtuális
 
 | Cím | Függvény | Mit csinál | Melyik képre | Forrás |
 |---|---|---|---|---|
-| `0x007fef21`, `0x007fef43`, `0x007fef69` | `0x007fee70` | Három betű: `HelveticaNeue MediumCond` (0x190, 0x1c, méret `0.7142857`), `HelveticaNeue Condensed` (0x190, 0x14), `HelveticaNeue MediumCond` (0x190, 0x0e, méret `1.4`). | nincs (betűkészítés) | bináris (nyers hívásbájt és utasítás) |
+| `0x007fef21`, `0x007fef43`, `0x007fef69` | `0x007fee70` | Három betű: `HelveticaNeue MediumCond` (0x190, 0x1c, méret `0.7142857`), `HelveticaNeue Condensed` (0x190, 0x14), `HelveticaNeue MediumCond` (0x190, 0x0e, méret `1.4`). | nincs (betűkészítés) | bináris (nyers hívóutasítás) |
 | `0x007ff148`, `0x007ff1eb` | `0x007fee70` | Gyűjtemény neve (a `[this+0x510]` indexű gyűjtemény, `CThumbDB+0x48` virtuális tábla `+0x18`): fekete árnyék `(x+1, y+1)`, majd szöveg `(x, y)`, `y = 130`. | célkép (a `0x007ffc90` adja) | bináris (38.2.89, itt újra megtalálva) |
 | `0x007ff376`, `0x007ff3f5` | `0x007fee70` | Hónap és év (`ytDateTime::Format2`, `%s %d`): árnyék, majd szöveg, `y = 158`. | célkép | bináris |
 | `0x007ff67f` | `0x007fee70` | A dátumvonal bal vége: az első rekord hónapja és éve. | célkép | bináris |
