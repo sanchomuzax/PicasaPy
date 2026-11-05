@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.47] - 2026-11-05
+
+- A filmkészítő előnézetének egyik belső tesztje elakadáskor bővebben írja ki, hol állt meg a képkészítés; a program működése nem változik (#6560).
+
 ## [1.0.46] - 2026-11-05
 
 - Az előnézet-várakozás bukásakor a számlálók kiírása (#6560).
