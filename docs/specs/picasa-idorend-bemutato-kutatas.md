@@ -1154,3 +1154,25 @@ A forráskép ovális mezőjén nincsenek a videón látható ferde csíkok. A `
 - `Ghidra-kör kell: 0x007fee70 - az utasításolvasatban látott Format2 szövegek közül melyik rajzolt mező kapja a kiválasztott mappa nevét, és melyik építi a bal alsó YYYY-MM-DD hh:mm feliratot? A meglévő Ghidra-kimenetek nem tartalmazzák ennek a függvénynek a dekompilálását. [blokkoló]`
 
 **Új kutatási jegyjavaslat.** Nincs. A nyitott címke-, csíkozás- és pixelkapcsolatok a #6532 feladatának részei; megvalósítást csak azután lehet teljes specifikációként átadni, hogy ezeket binárisból vagy pontos futásméréssel azonosítottuk.
+
+#### 38.2.87 Mit csinál a nyitó egy másodperc: két képréteg beúsztatása legfeljebb 39%-ig (#6532, 2026-11-05)
+
+**Kérdés.** A 38.2.86 szerint a `0x00800a30` a nyitás óta eltelt időből `p = kerekítés(clamp(t, 0, 1,0) x 256)` értéket ad a `0x007ffc90`-nek, de nyitva maradt, mire használja a `0x007ffc90` ezt az értéket.
+
+**Utasításszintű olvasat (helyi, hash-azonos programfájl, capstone).**
+
+| hely | mit csinál |
+|---|---|
+| `0x007ffc95` | `ebp = p` (a verem első paramétere). |
+| `0x007ffca2`-`0x007ffca5` | `0x007fee70(this, cél, p)`: a feliratfestő ugyanazt a `p`-t kapja. |
+| `0x007ffcb2`-`0x007ffcd0` | `ebx = (p x 0x64) >> 8`, azaz `p x 100 / 256`: `p = 256` esetén 100. |
+| `0x007ffcc9`-`0x007ffcd8` | `0x009ab690(cél, ebx, &this[+0x620], téglalap = -1)`. |
+| `0x007ffcf7`-`0x007ffd00` | ugyanez a `this[+0x5f8]` képpel, ugyanazzal az `ebx`-szel. |
+| `0x007ffd05`-`0x007ffd0e` | `0x007fd180(&this[+0x2f8], cél, p)`: a kártyák animátora is megkapja a `p`-t. |
+| `0x009ab72e`-`0x009ab798` | a `0x009ab690` MMX-ága: a második paramétert minden színcsatornára kiterjeszti, a forrásképpontot és a forrás alfáját `x param >> 8` szorzással gyengíti, majd előszorzott alfával a célra keveri (`cél x (255 - forrásalfa x param >> 8) >> 8 + forrás x param >> 8`). A második paraméter tehát **átlátszósági szorzó 256-os skálán**. |
+
+**Következtetés.** A nyitás első másodpercében a `+0x620` és a `+0x5f8` kép átlátszósága lineárisan nő 0-ról `100/256`-ra, azaz **legfeljebb kb. 39%-ra**, és utána ott marad (a `p` felső korlátja 256). Ez bizonyított; a két kép teljes fedéssel soha nem rajzolódik ezen az úton.
+
+**Nyitott.** Hogy mi van a `+0x620` és a `+0x5f8` képben, az nincs meg: az erőforrás-betöltő (`0x007fb210`) ezt a két mezőt nem tölti (a `left`, `right`, `mouse`, `rollovermouse`, `exit`, `timeline`, `timelinedot`, `sliderthumb`, `startbutton` és `overlay` erőforrás a `+0x530`, `+0x558`, `+0x5a8`, `+0x5d0`, `+0x580`, `+0x6c0`, `+0x6e8`, `+0x710`, `+0x738`, `+0x648` mezőbe kerül), és a `0x007f0000`-`0x00808000` tartományban rajtuk kívül csak a konstruktor (`0x007fa7f0`) és a felszabadító (`0x007fb5a0`) nyúl hozzájuk. A kitöltőjük tehát más úton (közvetett mutatóval vagy más tartománybeli függvényből) írja őket. Ugyanígy nyitott, mire használja a `p`-t a `0x007fee70` és a `0x007fd180`.
+
+**Fejlesztői átadás.** Még nem adható át: a 39%-os beúsztatás képlete megvan, de amíg nem tudjuk, melyik látható réteg a két kép, a PicasaPy-ban nem tudjuk, mire alkalmazzuk. A következő irány: a teljes programra futtatott `tagkereso.py 0x620 0x5f8` 95 találatot ad a qshow-tartományon kívül (a legtöbb a `0x00640670`-ban), ezek túlnyomó része más osztályok azonos eltolású mezője; közülük azokat kell kiválogatni, amelyek qshow-mutatót kapnak (a `0x007fda00` és a `0x007fa7f0` hívóinak paraméterköve), továbbá követni a `0x007fee70` `p`-paraméterét.
