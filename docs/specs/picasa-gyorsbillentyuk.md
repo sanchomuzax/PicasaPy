@@ -2298,3 +2298,9 @@ nyolc fájlnál sikeres kilépést jelzett. A helyi Qt **6.8.2.1**, a futtató
 | `test_view_options_people_shortcuts_4528.py` | 1 passed | Mappanézet-menü szerkezete és egérrel választott rendezés; nem billentyűleütéses bizonyíték. |
 
 **Fennmaradó tesztleltár-rés:** a fenti futás nem adott próbasort minden §12-es billentyűhöz. A célzott forráskeresés nem talált `/`, `,`, `.` billentyűtesztet vagy módosító nélküli F8/F9-próbát; az F8/F9-találatok Ctrl+F8-at és Ctrl+F9-et fednek le. A `PhotoViewerKeyboard.qml` jelenlegi `Keys` ágai között sincs `/`, `,`, `.`, plain F8 vagy plain F9; a `VideoPlayerView.qml` nem deklarál saját `Keys.onPressed`/`Keys.onReleased` kezelőt. Ez forrásleltár, nem futásidejű negatív mérés. A teljes megfeleltetés továbbra is nyitott.
+
+#### Helyi Codex-újrafuttatás (2026-11-05)
+
+A §11 táblájában hivatkozott 23 tesztfájlt és a §12.4-ben szereplő további hat gyorsbillentyű-fájlt egyenként újrafuttattam: **29 fájl, 361 passed, 1 skipped**. A QML-fájlok `QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software` beállítással futottak; a helyi PySide6-verzió **6.8.2.1**. Két futásban a `TrayTopRow.qml` és `TrayInfoBar.qml` `TypeError` naplófigyelmeztetései jelentek meg, a pytest ettől zölden zárt.
+
+Ez az összesítés **nem** zárja le a teljes mátrixot: a §11 teszthivatkozásai között menü-/struktúra- és parancsteszt is van, ezek nem mind külön `QTest.keyClick`-próbák a hozzájuk tartozó gyorsbillentyűre. A soronkénti PicasaPy-leütéspróbák hiányát továbbra is a fenti táblázat és a §12.4 rögzíti. Ebben a munkamenetben új Colab-futtatás nem indult; a §12.3 eredeti-Picasa eredményei csak az ott nevesített részhalmazra érvényesek.
