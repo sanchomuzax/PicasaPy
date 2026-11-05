@@ -2274,7 +2274,7 @@ nyolc fájlnál sikeres kilépést jelzett. A helyi Qt **6.8.2.1**, a futtató
 |---|---:|---|
 | `test_gyorsbillentyu_matrix_6531.py` | 10 passed | Valódi `QTest.keyClick`: könyvtári `Ctrl+4`, állóképes néző `Space`, `Ctrl+A/D`, `Ctrl+R`, `Ctrl+Shift+R`, `Ctrl+S`, `Ctrl+Shift+S`; több ablakmagassággal is. |
 | `test_nezo_ctrl_f9_folyamatos_leptetes_4698.py` | 4 passed | `Ctrl+F9` a nézőben, kézi jobbra lapozás, nézőbezárás és könyvtárnézet kapuja. |
-| `test_gyorsbillentyuk_valodi_5150_n.py` | 19 passed | Valódi leütések többek között `Ctrl+0`, `Ctrl+K`, `F3`, `F4`, `Ctrl+3`, `F11`, `Ctrl+F8` és kijelöltkép-/menüutak. |
+| `test_gyorsbillentyuk_valodi_5150_n.py` | 19 passed | Valódi leütések többek között `Ctrl+0`, `Ctrl+K`, `F3`, `F4`, `Ctrl+3`, `F11`, `Ctrl+F8` és a kijelölt képre és a menüre vonatkozó utak. |
 | `test_gyorsbillentyuk_1616.py` | 28 passed | Valódi `Ctrl+N` új albumhoz és keresőfókusz-/kijelölési kapukhoz; a fájl további esetei nem egyedi leltársorok. |
 | `test_felsomenupontok_gyorsbillentyuk_4329.py` | 6 passed | Valódi `Ctrl+E` küldési és `Ctrl+H` tálcamegtartási út. |
 | `test_tags_shortcut_focus_6301.py` | 3 passed | Valódi `Ctrl+T`, a Címkék-mező fókusza és visszatérés. |
