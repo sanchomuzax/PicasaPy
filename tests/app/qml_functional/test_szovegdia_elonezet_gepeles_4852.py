@@ -46,6 +46,14 @@ def _open_movie_dialog(window, qt_app, height):
 
 
 
+def _elonezet_allapot(dialog, kerelmek) -> str:
+    """#6560: windowson időnként itt bukik; a hibaüzenet mondja meg, melyik számláló áll."""
+    nevek = ("previewDisplayedGeneration", "previewLatestRequestGeneration",
+             "previewGenerationFloor", "previewIndex", "previewAwaitingTransitionFrame",
+             "previewTransitionServiceAvailable", "visible")
+    return ", ".join(f"{n}={dialog.property(n)}" for n in nevek) + f", kerelmek={len(kerelmek)}"
+
+
 def test_a_gepeles_billentyuleutesenkent_egy_kerest_indit_es_gyorsan_frissul(
     qml_app, qt_app
 ):
@@ -82,7 +90,7 @@ def test_a_gepeles_billentyuleutesenkent_egy_kerest_indit_es_gyorsan_frissul(
             lambda: int(dialog.property("previewDisplayedGeneration"))
             >= int(dialog.property("previewLatestRequestGeneration")),
             timeout=10.0,
-        )
+        ), _elonezet_allapot(dialog, kerelmek)
 
         field = _elem(window, "movieSlideText")
         point = field.mapToScene(
