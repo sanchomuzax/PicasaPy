@@ -2341,3 +2341,21 @@ A `0x00801270` a felismert `Esc`, nyíl, Space, számjegy, `F`, `B` és `O` bill
 **PicasaPy.** A `VideoPlayerView.qml` nem tartalmaz saját `Keys` kezelőt. Mivel az eredeti videónéző fizikai billentyűtől a parancsig vezető útja nincs meg, nem vezettem be `/`, `,`, `.` kezelést és nem változtattam a QML-t. A #375 eredeti-próba a vetítés Space-ágát mérte; a videósor ott sem futott le, ezért a három videógombhoz nincs új eredeti vagy PicasaPy futásmérés.
 
 **Következő címek.** A sávhoz: a `0x0097e510` `[0x00c40700]` közvetett céljának és a `0x00aa6f40` virtuális `+0x84` céljának feloldása, majd annak ellenőrzése, írják-e a sáv állapotát. A videóhoz: a 48-as keymap 42-44. rekeszétől a videónéző fogadójáig tartó út feltárása, a `0x005e60d0` hívási körének és a `0x005cb990` parancs-útvonalának követésével. Amíg ezek a címek nem adnak egyértelmű megfeleltetést, nem szabad kódot illeszteni.
+
+### 12.6 A szünet-ág két címe: az egérmutató, nem a vezérlősáv (2026-11-05)
+
+**Forrás.** Ghidra-dekompilálás hívókkal és hívottakkal: `referencia/ghidra/2026-11-05-gyorsbill-6531-vezerlosav.txt` (privát `picasapy-agent` repó), a kérdéses helyeken a helyi `Picasa3.exe` utasításain ellenőrizve (`pe_dis.py`).
+
+| cím | mit csinál |
+|---|---|
+| `0x0097e510` | `ShowCursor`-burkoló: igaz paraméternél a mutató számlálóját 0-ra hozza (látható), hamisnál -1-re (rejtett). A 12.5-ben nyitott „`[0x00c40700]` közvetett cél” maga a `ShowCursor` import. |
+| `0x007fda28`-`0x007fda2a` | a vetítés indítása (`0x007fda00`): `push 0; call 0x97e510`, tehát induláskor elrejti a mutatót; ugyanitt `[this+0x3bb] = 0` (`0x007fda5b`). |
+| `0x0080113c`-`0x00801146` | a szünet-kapcsoló (`0x00801130`): `[this+0x3bb] = !régi`, és az új értéket adja a `0x0097e510`-nek. |
+| `0x00802066`-`0x00802078` | a léptető óra (`0x00802060`): ha `[this+0x3bb] != 0`, a léptetés kimarad, tehát az 1 a szünet. Ebből: szünetkor a mutató megjelenik, folytatáskor eltűnik. |
+| `0x007fb69f`-`0x007fb6a1` | kilépés (`0x007fb5a0`): `push 1; call 0x97e510`, visszaadja a mutatót. |
+| `0x00aa6f40` | egy megjelenítő objektum virtuális `+0x84` hívása; a vezérlősávhoz nincs köze. |
+| `0x00802830` | szünetkor csak a `oneup/prev` és `oneup/next` gomb tiltását frissíti (első és utolsó képnél), a `+0x20e` bájttal. |
+
+**Következtetés.** A szünet-ág binárisan igazolt látható hatása a mutató megjelenése, ezt a PicasaPy követi (#6571, kiadva az 1.0.48-ban). A vezérlősáv szünetbeli megjelenésének (12.3, csak mérés) bináris forrása ezen az ágon nincs; a sáv a felvételen a mutató megjelenésével együtt látszik, de ez nem bizonyított összefüggés, ezért a PicasaPy vezérlősávja változatlan marad.
+
+**Nyitott.** A vezérlősáv láthatóságát író mező; a videó `/`, `,`, `.` billentyűinek útja (12.5).
