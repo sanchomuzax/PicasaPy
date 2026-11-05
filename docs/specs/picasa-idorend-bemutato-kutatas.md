@@ -1421,3 +1421,25 @@ A tartomány dátumformázói közül hívást kap: `0x0098c780` (`%s %d`, 3 hel
 | A teljes `YYYY-MM-DD hh:mm` felirat rajzolója | Nincs: a qshow-tartományban nem létezik. Átvehető teendő nincs; a forrás a fenti nyitott pontok szerint a rekord képe vagy a OneUp UI képaláírása. |
 
 **Új kutatási jegyjavaslat.** Nincs; a nyitott pontok a #6532 hatókörében maradnak. A következő célzott kör: `0x00423300` és a `[this+0x2e4]` osztály, valamint a OneUp UI `0x00802ec0` szolgáltatója.
+
+#### 38.2.93 A dátum-idő felirat és a ferde csíkozás a tesztkép tartalma (#6532, 2026-11-05)
+
+**Forrás.** A felvétel mintakészlete, a saját, gépi előállítású `minta-idorend.tar.gz` (a Colab-végrehajtó kellékei), ebből a `2009_majus/2009_majus_01.jpg`; és az `idorend-job373.mp4` 10,000 másodperces képkockája.
+
+**Mérés.** A `2009_majus_01.jpg` 800x600-as kép: piros alapon világos, ferde csíkok, rajta fehér betűkkel két sor, `2009_majus`, alatta `1/1  2009-05-14 10:00`. A felvétel 10,000 másodperces képkockáján:
+
+| a képkockán | mi az |
+|---|---|
+| a panel hátterében a nagy, halvány `...9_majus` / `2009-05-14 10:00` felirat és a ferde csíkozás | a kijelölt tesztkép nagyítva, szürkén, a panel bal szélén levágva; a betűk, a sortörés és a csíkok iránya egyezik a képpel |
+| a jobb alsó színes kártyák (piros, kék, zöld) apró szövege | ugyanezek a tesztképek kicsinyítve, eredeti színben; a pirosan `2009_majus 1/1 2009-05-14 10:00` olvasható |
+| a jobb felső `2009_majus` / `May 2009` | a qshow saját felirata (`0x007fee70`, 38.2.88-38.2.89) |
+
+**Következtetés.** A teljes `YYYY-MM-DD hh:mm` felirat és a ferde csíkozás **nem a Picasa felületének eleme**, hanem a tesztkép tartalma. Ezzel lezárul a 38.2.88-38.2.92 két nyitott kérdése, és megmagyarázza, miért nem volt sem dátum-idő formázó, sem csíkozó rajzoló a qshow-kódrészben (38.2.92 leltár). A 38.2.85 „ferdén csíkozott sötét mező” és „nagy bal oldali dátumfelirat” megfigyelése tehát a háttérbe tett kijelölt képet írta le.
+
+**A háttérkép bináris útja (olvasat, a 38.2.90 mellékleleteiből).** A `0x00802130` a `[this+0x46c]` képet szürkévé alakítja, a `0x008001c0` a `[this+0x444]` és a `[this+0x46c]` képet keveri, a `0x00802230` a `+0x46c`-t a `+0x444`-be másolja. Ez összhangban van azzal, hogy a háttér a kijelölt kép szürke, halványított változata; hogy a `+0x46c` a kijelölt elem képéből töltődik-e, azt a kód még nem mutatta meg.
+
+**Nyitott.** A `[this+0x46c]` kép kitöltője (a kijelölt elem képe-e), a halványítás mértéke, és a `+0x5f8`, `+0x620` kép tartalma.
+
+**Fejlesztői átadás.** A PicasaPy Időrend-nézete **ne rajzoljon** saját dátum-idő feliratot és csíkozott hátteret: ezek a mérésben a kép tartalmából jöttek. Binárisból igazolt elem ebben az alszakaszban nincs; a háttérkép szürkítése és keverése a fenti címeken olvasat.
+
+**Módszertani tanulság.** Mielőtt egy felvételen látott elem rajzolóját a programfájlban keressük, a mintakészlet képeinek saját tartalmát kell megnézni: öt Ghidra-kör kereste a tesztképbe írt szöveg rajzolóját.
