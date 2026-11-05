@@ -38,6 +38,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from picasapy.ini.names import INI_NAME, LEGACY_INI_NAME
+from picasapy.ioutil import cleanup_orphaned_atomic_temps
 from picasapy.paths import normalize_path
 
 from .filetypes import media_kind_if_enabled, media_kind_of
@@ -271,6 +272,7 @@ def _walk(
     except OSError as hiba:
         _hiba(hibas, current, hiba, mappa=True)
         return
+    cleanup_orphaned_atomic_temps(current, entries)
     dir_entries = []
     file_entries = []
     for entry in entries:

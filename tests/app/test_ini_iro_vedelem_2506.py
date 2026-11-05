@@ -154,6 +154,31 @@ class TestKulcsszavak:
         _torj_el(monkeypatch, "keywords_controller", "teszt: bukás")
         controller.addKeywordToRows([0], "a")  # nem dobhat
 
+    def test_iptc_irasi_hiba_lathato_es_a_slot_nem_dob(
+        self, controller, library, monkeypatch
+    ):
+        hibak: list[str] = []
+        controller.photoOpFailed.connect(hibak.append)
+
+        def sikertelen_iptc(*_args, **_kwargs):
+            raise OSError("teszt: a JPEG nem írható")
+
+        monkeypatch.setattr(
+            "picasapy.app.keywords_controller.write_iptc_keywords",
+            sikertelen_iptc,
+        )
+
+        controller.addKeywordToRows([0], "nyaralas")
+
+        assert hibak, "az IPTC-írás hibája nem jutott el a látható hibacsatornára"
+        assert "teszt: a JPEG nem írható" in hibak[0]
+        # A címke nem vész el: az ini-be kerül tartalékként.
+        ini_szoveg = "".join(
+            p.read_text(encoding="utf-8", errors="replace")
+            for p in library.rglob(".picasa.ini")
+        )
+        assert "nyaralas" in ini_szoveg
+
 
 class TestASlotokNemDobnak:
     """Együtt: a QML-ből hívott slotokból NEM szökhet ki kivétel."""

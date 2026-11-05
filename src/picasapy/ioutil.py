@@ -11,14 +11,18 @@ export) ezen az egy helperen fut, hogy két garancia egységes legyen:
    olvashatja tovább a fájlt.
 
 A viselkedés hívónként paraméterezhető: retry zárolt célfájlra (Windows),
-nem-atomikus direkt-írás végső fallbackként (képfájlnál elfogadható),
-párhuzamos írók versenyének tűrése (thumbnail-cache).
+a párhuzamos írók versenyének tűrése (thumbnail-cache). A korábbi direkt-
+írási fallback paramétere megmaradt kompatibilitásra, de a csonkulásveszély
+miatt már nem végez helyben írást.
 """
 
 from __future__ import annotations
 
 import contextlib
+import ctypes
+import hashlib
 import os
+import socket
 import stat
 import sys
 import tempfile
@@ -36,6 +40,9 @@ from pathlib import Path
 _replace = os.replace
 _fsync = os.fsync
 _fdopen = os.fdopen
+_mkstemp = tempfile.mkstemp
+_ATOMIC_TEMP_MARKER = ".picasapy-atomic-"
+_ATOMIC_TEMP_HOST = hashlib.sha256(socket.gethostname().encode("utf-8")).hexdigest()[:12]
 
 
 def write_atomic(
@@ -60,16 +67,18 @@ def write_atomic(
     - make_parents: hiányzó szülőkönyvtárak létrehozása.
     - lock_retries: ennyi ÚJRApróbálkozás `PermissionError`-ra (Windowson a
       nyitott célfájl zárolja a cserét), növekvő várakozással.
-    - fallback_direct: ha a zár nem enged fel, nem-atomikus közvetlen írás
-      a célfájlba (képfájlnál elfogadható; ini-nél tilos).
+    - fallback_direct: a régi hívásokkal való kompatibilitás miatt elfogadott,
+      de a közvetlen írás adatvesztési kockázata miatt figyelmen kívül hagyott.
     - ignore_replace_race: ha a csere hibája után a cél már létezik (egy
       párhuzamos író nyert), a hiba lenyelhető.
     """
     target = Path(target)
     if make_parents:
         target.parent.mkdir(parents=True, exist_ok=True)
-    fd, temp_name = tempfile.mkstemp(
-        dir=target.parent, prefix=f"{target.name}.", suffix=suffix
+    fd, temp_name = _mkstemp(
+        dir=target.parent,
+        prefix=f"{_ATOMIC_TEMP_MARKER}{_ATOMIC_TEMP_HOST}-{os.getpid()}-",
+        suffix=suffix,
     )
     try:
         try:
@@ -90,10 +99,8 @@ def write_atomic(
         _replace_temp(
             temp_name,
             target,
-            payload,
             lock_retries=lock_retries,
             lock_retry_delay=lock_retry_delay,
-            fallback_direct=fallback_direct,
             ignore_replace_race=ignore_replace_race,
         )
     except BaseException:
@@ -106,14 +113,12 @@ def write_atomic(
 def _replace_temp(
     temp_name: str,
     target: Path,
-    payload: bytes,
     *,
     lock_retries: int,
     lock_retry_delay: float,
-    fallback_direct: bool,
     ignore_replace_race: bool,
 ) -> None:
-    """`os.replace` a paraméterezett hibautakkal (retry, fallback, verseny)."""
+    """`os.replace` paraméterezett hibautakkal (retry, versenytűrés)."""
     for attempt in range(lock_retries + 1):
         try:
             _replace(temp_name, target)
@@ -127,9 +132,10 @@ def _replace_temp(
             if ignore_replace_race and target.exists():
                 _remove_quietly(temp_name)
                 return
-            if not fallback_direct:
-                raise
-            break
+            # A `fallback_direct` kérés kompatibilitási okból megmarad a
+            # nyilvános hívási alakban, de zárolt célra sem írunk rá közvetlenül:
+            # megszakadáskor vagy ENOSPC esetén csonka eredeti maradna.
+            raise
         except OSError:
             if ignore_replace_race and target.exists():
                 # A cél közben (egy párhuzamos írótól) létrejött — a
@@ -137,9 +143,74 @@ def _replace_temp(
                 _remove_quietly(temp_name)
                 return
             raise
-    # Végső fallback: a zár nem engedett fel → nem-atomikus közvetlen írás.
-    target.write_bytes(payload)
-    _remove_quietly(temp_name)
+
+
+def cleanup_orphaned_atomic_temps(directory: Path, entries) -> int:
+    """Eltávolítja a megszakadt atomikus írások tempfájljait a bejárt mappából.
+
+    A mappabejáró átadja az amúgy is beolvasott DirEntry-listát, ezért ez nem
+    indít új fájlrendszer-bejárást. A saját gépről származó fájlt csak akkor
+    töröljük, ha a névben jelölt folyamat már nem fut; másik gép tempfájlját
+    csak 24 óránál régebben takarítjuk, hogy NAS-on se töröljünk élő írást.
+    """
+    directory = Path(directory)
+    removed = 0
+    now = time.time()
+    for entry in entries:
+        name = entry.name
+        if not name.startswith(_ATOMIC_TEMP_MARKER):
+            continue
+        try:
+            _, _, host, pid_text, _random = name.split("-", 4)
+            pid = int(pid_text)
+            info = entry.stat(follow_symlinks=False)
+        except (OSError, ValueError):
+            continue
+        if not stat.S_ISREG(info.st_mode):
+            continue
+        local_process_alive = host == _ATOMIC_TEMP_HOST and _process_is_alive(pid)
+        if local_process_alive or (
+            host != _ATOMIC_TEMP_HOST and now - info.st_mtime < 24 * 60 * 60
+        ):
+            continue
+        try:
+            (directory / name).unlink()
+        except OSError:
+            continue
+        removed += 1
+    return removed
+
+
+def _process_is_alive(pid: int) -> bool:
+    """A tempnevet létrehozó folyamat él-e ezen a gépen?"""
+    if pid <= 0:
+        return False
+    if _platform() == "win32":
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        open_process = kernel32.OpenProcess
+        open_process.argtypes = (ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32)
+        open_process.restype = ctypes.c_void_p
+        handle = open_process(0x00100000, 0, pid)  # SYNCHRONIZE
+        if not handle:
+            # ERROR_ACCESS_DENIED azt jelenti, hogy létezik, csak nem kérdezhető.
+            return ctypes.get_last_error() == 5
+        try:
+            wait = kernel32.WaitForSingleObject
+            wait.argtypes = (ctypes.c_void_p, ctypes.c_uint32)
+            wait.restype = ctypes.c_uint32
+            return wait(handle, 0) == 0x00000102  # WAIT_TIMEOUT = még fut
+        finally:
+            close = kernel32.CloseHandle
+            close.argtypes = (ctypes.c_void_p,)
+            close.restype = ctypes.c_int
+            close(handle)
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
 
 
 def _remove_quietly(temp_name: str) -> None:

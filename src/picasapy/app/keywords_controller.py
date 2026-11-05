@@ -219,6 +219,7 @@ class KeywordsMixin:
             # kerülő (kulcs, érték|None) módosításokat gyűjtjük a mutate-nek.
             ini_edits: list[tuple[str, str | None]] = []
             changed_photos: list[str] = []
+            iptc_errors: list[BaseException] = []
             for photo in folder_photos:
                 current = _split_keywords(photo.keywords)
                 updated = transform(current)
@@ -227,9 +228,15 @@ class KeywordsMixin:
                 changed_photos.append(photo.name)
                 wrote_iptc = False
                 if photo.name.lower().endswith((".jpg", ".jpeg")):
-                    wrote_iptc = write_iptc_keywords(
-                        Path(folder) / photo.name, updated
-                    )
+                    try:
+                        wrote_iptc = write_iptc_keywords(
+                            Path(folder) / photo.name, updated
+                        )
+                    except _WRITE_ERRORS as error:
+                        # #6589: a JPEG nem csonkulhat, ezért nincs közvetlen
+                        # írás; a címke az ini-be kerül (defenzív tartalék),
+                        # a hiba pedig látható marad.
+                        iptc_errors.append(error)
                 if not wrote_iptc:
                     ini_edits.append(
                         (photo.name, ",".join(updated) if updated else None)
@@ -262,6 +269,8 @@ class KeywordsMixin:
                 except _WRITE_ERRORS as error:
                     self.jelentsdAzIrasiHibat(error)
                     break
+                if iptc_errors:
+                    self.jelentsdAzIrasiHibat(iptc_errors[0])
             with open_index(self._db_path) as conn:
                 self._sync_tree(conn, folder)
         self._refresh_view()
