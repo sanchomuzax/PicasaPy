@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.44] - 2026-11-05
+
+- A képnézőben a szóköz állóképeknél is elindítja a diavetítést (#6531).
+
 ## [1.0.43] - 2026-11-04
 
 - Megnyitott képnél is működik az F2: megnyitja az átnevezést a látott képre, ahogy az eredeti Picasában (#6530).
