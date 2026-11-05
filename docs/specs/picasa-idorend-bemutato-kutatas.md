@@ -1332,3 +1332,20 @@ Vagyis a kártya képernyőhelyét és méretét az `r` rekord `+0xa4..+0xcc` me
 | A teljes `YYYY-MM-DD hh:mm` felirat forrása | Nincs; nem igazolt, ezért nincs átvehető teendő. |
 
 **Új kutatási jegyjavaslat.** Nincs; a nyitott pontok a #6532 hatókörében maradnak.
+
+#### 38.2.91 A két utolsó dátumjelölt kizárása (#6532, 2026-11-05)
+
+**Forrás.** Ghidra-dekompilálás, hívókkal és hívottakkal: `referencia/ghidra/2026-11-05-idorend-6532-datumformazo.txt` (privát repó), valamint a bináris index `xrefs.csv` és `string_xrefs.csv` táblája.
+
+| cím | mit csinál |
+|---|---|
+| `0x007f9880` | Egyetlen hívója a `0x007f9130` (`0x007f9252`). A rekordokon `0xe0` bájtos lépéssel megy végig; rekordonként meghívja a `0x0098c670` dátumformázót (`0x007f98ab`), a rekord `+0x3c` helyéről vett nevet és a kapott dátumszöveget a `0x008e3730`-nak adja (`sorszám, név, dátumszöveg, 0`), majd a második paraméter `+0x48` objektumán a virtuális tábla `+0x100` helyét hívja `(sorszám, 1)` értékkel. Rajzoló- vagy betűobjektum-hívás nincs benne, qshow-mezőt (`+0x510`, `+0x46c`, `+0x5f8`, `+0x620`) nem olvas. |
+| `0x0044f7c0` | A `CThumbDB+0x48` virtuális tábla `+0x20` helye. Két zárolás között a `[this+0xc20]+0x48` tömbből a kért sorszámú 64 bites értéket adja vissza, határon kívül a `[this+0xc28]` tartalékot. Formázást nem végez. Hívói: a `0x0049f270` és a virtuális tábla (`0x00c81fc4`). |
+
+**Kereszthivatkozás-leltár a `0x007f0000`-`0x00808000` tartományra** (`xrefs.csv`, közvetlen hívások): a dátumformázók közül csak a `0x0098c780` (`Format2`, a `0x007fee70`-ből háromszor) és a `0x0098c670` (a `0x007f9880`-ból) kap hívást. A `%Y-%m-%d` formázó (`0x0098cba0`), a `HH:mm:ss` formázó (`0x0098bf10`) és a `%.2d:%.2d:%.2d` formázó (`0x0098c9a0`) innen nem kap közvetlen hívást. Ez index-alapú leltár: a virtuális táblán át futó hívásokat nem látja, ezért önmagában nem kizárás.
+
+**Következtetés.** A `0x007f9880` nem a nagy kártya dátum-idő felirata: soronként egy nevet és egy dátumszöveget ad tovább egy listaszerű objektumnak, és nem rajzol. A `0x0044f7c0` puszta adatkiolvasó. A 38.2.88-38.2.91 négy körében vizsgált qshow-függvények egyike sem állítja elő a `2009-05-14 10:00` alakot. A felvétel szerint ez a felirat a nagy kártyán, a mappanév mellett látszik (38.2.81), ezért a kártyakép összeállítása a következő hely: a `0x008014d0` kártyakészlet-építő két, eddig végig nem olvasott hívottja, a `0x00803c10` és a `0x00803b50` (közös hívójuk a `0x007fc7c0` is).
+
+**Nyitott.** A `0x00803c10` és a `0x00803b50` tartalma; ha ezek sem formáznak dátumot, a következő lépés a virtuális táblán át hívott formázók mintára pásztázása a kártyaépítő láncban.
+
+**Fejlesztői átadás.** Nincs új, binárisból igazolt megvalósítási elem.
