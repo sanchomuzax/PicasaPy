@@ -2237,6 +2237,8 @@ látható hatásra ott, ahol csak belső ág ismert.
 
 **Következtetés.** A statikus bináris megerősíti, hogy a CThumbUI F2-je átnevezés, és a művelethez nem üres kijelölés plusz az öt hamis kapu szükséges. A nyitott képnézőben azt, hogy a billentyű eseménye eljut-e a CThumbUI-hoz, és a fenti vektor a megnyitott képet tartalmazza-e, csak az eredeti program célzott futáspróbája dönti el; erre a kör nem tesz feltétel nélküli állítást.
 
+**Futáspróba (picasa-colab-jobs #374, 2026-11-05).** Az eredeti Picasa 3.9-ben egy bélyegkép kijelölése után az F2 a könyvtárnézetben, dupla kattintással megnyitott képnézőben pedig ugyanúgy megnyitja a „Rename Files” párbeszédet (az ablaklista a 7. és a 13. lépés előtt `['Picasa 3', 'Rename Files']`, a párbeszéd 320x171 képpont, középen). A párbeszédben a fájlnév kijelölve áll, alatta a „Date” és az „Image resolution” jelölőnégyzet és egy „Example:” sor. Ezzel a nyitott képnézőbeli F2 elérése **mérve igazolt**; a PicasaPy #6530 javítása ezt követi.
+
 ### 12.2 Cáfoló kísérlet
 
 **Ellenhipotézis:** a OneUpUI saját billentyűkezelője közvetlenül átnevez F2-re. A `0x00801270` teljes áglistájában a VK `0x71` nincs a kezelt ágak között; az alapértelmezett ág `0xf4241`. A OneUpUI +0x30 thunk (`0x00802e10`) a szülő `QDrawable` +0x30 metódusára (`0x00801270`) továbbít, tehát a lokális átnevezési hipotézis megdőlt. Ugyanakkor a `CThumbUI`-hoz esetleges továbbjutást ez nem cáfolja, ezért a nézőbeli F2 eredmény továbbra is nyitott. A cáfoló kontrollja: a konstruktor (`0x00802c60`), a szülő `QDrawable` vtable (`0x00cbd66c`) és a OneUpUI thunk (`0x00802e10`) mind ugyanarra a metódusra vezettek.
