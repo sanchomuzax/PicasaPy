@@ -6948,4 +6948,4 @@ Nyitott kérdések mérlege (38.2.60): 54 tétel · 13 lezárva · 25 részben �
 
 #### 38.2.61 és a további szakaszok
 
-A 38.2.61-től kezdődő kutatás a [picasa-idorend-bemutato-kutatas.md](picasa-idorend-bemutato-kutatas.md) lapon folytatódik (#5599).
+A 38.2.61-től kezdődő kutatás a [picasa-idorend-bemutato-kutatas.md](picasa-idorend-bemutato-kutatas.md) lapon folytatódik (#5599). A #6532 kutatási állapota a 38.2.88-ban pontosítja a qshow kiválasztott-indexű feliratának és hónap/év dátumának virtuális táblán át vezető adatútját; a teljes időbélyeg és a nyitó képrétegek forrása még nyitott.
