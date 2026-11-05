@@ -9,6 +9,7 @@ from PySide6.QtTest import QTest
 import pytest
 
 from support.qt_wait import varj_feltetelre
+from support.vetito_sav import sav_elohozasa
 
 
 _ATMENETKULCSOK = (
@@ -65,13 +66,11 @@ def _sor_index_szerint(lista, index):
 
 
 def _atmenet_kivalaszt(window, qt_app, combo, controls, popup, lista, index):
-    QTest.mouseMove(window, QPoint(1, 1))
-    qt_app.processEvents()
+    pont = _kozep(combo)
+    sav_elohozasa(window, qt_app, controls, QPoint(round(pont.x()), round(pont.y())))
+    # a teljesen megjelent sávon számoljuk újra a kattintás helyét (#5653)
     pont = _kozep(combo)
     QTest.mouseMove(window, QPoint(round(pont.x()), round(pont.y())))
-    assert varj_feltetelre(
-        qt_app, lambda: controls.property("opacity") > 0, masodperc=10.0
-    ), "az egérmozgatás nem jelenítette meg a vezérlősávot"
     QTest.mouseClick(
         window,
         Qt.MouseButton.LeftButton,
@@ -158,10 +157,7 @@ def test_minden_atmenet_kattintassal_valaszthato_es_lejatszhato(
     qt_app.processEvents()
 
     pont = _kozep(next_button)
-    QTest.mouseMove(window, QPoint(round(pont.x()), round(pont.y())))
-    assert varj_feltetelre(
-        qt_app, lambda: controls.property("opacity") > 0, masodperc=10.0
-    ), "az egérmozgatás nem jelenítette meg a vezérlősávot"
+    sav_elohozasa(window, qt_app, controls, QPoint(round(pont.x()), round(pont.y())))
     elozo_index = int(show.property("currentIndex"))
     _kattint(window, next_button)
     assert varj_feltetelre(

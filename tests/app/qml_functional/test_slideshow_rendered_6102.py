@@ -26,6 +26,7 @@ _ROOT = Path(__file__).resolve().parents[3]
 _QML = _ROOT / "src/picasapy/app/qml"
 _REFERENCIA = _ROOT / "tests/fixtures/slideshow_6102"
 _ALLAPOTOK = ("image", "controls", "paused", "transition-end")
+_REJTETT_OPACITAS = 1 / 256
 
 
 class _SlideshowModel(QObject):
@@ -203,8 +204,10 @@ def test_a_diavetites_negy_fobb_allapota_keppontra_megegyezik(
     captures: dict[str, QImage] = {}
     controls.setProperty("shown", False)
     assert varj_feltetelre(
-        qt_app, lambda: float(controls.property("opacity")) <= 0.001
-    )
+        qt_app,
+        lambda: abs(float(controls.property("opacity")) - _REJTETT_OPACITAS)
+        <= 0.001,
+    ), "a rejtett sáv nem érte el az 1/256 végopacitást"
     captures["image"] = _capture(view)
 
     controls.setProperty("shown", True)
@@ -220,8 +223,10 @@ def test_a_diavetites_negy_fobb_allapota_keppontra_megegyezik(
 
     controls.setProperty("shown", False)
     assert varj_feltetelre(
-        qt_app, lambda: float(controls.property("opacity")) <= 0.001
-    )
+        qt_app,
+        lambda: abs(float(controls.property("opacity")) - _REJTETT_OPACITAS)
+        <= 0.001,
+    ), "a rejtett sáv nem érte el az 1/256 végopacitást"
     QMetaObject.invokeMethod(root, "togglePause", Qt.ConnectionType.DirectConnection)
     QMetaObject.invokeMethod(root, "advance", Qt.ConnectionType.DirectConnection)
     assert varj_feltetelre(
@@ -240,10 +245,16 @@ def test_a_diavetites_negy_fobb_allapota_keppontra_megegyezik(
     for state in _ALLAPOTOK:
         reference = QImage(str(_REFERENCIA / f"{state}-{height}.png"))
         assert not reference.isNull(), f"hiányzó képernyőkép-referencia: {state}/{height}"
-        ignored_height = 100 if state in ("controls", "paused") else 0
-        shift = _egyezo_eltolassal(
-            reference, captures[state], also_sav_kihagyasa=ignored_height
-        )
+        # A régi golden a rejtett sávot 0 opacitással rögzítette. A mostani
+        # specifikáció 1/256-ot ír elő; a sáv tulajdonságát fent mérjük,
+        # ezért minden állapot referenciájából kihagyjuk az alsó 100 px-t.
+        # A látható sáv szöveg nélküli felső képpontjait lent külön ellenőrizzük.
+        try:
+            shift = _egyezo_eltolassal(
+                reference, captures[state], also_sav_kihagyasa=100
+            )
+        except AssertionError as error:
+            raise AssertionError(f"{state}/{height}: {error}") from error
         if state in ("controls", "paused"):
             _vezerlosav_felso_pixelei(reference, captures[state], controls, shift)
 

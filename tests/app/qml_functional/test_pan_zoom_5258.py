@@ -9,6 +9,7 @@ from PySide6.QtCore import Q_ARG, QMetaObject, QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
 
 from support.qt_wait import varj_feltetelre
+from support.vetito_sav import sav_elohozasa
 from tests.app.qml_functional.conftest import _build_qml_app
 
 
@@ -103,10 +104,10 @@ def test_kattintasra_a_pan_and_zoom_eltolt_kivagast_mutat(
     popup = _gyerek(window, "picasaComboPopup")
     lista = _gyerek(window, "picasaComboList")
     combo_pont = _kozep(combo)
-    QTest.mouseMove(window, QPoint(round(combo_pont.x()), round(combo_pont.y())))
-    assert varj_feltetelre(
-        qt_app, lambda: controls.property("opacity") > 0, masodperc=10.0
-    ), "a kattintás nem mutatta meg a vetítő vezérlősávját"
+    sav_elohozasa(
+        window, qt_app, controls,
+        QPoint(round(combo_pont.x()), round(combo_pont.y())),
+    )
     # #5653: a sáv beúszása és a Timeline-gomb rejtése után a választó helye
     # elmozdulhat; a kattintás helyét a teljesen megjelent sávon számoljuk
     assert varj_feltetelre(
@@ -148,10 +149,10 @@ def test_kattintasra_a_pan_and_zoom_eltolt_kivagast_mutat(
 
     next_button = _gyerek(window, "slideshowNextButton")
     next_pont = _kozep(next_button)
-    QTest.mouseMove(window, QPoint(round(next_pont.x()), round(next_pont.y())))
-    assert varj_feltetelre(
-        qt_app, lambda: controls.property("opacity") > 0, masodperc=10.0
-    ), "a következő gomb nem vált láthatóvá"
+    sav_elohozasa(
+        window, qt_app, controls,
+        QPoint(round(next_pont.x()), round(next_pont.y())),
+    )
     QTest.mouseClick(
         window,
         Qt.MouseButton.LeftButton,

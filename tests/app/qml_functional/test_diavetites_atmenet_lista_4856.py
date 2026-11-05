@@ -69,7 +69,7 @@ def _valaszto_megnyitasa(window, qt_app, show, combo, controls, popup):
     pont = _kozep(combo)
     QTest.mouseMove(window, QPoint(round(pont.x()), round(pont.y())))
     assert varj_feltetelre(
-        qt_app, lambda: controls.property("opacity") > 0, masodperc=10.0
+        qt_app, lambda: controls.property("shown") is True, masodperc=10.0
     ), "az egérmozgatás nem jelenítette meg a vezérlősávot"
     # #5653: a Timeline-gomb rejtése után a választó helye elmozdulhat; a
     # kattintás előtt megvárjuk a teljesen megjelent sávot

@@ -2359,3 +2359,58 @@ A `0x00801270` a felismert `Esc`, nyíl, Space, számjegy, `F`, `B` és `O` bill
 **Következtetés.** A szünet-ág binárisan igazolt látható hatása a mutató megjelenése, ezt a PicasaPy követi (#6571, kiadva az 1.0.48-ban). A vezérlősáv szünetbeli megjelenésének (12.3, csak mérés) bináris forrása ezen az ágon nincs; a sáv a felvételen a mutató megjelenésével együtt látszik, de ez nem bizonyított összefüggés, ezért a PicasaPy vezérlősávja változatlan marad.
 
 **Nyitott.** A vezérlősáv láthatóságát író mező; a videó `/`, `,`, `.` billentyűinek útja (12.5).
+
+### 12.7 A vetítés gombjai és a sáv-elrejtő időzítő (2026-11-05)
+
+**Forrás.** Ghidra-dekompilátum: `referencia/ghidra/2026-11-05-2026-11-05-vetites-sav-6531.txt` (`0x008032e0`, `0x00803110`, `0x00802630`, `0x007fda00`, `0x00801270`), `referencia/ghidra/2026-11-05-2026-11-05-sav-elrejtes-6531.txt` (`0x005c53d0`, `0x005915e0`, `0x005c4a10`, `0x005c4ce0`), `referencia/ghidra/2026-11-05-vetites-kocka-6531.txt` (`0x008001c0`, `0x007fe540`, `0x00802c20`); utasításszintű olvasás: `0x00760070`, `0x00760240`.
+
+**a) A vetítés (`Ctrl+4`, qshow/OneUp) gombjai.** A `0x008032e0` a `0x8000004` eseményt kezeli, és a kattintott elem nevét hasonlítja:
+
+| elem | mit hív | hatás |
+|---|---|---|
+| `oneup/captionbutton` | `0x009cd110`, `0x009cd760` | a képaláírás-gomb |
+| `oneup/auto`, `oneup/auto2` | `0x00803110` | lejátszás és szünet váltása |
+| `oneup/timeline` | ha `[this+0x50]` nem 0: `0x00802be0`; majd `0x007fda00` | az Időrend megnyitása (38.2.94: itt fut a háttér fakítása) |
+
+A `0x00803110` a qshow-n (`[this+0x25c]`): ha `[+0x3be]` nem 0, újrarajzolja a gyűjteménynevet (`0x00801cf0`); `[+0x518] = 1`, `[+0x3b8] = 0`, `[+0x428] = 0`, az időbélyeget a `[+0x520]`-ba teszi (QPC); meghívja a `0x00801130` váltót (12.6), végül ha `[this+0x50]` nem 0, a `0x00802be0`-t. A `0x00802be0` a `[+0x64]` mutatót cseréli (a régi elem virtuális `+0x28` hívása 0-val, az újé önmagával): nyitott felugró elem zárása. **A vezérlősáv láthatóságát egyik sem írja.**
+
+A `0x008001c0` a régi (`+0x444`) és az új (`+0x46c`) kocka átmenetét keveri (`Preferences/SimpleSlideshow` szerint egyszerű keverés vagy görbe); sávot nem rajzol. A `0x007fe540` a vezérlőképet rajzolja, és megmondja, a mutató (`[+0x420]`, `[+0x424]`) a kép fölött van-e.
+
+**b) A sáv-elrejtő időzítő (`SlideShowHideTimer`, `0x005c53d0`).** A vtábla (`0x00c9209c`) egyetlen beállítója a `0x005915e0` (`0x005915ef`); a kezdőállapot `[+0x31] = 1` (látható), `[+0x33] = 0`.
+
+| esemény | lépés |
+|---|---|
+| 2 (egérmozgás) | `[+0x30]` = a mutató a figyelt téglalapon belül van-e; az elmozdulás hosszát (`0x0049fe60`, négyzetgyök) a `[+0x18]`-hoz adja |
+| `0x13` (óraütés) | az eltelt időt a `[+0x10]`-hez adja; mindkét gyűjtőt `0,95`-tel szorozza (`[0x00cf40b0]`); látható, ha `út / idő > 0,5` (`[0x00c72150]`), vagy ha a mutató a téglalapon belül van és `[+0x33]` 0 |
+| | ha a gazda `[+0x3330]` bájtja 0, a sáv **rejtett** marad |
+| váltáskor | megjelenéskor `0x009e3a60(0,25)`, eltűnéskor `0x009e3a60(1,0)` (`[0x00c7c608]` = 0,25); `0x20` eseménynél `0,1` (`[0x00c7e4a0]`) |
+
+A `[+0x3330]` bájtot a `0x00760070` fordítja át, és ugyanott meghívja a `0x0097e510` mutató-kapcsolót (12.6) az új értékkel; hívói a `0x005c4ce0` (`SlideshowBaseHandler2`, 1-es esemény) és a `0x00760240` (`editoneup/` elemkezelő, `0x007608c7`). Ez a szerkesztő egyképes nézetének vetítése (`editpanel/previewimage`, `zoomslider/scaleslider`), **nem** a `Ctrl+4` qshow-vetítés.
+
+**Következtetés.** (1) Bináris: a `Ctrl+4` vetítésben a gombok és a szünet-ág nem írják a sáv láthatóságát; a 12.3 mérésében látott szünetbeli sáv forrása a qshow kódjában nincs. (2) Bináris: a Picasa sáv-elrejtése az egérmozgás sebességén (`0,95`-ös lecsengés, `0,5`-ös küszöb) és a sáv fölötti tartózkodáson múlik; a szerkesztői vetítésben a mutató-kapcsolóval együtt váltó `[+0x3330]` jelző nullánál elrejti. (3) Nem igazolt: hogy a `Ctrl+4` vetítés sávja ugyanezt az időzítőt használja. A PicasaPy `SlideshowView.qml`-je változatlan marad.
+
+**Nyitott, a következő felvehető irány.** A OneUp UI (`0x00802c60` konstruktor, `oneup/stripback`) rétegének láthatóságát író kód: a `0x00802c60` objektumának virtuális táblája és az `oneup/stripback` elem rejtése-mutatása (`0x009c2fc0` névkeresés után a láthatóság-hívás). A videó `/`, `,`, `.` billentyűje: a teljes `.text`-ben egyetlen függvény hasonlít mindhárom karakterkódra (`0x2c`, `0x2e`, `0x2f`: `0x009c3d50`, szövegbeviteli elemző, a `0x80` alatti karakterekre), a VK-kódokra (`0xbc`, `0xbe`, `0xbf`) egyik függvény sem hasonlít egynél többre; a fogadó tehát nem közvetlen összehasonlítással, hanem a keymap `srckey`/`dstkey` átképezésén (2.1) vagy táblán át kap parancsot.
+
+### 12.8 A `Ctrl+4` vetítés sávjának elrejtése: a `SlideshowBaseHandler` (2026-11-05)
+
+**Forrás.** A OneUp UI konstruktora (`0x00802c60`) az `oneup/stripback` elemet megkeresi (`0x00802d27`-`0x00802d2c`, `0x009c2fc0`), és a `0x009e4140` hívással a `0x00d67ad0` globális kezelőt köti rá (`0x00802d3d`-`0x00802d42`). A `0x00d67ad0` vtáblája a `0x005c2230` beállítás szerint `0x00c94a3c` = `SlideshowBaseHandler::vftable`, kezelője a `0x005c4a10` (Ghidra: `referencia/ghidra/2026-11-05-2026-11-05-sav-elrejtes-6531.txt`). Ez tehát a `Ctrl+4` vetítés sávjának elrejtője (a 12.7 b) `SlideShowHideTimer`-e a szerkesztői vetítésé).
+
+**A szabály.**
+
+| esemény | lépés |
+|---|---|
+| egérmozgás (2 vagy 3) | ha az előző mozgás óta több mint `0,5` mp telt el (`[0x00c72150]`), a vonatkoztatási pont az aktuális hely lesz; ha a vonatkoztatási ponttól mért távolság több mint `50` képpont (`[0x00cf3bd8]`), vagy a sáv már látható, az utolsó tevékenység ideje most |
+| óraütés (`0x13`) | ha a mutató a sáv téglalapján belül van (`GetCursorPos`, `ScreenToClient`), az utolsó tevékenység ideje most; a sáv látható, ha az utolsó tevékenység óta kevesebb mint `1,5` mp telt el (`[0x00d34128]`) |
+| váltáskor | megjelenés: `0x009e3a60(0,25)` a `0x100` (teljes) átlátszóságig; eltűnés: `0x009e3a60(1,2)` az `1`-es átlátszóságig (`0x005c4baa`-`0x005c4bc5`; `[0x00c7c608]` = 0,25, `[0x00c7dd44]` = 1,2) |
+
+A `0x009e3a60` az áttűnés kezdetét a mostani időre, a végét `most + argumentum` másodpercre teszi (`0x009e3aa8`-`0x009e3ab2`), a célértéket az `edi`-ből veszi (`0x009e3acc`).
+
+**Következtetés.** (1) Bináris: a `Ctrl+4` vetítés sávja kizárólag az egérmozgástól és a sáv fölötti tartózkodástól függ; a szünet állapotát a kezelő nem olvassa. (2) A 12.3 mérésében látott szünetbeli sáv ezért nem a szünet hatása; a felvételen a mutató ekkor jelent meg (12.6), a sáv megjelenését mozgás vagy a sáv fölötti mutató válthatta ki, ezt a mérés nem rögzítette. (3) A PicasaPy mostani viselkedése (`SlideshowControls.qml`) három ponton tér el:
+
+| | eredeti | PicasaPy |
+|---|---|---|
+| elrejtés tétlenség után | `1,5` mp | `2500` ms |
+| mozgási küszöb | `50` képpont a vonatkoztatási ponttól (a pont `0,5` mp nyugalom után újraindul) | bármilyen mozgás |
+| áttűnés | megjelenés `0,25` mp, eltűnés `1,2` mp, végérték `1/256` | mindkét irány `200` ms, végérték 0 |
+
+**Fejlesztői átadás.** Külön jegyben: a `SlideshowControls.qml` elrejtése a fenti szabály szerint. A sáv fölötti tartózkodás (`savLebeges`) már egyezik.
