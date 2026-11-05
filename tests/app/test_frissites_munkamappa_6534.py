@@ -26,10 +26,8 @@ def test_a_seged_munkamappaja_nem_windowson_a_seged_sajat_mappaja(monkeypatch, t
 
 def test_windowson_a_shellexecute_megkapja_a_seged_mappajat(monkeypatch, tmp_path):
     hivasok = []
-    hamis_shell = SimpleNamespace(ShellExecuteW=lambda *a: hivasok.append(a) or 42)
-    import ctypes
-
-    monkeypatch.setattr(ctypes, "windll", SimpleNamespace(shell32=hamis_shell), raising=False)
+    # #6557: a modul saját fogantyúját foltozzuk, nem a globális ctypes.windll-t (#1375)
+    monkeypatch.setattr(update_helper, "_shell_execute", lambda *a: hivasok.append(a) or 42)
     seged = tmp_path / "PicasaPy-update" / "PicasaPyUpdateHelper-1.exe"
     assert update_helper.inditsd_a_segedet([str(seged), "--pid", "1"], emelt=True, platform="win32")
     _hwnd, ige, fajl, _param, munkamappa, _mutat = hivasok[0]
