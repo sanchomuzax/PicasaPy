@@ -103,6 +103,10 @@ def test_kattintasra_a_pan_and_zoom_eltolt_kivagast_mutat(
     popup = _gyerek(window, "picasaComboPopup")
     lista = _gyerek(window, "picasaComboList")
     combo_pont = _kozep(combo)
+    # Az első mozgás 500 ms tétlenség után referenciahelyet állíthat be;
+    # utána valódi, küszöb feletti mozdulattal kérjük a sáv megjelenését.
+    referencia_pont = QPoint(round(combo_pont.x()), round(combo_pont.y() - 100))
+    QTest.mouseMove(window, referencia_pont)
     QTest.mouseMove(window, QPoint(round(combo_pont.x()), round(combo_pont.y())))
     assert varj_feltetelre(
         qt_app, lambda: controls.property("opacity") > 0, masodperc=10.0
