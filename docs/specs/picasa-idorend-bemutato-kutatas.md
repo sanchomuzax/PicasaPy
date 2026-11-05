@@ -1460,7 +1460,7 @@ A tartomány dátumformázói közül hívást kap: `0x0098c780` (`%s %d`, 3 hel
 | `0x007fda4f` | `0x007fda00` (a megnyitás, a mutatót is elrejti) | 1 |
 | `0x00801178` | `0x00801130` (szünet-ág) | 0 |
 | `0x00801d05` | `0x00801cf0` (gyűjteménynév) | 0 |
-| `0x008026e9` | `0x00802630` | `ebx` (a hívó állapota) |
+| `0x008026e9` | `0x00802630` (a vetítés léptetője: a `+0x3f4` indexet lépteti, a sor végén a `0x007fb820` vagy a `0x007fda00`) | 0 (dekompilátum: `FUN_00802230(this, 0)`) |
 
 A `0x00802180` lépései, sorrendben:
 
@@ -1473,7 +1473,7 @@ A `0x00802180` lépései, sorrendben:
 
 A `+0x648` a `0x007fb210` betöltőben készül: a `layer:overlays/overlay` erőforrást (`0x00cbd3e8`, 640x480 RGBA, alfa 179-255, 38.2.85) a qshow ablakméretére méretezi (`0x009a9c90` a `[this+0x2d0]-[this+0x2c8]` szélességgel, `0x007fb4bb`-`0x007fb4c4`), majd újramintavételezi (`0x00a42c20`).
 
-**Következtetés.** (1) Bináris: megnyitáskor a háttér a képszolgáltatótól kért kép a kocka közepén, szürkítve (zöld csatorna), `enhance`-szerűen nyújtva (0,30), `1/3` kitevőjű görbével erősen világosítva, és rajta az ablakméretre nyújtott `overlays/overlay` fedőkép. (2) Bináris: szünetkor és gyűjteménynév-frissítéskor a frissítő ezt a fakítást nem futtatja. (3) Kizárva: a `+0x5f8`/`+0x620` mint háttérforrás (üres tárolók). (4) Nem igazolt: hogy a képszolgáltató a kijelölt elem képét adja; a 38.2.93 képkockája ezt mutatja, a `[this+0x2e4]` osztály virtuális `+8` célja nincs feloldva.
+**Következtetés.** (1) Bináris: megnyitáskor a háttér a képszolgáltatótól kért kép a kocka közepén, szürkítve (zöld csatorna), `enhance`-szerűen nyújtva (0,30), `1/3` kitevőjű görbével erősen világosítva, és rajta az ablakméretre nyújtott `overlays/overlay` fedőkép. (2) Bináris: szünetkor, lapozáskor (`0x00802630`) és gyűjteménynév-frissítéskor a frissítő ezt a fakítást nem futtatja. (3) Kizárva: a `+0x5f8`/`+0x620` mint háttérforrás (üres tárolók). (4) Nem igazolt: hogy a képszolgáltató a kijelölt elem képét adja; a 38.2.93 képkockája ezt mutatja, a `[this+0x2e4]` osztály virtuális `+8` célja nincs feloldva.
 
 **Fejlesztői átadás.**
 
