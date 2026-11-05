@@ -1095,7 +1095,7 @@ Ezért a mért látható időablakokat nem azonosítom a `2.0f` bináris érték
 
 #### 38.2.86 A látható rétegek bináris idő- és rajzútja (#6532, 2026-11-05)
 
-**Hatókör és futó programfájl.** A 38.2.85-ben kimért job-373 felvétel jeleneteit vetettem össze a helyi `Picasa3.exe`-vel. A PE-verzió `3.9.141.259`, a SHA-256 egyezik a bináris indexével, de a videóban futó programfájl azonos hash-e nincs rögzítve. Ezért a bináris-állítások a helyi PE-re vonatkoznak; a videós egyezés nem bizonyítja a felhős példány pontos programfájl-azonosságát.
+**Hatókör és futó programfájl.** A 38.2.85-ben kimért job-373 felvétel jeleneteit vetettem össze a helyi `Picasa3.exe`-vel. A PE-verzió `3.9.141.259`, a SHA-256 egyezik a bináris indexével, de a videóban futó programfájl azonos hash-e nincs rögzítve. Ezért a bináris-állítások a helyi programfájlra vonatkoznak; a videós egyezés nem bizonyítja a felhős példány pontos programfájl-azonosságát.
 
 **A nyitás egy másodperces rajzága.** A `0x007fda00` QueryPerformanceCounter-értéket ír a qshow `[this+0x430]` mezőjébe (`0x007fda3d`-`0x007fda49`), majd a `0x00802230` állapotfrissítőt hívja (`0x007fda4f`). A `0x00800a30` rajzoló az eltelt időt a `0x009a51b0` függvénnyel számítja a `[this+0x430]` mezőből. Ezt az értéket 0 és a PE `0x00c79c88` címén tárolt f32 `1.0` közé korlátozza, majd a PE `0x00cf39d8` címén tárolt f64 `256.0` értékkel szorozza, egészre kerekíti, és a `0x007ffc90` rajzolónak adja (`0x00800cc9`-`0x00800d46`, a párhuzamos festési ágban `0x00800f1d`-`0x00801003`). A kód tehát egy másodperces, QPC-másodpercben számolt felső korlátot használ a pont- és felirat-rajzolási út progresszértékéhez. Ez nem animátorrekordban tárolt időtartammező.
 
