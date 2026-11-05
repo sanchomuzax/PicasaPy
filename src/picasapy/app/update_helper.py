@@ -77,6 +77,13 @@ def kenyszeritett_kilepes_ha_beragad(
     idozito.start()
 
 
+def _shell_execute(*args):
+    """A Windows ShellExecuteW hívása; a tesztek ezt a fogantyút foltozzák (#6557, #1375)."""
+    import ctypes
+
+    return ctypes.windll.shell32.ShellExecuteW(*args)
+
+
 def inditsd_a_segedet(args: list[str], *, emelt: bool, platform: str) -> bool:
     """A frissítő segéd indítása; UAC-ot csak akkor kér, ha `emelt` (#6340)."""
     # #6534: a segéd munkamappája a saját mappája legyen, ne a miénk. A programot
@@ -86,10 +93,8 @@ def inditsd_a_segedet(args: list[str], *, emelt: bool, platform: str) -> bool:
     if platform != "win32":
         _popen(args, close_fds=True, cwd=munkamappa)
         return True
-    import ctypes
-
     params = subprocess.list2cmdline(args[1:])
-    result = ctypes.windll.shell32.ShellExecuteW(
+    result = _shell_execute(
         None, "runas" if emelt else "open", str(args[0]), params, munkamappa, 0
     )
     if result <= 32:
