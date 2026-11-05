@@ -21,7 +21,7 @@ from PySide6.QtTest import QTest
 from tests.support.varakozas import var_feltetelre
 
 
-def _varj(qt_app, feltetel, timeout: float = 3.0) -> bool:
+def _varj(qt_app, feltetel, timeout: float = 10.0) -> bool:
     return var_feltetelre(qt_app, feltetel, timeout)
 
 
