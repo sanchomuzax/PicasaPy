@@ -2304,3 +2304,40 @@ nyolc fájlnál sikeres kilépést jelzett. A helyi Qt **6.8.2.1**, a futtató
 A §11 táblájában hivatkozott 23 tesztfájlt és a §12.4-ben szereplő további hat gyorsbillentyű-fájlt egyenként újrafuttattam: **29 fájl, 361 passed, 1 skipped**. A QML-fájlok `QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software` beállítással futottak; a helyi PySide6-verzió **6.8.2.1**. Két futásban a `TrayTopRow.qml` és `TrayInfoBar.qml` `TypeError` naplófigyelmeztetései jelentek meg, a pytest ettől zölden zárt.
 
 Ez az összesítés **nem** zárja le a teljes mátrixot: a §11 teszthivatkozásai között menü-/struktúra- és parancsteszt is van, ezek nem mind külön `QTest.keyClick`-próbák a hozzájuk tartozó gyorsbillentyűre. A soronkénti PicasaPy-leütéspróbák hiányát továbbra is a fenti táblázat és a §12.4 rögzíti. Ebben a munkamenetben új Colab-futtatás nem indult; a §12.3 eredeti-Picasa eredményei csak az ott nevesített részhalmazra érvényesek.
+
+### 12.5 A vetítés vezérlősávja és a videó billentyűi (2026-11-05)
+
+**Módszer.** A helyi `Picasa3.exe` SHA-256 értéke `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`, egyezik a kutatási index `meta.json` értékével. A következő kódutakat capstone-nal olvastam újra: `0x00801130`, `0x00802230`, `0x00802c20`, `0x00802830`, `0x00803110`, `0x008032e0`, `0x00801270` és `0x006248e0`. A binárist nem futtattam.
+
+#### A vezérlősáv szünetben
+
+| bináris út | közvetlenül igazolt művelet | vezérlősáv-láthatóság |
+|---|---|---|
+| `0x00801130` | A `[this+0x3bb]` lejátszásjelzőt átbillenti. Az új 1-es értéknél hívja a `0x00802c20`-at; 0-s értéknél a `0x00802230(this, 0)` frissítőt és a `0x009aabf0` rajzoló utat hívja. A jelző értékét a `0x0097e510`-nek is átadja. | Nem találtam olyan mezőt, amelyet egyértelműen a sáv láthatóságaként lehetne azonosítani. |
+| `0x00802230` | Frissíti a vetített képet, a kép helyét a `[this+0x400]` és `[this+0x404]` mezőben, az időbélyeget a `[this+0x520]` mezőben kezeli, majd képkirajzoló függvényeket hív. | A vizsgált törzs nem nevezi meg és nem írja a vezérlősáv láthatóságát. |
+| `0x00802c20` | Hívja a `0x00802830` függvényt; ha a `[this+0x50]` nem nulla, a `0x009833a0` objektumváltót is. A `0x00802830` a `[this+0x3f4]` mezőt és a feloldott objektum `[+0x20e]` bájtját írja. | A két hívásból nem állapítható meg, melyik mező kapcsolja a sávot. |
+| `0x00803110` és `0x00803486` | A `oneup/auto` és `oneup/auto2` hívója a `0x00803110`. Ez időbélyeget rögzít, módjelzőket nulláz és a `0x00801130`-on át folytatja a vetítést; végül feltételesen a `0x00802be0` objektumváltót hívja. | A vizsgált ág nem tár fel sáv-láthatósági mezőt. |
+
+`0x0097e510` a `0x00801130`-ból közvetett hívásokat végez a `[0x00c40700]` címen tárolt címen át; a hívás célja és a mezőkapcsolata **NINCS MEG**. A `0x00aa6f40`-et a szünet ágán szintén hívja a `0x00801130`; a függvény egy virtuális `+0x84` hívást tartalmaz, ennek célja nincs feloldva. Ezek a következő vizsgálati címek.
+
+**Következtetés.** A `picasa-colab-jobs #375` 17-19. képe szerint szünetben az eredeti Picasában megjelenik, folytatáskor eltűnik a vezérlősáv; ez **csak mérés**. A most ellenőrzött bináris utak nem mutatták meg a sáv láthatóságát író mezőt, ezért a `SlideshowView.qml`-hez nem nyúltam, és új QML-billentyűtesztet sem írtam. A mérés és a statikus lelet nem mond ellent egymásnak: a képernyőn látható változás igazolt, a bináris mezője még nyitott.
+
+#### A videó `/`, `,`, `.` billentyűi
+
+| billentyű | `SHORTCUTS.XML` megnevezése | vizsgált bináris cím és megállapítás |
+|---|---|---|
+| `/` | `Pause/Play Movie` | `0x00801270` a OneUp billentyűkezelő; a `WM_KEYDOWN` ágban nincs `VK 0xbf` vizsgálat. A videónézőhöz kötött parancs útja **NINCS MEG**. |
+| `,` | `Rewind Movie` | `0x00801270` a OneUp billentyűkezelő; a `WM_KEYDOWN` ágban nincs `VK 0xbc` vizsgálat. A videónézőhöz kötött parancs útja **NINCS MEG**. |
+| `.` | `Fast Forward Movie` | `0x00801270` a OneUp billentyűkezelő; a `WM_KEYDOWN` ágban nincs `VK 0xbe` vizsgálat. A videónézőhöz kötött parancs útja **NINCS MEG**. |
+
+A `0x00801270` a felismert `Esc`, nyíl, Space, számjegy, `F`, `B` és `O` billentyűágak után nem kezeli a többi VK-kódot. A külön `0x006248e0` a `MakeMoviePanel` `MoviePreviewHandler`-e: belső műveletkódot (`0x13`, `0x18`, `0x17` stb.) és kiegészítő értéket vizsgál, nem a három fenti fizikai billentyű bizonyított fogadója. A `0x005c5f90` és `0x005c5fc0` kulcs-összevető segédek egyetlen hívója a CThumbUI `0x005e60d0` kezelője; ez sem köti a 42-44. rekeszt a videónézőhöz. A `0x005cb990` parancselosztóhoz vezető fizikai billentyű-út **NINCS MEG**.
+
+| billentyű | parancs | bináris cím |
+|---|---|---|
+| `/` | `Pause/Play Movie` megnevezés; a tényleges videónézeti parancs nincs azonosítva | `0x00801270` - nincs ilyen ág; a külön MovieMaker-kezelő `0x006248e0` nem köthető ide |
+| `,` | `Rewind Movie` megnevezés; a tényleges videónézeti parancs nincs azonosítva | `0x00801270` - nincs ilyen ág; a külön MovieMaker-kezelő `0x006248e0` nem köthető ide |
+| `.` | `Fast Forward Movie` megnevezés; a tényleges videónézeti parancs nincs azonosítva | `0x00801270` - nincs ilyen ág; a külön MovieMaker-kezelő `0x006248e0` nem köthető ide |
+
+**PicasaPy.** A `VideoPlayerView.qml` nem tartalmaz saját `Keys` kezelőt. Mivel az eredeti videónéző fizikai billentyűtől a parancsig vezető útja nincs meg, nem vezettem be `/`, `,`, `.` kezelést és nem változtattam a QML-t. A #375 eredeti-próba a vetítés Space-ágát mérte; a videósor ott sem futott le, ezért a három videógombhoz nincs új eredeti vagy PicasaPy futásmérés.
+
+**Következő címek.** A sávhoz: a `0x0097e510` `[0x00c40700]` közvetett céljának és a `0x00aa6f40` virtuális `+0x84` céljának feloldása, majd annak ellenőrzése, írják-e a sáv állapotát. A videóhoz: a 48-as keymap 42-44. rekeszétől a videónéző fogadójáig tartó út feltárása, a `0x005e60d0` hívási körének és a `0x005cb990` parancs-útvonalának követésével. Amíg ezek a címek nem adnak egyértelmű megfeleltetést, nem szabad kódot illeszteni.
