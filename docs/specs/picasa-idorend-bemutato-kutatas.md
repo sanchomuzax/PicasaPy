@@ -1346,7 +1346,7 @@ Vagyis a kártya képernyőhelyét és méretét az `r` rekord `+0xa4..+0xcc` me
 
 **Következtetés.** A `0x007f9880` nem a nagy kártya dátum-idő felirata: soronként egy nevet és egy dátumszöveget ad tovább egy listaszerű objektumnak, és nem rajzol. A `0x0044f7c0` puszta adatkiolvasó. A 38.2.88-38.2.91 négy körében vizsgált qshow-függvények egyike sem állítja elő a `2009-05-14 10:00` alakot. A felvétel szerint ez a felirat a nagy kártyán, a mappanév mellett látszik (38.2.81), ezért a kártyakép összeállítása a következő hely: a `0x008014d0` kártyakészlet-építő két, eddig végig nem olvasott hívottja, a `0x00803c10` és a `0x00803b50` (közös hívójuk a `0x007fc7c0` is).
 
-**Nyitott.** A `0x00803c10` és a `0x00803b50` tartalma; ha ezek sem formáznak dátumot, a következő lépés a virtuális táblán át hívott formázók mintára pásztázása a kártyaépítő láncban.
+**Nyitott.** A `0x00803c10` és a `0x00803b50` tartalma (azóta lezárva, `referencia/ghidra/2026-11-05-idorend-6532-kartyaepito.txt`: a `0x00803c10` a `0xf8` bájtos kártyarekord-tömb felszabadítója, elemenként a `0x007fd090` bontót hívja; a `0x00803b50` a kártyarekord másolója, a `+4` képet a `0x00a6a7d0`-val, a `+0xf0` 64 bites mezőt közvetlenül veszi át; egyikben sincs dátumformázás vagy szövegrajzolás); ha ezek sem formáznak dátumot, a következő lépés a virtuális táblán át hívott formázók mintára pásztázása a kártyaépítő láncban.
 
 **Fejlesztői átadás.** Nincs új, binárisból igazolt megvalósítási elem.
 
