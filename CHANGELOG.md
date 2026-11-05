@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.49] - 2026-11-05
+
+- A vetítés vezérlősávját a tesztek küszöb feletti mozdulattal hozzák elő (#6591).
+- Az Időrend háttere a kijelölt kép fakított, szürke változata a Picasa fedőképével (jobb felső ovális, halvány ív, alsó sáv), az egyszínű szürke helyett (#6577).
+- A vetítés vezérlősávja 50 képpontnál nagyobb egérmozdulatra jelenik meg, és 1,5 másodperc tétlenség után tűnik el lassú áttűnéssel, mint az eredeti Picasában (#6580).
+
 ## [1.0.48] - 2026-11-05
 
 - Pontosítottuk a gyorsbillentyű-leltár nyitott vetítési és videós útvonalait (#6531).
