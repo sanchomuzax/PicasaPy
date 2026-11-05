@@ -18,6 +18,11 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: slideshow.screensaverMode ? Qt.AllButtons : Qt.NoButton
+        // Lejátszáskor a képfelületen rejtjük el a kurzort. A sáv saját
+        // lebegés-figyelője visszaadja a nyilat, hogy a gombok használhatók
+        // maradjanak; a képernyővédő mód a korábbi látható kurzort tartja.
+        cursorShape: slideshow.playing && !slideshow.screensaverMode
+            && !savLebeges.hovered ? Qt.BlankCursor : Qt.ArrowCursor
         onPressed: if (slideshow.screensaverMode && slideshow.screensaverInputArmed)
                        slideshow.stop()
         onPositionChanged: {
@@ -39,6 +44,8 @@ Item {
         anchors.top: parent.top
         height: 14
         acceptedButtons: Qt.LeftButton
+        cursorShape: slideshow.playing && !slideshow.screensaverMode
+            ? Qt.BlankCursor : Qt.ArrowCursor
         onClicked: slideshow.togglePause()
 
         PressFeedbackOverlay { pressSource: parent }
