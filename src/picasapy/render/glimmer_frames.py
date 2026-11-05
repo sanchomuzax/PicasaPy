@@ -48,9 +48,12 @@ def apply_border(
     caption_height: float = 0.0,
 ):
     """`Border=1,OuterThickness,InnerThickness,CornerRadius,színOuter,
-    színInner,CaptionHeight` — `BorderImageOperation`. Vastagságok
-    `[0..100]` (a rövidebb oldal százaléka), `CornerRadius`
-    `[0..min(W,H)/2]`, `CaptionHeight` `[0..H/6]` (mindkettő PIXELBEN).
+    színInner,CaptionHeight` — `BorderImageOperation`. A vastagságok a
+    `filterdesc.xml` csúszkáján 0–100-as tartományúak, de a Picasa renderútja
+    a `.picasa.ini` nyers vastagságát pixelszorzóval olvassa, felső vágás
+    nélkül. A PicasaPy a közös kimeneti pixelhatárt még foglalás előtt
+    ellenőrzi. `CornerRadius` `[0..min(W,H)/2]`, `CaptionHeight`
+    `[0..H/6]` (mindkettő PIXELBEN).
     """
     validate_image(image)
     return draw_border(
@@ -79,8 +82,11 @@ def apply_drop_shadow(
     fade: float = 30.0,
 ):
     """`DropShadow=1,Distance,Angle,Blur,színÁrnyék,színHáttér,Fade` —
-    `shadowAlpha = 1 − Fade/100`, `Distance` `[0..30]`, `Angle` `[0..360]`,
-    `Blur` `[0..100]`.
+    `shadowAlpha = 1 − Fade/100`. A `filterdesc.xml` csúszkája `Distance`
+    esetén 0–30, `Angle` esetén 0–360, `Blur` esetén 0–100; a renderút a
+    tárolt távolságot nem vágja, az elmosást pedig a natív 1–255 tartományra
+    korlátozza. A közös kimeneti pixelhatár az árnyékvászon foglalása előtt
+    fut le.
     """
     validate_image(image)
     return draw_drop_shadow(image, shadow_color, background_color, distance, angle, blur, fade)
@@ -96,7 +102,9 @@ def apply_museum_matte(
     """`MuseumMatte=1,OuterThickness,InnerThickness,színOuter,színInner` —
     belső ragyogás (fekete, `xblur = 2·0,02·max(W,H)/4`, `strength 1,3`,
     `alfa 0,7`) → belső gyűrű (`Inner`) → újra ragyogás (`alfa 0,6`) →
-    külső gyűrű (`Outer`).
+    külső gyűrű (`Outer`). A leíró csúszkája 0–100, de a Picasa renderútja
+    a `.picasa.ini` vastagságát felső vágás nélkül olvassa; a kimeneti
+    pixelhatár a gyűrű foglalása előtt érvényesül.
     """
     from picasapy.render.belso_ragyogas import inner_glow
     from picasapy.render.glimmer_frame_ops import add_ring
