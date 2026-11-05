@@ -180,6 +180,7 @@ def _build_qml_app(qt_app, tmp_path):
     from picasapy.app.import_source_controller import ImportSourceController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.app.timeline_controller import TimelineController
+    from picasapy.app.timeline_background import TimelineBackgroundProvider
     from picasapy.index import open_index, sync_tree
     from picasapy.thumbs import ThumbnailCache
     from picasapy.version import version_string
@@ -270,7 +271,12 @@ def _build_qml_app(qt_app, tmp_path):
     # Az aszinkron utat saját, motor nélküli tesztek fedik.
     from support.szinkron_kepszolgaltato import SzinkronKepSzolgaltato
 
-    engine.addImageProvider("thumbs", SzinkronKepSzolgaltato())
+    thumbnail_image_provider = SzinkronKepSzolgaltato()
+    engine.addImageProvider("thumbs", thumbnail_image_provider)
+    timeline_background_provider = TimelineBackgroundProvider(
+        thumbnail_image_provider
+    )
+    engine.addImageProvider("timelinebackground", timeline_background_provider)
     engine.addImageProvider("editpreview", edit_preview)
     engine.addImageProvider("effectthumb", SzinkronKepSzolgaltato())
     # #1640: a diavetítés teljes felbontású, MÓD-TUDATOS szolgáltatója. ⚠️ A

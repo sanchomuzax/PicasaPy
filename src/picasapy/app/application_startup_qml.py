@@ -13,6 +13,7 @@ from .color_palette import ColorPaletteProvider
 from .external_links import EXTERNAL_LINKS
 from .option_settings import initialize_option_settings
 from .notifier_screen_geometry import NotifierScreenGeometry
+from .timeline_background import TimelineBackgroundProvider
 
 def _startup_step_create_qml_engine(state):
     controller = state.controller
@@ -36,6 +37,8 @@ def _startup_step_create_qml_engine(state):
     engine.addImageProvider("colorpalette", color_palette_provider)
     engine.rootContext().setContextProperty("colorPalette", color_palette_provider)
     engine.addImageProvider("thumbs", provider)
+    timeline_background_provider = TimelineBackgroundProvider(provider)
+    engine.addImageProvider("timelinebackground", timeline_background_provider)
     engine.addImageProvider("editpreview", edit_preview)
     # #1640: a diavetítés teljes felbontású képe — a megjelenítési móddal
     engine.addImageProvider(
@@ -70,6 +73,7 @@ def _startup_step_create_qml_engine(state):
     state.engine = engine
     state.color_palette_provider = color_palette_provider
     state.folder_cover_provider = folder_cover_provider
+    state.timeline_background_provider = timeline_background_provider
 
 def _startup_step_register_qml_context(state):
     app = state.app

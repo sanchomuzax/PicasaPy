@@ -167,6 +167,7 @@ def _build_qml_app(
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.app.color_palette import ColorPaletteProvider
     from picasapy.app.timeline_controller import TimelineController
+    from picasapy.app.timeline_background import TimelineBackgroundProvider
     from picasapy.thumbs import ThumbnailCache
     from PySide6.QtCore import QSettings
     from PySide6.QtQml import QQmlApplicationEngine
@@ -282,12 +283,16 @@ def _build_qml_app(
     # #1596: a `valodi_belyegkep` hívók a TERMÉK render-magját kapják (a
     # pool-ugrás nélkül) — enélkül a rács képpontjai a lapos helyettesítő
     # képet mutatnák, és a megjelenítési mód hatása méretlen maradna.
-    engine.addImageProvider(
-        "thumbs",
+    thumbnail_image_provider = (
         SzinkronValodiBelyegkep(provider)
         if valodi_belyegkep
-        else SzinkronKepSzolgaltato(),
+        else SzinkronKepSzolgaltato()
     )
+    engine.addImageProvider("thumbs", thumbnail_image_provider)
+    timeline_background_provider = TimelineBackgroundProvider(
+        thumbnail_image_provider
+    )
+    engine.addImageProvider("timelinebackground", timeline_background_provider)
     engine.addImageProvider("editpreview", edit_preview)
     engine.addImageProvider("effectthumb", SzinkronKepSzolgaltato())
     engine.addImageProvider(

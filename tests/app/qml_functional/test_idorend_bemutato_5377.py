@@ -123,6 +123,15 @@ def test_rendered_timeline_has_centered_600_by_480_panel(
     panel = _child(timeline, "timelinePanel")
     assert panel.property("width") == 600
     assert panel.property("height") == 480
+    background_image = _child(timeline, "timelineBackgroundImage")
+    background_point = panel.mapToItem(
+        timeline.contentItem(), QPointF(35, 25)
+    ).toPoint()
+    assert _wait(
+        qt_app,
+        lambda: background_image.property("source")
+        and timeline.grabWindow().pixelColor(background_point).green() > 0,
+    ), "a kijelölt fotó háttere nem készült el"
     assert _wait(
         qt_app,
         lambda: timeline.property("currentCardsLoaded"),
@@ -135,19 +144,24 @@ def test_rendered_timeline_has_centered_600_by_480_panel(
     assert abs(center.y() - timeline.height() / 2) <= 3
     panel_center = center.toPoint()
     assert frame.pixelColor(panel_center.x(), panel_center.y()) != QColor("black")
-    panel_background = panel.mapToItem(
-        timeline.contentItem(), QPointF(35, 25)
-    ).toPoint()
-    background_pixel = frame.pixelColor(panel_background)
-    assert max(
-        abs(background_pixel.red() - 138),
-        abs(background_pixel.green() - 136),
-        abs(background_pixel.blue() - 139),
-    ) <= 3, (
-        "a panel alapfelülete nem a referencia szürke mezője: "
-        f"{background_pixel.name()}"
+    assert background_image.property("source").toString().startswith(
+        "image://timelinebackground/"
     )
+    # #6577: az oválison kívül a fedőréteg átlátszatlan, így a referencia
+    # szürke mező (job-217) változatlanul mérhető.
+    for x, y in ((35, 25), (80, 25), (35, 60)):
+        point = panel.mapToItem(timeline.contentItem(), QPointF(x, y)).toPoint()
+        background_pixel = frame.pixelColor(point)
+        assert max(
+            abs(background_pixel.red() - 138),
+            abs(background_pixel.green() - 136),
+            abs(background_pixel.blue() - 139),
+        ) <= 3, (
+            "a panel alapfelülete nem a referencia szürke mezője: "
+            f"{background_pixel.name()} ({x}, {y})"
+        )
     for object_name in (
+        "timelineBackgroundImage",
         "timelineCollectionName",
         "timelineCollectionDate",
         "timelineControlBar",
@@ -309,7 +323,17 @@ def test_rendered_timeline_has_centered_600_by_480_panel(
 def test_timeline_slider_dates_have_reference_contrast(qml_app, qt_app):
     window, _controller, _engine = qml_app
     timeline = _open_timeline(window, qt_app)
-    background = QColor("#8a888b")
+    panel = _child(timeline, "timelinePanel")
+    background_point = panel.mapToItem(
+        timeline.contentItem(), QPointF(20, 465)
+    ).toPoint()
+    # A dátumfeliratoktól távoli, szöveg nélküli ponton mérjük a fedősávot.
+    assert _wait(
+        qt_app,
+        lambda: timeline.grabWindow().pixelColor(background_point).red() > 150,
+    ), "az alsó fedősáv nem jelent meg"
+    frame = timeline.grabWindow()
+    background = frame.pixelColor(background_point)
 
     def luminance(color):
         channels = [color.red(), color.green(), color.blue()]

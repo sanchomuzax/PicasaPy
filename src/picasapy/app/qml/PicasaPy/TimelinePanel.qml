@@ -48,13 +48,30 @@ Item {
 
     readonly property real sliderAreaX: sliderArea.x
     readonly property real sliderAreaWidth: sliderArea.width
+    readonly property var selectedBackgroundPhoto:
+        hostWindow.photoAt(hostWindow.currentIndex, 0)
 
+    // Amíg a háttérkép nincs kész (vagy nincs kijelölt fotó), a fedőréteg mért
+    // átlátszatlan alapszíne látszik.
     Rectangle {
         anchors.fill: parent
-        // A job-217 képkockán a panel alapja szürke; a fotók a kötegben
-        // jelennek meg, nem teljes felületű háttérképként. Világoson a
-        // mért alap marad, sötét témán a panel tokenje veszi át a helyét.
-        color: Theme.dark ? Theme.panelBg : "#8a888b"
+        color: Theme.dark ? Theme.panelBg : "#8a8a8a"
+    }
+
+    Image {
+        id: backgroundImage
+        objectName: "timelineBackgroundImage"
+        anchors.fill: parent
+        source: panel.selectedBackgroundPhoto
+            ? panel.selectedBackgroundPhoto.thumbUrl.replace(
+                  "image://thumbs/", "image://timelinebackground/")
+            : ""
+        sourceSize: Qt.size(Math.max(1, panel.width), Math.max(1, panel.height))
+        fillMode: Image.Stretch
+        asynchronous: true
+        cache: true
+        smooth: true
+        mipmap: true
     }
 
     Canvas {
@@ -111,22 +128,6 @@ Item {
         onPaint: {
             var context = getContext("2d")
             context.clearRect(0, 0, width, height)
-
-            context.beginPath()
-            context.moveTo(178, 0)
-            context.bezierCurveTo(108, 39, 48, 99, 63, 171)
-            context.bezierCurveTo(78, 253, 204, 297, 600, 330)
-            context.lineTo(600, 0)
-            context.closePath()
-            context.fillStyle = "#6b6f7d"
-            context.fill()
-
-            context.beginPath()
-            context.moveTo(16, 150)
-            context.bezierCurveTo(8, 228, 73, 302, 245, 359)
-            context.strokeStyle = "rgba(255,255,255,0.22)"
-            context.lineWidth = 8
-            context.stroke()
 
             var points = dotArcPoints
             for (var i = 0; i < points.length; ++i) {
