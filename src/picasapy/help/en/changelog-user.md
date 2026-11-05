@@ -2,6 +2,46 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-05
+
+### Viewer
+
+- In the viewer, `Space` starts a slideshow from the photo you are looking
+  at when it is a still photo; on a video it still starts and pauses
+  playback. See [Keyboard shortcuts](features/billentyuk.md).
+- `F2` also works in the open viewer, where it renames the photo you are
+  looking at. See [File operations](features/fajlmuveletek.md).
+
+### Editor
+
+- New, PicasaPy's own view: **Effect Slice** shows a small rotating 3D
+  picture above the histogram of what the edited effect does to the photo.
+  It appears on every tab of the editing panel; you can set it in the
+  **Effect Slice** submenu of the View menu. See [Editor](features/szerkeszto.md).
+
+### Appearance
+
+- With the dark appearance, the window frame and title bar are dark too,
+  where the operating system supports it. See [Settings](features/beallitasok.md).
+- The startup window appears without a frame.
+- The program icon now has a circle and colored mark the same size as the
+  original Picasa icon.
+
+### Updates
+
+- While updating, the update window shows which step it is on and how much
+  time has passed; if something fails, it tells you what happened.
+- Replacing the files no longer gets stuck, and if the new version did not
+  even start, the helper no longer waits for minutes.
+- An update check that runs meanwhile does not interrupt a download that
+  has already started.
+
+### Performance
+
+- The program uses less memory and processor time while idle. The movie
+  preview, face recognition, and the camera list load the first time you
+  use them, so opening them the first time can take a moment longer.
+
 ## 2026-11-04
 
 ### Editor

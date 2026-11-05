@@ -26,7 +26,7 @@ Two general rules from the original Picasa apply:
 | `Ctrl+E` | **E-Mail...** - see [Email](email.md) |
 | `Ctrl+Shift+P` | **Print Contact Sheet...**, even when nothing is selected; it prints the open folder |
 | `Ctrl+Enter` | **Locate on Disk**; when nothing is selected, it opens the current folder in the file manager |
-| `F2` | **Rename...** |
+| `F2` | **Rename...**; in the open viewer it renames the photo you are looking at, but not during a slideshow or while typing |
 | `Delete` | **Delete from Disk** in the grid; in an album or People album, it removes the photo from the collection instead |
 | `Ctrl+Delete` | **Delete from Disk** in the viewer; for a photo opened from an album or People album, it removes it from the collection instead |
 
@@ -140,6 +140,7 @@ key immediately removes the constraint.
 | `Shift+F` | **Edit Faces** |
 | `Ctrl+9` | Hide or show the left editor panel |
 | `F11` | Toggle full-screen mode; it has no effect during a slideshow |
+| `Space` | On a still photo, starts a slideshow from the photo you are looking at; on a video, starts or pauses playback |
 | `Esc` | Return to the library |
 | `Enter` | Return to the library when viewing one still photo with no editing tool open. With single-click exit enabled, while viewing a video, or while comparing two photos, it advances to the next photo instead. |
 | `Ctrl+F9` | Quickly move through the folder to the end. Any manual page change or closing the viewer stops it. |

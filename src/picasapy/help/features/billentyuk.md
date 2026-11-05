@@ -26,7 +26,7 @@ látható, de szürke tételek billentyűi nem élnek.
 | Ctrl+E | E-mail — lásd [Küldés e-mailben](email.md) |
 | Ctrl+Shift+P | Indexképek nyomtatása — kijelölés nélkül is, a megnyitott mappára |
 | Ctrl+Enter | Keresés a lemezen — kijelölés nélkül a megnyitott mappát mutatja a fájlkezelőben |
-| F2 | Átnevezés |
+| F2 | Átnevezés; a nyitott nézőben a látott képet nevezi át, diavetítés alatt és gépelés közben nem |
 | Delete | Törlés lemezről a rácsban — albumban és Emberek albumban ehelyett kiveszi a képet az összeállításból |
 | Ctrl+Delete | Törlés lemezről (a nézőben) — albumból vagy Emberek albumból megnyitott képen ehelyett kiveszi a képet az összeállításból |
 
@@ -140,6 +140,7 @@ felszabadítja az arányt.
 | Shift+F | Arcok szerkesztése |
 | Ctrl+9 | A bal oldali szerkesztőpanel elrejtése és előhozása |
 | F11 | Teljes képernyő be- és kikapcsolása (a diavetítés közben nem hat) |
+| Szóköz | Állóképnél diavetítést indít a látott képtől; videónál elindítja vagy megállítja a lejátszást |
 | Esc | Vissza a könyvtárhoz |
 | Enter | Vissza a könyvtárhoz, ha egyetlen állóképet nézel, és nincs nyitva szerkesztőeszköz; bekapcsolt egykattintásos kilépésnél, videón vagy két kép mellett a következő képre lép |
 | Ctrl+F9 | Gyors, folyamatos léptetés a mappa végéig; bármelyik kézi lapozás vagy a néző bezárása leállítja |

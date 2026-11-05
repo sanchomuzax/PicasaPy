@@ -4,6 +4,48 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-05
+
+**Képnéző**
+
+- A nézőben a **Szóköz** állóképnél diavetítést indít a látott képtől,
+  videónál továbbra is a lejátszást indítja és állítja meg. Lásd
+  [Billentyűparancsok](features/billentyuk.md).
+- Az **F2** a nyitott nézőben is működik: a látott képet nevezi át. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+
+**Szerkesztő**
+
+- Új, a PicasaPy saját nézete: az **Effekt-térszelvény** a hisztogram
+  fölött kis, forgó 3D képen mutatja, mit csinál a képpel a szerkesztett
+  effekt. A szerkesztőpanel minden fülén megjelenik; a **Nézet ▸
+  Effekt-térszelvény** almenüben állíthatod. Lásd
+  [Szerkesztő](features/szerkeszto.md).
+
+**Megjelenés**
+
+- Sötét témában az ablak kerete és címsora is sötét, ahol az operációs
+  rendszer ezt támogatja. Lásd [Beállítások](features/beallitasok.md).
+- Az indulóablak keret nélkül jelenik meg.
+- A program ikonja az eredeti Picasáéval azonos méretű kört és színes jelet
+  kapott.
+
+**Frissítés**
+
+- Frissítés közben a **PicasaPy frissítése** ablak kiírja, melyik lépésnél
+  tart a munka, és mennyi idő telt el; hiba esetén megírja, mi történt.
+- A fájlcsere nem akad el, és ha az új verzió el sem indult, a segéd nem
+  vár feleslegesen percekig.
+- A megkezdett letöltést nem szakítja félbe az időközben lefutó
+  frissítéskeresés.
+
+**Teljesítmény**
+
+- Tétlenül kevesebb memóriát és processzoridőt használ a program. A
+  film-előnézet, az arcfelismerés és a kameralista csak az első
+  használatkor töltődik be, ezért az első megnyitásuk egy pillanattal
+  tovább tarthat.
+
 ## 2026-11-04
 
 **Szerkesztő**

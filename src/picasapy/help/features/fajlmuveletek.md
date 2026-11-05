@@ -16,7 +16,8 @@ nincs kijelölt kép.
 
 ## Átnevezés
 
-**Fájl ▸ Átnevezés…** (F2), vagy a kép helyi menüjéből.
+**Fájl ▸ Átnevezés…** (F2), vagy a kép helyi menüjéből. Az F2 a nyitott
+nézőben is működik: ott a látott képet nevezi át.
 
 Egy és több kijelölt képnél is ugyanaz a **Fájlok átnevezése** ablak
 nyílik meg. Egyetlen képnél a névmezőben már ott áll a kép mostani neve
