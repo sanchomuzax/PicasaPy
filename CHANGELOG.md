@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.46] - 2026-11-05
+
+- Az előnézet-várakozás bukásakor a számlálók kiírása (#6560).
 ## [1.0.45] - 2026-11-05
 
 - A frissítősegéd indításának belső tesztje már nem nyúl a Windows közös rendszerhívásaihoz; a program működése nem változik (#6557).
