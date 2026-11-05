@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.48] - 2026-11-05
+
+- Pontosítottuk a gyorsbillentyű-leltár nyitott vetítési és videós útvonalait (#6531).
+- A diavetítés lejátszás közben elrejti az egérmutatót, szünetkor megmutatja, mint az eredeti Picasa (#6571).
+
 ## [1.0.47] - 2026-11-05
 
 - A filmkészítő előnézetének egyik belső tesztje elakadáskor bővebben írja ki, hol állt meg a képkészítés; a program működése nem változik (#6560).
