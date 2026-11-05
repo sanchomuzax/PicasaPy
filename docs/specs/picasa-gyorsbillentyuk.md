@@ -2414,3 +2414,6 @@ A `0x009e3a60` az áttűnés kezdetét a mostani időre, a végét `most + argum
 | áttűnés | megjelenés `0,25` mp, eltűnés `1,2` mp, végérték `1/256` | mindkét irány `200` ms, végérték 0 |
 
 **Fejlesztői átadás.** Külön jegyben: a `SlideshowControls.qml` elrejtése a fenti szabály szerint. A sáv fölötti tartózkodás (`savLebeges`) már egyezik.
+
+**Kizárt irány: a gyorsbillentyű-tábla (accelerator).** A `CreateAcceleratorTableA` egyetlen hívója a `0x00923110` (Ghidra: `referencia/ghidra/2026-11-05-gyorsbill-accel-6531.txt`); ez egy beágyazott OLE-ablak keretadatát adja vissza, és üres, egyetlen nulla bejegyzésű táblát hoz létre. A `SHORTCUTS.XML` 42-44. sora `srckey="/"`, `","`, `"."` és üres `dstkey`, tehát a billentyűtérkép ezeknél nem képez át. A videó három billentyűjének útja ezen az ágon sem vezet a fogadóhoz.
+
