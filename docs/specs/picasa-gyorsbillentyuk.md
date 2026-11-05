@@ -202,9 +202,9 @@ Jelölés a „3.9-ben él?" oszlopban:
 | 39 | Full Screen Mode | `F11` | ⬜ | nincs menütétel-párja (a teljes képernyő a nézőben és a diavetítésben él) |
 | 40 | Select 1st Picture in Album | `Home` | ✅ | a rács `Home`-kezelője, `0x0076a390` → `0x00718880` (ld. `picasa-eger-es-kijeloles.md` 12.) |
 | 41 | Select Last Picture in Album | `End` | ✅ | `0x0076a400` → `0x00718930` (ugyanott) |
-| 42 | Pause/Play Movie | `/` | ⬜ | a videó billentyűfogadója és hatása **NINCS MEG** (ld. 7. és 12.) |
-| 43 | Rewind Movie | `,` | ⬜ | ugyanaz; a karakterkód-találatok nem billentyűfogadók (§12) |
-| 44 | Fast Forward Movie | `.` | ⬜ | ugyanaz; a karakterkód-találatok nem billentyűfogadók (§12) |
+| 42 | Pause/Play Movie | `/` | ⬜ | a `SHORTCUTS.XML`-beli billentyű és a fogadó közötti út **NINCS MEG**; a külön MovieMaker `video_control_bar2`-kezelő nem köthető ehhez a billentyűhöz (§12; `picasa-create-features.md` §2.7/c) |
+| 43 | Rewind Movie | `,` | ⬜ | ugyanaz; a fizikai billentyű→fogadó út **NINCS MEG** (§12) |
+| 44 | Fast Forward Movie | `.` | ⬜ | ugyanaz; a fizikai billentyű→fogadó út **NINCS MEG** (§12) |
 | 45 | Next Picture | ➖ | ✅ | a rekesz üres, de a funkció él: jobbra nyíl (`0x00717eb0`) |
 | 46 | Previous Picture | ➖ | ✅ | balra nyíl, ugyanaz a mag |
 | 47 | Switch Between Automatic and Manual Modes | ➖ | ⬜ | nem azonosított |
@@ -628,7 +628,7 @@ A #4398 elején megadott 53-as szám a #4339 korábbi pillanatfelvétele volt; a
 
 A főablak kötéseinél a táblázat a forrásban kifejezett `enabled`-kaput írja le; ahol nincs nézetkapu, ott nem következtetünk a 44 eredeti helyi rekord parancs-hozzárendelésére. Az eredetihez nem igazolt `+0x332f` módjelző szemantikája továbbra is nyitott. `PhotoViewer.qml` nézeti `Keys`-fogadói (`Esc`, nyilak, `Return`, szóköz, `F`, `Shift+F`, `Ctrl+Delete`) szövegfókuszban visszatérnek a mezőnek, `PicasaSlider.qml` pedig csak a `EditorParamPanel.qml` 3–5. látható füléhez kapja meg a `+`, `=`, `-`, `_` léptetés engedélyét.
 
-Az ellenőrző teszt valódi billentyűleütéssel próbálja mind az 54 deklaráció szekvenciáját keresőmező-fókuszban; külön valódi eseményekkel vizsgálja a könyvtári `Ctrl+1` editorbeli tiltását, az editor 2. fülén a négy sliderbillentyű tiltását és a 3. fülön működését, továbbá a kereső-, felirat- és címkemező saját szerkesztőbillentyűit. Ez nem bizonyítja a 44 rekord egyedi parancs-megfeleltetését.
+Az ellenőrző teszt jelenlegi futáskor 62 QML `Shortcut`-deklaráció szekvenciáját próbálta valódi leütéssel keresőmező-fókuszban; külön valódi eseményekkel vizsgálja a könyvtári `Ctrl+1` editorbeli tiltását, az editor 2. fülén a négy sliderbillentyű tiltását és a 3. fülön működését, továbbá a kereső-, felirat- és címkemező saját szerkesztőbillentyűit. Ez nem bizonyítja a 44 rekord egyedi parancs-megfeleltetését.
 ---
 
 ## 7. Amit ez a kör NEM vizsgált (kimondva)
@@ -646,10 +646,15 @@ Az ellenőrző teszt valódi billentyűleütéssel próbálja mind az 54 deklar�
    `/`, `,`, `.`, 47.) — ezekhez **nem találtunk** menü- vagy
    helyimenü-kötést. Nem állítjuk, hogy nem működnek: azt állítjuk,
    hogy a **három feltárt forrásban nincsenek**.
-3. **A videólejátszó billentyűzete** (`/`, `,`, `.`) — a
-   `video_control_bar2/*` felület nincs feltárva.
-4. **A szerkesztőpanel saját billentyűi** (`F8`/`F9` említések a
-   `ui-audit-editor.md`-ben) — más lap hatóköre.
+3. **A videólejátszó billentyűzete** (`/`, `,`, `.`) - a fizikai
+   billentyűk és a néző videólejátszójának műveletei közötti út továbbra
+   nyitott. A MovieMaker külön `video_control_bar2` előnézetének belső
+   műveletkódjai dokumentáltak a `picasa-create-features.md` §2.7/c-ben;
+   nem bizonyított, hogy a keymap-billentyűk ehhez jutnak.
+4. **A szerkesztőpanel saját billentyűi** (`F8`/`F9`): a
+   `0x00760970` egyképes szerkesztő-ágát és a helyi PicasaPy-billentyűforrást
+   ez a kör részlegesen ellenőrizte (§12). A módosító nélküli F8/F9 teljes
+   eredeti fókusz-/nézetútja és futásbeli hatása nyitott.
 5. **A párbeszédek `Esc`-kezelése** — a `picasa-eger-es-kijeloles.md`
    8. szakasza (`escapekey 1`, 11 gomb) már leírja.
 6. **Mac-változat** (`eMenuFileMac::*`, `eMenuPictureMac::*`) — a
@@ -2147,7 +2152,7 @@ Az állapot mező értékei:
 | 47 | ➖ (nincs billentyű) | Automatikus/kézi mód váltása | Nincs azonosított eredeti parancs vagy mai kötés | **tisztázandó — a forrás nem azonosítja a rekesz műveletét** | Nincs megállapítható kapu; nem találgatunk | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
 | 48 | ➖ (nincs billentyű) | Visszatérés a könyvtárnézetbe; a C forrás Esc-kötése | Keys=Keys.onEscapePressed → viewerMenuBackToLibrary út | **megvan és működik** | Néző; aktív szerkesztőművelet előbb megszakad; szövegfókuszban nem zár | tests/app/qml_functional/test_viewer_escape_key_4462.py, tests/app/qml_functional/test_viewer_escape_666.py |
 
-A 22., 26. és 37. sor a keymap-komment/rekesz eltérését rögzíti, nem hibás mai működést. A 39. sor önálló hiány; a 42-44. sor videókezelője továbbra is **NINCS MEG** (§12), a 47. sor tisztázandó. A #4398 valós QTest.keyClick próbája mind az 54 QML Shortcutot keresőmező-fókusszal ellenőrzi, a paritásőr pedig a 48 eredeti keymap-rekeszt és a QML-horgonyokat tartja számon. A konkrét műveletpróbákat a sorokban hivatkozott meglévő tesztek végzik.
+A 22., 26. és 37. sor a keymap-komment/rekesz eltérését rögzíti, nem hibás mai működést. A 39. sor önálló hiány; a 42-44. sorhoz a fizikai billentyű→néző videókezelő út továbbra is **NINCS MEG** (§12), a 47. sor tisztázandó. A #4398 valódi `QTest.keyClick` próbája a jelenlegi futáskor 62 QML `Shortcut`-szekvenciát ellenőriz keresőmező-fókusszal; ez fókuszkapu, nem a 62 művelet egyedi igazolása. A paritásőr a 48 eredeti keymap-rekeszt és a QML-horgonyokat tartja számon. A konkrét műveletpróbák állapotát a §12.4 sorolja.
 
 ## 12. #6531 - nézetenkénti billentyű → művelet útvonalak (2026-11-04)
 
@@ -2223,7 +2228,7 @@ látható hatásra ott, ahol csak belső ág ismert.
 | `Esc`, `←`, `↑`, `→`, `↓`, `Space`, `VK_PAUSE (0x13)`, `VK_PLAY (0xfa)`, `0`-`9` | CThumbUI szerkesztő-egyképes mód, `[panel+0x332f] != 0` | `Esc` → `0x0075de50`; nyilak → gyűjtemény-navigáció `0x0075fb20` és frissítés `0x0075ffe0`; Space/Pause/Play az `editoneup/auto` elemet váltja a `[panel+0x3330]` kapuja szerint; számjegyek az egyképes sebesség-/időmezőt írják és szükség esetén `0x0075f960`-t hívják | `0x00760970` | Feltételes: egy statikus kezelőút; a nyílirány és a számjegy vizuális hatása részben nyitott. |
 | `Esc`, `←`, `↑`, `→`, `↓`, `Space`, `Ctrl+Space`, `0`-`9`, `F`, `B`, `O` | OneUpUI / `oneup` nézeti objektum (QDrawable-szülő) | `Esc` → `0x007fb820`; nyilak → `0x008011b0` / `0x00801210`; Space → az automatikus lejátszásjelző billentése (`0x00801130`); Ctrl+Space külön `[+0x3ba]` jelzőt ír; számjegyek a OneUp időmező útját (`0x00802ff0`) frissítik; F/B/O saját állapot-/nézetágra megy | `QDrawable::vftable +0x30 = 0x00801270`; OneUpUI thunk `0x00802e10`; konstruktorlánc `0x00802c60` | **Megerősített statikus út**: a WM_KEYDOWN/VK-ágak és a vtable→szülő-thunk lánc külön vizsgálatból egyezik. A betűk és egyes flag-ek látható jelentése nyitott. |
 | `F2` (`VK=0x71`) a OneUpUI/QDrawable lokális útján | Néző / `oneup` | A lokális handler nem tartalmaz F2-ágat, alapértelmezett `0xf4241`-et ad vissza. Ez **nem** bizonyítja, hogy a fölérendelt CThumbUI nem kapja meg a billentyűt. | `0x00801270` (VK-ágak), elérés `0x00802e10` | Feltételes: a lokális nem-kezelés megállapítható; a teljes nézőbeli hatás nyitott. |
-| `/`, `,`, `.` | Videólejátszó | Keymap megnevezése szerint pause/play, rewind, fast forward; a fókuszált videóvezérlő bináris billentyűfogadója és a konkrét hatás **NINCS MEG** | `NINCS MEG`; a régi `0xBC/0xBE/0xBF` keresés csak meghatározott CMP-alakra terjedt ki | Nyitott. A karakterkód-jelöltek (`0x006e7f90`, `0x00939660`) szövegfeldolgozók, nem billentyűkezelők. |
+| `/`, `,`, `.` | Néző videólejátszója | A keymap megnevezése szerinti műveletek a fizikai billentyűtől a fogadóig **NINCS MEG**. A külön MovieMaker `MoviePreviewHandler` (`video_control_bar2`) belső műveletkódja ismert: `0x13` → pause/play (`0x00619ac0`); `0x18` + `VK_SPACE` → play/pause felületi állapot; `0x17` + `VK_SPACE` → stop; `0x0d` → feltételes fullscreen; `0x1f`/`0x20` → fullscreen-jelző be/ki. | A MovieMaker-fogadó: `0x006248e0`; a néző keymap-fizikai billentyűhöz kapcsolása **NINCS MEG**. A régi `0xBC/0xBE/0xBF` keresés csak meghatározott CMP-alakra terjedt ki. | Feltételes a belső kód→művelet ágra; nyitott a `/`, `,`, `.` fizikai billentyű→nézőfogadó út. Részletes lelet: `picasa-create-features.md` §2.7/c. |
 | Navigációs billentyűk (Backspace, Enter, Esc, Space, PgUp/PgDn, Home/End, nyilak, Insert/Delete, F1) | Fókuszált vezérlő vagy párbeszéd | Az általános út eseményobjektumot épít és a fókuszált elemnek továbbít; a konkrét parancs az elem saját kezelőjében van | `0x00a53b00` → `0x00a582f0`; táblák `0x00a53bb4` / `0x00a53ba8` | Az általános továbbítás megerősített (§10.18); az egyes dialogusok elemenkénti hatása a `picasa-eger-es-kijeloles.md` §8-ban van. |
 
 ### 12.1 F2 a megnyitott képnézőben - statikus út és feltételek
@@ -2245,7 +2250,7 @@ látható hatásra ott, ahol csak belső ág ismert.
 
 ### 12.3 Eredeti Picasa-próbasorok a Colab `ui_capture`-hez
 
-Az alábbi sorok **teszttervek, nem végrehajtott próbák**. A `kattint` koordinátája és a `var` várakozása nincs megmérve, ezért nem adok meg kitalált értéket. A hívó minden billentyű után mentse a képernyőképet, és a rács-/videóbélyegkép koordinátáját a saját aktuális Colab-képéről vegye.
+Az alábbi sorok az eredeti Picasa számára **teszttervek, nem végrehajtott próbák**. A `kattint` koordinátája és a `var` várakozása nincs megmérve, ezért nem adok meg kitalált értéket. A hívó minden billentyű után mentse a képernyőképet, és a rács-/videóbélyegkép koordinátáját a saját aktuális Colab-képéről vegye.
 
 | nézet | kezdőfeltétel és `ui_capture` lépéssor | mit kell a képernyőképen ellenőrizni |
 |---|---|---|
@@ -2256,4 +2261,24 @@ Az alábbi sorok **teszttervek, nem végrehajtott próbák**. A `kattint` koordi
 | Videó | `kattint [NINCS MEG - videóbélyegkép]` → `billentyu Enter` → `var NINCS MEG`; majd egyenként `billentyu /`, `billentyu ,`, `billentyu .` és mindegyik után `var NINCS MEG` | Lejátszás/szünet, vissza- és előrelépés külön képernyőképe; a lejátszó fókuszát a képen ellenőrizze. |
 | Párbeszéd | Könyvtárból: `billentyu ctrl+O` → `var NINCS MEG` → `billentyu Esc` | A fájlmegnyitó párbeszéd megjelenik-e és az Esc bezárja-e. Másik dialogus kiválasztott billentyűútja **NINCS MEG**. |
 
-**Körhatár:** a Colab-futtatást, a mai PicasaPy valódi QML-billentyűtesztjeit és az eltérésjavításokat a hívó végzi. E szakasz ezek egyikét sem jelenti késznek.
+**Körhatár:** a Colab-futtatás nem történt meg. A PicasaPy meglévő billentyűtesztjeinek helyi eredménye a §12.4-ben szerepel; egyik próbasor sem tekinthető a teljes nézetenkénti leltár kész bizonyítékának.
+
+### 12.4 PicasaPy - meglévő valódi billentyűpróbák (2026-11-05)
+
+A kijelölt, már létező QML-teszteket a projekt futtatójával futtattam, a
+munkafa `.tmp/` könyvtárát ideiglenes tárként használva. A futtató mind a
+nyolc fájlnál sikeres kilépést jelzett. A helyi Qt **6.8.2.1**, a futtató
+által jelzett CI-verzió **6.11.2**; ezért az eredmény nem CI-azonos.
+
+| Tesztfájl | Eredmény | Tényleges billentyűpróba / korlát |
+|---|---:|---|
+| `test_gyorsbillentyu_matrix_6531.py` | 10 passed | Valódi `QTest.keyClick`: könyvtári `Ctrl+4`, állóképes néző `Space`, `Ctrl+A/D`, `Ctrl+R`, `Ctrl+Shift+R`, `Ctrl+S`, `Ctrl+Shift+S`; több ablakmagassággal is. |
+| `test_nezo_ctrl_f9_folyamatos_leptetes_4698.py` | 4 passed | `Ctrl+F9` a nézőben, kézi jobbra lapozás, nézőbezárás és könyvtárnézet kapuja. |
+| `test_gyorsbillentyuk_valodi_5150_n.py` | 19 passed | Valódi leütések többek között `Ctrl+0`, `Ctrl+K`, `F3`, `F4`, `Ctrl+3`, `F11`, `Ctrl+F8` és kijelöltkép-/menüutak. |
+| `test_gyorsbillentyuk_1616.py` | 28 passed | Valódi `Ctrl+N` új albumhoz és keresőfókusz-/kijelölési kapukhoz; a fájl további esetei nem egyedi leltársorok. |
+| `test_felsomenupontok_gyorsbillentyuk_4329.py` | 6 passed | Valódi `Ctrl+E` küldési és `Ctrl+H` tálcamegtartási út. |
+| `test_tags_shortcut_focus_6301.py` | 3 passed | Valódi `Ctrl+T`, a Címkék-mező fókusza és visszatérés. |
+| `test_shortcut_focus_4398.py` | 15 passed | A futáskor felolvasott 62 QML `Shortcut`-szekvencia valódi leütése keresőmező-fókusszal; fókuszkapu, nem parancsonkénti működési próba. |
+| `test_view_options_people_shortcuts_4528.py` | 1 passed | Mappanézet-menü szerkezete és egérrel választott rendezés; nem billentyűleütéses bizonyíték. |
+
+**Fennmaradó tesztleltár-rés:** a fenti futás nem adott próbasort minden §12-es billentyűhöz. A célzott forráskeresés nem talált `/`, `,`, `.` billentyűtesztet vagy módosító nélküli F8/F9-próbát; az F8/F9-találatok Ctrl+F8-at és Ctrl+F9-et fednek le. A `PhotoViewerKeyboard.qml` jelenlegi `Keys` ágai között sincs `/`, `,`, `.`, plain F8 vagy plain F9; a `VideoPlayerView.qml` nem deklarál saját `Keys.onPressed`/`Keys.onReleased` kezelőt. Ez forrásleltár, nem futásidejű negatív mérés. A teljes megfeleltetés továbbra is nyitott.
