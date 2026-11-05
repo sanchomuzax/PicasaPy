@@ -1273,3 +1273,62 @@ Vagyis a kártya képernyőhelyét és méretét az `r` rekord `+0xa4..+0xcc` me
 | `+0x6c0`, `+0x6e8` (sáv pontjai), `+0x710`, és a `+0x5a8`/`+0x5d0` vezérlőképek `p` átlátszósággal; a `+0x5f8`/`+0x620` kép `p*100>>8`-cal (`0x007ffc90`) | A vezérlősáv is beúszik az első másodpercben. A `+0x5f8`/`+0x620` tartalma nincs meg, ezért átvehető teendő nincs. |
 
 **Új kutatási jegyjavaslat.** Nincs. A nyitott pontok a #6532 hatókörében maradnak.
+
+#### 38.2.90 A gyűjteménynév-rajzoló hívásláncának két függvénye (#6532, 2026-11-05)
+
+**Forrás.** A Ghidra-dekompilálás a `0x008018a0` és a `0x007fd8c0` függvényre, hívottakkal: `referencia/ghidra/2026-11-05-idorend-6532-datumfelirat.txt` (privát `picasapy-agent` repó, 307 sor). A Ghidra paraméterszáma itt is megbízhatatlan, ezért mindkét függvényt, a hívó `0x00801cb0`-t és a hívottakat a helyi `Picasa3.exe` utasításain is végigolvastam (capstone, `pe_dis.py`). A `_DAT_` konstansokat a programfájlból olvastam ki (`pe_dis.py` `f32`/`f64`). A bináris-állítások a helyi, hash-azonos programfájlra vonatkoznak (ugyanaz a korlát, mint a 38.2.86-ban).
+
+**A hívólánc.** A `0x00801cb0` (nincs veremparamétere, a qshow a `esi`-ben) a `0x00801cc1`-nél hívja a `0x007fc010`-et (`this+0x2f8`, `this+0x2c8`), majd, ha a `[this+0x429]` bájt nulla, a `0x00801cd8`-nál a `0x007fd8c0`-at (`eax = this+0x2f8`, a veremparaméter `this+0x510` címe). Ha az igazat ad, a `0x00801ce1`-nél a `[this+0x510]` értékét az `eax`-be tölti, és hívja a `0x008018a0`-at (`ecx = this`). A `0x007fd8c0` paramétere tehát egy *kimenet*: ide írja a kiválasztott gyűjtemény sorszámát.
+
+**Címtáblázat.**
+
+| Cím | Mit csinál | Forrás |
+|---|---|---|
+| `0x00801cb0` | Egy lépés: `0x007fc010` (görgetés léptetése), majd `0x007fd8c0` (fókuszkártya kiválasztása), majd, ha az igazat ad, `0x008018a0` (gyűjteményváltás). | bináris (utasítások `0x00801cb0`-`0x00801cef`) |
+| `0x007fd8c0` | A kártyasáv (`obj = this+0x2f8`) minden rekordjára `t = i * [obj+0x30] + [obj+0x20]` (f64 mezők), meghívja a `0x007fbab0` görbét, és a görbe pontjának első összetevőjét az `0.666` (f64 `0x00cf4860`) értékhez méri. A legkisebb eltérésű rekord sorszáma a `[obj+0]`-ba (`this+0x2f8`) kerül, a rekord (`obj[+0xb0] + sorszám * 0xf8`) első szava pedig a kimenetre (`[this+0x510]`). Visszatérési érték: igaz, ha a sáv megállt (lent). | bináris (`0x007fd8c0`-`0x007fd9f0`) |
+| `0x007fbab0` | Háromdimenziós köbös Bézier-görbe: a `ecx` objektum `+0x50..+0x7c` mezőiben négy, három lebegőpontos számból álló ellenőrzőpont, a bemenet az `t` (f32 a veremben), a kimenet három f32 (a `eax`-ben megadott helyre, `eax` vissza). A `0x007fc010` a harmadik összetevőt a `0.1`-hez (f64 `0x00c7dd30`) hasonlítja: a sáv láthatósági szűrője. | bináris (`0x007fbab0`-`0x007fbbe5`, a `0x007fc010` `0x007fc100`-`0x007fc128`) |
+| `0x008018a0` | Gyűjteményváltás. Ha a `[this+0x50c]` már egyezik az `eax`-szel, azonnal kilép. Különben beírja az új sorszámot a `[this+0x50c]`-be, a `[this+0x2f4]` objektumból kéri a gyűjtemény elemlistáját (`0x004b0190`, zár alatt), a `[this+0x3ec]` listát (darabszám `[this+0x3f0] >> 1`) újraépíti a nem kizárt elemek azonosítóival, nullázza a `[this+0x3f4]`-et, a `[this+0x51a]` bájtot 1-re állítja, majd hívja a `0x008014d0`-et. | bináris (`0x008018ac`-`0x00801c19`; a ciklus tartalma dekompilálásból) |
+| `0x008014d0` | A gyűjtemény elemeihez kártyakészletet épít: a régi `[this+0x2ec]` objektumot felszabadítja (`0x00803c10`), az új elemeket a `[this+0x2e4]` objektum virtuális hívásával kéri, a hely véletlen eltolását `rand`-szerű hívásokból (`0x00c08221`) számolja. Szöveget nem rajzol. | bináris (hívások `0x008014e5`-`0x00801862`; a szerep olvasat) |
+
+**1. A nagy bal oldali teljes dátum-idő felirat. Nem ez a két függvény.** Egyik sem hív szövegrajzolót vagy betűobjektumot (`0x00a48e10`), egyik sem hív dátumformázót (`0x0098c780` és társai), és a közvetlen hívási listájukban sincs ilyen (Ghidra hívottak: `0x008018a0` kilenc, `0x007fd8c0` három hívott, köztük nincs formázó vagy rajzoló). A `0x008018a0` a *gyűjtemény váltását* végzi: elemlista és kártyakészlet cseréje. A `0x007fd8c0` a *fókusz* kiválasztását végzi. Mezőt, formázót és képet a dátum-idő feliratra tehát nem lehet belőlük megnevezni.
+
+**Mit számol a `0x007fd8c0` pontosan.**
+
+- Fókusz: a `t = i * [obj+0x30] + [obj+0x20]` helyen a görbe pontjának első összetevője (f32) és az `0.666` különbségének abszolút értéke (`0x0049f5c0` = `fabs`) a legkisebb. A kezdő minimum f32 `1000000.0` (`0x00cf4900`). Döntetlennél az előbbi (kisebb sorszámú) marad (`fcomp`, `0x41` maszk).
+- Megállt-e: igaz, ha `|[obj+0x18]| <= [obj+0x30] * 0.01` (f64 `0x00cf40b8`) *és* a `[obj+0x4c] >> 1` darabszámú szakaszlistán (`[obj+0x48]`) nincs befejezetlen szakasz: nulla szakasznál igaz, két vagy több szakasznál hamis, egynél igaz, ha a kezdő és záró idő (`+0x18`, `+0x20`) egyenlő, vagy `(most - kezdő) / (záró - kezdő) > 1.0` (f64 `0x00c7e328`). A `most` a `0x009a5210` értéke: másodpercben a QueryPerformanceCounter-idő az első híváshoz képest (`0x009a5210`, a frekvencia-gyorsítótár `0x00d678e8`).
+
+**2. A `+0x5f8` és `+0x620` képtároló. Nem írnak bele.** A `0x007fd8c0` teljes utasítássorában (`0x007fd8c0`-`0x007fd9f0`) és a `0x008018a0` utasításaiban (`0x008018a0`-`0x00801caf`) nincs `+0x5f8` vagy `+0x620` hivatkozás (a `0x008018a0` csak a `+0x20`, `+0x24`, `+0x28`, `+0x2f4`, `+0x3ec`, `+0x3f0`, `+0x3f4`, `+0x50c`, `+0x51a` és `+0xc` eltolásokat használja); a `0x008014d0` első `0x3d0` bájtjában sincs. A `0x008014d0` hátralévő része és a `0x00803c10`, `0x00803b50` nincs végigolvasva.
+
+**3. A `0x007fd8c0` és a görbe. Képlet és kapcsolat az 1,4 mp-hez.**
+
+- A görbe *térbeli pálya*, nem időgörbe: a `t` paraméter a kártya sorszámából és a sáv görgetési eltolásából jön (`t = i * lépés + eltolás`), nem az órából. A kimenete (x, y, z) a kártya helye és mélysége a sávban. Az ellenőrzőpontok futásidejű mezők (`this+0x348..0x374`), a konstruktor (`0x007fa7f0`) vagy egy beállító tölti őket; az értékeiket nem olvastam ki.
+- A `0x007fbab0` egyetlen kiolvasható konstansa a `3.0` (f64 `0x00cf39f8`, a Bézier-súly). A teljes Bernstein-szorzat az utasításokból olvasat (`(1-t)^3`, `3(1-t)^2 t`, `3(1-t) t^2`, `t^3`).
+- Időt a `0x007fd8c0` csak a *megállt-e* ágban használ (`0x009a5210`, másodperc), és ott is szakaszarányt (`> 1.0`), nem 1,4 másodpercet. Nincs `1.4` vagy hozzá közeli időállandó a két függvényben vagy a `0x007fbab0`-ban. A `0x007fc010` a sebességet hívásonként `0.95`-tel szorozza (f64 `0x00cf40b0`), ami képkockaszámhoz kötött lassulás; ebből az 1,4 mp nem vezethető le a hívási gyakoriság ismerete nélkül. **A lapváltás mért kb. 1,4 mp-éhez (38.2.85, csak mérés) kapcsolat nem igazolt.**
+
+**Ellentmondás a korábbiakkal.** Nincs. A 38.2.89 sejtése, hogy a `0x00801cf0` testvérfüggvényei a dátum-idő feliratot adhatják, ezzel megdőlt erre a két függvényre.
+
+**Mellékes lelet a gyűjteménynév-gyorsítótárról (nem a kérdés, de a keresést szűkíti).** A `0x00801cf0` a nevet a `[this+0x46c]` képre rajzolja; a `0x00802130` ezt a képet szürkeárnyalatúvá teszi (minden képpont a zöld bájt háromszorosa `0x10101`-gyel szorozva). A `[this+0x470]` nem külön kép, hanem a `+0x46c` kép sorhossza (a `0x008001c0` `0x008004af`-nál `[ebp+0x470] * sor` indexel a `[ebp+0x47c]` képpontterületen). A `0x008001c0` a `+0x444` és `+0x46c` képet képpontonként keveri (`0x009dc040`), a `0x00802230` a `0x009ad280` hívással a `+0x46c`-t a `+0x444` helyére másolja (`0x00802516`-`0x00802525`); ez átúsztatásra (a régi és az új név) utal, de a keverés mértékét nem olvastam ki. A `[this+0x3b8]` bájt szerepe nyitott marad.
+
+**Következtetés.** (1) Bináris: a `0x008018a0` gyűjteményváltás (elemlista és kártyakészlet cseréje), a `0x007fd8c0` fókuszválasztás a görbe első összetevője és `0.666` különbsége szerint, plusz megállt-teszt. (2) Bináris: egyik sem formáz vagy rajzol szöveget, egyik sem nyúl a `+0x5f8`/`+0x620` tárolóhoz. (3) Kizárt: a két függvény mint a nagy bal oldali `YYYY-MM-DD hh:mm` felirat forrása. (4) Nem igazolt: kapcsolat a mért 1,4 mp-hez.
+
+**Nyitott.**
+
+- A teljes dátum-idő felirat mezője, formázója és rajzolója. Kizárt helyek: a `0x007fee70` (csak `%s %d`), a `0x00801cf0` (csak név), a `0x008018a0`, a `0x007fd8c0`. A `ytDateTime` formázók hívói a programban: `0x0098c780` (`%s %d`) hívói `0x0043c410`, `0x004b0390`, `0x004b3770`, `0x007376a0` (filmkészítő, `CMovieExport::renderprog`, nem qshow), `0x007fee70`, `0x0086bce0`, `0x0087db30`; a `0x0098c670` (`MMM d, yyyy`) hívói között a `0x007f9880` (a qshow konstruktor `0x007fa7f0` közvetlen szomszédja, 231 bájt) áll, amelyet nem olvastam végig; a `0x0098c9a0` (`%.2d:%.2d:%.2d`) hívói videó- és filmkezelők (`video_control_bar`, `makemoviepanel`), nem qshow.
+- Az időpont forrása: a `CThumbDB+0x48` virtuális tábla `+0x20` helyén a `0x0044f7c0` a gyűjteményhez tartozó időt *f64 számként* adja (a tömb `[objektum+0x58]` mutatóján át, `[+0x48][sorszám]`, 8 bájtos elemek); a tábla címe `0x00c81fa4` (a konstruktorok `0x00415804` és `0x0041777f` a `[this+0x48]`-ba írják). Ez az idő tehát időbélyeg, nem szöveg: a formázás a hívónál történik.
+- A `0x008014d0` hátralévő része, a `[this+0x3b8]` bájt szerepe, a `0x007fbab0` ellenőrzőpontjainak értékei.
+
+**Következő két cím (kódból kiolvasható indokkal).**
+
+1. **`0x007f9880`** (231 bájt). Indok: a `0x007f98ab`-nál a `0x0098c670` (`MMM d, yyyy`) dátumformázót hívja, a végén `ret 8`, a qshow konstruktor `0x007fa7f0` közvetlen szomszédja a programszövegben. Ez az egyetlen dátumformázó-hívó a `0x007f0000`-`0x00808000` tartományban, amelyet a 38.2.88 és 38.2.89 nem vizsgált (a `0x0098c780`-ra és a `%02d:%02d` jellegű sztringekre szűkített). Ha a hívója qshow-mutatót kap, vagy a `[this+0x510]`/`[this+0x50c]` sorszámot használja, ez a dátumfelirat forrása; ha nem, a qshow-tartomány dátumfeliratok szempontjából lezárható.
+2. **`0x0044f7c0`** (a `CThumbDB+0x48` tábla `+0x20` helye, a gyűjtemény ideje f64-ként). Indok: ez a `0x007fee70` dátumának és minden más qshow-dátumnak az egyetlen forrása a kódban; a hívóinak keresése (a `[reg+0x20]` hívás `ecx = objektum+0x48` mellett) megmutatja, melyik másik függvény kéri el a gyűjtemény idejét, és mit kezd vele (formázó, szövegrajzoló).
+
+**Fejlesztői átadás (csak binárisból igazolt elemek).**
+
+| Eredeti | Teendő |
+|---|---|
+| A fókuszkártya a sáv azon rekordja, amelynek görbepontja első összetevője legközelebb esik `0.666`-hoz (`0x007fd8c0`, `0x00cf4860`) | A PicasaPy fókuszválasztását ehhez a szabályhoz hasonlítani; a görbe ellenőrzőpontjait nem ismerjük, ezért átvehető képlet még nincs. |
+| A sáv megállt, ha a sebesség abszolút értéke legfeljebb a rekordlépés századrésze (`0.01`), és nincs futó szakasz (`0x007fd8c0`) | Csak megerősíti, hogy a gyűjteményváltás a görgetés megállása után történik, nem közben. |
+| A gyűjteményváltás (`0x008018a0`) csak akkor fut, ha a `[this+0x429]` bájt nulla, és a kiválasztott gyűjtemény sorszáma eltér a korábbitól (`0x00801cc6`, `0x008018ac`) | A kiválasztott gyűjtemény elemlistáját és kártyakészletét a görgetés megállása után cserélni. |
+| A teljes `YYYY-MM-DD hh:mm` felirat forrása | Nincs; nem igazolt, ezért nincs átvehető teendő. |
+
+**Új kutatási jegyjavaslat.** Nincs; a nyitott pontok a #6532 hatókörében maradnak.
