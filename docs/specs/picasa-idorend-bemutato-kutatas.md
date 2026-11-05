@@ -1480,7 +1480,7 @@ A `+0x648` a `0x007fb210` betöltőben készül: a `layer:overlays/overlay` erő
 | Eredeti | Teendő a PicasaPy-ban |
 |---|---|
 | Háttér: a kép középre, szürkítés a zöld csatornából, `enhance`-nyújtás 0,30 keveréssel, gamma `1/3` (`0x00802180`) | A `TimelinePanel.qml` egyszínű `#8a888b` alapja helyett ezt a háttérképet kell rajzolni. A meglévő elemek: `render/ops_levels.py::apply_enhance` (a `0x009db610`), `render/native_tone.py::native_gamma_lut` (a `0x00aa40a0`). |
-| Fedőkép: `overlays/overlay`, ablakméretre nyújtva (`+0x648`) | Az eredeti erőforrás nem másolható; saját rajzolással kell újraalkotni (ovális sötét felület, halvány külső ív, alsó sáv, alfa 179-255, 38.2.85), a mért alfatartományt megtartva. |
+| Fedőkép: `overlays/overlay`, ablakméretre nyújtva (`+0x648`) | Az eredeti erőforrás nem másolható; saját rajzolással kell újraalkotni (ovális sötét felület, halvány külső ív, alsó sáv, 38.2.85), az átlátszóság mért 179-255-ös tartományát megtartva. |
 | `+0x5f8`, `+0x620` | Nincs teendő: üresek. |
 
 **Nyitott.** A `[this+0x2e4]` képszolgáltató virtuális `+8` célja (melyik elem képét adja, milyen méretben; a méretkérés `f32 [0xd35808]`-ból jön). A 38.2.93 nyitott pontjai közül a `+0x46c` kitöltője és a halványítás mértéke ezzel lezárva.
