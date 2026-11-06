@@ -55,8 +55,6 @@ def qml_warnings():
 
 def _teardown_qml_app(engine, qt_app, *, keep_modul=None, root_window=None):
     """Biztonságosan leállítja az appot, majd elengedi a QML-burkokat."""
-    from PySide6.QtCore import QCoreApplication, QEvent
-
     from picasapy.app.worker_thread import (
         elo_valaszok,
         running_background_workers,
@@ -74,12 +72,11 @@ def _teardown_qml_app(engine, qt_app, *, keep_modul=None, root_window=None):
         + ", ".join(running_background_workers())
     )
 
-    # #1193: a háttérmunkák után töröljük a motort, majd valóban
-    # feldolgozzuk a DeferredDelete eseményt, mielőtt a vezérlők elengednek.
-    engine.deleteLater()
-    qt_app.processEvents()
-    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
-    qt_app.processEvents()
+    # #6625: a providers Python-burkát csak az engine tényleges törlése és
+    # az utána feldolgozott Qt-események után engedjük el.
+    from picasapy.app.application_startup_qml import _destroy_qml_engine
+
+    _destroy_qml_engine(engine, qt_app)
 
     # A hívó teszt `window` változója a teardown alatt még életben lehet.
     # A QML-fa törlése önmagában nem veszi ki ezt a Python-burkot a Shiboken
@@ -171,6 +168,7 @@ def _build_qml_app(
     from picasapy.thumbs import ThumbnailCache
     from PySide6.QtCore import QSettings
     from PySide6.QtQml import QQmlApplicationEngine
+    from picasapy.app.application_startup_qml import _register_image_provider
 
     lib = tmp_path / "kepek"
     lib.mkdir()
@@ -266,7 +264,7 @@ def _build_qml_app(
     app_module._install_ui_font(qt_app)
     engine = QQmlApplicationEngine()
     color_palette_provider = ColorPaletteProvider()
-    engine.addImageProvider("colorpalette", color_palette_provider)
+    _register_image_provider(engine, "colorpalette", color_palette_provider)
     engine.rootContext().setContextProperty(
         "colorPalette", color_palette_provider
     )
@@ -288,14 +286,15 @@ def _build_qml_app(
         if valodi_belyegkep
         else SzinkronKepSzolgaltato()
     )
-    engine.addImageProvider("thumbs", thumbnail_image_provider)
+    _register_image_provider(engine, "thumbs", thumbnail_image_provider)
     timeline_background_provider = TimelineBackgroundProvider(
         thumbnail_image_provider
     )
-    engine.addImageProvider("timelinebackground", timeline_background_provider)
-    engine.addImageProvider("editpreview", edit_preview)
-    engine.addImageProvider("effectthumb", SzinkronKepSzolgaltato())
-    engine.addImageProvider(
+    _register_image_provider(engine, "timelinebackground", timeline_background_provider)
+    _register_image_provider(engine, "editpreview", edit_preview)
+    _register_image_provider(engine, "effectthumb", SzinkronKepSzolgaltato())
+    _register_image_provider(
+        engine,
         "moviepreview", controller.movie_transition_preview_provider
     )
     # #1640: a diavetítés teljes felbontású, MÓD-TUDATOS szolgáltatója. ⚠️ A
@@ -304,7 +303,8 @@ def _build_qml_app(
     # kap, és a hiba a saját kódjának látszik (mérve a #1640-ben).
     from picasapy.app import display_photo_provider
 
-    engine.addImageProvider(
+    _register_image_provider(
+        engine,
         display_photo_provider.PROVIDER_NAME,
         display_photo_provider.DisplayPhotoProvider(),
     )
@@ -312,7 +312,9 @@ def _build_qml_app(
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
     engine.rootContext().setContextProperty("effectSliceController", effect_slice_controller)
-    engine.addImageProvider("effectslice", EffectSliceImageProvider(effect_slice_controller))
+    _register_image_provider(
+        engine, "effectslice", EffectSliceImageProvider(effect_slice_controller)
+    )
     # #3187: a kettős nézet második felének vezérlője (fent, a
     # `wire_display_mode` előtt létrehozva, #3837) — az application.py
     # bekötésének tükre (ld. a szolgáltató-listánál írt figyelmeztetést)

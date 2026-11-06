@@ -335,7 +335,7 @@ if TYPE_CHECKING:
         _startup_step_create_qml_engine,
         _startup_step_load_qml,
         _startup_step_register_qml_context,
-        _startup_step_screensaver,
+        _startup_step_screensaver, _shutdown_application_qml,
     )
 
 # a `screensaver_idle.SCREENSAVER_FLAG` másolata — az import nélkül olvasható
@@ -529,6 +529,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     load_exit = _startup_step_load_qml(state)
     if load_exit is not None:
         _zard_be_az_induloablakot(early_startup)
+        _shutdown_application_qml(state)
         return load_exit
 
     #: #3021: a csomagolás füstpróbája: a felület felépült (Qt-bővítmények, QML,
@@ -538,6 +539,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     if onellenorzes:
         _startup_step_smoke_test(state)
         _zard_be_az_induloablakot(early_startup)
+        _shutdown_application_qml(state)
         return 0
 
     # #240: a betöltés csak az ablak ELSŐ kirajzolt képkockája UTÁN indul (Windowson
@@ -694,4 +696,5 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # a perces rendert nem kell végigvárni, a daemon-szál emit nélkül fut ki.
     edit_controller.cancelPendingPreview()
     edit_controller.waitForBackgroundWorkers(2.0)
+    _shutdown_application_qml(state)
     return exit_code

@@ -15,6 +15,65 @@ from .option_settings import initialize_option_settings
 from .notifier_screen_geometry import NotifierScreenGeometry
 from .timeline_background import TimelineBackgroundProvider
 
+
+_IMAGE_PROVIDER_REFS = "_picasapy_image_provider_refs"
+_QML_SHUTDOWN_KEEPALIVE = []
+
+
+def _register_image_provider(engine, name: str, provider) -> None:
+    """Tartsa életben a Python-burkot az engine tényleges törléséig (#6625)."""
+    providers = getattr(engine, _IMAGE_PROVIDER_REFS, None)
+    if providers is None:
+        providers = []
+        setattr(engine, _IMAGE_PROVIDER_REFS, providers)
+    engine.addImageProvider(name, provider)
+    providers.append(provider)
+
+
+def _destroy_qml_engine(engine, qt_app) -> None:
+    """Törölje a motort és ürítse ki az eseménysort, majd engedje el a providereket."""
+    import shiboken6
+    from PySide6.QtCore import QCoreApplication, QEvent
+
+    providers = getattr(engine, _IMAGE_PROVIDER_REFS, ())
+    if shiboken6.isValid(engine):
+        engine.deleteLater()
+        qt_app.processEvents()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+        qt_app.processEvents()
+    if shiboken6.isValid(engine):
+        raise RuntimeError("a QML-engine nem semmisült meg a DeferredDelete után")
+    if hasattr(providers, "clear"):
+        providers.clear()
+    if hasattr(engine, _IMAGE_PROVIDER_REFS):
+        delattr(engine, _IMAGE_PROVIDER_REFS)
+
+
+def _shutdown_application_qml(state) -> None:
+    """A futó workerek után bontsa le az alkalmazás QML-motorát (#6625)."""
+    import logging
+
+    from .worker_thread import running_background_workers, wait_for_all_background_workers
+
+    try:
+        effect_slice_controller = getattr(state, "effect_slice_controller", None)
+        if effect_slice_controller is not None:
+            effect_slice_controller.shutdown()
+        # a kilépést legfeljebb 2 mp-ig tartjuk vissza, mint eddig; ha addig
+        # nem áll le minden, a motor nem bomlik le (a korábbi viselkedés)
+        if not wait_for_all_background_workers(2.0):
+            logging.getLogger(__name__).error(
+                "QML-leállítás elhalasztva, élő háttérmunkák: %s",
+                ", ".join(running_background_workers()),
+            )
+            _QML_SHUTDOWN_KEEPALIVE.append(state)
+            return
+        _destroy_qml_engine(state.engine, state.app)
+    except Exception:  # noqa: BLE001 (leállításkor a burkok maradjanak életben)
+        logging.getLogger(__name__).exception("A QML-engine rendezett törlése nem sikerült")
+        _QML_SHUTDOWN_KEEPALIVE.append(state)
+
+
 def _startup_step_create_qml_engine(state):
     controller = state.controller
     data_dir = state.data_dir
@@ -34,23 +93,29 @@ def _startup_step_create_qml_engine(state):
     engine = QQmlApplicationEngine()
 
     color_palette_provider = ColorPaletteProvider()
-    engine.addImageProvider("colorpalette", color_palette_provider)
+    _register_image_provider(engine, "colorpalette", color_palette_provider)
     engine.rootContext().setContextProperty("colorPalette", color_palette_provider)
-    engine.addImageProvider("thumbs", provider)
+    _register_image_provider(engine, "thumbs", provider)
     timeline_background_provider = TimelineBackgroundProvider(provider)
-    engine.addImageProvider("timelinebackground", timeline_background_provider)
-    engine.addImageProvider("editpreview", edit_preview)
+    _register_image_provider(
+        engine, "timelinebackground", timeline_background_provider
+    )
+    _register_image_provider(engine, "editpreview", edit_preview)
     # #1640: a diavetítés teljes felbontású képe — a megjelenítési móddal
-    engine.addImageProvider(
+    _register_image_provider(
+        engine,
         display_photo_provider.PROVIDER_NAME,
         display_photo_provider.DisplayPhotoProvider(),
     )
-    engine.addImageProvider("effectthumb", effect_thumb_provider)
+    _register_image_provider(engine, "effectthumb", effect_thumb_provider)
     # #920: élő kollázs-előnézet. A szolgáltatót a vezérlő birtokolja
     # (lusta init), mert a kollázs állapota is ott él.
-    engine.addImageProvider("collagepreview", controller.collage_preview_provider)
+    _register_image_provider(
+        engine, "collagepreview", controller.collage_preview_provider
+    )
     # #4820: az élő filmátmenet ugyanazt a képkocka-geometriát kéri, mint az export.
-    engine.addImageProvider(
+    _register_image_provider(
+        engine,
         "moviepreview", controller.movie_transition_preview_provider
     )
 
@@ -64,7 +129,7 @@ def _startup_step_create_qml_engine(state):
     # #4876: a borító a rács bélyegkép-tárából jön — meleg tárral az eredeti
     # fotót nem dekódoljuk újra minden indításkor.
     folder_cover_provider = _app._create_folder_cover_provider(data_dir, thumb_cache)
-    engine.addImageProvider("foldercover", folder_cover_provider)
+    _register_image_provider(engine, "foldercover", folder_cover_provider)
     engine.addImportPath(_qml_import_path())
     # #1653: idáig tart a motor felállítása (konstruktor + kép-szolgáltatók
     # + import-útvonal); innentől már csak kontextus-bekötés következik.
@@ -113,7 +178,9 @@ def _startup_step_register_qml_context(state):
         edit_controller, settings=QSettings("PicasaPy", "PicasaPy"), parent=app
     )
     app.aboutToQuit.connect(effect_slice_controller.shutdown)
-    engine.addImageProvider("effectslice", EffectSliceImageProvider(effect_slice_controller))
+    _register_image_provider(
+        engine, "effectslice", EffectSliceImageProvider(effect_slice_controller)
+    )
 
     ScreenCaptureController = _app._lazy_app_symbol("ScreenCaptureController")
     screen_capture_controller = ScreenCaptureController(
@@ -234,6 +301,7 @@ def _startup_step_register_qml_context(state):
     timeline.mark("vezérlők regisztrálása a QML-kontextusban")
     progress_log.mark("QML-kontextus és vezérlők regisztrálva")
 
+    state.effect_slice_controller = effect_slice_controller
     state.screen_capture_controller = screen_capture_controller
     state.notifier_screen_geometry = notifier_screen_geometry
     state.passport_controller = passport_controller
