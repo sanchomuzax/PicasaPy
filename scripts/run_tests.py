@@ -1154,9 +1154,54 @@ def _nincs_teszt_nem_bukas(args: list[str], returncode: int) -> int:
     return returncode
 
 
+_RANDOM_SORREND_PREFIX = "PICASAPY_RANDOM_ORDER\t"
+
+
+def _random_tesztbukottak(kimenet: str) -> set[str]:
+    """A pytest rövid összegzéséből a bukott tesztek nodeid-jei."""
+    bukottak: set[str] = set()
+    for sor in kimenet.splitlines():
+        talalat = re.match(r"^(?:FAILED|ERROR)\s+(.+?)(?:\s+-\s+.*)?$", sor)
+        if talalat:
+            bukottak.add(talalat.group(1))
+    return bukottak
+
+
+def _random_sorrend_parok(kimenet: str) -> dict[str, str]:
+    """A random-sorrend plug-in bukott teszt → közvetlen előd párjai."""
+    parok: dict[str, str] = {}
+    for sor in kimenet.splitlines():
+        if not sor.startswith(_RANDOM_SORREND_PREFIX):
+            continue
+        reszek = sor.split("\t", 2)
+        if len(reszek) == 3:
+            parok[reszek[1]] = reszek[2]
+    return parok
+
+
+def _random_besorolas(
+    eredeti_bukasok: set[str], azonos_mag_bukasok: set[str], fix_bukasok: set[str],
+    *, azonos_mag_zold: bool = False, fix_sorrend_zold: bool = False,
+) -> dict[str, str]:
+    """A random sorrend bukásait a két diagnosztikai újrafuttatás szerint sorolja be."""
+    besorolas: dict[str, str] = {}
+    for nodeid in sorted(eredeti_bukasok):
+        if azonos_mag_zold or nodeid not in azonos_mag_bukasok:
+            besorolas[nodeid] = "ingadozás (#999/#3265)"
+        elif fix_sorrend_zold and nodeid not in fix_bukasok:
+            besorolas[nodeid] = "sorrendfüggés"
+        elif nodeid in fix_bukasok:
+            besorolas[nodeid] = "valódi hiba"
+        else:
+            besorolas[nodeid] = "nem egyértelmű újrafuttatás"
+    return besorolas
+
+
 def _run_pytest(
     args: list[str], timeout_s: int, *, cov: bool, basetemp: Path,
     kornyezet: dict[str, str] | None = None, csendben: bool = False,
+    randomly_seed: int | None = None, fixed_order: bool = False,
+    order_targets: set[str] | None = None,
 ) -> int:
     """Egy pytest-részfutás saját processzben; timeoutnál 124-gyel tér vissza.
 
@@ -1190,13 +1235,24 @@ def _run_pytest(
         "-o",
         f"faulthandler_timeout={_FAULTHANDLER_TIMEOUT_S}",
         f"--basetemp={basetemp}",
-        *args,
     ]
+    if randomly_seed is None or fixed_order:
+        pytest_args.extend(["-p", "no:randomly"])
+    if randomly_seed is not None and not fixed_order:
+        pytest_args.extend(["-p", "randomly", "--randomly-seed", str(randomly_seed)])
+    if randomly_seed is not None or order_targets:
+        pytest_args.extend(["-p", "scripts.pytest_random_order"])
+    pytest_args.extend(args)
     if cov:
         command = [sys.executable, "-m", "coverage", "run", "-p", *pytest_args]
     else:
         command = [sys.executable, *pytest_args]
     command = _memoria_burok() + command
+    if order_targets:
+        kornyezet = dict(kornyezet if kornyezet is not None else os.environ)
+        kornyezet["PICASAPY_RANDOM_ORDER_TARGETS"] = json.dumps(
+            sorted(order_targets)
+        )
     # #1457: a környezet SOSEM `None` — a faulthandler bekapcsolása különben
     # a szülő környezetén múlna (a soros ág eddig nem adott át `env`-et).
     kornyezet = _faulthandlerrel(dict(kornyezet if kornyezet is not None else os.environ))
@@ -1701,6 +1757,29 @@ def _fajllista_argumentum(argv: Sequence[str]) -> Path | None:
     return None
 
 
+def _random_mag_argumentum(argv: Sequence[str]) -> int | None:
+    """Az éjszakai mérés 32 bites, futáson belül közös magja."""
+    ertek: str | None = None
+    for index, argumentum in enumerate(argv):
+        if argumentum == "--nightly-random-seed":
+            if index + 1 >= len(argv):
+                raise SystemExit("a --nightly-random-seed után egész mag kell")
+            ertek = argv[index + 1]
+            break
+        if argumentum.startswith("--nightly-random-seed="):
+            ertek = argumentum.partition("=")[2]
+            break
+    if ertek is None:
+        return None
+    try:
+        mag = int(ertek)
+    except ValueError:
+        raise SystemExit("a --nightly-random-seed értéke egész szám legyen") from None
+    if not 0 <= mag < 2**32:
+        raise SystemExit("a --nightly-random-seed értéke 0 és 2**32-1 közé essen")
+    return mag
+
+
 def _olvas_fajllista(
     ut: Path, *, root: Path = _ROOT
 ) -> tuple[list[str], bool, str]:
@@ -1749,6 +1828,9 @@ def main(argv: list[str] | None = None) -> int:
     if fajllista_ut is not None:
         fajlok, teljes, indok = _olvas_fajllista(fajllista_ut)
     cov = "--cov" in argv
+    randomly_seed = _random_mag_argumentum(argv)
+    if randomly_seed is not None:
+        print(f"Éjszakai véletlen tesztsorrend magja: {randomly_seed}", flush=True)
 
     if cov:
         # tiszta lap: egy korábbi (pl. megszakadt) --cov futásból maradt
@@ -1813,6 +1895,7 @@ def main(argv: list[str] | None = None) -> int:
         visszater = _futtat(
             cov, basetemp, sorszam=sorszam, darab=darab,
             fajlok=fajlok, teljes=teljes, indok=indok,
+            randomly_seed=randomly_seed,
         )
         _ird_ki_a_qt_eltérést()
         return visszater
@@ -1912,6 +1995,7 @@ def _futtat(
     fajlok: list[str] | None = None,
     teljes: bool = False,
     indok: str = "",
+    randomly_seed: int | None = None,
 ) -> int:
     """A tényleges részfutás-sorozat; a basetemp életciklusa a hívóé.
 
@@ -1974,7 +2058,15 @@ def _futtat(
             "kihagyás nem megoldás, csak a veszteség megállítása.",
             flush=True,
         )
-    if _PARHUZAM > 1:
+    if randomly_seed is not None:
+        # A diagnosztikai újrafuttatások fájlonként azonnal követik az első
+        # hibát; a nightly sorrendmérésben ne fusson több pytest-folyamat
+        # egyszerre, mert az erőforrás-verseny új ingadozást kelthet.
+        failures += _tesztfajlok_sorosan(
+            tesztfajlok, cov=cov, basetemp=basetemp,
+            randomly_seed=randomly_seed,
+        )
+    elif _PARHUZAM > 1:
         failures += _tesztfajlok_parhuzamosan(tesztfajlok, cov=cov, basetemp=basetemp)
     else:
         failures += _tesztfajlok_sorosan(tesztfajlok, cov=cov, basetemp=basetemp)
@@ -2006,12 +2098,54 @@ def _futtat(
 
 
 def _tesztfajlok_sorosan(
-    test_files: list[Path], *, cov: bool, basetemp: Path
+    test_files: list[Path], *, cov: bool, basetemp: Path,
+    randomly_seed: int | None = None,
 ) -> list[tuple[str, int]]:
     """A korábbi (2026-08-19 előtti) viselkedés — `PICASAPY_TESZT_PARHUZAM=1`."""
     failures: list[tuple[str, int]] = []
     for test_file in test_files:
         relative = test_file.relative_to(_ROOT)
+        if randomly_seed is not None:
+            relative_text = str(relative)
+            print(
+                f"\nÉjszakai véletlen sorrend: {relative_text} "
+                f"(mag: {randomly_seed})",
+                flush=True,
+            )
+            returncode = _run_pytest(
+                [relative_text], _APP_FILE_TIMEOUT_S, cov=cov,
+                basetemp=basetemp, randomly_seed=randomly_seed, csendben=True,
+            )
+            if returncode == 0:
+                print(f"  ok   {relative_text}", flush=True)
+                continue
+            if returncode == 1:
+                _random_hiba_diagnosztika(
+                    relative_text, randomly_seed, cov=cov, basetemp=basetemp
+                )
+            elif returncode == 124:
+                print(f"ÚJRAPRÓBÁLÁS (timeout után): {relative_text}", flush=True)
+                returncode = _run_pytest(
+                    [relative_text], _APP_FILE_TIMEOUT_S, cov=cov,
+                    basetemp=basetemp, randomly_seed=randomly_seed, csendben=True,
+                )
+            elif _osszeomlas(returncode):
+                _ird_ki_az_osszeomlas_nyomat(relative_text, returncode)
+                print(
+                    f"ÚJRAPRÓBÁLÁS (összeomlás után, exit {returncode}): "
+                    f"{relative_text}",
+                    flush=True,
+                )
+                returncode = _run_pytest(
+                    [relative_text], _APP_FILE_TIMEOUT_S, cov=cov,
+                    basetemp=basetemp, randomly_seed=randomly_seed, csendben=True,
+                )
+                if returncode == 0:
+                    _OSSZEOMLAS_UJRAPROBA.append(relative_text)
+            if returncode != 0:
+                failures.append((relative_text, returncode))
+            continue
+
         returncode = _run_pytest(
             [str(relative)], _APP_FILE_TIMEOUT_S, cov=cov, basetemp=basetemp
         )
@@ -2039,6 +2173,80 @@ def _tesztfajlok_sorosan(
         if returncode != 0:
             failures.append((str(relative), returncode))
     return failures
+
+
+def _random_hiba_diagnosztika(
+    relative: str, randomly_seed: int, *, cov: bool, basetemp: Path
+) -> None:
+    """Sorrendfüggést választ szét ingadozástól és tartós hibától."""
+    pytest_args = [relative]
+    eredeti_kimenet = _KIMENET.get(relative, "")
+    eredeti_bukasok = _random_tesztbukottak(eredeti_kimenet)
+    if eredeti_kimenet:
+        print(eredeti_kimenet, flush=True)
+
+    print(f"ÚJRAPRÓBÁLÁS ugyanazzal a maggal ({randomly_seed}): {relative}", flush=True)
+    azonos_mag_kod = _run_pytest(
+        pytest_args, _APP_FILE_TIMEOUT_S, cov=cov, basetemp=basetemp,
+        randomly_seed=randomly_seed, csendben=True,
+    )
+    azonos_mag_kimenet = _KIMENET.get(relative, "")
+    azonos_mag_bukasok = _random_tesztbukottak(azonos_mag_kimenet)
+    if azonos_mag_kod == 0:
+        besorolasok = _random_besorolas(
+            eredeti_bukasok, set(), set(), azonos_mag_zold=True
+        )
+        if besorolasok:
+            for nodeid, besorolas in besorolasok.items():
+                print(f"Besorolás: {besorolas} — {nodeid}", flush=True)
+        else:
+            print(
+                "Besorolás: ingadozás (#999/#3265) — a pytest nem adott "
+                "kiolvasható bukott tesztnevet.",
+                flush=True,
+            )
+        return
+
+    if azonos_mag_kimenet:
+        print(azonos_mag_kimenet, flush=True)
+    print(f"ÚJRAPRÓBÁLÁS rögzített sorrendben: {relative}", flush=True)
+    fix_kod = _run_pytest(
+        pytest_args, _APP_FILE_TIMEOUT_S, cov=cov, basetemp=basetemp,
+        fixed_order=True, order_targets=eredeti_bukasok, csendben=True,
+    )
+    fix_kimenet = _KIMENET.get(relative, "")
+    fix_bukasok = _random_tesztbukottak(fix_kimenet)
+    if fix_kimenet:
+        print(fix_kimenet, flush=True)
+
+    besorolasok = _random_besorolas(
+        eredeti_bukasok,
+        azonos_mag_bukasok,
+        fix_bukasok,
+        fix_sorrend_zold=(fix_kod == 0),
+    )
+    elozmenyek = _random_sorrend_parok(eredeti_kimenet)
+    fix_elozmenyek = _random_sorrend_parok(fix_kimenet)
+    if besorolasok:
+        for nodeid, besorolas in besorolasok.items():
+            if besorolas == "sorrendfüggés":
+                elozo = elozmenyek.get(nodeid) or fix_elozmenyek.get(nodeid)
+                par = f"{elozo} -> {nodeid}" if elozo else f"előd nem azonosítható -> {nodeid}"
+                print(f"Besorolás: Sorrendfüggés — {par}", flush=True)
+            else:
+                print(f"Besorolás: {besorolas} — {nodeid}", flush=True)
+    elif azonos_mag_kod != 0 and fix_kod == 0:
+        print(
+            "Besorolás: sorrendfüggés, de a pytest bukott tesztneve vagy "
+            "közvetlen elődje nem azonosítható.",
+            flush=True,
+        )
+    else:
+        print(
+            "Besorolás: valódi hiba, a tesztnév nem azonosítható "
+            "(#6590-en kívüli javítás).",
+            flush=True,
+        )
 
 
 def _tesztfajlok_parhuzamosan(

@@ -43,6 +43,11 @@ on:
         required: false
         default: false
         type: boolean
+      random_seed:
+        description: Nightly véletlen tesztsorrend magja; üresen kikapcsolva
+        required: false
+        default: ""
+        type: string
 
 jobs:
   darab:
@@ -172,7 +177,7 @@ jobs:
         # állítja össze, a shellhez nem nyúl.
         env:
           PICASAPY_RENDER_FAILURE_DIR: ${{ runner.temp }}/picasapy-render-failures
-        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/${{ inputs.darabszam }} --fajllista "${{ runner.temp }}/picasapy-test-list.json" ${{ inputs.cov && '--cov' || '' }}
+        run: python scripts/run_tests.py --shard ${{ matrix.shard }}/${{ inputs.darabszam }} --fajllista "${{ runner.temp }}/picasapy-test-list.json" ${{ inputs.cov && '--cov' || '' }} ${{ inputs.random_seed != '' && format('--nightly-random-seed {0}', inputs.random_seed) || '' }}
 
       - name: Ubuntu renderképek feltöltése hiba esetén
         if: ${{ failure() && runner.os == 'Linux' }}
