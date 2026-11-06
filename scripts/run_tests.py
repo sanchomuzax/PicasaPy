@@ -1821,6 +1821,10 @@ def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if "--darabszam" in argv:
         return _darabszam_kimenet()
+    mutmut = "--mutmut" in argv
+    if mutmut and ("--cov" in argv or _fajllista_argumentum(argv) is not None):
+        print("A --mutmut nem kombinálható --cov vagy --fajllista kapcsolóval.")
+        return 2
     fajllista_ut = _fajllista_argumentum(argv)
     fajlok: list[str] | None = None
     teljes = False
@@ -1892,11 +1896,14 @@ def main(argv: list[str] | None = None) -> int:
     basetemp = Path(tempfile.mkdtemp(prefix=_TEMP_ELOTAG, dir=_TEMP_GYOKER))
     _jelold_a_futast(basetemp)
     try:
-        visszater = _futtat(
-            cov, basetemp, sorszam=sorszam, darab=darab,
-            fajlok=fajlok, teljes=teljes, indok=indok,
-            randomly_seed=randomly_seed,
-        )
+        if mutmut:
+            visszater = _futtat_mutmut()
+        else:
+            visszater = _futtat(
+                cov, basetemp, sorszam=sorszam, darab=darab,
+                fajlok=fajlok, teljes=teljes, indok=indok,
+                randomly_seed=randomly_seed,
+            )
         _ird_ki_a_qt_eltérést()
         return visszater
     finally:
@@ -1904,6 +1911,14 @@ def main(argv: list[str] | None = None) -> int:
         # hogy megszakították-e (#677)
         shutil.rmtree(basetemp, ignore_errors=True)
         _engedd_el_a_helyet(hely)
+
+
+def _futtat_mutmut() -> int:
+    """Az éjszakai mutációs mérést ugyanazon kapun belül indítja (#6587)."""
+    szkript = _ROOT / "scripts" / "mutation_testing.py"
+    parancs = [*_memoria_burok(), sys.executable, str(szkript)]
+    print("Mutációs mérés indul (egy mutánsfolyamat, a run_tests kapuján át).", flush=True)
+    return _run(parancs, cwd=_ROOT, check=False).returncode
 
 
 #: A teljes nem-app készlet összesített mérésének kulcsa; nem futtatási egység.

@@ -1,0 +1,57 @@
+# #6587: szűk mutációs mérés. Éjszakai adatgyűjtés és kézi indítás; nem PR-kapu.
+name: Mutációs mérés (#6587)
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  mutmut:
+    name: ini + render mutációs pontszám
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Qt rendszercsomagok
+        run: |
+          for kiserlet in 1 2 3; do
+            timeout 180 sudo apt-get update && break
+            echo "apt-get update ($kiserlet.) nem jött vissza — újra"
+            sleep 5
+          done
+          sudo apt-get install -y $(python scripts/print_dependencies.py --apt)
+
+      - name: Futásidejű és fejlesztői függőségek
+        run: |
+          python -m pip install --upgrade pip
+          pip install -c packaging/ci-constraints.txt $(python scripts/print_dependencies.py --all)
+
+      - name: Mutációs mérés a run_tests.py kapuján át
+        run: python scripts/run_tests.py --mutmut
+
+      - name: Mért jelentés feltöltése
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: picasapy-mutmut-${{ github.run_id }}
+          path: .tmp/picasapy-mutmut/report.md
+          if-no-files-found: warn
+          include-hidden-files: true
