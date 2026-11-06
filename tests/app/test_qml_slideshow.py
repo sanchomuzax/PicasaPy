@@ -129,19 +129,29 @@ class TestSlideshowBasics:
         # DoD: léptetés-időzítő — rövid intervallummal valóban lép. Az
         # intervallum már INDÍTÁS ELŐTT rövid (a futó Timer átállítására
         # nem építünk), és lassú CI-gépre türelmesen, max ~3 mp-ig várunk.
-        window, _controller, _lib, _engine = qml_app
+        window, controller, _lib, _engine = qml_app
         show = _child(window, "slideshowView")
-        show.setProperty("intervalMs", 50)
+        # `intervalMs` csak olvasható, számított tulajdonság. A vetítési
+        # időt a vezérlő írható beállításán keresztül rövidítjük le.
+        controller.setSlideshowSeconds(1)
         steps = []
         show.currentIndexChanged.connect(
             lambda: steps.append(show.property("currentIndex"))
         )
         _start(window, qt_app, 0)
+        timer = _child(window, "slideshowTimer")
+        assert timer.property("interval") == 1000, (
+            "a tesztbeállításnak a tényleges QML-időzítőre is érvényesülnie kell"
+        )
         for _ in range(30):
             _wait_ms(qt_app, 100)
             if len(steps) > 1:   # az indítási index-beállításon túl is lépett
                 break
-        assert len(steps) > 1, "az időzítőnek legalább egyet lépnie kellett"
+        assert len(steps) > 1, (
+            "az időzítőnek legalább egyet lépnie kellett "
+            f"(running={timer.property('running')}, "
+            f"interval={timer.property('interval')})"
+        )
         _invoke(qt_app, show, "stop")
 
 

@@ -31,16 +31,18 @@ def _register_image_provider(engine, name: str, provider) -> None:
 
 
 def _destroy_qml_engine(engine, qt_app) -> None:
-    """Törölje a motort és ürítse ki az eseménysort, majd engedje el a providereket."""
+    """Törölje az engine-t, majd engedje el a providereket."""
     import shiboken6
     from PySide6.QtCore import QCoreApplication, QEvent
 
     providers = getattr(engine, _IMAGE_PROVIDER_REFS, ())
     if shiboken6.isValid(engine):
         engine.deleteLater()
-        qt_app.processEvents()
-        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
-        qt_app.processEvents()
+        # Csak ennek a motornak a DeferredDelete eseményét kézbesítsük. A
+        # globális event loop pörgetése a még élő régi QML-fát is futtathatja,
+        # a globális receiver (`None`) pedig a közös QGuiApplication más,
+        # használt objektumait idő előtt megsemmisítheti.
+        QCoreApplication.sendPostedEvents(engine, QEvent.Type.DeferredDelete)
     if shiboken6.isValid(engine):
         raise RuntimeError("a QML-engine nem semmisült meg a DeferredDelete után")
     if hasattr(providers, "clear"):

@@ -3,6 +3,8 @@
 import gc
 import weakref
 
+import shiboken6
+from PySide6.QtCore import QCoreApplication, QEvent, QObject
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuick import QQuickImageProvider
 
@@ -39,3 +41,23 @@ def test_provider_python_hivatkozasa_a_motor_torlese_utan_szabadul_fel(qt_app):
         f"szabadulhat fel: {sorrend}"
     )
     assert provider_ref() is None
+
+
+def test_engine_lebontasa_nem_torol_mas_fuggoben_levo_qt_objektumot(qt_app):
+    engine = QQmlApplicationEngine()
+    unrelated = QObject(qt_app)
+    unrelated.deleteLater()
+
+    try:
+        _destroy_qml_engine(engine, qt_app)
+
+        assert shiboken6.isValid(unrelated), (
+            "a QML-engine lebontása csak a saját DeferredDelete eseményét "
+            "kézbesítheti"
+        )
+    finally:
+        if shiboken6.isValid(unrelated):
+            unrelated.deleteLater()
+            QCoreApplication.sendPostedEvents(
+                unrelated, QEvent.Type.DeferredDelete
+            )
