@@ -53,6 +53,7 @@ dependencies = [
 # Telepítés: `pip install $(python scripts/print_dependencies.py --all)`.
 [project.optional-dependencies]
 dev = [
+    "hypothesis",
     "pytest",
     "pytest-randomly",
     "pytest-cov",
