@@ -152,7 +152,10 @@ def test_az_ejszakai_bukas_azonos_magon_ujra_es_fix_sorrendben_is_fut(
         [teszt], cov=False, basetemp=tmp_path / ".bt", randomly_seed=6590
     )
 
-    assert bukasok == [("tests/test_pelda.py", 1)]
+    # windowson a futtató a platform elválasztójával adja vissza az utat
+    assert [(nev.replace("\\", "/"), kod) for nev, kod in bukasok] == [
+        ("tests/test_pelda.py", 1)
+    ]
     assert hivasok == [(6590, False), (6590, False), (None, True)]
     kimenet = capsys.readouterr().out
     assert "Sorrendfüggés" in kimenet
