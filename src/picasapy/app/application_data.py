@@ -326,7 +326,10 @@ def load_screensaver_window(
     Itt, és nem a `screensaver_mode.py`-ban regisztrál, mert a
     `kepesseg_or.py` a kontextus-objektumokat ebben a fájlban méri.
     """
-    engine.addImageProvider(
+    from .application_startup_qml import _register_image_provider
+
+    _register_image_provider(
+        engine,
         display_photo_provider.PROVIDER_NAME,
         display_photo_provider.DisplayPhotoProvider(),
     )

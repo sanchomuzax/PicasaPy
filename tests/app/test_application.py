@@ -537,7 +537,8 @@ class TestEditControllerShutdownOnExit:
         exec_at = source.index("exit_code = app.exec()")
         cancel_at = source.rindex("edit_controller.cancelPendingPreview()")
         wait_at = source.rindex("edit_controller.waitForBackgroundWorkers(")
-        return_at = source.index("return exit_code")
+        # #6625: a kilépési kód a QML-lebontáson át tér vissza
+        return_at = source.index("return _shutdown_application_qml(state, exit_code)")
         assert exec_at < cancel_at < wait_at < return_at, (
             "a szerkesztő háttér-renderének érvénytelenítése/bevárása nem a "
             "kilépési úton, helyes sorrendben áll"
@@ -551,7 +552,7 @@ class TestEditControllerShutdownOnExit:
         levágta. A füstpróba pontosan azt nem mutatta volna meg, amiért van."""
         source = self._source()
         agi = source.index('print("onellenorzes: a felulet felepult"')
-        veg = source.index("return 0", agi)
+        veg = source.index("return _shutdown_application_qml(state, 0)", agi)
         szakasz = source[agi:veg]
         assert "controller.shutdown()" in szakasz
         assert "edit_controller.cancelPendingPreview()" in szakasz

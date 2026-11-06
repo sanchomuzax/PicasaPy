@@ -148,6 +148,13 @@ def run_screensaver(argv: list[str]) -> int:
     engine = QQmlApplicationEngine()
     window = load_screensaver_window(engine, screensaver_run_bridge)
     if window is None:
+        from .application_startup_qml import _destroy_qml_engine
+
+        _destroy_qml_engine(engine, app)
         return 1
     screensaver_run_bridge.finished.connect(app.quit)
-    return app.exec()
+    exit_code = app.exec()
+    from .application_startup_qml import _destroy_qml_engine
+
+    _destroy_qml_engine(engine, app)
+    return exit_code

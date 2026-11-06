@@ -191,6 +191,7 @@ def _build_qml_app(qt_app, tmp_path):
         wait_for_all_background_workers,
     )
     from PySide6.QtQml import QQmlApplicationEngine
+    from picasapy.app.application_startup_qml import _register_image_provider
 
     from support.jpeg_factory import make_jpeg
 
@@ -260,7 +261,7 @@ def _build_qml_app(qt_app, tmp_path):
     from picasapy.app.color_palette import ColorPaletteProvider
 
     color_palette_provider = ColorPaletteProvider()
-    engine.addImageProvider("colorpalette", color_palette_provider)
+    _register_image_provider(engine, "colorpalette", color_palette_provider)
     engine.rootContext().setContextProperty(
         "colorPalette", color_palette_provider
     )
@@ -272,29 +273,34 @@ def _build_qml_app(qt_app, tmp_path):
     from support.szinkron_kepszolgaltato import SzinkronKepSzolgaltato
 
     thumbnail_image_provider = SzinkronKepSzolgaltato()
-    engine.addImageProvider("thumbs", thumbnail_image_provider)
+    _register_image_provider(engine, "thumbs", thumbnail_image_provider)
     timeline_background_provider = TimelineBackgroundProvider(
         thumbnail_image_provider
     )
-    engine.addImageProvider("timelinebackground", timeline_background_provider)
-    engine.addImageProvider("editpreview", edit_preview)
-    engine.addImageProvider("effectthumb", SzinkronKepSzolgaltato())
+    _register_image_provider(engine, "timelinebackground", timeline_background_provider)
+    _register_image_provider(engine, "editpreview", edit_preview)
+    _register_image_provider(engine, "effectthumb", SzinkronKepSzolgaltato())
     # #1640: a diavetítés teljes felbontású, MÓD-TUDATOS szolgáltatója. ⚠️ A
     # harness a szolgáltató-listát KÉZZEL tükrözi az `application.py`-ból: aki
     # új szolgáltatót vezet be és ezt kihagyja, a QML-tesztekben FEKETE képet
     # kap, és a hiba a saját kódjának látszik (mérve a #1640-ben).
     from picasapy.app import display_photo_provider
 
-    engine.addImageProvider(
+    _register_image_provider(
+        engine,
         display_photo_provider.PROVIDER_NAME,
         display_photo_provider.DisplayPhotoProvider(),
     )
-    engine.addImageProvider("collagepreview", controller.collage_preview_provider)
+    _register_image_provider(
+        engine, "collagepreview", controller.collage_preview_provider
+    )
     engine.addImportPath(str(app_module._APP_DIR / "qml"))
     engine.rootContext().setContextProperty("controller", controller)
     engine.rootContext().setContextProperty("editController", edit_controller)
     engine.rootContext().setContextProperty("effectSliceController", effect_slice_controller)
-    engine.addImageProvider("effectslice", EffectSliceImageProvider(effect_slice_controller))
+    _register_image_provider(
+        engine, "effectslice", EffectSliceImageProvider(effect_slice_controller)
+    )
     engine.rootContext().setContextProperty(
         "fileOpsController", fileops_controller
     )
@@ -389,8 +395,9 @@ def _build_qml_app(qt_app, tmp_path):
     # EffectThumbnailProvider QRunnable-je a végén Qt `finished` jelzést küld;
     # Windows alatt hozzáférési hibát okoz, ha a válasz QML-tulajdonosa addigra
     # már megsemmisült.
-    engine.deleteLater()
-    qt_app.processEvents()
+    from picasapy.app.application_startup_qml import _destroy_qml_engine
+
+    _destroy_qml_engine(engine, qt_app)
 
 
 @pytest.fixture

@@ -41,6 +41,7 @@ közvetlenül nem indítunk: nincs `triggered`/`clicked`/`activated` és nincs
 from __future__ import annotations
 
 import pytest
+from support.szinkron_kepszolgaltato import SzinkronKepSzolgaltato
 
 from conftest import _build_qml_app, _negyzet_kepek
 from _szerkeszto_5150_helpers import (
@@ -89,6 +90,19 @@ EFFEKT_CSEMPEK = [
     ("editTabEffects4", 5, "effectNightVision", "nightvision", True),
     ("editTabEffects4", 5, "effectLocalContrast", "localcontrast", True),
 ]
+
+
+def test_effektcsempe_provider_python_hivatkozasa_az_enginehez_kotott(
+    qml_app_negyzet_kepek,
+):
+    """A két szinkron provider a tesztmotoron él; egyik sem lehet ideiglenes."""
+    _window, _controller, engine = qml_app_negyzet_kepek
+    providers = getattr(engine, "_picasapy_image_provider_refs", ())
+
+    assert sum(isinstance(provider, SzinkronKepSzolgaltato) for provider in providers) >= 2, (
+        "a rács és az effektcsempék providerét is Python-hivatkozásnak kell "
+        "életben tartania az engine törléséig"
+    )
 
 
 @pytest.mark.parametrize(("fulnev", "fulindex"), FULEK, ids=[f[0] for f in FULEK])

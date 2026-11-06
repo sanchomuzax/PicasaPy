@@ -335,7 +335,7 @@ if TYPE_CHECKING:
         _startup_step_create_qml_engine,
         _startup_step_load_qml,
         _startup_step_register_qml_context,
-        _startup_step_screensaver,
+        _startup_step_screensaver, _shutdown_application_qml,
     )
 
 # a `screensaver_idle.SCREENSAVER_FLAG` másolata — az import nélkül olvasható
@@ -529,7 +529,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     load_exit = _startup_step_load_qml(state)
     if load_exit is not None:
         _zard_be_az_induloablakot(early_startup)
-        return load_exit
+        return _shutdown_application_qml(state, load_exit)
 
     #: #3021: a csomagolás füstpróbája: a felület felépült (Qt-bővítmények, QML,
     #: fordítás, ikon a csomagban), az eseményciklus el sem indul. A LEZÁRÁS nem
@@ -538,7 +538,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     if onellenorzes:
         _startup_step_smoke_test(state)
         _zard_be_az_induloablakot(early_startup)
-        return 0
+        return _shutdown_application_qml(state, 0)
 
     # #240: a betöltés csak az ablak ELSŐ kirajzolt képkockája UTÁN indul (Windowson
     # a korábbi singleShot(0) még az első frame előtt futott); #6367: a külön
@@ -694,4 +694,4 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     # a perces rendert nem kell végigvárni, a daemon-szál emit nélkül fut ki.
     edit_controller.cancelPendingPreview()
     edit_controller.waitForBackgroundWorkers(2.0)
-    return exit_code
+    return _shutdown_application_qml(state, exit_code)
