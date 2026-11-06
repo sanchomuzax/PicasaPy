@@ -1530,3 +1530,13 @@ A `+0x648` a `0x007fb210` betöltőben készül: a `layer:overlays/overlay` erő
 **Következtetés.** (1) Bináris: `S = 0.05`, `Z = 1.0` a `0x007fb9f0`-ból, `O = P+8 = t*` a `0x007fbd90`-ből; ezzel a 38.2.24 B1 lezárva. (2) A teljes körhinta-elrendezés (hely, lépték, átlátszóság, láthatóság, korlátok, fókusz, animátor) binárisból adott; a megvalósítás a #6595. (3) Mérés: a lap 480 px magas, szélessége a képernyő arányát követi.
 
 **Nyitott, a következő felvehető irány.** A lapméret kiszámítása a binárisban: a `0x00801f50` `GetClientRect` utáni `0x009b49c0(&rect)` elrendező hívása, ahol a 480-as konstans (`0x1e0`) vagy a magasságarány várható.
+
+#### 38.2.97 A vetítés legalább 640 px-es fotóforrást kér (#6604, 2026-11-06)
+
+**Forrás és módszer (utasításszintű olvasat, a helyi `Picasa3.exe`-ből).** A `0x00802230` a `0x008023ad`-`0x008023f8` között a `[this+0x2e4]` képszolgáltató vtábla `+8` slotját hívja `(rekord, kimenet, méret)` argumentumokkal; a méret `trunc([0x00d35808])`, ahol az f32 konstans `2276.5557` (a `0x00d35808`-at a független memóriaeltolás-pásztázás szerint 15 utasítás csak olvassa, író nincs). A szolgáltató a `CThumbDB` `+0x4c`-n beágyazott felülete: a `0x00415790` és a `0x00417770` konstruktor a `[this+0x4c]`-be a `0x00c820a8` vtáblát írja (`0x0041580b`, `0x00417786`), amelyet az RTTI-index `CThumbDB::vftable` néven azonosít; a `+8` slot a nyers PE-adat szerint `0x00424b10`.
+
+**Mért küszöb.** A `0x00424b10` a kis és közepes méretű bélyegképet legfeljebb 256, illetve 512 px-es kérésekre használja. Nagyobb kérésnél a küszöb `kért_méret · 144 >> 9`; a `2276`-ra csonkolt kérés eredménye **640 px**. Előbb a `+0x2330`, majd a `+0x2284` gyorsítótárat vizsgálja. Ha mindkét kép mindkét oldala a küszöb alatt marad, a `0x006a0b10` háttérkéréssel készítteti el a nagyobb képet (`0x00424b63`–`0x00424bd9`).
+
+**Következtetés.** A teljes képernyős Időrend háttérforrása legalább 640 px hosszabb oldalú kép a fotóból; a 256 px-es rácsbélyegkép felnagyítása nem megfelelő forrás. A kisebb eredeti fotót nem lehet valódi részlettel 640 px-re bővíteni.
+
+**Fejlesztői átadás.** A PicasaPy Időrend háttérszolgáltatója a fotófájlból olvasson legalább 640 px-es forrást, ne a rács 256 px-es lemez-cache-éből. A #6577 szürkítési, automatikus javítási, gamma- és fedőréteg-lánca változatlan marad; a forrás előállítása a már aszinkron QML-kérésben történik, a kész háttér pedig az Időrend LRU-jába kerül.
