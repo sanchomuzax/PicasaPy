@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.55] - 2026-11-06
+
+- A Vetett árnyék tört távolságnál is a natív függőleges helyre kerül (#6618).
+
 ## [1.0.54] - 2026-11-06
 
 - A szinkron tesztjei véletlen műveletsorok után is ellenőrzik az ini és az index egyezését (#6588).
