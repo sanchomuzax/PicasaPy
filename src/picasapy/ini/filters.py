@@ -4,7 +4,9 @@ Formátum: `<név>=1[,<param>...];` bejegyzések pontosvesszővel, sorrend =
 alkalmazási sorrend. A név kis-nagybetű-tűrően illesztendő (pl. `Vignette`),
 de round-triphez az eredeti alak megőrzendő. A paraméterek tetszőleges
 előjeles floatok lehetnek — nyers stringként tároljuk őket, hogy a
-serialize bitre pontos legyen.
+serialize bitre pontos legyen. Kivétel a `colorfix`: annak korábbi PicasaPy
+mentései fordított sorrendűek voltak, ezért beolvasáskor natív sorrendűvé
+alakulnak.
 
 Figyelem: a parse→serialize normalizál (üres bejegyzéseket elhagy, záró `;`-t
 pótol), ezért a byte-pontos round-trip garanciát a document-réteg nyers
@@ -13,8 +15,10 @@ ezen a modulon keresztülmenni.
 
 Két serialize-út van (#695):
 
-- `serialize_filters` — megengedő és bájtra pontos. A bélyegkép-kulcshoz és
-  a belső round-triphez való; idegen/sérült láncra sem dob (#301).
+- `serialize_filters` — megengedő; a `colorfix` régi PicasaPy-sorrendjét
+  natív sorrenddé alakítja, a többi paramétert változatlanul írja. A
+  bélyegkép-kulcshoz és a belső round-triphez való; idegen/sérült láncra sem
+  dob (#301).
 - `serialize_filters_for_write` — az ÍRÓ kapu a `.picasa.ini` felé:
   kanonizálja a regiszterbeli szűrőneveket, és visszautasítja a néma
   elejtésbe futó paraméterszámot (ld. `picasapy.ini.filter_registry` és
@@ -63,6 +67,40 @@ class FilterOp:
         return tuple(float(param) for param in self.params[1:])
 
 
+def _legacy_colorfix_color(value: str) -> bool:
+    """Igaz, ha az első colorfix-mező egy régi PicasaPy-féle hex szín.
+
+    A Picasa natív sorrendjében ez a mező numerikus hőmérséklet. Csak a
+    korábbi PicasaPy alak (`szín,hőmérséklet`) tér el, ezért kizárólag
+    nem numerikus, 6 vagy 8 jegyű hex mezőt tekintünk régi színnek.
+    """
+    raw = value.strip()
+    try:
+        float(raw)
+    except ValueError:
+        pass
+    else:
+        return False
+    return len(raw) in (6, 8) and all(
+        char in "0123456789abcdefABCDEF" for char in raw
+    )
+
+
+def _normalize_colorfix_op(op: FilterOp) -> FilterOp:
+    """A régi PicasaPy szín–hőmérséklet alakot natív sorrendre migrálja."""
+    if (
+        op.name != "colorfix"
+        or len(op.params) < 2
+        or not _legacy_colorfix_color(op.params[1])
+    ):
+        return op
+    if len(op.params) == 2:
+        params = (op.params[0], "0.000000", op.params[1])
+    else:
+        params = (op.params[0], op.params[2], op.params[1], *op.params[3:])
+    return FilterOp(op.name, params)
+
+
 def parse_filters(value: str) -> tuple[FilterOp, ...]:
     ops = []
     for entry in value.split(";"):
@@ -72,7 +110,7 @@ def parse_filters(value: str) -> tuple[FilterOp, ...]:
         if not sep or not name:
             raise ValueError(f"Érvénytelen filter-bejegyzés: {entry!r}")
         params = tuple(rest.split(",")) if rest else ()
-        ops.append(FilterOp(name, params))
+        ops.append(_normalize_colorfix_op(FilterOp(name, params)))
     return tuple(ops)
 
 
@@ -134,12 +172,15 @@ def parse_filters_prefix(value: str) -> tuple[FilterOp, ...]:
             supplied_count = effective_param_count(params)
             if supplied_count and supplied_count != expected_count:
                 break
-        ops.append(FilterOp(name, params))
+        ops.append(_normalize_colorfix_op(FilterOp(name, params)))
     return tuple(ops)
 
 
 def serialize_filters(ops: tuple[FilterOp, ...]) -> str:
-    return "".join(f"{op.name}={','.join(op.params)};" for op in ops)
+    return "".join(
+        f"{normalized.name}={','.join(normalized.params)};"
+        for normalized in map(_normalize_colorfix_op, ops)
+    )
 
 
 def canonicalize_op(op: FilterOp) -> FilterOp:

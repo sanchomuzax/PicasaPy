@@ -123,14 +123,15 @@ def apply_whitept_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 
 
 def apply_colorfix_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    """`colorfix=1,Fehérpontszín,Hőmérséklet` — `0x008f9190`.
+    """`colorfix=1,Hőmérséklet,Fehérpontszín` — `0x008f9190`.
 
     A visszafejtett callback előbb a kiválasztott fehérpont-mátrixot
     alkalmazza, majd a színhő workerét nulla fehérváltással. Ha csak az
-    egyik beállítás aktív, csak az ahhoz tartozó lépés fut.
+    egyik beállítás aktív, csak az ahhoz tartozó lépés fut. A régi
+    PicasaPy-sorrendet a filters-beolvasó migrálja erre az alakra.
     """
     color = _whitepoint_color(op)
-    temperature = _slider(op, 1)
+    temperature = _slider(op, 0)
     result = _apply_whitepoint(image, color) if color else image
     if temperature != 0.0:
         return apply_native_colortemp(result, temperature, 0.0)
