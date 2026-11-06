@@ -58,6 +58,7 @@ dev = [
     "pytest-cov",
     "ruff",
     "build",
+    "mutmut==3.5.0",
 ]
 
 # Parancssori belépési pont: `pip install .` / `pipx install .` után a
@@ -97,6 +98,12 @@ source = ["src/picasapy"]
 
 [tool.coverage.report]
 show_missing = true
+
+# #6587: a mutation run is a nightly metric, not a PR gate. Pinning 3.5 keeps
+# its configuration key (`paths_to_mutate`) and result format reproducible.
+[tool.mutmut]
+paths_to_mutate = ["src/picasapy/ini", "src/picasapy/render"]
+pytest_add_cli_args_test_selection = ["tests/ini", "tests/render"]
 
 # #300: linter-konfiguráció. A cél a `ruff check src/ tests/` zöld futása,
 # a meglévő stílushoz igazított, szűk szabálykészlettel — nem egy tömeges

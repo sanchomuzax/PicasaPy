@@ -1821,6 +1821,23 @@ def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if "--darabszam" in argv:
         return _darabszam_kimenet()
+    mutmut = "--mutmut" in argv
+    mutmut_csomagok = [
+        arg.partition("=")[2]
+        for arg in argv
+        if arg.startswith("--mutmut-package=")
+    ]
+    if (
+        len(mutmut_csomagok) > 1
+        or any(csomag not in {"all", "ini", "render"} for csomag in mutmut_csomagok)
+        or any(arg == "--mutmut-package" for arg in argv)
+        or (mutmut_csomagok and not mutmut)
+    ):
+        print("A --mutmut-package értéke all, ini vagy render lehet, és csak --mutmut mellett használható.")
+        return 2
+    if mutmut and ("--cov" in argv or _fajllista_argumentum(argv) is not None):
+        print("A --mutmut nem kombinálható --cov vagy --fajllista kapcsolóval.")
+        return 2
     fajllista_ut = _fajllista_argumentum(argv)
     fajlok: list[str] | None = None
     teljes = False
@@ -1892,11 +1909,14 @@ def main(argv: list[str] | None = None) -> int:
     basetemp = Path(tempfile.mkdtemp(prefix=_TEMP_ELOTAG, dir=_TEMP_GYOKER))
     _jelold_a_futast(basetemp)
     try:
-        visszater = _futtat(
-            cov, basetemp, sorszam=sorszam, darab=darab,
-            fajlok=fajlok, teljes=teljes, indok=indok,
-            randomly_seed=randomly_seed,
-        )
+        if mutmut:
+            visszater = _futtat_mutmut(mutmut_csomagok[0] if mutmut_csomagok else None)
+        else:
+            visszater = _futtat(
+                cov, basetemp, sorszam=sorszam, darab=darab,
+                fajlok=fajlok, teljes=teljes, indok=indok,
+                randomly_seed=randomly_seed,
+            )
         _ird_ki_a_qt_eltérést()
         return visszater
     finally:
@@ -1904,6 +1924,16 @@ def main(argv: list[str] | None = None) -> int:
         # hogy megszakították-e (#677)
         shutil.rmtree(basetemp, ignore_errors=True)
         _engedd_el_a_helyet(hely)
+
+
+def _futtat_mutmut(csomag: str | None = None) -> int:
+    """Az éjszakai mutációs mérést ugyanazon kapun belül indítja (#6587)."""
+    szkript = _ROOT / "scripts" / "mutation_testing.py"
+    parancs = [*_memoria_burok(), sys.executable, str(szkript)]
+    if csomag is not None:
+        parancs.extend(["--package", csomag])
+    print("Mutációs mérés indul (egy mutánsfolyamat, a run_tests kapuján át).", flush=True)
+    return _run(parancs, cwd=_ROOT, check=False).returncode
 
 
 #: A teljes nem-app készlet összesített mérésének kulcsa; nem futtatási egység.
