@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import ast
 import difflib
+import importlib
 import importlib.metadata
 import json
 import os
@@ -14,6 +15,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import textwrap
 import time
 import tomllib
 from collections import Counter, defaultdict
@@ -32,6 +34,9 @@ _IGNORE_NAMES = {
 }
 _NAS_UT = re.compile(r"/mnt/|nas", re.IGNORECASE)
 _MUTANT_SORSZAM = re.compile(r"__mutmut_\d+$")
+_SOURCE_ROOT_PARTS = {"src", "picasapy"}
+_MUTATED_PACKAGE_PARTS = {"ini", "render"}
+_SOURCE_READ_CALLS = {"open", "read_text", "read_bytes", "glob", "rglob", "run"}
 
 # A mutmut 3.5 exitkódjai. A pontszám a kért „megölt / összes”; az időtúllépés
 # és a teszt nélküli mutáns külön státusz, nem számít megölt mutánsnak.
@@ -87,10 +92,10 @@ def _frissit_masolat() -> None:
             _masolat_fajl(forras, cel)
 
 
-def _nas_testfajlok(gyoker: Path) -> list[str]:
+def _nas_testfajlok(gyoker: Path, csomagok: set[str] | None = None) -> list[str]:
     """A NAS-útvonalat tartalmazó céltesztfájlokat futtatás előtt kizárja."""
     kihagyas: list[str] = []
-    for csomag in sorted(_TARGETS):
+    for csomag in sorted(csomagok or _TARGETS):
         tesztgyoker = gyoker / "tests" / csomag
         if not tesztgyoker.is_dir():
             continue
@@ -100,28 +105,170 @@ def _nas_testfajlok(gyoker: Path) -> list[str]:
     return kihagyas
 
 
-def _pytest_kivalasztas_frissitese() -> list[str]:
+def _hivasok_nevei(node: ast.AST) -> set[str]:
+    nevek: set[str] = set()
+    for elem in ast.walk(node):
+        if not isinstance(elem, ast.Call):
+            continue
+        cel = elem.func
+        if isinstance(cel, ast.Name):
+            nevek.add(cel.id)
+        elif isinstance(cel, ast.Attribute):
+            nevek.add(cel.attr)
+    return nevek
+
+
+def _nevek(node: ast.AST) -> set[str]:
+    return {elem.id for elem in ast.walk(node) if isinstance(elem, ast.Name)}
+
+
+def _szovegek(node: ast.AST) -> set[str]:
+    return {
+        elem.value.replace("\\", "/")
+        for elem in ast.walk(node)
+        if isinstance(elem, ast.Constant) and isinstance(elem.value, str)
+    }
+
+
+def _forrasgyoker_kifejezes(node: ast.AST) -> bool:
+    szovegek = _szovegek(node)
+    for ut in szovegek:
+        normalizalt = ut.strip("/")
+        darabok = set(normalizalt.split("/"))
+        if _SOURCE_ROOT_PARTS <= darabok and _MUTATED_PACKAGE_PARTS & darabok:
+            return True
+    return _SOURCE_ROOT_PARTS <= szovegek and bool(_MUTATED_PACKAGE_PARTS & szovegek)
+
+
+def _forrasut_valtozonevek(statements: list[ast.stmt]) -> set[str]:
+    valtozonevek: set[str] = set()
+    for statement in statements:
+        if isinstance(statement, (ast.Assign, ast.AnnAssign)):
+            ertek = statement.value
+            if ertek is None or not _forrasgyoker_kifejezes(ertek):
+                continue
+            celok = statement.targets if isinstance(statement, ast.Assign) else [statement.target]
+            for cel in celok:
+                valtozonevek.update(_nevek(cel))
+    return valtozonevek
+
+
+def _forrasolvaso_fuggveny(
+    node: ast.FunctionDef | ast.AsyncFunctionDef,
+    modul_forras_nevek: set[str],
+) -> bool:
+    """Igaz, ha a függvény forráskódot olvas, nem a termék viselkedését méri."""
+    hivasok = _hivasok_nevei(node)
+    if "getsource" in hivasok:
+        return True
+
+    forras_nevek = modul_forras_nevek | _forrasut_valtozonevek(node.body)
+    if not forras_nevek and not _forrasgyoker_kifejezes(node):
+        return False
+
+    hivasutak = {
+        elem.attr
+        for elem in ast.walk(node)
+        if isinstance(elem, ast.Attribute)
+    }
+    fajlolvasonak_latszik = bool(hivasok & _SOURCE_READ_CALLS) or "__file__" in hivasutak
+    return fajlolvasonak_latszik and (
+        bool(_nevek(node) & forras_nevek)
+        or _forrasgyoker_kifejezes(node)
+        or "__file__" in hivasutak
+    )
+
+
+def _teszt_nodeok(
+    fa: ast.Module,
+) -> tuple[
+    dict[str, ast.FunctionDef | ast.AsyncFunctionDef],
+    list[tuple[list[str], ast.FunctionDef | ast.AsyncFunctionDef]],
+]:
+    fuggvenyek: dict[str, ast.FunctionDef | ast.AsyncFunctionDef] = {}
+    tesztek: list[tuple[list[str], ast.FunctionDef | ast.AsyncFunctionDef]] = []
+    feldolgozando = [(fa.body, [])]
+    while feldolgozando:
+        body, osztalyok = feldolgozando.pop()
+        for elem in body:
+            if isinstance(elem, ast.ClassDef):
+                feldolgozando.append((elem.body, [*osztalyok, elem.name]))
+            elif isinstance(elem, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                fuggvenyek[elem.name] = elem
+                if elem.name.startswith("test_"):
+                    tesztek.append(([*osztalyok, elem.name], elem))
+    return fuggvenyek, tesztek
+
+
+def _forrasolvaso_tesztazonositok(gyoker: Path, csomagok: set[str] | None = None) -> list[str]:
+    """A mutált `src/picasapy`-t vizsgáló őrteszteket nodeid szinten azonosítja."""
+    kizart: list[str] = []
+    for csomag in sorted(csomagok or _TARGETS):
+        tesztgyoker = gyoker / "tests" / csomag
+        if not tesztgyoker.is_dir():
+            continue
+        for fajl in sorted(tesztgyoker.rglob("test_*.py")):
+            try:
+                fa = ast.parse(fajl.read_text(encoding="utf-8"))
+            except (OSError, SyntaxError, UnicodeError):
+                continue
+
+            modul_forras_nevek = _forrasut_valtozonevek(fa.body)
+            fuggvenyek, tesztek = _teszt_nodeok(fa)
+            forrasolvaso_nevek = {
+                nev for nev, fuggveny in fuggvenyek.items()
+                if _forrasolvaso_fuggveny(fuggveny, modul_forras_nevek)
+            }
+            valtozott = True
+            while valtozott:
+                valtozott = False
+                for nev, fuggveny in fuggvenyek.items():
+                    if (
+                        nev not in forrasolvaso_nevek
+                        and _hivasok_nevei(fuggveny) & forrasolvaso_nevek
+                    ):
+                        forrasolvaso_nevek.add(nev)
+                        valtozott = True
+
+            rel = fajl.relative_to(gyoker).as_posix()
+            for utvonal, teszt in tesztek:
+                if teszt.name in forrasolvaso_nevek:
+                    kizart.append(f"{rel}::" + "::".join(utvonal))
+    return sorted(kizart)
+
+
+def _toml_lista_csere(szoveg: str, kulcs: str, ertekek: list[str]) -> str:
+    sor = re.compile(rf"(?m)^{re.escape(kulcs)}\s*=\s*\[[^\]]*\]")
+    uj = f"{kulcs} = " + json.dumps(ertekek, ensure_ascii=False)
+    szoveg, darab = sor.subn(uj, szoveg, count=1)
+    if darab != 1:
+        raise ValueError(f"A pyproject.toml nem tartalmazza a mutmut {kulcs} beállítását.")
+    return szoveg
+
+
+def _pytest_kivalasztas_frissitese(csomagok: set[str] | None = None) -> tuple[list[str], list[str]]:
     pyproject = _PROJECT / "pyproject.toml"
     szoveg = pyproject.read_text(encoding="utf-8")
     beallitas = tomllib.loads(szoveg).get("tool", {}).get("mutmut", {})
-    vart = ["src/picasapy/ini", "src/picasapy/render"]
+    csomagok = set(csomagok or _TARGETS)
+    vart = [f"src/picasapy/{nev}" for nev in sorted(_TARGETS)]
     if beallitas.get("paths_to_mutate") != vart:
         raise ValueError(f"A mutmut forráshatókör eltér a kértől: {beallitas.get('paths_to_mutate')}")
 
-    kizart = _nas_testfajlok(_PROJECT)
-    args = ["tests/ini", "tests/render", *(f"--ignore={ut}" for ut in kizart)]
-    sor = re.compile(
-        r"(?m)^pytest_add_cli_args_test_selection\s*=\s*\[[^\]]*\]"
-    )
-    uj = "pytest_add_cli_args_test_selection = " + json.dumps(args, ensure_ascii=False)
-    friss, darab = sor.subn(uj, szoveg, count=1)
-    if darab != 1:
-        raise ValueError("A pyproject.toml nem tartalmazza a mutmut pytest-kiválasztását.")
+    if not csomagok or not csomagok <= _TARGETS:
+        raise ValueError(f"Érvénytelen mutációs csomaghatókör: {sorted(csomagok)}")
+    kizart_nas = _nas_testfajlok(_PROJECT, csomagok)
+    kizart_forras = _forrasolvaso_tesztazonositok(_PROJECT, csomagok)
+    tesztargs = [f"tests/{nev}" for nev in sorted(csomagok)]
+    tesztargs.extend(f"--ignore={ut}" for ut in kizart_nas)
+    tesztargs.extend(f"--deselect={nodeid}" for nodeid in kizart_forras)
+    friss = _toml_lista_csere(szoveg, "paths_to_mutate", [f"src/picasapy/{nev}" for nev in sorted(csomagok)])
+    friss = _toml_lista_csere(friss, "pytest_add_cli_args_test_selection", tesztargs)
     pyproject.write_text(friss, encoding="utf-8")
-    return kizart
+    return kizart_nas, kizart_forras
 
 
-def _mutmut_tamogato_forrasok() -> None:
+def _mutmut_tamogato_forrasok(csomagok: set[str] | None = None) -> None:
     """A nem célzott modulokat a mutmut importútvonalába másolja.
 
     A mutmut csak a két kijelölt könyvtárat másolja a `mutants/` alá. A
@@ -132,7 +279,7 @@ def _mutmut_tamogato_forrasok() -> None:
     cel = _PROJECT / "mutants" / "src" / "picasapy"
     cel.mkdir(parents=True, exist_ok=True)
     for elem in forras.iterdir():
-        if elem.name in _TARGETS:
+        if elem.name in (csomagok or _TARGETS):
             continue
         cel_elem = cel / elem.name
         if cel_elem.is_dir() and not cel_elem.is_symlink():
@@ -218,12 +365,12 @@ def _status(kod: int | None) -> str:
     return "nem futott le" if kod is None else _STATUS.get(kod, "gyanús eredmény")
 
 
-def _mutansok(mutants: Path) -> list[dict[str, Any]]:
+def _mutansok(mutants: Path, csomagok: set[str] | None = None) -> list[dict[str, Any]]:
     eredmeny: list[dict[str, Any]] = []
     for meta_ut in sorted(mutants.glob("src/picasapy/**/*.py.meta")):
         forras_ut = meta_ut.relative_to(mutants).with_suffix("")
         reszek = forras_ut.parts
-        if len(reszek) < 4 or reszek[2] not in _TARGETS:
+        if len(reszek) < 4 or reszek[2] not in (csomagok or _TARGETS):
             continue
         adat = json.loads(meta_ut.read_text(encoding="utf-8"))
         for nev, kod in adat.get("exit_code_by_key", {}).items():
@@ -251,58 +398,112 @@ def _fuggveny_sora(forras: str, mutans: str) -> int | None:
     return talalat
 
 
-def _mutacio_sora(mutans: dict[str, Any], futtato: str, projekt: Path) -> int | None:
-    fajl = projekt / "mutants" / mutans["fajl"]
-    try:
-        eredeti = fajl.read_text(encoding="utf-8")
-        allapot = fajl.stat()
-    except OSError:
-        return None
-    alkalmaz = subprocess.run(
-        [futtato, "apply", mutans["nev"]], cwd=projekt,
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
-        check=False,
+def _elso_elteres_sora(eredeti: str, mutalt: str, kezdo_sor: int) -> int | None:
+    """A függvénykódok diffjéből visszaadja az első módosított forrássort."""
+    for muvelet, kezdet, _veg, _uj_kezdet, _uj_veg in difflib.SequenceMatcher(
+        a=eredeti.splitlines(), b=mutalt.splitlines(), autojunk=False,
+    ).get_opcodes():
+        if muvelet != "equal":
+            return max(1, kezdo_sor + kezdet)
+    return None
+
+
+def _fuggveny_node(
+    fa: ast.Module, nev: str, osztalynev: str | None,
+) -> ast.FunctionDef | ast.AsyncFunctionDef | None:
+    if osztalynev is not None:
+        osztaly = next(
+            (node for node in ast.walk(fa) if isinstance(node, ast.ClassDef) and node.name == osztalynev),
+            None,
+        )
+        if osztaly is None:
+            return None
+        return next(
+            (node for node in osztaly.body
+             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == nev),
+            None,
+        )
+    return next(
+        (node for node in fa.body
+         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == nev),
+        None,
     )
+
+
+def _mutacio_sora(
+    mutans: dict[str, Any],
+    projekt: Path,
+    mutmut_api: Any,
+    forras_cache: dict[str, tuple[str, ast.Module]],
+    mutans_cache: dict[str, Any],
+) -> int | None:
+    fajlnev = mutans["fajl"]
+    forras = forras_cache.get(fajlnev)
+    if forras is None:
+        try:
+            szoveg = (projekt / fajlnev).read_text(encoding="utf-8")
+            fa = ast.parse(szoveg)
+        except (OSError, SyntaxError):
+            return None
+        forras = (szoveg, fa)
+        forras_cache[fajlnev] = forras
+
+    szoveg, fa = forras
+    mutant_modul = mutans_cache.get(fajlnev)
+    if mutant_modul is None:
+        mutant_fajl = projekt / "mutants" / fajlnev
+        try:
+            mutant_modul = mutmut_api.cst.parse_module(
+                mutant_fajl.read_text(encoding="utf-8"),
+            )
+        except (OSError, SyntaxError):
+            return None
+        mutans_cache[fajlnev] = mutant_modul
     try:
-        if alkalmaz.returncode != 0:
-            return _fuggveny_sora(eredeti, mutans["nev"])
-        valtozott = fajl.read_text(encoding="utf-8")
-        regi_sorok = eredeti.splitlines()
-        uj_sorok = valtozott.splitlines()
-        for op, kezdet, _veg, _uj_kezdet, _uj_veg in difflib.SequenceMatcher(
-            a=regi_sorok, b=uj_sorok, autojunk=False,
-        ).get_opcodes():
-            if op != "equal":
-                return max(1, kezdet + 1)
-        return _fuggveny_sora(eredeti, mutans["nev"])
-    except OSError:
-        return _fuggveny_sora(eredeti, mutans["nev"])
-    finally:
-        fajl.write_text(eredeti, encoding="utf-8")
-        os.utime(fajl, ns=(allapot.st_atime_ns, allapot.st_mtime_ns))
+        fuggvenynev, osztalynev = mutmut_api.orig_function_and_class_names_from_key(mutans["nev"])
+        eredeti_node = _fuggveny_node(fa, fuggvenynev, osztalynev)
+        mutalt_node = mutmut_api.read_mutant_function(mutant_modul, mutans["nev"])
+        if eredeti_node is None:
+            return None
+        eredeti_kod = ast.get_source_segment(szoveg, eredeti_node)
+        if eredeti_kod is None:
+            return None
+        dekorator_sorok = [dekorator.lineno for dekorator in eredeti_node.decorator_list]
+        kezdo_sor = min([eredeti_node.lineno, *dekorator_sorok])
+        mutalt_kod = mutmut_api.cst.Module([mutalt_node]).code
+        return _elso_elteres_sora(
+            textwrap.dedent(eredeti_kod),
+            textwrap.dedent(mutalt_kod).strip("\n"),
+            kezdo_sor,
+        )
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+        return None
 
 
-def _osszefoglal(mutansok: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
-    csomagok: dict[str, dict[str, Any]] = {
+def _osszefoglal(
+    mutansok: list[dict[str, Any]], csomagok: set[str] | None = None,
+) -> dict[str, dict[str, Any]]:
+    kivant_csomagok = csomagok or _TARGETS
+    osszesito: dict[str, dict[str, Any]] = {
         nev: {"ossz": 0, "megolt": 0, "tulelte": 0, "statuszok": Counter()}
-        for nev in sorted(_TARGETS)
+        for nev in sorted(kivant_csomagok)
     }
     for mutans in mutansok:
-        adat = csomagok[mutans["csomag"]]
+        adat = osszesito[mutans["csomag"]]
         adat["ossz"] += 1
         adat["statuszok"][mutans["status"]] += 1
         if mutans["status"] == "megölte a teszt":
             adat["megolt"] += 1
         elif mutans["status"] == "túlélte":
             adat["tulelte"] += 1
-    return csomagok
+    return osszesito
 
 
-def _relacio_fajlok(projekt: Path) -> list[str]:
+def _relacio_fajlok(projekt: Path, csomagok: set[str] | None = None) -> list[str]:
     """Kifejezett metamorf/relációjelölést keres; név alapján nem találgat."""
     jelolo = re.compile(r"pytest\.mark\.(?:metamorphic|metamorf|mutation_relation|mutacio_relacio)")
     talalatok: list[str] = []
-    for csomag in sorted(_TARGETS):
+    for csomag in sorted(csomagok or _TARGETS):
         tesztgyoker = projekt / "tests" / csomag
         for fajl in sorted(tesztgyoker.rglob("test_*.py")):
             if jelolo.search(fajl.read_text(encoding="utf-8", errors="replace")):
@@ -316,11 +517,12 @@ def _jelentes(
     futasido: float,
     csucs_bajt: int | None,
     kizart_nas: list[str],
+    kizart_forras: list[str],
+    csomagok: set[str],
     teljes: bool,
     projekt: Path,
-    mutmut_parancs: str,
 ) -> str:
-    csomagok = _osszefoglal(mutansok)
+    osszesites = _osszefoglal(mutansok, csomagok)
     sorok = [
         "# Mutációs mérés — #6587",
         "",
@@ -336,8 +538,8 @@ def _jelentes(
         "| Csomag | Megölt / összes | Pontszám | Túlélő |",
         "|---|---:|---:|---:|",
     ]
-    for nev in sorted(_TARGETS):
-        adat = csomagok[nev]
+    for nev in sorted(csomagok):
+        adat = osszesites[nev]
         pont = f"{adat['megolt'] / adat['ossz'] * 100:.1f}%" if adat["ossz"] else "n/a"
         sorok.append(
             f"| `{nev}/` | {adat['megolt']} / {adat['ossz']} | {pont} | {adat['tulelte']} |"
@@ -349,6 +551,12 @@ def _jelentes(
 
     tulelok = [m for m in mutansok if m["status"] == "túlélte"]
     csoportok: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    forras_cache: dict[str, tuple[str, ast.Module]] = {}
+    mutans_cache: dict[str, Any] = {}
+    try:
+        mutmut_api = importlib.import_module("mutmut.__main__")
+    except ImportError:
+        mutmut_api = None
     for mutans in tulelok:
         csoportok[mutans["fajl"]].append(mutans)
     sorok.extend(["", "## Túlélők, modulonként csoportosítva", ""])
@@ -357,7 +565,17 @@ def _jelentes(
     for fajl, csoport in sorted(csoportok.items()):
         sorok.append(f"### `{fajl}` — {len(csoport)} túlélő")
         for mutans in sorted(csoport, key=lambda m: m["nev"]):
-            line = _mutacio_sora(mutans, mutmut_parancs, projekt)
+            if mutmut_api is None:
+                try:
+                    eredeti = (projekt / mutans["fajl"]).read_text(encoding="utf-8")
+                except OSError:
+                    line = None
+                else:
+                    line = _fuggveny_sora(eredeti, mutans["nev"])
+            else:
+                line = _mutacio_sora(
+                    mutans, projekt, mutmut_api, forras_cache, mutans_cache,
+                )
             hely = f"{fajl}:{line}" if line is not None else f"{fajl}:?"
             sorok.append(f"- `{hely}` — `{mutans['nev']}`")
         sorok.append("")
@@ -367,7 +585,12 @@ def _jelentes(
     if not kizart_nas:
         sorok.append("Nem volt NAS-útvonalat tartalmazó céltesztfájl.")
 
-    relaciok = _relacio_fajlok(projekt)
+    sorok.extend(["", "## Mutált forrást olvasó őrtesztek kizárva", ""])
+    sorok.extend(f"- `{nodeid}`" for nodeid in kizart_forras)
+    if not kizart_forras:
+        sorok.append("Nem találtam forráskódot olvasó céltesztet.")
+
+    relaciok = _relacio_fajlok(projekt, csomagok)
     sorok.extend(["", "## Metamorf relációk", ""])
     if relaciok:
         sorok.append(
@@ -397,7 +620,12 @@ def _jelentes(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.parse_args(argv)
+    parser.add_argument(
+        "--package", choices=("all", *sorted(_TARGETS)), default="all",
+        help="mérési hatókör; csomagonkénti első méréshez szűkíthető",
+    )
+    args = parser.parse_args(argv)
+    csomagok = set(_TARGETS) if args.package == "all" else {args.package}
     if os.name == "nt":
         print("A mutmut 3.5 Linux/WSL alatt fut; natív Windowson nem támogatott.", file=sys.stderr)
         return 2
@@ -415,20 +643,21 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     _frissit_masolat()
-    kizart_nas = _pytest_kivalasztas_frissitese()
-    _mutmut_tamogato_forrasok()
+    kizart_nas, kizart_forras = _pytest_kivalasztas_frissitese(csomagok)
+    _mutmut_tamogato_forrasok(csomagok)
     env = os.environ.copy()
     env["PYTHONDONTWRITEBYTECODE"] = "1"
-    print("Hatókör: src/picasapy/ini + tests/ini és src/picasapy/render + tests/render.")
+    print("Hatókör:", " + ".join(f"src/picasapy/{nev} + tests/{nev}" for nev in sorted(csomagok)))
     print("NAS-t tartalmazó tesztfájlok kizárva:", ", ".join(kizart_nas) or "nincs")
+    print("Mutált forrást olvasó tesztek kizárva:", ", ".join(kizart_forras) or "nincs")
     parancs = [mutmut, "run", "--max-children", "1"]
     kod, futasido, csucs = _futtat_meressel(parancs, env)
     if kod == 130:
-        mutansok = _mutansok(_PROJECT / "mutants")
+        mutansok = _mutansok(_PROJECT / "mutants", csomagok)
         resz = _jelentes(
             mutansok, futasido=futasido, csucs_bajt=csucs,
-            kizart_nas=kizart_nas, teljes=False, projekt=_PROJECT,
-            mutmut_parancs=mutmut,
+            kizart_nas=kizart_nas, kizart_forras=kizart_forras,
+            csomagok=csomagok, teljes=False, projekt=_PROJECT,
         )
         _REPORT.write_text(resz, encoding="utf-8")
         print(f"Megszakadt; folytatáshoz futtasd újra. Részjelentés: {_REPORT}")
@@ -436,11 +665,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if kod == 0:
         subprocess.run([mutmut, "export-cicd-stats"], cwd=_PROJECT, env=env, check=False)
-    mutansok = _mutansok(_PROJECT / "mutants")
+    mutansok = _mutansok(_PROJECT / "mutants", csomagok)
     jelentes = _jelentes(
         mutansok, futasido=futasido, csucs_bajt=csucs,
-        kizart_nas=kizart_nas, teljes=kod == 0, projekt=_PROJECT,
-        mutmut_parancs=mutmut,
+        kizart_nas=kizart_nas, kizart_forras=kizart_forras,
+        csomagok=csomagok, teljes=kod == 0, projekt=_PROJECT,
     )
     _REPORT.write_text(jelentes, encoding="utf-8")
     print(jelentes)
