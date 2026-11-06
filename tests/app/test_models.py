@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from picasapy.index import open_index, photos_in_folder, sync_tree
+from picasapy.index import open_index, photos_in_folder, sync_folder, sync_tree
 
 from support.jpeg_factory import make_jpeg
 
@@ -212,6 +212,37 @@ class TestFolderListModel:
         from picasapy.app.models import FolderListModel
 
         assert FolderListModel().rowCount() == 0
+
+    def test_ini_only_album_folder_is_hidden_until_it_gets_a_photo(
+        self, qt_app, conn, library
+    ):
+        from picasapy.app.models import FolderListModel
+
+        folder = library / "aaa-csak-ini"
+        folder.mkdir()
+        (folder / ".picasa.ini").write_text(
+            "[.album:ini6608]\nname=Album\n", encoding="utf-8"
+        )
+        sync_folder(conn, library, folder)
+
+        model = FolderListModel()
+        model.load(conn)
+        paths = {
+            model.data(model.index(i, 0), FolderListModel.PathRole)
+            for i in range(model.rowCount())
+            if model.data(model.index(i, 0), FolderListModel.KindRole) == "folder"
+        }
+        assert str(folder) not in paths
+
+        make_jpeg(folder / "uj.jpg")
+        sync_folder(conn, library, folder)
+        model.load(conn)
+        paths = {
+            model.data(model.index(i, 0), FolderListModel.PathRole)
+            for i in range(model.rowCount())
+            if model.data(model.index(i, 0), FolderListModel.KindRole) == "folder"
+        }
+        assert str(folder) in paths
 
 
 class TestPhotoGridModel:
