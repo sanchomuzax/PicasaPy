@@ -183,7 +183,7 @@ class TestFeherpontEffektekRenderelese:
     @pytest.mark.parametrize(
         "chain",
         (
-            "colorfix=1,ffd27840,0.125000;",
+            "colorfix=1,0.125000,ffd27840;",
             "whitept=1,ffd27840;",
         ),
     )

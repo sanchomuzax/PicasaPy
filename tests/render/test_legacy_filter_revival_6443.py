@@ -47,7 +47,7 @@ def test_colorfix_applies_whitepoint_then_native_color_temperature():
     image = _photo()
     selected = (210, 120, 64)
     temperature = 0.125
-    op = FilterOp("colorfix", ("1", "ffD27840", "0.125"))
+    op = FilterOp("colorfix", ("1", "0.125", "ffD27840"))
 
     result = apply_colorfix_op(image, op)
 
@@ -63,7 +63,7 @@ def test_revived_filters_run_from_the_filter_chain():
     image = _photo()
     ops = (
         FilterOp("whitept", ("1", "ffd27840")),
-        FilterOp("colorfix", ("1", "ffd27840", "0.125")),
+        FilterOp("colorfix", ("1", "0.125", "ffd27840")),
     )
 
     report = apply_filters(image, ops)
@@ -78,7 +78,7 @@ def test_colorfix_keeps_legacy_numeric_parameters_without_a_picked_color():
 
     assert report.skipped == ()
     np.testing.assert_array_equal(
-        report.image, apply_native_colortemp(image, 0.125, 0.0)
+        report.image, apply_native_colortemp(image, 0.5, 0.0)
     )
 
 

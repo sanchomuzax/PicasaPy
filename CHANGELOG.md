@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.57] - 2026-11-06
+
+- A Semleges szín (colorfix) natív sorrendben menti a hőmérsékletet és a pipettaszínt, a régi mentéseket pedig beolvasáskor átalakítja (#6617).
+
+## [1.0.56] - 2026-11-06
+
+- A véletlen sorrend tesztje windowson a platform elválasztójával is egyezik (#6590).
 ## [1.0.55] - 2026-11-06
 
 - A Vetett árnyék tört távolságnál is a natív függőleges helyre kerül (#6618).
