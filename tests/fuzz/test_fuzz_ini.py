@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import pytest
 
@@ -43,7 +44,8 @@ def test_ini_parser_es_szurok_roundtripja_es_mentese_bajtazonos(
     eset, tmp_path, fuzz_keret
 ):
     szoveg, nyers_ops, rect, raw, bom = eset
-    with fuzz_keret():
+    with TemporaryDirectory(prefix="ini-", dir=tmp_path) as temp_dir, fuzz_keret():
+        mappa = Path(temp_dir)
         dokumentum = parse_document(szoveg)
         assert dokumentum.serialize() == szoveg
 
@@ -56,10 +58,10 @@ def test_ini_parser_es_szurok_roundtripja_es_mentese_bajtazonos(
         ujra = decode_rect64(encode_rect64(dekodolt))
         assert ujra == dekodolt
 
-        cel = tmp_path / "fuzz.picasa.ini"
+        cel = mappa / "fuzz.picasa.ini"
         cel.write_bytes((b"\xef\xbb\xbf" if bom else b"") + raw)
         betoltott = load_document(cel)
-        mentett = tmp_path / "mentett.picasa.ini"
+        mentett = mappa / "mentett.picasa.ini"
         save_document(betoltott, mentett)
         assert mentett.read_bytes() == cel.read_bytes()
 

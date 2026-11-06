@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import struct
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import pytest
 
@@ -90,16 +91,17 @@ def _slot_eset(draw):
 def test_mutalt_pmp_fejlecek_es_darabszamok_hibas_adaton_is_gyorsak(
     pmp, thumb, slot, tmp_path, fuzz_keret
 ):
-    fajl = tmp_path / "fuzz.pmp"
-    thumb_fajl = tmp_path / "thumbindex.db"
-    slot_fajl = tmp_path / "thumbs_index.db"
-    db3 = tmp_path / "db3"
-    db3.mkdir(exist_ok=True)
-    tabla_fajl = db3 / "imagedata_caption.pmp"
-    cache_data = db3 / "thumbs_0.db"
-    cache_index = db3 / "thumbs_index.db"
+    with TemporaryDirectory(prefix="pmp-", dir=tmp_path) as temp_dir, fuzz_keret():
+        mappa = Path(temp_dir)
+        fajl = mappa / "fuzz.pmp"
+        thumb_fajl = mappa / "thumbindex.db"
+        slot_fajl = mappa / "thumbs_index.db"
+        db3 = mappa / "db3"
+        db3.mkdir()
+        tabla_fajl = db3 / "imagedata_caption.pmp"
+        cache_data = db3 / "thumbs_0.db"
+        cache_index = db3 / "thumbs_index.db"
 
-    with fuzz_keret():
         fajl.write_bytes(pmp)
         thumb_fajl.write_bytes(thumb)
         slot_fajl.write_bytes(slot)
