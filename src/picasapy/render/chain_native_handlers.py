@@ -123,7 +123,7 @@ def apply_whitept_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 
 
 def apply_colorfix_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    """`colorfix=1,Hőmérséklet,Fehérpontszín` — `0x008f9190`.
+    """`colorfix=1,Hőmérséklet,Fehérpontszín` (`0x008f9190`).
 
     A visszafejtett callback előbb a kiválasztott fehérpont-mátrixot
     alkalmazza, majd a színhő workerét nulla fehérváltással. Ha csak az

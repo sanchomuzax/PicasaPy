@@ -15,7 +15,7 @@ ezen a modulon keresztülmenni.
 
 Két serialize-út van (#695):
 
-- `serialize_filters` — megengedő; a `colorfix` régi PicasaPy-sorrendjét
+- `serialize_filters`: megengedő; a `colorfix` régi PicasaPy-sorrendjét
   natív sorrenddé alakítja, a többi paramétert változatlanul írja. A
   bélyegkép-kulcshoz és a belső round-triphez való; idegen/sérült láncra sem
   dob (#301).
@@ -87,7 +87,7 @@ def _legacy_colorfix_color(value: str) -> bool:
 
 
 def _normalize_colorfix_op(op: FilterOp) -> FilterOp:
-    """A régi PicasaPy szín–hőmérséklet alakot natív sorrendre migrálja."""
+    """A régi PicasaPy szín, majd hőmérséklet alakot natív sorrendre migrálja."""
     if (
         op.name != "colorfix"
         or len(op.params) < 2
