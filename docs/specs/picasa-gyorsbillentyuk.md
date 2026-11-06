@@ -2463,4 +2463,44 @@ A keymap 42-44. sorában rendre `srckey="/"`, `srckey=","` és `srckey="."` szer
 
 #### Nyitott, a következő felvehető irány
 
-A 42-44. keymap-rekord útját a `0x009a16b0` betöltőtől és a `0x009a0ad0` parser által létrehozott rekesztáblától kell követni addig a fogyasztóig, amely az aktív videónézőnek eseményt küld. Ott azonosítható, hogy létezik-e parancsazonosító, és mely fogadó kapja meg; csak ezután érdemes a `0x005cb990` parancs-szétosztóval vagy a `0x006248e0` MoviePreviewHandlerrel összekötni. Az eredeti Picasa és a PicasaPy három videóbillentyűs futáspróbája továbbra sincs meg.
+A 42-44. keymap-rekord útját a `0x009a16b0` betöltőtől és a `0x009a0ad0` parser által létrehozott rekesztáblától kell követni addig a fogyasztóig, amely az aktív videónézőnek eseményt küld. Ott azonosítható, hogy létezik-e parancsazonosító, és mely fogadó kapja meg; csak ezután érdemes a `0x005cb990` parancs-szétosztóval vagy a `0x006248e0` MoviePreviewHandlerrel összekötni. Az eredeti Picasa és a PicasaPy három videóbillentyűs futáspróbája továbbra sincs meg. Ezt a kutatási irányt a §12.10 zárja le.
+
+### 12.10 A 42-44. rekesz nem jut el a videóparancsig (2026-11-07)
+
+**Forrás és módszer.** A helyi `Picasa3.exe` SHA-256 értéke `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`. A `.text` szakaszt a privát `paszta.py` darabolt Capstone-pásztázásával, `memoria_kapu()` használatával vizsgáltam; a pásztázás 2 884 879 utasításon ment végig. A keymap-rekordok betöltési, tárolási és olvasási útját, a közvetett vtable-útvonalakat, valamint a hívókat ellenőriztem. Ez a bináris statikus vizsgálata; sem az eredeti Picasát, sem a PicasaPy-t nem futtattam.
+
+#### A loader és a parser útja
+
+| lépés | cím | megállapítás | bizonyítottság |
+|---|---|---|---|
+| betöltés | `0x009a16b0` | A `runtime\shortcuts.xml` opcionális fájlt próbálja olvasni, a parser vtable-jét `0x00cd9260`-ra állítja. A menüépítő `0x00559150` a `0x00559164`-en, a `CThumbUI` felépítője `0x00565920` a `0x00565c16`-on hívja. | közvetlen disassembly |
+| `CThumbUI`-tábla | `0x00565c10`-`0x00565c16` | A `0x00565920` a `CThumbUI + 0xcdc` mező címét adja a loadernek. | közvetlen disassembly |
+| XML-parser | `0x009a0ad0` | A `srckey`, `dstkey` és módosítók értékeit olvassa. A `0x009a1189`-`0x009a1199` ellenőrzi, hogy a forrás- és célbillentyű egyaránt nem nulla-e; ha bármelyik nulla, a parser átugorja a rekesz hozzáadását. | közvetlen disassembly |
+| átírórekord | `0x009a11c0`-`0x009a12ee` | A hozzáadott rekordok 16 bájtosak: forrásmódosítók `+0..+2`, célmódosítók `+3..+5`, forrásbillentyű DWORD `+8`, célbillentyű DWORD `+0x0c`. Nincs bennük parancsazonosító. | közvetlen disassembly |
+
+A SHORTCUTS.XML 42-44. eleme rendre `/`, `,`, `.` forrásbillentyűt és üres `dstkey`-t, továbbá nulla `ctrl`, `shift` és `alt` értéket tartalmaz. Az üres `dstkey` nulla célértékként marad a parser ideiglenes mezőjében, ezért a `0x009a1189`-nél kezdődő ellenőrzés mindhárom sort kihagyja. Ezek a sorok nem kerülnek be a `CThumbUI + 0xcdc` által használt, 16 bájtos átírórekordok közé. A `Pause/Play Movie`, `Rewind Movie` és `Fast Forward Movie` XML-kommentek funkciónevek, nem parancsazonosítók.
+
+#### Az eseménykezelők és a táblafogyasztó
+
+| út | címek | eredmény | bizonyítottság |
+|---|---|---|---|
+| CThumbUI Ctrl-ág | `0x005e6710` → `0x005e60d0` (`0x005e69cf`) | A `0x005e6710` a Ctrl módosítóbittel érkező billentyűeseményt a Ctrl-kezelőnek adja. A `0x005e60d0` a `CThumbUI + 0xcdc` táblát átadja a `0x005c5fc0` összevetőnek (`0x005e61c7`-`0x005e61d1`). | közvetlen disassembly |
+| táblafogyasztó | `0x005c5fc0` | A 16 bájtos sorokon végiglépked, forrásbillentyűt és három módosítót hasonlít, majd találatkor csak a célbillentyűt és célmódosítókat írja az eseménybe. Parancsot nem indít. A teljes `.text`-pásztázásban ez az egyetlen hívója. | közvetlen disassembly és teljes szakaszpásztázás |
+| OneUp billentyűút | `0x00cbd5c4 + 0x30` → `0x00802e10` → `0x00801270` | Az aktív OneUpUI keydown-kezelője közvetlenül kezeli az Escape, nyíl, Space, számjegy, F, B és O ágakat. `/`, `,`, `.` ág nincs; az alapág `0x80004003` értékkel tér vissza, videóműveletet nem indít. | vtable és kezelőtörzs közvetlen disassembly |
+
+A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírórekordok közül. A Ctrl-kezelő ezért ezekből a rekordokból nem tud parancsot előállítani. Az aktív OneUp ismert helyi billentyűkezelője megkapja a keydown eseményt, de egyik írásjelhez sem tartozik helyi műveletág. A két út közül egyik sem ad `cmd` értéket vagy hívja a videó műveletét.
+
+**Következtetés.** A leltár jelenlegi bináris bizonyítéka szerint egyik billentyűhöz sincs azonosított videónézeti parancs. A PicasaPy videónézőjéhez most nem indokolt `/`, `,`, `.` gyorsbillentyű-javítást hozzáadni: az eredeti Picasa viselkedését a sorok kommentje önmagában nem bizonyítja. Ez nem paritásfutás; az eredeti Picasa és a PicasaPy valódi billentyűleütéses próbája továbbra is szükséges a teljes jegy lezárásához.
+
+#### Amit kizártam
+
+- A menüsáv és helyi menü `0x00a6b250` feliratépítő útja gyorsbillentyű-szöveget állít elő. Ez nem azonos a `0x005c5fc0` billentyűesemény-átírójával, és nem ad videóparancsot a három üres `dstkey` sorhoz.
+- A `0x005cb990` parancs-elosztó nincs a fenti billentyűkezelői láncban. Nem köthető hozzá parancs pusztán a függvény létezése alapján.
+- A `0x006248e0` a MovieMaker előnézet `MoviePreviewHandler`-e. Annak belső műveletkódjaihoz nem találtam a keymap 42-44. soraitól vezető hívási láncot.
+- A `CreateAcceleratorTableA` út (`0x00923110`) egy üres OLE gyorsítótáblát állít elő; ez nem a 42-44. sorok eseményfogyasztója.
+- Nem használtam önmagában negatív xref-találatot. A kizárások közvetlen kezelőtörzsön, vtable-feloldáson és a teljes `.text`-pásztázáson alapulnak.
+
+#### Nyitott
+
+- A futó eredeti Picasában le kell ütni mindhárom billentyűt aktív videó mellett, és a ténylegesen látható hatást rögzíteni kell. A statikus vizsgálat nem mutatja meg, hogy az alapértelmezett OneUp-kezelői visszatérés után egy külső ablak- vagy lejátszókomponens átveszi-e az eseményt.
+- A PicasaPy három valódi `QTest.keyClick` próbája, valamint az eredeti és az újraírás közti eltérés táblázata még nincs elkészítve. Addig nincs binárissal alátámasztott termékváltozás vagy külön javító jegy.
