@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.50] - 2026-11-06
+
+- A túlméretezett keret- és árnyékeffektek nem foglalhatnak korlátlan memóriát. (#6581).
+- A zárolt vagy megszakadt mentés nem hagyhat félig írt képet vagy `.picasa.ini`-t (#6589).
+
 ## [1.0.49] - 2026-11-05
 
 - A vetítés vezérlősávját a tesztek küszöb feletti mozdulattal hozzák elő (#6591).
