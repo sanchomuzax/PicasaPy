@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.54] - 2026-11-06
+
+- A szinkron tesztjei véletlen műveletsorok után is ellenőrzik az ini és az index egyezését (#6588).
+
 ## [1.0.53] - 2026-11-06
 
 - A fájlolvasók és a renderlánc generált hibás bemeneteken is ellenőrzést kapnak (#6582).
