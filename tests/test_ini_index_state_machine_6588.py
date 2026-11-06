@@ -11,7 +11,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pytest
-from hypothesis import settings, strategies as st
+from hypothesis import example, given, settings, strategies as st
 from hypothesis.stateful import (
     RuleBasedStateMachine,
     invariant,
@@ -60,7 +60,7 @@ _NOT_REBUILT_PHOTO_FIELDS = {
     "face_count",
     "unnamed_face_count",
 }
-_PROFILE = os.environ.get("HYPOTHESIS_PROFILE", "ci")
+_PROFILE = os.environ.get("PICASAPY_FUZZ_PROFIL", "ci")
 settings.register_profile(
     "ci", max_examples=12, stateful_step_count=18, deadline=None
 )
@@ -621,6 +621,33 @@ def test_ini_index_state_machine_6588(tmp_path: Path) -> None:
         lambda: _IniIndexMachine(tmp_path / "machine"),
         settings=_STATEFUL_SETTINGS,
     )
+
+
+@example(copy_selection=0, rename_selection=0)
+@given(
+    copy_selection=st.integers(min_value=0, max_value=2),
+    rename_selection=st.integers(min_value=0, max_value=1),
+)
+@settings(max_examples=12, deadline=None)
+def test_album_copy_then_source_rename_regression_example(
+    tmp_path: Path, copy_selection: int, rename_selection: int
+) -> None:
+    """A #6599 regressziós sorozat rögzített Hypothesis-példája is fusson."""
+    machine = _IniIndexMachine(tmp_path / "album-copy-rename-example")
+    try:
+        machine.copy_a_photo(copy_selection)
+        machine.ini_index_and_files_remain_consistent()
+        machine.rename_a_folder(rename_selection)
+        machine.ini_index_and_files_remain_consistent()
+    finally:
+        machine.teardown()
+
+
+def test_fuzz_profile_uses_picasapy_fuzz_profil() -> None:
+    expected_profile = os.environ.get("PICASAPY_FUZZ_PROFIL", "ci")
+    assert _PROFILE == expected_profile
+    expected_examples = {"ci": 12, "ejszakai": 180}[expected_profile]
+    assert _STATEFUL_SETTINGS.max_examples == expected_examples
 
 
 def test_index_oracle_catches_a_missing_incremental_sync(tmp_path: Path) -> None:
