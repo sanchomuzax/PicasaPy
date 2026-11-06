@@ -6,6 +6,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 import struct
+from tempfile import TemporaryDirectory
 
 import pytest
 
@@ -140,7 +141,8 @@ def test_cxf_contacts_es_iso_mutalt_bemeneteken_is_korlatozott(
     tmp_path,
     fuzz_keret,
 ):
-    with fuzz_keret():
+    with TemporaryDirectory(prefix="xml-", dir=tmp_path) as temp_dir, fuzz_keret():
+        mappa = Path(temp_dir)
         projekt = loads(cxf)
         stabil = loads(dumps(projekt))
         assert loads(dumps(stabil)) == stabil
@@ -174,7 +176,7 @@ def test_cxf_contacts_es_iso_mutalt_bemeneteken_is_korlatozott(
             hely = min(iso_offset, len(iso) - 1)
             iso[hely] = iso_byte
         for sorszam, kepbajtok in enumerate((bytes(iso), _ISO_KORPUSZ)):
-            iso_path = tmp_path / f"mutalt-{sorszam}.iso"
+            iso_path = mappa / f"mutalt-{sorszam}.iso"
             iso_path.write_bytes(kepbajtok)
             try:
                 ISOOlvaso(iso_path)

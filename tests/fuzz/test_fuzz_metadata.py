@@ -4,15 +4,17 @@
 from __future__ import annotations
 
 from io import BytesIO
+import math
 import os
 from pathlib import Path
 import subprocess
 import sys
+from tempfile import TemporaryDirectory
 
 import pytest
 
 hypothesis = pytest.importorskip("hypothesis")
-from hypothesis import example, given, strategies as st
+from hypothesis import example, given, settings, strategies as st
 from PIL import Image
 
 from picasapy.metadata.jpeg_quality import jpeg_quality_text
@@ -58,6 +60,18 @@ _TIFF_KORPUSZ = bytes.fromhex(
     .read_text(encoding="ascii")
     .strip()
 )
+_VIDEO_VEGES_SEBESSEG = st.floats(
+    min_value=0.01, max_value=1_000_000, allow_nan=False, allow_infinity=False
+)
+_VIDEO_VEGES_KOCKASZAM = st.floats(
+    min_value=0, max_value=1_000_000, allow_nan=False, allow_infinity=False
+)
+_VIDEO_SEBESSEG = st.one_of(
+    _VIDEO_VEGES_SEBESSEG, st.sampled_from((0.0, -1.0, math.nan, math.inf, -math.inf))
+)
+_VIDEO_KOCKASZAM = st.one_of(
+    _VIDEO_VEGES_KOCKASZAM, st.sampled_from((-1.0, math.nan, math.inf, -math.inf))
+)
 
 
 @st.composite
@@ -91,47 +105,107 @@ def _mutalt_kepbajtok(draw, seed: bytes):
 def test_mutalt_jpeg_es_tiff_metaadat_olvasok_nem_dobnak_varatlan_kivetelt(
     jpeg, tiff, xmp, tmp_path, fuzz_keret
 ):
-    jpeg_path = tmp_path / "mutalt.jpg"
-    tiff_path = tmp_path / "mutalt.tif"
-    video_path = tmp_path / "mutalt.mp4"
-    with fuzz_keret():
-        jpeg_path.write_bytes(jpeg)
-        tiff_path.write_bytes(tiff)
-        video_path.write_bytes(jpeg[:4096])
+    with TemporaryDirectory(prefix="metadata-", dir=tmp_path) as temp_dir:
+        mappa = Path(temp_dir)
+        jpeg_path = mappa / "mutalt.jpg"
+        tiff_path = mappa / "mutalt.tif"
+        with fuzz_keret():
+            jpeg_path.write_bytes(jpeg)
+            tiff_path.write_bytes(tiff)
 
-        read_file_metadata(jpeg_path)
-        read_exif_details(jpeg_path)
-        jpeg_quality_text(jpeg_path)
-        xmp_person_names(xmp)
-        videoadat = read_video_metadata(video_path)
-        assert videoadat.movie_format == "MP4"
+            read_file_metadata(jpeg_path)
+            read_exif_details(jpeg_path)
+            jpeg_quality_text(jpeg_path)
+            xmp_person_names(xmp)
 
-        exif = tiff_blokk(jpeg_path)
-        canon_camera_settings(exif)
-        nikon_objektiv_mezok(exif)
-        canon_camera_settings(_TIFF_KORPUSZ)
-        nikon_objektiv_mezok(_TIFF_KORPUSZ)
+            exif = tiff_blokk(jpeg_path)
+            canon_camera_settings(exif)
+            nikon_objektiv_mezok(exif)
+            canon_camera_settings(_TIFF_KORPUSZ)
+            nikon_objektiv_mezok(_TIFF_KORPUSZ)
 
-        for muvelet in (tajolas_1_helyben,):
-            try:
-                kimenet = muvelet(tiff)
-            except TiffHiba:
-                continue
-            with Image.open(BytesIO(kimenet)) as visszaolvasott:
-                visszaolvasott.load()
-
-        try:
-            friss = frissitett_tiff(tiff, [])
-        except TiffHiba:
-            pass
-        else:
-            with Image.open(BytesIO(friss)) as visszaolvasott:
-                visszaolvasott.load()
+            # A helyben író csak olvasható bemenetből köteles olvasható
+            # kimenetet adni: az eleve sérült TIFF-et nem javítja meg, de nem
+            # is ront rajta (a hívó egybájtos rontással mérte: mind a 721
+            # olvasható bemenet olvasható maradt, olvashatatlan kimenet csak
+            # olvashatatlan bemenetből lett).
+            bemenet_olvashato = _pillow_olvassa(tiff)
+            for muvelet in (tajolas_1_helyben, lambda adat: frissitett_tiff(adat, [])):
+                try:
+                    kimenet = muvelet(tiff)
+                except TiffHiba:
+                    continue
+                if bemenet_olvashato:
+                    assert _pillow_olvassa(kimenet), "olvasható TIFF-ből olvashatatlan lett"
 
 
-def test_libraw_futas_kulon_idokorlatozott_folyamatban(
-    tmp_path, fuzz_keret
+def _pillow_olvassa(adat: bytes) -> bool:
+    try:
+        with Image.open(BytesIO(adat)) as kep:
+            kep.load()
+    except Exception:  # noqa: BLE001 - bármilyen olvasási hiba „olvashatatlan"
+        return False
+    return True
+
+
+class _FakeVideoCapture:
+    def __init__(self, cv2, sebesseg, kockaszam, megnyilt: bool) -> None:
+        self._cv2 = cv2
+        self._sebesseg = sebesseg
+        self._kockaszam = kockaszam
+        self._megnyilt = megnyilt
+
+    def isOpened(self) -> bool:
+        return self._megnyilt
+
+    def get(self, tulajdonsag: int) -> float:
+        if tulajdonsag == self._cv2.CAP_PROP_FPS:
+            return self._sebesseg
+        return self._kockaszam
+
+    def release(self) -> None:
+        return None
+
+
+@given(
+    sebesseg=_VIDEO_SEBESSEG,
+    kockaszam=_VIDEO_KOCKASZAM,
+    megnyilt=st.booleans(),
+)
+# Az első példa a videómodul lusta betöltése miatt másodpercekig tart; a
+# dekóder itt álfelvétel, így a határidő nem mér semmit.
+@settings(deadline=None)
+def test_video_metadata_a_vegyes_dekoderadatokat_vegyes_eredmenyre_kepezi(
+    sebesseg, kockaszam, megnyilt, fuzz_keret, monkeypatch
 ):
+    import cv2
+
+    capture = _FakeVideoCapture(cv2, sebesseg, kockaszam, megnyilt)
+    monkeypatch.setattr(cv2, "VideoCapture", lambda _ut: capture)
+    with fuzz_keret():
+        eredmeny = read_video_metadata("fuzz.mp4")
+
+    assert eredmeny.movie_format == "MP4"
+    ervenyes = (
+        megnyilt
+        and math.isfinite(sebesseg)
+        and sebesseg > 0
+        and math.isfinite(kockaszam)
+        and kockaszam >= 0
+    )
+    if not ervenyes:
+        assert eredmeny.frame_rate is None
+        assert eredmeny.duration_seconds is None
+    else:
+        assert eredmeny.frame_rate == sebesseg
+        assert eredmeny.duration_seconds == kockaszam / sebesseg
+
+
+_LIBRAW_CIMTER = 2 * 1024**3
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="RLIMIT_AS csak POSIX-on van")
+def test_libraw_futas_kulon_idokorlatozott_folyamatban(tmp_path):
     pytest.importorskip("rawpy")
     for sorszam, payload in enumerate(
         (b"", b"\xff\xd8" + bytes(64), b"II*\x00" + bytes(128))
@@ -143,18 +217,21 @@ def test_libraw_futas_kulon_idokorlatozott_folyamatban(
         env["PYTHONPATH"] = os.pathsep.join(
             filter(None, (str(gyoker / "src"), env.get("PYTHONPATH", "")))
         )
-        with fuzz_keret():
-            futas = subprocess.run(
-                [
-                    sys.executable,
-                    "-c",
-                    "from picasapy.rawdecode import dekodol_nyerset; "
-                    "import sys; dekodol_nyerset(sys.argv[1])",
-                    str(raw_path),
-                ],
-                capture_output=True,
-                check=False,
-                env=env,
-                timeout=2,
-            )
+        # A memóriakorlát a GYEREKFOLYAMATRA kerül: a szülőben beállított
+        # RLIMIT_AS-sel már az új Python indítása is ENOMEM-mel bukna.
+        futas = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import resource, sys; "
+                f"resource.setrlimit(resource.RLIMIT_AS, ({_LIBRAW_CIMTER}, {_LIBRAW_CIMTER})); "
+                "from picasapy.rawdecode import dekodol_nyerset; "
+                "dekodol_nyerset(sys.argv[1])",
+                str(raw_path),
+            ],
+            capture_output=True,
+            check=False,
+            env=env,
+            timeout=10,
+        )
         assert futas.returncode == 0, futas.stderr.decode("utf-8", "replace")

@@ -17,7 +17,7 @@ except ImportError:  # Windows
     resource = None
 
 try:
-    from hypothesis import settings
+    from hypothesis import HealthCheck, settings
     from hypothesis.database import DirectoryBasedExampleDatabase
 except ImportError:  # a tesztmodulok pytest.importorskip-szel kimaradnak
     settings = None
@@ -43,6 +43,7 @@ if settings is not None:
         max_examples=100,
         derandomize=True,
         deadline=_HIVAS_HATARIDO_MASODPERC * 1_000,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
         # A determinisztikus futás a Hypothesis szabálya szerint nem használ
         # példaadatbázist; a minimalizált leleteket az éjszakai profil menti.
         database=None,
@@ -53,6 +54,7 @@ if settings is not None:
         derandomize=False,
         deadline=_HIVAS_HATARIDO_MASODPERC * 1_000,
         database=_database,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
     _profil = os.environ.get("PICASAPY_FUZZ_PROFIL", "ci")
     if _profil not in {"ci", "ejszakai"}:
