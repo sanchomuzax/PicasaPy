@@ -54,6 +54,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-randomly",
     "pytest-cov",
     "ruff",
     "build",
@@ -86,6 +87,10 @@ include-package-data = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "tests"]
+# #6590: a pytest-randomly csak az éjszakai mérésben fut (a run_tests.py
+# `-p randomly`-val kapcsolja be); a csupasz pytest-hívások sorrendje és
+# véletlenmagja változatlan marad.
+addopts = ["-p", "no:randomly"]
 
 [tool.coverage.run]
 source = ["src/picasapy"]
