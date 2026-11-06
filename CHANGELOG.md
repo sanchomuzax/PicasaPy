@@ -7,6 +7,14 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.52] - 2026-11-06
+
+- Referenciakép nélküli metamorf próbák ellenőrzik a szűrők semleges állását, térbeli viselkedését, monotonitását és léptékfüggetlenségét (#6586).
+- Éjszakai, szűk hatókörű mutációs mérés az ini- és render-csomag tesztvédelmének követéséhez (#6587).
+- Az Időrend minden gyűjteményt egy-egy képkötegként egy íven mutat: a régebbiek balra-hátra húzódnak, lapozáskor az egész sor folyamatosan átúszik, és a nézet a teljes képernyőt kitölti. (#6595).
+- Az index album-tagszáma nem függ többé a mappák feldolgozási sorrendjétől: egy albumtag kép másolata a forrásmappa átnevezése után is tag marad. (#6599).
+- Az Időrend háttere a fotóból, legalább 640 képpontos forrásból készül, ezért teljes képernyőn is éles (#6604).
+
 ## [1.0.51] - 2026-11-06
 
 - Az éjszakai ellenőrzés véletlen tesztsorrendben fut, és a bukásokat azonos magú, majd fix sorrendű újrafuttatással sorolja be (#6590).
