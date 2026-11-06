@@ -58,6 +58,7 @@ dev = [
     "pytest-cov",
     "ruff",
     "build",
+    "hypothesis",
     "mutmut==3.5.0",
 ]
 

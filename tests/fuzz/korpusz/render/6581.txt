@@ -1,0 +1,4 @@
+Border=1,5000;
+Border=1,20000;
+MuseumMatte=1,20000;
+DropShadow=1,1e9,90,10,00000000,00ffffff,30;

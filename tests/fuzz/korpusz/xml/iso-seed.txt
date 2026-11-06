@@ -1,0 +1,1 @@
+ISO 9660 mag: 16. szektor PVD, 17. szektor lezáró leíró, 18. szektor gyökérkönyvtár.
