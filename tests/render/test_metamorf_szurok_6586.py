@@ -9,18 +9,77 @@ az egyes képek pedig Hypothesis által generáltak.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import inspect
+from types import ModuleType
 
 import numpy as np
 import pytest
 
 from picasapy.ini import parse_filters
 from picasapy.ini.filter_registry import CANONICAL_FILTER_NAMES
-from picasapy.render.chain import apply_filters, can_render_filter
+from picasapy.render.chain import _HANDLERS, apply_filters, can_render_filter
 from picasapy.render.elonezeti_arany import elonezeti_arany
 from picasapy.render.registry import FILTER_REGISTRY
 
 _RENDERELHETOK = frozenset(
     nev for nev in CANONICAL_FILTER_NAMES if can_render_filter(nev)
+)
+
+
+def _sajat_render_fuggveny(ertek) -> bool:
+    return inspect.isfunction(ertek) and ertek.__module__.startswith("picasapy.render")
+
+
+def _render_fuggvenyek_hivoi(fuggveny):
+    """A renderláncban hívott render-függvényeket adja vissza.
+
+    A handler-regiszter függvényein követjük az importált függvényeket és a
+    render-modulok attribútumait is, így az indirekt wrapper (például a
+    `tint` → `apply_tint` → `apply_channel_levels_stretch`) sem marad rejtve.
+    """
+    if not _sajat_render_fuggveny(fuggveny):
+        return ()
+
+    closure = inspect.getclosurevars(fuggveny)
+    eredmeny = {
+        ertek
+        for ertek in (*closure.globals.values(), *closure.nonlocals.values())
+        if _sajat_render_fuggveny(ertek)
+    }
+    modulok = {
+        ertek
+        for ertek in closure.globals.values()
+        if isinstance(ertek, ModuleType) and ertek.__name__.startswith("picasapy.render")
+    }
+    for modul in modulok:
+        for nev in fuggveny.__code__.co_names:
+            ertek = getattr(modul, nev, None)
+            if _sajat_render_fuggveny(ertek):
+                eredmeny.add(ertek)
+    return eredmeny
+
+
+def _handler_eleri_a_szint_huzast(handler) -> bool:
+    latott = set()
+    verem = [handler]
+    while verem:
+        fuggveny = verem.pop()
+        if id(fuggveny) in latott:
+            continue
+        latott.add(id(fuggveny))
+        if getattr(fuggveny, "__name__", "") == "apply_channel_levels_stretch":
+            return True
+        verem.extend(_render_fuggvenyek_hivoi(fuggveny))
+    return False
+
+
+_SZINTHUZO_SZURO_KULCSOK = frozenset(
+    nev for nev, handler in _HANDLERS.items() if _handler_eleri_a_szint_huzast(handler)
+)
+_SZINTHUZO_SZUROK = frozenset(
+    nev
+    for nev in _RENDERELHETOK
+    if nev.casefold() in _SZINTHUZO_SZURO_KULCSOK
 )
 
 # Az egypontos és a globális, de helyfüggetlen szűrők ugyanazt a pixelt
@@ -49,6 +108,13 @@ _PONTONKENTI = frozenset(
         "PicnikTint",
         "TwoTone",
     }
+)
+
+# Ha új handler kerül a közös szinthúzó hívói közé, ez az őr jelzi, hogy a
+# forrásból levezetett kizárást és annak indoklását is át kell nézni. Maga a
+# kizárás nem ebből a listából, hanem a handler-hívási láncból származik.
+_SZINTHUZO_KIZARAS_KULCSAI = frozenset(
+    {"enhance", "autocontrast", "tint", "rainbow"}
 )
 
 # Ezek térbeli műveletek, de a középpontjuk és a kernelük 180°-os forgatásra
@@ -114,7 +180,6 @@ _CSATORNAFUGGETLEN = frozenset(
 # A teljes képből arányosan kicsinyített render és a preview arányban futó
 # kisebb render összevetését ezeknél a méretfüggő kereteknél mérjük.
 _ELONEZETI_SZUROK = frozenset({"Border", "MuseumMatte"})
-_VIZSZINTES_TUKOR = frozenset({"rainbow", "Cinemascope"})
 _ISMETELHETO_ZAJ = frozenset({"grain", "grain2"})
 
 _NULLA_OP = {
@@ -177,7 +242,7 @@ _MONOTON_ESETEK = {
 # nem forgatjuk együtt a bemenettel.
 _FORGATAS_KIZARAS = {
     "Border": "a képaláírás-sáv a keret alsó oldalához kötött",
-    "Cinemascope": "a letterbox vágási pereme 180°-nál nem pixelpontos",
+    "Cinemascope": "a rögzített magú, sorfolytonos zajréteg nem fordul a képpel",
     "DropShadow": "az eltolt árnyék szöge és eltolása helyhez kötött",
     "Polaroid": "az alsó feliratsáv a kerethez kötött",
     "rainbow": "a színpaletta függőleges sávokra van rögzítve",
@@ -189,17 +254,21 @@ _FORGATAS_KIZARAS = {
     "grain": "a véletlenszám-sorozat a képpontbejáráshoz kötött",
     "grain2": "a véletlenszám-sorozat a képpontbejáráshoz kötött",
 }
+for _nev in _SZINTHUZO_SZUROK:
+    _FORGATAS_KIZARAS[_nev] = (
+        "a 0x009db610 szinthúzó a balra igazított 90% × 90%-os elemzőablakból számol"
+    )
 
 
 def _regisztralt_relaciok() -> dict[str, frozenset[str]]:
     relaciok = {nev: set() for nev in _RENDERELHETOK}
     csoportok = {
-        "permutation": _PONTONKENTI,
-        "rotation180": _KOZEP_SZIMMETRIKUS,
+        "permutation": _PONTONKENTI - _SZINTHUZO_SZUROK,
+        "analysis_window_permutation": _PONTONKENTI & _SZINTHUZO_SZUROK,
+        "rotation180": _KOZEP_SZIMMETRIKUS - _SZINTHUZO_SZUROK,
         "channel_swap": _CSATORNAFUGGETLEN,
         "preview_scale": _ELONEZETI_SZUROK,
-        "horizontal_mirror": _VIZSZINTES_TUKOR,
-        "repeatability": _ISMETELHETO_ZAJ,
+        "repeatability": _ISMETELHETO_ZAJ | _SZINTHUZO_SZUROK | {"Cinemascope"},
     }
     for relacio, nevek in csoportok.items():
         for nev in nevek:
@@ -230,7 +299,11 @@ def _muvelet(nev: str, *, semleges: bool = False) -> str:
 
 
 def _render(kep: np.ndarray, nev: str, *, semleges: bool = False) -> np.ndarray:
-    lanc = parse_filters(_muvelet(nev, semleges=semleges))
+    return _render_op(kep, _muvelet(nev, semleges=semleges), nev)
+
+
+def _render_op(kep: np.ndarray, muvelet: str, nev: str) -> np.ndarray:
+    lanc = parse_filters(muvelet)
     jelentes = apply_filters(kep, lanc)
     assert not jelentes.skipped, f"A regisztrált szűrő kimaradt: {nev}"
     return jelentes.image
@@ -270,6 +343,19 @@ def test_minden_renderelheto_szurohoz_van_regisztralt_relacio():
     assert all(FILTER_RELATIONS.values()), "Üres relációjú szűrő maradt"
     assert set(_NULLA_OP) <= set(_RENDERELHETOK)
     assert set(_FORGATAS_KIZARAS) <= set(_RENDERELHETOK)
+    deklaralt = (
+        _PONTONKENTI
+        | _KOZEP_SZIMMETRIKUS
+        | _CSATORNAFUGGETLEN
+        | _ELONEZETI_SZUROK
+        | _ISMETELHETO_ZAJ
+        | {eset.szuro for eset in _MONOTON_ESETEK.values()}
+    )
+    assert deklaralt <= set(_RENDERELHETOK), "A reláció egy nem regisztrált szűrőre hivatkozik"
+    assert _SZINTHUZO_SZURO_KULCSOK == _SZINTHUZO_KIZARAS_KULCSAI, (
+        "Változott a 0x009db610 szinthúzó hívóinak köre; vizsgáld felül a térbeli kizárást"
+    )
+    assert _SZINTHUZO_SZUROK == {"enhance", "autocontrast", "tint", "rainbow"}
 
     nullas_regiszter = {
         nev
@@ -282,6 +368,22 @@ def test_minden_renderelheto_szurohoz_van_regisztralt_relacio():
         and "permutation" not in FILTER_RELATIONS[nev]
         for nev in _FORGATAS_KIZARAS
     )
+
+
+def test_a_szinthuzo_hivoi_tukrozesbol_kimaradnak_a_regisztralt_hivasi_lanc_alapjan():
+    assert _SZINTHUZO_SZUROK == {"enhance", "autocontrast", "tint", "rainbow"}
+    for nev in _SZINTHUZO_SZUROK:
+        assert "0x009db610" in _FORGATAS_KIZARAS[nev]
+        assert "permutation" not in FILTER_RELATIONS[nev]
+        assert "rotation180" not in FILTER_RELATIONS[nev]
+
+
+def test_a_cinemascope_zajretege_sorfolytonos_es_nem_tukorszimmetrikus():
+    from picasapy.render.glimmer_noise_ops import noise_layer
+
+    # A Cinemascope-spec zajlépése ezt az állandó magú, szürke zajt használja.
+    zaj = noise_layer(9, 16, seed=0, low=225, high=245, grayscale=True)
+    assert not np.array_equal(zaj, np.fliplr(zaj))
 
 
 def test_a_semleges_allasok_valtozatlanul_hagyjak_a_kepet():
@@ -300,9 +402,10 @@ def test_a_pontonkénti_szurok_felcserelhetok_a_keppontok_permutalasaval():
         lambda kep: np.flipud(kep).copy(),
         lambda kep: kep.transpose(1, 0, 2).copy(),
     )
+    szinthuzo_nelkul = _PONTONKENTI - _SZINTHUZO_SZUROK
 
     def ellenoriz(kep):
-        for nev in sorted(_PONTONKENTI):
+        for nev in sorted(szinthuzo_nelkul):
             eredeti = _render(kep, nev)
             for transzform in transzformaciok:
                 bal = _render(transzform(kep), nev)
@@ -310,6 +413,23 @@ def test_a_pontonkénti_szurok_felcserelhetok_a_keppontok_permutalasaval():
                 assert np.array_equal(bal, jobb), nev
 
     _hypothesis_kepeken(ellenoriz)
+
+
+def test_a_tint_az_elemzoablakon_beluli_pixelcseret_felcsereli():
+    def ellenoriz(kep):
+        magassag, szelesseg = kep.shape[:2]
+        elso = (magassag // 4, szelesseg // 4)
+        masodik = (3 * magassag // 4, 3 * szelesseg // 4)
+        permutalt = kep.copy()
+        permutalt[elso], permutalt[masodik] = kep[masodik].copy(), kep[elso].copy()
+
+        for nev in sorted(_PONTONKENTI & _SZINTHUZO_SZUROK):
+            eredeti = _render(kep, nev)
+            vart = eredeti.copy()
+            vart[elso], vart[masodik] = eredeti[masodik].copy(), eredeti[elso].copy()
+            assert np.array_equal(_render(permutalt, nev), vart), nev
+
+    _hypothesis_kepeken(ellenoriz, alak=(48, 64, 3))
 
 
 def test_a_kozepesen_szimmetrikus_szurok_180_fokos_relacioja_tureses():
@@ -340,16 +460,11 @@ def test_a_csatornafuggetlen_szuroknel_az_r_es_b_csere_felcserelheto():
     _hypothesis_kepeken(ellenoriz)
 
 
-def test_a_sorhoz_kotott_szurok_vizszintes_tukrozassal_felcserelhetok():
-    def ellenoriz(kep):
-        tukrozott = np.fliplr(kep).copy()
-        for nev in sorted(_VIZSZINTES_TUKOR):
-            eredeti = _render(kep, nev)
-            masik = _render(tukrozott, nev)
-            kulonbseg = np.abs(masik.astype(np.int16) - np.fliplr(eredeti).astype(np.int16))
-            assert int(kulonbseg.max()) <= 1, nev
-
-    _hypothesis_kepeken(ellenoriz)
+def test_a_terbeli_kizarasokhoz_indoklas_tartozik():
+    for nev, indok in _FORGATAS_KIZARAS.items():
+        assert indok.strip(), nev
+        assert "permutation" not in FILTER_RELATIONS[nev], nev
+        assert "rotation180" not in FILTER_RELATIONS[nev], nev
 
 
 def _mertek(kep: np.ndarray, nev: str) -> float:
