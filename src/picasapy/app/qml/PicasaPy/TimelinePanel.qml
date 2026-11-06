@@ -304,6 +304,7 @@ Item {
                     }
 
                     MouseArea {
+                        id: kotegKattintas
                         anchors.fill: parent
                         acceptedButtons: Qt.LeftButton
                         onPressed: function(mouse) {
@@ -322,6 +323,7 @@ Item {
                                 hostWindow.animateTo(collectionDeck.deckIndex, 4000)
                         }
                     }
+                    PressFeedbackOverlay { pressSource: kotegKattintas }
                 }
             }
 

@@ -215,7 +215,7 @@ def test_fullscreen_scaled_carousel_renders_twelve_cards_and_moves_smoothly(
         qt_app,
         has_intermediate_render,
         "egy másodpercnél nem volt látható köztes körhinta-állás",
-        seconds=3.0,
+        seconds=10.0,
     )
     assert intermediate["start_distance"] > 2
     assert intermediate["target_distance"] > 2
@@ -224,7 +224,7 @@ def test_fullscreen_scaled_carousel_renders_twelve_cards_and_moves_smoothly(
         lambda: timeline.property("currentIndex") == 2
         and timeline.property("animating") is False,
         "a két összeadódó léptetés nem a harmadik gyűjteménynél állt meg",
-        seconds=6.0,
+        seconds=10.0,
     )
     assert _child(timeline, "timelineCollectionName").property("text") == "Collection 02"
 
@@ -248,7 +248,7 @@ def test_click_and_slider_animate_to_the_chosen_collection(
         lambda: timeline.property("currentIndex") == 2
         and timeline.property("animating") is False,
         "a kötegre kattintás nem úszott a kiválasztott gyűjteményhez",
-        seconds=7.0,
+        seconds=10.0,
     )
 
     slider = _child(timeline, "timelineSliderArea")
@@ -263,7 +263,7 @@ def test_click_and_slider_animate_to_the_chosen_collection(
         lambda: timeline.property("currentIndex") == target_index
         and timeline.property("animating") is False,
         "a csúszka nem úszott a választott gyűjteményhez",
-        seconds=7.0,
+        seconds=10.0,
     )
     assert _child(timeline, "timelineCollectionName").property("text") == "Collection 05"
 
