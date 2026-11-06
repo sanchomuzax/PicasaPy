@@ -56,10 +56,26 @@ def _elonezet_allapot(dialog, kerelmek, provider=None) -> str:
              "previewTransitionServiceAvailable", "visible")
     szoveg = ", ".join(f"{n}={dialog.property(n)}" for n in nevek) + f", kerelmek={len(kerelmek)}"
     if provider is not None:
-        szoveg += (f", renderelo_fut={provider._running}"
-                   f", renderelo_var={provider._pending is not None}"
-                   f", renderelo_generacio={provider._generation}"
-                   f", renderelo_szalak={provider._pool.activeThreadCount()}")
+        with provider._lock:
+            started_at = provider._active_request_started_at
+            active_generation = provider._active_request_generation
+            pending_generation = (
+                provider._pending.generation if provider._pending is not None else None
+            )
+            elapsed = (
+                f"{max(0.0, time.monotonic() - started_at):.2f}s"
+                if started_at is not None
+                else "nem indult"
+            )
+            szoveg += (
+                f", renderelo_fut={provider._running}"
+                f", renderelo_var={provider._pending is not None}"
+                f", renderelo_generacio={provider._generation}"
+                f", renderelo_aktiv_generacio={active_generation}"
+                f", renderelo_varo_generacio={pending_generation}"
+                f", renderelo_futasi_ido={elapsed}"
+                f", renderelo_szalak={provider._pool.activeThreadCount()}"
+            )
     return szoveg
 
 

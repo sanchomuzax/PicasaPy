@@ -121,6 +121,66 @@ def test_a_kocka_dekodolasa_hatterben_fut_es_nem_varja_meg_a_gui(
         provider.wait_for_done(2_000)
 
 
+def test_a_futas_kozben_erkezo_keres_a_futas_utan_elindul_es_merheto(
+    monkeypatch, tmp_path
+):
+    provider = MovieTransitionPreviewProvider()
+    provider._font_warmup_started = True
+    elso_elindult = threading.Event()
+    elso_folytathato = threading.Event()
+    masodik_elindult = threading.Event()
+    masodik_folytathato = threading.Event()
+    indult_generaciok = []
+
+    def blokkolt_render(keres):
+        indult_generaciok.append(keres.generation)
+        if keres.generation == 1:
+            elso_elindult.set()
+            assert elso_folytathato.wait(5), "az első render nem kapott feloldást"
+        else:
+            masodik_elindult.set()
+            assert masodik_folytathato.wait(5), "a második render nem kapott feloldást"
+        return np.zeros((16, 16, 3), dtype=np.uint8)
+
+    monkeypatch.setattr(provider, "_render_request", blokkolt_render)
+    args = _request_args(tmp_path / "elso.jpg", 16, 16)
+    try:
+        provider.request_transition(*args)
+        assert elso_elindult.wait(5), "az első render nem indult el"
+        with provider._lock:
+            elso_kezdet = provider._active_request_started_at
+            assert provider._active_request_generation == 1
+        assert elso_kezdet is not None, "az első render kezdési ideje hiányzik"
+
+        provider.request_transition(*args)
+        with provider._lock:
+            assert provider._pending is not None
+            assert provider._pending.generation == 2
+
+        elso_folytathato.set()
+        assert masodik_elindult.wait(5), (
+            "a futás közben érkezett kérés nem indult el az első render végén"
+        )
+        with provider._lock:
+            assert provider._active_request_generation == 2
+            masodik_kezdet = provider._active_request_started_at
+        assert masodik_kezdet is not None
+        assert masodik_kezdet >= elso_kezdet
+
+        masodik_folytathato.set()
+        assert provider.wait_for_done(5_000), "a renderelő nem ürítette ki a sort"
+        with provider._lock:
+            assert provider._running is False
+            assert provider._pending is None
+            assert provider._active_request_started_at is None
+            assert provider._active_request_generation is None
+        assert indult_generaciok == [1, 2]
+    finally:
+        elso_folytathato.set()
+        masodik_folytathato.set()
+        provider.wait_for_done(5_000)
+
+
 def test_a_hibas_forras_hibakockaja_cachelodik_es_csak_egyszer_naplozodik(
     monkeypatch, tmp_path, caplog
 ):

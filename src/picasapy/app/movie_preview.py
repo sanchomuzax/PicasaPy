@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import threading
+import time
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
@@ -72,6 +73,7 @@ class _TransitionJob(QRunnable):
         self._request = request
 
     def run(self) -> None:
+        self._provider._mark_request_started(self._request.generation)
         try:
             frame = self._provider._render_request(self._request)
         except Exception as exc:  # noqa: BLE001 — a hibás kérés se akassza be a poolt
@@ -147,7 +149,15 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
         self._generation = 0
         self._running = False
         self._pending: _TransitionRequest | None = None
+        self._active_request_generation: int | None = None
+        self._active_request_started_at: float | None = None
         register_pool_owner(self)
+
+    def _mark_request_started(self, generation: int) -> None:
+        """Az aktív render tényleges kezdetét rögzíti diagnosztikához."""
+        with self._lock:
+            self._active_request_generation = generation
+            self._active_request_started_at = time.monotonic()
 
     def request_transition(
         self,
@@ -424,6 +434,9 @@ class MovieTransitionPreviewProvider(QQuickImageProvider):
             # A régebbi kész kocka is hasznos köztes állapot. A QML monoton
             # generációszám alapján szűr, ezért a lassú render nem éhezteti ki.
             url = self._store_frame(frame)
+            if self._active_request_generation == generation:
+                self._active_request_generation = None
+                self._active_request_started_at = None
             if self._pending is not None:
                 next_request = self._pending
                 self._pending = None
