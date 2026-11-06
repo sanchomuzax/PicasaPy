@@ -348,7 +348,8 @@ def _sync_albums(conn, folder_id: int, document) -> None:
       hogy az ini-ből kivett kép az indexből is kiessen.
 
     Az ini nélküli mappa csak a saját tagságait törli — a máshol definiált
-    albumokat nem bántja.
+    albumokat nem bántja. A globális árvaszűrés a teljes fa beolvasása után
+    fut, mert a definíció egy később feldolgozott mappában is lehet (#6599).
     """
     photo_ids = {
         row["name"]: row["id"]
@@ -362,7 +363,6 @@ def _sync_albums(conn, folder_id: int, document) -> None:
     # akkor is kiesik, ha egy másik mappa még hivatkozik rá
     conn.execute("DELETE FROM albums WHERE folder_id = ?", (folder_id,))
     if document is None:
-        _prune_albums(conn)
         return
 
     for album in albums_of(document):
@@ -395,7 +395,6 @@ def _sync_albums(conn, folder_id: int, document) -> None:
                 "INSERT OR IGNORE INTO photo_albums (photo_id, token, place) VALUES (?, ?, ?)",
                 (photo_id, token, photo_places.get(token)),
             )
-    _prune_albums(conn)
 
 
 def _prune_albums(conn) -> None:
