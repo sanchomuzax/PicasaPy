@@ -156,21 +156,25 @@ class TestWriteCaption:
         assert write_iptc_caption(photo, "zárolt közben")
         assert read_file_metadata(photo).caption == "zárolt közben"
 
-    def test_replace_falls_back_to_direct_write(self, tmp_path, monkeypatch):
-        # Ha a zár nem enged fel, nem-atomikus közvetlen írás (a képfájlnál
-        # ez elfogadható fallback; az ini-nél nem — ott nincs ilyen).
+    def test_replace_error_preserves_image_instead_of_direct_write(
+        self, tmp_path, monkeypatch
+    ):
+        # A fénykép eredeti bájtjait zárolt célon sem írhatjuk felül
+        # nem-atomikus fallbackkel.
         import picasapy.ioutil as ioutil_module
         import picasapy.metadata.iptc_writer as writer_module
 
         photo = make_jpeg(tmp_path / "a.jpg")
+        original = photo.read_bytes()
 
         def always_denied(src, dst):
             raise PermissionError(13, "Access is denied")
 
         monkeypatch.setattr(ioutil_module, "_replace", always_denied)
         monkeypatch.setattr(writer_module, "_RETRY_DELAY", 0.001)
-        assert write_iptc_caption(photo, "fallback felirat")
-        assert read_file_metadata(photo).caption == "fallback felirat"
+        with pytest.raises(PermissionError):
+            write_iptc_caption(photo, "zárolt felirat")
+        assert photo.read_bytes() == original
         assert not list(tmp_path.glob("*.jpgtmp"))  # temp kitakarítva
 
     def test_no_temp_leftovers(self, tmp_path):

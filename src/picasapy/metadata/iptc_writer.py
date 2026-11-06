@@ -80,14 +80,14 @@ def _write_datasets(
     # Közös helper (#129): fsync a csere előtt (crash-nél sem csonkulhat az
     # eredeti fotó) + a fájl jogainak megőrzése (NAS-on más kliens is
     # olvassa). Windowson a nyitott célfájl (pl. a néző épp tölti) zárolja
-    # a rename-et → rövid retry, végső esetben közvetlen írás (képfájlnál
-    # ez elfogadható fallback).
+    # a rename-et → korlátozott retry, utána látható hiba. A közvetlen írás
+    # itt sem elfogadható, mert megtelt lemeznél vagy összeomláskor a JPEG
+    # korábbi bájtjait csonkolhatná.
     write_atomic(
         target,
         rebuilt,
         lock_retries=_RETRY_COUNT,
         lock_retry_delay=_RETRY_DELAY,
-        fallback_direct=True,
         suffix=".jpgtmp",
     )
     return True
