@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.58] - 2026-11-06
+
+- A szövegdia-előnézet hibakeresése most már megmutatja az aktuális render futási idejét (#6621).
+
 ## [1.0.57] - 2026-11-06
 
 - A Semleges szín (colorfix) natív sorrendben menti a hőmérsékletet és a pipettaszínt, a régi mentéseket pedig beolvasáskor átalakítja (#6617).
