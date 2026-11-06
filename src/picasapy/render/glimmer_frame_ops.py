@@ -401,7 +401,9 @@ def drop_shadow_padding(
     """
     blur_px = min(max(float(blur), _DROPSHADOW_BLUR_MIN), _DROPSHADOW_BLUR_MAX)
     margo = math.ceil(blur_px * _DROPSHADOW_HIGH_FAKTOR)
-    dx, dy = shadow_offset(int(round(distance)), angle)
+    # A rajzoló a tört távolságot adja a natív floor-képletnek
+    # (`0x00bcdea0`); az előzetes egészre kerekítés képponttal eltolhatja a képet.
+    dx, dy = shadow_offset(distance, angle)
     return (
         blur_px,
         (dx, dy),
@@ -441,6 +443,31 @@ def compose_drop_shadow(
     `margin` figyelmen kívül marad. A Polaroid `source_alpha` maszkja (#5299)
     az árnyékmaskot és a háttér fölötti forráskompozitot is vezérli.
     """
+    return _compose_drop_shadow(
+        image,
+        shadow_color,
+        background_color,
+        shadow_offset(distance_px, angle),
+        blur_px,
+        margin,
+        fade,
+        pads,
+        source_alpha,
+    )
+
+
+def _compose_drop_shadow(
+    image: np.ndarray,
+    shadow_color: tuple[int, int, int],
+    background_color: tuple[int, int, int],
+    offset: tuple[int, int],
+    blur_px: float,
+    margin: int,
+    fade: float = 0.0,
+    pads: tuple[int, int, int, int] | None = None,
+    source_alpha: np.ndarray | None = None,
+) -> np.ndarray:
+    """A már natív képlettel kiszámolt eltolású árnyékot rajzolja ki."""
     validate_image(image)
     height, width = image.shape[:2]
     bal, fent, jobb, lent = pads if pads is not None else (margin,) * 4
@@ -452,7 +479,7 @@ def compose_drop_shadow(
     # alfával (#3498, `teglalap_alfa`). Az elmosás (`0x00bc5680`, quality=3: 3 vízszintes + 3
     # függőleges egész menet) az állandó RGB-t nem változtatja, tehát
     # gyakorlatilag csak az alfát mossa — ezért elég az alfa-csatorna.
-    offset_x, offset_y = shadow_offset(distance_px, angle)
+    offset_x, offset_y = offset
     top = fent + offset_y
     left = bal + offset_x
     alfa = np.zeros((canvas_h, canvas_w), dtype=np.uint8)
@@ -509,13 +536,12 @@ def draw_drop_shadow(
     emulátorban futtatott eredeti kóddal bitre azonos.
     """
     validate_image(image)
-    blur_px, _, pads = drop_shadow_padding(distance, angle, blur)
-    return compose_drop_shadow(
+    blur_px, offset, pads = drop_shadow_padding(distance, angle, blur)
+    return _compose_drop_shadow(
         image,
         shadow_color,
         background_color,
-        int(round(distance)),
-        angle,
+        offset,
         blur_px,
         0,
         fade,
