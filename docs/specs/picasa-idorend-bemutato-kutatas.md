@@ -1529,7 +1529,7 @@ A `+0x648` a `0x007fb210` betöltőben készül: a `layer:overlays/overlay` erő
 
 **Következtetés.** (1) Bináris: `S = 0.05`, `Z = 1.0` a `0x007fb9f0`-ból, `O = P+8 = t*` a `0x007fbd90`-ből; ezzel a 38.2.24 B1 lezárva. (2) A teljes körhinta-elrendezés (hely, lépték, átlátszóság, láthatóság, korlátok, fókusz, animátor) binárisból adott; a megvalósítás a #6595. (3) Mérés: a lap 480 px magas, szélessége a képernyő arányát követi.
 
-**Nyitott, a következő felvehető irány.** A lapméret kiszámítása a binárisban: a `0x00801f50` `GetClientRect` utáni `0x009b49c0(&rect)` elrendező hívása, ahol a 480-as konstans (`0x1e0`) vagy a magasságarány várható.
+**Nyitott, a következő felvehető irány (lezárva: 38.2.98).** A lapméret kiszámítása a binárisban: a `0x00801f50` `GetClientRect` utáni `0x009b49c0(&rect)` elrendező hívása, ahol a 480-as konstans (`0x1e0`) vagy a magasságarány várható.
 
 #### 38.2.97 A vetítés legalább 640 px-es fotóforrást kér (#6604, 2026-11-06)
 
@@ -1540,3 +1540,32 @@ A `+0x648` a `0x007fb210` betöltőben készül: a `layer:overlays/overlay` erő
 **Következtetés.** A teljes képernyős Időrend háttérforrása legalább 640 px hosszabb oldalú kép a fotóból; a 256 px-es rácsbélyegkép felnagyítása nem megfelelő forrás. A kisebb eredeti fotót nem lehet valódi részlettel 640 px-re bővíteni.
 
 **Fejlesztői átadás.** A PicasaPy Időrend háttérszolgáltatója a fotófájlból olvasson legalább 640 px-es forrást, ne a rács 256 px-es lemez-cache-éből. A #6577 szürkítési, automatikus javítási, gamma- és fedőréteg-lánca változatlan marad; a forrás előállítása a már aszinkron QML-kérésben történik, a kész háttér pedig az Időrend LRU-jába kerül.
+
+#### 38.2.98 A lap méretét a `0x007fa730` számolja: az Időrend mindig 480 px magas, képernyőarányos lapot kap (#6532, 2026-11-06)
+
+**Kérdés.** A 38.2.96 4. pontja a 480 px magas, `480 · W / H` széles lapot csak a felvételekből mérte; a lapméret kiszámítása a binárisban nyitott volt.
+
+**Forrás és módszer (utasításszintű olvasat, a helyi `Picasa3.exe`-ből, capstone).** A `0x00801f50` rajzolás előtti elrendezője a `[this+0x3c4]` képobjektum `+8`/`+0xc` mezőjét (szélesség, magasság) és az ablak téglalapját adja a `0x009b49c0`-nak (`0x00801fbb`-`0x00801fea`); ez a belső téglalapot a külső közepére igazítja (`(külső - belső) / 2`), méretet nem számol. A `[this+0x3c4]` kép a `0x00800a30`-ban a `[this+0x2c8]` téglalap méretével jön létre (`0x00800b99`-`0x00800ba5`, `0x009a9c90`). A `[this+0x2c8..0x2d4]` mezőt a qshow-tartományban (`0x007f9000`-`0x00805000`, indextől független pásztázás) csak a `0x007fa3d0` nullázza és a `0x007fa4c0` írja; ez utóbbi a `ytDDrawable` (`0x00cbd564`) és a `QDrawable` (`0x00cbd66c`) vtábla `+0x44` slotja, vagyis a rajzolható elem téglalap-beállítója. A 480-as konstans (`0x1e0`) a qshow-tartományban egyetlen függvényben fordul elő: `0x007fa730`.
+
+**A `0x007fa730` - megerősített.** Hívói: `0x008037e0` (`0x00803883`, a vetítés indításakor) és `0x00801270` (`0x0080146e`).
+
+| utasítás | hatás |
+|---|---|
+| `0x007fa73c`-`0x007fa746` | `GetSystemMetrics(1)` és `GetSystemMetrics(0)`: a képernyő `H` magassága és `W` szélessége; a képernyő téglalapja `(0, 0, W, H)` |
+| `0x007fa761`, `0x007fa767` | alap: `640 × 480` (`0x280`, `0x1e0`) |
+| `0x007fa76d`-`0x007fa77c` | ha a jelzőbájt **0**, az alap a teljes képernyő: `W × H` |
+| `0x007fa77e`-`0x007fa7af` | `arány = W / H`; a lap szélessége `round(alap_magasság · arány)` |
+| `0x007fa7cd`-`0x007fa7d8` | a lap téglalapja `(0, 0, round(alap_magasság · W / H), alap_magasság)` |
+| `0x007fa7c1`, `0x007fa7dc` | `[0x00d34040] = arány / 1.3333333` (a `0x00cf4908` dupla pontosságú konstans) |
+
+**A jelző forrása, `0x008037e0` - megerősített.**
+
+1. `0x008037f8`-`0x0080382a`: a `HKEY_CURRENT_USER` alatti `Preferences\BigSlideshow2` DWORD (`0x00407a20` és `0x004019b0`; alapérték 1, `0x0080380d`). A jelző 1, ha az érték 0.
+2. `0x00803825`-`0x00803839`: a jelző 1, ha a `[0x00d33958]` nem 16 és nem 32. A `[0x00d33958]`-at a `0x0097e030` írja: `GetDeviceCaps(hdc, 12)`, azaz a képernyő színmélysége bit/képpontban.
+3. `0x0080383e`-`0x00803849`: a jelző 1, ha a paraméterrekord `+1` bájtja nem 0. Ez a bájt a vetítésindító `0x005e8a70` második paramétere (38.2.95). A hívóhelyek közül a `thumbui/timelinebutton` ága `1`-et ad (`0x005da79e`, `0x005da7ab` `push 1`), a `thumbui/sbutton` (diavetítés) ága `0`-t (`0x005da733`, `0x005da740` `push 0`).
+
+**A `Ctrl+O` váltó - megerősített, rejtett.** A `0x00801270` a vetítés `WM_KEYDOWN` (`0x100`) kezelője (`Esc` `0x1b`, nyilak `0x25`-`0x28`, szóköz `0x20`). Az `O` (`0x4f`) ága `GetKeyState(VK_CONTROL)` mellett átbillenti a `[this+0x2d8]` jelzőt, és újraszámolja a lapot (`0x0080143b`-`0x0080146e`). Az ágat, a `Ctrl+F` (`0x46`) és a `Ctrl+B` (`0x42`) ágával együtt, a `[0x00d67849]` bájt kapuzza; ezt csak a `0x005760e0` (`0x00576419`, állandó 1) és a `0x00a52890` (`0x00a52e66`) írja. Hogy ez a kapu mikor nyit, nem olvastam ki.
+
+**Következtetés.** (1) Bináris: az Időrend gombjáról indított vetítés jelzője mindig 1, ezért a lap `round(480 · W / H) × 480` méretű, és a `0x009b49c0` a képernyő közepére teszi. Ez egyezik a 38.2.96 4. pontjának mérésével: 1280×1024-en a számolt 600×480 pontosan a mért, 1920×1080-on a számolt 853×480 a felvételen mért 852×480-tól 1 px-re van; a 4. pont ezzel lezárva. (2) Bináris: a sima diavetítés (`thumbui/sbutton`) alapbeállítással (`BigSlideshow2 = 1`, 16 vagy 32 bites színmélység) a teljes képernyőt kapja. (3) Termékdöntés (tulajdonos, 2026-11-05): a PicasaPy Időrendje a 480 px magas logikai lapot a képernyő magasságára nagyítja (38.2.96); a fenti leképezés ezt nem változtatja, a `Ctrl+O` rejtett váltó nem cél.
+
+**Nyitott.** A `[0x00d67849]` kapu jelentése (a `0x005760e0` és a `0x00a52890` hívási feltétele); a termékre nincs hatása.
