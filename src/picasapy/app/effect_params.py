@@ -180,12 +180,13 @@ def _legacy_registry_params(name: str) -> tuple[EffectParam, ...]:
 #: vezérlő a `filters=` első paramétere az engedélyező „1" flag után).
 _CATALOGUE: dict[str, tuple[EffectParam, ...]] = {
     # --- 3. fül: törzs-effektek ---------------------------------------------
-    # #6443: a natív colorfix sorrendje fehérpont-szín, majd hőmérséklet;
-    # a whitept csak a színmátrixot futtatja. A szín a pipetta/kör
-    # beállítása, a renderelő a bináris callback szerinti mátrixot használja.
+    # #6443/#6617: a mért natív colorfix-sorrend hőmérséklet, majd
+    # fehérpont-szín. A whitept csak a színmátrixot futtatja. A szín a
+    # pipetta/kör beállítása, a renderelő a bináris callback szerinti
+    # mátrixot használja.
     "colorfix": (
-        _color("whitepoint", "Pick Color", "#ffffff"),
         _p("temperature", "Color Temperature", -0.5, 0.5, 0.125, 0.01),
+        _color("whitepoint", "Pick Color", "#ffffff"),
     ),
     "whitept": (_color("whitepoint", "Pick Color", "#ffffff"),),
     # unsharp=1 mérten azonos az unsharp2=1,0.600000-val
