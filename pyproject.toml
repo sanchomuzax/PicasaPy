@@ -58,6 +58,7 @@ dev = [
     "pytest-cov",
     "ruff",
     "build",
+    "hypothesis",
 ]
 
 # Parancssori belépési pont: `pip install .` / `pipx install .` után a
