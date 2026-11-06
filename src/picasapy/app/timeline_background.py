@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 from collections import OrderedDict
+from pathlib import Path
 
+from picasapy.cvimage import dekodolj_forrast, hosszabb_el, scale_down_picasa_mag
 from picasapy.lazy_cv2 import cv2
 import numpy as np
 from PySide6.QtCore import QSize, QRectF, Qt
@@ -15,15 +18,25 @@ from PySide6.QtGui import (
     QPainter,
     QPainterPath,
     QPen,
+    QTransform,
 )
 from PySide6.QtQuick import QQuickImageProvider
 
+from picasapy.app.display_mode_paint import apply_display_mode_to_qimage
+from picasapy.app.display_mode_paint import display_mode_from_thumb_id
+from picasapy.render.chain import apply_filters, normalize_crop_ops
+from picasapy.render.elonezeti_arany import elonezeti_arany
+from picasapy.render.flip import FLIP_HORIZONTAL, FLIP_VERTICAL
 from picasapy.render.native_tone import native_gamma_lut
 from picasapy.render.ops_levels import apply_enhance
+from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
+from picasapy.scanner import PICASA_INI_NAME
 
 _ALAP_SZELESSEG = 600
 _ALAP_MAGASSAG = 480
 _CACHE_KAPACITAS = 8
+_HATTER_FORRAS_HOSSZABB_OLDAL = 640
+_log = logging.getLogger(__name__)
 
 
 def _ellenoriz_rgb(image: np.ndarray) -> None:
@@ -220,6 +233,84 @@ def _rgb_qimage(image: np.ndarray) -> QImage:
     ).copy()
 
 
+def _hatter_forras_qimage(
+    image: np.ndarray, rotate_steps: int = 0, flip_flags: int = 0
+) -> QImage:
+    rgb = np.ascontiguousarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    height, width = rgb.shape[:2]
+    result = QImage(
+        rgb.data,
+        width,
+        height,
+        rgb.strides[0],
+        QImage.Format.Format_RGB888,
+    ).copy()
+    steps = int(rotate_steps or 0) % 4
+    if steps:
+        result = result.transformed(QTransform().rotate(90 * steps))
+    flags = int(flip_flags or 0)
+    if flags:
+        result = result.mirrored(
+            bool(flags & FLIP_HORIZONTAL), bool(flags & FLIP_VERTICAL)
+        )
+    return result
+
+
+def _load_timeline_source(thumbnail_provider, photo_id, longest_side):
+    """A háttérhez az eredeti fotóból készít legfeljebb `longest_side`-os képet.
+
+    A `ThumbnailProvider` lemezes cache-e szándékosan a rács 256 px-es
+    plafonján marad. Ez az út csak az Időrend háttér-cache miss ágában fut,
+    és a háttér LRU-ja tartja meg a kész képkockát.
+    """
+    photo_lookup = getattr(thumbnail_provider, "_photo_for_render", None)
+    if not callable(photo_lookup):
+        return thumbnail_provider.requestImage(str(photo_id), QSize(), QSize())
+    photo = photo_lookup(str(photo_id))
+    if photo is None:
+        return thumbnail_provider.requestImage(str(photo_id), QSize(), QSize())
+
+    source_path = Path(photo.folder_path) / photo.name
+    if source_path.suffix.lower() in VIDEO_EXTENSIONS:
+        return thumbnail_provider.requestImage(str(photo_id), QSize(), QSize())
+
+    image = dekodolj_forrast(source_path, int(longest_side))
+    if image is None:
+        return thumbnail_provider.requestImage(str(photo_id), QSize(), QSize())
+
+    ops, _chain_crc = thumbnail_provider._resolved_ops(photo)
+    if ops:
+        crop, crop_ini_readable = thumbnail_provider._crop_reader.read(
+            source_path.parent / PICASA_INI_NAME, source_path.name
+        )
+        ops = normalize_crop_ops(
+            ops,
+            crop,
+            crop_ini_readable=crop_ini_readable,
+            warning_key=str(source_path),
+        )
+        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        teljes = hosszabb_el(source_path)
+        arany = (
+            min(1.0, max(image.shape[:2]) / teljes)
+            if teljes
+            else 1.0
+        )
+        with elonezeti_arany(arany):
+            rendered, _skipped = apply_filters(rgb, ops)
+        image = cv2.cvtColor(rendered, cv2.COLOR_RGB2BGR)
+
+    image = scale_down_picasa_mag(image, int(longest_side))
+    result = _hatter_forras_qimage(
+        image,
+        getattr(photo, "rotate_steps", 0),
+        getattr(photo, "flip_flags", 0),
+    )
+    return apply_display_mode_to_qimage(
+        result, display_mode_from_thumb_id(str(photo_id))
+    )
+
+
 class TimelineBackgroundProvider(QQuickImageProvider):
     """A bélyegkép-szolgáltatóból kér képet és a háttér eredményét gyorsítótárazza."""
 
@@ -239,10 +330,19 @@ class TimelineBackgroundProvider(QQuickImageProvider):
         with self._lock:
             image = self._cache.get(key)
             if image is None:
-                source_size = QSize()
-                source = self._thumbnail_provider.requestImage(
-                    str(image_id), source_size, QSize()
-                )
+                try:
+                    source = _load_timeline_source(
+                        self._thumbnail_provider,
+                        str(image_id),
+                        _HATTER_FORRAS_HOSSZABB_OLDAL,
+                    )
+                except Exception:  # noqa: BLE001 - a háttér hibája nem zárhatja le a nézetet
+                    _log.exception(
+                        "Időrend háttérforrás-betöltési hiba: %s", image_id
+                    )
+                    source = self._thumbnail_provider.requestImage(
+                        str(image_id), QSize(), QSize()
+                    )
                 if source.isNull():
                     return QImage()
                 rendered = render_timeline_background(
