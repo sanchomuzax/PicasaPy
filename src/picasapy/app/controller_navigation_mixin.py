@@ -26,7 +26,9 @@ class FolderNavigationMixin:
                 # #4887: rejtett mappa nem állhat vissza jelenlegi mappának
                 for row in conn.execute(
                     "SELECT path FROM folders f"
-                    f" WHERE {visible_folder_sql(conn)} ORDER BY path"
+                    " WHERE (f.has_ini = 0 OR EXISTS ("
+                    " SELECT 1 FROM photos p WHERE p.folder_id = f.id))"
+                    f" AND {visible_folder_sql(conn)} ORDER BY path"
                 )
             ]
         if saved and saved in paths:

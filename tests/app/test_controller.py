@@ -963,6 +963,26 @@ class TestSessionRestore:
         ctl.restoreSession()
         assert ctl.currentFolder == str(library / "nyaralas")
 
+    def test_restore_skips_ini_only_album_folder(
+        self, qt_app, tmp_path, library
+    ):
+        from pathlib import Path
+
+        folder = library / "aaa-csak-ini"
+        folder.mkdir()
+        (folder / ".picasa.ini").write_text(
+            "[.album:ini6608]\nname=Album\n", encoding="utf-8"
+        )
+        settings = self._settings(tmp_path)
+        settings.setValue("session/lastFolder", str(library / "nincs-ilyen"))
+        settings.sync()
+        ctl = self._controller(tmp_path, library, settings)
+        ctl._reload()
+
+        ctl.restoreSession()
+
+        assert Path(ctl.currentFolder) == library / "nyaralas"
+
     def test_select_folder_persists_choice(self, qt_app, tmp_path, library):
         settings = self._settings(tmp_path)
         ctl = self._controller(tmp_path, library, settings)

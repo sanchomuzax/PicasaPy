@@ -48,7 +48,8 @@ def sorted_folder_rows(
         " COALESCE(MAX(p.mtime_ns), 0) AS last_change"
         " FROM folders f LEFT JOIN photos p ON p.folder_id = f.id"
         f"{rejtett_szuro}"
-        " GROUP BY f.id ORDER BY f.path"
+        " GROUP BY f.id HAVING f.has_ini = 0 OR count(p.id) > 0"
+        " ORDER BY f.path"
     ).fetchall()
     folders = [
         (

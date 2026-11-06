@@ -160,6 +160,55 @@ def scan_tree(
     ténylegesen elérhető volt (scandir sikerült rajta), csak a talált
     tartalom szándékosan kizárt nevű mappák alatt van — szemben a gyökér
     valódi elérhetetlenségével, amikor egyetlen mappa scandirje sem fut le."""
+    return _scan_tree(
+        root,
+        exclude=exclude,
+        skip=skip,
+        name_filters=name_filters,
+        excluded_names=excluded_names,
+        hibas_bejegyzesek=hibas_bejegyzesek,
+        enabled_filetypes=enabled_filetypes,
+        include_ini_only=False,
+    )
+
+
+def _scan_tree_for_index(
+    root: str | Path,
+    exclude: tuple[str | Path, ...] = (),
+    skip: SkipPredicate | None = None,
+    name_filters: NameFilters | None = None,
+    excluded_names: list[Path] | None = None,
+    hibas_bejegyzesek: list[HibasBejegyzes] | None = None,
+    enabled_filetypes: Collection[str] | None = None,
+) -> tuple[FolderScan, ...]:
+    """Az index számára a csak `.picasa.ini`-t tartalmazó mappákat is bejárja.
+
+    Ezekben nincs fotó, de lehet albumdefiníció; az index teljes újraépítése
+    ezért a normál média-mappák mellett ezeket is megőrzi.
+    """
+    return _scan_tree(
+        root,
+        exclude=exclude,
+        skip=skip,
+        name_filters=name_filters,
+        excluded_names=excluded_names,
+        hibas_bejegyzesek=hibas_bejegyzesek,
+        enabled_filetypes=enabled_filetypes,
+        include_ini_only=True,
+    )
+
+
+def _scan_tree(
+    root: str | Path,
+    *,
+    exclude: tuple[str | Path, ...],
+    skip: SkipPredicate | None,
+    name_filters: NameFilters | None,
+    excluded_names: list[Path] | None,
+    hibas_bejegyzesek: list[HibasBejegyzes] | None,
+    enabled_filetypes: Collection[str] | None,
+    include_ini_only: bool,
+) -> tuple[FolderScan, ...]:
     root_path = Path(root)
     if not root_path.is_dir():
         raise FileNotFoundError(f"A szkennelendő gyökér nem létezik: {root_path}")
@@ -181,6 +230,7 @@ def scan_tree(
         root_path, exclude_paths, skip, filters, folders, set(),
         excluded_names, hibas_bejegyzesek, kanonikus=True,
         enabled_filetypes=enabled_filetypes,
+        include_ini_only=include_ini_only,
     )
     return tuple(sorted(folders, key=lambda f: f.path))
 
@@ -202,6 +252,47 @@ def scan_folder(
     `mar_feloldva=True`: a hívó állítja, hogy `folder` már feloldott
     abszolút útvonal, tehát a kizárólista-egyeztetés ne oldja fel újra
     (#2483) — ld. `NameFilters.is_path_excluded`."""
+    return _scan_folder_path(
+        folder,
+        name_filters=name_filters,
+        skip=skip,
+        hibas_bejegyzesek=hibas_bejegyzesek,
+        mar_feloldva=mar_feloldva,
+        enabled_filetypes=enabled_filetypes,
+        include_ini_only=False,
+    )
+
+
+def _scan_folder_for_index(
+    folder: str | Path,
+    name_filters: NameFilters | None = None,
+    skip: SkipPredicate | None = None,
+    hibas_bejegyzesek: list[HibasBejegyzes] | None = None,
+    mar_feloldva: bool = False,
+    enabled_filetypes: Collection[str] | None = None,
+) -> FolderScan | None:
+    """Az index mappa-pontos szinkronjához az ini-only mappát is visszaadja."""
+    return _scan_folder_path(
+        folder,
+        name_filters=name_filters,
+        skip=skip,
+        hibas_bejegyzesek=hibas_bejegyzesek,
+        mar_feloldva=mar_feloldva,
+        enabled_filetypes=enabled_filetypes,
+        include_ini_only=True,
+    )
+
+
+def _scan_folder_path(
+    folder: str | Path,
+    *,
+    name_filters: NameFilters | None,
+    skip: SkipPredicate | None,
+    hibas_bejegyzesek: list[HibasBejegyzes] | None,
+    mar_feloldva: bool,
+    enabled_filetypes: Collection[str] | None,
+    include_ini_only: bool,
+) -> FolderScan | None:
     path = Path(folder)
     if path.name.startswith("."):
         return None
@@ -224,6 +315,7 @@ def scan_folder(
     return _scan_folder(
         path, file_entries, skip=skip, with_state=True,
         hibas=hibas_bejegyzesek, enabled_filetypes=enabled_filetypes,
+        include_ini_only=include_ini_only,
     )
 
 
@@ -238,6 +330,7 @@ def _walk(
     hibas: list[HibasBejegyzes] | None = None,
     kanonikus: bool = False,
     enabled_filetypes: Collection[str] | None = None,
+    include_ini_only: bool = False,
 ) -> None:
     """Rekurzív scandir-bejárás; olvashatatlan mappát csendben kihagy
     (élő NAS-on a mappa el is tűnhet menet közben).
@@ -283,6 +376,7 @@ def _walk(
     scan = _scan_folder(
         current, file_entries, skip, with_state=skip is not None, hibas=hibas,
         enabled_filetypes=enabled_filetypes,
+        include_ini_only=include_ini_only,
     )
     if scan is not None:
         out.append(scan)
@@ -318,6 +412,7 @@ def _walk(
             # a kanonikusság csak NEM-symlink bejegyzésen öröklődik
             kanonikus=kanonikus and not _entry_is_symlink(entry),
             enabled_filetypes=enabled_filetypes,
+            include_ini_only=include_ini_only,
         )
 
 
@@ -353,8 +448,10 @@ def _scan_folder(
     with_state: bool,
     hibas: list[HibasBejegyzes] | None = None,
     enabled_filetypes: Collection[str] | None = None,
+    include_ini_only: bool = False,
 ) -> FolderScan | None:
     by_name = {entry.name: entry for entry in entries}
+    has_ini = PICASA_INI_NAME in by_name or PICASA_INI_LEGACY_NAME in by_name
     recognised_media = [
         (name, kind)
         for name in sorted(by_name)
@@ -366,9 +463,11 @@ def _scan_folder(
         if (enabled_kind := media_kind_if_enabled(name, enabled_filetypes))
         is not None
     ]
-    if not media and not (enabled_filetypes is not None and recognised_media):
+    if not media and not (
+        (include_ini_only and has_ini)
+        or (enabled_filetypes is not None and recognised_media)
+    ):
         return None
-    has_ini = PICASA_INI_NAME in by_name or PICASA_INI_LEGACY_NAME in by_name
     mtime_ns = 0
     ini_mtime_ns: int | None = None
     if with_state:

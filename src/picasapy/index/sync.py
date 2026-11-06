@@ -49,6 +49,7 @@ from picasapy.scanner import (
     scan_folder,
     scan_tree,
 )
+from picasapy.scanner.walker import _scan_folder_for_index, _scan_tree_for_index
 
 
 # Régi importútvonalak: a függvények közvetlenül erről a modulról maradnak elérhetők.
@@ -240,7 +241,7 @@ def sync_tree(
     # Elemenként a `walker` naplóz; itt egy összesítő sor is kell, mert a
     # hosszú scan naplójában az egyedi sorok elvesznek.
     hibas_bejegyzesek: list[HibasBejegyzes] = []
-    scans = scan_tree(
+    scans = _scan_tree_for_index(
         root_path,
         exclude=exclude,
         skip=skip,
@@ -350,8 +351,9 @@ def sync_folder(
 
     A watcher mappa-pontos jelzést ad — nincs ok a teljes részfa
     újrabejárására. A mappa almappáihoz nem nyúl; ha a mappa eltűnt,
-    kizárt vagy médiamentes lett, a sora (és a fotói) kikerülnek az
-    indexből. A `root` a védőkorlát: csak a figyelt gyökér alatti mappa
+    kizárt vagy média és ini nélküli lett, a sora (és a fotói) kikerülnek
+    az indexből. A `.picasa.ini`-t tartalmazó médiamentes mappa album-
+    definícióit megőrizzük. A `root` a védőkorlát: csak a figyelt gyökér alatti mappa
     szinkronizálható.
 
     #216: ha a `should_stop` igazat ad (a mappa a hívás pillanatában már
@@ -398,7 +400,7 @@ def sync_folder(
     scan = (
         None
         if excluded
-        else scan_folder(
+        else _scan_folder_for_index(
             folder_path,
             skip=skip,
             mar_feloldva=True,
