@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.51] - 2026-11-06
+
+- Az éjszakai ellenőrzés véletlen tesztsorrendben fut, és a bukásokat azonos magú, majd fix sorrendű újrafuttatással sorolja be (#6590).
+
 ## [1.0.50] - 2026-11-06
 
 - A túlméretezett keret- és árnyékeffektek nem foglalhatnak korlátlan memóriát. (#6581).
