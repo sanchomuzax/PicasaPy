@@ -13,6 +13,8 @@ fejezete alapján SZÁMOLTAK (nem találgatottak) — ahol van valós ini-minta
 
 from __future__ import annotations
 
+import math
+
 from picasapy.ini.filters import FilterOp
 from picasapy.render import glimmer_artistic as artistic
 from picasapy.render import glimmer_creative as creative
@@ -29,13 +31,15 @@ from picasapy.render.tinting import parse_rgb_hex
 
 
 def _float_at(op: FilterOp, index: int, default: float) -> float:
-    """A flag utáni `index`-edik paraméter számként, hiányzónál `default`
-    (a `chain._effect_float`-tal azonos, POZÍCIÓ szerinti olvasás — a
-    szám/szín keveredés miatt a teljes lista konvertálása elszállna)."""
+    """A flag utáni `index`-edik paraméter számként, hiányzó vagy nem véges
+    értéknél `default`; az érvénytelen szöveg továbbra is hibát dob. A paramétereket
+    POZÍCIÓ szerint olvassa — a szám/szín keveredés miatt a teljes lista
+    konvertálása elszállna."""
     absolute = index + 1
     if len(op.params) <= absolute:
         return default
-    return float(op.params[absolute])
+    value = float(op.params[absolute])
+    return value if math.isfinite(value) else default
 
 
 def _color_at(op: FilterOp, index: int, default: tuple[int, int, int]) -> tuple[int, int, int]:

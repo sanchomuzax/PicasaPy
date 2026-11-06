@@ -110,9 +110,10 @@ def _forgatas(kozep_x: float, kozep_y: float, szog_fok: float) -> Matrix:
 def _szam(op: FilterOp, index: int, alap: float) -> float:
     """A `chain_glimmer_handlers._float_at` viselkedése."""
     try:
-        return float(op.params[index])
+        value = float(op.params[index])
     except (IndexError, TypeError, ValueError):
         return alap
+    return value if math.isfinite(value) else alap
 
 
 def _logikai(op: FilterOp, index: int, alap: bool) -> bool:

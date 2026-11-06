@@ -21,6 +21,35 @@ from picasapy.render.glimmer_ops import fade_alpha
 from picasapy.render.nativ_blur import nativ_blur_csatorna
 
 _BORDER_Q_X_SLOPE = 240
+_KERET_KIMENET_FORRAS_SZORZO = 128
+# Az abszolút plafon a kis forrásnál véd; nagy fotónál a forrás négyszerese
+# mindig megengedett, hogy a csúszkatartományon belüli keret ne essen ki.
+_KERET_KIMENET_ABSZOLUT_PIXELPLAFON = 256_000_000
+_KERET_KIMENET_NAGY_FORRAS_SZORZO = 4
+
+
+def _ellenoriz_keret_kimenetet(image: np.ndarray, width: int, height: int) -> None:
+    """A méretnövelő keretművelet vásznát még foglalás előtt korlátozza."""
+    forras_h, forras_w = image.shape[:2]
+    forras_pixelek = int(forras_h) * int(forras_w)
+    kimeneti_pixelek = int(width) * int(height)
+    if width < 0 or height < 0:
+        raise ValueError(f"Érvénytelen keret-kimeneti méret: {width}×{height}")
+    if kimeneti_pixelek <= forras_pixelek:
+        return
+
+    plafon = min(
+        forras_pixelek * _KERET_KIMENET_FORRAS_SZORZO,
+        max(
+            _KERET_KIMENET_ABSZOLUT_PIXELPLAFON,
+            forras_pixelek * _KERET_KIMENET_NAGY_FORRAS_SZORZO,
+        ),
+    )
+    if kimeneti_pixelek > plafon:
+        raise ValueError(
+            f"A keret kimenete túl nagy: {width}×{height} képpont, "
+            f"a határ {plafon} képpont"
+        )
 
 
 def add_ring(image: np.ndarray, thickness: float, color: tuple[int, int, int]) -> np.ndarray:
@@ -37,6 +66,8 @@ def add_ring(image: np.ndarray, thickness: float, color: tuple[int, int, int]) -
     px = max(0, int(round(thickness)))
     if px == 0:
         return image.copy()
+    height, width = image.shape[:2]
+    _ellenoriz_keret_kimenetet(image, width + 2 * px, height + 2 * px)
     return cv2.copyMakeBorder(image, px, px, px, px, cv2.BORDER_CONSTANT, value=color)
 
 
@@ -48,6 +79,8 @@ def add_border_sides(
     left, right, top, bottom = (max(0, int(round(v))) for v in (left, right, top, bottom))
     if left == right == top == bottom == 0:
         return image.copy()
+    height, width = image.shape[:2]
+    _ellenoriz_keret_kimenetet(image, width + left + right, height + top + bottom)
     return cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
 
 
@@ -232,7 +265,9 @@ def draw_border(
     felirat = max(0, int(caption_height_px))
     sugar = max(0, min(int(round(corner_radius_px)), height // 2, width // 2))
     keret = kulso + belso
-    vaszon = np.empty((height + 2 * keret + felirat, width + 2 * keret, 3), dtype=image.dtype)
+    vaszon_h, vaszon_w = height + 2 * keret + felirat, width + 2 * keret
+    _ellenoriz_keret_kimenetet(image, vaszon_w, vaszon_h)
+    vaszon = np.empty((vaszon_h, vaszon_w, 3), dtype=image.dtype)
     vaszon[:] = np.asarray(outer_color, dtype=image.dtype)
     if belso > 0:
         vaszon[
@@ -410,6 +445,7 @@ def compose_drop_shadow(
     height, width = image.shape[:2]
     bal, fent, jobb, lent = pads if pads is not None else (margin,) * 4
     canvas_h, canvas_w = height + fent + lent, width + bal + jobb
+    _ellenoriz_keret_kimenetet(image, canvas_w, canvas_h)
 
     # #3474: a natív út (`0x00bcd940`). Az árnyékréteg egyenes BGRA: a teljes
     # vászon `árnyékszín | alfa 0`, a téglalap `TRUNC(shadowAlpha · 255)`
@@ -526,6 +562,7 @@ def rotate_with_pad(
     cos_a, sin_a = math.cos(radian), math.sin(radian)
     cel_w = int(math.floor(src_w * abs(cos_a) + src_h * abs(sin_a)))
     cel_h = int(math.floor(src_w * abs(sin_a) + src_h * abs(cos_a)))
+    _ellenoriz_keret_kimenetet(image, cel_w, cel_h)
     # cél → forrás: az óramutató szerinti forgatás inverze
     matrix = (
         cos_a, sin_a, src_w / 2.0 - cos_a * cel_w / 2.0 - sin_a * cel_h / 2.0,
