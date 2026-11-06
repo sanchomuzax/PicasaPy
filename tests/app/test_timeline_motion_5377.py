@@ -2,6 +2,7 @@
 
 from math import isclose
 
+from picasapy import timeline_motion
 from picasapy.timeline_motion import (
     blend_channel,
     frame_transforms,
@@ -225,3 +226,82 @@ def test_timeline_dot_positions_match_picasa_qemu_duplicate_branches():
     assert (four[-1]["x"], four[-1]["y"], four[-1]["draw"]) == (295, 13, False)
     five = timeline_dot_positions([0.125, 0.5, 0.5, 0.5, 0.5], **common)
     assert (five[-1]["x"], five[-1]["y"], five[-1]["draw"]) == (295, 6, True)
+
+
+def test_focus_parameter_uses_the_first_closest_point_on_the_measured_grid():
+    parameter = timeline_motion.focus_parameter()
+
+    assert isclose(parameter, 0.9358, rel_tol=0.0, abs_tol=1e-4)
+    x, _y, _w = rational_cubic_bezier(parameter, _CONTROL_POINTS)
+    assert abs(x - 0.666) < 0.0001
+
+
+def test_carousel_layout_positions_and_visibility_follow_the_curve():
+    focus = 0.9358
+    cards = timeline_motion.carousel_layout(focus, 12)
+
+    assert len(cards) == 12
+    assert [card["index"] for card in cards] == list(range(12))
+    for index, card in enumerate(cards):
+        parameter = index * timeline_motion.CARD_STEP + focus
+        x, y, width = rational_cubic_bezier(parameter, _CONTROL_POINTS)
+        assert isclose(card["t"], parameter, rel_tol=0.0, abs_tol=1e-12)
+        assert isclose(card["x"], x, rel_tol=0.0, abs_tol=1e-12)
+        assert isclose(card["y"], y, rel_tol=0.0, abs_tol=1e-12)
+        assert isclose(card["w"], width, rel_tol=0.0, abs_tol=1e-12)
+        assert card["visible"] is (width > 0.1)
+    assert all(card["alpha"] == timeline_motion.card_alpha(card["w"]) for card in cards)
+
+
+def test_carousel_offset_clamps_to_the_focus_and_collection_bounds():
+    focus = timeline_motion.focus_parameter()
+    count = 12
+    lower = focus - (count - 1) * timeline_motion.CARD_STEP
+
+    assert timeline_motion.clamp_offset(focus + 1, count) == focus
+    assert isclose(
+        timeline_motion.clamp_offset(lower - 1, count),
+        lower,
+        rel_tol=0.0,
+        abs_tol=1e-12,
+    )
+    assert timeline_motion.clamp_offset(focus - 0.5, 1) == focus
+
+
+def test_card_alpha_matches_the_measured_depth_fade():
+    assert timeline_motion.card_alpha(1.0) == 256
+    assert timeline_motion.card_alpha(0.1) == 0
+    for width in (0.25, 0.5, 0.95, 1.1):
+        z = max(0.0, (1.0 / width - 1.0) / 9.0)
+        assert timeline_motion.card_alpha(width) == round(
+            (1.0 - z**1.5) * 256.0
+        )
+
+
+def test_focus_index_uses_nearest_curve_x_and_lower_index_for_ties():
+    focus = timeline_motion.focus_parameter()
+    cards = timeline_motion.carousel_layout(focus - timeline_motion.CARD_STEP, 3)
+    assert timeline_motion.focus_index(focus - timeline_motion.CARD_STEP, 3) == 1
+
+    flat_x_points = tuple((0.666, y, 1.0) for y in (-1.0, 0.0, 1.0, 2.0))
+    assert timeline_motion.focus_index(0.4, 4, flat_x_points) == 0
+    assert cards[1]["index"] == 1
+
+
+def test_animator_position_sums_quick_steps_until_both_records_finish():
+    base = timeline_motion.focus_parameter()
+    records = [
+        {"delta": -timeline_motion.CARD_STEP, "started_at": 0.0, "duration": 2.0},
+        {"delta": -timeline_motion.CARD_STEP, "started_at": 0.1, "duration": 2.0},
+    ]
+
+    middle = timeline_motion.animator_position(base, records, 1.0)
+    end = timeline_motion.animator_position(base, records, 2.2)
+
+    assert base - 2 * timeline_motion.CARD_STEP < middle < base
+    assert isclose(
+        end,
+        base - 2 * timeline_motion.CARD_STEP,
+        rel_tol=0.0,
+        abs_tol=1e-12,
+    )

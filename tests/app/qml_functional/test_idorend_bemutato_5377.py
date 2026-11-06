@@ -99,7 +99,7 @@ def test_ctrl5_opens_fullscreen_timeline_without_selection(qml_app, qt_app):
 
 
 @pytest.mark.parametrize("height", [795, 800, 805])
-def test_rendered_timeline_has_centered_600_by_480_panel(
+def test_rendered_timeline_scales_480px_panel_to_full_window(
     qml_app_idorend_5377, qt_app, tmp_path, height
 ):
     window, _controller, engine = qml_app_idorend_5377
@@ -120,9 +120,14 @@ def test_rendered_timeline_has_centered_600_by_480_panel(
     assert name.property("text") == "PicasaTeszt"
     assert date.property("text") == "October 2026"
 
+    timeline.setProperty("visibility", timeline.property("windowedVisibility"))
+    timeline.resize(1280, height)
+    assert _wait(qt_app, lambda: timeline.width() == 1280)
+    assert _wait(qt_app, lambda: timeline.height() == height)
     panel = _child(timeline, "timelinePanel")
-    assert panel.property("width") == 600
+    assert abs(panel.property("width") - 480 * 1280 / height) <= 0.01
     assert panel.property("height") == 480
+    assert abs(panel.property("scale") - height / 480) <= 0.001
     background_image = _child(timeline, "timelineBackgroundImage")
     background_point = panel.mapToItem(
         timeline.contentItem(), QPointF(35, 25)
@@ -138,8 +143,11 @@ def test_rendered_timeline_has_centered_600_by_480_panel(
     ), "a gyűjtemény bélyegképei nem töltődtek be"
     frame = timeline.grabWindow()
     assert not frame.isNull(), "az Időrend képkockája üres"
-    assert frame.pixelColor(5, 5) == QColor("black")
-    center = panel.mapToItem(timeline.contentItem(), QPointF(300, 240))
+    assert frame.pixelColor(5, 5) != QColor("black")
+    center = panel.mapToItem(
+        timeline.contentItem(),
+        QPointF(panel.property("width") / 2, panel.property("height") / 2),
+    )
     assert abs(center.x() - timeline.width() / 2) <= 3
     assert abs(center.y() - timeline.height() / 2) <= 3
     panel_center = center.toPoint()
@@ -176,30 +184,20 @@ def test_rendered_timeline_has_centered_600_by_480_panel(
     slider_area = _child(timeline, "timelineSliderArea")
     slider_top = slider_area.mapToItem(panel, QPointF(0, 0))
     assert abs(slider_top.y() - 452) <= 3
-    photo_deck = _child(timeline, "timelineCurrentPhotoDeck")
-    assert photo_deck.property("count") >= 3, (
-        "a gyűjtemény képei nem alkotnak több, egymásra döntött bélyegből álló köteget"
-    )
-    next_deck = _child(timeline, "timelineNextPhotoDeck")
-    assert next_deck.property("count") >= 3, (
-        "a következő gyűjtemény képkötege nem látható a jelenlegi mellett"
+    carousel_deck = _child(timeline, "timelineCarouselDeck")
+    assert carousel_deck.property("count") == len(reference_collections)
+    photo_geometry = timeline.property("currentPhotoCardGeometry").toVariant()
+    assert len(photo_geometry) >= 3, (
+        "a fókuszban levő gyűjtemény képei nem alkotnak több bélyegből álló köteget"
     )
     first_photo_url = reference_collections[0]["photos"][0]["thumbUrl"]
     assert first_photo_url.startswith("image://thumbs/"), first_photo_url
-    timeline.setProperty("visibility", timeline.property("windowedVisibility"))
-    timeline.resize(1280, 1024)
-    assert _wait(qt_app, lambda: timeline.width() == 1280)
-    assert _wait(qt_app, lambda: timeline.height() == 1024)
-    reference_center = panel.mapToItem(
-        timeline.contentItem(), QPointF(300, 240)
-    )
-    assert abs(reference_center.x() - 640) <= 3
-    assert abs(reference_center.y() - 512) <= 3
     if height == 800:
         reference_frame = timeline.grabWindow()
         assert not reference_frame.isNull()
         assert reference_frame.save(str(tmp_path / "timeline-frame.png"))
-        card_curve = timeline_controller.bezierAt(0.94)
+        focus_parameter = timeline_controller.focusParameter()
+        card_curve = timeline_controller.bezierAt(focus_parameter)
         card_center = panel.mapToItem(
             timeline.contentItem(),
             QPointF(
@@ -218,7 +216,7 @@ def test_rendered_timeline_has_centered_600_by_480_panel(
         )
 
         card_geometry = timeline.property("currentPhotoCardGeometry").toVariant()
-        assert len(card_geometry) == photo_deck.property("count")
+        assert len(card_geometry) == len(photo_geometry)
         assert all(abs(card["rotation"]) >= 3 for card in card_geometry), (
             "a bélyegköteg valamelyik képe nincs megdöntve"
         )
@@ -245,7 +243,7 @@ def test_rendered_timeline_has_centered_600_by_480_panel(
         ), "a bélyegképek nem fednek egymásra látható kötegként"
 
         first_card = card_geometry[0]
-        first_curve = timeline_controller.bezierAt(0.94)
+        first_curve = timeline_controller.bezierAt(focus_parameter)
         actual_card_center = QPointF(
             panel.mapToItem(timeline.contentItem(), QPointF(
                 first_card["x"] + first_card["width"] / 2,
@@ -314,9 +312,10 @@ def test_rendered_timeline_has_centered_600_by_480_panel(
             assert abs(actual["x"] - expected_x) <= 1
             assert abs(actual["y"] - expected_y) <= 1
 
-    timeline.resize(timeline.width(), height)
-    assert _wait(qt_app, lambda: timeline.height() == height)
-    resized_center = panel.mapToItem(timeline.contentItem(), QPointF(300, 240))
+    resized_center = panel.mapToItem(
+        timeline.contentItem(),
+        QPointF(panel.property("width") / 2, panel.property("height") / 2),
+    )
     assert abs(resized_center.y() - timeline.height() / 2) <= 3
 
 
@@ -361,6 +360,10 @@ def test_keys_buttons_and_slider_animate_between_collection_cards(
     window, controller, _engine = qml_app
     window.resize(window.width(), height)
     timeline = _open_timeline(window, qt_app)
+    timeline.setProperty("visibility", timeline.property("windowedVisibility"))
+    timeline.resize(1280, height)
+    assert _wait(qt_app, lambda: timeline.width() == 1280)
+    assert _wait(qt_app, lambda: timeline.height() == height)
     timeline.setProperty("collectionsModel", _sample_collections(controller.currentFolder))
 
     QTest.keyClick(timeline, Qt.Key.Key_Right)

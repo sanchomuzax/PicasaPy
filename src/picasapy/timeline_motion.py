@@ -23,6 +23,9 @@ DEFAULT_BEZIER_POINTS = (
 _OFFSET_SCALE = 0.1499999761581421
 _ALPHA_THRESHOLD = 0.6800000071525574
 _ALPHA_SPAN = 0.3199999928474426
+CARD_STEP = 0.04999999888241291
+FOCUS_X = 0.666
+VISIBLE_WIDTH = 0.1
 
 
 def rational_cubic_bezier(
@@ -61,6 +64,125 @@ def rational_cubic_bezier(
         (y_numerator - 0.5) / denominator + 0.5,
         1.0 / denominator,
     )
+
+
+def focus_parameter(
+    points: Sequence[Sequence[float]] = DEFAULT_BEZIER_POINTS,
+) -> float:
+    """Az első paraméter a bináris 0,0001-es rácsán, ahol x a 0,666-hoz
+    legközelebb esik (38.2.24–38.2.25).
+    """
+    best_parameter = -1.0
+    best_distance = float("inf")
+    for step in range(20_000):
+        parameter = step / 10_000.0 - 1.0
+        x, _y, _w = rational_cubic_bezier(parameter, points)
+        distance = abs(x - FOCUS_X)
+        if distance < best_distance:
+            best_parameter = parameter
+            best_distance = distance
+    return best_parameter
+
+
+DEFAULT_FOCUS_PARAMETER = focus_parameter()
+
+
+def card_alpha(width: float) -> int:
+    """A kártya mélység szerinti alfája (38.2.24–38.2.25)."""
+    if not isfinite(width):
+        raise ValueError("a kártyaszélesség csak véges szám lehet")
+    if width <= 0.0:
+        return 0
+    depth = max(0.0, (1.0 / width - 1.0) / 9.0)
+    return round((1.0 - depth**1.5) * 256.0)
+
+
+def carousel_layout(
+    offset: float,
+    count: int,
+    points: Sequence[Sequence[float]] = DEFAULT_BEZIER_POINTS,
+) -> list[dict[str, float | int | bool]]:
+    """A teljes sáv kártyáinak normalizált görbehelye és láthatósága."""
+    if not isfinite(offset):
+        raise ValueError("a sáv eltolása csak véges szám lehet")
+    if count < 0:
+        raise ValueError("a gyűjtemények száma nem lehet negatív")
+    cards = []
+    for index in range(count):
+        parameter = index * CARD_STEP + offset
+        x, y, width = rational_cubic_bezier(parameter, points)
+        cards.append(
+            {
+                "index": index,
+                "t": parameter,
+                "x": x,
+                "y": y,
+                "w": width,
+                "alpha": card_alpha(width),
+                "visible": width > VISIBLE_WIDTH,
+            }
+        )
+    return cards
+
+
+def clamp_offset(offset: float, count: int) -> float:
+    """A sáv eltolását a fókusz és a gyűjteményszám határai közé szorítja."""
+    if not isfinite(offset):
+        raise ValueError("a sáv eltolása csak véges szám lehet")
+    if count < 0:
+        raise ValueError("a gyűjtemények száma nem lehet negatív")
+    focus = DEFAULT_FOCUS_PARAMETER
+    if count <= 1:
+        return focus
+    minimum = focus - (count - 1) * CARD_STEP
+    return min(focus, max(minimum, offset))
+
+
+def focus_index(
+    offset: float,
+    count: int,
+    points: Sequence[Sequence[float]] = DEFAULT_BEZIER_POINTS,
+) -> int:
+    """A fókuszban levő kártya; azonos távolságnál a kisebb index nyer."""
+    if count < 0:
+        raise ValueError("a gyűjtemények száma nem lehet negatív")
+    if count == 0:
+        return -1
+    best_index = 0
+    best_distance = float("inf")
+    for card in carousel_layout(offset, count, points):
+        distance = abs(float(card["x"]) - FOCUS_X)
+        if distance < best_distance:
+            best_index = int(card["index"])
+            best_distance = distance
+    return best_index
+
+
+def animator_position(
+    base_offset: float,
+    records: Sequence[dict[str, float]],
+    current_time: float,
+) -> float:
+    """A qshow összegző animátorának pozíciója (38.2.24, 0x009e5e70).
+
+    Minden rekord `delta`, `started_at` és `duration` mezőt tartalmaz; az
+    időeltolás `+0.02` másodpercét a bináris `pos(t)` képlete adja.
+    """
+    if not isfinite(base_offset) or not isfinite(current_time):
+        raise ValueError("az animátor ideje és kezdőpontja csak véges lehet")
+    position = base_offset
+    for record in records:
+        delta = float(record["delta"])
+        started_at = float(record["started_at"])
+        duration = float(record["duration"])
+        if not all(isfinite(value) for value in (delta, started_at, duration)):
+            raise ValueError("az animátor rekordjának számai legyenek végesek")
+        if duration <= 0.0:
+            progress = 1.0 if current_time + 0.02 >= started_at else 0.0
+        else:
+            progress = (current_time + 0.02 - started_at) / duration
+        position += slideshow_easing(progress) * delta
+    return position
 
 
 def slideshow_easing(progress: float) -> float:
