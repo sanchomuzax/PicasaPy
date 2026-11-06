@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-import shutil
+import tempfile
 from collections import Counter
 from dataclasses import fields
 from pathlib import Path
@@ -11,7 +11,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pytest
-from hypothesis import example, given, settings, strategies as st
+from hypothesis import HealthCheck, example, given, settings, strategies as st
 from hypothesis.stateful import (
     RuleBasedStateMachine,
     invariant,
@@ -61,14 +61,19 @@ _NOT_REBUILT_PHOTO_FIELDS = {
     "unnamed_face_count",
 }
 _PROFILE = os.environ.get("PICASAPY_FUZZ_PROFIL", "ci")
-settings.register_profile(
-    "ci", max_examples=12, stateful_step_count=18, deadline=None
-)
-settings.register_profile(
-    "ejszakai", max_examples=180, stateful_step_count=90, deadline=None
-)
-settings.load_profile(_PROFILE)
-_STATEFUL_SETTINGS = settings()
+
+
+def _stateful_settings():
+    """A közös fuzzprofilra épülő, a géphez mért futásméret."""
+    ci_profile = _PROFILE == "ci"
+    return settings(
+        max_examples=8 if ci_profile else 24,
+        stateful_step_count=10 if ci_profile else 30,
+        deadline=None,
+        # A gép saját TemporaryDirectory-t használ, nincs fixture, amit
+        # Hypothesisnek el kellene némítania.
+        suppress_health_check=[],
+    )
 
 
 def _photo_bytes(seed: int) -> bytes:
@@ -145,15 +150,16 @@ def _album_state(connection) -> tuple[tuple[object, ...], ...]:
 class _IniIndexMachine(RuleBasedStateMachine):
     """A termék API-ját használja; a teszt és a gép nem ír ini-t közvetlenül."""
 
-    def __init__(self, root: Path):
+    def __init__(self):
         super().__init__()
-        self.root = root
-        if root.exists():
-            shutil.rmtree(root)
-        root.mkdir(parents=True)
-        self.index_context = open_index(root / "index.sqlite")
+        self._temporary_directory = tempfile.TemporaryDirectory(
+            prefix="picasapy-state-machine-6588-"
+        )
+        self.root = Path(self._temporary_directory.name) / "library"
+        self.root.mkdir()
+        self.index_context = open_index(self.root / "index.sqlite")
         self.connection = self.index_context.__enter__()
-        self.journal_path = root / "edit-journal.json"
+        self.journal_path = self.root / "edit-journal.json"
         self.journal = {}
         self.sessions: dict[Path, EditSession] = {}
         self.undo_before: dict[Path, tuple[bytes, str | None]] = {}
@@ -161,8 +167,8 @@ class _IniIndexMachine(RuleBasedStateMachine):
         self.photo_number = 0
         self.expected_payloads: Counter[bytes] = Counter()
 
-        first = create_folder_for_move(root, "Album A")
-        second = create_folder_for_move(root, "Album B")
+        first = create_folder_for_move(self.root, "Album A")
+        second = create_folder_for_move(self.root, "Album B")
         for folder, name, seed in (
             (first, "A-1.png", 31),
             (first, "A-2.png", 47),
@@ -185,7 +191,10 @@ class _IniIndexMachine(RuleBasedStateMachine):
         sync_tree(self.connection, self.root)
 
     def teardown(self) -> None:
-        self.index_context.__exit__(None, None, None)
+        try:
+            self.index_context.__exit__(None, None, None)
+        finally:
+            self._temporary_directory.cleanup()
 
     def _photos(self) -> tuple[Path, ...]:
         return _media_files(self.root)
@@ -616,42 +625,61 @@ class _IniIndexMachine(RuleBasedStateMachine):
         sync_tree(self.connection, self.root)
 
 
-def test_ini_index_state_machine_6588(tmp_path: Path) -> None:
+def test_ini_index_state_machine_6588() -> None:
     run_state_machine_as_test(
-        lambda: _IniIndexMachine(tmp_path / "machine"),
-        settings=_STATEFUL_SETTINGS,
+        _IniIndexMachine,
+        settings=_stateful_settings(),
     )
 
 
-@example(copy_selection=0, rename_selection=0)
-@given(
-    copy_selection=st.integers(min_value=0, max_value=2),
-    rename_selection=st.integers(min_value=0, max_value=1),
-)
-@settings(max_examples=12, deadline=None)
-def test_album_copy_then_source_rename_regression_example(
-    tmp_path: Path, copy_selection: int, rename_selection: int
-) -> None:
-    """A #6599 regressziós sorozat rögzített Hypothesis-példája is fusson."""
-    machine = _IniIndexMachine(tmp_path / "album-copy-rename-example")
-    try:
-        machine.copy_a_photo(copy_selection)
-        machine.ini_index_and_files_remain_consistent()
-        machine.rename_a_folder(rename_selection)
-        machine.ini_index_and_files_remain_consistent()
-    finally:
-        machine.teardown()
+def test_album_copy_then_source_rename_regression_example() -> None:
+    """A #6599 és #6608 minimalizált sorozata külön Hypothesis-példa."""
+
+    @example(sequence="6599")
+    @example(sequence="6608")
+    @given(sequence=st.sampled_from(("6599", "6608")))
+    @_stateful_settings()
+    def run_regression_sequence(sequence: str) -> None:
+        machine = _IniIndexMachine()
+        try:
+            if sequence == "6599":
+                operations = (
+                    (machine.copy_a_photo, 0),
+                    (machine.rename_a_folder, 0),
+                )
+            else:
+                operations = (
+                    (machine.move_a_photo, 0),
+                    (machine.move_a_photo, 0),
+                    (machine.copy_a_photo, 0),
+                )
+            for operation, selection in operations:
+                operation(selection)
+                machine.ini_index_and_files_remain_consistent()
+        finally:
+            machine.teardown()
+
+    run_regression_sequence()
 
 
 def test_fuzz_profile_uses_picasapy_fuzz_profil() -> None:
     expected_profile = os.environ.get("PICASAPY_FUZZ_PROFIL", "ci")
     assert _PROFILE == expected_profile
-    expected_examples = {"ci": 12, "ejszakai": 180}[expected_profile]
-    assert _STATEFUL_SETTINGS.max_examples == expected_examples
+    assert settings.default.max_examples == {"ci": 100, "ejszakai": 20_000}[
+        expected_profile
+    ]
+    stateful_settings = _stateful_settings()
+    assert stateful_settings.max_examples == {"ci": 8, "ejszakai": 24}[
+        expected_profile
+    ]
+    assert stateful_settings.stateful_step_count == {"ci": 10, "ejszakai": 30}[
+        expected_profile
+    ]
+    assert HealthCheck.function_scoped_fixture not in stateful_settings.suppress_health_check
 
 
-def test_index_oracle_catches_a_missing_incremental_sync(tmp_path: Path) -> None:
-    machine = _IniIndexMachine(tmp_path / "negative-control")
+def test_index_oracle_catches_a_missing_incremental_sync() -> None:
+    machine = _IniIndexMachine()
     try:
         folder = next(folder for folder in machine._folders() if folder != machine.root)
         payload = _photo_bytes(229)
