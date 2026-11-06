@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.59] - 2026-11-06
+
+- Kilépéskor a program előbb bevárja a háttérben futó képbetöltéseket, és csak utána szabadítja fel a képszolgáltatókat, így ezek nem okozhatnak összeomlást (#6625).
+
 ## [1.0.58] - 2026-11-06
 
 - A szövegdia-előnézet hibakeresése most már megmutatja az aktuális render futási idejét (#6621).
