@@ -177,6 +177,10 @@ jobs:
         # állítja össze, a shellhez nem nyúl.
         env:
           PICASAPY_RENDER_FAILURE_DIR: ${{ runner.temp }}/picasapy-render-failures
+          # Hypothesis a nappali/PR-körben determinisztikus és rövid; az
+          # ütemezett Ubuntu-kör a hosszú, véletlen éjszakai profilt futtatja.
+          PICASAPY_FUZZ_PROFIL: ${{ github.event_name == 'schedule' && inputs.os == 'ubuntu-latest' && 'ejszakai' || 'ci' }}
+          PICASAPY_HYPOTHESIS_DB: ${{ runner.temp }}/picasapy-hypothesis
         run: python scripts/run_tests.py --shard ${{ matrix.shard }}/${{ inputs.darabszam }} --fajllista "${{ runner.temp }}/picasapy-test-list.json" ${{ inputs.cov && '--cov' || '' }} ${{ inputs.random_seed != '' && format('--nightly-random-seed {0}', inputs.random_seed) || '' }}
 
       - name: Ubuntu renderképek feltöltése hiba esetén
@@ -185,6 +189,16 @@ jobs:
         with:
           name: render-hibakepek-${{ matrix.shard }}
           path: ${{ runner.temp }}/picasapy-render-failures/
+          if-no-files-found: ignore
+          retention-days: 3
+
+      - name: Hypothesis minimalizált leletek feltöltése hiba esetén
+        if: ${{ failure() && runner.os == 'Linux' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: hypothesis-fuzz-leletek-${{ matrix.shard }}
+          path: ${{ runner.temp }}/picasapy-hypothesis/
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 3
 
