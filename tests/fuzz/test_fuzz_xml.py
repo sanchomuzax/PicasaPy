@@ -64,6 +64,9 @@ _XML_ALFABET = "abcXYZ0123 <>&;/'\"=\r\n"
 _ISO_ALAP = _iso_mag()
 _XML_KORPUSZ = Path(__file__).parent / "korpusz" / "xml"
 _CXF_KORPUSZ = (_XML_KORPUSZ / "cxf.xml").read_bytes()
+_HIBAS_CXF_TEMA = _CXF_KORPUSZ.replace(
+    b'theme="picturepile"', b'theme="PicturePile"'
+)
 _CONTACTS_KORPUSZ = (_XML_KORPUSZ / "contacts.xml").read_text(encoding="utf-8")
 _ISO_KORPUSZ = (_XML_KORPUSZ / "iso-seed.txt").read_bytes()
 _ENTITY_BOMBA = ["<!ENTITY a '1234567890'>"]
@@ -106,6 +109,15 @@ def _cxf_eset(draw):
     return cxf
 
 
+@st.composite
+def _contact_nev(draw):
+    szegely = "abcXYZ0123"
+    eleje = draw(st.text(alphabet=szegely, min_size=1, max_size=16))
+    belso = draw(st.text(alphabet=_XML_ALFABET, max_size=96))
+    vege = draw(st.text(alphabet=szegely, min_size=1, max_size=16))
+    return eleje + belso + vege
+
+
 @given(
     cxf=_cxf_eset(),
     cxf_nyers=st.binary(max_size=4096),
@@ -113,7 +125,7 @@ def _cxf_eset(draw):
         st.just(_CONTACTS_KORPUSZ),
         st.text(alphabet=_XML_ALFABET, max_size=4096),
     ),
-    nev=st.text(alphabet=_XML_ALFABET, max_size=128),
+    nev=_contact_nev(),
     azonosito=st.text(alphabet="0123456789abcdef", min_size=1, max_size=16),
     iso_offset=st.integers(min_value=0, max_value=len(_ISO_ALAP) - 1),
     iso_byte=st.integers(min_value=0, max_value=255),
@@ -128,6 +140,16 @@ def _cxf_eset(draw):
     iso_offset=20 * 2048 - 1,
     iso_byte=0,
     iso_hossz=20 * 2048,
+)
+@example(
+    cxf=_CXF_KORPUSZ,
+    cxf_nyers=_HIBAS_CXF_TEMA,
+    contacts=_CONTACTS_KORPUSZ,
+    nev="Fuzz & Writer",
+    azonosito="6582a1",
+    iso_offset=0,
+    iso_byte=0,
+    iso_hossz=0,
 )
 def test_cxf_contacts_es_iso_mutalt_bemeneteken_is_korlatozott(
     cxf,

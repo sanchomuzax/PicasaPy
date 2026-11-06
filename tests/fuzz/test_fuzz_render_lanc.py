@@ -49,6 +49,15 @@ _KORPUSZ = (Path(__file__).parent / "korpusz" / "render" / "6581.txt").read_text
 ).splitlines()
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _render_lanc_elomelegitese():
+    """A hideg első OpenCV-lánchívás ne torzítsa az egyedi deadline-t."""
+    apply_filters(
+        np.zeros((2, 3, 3), dtype=np.uint8),
+        (FilterOp("Border", ("1",)),),
+    )
+
+
 @dataclass(frozen=True)
 class _RenderEset:
     nev: str

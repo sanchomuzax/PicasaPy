@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<collage version="2" format="4:3" orientation="landscape" theme="PicturePile" shadows="0" captions="0">
+<collage version="2" format="4:3" orientation="landscape" theme="picturepile" shadows="0" captions="0">
  <background type="solid" color="FF000000"/>
  <spacing value="0.000000"/>
 </collage>
