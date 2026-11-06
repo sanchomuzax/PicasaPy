@@ -2409,11 +2409,58 @@ A `0x009e3a60` az áttűnés kezdetét a mostani időre, a végét `most + argum
 
 | | eredeti | PicasaPy |
 |---|---|---|
-| elrejtés tétlenség után | `1,5` mp | `2500` ms |
-| mozgási küszöb | `50` képpont a vonatkoztatási ponttól (a pont `0,5` mp nyugalom után újraindul) | bármilyen mozgás |
-| áttűnés | megjelenés `0,25` mp, eltűnés `1,2` mp, végérték `1/256` | mindkét irány `200` ms, végérték 0 |
+| elrejtés tétlenség után | `1,5` mp | `1500` ms |
+| mozgási küszöb | `50` képpont a vonatkoztatási ponttól (a pont `0,5` mp nyugalom után újraindul) | `50` képpont (`dx² + dy² > 2500`), a pont `500` ms után újraindul |
+| áttűnés | megjelenés `0,25` mp, eltűnés `1,2` mp, végérték `1/256` | megjelenés `250` ms, eltűnés `1200` ms, végérték `1/256` |
 
-**Fejlesztői átadás.** Külön jegyben: a `SlideshowControls.qml` elrejtése a fenti szabály szerint. A sáv fölötti tartózkodás (`savLebeges`) már egyezik.
+**Forrásellenőrzés.** A `SlideshowControls.qml` a fenti időzítést, küszöböt és áttűnéseket tartalmazza; a `savLebeges` a sáv fölötti tartózkodást kezeli. Ez forrás-összevetés, nem új futáspróba.
 
 **Kizárt irány: a gyorsbillentyű-tábla (accelerator).** A `CreateAcceleratorTableA` egyetlen hívója a `0x00923110` (Ghidra: `referencia/ghidra/2026-11-05-gyorsbill-accel-6531.txt`); ez egy beágyazott OLE-ablak keretadatát adja vissza, és üres, egyetlen nulla bejegyzésű táblát hoz létre. A `SHORTCUTS.XML` 42-44. sora `srckey="/"`, `","`, `"."` és üres `dstkey`, tehát a billentyűtérkép ezeknél nem képez át. A videó három billentyűjének útja ezen az ágon sem vezet a fogadóhoz.
 
+### 12.9 A OneUp `stripback` és a videó írásjel-billentyűi (2026-11-06)
+
+**Forrás és módszer.** A helyi `Picasa3.exe` SHA-256 értéke `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`. A `0x00802c60` konstruktor utasításait, az objektum vtable-jét, a `0x005c2230`, `0x005c4a10`, `0x009e4140` és `0x009e3a60` útját a helyi binárisból ellenőriztem; a kezelő C-kimenetét a Ghidra-kutatási fájl adja. A keymap forrása a helyi `SHORTCUTS.XML`, parserének címe `0x009a0ad0`. A Picasát nem futtattam.
+
+#### A `oneup/stripback` láthatósága
+
+`0x00802c60` az objektum első vtable-mutatóját `0x00cbd5c4`-re, a két további alobjektumét `0x00cbd650` és `0x00cbd660`-ra állítja. A kiolvasott első vtable releváns bejegyzései:
+
+| OneUpUI vtable | cél | szerep |
+|---|---|---|
+| `0x00cbd5c4 + 0x30` | `0x00802e10` | a OneUpUI billentyű-esemény továbbítója |
+| `0x00cbd5c4 + 0x58` | `0x008032e0` | a OneUpUI gomb-esemény kezelője |
+
+A konstruktor a `0x00cbd498` címen levő `oneup/stripback` nevet adja a `0x009c2fc0` névkeresőnek (`0x00802d27`-`0x00802d2c`), majd a `0x009e4140`-nel a `0x00d67ad0` kezelőt köti a megtalált elemhez (`0x00802d3d`-`0x00802d42`). A `0x005c2230` a `0x00d67ad0` vtable-jét `0x00c94a3c`-re állítja; ennek `+0x0c` bejegyzése a `0x005c4a10` eseménykezelő.
+
+A `0x005c4a10` leletének bizalmi foka **közvetlen disassembly-vel megerősített**:
+
+- Egérmozgáskor az előző mozgástól eltelt időt `0,5` másodperccel (`0x00c72150`) veti össze. Ha a vonatkoztatási pontot újra kell venni, a mostani egérpozíciót tárolja; az onnan mért távolságot a `50` képpontos küszöbhöz (`0x00cf3bd8`) hasonlítja.
+- A `0x13` időzítő-esemény `GetCursorPos` és `ScreenToClient` után ellenőrzi, hogy a mutató a vezérlősáv téglalapján belül áll-e. A sáv látható, ha az utolsó tevékenység óta kevesebb mint `1,5` másodperc telt el (`0x00d34128`), vagy a mutató a sáv fölött van.
+- Láthatóságváltáskor a `0x009e3a60` áttűnési út fut. A paraméterek `0,25` másodperc megjelenéshez (`0x00c7c608`) és `1,2` másodperc eltűnéshez (`0x00c7dd44`).
+
+A kezelő nem olvassa a vetítés `[this+0x3bb]` szünetjelzőjét, és nem hívja a `0x0097e510` `ShowCursor`-burkolót. A sáv állapotát az egér aktivitása és a sáv fölötti pozíció kapcsolja, nem a szünetjelző vagy a kurzor láthatósági állapota. A §12.3 felvételén a szünettel együtt megjelent sávot ezért nem lehet a szünet közvetlen hatásának tekinteni; a kurzor megjelenése mellett esetleges mozgást vagy sáv fölötti tartózkodást a felvétel nem rögzített.
+
+**PicasaPy összevetése.** A `SlideshowControls.qml` jelenlegi forrásában a `hideTimer.interval` `1500`, a mozgásküszöb `dx * dx + dy * dy > 2500`, a vonatkoztatási pont `500` ms után újraindul, az áttűnés `250`/`1200` ms, a rejtett végérték pedig `1/256`. Ezek a `0x005c4a10` bináris szabályával egyeznek. Ez statikus forrás-összevetés, nem új valódi billentyű- vagy futáspróba. A §12.8 korábbi PicasaPy-eltérés táblája elavult volt; a vezérlősávhoz ezen a ponton nem indokolt termékváltoztatást javasolni.
+
+#### A `/`, `,`, `.` billentyűk útja
+
+A keymap 42-44. sorában rendre `srckey="/"`, `srckey=","` és `srckey="."` szerepel, mindháromnál üres a `dstkey`, a `ctrl`, `shift` és `alt` értéke pedig nulla. A `0x009a0ad0` parser a billentyű- és módosítóértékeket tárolja; az elem nem tartalmaz művelet- vagy parancsazonosító-mezőt. A `<keymap id="0">` az egész keymap azonosítója, nem a három elem parancsazonosítója. A három fizikai billentyű célbillentyűre átképezése tehát nem történik meg, de a sorok sorszáma önmagában nem mondja meg, melyik eseménykezelő fogyasztja őket.
+
+| lehetséges fogadóút | közvetlenül ellenőrzött eredmény | bizalmi fok |
+|---|---|---|
+| CThumbUI fő billentyűút (`0x005e6710`) és Ctrl-ág (`0x005e60d0`) | A Ctrl-ág `0x0d`-`0x78` közötti billentyűkód-tartományt kezel; a `0xbc`, `0xbe`, `0xbf` kívül esik rajta. A módosító nélküli ág sem tartalmazza e három VK-t. | megerősített az adott CThumbUI-út kizárására |
+| OneUpUI / QDrawable (`0x00802e10` → `0x00801270`) | A `0x00801270` kezelt VK-ágai az Escape, nyilak, Space, számjegyek, F, B és O; a többi kód alapértelmezett `0xf4241` visszatérést kap. A három írásjelnek nincs helyi kezelőága. | megerősített a helyi út kizárására |
+| MovieMaker `MoviePreviewHandler` (`0x006248e0`) | Belső műveletkódot és egyes ágakban kiegészítő VK-t fogad. A `0x13` művelet Play/Pause, de nincs bináris bizonyíték arra, hogy a néző `/` billentyűje ezt adja át; a vessző és pont útja sincs ide kötve. | a handler működése megerősített, a fizikai billentyűhöz kötése nincs meg |
+
+**Eredmény.** A videónéző `/`, `,`, `.` billentyűihez tartozó parancsazonosító és fogadó **NINCS MEG**. A keymap rekordok nem nevezik meg ezeket, a vizsgált főablaki és OneUp út nem kezeli közvetlenül a VK-kódokat, a MovieMaker műveletkódjai pedig külön eseménynévteret alkotnak. A mostani bizonyíték nem indokol videóbillentyű-javítást a PicasaPy-ban.
+
+#### Amit kizártam
+
+- A `CreateAcceleratorTableA` egyetlen vizsgált útja a `0x00923110`; ez egy beágyazott OLE-ablak üres, nulla bejegyzésű tábláját hozza létre. Nem ez köti a keymap 42-44. sorait a videóhoz.
+- A `0x009c3d50` szövegbeviteli parser írásjelekkel való összehasonlítása nem videóparancs-diszpécser.
+- A `0x006248e0` belső `0x13` műveletkódját nem neveztem át `cmd` azonosítóvá, és nem kötöttem fizikai billentyűhöz, mert ilyen hívási lánc nincs igazolva.
+- A negatív xref-találatot nem használtam kizáró bizonyítékként; a fenti korlátozott negatívumok a konkrét kezelők közvetlen áglistáján és a keymap parser által tárolt mezőkön alapulnak.
+
+#### Nyitott, a következő felvehető irány
+
+A 42-44. keymap-rekord útját a `0x009a16b0` betöltőtől és a `0x009a0ad0` parser által létrehozott rekesztáblától kell követni addig a fogyasztóig, amely az aktív videónézőnek eseményt küld. Ott azonosítható, hogy létezik-e parancsazonosító, és mely fogadó kapja meg; csak ezután érdemes a `0x005cb990` parancs-szétosztóval vagy a `0x006248e0` MoviePreviewHandlerrel összekötni. Az eredeti Picasa és a PicasaPy három videóbillentyűs futáspróbája továbbra sincs meg.
