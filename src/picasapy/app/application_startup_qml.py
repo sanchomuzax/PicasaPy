@@ -49,8 +49,11 @@ def _destroy_qml_engine(engine, qt_app) -> None:
         delattr(engine, _IMAGE_PROVIDER_REFS)
 
 
-def _shutdown_application_qml(state) -> None:
-    """A futó workerek után bontsa le az alkalmazás QML-motorát (#6625)."""
+def _shutdown_application_qml(state, kilepesi_kod: int = 0) -> int:
+    """A futó workerek után bontsa le az alkalmazás QML-motorát (#6625).
+
+    A kilépési kódot változatlanul visszaadja, hogy a hívó egy sorban térhessen vissza.
+    """
     import logging
 
     from .worker_thread import running_background_workers, wait_for_all_background_workers
@@ -67,11 +70,12 @@ def _shutdown_application_qml(state) -> None:
                 ", ".join(running_background_workers()),
             )
             _QML_SHUTDOWN_KEEPALIVE.append(state)
-            return
+            return kilepesi_kod
         _destroy_qml_engine(state.engine, state.app)
     except Exception:  # noqa: BLE001 (leállításkor a burkok maradjanak életben)
         logging.getLogger(__name__).exception("A QML-engine rendezett törlése nem sikerült")
         _QML_SHUTDOWN_KEEPALIVE.append(state)
+    return kilepesi_kod
 
 
 def _startup_step_create_qml_engine(state):

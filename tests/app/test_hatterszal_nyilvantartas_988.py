@@ -151,9 +151,12 @@ class TestATeardownAKozosBevarotHivja:
         for ut in conftestek:
             forras = ut.read_text(encoding="utf-8")
 
-            assert forras.rindex("wait_for_all_background_workers(") < forras.rindex(
-                "engine.deleteLater()"
-            ), (
+            # #6625: a motor törlése a közös `_destroy_qml_engine`-en át is mehet
+            torles = max(
+                forras.rfind("engine.deleteLater()"),
+                forras.rfind("_destroy_qml_engine(engine"),
+            )
+            assert forras.rindex("wait_for_all_background_workers(") < torles, (
                 f"{ut}: a QML-motor megsemmisítése futó háttérmunka mellett "
                 "hozzáférési hibát okozhat"
             )
