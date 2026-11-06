@@ -194,6 +194,11 @@ def test_valodi_billentyuk_sorrend_felirat_escape_es_ujranyitas(
     _vár(qt_app, lambda: timeline.property("currentIndex") == 0, "Left nem lépett vissza")
     QTest.keyClick(timeline, Qt.Key.Key_Left)
     assert timeline.property("currentIndex") == 0
+    _vár(
+        qt_app,
+        lambda: timeline.property("animating") is False,
+        "a határnál elutasított bal lépés animátora nem állt le",
+    )
 
     QTest.keyClick(timeline, Qt.Key.Key_Right)
     QTest.keyClick(timeline, Qt.Key.Key_Right)

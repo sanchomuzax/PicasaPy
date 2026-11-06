@@ -9,7 +9,9 @@ Item {
     width: hostWindow.panelWidth
     height: hostWindow.panelHeight
     anchors.centerIn: parent
+    scale: hostWindow.panelScale
     clip: true
+    property int carouselCountRevision: 0
 
     readonly property var dotsModel: (typeof timelineController !== "undefined" && timelineController)
         ? timelineController.dotPositions(
@@ -17,45 +19,46 @@ Item {
               28, 0, 10)
         : []
     readonly property bool currentCardsLoaded: {
-        if (currentDeck.count === 0)
-            return false
-        for (var i = 0; i < currentDeck.count; ++i) {
-            if (!currentDeck.itemAt(i).imageLoaded)
-                return false
-        }
-        for (var j = 0; j < nextDeck.count; ++j) {
-            if (!nextDeck.itemAt(j).imageLoaded)
-                return false
-        }
-        return true
+        carouselCountRevision
+        var card = carouselDeck.itemAt(hostWindow.currentIndex)
+        return card ? card.imagesLoaded : false
     }
     readonly property var currentPhotoCardGeometry: {
-        var geometry = []
-        for (var i = 0; i < currentDeck.count; ++i) {
-            var card = currentDeck.itemAt(i)
-            if (card) {
-                geometry.push({
-                    x: card.x,
-                    y: card.y,
-                    width: card.width,
-                    height: card.height,
-                    rotation: card.rotation
-                })
-            }
-        }
-        return geometry
+        carouselCountRevision
+        var card = carouselDeck.itemAt(hostWindow.currentIndex)
+        return card ? card.photoGeometry : []
     }
 
     readonly property real sliderAreaX: sliderArea.x
     readonly property real sliderAreaWidth: sliderArea.width
     readonly property var selectedBackgroundPhoto:
         hostWindow.photoAt(hostWindow.currentIndex, 0)
+    readonly property var previousBackgroundPhoto:
+        hostWindow.photoAt(hostWindow.previousIndex, 0)
 
     // Amíg a háttérkép nincs kész (vagy nincs kijelölt fotó), a fedőréteg mért
     // átlátszatlan alapszíne látszik.
     Rectangle {
         anchors.fill: parent
         color: Theme.dark ? Theme.panelBg : "#8a8a8a"
+    }
+
+    Image {
+        objectName: "timelinePreviousBackgroundImage"
+        anchors.fill: parent
+        source: panel.previousBackgroundPhoto
+            ? panel.previousBackgroundPhoto.thumbUrl.replace(
+                  "image://thumbs/", "image://timelinebackground/")
+            : ""
+        sourceSize: Qt.size(
+            Math.max(1, panel.width * panel.scale),
+            Math.max(1, panel.height * panel.scale))
+        fillMode: Image.Stretch
+        asynchronous: true
+        cache: true
+        smooth: true
+        mipmap: true
+        opacity: hostWindow.previousLayerOpacity
     }
 
     Image {
@@ -66,12 +69,35 @@ Item {
             ? panel.selectedBackgroundPhoto.thumbUrl.replace(
                   "image://thumbs/", "image://timelinebackground/")
             : ""
-        sourceSize: Qt.size(Math.max(1, panel.width), Math.max(1, panel.height))
+        sourceSize: Qt.size(
+            Math.max(1, panel.width * panel.scale),
+            Math.max(1, panel.height * panel.scale))
         fillMode: Image.Stretch
         asynchronous: true
         cache: true
         smooth: true
         mipmap: true
+        opacity: hostWindow.currentLayerOpacity
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.LeftButton
+        onPressed: function(mouse) {
+            hostWindow.beginCarouselDrag(mouse.x)
+        }
+        onPositionChanged: function(mouse) {
+            if (pressed)
+                hostWindow.dragCarouselTo(mouse.x)
+        }
+        onReleased: hostWindow.endCarouselDrag()
+    }
+
+    WheelHandler {
+        onWheel: function(event) {
+            hostWindow.step(event.angleDelta.y > 0 ? 1 : -1)
+            event.accepted = true
+        }
     }
 
     Canvas {
@@ -81,10 +107,19 @@ Item {
         height: 400
         readonly property var dotArcPoints: {
             var values = hostWindow.sliderValues()
-            var firstPhoto = currentDeck.count > 0
-                ? currentDeck.itemAt(0) : null
-            if (!(typeof timelineController !== "undefined" && timelineController) || values.length === 0 || !firstPhoto)
+            if (!(typeof timelineController !== "undefined" && timelineController) || values.length === 0)
                 return []
+            // #6595: a pontsor a rögzített fókuszhelyen álló kötegig fut
+            // (görbe a t* paraméteren), nem a mozgó kártyáig: lapozás közben
+            // a felvételeken is helyben marad.
+            var focusCurve = timelineController.bezierAt(
+                timelineController.focusParameter())
+            var focusWidth = 76 * focusCurve.z
+            var firstPhoto = {
+                x: focusCurve.x * panel.width - focusWidth / 2,
+                y: focusCurve.y * panel.height - 72 * focusCurve.z / 2,
+                width: focusWidth
+            }
 
             // A qshow mért A[i]/A[n-1] aránya és a duplikált pontok
             // 0/7/14 px y-ága vezérli a pontok sorrendjét/helyét. A natív
@@ -141,193 +176,159 @@ Item {
     }
 
     Connections {
-        target: currentDeck
-        function onCountChanged() { cardArtwork.requestPaint() }
+        target: carouselDeck
+        function onCountChanged() {
+            panel.carouselCountRevision += 1
+            cardArtwork.requestPaint()
+        }
     }
 
-    // A jelenlegi gyűjtemény lapjai a mért görbe 0.94 paraméterén
-    // fedik egymást; a sorozat egy csoport bélyegkötege.
+    // A teljes, időrendi gyűjteménysor egy-egy kötegét rajzolja.
     Repeater {
-        id: currentDeck
-        objectName: "timelineCurrentPhotoDeck"
-        model: {
-            var collection = hostWindow.collectionAt(hostWindow.currentIndex)
-            return collection && collection.photos
-                ? Math.min(4, collection.photos.length) : 0
-        }
-        delegate: Item {
-            id: currentPhotoCard
-            objectName: "timelinePhotoCard" + index
-            required property int index
-            property var photo: hostWindow.photoAt(hostWindow.currentIndex, index)
-            property real curveParameter: 0.94
-            property var curve: (typeof timelineController !== "undefined" && timelineController)
-                ? timelineController.bezierAt(curveParameter)
-                : ({ x: 0.5, y: 0.7, z: 1 })
-            width: 82 * curve.z
-            height: 90 * curve.z
-            x: curve.x * panel.width - width / 2
-               + index * 4
-               + (hostWindow.frameTransforms.current.tx - 1) * panel.width
-            y: curve.y * panel.height - height / 2
-               - index * 3
-               + (hostWindow.frameTransforms.current.ty - 1) * panel.height
-            z: index
-            rotation: index % 2 === 0 ? -7 : 5
-            scale: hostWindow.frameTransforms.current.scale
-            opacity: hostWindow.currentLayerOpacity
-            readonly property bool imageLoaded: cardImage.status === Image.Ready
+        id: carouselDeck
+        objectName: "timelineCarouselDeck"
+        model: hostWindow.collectionsModel
+            ? hostWindow.collectionsModel.length : 0
 
-            Rectangle {
-                objectName: "timelinePhotoShadow" + currentPhotoCard.index
-                x: 4
-                y: 5
-                width: parent.width
-                height: parent.height
-                radius: 2
-                color: "#55000000"
+        delegate: Item {
+            id: collectionDeck
+            property int deckIndex: index
+            objectName: "timelineCarouselCard" + deckIndex
+            property var collection: hostWindow.collectionsModel[deckIndex]
+            readonly property var layout:
+                hostWindow.carouselLayouts.length > deckIndex
+                    ? hostWindow.carouselLayouts[deckIndex] : null
+            readonly property real depthScale: layout ? Number(layout.w) : 0
+            // A képek a fókusz közelében előre betöltődnek, és a láthatóság
+            // elvesztése után is megmaradnak: lapozáskor ne villanjon szürke.
+            property bool kepekKellenek: false
+            readonly property bool fokuszKozeleben:
+                Math.abs(deckIndex - hostWindow.currentIndex) <= 12
+            onVisibleChanged: if (visible) kepekKellenek = true
+            onFokuszKozelebenChanged: if (fokuszKozeleben) kepekKellenek = true
+            Component.onCompleted: kepekKellenek = visible || fokuszKozeleben
+            property int photoStackRevision: 0
+            width: 76 * depthScale
+            height: 72 * depthScale
+            x: layout ? Number(layout.x) * panel.width - width / 2 : 0
+            y: layout ? Number(layout.y) * panel.height - height / 2 : 0
+            z: layout ? Number(layout.w) : 0
+            visible: layout ? Boolean(layout.visible) : false
+            opacity: layout ? Number(layout.alpha) / 256 : 0
+            readonly property bool imagesLoaded: {
+                photoStackRevision
+                if (photoStack.count === 0)
+                    return false
+                for (var i = 0; i < photoStack.count; ++i) {
+                    var photoCard = photoStack.itemAt(i)
+                    if (!photoCard || !photoCard.imageLoaded)
+                        return false
+                }
+                return true
+            }
+            readonly property var photoGeometry: {
+                photoStackRevision
+                var geometry = []
+                for (var i = 0; i < photoStack.count; ++i) {
+                    var photoCard = photoStack.itemAt(i)
+                    if (photoCard) {
+                        geometry.push({
+                            x: collectionDeck.x + photoCard.x,
+                            y: collectionDeck.y + photoCard.y,
+                            width: photoCard.width,
+                            height: photoCard.height,
+                            rotation: photoCard.rotation
+                        })
+                    }
+                }
+                return geometry
             }
 
-            Rectangle {
-                anchors.fill: parent
-                color: "#eeeeee"
-                border.width: 1
-                border.color: "#555555"
-                Rectangle {
-                    anchors.fill: parent
-                    anchors.margins: 3
-                    color: "#777777"
-                    Image {
-                        id: cardImage
-                        objectName: "timelinePhotoImage" + currentPhotoCard.index
+            Repeater {
+                id: photoStack
+                objectName: "timelineCarouselPhotoDeck" + collectionDeck.deckIndex
+                model: collectionDeck.kepekKellenek && collectionDeck.collection.photos
+                    ? Math.min(4, collectionDeck.collection.photos.length) : 0
+
+                delegate: Item {
+                    id: stackedPhoto
+                    required property int index
+                    objectName: "timelineCarouselPhoto_"
+                        + collectionDeck.deckIndex + "_" + index
+                    property var photo: collectionDeck.collection.photos[index]
+                    width: collectionDeck.width
+                    height: collectionDeck.height
+                    x: index * 4 * collectionDeck.depthScale
+                    y: -index * 3 * collectionDeck.depthScale
+                    z: index
+                    rotation: index % 2 === 0 ? -7 : 5
+                    readonly property bool imageLoaded: photoImage.status === Image.Ready
+
+                    Rectangle {
+                        x: 4 * collectionDeck.depthScale
+                        y: 5 * collectionDeck.depthScale
+                        width: parent.width
+                        height: parent.height
+                        radius: 2
+                        color: "#55000000"
+                        // #6595: a ferde köteg széle sima legyen, ne recés
+                        // (tulajdonosi kérés: az eredeti itt recés).
+                        antialiasing: true
+                    }
+
+                    Rectangle {
                         anchors.fill: parent
-                        source: currentPhotoCard.photo
-                            ? currentPhotoCard.photo.thumbUrl : ""
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                        smooth: true
-                        mipmap: true
+                        color: "#eeeeee"
+                        border.width: 1
+                        border.color: "#555555"
+                        antialiasing: true
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: 3 * collectionDeck.depthScale
+                            color: "#777777"
+                            antialiasing: true
+                            Image {
+                                id: photoImage
+                                objectName: "timelineCarouselImage_"
+                                    + collectionDeck.deckIndex + "_" + stackedPhoto.index
+                                anchors.fill: parent
+                                source: collectionDeck.kepekKellenek && stackedPhoto.photo
+                                    ? stackedPhoto.photo.thumbUrl : ""
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                smooth: true
+                                mipmap: true
+                                antialiasing: true
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.LeftButton
+                        onPressed: function(mouse) {
+                            var point = stackedPhoto.mapToItem(panel, mouse.x, mouse.y)
+                            hostWindow.beginCarouselDrag(point.x)
+                        }
+                        onPositionChanged: function(mouse) {
+                            if (pressed) {
+                                var point = stackedPhoto.mapToItem(panel, mouse.x, mouse.y)
+                                hostWindow.dragCarouselTo(point.x)
+                            }
+                        }
+                        onReleased: hostWindow.endCarouselDrag()
+                        onClicked: {
+                            if (!hostWindow.dragMoved)
+                                hostWindow.animateTo(collectionDeck.deckIndex, 4000)
+                        }
                     }
                 }
             }
-        }
-    }
 
-    Repeater {
-        id: nextDeck
-        objectName: "timelineNextPhotoDeck"
-        model: {
-            var collection = hostWindow.collectionAt(hostWindow.currentIndex + 1)
-            return collection && collection.photos
-                ? Math.min(4, collection.photos.length) : 0
-        }
-        delegate: Item {
-            id: nextPhotoCard
-            objectName: "timelineNextPhotoCard" + index
-            required property int index
-            property var photo: hostWindow.photoAt(hostWindow.currentIndex + 1, index)
-            property real curveParameter: 1.0
-            property var curve: (typeof timelineController !== "undefined" && timelineController)
-                ? timelineController.bezierAt(curveParameter)
-                : ({ x: 0.5, y: 0.7, z: 1 })
-            width: 82 * curve.z
-            height: 90 * curve.z
-            x: curve.x * panel.width - width / 2 + index * 4
-            y: curve.y * panel.height - height / 2 - index * 3
-            z: index
-            rotation: index % 2 === 0 ? -7 : 5
-            readonly property bool imageLoaded: nextCardImage.status === Image.Ready
-
-            Rectangle {
-                x: 4
-                y: 5
-                width: parent.width
-                height: parent.height
-                radius: 2
-                color: "#55000000"
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                color: "#eeeeee"
-                border.width: 1
-                border.color: "#555555"
-                Rectangle {
-                    anchors.fill: parent
-                    anchors.margins: 3
-                    color: "#777777"
-                    Image {
-                        id: nextCardImage
-                        anchors.fill: parent
-                        source: nextPhotoCard.photo
-                            ? nextPhotoCard.photo.thumbUrl : ""
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                        smooth: true
-                        mipmap: true
-                    }
-                }
-            }
-        }
-    }
-
-    Repeater {
-        id: previousDeck
-        objectName: "timelinePreviousPhotoDeck"
-        model: {
-            var collection = hostWindow.collectionAt(hostWindow.previousIndex)
-            return hostWindow.previousIndex !== hostWindow.currentIndex
-                    && collection && collection.photos
-                ? Math.min(4, collection.photos.length) : 0
-        }
-        delegate: Item {
-            id: previousPhotoCard
-            required property int index
-            property var photo: hostWindow.photoAt(hostWindow.previousIndex, index)
-            property real curveParameter: 0.94
-            property var curve: (typeof timelineController !== "undefined" && timelineController)
-                ? timelineController.bezierAt(curveParameter)
-                : ({ x: 0.5, y: 0.7, z: 1 })
-            width: 82 * curve.z
-            height: 90 * curve.z
-            x: curve.x * panel.width - width / 2
-               + index * 4
-               + (hostWindow.frameTransforms.previous.tx - 1) * panel.width
-            y: curve.y * panel.height - height / 2
-               - index * 3
-               + (hostWindow.frameTransforms.previous.ty - 1) * panel.height
-            z: index
-            rotation: index % 2 === 0 ? -7 : 5
-            scale: hostWindow.frameTransforms.previous.scale
-            opacity: hostWindow.previousLayerOpacity
-
-            Rectangle {
-                x: 4
-                y: 5
-                width: parent.width
-                height: parent.height
-                radius: 2
-                color: "#55000000"
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                color: "#eeeeee"
-                border.width: 1
-                border.color: "#555555"
-                Rectangle {
-                    anchors.fill: parent
-                    anchors.margins: 3
-                    color: "#777777"
-                    Image {
-                        anchors.fill: parent
-                        source: previousPhotoCard.photo
-                            ? previousPhotoCard.photo.thumbUrl : ""
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                        smooth: true
-                        mipmap: true
-                    }
+            Connections {
+                target: photoStack
+                function onCountChanged() {
+                    collectionDeck.photoStackRevision += 1
                 }
             }
         }
@@ -336,7 +337,7 @@ Item {
     Text {
         id: collectionNameText
         objectName: "timelineCollectionName"
-        x: 330
+        x: panel.width - 270
         y: 108
         width: 180
         horizontalAlignment: Text.AlignRight
@@ -354,7 +355,7 @@ Item {
     Text {
         id: collectionDateText
         objectName: "timelineCollectionDate"
-        x: 330
+        x: panel.width - 270
         y: 143
         width: 180
         horizontalAlignment: Text.AlignRight
@@ -434,7 +435,7 @@ Item {
     Button {
         id: timelineLeftButton
         objectName: "timelineLeftButton"
-        x: 228
+        x: panel.width / 2 - 72
         y: 405
         width: 30
         height: 30
@@ -467,7 +468,7 @@ Item {
     Button {
         id: timelinePlayButton
         objectName: "timelinePlayButton"
-        x: 280
+        x: panel.width / 2 - 20
         y: 405
         width: 40
         height: 30
@@ -509,7 +510,7 @@ Item {
     Button {
         id: timelineRightButton
         objectName: "timelineRightButton"
-        x: 340
+        x: panel.width / 2 + 40
         y: 405
         width: 30
         height: 30
@@ -541,7 +542,7 @@ Item {
 
     Text {
         objectName: "timelineFirstDate"
-        x: 78
+        x: sliderArea.x - 110
         y: 456
         width: 100
         horizontalAlignment: Text.AlignRight
@@ -556,7 +557,7 @@ Item {
     Item {
         id: sliderArea
         objectName: "timelineSliderArea"
-        x: 188
+        x: panel.width / 2 - width / 2
         y: 452
         width: 244
         height: 28
@@ -633,7 +634,7 @@ Item {
 
     Text {
         objectName: "timelineLastDate"
-        x: 437
+        x: sliderArea.x + sliderArea.width + 5
         y: 456
         width: 120
         horizontalAlignment: Text.AlignLeft

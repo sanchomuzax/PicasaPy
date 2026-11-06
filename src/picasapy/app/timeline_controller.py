@@ -26,9 +26,14 @@ from picasapy.index import (
 
 from .models import PhotoGridModel, _has_edits, _thumb_url
 from ..timeline_motion import (
+    CARD_STEP,
     DEFAULT_BEZIER_POINTS,
+    animator_position,
+    carousel_layout,
+    clamp_offset,
     frame_transforms,
-    random_slide_offsets,
+    focus_index,
+    focus_parameter,
     rational_cubic_bezier,
     slider_index,
     slider_thumb_x,
@@ -64,6 +69,30 @@ class TimelineController(QObject):
         x, y, z = rational_cubic_bezier(t, DEFAULT_BEZIER_POINTS)
         return {"x": x, "y": y, "z": z}
 
+    @Slot(result=float)
+    def focusParameter(self) -> float:
+        return focus_parameter()
+
+    @Slot(float, int, result="QVariantList")
+    def carouselLayout(self, offset: float, count: int) -> list:
+        return carousel_layout(offset, count)
+
+    @Slot(float, int, result=float)
+    def clampOffset(self, offset: float, count: int) -> float:
+        return clamp_offset(offset, count)
+
+    @Slot(float, int, result=int)
+    def focusIndex(self, offset: float, count: int) -> int:
+        return focus_index(offset, count)
+
+    @Slot(float, "QVariantList", float, result=float)
+    def animatorPosition(self, base_offset: float, records: list, current_time: float) -> float:
+        return animator_position(base_offset, records, current_time)
+
+    @Property(float, constant=True)
+    def carouselCardStep(self) -> float:
+        return CARD_STEP
+
     @Slot(float, result=float)
     def easingAt(self, progress: float) -> float:
         return slideshow_easing(progress)
@@ -84,25 +113,6 @@ class TimelineController(QObject):
             previous_offset=(previous_x, previous_y),
             previous_present=previous_present,
         )
-
-    @Slot(float, float, int, int, int, int, result="QVariantMap")
-    def randomOffsets(
-        self,
-        previous_x: float,
-        previous_y: float,
-        rand_y: int,
-        rand_x: int,
-        width: int,
-        height: int,
-    ) -> dict:
-        current, previous = random_slide_offsets(
-            (previous_x, previous_y),
-            rand_y=rand_y,
-            rand_x=rand_x,
-            width=width,
-            height=height,
-        )
-        return {"current": list(current), "previous": list(previous)}
 
     @Slot("QVariantList", float, result=int)
     def sliderIndex(self, values: list, ratio: float) -> int:

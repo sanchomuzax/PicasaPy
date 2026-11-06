@@ -99,6 +99,9 @@ def test_rendered_background_tracks_the_selected_photo(
     timeline.setProperty("currentIndex", 0)
     panel = _child(timeline, "timelinePanel")
     background_image = _child(timeline, "timelineBackgroundImage")
+    previous_background_image = _child(
+        timeline, "timelinePreviousBackgroundImage"
+    )
     _wait(
         qt_app,
         lambda: background_image.property("source").toString().startswith(
@@ -143,29 +146,51 @@ def test_rendered_background_tracks_the_selected_photo(
         "image://timelinebackground/"
     )
 
-    timeline.setProperty("currentIndex", 1)
+    QTest.keyClick(timeline, Qt.Key.Key_Right)
     _wait(
         qt_app,
-        lambda: background_image.property("source").toString() != first_source,
-        "a háttérforrás nem változott a kijelölt fotóval",
+        lambda: timeline.property("motionMode") == "background"
+        and timeline.property("currentIndex") == 1
+        and background_image.property("source").toString() != first_source,
+        "a körhinta megállásakor nem váltott át a háttérforrás",
     )
     _wait(
         qt_app,
         lambda: timeline.property("currentCardsLoaded"),
         "a második gyűjtemény kártyái nem töltődtek be",
     )
-    second_frame = {}
+    mixed_frame = {}
 
-    def masodik_hatterkesz():
+    def atkevert_hatterkesz():
         frame = timeline.grabWindow()
         pixel = frame.pixelColor(sample)
-        if abs(pixel.green() - first_pixel.green()) < 8:
+        old_opacity = timeline.property("previousLayerOpacity")
+        new_opacity = timeline.property("currentLayerOpacity")
+        if not (0.05 < old_opacity < 0.95 and 0.05 < new_opacity < 0.95):
             return False
-        second_frame["pixel"] = pixel
+        if abs(pixel.green() - first_pixel.green()) < 2:
+            return False
+        mixed_frame["pixel"] = pixel
+        mixed_frame["old_opacity"] = old_opacity
+        mixed_frame["new_opacity"] = new_opacity
         return True
 
-    _wait(qt_app, masodik_hatterkesz, "a második fotó háttere nem változott")
-    second_pixel = second_frame["pixel"]
+    _wait(
+        qt_app,
+        atkevert_hatterkesz,
+        "a régi és az új háttér nem jelent meg átkevert képkockán",
+    )
+    assert previous_background_image.property("source").toString() == first_source
+    assert 0.05 < mixed_frame["old_opacity"] < 0.95
+    assert 0.05 < mixed_frame["new_opacity"] < 0.95
+
+    _wait(
+        qt_app,
+        lambda: timeline.property("motionMode") == "idle"
+        and timeline.property("animating") is False,
+        "a háttér átúszása nem ért véget",
+    )
+    second_pixel = _panel_pixel(timeline, panel, 250, 200)
     assert abs(first_pixel.green() - second_pixel.green()) >= 8, (
         "a megváltozott fotó nem frissítette a szürkített háttér képpontját"
     )
