@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.53] - 2026-11-06
+
+- A fájlolvasók és a renderlánc generált hibás bemeneteken is ellenőrzést kapnak (#6582).
+- Egy album akkor is megmarad, ha minden képe kikerül abból a mappából, amelyben a definíciója van, és az ilyen kép nélküli mappa nem jelenik meg üresen a mappalistában (#6608).
+
 ## [1.0.52] - 2026-11-06
 
 - Referenciakép nélküli metamorf próbák ellenőrzik a szűrők semleges állását, térbeli viselkedését, monotonitását és léptékfüggetlenségét (#6586).
