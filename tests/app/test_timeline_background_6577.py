@@ -1,15 +1,20 @@
 """Az Időrend hátterének képpontos lépéssora (#6577)."""
 
+from types import SimpleNamespace
+
 import numpy as np
+from PIL import Image
 from PySide6.QtCore import QSize
 from PySide6.QtGui import QImage
 
+import picasapy.app.timeline_background as timeline_background
 from picasapy.app.timeline_background import (
     TimelineBackgroundProvider,
     create_timeline_overlay,
     prepare_timeline_background,
     render_timeline_background,
 )
+from picasapy.lazy_cv2 import cv2
 from picasapy.render.native_tone import native_gamma_lut
 from picasapy.render.ops_levels import apply_enhance
 
@@ -19,6 +24,30 @@ def _rgb_to_qimage(image: np.ndarray) -> QImage:
     return QImage(
         image.data, width, height, width * 3, QImage.Format.Format_RGB888
     ).copy()
+
+
+def _qimage_to_rgb(image: QImage) -> np.ndarray:
+    converted = image.convertToFormat(QImage.Format.Format_RGB888)
+    width, height = converted.width(), converted.height()
+    stride = converted.bytesPerLine()
+    raw = np.frombuffer(bytes(converted.constBits()), dtype=np.uint8)
+    return raw.reshape((height, stride))[:, : width * 3].reshape(
+        (height, width, 3)
+    ).copy()
+
+
+def _laplace_variance(image: np.ndarray) -> float:
+    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    # A középső, szöveg nélküli rész az ovális fedőrétegen belül marad.
+    region = gray[250:650, 350:1450]
+    return float(cv2.Laplacian(region, cv2.CV_64F).var())
+
+
+def _synthetic_detail(width: int, height: int) -> np.ndarray:
+    y, x = np.indices((height, width))
+    lines = (x % 32 < 2) | (y % 32 < 2) | ((x + y) % 47 < 2)
+    gray = np.where(lines, 245, 55).astype(np.uint8)
+    return np.repeat(gray[:, :, None], 3, axis=2)
 
 
 def test_background_steps_match_center_green_enhance_then_gamma_bytes():
@@ -79,6 +108,10 @@ def test_provider_reuses_a_paused_background_for_the_same_photo_and_size():
     class ThumbnailSource:
         calls = 0
 
+        def _photo_for_render(self, photo_id):
+            assert photo_id == "selected-photo"
+            return None
+
         def requestImage(self, photo_id, size, requested_size):  # noqa: N802
             self.calls += 1
             assert photo_id == "selected-photo"
@@ -104,6 +137,79 @@ def test_provider_reuses_a_paused_background_for_the_same_photo_and_size():
     assert first == second
     assert size == QSize(2, 2)
     assert thumbnails.calls == 1
+
+
+def test_provider_uses_640px_source_for_a_sharper_fullscreen_background(
+    monkeypatch,
+):
+    source = _synthetic_detail(1280, 960)
+    low_resolution = cv2.resize(
+        source, (256, 192), interpolation=cv2.INTER_AREA
+    )
+    high_resolution = cv2.resize(
+        source, (640, 480), interpolation=cv2.INTER_AREA
+    )
+    requested_sizes = []
+
+    def load_source(_thumbnail_provider, photo_id, longest_side):
+        assert photo_id == "synthetic-photo"
+        requested_sizes.append(longest_side)
+        return _rgb_to_qimage(high_resolution)
+
+    monkeypatch.setattr(
+        timeline_background,
+        "_load_timeline_source",
+        load_source,
+        raising=False,
+    )
+
+    class ThumbnailSource:
+        def requestImage(self, photo_id, size, requested_size):  # noqa: N802
+            assert photo_id == "synthetic-photo"
+            return _rgb_to_qimage(low_resolution)
+
+    provider = TimelineBackgroundProvider(ThumbnailSource())
+    actual = provider.requestImage(
+        "synthetic-photo", QSize(), QSize(1920, 1080)
+    )
+    expected_640 = render_timeline_background(high_resolution, 1920, 1080)
+    expected_256 = render_timeline_background(low_resolution, 1920, 1080)
+
+    assert requested_sizes == [640]
+    np.testing.assert_array_equal(_qimage_to_rgb(actual), expected_640)
+    sharp_640 = _laplace_variance(_qimage_to_rgb(actual))
+    sharp_256 = _laplace_variance(expected_256)
+    assert sharp_640 > sharp_256 * 1.1, (
+        f"a 640 px-es forrás élessége ({sharp_640:.2f}) nem haladja meg "
+        f"a 256 px-esét ({sharp_256:.2f}) legalább 10%-kal"
+    )
+
+
+def test_timeline_source_is_loaded_from_the_original_file_at_640px(tmp_path):
+    source = _synthetic_detail(1280, 960)
+    path = tmp_path / "synthetic-timeline.png"
+    Image.fromarray(source).save(path)
+    photo = SimpleNamespace(
+        folder_path=str(tmp_path),
+        name=path.name,
+        rotate_steps=0,
+        filters="",
+    )
+
+    class ThumbnailSource:
+        def _photo_for_render(self, photo_id):
+            assert photo_id == "synthetic-photo"
+            return photo
+
+        def _resolved_ops(self, record):
+            assert record is photo
+            return (), 0
+
+    image = timeline_background._load_timeline_source(
+        ThumbnailSource(), "synthetic-photo", 640
+    )
+
+    assert image.size() == QSize(640, 480)
 
 
 def test_overlay_matches_the_measured_original_layer_values():
