@@ -46,6 +46,12 @@ _WINE_APPDATA_RELATIVE_DIRS = (
 )
 
 
+
+def _platform() -> str:
+    """A futó platform: cserélhető fogantyú (#1217), hogy a windowsos ág Linuxon is mérhető legyen."""
+    return sys.platform
+
+
 @dataclass(frozen=True)
 class PicasaInstallation:
     """Egy felismert (vagy kézzel megadott) Picasa-adatkönyvtár.
@@ -233,7 +239,7 @@ def discover_installations(
         if localappdata is not None
         else (
             Path(os.environ["LOCALAPPDATA"])
-            if sys.platform == "win32" and os.environ.get("LOCALAPPDATA")
+            if _platform() == "win32" and os.environ.get("LOCALAPPDATA")
             else None
         )
     )

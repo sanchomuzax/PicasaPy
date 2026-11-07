@@ -60,7 +60,8 @@ Window {
         // #6656: a Picasa adatmappáját nem a felhasználónak kell megkeresnie
         if (sourceFolderField.text.trim().length === 0
                 && typeof picasaImportController !== "undefined"
-                && picasaImportController)
+                && picasaImportController
+                && typeof picasaImportController.detectedDataFolder === "function")
             sourceFolderField.text = picasaImportController.detectedDataFolder()
         importWindow.visible = true
     }

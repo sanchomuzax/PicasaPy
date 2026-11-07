@@ -29,6 +29,12 @@ def _cel_ut(target_prefix: str) -> PurePosixPath | PureWindowsPath:
     return PurePosixPath(target_prefix)
 
 
+
+def _platform() -> str:
+    """A futó platform: cserélhető fogantyú (#1217), hogy a windowsos ág Linuxon is mérhető legyen."""
+    return sys.platform
+
+
 @dataclass(frozen=True)
 class PathRemapper:
     """Prefix-leképezések: Windows-útvonal-előtag → helyi (POSIX) előtag."""
@@ -102,6 +108,6 @@ def alapertelmezett_lekepezes() -> PathRemapper:
     eredetű (NAS-ra másolt) telepítésnél a leképezés nem illeszkedik, ilyenkor
     a rekordok kimaradnak, és a jelentés nullát mond, nem hazudik sikert.
     """
-    if sys.platform == "win32":
+    if _platform() == "win32":
         return PathRemapper.azonos_lekepezes()
     return PathRemapper.from_dict({"Z:\\": "/"})

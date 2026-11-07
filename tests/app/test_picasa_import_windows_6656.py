@@ -27,12 +27,12 @@ def test_az_azonos_lekepezes_minden_utvonalat_valtozatlanul_atenged():
     ("linux", None),
 ])
 def test_az_alapertelmezett_lekepezes_platformfuggo(monkeypatch, platform, varhato):
-    monkeypatch.setattr(remap_modul.sys, "platform", platform)
+    monkeypatch.setattr(remap_modul, "_platform", lambda: platform)
     assert remap_modul.alapertelmezett_lekepezes().remap(r"C:\Users\felhasznalo\Pictures\kep.jpg") == varhato
 
 
 def test_kezi_import_ures_atiro_mezokkel_a_platform_alapertelmezeset_hasznalja(qt_app, tmp_path, monkeypatch):
-    monkeypatch.setattr(remap_modul.sys, "platform", "win32")
+    monkeypatch.setattr(remap_modul, "_platform", lambda: "win32")
     db3 = tmp_path / "Picasa2"
     db3.mkdir()
     olvasasok = []
@@ -79,5 +79,5 @@ def test_a_vezerlo_megadja_a_felismert_adatmappat(tmp_path):
 
     controller = PicasaImportController(
         felderito=lambda: (SimpleNamespace(picasa2_dir=tmp_path / "Picasa2"),))
-    assert controller.detectedDataFolder() == str(tmp_path / "Picasa2")
+    assert Path(controller.detectedDataFolder()) == tmp_path / "Picasa2"
     assert PicasaImportController(felderito=lambda: ()).detectedDataFolder() == ""

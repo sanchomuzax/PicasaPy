@@ -29,7 +29,7 @@ _APP_DIR = Path(app_package.__file__).parent
 def test_a_felismert_adatmappaval_kattintasra_atiras_nelkul_importal(qt_app, tmp_path, monkeypatch):
     from picasapy.pmpimport import remap as remap_modul
 
-    monkeypatch.setattr(remap_modul.sys, "platform", "win32")
+    monkeypatch.setattr(remap_modul, "_platform", lambda: "win32")
     helyi_kepek = tmp_path / "Pictures"
     helyi_kepek.mkdir()
     (helyi_kepek / "IMG_0001.jpg").write_bytes(b"minta")
@@ -58,7 +58,7 @@ def test_a_felismert_adatmappaval_kattintasra_atiras_nelkul_importal(qt_app, tmp
         qt_app.processEvents()
         # a felhasználó semmit nem ír be: az adatmappát a párbeszéd magától kitölti,
         # útvonal-átíró mező pedig nincs
-        assert _elem(window, "picasaImportSourceFolderField").property("text") == str(db3)
+        assert Path(_elem(window, "picasaImportSourceFolderField").property("text")) == db3
         assert window.findChild(QQuickItem, "picasaImportDrivePrefixField") is None
         assert window.findChild(QQuickItem, "picasaImportLocalPrefixField") is None
         _kattint(window, _elem(window, "picasaImportStartButton"), qt_app)
