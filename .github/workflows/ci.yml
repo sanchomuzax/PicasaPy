@@ -40,6 +40,13 @@ on:
           - ubuntu
         default: mindketto
         required: false
+      # #6590: kézi véletlensorrend-méréshez opcionálisan megadható mag.
+      # Üresen a kézi futás és a PR-futás is a megszokott sorrendet használja.
+      random_seed:
+        description: Véletlen tesztsorrend magja (kézi méréshez)
+        type: string
+        default: ""
+        required: false
   # 2026-10-09: a windowsos készlet éjszaka fut (és kézzel indítható), nem minden
   # main-pushon — 4 futtatóhelyet foglalt ~30 percig minden beolvadás után, a Free
   # csomag 20 helyéből, miközben az eredménye nem blokkol.
@@ -76,7 +83,9 @@ jobs:
       windows_darabok: ${{ steps.nw.outputs.darabok || '[]' }}
       windows_darabszam: ${{ steps.nw.outputs.darabszam || '0' }}
       # Egy éjszakai futás minden tesztdarabja ugyanazt a magot kapja.
-      random_seed: ${{ steps.nightly-seed.outputs.seed || '' }}
+      # Az éjszaka friss magot kap; kézi indításkor a megadott magot használja.
+      # Más eseményen nincs mag, így a PR-futások változatlanok maradnak.
+      random_seed: ${{ steps.nightly-seed.outputs.seed || (github.event_name == 'workflow_dispatch' && inputs.random_seed) || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -124,7 +133,7 @@ jobs:
       os: ubuntu-latest
       darabok: ${{ needs.valtozas.outputs.darabok }}
       darabszam: ${{ needs.valtozas.outputs.darabszam }}
-      random_seed: ${{ github.event_name == 'schedule' && needs.valtozas.outputs.random_seed || '' }}
+      random_seed: ${{ needs.valtozas.outputs.random_seed }}
 
   # #6122: PR-en a Windows tesztlábat kihagyjuk; main-pushon, kézi és
   # ütemezett futáskor továbbra is elindul, hogy a Windows-hibák kiderüljenek.
@@ -146,7 +155,7 @@ jobs:
       darabok: ${{ needs.valtozas.outputs.windows_darabok }}
       darabszam: ${{ needs.valtozas.outputs.windows_darabszam }}
       teljes: ${{ needs.valtozas.outputs.kod == 'true' && '1' || '' }}
-      random_seed: ${{ github.event_name == 'schedule' && needs.valtozas.outputs.random_seed || '' }}
+      random_seed: ${{ needs.valtozas.outputs.random_seed }}
 
   # #1863: a `docs/`-ot OLVASÓ őrök — csak-dokumentációs PR-en ez fut a
   # kihagyott mátrix helyett. A listát a `scripts/docs_olvaso_tesztek.py`
