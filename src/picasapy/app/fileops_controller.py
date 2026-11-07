@@ -112,6 +112,10 @@ class FileOpsController(
 
     photoRenamed = Signal(str, str)  # (régi_út, új_út)
     photoMoved = Signal(str, str)  # (régi_út, új_út)
+    # #6658: a hibás fájl mozgatása is változtathatott a lemezen (pl. az
+    # ini-írás a fájl áthelyezése után bukott el), ezért a forrás/cél indexét
+    # ilyenkor is egyeztetni kell.
+    photoMoveFailed = Signal(str, str)  # (forrás_út, lehetséges_cél_út)
     # #1522: (forrás_út, másolat_út) — a másolat célzott indexelése. Külön
     # jelzés, nem a `photoMoved`: ott a FORRÁS is megváltozik (eltűnik), itt
     # érintetlen marad, tehát a forrásmappa újraolvasása fölösleges munka.
@@ -179,18 +183,28 @@ class FileOpsController(
 
 
 def _first_failure_reason(result) -> str:
-    """Az ELSŐ bukás fájlneve és oka — a köteg összegzéséhez (#1430).
+    """Minden bukás fájlneve és oka — a köteg összegzéséhez (#1430, #6658).
 
     A `BatchResult.failed` (forrás, hibaüzenet) párokat tart; a darabszám
     önmagában nem cselekvésre fordítható („1 fájlt nem sikerült
     feldolgozni"). A fájlnevet elé tesszük, mert a mag üzenete nem mindig
     nevezi meg a forrást. Üres sztring, ha nem volt bukás.
 
-    Csak az elsőt mutatjuk: a köteg összegzése SZÁNDÉKOSAN egyetlen
-    párbeszéd (#459), nem fájlonkénti ablak — a többi bukás darabszáma a
-    saját sorában szerepel.
+    Minden sort egyetlen összegző párbeszéd mutat (#459); így részleges
+    mozgatásnál a felhasználó minden ott maradt fájlt és hibaokát látja.
     """
     if not result.failed:
         return ""
-    source, reason = result.failed[0]
-    return f"{Path(source).name}: {reason}"
+    sorok = [
+        f"{Path(source).name}: {reason}"
+        for source, reason in result.failed[:_OSSZEGZO_SOROK]
+    ]
+    maradek = len(result.failed) - _OSSZEGZO_SOROK
+    if maradek > 0:
+        sorok.append(f"… (+{maradek})")
+    return "\n".join(sorok)
+
+
+#: Az összegző párbeszéd legfeljebb ennyi hibasort mutat; a többit egy
+#: darabszám jelzi, hogy egy nagy köteg ne nyújtsa a képernyőn túlra.
+_OSSZEGZO_SOROK = 10

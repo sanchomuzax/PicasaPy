@@ -620,8 +620,9 @@ Item {
         anchors.centerIn: parent
         standardButtons: Dialog.Ok
         property string message: ""
-        // #1430: a `reason` az ELSŐ bukás fájlneve és oka. A darabszám
-        // önmagában nem cselekvésre fordítható, és a felületen az
+        // #1430, #6658: a `reason` minden bukott fájl nevét és okát
+        // tartalmazza. A darabszám önmagában nem cselekvésre fordítható,
+        // és a felületen az
         // áthelyezés mindig ezen az úton fut — a magok magyarázó üzenete
         // csak így jut el a felhasználóhoz. A szöveg a magból jön, magyarul
         // és készen (ahogy a `fileOpsErrorDialog`-ban is), ezért nincs

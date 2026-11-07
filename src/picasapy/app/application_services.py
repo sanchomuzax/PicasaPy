@@ -58,6 +58,7 @@ def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
 
     fileops.photoRenamed.connect(lambda old, new: refresh(old, new))
     fileops.photoMoved.connect(lambda old, new: refresh(old, new))
+    fileops.photoMoveFailed.connect(lambda old, dest: refresh(old, dest))
 
     def torles_utan(path: str) -> None:
         """#1227: a sor AZONNAL tűnjön el, a resync csak utólag egyeztessen.

@@ -250,6 +250,11 @@ class FileOpsControllerMoveMixin:
             # frissíti (#15).
             for source, target in result.done:
                 self.photoMoved.emit(str(source), str(target))
+            # A hiba a lemezművelet UTÁN is bekövetkezhetett (például a
+            # .picasa.ini frissítésekor), ezért a sikertelen elemek mindkét
+            # mappáját a lemezről egyeztetjük, nem csak a sikeresekét.
+            for source, _reason in result.failed:
+                self.photoMoveFailed.emit(str(source), str(dest / source.name))
         elif operation == "copy":
             # #1522: a másolás UGYANÚGY célzott újraolvasást kér, mint az
             # áthelyezés — a figyelőre itt sem építünk.

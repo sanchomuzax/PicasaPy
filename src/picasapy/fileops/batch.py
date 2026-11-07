@@ -22,6 +22,8 @@ programon belül kétféle séma zavaróbb lenne, mint az eredetitől való elt�
 
 from __future__ import annotations
 
+import errno
+import time
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -130,7 +132,14 @@ def move_photos(
     másolásnál (`::5`); a MAPPA áthelyezését viszont ütközéskor elutasította
     (`CThumbUI::MoveFolderExists`) — az más művelet, nem ez.
     """
-    return _run(paths, dest_folder, policy, _move_with_rename, progress)
+    return _run(
+        paths,
+        dest_folder,
+        policy,
+        _move_with_rename,
+        progress,
+        retry_transient_locks=True,
+    )
 
 
 def _move_with_rename(path: Path, dest_folder: Path) -> Path:
@@ -191,7 +200,15 @@ def _free_name(path: Path, dest_folder: Path) -> str:
         counter += 1
 
 
-def _run(paths, dest_folder, policy, operation, progress=None) -> BatchResult:
+def _run(
+    paths,
+    dest_folder,
+    policy,
+    operation,
+    progress=None,
+    *,
+    retry_transient_locks: bool = False,
+) -> BatchResult:
     if policy not in (RENAME, SKIP):
         raise ValueError(f"Ismeretlen ütközés-házirend: {policy!r}")
     dest = Path(dest_folder)
@@ -209,24 +226,50 @@ def _run(paths, dest_folder, policy, operation, progress=None) -> BatchResult:
             if policy == SKIP and _conflicts(path, dest):
                 skipped.append(path)
             else:
-                try:
-                    done.append((path, operation(path, dest)))
-                except (
-                    OSError,
-                    ValueError,
-                    IniSaveError,
-                    IniConflictError,
-                ) as error:
+                for attempt in range(2 if retry_transient_locks else 1):
+                    try:
+                        done.append((path, operation(path, dest)))
+                        break
+                    except (
+                        OSError,
+                        ValueError,
+                        IniSaveError,
+                        IniConflictError,
+                    ) as error:
+                        if (
+                            retry_transient_locks
+                            and attempt == 0
+                            and _is_transient_lock_error(error)
+                        ):
+                            # Egy rövid újrapróba elkapja az átmeneti
+                            # OneDrive- vagy megosztási zárolást; a tartós
+                            # zárolás rendes, fájlonkénti hiba marad (#6658).
+                            time.sleep(0.1)
+                            continue
                     # #301/#459: egy hibás fájl nem állíthatja meg a köteget
                     # — a hívó a végén EGY összegzést mutat, nem fájlonkénti
                     # ablakot
-                    failed.append((path, str(error)))
+                        failed.append((path, str(error)))
+                        break
             # a kihagyott és a hibás fájl is HALAD: a felhasználó a
             # számlálóból azt akarja tudni, hol tart a művelet, nem azt,
             # hány sikerült
             if progress is not None:
                 progress(index, total)
     return BatchResult(tuple(done), tuple(skipped), tuple(failed))
+
+
+def _is_transient_lock_error(error: Exception) -> bool:
+    """Az átmeneti fájlzárolások egyszeri újrapróbálásra érdemesek."""
+    if isinstance(error, (PermissionError, BlockingIOError)):
+        return True
+    if getattr(error, "errno", None) in (
+        errno.EAGAIN,
+        errno.EBUSY,
+        getattr(errno, "ETXTBSY", -1),
+    ):
+        return True
+    return getattr(error, "winerror", None) in (32, 33)
 
 
 __all__ = [

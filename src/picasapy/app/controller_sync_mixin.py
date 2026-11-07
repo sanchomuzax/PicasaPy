@@ -24,6 +24,8 @@ class AppControllerSyncMixin:
         folder: str,
         progress=None,
         enabled_filetypes=_FILETYPE_SNAPSHOT_UNSET,
+        *,
+        incremental: bool | None = None,
     ) -> None:
         """Indirekció a mappa-resynchez (#150): a mixinek ezen át hívják a
         `sync_tree`-t, így a tesztek patch-pontja (a modul-szintű
@@ -38,6 +40,8 @@ class AppControllerSyncMixin:
             kwargs["progress"] = progress
         if enabled_filetypes is not None:
             kwargs["enabled_filetypes"] = enabled_filetypes
+        if incremental is not None:
+            kwargs["incremental"] = incremental
         from . import controller as controller_module
 
         controller_module.sync_tree(conn, folder, **kwargs)

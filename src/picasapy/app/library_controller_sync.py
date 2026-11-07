@@ -45,6 +45,29 @@ del _dirty_sync_module, _rescan_sync_module, _sweep_sync_module
 class _LibrarySyncMixin(
     _LibrarySyncDirtyMixin, _LibrarySyncSweepMixin, _LibrarySyncRescanMixin
 ):
+    def refreshDroppedFolder(self, folder_path: str) -> bool:  # noqa: N802
+        """A már indexelt mappa behúzásakor teljes gyökér-egyeztetést kér (#6658).
+
+        A rekurzív, nem inkrementális scan a lemezen lévő fájlokat visszateszi
+        a helyükre, és eltávolítja azokat az indexsorokat, amelyekhez már nem
+        tartozik fájl. Ha nincs figyelt gyökér, a hívó az új mappa felvételét
+        végzi el.
+        """
+        root = self._root_for_folder(folder_path)
+        if root is None:
+            return False
+        forced_roots = getattr(self, "_forced_tree_sync_roots", set())
+        forced_roots.add(root)
+        self._forced_tree_sync_roots = forced_roots
+        try:
+            self._on_folders_dirty(
+                [DirectoryChange(root, "refresh")], felhasznaloi=True
+            )
+        except BaseException:
+            forced_roots.discard(root)
+            raise
+        return True
+
     @Slot(int)
     def resyncFolderOfRow(self, row: int) -> None:
         """A sorhoz tartozó mappa resyncje — a néző bezárásakor hívjuk:
