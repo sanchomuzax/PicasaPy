@@ -36,6 +36,13 @@ class TestAKornyezetJelentes:
         assert "PySide6" in sorok, sorok
         assert "OpenCV" in sorok or "cv2" in sorok, sorok
 
+    def test_az_SQLite_verziot_is_jelenti(self):
+        """#6518: a windowsos indexsérülés oka SQLite-verziófüggő lehet."""
+        import sqlite3
+
+        sorok = "\n".join(_modul().kornyezet_sorai())
+        assert f"SQLite {sqlite3.sqlite_version}" in sorok, sorok
+
     def test_a_HIANYZO_csomag_nem_dont_le_semmit(self, monkeypatch):
         """A jelentés sosem lehet drágább, mint a hiba, amit kísér.
 

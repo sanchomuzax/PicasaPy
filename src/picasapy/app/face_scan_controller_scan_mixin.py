@@ -131,7 +131,9 @@ class FaceScanControllerScanMixin:
             quick_check = "; ".join(rows) if rows else "nincs eredmény"
         except Exception as diagnostic_error:  # noqa: BLE001 — az őr ne fedje el az eredeti hibát
             quick_check = f"nem futott le ({type(diagnostic_error).__name__})"
-        _log.error("arc-index quick_check: %s", quick_check)
+        _log.error(
+            "arc-index quick_check (SQLite %s): %s", sqlite3.sqlite_version, quick_check
+        )
 
         meretek = []
         fajlok = (

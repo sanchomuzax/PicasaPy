@@ -1685,6 +1685,7 @@ def kornyezet_sorai() -> list[str]:
         f"{platform.system()})",
         f"PySide6 {verzio('PySide6', '__version__')}",
         f"OpenCV {verzio('cv2', '__version__')}",
+        f"SQLite {verzio('sqlite3', 'sqlite_version')}",
     ]
 
 
