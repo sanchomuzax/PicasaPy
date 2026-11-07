@@ -35,6 +35,7 @@ from pathlib import Path
 #: cserélje, ne a `monkeypatch.setattr(relocate.shutil, "disk_usage", …)`
 #: alakot: az a GLOBÁLIS `shutil`-t írja át.
 _disk_usage = shutil.disk_usage
+_sqlite_connect = sqlite3.connect
 
 def _probe_iras(probe: Path) -> None:
     """A cél írhatóságát próbáló üres kiírás — külön függvény, hogy a teszt
@@ -172,9 +173,10 @@ def _copy_database(
     if not old_index_db.exists():
         return  # még nincs index — nincs mit másolni, a cél üresen indul
     new_index_db.parent.mkdir(parents=True, exist_ok=True)
-    source_conn = sqlite3.connect(str(old_index_db))
+    source_uri = f"{old_index_db.resolve().as_uri()}?mode=ro"
+    source_conn = _sqlite_connect(source_uri, uri=True)
     try:
-        target_conn = sqlite3.connect(str(new_index_db))
+        target_conn = _sqlite_connect(str(new_index_db))
         try:
 
             def _on_backup_progress(status: int, remaining: int, total: int) -> None:
@@ -229,7 +231,7 @@ def _copy_cache(
 def _integrity_check(new_index_db: Path) -> None:
     if not new_index_db.exists():
         return  # nem volt forrás-adatbázis — nincs mit ellenőrizni
-    conn = sqlite3.connect(str(new_index_db))
+    conn = _sqlite_connect(str(new_index_db))
     try:
         rows = conn.execute("PRAGMA integrity_check").fetchall()
     finally:

@@ -36,6 +36,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from .database import _serialize_index_writes
+
 #: Ennyi szabad hely fölött ajánljuk fel a tömörítést (százalék). Az
 #: eredeti `compactpercentage` értéke nem derül ki a binárisból, ezért ez a
 #: MI döntésünk: a 20% már érezhető pazarlás, alatta a `VACUUM` percei nem
@@ -134,21 +136,22 @@ def compact_database(
             return 1  # nem nulla → az SQLite megszakítja a futó utasítást
         return 0
 
-    conn = sqlite3.connect(path)
-    try:
-        # a `VACUUM` WAL módban sem futhat nyitott tranzakcióban
-        conn.isolation_level = None
-        conn.set_progress_handler(_handler, _PROGRESS_STEPS)
-        conn.execute("VACUUM")
-    except sqlite3.Error as error:
-        if cancelled:
-            raise CompactionCancelled(
-                "A tömörítést megszakítottad — az adatbázis érintetlen."
-            ) from error
-        raise CompactionError(str(error)) from error
-    finally:
-        conn.set_progress_handler(None, 0)
-        conn.close()
+    with _serialize_index_writes(path):
+        conn = sqlite3.connect(path)
+        try:
+            # a `VACUUM` WAL módban sem futhat nyitott tranzakcióban
+            conn.isolation_level = None
+            conn.set_progress_handler(_handler, _PROGRESS_STEPS)
+            conn.execute("VACUUM")
+        except sqlite3.Error as error:
+            if cancelled:
+                raise CompactionCancelled(
+                    "A tömörítést megszakítottad — az adatbázis érintetlen."
+                ) from error
+            raise CompactionError(str(error)) from error
+        finally:
+            conn.set_progress_handler(None, 0)
+            conn.close()
 
     return CompactionResult(before_bytes=before, after_bytes=path.stat().st_size)
 
