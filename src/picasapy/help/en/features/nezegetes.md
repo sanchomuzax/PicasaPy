@@ -243,8 +243,13 @@ and continues from there. An empty list stops the slideshow.
 
 ### Slideshow controls
 
-Move the pointer to show the control bar at the bottom. It hides after a
-few seconds; while the pointer is over it, it stays visible. The bar
+While the slideshow plays, the mouse pointer is hidden over the picture;
+it reappears when you pause and while it is over the control bar.
+
+Move the pointer noticeably to show the control bar at the bottom; a tiny
+twitch does not bring it up. Once it is visible, any movement keeps it
+there. Without movement it fades out after a second and a half; while
+the pointer is over it, it stays visible. The bar
 provides Exit, previous, play/pause, next, and rotate controls. Previous
 and next respond once on press and do not repeat when held. Rotations
 made during the slideshow are saved.
@@ -277,13 +282,18 @@ in the [Movie](mozgofilm.md) editor.
 Choose **View** ▸ **Timeline** (Ctrl+5) to see an animated, full-screen
 overview of your library. Each folder and album with pictures is a card
 with stacked-photo imagery, its name, and a month and year, such as
-July 2024. Cards are ordered by the oldest capture date in each folder
+July 2024. All cards sit on one curved track like a carousel: when you
+move, the whole row glides along and the selected card always lands in
+the same place. The background is a faded, grey version of the first
+photo of the selected folder or album, and it cross-fades to the new one
+when you change cards. Cards are ordered by the oldest capture date in each folder
 or album. Items with no capture dates appear at the end without a date;
 empty albums and hidden photos do not appear. Timeline always opens at
 the first card.
 
 Use the left and right arrows or the bar's arrow buttons to move between
-cards. Drag the bottom slider to move farther through time; the first
+cards. You can also use the mouse wheel, or grab the row of cards and
+drag it sideways. Drag the bottom slider to move farther through time; the first
 and last library dates appear at its ends. Press Space or the play
 button to start a slideshow of the current folder or album. Press Esc
 or use the close button to exit. On return, the library opens the last
