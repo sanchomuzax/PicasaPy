@@ -18,6 +18,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pytest
+from PIL import Image
 
 from picasapy.ini.filters import parse_filters
 from picasapy.render import apply_filters
@@ -190,6 +191,29 @@ class TestComparePair:
 
         result = cr.compare_pair(original, "bw=1;", golden, cr.Thresholds())
         assert result.verdict == "közelítés"
+
+    def test_jpeg_referenciat_a_sajat_mintaveteli_modjaval_kell_osszevetni(
+        self, tmp_path: Path
+    ) -> None:
+        """A Picasa JPEG chroma-subsamplingját ne mérjük szűrőhibának."""
+        image = np.empty((48, 64, 3), np.uint8)
+        image[:, ::2] = (255, 0, 0)
+        image[:, 1::2] = (0, 0, 255)
+        original = tmp_path / "eredeti.png"
+        golden = tmp_path / "picasa-export.jpg"
+        cv2.imwrite(str(original), cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+
+        rendered, _ = apply_filters(image, parse_filters("sat=1,0.500000;"))
+        Image.fromarray(rendered).save(
+            golden, format="JPEG", quality=95, subsampling=2
+        )
+
+        result = cr.compare_pair(
+            original, "sat=1,0.500000;", golden, cr.Thresholds()
+        )
+
+        assert result.verdict == "pixelhű"
+        assert result.metrics["delta_e_mean"] < 0.25
 
     def test_meret_elteres_hibauzenettel_elter(self, tmp_path: Path) -> None:
         """Ha a golden mérete eltér (pl. rossz crop), az „eltér" + megjegyzés."""
