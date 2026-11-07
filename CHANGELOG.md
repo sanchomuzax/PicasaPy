@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.67] - 2026-11-07
+
+- A golden- és a differenciális összevetés a Picasa-export JPEG-beállításaival (színfelbontás, kvantálótáblák) kódolja újra a saját renderet, így a JPEG-tömörítés nem mérődik szűrő-eltérésnek (#6585).
+- A windowsos önfrissítési próba képe nem kerül többé a kiadás fájljai közé; a kép a próba futásának mellékletében marad (#6662).
+
 ## [1.0.66] - 2026-11-07
 
 - Éjszakai tesztsorrend-mérés kézzel is indítható megadott maggal (#6590).
