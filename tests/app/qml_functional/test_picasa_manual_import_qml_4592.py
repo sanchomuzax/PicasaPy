@@ -12,6 +12,7 @@ from PySide6.QtTest import QTest
 
 import picasapy.app as app_package
 from picasapy.app.picasa_import_controller import PicasaImportController
+from picasapy.pmpimport.remap import alapertelmezett_lekepezes
 from tests.support.pmp_factory import build_pmp_column, build_thumb_index
 
 _APP_DIR = Path(app_package.__file__).parent
@@ -77,8 +78,13 @@ def test_kattintassal_importal_kezzel_valasztott_mappabol_es_terkepezessel(
     db3 = tmp_path / "kézzel választott Picasa2"
     helyi_kepek = tmp_path / "saját képek"
     helyi_kepek.mkdir()
-    # #6656: útvonal-átíró mező nincs; Linuxon a Wine `Z:\` meghajtója a gyökér
-    _minta_db3(db3, "Z:" + str(helyi_kepek).replace("/", "\\"))
+    # #6656: útvonal-átíró mező nincs. Windowson a Picasa-útvonal változatlanul
+    # érvényes, Linuxon a Wine `Z:\` meghajtója a gyökér.
+    if alapertelmezett_lekepezes().azonos:
+        kepmappa = str(helyi_kepek)
+    else:
+        kepmappa = "Z:" + str(helyi_kepek).replace("/", "\\")
+    _minta_db3(db3, kepmappa)
     (helyi_kepek / "IMG_0001.jpg").write_bytes(b"minta")
 
     engine = QQmlEngine()
