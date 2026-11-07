@@ -2231,6 +2231,74 @@ látható hatásra ott, ahol csak belső ág ismert.
 | `/`, `,`, `.` | Néző videólejátszója | A keymap megnevezése szerinti műveletek a fizikai billentyűtől a fogadóig **NINCS MEG**. A külön MovieMaker `MoviePreviewHandler` (`video_control_bar2`) belső műveletkódja ismert: `0x13` → pause/play (`0x00619ac0`); `0x18` + `VK_SPACE` → play/pause felületi állapot; `0x17` + `VK_SPACE` → stop; `0x0d` → feltételes fullscreen; `0x1f`/`0x20` → fullscreen-jelző be/ki. | A MovieMaker-fogadó: `0x006248e0`; a néző keymap-fizikai billentyűhöz kapcsolása **NINCS MEG**. A régi `0xBC/0xBE/0xBF` keresés csak meghatározott CMP-alakra terjedt ki. | Feltételes a belső kód→művelet ágra; nyitott a `/`, `,`, `.` fizikai billentyű→nézőfogadó út. Részletes lelet: `picasa-create-features.md` §2.7/c. |
 | Navigációs billentyűk (Backspace, Enter, Esc, Space, PgUp/PgDn, Home/End, nyilak, Insert/Delete, F1) | Fókuszált vezérlő vagy párbeszéd | Az általános út eseményobjektumot épít és a fókuszált elemnek továbbít; a konkrét parancs az elem saját kezelőjében van | `0x00a53b00` → `0x00a582f0`; táblák `0x00a53bb4` / `0x00a53ba8` | Az általános továbbítás megerősített (§10.18); az egyes dialogusok elemenkénti hatása a `picasa-eger-es-kijeloles.md` §8-ban van. |
 
+#### PicasaPy-próba index a CThumbUI-sorokhoz
+
+Az alábbi hivatkozások valódi `QTest.keyClick` eseményt küldenek a főablaknak
+(a projektlap-sáv önálló QML-ablakának), és látható vagy állapotbeli hatást
+ellenőriznek. A `nincs megfelelő` azt jelenti, hogy a PicasaPy-ban nincs az
+adott könyvtárnézeti művelethez tartozó billentyűút; ezt a jelentés külön
+eltérésként részletezi. Az eredeti Picasán végzett `ui_capture` próbák nem
+tartoznak ehhez a PicasaPy-kiegészítéshez.
+
+| billentyű | PicasaPy-próba |
+|---|---|
+| `Ctrl+Enter` | `test_ctrl_enter_mappa_4631.py::test_ctrl_enter_a_kijelolt_kepet_vagy_az_aktualis_mappat_mutatja` |
+| `Ctrl` + `VK_MENU (0x12)` | nincs megfelelő |
+| `Ctrl+0` | `test_menusor_billentyu_valodi_5127.py::TestGyorsbillentyuk::test_ctrl0_valodi_billentyuvel_kinyitja_es_bezarja_a_jobb_fiokot` |
+| `Ctrl+1` | `test_menusor_maradek_valodi_5150_l.py::TestNezetKepmeret::test_a_kepmeret_gyorsbillentyuvel_allitja_a_meretet` |
+| `Ctrl+2` | `test_menusor_maradek_valodi_5150_l.py::TestNezetKepmeret::test_a_kepmeret_gyorsbillentyuvel_allitja_a_meretet` |
+| `Ctrl+3` | `test_menusor_billentyu_valodi_5127.py::TestGyorsbillentyuk::test_ctrl3_valodi_billentyuvel_szerkesztesi_nezetbe_valt` |
+| `Ctrl+4` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl4_elinditja_a_diavetitest` |
+| `Ctrl+5` | `test_idorend_bemutato_5377.py::test_ctrl5_opens_fullscreen_timeline_without_selection` |
+| `Ctrl+6` | nincs megfelelő |
+| `Ctrl+8` | nincs megfelelő |
+| `Ctrl+9` | `test_ctrl9_left_drawer_4696.py::test_ctrl9_toggles_editor_drawer_and_is_inactive_in_library` (a könyvtári ág nem hat) |
+| `Ctrl+A` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_a_es_ctrl_d_valtoztatja_a_kijelolest` |
+| `Ctrl+Shift+B` | `test_maradek_valodi_kattintas_5127.py::TestGyorsbillentyuk::test_ctrl_shift_b_fekete_feher_a_kijelolesre` |
+| `Ctrl+C` | `test_huzas_hianyzoi_5008.py::test_grid_to_tray_and_tray_to_grid_use_the_dragged_rows_and_clipboard_keys` |
+| `Ctrl+X` | `test_huzas_hianyzoi_5008.py::test_grid_to_tray_and_tray_to_grid_use_the_dragged_rows_and_clipboard_keys` |
+| `Ctrl+D` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_a_es_ctrl_d_valtoztatja_a_kijelolest` |
+| `Ctrl+Shift+E` | `test_maradek_valodi_kattintas_5127.py::TestGyorsbillentyuk::test_ctrl_shift_e_jo_napom_van_a_kijelolesre` |
+| `Ctrl+F` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_f_a_keresomezore_viszi_a_fokuszt` |
+| `Ctrl+G` | nincs megfelelő (az eredeti ág is művelet nélküli) |
+| `Ctrl+Alt+G` | nincs megfelelő (az eredeti ág is művelet nélküli) |
+| `Ctrl+Shift+G` | nincs megfelelő |
+| `Ctrl+Alt+Shift+G` | nincs megfelelő |
+| `Ctrl+Shift+H` | `test_gyorsbillentyuk_valodi_5150_n.py::TestTukrozes::test_a_tukrozes_billentyu_a_kijelolt_kepeket_tukrozi` |
+| `Ctrl+I` | `test_invert_selection_menu_1686.py::TestAMenupontUGYANAZTCsinalja::test_a_billentyu_ugyanazt_adja` |
+| `Ctrl+K` | `test_gyorsbillentyuk_valodi_5150_n.py::TestFiokEsKereses::test_a_ctrl_k_a_cimkek_lapot_nyitja_a_fiokban` |
+| `Ctrl+T` | `test_tags_shortcut_focus_6301.py::test_ctrl_t_focus_types_and_returns_to_grid_shortcuts` |
+| `Ctrl+Shift+L` | nincs megfelelő |
+| `Ctrl+M` | `test_import_menupont_1615.py::TestGyorsbillentyu::test_a_ctrl_m_megnyitja_a_parbeszedet` |
+| `Ctrl+N` | `test_gyorsbillentyuk_1616.py::TestUjAlbumMenupontEsCtrlN::test_a_ctrl_n_valodi_billentyuvel_LETREHOZZA_az_albumot` |
+| `Ctrl+O` | `test_addfile_menupont_1633.py::TestGyorsbillentyu::test_a_ctrl_o_megnyitja_a_fajlvalasztot` |
+| `Ctrl+Shift+O` | `test_gyorsbillentyuk_valodi_5150_n.py::TestKulsoProgram::test_a_ctrl_shift_o_a_kijelolt_kepet_a_rendszer_megnyitojaval_nyitja` |
+| `Ctrl+P` | `test_nyomtatas_bekotes_1472.py::TestBelepesiPontok::test_a_ctrl_p_megnyitja_a_parbeszedet` |
+| `Ctrl+Shift+P` | `test_indexkep_nyomtatas_1590.py::TestBelepesiPont::test_a_ctrl_shift_p_ugyanoda_vezet` |
+| `Ctrl+R` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_r_es_ctrl_shift_r_forgatja_a_kijelolt_kepet` |
+| `Ctrl+Shift+R` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_r_es_ctrl_shift_r_forgatja_a_kijelolt_kepet` |
+| `Ctrl+S` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_s_megerositi_a_szerkesztett_kep_menteset` |
+| `Ctrl+Alt+S` | nincs megfelelő |
+| `Ctrl+Shift+U` | nincs megfelelő |
+| `Ctrl+Shift+V` | `test_gyorsbillentyuk_valodi_5150_n.py::TestTukrozes::test_a_tukrozes_billentyu_a_kijelolt_kepeket_tukrozi` |
+| `Ctrl+Shift+Y` | nincs megfelelő |
+| `Ctrl+F6` | `test_gyorsbillentyuk_valodi_5150_n.py::TestKeresesek::test_a_ctrl_f6_a_masodpeldanyokat_mutatja` |
+| `Ctrl+F7` | `test_gyorsbillentyuk_valodi_5150_n.py::TestKeresesek::test_a_ctrl_f7_a_kijelolt_kephez_hasonlot_keres` |
+| `Ctrl+F8` | `test_gyorsbillentyuk_valodi_5150_n.py::TestKeresesek::test_a_ctrl_f8_torli_a_hasonlosagi_mintat` |
+| `Ctrl+F9` | `test_nezo_ctrl_f9_folyamatos_leptetes_4698.py::test_konyvtarnezetben_nincs_hatas_es_az_autorepeat_nem_indit` (a működő kötés csak a nézőben él) |
+| `Ctrl+Left` | `test_projektlap_billentyuk_2170.py::TestABillentyuLANCA::test_a_ctrl_left_visszafele_valt` |
+| `Ctrl+Right` | `test_projektlap_billentyuk_2170.py::TestABillentyuLANCA::test_a_ctrl_right_TENYLEG_lapot_valt` |
+| `Ctrl+Tab` | `test_projektlap_billentyuk_2170.py::TestABillentyuLANCA::test_a_ctrl_tab_valodi_billentyuvel_a_kovetkezo_lapra_lep` |
+| `Ctrl+Shift+Tab` | `test_projektlap_billentyuk_2170.py::TestABillentyuLANCA::test_a_ctrl_shift_tab_valodi_billentyuvel_az_elozo_lapra_lep` |
+| `Ctrl+W` | `test_projektlap_billentyuk_2170.py::TestABillentyuLANCA::test_a_ctrl_w_valodi_billentyuvel_megerositest_ker` |
+| `F1` | `test_sugo_fooablak_nem_modalis_6387.py::test_f1_a_foablakbol_nem_modalis_sugoablak_nyilik` |
+| `F2` | `test_atnevezes_f2_5396.py::test_f2_atnevezes_egyetlen_kepre_megorizza_a_picasa_parbeszedet_es_fajlt` |
+| `F3` | `test_f3_f4_gyorsbillentyu_4600.py::TestF3Kereses::test_az_F3_a_keresomezore_viszi_a_fokuszt` |
+| `F4` | `test_f3_f4_gyorsbillentyu_4600.py::TestF4Csillag::test_az_F4_megfordítja_a_kijelolt_kep_csillagat` |
+| `F5` | `test_f5_konyvtar_frissites_4697.py::test_f5_refreshes_the_visible_folder_and_search_state` |
+| `F11` | `test_viewer_fullscreen_4569.py::test_f11_a_konyvtarnezetben_nem_valt_teljes_kepernyore` (az eredeti könyvtári út eltérését méri) |
+| `F12` | nincs megfelelő (a spec szerint nincs funkció) |
+
 ### 12.1 F2 a megnyitott képnézőben - statikus út és feltételek
 
 1. A `0x005e6710` csak a Ctrl-bit nélküli `WM_KEYDOWN` (`[MSG+4] == 0x100`, `[MSG+0x10] & 4 == 0`) F2 (`[MSG+8] == 0x71`) ágán jut el az átnevezéshez.
@@ -2304,6 +2372,15 @@ nyolc fájlnál sikeres kilépést jelzett. A helyi Qt **6.8.2.1**, a futtató
 A §11 táblájában hivatkozott 23 tesztfájlt és a §12.4-ben szereplő további hat gyorsbillentyű-fájlt egyenként újrafuttattam: **29 fájl, 361 passed, 1 skipped**. A QML-fájlok `QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software` beállítással futottak; a helyi PySide6-verzió **6.8.2.1**. Két futásban a `TrayTopRow.qml` és `TrayInfoBar.qml` `TypeError` naplófigyelmeztetései jelentek meg, a pytest ettől zölden zárt.
 
 Ez az összesítés **nem** zárja le a teljes mátrixot: a §11 teszthivatkozásai között menü-/struktúra- és parancsteszt is van, ezek nem mind külön `QTest.keyClick`-próbák a hozzájuk tartozó gyorsbillentyűre. A soronkénti PicasaPy-leütéspróbák hiányát továbbra is a fenti táblázat és a §12.4 rögzíti. Ebben a munkamenetben új Colab-futtatás nem indult; a §12.3 eredeti-Picasa eredményei csak az ott nevesített részhalmazra érvényesek.
+
+#### Kiegészítő PicasaPy-próbák (#6531, 2026-11-07)
+
+| Tesztfájl | Eredmény | Új, valódi billentyűpróba |
+|---|---:|---|
+| `test_gyorsbillentyu_matrix_6531.py` | 11 passed | Könyvtári `Ctrl+F`: `QTest.keyClick` a főablakon, a keresőmező tényleges fókuszával. A korábbi 10 próba továbbra is zöld. |
+| `test_projektlap_billentyuk_2170.py` | 37 passed | `Ctrl+Tab`, `Ctrl+Shift+Tab` és módosított projektlapon `Ctrl+W`: valódi billentyűesemény, látható lapváltás / bezárási kérdés. |
+
+A §12 CThumbUI-sorainak PicasaPy-próbáját a fenti PicasaPy-próba index soronként hivatkozza. A `nincs megfelelő` soroknál nem adtam hozzá funkciót; az eltérések és a jelenlegi PicasaPy-viselkedés a munkafa `.codex-jelentes.md` fájljában szerepel. Az eredeti Picasa Colab-próbája ebben a kiegészítésben nem futott.
 
 ### 12.5 A vetítés vezérlősávja és a videó billentyűi (2026-11-05)
 
