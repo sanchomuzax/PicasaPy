@@ -6,7 +6,7 @@ import logging
 import sqlite3
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QSettings, Qt, Slot
+from PySide6.QtCore import QSettings, Qt
 
 from picasapy.index import open_index
 from . import application as _app
@@ -14,11 +14,13 @@ from .application_services import wire_dedup, wire_fileops
 from .startup_maintenance import StartupMaintenance, StartupMaintenanceStep
 
 
-class _DropFolderSelection(QObject):
-    """A behúzott mappát kijelöli, majd a friss feedben újra odaugrik."""
+class _DropFolderSelection:
+    """A behúzott mappát kijelöli, majd a friss feedben újra odaugrik.
 
-    def __init__(self, controller: QObject) -> None:
-        super().__init__(controller)
+    Sima Python-objektum (nem QML-tag): a `DropImportController` a metódusait
+    tartja, így vele együtt él."""
+
+    def __init__(self, controller) -> None:
         self._controller = controller
         self._pending_paths: list[str] = []
         controller.feedChanged.connect(self._select_after_feed_refresh)
@@ -39,7 +41,6 @@ class _DropFolderSelection(QObject):
         if not self._has_indexed_photo(folder_path):
             self._pending_paths.append(folder_path)
 
-    @Slot()
     def _select_after_feed_refresh(self) -> None:
         ready = [
             path for path in self._pending_paths if self._has_indexed_photo(path)
