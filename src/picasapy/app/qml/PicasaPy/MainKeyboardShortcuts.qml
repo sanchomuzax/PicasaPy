@@ -72,6 +72,17 @@ Item {
     }
 
     Shortcut {
+        id: shortcutStarToggleCtrl8
+        objectName: "starToggleCtrl8Shortcut"
+        sequence: "Ctrl+8"
+        enabled: hostWindow._konyvtariGyorsbillentyuEngedelyezve
+                 && !hostWindow.slideshowRunning
+        // #6660: `0x005e6584` -> `0x005e81e0(panel, 2)` a kijelölt képek
+        // csillagállapotát váltja; a meglévő tálca-csillag parancsot hívjuk.
+        onActivated: hostTrayBar.kapcsoldACsillagot()
+    }
+
+    Shortcut {
         id: shortcutRefreshCurrentFolder
         objectName: "refreshCurrentFolderShortcut"
         sequence: "F5"
@@ -155,6 +166,18 @@ Item {
         //: Köteg-szerkesztés menütételé.
         onActivated: hostWindow.kotegEffekt("enhance")
     }
+
+    Shortcut {
+        id: shortcutPlacesPanel
+        objectName: "placesPanelShortcut"
+        sequence: "Ctrl+Shift+G"
+        enabled: hostWindow._konyvtariGyorsbillentyuEngedelyezve
+                 && !hostWindow.slideshowRunning
+        // #6660: az eredeti Google Earth-ös címkézője nincs meg a PicasaPy-ban;
+        // a meglévő Helyek panel a geotag-funkció belépője.
+        onActivated: hostWindow.valtsFiokLapot("places")
+    }
+
 
     Shortcut {
         id: shortcutHelp
@@ -468,10 +491,12 @@ Item {
             sequences: hostPicasaMenuBar.keyboardShortcutSequences.view.concat([
                 shortcutToggleRightDrawer.sequence, shortcutSearch.sequence,
                 shortcutSearchF3.sequence, shortcutStarToggle.sequence,
+                shortcutStarToggleCtrl8.sequence,
                 shortcutTagsPanelAlt.sequence, shortcutEditView.sequence,
                 shortcutDuplicateSearch.sequence, shortcutFindSimilar.sequence,
                 shortcutClearSimilar.sequence, shortcutSlideshow.sequence,
-                shortcutTagsPanel.sequence, shortcutPropertiesPanel.sequence,
+                shortcutTagsPanel.sequence, shortcutPlacesPanel.sequence,
+                shortcutPropertiesPanel.sequence,
                 shortcutViewerFullscreen.sequence
             ]).concat(hostDocumentTabStrip.keyboardShortcutSequences)
                 .concat(hostPhotoViewer.keyboardShortcutSequences)

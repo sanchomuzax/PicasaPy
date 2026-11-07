@@ -49,7 +49,8 @@ MERT_AGAK = frozenset(
         "Ctrl+A", "Ctrl+C", "Ctrl+D", "Ctrl+F", "Ctrl+G", "Ctrl+I",
         "Ctrl+K", "Ctrl+M", "Ctrl+N", "Ctrl+O", "Ctrl+P", "Ctrl+R",
         "Ctrl+S", "Ctrl+T", "Ctrl+X",
-        "Ctrl+Shift+B", "Ctrl+Shift+E", "Ctrl+Shift+H", "Ctrl+Shift+L",
+        "Ctrl+Shift+B", "Ctrl+Shift+E", "Ctrl+Shift+G", "Ctrl+Shift+H",
+        "Ctrl+Shift+L",
         "Ctrl+Shift+U", "Ctrl+Shift+V", "Ctrl+Shift+Y",
         "Ctrl+F6", "Ctrl+F7", "Ctrl+F8", "Ctrl+F9",
     }
@@ -148,8 +149,10 @@ class TestAHianyzoAgakBekotese:
             ("Ctrl+F6", "window.masodpeldanyokMutatasa()"),
             ("Ctrl+F7", "window.keressHasonlot()"),
             ("Ctrl+F8", "window.torolAHasonlosagMintat()"),
+            ("Ctrl+8", "hostTrayBar.kapcsoldACsillagot()"),
             ("Ctrl+Shift+B", 'window.kotegEffekt("bw")'),
             ("Ctrl+Shift+E", 'window.kotegEffekt("enhance")'),
+            ("Ctrl+Shift+G", 'window.valtsFiokLapot("places")'),
             # #2902: a tükrözés két ága — a keymap 35./36. tétele
             ("Ctrl+Shift+H", "controller.flipHorizontalMany"),
             ("Ctrl+Shift+V", "controller.flipVerticalMany"),
