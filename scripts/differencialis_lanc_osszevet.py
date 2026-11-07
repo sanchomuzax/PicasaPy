@@ -131,6 +131,10 @@ def compare_record(
         row["megjegyzes"] = f"Sérült vagy olvashatatlan kép: {exc}"
         return row
 
+    # #6585: a saját képet a Picasa-export JPEG-beállításaival (mintavételezés,
+    # kvantálótáblák) kódoljuk újra; a 4:2:0 színfelbontás különben kb. 1 ΔE-s
+    # hamis eltérést adott (mérve, lanc-0006: 4,459 helyett 0,672)
+    own_image = _GOLDEN.encode_like_reference(own_image, original_path)
     thresholds = _GOLDEN.Thresholds()
     verdict, metrics, note = _GOLDEN.compare_images(
         own_image, original_image, thresholds
