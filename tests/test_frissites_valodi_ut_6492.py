@@ -63,18 +63,16 @@ def test_a_package_csak_a_feltoltott_setup_utani_sikeres_futashoz_ad_jelolot():
     assert "PicasaPy-Setup-${{ steps.tag.outputs.verzio }}.exe" in package
 
 
-def test_a_valodi_proba_kepe_a_jelzoablakot_menti_es_a_kiadasba_kerul():
+def test_a_valodi_proba_kepe_a_futas_melleklete_marad_es_nem_kerul_a_kiadasba():
+    """A próba képe a GitHub-futtató konzolját is mutatja (belső CI-azonosítók),
+    ezért csak a futás mellékletébe kerül, a nyilvános kiadásba nem (#6662)."""
     workflow_job = _job(_FRISSITES, "frissites")
-    release_job = _job(_FRISSITES, "kep-a-kiadasba")
+    teljes = _FRISSITES.read_text(encoding="utf-8")
     meres = _FRISSITES_MERES.read_text(encoding="utf-8")
 
     assert "_varjon_frissitesi_ablakra(timeout=30.0)" in meres
     assert "05b-frissites-folyamatban-ablak.png" in meres
     assert "actions/upload-artifact@v4" in workflow_job
-    assert "needs: frissites" in release_job
-    assert "github.event_name == 'workflow_run'" in release_job
-    assert "contents: write" in release_job
-    assert "actions/download-artifact@v4" in release_job
-    assert "05b-frissites-folyamatban-ablak.png" in release_job
-    assert "gh release upload" in release_job
-    assert "PicasaPy-frissitesi-folyamat.png" in release_job
+    assert "kep-a-kiadasba" not in teljes
+    assert "gh release upload" not in teljes
+    assert "contents: write" not in teljes
