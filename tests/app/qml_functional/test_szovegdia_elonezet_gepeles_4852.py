@@ -110,11 +110,13 @@ def test_a_gepeles_billentyuleutesenkent_egy_kerest_indit_es_gyorsan_frissul(
             QPointF(float(slide_list.property("width")) / 2, click_y)
         ).toPoint()
         QTest.mouseClick(slide_list.window(), Qt.MouseButton.LeftButton, pos=point)
+        # Az első előnézet hidegindítás: a windowsos CI-on az első renderelés
+        # ~7,8 s, és a közben érkezett második kérés csak utána indul (#6621).
         assert _wait(
             qt_app,
             lambda: int(dialog.property("previewDisplayedGeneration"))
             >= int(dialog.property("previewLatestRequestGeneration")),
-            timeout=10.0,
+            timeout=30.0,
         ), _elonezet_allapot(dialog, kerelmek, provider)
 
         field = _elem(window, "movieSlideText")
