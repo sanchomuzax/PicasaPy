@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import sqlite3
-from contextlib import closing
+from collections.abc import Iterator
+from contextlib import closing, contextmanager, nullcontext
 
 from .face_scan_controller_signals import FaceScanControllerSignalsMixin as _Signals
 from .hatter_prioritas import arckeres_szal_elokeszitese, arckeres_szal_lezarasa
@@ -122,32 +123,84 @@ class FaceScanControllerScanMixin:
         self._set_unchecked_files(remaining)
 
 
-    def _log_database_error_diagnostics(self) -> None:
+    @contextmanager
+    def _open_index_for_scan(self) -> Iterator[sqlite3.Connection]:
+        """Adatbázishibánál még a kapcsolat lezárása előtt naplóz."""
+        yielded = False
+        try:
+            with open_index(self._db_path) as conn:
+                yielded = True
+                try:
+                    yield conn
+                except sqlite3.DatabaseError:
+                    self._log_database_error_diagnostics(conn)
+                    raise
+        except sqlite3.DatabaseError:
+            # Ha maga az index megnyitása/sémabetöltése hibázott, nincs élő
+            # kapcsolat, amelynek állapotát átadhatnánk.
+            if not yielded:
+                self._log_database_error_diagnostics()
+            raise
+
+
+    def _log_database_error_diagnostics(
+        self, conn: sqlite3.Connection | None = None
+    ) -> None:
         """Rögzíti az index állapotát útvonalak nélkül egy arcindex-hibánál."""
         db_path = Path(self._db_path)
-        try:
-            with closing(sqlite3.connect(db_path, timeout=0.5)) as conn:
-                rows = [str(row[0]) for row in conn.execute("PRAGMA quick_check")]
-            quick_check = "; ".join(rows) if rows else "nincs eredmény"
-        except Exception as diagnostic_error:  # noqa: BLE001 — az őr ne fedje el az eredeti hibát
-            quick_check = f"nem futott le ({type(diagnostic_error).__name__})"
-        _log.error(
-            "arc-index quick_check (SQLite %s): %s", sqlite3.sqlite_version, quick_check
-        )
+        journal_mode = "nem olvasható"
+        quick_check = "nem futott le"
+        meretek: list[str] = []
 
-        meretek = []
         fajlok = (
             ("index.db", db_path),
             ("-wal", Path(f"{db_path}-wal")),
             ("-shm", Path(f"{db_path}-shm")),
         )
-        for cimke, fajl in fajlok:
-            try:
-                meretek.append(f"{cimke}={fajl.stat().st_size} bájt")
-            except FileNotFoundError:
-                meretek.append(f"{cimke}=nincs")
-            except OSError:
-                meretek.append(f"{cimke}=nem olvasható")
+
+        def meretpillanat() -> list[str]:
+            allapot = []
+            for cimke, fajl in fajlok:
+                try:
+                    allapot.append(f"{cimke}={fajl.stat().st_size} bájt")
+                except FileNotFoundError:
+                    allapot.append(f"{cimke}=nincs")
+                except OSError:
+                    allapot.append(f"{cimke}=nem olvasható")
+            return allapot
+
+        try:
+            kapcsolat = (
+                nullcontext(conn)
+                if conn is not None
+                else closing(sqlite3.connect(db_path, timeout=0.5))
+            )
+            with kapcsolat as diagnostic_conn:
+                try:
+                    row = diagnostic_conn.execute("PRAGMA journal_mode").fetchone()
+                    journal_mode = str(row[0]) if row else "nincs eredmény"
+                except Exception as diagnostic_error:  # noqa: BLE001 — az őr ne fedje el az eredeti hibát
+                    journal_mode = f"nem olvasható ({type(diagnostic_error).__name__})"
+                meretek = meretpillanat()
+                try:
+                    rows = [
+                        str(row[0])
+                        for row in diagnostic_conn.execute("PRAGMA quick_check")
+                    ]
+                    quick_check = "; ".join(rows) if rows else "nincs eredmény"
+                except Exception as diagnostic_error:  # noqa: BLE001 — az őr ne fedje el az eredeti hibát
+                    quick_check = f"nem futott le ({type(diagnostic_error).__name__})"
+        except Exception as diagnostic_error:  # noqa: BLE001 — az őr ne fedje el az eredeti hibát
+            if journal_mode == "nem olvasható":
+                journal_mode = f"nem olvasható ({type(diagnostic_error).__name__})"
+            if quick_check == "nem futott le":
+                quick_check = f"nem futott le ({type(diagnostic_error).__name__})"
+            if not meretek:
+                meretek = meretpillanat()
+        _log.error("arc-index journal_mode: %s", journal_mode)
+        _log.error(
+            "arc-index quick_check (SQLite %s): %s", sqlite3.sqlite_version, quick_check
+        )
         _log.error("arc-index fájlméretek: %s", ", ".join(meretek))
 
         try:
@@ -261,7 +314,7 @@ class FaceScanControllerScanMixin:
     ) -> None:
         elozo_szalszam: int | None = None
         try:
-            with open_index(self._db_path) as conn:
+            with self._open_index_for_scan() as conn:
                 # #4887: a szkennelés a rejtett mappák képein is fut (az
                 # eredménye a megjelenítéskor szűrődik)
                 photos = (
@@ -349,7 +402,6 @@ class FaceScanControllerScanMixin:
                 conn.commit()
         except sqlite3.DatabaseError as error:
             _log.exception("arc-detektálás adatbázishiba")
-            self._log_database_error_diagnostics()
             self.scanFailed.emit(str(error))
             return
         except Exception as error:  # noqa: BLE001 — index-hiba se fagyassza a UI-t
