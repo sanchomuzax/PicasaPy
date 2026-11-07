@@ -1569,3 +1569,41 @@ A `+0x648` a `0x007fb210` betöltőben készül: a `layer:overlays/overlay` erő
 **Következtetés.** (1) Bináris: az Időrend gombjáról indított vetítés jelzője mindig 1, ezért a lap `round(480 · W / H) × 480` méretű, és a `0x009b49c0` a képernyő közepére teszi. Ez egyezik a 38.2.96 4. pontjának mérésével: 1280×1024-en a számolt 600×480 pontosan a mért, 1920×1080-on a számolt 853×480 a felvételen mért 852×480-tól 1 px-re van; a 4. pont ezzel lezárva. (2) Bináris: a sima diavetítés (`thumbui/sbutton`) alapbeállítással (`BigSlideshow2 = 1`, 16 vagy 32 bites színmélység) a teljes képernyőt kapja. (3) Termékdöntés (tulajdonos, 2026-11-05): a PicasaPy Időrendje a 480 px magas logikai lapot a képernyő magasságára nagyítja (38.2.96); a fenti leképezés ezt nem változtatja, a `Ctrl+O` rejtett váltó nem cél.
 
 **Nyitott.** A `[0x00d67849]` kapu jelentése (a `0x005760e0` és a `0x00a52890` hívási feltétele); a termékre nincs hatása.
+
+#### 38.2.99 A háttérkép a qshow aktuális képazonosítóját követi (#6532, 2026-11-07)
+
+**Kérdés.** A 38.2.94/95 nyitott pontja az volt, hogy a háttérhez hívott képszolgáltató melyik képet kapja, és változik-e a háttér a gyűjtemény lapozásakor.
+
+**Forrás és módszer.** A helyi `Picasa3.exe` célzott, utasításszintű diszasszemblálása (`annot_disasm.py`) a `0x008018a0`, `0x008014d0`, `0x00802230` és `0x00424b10` függvényekre; független ellenőrzésként a korábban elkészült Ghidra-kimenetek (`2026-10-21-idorend-8.txt`, `2026-10-17-qshow-2.txt`, `2026-11-05-idorend-6532-kartyakeszlet.txt`); valamint a meglévő job373 videó. A videófolyam metaadata: 1280×1024, 15 képkocka/s, 1500 képkocka, 100,000 s. A képkockákat a teljes videó dekódolása után, a zérus alapú sorszám alapján választottam ki (FFmpeg `select`), így nem a közeli kulcsképkocka gyors pozicionálásából származnak. A másolatot és a képkockákat a munkafa ideiglenes `.bt/` könyvtárából a vizsgálat után törlöm.
+
+**Bináris adatút.**
+
+1. A gyűjteményváltó `0x008018a0` a `[this+0x50c]` gyűjteményindex változásakor újraépíti a `[this+0x3ec]` azonosítólistát. A régi listát felszabadítja, a `[this+0x3f0]` elemszámot újraindítja, a `[this+0x3f4]` képindexet nullázza (`0x008018e5`-`0x0080190d`), majd a kiválasztott elemek azonosítóit a listába írja (`0x00801ba6`-`0x00801bc4`). A lista forrásának és szűrésének részleteit a 38.2.92 tartalmazza.
+2. A kártyakészítő `0x008014d0` ugyanezt a `[this+0x3ec]` listát járja: az aktuális ID-t a `[this+0x3ec][i]` kifejezésből olvassa (`0x00801570`-`0x0080157a`), a `[this+0x2e4]` szolgáltató virtuális slot `+0` hívásával tölti az elemrekordot, majd ebből kártyarekordot épít. A gyűjteményváltó a kártyakészítőt a `0x00801c95` címen hívja.
+3. A háttérfrissítő `0x00802230` előbb ellenőrzi, hogy a `[this+0x3f4]` index a `[this+0x3f0] >> 1` elemszámon belül van-e (`0x0080227d`-`0x00802299`). Érvényes indexnél az ID-t a `[this+0x3ec][this+0x3f4]` helyről veszi (`0x008022ba`-`0x008022c0`). Ha a `[this+0x3c1]` jelző nem nulla, ezt az ID-t a `[this+0x2e4]` objektum `+8` virtuális slotjának adja át, a `0x00d35808` f32 konstansból csonkolt 2276-os méretkéréssel (`0x00802385`-`0x008023f8`). A szolgáltató a CThumbDB beágyazott `+0x4c` felülete; a `+8` slot `0x00424b10` a 2276-os kéréshez `2276 × 144 >> 9 = 640` pixeles forráságat választ (38.2.95, 38.2.97). A kapott kép a régi képkocka `+0x444` mentése után a jelenet `+0x46c` képébe kerül; a `0x00802180` tónuslánc csak a második argumentum nem nulla értékén fut (`0x00802516`-`0x008025af`; 38.2.94).
+4. A `0x008018a0` nullázása és a `0x00802230` ID-olvasása ugyanarra a listára/indexre mutat. A meglévő Ghidra-kimenet ezt külön reprezentációban is mutatja: `2026-10-21-idorend-8.txt` 552-563. és 680-725. sora a lista újraépítését, indexnullázását és kártyakészítő-hívását; `2026-10-17-qshow-2.txt` 1725-1776. sora a lista/index beolvasását és a háttér-szolgáltató meghívását tartalmazza.
+
+**Videómérés.** A beágyazott nagy kép saját dátumfelirata és a jobb felső gyűjteményfelirat alapján:
+
+| időpont | jobb felső gyűjtemény | a nagy háttérképen olvasható tartalom |
+|---:|---|---|
+| `n=91` (91/15 s) | `2009_majus` / `May 2009` | `2009_majus`, `2009-05-14 10:00` |
+| `n=267` (17,800 s) és `n=300` (20,000 s) | `2014_november` / `November 2014` | `2014_november`, `2014-11-02 15:30` |
+| `n=360` (24,000 s) | `2019_marcius` / `March 2019` | még `2014_november`, `2014-11-02 15:30` |
+| `n=420` (28,000 s) | `2019_marcius` / `March 2019` | `2019_marcius`, `2019-03-08 09:15` |
+
+**Következtetés.** A bináris megerősíti, hogy gyűjteményváltáskor a képindex 0-ról indul, a háttérfrissítő pedig a gyűjtemény ID-listájának aktuális indexű képét kéri le. A job373 videóban a háttér a kiválasztott gyűjtemény képéhez igazodik; a 24,000 s-os képkockán a régi háttér még látszik, a 28,000 s-oson az új. Ez megfelel a 38.2.94-ben igazolt régi/jelenlegi képkockarétegnek, nem bizonyít külön, rögzített háttérképet. Az egyes átmeneti képkockák pontos belső állapota és időtartama ebből a mintavételből nem állapítható meg.
+
+**PicasaPy-összevetés.**
+
+| Eredeti Picasa | Jelenlegi PicasaPy | Teendő |
+|---|---|---|
+| Gyűjteményváltáskor `+0x3f4 = 0`, háttérhez `+0x3ec[+0x3f4]` képet kér; 2276 méretkérésből a CThumbDB legalább 640 px-es forrást szolgáltat (`0x008018a0`, `0x00802230`, `0x00424b10`). | A `TimelinePanel.qml` az aktuális és előző gyűjtemény `photos[0]` elemét használja háttérként (34-37. sor), két `timelinebackground` képréteggel (46-80. sor). A `timeline_background.py` 640 px-es forrásméretet kér (38. sor), az eredeti fotót dekódolja (259-310. sor), majd zöldcsatornás szürkítést, enhance-t, 3-as gamma-t és saját rajzú fedőképet alkalmaz (72-79., 91-211. sor). | A háttér ID-választása gyűjteményváltáskor megfelel az eredeti 0. indexének; a 38.2.94 és 38.2.97 háttér-forrás/tónus teendője a jelenlegi forrásban már teljesül. Ehhez az alrészhez új fejlesztői jegy nem indokolt. |
+
+**Bizonyítottsági fok: megerősített, a fenti szűk kérdésre.** A helyi utasításszintű diszasszemblálás és a korábban készült Ghidra-dekompilálás egyezik a lista/index/szolgáltató útvonalában. Ettől függetlenül a videómérés a gyűjteményváltás után a háttérben megjelenő képet a jobb felső gyűjteményfelirattal összeveti. A videó köztes, 24,000 s-os képkockája korlátozza az időzítési következtetést, de nem cáfolja a végállapot egyezését.
+
+**Cáfoló kísérlet.** Azt a feltevést próbáltam megcáfolni, hogy a háttér a nyitáskor kapott első képen marad. A 17,800 s-os és 28,000 s-os képkockákon a háttérfelirat rendre a 2014-es, majd a 2019-es gyűjtemény képére vált, tehát a fix háttér hipotézis megdől. Ellenőrzésként a kódút ugyanazzal az ID-mércével újraolvasható: a `0x00802230` az arg2=0 ágban is kiolvassa a listából az aktuális ID-t és lekéri a képet; csak a `0x00802180` tónuslánc feltételes (`0x008025a4`-`0x008025af`). A régi kép elmentése a `+0x444` mezőbe és a jelenetkeverő a korábbi réteg jelenlétét magyarázza (`0x00802516`-`0x00802525`, `0x008001c0`; 38.2.94).
+
+**Nyitott.** A videó nem mutat minden köztes animációs állapotot, ezért a régi és új háttér rétegarányának képkockánkénti függvénye és időtartama továbbra sincs binárisból és pontos mérésből összekötve; megszerzéséhez ugyanabban a Picasa-futásban időbélyegzett képkocka és a `[this+0x3f4]`, `+0x444`, `+0x46c` mezők egyidejű rögzítése kell. Ezen az adatúton meglévő Ghidra-kimenet van, ezért ugyanerre a kérdésre új dekompilációt nem kérek. A #6532 teljes „Kész, ha” feltételei továbbra sem tekinthetők lezártnak: a korábbi szakaszok egyéb nyitott vezérlő-, időzítési és forráshalmaz-pontjai külön megmaradnak; a megvalósítási jegyet a hívó nyithatja meg.
+
+**Checkpoint.** Az adatút, a Ghidra-ellenőrzés, a job373 képkockamérés és a PicasaPy-forrásösszevetés rögzítve a `.codex-jelentes.md`-ben (2026-11-07).
