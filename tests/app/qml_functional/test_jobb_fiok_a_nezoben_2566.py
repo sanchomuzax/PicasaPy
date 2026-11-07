@@ -147,22 +147,28 @@ def _fiokot_urit(window, qt_app) -> None:
 def qml_app(qml_app_module):
     """#2851: az ablakot a MODUL építi EGYSZER, nem tesztenként.
 
-    Ez a fájl nem ír tartós állapotot (se ini-t, se beállítást, se fájlt) —
-    csak felületi kötéseket és geometriát mér. A tesztek közti felület-
-    állapotot a `_tiszta_indulas` autouse fixture nullázza, ami eddig is
-    futott: zárt néző, üres fiók, üres kijelölés, 1280 × 800.
+    A közös képekre író tesztek a címkéket a saját `finally` águkban
+    visszaállítják; a `_tiszta_indulas` ezt őrzi, és a felületi állapotot is
+    nullázza: zárt néző, üres fiók, üres kijelölés, 1280 × 800.
 
     Mérve (#2851): 18 teszt × egy-egy ablaképítés 59,2 s volt; egyetlen
-    ablakkal 9,3 s — a fájl ideje HATODÁRA esett. A kimondott feltétel az
-    állapotmentesség: ha ide állapotot író teszt kerül, ezt az `override`-ot
-    kell törölni, nem a nullázást bővíteni."""
+    ablakkal 9,3 s — a fájl ideje HATODÁRA esett. A tartós geocímke-írást
+    végző teszt külön, friss alkalmazást kér."""
     return qml_app_module
 
 
 @pytest.fixture(autouse=True)
 def _tiszta_indulas(qml_app, qt_app):
-    """Minden teszt zárt fiókkal és zárt nézővel indul."""
+    """Minden teszt zárt fiókkal, zárt nézővel és változatlan képekkel indul."""
     window = qml_app[0]
+    controller = qml_app[1]
+    if controller.searchQuery:
+        controller.search("")
+        qt_app.processEvents()
+    cimkek_indulaskor = tuple(
+        tuple(controller.keywordsOfRows([sor]))
+        for sor in range(len(controller.photos.photos))
+    )
     window.resize(1280, 800)
     window.setProperty("viewerOpen", False)
     window.setProperty("activeDrawerTab", "")
@@ -170,6 +176,17 @@ def _tiszta_indulas(qml_app, qt_app):
     window.setProperty("selectedIndex", -1)
     qt_app.processEvents()
     yield
+    if controller.searchQuery:
+        controller.search("")
+        qt_app.processEvents()
+    cimkek_a_vegen = tuple(
+        tuple(controller.keywordsOfRows([sor]))
+        for sor in range(len(controller.photos.photos))
+    )
+    assert cimkek_a_vegen == cimkek_indulaskor, (
+        "a teszt nem állította vissza a modul közös QML-alkalmazásának "
+        f"képcímkéit: {cimkek_indulaskor} → {cimkek_a_vegen}"
+    )
 
 
 # --------------------------------------------------------------------------
@@ -329,19 +346,23 @@ class TestANezettKepreHat:
         1. képen állva is."""
         window, controller, _engine = qml_app
         controller.addKeywordToRows([1], "kutya")
-        qt_app.processEvents()
-        _nezot_nyit(window, qt_app, index=0)
-        _kattints(window, _talca_gomb(window, "tags"), qt_app)
-        panel = _elem(window, "viewerTagsPanel")
-        assert list(panel.property("tags") or []) == []
-        viewer = _elem(window, "photoViewer")
-        viewer.setProperty("currentIndex", 1)
-        assert _var(
-            qt_app, lambda: list(panel.property("tags") or []) == ["kutya"]
-        ), (
-            "a Címkék-panel a nézőben nem a NÉZETT kép címkéit mutatja: "
-            f"{list(panel.property('tags') or [])}"
-        )
+        try:
+            qt_app.processEvents()
+            _nezot_nyit(window, qt_app, index=0)
+            _kattints(window, _talca_gomb(window, "tags"), qt_app)
+            panel = _elem(window, "viewerTagsPanel")
+            assert list(panel.property("tags") or []) == []
+            viewer = _elem(window, "photoViewer")
+            viewer.setProperty("currentIndex", 1)
+            assert _var(
+                qt_app, lambda: list(panel.property("tags") or []) == ["kutya"]
+            ), (
+                "a Címkék-panel a nézőben nem a NÉZETT kép címkéit mutatja: "
+                f"{list(panel.property('tags') or [])}"
+            )
+        finally:
+            controller.removeKeywordFromRows([1], "kutya")
+            qt_app.processEvents()
 
     def test_a_tulajdonsagok_is_a_nezett_kepet_kovetik(self, qml_app, qt_app):
         """A #192 útja változatlan — a négyes együtt mozog."""
@@ -548,16 +569,21 @@ class TestAFiokKifeleMenoParancsai:
     def test_a_cimke_keresese_kivezet_a_nezobol(self, qml_app, qt_app):
         window, controller, _engine = qml_app
         controller.addKeywordToRows([0], "kutya")
-        qt_app.processEvents()
-        _nezot_nyit(window, qt_app)
-        _kattints(window, _talca_gomb(window, "tags"), qt_app)
-        panel = _elem(window, "viewerTagsPanel")
-        panel.findTaggedRequested.emit("kutya")
-        qt_app.processEvents()
-        assert window.property("viewerOpen") is False, (
-            "a keresés a néző MÖGÖTT futott le — a találatokat nem látná senki"
-        )
-        assert _var(qt_app, lambda: controller.searchQuery == "kutya")
+        try:
+            qt_app.processEvents()
+            _nezot_nyit(window, qt_app)
+            _kattints(window, _talca_gomb(window, "tags"), qt_app)
+            panel = _elem(window, "viewerTagsPanel")
+            panel.findTaggedRequested.emit("kutya")
+            qt_app.processEvents()
+            assert window.property("viewerOpen") is False, (
+                "a keresés a néző MÖGÖTT futott le — a találatokat nem látná senki"
+            )
+            assert _var(qt_app, lambda: controller.searchQuery == "kutya")
+        finally:
+            controller.search("")
+            controller.removeKeywordFromRows([0], "kutya")
+            qt_app.processEvents()
 
     def test_a_szemely_valasztasa_kivezet_a_nezobol(self, qml_app, qt_app):
         window, controller, _engine = qml_app
