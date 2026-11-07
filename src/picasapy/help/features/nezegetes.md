@@ -320,9 +320,14 @@ marad, és onnan megy tovább. Ha a lista kiürül, a vetítés megáll.
 
 ### A vezérlősáv
 
-Az egeret megmozdítva a kép alján előjön a vezérlősáv, és pár másodperc
-múlva magától eltűnik. Amíg az egér **a sávon** áll, ott is marad —
-amint elhagyod, újraindul a visszaszámlálás. A sávon:
+Lejátszás közben az egérmutató nem látszik a képen; szünetkor, és amíg
+a vezérlősáv fölött jár, újra megjelenik.
+
+A vezérlősáv akkor jön elő a kép alján, ha az egeret **érezhetően**
+elmozdítod: egy apró rándulás vagy véletlen érintés még nem hozza elő.
+Ha már látszik, minden mozdulat kint tartja. Mozgás nélkül másfél
+másodperc múlva lassan elhalványul. Amíg az egér **a sávon** áll, ott
+marad; amint elhagyod, újraindul a visszaszámlálás. A sávon:
 
 - **✕ Kilépés**;
 - **◀** előző, **▶** / **❚❚** lejátszás és szünet, **▶▶** következő;
@@ -381,7 +386,11 @@ készítőjében maradt meg.
 A **Nézet ▸ Időrend** (Ctrl+5) teljes képernyős, animált bemutatót nyit a
 könyvtáradról. Minden mappa és minden album egy **kártya**: a képei
 egymásra rakott fotókként látszanak, mellette a neve és a hónap meg az
-év (például *Július 2024*). A kártyák a legrégebbi képük **felvételi
+év (például *Július 2024*). Az összes kártya egyetlen íves pályán sorakozik,
+mint egy körhinta: lapozáskor az egész sor elúszik, és a kiválasztott
+kártya mindig ugyanarra a helyre érkezik. A háttér a kiválasztott mappa
+vagy album első képének fakított, szürke változata; kártyaváltáskor az
+előző háttér lassan átúszik az újba. A kártyák a legrégebbi képük **felvételi
 dátuma** szerint követik egymást. Ha egy mappában vagy albumban egyetlen
 képnek sincs felvételi dátuma, a kártyája dátum nélkül, a sor **végére**
 kerül. Az üres albumok nem kapnak kártyát, és a rejtett képek sem
@@ -390,7 +399,8 @@ jelennek meg.
 Az Időrend mindig az **első** kártyánál nyílik meg.
 
 - A **→** és **←** billentyűvel, vagy a sáv nyílgombjaival a következő,
-  illetve az előző kártyára lépsz.
+  illetve az előző kártyára lépsz. Az egér görgőjével is lapozhatsz, és a
+  kártyasort egérrel megfogva oldalra is húzhatod.
 - Az alsó **csúszkán** húzva nagyobbat ugorhatsz az időben; két oldalán
   a könyvtár első és utolsó dátuma áll.
 - A **Szóköz** vagy a lejátszás gomb az éppen látott mappa vagy album

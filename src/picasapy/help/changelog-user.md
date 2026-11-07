@@ -4,6 +4,36 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-07
+
+**Időrend**
+
+- Az összes mappa és album egyetlen íves, körhintaszerű pályán sorakozik,
+  és lapozáskor az egész sor elúszik. Az egér görgőjével és a kártyasor
+  oldalra húzásával is lapozhatsz.
+- A háttér a kiválasztott kártya első képének fakított, szürke változata,
+  éles, nagyobb felbontású forrásból; kártyaváltáskor átúszik az újba.
+  Lásd [Nézegetés](features/nezegetes.md).
+
+**Diavetítés**
+
+- Lejátszás közben eltűnik az egérmutató, szünetkor visszajön.
+- A vezérlősáv csak érezhető egérmozdulatra jön elő, és másfél másodperc
+  nyugalom után halványul el. Lásd [Nézegetés](features/nezegetes.md).
+
+**Szerkesztő**
+
+- A **Vetett árnyék** az eredeti Picasával egyező helyre teszi a képet.
+- A **Színjavítások** a Picasában beállított színhőmérsékletet és
+  semleges színt helyesen olvassa, és ugyanúgy is menti.
+
+**Könyvtár és mentés**
+
+- Az a mappa, amelyben nincs kép, csak egy album leírása, többé nem veszíti
+  el az albumot.
+- Ha mentés közben leáll a gép, megtelik a lemez vagy zárolt a fájl, nem
+  marad félig írt fájl.
+
 ## 2026-11-05
 
 **Képnéző**

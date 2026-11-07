@@ -2,6 +2,38 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-07
+
+### Timeline
+
+- All folders and albums sit on one curved, carousel-like track, and the
+  whole row glides along when you move. You can also use the mouse wheel
+  or drag the row of cards sideways.
+- The background is a faded, grey version of the selected card's first
+  photo, made from a sharper, larger source; it cross-fades when you change
+  cards. See [Viewing](features/nezegetes.md).
+
+### Slideshow
+
+- The mouse pointer is hidden while the slideshow plays and returns when
+  you pause.
+- The control bar appears only on a noticeable mouse movement and fades
+  out after a second and a half of stillness. See
+  [Viewing](features/nezegetes.md).
+
+### Editor
+
+- **Drop Shadow** places the photo where the original Picasa does.
+- **Color Fixes** reads the color temperature and neutral color set in
+  Picasa correctly, and saves them the same way.
+
+### Library and saving
+
+- A folder that holds no pictures, only an album definition, no longer
+  loses that album.
+- If the computer stops, the disk fills up or a file is locked while
+  saving, no half-written file is left behind.
+
 ## 2026-11-05
 
 ### Viewer
