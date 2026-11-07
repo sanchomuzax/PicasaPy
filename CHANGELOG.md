@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.68] - 2026-11-08
+
+- Index-írás sorosítva (#6518), gyorsbillentyű-próbák (#6531), Időrend- és billentyű-spec (#6532).
+- Index-írás sorosítva (#6518), gyorsbillentyű-próbák (#6531), Időrend- és billentyű-spec (#6660).
+- Csökkentjük az index adatbázis-sérülésének kockázatát az útvonalanként sorosított és időkorlátos írásokkal (#6518).
+- A gyorsbillentyű-leltár PicasaPy-próbahivatkozásokkal és valódi billentyűtesztekkel egészült ki (#6531).
+
 ## [1.0.67] - 2026-11-07
 
 - A golden- és a differenciális összevetés a Picasa-export JPEG-beállításaival (színfelbontás, kvantálótáblák) kódolja újra a saját renderet, így a JPEG-tömörítés nem mérődik szűrő-eltérésnek (#6585).
