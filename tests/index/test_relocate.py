@@ -93,6 +93,26 @@ class TestValidateDestination:
 
 
 class TestSuccessfulRelocation:
+    def test_database_copy_opens_the_wal_source_read_only(self, tmp_path, monkeypatch):
+        import picasapy.index.relocate as relocate_module
+
+        index_db, _cache_dir = _make_source(tmp_path, with_cache=False)
+        copied_db = tmp_path / "new-root" / "index.db"
+        original_connect = relocate_module._sqlite_connect
+        calls = []
+
+        def record_connect(database, *args, **kwargs):
+            calls.append((database, kwargs.copy()))
+            return original_connect(database, *args, **kwargs)
+
+        monkeypatch.setattr(relocate_module, "_sqlite_connect", record_connect)
+        relocate_module._copy_database(index_db, copied_db, None, None)
+
+        source_database, source_kwargs = calls[0]
+        assert str(source_database).startswith("file:")
+        assert "mode=ro" in str(source_database)
+        assert source_kwargs.get("uri") is True
+
     def test_moves_database_and_cache_and_removes_old(self, tmp_path):
         index_db, cache_dir = _make_source(tmp_path)
         new_root = tmp_path / "uj-hely"
