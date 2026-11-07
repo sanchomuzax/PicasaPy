@@ -625,7 +625,8 @@ def _jelentes(
     mutans_cache: dict[str, Any] = {}
     try:
         mutmut_api = importlib.import_module("mutmut.__main__")
-    except ImportError:
+    except (ImportError, SystemExit):
+        # natív Windowson a mutmut importja `sys.exit(1)`-gyel kilép (csak WSL alatt fut, #6652)
         mutmut_api = None
     for mutans in tulelok:
         csoportok[mutans["fajl"]].append(mutans)
