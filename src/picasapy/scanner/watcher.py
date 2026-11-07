@@ -36,11 +36,12 @@ class DirectoryChange:
     """Egy könyvtár létrehozása vagy törlése, külön szinkronmóddal (#5177).
 
     A létrehozás rekurzív szinkront kér az adott könyvtárra; a törlés csak
-    indexből törlést kér, lemezbejárás nélkül. Átnevezés két ilyen esemény.
+    indexből törlést kér, lemezbejárás nélkül. A `refresh` kérés a teljes
+    részfát inkrementális kihagyás nélkül egyezteti. Átnevezés két esemény.
     """
 
     path: str
-    action: Literal["created", "deleted"]
+    action: Literal["created", "deleted", "refresh"]
 
 
 def _relative_parts(path: PurePath, roots: tuple[str, ...]) -> tuple[str, ...]:

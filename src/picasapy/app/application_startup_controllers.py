@@ -25,6 +25,16 @@ class _DropFolderSelection(QObject):
 
     def add_folder(self, folder_path: str) -> None:
         self._controller.addWatchedFolder(folder_path)
+        self._select(folder_path)
+
+    def refresh_folder(self, folder_path: str) -> bool:
+        """Már ismert mappa: lemezalapú egyeztetés (#6658), majd kijelölés."""
+        if not self._controller.refreshDroppedFolder(folder_path):
+            return False
+        self._select(folder_path)
+        return True
+
+    def _select(self, folder_path: str) -> None:
         self._controller.selectFolder(folder_path)
         if not self._has_indexed_photo(folder_path):
             self._pending_paths.append(folder_path)
@@ -153,7 +163,8 @@ def _startup_step_create_edit_and_file_controllers(state):
     DropImportController = _app._lazy_app_symbol("DropImportController")
     drop_folder_selection = _DropFolderSelection(controller)
     drop_import_controller = DropImportController(
-        add_folder=drop_folder_selection.add_folder
+        add_folder=drop_folder_selection.add_folder,
+        refresh_folder=drop_folder_selection.refresh_folder,
     )
 
     # Mappakezelő fa-nézete (#231): a helyi fájlrendszer LUSTA, háttérszálas

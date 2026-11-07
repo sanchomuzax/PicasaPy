@@ -84,18 +84,29 @@ class DropImportController(QObject):
         self,
         add_folder: Callable[[str], None],
         parent: QObject | None = None,
+        *,
+        refresh_folder: Callable[[str], bool] | None = None,
     ) -> None:
         super().__init__(parent)
         self._add_folder = add_folder
+        self._refresh_folder = refresh_folder
 
     @Slot(list)
     def importDroppedUrls(self, urls: list) -> None:
         """A ráejtett elemek importja a meglévő `addWatchedFolder` úton
-        (ismételhetően; a duplikátum-szűrés ott történik). Az elutasított
-        elemekről a `dropRejected` ad hírt."""
+        (ismételhetően). Már ismert mappánál a `refresh_folder` kényszerített,
+        lemezalapú egyeztetést kér; ha a callback nem kezeli a mappát, az
+        `add_folder` veszi át. Az elutasított elemekről a `dropRejected` ad
+        hírt."""
         folders, rejected = folders_of_dropped_urls(urls)
         for folder in folders:
-            self._add_folder(folder)
+            refreshed = (
+                self._refresh_folder(folder)
+                if self._refresh_folder is not None
+                else False
+            )
+            if not refreshed:
+                self._add_folder(folder)
         if rejected:
             names = ", ".join(rejected[:3])
             if len(rejected) > 3:

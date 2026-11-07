@@ -171,20 +171,30 @@ class _LibraryFoldersMixin:
         excludes = self._folder_manager_excludes_for_root(root)
         if enabled_filetypes is _legacy()._FILETYPE_SNAPSHOT_UNSET:
             enabled_filetypes = getattr(self, "_filetype_scan_snapshot", None)
-        if not excludes:
-            kwargs = {"progress": progress}
+        forced_roots = getattr(self, "_forced_tree_sync_roots", set())
+        force_disk_read = target in forced_roots
+        try:
+            if not excludes:
+                kwargs = {"progress": progress}
+                if enabled_filetypes is not None:
+                    kwargs["enabled_filetypes"] = enabled_filetypes
+                if force_disk_read:
+                    kwargs["incremental"] = False
+                self._sync_tree(conn, target, **kwargs)
+                return
+            kwargs = {"exclude": excludes}
+            if progress is not None:
+                kwargs["progress"] = progress
             if enabled_filetypes is not None:
                 kwargs["enabled_filetypes"] = enabled_filetypes
-            self._sync_tree(conn, target, **kwargs)
-            return
-        kwargs = {"exclude": excludes}
-        if progress is not None:
-            kwargs["progress"] = progress
-        if enabled_filetypes is not None:
-            kwargs["enabled_filetypes"] = enabled_filetypes
-        from . import controller as controller_module
+            if force_disk_read:
+                kwargs["incremental"] = False
+            from . import controller as controller_module
 
-        controller_module.sync_tree(conn, target, **kwargs)
+            controller_module.sync_tree(conn, target, **kwargs)
+        finally:
+            if force_disk_read:
+                forced_roots.discard(target)
 
     def _find_root(self, path: str) -> str | None:
         """#507: a `path`-hoz tartozó, MÁR figyelt gyökér — `path_key`
