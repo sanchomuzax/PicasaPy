@@ -74,6 +74,40 @@ def test_az_ejszakai_futas_a_maggal_es_a_sorrendjelentovel_inditja_a_pluginet(
         run_tests._random_mag_argumentum(["--nightly-random-seed", "x"])
 
 
+@pytest.mark.parametrize(
+    ("kwargs", "kell"),
+    [
+        ({}, False),
+        ({"randomly_seed": 6590}, True),
+        ({"randomly_seed": 6590, "fixed_order": True,
+          "order_targets": {"tests/test_pelda.py::test_bukik"}}, True),
+    ],
+)
+def test_a_diagnosztikai_futas_kiirja_a_bukott_tesztek_nevet(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, kwargs: dict, kell: bool
+) -> None:
+    # A besorolás a `FAILED <nodeid>` összegzősorból olvas; a `-rs` csak a
+    # kihagyást írja ki, így az első éjszakai futás minden sorrendfüggést
+    # „nem azonosítható" tesztnévvel jelentett (#6590).
+    parancsok: list[list[str]] = []
+
+    class Eredmeny:
+        returncode = 0
+
+    def rogzit(parancs, **_kwargs):
+        parancsok.append(list(parancs))
+        return Eredmeny()
+
+    monkeypatch.setattr(run_tests, "_run", rogzit)
+    monkeypatch.setattr(run_tests, "_memoria_burok", lambda: [])
+
+    run_tests._run_pytest(
+        ["tests/test_pelda.py"], 30, cov=False, basetemp=tmp_path, **kwargs
+    )
+
+    assert ("-rfE" in parancsok[0]) is kell
+
+
 def test_a_visszatero_bukas_sorrendfugges_ingadozas_vagy_valodi_hiba_lehet() -> None:
     sorrendfuggo = {"tests/test_x.py::test_bukik"}
     ingadozo = {"tests/test_y.py::test_ingadozik"}
