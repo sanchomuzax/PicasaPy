@@ -1829,13 +1829,24 @@ def main(argv: list[str] | None = None) -> int:
         for arg in argv
         if arg.startswith("--mutmut-package=")
     ]
+    mutmut_mutansok = [
+        arg.partition("=")[2]
+        for arg in argv
+        if arg.startswith("--mutmut-mutant=")
+    ]
     if (
         len(mutmut_csomagok) > 1
-        or any(csomag not in {"all", "ini", "render"} for csomag in mutmut_csomagok)
+        or any(csomag not in {"all", "ini", "render", "render-sample"} for csomag in mutmut_csomagok)
         or any(arg == "--mutmut-package" for arg in argv)
         or (mutmut_csomagok and not mutmut)
+        or any(not nev for nev in mutmut_mutansok)
+        or any(arg == "--mutmut-mutant" for arg in argv)
+        or (mutmut_mutansok and not mutmut)
     ):
-        print("A --mutmut-package értéke all, ini vagy render lehet, és csak --mutmut mellett használható.")
+        print(
+            "A --mutmut-package értéke all, ini, render vagy render-sample lehet, "
+            "és csak --mutmut mellett használható."
+        )
         return 2
     if mutmut and ("--cov" in argv or _fajllista_argumentum(argv) is not None):
         print("A --mutmut nem kombinálható --cov vagy --fajllista kapcsolóval.")
@@ -1912,7 +1923,10 @@ def main(argv: list[str] | None = None) -> int:
     _jelold_a_futast(basetemp)
     try:
         if mutmut:
-            visszater = _futtat_mutmut(mutmut_csomagok[0] if mutmut_csomagok else None)
+            visszater = _futtat_mutmut(
+                mutmut_csomagok[0] if mutmut_csomagok else None,
+                mutmut_mutansok or None,
+            )
         else:
             visszater = _futtat(
                 cov, basetemp, sorszam=sorszam, darab=darab,
@@ -1928,12 +1942,16 @@ def main(argv: list[str] | None = None) -> int:
         _engedd_el_a_helyet(hely)
 
 
-def _futtat_mutmut(csomag: str | None = None) -> int:
+def _futtat_mutmut(
+    csomag: str | None = None, mutansok: Sequence[str] | None = None,
+) -> int:
     """Az éjszakai mutációs mérést ugyanazon kapun belül indítja (#6587)."""
     szkript = _ROOT / "scripts" / "mutation_testing.py"
     parancs = [*_memoria_burok(), sys.executable, str(szkript)]
     if csomag is not None:
         parancs.extend(["--package", csomag])
+    for mutans in mutansok or ():
+        parancs.extend(["--mutant", mutans])
     print("Mutációs mérés indul (egy mutánsfolyamat, a run_tests kapuján át).", flush=True)
     return _run(parancs, cwd=_ROOT, check=False).returncode
 
