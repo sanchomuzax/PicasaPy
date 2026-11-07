@@ -225,3 +225,6 @@ class TestTextActive:
     def test_serialize_round_trip(self) -> None:
         assert parse_text_active(serialize_text_active(True)) is True
         assert parse_text_active(serialize_text_active(False)) is False
+
+    def test_aktiv_allapot_a_picasa_egyes_kodjat_menti(self) -> None:
+        assert serialize_text_active(True) == "1"

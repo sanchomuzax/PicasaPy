@@ -120,6 +120,15 @@ class TestRoundTripNewKeys:
         assert "movieend=67890" in text
         assert "caption=teszt felirat" in text
 
+    def test_new_key_is_inserted_after_existing_keys_before_trailing_comment(self):
+        source = "[kep.jpg]\nfirst=one\nlast=two\n; megjegyzés\n"
+
+        updated = parse_document(source).with_value("kep.jpg", "added", "three")
+
+        assert updated.serialize() == (
+            "[kep.jpg]\nfirst=one\nlast=two\nadded=three\n; megjegyzés\n"
+        )
+
 
 class TestFileIoNewKeys:
     """A fájl-alapú betöltés/mentés (`load_document`/`save_document`) és az
