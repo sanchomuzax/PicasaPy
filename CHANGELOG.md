@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.62] - 2026-11-07
+
+- Az éjszakai sorrendmérés a bukott teszt nevét is kiírja, így a besorolás megnevezi a sorrendfüggést (#6590).
 ## [1.0.61] - 2026-11-07
 
 - Ha az arcfelismerés közben sérültnek látszik a képek nyilvántartása, a hibanapló a használt adatbázismotor verzióját is rögzíti, így az ok könnyebben kideríthető; a program működése nem változik (#6518).
