@@ -188,7 +188,8 @@ def test_egy_paranccsal_ujrafuttathato_a_generálas_helyi_render_es_osszevetes(
 
     assert _TOOL.main(args) == 0
     capsys.readouterr()
-    records = json.loads((output / "lancok.json").read_text(encoding="utf-8"))
+    manifest_data = json.loads((output / "lancok.json").read_text(encoding="utf-8"))
+    records = manifest_data["lancok"] if isinstance(manifest_data, dict) else manifest_data
     assert len(records) == 2
     local_rows = json.loads(
         (output / "sajat" / "futtatas.json").read_text(encoding="utf-8")
@@ -196,7 +197,7 @@ def test_egy_paranccsal_ujrafuttathato_a_generálas_helyi_render_es_osszevetes(
     assert all(row["allapot"] == "kész" for row in local_rows)
 
     for record in records:
-        source = output / "sajat" / f"{record['azonosito']}.jpg"
+        source = output / "sajat" / f"{record['azonosito']}.png"
         target = (
             original_dir
             / record["koteg"]
@@ -324,7 +325,7 @@ def test_osszevet_a_picasa_jpg_export_nevet_es_a_meglevo_golden_kuszobot_hasznal
 ) -> None:
     image = np.tile(np.arange(64, dtype=np.uint8), (48, 1))
     image = np.repeat(image[:, :, None], 3, axis=2)
-    own_path = tmp_path / "sajat" / "lanc-0001.jpg"
+    own_path = tmp_path / "sajat" / "lanc-0001.png"
     original_path = tmp_path / "eredeti" / "koteg-001" / "export__color_patches.jpg"
     _write_rgb(own_path, image)
     _write_rgb(original_path, image)
@@ -342,7 +343,7 @@ def test_osszevet_a_picasa_jpg_export_nevet_es_a_meglevo_golden_kuszobot_hasznal
     assert result["delta_e"] == pytest.approx(0.0)
 
 
-def test_sajat_a_katalogusbol_azonos_meretu_kepeket_jpg_be_renderel(
+def test_sajat_a_katalogusbol_azonos_meretu_kepeket_png_be_renderel(
     tmp_path: Path,
 ) -> None:
     record = {
@@ -367,10 +368,10 @@ def test_sajat_a_katalogusbol_azonos_meretu_kepeket_jpg_be_renderel(
 
     results = _TOOL.run_local(batch_dir, image_manifest=manifest, image_dir=image_dir)
 
-    output = batch_dir / "sajat" / "lanc-0001.jpg"
+    output = batch_dir / "sajat" / "lanc-0001.png"
     assert results[0]["allapot"] == "kész"
     assert output.is_file()
-    assert output.read_bytes().startswith(b"\xff\xd8")
+    assert output.read_bytes().startswith(b"\x89PNG")
     assert _TOOL._read_rgb(output).shape == image.shape
 
 
@@ -396,6 +397,7 @@ def test_sajat_kihagyja_a_hianyzot_vagy_meretben_eltet_kepeket(tmp_path: Path) -
     results = _TOOL.run_local(batch_dir, image_manifest=manifest, image_dir=image_dir)
 
     assert results[0]["allapot"] == "hiányzik vagy eltér a katalógusbeli kép" 
+    assert not (batch_dir / "sajat" / "lanc-0002.png").exists()
     assert not (batch_dir / "sajat" / "lanc-0002.jpg").exists()
     assert (batch_dir / "sajat" / "futtatas.json").is_file()
 
@@ -485,7 +487,7 @@ def test_az_eredeti_export_neve_a_vegrehajto_lapitasat_koveti(tmp_path: Path) ->
     for kep, varhato in (("color_patches.jpg", "export__color_patches.jpg"),
                          ("_026e.jpg", "export___026e.jpg"),
                          ("_026e.png", "export___026e.jpg")):
-        ut = _TOOL._original_image_path({"kep": kep, "koteg": "koteg-001"}, tmp_path)
+        ut = sys.modules["differencialis_lanc_osszevet"]._original_image_path({"kep": kep, "koteg": "koteg-001"}, tmp_path)
         assert ut == koteg / varhato
 
 
@@ -523,3 +525,177 @@ def test_az_egyetlen_menet_a_mintakeszletet_minden_colab_kotegbe_atadja(
     assert {record["mintakeszlet"] for record in records} == {"kombinalt"}
     for job_path in sorted(output.glob("koteg-*.job.json")):
         assert json.loads(job_path.read_text(encoding="utf-8"))["mintakeszlet"] == "kombinalt"
+
+
+def test_sajat_png_kimenetet_ad_es_az_osszevetes_png_t_olvas(tmp_path: Path) -> None:
+    manifest, image_dir = _synthetic_catalog(tmp_path, ("k01.jpg",))
+    batch_dir = tmp_path / "batch"
+    batch_dir.mkdir()
+    record = {
+        "azonosito": "lanc-0001",
+        "koteg": "koteg-001",
+        "kep": "k01.jpg",
+        "filters": "bw=1;",
+    }
+    _TOOL._write_json(batch_dir / "lancok.json", [record])
+    results = _TOOL.run_local(batch_dir, image_manifest=manifest, image_dir=image_dir)
+    assert results[0]["allapot"] == "kész"
+    png_out = batch_dir / "sajat" / "lanc-0001.png"
+    assert png_out.is_file()
+    assert png_out.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+    assert not (batch_dir / "sajat" / "lanc-0001.jpg").exists()
+
+    orig_dir = tmp_path / "eredeti"
+    orig_img = orig_dir / "koteg-001" / "export__k01.jpg"
+    orig_img.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(png_out, orig_img)
+    cmp_res = _TOOL.compare_record(record, batch_dir / "sajat", orig_dir)
+    assert cmp_res["egyezes"] == "egyezik"
+
+
+def test_kihagyott_szuro_eseten_helyi_hiba_itelet_szurokkel(tmp_path: Path) -> None:
+    manifest, image_dir = _synthetic_catalog(tmp_path, ("k01.jpg",))
+    batch_dir = tmp_path / "batch"
+    batch_dir.mkdir()
+    record = {
+        "azonosito": "lanc-0001",
+        "koteg": "koteg-001",
+        "kep": "k01.jpg",
+        "filters": "bw=1;",
+        "kihagyott": ["DropShadow"],
+    }
+    _TOOL._write_json(batch_dir / "lancok.json", [record])
+    _TOOL.run_local(batch_dir, image_manifest=manifest, image_dir=image_dir)
+
+    orig_dir = tmp_path / "eredeti"
+    orig_img = orig_dir / "koteg-001" / "export__k01.jpg"
+    orig_img.parent.mkdir(parents=True, exist_ok=True)
+    _write_rgb(orig_img, np.zeros((24, 32, 3), dtype=np.uint8))
+
+    cmp_res = _TOOL.compare_record(record, batch_dir / "sajat", orig_dir)
+    assert cmp_res["egyezes"] == "helyi hiba"
+    assert "DropShadow" in cmp_res["golden_itelet"] or "DropShadow" in cmp_res["megjegyzes"]
+
+
+def test_generalas_es_run_local_torli_a_korabbi_maradekokat(tmp_path: Path) -> None:
+    manifest, image_dir = _synthetic_catalog(tmp_path, ("k01.jpg",))
+    output = tmp_path / "batch"
+    output.mkdir()
+    (output / "koteg-999.ini").write_text("old ini", encoding="utf-8")
+    (output / "koteg-999.job.json").write_text("{}", encoding="utf-8")
+    (output / "minimal-old.json").write_text("[]", encoding="utf-8")
+    (output / "minimal-old.ini").write_text("old", encoding="utf-8")
+
+    _TOOL.generalize(
+        output,
+        seed=1,
+        count=1,
+        image_manifest=manifest,
+        image_dir=image_dir,
+        mintakeszlet="kombinalt",
+    )
+    assert not (output / "koteg-999.ini").exists()
+    assert not (output / "koteg-999.job.json").exists()
+    assert not (output / "minimal-old.json").exists()
+    assert not (output / "minimal-old.ini").exists()
+
+    sajat_dir = output / "sajat"
+    sajat_dir.mkdir(exist_ok=True)
+    stale_png = sajat_dir / "lanc-0002.png"
+    stale_png.write_bytes(b"old")
+    stale_jpg = sajat_dir / "lanc-0002.jpg"
+    stale_jpg.write_bytes(b"old")
+    record_missing = {
+        "azonosito": "lanc-0002",
+        "koteg": "koteg-001",
+        "kep": "nonexistent.jpg",
+        "filters": "bw=1;",
+    }
+    _TOOL._write_json(output / "lancok.json", [record_missing])
+    _TOOL.run_local(output, image_manifest=manifest, image_dir=image_dir)
+    assert not stale_png.exists()
+    assert not stale_jpg.exists()
+
+
+def test_meretmeres_es_render_azonos_beolvasast_hasznal(monkeypatch, tmp_path: Path) -> None:
+    calls = []
+    real_imdecode = cv2.imdecode
+
+    def tracked_imdecode(buf, flags):
+        calls.append(flags)
+        return real_imdecode(buf, flags)
+
+    monkeypatch.setattr(_TOOL.cv2, "imdecode", tracked_imdecode)
+    manifest, image_dir = _synthetic_catalog(tmp_path, ("k01.jpg",))
+    _TOOL._available_images(manifest, image_dir)
+    assert calls
+    assert all(flag == cv2.IMREAD_COLOR for flag in calls)
+
+
+def test_serult_vagy_ures_export_eseten_hibas_export_sor(tmp_path: Path) -> None:
+    own_dir = tmp_path / "sajat"
+    own_dir.mkdir()
+    (own_dir / "lanc-0001.png").write_bytes(b"")
+    orig_dir = tmp_path / "eredeti"
+    orig_img = orig_dir / "koteg-001" / "export__k01.jpg"
+    orig_img.parent.mkdir(parents=True, exist_ok=True)
+    orig_img.write_bytes(b"corrupt payload")
+
+    record = {
+        "azonosito": "lanc-0001",
+        "koteg": "koteg-001",
+        "kep": "k01.jpg",
+        "filters": "bw=1;",
+    }
+    result = _TOOL.compare_record(record, own_dir, orig_dir)
+    assert result["egyezes"] == "hibás export"
+    assert result["golden_itelet"] == "hibás export"
+
+
+def test_azonos_nevtorsz_kulonbozo_kiterjesztes_export_utkozes_kiszurve(tmp_path: Path) -> None:
+    manifest, image_dir = _synthetic_catalog(tmp_path, ("k01.jpg", "k01.png"))
+    available = _TOOL._available_images(manifest, image_dir)
+    assert len(available) == 1
+    assert "k01.jpg" in available
+    assert "k01.png" not in available
+
+
+def test_kihagyott_nevjegyzek_tetelek_stderr_kiirasa_es_kepek_a_lancok_jsonban(
+    tmp_path: Path, capsys
+) -> None:
+    manifest, image_dir = _synthetic_catalog(tmp_path, ("k01.jpg", "k01.png"))
+    output = tmp_path / "batch"
+    _TOOL.generalize(
+        output,
+        seed=1,
+        count=2,
+        image_manifest=manifest,
+        image_dir=image_dir,
+        mintakeszlet="kombinalt",
+    )
+    stderr = capsys.readouterr().err
+    assert "Kihagyott névjegyzék-tételek" in stderr
+    lancok_data = json.loads((output / "lancok.json").read_text(encoding="utf-8"))
+    assert isinstance(lancok_data, dict)
+    assert "kepek" in lancok_data
+    assert lancok_data["kepek"] == ["k01.jpg"]
+    assert "lancok" in lancok_data
+    assert len(lancok_data["lancok"]) == 2
+
+
+def test_ini_kiiras_mindig_newline_n_legyen(tmp_path: Path) -> None:
+    manifest, image_dir = _synthetic_catalog(tmp_path, ("k01.jpg",))
+    output = tmp_path / "batch"
+    _TOOL.generalize(
+        output,
+        seed=1,
+        count=1,
+        image_manifest=manifest,
+        image_dir=image_dir,
+        mintakeszlet="kombinalt",
+    )
+    ini_file = output / "koteg-001.ini"
+    raw_bytes = ini_file.read_bytes()
+    assert b"\r\n" not in raw_bytes
+    assert b"\n" in raw_bytes
+

@@ -23,8 +23,6 @@ Az eredeti exportok elvárt helye:
 from __future__ import annotations
 
 import argparse
-import csv
-import importlib.util
 import json
 from pathlib import Path
 import random
@@ -35,8 +33,17 @@ from typing import Any
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
 
-import numpy as np
+from differencialis_lanc_osszevet import (
+    _read_rgb,
+    _write_results,
+    _write_rgb,
+    compare_all,
+    compare_record,
+)
 
 from picasapy.app.effect_params import (
     format_param_values,
@@ -91,21 +98,6 @@ _GENERALHATO = tuple(
 )
 
 
-def _load_golden_comparator():
-    """Betölti a meglévő SSIM/ΔE- és küszöbmegvalósítást."""
-    path = _REPO_ROOT / "tools" / "golden" / "compare_render.py"
-    spec = importlib.util.spec_from_file_location("picasapy_golden_compare", path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Nem tölthető be a golden-összevető: {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules.setdefault(spec.name, module)
-    spec.loader.exec_module(module)
-    return module
-
-
-_GOLDEN = _load_golden_comparator()
-
-
 def _validate_ini(text: str) -> str:
     """A Colab figyelo_cella.py ini_ellenoriz() szabályának másolata."""
     if not isinstance(text, str) or not text.strip():
@@ -151,36 +143,82 @@ def _available_images(
         raise ValueError("A névjegyzék fajlok mezője nem lista")
 
     available: dict[str, tuple[int, int, int]] = {}
+    seen_stems: set[str] = set()
+    skipped: dict[str, int] = {}
+
     for row in rows:
         if not isinstance(row, dict):
+            skipped["nem szótár rekord"] = skipped.get("nem szótár rekord", 0) + 1
             continue
         name = row.get("nev")
         size = row.get("meret")
+        if not isinstance(name, str) or not name:
+            skipped["hiányzó vagy nem szöveges név"] = (
+                skipped.get("hiányzó vagy nem szöveges név", 0) + 1
+            )
+            continue
         if (
-            not isinstance(name, str)
-            or Path(name).name != name
+            Path(name).name != name
             or "/" in name
             or "\\" in name
             or ".." in name
-            or Path(name).suffix.casefold() not in _IMAGE_EXTENSIONS
             or not _INI_SZEKCIO_RE.fullmatch(f"[{name}]")
-            or isinstance(size, bool)
-            or not isinstance(size, int)
-            or size < 0
-            or name in available
         ):
+            skipped["érvénytelen fájlnév"] = skipped.get("érvénytelen fájlnév", 0) + 1
             continue
+        if Path(name).suffix.casefold() not in _IMAGE_EXTENSIONS:
+            skipped["nem támogatott kiterjesztés"] = (
+                skipped.get("nem támogatott kiterjesztés", 0) + 1
+            )
+            continue
+        if isinstance(size, bool) or not isinstance(size, int) or size < 0:
+            skipped["érvénytelen méret mező"] = (
+                skipped.get("érvénytelen méret mező", 0) + 1
+            )
+            continue
+
+        stem = Path(name).stem.casefold()
+        if stem in seen_stems or name in available:
+            skipped["ismétlődő vagy ütköző fájlnévtörzs"] = (
+                skipped.get("ismétlődő vagy ütköző fájlnévtörzs", 0) + 1
+            )
+            continue
+
         image_path = directory / name
         try:
-            if image_path.is_file() and image_path.stat().st_size == size:
-                payload = read_image_bytes(image_path)
-                image = None if payload is None else cv2.imdecode(
-                    payload, cv2.IMREAD_UNCHANGED
+            if not image_path.is_file():
+                skipped["hiányzó fájl a lemezen"] = (
+                    skipped.get("hiányzó fájl a lemezen", 0) + 1
                 )
-                if image is not None and image.ndim >= 2:
-                    available[name] = (size, int(image.shape[1]), int(image.shape[0]))
+                continue
+            if image_path.stat().st_size != size:
+                skipped["méreteltérés a lemezen"] = (
+                    skipped.get("méreteltérés a lemezen", 0) + 1
+                )
+                continue
+            payload = read_image_bytes(image_path)
+            image = None if payload is None else cv2.imdecode(
+                payload, cv2.IMREAD_COLOR
+            )
+            if image is not None and image.ndim >= 2:
+                available[name] = (size, int(image.shape[1]), int(image.shape[0]))
+                seen_stems.add(stem)
+            else:
+                skipped["nem dekódolható kép"] = (
+                    skipped.get("nem dekódolható kép", 0) + 1
+                )
         except OSError:
+            skipped["olvasási hiba a lemezen"] = (
+                skipped.get("olvasási hiba a lemezen", 0) + 1
+            )
             continue
+
+    if skipped:
+        total = sum(skipped.values())
+        sys.stderr.write(f"Kihagyott névjegyzék-tételek ({total} db):\n")
+        for reason, count in sorted(skipped.items()):
+            sys.stderr.write(f"  - {reason}: {count} db\n")
+
     return available
 
 
@@ -253,12 +291,13 @@ def generate_chains(
 
 def _ini_for_records(records: list[dict[str, Any]]) -> str:
     lines: list[str] = []
-    seen_images: set[str] = set()
+    seen_stems: set[str] = set()
     for record in records:
         image_name = record["kep"]
-        if image_name in seen_images:
-            raise ValueError(f"A kötegben ismétlődik a kép: {image_name}")
-        seen_images.add(image_name)
+        stem = Path(image_name).stem.casefold()
+        if stem in seen_stems:
+            raise ValueError(f"A kötegben ismétlődik a kép-névtörzs: {image_name}")
+        seen_stems.add(stem)
         lines.extend((f"[{image_name}]", f"filters={record['filters']}", ""))
     if not lines:
         raise ValueError("Üres köteg nem írható ki")
@@ -276,10 +315,6 @@ def _ini_fits(records: list[dict[str, Any]]) -> bool:
     )
 
 
-# A végrehajtó a `picasa_ini_be`-t a már futó, a mestermásolatot beindexelt Picasa
-# mappájába írja; a Picasa a már ismert képekre nem olvassa újra (job-379: `sepia=1` a
-# `color_patches.jpg`-n sem hatott). A mintakészlet képei csak az ini után kerülnek a
-# mappába, ezért azokra az ini hat (job-230, #5398).
 MINTAKESZLETEK = ("arcos", "kombinalt", "idorend")
 
 
@@ -323,6 +358,12 @@ def generalize(
         raise ValueError(f"Ismeretlen mintakészlet: {mintakeszlet!r}")
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
+
+    for pattern in ("koteg-*.ini", "koteg-*.job.json", "minimal-*", "lancok.json"):
+        for path in output.glob(pattern):
+            if path.is_file():
+                path.unlink()
+
     available = _available_images(image_manifest, image_dir)
     if not available:
         raise ValueError("A névjegyzékben nincs helyben meglévő, méretazonos támogatott kép")
@@ -337,18 +378,19 @@ def generalize(
     )
     packed_batches: list[list[dict[str, Any]]] = []
     current: list[dict[str, Any]] = []
-    current_images: set[str] = set()
+    current_stems: set[str] = set()
     for record in records:
-        would_repeat = record["kep"] in current_images
+        stem = Path(record["kep"]).stem.casefold()
+        would_repeat = stem in current_stems
         would_overflow = bool(current) and not _ini_fits([*current, record])
         if would_repeat or would_overflow:
             packed_batches.append(current)
             current = []
-            current_images = set()
+            current_stems = set()
         if not _ini_fits([*current, record]):
             raise ValueError("Egy szűrőlánc önmagában túllépi a Colab INI-korlátját")
         current.append(record)
-        current_images.add(record["kep"])
+        current_stems.add(stem)
     if current:
         packed_batches.append(current)
 
@@ -359,32 +401,16 @@ def generalize(
             if mintakeszlet is not None:
                 record["mintakeszlet"] = mintakeszlet
         text = _ini_for_records(batch_records)
-        (output / f"{batch_name}.ini").write_text(text, encoding="utf-8")
+        (output / f"{batch_name}.ini").write_text(text, encoding="utf-8", newline="\n")
         _write_json(output / f"{batch_name}.job.json", _capture_job(batch_name, text, mintakeszlet))
-    _write_json(output / "lancok.json", records)
-    return records
-
-
-def _read_rgb(path: Path) -> np.ndarray:
-    payload = read_image_bytes(path)
-    image = None if payload is None else cv2.imdecode(payload, cv2.IMREAD_COLOR)
-    if image is None:
-        raise ValueError(f"A kép nem olvasható: {path}")
-    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-
-def _write_rgb(path: Path, image: np.ndarray) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    extension = path.suffix.casefold()
-    if extension not in {".jpg", ".jpeg", ".png"}:
-        raise ValueError(f"Nem támogatott kimeneti képformátum: {path.suffix}")
-    params = [cv2.IMWRITE_JPEG_QUALITY, 95] if extension in {".jpg", ".jpeg"} else []
-    success, encoded = cv2.imencode(
-        extension, cv2.cvtColor(image, cv2.COLOR_RGB2BGR), params
+    _write_json(
+        output / "lancok.json",
+        {
+            "kepek": sorted(available.keys()),
+            "lancok": records,
+        },
     )
-    if not success:
-        raise ValueError(f"A renderelt kép nem kódolható: {path}")
-    path.write_bytes(encoded.tobytes())
+    return records
 
 
 def _load_records(batch_dir: Path | str) -> list[dict[str, Any]]:
@@ -392,13 +418,20 @@ def _load_records(batch_dir: Path | str) -> list[dict[str, Any]]:
     manifest = root / "lancok.json"
     if not manifest.is_file():
         raise ValueError(f"Nem található a láncjegyzék: {manifest}")
-    records = json.loads(manifest.read_text(encoding="utf-8"))
-    if not isinstance(records, list):
-        raise ValueError("A lancok.json gyökere nem lista")
+    content = json.loads(manifest.read_text(encoding="utf-8"))
+    if isinstance(content, dict):
+        records = list(content.get("lancok", []))
+    elif isinstance(content, list):
+        records = list(content)
+    else:
+        raise ValueError("A lancok.json gyökere nem lista vagy szótár")
     for candidates_path in sorted(root.glob("minimal-*.json")):
-        candidates = json.loads(candidates_path.read_text(encoding="utf-8"))
-        if isinstance(candidates, list):
-            records.extend(candidates)
+        try:
+            candidates = json.loads(candidates_path.read_text(encoding="utf-8"))
+            if isinstance(candidates, list):
+                records.extend(candidates)
+        except (OSError, json.JSONDecodeError):
+            continue
     return records
 
 
@@ -421,11 +454,15 @@ def run_local(
         source_path = input_dir / record["kep"] if record["kep"] in available else None
         if source_path is None:
             result["allapot"] = "hiányzik vagy eltér a katalógusbeli kép"
+            for ext in (".png", ".jpg"):
+                old_file = output_dir / f"{record['azonosito']}{ext}"
+                if old_file.is_file():
+                    old_file.unlink()
             results.append(result)
             continue
         image = _read_rgb(source_path)
         report = apply_filters(image, parse_filters(record["filters"]))
-        output_path = output_dir / f"{record['azonosito']}.jpg"
+        output_path = output_dir / f"{record['azonosito']}.png"
         _write_rgb(output_path, report.image)
         result["kimenet"] = output_path.relative_to(root).as_posix()
         result["kihagyott"] = list(report.skipped)
@@ -434,102 +471,6 @@ def run_local(
         results.append(result)
     _write_json(output_dir / "futtatas.json", results)
     return results
-
-
-def _original_image_path(record: dict[str, Any], root: Path) -> Path:
-    filename = f"export__{Path(record['kep']).stem}.jpg"
-    batch_dir = root / record["koteg"]
-    direct = batch_dir / filename
-    if direct.is_file():
-        return direct
-    nested = sorted(batch_dir.rglob(filename)) if batch_dir.is_dir() else []
-    return nested[0] if len(nested) == 1 else direct
-
-
-def compare_record(
-    record: dict[str, Any], own_root: Path | str, original_root: Path | str
-) -> dict[str, Any]:
-    """Egy PicasaPy/Picasa exportpárt a golden küszöbeivel mér össze."""
-    local_path = Path(own_root) / f"{record['azonosito']}.jpg"
-    original_path = _original_image_path(record, Path(original_root))
-    row: dict[str, Any] = {
-        "azonosito": record["azonosito"],
-        "koteg": record["koteg"],
-        "kep": record["kep"],
-        "filters": record["filters"],
-        "ssim": None,
-        "delta_e": None,
-        "egyezes": "hiányzik",
-        "golden_itelet": "hiányzik",
-        "megjegyzes": "",
-    }
-    missing = [str(path) for path in (local_path, original_path) if not path.is_file()]
-    if missing:
-        row["megjegyzes"] = "Hiányzó kimenet: " + ", ".join(missing)
-        return row
-
-    own_image = _read_rgb(local_path)
-    original_image = _read_rgb(original_path)
-    thresholds = _GOLDEN.Thresholds()
-    verdict, metrics, note = _GOLDEN.compare_images(
-        own_image, original_image, thresholds
-    )
-    row.update(
-        {
-            "ssim": metrics.get("ssim"),
-            "delta_e": metrics.get("delta_e_mean"),
-            "egyezes": "egyezik" if verdict in {"pixelhű", "közelítés"} else "eltér",
-            "golden_itelet": verdict,
-            "megjegyzes": note,
-        }
-    )
-    return row
-
-
-def _write_results(output_dir: Path, rows: list[dict[str, Any]]) -> None:
-    csv_path = output_dir / "eredmeny.csv"
-    fields = (
-        "azonosito",
-        "koteg",
-        "kep",
-        "filters",
-        "ssim",
-        "delta_e",
-        "egyezes",
-        "golden_itelet",
-        "megjegyzes",
-    )
-    with csv_path.open("w", encoding="utf-8", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=fields)
-        writer.writeheader()
-        writer.writerows(rows)
-
-    lines = [
-        "# Differenciális szűrőlánc-összevetés",
-        "",
-        "Mérce: `tools/golden/compare_render.py`, `Thresholds()` és `compare_images()`.",
-        "Az `egyezik` a meglévő `pixelhű` vagy `közelítés` ítéletet jelenti.",
-        "",
-        "| Lánc | Köteg | Kép | filters= | SSIM | ΔE átlag | Eredmény |",
-        "|---|---|---|---|---:|---:|---|",
-    ]
-    for row in rows:
-        ssim = "—" if row["ssim"] is None else f"{row['ssim']:.5f}"
-        delta_e = "—" if row["delta_e"] is None else f"{row['delta_e']:.3f}"
-        lines.append(
-            f"| {row['azonosito']} | {row['koteg']} | {row['kep']} | "
-            f"`{row['filters']}` | {ssim} | {delta_e} | {row['egyezes']} |"
-        )
-    (output_dir / "eredmeny.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-
-def compare_all(batch_dir: Path | str, original_dir: Path | str) -> list[dict[str, Any]]:
-    """Minden kezdeti és minimalizáló jelöltet riportba hasonlít."""
-    root = Path(batch_dir)
-    records = _load_records(root)
-    rows = [compare_record(record, root / "sajat", original_dir) for record in records]
-    _write_results(root, rows)
-    return rows
 
 
 def run_campaign(
@@ -658,7 +599,7 @@ def minimize(batch_dir: Path | str, chain_id: str) -> list[dict[str, Any]]:
     for candidate in candidates:
         ini_text = _ini_for_records([candidate])
         (root / f"{candidate['azonosito']}.ini").write_text(
-            ini_text, encoding="utf-8"
+            ini_text, encoding="utf-8", newline="\n"
         )
         _write_json(
             root / f"{candidate['azonosito']}.job.json",
@@ -760,11 +701,13 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 matched = sum(row["egyezes"] == "egyezik" for row in comparisons)
                 different = sum(row["egyezes"] == "eltér" for row in comparisons)
-                missing = len(comparisons) - matched - different
+                local_error = sum(row["egyezes"] == "helyi hiba" for row in comparisons)
+                corrupt = sum(row["egyezes"] == "hibás export" for row in comparisons)
+                missing = sum(row["egyezes"] == "hiányzik" for row in comparisons)
                 print(
                     f"Összevetés: {matched}/{len(comparisons)} egyezik, "
-                    f"{different} eltér, {missing} hiányzik; eredmeny.md és "
-                    f"eredmeny.csv: {args.ki}"
+                    f"{different} eltér, {local_error} helyi hiba, {corrupt} hibás export, "
+                    f"{missing} hiányzik; eredmeny.md és eredmeny.csv: {args.ki}"
                 )
         elif args.command == "sajat":
             results = run_local(
@@ -782,9 +725,12 @@ def main(argv: list[str] | None = None) -> int:
             rows = compare_all(args.be, args.eredeti)
             matched = sum(row["egyezes"] == "egyezik" for row in rows)
             different = sum(row["egyezes"] == "eltér" for row in rows)
-            missing = len(rows) - matched - different
+            local_error = sum(row["egyezes"] == "helyi hiba" for row in rows)
+            corrupt = sum(row["egyezes"] == "hibás export" for row in rows)
+            missing = sum(row["egyezes"] == "hiányzik" for row in rows)
             print(
                 f"{len(rows)} sor: egyezik={matched}, eltér={different}, "
+                f"helyi hiba={local_error}, hibás export={corrupt}, "
                 f"hiányzik={missing}; eredmeny.md és eredmeny.csv: {args.be}"
             )
         else:
