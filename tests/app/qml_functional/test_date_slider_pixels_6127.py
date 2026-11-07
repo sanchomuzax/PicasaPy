@@ -9,9 +9,10 @@ from PySide6.QtCore import QPoint, QPointF, QRect
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
 
+from tests.app.qml_functional.conftest import _build_qml_app
+
 
 _MAGASSAGOK = (695, 700, 705)
-_ELSO_KEPEK: dict[int, bytes] = {}
 
 
 def _item(window, object_name: str) -> QQuickItem:
@@ -75,22 +76,51 @@ def _fogantyu_kep(window, slider: QQuickItem, qt_app, magassag: int) -> bytes:
     return bytes(crop.constBits())
 
 
+@pytest.fixture(scope="module")
+def _elso_felepites_kepei(
+    qt_app,
+    tmp_path_factory,
+    request,
+    _module_qml_warnings,
+    _module_user_folder_guard,
+) -> dict[int, bytes]:
+    """A modul minden magasság első képét külön, friss appból méri meg."""
+    kepek: dict[int, bytes] = {}
+    for magassag in _MAGASSAGOK:
+        app = _build_qml_app(
+            qt_app,
+            tmp_path_factory.mktemp(f"date-slider-{magassag}"),
+            keep_modul=request.module,
+        )
+        window, _, _engine = next(app)
+        try:
+            slider = _item(window, "dateRangeFilterSlider")
+            kepek[magassag] = _fogantyu_kep(
+                window, slider, qt_app, magassag
+            )
+        finally:
+            try:
+                next(app)
+            except StopIteration:
+                pass
+    return kepek
+
+
 @pytest.mark.parametrize("magassag", _MAGASSAGOK)
-def test_a_fogantyu_kepe_elso_felepitesben(qml_app, qt_app, magassag: int) -> None:
-    window, _, _engine = qml_app
-    slider = _item(window, "dateRangeFilterSlider")
-    _ELSO_KEPEK[magassag] = _fogantyu_kep(window, slider, qt_app, magassag)
+def test_a_fogantyu_kepe_elso_felepitesben(
+    _elso_felepites_kepei: dict[int, bytes], magassag: int
+) -> None:
+    assert _elso_felepites_kepei[magassag], "az első fogantyúkép mérése üres"
 
 
 @pytest.mark.parametrize("magassag", _MAGASSAGOK)
 def test_a_fogantyu_kepe_azonos_kulon_felepitesben(
-    qml_app, qt_app, magassag: int
+    qml_app, qt_app, _elso_felepites_kepei: dict[int, bytes], magassag: int
 ) -> None:
     window, _, _engine = qml_app
     slider = _item(window, "dateRangeFilterSlider")
     masodik = _fogantyu_kep(window, slider, qt_app, magassag)
-    assert magassag in _ELSO_KEPEK, "az első képfelépítés mérése hiányzik"
-    assert masodik == _ELSO_KEPEK[magassag], (
+    assert masodik == _elso_felepites_kepei[magassag], (
         f"a dátumcsúszka fogantyújának képe eltér két külön felépítés között "
         f"({magassag}px ablakmagasságnál, value=0, visualPosition=0)"
     )

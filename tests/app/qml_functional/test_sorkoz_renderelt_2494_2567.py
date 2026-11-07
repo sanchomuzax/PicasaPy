@@ -159,6 +159,29 @@ def _panel_nezet(qt_app):
     yield view, root, qt_app
 
 
+@pytest.fixture(autouse=True)
+def _kozos_nezet_visszaallitasa(_panel_nezet):
+    """A modulszintű nézeten átírt tulajdonságok a teszt végén visszaállnak.
+
+    A sorközteszt kikapcsolja a gomb rögzített magasságát, a többiek a
+    feliratokat írják át; visszaállítás nélkül az utánuk futó teszt a
+    padlómagasságú gombot mérte (#6642)."""
+    view, root, qt_app = _panel_nezet
+    panel = _child(root, "panel")
+    gomb = _child(root, "editUndoButton")
+    csempe = _child(root, "editToolAutocolor")
+    eredeti = (
+        gomb.property("rogzitettMagassag"),
+        panel.property("undoLabel"),
+        csempe.property("label"),
+    )
+    yield
+    gomb.setProperty("rogzitettMagassag", eredeti[0])
+    panel.setProperty("undoLabel", eredeti[1])
+    csempe.setProperty("label", eredeti[2])
+    _var_a_kirajzolasra(view, qt_app)
+
+
 def _szurkekep(view: QQuickView) -> tuple[np.ndarray, float]:
     """A kirajzolt ablak szürkeárnyalatos képe és a képpont-arány."""
     kep = view.grabWindow().convertToFormat(QImage.Format.Format_Grayscale8)
