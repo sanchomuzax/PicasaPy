@@ -18,7 +18,7 @@ from typing import Callable
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from picasapy.pmpimport.remap import PathRemapper
+from picasapy.pmpimport.remap import alapertelmezett_lekepezes
 from picasapy.scanner import discover_installations, propose_watched_folders
 
 from .worker_thread import BackgroundWorkerMixin
@@ -29,7 +29,7 @@ from .worker_thread import BackgroundWorkerMixin
 # helyi (Linux) útvonalak, csak Z:\ előtaggal. Más eredetű (pl. NAS-ra
 # másolt, más gépről származó) telepítéseknél ez az alapértelmezés nem fog
 # illeszkedni — ott a dialógus kézi tallózás gombja a tartalék út.
-_DEFAULT_REMAP = PathRemapper.from_dict({"Z:\\": "/"})
+
 
 
 class DiscoveryController(BackgroundWorkerMixin, QObject):
@@ -122,7 +122,7 @@ class DiscoveryController(BackgroundWorkerMixin, QObject):
         proposed: list[str] = []
         seen: set[str] = set()
         for installation in installations:
-            for path in propose_watched_folders(installation, _DEFAULT_REMAP):
+            for path in propose_watched_folders(installation, alapertelmezett_lekepezes()):
                 text = str(path)
                 if text not in seen:
                     seen.add(text)

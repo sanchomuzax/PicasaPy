@@ -9,7 +9,11 @@ ismételjük meg: könyvtár Ctrl+N/M/O/3/K és F2 (#1616, #1615, #1633,
 Ez a fájl a hiányzó könyvtári Ctrl+4 és az állóképes néző Space útját
 próbálja valódi Qt-billentyűeseménnyel, látható nézetváltással. A §3.3
 korábbi billentyűpróbáiból kimaradt Ctrl+A/D, Ctrl+R/Shift+R, Ctrl+S és
-Ctrl+Shift+S látható műveleteit is itt ellenőrizzük.
+Ctrl+Shift+S látható műveleteit is itt ellenőrizzük. A #6531 kiegészítések
+a könyvtári Ctrl+F-et is valódi leütéssel mérik. Más fájlokban már megvan
+a Ctrl+Enter (#4631), Ctrl+1/2 (#5150_l), Ctrl+5 (#5377), Ctrl+9 negatív
+könyvtárnézeti próbája (#4696), a Ctrl+F6/7/8 és a tükrözés (#5150_n),
+valamint a projektlap Ctrl+←/→ próbája (#2170); ezeket nem ismételjük.
 """
 
 from __future__ import annotations
@@ -36,6 +40,22 @@ def _aktiv_ablak(window, qt_app, magassag_eltolas: int) -> None:
     window.show()
     window.requestActivate()
     assert _varj(qt_app, lambda: window.isActive()), "a főablak nem aktiválódott"
+
+
+def test_konyvtar_ctrl_f_a_keresomezore_viszi_a_fokuszt(qml_app, qt_app):
+    window, _controller, _engine = qml_app
+    _aktiv_ablak(window, qt_app, 0)
+    racs = _objektum(window, "folderListView")
+    keresomezo = _objektum(window, "searchField")
+    racs.forceActiveFocus()
+    assert _varj(qt_app, lambda: racs.property("activeFocus") is True)
+    assert keresomezo.property("activeFocus") is False
+
+    QTest.keyClick(window, Qt.Key.Key_F, Qt.KeyboardModifier.ControlModifier)
+
+    assert _varj(
+        qt_app, lambda: keresomezo.property("activeFocus") is True
+    ), "a könyvtári Ctrl+F nem vitte a fókuszt a keresőmezőre"
 
 
 @pytest.mark.parametrize("magassag_eltolas", [-5, 0, 5])

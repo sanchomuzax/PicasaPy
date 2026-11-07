@@ -57,6 +57,12 @@ Window {
         importWindow.kihagyott = 0
         importWindow.videodatum = 0
         importWindow.videodatumHiba = 0
+        // #6656: a Picasa adatmappáját nem a felhasználónak kell megkeresnie
+        if (sourceFolderField.text.trim().length === 0
+                && typeof picasaImportController !== "undefined"
+                && picasaImportController
+                && typeof picasaImportController.detectedDataFolder === "function")
+            sourceFolderField.text = picasaImportController.detectedDataFolder()
         importWindow.visible = true
     }
 
@@ -70,16 +76,10 @@ Window {
         importWindow.nothingFound = false
         importWindow.lastError = ""
         if (sourceFolderField.text.trim().length > 0) {
-            if (drivePrefixField.text.trim().length === 0
-                    || localPrefixField.text.trim().length === 0) {
-                importWindow.lastError = qsTr(
-                    "Enter both paths for the drive mapping.")
-                return
-            }
+            // #6656: útvonal-átírást nem kérünk a felhasználótól; a vezérlő a
+            // platform alapértelmezését használja
             picasaImportController.startManualImport(
-                sourceFolderField.text.trim(),
-                drivePrefixField.text.trim(),
-                localPrefixField.text.trim())
+                sourceFolderField.text.trim(), "", "")
         } else {
             picasaImportController.startImport()
         }
@@ -150,44 +150,6 @@ Window {
                 objectName: "picasaImportBrowseButton"
                 text: qsTr("Browse...")
                 onClicked: sourceFolderDialog.open()
-            }
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 8
-            Label {
-                text: qsTr("Windows path prefix")
-                Layout.preferredWidth: 145
-                color: Theme.ink
-            }
-            TextField {
-                id: drivePrefixField
-                objectName: "picasaImportDrivePrefixField"
-                Layout.fillWidth: true
-                text: "Z:\\"
-                placeholderText: qsTr("For example, C:/Pictures")
-                selectByMouse: true
-                TextFieldContextArea {}
-            }
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 8
-            Label {
-                text: qsTr("Matching local folder")
-                Layout.preferredWidth: 145
-                color: Theme.ink
-            }
-            TextField {
-                id: localPrefixField
-                objectName: "picasaImportLocalPrefixField"
-                Layout.fillWidth: true
-                text: "/"
-                placeholderText: qsTr("For example, /home/user/Pictures")
-                selectByMouse: true
-                TextFieldContextArea {}
             }
         }
 

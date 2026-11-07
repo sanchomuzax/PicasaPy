@@ -46,14 +46,18 @@ import numpy as np
 # A tools/ nincs a pythonpath-on — a repo src/-ét kézzel vesszük fel, hogy a
 # szkript közvetlenül (python3 tools/golden/compare_render.py) is fusson.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+_TOOL_DIR = Path(__file__).resolve().parent
 if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
+if str(_TOOL_DIR) not in sys.path:
+    sys.path.insert(0, str(_TOOL_DIR))
 
 from picasapy.cvimage import read_image_bytes  # noqa: E402
 from picasapy.ini.filters import FilterOp, parse_filters, parse_filters_prefix  # noqa: E402
 from picasapy.render import apply_filters  # noqa: E402
 from picasapy.render.curves import apply_lut, lut_ramp, validate_image  # noqa: E402
 from picasapy.render.tone import apply_neutral_pipette, parse_neutral_argb  # noqa: E402
+from jpeg_reference import encode_like_reference  # noqa: E402
 
 #: Az ítéletek rögzített sorrendje (súlyosság szerint).
 VERDICTS = ("pixelhű", "közelítés", "eltér", "hiányzik")
@@ -220,6 +224,9 @@ class GoldenLuts:
         return bool(self.fill2d or self.hs or self.temp)
 
 
+_EMPTY_GOLDEN_LUTS = GoldenLuts()
+
+
 def _parse_temp_key(key: str) -> float:
     """A "tm100"/"tp025" kulcs előjeles színhő-értékké (−1,0 / +0,25)."""
     sign = -1.0 if key[1] == "m" else 1.0
@@ -271,7 +278,7 @@ def _interpolate_curve_family(
     points = [(0.0, lut_ramp())] + [(s, family[s]) for s in knots]
     if strength <= points[0][0]:
         return points[0][1]
-    for (s0, lut0), (s1, lut1) in zip(points, points[1:]):
+    for (s0, lut0), (s1, lut1) in zip(points, points[1:], strict=False):
         if strength <= s1:
             weight = (strength - s0) / (s1 - s0)
             return (1.0 - weight) * lut0 + weight * lut1
@@ -456,14 +463,21 @@ def compare_pair(
     filters_value: str,
     golden_path: Path | str,
     thresholds: Thresholds,
-    luts: GoldenLuts = GoldenLuts(),
+    luts: GoldenLuts = _EMPTY_GOLDEN_LUTS,
     name: str | None = None,
 ) -> ComparisonResult:
-    """Egyetlen pár: eredeti kép + filters-lánc renderelve vs Picasa-export."""
+    """Egyetlen pár: eredeti kép + filters-lánc renderelve vs Picasa-export.
+
+    JPEG referencia esetén a renderelt képet a referencia mintavételezésével
+    és kvantálótábláival kódoljuk újra, így a JPEG chroma-subsampling nem lesz
+    szűrő-eltérésnek mérve (#6585).
+    """
     original = _read_rgb(Path(original_path))
-    golden = _read_rgb(Path(golden_path))
+    reference_path = Path(golden_path)
+    golden = _read_rgb(reference_path)
     ops = parse_filters_prefix(filters_value)  # #4942: mint az export
     rendered, skipped, lut_ops = render_chain(original, ops, luts)
+    rendered = encode_like_reference(rendered, reference_path)
     result_verdict, metrics, note = compare_images(rendered, golden, thresholds)
     return ComparisonResult(
         name=name or Path(original_path).name,

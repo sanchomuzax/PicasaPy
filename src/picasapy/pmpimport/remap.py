@@ -10,6 +10,7 @@ fájlrendszere is az), a leghosszabb egyező prefix nyer.
 from __future__ import annotations
 
 import re
+import sys
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import PurePosixPath, PureWindowsPath
@@ -28,11 +29,20 @@ def _cel_ut(target_prefix: str) -> PurePosixPath | PureWindowsPath:
     return PurePosixPath(target_prefix)
 
 
+
+def _platform() -> str:
+    """A futó platform: cserélhető fogantyú (#1217), hogy a windowsos ág Linuxon is mérhető legyen."""
+    return sys.platform
+
+
 @dataclass(frozen=True)
 class PathRemapper:
     """Prefix-leképezések: Windows-útvonal-előtag → helyi (POSIX) előtag."""
 
     mappings: tuple[tuple[str, str], ...]
+    #: #6656: átírás nélküli mód. Windowson, ugyanazon a gépen a db3 útvonalai
+    #: már a helyi útvonalak; a Wine-os `Z:\ → /` leképezés mindet kiejtené.
+    azonos: bool = False
 
     @cached_property
     def _folded_prefixes(self) -> tuple[tuple[tuple[str, ...], str], ...]:
@@ -42,6 +52,11 @@ class PathRemapper:
             parts = _to_slashes(source).split("/")
             prefixes.append((tuple(part.casefold() for part in parts), target))
         return tuple(prefixes)
+
+    @classmethod
+    def azonos_lekepezes(cls) -> PathRemapper:
+        """Minden útvonalat változatlanul (windowsos alakban) visszaadó leképező (#6656)."""
+        return cls(mappings=(), azonos=True)
 
     @classmethod
     def from_dict(cls, mappings: dict[str, str]) -> PathRemapper:
@@ -55,6 +70,12 @@ class PathRemapper:
         # egyes karaktereknél hosszváltozással jár (pl. ß→ss), ezért a
         # foldolt prefix HOSSZA nem használható levágási határnak az
         # eredeti (nem foldolt) útvonalon: elcsúsztatná a maradékot
+        if self.azonos:
+            # meghajtóbetűs útvonal windowsos alakban; a meghajtó nélküli (pl. a
+            # tesztek helyi) útvonal perjeles alakban
+            if _MEGHAJTO.match(windows_path):
+                return str(PureWindowsPath(windows_path))
+            return str(PurePosixPath(windows_path.replace("\\", "/")))
         parts = tuple(_to_slashes(windows_path).split("/"))
         folded_parts = tuple(part.casefold() for part in parts)
         for folded_prefix_parts, target_prefix in self._folded_prefixes:
@@ -76,3 +97,17 @@ class PathRemapper:
 def _to_slashes(path: str) -> str:
     """Windows-útvonal / határolós, záró-perjel nélküli alakja."""
     return str(PureWindowsPath(path)).replace("\\", "/").rstrip("/")
+
+
+def alapertelmezett_lekepezes() -> PathRemapper:
+    """Az automatikus import útvonal-leképezése.
+
+    Linuxon a Wine `Z:\\` meghajtója a helyi gyökeret tükrözi. Windowson
+    (#6656) ugyanazon a gépen a db3 útvonalai már helyiek: átírás nélkül
+    kell átvenni őket, különben mind kiesik („0 mappa frissült”). Más
+    eredetű (NAS-ra másolt) telepítésnél a leképezés nem illeszkedik, ilyenkor
+    a rekordok kimaradnak, és a jelentés nullát mond, nem hazudik sikert.
+    """
+    if _platform() == "win32":
+        return PathRemapper.azonos_lekepezes()
+    return PathRemapper.from_dict({"Z:\\": "/"})

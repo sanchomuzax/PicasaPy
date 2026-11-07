@@ -141,11 +141,19 @@ _KET_LAP = (
     '[{ "id": "collage", "title": "Collage", "modified": false },'
     ' { "id": "movie", "title": "Movie", "modified": false }]'
 )
+_MENTETLEN_LAP = '[{ "id": "collage", "title": "Collage", "modified": true }]'
 
 
 @pytest.fixture()
 def sav(qt_app):
     view, root = _view(qt_app, _harness_qml(_KET_LAP), 900, 260)
+    strip = _child(root, "documentTabStrip")
+    yield view, strip, qt_app
+
+
+@pytest.fixture()
+def mentetlen_sav(qt_app):
+    view, root = _view(qt_app, _harness_qml(_MENTETLEN_LAP), 900, 260)
     strip = _child(root, "documentTabStrip")
     yield view, strip, qt_app
 
@@ -208,6 +216,52 @@ class TestABillentyuLANCA:
         assert _wait_for(qt_app, lambda: _aktiv(strip) == "movie"), (
             f"a Ctrl+← nem lépett az utolsó lapra (aktív: {_aktiv(strip)})"
         )
+
+    def test_a_ctrl_tab_valodi_billentyuvel_a_kovetkezo_lapra_lep(self, sav):
+        view, strip, qt_app = sav
+        assert _wait_for(qt_app, view.isActive), "az ablak nem aktiválódott"
+
+        QTest.keyClick(
+            view, Qt.Key.Key_Tab, Qt.KeyboardModifier.ControlModifier
+        )
+
+        assert _wait_for(qt_app, lambda: _aktiv(strip) == "collage"), (
+            f"a Ctrl+Tab nem váltott a következő lapra (aktív: {_aktiv(strip)})"
+        )
+
+    def test_a_ctrl_shift_tab_valodi_billentyuvel_az_elozo_lapra_lep(self, sav):
+        view, strip, qt_app = sav
+        assert _wait_for(qt_app, view.isActive), "az ablak nem aktiválódott"
+
+        QTest.keyClick(
+            view,
+            Qt.Key.Key_Tab,
+            Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier,
+        )
+
+        assert _wait_for(qt_app, lambda: _aktiv(strip) == "movie"), (
+            f"a Ctrl+Shift+Tab nem váltott az előző lapra (aktív: {_aktiv(strip)})"
+        )
+
+    def test_a_ctrl_w_valodi_billentyuvel_megerositest_ker(self, mentetlen_sav):
+        view, strip, qt_app = mentetlen_sav
+        assert _wait_for(qt_app, view.isActive), "az ablak nem aktiválódott"
+        assert _aktiv(strip) == "library"
+
+        QTest.keyClick(
+            view, Qt.Key.Key_Tab, Qt.KeyboardModifier.ControlModifier
+        )
+        assert _wait_for(qt_app, lambda: _aktiv(strip) == "collage")
+
+        QTest.keyClick(
+            view, Qt.Key.Key_W, Qt.KeyboardModifier.ControlModifier
+        )
+
+        close_dialog = _child(strip, "documentTabCloseConfirm")
+        assert _wait_for(qt_app, lambda: close_dialog.property("visible") is True), (
+            "a Ctrl+W nem nyitotta meg a módosított lap bezárási kérdését"
+        )
+        assert close_dialog.property("pendingTabId") == "collage"
 
 
 # ----------------------------------------------------------------------

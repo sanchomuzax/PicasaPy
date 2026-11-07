@@ -198,28 +198,3 @@ jobs:
             ${{ runner.temp }}/frissites-kepek
             ${{ runner.temp }}/frissites/diagnosztika
           if-no-files-found: warn
-
-  kep-a-kiadasba:
-    needs: frissites
-    if: github.event_name == 'workflow_run' && needs.frissites.result == 'success'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      actions: read
-    steps:
-      - name: Az első önfrissítési próba ablakának letöltése
-        uses: actions/download-artifact@v4
-        with:
-          name: frissites-valodi-ut-1
-          path: ${{ runner.temp }}/frissites-valodi-ut-1
-
-      - name: A frissítési ablak képének csatolása a kiadáshoz
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          kep="$RUNNER_TEMP/frissites-valodi-ut-1/frissites-kepek/05b-frissites-folyamatban-ablak.png"
-          test -s "$kep" || { echo "::error::A frissítési ablak képe hiányzik."; exit 1; }
-          tag="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)"
-          gh release upload "$tag" "$kep#PicasaPy-frissitesi-folyamat.png" \
-            --repo "$GITHUB_REPOSITORY" --clobber

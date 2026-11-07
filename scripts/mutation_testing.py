@@ -34,6 +34,9 @@ from typing import Any
 _ROOT = Path(__file__).resolve().parents[1]
 _PYTHON_EXECUTABLE = sys.executable
 _MUTMUT_PATH_LOOKUP = shutil.which
+#: cserélhető fogantyú (#1375): a teszt ezt írja át, nem a globális importlibet
+_import_module = importlib.import_module
+
 _SCRATCH = _ROOT / ".tmp" / "picasapy-mutmut"
 _PROJECT = _SCRATCH / "project"
 _REPORT = _SCRATCH / "report.md"
@@ -624,7 +627,7 @@ def _jelentes(
     forras_cache: dict[str, tuple[str, ast.Module]] = {}
     mutans_cache: dict[str, Any] = {}
     try:
-        mutmut_api = importlib.import_module("mutmut.__main__")
+        mutmut_api = _import_module("mutmut.__main__")
     except (ImportError, SystemExit):
         # natív Windowson a mutmut importja `sys.exit(1)`-gyel kilép (csak WSL alatt fut, #6652)
         mutmut_api = None

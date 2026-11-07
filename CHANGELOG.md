@@ -7,6 +7,17 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.67] - 2026-11-07
+
+- A golden- és a differenciális összevetés a Picasa-export JPEG-beállításaival (színfelbontás, kvantálótáblák) kódolja újra a saját renderet, így a JPEG-tömörítés nem mérődik szűrő-eltérésnek (#6585).
+- A windowsos önfrissítési próba képe nem kerül többé a kiadás fájljai közé; a kép a próba futásának mellékletében marad (#6662).
+
+## [1.0.66] - 2026-11-07
+
+- Éjszakai tesztsorrend-mérés kézzel is indítható megadott maggal (#6590).
+- A mutációs mérő jelentéskészítője Windowson sem állítja le a folyamatot (#6652).
+- Import a Picasából: a párbeszéd magától megtalálja a Picasa adatmappáját (Windowson is), az útvonal-átíró mezők megszűntek, és Windowson ugyanazon a gépen átírás nélkül jönnek át a mappák; eddig 0 mappa jött át (#6656).
+
 ## [1.0.65] - 2026-11-07
 
 - Időrend: a háttérkép adatútja binárisból igazolva (spec 38.2.99) (#6532).

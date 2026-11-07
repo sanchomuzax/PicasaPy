@@ -12,6 +12,7 @@ from PySide6.QtTest import QTest
 
 import picasapy.app as app_package
 from picasapy.app.picasa_import_controller import PicasaImportController
+from picasapy.pmpimport.remap import alapertelmezett_lekepezes
 from tests.support.pmp_factory import build_pmp_column, build_thumb_index
 
 _APP_DIR = Path(app_package.__file__).parent
@@ -56,12 +57,12 @@ def _szoveget_beallit(window, field, value: str, qt_app) -> None:
     qt_app.processEvents()
 
 
-def _minta_db3(db3: Path) -> None:
+def _minta_db3(db3: Path, kepmappa: str = r"C:\Users\felhasznalo\Pictures") -> None:
     db3.mkdir()
     (db3 / "thumbindex.db").write_bytes(
         build_thumb_index(
             [
-                (r"C:\Users\anna\Pictures", None),
+                (kepmappa, None),
                 ("IMG_0001.jpg", 0),
             ]
         )
@@ -75,9 +76,15 @@ def test_kattintassal_importal_kezzel_valasztott_mappabol_es_terkepezessel(
     qt_app, tmp_path
 ):
     db3 = tmp_path / "kézzel választott Picasa2"
-    _minta_db3(db3)
     helyi_kepek = tmp_path / "saját képek"
     helyi_kepek.mkdir()
+    # #6656: útvonal-átíró mező nincs. Windowson a Picasa-útvonal változatlanul
+    # érvényes, Linuxon a Wine `Z:\` meghajtója a gyökér.
+    if alapertelmezett_lekepezes().azonos:
+        kepmappa = str(helyi_kepek)
+    else:
+        kepmappa = "Z:" + str(helyi_kepek).replace("/", "\\")
+    _minta_db3(db3, kepmappa)
     (helyi_kepek / "IMG_0001.jpg").write_bytes(b"minta")
 
     engine = QQmlEngine()
@@ -101,14 +108,12 @@ def test_kattintassal_importal_kezzel_valasztott_mappabol_es_terkepezessel(
         qt_app.processEvents()
         eredeti_magassag = window.height()
         source = _elem(window, "picasaImportSourceFolderField")
-        drive = _elem(window, "picasaImportDrivePrefixField")
-        local = _elem(window, "picasaImportLocalPrefixField")
         import_button = _elem(window, "picasaImportStartButton")
 
         for eltolas in (-5, 0, 5):
             window.resize(window.width(), eredeti_magassag + eltolas)
             qt_app.processEvents()
-            for item in (source, drive, local, import_button):
+            for item in (source, import_button):
                 assert item.property("visible") is True, (
                     f"{item.objectName()} nem látszik {eltolas:+} px ablakmagasságnál"
                 )
@@ -148,8 +153,6 @@ def test_kattintassal_importal_kezzel_valasztott_mappabol_es_terkepezessel(
             "a kiválasztott Picasa2 mappa nem került a mezőbe",
         )
 
-        _szoveget_beallit(window, drive, r"C:\Users\anna\Pictures", qt_app)
-        _szoveget_beallit(window, local, str(helyi_kepek), qt_app)
         _kattint(window, import_button, qt_app)
         _varj(
             qt_app,
