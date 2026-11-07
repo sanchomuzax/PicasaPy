@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.63] - 2026-11-07
+
+- A Mozgófilm bezárási tesztje a megosztott fordítóktól függetlenül indul (#6639).
+- A jobb fiók címketesztjei visszaállítják a közösen használt képek címkéit (#6640).
+- A dátumcsúszka képtesztje már véletlen sorrendben is önállóan méri az első felépítést (#6641).
+- A Visszavonás-gomb renderelt tesztjei a közös nézet átírt tulajdonságait visszaállítják, így véletlen sorrendben is zöldek (#6642).
+
 ## [1.0.62] - 2026-11-07
 
 - Az éjszakai sorrendmérés a bukott teszt nevét is kiírja, így a besorolás megnevezi a sorrendfüggést (#6590).
