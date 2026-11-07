@@ -192,6 +192,8 @@ class TestDatabaseErrorDiagnostics:
         assert "index.db=" in messages and "-wal=" in messages and "-shm=" in messages
         assert "bájt" in messages
         assert "picasapy-face-scan" in messages
+        # #6518: a WAL-reset SQLite-hiba verziófüggő, a naplóból látszódjon a verzió.
+        assert f"SQLite {sqlite3.sqlite_version}" in messages
         assert str(db_path) not in messages
         assert "private-user-name" not in messages
 
