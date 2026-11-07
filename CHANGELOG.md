@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.65] - 2026-11-07
+
+- Időrend: a háttérkép adatútja binárisból igazolva (spec 38.2.99) (#6532).
+- Ismételhető véletlen szűrőláncok és gépi összevetés az eredeti Picasa-exportokkal, veszteségmentes saját renderrel (#6585).
+- A mutációs mérő két párhuzamos gyermekkel fut, és túlélő mutánsokra célzott újramérést támogat (#6587).
+
 ## [1.0.64] - 2026-11-07
 
 - Az arckeresés adatbázishiba-naplója még a kapcsolat lezárása előtt rögzíti az SQLite naplózási módját és az indexfájlok állapotát (#6518).
