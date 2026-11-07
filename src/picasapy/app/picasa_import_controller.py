@@ -45,7 +45,7 @@ from picasapy.pmpimport.db3_atvetel import (
     videodatumokat_atvesz,
 )
 from picasapy.pmpimport.importer import Db3Beolvasas, beolvas_db3
-from picasapy.pmpimport.remap import PathRemapper
+from picasapy.pmpimport.remap import PathRemapper, alapertelmezett_lekepezes
 from picasapy.scanner import discover_installations
 
 from .index_writer_queue import IndexWriterQueue
@@ -53,11 +53,6 @@ from .worker_thread import BackgroundWorkerMixin
 
 _log = logging.getLogger(__name__)
 
-#: Ugyanaz az alapértelmezett leképezés, amit a `DiscoveryController` használ:
-#: a Wine `Z:\` meghajtója a helyi gyökeret tükrözi. Más eredetű (NAS-ra
-#: másolt) telepítésnél ez nem illeszkedik — akkor a rekordok kimaradnak, és
-#: a jelentés nullát mond, nem hazudik sikert.
-_ALAP_REMAP = PathRemapper.from_dict({"Z:\\": "/"})
 _MANUAL_SOURCE_REQUIRED = "picasapy-manual-source-required"
 _MANUAL_MAPPING_REQUIRED = "picasapy-manual-mapping-required"
 
@@ -113,7 +108,7 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
         self._felderito = felderito or discover_installations
         self._olvaso = olvaso or beolvas_db3
         self._atvevo = atvevo or rekordokat_atvesz
-        self._remapper = remapper or _ALAP_REMAP
+        self._remapper = remapper or alapertelmezett_lekepezes()
         self._jelszo_olvaso = jelszo_olvaso or _read_hidden_password_hash
         self._running = False
 
@@ -145,6 +140,13 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
                 utak.append(Path(db3))
         return tuple(utak)
 
+    @Slot(result=str)
+    def detectedDataFolder(self) -> str:
+        """Az első felismert Picasa-adatmappa (#6656): a párbeszéd ezzel tölti
+        ki magától a mezőt, hogy a felhasználónak ne kelljen keresnie."""
+        utak = self._db3_konyvtarak()
+        return str(utak[0]) if utak else ""
+
     @Slot()
     def startImport(self) -> None:
         """Az átvétel elindítása — a menüpont ezt hívja.
@@ -166,13 +168,14 @@ class PicasaImportController(BackgroundWorkerMixin, QObject):
         if not konyvtar:
             self.importFailed.emit(_MANUAL_SOURCE_REQUIRED)
             return
-        if not forras or not cel:
+        if bool(forras) != bool(cel):
             self.importFailed.emit(_MANUAL_MAPPING_REQUIRED)
             return
-        self._start_import(
-            db3_konyvtar=Path(konyvtar),
-            remapper=PathRemapper.from_dict({forras: cel}),
-        )
+        # #6656: leképezés nélkül a platform alapértelmezése (Windowson átírás
+        # nélkül, Linuxon a Wine `Z:\\` meghajtója); a felhasználónak nem kell tudnia
+        remapper = (PathRemapper.from_dict({forras: cel}) if forras
+                    else alapertelmezett_lekepezes())
+        self._start_import(db3_konyvtar=Path(konyvtar), remapper=remapper)
 
     def _befejez(self, jelentes: AtvetelJelentes) -> None:
         self.importFinished.emit(

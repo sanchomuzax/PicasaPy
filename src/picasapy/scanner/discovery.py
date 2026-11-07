@@ -24,6 +24,7 @@ ez a modul csak *javaslatot* ad, fájlt nem ír).
 from __future__ import annotations
 
 import os
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -43,6 +44,12 @@ _WINE_APPDATA_RELATIVE_DIRS = (
     "AppData/Local",
     "Local Settings/Application Data",
 )
+
+
+
+def _platform() -> str:
+    """A futó platform: cserélhető fogantyú (#1217), hogy a windowsos ág Linuxon is mérhető legyen."""
+    return sys.platform
 
 
 @dataclass(frozen=True)
@@ -207,6 +214,7 @@ def discover_installations(
     home: str | Path | None = None,
     wineprefix: str | Path | None = None,
     windows_old: str | Path | None = None,
+    localappdata: str | Path | None = None,
 ) -> tuple[PicasaInstallation, ...]:
     """Meglévő Picasa-telepítések felderítése.
 
@@ -222,6 +230,18 @@ def discover_installations(
         Path(wineprefix)
         if wineprefix is not None
         else (Path(os.environ["WINEPREFIX"]) if os.environ.get("WINEPREFIX") else None)
+    )
+
+    # #6656: a natív windowsos Picasa a `%LOCALAPPDATA%\\Google\\Picasa2`-ben él;
+    # eddig csak a Wine-os helyeket néztük, így Windowson semmit nem találtunk
+    resolved_localappdata = (
+        Path(localappdata)
+        if localappdata is not None
+        else (
+            Path(os.environ["LOCALAPPDATA"])
+            if _platform() == "win32" and os.environ.get("LOCALAPPDATA")
+            else None
+        )
     )
 
     results: list[PicasaInstallation] = []
@@ -240,6 +260,9 @@ def discover_installations(
                 return
             seen.add(key)
         results.append(installation)
+
+    if resolved_localappdata is not None:
+        _add(_installation_from_appdata("Windows", resolved_localappdata))
 
     for label, appdata in _wine_appdata_candidates(resolved_home, resolved_wineprefix):
         _add(_installation_from_appdata(label, appdata))
