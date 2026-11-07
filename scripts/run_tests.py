@@ -1241,7 +1241,8 @@ def _run_pytest(
     if randomly_seed is not None and not fixed_order:
         pytest_args.extend(["-p", "randomly", "--randomly-seed", str(randomly_seed)])
     if randomly_seed is not None or order_targets:
-        pytest_args.extend(["-p", "scripts.pytest_random_order"])
+        # a besorolás a `FAILED <nodeid>` sorból olvas; a `-rs` ezt nem írja ki
+        pytest_args.extend(["-rfE", "-p", "scripts.pytest_random_order"])
     pytest_args.extend(args)
     if cov:
         command = [sys.executable, "-m", "coverage", "run", "-p", *pytest_args]
