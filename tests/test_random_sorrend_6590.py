@@ -214,6 +214,25 @@ def test_a_pytest_randomly_a_dev_extraban_es_a_schedule_magbekotesevel_szerepel(
     assert "--nightly-random-seed" in reusable
 
 
+def test_a_kezi_magbemenet_kikapcsolva_marad_alapbol_es_eljut_a_darabokhoz() -> None:
+    ci = (_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+    dispatch = ci[ci.index("  workflow_dispatch:"):ci.index("  schedule:")]
+    magbemenet = dispatch[dispatch.index("      random_seed:"):]
+    assert 'default: ""' in magbemenet
+    assert "required: false" in magbemenet
+    assert "type: string" in magbemenet
+
+    valtozas = ci[ci.index("  valtozas:"):ci.index("  darabok-ubuntu:")]
+    assert "inputs.random_seed" in valtozas
+    assert "github.event_name == 'workflow_dispatch'" in valtozas
+
+    ubuntu = ci[ci.index("  darabok-ubuntu:"):ci.index("  darabok-windows:")]
+    windows = ci[ci.index("  darabok-windows:"):ci.index("  docs-orok:")]
+    assert "random_seed: ${{ needs.valtozas.outputs.random_seed }}" in ubuntu
+    assert "random_seed: ${{ needs.valtozas.outputs.random_seed }}" in windows
+
+
 def test_a_csupasz_pytest_hivas_nem_kever() -> None:
     """A pytest-randomly csak a futtató kifejezett `-p randomly`-jával fut."""
     import tomllib
