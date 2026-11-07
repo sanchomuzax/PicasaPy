@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.60] - 2026-11-07
+
+- A filmkészítő előnézetének egyik belső tesztje a lassabb windowsos gépen is kivárja az első előnézet elkészülését; a program működése nem változik (#6621).
+
 ## [1.0.59] - 2026-11-06
 
 - Kilépéskor a program előbb bevárja a háttérben futó képbetöltéseket, és csak utána szabadítja fel a képszolgáltatókat, így ezek nem okozhatnak összeomlást (#6625).
