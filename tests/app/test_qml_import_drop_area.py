@@ -1,13 +1,25 @@
 """#237: az ImportDropArea komponens — drop → kontroller-híd + visszajelzés.
 
-Önállóan betöltve (a Main.qml gyökerére helyezés az integrátoré). A valódi
-asztali drag-and-drop eseményt offscreen nem lehet előállítani, ezért a
-DropArea onDropped-ja egy külön submitUrls() függvényre vezet, és a teszt
-azt hívja közvetlenül.
+Önállóan betöltve (a Main.qml gyökerére helyezés az integrátoré). Az önálló
+komponenspróbák a submitUrls() átadást közvetlenül mérik; a főablakos próba
+Qt drag-enter/move/drop eseménysort küld egy külső képfájlra.
 """
 
+from pathlib import Path
+
 import pytest
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import (
+    QCoreApplication,
+    QMimeData,
+    QObject,
+    QPoint,
+    QPointF,
+    QUrl,
+    Qt,
+    Signal,
+    Slot,
+)
+from PySide6.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
 
 
 class FakeDropController(QObject):
@@ -55,6 +67,24 @@ def _invoke_submit(area, urls) -> None:
     assert ok, "a submitUrls() nem hívható"
 
 
+def _drop_external_file(window, path) -> bool:
+    """A Qt külső fájl-húzásának eseménysorát küldi a főablaknak."""
+    mime_data = QMimeData()
+    mime_data.setUrls([QUrl.fromLocalFile(str(path))])
+    point = QPoint(round(window.width() / 2), round(window.height() / 2))
+    buttons = Qt.MouseButton.LeftButton
+    modifiers = Qt.KeyboardModifier.NoModifier
+    enter = QDragEnterEvent(point, Qt.DropAction.CopyAction, mime_data, buttons, modifiers)
+    QCoreApplication.sendEvent(window, enter)
+    move = QDragMoveEvent(point, Qt.DropAction.CopyAction, mime_data, buttons, modifiers)
+    QCoreApplication.sendEvent(window, move)
+    drop = QDropEvent(
+        QPointF(point), Qt.DropAction.CopyAction, mime_data, buttons, modifiers
+    )
+    QCoreApplication.sendEvent(window, drop)
+    return drop.isAccepted()
+
+
 class TestImportDropArea:
     def test_forwards_urls_to_controller(self, drop_area):
         area, fake, qt_app = drop_area
@@ -95,6 +125,83 @@ class TestMainWiring:
         _invoke_submit(area, [(extra / "c.jpg").as_uri()])
         qt_app.processEvents()
         assert str(extra) in list(controller.watchedFolders)
+
+    @pytest.mark.parametrize("height_delta", (-5, 0, 5))
+    def test_drop_selects_imported_folder_after_its_photo_is_indexed(
+        self, qml_app, qt_app, tmp_path, height_delta, monkeypatch
+    ):
+        from threading import Event
+
+        from support.jpeg_factory import make_jpeg
+        from support.qt_wait import varj_feltetelre
+
+        window, controller, library, _engine = qml_app
+        window.setHeight(window.height() + height_delta)
+        qt_app.processEvents()
+        folder_pane = window.findChild(QObject, "folderPane")
+        photo_grid = window.findChild(QObject, "photoGrid")
+        assert folder_pane is not None, "folderPane nem található"
+        assert photo_grid is not None, "photoGrid nem található"
+
+        previous_folder = str(library)
+        controller.selectFolder(previous_folder)
+        qt_app.processEvents()
+        assert controller.currentFolder == previous_folder
+        assert folder_pane.property("selectedPath") == previous_folder
+        assert varj_feltetelre(
+            qt_app,
+            lambda: Path(str(photo_grid.property("anchorPath")))
+            == Path(previous_folder),
+        ), "a próba kezdő rácsnézete nem állt be a korábbi mappára"
+
+        extra = tmp_path / "ejtett"
+        extra.mkdir()
+        photo = extra / "c.jpg"
+        make_jpeg(photo, size=(64, 64))
+
+        scan_started = Event()
+        scan_may_continue = Event()
+        original_sync = controller._sync_folder_manager_tree
+
+        def wait_for_release(conn, root, **kwargs):
+            if Path(root) == extra:
+                scan_started.set()
+                if not scan_may_continue.wait(10):
+                    raise TimeoutError("a próba nem engedte tovább a mappaszkennelést")
+            return original_sync(conn, root, **kwargs)
+
+        monkeypatch.setattr(controller, "_sync_folder_manager_tree", wait_for_release)
+
+        def photo_indexed():
+            return any(
+                controller.photos.filePathAt(row) == str(photo)
+                for row in range(controller.photos.rowCount())
+            )
+
+        try:
+            assert _drop_external_file(window, photo), (
+                "a főablak nem fogadta el a külső képfájl-húzást"
+            )
+            assert scan_started.wait(10), "az új mappa szkennelése nem indult el"
+            assert Path(controller.currentFolder) == extra
+            assert not photo_indexed(), "a teszt szkennelési kapuja nem fogta meg a munkát"
+        finally:
+            scan_may_continue.set()
+
+        assert varj_feltetelre(qt_app, photo_indexed), (
+            "a behúzott kép nem került be az indexbe"
+        )
+        assert varj_feltetelre(
+            qt_app,
+            lambda: Path(str(photo_grid.property("anchorPath"))) == extra,
+            masodperc=10.0,
+        ), "a rács nem ugrott a behúzott kép csoportjára a szkennelés után"
+        assert Path(controller.currentFolder) == extra, (
+            "a szkennelés után a korábban nézett mappa maradt kijelölve"
+        )
+        assert Path(str(folder_pane.property("selectedPath"))) == extra, (
+            "a bal sáv nem a behúzott kép mappáját jelöli ki"
+        )
 
 
 _BELSO_HUZAS_QML = b"""

@@ -4,13 +4,50 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+from pathlib import Path
 
-from PySide6.QtCore import QSettings, Qt
+from PySide6.QtCore import QObject, QSettings, Qt, Slot
 
 from picasapy.index import open_index
 from . import application as _app
 from .application_services import wire_dedup, wire_fileops
 from .startup_maintenance import StartupMaintenance, StartupMaintenanceStep
+
+
+class _DropFolderSelection(QObject):
+    """A behúzott mappát kijelöli, majd a friss feedben újra odaugrik."""
+
+    def __init__(self, controller: QObject) -> None:
+        super().__init__(controller)
+        self._controller = controller
+        self._pending_paths: list[str] = []
+        controller.feedChanged.connect(self._select_after_feed_refresh)
+
+    def add_folder(self, folder_path: str) -> None:
+        self._controller.addWatchedFolder(folder_path)
+        self._controller.selectFolder(folder_path)
+        if not self._has_indexed_photo(folder_path):
+            self._pending_paths.append(folder_path)
+
+    @Slot()
+    def _select_after_feed_refresh(self) -> None:
+        ready = [
+            path for path in self._pending_paths if self._has_indexed_photo(path)
+        ]
+        if not ready:
+            return
+        self._pending_paths = [
+            path for path in self._pending_paths if path not in ready
+        ]
+        self._controller.selectFolder(ready[-1])
+
+    def _has_indexed_photo(self, folder_path: str) -> bool:
+        root = Path(folder_path)
+        return any(
+            Path(photo.folder_path).is_relative_to(root)
+            for photo in self._controller.photos.photos
+        )
+
 
 def _startup_step_create_edit_and_file_controllers(state):
     controller = state.controller
@@ -111,10 +148,12 @@ def _startup_step_create_edit_and_file_controllers(state):
     )
 
     # kép/mappa ablakra ejtése (#237): a kép mappája (vagy maga a mappa)
-    # figyelt gyökér lesz — az ImportDropArea.qml hídja
+    # figyelt gyökér lesz, és kijelölődik. Az új feed frissülése után a
+    # híd ismét jelez, hogy a rács a már betöltött mappacsoporthoz ugorjon.
     DropImportController = _app._lazy_app_symbol("DropImportController")
+    drop_folder_selection = _DropFolderSelection(controller)
     drop_import_controller = DropImportController(
-        add_folder=controller.addWatchedFolder
+        add_folder=drop_folder_selection.add_folder
     )
 
     # Mappakezelő fa-nézete (#231): a helyi fájlrendszer LUSTA, háttérszálas

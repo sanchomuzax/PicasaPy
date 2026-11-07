@@ -237,8 +237,11 @@ def _build_qml_app(qt_app, tmp_path):
     app_module.wire_fileops(fileops_controller, controller)
     discovery_controller = DiscoveryController(add_folder=controller.addWatchedFolder)
     # kép/mappa ablakra ejtése (#237) — az application.py bekötésének tükre
+    from picasapy.app.application_startup_controllers import _DropFolderSelection
+
+    drop_folder_selection = _DropFolderSelection(controller)
     drop_import_controller = DropImportController(
-        add_folder=controller.addWatchedFolder
+        add_folder=drop_folder_selection.add_folder
     )
     folder_tree_controller = FolderTreeController()
     # Duplikátum-kezelő (#287) — az application.py bekötésének tükre
