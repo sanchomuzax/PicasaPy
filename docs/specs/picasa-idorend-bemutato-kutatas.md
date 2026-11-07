@@ -1622,7 +1622,7 @@ A `+0x648` a `0x007fb210` betöltőben készül: a `layer:overlays/overlay` erő
 
 **Következmény a névleges alapértékre.** Ha a futás a konstruktor `T=3` alapértékét és a `SimpleSlideshow=1` alapértékét használja, a `1,5`-ös skálázás miatt a görbe bemenete 1-nél telítődik, amikor `t=2` másodperc. Ez a binárisból feltételesen levezetett clamp-idő; nem a job-373 futásidejű Preferences-értéke és nem a videón mért látható átmenet időtartama.
 
-**Videó és PicasaPy.** A korábbi job-373 képkockamérés 1,400, illetve 1,467 másodperces látható képcserét rögzített (38.2.85, 226–247. és 344–366. képkocka). Ezek a látható változásablakok nem rögzítik a Picasa futásidejű `SlideshowEffectTime` vagy `SimpleSlideshow` értékét, és nem mérik a `+0x520`-hoz viszonyított belső progressziót. A helyi `meroadat.tar`-ban nincs job-373 videótag, ezért ebben a körben képkockánként újramérés nem készült.
+**Videó és PicasaPy.** A korábbi job-373 képkockamérés 1,400, illetve 1,467 másodperces látható képcserét rögzített (38.2.85, 226-247. és 344-366. képkocka). Ezek a látható változásablakok nem rögzítik a Picasa futásidejű `SlideshowEffectTime` vagy `SimpleSlideshow` értékét, és nem mérik a `+0x520`-hoz viszonyított belső progressziót. A helyi `meroadat.tar`-ban nincs job-373 videótag, ezért ebben a körben képkockánként újramérés nem készült.
 
 | Eredeti Picasa | PicasaPy-forrás (nem futásidejű mérés) | Teendő |
 |---|---|---|
