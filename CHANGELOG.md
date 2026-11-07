@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.64] - 2026-11-07
+
+- Az arckeresés adatbázishiba-naplója még a kapcsolat lezárása előtt rögzíti az SQLite naplózási módját és az indexfájlok állapotát (#6518).
+
 ## [1.0.63] - 2026-11-07
 
 - A Mozgófilm bezárási tesztje a megosztott fordítóktól függetlenül indul (#6639).
