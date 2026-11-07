@@ -135,6 +135,13 @@ def _varj(qt_app, condition, seconds=10.0):
     return var_feltetelre(qt_app, condition, seconds)
 
 
+def _allit_angol_felhasznaloi_feluletet(qt_app, engine):
+    """A teszt fordítóktól függetlenül az angol menüfeliratokkal induljon."""
+    for translator in qt_app.findChildren(QTranslator):
+        qt_app.removeTranslator(translator)
+    engine.retranslate()
+
+
 def _movie_menu_kattintas(window, qt_app):
     menu_bar = window.property("menuBar")
     create_menu = _megnyit(menu_bar, qt_app, "&Create")
@@ -244,6 +251,8 @@ def test_a_mozgofilmkeszito_foablaklap_es_minden_bezarasi_utja(
     movie_app, qt_app
 ):
     window, controller, _engine = movie_app
+    # A qt_app munkamenet-szintű; az előző teszt fordítója itt is aktív lehet.
+    _allit_angol_felhasznaloi_feluletet(qt_app, _engine)
     window.show()
     window.requestActivate()
     qt_app.processEvents()
@@ -766,9 +775,7 @@ def _nyisd_a_mozgofilmkeszitot(window, controller, qt_app, engine):
     """A két fotós mappát kijelöli, és a Create > Movie menüből megnyitja."""
     # A munkamenet-szintű qt_app a korábbi teszt magyar fordítóját is megtartja;
     # a `&Create` menüút angol feliratot vár.
-    for korabbi in qt_app.findChildren(QTranslator):
-        qt_app.removeTranslator(korabbi)
-    engine.retranslate()
+    _allit_angol_felhasznaloi_feluletet(qt_app, engine)
     window.show()
     window.requestActivate()
     qt_app.processEvents()
