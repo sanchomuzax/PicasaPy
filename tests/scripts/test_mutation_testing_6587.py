@@ -273,3 +273,31 @@ def test_a_mutmut_futtatas_a_run_tests_helyet_foglalja(
     assert run_tests.main(argumentumok) == 0
     assert esemenyek == ["hely-foglalva", "mutmut", "hely-felszabaditva"]
     assert futtatott == [(vart_csomag, vart_mutansok)]
+
+
+def test_jelentes_windowson_sem_all_le_a_mutmut_kilepese_miatt_6652(tmp_path: Path, monkeypatch) -> None:
+    """#6652: natív Windowson a `mutmut.__main__` importja `sys.exit(1)`-gyel kilép."""
+    import importlib
+
+    import mutation_testing
+
+    eredeti_import = importlib.import_module
+
+    def kilepo_import(nev, *args, **kwargs):
+        if nev == "mutmut.__main__":
+            raise SystemExit(1)
+        return eredeti_import(nev, *args, **kwargs)
+
+    monkeypatch.setattr(mutation_testing.importlib, "import_module", kilepo_import)
+    report = mutation_testing._jelentes(
+        [],
+        futasido=1.0,
+        csucs_bajt=1024,
+        kizart_nas=[],
+        kizart_forras=[],
+        csomagok={"ini"},
+        teljes=True,
+        projekt=tmp_path,
+        render_minta=False,
+    )
+    assert "Túlélők" in report
