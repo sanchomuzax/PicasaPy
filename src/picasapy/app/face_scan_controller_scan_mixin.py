@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+import time
 from collections.abc import Iterator
 from contextlib import closing, contextmanager, nullcontext
 
@@ -18,10 +19,11 @@ from .face_scan_controller_shared import (
     _log,
     _mark_previously_ignored,
     _path_key,
+    _remember_decoded_image,
     album_photos,
     all_photos,
     dekodolj_forrast,
-    face_scan_done,
+    face_scan_done,  # noqa: F401 — legacy module namespace
     ini_faces_of,
     mark_face_scan,
     open_index,
@@ -35,6 +37,57 @@ from .face_scan_controller_shared import (
 
 class FaceScanControllerScanMixin:
     """Arcfelismerési keresés, állapotkövetés és detektor-worker."""
+
+    _SCAN_COMMIT_BATCH_SIZE = 32
+
+
+    @staticmethod
+    def _read_face_scan_states(conn) -> dict[int, tuple[int, int, str]]:
+        """Egy lekérdezésből adja vissza a már vizsgált fotók állapotát."""
+        return {
+            int(row[0]): (int(row[1]), int(row[2]), str(row[3]))
+            for row in conn.execute(
+                "SELECT photo_id, mtime_ns, size, ok FROM face_scan"
+            )
+        }
+
+
+    @staticmethod
+    def _face_scan_is_done(states, photo: PhotoRecord) -> bool:
+        state = states.get(photo.id)
+        if state is None:
+            return False
+        mtime_ns, size, ok = state
+        return ok == "kizarva" or (
+            mtime_ns == int(photo.mtime_ns) and size == int(photo.size)
+        )
+
+
+    @staticmethod
+    def _ini_signature(folder: Path) -> tuple[int, int] | None:
+        try:
+            stat = (folder / ".picasa.ini").stat()
+        except OSError:
+            return None
+        return int(stat.st_mtime_ns), int(stat.st_size)
+
+
+    def _changed_ini_directories(self, photos):
+        """Egy `.picasa.ini`-stat mappánként; csak változáskor kell #3670-et futtatni."""
+        signatures: dict[str, tuple[int, int] | None] = {}
+        changed: set[str] = set()
+        for photo in photos:
+            folder = Path(photo.folder_path)
+            key = _path_key(folder)
+            if key in signatures:
+                continue
+            signature = self._ini_signature(folder)
+            signatures[key] = signature
+            if key not in self._face_ini_signatures or (
+                self._face_ini_signatures[key] != signature
+            ):
+                changed.add(key)
+        return changed, signatures
 
 
     @Property(int, notify=_Signals.scanPercentChanged)
@@ -78,21 +131,37 @@ class FaceScanControllerScanMixin:
             return sum(1 for key in keys if key in self._pending_paths)
 
 
-    def _build_pending(self, conn, photos) -> set[str]:
+    def _build_pending(
+        self,
+        conn,
+        photos,
+        *,
+        scan_states=None,
+        ini_cache=None,
+        enabled_cache=None,
+    ) -> set[str]:
         """A worker átlépési feltételei szerint a ciklus ELŐTT felépített
         halmaz: engedélyezett mappa, nem videó, nincs lefutott keresés, és
         nincs azonosított arc az ini-ben."""
         pending: set[str] = set()
-        ini_cache: dict = {}
+        if scan_states is None:
+            scan_states = self._read_face_scan_states(conn)
+        if ini_cache is None:
+            ini_cache = {}
+        if enabled_cache is None:
+            enabled_cache = {}
         for photo in photos:
             photo_path = Path(photo.folder_path) / photo.name
-            if not self._face_detection_enabled(str(photo_path.parent)):
+            folder_key = _path_key(photo_path.parent)
+            if folder_key not in enabled_cache:
+                enabled_cache[folder_key] = self._face_detection_enabled(
+                    str(photo_path.parent)
+                )
+            if not enabled_cache[folder_key]:
                 continue
             if photo_path.suffix.lower() in VIDEO_EXTENSIONS:
                 continue
-            if face_scan_done(
-                conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
-            ):
+            if self._face_scan_is_done(scan_states, photo):
                 continue
             if any(
                 face.is_identified
@@ -264,7 +333,10 @@ class FaceScanControllerScanMixin:
         self._set_scan_percent(0)
         self.scanStarted.emit()
         self._start_background(
-            self._run_scan, args=(stop_event, photos), name="picasapy-face-scan"
+            self._run_scan,
+            args=(stop_event, photos),
+            kwargs={"automatic": automatic},
+            name="picasapy-face-scan",
         )
 
 
@@ -307,12 +379,40 @@ class FaceScanControllerScanMixin:
 
     # -- worker-szál törzse -------------------------------------------------
 
+    def _wait_for_scan_slot(
+        self,
+        stop_event: threading.Event,
+        *,
+        automatic: bool,
+        delay_seconds: float = 0.0,
+    ) -> bool:
+        """Aktivitás alatt vár, különben a detektálási idővel arányosan fékez."""
+        remaining = max(0.0, delay_seconds)
+        while not stop_event.is_set():
+            if automatic and self._scan_should_pause():
+                stop_event.wait(0.25)
+                continue
+            if remaining <= 0:
+                return True
+            started = time.perf_counter()
+            if stop_event.wait(min(remaining, 0.25)):
+                return False
+            remaining = max(0.0, remaining - (time.perf_counter() - started))
+        return False
+
+
     def _run_scan(
         self,
         stop_event: threading.Event,
         scoped_photos: tuple[PhotoRecord, ...] | None = None,
+        *,
+        automatic: bool | None = None,
     ) -> None:
         elozo_szalszam: int | None = None
+        found = 0
+        scanned = 0
+        if automatic is None:
+            automatic = self._automatic_scan
         try:
             with self._open_index_for_scan() as conn:
                 # #4887: a szkennelés a rejtett mappák képein is fut (az
@@ -322,84 +422,159 @@ class FaceScanControllerScanMixin:
                     if scoped_photos is None
                     else scoped_photos
                 )
-                total = len(photos)
-                pending = self._build_pending(conn, photos)
+                scan_states = self._read_face_scan_states(conn)
+                ini_cache: dict = {}
+                enabled_cache: dict[str, bool] = {}
+                changed_ini_dirs, current_ini_signatures = (
+                    self._changed_ini_directories(photos)
+                )
+                detection_pending = self._build_pending(
+                    conn,
+                    photos,
+                    scan_states=scan_states,
+                    ini_cache=ini_cache,
+                    enabled_cache=enabled_cache,
+                )
                 with self._pending_lock:
                     if not self._owns_scan(stop_event):
-                        # közben újabb keresés indult: az övé a halmaz
-                        pending = set()
-                    self._pending_paths = pending
-                self._set_unchecked_files(len(pending))
-                if pending and not self._detector.available:
-                    # Automatikus szinkron után gyakori, hogy nincs új fotó.
-                    # Ilyenkor ne töltsük be az OpenCV-t pusztán az állapot
-                    # lekérdezéséért; a detektor csak valódi munkánál kell.
-                    if not self._unavailable_logged:
-                        self._unavailable_logged = True
-                        _log.warning(
-                            "az arcfelismerés nem indul: %s",
-                            self.unavailableReason(),
-                        )
-                    self.modelUnavailable.emit()
-                    return
-                if pending:
-                    elozo_szalszam = arckeres_szal_elokeszitese()
-                found = 0
-                scanned = 0
-                for done, photo in enumerate(photos, start=1):
-                    if stop_event.is_set():
-                        conn.commit()
-                        self.scanCancelled.emit()
-                        return
-                    try:
+                        detection_pending = set()
+                    self._pending_paths = detection_pending
+                pending_total = len(detection_pending)
+                self._set_unchecked_files(pending_total)
+
+                reconcile_photos = []
+                if changed_ini_dirs:
+                    for photo in photos:
+                        folder = Path(photo.folder_path)
+                        folder_key = _path_key(folder)
+                        if folder_key not in changed_ini_dirs:
+                            continue
+                        if not enabled_cache.get(folder_key, False):
+                            continue
+                        if Path(photo.name).suffix.lower() in VIDEO_EXTENSIONS:
+                            continue
+                        if self._face_scan_is_done(scan_states, photo):
+                            reconcile_photos.append(photo)
+
+                # A változatlan könyvtár üres köre itt megáll: nincs ini-olvasás,
+                # képenkénti SQL, detektor- vagy útvonal-felbontási munka.
+                if not detection_pending and not reconcile_photos:
+                    self._face_ini_signatures.update(current_ini_signatures)
+                else:
+                    reconcile_batch = 0
+                    for photo in reconcile_photos:
+                        if stop_event.is_set():
+                            if reconcile_batch:
+                                conn.commit()
+                            self.scanCancelled.emit()
+                            return
                         photo_path = Path(photo.folder_path) / photo.name
-                        if not self._face_detection_enabled(str(photo_path.parent)):
-                            self._report_scan(done, total)
-                            continue
-                        ini_faces = ini_faces_of(photo_path)
-                        if any(face.is_identified for face in ini_faces):
-                            # a Picasa döntése szent — nem értékeljük újra
-                            self._report_scan(done, total)
-                            continue
-                        if photo_path.suffix.lower() in VIDEO_EXTENSIONS:
-                            self._report_scan(done, total)
-                            continue
-                        # #2519: már lefutott ezen a fájlállapoton — a `face`
-                        # tábla ürességéből ez nem látszana (arc nélküli fotó =
-                        # nulla sor), ezért kell a külön nyom. A `kizarva`
-                        # jelölést a fájl változása sem oldja fel.
-                        if face_scan_done(
-                            conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
-                        ):
-                            # #3670: a Picasa a mi keresésünk UTÁN is mellőzhette
-                            _mark_previously_ignored(conn, photo.id, ini_faces)
-                            conn.commit()
-                            self._report_scan(done, total)
-                            continue
-                        faces = self._detect(
-                            photo_path,
-                            source_width=photo.width,
-                            source_height=photo.height,
-                        )
-                        replace_faces(conn, photo.id, faces)
+                        ini_faces = ini_faces_of(photo_path, ini_cache)
                         _mark_previously_ignored(conn, photo.id, ini_faces)
-                        mark_face_scan(
-                            conn, photo.id, mtime_ns=photo.mtime_ns, size=photo.size
-                        )
-                        found += len(faces)
-                        scanned += 1
-                        # A következő kép detektálása több másodperc lehet; ne
-                        # tartsa addig az SQLite írási zárát.
+                        reconcile_batch += 1
+                        if reconcile_batch >= self._SCAN_COMMIT_BATCH_SIZE:
+                            conn.commit()
+                            reconcile_batch = 0
+                    if reconcile_batch:
                         conn.commit()
-                        self._mark_checked(photo_path, stop_event)
-                        if faces:
-                            # a commit UTÁN: a panel már a mentett arcot látja
-                            self.facesStored.emit()
-                        self._report_scan(done, total)
-                    finally:
-                        # a `continue` ágak is kivéve a függők közül (#4586)
-                        self._mark_checked(photo_path, stop_event)
-                conn.commit()
+
+                    if detection_pending and not self._detector.available:
+                        if not self._unavailable_logged:
+                            self._unavailable_logged = True
+                            _log.warning(
+                                "az arcfelismerés nem indul: %s",
+                                self.unavailableReason(),
+                            )
+                        self.modelUnavailable.emit()
+                        return
+
+                    pending_photos = [
+                        photo
+                        for photo in photos
+                        if _path_key(Path(photo.folder_path) / photo.name)
+                        in detection_pending
+                    ]
+                    if pending_photos:
+                        elozo_szalszam = arckeres_szal_elokeszitese()
+                    batch: list[tuple[PhotoRecord, tuple, tuple]] = []
+
+                    def commit_batch() -> None:
+                        nonlocal found, scanned
+                        if not batch:
+                            return
+                        for photo, faces, ini_faces in batch:
+                            replace_faces(conn, photo.id, faces)
+                            _mark_previously_ignored(conn, photo.id, ini_faces)
+                            mark_face_scan(
+                                conn,
+                                photo.id,
+                                mtime_ns=photo.mtime_ns,
+                                size=photo.size,
+                            )
+                            found += len(faces)
+                            scanned += 1
+                        conn.commit()
+                        for done, (_photo, faces, _ini_faces) in enumerate(
+                            batch, start=scanned - len(batch) + 1
+                        ):
+                            if faces:
+                                self.facesStored.emit()
+                            if automatic:
+                                self._report_scan(done, pending_total)
+                        batch.clear()
+
+                    processed = 0
+                    for photo in pending_photos:
+                        if not self._wait_for_scan_slot(
+                            stop_event, automatic=automatic
+                        ):
+                            commit_batch()
+                            conn.commit()
+                            self.scanCancelled.emit()
+                            return
+                        photo_path = Path(photo.folder_path) / photo.name
+                        try:
+                            ini_faces = ini_faces_of(photo_path, ini_cache)
+                            started = time.perf_counter()
+                            faces = self._detect(
+                                photo_path,
+                                source_width=photo.width,
+                                source_height=photo.height,
+                                source_mtime_ns=photo.mtime_ns,
+                                source_size=photo.size,
+                            )
+                            elapsed = time.perf_counter() - started
+                            batch.append((photo, faces, ini_faces))
+                            self._mark_checked(photo_path, stop_event)
+                            processed += 1
+                            if not automatic:
+                                # A kézi keresés a korábbi módon, minden sikeres
+                                # detektálás után frissíti a haladást; a DB-írás
+                                # ettől függetlenül kötegelt marad.
+                                self._report_scan(processed, pending_total)
+                            if len(batch) >= self._SCAN_COMMIT_BATCH_SIZE:
+                                commit_batch()
+                            if not self._wait_for_scan_slot(
+                                stop_event,
+                                automatic=automatic,
+                                delay_seconds=elapsed if automatic else 0.0,
+                            ):
+                                commit_batch()
+                                conn.commit()
+                                self.scanCancelled.emit()
+                                return
+                        except Exception:
+                            commit_batch()
+                            raise
+                    commit_batch()
+                    if not stop_event.is_set():
+                        conn.commit()
+                        with self._pending_lock:
+                            owner = self._owns_scan(stop_event)
+                        if owner:
+                            self._face_ini_signatures.update(
+                                current_ini_signatures
+                            )
         except sqlite3.DatabaseError as error:
             _log.exception("arc-detektálás adatbázishiba")
             self.scanFailed.emit(str(error))
@@ -440,10 +615,20 @@ class FaceScanControllerScanMixin:
         *,
         source_width: int | None = None,
         source_height: int | None = None,
+        source_mtime_ns: int | None = None,
+        source_size: int | None = None,
     ):
         image = self._decode(photo_path)
         if image is None:
             return ()
+        if source_mtime_ns is not None and source_size is not None:
+            _remember_decoded_image(
+                photo_path,
+                source_mtime_ns,
+                source_size,
+                _DETECT_MAX_DIMENSION,
+                image,
+            )
         # A JPEG dekóder minőségi tartaléka a kért 960 px helyett teljes
         # vagy annál még mindig nagyobb képet adhat. A YuNet bemenetét ezért
         # itt is kötelező a határra kicsinyíteni.

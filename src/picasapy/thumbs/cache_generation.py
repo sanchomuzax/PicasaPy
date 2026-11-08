@@ -68,7 +68,9 @@ class _CacheGenerationMixin:
             kep = cv2.imdecode(np.frombuffer(payload, np.uint8), cv2.IMREAD_COLOR)
             if kep is not None:
                 return kep
-        return self._decode_source(source)
+        return self._decode_source(
+            source, mtime_ns=mtime_ns, size_bytes=size_bytes
+        )
 
     def _read_flag(self, payload: np.ndarray, target: int | None = None) -> int:
         """Dekódolási flag a MÁR beolvasott bájtokból: nagy képre redukált

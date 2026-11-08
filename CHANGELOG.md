@@ -7,6 +7,22 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.81] - 2026-11-08
+
+- A szerkesztő előnézete renderelés közben is friss marad, a csúszkahúzás közbeni kérések összevonása pedig csökkenti a felesleges számolást (#6685).
+
+## [1.0.80] - 2026-11-08
+
+- Az automatikus arckeresés változatlan szinkronnál nem olvassa újra a teljes könyvtárat, és a háttérben fékezve fut (#6694).
+
+## [1.0.79] - 2026-11-08
+
+- A szerkesztőpanel-elrendezés tesztje már nem függ a tesztek futási sorrendjétől (#6709).
+- A bejárás feloldásszámláló tesztje már nem függ a tesztek futási sorrendjétől (#6711).
+## [1.0.78] - 2026-11-08
+
+- Az exportpárbeszéd fókusztesztjei most egymástól függetlenül futnak (#6708).
+
 ## [1.0.77] - 2026-11-08
 
 - A filmátmenet-előnézet próbája hosszabb átfedéssel, hogy lassú gépen is jusson keveredő kocka (#6703).

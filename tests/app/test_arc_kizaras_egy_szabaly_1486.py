@@ -126,12 +126,13 @@ class TestAKivonasMAGA_is_mukodik:
 
     def test_a_python_oldal_a_KOZOS_fuggvenyt_hasznalja(self):
         """A vezérlő ne írja újra a szabályt — a `scanner/exclude.py` az
-        igazságforrás."""
+        igazságforrás; a feloldott gyökerek átadásával a fotónkénti
+        ellenőrzés nem oldja fel újra ugyanazt a hálózati útvonalat (#6694)."""
         vezerlo = (
             Path(picasapy.app.__file__).parent
             / "library_controller_folders.py"
         ).read_text(encoding="utf-8")
-        assert "is_excluded(" in vezerlo
+        assert "_is_excluded_resolved(" in vezerlo
 
 
 class TestAMASOLAS_INDOKA_ki_van_mondva:
