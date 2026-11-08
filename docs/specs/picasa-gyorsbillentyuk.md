@@ -2282,7 +2282,7 @@ tartoznak ehhez a PicasaPy-kiegészítéshez.
 | `Ctrl+Alt+S` | nincs megfelelő (belső adatbázis-persistálás, az SQLite azonnal ment, fotómentésre nem köthető, §12.11) |
 | `Ctrl+Shift+U` | nincs megfelelő (belső bélyegkép-cache reset, nem cél, §12.11) |
 | `Ctrl+Shift+V` | `test_gyorsbillentyuk_valodi_5150_n.py::TestTukrozes::test_a_tukrozes_billentyu_a_kijelolt_kepeket_tukrozi` |
-| `Ctrl+Shift+Y` | nincs megfelelő (belső húsvéti tojás overlays/egg, nem cél, §12.11) |
+| `Ctrl+Shift+Y` | nincs megfelelő (belső húsvéti tojás, `overlays/egg`, nem cél, §12.11) |
 | `Ctrl+F6` | `test_gyorsbillentyuk_valodi_5150_n.py::TestKeresesek::test_a_ctrl_f6_a_masodpeldanyokat_mutatja` |
 | `Ctrl+F7` | `test_gyorsbillentyuk_valodi_5150_n.py::TestKeresesek::test_a_ctrl_f7_a_kijelolt_kephez_hasonlot_keres` |
 | `Ctrl+F8` | `test_gyorsbillentyuk_valodi_5150_n.py::TestKeresesek::test_a_ctrl_f8_torli_a_hasonlosagi_mintat` |
