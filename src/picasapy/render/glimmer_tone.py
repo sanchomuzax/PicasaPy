@@ -18,6 +18,10 @@ TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
 
 from __future__ import annotations
 
+from functools import lru_cache
+
+import numpy as np
+
 from picasapy.render.belso_ragyogas import inner_glow
 from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_ops import (
@@ -34,6 +38,9 @@ from picasapy.render.glimmer_ops import (
     to_float,
     to_uint8,
     xml_local_contrast,
+    _fixpont_bias,
+    _fixpont_egyutthato,
+    _szinmatrix_osszefuzve,
 )
 
 # --- Vignette / Matte: GlowImageOperation(innerglow=true) ------------------
@@ -219,6 +226,47 @@ def apply_nightvision(image, brightness: float = 0.0, contrast: float = 0.0, fad
 # --- TwoTone -------------------------------------------------------------
 
 
+@lru_cache(maxsize=64)
+def _twotone_partial_lut(red_coefficient: int, green_coefficient: int) -> np.ndarray:
+    """A mátrix első két külön eltolását előre összegezi minden R/G párra."""
+    red = np.arange(256, dtype=np.int32)[:, None]
+    green = np.arange(256, dtype=np.int32)[None, :]
+    return ((red * red_coefficient) >> 9) + ((green * green_coefficient) >> 9)
+
+
+def _twotone_gray_plane(
+    image, brightness: float, contrast: float
+):
+    """A TwoTone-hoz szükséges piros mátrixcsatorna, a többi kimenet nélkül."""
+    matrix, offset = _szinmatrix_osszefuzve(
+        0.0, contrast, brightness, linked=True
+    )
+    coefficients64 = _fixpont_egyutthato(matrix)[0]
+    bias64 = int(_fixpont_bias(offset)[0])
+    limit = np.iinfo(np.int32).max // 255
+    if np.any(np.abs(coefficients64) > limit) or abs(bias64) > np.iinfo(np.int32).max:
+        return simple_color_matrix(
+            image,
+            saturation=0.0,
+            brightness=brightness,
+            contrast=contrast,
+            linked=True,
+        )[..., 0]
+    coefficients = coefficients64.astype(np.int32)
+    bias = np.int32(bias64)
+
+    # A három termék külön `>> 9`-et kap. Az R és G hozzájárulást minden
+    # bemeneti párra előre összegezzük, így képpontonként egy táblalekérés és
+    # egy szorzás marad; a natív eltolási sorrend nem változik.
+    partial = _twotone_partial_lut(int(coefficients[0]), int(coefficients[1]))
+    accumulated = (
+        partial[image[..., 0], image[..., 1]]
+        + ((image[..., 2].astype(np.int32) * coefficients[2]) >> 9)
+        + bias
+    )
+    return np.clip(accumulated >> 2, 0, 255).astype(np.uint8)
+
+
 def apply_twotone(
     image,
     black_color=(0x00, 0x44, 0x88),
@@ -242,18 +290,16 @@ def apply_twotone(
 
     validate_image(image)
 
-    matrixed = simple_color_matrix(
-        image,
-        saturation=0.0,
-        brightness=brightness,
-        contrast=contrast,
-        linked=True,
-    )
-    gray = to_float(matrixed)[..., 0:1] / 255.0
+    gray = _twotone_gray_plane(image, brightness, contrast)
+    gray_values = np.arange(256, dtype=np.float32)[:, None] / 255.0
     black = np.array(black_color, dtype=float)
     white = np.array(white_color, dtype=float)
-    mapped = black + gray * (white - black)
-    return to_uint8(alpha_blend(to_float(image), mapped, fade_alpha(fade)))
+    mapped_lut = to_uint8(black + gray_values * (white - black))
+    mapped = mapped_lut[gray]
+    alpha = fade_alpha(fade)
+    if alpha == 1.0:
+        return mapped
+    return to_uint8(alpha_blend(to_float(image), to_float(mapped), alpha))
 
 
 # --- QuantizePalette -------------------------------------------------------

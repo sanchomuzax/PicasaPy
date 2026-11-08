@@ -70,8 +70,11 @@ van — és `M · diag(g) · M`-re jut, ami a középszürkét fehérre égeti.
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 import numpy as np
 
+from picasapy.lazy_cv2 import cv2
 from picasapy.fixedpoint import c_int_div
 from picasapy.render.curves import validate_image
 
@@ -105,6 +108,35 @@ _CENTER = 32
 c_divide = c_int_div
 
 
+@lru_cache(maxsize=1)
+def _illuminant_ratio_bins() -> np.ndarray:
+    """A két 256×256-os arányosztás előre kiszámított, bájtos eredménye."""
+    red = np.arange(256, dtype=np.int32)[:, None]
+    green = np.arange(256, dtype=np.int32)[None, :]
+    numerator = 32 * (red - green)
+    denominator = np.maximum(np.minimum(red, green), 1)
+    quotient = np.where(
+        numerator < 0,
+        -((-numerator) // denominator),
+        numerator // denominator,
+    )
+    return np.clip(quotient + _CENTER, 0, _BINS - 1).astype(np.uint8)
+
+
+@lru_cache(maxsize=1)
+def _illuminant_pair_table() -> np.ndarray:
+    """Az arány-bin; a kétcsatorna-feltétel sértése 255-ös őrértéket kap."""
+    red = np.arange(256, dtype=np.uint16)[:, None]
+    green = np.arange(256, dtype=np.uint16)[None, :]
+    usable = (
+        (green >= 32)
+        & (green <= 224)
+        & (2 * red > green)
+        & (2 * green > red)
+    )
+    return np.where(usable, _illuminant_ratio_bins(), 255).astype(np.uint8)
+
+
 def estimate_illuminant(image: np.ndarray) -> tuple[int, int]:
     """A megvilágítás becslése: `(kR, kB)`, ahol `128` a semleges.
 
@@ -119,32 +151,55 @@ def estimate_illuminant(image: np.ndarray) -> tuple[int, int]:
        képlettel skálázódik (`(32+d)·4`, illetve `16384 / ((32−d)·4)`).
     """
     validate_image(image)
-    red = image[..., 0].astype(np.int64)
-    green = image[..., 1].astype(np.int64)
-    blue = image[..., 2].astype(np.int64)
-
-    usable = (
-        (green >= 32)
-        & (green <= 224)
-        & (2 * red > green)
-        & (2 * green > red)
-        & (2 * blue > green)
-        & (2 * green > blue)
+    red = image[..., 0]
+    green = image[..., 1]
+    blue = image[..., 2]
+    table = _illuminant_pair_table()
+    maps = np.empty((*green.shape, 2), dtype=np.int16)
+    maps[..., 0] = green
+    maps[..., 1] = red
+    red_lookup = cv2.remap(
+        table,
+        maps,
+        None,
+        interpolation=cv2.INTER_NEAREST,
+        borderMode=cv2.BORDER_REPLICATE,
     )
-    if not usable.any():
-        return (_NEUTRAL, _NEUTRAL)
+    maps[..., 1] = blue
+    blue_lookup = cv2.remap(
+        table,
+        maps,
+        None,
+        interpolation=cv2.INTER_NEAREST,
+        borderMode=cv2.BORDER_REPLICATE,
+    )
+    usable = (red_lookup != 255) & (blue_lookup != 255)
 
-    r, g, b = red[usable], green[usable], blue[usable]
-    red_bin = np.clip(c_divide(32 * (r - g), np.minimum(r, g)) + _CENTER, 0, _BINS - 1)
-    blue_bin = np.clip(c_divide(32 * (b - g), np.minimum(b, g)) + _CENTER, 0, _BINS - 1)
-
-    histogram = np.zeros((_BINS, _BINS), dtype=np.int64)
-    np.add.at(histogram, (blue_bin, red_bin), 1)
+    if image.shape[0] * image.shape[1] < 2**24:
+        # A 2560×1707-es célképen minden cellaszámláló pontosan ábrázolható
+        # float32-ben; a C++-os 2D hisztogram elhagyja a NumPy-s képpontszintű
+        # kód-összefűzést és indexelt gyűjtést.
+        bins = cv2.merge((blue_lookup, red_lookup))
+        histogram = cv2.calcHist(
+            [bins], [0, 1], usable.astype(np.uint8), [_BINS, _BINS],
+            [0, _BINS, 0, _BINS],
+        ).astype(np.int64)
+    else:
+        # Nagyobb képeknél a float32 hisztogram számlálója elveszíthet egyes
+        # egész értékeket; a bincount itt megtartja a korábbi pontos utat.
+        blue_bin = blue_lookup[usable]
+        red_bin = red_lookup[usable]
+        histogram = np.bincount(
+            blue_bin.astype(np.int32) * _BINS + red_bin,
+            minlength=_BINS * _BINS,
+        ).reshape(_BINS, _BINS)
 
     rows, columns = np.mgrid[0:_BINS, 0:_BINS]
     distance = np.maximum(np.abs(columns - _CENTER), np.abs(rows - _CENTER))
-    weight = ((_CENTER - distance).astype(np.int64) ** 3) >> 5
-    histogram = np.where(weight > 0, (histogram * weight) >> 8, 0)
+    radius = np.maximum(_CENTER - distance, 0).astype(np.int64)
+    weight = (radius**3) >> 5
+    histogram *= weight
+    histogram >>= 8
 
     total = int(histogram.sum())
     if total == 0:
@@ -185,16 +240,45 @@ def autocolor_matrix_16_16(red_gain: int, green_gain: int, blue_gain: int) -> np
 def apply_autocolor_matrix(image: np.ndarray, matrix: np.ndarray) -> np.ndarray:
     """A 16.16 mátrix alkalmazása egész aritmetikával, a natív mintájára."""
     validate_image(image)
-    pixels = image.astype(np.int64)
-    result = np.empty_like(pixels)
-    for row in range(3):
-        accumulator = (
-            pixels[..., 0] * matrix[row, 0]
-            + pixels[..., 1] * matrix[row, 1]
-            + pixels[..., 2] * matrix[row, 2]
-        )
-        result[..., row] = np.clip(accumulator >> 16, 0, 255)
-    return result.astype(np.uint8)
+    coeffs64 = np.asarray(matrix, dtype=np.int64)
+    # A pixelcsatorna legfeljebb 255. Ha minden sor abszolút összegének
+    # szorzata 255-tel elfér int32-ben, akkor az összes szorzat és összeg is
+    # elfér benne. A tipikus mátrix ezen a feltételen bőven belül van; a
+    # ritka, tágabb belső hívásnál megtartjuk az eredeti int64 utat.
+    int32_max = np.iinfo(np.int32).max
+    coefficient_limit = int32_max // 255
+    if np.any(coeffs64 > coefficient_limit) or np.any(coeffs64 < -coefficient_limit):
+        pixels = image.astype(np.int64)
+        result = np.empty_like(pixels)
+        for row in range(3):
+            accumulator = (
+                pixels[..., 0] * coeffs64[row, 0]
+                + pixels[..., 1] * coeffs64[row, 1]
+                + pixels[..., 2] * coeffs64[row, 2]
+            )
+            result[..., row] = np.clip(accumulator >> 16, 0, 255)
+        return result.astype(np.uint8)
+
+    row_bounds = np.sum(np.abs(coeffs64), axis=1, dtype=np.int64) * 255
+    if np.any(row_bounds > int32_max):
+        pixels = image.astype(np.int64)
+        result = np.empty_like(pixels)
+        for row in range(3):
+            accumulator = (
+                pixels[..., 0] * coeffs64[row, 0]
+                + pixels[..., 1] * coeffs64[row, 1]
+                + pixels[..., 2] * coeffs64[row, 2]
+            )
+            result[..., row] = np.clip(accumulator >> 16, 0, 255)
+        return result.astype(np.uint8)
+
+    # NumPy futtatja a lapos, folytonos int32 mátrixszorzást natív C-kódban.
+    # A fenti sorhatár-ellenőrzés miatt minden szorzatösszeg int32-ben pontos,
+    # így a Q16 jobbra tolás az eredeti, bájtra azonos csonkítást adja.
+    pixels = image.astype(np.int32)
+    coeffs = coeffs64.astype(np.int32)
+    accumulators = pixels.reshape(-1, 3) @ coeffs.T
+    return np.clip(accumulators >> 16, 0, 255).astype(np.uint8).reshape(image.shape)
 
 
 __all__ = [

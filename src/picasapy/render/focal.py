@@ -25,7 +25,7 @@ import numpy as np
 
 from picasapy.lazy_cv2 import cv2
 from picasapy.render.curves import validate_image
-from picasapy.render.glimmer_ops import masked_blend, resize_image
+from picasapy.render.glimmer_ops import alpha_blend, fade_alpha, masked_blend, resize_image
 
 #: A `Hardness` osztója a natív képletben. A 101 (nem 100!) szándékos: a
 #: `Hardness = 100` mellett is marad egy hajszálnyi átmenet, sosem lesz a
@@ -413,7 +413,19 @@ def apply_focal_pixelate(
     `Resize`-zal (`resize_image`, fixpontos doboz, #3805), majd
     visszanagyítás `W × H`-ra **`smoothing = false`** módban — vagyis
     legközelebbi-szomszéd, nem interpoláció (ettől lesznek éles blokkjai, nem
-    elmosódott foltjai). Ugyanaz a körmaszk és `Fade`, mint a `FocalZoom`-nál.
+    elmosódott foltjai). Ugyanaz a körmaszk, mint a `FocalZoom`-nál.
+
+    #6691: két ponton tért el az eredeti exportjától (9 mért esetből 8):
+
+    - a kicsinyített méretet a `Resize` `trunc(v + 0,5)`-tel egészíti, mint a
+      `Pixelate` effektnél (#4912); a csonkolás nem egész `W/Impact`
+      mellett egy sorral/oszloppal kisebb rácsot adott, és a blokkhatárok
+      az egész képen elcsúsztak;
+    - a `NestedImageOperation` (`BlendAlpha` + `Mask`) a natív egész
+      képletekkel keveri a pixelezett réteget: előbb a Fade (`alpha_blend`,
+      `0x009dc4b0`), utána a maszk (`masked_blend`, `0x008f62a0`), mint a
+      `glimmer_focal.py`-ban. A lebegőpontos lerp a pixelezett részen
+      átlagosan 1 szinttel világosabb képet adott.
 
     #788: a `reverse` a felület ötödik vezérlője (`_chkReverse`, alapból ki).
     A `filterdesc.xml` ezt **a körmaszk két alfájának cseréjével** valósítja
@@ -436,8 +448,10 @@ def apply_focal_pixelate(
     height, width = image.shape[:2]
     image_f = image.astype(np.float32)
     factor = max(float(impact), 1.0)
-    small_w = max(1, int(width / factor))
-    small_h = max(1, int(height / factor))
+    # `trunc(v + 0,5)`, mint a `Pixelate` effektnél (#4912): a pontos .5-nél
+    # felfelé kerekít, a `round()` párosra
+    small_w = max(1, int(width / factor + 0.5))
+    small_h = max(1, int(height / factor + 0.5))
     # a közös `Resize` (#3805): kicsinyítéskor a `ytResampler` fixpontos
     # doboza, visszafelé `smoothing=false` → legközelebbi szomszéd
     small = resize_image(image, small_w, small_h, smoothing=True)
@@ -453,10 +467,10 @@ def apply_focal_pixelate(
         scale,
         inner_alpha=1.0 if reverse else 0.0,
         outer_alpha=0.0 if reverse else 1.0,
-    )[..., np.newaxis]
-    focused = image_f + mask * (pixelated - image_f)
-    weight = np.float32(np.clip(1.0 - fade / 100.0, 0.0, 1.0))
-    return _to_uint8(image_f + weight * (focused - image_f))
+    )
+    # a natív egész keverés (#6691): előbb a Fade, utána a maszk
+    faded = alpha_blend(image_f, pixelated, fade_alpha(fade))
+    return _to_uint8(masked_blend(image_f, faded, mask))
 
 
 def _to_uint8(values: np.ndarray) -> np.ndarray:

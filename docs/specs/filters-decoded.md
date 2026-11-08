@@ -836,7 +836,9 @@ legnagyobb zoomeltolás `floor(width · Impact / 200)` pixel.
 
 > ⛔ **KIEGÉSZÍTVE (#3883):** a minták NEM átlagolódnak — állandó 38/217-es súllyal egymás után keverednek, legközelebbi szomszéddal, és az SSE2-ágban sávhibával. Ld. „⛳ A FocalZoom zoom-kernele teljesen”.
 
-**`PicnikFocalPixelate`:** lekicsinyítés `W/Impact × H/Impact` méretre, majd
+**`PicnikFocalPixelate`:** lekicsinyítés `W/Impact × H/Impact` méretre (a
+célméret `trunc(v + 0,5)`, ld. „⛳ A `PicnikFocalPixelate` önálló eltérésének
+oka”, #6691), majd
 visszanagyítás `W × H`-ra **`smoothing = false`** módban. A bináris ezt a
 `ResizeImageOperation` közös útján (`0x00bc3650` → `0x00bcb5e0`) a
 `0x009e7420` egyképpontos, fixpontos koordinátát csonkoló rutinjához köti
@@ -993,6 +995,69 @@ A zoom-kernel a #3883 szerint javítva (#3884): `FocalZoom` `alap` **0,311**, `m
 
 A kisbetűs, régi `focalpixelate` **nem** ez: ahhoz a vizsgált buildben nincs
 natív regisztráció (#567).
+
+**⛳ A `PicnikFocalPixelate` önálló eltérésének oka: két lépés, mindkettő a Resize/keverés közös szabálya (2026-11-08, #6691).**
+
+*A mérés.* A `docs/benchmarks/2026-11-08-6585-ujrabesorolas.md` 9 esetéből 8
+tért el az eredeti exportjától (SSIM 0,906-0,973, ΔE 1,24-3,17). A 9 esetet
+(Colab-feladat 403, 408-414, 429; forráskép k02, k04, k05, k07, k08, k10;
+Impact 5,1-69,0, nem egész `W/Impact`) helyben újra lefuttatva a hiba a
+**blokkrácsban** és a **keverésben** volt; a maszk helye és sugara jó (a belső
+körön belül, a kép 1-15 %-án, ΔE 0,007-0,053; a #3596 óta).
+Mérés és táblák: `docs/benchmarks/2026-11-08-6691-focal-pixelate.md`.
+
+*1. A kicsinyített méret kerekítése.* A `ResizeImageOperation` célmérete a
+`W/Impact × H/Impact` értékből `trunc(v + 0,5)` (mint a `Pixelate` effektnél,
+5/f.A, #4912); nálunk csonkolás (`int(v)`) volt. Egész `W/Impact` esetén
+(a #3491 mérőkészlete: 960/20 = 48) a kettő egyezik, ezért nem látszott. Nem
+egész osztásnál a csonkolt rács egy sorral/oszloppal kisebb, a blokkhatárok az
+egész képen elcsúsznak (lanc-0067: a Picasa sorhatárai 593, 598, ..., a
+mieink 591, 596, ...). A 9 eset mindegyikén a (szélesség, magasság)
+rácsjelöltek közül **egyetlen** egyezik legjobban az exporttal, és az mindig a
+kerekített méret (pl. lanc-0124: `W/I = 35,33`, `H/I = 23,54` → (35, 24); a
+csonkolt (35, 23) ΔE 3,105, a kerekített 1,158 a nyers renderen).
+*Bizonyítottság: mérés (9/9 eset egyedi minimum) + a `Pixelate` #4912-es
+kiolvasása. **NINCS MEG:** a `ResizeImageOperation` méretkonverziójának
+utasításcíme ebben a körben (a `0x00529e10` a `PixelateImageOperation`
+segédje, nem ez); a szabály a közös `Resize` szerepére és a mérésre épül.*
+
+*2. A Fade és a maszk keverése a natív egész képletekkel.* A
+`NestedImageOperation` (`BlendAlpha = 1 - Fade/100`, `Mask = {_msk}`) a
+pixelezett réteget előbb a Fade-del keveri a bemenettel (`alpha_blend`,
+`0x009dc4b0`: `(b·(255-w) + t·w) >> 8`, `w = trunc(256α) - 1`), utána a
+maszkkal (`masked_blend`, `0x008f62a0` → `0x008f4810`/`0x008f49a0`:
+`⌊(t·m + b·(255-m)) / 255⌋`, `m` = a maszk bájtja), ugyanez a sorrend áll a
+`glimmer_focal.py`-ban (`ReanimatedEyeColor`). Nálunk a lebegőpontos
+`kép + maszk·(pixelezett - kép)`, majd a Fade lineáris lerpje volt: a
+pixelezett részen átlagosan **+1 szinttel világosabb** képet adott (a
+`(255-w)`/`w` súlyok összege 255, a `>> 8` pedig csonkít), a Fade nagyságától
+függetlenül. A négy kombináció (kerekítés/csonkolás × float/natív) ΔE-je a
+tárolt ablakokon a benchmark-lapon; a „kerekített méret + natív egész keverés”
+a 9 ablakból 6-ban a teljesen pixelezett részen ΔE ≤ 0,037, a lanc-0088
+ablakában **bitre egyező** (ΔE 0,000). A keverési sorrend (előbb Fade, utána
+maszk) a mérésből jön: a fordított sorrend 0,02-0,31 (a javított 0,008-0,123
+helyett) a teljes képen. *Bizonyítottság: a két képlet a #3442 bináris olvasata;
+a sorrend mérés, **NINCS MEG** hozzá a `NestedImageOperation` alkalmazójának
+címe.*
+
+*Eredmény (teljes kép, `tools/golden/compare_render.py` módszerével, JPEG-
+újrakódolással):* mind a 9 eset `közelítés`, SSIM 0,9985-0,99995, ΔE átlag
+0,008-0,123 (előtte SSIM 0,906-0,993, ΔE 0,683-3,172). Őr:
+`tests/render/test_focal_pixelate_golden_6691.py` (az eredeti exportok tárolt
+kivágásain, ld. a tesztfájl fejét).
+
+**NYITOTT (#6691):** az átmeneti gyűrűben (a belső és külső sugár között, ahol a
+maszk 0 és 1 között van) a tárolt ablakokban még ΔE 0,09-0,73 marad; a
+teljesen pixelezett részen és a belső körön belül nincs. A natív maszk
+kétmegállós színátmenet (a belső megálló `csonk(255 · inner / R)`,
+`0x00bc2b8a`-`0x00bc2d1d`), de a megállók KÖZÖTTI bájtszintű képlet (kerekítés vagy
+csonkolás, a középpont fél képpontja) **nincs kiolvasva**. Négy változatot próbáltam a tárolt
+ablakokon (csonkoló/kerekítő bájt, középponttal és anélkül): egyik sem ad
+bitre egyező gyűrűt (a legjobb átlag 0,223 a mostani 0,332 helyett), ezért
+egyiket sem vettem át, becsült érték nem kerül a kódba. Következő bináris
+irány: a `0x008f3970` csak a megállókat állítja be, a megállók között bájtot
+számoló rajzoló még azonosítatlan; azonosítása után egy
+`CircularGradientImageMask` kimenetének QEMU-mérése dönt.
 
 > ⛔ **HELYESBÍTVE (#3315, 2026-09-22): a hétmezős sort a MI generátorunk írta.**
 >
