@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.74] - 2026-11-08
+
+- Időrend: a dátumskála végfeliratai feltételesek, a PicasaPy-eltérés nem bizonyított (#6532).
 ## [1.0.73] - 2026-11-08
 
 - A gyorsbillentyű-leltár futáspróba-lefedettsége: mi hiányzik még (#6531).
