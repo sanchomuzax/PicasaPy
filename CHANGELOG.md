@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.75] - 2026-11-08
+
+- A 30 eldöntetlen szűrőlánc újrabesorolása: két szűrő önállóan is eltér (#6585).
+- Valódi billentyűpróba ellenőrzi, hogy a szerkesztőben a módosító nélküli F8 és F9 nem változtat semmin, ahogy az eredetiben (#6531).
+
 ## [1.0.74] - 2026-11-08
 
 - Időrend: a dátumskála végfeliratai feltételesek, a PicasaPy-eltérés nem bizonyított (#6532).
