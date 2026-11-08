@@ -122,25 +122,25 @@ class TestLibraryWatcher:
         collector.wait()
         assert str(tmp_path / "m") in collector.seen
 
-    def test_irrelevant_files_ignored(self, tmp_path, watcher_factory, collector):
-        """A nem releváns fájlok nem adnak jelzést.
+    def test_irrelevant_files_ignored(self, tmp_path):
+        """A fájlszűrő a nem képi és backup fájlokat eldobja.
 
-        ⚠️ #1463 — fali-óra alapú, és az is MARAD: távollétet állítunk,
-        azt pedig csak várakozással lehet. A 0,8 mp a 0,2 mp-es
-        debounce négyszerese, tehát ha a szűrő elromlana, a flush
-        bőven beleférne az ablakba.
-
-        Terhelt gépen ez NEM hamis bukást ad, hanem hamis ZÖLDET: ha a
-        gép annyira lassú, hogy a hibásan átengedett esemény sem ér oda
-        0,8 mp alatt, a teszt zöld marad. Az irány tehát biztonságos —
-        de aki itt zöldet lát terhelés alatt, ne vegye erős bizonyítéknak.
+        A könyvtár saját módosítása külön esemény, és azt a #6696 szerint
+        a `test_modositott_mappa_is_jelzest_ad` fedi le.
         """
-        (tmp_path / "m").mkdir()
-        watcher_factory(tmp_path)
-        (tmp_path / "m" / "jegyzet.txt").write_text("nem média", encoding="utf-8")
-        (tmp_path / "m" / ".picasa.ini.bak").write_text("backup", encoding="utf-8")
-        time.sleep(0.8)
-        assert collector.batches == []
+        from watchdog.events import FileCreatedEvent
+
+        from picasapy.scanner.watcher import _Handler
+
+        class Figyelo:
+            _roots = (str(tmp_path),)
+
+            def _mark_dirty(self, _mappa):
+                raise AssertionError("nem releváns fájl piszkos jelzést adott")
+
+        kezelo = _Handler(Figyelo())
+        for nev in ("jegyzet.txt", ".picasa.ini.bak"):
+            kezelo.on_any_event(FileCreatedEvent(str(tmp_path / nev)))
 
     def test_hidden_dirs_ignored(self, tmp_path, watcher_factory, collector):
         """A rejtett mappákban történt változás nem ad jelzést.
@@ -287,3 +287,105 @@ class TestWindowsKonyvtarTorles:
             FileDeletedEvent(str(tmp_path / ".picasaoriginals"))
         )
         assert jelzesek == []
+
+
+def test_fajl_olvasasa_nem_jelol_piszkosnak_de_a_valtozasok_igen(tmp_path):
+    """#6696: csak írási/változási watchdog-esemény érhet piszkos jelölésig."""
+    from watchdog.events import (
+        FileClosedNoWriteEvent,
+        FileCreatedEvent,
+        FileClosedEvent,
+        FileDeletedEvent,
+        FileModifiedEvent,
+        FileOpenedEvent,
+    )
+
+    from picasapy.scanner.watcher import _Handler
+
+    class Figyelo:
+        _roots = (str(tmp_path),)
+
+        def __init__(self):
+            self.jelzesek = []
+
+        def _mark_dirty(self, mappa):
+            self.jelzesek.append(mappa)
+
+    figyelo = Figyelo()
+    kezelo = _Handler(figyelo)
+    kep = str(tmp_path / "kep.jpg")
+
+    kezelo.on_any_event(FileOpenedEvent(kep))
+    kezelo.on_any_event(FileClosedNoWriteEvent(kep))
+    assert figyelo.jelzesek == [], "a saját fájlolvasás piszkosnak jelölt egy mappát"
+
+    for esemeny in (
+        FileCreatedEvent(kep),
+        FileClosedEvent(kep),
+        FileDeletedEvent(kep),
+        FileModifiedEvent(kep),
+    ):
+        kezelo.on_any_event(esemeny)
+    assert figyelo.jelzesek == [str(tmp_path)] * 4
+
+
+def test_modositott_mappa_is_jelzest_ad(tmp_path):
+    """A mappán jelzett módosítás is számít, a read-only bezárás nem."""
+    from watchdog.events import DirModifiedEvent
+
+    from picasapy.scanner import DirectoryChange
+    from picasapy.scanner.watcher import _Handler
+
+    class Figyelo:
+        _roots = (str(tmp_path),)
+
+        def __init__(self):
+            self.jelzesek = []
+
+        def _mark_dirty(self, mappa):
+            self.jelzesek.append(mappa)
+
+    figyelo = Figyelo()
+    _Handler(figyelo).on_any_event(DirModifiedEvent(str(tmp_path / "album")))
+    assert figyelo.jelzesek == [
+        DirectoryChange(str(tmp_path / "album"), "refresh")
+    ]
+
+
+# rontás-kontroll: picasapy.scanner.watcher._CHANGE_EVENT_TYPES = {'created', 'deleted', 'moved', 'modified', 'closed', 'opened'} → 1 failed
+def test_halozati_gyokerhez_nem_kerul_watchdog_utemezes(tmp_path, monkeypatch):
+    from picasapy.scanner import watcher as watcher_module
+    from picasapy.scanner.watcher import LibraryWatcher
+
+    helyi = tmp_path / "helyi"
+    tavoli = tmp_path / "megosztas"
+    helyi.mkdir()
+    tavoli.mkdir()
+    utemezett = []
+
+    class Observer:
+        def schedule(self, _handler, path, *, recursive):
+            utemezett.append((path, recursive))
+
+        def start(self):
+            pass
+
+        def stop(self):
+            pass
+
+        def join(self, timeout=None):
+            pass
+
+    monkeypatch.setattr(watcher_module, "Observer", Observer)
+    monkeypatch.setattr(
+        watcher_module,
+        "halozati_gyoker",
+        lambda root: "\\\\photoserver\\share\\" if root == str(tavoli) else None,
+    )
+
+    figyelo = LibraryWatcher((str(helyi), str(tavoli)), lambda _mappak: None)
+    figyelo.start()
+    try:
+        assert utemezett == [(str(helyi), True)]
+    finally:
+        figyelo.stop()

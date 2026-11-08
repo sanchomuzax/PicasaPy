@@ -6,8 +6,10 @@ viszont nem érkezik esemény távoli változásról — arra a hívó oldali
 periodikus rescan a fallback.
 
 A figyelő debounce-ol: a gyors esemény-sorozatokat (pl. fájlmásolás)
-egyetlen jelzésbe gyűjti, és csak a releváns változásokra szól
-(médiafájlok és .picasa.ini; a backup/temp fájlok és rejtett mappák nem).
+egyetlen jelzésbe gyűjti. A fájlesemények közül a médiafájlok és a
+`.picasa.ini` relevánsak; a látható mappák létrehozása, törlése, áthelyezése
+és módosítása szintén jelzést ad. A backup/temp fájlok és rejtett mappák
+fájleseményeit kihagyja.
 """
 
 from __future__ import annotations
@@ -23,12 +25,15 @@ from typing import Literal
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
+from picasapy.halozati_ut import halozati_gyoker
+
 from .filetypes import media_kind_of
 from .walker import PICASA_INI_NAME
 
 #: A debounce időzítő osztálya; modulszintű fogantyú, hogy a teszt ezt
 #: cserélje, ne a globális `threading.Timer`-t (#1375).
 _Timer = threading.Timer
+_CHANGE_EVENT_TYPES = {"created", "deleted", "moved", "modified", "closed"}
 
 
 @dataclass(frozen=True)
@@ -102,6 +107,8 @@ class _Handler(FileSystemEventHandler):
         self._watcher = watcher
 
     def on_any_event(self, event) -> None:
+        if event.event_type not in _CHANGE_EVENT_TYPES:
+            return
         if event.is_directory:
             if event.event_type in {"created", "deleted"}:
                 path_str = _directory_change_path(
@@ -125,6 +132,14 @@ class _Handler(FileSystemEventHandler):
                         self._watcher._mark_dirty(
                             DirectoryChange(changed_path, action)
                         )
+            elif event.event_type in {"modified", "closed"}:
+                path_str = _directory_change_path(
+                    event.src_path, self._watcher._roots
+                )
+                if path_str is not None:
+                    self._watcher._mark_dirty(
+                        DirectoryChange(path_str, "refresh")
+                    )
             return
         # Windowson a watchdog a törölt mappát is fájlként jelzi (#5177): a
         # `ReadDirectoryChangesW` törlésnél nem mondja meg, mappa volt-e, a törölt
@@ -175,23 +190,90 @@ class LibraryWatcher:
         self._timers: set[threading.Timer] = set()
         self._first_dirty_at: float | None = None
         self._running = False
+        self._start_generation = 0
+        self._startup_thread: threading.Thread | None = None
 
     def start(self) -> None:
-        observer = Observer()
+        current_thread = threading.current_thread()
+        with self._lock:
+            if self._running:
+                return
+            self._running = True
+            self._start_generation += 1
+            generation = self._start_generation
+            if current_thread is not threading.main_thread():
+                self._startup_thread = current_thread
+
+        self._start_observer(generation)
+
+    def _start_background(self) -> threading.Thread | None:
+        """A watchdog rekurzív felállítása saját háttérszálon (#6696)."""
+        with self._lock:
+            if self._running:
+                return self._startup_thread
+            self._running = True
+            self._start_generation += 1
+            generation = self._start_generation
+            thread = threading.Thread(
+                target=self._start_observer_background,
+                args=(generation,),
+                name="picasapy-inotify-start",
+                daemon=True,
+            )
+            self._startup_thread = thread
+            try:
+                thread.start()
+            except BaseException:
+                self._running = False
+                self._start_generation += 1
+                self._startup_thread = None
+                raise
+            return thread
+
+    def _start_observer_background(self, generation: int) -> None:
+        try:
+            self._start_observer(generation)
+        except Exception:
+            _log.exception("a mappafigyelő indítása nem sikerült")
+
+    def _start_observer(self, generation: int) -> None:
+        observer = None
         handler = _Handler(self)
         scheduled = 0
-        for root in self._roots:
-            if Path(root).is_dir():
-                observer.schedule(handler, root, recursive=True)
-                scheduled += 1
-        if scheduled:
-            observer.start()
-            self._observer = observer
-        self._running = True
+        try:
+            observer = Observer()
+            for root in self._roots:
+                with self._lock:
+                    if not self._running or generation != self._start_generation:
+                        return
+                # UNC-megosztáson az inotify nem látja a távoli módosítást,
+                # a hívó oldali időzített rescan kezeli (#6696).
+                if halozati_gyoker(root) is not None:
+                    continue
+                if Path(root).is_dir():
+                    observer.schedule(handler, root, recursive=True)
+                    scheduled += 1
+            with self._lock:
+                if not self._running or generation != self._start_generation:
+                    return
+                if scheduled:
+                    # A watchdog itt hozza létre a rekurzív inotify-figyelőket;
+                    # ezt a hívó (a vezérlőnél háttérszál) nem blokkolja.
+                    observer.start()
+                    self._observer = observer
+        except Exception:
+            with self._lock:
+                if generation == self._start_generation:
+                    self._running = False
+                    if observer is not None and self._observer is observer:
+                        self._observer = None
+            raise
 
     def stop(self) -> None:
         with self._lock:
             self._running = False
+            self._start_generation += 1
+            startup_thread = self._startup_thread
             timers = tuple(self._timers)
             for timer in timers:
                 timer.cancel()
@@ -218,6 +300,8 @@ class LibraryWatcher:
                 )
             else:
                 self._observer = None
+        if startup_thread is not None and startup_thread is not threading.current_thread():
+            startup_thread.join(timeout=_JOIN_TIMEOUT_S)
         # A késleltető Timer külön szál, nem a watchdog Observeré. A cancel()
         # a már elindult callbacket nem állítja meg, ezért minden időzítőszálat
         # bevárunk, mielőtt a hívó elengedné a callbackben használt vezérlőt
@@ -257,7 +341,11 @@ class LibraryWatcher:
                 self._observer is None or not self._szal_el(self._observer)
             )
             timers_stopped = not any(timer.is_alive() for timer in self._timers)
-        return observer_stopped and timers_stopped
+            startup_stopped = (
+                self._startup_thread is None
+                or not self._startup_thread.is_alive()
+            )
+        return observer_stopped and timers_stopped and startup_stopped
 
     def _mark_dirty(self, folder: str | DirectoryChange) -> None:
         with self._lock:

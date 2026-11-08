@@ -545,4 +545,4 @@ class _LibraryFoldersMixin:
             tuple(self._roots),
             lambda folders: self.watcherDirty.emit(list(folders)),
         )
-        self._watcher.start()
+        self._start_watcher_background()
