@@ -5,12 +5,12 @@
 
 ## Mi ez
 
-A besorolás 30 láncot "c"-be tett, mert a láncot alkotó szűrők egyenkénti, eredeti Picasával készült renderje hiányzik. Ez a lap azt rögzíti, hogy a hiányzó egyszűrős eseteket feladtuk a Colab-végrehajtónak: melyik feladat melyik esetet méri, és melyik issue-szám alatt fut. Az eredmények még nem érkeztek meg, a besorolás nem változott.
+A besorolás 30 láncot "c"-be tett, mert a láncot alkotó szűrők egyenkénti, eredeti Picasával készült renderje hiányzik. Ez a lap azt rögzíti, hogy a hiányzó egyszűrős eseteket feladtuk a Colab-végrehajtónak: melyik feladat melyik esetet méri, és melyik feladatszám alatt fut. Az eredmények még nem érkeztek meg, a besorolás nem változott.
 
 ## Hogyan állt össze a lista
 
 1. **Forrás:** a "c" besorolású 30 lánc `filters=` értéke a besoroló lapról, tagokra bontva.
-2. **Már mért tagok kiszűrve:** a `picasa-colab-jobs` 400-406. issue-ja (a `r6585f` 64 egyszűrős esete) minden `(kép, pontos szűrősor)` párját beolvastam. Egy tag akkor "mért", ha ugyanazon a képen ugyanazzal a paraméterezéssel már van egyszűrős eredeti render. A 407. issue (#6617, `colorfix`-változatok) más paraméterekkel készült, ezért egyik láncbeli tagot sem fedi le.
+2. **Már mért tagok kiszűrve:** a `picasa-colab-jobs` 400-406. feladata (a `r6585f` 64 egyszűrős esete) minden `(kép, pontos szűrősor)` párját beolvastam. Egy tag akkor "mért", ha ugyanazon a képen ugyanazzal a paraméterezéssel már van egyszűrős eredeti render. A 407. feladat (#6617, `colorfix`-változatok) más paraméterekkel készült, ezért egyik láncbeli tagot sem fedi le.
 3. **Véletlen szemcse kizárva:** `grain`, `grain2`, `PicnikGrain` tagot nem kértem, mert a besorolás is kizárja őket a pixelmérésből, a véletlen szemcse miatt nem lehet képpontosan besorolni.
 4. **Ellenőrzés:** a fenti szabállyal mind a 32 eltérő láncra pontosan ugyanazt a hiányzó-tagszámot és kizárt-szemcseszámot kaptam, mint a besoroló lap "Egyszűrős bizonyíték" oszlopa.
 5. **Egyediség:** a hiányzó tagok között nincs két azonos `(kép, szűrősor)` pár, ezért nem kellett összevonni.
@@ -30,13 +30,13 @@ A "b" (`lanc-0045`) és az "a" (`lanc-0052`) lánc minden tagja már mért, ezek
 
 Egy feladatban az ini képenként egyetlen `filters=` sort hordozhat, a mintakészletben pedig csak a `k01.jpg`-`k10.jpg` képek vannak. Egy feladat tehát legfeljebb 10 esetet visz, képenként egyet. A leggyakoribb kép, a `k05.jpg`, 23 hiányzó esetet kér, így legalább 23 feladat kell. A többi kép esetei (k06: 17, k10: 10, k08 és k09: 8-8, k02 és k07: 7-7, k03 és k04: 5-5, k01: 2) ugyanebbe a 23 feladatba oszlanak szét.
 
-Az eseteket képenként úgy sorrendeztem, hogy a kevés hiányzó taggal bíró láncok előbb teljessé váljanak: a koteg-001 után 2, a koteg-003 után 11 lánc összes hiányzó tagja mérve van. A feladatok `lepesek`, `kimenet`, `keret` (30 perc), `indulas` és `mintakeszlet` mezője azonos a 400-406. issue-ban használttal (gépileg összevetve mind a hét feladattal); a feladatban nem szereplő képeknek nincs `filters=` sora, azokat nem értékeljük.
+Az eseteket képenként úgy sorrendeztem, hogy a kevés hiányzó taggal bíró láncok előbb teljessé váljanak: a koteg-001 után 2, a koteg-003 után 11 lánc összes hiányzó tagja mérve van. A feladatok `lepesek`, `kimenet`, `keret` (30 perc), `indulas` és `mintakeszlet` mezője azonos a 400-406. feladatban használttal (gépileg összevetve mind a hét feladattal); a feladatban nem szereplő képeknek nincs `filters=` sora, azokat nem értékeljük.
 
 ## A feladott feladatok
 
 Minden feladat: `colab-job`, `tipus:ui_capture`, `allapot:varakozik` címkékkel nyílt, `v: 3`, `indulas: alapallapot`, `mintakeszlet: kombinalt`, cím: `#6585 egyszűrős pótmérés koteg-NNN`. A feladatfájlok a munkafában a `.bt/r6585p/koteg-NNN.job.json` és `.ini` alatt vannak (a `.bt` nincs verziókezelve).
 
-| Köteg | Issue | Esetek | Képek |
+| Köteg | Feladat | Esetek | Képek |
 |---|---:|---:|---|
 | koteg-001 | 408 | 10 | k01, k02, k03, k04, k05, k06, k07, k08, k09, k10 |
 | koteg-002 | 409 | 10 | k01, k02, k03, k04, k05, k06, k07, k08, k09, k10 |
@@ -64,7 +64,7 @@ Minden feladat: `colab-job`, `tipus:ui_capture`, `allapot:varakozik` címkékkel
 
 ### Esetek feladatonként
 
-| Köteg | Issue | Kép | Szűrő (pontos paraméterekkel) | Lánc |
+| Köteg | Feladat | Kép | Szűrő (pontos paraméterekkel) | Lánc |
 |---|---:|---|---|---|
 | koteg-001 | 408 | k01.jpg | `colorfix=1,ff2739b2,-0.326245;` | lanc-0101 |
 | koteg-001 | 408 | k02.jpg | `PicnikFocalPixelate=1,0.698914,0.945061,42.726991,31.797369,60.493888,63.244677,0;` | lanc-0142 |
@@ -161,9 +161,9 @@ Minden feladat: `colab-job`, `tipus:ui_capture`, `allapot:varakozik` címkékkel
 
 ## Láncok szerinti lefedettség
 
-Melyik lánc melyik hiányzó tagját melyik issue méri. A láncon belül minden tag külön feladatba kerül, mert a lánc minden tagja ugyanazon a képen van.
+Melyik lánc melyik hiányzó tagját melyik feladat méri. A láncon belül minden tag külön feladatba kerül, mert a lánc minden tagja ugyanazon a képen van.
 
-| Lánc | Kép | Hiányzó tag | Már mért tag | Kizárt szemcse | Issue-k | Teljes ennyi köteg után |
+| Lánc | Kép | Hiányzó tag | Már mért tag | Kizárt szemcse | Feladatok | Teljes ennyi köteg után |
 |---|---|---:|---:|---:|---|---:|
 | lanc-0005 | k05.jpg | 3 | 3 | 0 | 408, 409, 410 | 3 |
 | lanc-0010 | k10.jpg | 2 | 0 | 1 | 410, 411 | 4 |
@@ -200,7 +200,7 @@ Melyik lánc melyik hiányzó tagját melyik issue méri. A láncon belül minde
 
 A besoroló lap "Adatminőségi megjegyzés" szakasza szerint a #6617 előtti `colorfix=1,<hex szín>,<hőmérséklet>` alakot az eredeti Picasa figyelmen kívül hagyja, a PicasaPy régi mentésként alkalmazza. Ezekhez a tagokhoz is kértem egyszűrős mérést, hogy a besorolás a pontos paraméterre is mérésből álljon, de az eredményüket ennek tudatában kell olvasni: a #6617 mérése (job-407) szerint az eredeti ezt az alakot figyelmen kívül hagyja.
 
-| Issue | Kép | Szűrő | Lánc |
+| Feladat | Kép | Szűrő | Lánc |
 |---:|---|---|---|
 | 408 | k01.jpg | `colorfix=1,ff2739b2,-0.326245;` | lanc-0101 |
 | 408 | k04.jpg | `colorfix=1,ff3de652,0.486719;` | lanc-0144 |
@@ -214,9 +214,9 @@ A besoroló lap "Adatminőségi megjegyzés" szakasza szerint a #6617 előtti `c
 ## Amit nem kértem, és miért
 
 - **Véletlen szemcse-tagok (12 db):** `grain`, `grain2`, `PicnikGrain`. A besorolás őket a pixelmérésből eleve kizárta (véletlen szemcse), ezért nem kértem újra. Az érintett láncok: lanc-0010 (1), lanc-0043 (2), lanc-0060 (1), lanc-0065 (1), lanc-0115 (1), lanc-0117 (1), lanc-0119 (1), lanc-0124 (1), lanc-0140 (1), lanc-0142 (1), lanc-0169 (1).
-- **Már mért tagok (23 db):** a 400-406. issue azonos képen, azonos paraméterrel mért eseteit nem ismételtem.
-- **A 407. issue (#6617) `colorfix`-sorai:** más paraméterű változatok, láncbeli taghoz nem tartoznak.
+- **Már mért tagok (23 db):** a 400-406. feladat azonos képen, azonos paraméterrel mért eseteit nem ismételtem.
+- **A 407. feladat (#6617) `colorfix`-sorai:** más paraméterű változatok, láncbeli taghoz nem tartoznak.
 
 ## Következő lépés
 
-Amikor a 408-430. issue `allapot:kesz` lesz, az `export/` mellékleteket a `job-<szám>` kiadásokból le kell tölteni (`eszkozok/colab_eredmeny.py`), az egyes tagokat a PicasaPy jelenlegi kódjával ugyanazon a forrásképen, ugyanazzal a szűrősorral renderelni, és a `tools/golden/compare_render.py` küszöbeivel összevetni. Utána a 30 lánc "c" besorolása újraértékelhető: ha minden mért tag egyezik, de a lánc eltér, az "b" (kölcsönhatás); ha valamelyik tag önállóan eltér, az "a".
+Amikor a 408-430. feladat `allapot:kesz` lesz, az `export/` mellékleteket a `job-<szám>` kiadásokból le kell tölteni (`eszkozok/colab_eredmeny.py`), az egyes tagokat a PicasaPy jelenlegi kódjával ugyanazon a forrásképen, ugyanazzal a szűrősorral renderelni, és a `tools/golden/compare_render.py` küszöbeivel összevetni. Utána a 30 lánc "c" besorolása újraértékelhető: ha minden mért tag egyezik, de a lánc eltér, az "b" (kölcsönhatás); ha valamelyik tag önállóan eltér, az "a".
