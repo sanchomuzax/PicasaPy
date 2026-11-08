@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.79] - 2026-11-08
+
+- A szerkesztőpanel-elrendezés tesztje már nem függ a tesztek futási sorrendjétől (#6709).
+- A bejárás feloldásszámláló tesztje már nem függ a tesztek futási sorrendjétől (#6711).
 ## [1.0.78] - 2026-11-08
 
 - Az exportpárbeszéd fókusztesztjei most egymástól függetlenül futnak (#6708).
