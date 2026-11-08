@@ -230,6 +230,16 @@ def test_nem_nevez_at_amig_a_mappa_kepe_szerkesztes_alatt_all(
     assert not source.with_name("new-name").exists()
 
 
+def _figyelo_el(controller) -> bool:
+    """A mappafigyelő Observer-szála elindult, és a felállító szál végzett."""
+    figyelo = getattr(controller, "_watcher", None)
+    if figyelo is None:
+        return False
+    observer = getattr(figyelo, "_observer", None)
+    indito = getattr(figyelo, "_startup_thread", None)
+    return observer is not None and (indito is None or not indito.is_alive())
+
+
 def test_az_utoellenorzo_figyelo_futas_utan_is_megmaradnak_a_mappaadatok(
     indexed_library, qt_app
 ):
@@ -237,6 +247,11 @@ def test_az_utoellenorzo_figyelo_futas_utan_is_megmaradnak_a_mappaadatok(
     controller.start()
     assert _var(qt_app, lambda: not controller._sync_running), (
         "az induló indexszinkron nem fejeződött be"
+    )
+    # #6696 óta a figyelő a szinkron és a GUI-újratöltés UTÁN, sorba állítva
+    # indul; az átnevezés csak akkor kelt watcher-eseményt, ha már figyel.
+    assert _var(qt_app, lambda: _figyelo_el(controller)), (
+        "a mappafigyelő nem indult el a szinkron után"
     )
     controller.selectFolder(str(source))
     befejezesek = []
