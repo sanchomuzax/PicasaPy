@@ -519,9 +519,11 @@ class FaceScanControllerScanMixin:
                         ):
                             if faces:
                                 self.facesStored.emit()
-                            self._report_scan(done, pending_total)
+                            if automatic:
+                                self._report_scan(done, pending_total)
                         batch.clear()
 
+                    processed = 0
                     for photo in pending_photos:
                         if not self._wait_for_scan_slot(
                             stop_event, automatic=automatic
@@ -544,6 +546,12 @@ class FaceScanControllerScanMixin:
                             elapsed = time.perf_counter() - started
                             batch.append((photo, faces, ini_faces))
                             self._mark_checked(photo_path, stop_event)
+                            processed += 1
+                            if not automatic:
+                                # A kézi keresés a korábbi módon, minden sikeres
+                                # detektálás után frissíti a haladást; a DB-írás
+                                # ettől függetlenül kötegelt marad.
+                                self._report_scan(processed, pending_total)
                             if len(batch) >= self._SCAN_COMMIT_BATCH_SIZE:
                                 commit_batch()
                             if not self._wait_for_scan_slot(
