@@ -26,8 +26,11 @@ Ld. `docs/specs/picasa-native-filter-workers.md` 2.7, „A súly szorzója
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 import numpy as np
 
+from picasapy.lazy_cv2 import cv2
 from picasapy.render.curves import validate_image
 from picasapy.render.iir_blur import apply_picasa_blur
 
@@ -159,6 +162,19 @@ def apply_dir_sat(
     return np.clip(result, 0.0, 255.0).astype(np.uint8)
 
 
+@lru_cache(maxsize=1)
+def _dir_brite_lut() -> np.ndarray:
+    """A 513×256-os tábla minden egész iránysúlyra és csatornabájtra."""
+    weights = np.arange(-256, 257, dtype=np.int32)[:, None]
+    values = np.arange(256, dtype=np.int32)[None, :]
+    amount = np.abs(weights)
+    lighten = weights > 0
+    mirrored = np.where(lighten, 255 - values, values)
+    cubic = (mirrored * mirrored * mirrored) >> 16
+    blended = (cubic * amount + (256 - amount) * mirrored) >> 8
+    return np.where(lighten, 255 - blended, blended).astype(np.uint8)
+
+
 def apply_dir_brite(
     image: np.ndarray, horizontal: float, vertical: float
 ) -> np.ndarray:
@@ -182,18 +198,23 @@ def apply_dir_brite(
     validate_image(image)
     height, width = image.shape[:2]
     weight = directional_weight(height, width, horizontal, vertical)
-    amount = np.abs(weight)
-    lighten = (weight > 0)[..., np.newaxis]
-
-    values = image.astype(np.float32)
-    mirrored = np.where(lighten, np.float32(255.0) - values, values)
-    cubic = np.floor(mirrored * mirrored * mirrored / np.float32(65536.0))
-    blended = np.floor(
-        (cubic * amount[..., np.newaxis] + (np.float32(_WEIGHT_SCALE) - amount[..., np.newaxis]) * mirrored)
-        / np.float32(_WEIGHT_SCALE)
-    )
-    result = np.where(lighten, np.float32(255.0) - blended, blended)
-    return np.clip(result, 0.0, 255.0).astype(np.uint8)
+    # A súly már egész float32 érték a [-256, 256] tartományban. A natív
+    # lebegőpontos képlet minden szorzata és összege ebben a tartományban
+    # pontos egész float32, így ugyanaz az eredmény előáll a közös táblából.
+    maps = np.empty((*weight.shape, 2), dtype=np.int16)
+    maps[..., 1] = weight.astype(np.int16) + 256
+    output = np.empty_like(image)
+    table = _dir_brite_lut()
+    for channel in range(3):
+        maps[..., 0] = image[..., channel]
+        output[..., channel] = cv2.remap(
+            table,
+            maps,
+            None,
+            interpolation=cv2.INTER_NEAREST,
+            borderMode=cv2.BORDER_REPLICATE,
+        )
+    return output
 
 
 def dir_sharp_blur_radius(height: int, width: int) -> int:
