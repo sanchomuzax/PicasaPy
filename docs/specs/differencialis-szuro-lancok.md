@@ -65,7 +65,7 @@ Az „elhagyva” jelöltek a megadott tagot vették ki az eredeti sorrendből. 
 | `lanc-0178-par-34` | megtartott pár: `dir_sat → colortemp` | `dir_sat=1,0.037718,-0.414407;colortemp=1,-0.389167,0.612947;` | 1.00000 | 0.000 | egyezik (pixelhű) |
 ## Lokalizálás és önálló szűrők
 
-Az alábbi önálló eredmények azonos forrásképen, az adott lánc paramétereivel készültek (a [korábbi pótmérés teljes táblája](../benchmarks/2026-11-08-6585-ujrabesorolas.md#tagonkenti-mérés)). Minden tag `pixelhű` vagy `közelítés`; egyik sem `eltér`. Ezért a b-láncok nem önálló szűrőhibát bizonyítanak. A ΔE értékek CIE76 átlagok.
+Az alábbi önálló eredmények azonos forrásképen, az adott lánc paramétereivel készültek (a [korábbi pótmérés teljes táblája](../benchmarks/2026-11-08-6585-ujrabesorolas.md)). Minden tag `pixelhű` vagy `közelítés`; egyik sem `eltér`. Ezért a b-láncok nem önálló szűrőhibát bizonyítanak. A ΔE értékek CIE76 átlagok.
 
 | Lánc / kép | Önálló mérés: szűrő: SSIM / ΔE | Minimalizálási lelet |
 |---|---|---|
