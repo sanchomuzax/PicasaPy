@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.69] - 2026-11-08
+
+- Ha mozgatáskor néhány képet nem sikerül áthelyezni (például mert a OneDrive épp zárolja), azok a régi mappában maradnak és ott látszanak is; a program egyszer újrapróbálja, és fájlonként megmutatja a hiba okát (#6658).
+- Ha képet vagy mappát húzol a főablakra, az importált mappa kijelölődik, és a nézet a képeihez ugrik, amint betöltődtek (#6659).
+- A könyvtárnézetben a Ctrl+8 a kijelölt képek csillagát váltja, a Ctrl+Shift+G pedig a Helyek panelt nyitja meg, ahogy az eredeti Picasában (#6660).
+
 ## [1.0.68] - 2026-11-08
 
 - Index-írás sorosítva (#6518), gyorsbillentyű-próbák (#6531), Időrend- és billentyű-spec (#6532).
