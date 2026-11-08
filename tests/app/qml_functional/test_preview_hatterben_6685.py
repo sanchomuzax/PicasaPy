@@ -20,6 +20,20 @@ def _item(window, name):
     return item
 
 
+def _walk_visual_items(item):
+    """A Repeater delegáltjait a vizuális fában keresi, nem findChild-dal."""
+    for child in item.childItems():
+        yield child
+        yield from _walk_visual_items(child)
+
+
+def _visual_child(root, name):
+    return next(
+        (item for item in _walk_visual_items(root) if item.objectName() == name),
+        None,
+    )
+
+
 def _click(window, item, qt_app):
     center = item.mapToScene(
         QPointF(float(item.property("width")) / 2, float(item.property("height")) / 2)
@@ -46,6 +60,11 @@ def _check_timer_during_render(tick_times, interval, label):
     start, end = interval
     expected = max(1, int((end - start) / 0.05))
     tick_count = sum(start <= tick <= end for tick in tick_times)
+    print(
+        f"{label}: időzítő {tick_count}/{expected} = "
+        f"{tick_count / expected:.1%}",
+        flush=True,
+    )
     assert tick_count >= math.ceil(expected * 0.8), (
         f"{label}: a QML 50 ms-os időzítő {tick_count}/{expected} alkalommal futott "
         f"a render ideje alatt; tickek={tuple(round(tick - start, 3) for tick in tick_times if start <= tick <= end)}"
@@ -134,7 +153,7 @@ def test_valodi_kattintas_kozben_el_a_felulet_es_frissul_a_kep(
     _check_timer_during_render(
         timer_ticks,
         (render_intervals[0][0], render_intervals[0][1]),
-        "csempekattintás",
+        f"{height}px csempekattintás",
     )
 
     # A panel Slider eleme és a kész előnézeti képkocka csak a render után
@@ -147,13 +166,14 @@ def test_valodi_kattintas_kozben_el_a_felulet_es_frissul_a_kep(
     assert var_feltetelre(
         qt_app,
         lambda: (
-            (slider := panel.findChild(QObject, "effectParamSlider0")) is not None
-            and bool(slider.property("visible"))
-            and float(slider.property("width")) > 0
+            (slider := _visual_child(panel, "effectParamSlider0")) is not None
+            and slider.isVisible()
+            and float(slider.width()) > 0
         ),
         10.0,
     ), "az első render után a paramétercsúszka nem épült fel"
-    slider = panel.findChild(QObject, "effectParamSlider0")
+    slider = _visual_child(panel, "effectParamSlider0")
+    assert slider is not None
     assert var_feltetelre(
         qt_app,
         lambda: viewer_image.property("source") != previous_source,
@@ -188,7 +208,7 @@ def test_valodi_kattintas_kozben_el_a_felulet_es_frissul_a_kep(
     _check_timer_during_render(
         timer_ticks,
         (render_intervals[-1][0], render_intervals[-1][1]),
-        "csúszkahúzás",
+        f"{height}px csúszkahúzás",
     )
     assert var_feltetelre(
         qt_app,
