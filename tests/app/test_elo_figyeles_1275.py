@@ -136,13 +136,14 @@ class TestAzUjKepMegjelenik:
 
 class TestAHalozatiTartalek:
     r"""NAS-mounton (SMB/NFS) NEM érkezik inotify-esemény — mérve a
-    `docs/benchmarks/rpi5-sqlite-inotify.md`-ben. Ilyenkor az 5 percenkénti
-    periodikus `rescan()` az egyetlen út, amin az új kép bejöhet.
+    `docs/benchmarks/rpi5-sqlite-inotify.md`-ben. Ilyenkor a hálózati
+    gyökérre szűrt időzített vagy a kézi `rescan()` hozza be az új képet.
 
     ⚠️ A tulajdonos gyűjteménye NAS-on van (`\\DS215j\...`), tehát nála
-    GYAKORLATILAG ez a tartalék működik — vagy nem működik semmi."""
+    GYAKORLATILAG ez a tartalék működik — vagy nem működik semmi. A teszt
+    helyi ideiglenes gyökeret használ, ezért itt a kézi út fut."""
 
-    def test_a_periodikus_rescan_behozza_az_uj_kepet(
+    def test_a_kezi_rescan_behozza_az_uj_kepet(
         self, elo_controller, library, qt_app
     ):
         mappa = library / "nyaralas"
@@ -156,6 +157,6 @@ class TestAHalozatiTartalek:
         elo_controller.rescan()
 
         assert _var(qt_app, lambda: elo_controller.photos.rowCount() == 3), (
-            "a periodikus rescan sem hozta be az új képet — hálózati "
-            "meghajtón ez az EGYETLEN út"
+            "a kézi rescan nem hozta be az új képet — hálózati "
+            "meghajtón a watcher nem kap távoli változásjelzést"
         )
