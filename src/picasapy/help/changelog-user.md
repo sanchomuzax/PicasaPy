@@ -4,6 +4,30 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-08
+
+**Billentyűk**
+
+- A könyvtárban a **Ctrl+8** csillagot ad a kijelölt képeknek vagy
+  elveszi róluk, a **Ctrl+Shift+G** pedig megnyitja a **Helyek** panelt,
+  ahogy az eredeti Picasában. Lásd [Billentyűparancsok](features/billentyuk.md).
+
+**Importálás**
+
+- Ha mappát vagy képet húzol az ablakra, a mappa kijelölődik, és a rács a
+  képeihez ugrik. Egy már ismert mappa behúzásakor a program újraolvassa
+  a lemezről. Lásd [Importálás](features/importalas.md).
+- Az **Import a Picasából…** magától megtalálja a régi Picasa adatmappáját,
+  Windowson is, és beírja a mezőbe. Az útvonal-átíró mezők megszűntek;
+  Windowson a mappák átírás nélkül jönnek át (eddig egy sem jött át).
+
+**Fájlműveletek**
+
+- Ha áthelyezéskor néhány képet nem sikerül átvinni (például mert a
+  OneDrive épp zárolja), a program egyszer újrapróbálja, a végén
+  fájlonként megmutatja a hiba okát, és a kimaradt képek a régi mappában
+  látszanak. Lásd [Fájlműveletek](features/fajlmuveletek.md).
+
 ## 2026-11-07
 
 **Időrend**

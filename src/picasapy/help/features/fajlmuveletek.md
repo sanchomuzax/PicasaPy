@@ -110,6 +110,14 @@ keletkezik belőle másolat — a program a félbemaradt másolatot visszatörli
 ugyanabból a képből. Ugyanez a védelem működik a Kukába helyezésnél, a
 visszaállításnál és a megőrzött eredetik költöztetésénél is.
 
+Ha a fájl csak egy pillanatra foglalt (például a OneDrive épp
+szinkronizálja), a program egyszer rövid szünet után újra megpróbálja.
+Ha így sem megy, a többi képpel folytatja, és a végén **A fájlművelet
+befejeződött** ablakban fájlonként felsorolja, mi maradt ki és miért
+(legfeljebb tíz sort; a többit egy darabszám jelzi). A ki nem mozgatott
+képek a régi mappában maradnak, és a nézetben is ott látszanak: a
+program a művelet után a lemezről újraolvassa mindkét mappát.
+
 ## Másolás, kivágás, beillesztés
 
 **Szerkesztés ▸ Másolás** (Ctrl+C) és **Kivágás** (Ctrl+X) a

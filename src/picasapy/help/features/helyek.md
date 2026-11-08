@@ -5,7 +5,8 @@ telefon már eleve beleírja a fájlba; a többi képhez kézzel adhatod meg.
 
 ## A Helyek panel
 
-Megnyitás: **Nézet ▸ Helyek**, vagy a képtálca Helyek gombja.
+Megnyitás: **Nézet ▸ Helyek**, a képtálca Helyek gombja, vagy a
+könyvtárban a **Ctrl+Shift+G** billentyű.
 
 A panelen térkép látszik, rajta a helyhez kötött képeid jelölői. A térkép
 fölött ott áll, hány képed rendelkezik hellyel.

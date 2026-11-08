@@ -10,7 +10,7 @@ látható, de szürke tételek billentyűi nem élnek.
   marad: a Ctrl+A ott a szöveget jelöli ki, a nyilak a szövegben
   lépnek, az Enter és az Esc a mezőre vonatkozik.
 - **A könyvtári parancsok a könyvtárban élnek.** A Ctrl+A, Ctrl+D,
-  Ctrl+I és Ctrl+H nem sül el, amíg a nagy
+  Ctrl+I, Ctrl+H, Ctrl+8 és Ctrl+Shift+G nem sül el, amíg a nagy
   nézőben állsz; ott a néző saját billentyűi érvényesek.
 
 ## Fájl
@@ -71,11 +71,13 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 | Ctrl+5 | Időrend: teljes képernyős bemutató a mappáidról - lásd [Nézegetés](nezegetes.md) |
 | Ctrl+T | Címkék panel nyitása/zárása |
 | Ctrl+K | Címkék panel (ugyanaz, mint a Ctrl+T) |
+| Ctrl+Shift+G | A Helyek panel megnyitása - lásd [Helyek és geocímkék](helyek.md); csak a könyvtárban |
 | Ctrl+0 | A jobb oldali panel be- és kikapcsolása |
 | Ctrl+3 | A kijelölt kép megnyitása a nézőben |
 | Ctrl+F | A kereső mezőre ugrik |
 | F3 | A kereső mezőre ugrik (ugyanaz, mint a Ctrl+F); a nézőben nem működik |
 | F4 | Csillag adása vagy elvétele a kijelölt képeken, mint a képtálca csillag-gombja; a nézőben is működik, diavetítés alatt és gépelés közben nem |
+| Ctrl+8 | Csillag adása vagy elvétele a kijelölt képeken, mint az F4; csak a könyvtárban, a nézőben nem |
 | Ctrl+F6 | Váltás a másodpéldányok nézetére |
 | Ctrl+F7 | Keresés hasonló képekre |
 | Ctrl+F8 | A hasonlóság-minta törlése |

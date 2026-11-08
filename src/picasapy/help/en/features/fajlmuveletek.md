@@ -105,6 +105,14 @@ destination. A failed move therefore does not leave two copies of the
 same photo. The same protection applies when moving a file to Trash,
 restoring it, or moving a preserved original.
 
+If a file is only briefly busy (for example, while OneDrive is syncing
+it), PicasaPy waits a moment and tries once more. If that also fails, it
+continues with the other photos and, at the end, the **File operation
+finished** window lists each file that was left behind and why (up to
+ten lines; a count stands in for the rest). Photos that were not moved
+stay in the old folder and are shown there: after the operation
+PicasaPy re-reads both folders from disk.
+
 ## Copy, cut, and paste
 
 **Edit** ▸ **Copy** (`Ctrl+C`) and **Cut** (`Ctrl+X`) put the files on
