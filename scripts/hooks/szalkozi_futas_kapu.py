@@ -94,7 +94,8 @@ def blokkolando(cmd: str, *, ps: str, terheles: float, magok: int) -> str | None
 
 def _ps() -> str:
     return subprocess.run(["ps", "-eww", "-o", "etimes=,args="],
-                          capture_output=True, text=True, timeout=10).stdout
+                          capture_output=True, text=True, encoding="utf-8",
+                          errors="replace", timeout=10).stdout
 
 
 def _terheles() -> tuple[float, int]:
