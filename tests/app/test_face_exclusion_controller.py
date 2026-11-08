@@ -125,3 +125,29 @@ class TestFaceDetectionToggle:
             assert ctl.faceDetectionEnabledFor(str(lib)) is False
         finally:
             assert ctl.waitForBackgroundWorkers(30.0)
+
+    def test_detection_checks_reuse_pre_resolved_exclusion_roots(
+        self, controller, monkeypatch
+    ):
+        from picasapy.app import library_controller_folders
+
+        ctl, lib, _tmp_path = controller
+        calls = []
+        original_resolve = library_controller_folders._resolve_exclude_roots
+        from picasapy.paths import path_key
+
+        def counted_resolve(roots):
+            calls.append(tuple(path_key(root) for root in roots))
+            return original_resolve(roots)
+
+        monkeypatch.setattr(
+            library_controller_folders,
+            "_resolve_exclude_roots",
+            counted_resolve,
+        )
+
+        ctl.setFaceDetectionEnabled(str(lib), False)
+        child = lib / "alalbum"
+        child.mkdir()
+        assert ctl.faceDetectionEnabledFor(str(child)) is False
+        assert calls == [(path_key(lib),)]
