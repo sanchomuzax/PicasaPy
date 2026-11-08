@@ -6,6 +6,7 @@ import sys
 import threading
 from dataclasses import replace
 
+import numpy as np
 import pytest
 
 from picasapy.ini.filters import FilterOp
@@ -107,3 +108,61 @@ def test_render_kozben_a_gui_gil_idot_kap_es_visszaall(vezerlo, monkeypatch):
     assert worker_idokoz == [min(eredeti_idokoz, 0.001)]
     assert vezerlo.waitForBackgroundWorkers(3.0)
     assert sys.getswitchinterval() == eredeti_idokoz
+
+
+def test_gyors_keresek_osszevonodnak_a_futo_render_mellett(vezerlo, monkeypatch):
+    """Húsz gyors kérésből csak az első és az utolsó renderelődjön."""
+    assert vezerlo.waitForBackgroundWorkers(10.0)
+    provider = vezerlo._provider
+    eredeti_register = provider.register
+    elso_elindult = threading.Event()
+    elso_feloldasa = threading.Event()
+    render_keresek = []
+
+    monkeypatch.setattr(
+        provider,
+        "_resolve_source",
+        lambda *_args, **_kwargs: np.zeros((4, 4, 3), dtype=np.uint8),
+    )
+
+    def determinisztikus_lanc(_key, source, ops, _shared_cache, _paint_strokes):
+        ertek = int(ops[0].params[0])
+        return np.full_like(source, ertek), None
+
+    monkeypatch.setattr(provider, "_futtasd_a_lancot", determinisztikus_lanc)
+
+    def lassu_register(**request):
+        render_keresek.append(request)
+        if len(render_keresek) == 1:
+            elso_elindult.set()
+            elso_feloldasa.wait(5.0)
+        eredeti_register(**request)
+
+    monkeypatch.setattr(provider, "register", lassu_register)
+
+    try:
+        for ertek in range(20):
+            vezerlo._session = replace(
+                vezerlo._session,
+                ops=(FilterOp("sepia", (str(ertek),)),),
+            )
+            vezerlo._register_preview()
+
+        assert elso_elindult.wait(3.0), "az első előnézeti render nem indult el"
+    finally:
+        elso_feloldasa.set()
+
+    assert vezerlo.waitForBackgroundWorkers(10.0)
+    assert len(render_keresek) == 2, (
+        "a húsz gyors előnézeti kérésből csak az elsőnek és az utolsónak "
+        f"szabad renderelnie; hívások: {len(render_keresek)}"
+    )
+    assert [request["ops"][0].params[0] for request in render_keresek] == [
+        "0",
+        "19",
+    ]
+
+    vegso_kep = provider.requestImage(vezerlo._kulcs, None, None)
+    assert vegso_kep.pixelColor(0, 0).red() == 19, (
+        "a tárolt előnézeti kép nem az utolsó kérésből készült"
+    )

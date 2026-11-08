@@ -19,6 +19,8 @@ előnézet háttérbe kerül, ezért a gyors és üres lánc is aszinkron.
 
 from __future__ import annotations
 
+import threading
+
 import pytest
 
 from picasapy.ini.filters import FilterOp
@@ -40,9 +42,24 @@ def vezerlo(qt_app, tmp_path):
 
 def _hatterben_futott(ctl, hivas) -> bool:
     """Igaz, ha a hívás HÁTTÉRSZÁLAT indított."""
-    elotte = len(ctl._bg_worker_set())
-    hivas()
-    return len(ctl._bg_worker_set()) > elotte
+    assert ctl.waitForBackgroundWorkers(10.0)
+    provider = ctl._provider
+    eredeti_register = provider.register
+    render_szal = []
+    elindult = threading.Event()
+
+    def figyelt_register(**request):
+        render_szal.append(threading.current_thread())
+        elindult.set()
+        eredeti_register(**request)
+
+    provider.register = figyelt_register
+    try:
+        hivas()
+        return elindult.wait(3.0) and render_szal[0] is not threading.current_thread()
+    finally:
+        provider.register = eredeti_register
+        assert ctl.waitForBackgroundWorkers(10.0)
 
 
 class TestASlowLanc:

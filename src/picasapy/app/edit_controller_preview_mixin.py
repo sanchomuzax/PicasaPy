@@ -244,24 +244,41 @@ class EditControllerPreviewMixin:
         szolgáltatói út és a #546-os elavult eredmény elleni védelem megmarad.
 
         A kép csak a renderelés VÉGÉN frissül: addig a korábbi előnézet
-        látszik, ami így is jobb, mint a befagyott felület."""
-        self._preview_job += 1
-        job = self._preview_job
+        látszik, ami így is jobb, mint a befagyott felület. #6685: egyszerre
+        egy render fut; a közben beérkező kérésekből csak a legutolsó marad."""
         request = self._preview_request(session)
         # A gyors csúszka-előnézet és a renderhez tartozó más ContextVar-ok
         # ugyanazzal az értékkel fussanak a workerben, mint az indító szálon.
         render_context = copy_context()
+        with self._preview_queue_lock:
+            self._preview_job += 1
+            task = (self._preview_job, request, render_context)
+            if self._preview_worker_active:
+                self._preview_pending = task
+                return
+            self._preview_worker_active = True
+
+        try:
+            self._start_preview_worker(task)
+        except BaseException:
+            with self._preview_queue_lock:
+                self._preview_worker_active = False
+            raise
+
+    def _start_preview_worker(self, task) -> None:
+        job, request, render_context = task
 
         def still_current() -> bool:
             return job == self._preview_job
 
         def worker() -> None:
-            # #546: az elavultság-ellenőrzés a providerben, a TÁROLÁSSAL egy
-            # zár alatt fut le (`is_current`) — ha itt kívül néznénk meg,
-            # a régebbi render a zárért állva utóbb végezne, és felülírná a
-            # frissebb képet. A `shared_cache=False` miatt a háttér-render
-            # lokálisan dekódol: a GUI-szál soha nem vár rá záron.
             try:
+                # #546: az elavultság-ellenőrzés a providerben, a TÁROLÁSSAL
+                # egy zár alatt fut le (`is_current`) — ha itt kívül néznénk
+                # meg, a régebbi render a zárért állva utóbb végezne, és
+                # felülírná a frissebb képet. A `shared_cache=False` miatt a
+                # háttér-render lokálisan dekódol: a GUI-szál soha nem vár
+                # rá záron.
                 with _preview_gil_fairness():
                     render_context.run(
                         self._provider.register,
@@ -279,10 +296,31 @@ class EditControllerPreviewMixin:
                 _log.exception("Az előnézet háttérszálas renderelése elbukott")
                 self.editSaveFailed.emit(str(error))
                 return
-            if still_current():
-                self._previewRendered.emit()
+            else:
+                if still_current():
+                    self._previewRendered.emit()
+            finally:
+                self._finish_preview_worker()
 
         self._start_background(worker, name="picasapy-editpreview")
+
+    def _finish_preview_worker(self) -> None:
+        """A befejezett render után indítsa a legutóbbi várakozó kérést."""
+        with self._preview_queue_lock:
+            task = self._preview_pending
+            if task is None or task[0] != self._preview_job:
+                self._preview_pending = None
+                self._preview_worker_active = False
+                return
+
+            # A következő worker a zár felengedése előtt induljon el. Így a
+            # hívó nem tud egy régebbi várakozót elindulása közben felülírni.
+            self._preview_pending = None
+            try:
+                self._start_preview_worker(task)
+            except BaseException:
+                self._preview_worker_active = False
+                raise
 
 
     @Slot()
