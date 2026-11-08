@@ -1769,3 +1769,32 @@ A kártya mélységi alfája a távolodással nemlineárisan csökken:
 2. ⛔ A specifikáció nem zárja le az összes megvalósítandó pontot: a 38.2.101-ben felsorolt Preferences-értékek, a teljes futásidejű qshow-forráslista, az eseménynaplóhoz rendelt képkockák és az összehasonlító kiadási képsor/videó továbbra is „NINCS MEG”.
 3. ⛔ A PicasaPy-forrás és az eredeti bináris több eleme össze lett vetve, de a végfeliratok qshow-rekordjai és a PicasaPy globális dátumhatárai közötti tényleges egyezés/eltérés nincs mérve; ezért a korábbi konkrét végfelirat-javítás nem adható át fejlesztési követelményként.
 4. ⛔ A megvalósítási jegy megnyitása és állapotának ellenőrzése a hívó feladata; a GitHub-állapot ebben a kutatási körben nem ellenőrizhető.
+#### 38.2.103 A dátumskála végfeliratai a fókuszgyűjtemény váltásakor változatlanok (#6532, 2026-11-08)
+
+**Kérdés.** A 38.2.102 nyitva hagyta, hogy a dátumvonal `May 2009` és `November 2026` felirata a kiválasztott gyűjtemény szélső dátumát, vagy a qshow saját rekordlistájának széleit mutatja-e.
+
+**Forrás és módszer.** A helyi `Picasa3.exe` `0x007fee70` függvényének célzott, utasításszintű diszasszemblálása (`annot_disasm.py`, a bináris index szerinti 3600 bájt); összevetés a már meglévő `2026-11-05-idorend-6532-retegek.txt` Ghidra-kimenettel; a `job-373` MP4 teljes dekódolása után kiválasztott `n=150`, `n=300` és `n=420` képkocka vizuális összehasonlítása. Az átmeneti PNG-k a munkafa `.bt/` könyvtárába kerültek.
+
+**Bináris út (feltételes a rekordlista teljes hatókörére).** A `0x007ff476` a `[this+0x3a8]` rekordlista első rekordjának azonosítóját olvassa. A `0x007ff493`-nál a `[this+0x2f4]+0xc4+0x48` objektum virtuális táblájának `+0x20` slotja kapja az azonosítót; a hívás a `0x007ff496` címen történik. A dátumot a `0x0098c780` `%s %d` hónap-év formázó alakítja felirattá (`0x007ff4a9`). A jobb végpontnál a függvény a `[this+0x3ac]` mezőt felezi (`0x007ff4c6`), `0xf8` bájtos rekordmérettel kiszámítja az utolsó rekord címét (`0x007ff4c8`-`0x007ff4ce`), majd ugyanennek a virtuális `+0x20` lekérdezőnek adja át (`0x007ff4f0`-`0x007ff4f3`) és a `0x0098c780`-nal formázza (`0x007ff506`). A meglévő Ghidra-kiírás ugyanebben a függvényben ugyanezt a mező- és hívásszerkezetet tartalmazza; ez a gépi kód alternatív reprezentációja, önmagában nem második futásidejű adatút.
+
+**Videómérés.**
+
+| Videóképkocka | Fókuszban látható gyűjtemény | A dátumvonal bal és jobb végfelirata |
+|---:|---|---|
+| `n=150` (10,000 s) | `2009_majus` / `May 2009` | `May 2009` / `November 2026` |
+| `n=300` (20,000 s) | `2014_november` / `November 2014` | `May 2009` / `November 2026` |
+| `n=420` (28,000 s) | `2019_marcius` / `March 2019` | `May 2009` / `November 2026` |
+
+A három vizsgált képkockán a dátumvonal feliratai változatlanok, miközben a jobb felső fókuszfelirat három különböző gyűjteményt mutat. Ez a mérés azt támasztja alá, hogy a dátumvonal nem a látható fókuszgyűjteményhez tartozó dátumpárt jeleníti meg. Nem bizonyítja önmagában, hogy a `[this+0x3a8]` rekordlista a teljes Picasa-katalógus valamennyi képét tartalmazza.
+
+**Eredeti / nálunk / teendő.**
+
+| Eredeti Picasa | Jelenlegi PicasaPy (forráskód, nem futásidejű mérés) | Teendő |
+|---|---|---|
+| A qshow dátumvonalának két felirata a saját `+0x3a8` rekordlistájának első és utolsó rekordjából kap hónap-évet (`0x007fee70`, `0x007ff476`-`0x007ff506`); a job-373 három vizsgált csoportja alatt a feliratok azonosak. | A `timeline_controller.py:201-209` a `_collections_to_qml` hívásnak átadott `records` dátumai közül egyszer számít minimumot és maximumot, majd ezeket minden gyűjtemény rekordjához rendeli (`:273-274`). A `TimelinePanel.qml:545-554,640-646` az aktuális gyűjtemény objektumáról olvassa ki a két címkét. | A két megjelenítési mód gyűjteményváltás közbeni viselkedése egyezik, de a PicasaPy `records` készletének és a Picasa qshow `+0x3a8` rekordlistájának tényleges azonossága nincs mérve. A rekordlisták futásidejű azonosítása előtt e részből nem következik dátumhatár-javítás. |
+
+**A két út és bizonyítottsági fok.** A út: a friss utasításolvasat a bal/jobb feliratot az első/utolsó qshow-rekordhoz köti. B út: a job-373 három, különböző fókuszgyűjteményt mutató képkockáján a végfeliratok változatlanok. A utak egyeznek abban a szűk következtetésben, hogy a mért dátumvonal a fókuszgyűjtemény dátumpárját nem követi. A qshow-lista teljes katalógushoz való viszonya és a PicasaPy `records` készletével való azonossága továbbra is **nyitott**; a `0x007fee70` Ghidra-kimenet ugyanennek a függvénynek a másik reprezentációja, ezért arra nem támaszkodom második független útként.
+
+**Cáfoló kísérlet.** Azt a feltevést próbáltam cáfolni, hogy a dátumvonal végei az aktuális gyűjtemény legkorábbi és legkésőbbi dátumát követik. A `n=150`, `n=300` és `n=420` képkockákon a fókuszfelirat 2009-ről 2014-re, majd 2019-re változik, a két végfelirat viszont mindhárom képen ugyanaz. Ez a feltevést a vizsgált három állapotra cáfolja. A három képkocka ugyanabból az egy felvételből származik; a vizsgált menet egészére vagy a teljes könyvtárra nem általánosítom.
+
+**Nyitott.** A qshow `[this+0x3a8]` rekordlistájának tagjai, teljessége és a PicasaPy-ba átadott `records` halmazzal való azonossága **NINCS MEG**. Megszerzéséhez egy azonos Picasa-futásban rögzíteni kell a qshow rekordlista azonosítóit, a fókuszgyűjteményt és a két végfelirat dátumkulcsát, majd ezeket a PicasaPy azonos mappakészletből előállított `records` dátumaihoz hasonlítani. A helyi böngészőben nem volt Colab-fül; a helyi Colab-indító GitHub API-t igényel, ezért új futást ebben a körben nem indítottam.
