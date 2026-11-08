@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.73] - 2026-11-08
+
+- A gyorsbillentyű-leltár futáspróba-lefedettsége: mi hiányzik még (#6531).
 ## [1.0.72] - 2026-11-08
 
 - Kilenc Ctrl-ág funkciója a binárisból (#6660), egyszűrős pótmérés feladása (#6660).
