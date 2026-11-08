@@ -2607,10 +2607,11 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
 
 **PicasaPy elfogadási kritériumok a fejlesztői körnek:**
 
-- [ ] A `Ctrl+8` valódi `QTest.keyClick`-kel kijelölt képen billenti a csillagot, és a visszaállítást is ellenőrzi.
+- [x] A `Ctrl+8` valódi `QTest.keyClick`-kel kijelölt képen billenti a csillagot, és a visszaállítást is ellenőrzi. Megvalósítva (#6660): a meglévő tálca-csillag parancs, próba: `test_konyvtari_gyorsbillentyuk_6660.py`.
 - [ ] A `Ctrl+Alt+Shift+G` valódi leütése létrehozza a bizonyított kontaktkép-kimenetet és a külső megnyitási hívást; a teszt ideiglenes könyvtárat és megfigyelhető megnyitó-adaptert használ.
 - [ ] A `Ctrl+Shift+L` valódi leütése ellenőrzi a helyi szerver indítását, az előállított URL-t és a böngészőindítási adaptert.
 - [ ] A `Ctrl+Shift+G` csak a PicasaPy támogatott geotag-útvonalára kerül; a Google Earth hiányzó és elérhető esete külön billentyűtesztet kap. KML-exportot nem tekintünk automatikusan azonos műveletnek.
+  - Részben megvalósítva (#6660): a billentyű a Helyek panelt nyitja meg, mert a PicasaPy geotag-felülete ez; Google Earth-integráció nincs, ezért a hiányzó/elérhető ág külön próbája nem értelmezhető. A `Ctrl+Shift+L` a helyi webszerver hiányában szándékosan nincs bekötve (a weboldal-export más funkció).
 - [ ] A `Ctrl+Alt` meglévő QML- és billentyűtesztje a §10.32 eltéréseit lefedi: `EnableHover`, bináris képforrás, gyerekablak `>1024 px` kapuja, Alt-tartás és tick-es elrejtés.
 - [ ] A `Ctrl+6` és `Ctrl+Shift+Y` látható viselkedését az eredeti Picasa célzott Colab-próbája rögzíti, mielőtt PicasaPy-hoz végleges műveletet rendelünk.
 - [ ] A `Ctrl+Alt+S` és `Ctrl+Shift+U` csak akkor kap felhasználói kötést, ha a PicasaPy adatbázis- és cache-életciklusának megfelelő műveletet külön specifikáció igazolja; a `Ctrl+Alt+S` nem válik fotómentéssé.
