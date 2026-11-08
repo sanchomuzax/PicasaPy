@@ -628,7 +628,7 @@ A #4398 elején megadott 53-as szám a #4339 korábbi pillanatfelvétele volt; a
 
 A főablak kötéseinél a táblázat a forrásban kifejezett `enabled`-kaput írja le; ahol nincs nézetkapu, ott nem következtetünk a 44 eredeti helyi rekord parancs-hozzárendelésére. Az eredetihez nem igazolt `+0x332f` módjelző szemantikája továbbra is nyitott. `PhotoViewer.qml` nézeti `Keys`-fogadói (`Esc`, nyilak, `Return`, szóköz, `F`, `Shift+F`, `Ctrl+Delete`) szövegfókuszban visszatérnek a mezőnek, `PicasaSlider.qml` pedig csak a `EditorParamPanel.qml` 3–5. látható füléhez kapja meg a `+`, `=`, `-`, `_` léptetés engedélyét.
 
-Az ellenőrző teszt jelenlegi futáskor 62 QML `Shortcut`-deklaráció szekvenciáját próbálta valódi leütéssel keresőmező-fókuszban; külön valódi eseményekkel vizsgálja a könyvtári `Ctrl+1` editorbeli tiltását, az editor 2. fülén a négy sliderbillentyű tiltását és a 3. fülön működését, továbbá a kereső-, felirat- és címkemező saját szerkesztőbillentyűit. Ez nem bizonyítja a 44 rekord egyedi parancs-megfeleltetését.
+Az ellenőrző teszt jelenlegi futáskor 64 QML `Shortcut`-deklaráció szekvenciáját próbálta valódi leütéssel keresőmező-fókuszban; külön valódi eseményekkel vizsgálja a könyvtári `Ctrl+1` editorbeli tiltását, az editor 2. fülén a négy sliderbillentyű tiltását és a 3. fülön működését, továbbá a kereső-, felirat- és címkemező saját szerkesztőbillentyűit. Ez nem bizonyítja a 44 rekord egyedi parancs-megfeleltetését.
 ---
 
 ## 7. Amit ez a kör NEM vizsgált (kimondva)
@@ -2153,7 +2153,7 @@ Az állapot mező értékei:
 | 47 | ➖ (nincs billentyű) | Automatikus/kézi mód váltása | Nincs azonosított eredeti parancs vagy mai kötés | **tisztázandó — a forrás nem azonosítja a rekesz műveletét** | Nincs megállapítható kapu; nem találgatunk | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
 | 48 | ➖ (nincs billentyű) | Visszatérés a könyvtárnézetbe; a C forrás Esc-kötése | Keys=Keys.onEscapePressed → viewerMenuBackToLibrary út | **megvan és működik** | Néző; aktív szerkesztőművelet előbb megszakad; szövegfókuszban nem zár | tests/app/qml_functional/test_viewer_escape_key_4462.py, tests/app/qml_functional/test_viewer_escape_666.py |
 
-A 22., 26. és 37. sor a keymap-komment/rekesz eltérését rögzíti, nem hibás mai működést. A 39. sor önálló hiány; a 42-44. sorhoz a fizikai billentyű→néző videókezelő út továbbra is **NINCS MEG** (§12), a 47. sor tisztázandó. A #4398 valódi `QTest.keyClick` próbája a jelenlegi futáskor 62 QML `Shortcut`-szekvenciát ellenőriz keresőmező-fókusszal; ez fókuszkapu, nem a 62 művelet egyedi igazolása. A paritásőr a 48 eredeti keymap-rekeszt és a QML-horgonyokat tartja számon. A konkrét műveletpróbák állapotát a §12.4 sorolja.
+A 22., 26. és 37. sor a keymap-komment/rekesz eltérését rögzíti, nem hibás mai működést. A 39. sor önálló hiány; a 42-44. sorhoz a fizikai billentyű→néző videókezelő út továbbra is **NINCS MEG** (§12), a 47. sor tisztázandó. A #4398 valódi `QTest.keyClick` próbája a jelenlegi futáskor 64 QML `Shortcut`-szekvenciát ellenőriz keresőmező-fókusszal; ez fókuszkapu, nem a 64 művelet egyedi igazolása. A paritásőr a 48 eredeti keymap-rekeszt és a QML-horgonyokat tartja számon. A konkrét műveletpróbák állapotát a §12.4 sorolja.
 
 ## 12. #6531 - nézetenkénti billentyű → művelet útvonalak (2026-11-04)
 
@@ -2363,7 +2363,7 @@ nyolc fájlnál sikeres kilépést jelzett. A helyi Qt **6.8.2.1**, a futtató
 | `test_gyorsbillentyuk_1616.py` | 28 passed | Valódi `Ctrl+N` új albumhoz és keresőfókusz-/kijelölési kapukhoz; a fájl további esetei nem egyedi leltársorok. |
 | `test_felsomenupontok_gyorsbillentyuk_4329.py` | 6 passed | Valódi `Ctrl+E` küldési és `Ctrl+H` tálcamegtartási út. |
 | `test_tags_shortcut_focus_6301.py` | 3 passed | Valódi `Ctrl+T`, a Címkék-mező fókusza és visszatérés. |
-| `test_shortcut_focus_4398.py` | 15 passed | A futáskor felolvasott 62 QML `Shortcut`-szekvencia valódi leütése keresőmező-fókusszal; fókuszkapu, nem parancsonkénti működési próba. |
+| `test_shortcut_focus_4398.py` | 15 passed | A futáskor felolvasott 64 QML `Shortcut`-szekvencia valódi leütése keresőmező-fókusszal; fókuszkapu, nem parancsonkénti működési próba. |
 | `test_view_options_people_shortcuts_4528.py` | 1 passed | Mappanézet-menü szerkezete és egérrel választott rendezés; nem billentyűleütéses bizonyíték. |
 
 **Fennmaradó tesztleltár-rés:** a fenti futás nem adott próbasort minden §12-es billentyűhöz. A célzott forráskeresés nem talált `/`, `,`, `.` billentyűtesztet vagy módosító nélküli F8/F9-próbát; az F8/F9-találatok Ctrl+F8-at és Ctrl+F9-et fednek le. A `PhotoViewerKeyboard.qml` jelenlegi `Keys` ágai között sincs `/`, `,`, `.`, plain F8 vagy plain F9; a `VideoPlayerView.qml` nem deklarál saját `Keys.onPressed`/`Keys.onReleased` kezelőt. Ez forrásleltár, nem futásidejű negatív mérés. A teljes megfeleltetés továbbra is nyitott.
