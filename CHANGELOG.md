@@ -7,6 +7,18 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.82] - 2026-11-08
+
+- A könyvtárnézeti gyorsbillentyűk futásidejű ellenőrzése az eredeti Picasán (52 billentyű próbaeredményének rögzítése a specifikációban) (#6531).
+- Az eltérő szűrőláncok minimalizálásának mérési eredményei bekerülnek a műszaki dokumentációba (#6585).
+- A szövegigazító ikonok tesztje tesztenként rendesen lebontja az alkalmazást, így windowson sem omlik össze véletlen sorrendben (#6710).
+- A kötegelt exportban a szemcse az eredeti Picasa véletlenszám-folyamát követi, így a több képes export szemcséje képpontra egyezik az eredetivel (#6712).
+- A hiányzó könyvtári és videónézeti billentyűkhöz valódi leütéses próbák készültek (#6714).
+
+## [1.0.81] - 2026-11-08
+
+- A szerkesztő előnézete renderelés közben is friss marad, a csúszkahúzás közbeni kérések összevonása pedig csökkenti a felesleges számolást (#6685).
+
 ## [1.0.80] - 2026-11-08
 
 - Az automatikus arckeresés változatlan szinkronnál nem olvassa újra a teljes könyvtárat, és a háttérben fékezve fut (#6694).

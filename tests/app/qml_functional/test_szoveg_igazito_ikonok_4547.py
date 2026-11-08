@@ -18,7 +18,7 @@ nem a forráskódban.
 - a rajzolt képen a tinta súlypontja balra / középen / jobbra áll;
 - a három gomb rajzolt képe páronként különbözik;
 - VALÓDI egérkattintásra a megfelelő igazítás megy a vezérlőnek;
-- mindez −5 / 0 / +5 px ablakmagasságnál.
+- mindez -5 / 0 / +5 px ablakmagasságnál.
 
 ⚠️ Amit NEM mér: a képpontra pontos egyezést a referencia-képernyőképpel.
 A referenciában a szövegpanel igazító gombjainak képe nincs a leltárban
@@ -27,9 +27,11 @@ A referenciában a szövegpanel igazító gombjainak képe nincs a leltárban
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
+import shiboken6
 from PySide6.QtCore import QObject, QPointF, QRectF, Qt
 from PySide6.QtTest import QTest
 from PySide6.QtQuick import QQuickItem
@@ -57,6 +59,27 @@ _SULYPONT_KUSZOB = 0.03
 
 def _mappa_kepei(lib) -> None:
     make_jpeg(lib / "elso.jpg", size=(640, 400))
+
+
+@contextmanager
+def _futo_app(qt_app, tmp_path):
+    """A teljes app a blokk idejére; a blokk végén RENDESEN lebomlik (#6710).
+
+    A `_build_qml_app` generátor a lebontását a `yield` UTÁN végzi (háttérmunkák
+    bevárása, a térszelvény-vezérlő leállítása, a motor `deleteLater`-e és a
+    képszolgáltatók elengedése). A generátor `close()`-a ezt NEM futtatja le:
+    a `yield`-nél `GeneratorExit` dobódik, a lebontó rész kimarad, és a motor
+    meg a vezérlők a Python-burkok refcount-esésekor, tetszőleges sorrendben
+    semmisülnek meg. Windowson a következő teszt felépítése közben ez
+    hozzáférési hibává (0xC0000005) válik. Ezért a generátort `next()`-tel
+    kell végigvinni, `finally`-ben, hogy akkor is lebomoljon, ha a teszt bukik.
+    """
+    gen = _build_qml_app(qt_app, tmp_path, kepeket_keszit=_mappa_kepei)
+    ablak, vezerlo, motor = next(gen)
+    try:
+        yield ablak, vezerlo, motor
+    finally:
+        next(gen, None)
 
 
 def _keres(elem: QQuickItem, object_name: str):
@@ -183,9 +206,7 @@ class TestAzIkonOttVan:
 class TestAzIkonRajzoltKepen:
     @pytest.mark.parametrize("offset", [-5, 0, 5])
     def test_a_tinta_sulypontja_balra_kozep_jobbra(self, offset, qt_app, tmp_path):
-        gen = _build_qml_app(qt_app, tmp_path, kepeket_keszit=_mappa_kepei)
-        ablak, _vezerlo, _motor = next(gen)
-        try:
+        with _futo_app(qt_app, tmp_path) as (ablak, _vezerlo, _motor):
             ablak.setHeight(ablak.height() + offset)
             qt_app.processEvents()
             _szovegpanel_nyitva(ablak, qt_app)
@@ -194,16 +215,12 @@ class TestAzIkonRajzoltKepen:
             jobb = _tinta_sulypont(ablak, _gomb(ablak, "textAlign_right"))
             assert bal + _SULYPONT_KUSZOB < kozep, (bal, kozep)
             assert kozep + _SULYPONT_KUSZOB < jobb, (kozep, jobb)
-        finally:
-            gen.close()
 
     @pytest.mark.parametrize("offset", [-5, 0, 5])
     def test_a_harom_gomb_rajzolt_kepe_paronkent_kulonbozik(
         self, offset, qt_app, tmp_path
     ):
-        gen = _build_qml_app(qt_app, tmp_path, kepeket_keszit=_mappa_kepei)
-        ablak, _vezerlo, _motor = next(gen)
-        try:
+        with _futo_app(qt_app, tmp_path) as (ablak, _vezerlo, _motor):
             ablak.setHeight(ablak.height() + offset)
             qt_app.processEvents()
             _szovegpanel_nyitva(ablak, qt_app)
@@ -214,8 +231,6 @@ class TestAzIkonRajzoltKepen:
             for i, a in enumerate(nevek):
                 for b in nevek[i + 1:]:
                     assert kepek[a] != kepek[b], f"{a} és {b} ugyanazt mutatja"
-        finally:
-            gen.close()
 
 
 class TestAKattintasAzIgazitastKuldi:
@@ -223,9 +238,7 @@ class TestAKattintasAzIgazitastKuldi:
     def test_valodi_kattintas_a_helyes_igazitast_kuldi(
         self, offset, qt_app, tmp_path
     ):
-        gen = _build_qml_app(qt_app, tmp_path, kepeket_keszit=_mappa_kepei)
-        ablak, _vezerlo, _motor = next(gen)
-        try:
+        with _futo_app(qt_app, tmp_path) as (ablak, _vezerlo, _motor):
             ablak.setHeight(ablak.height() + offset)
             qt_app.processEvents()
             panel = _szovegpanel_nyitva(ablak, qt_app)
@@ -234,5 +247,21 @@ class TestAKattintasAzIgazitastKuldi:
             for nev, igazitas in GOMBOK.items():
                 _kattints(ablak, qt_app, _gomb(ablak, nev))
                 assert kapott[-1:] == [igazitas], nev
-        finally:
-            gen.close()
+
+
+class TestAzAppLebomlikATesztVegen:
+    """A blokk vége UGYANAZT a lebontást futtatja, mint a `qml_app` fixture."""
+
+    def test_a_blokk_vegen_a_motor_megsemmisul(self, qt_app, tmp_path):
+        with _futo_app(qt_app, tmp_path) as (ablak, _vezerlo, motor):
+            assert shiboken6.isValid(ablak)
+            assert shiboken6.isValid(motor)
+        assert not shiboken6.isValid(motor)
+
+    def test_a_teszt_bukasa_utan_is_lebomlik(self, qt_app, tmp_path):
+        motorok = []
+        with pytest.raises(AssertionError, match="szándékos"):
+            with _futo_app(qt_app, tmp_path) as (_ablak, _vezerlo, motor):
+                motorok.append(motor)
+                raise AssertionError("szándékos bukás")
+        assert not shiboken6.isValid(motorok[0])
