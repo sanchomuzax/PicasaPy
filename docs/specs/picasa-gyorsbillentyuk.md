@@ -2651,4 +2651,28 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
 
 **Cáfoló kísérlet.** Az ellenhipotézist, miszerint az F8/F9 billentyű a szerkesztőben bármilyen felületi elemet (pl. csúszka-léptetést, csempe-kiválasztást vagy elrejtést) kapcsol, a szerkesztőpanel vezérlőinek közvetlen elemzésével vizsgáltam: a csúszkaléptetés kizárólag a `+`/`=`/`-`/`_` karakterekre korlátozott (`0x005d2290`, `WM_CHAR`), a csempefrissítés pedig kizárólag a Shift billentyűre (`0x005e674e`: `cmp byte ptr [ebx+8], 0x10`). Semmilyen egyéb F-billentyű ág nem létezik a szerkesztőben.
 
-**Lezárási állapot.** A §7-ben és a jegyben nevesített nyitott kutatási kérdések (a szerkesztőpanel F8/F9 billentyűi, a 47. keymap-rekesz, a videólejátszó `/`, `,`, `.`, a szünetbeli vezérlősáv és egérmutató, a vetítés gombjai és a kilenc könyvtári Ctrl-ág) mind megerősített bizonyítékkal lezárva.
+**Lezárási állapot.** E szakasz három statikus kérdése lezárva: a szerkesztőpanel módosító nélküli F8/F9 ágát cáfolja a handlerlánc, a 47. rekesz nem ad leütést, a `0x005cb990` pedig parancsazonosítót dolgoz fel, nem billentyűeseményt. Ez **nem** jelenti a #6531 teljes lezárását: a jegy minden táblázatsorhoz eredeti-Picasa- és PicasaPy-billentyűpróbát kér, és a §12.13 szerinti futáspróba-lefedettség hiányos.
+
+### 12.13 #6531 futáspróba-lefedettség: nem teljes (2026-11-08)
+
+**Kérdés.** Van-e a §12-es leltár minden sorához eredeti Picasa- és PicasaPy-próba? A specifikációban rögzített próbák pontos átnézése szerint nincs; a korábbi részfutások nem fedik le a teljes jegy elfogadási feltételét.
+
+| eset | eredeti Picasa | PicasaPy | állapot |
+|---|---|---|---|
+| Módosító nélküli `F8`/`F9` a szerkesztőben | A #375 képernyőképei (8–12.) azonosak, változás nem látszik (§12.12). | A tesztfában csak `Ctrl+F8`/`Ctrl+F9` leütéspróbát találtam; módosító nélküli F8/F9 `QTest.keyClick`-próbát nem. | Eredeti: mérve; PicasaPy: **NINCS MEG**. |
+| Videónézeti `/`, `,`, `.` | A #375 eredménysorában nem szerepelnek; a §12.4 szerint a Colab-végrehajtó ezeket videólejátszóban nem tudta megbízhatóan leütni. | A tesztfában egyik billentyűre sincs `QTest.keyClick`-próba; a §12.10 statikus lelete nem kezelőt, hanem teszthiányt igazol. | Mindkét oldali futáspróba: **NINCS MEG**. |
+| CThumbUI-próbaindex | A §12.3/#375 eredménytábla nyolc leütött sort rögzít; ez a táblázat nem teljes leltárpróba. | Az index 56 sorából 10 `nincs megfelelő` jelölésű, tehát ezekhez nincs hivatkozott QML-billentyűpróba: `Ctrl+Alt`, `Ctrl+6`, `Ctrl+G`, `Ctrl+Alt+G`, `Ctrl+Alt+Shift+G`, `Ctrl+Shift+L`, `Ctrl+Alt+S`, `Ctrl+Shift+U`, `Ctrl+Shift+Y`, `F12`. | Soronkénti egyezés: **NINCS MEG**. |
+
+**Helyi PicasaPy-futtatás (2026-11-08).** A 24, a §12-es PicasaPy-indexben hivatkozott különböző QML-tesztfájl a `scripts/run_tests.py` darabolt futtatójával futott. 23 fájl sikeresen befejeződött, összesen 244 teszttel; a `test_menusor_maradek_valodi_5150_l.py` két egymás utáni, 180 másodperces timeout után `exit 124`-gyel maradt befejezetlenül. A futtató ezt időtúllépésként, nem tesztbukásként osztályozta. A környezet PySide6 6.8.2.1, a futtató által jelzett CI-verzió 6.11.2; ez nem CI-azonos mérés. A fájlok lefutása nem oldja fel a soronként hiányzó teszteket, és a timeouttal végződött fájl sincs zöldként elszámolva.
+
+**Cáfoló kísérlet.** A tesztfában közvetlenül rákerestem a módosító nélküli `Key_F8`/`Key_F9` és a videó `Key_Slash`/`Key_Comma`/`Key_Period` `QTest.keyClick` hívásaira. Találat csak Ctrl+F8-ra és Ctrl+F9-re van; a puszta billentyűpróba hiányát ez az ellenőrzés megerősíti. A keresés negatívumát a §12.4 korábbi futásjegyzeteivel is összevetettem: azok ugyanezt a két próbahézagot nevezték meg.
+
+**Következtetés.** A 47. üres keymap-rekesz és a parancsszétosztó nem igényel gyorsbillentyű-próbasort: az egyikben nincs billentyűkötés, a másik parancsüzeneteket fogad. A többi leütési sorra a bináris lelet önmagában nem pótolja a két felületen kért futáspróbát. E körben nem állítok paritást, és a le nem futtatott esetből eltérést sem következtetek.
+
+**A #6531 „Kész, ha” teljesítéséhez hátra van:**
+
+1. Az eredeti Picasa `ui_capture` futásának folytatása minden még nem mért táblasorral, képernyőkép és azonosítható billentyűlépés mentésével. A `/`, `,`, `.` esetén a végrehajtó billentyűküldését külön ellenőrizni kell; a §12.4-ben dokumentált korlát miatt ezek még nem mértek.
+2. A PicasaPy valódi QML-billentyűpróbáinak lefuttatása minden indexelt sorra, a hiányzó műveleteknél is rögzítve, hogy a leütésnek nincs hatása vagy szándékosan nincs kötése. A `nincs megfelelő` sor nem futáspróba.
+3. Eredeti/PicasaPy eredmény soronkénti összevetése, majd csak a mért eltérések továbbadása javító jegyként.
+
+**Körkorlát.** A jelen munkamenetben nincs csatlakoztatott böngésző vagy asztali alkalmazás, és nem indítottam Colab-feladatot. Ezért új eredeti-Picasa képernyőképet és a hiányzó PicasaPy tesztfuttatásokat itt nem állítom késznek.
