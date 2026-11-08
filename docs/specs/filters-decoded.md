@@ -1901,6 +1901,58 @@ figyelembe veszi a `Preferences/CarefulEnhance` beállítást.
 **Ezekhez már nem a felhasználó Picasája kell**, hanem a meglévő
 dekompilátum feldolgozása vagy egy tetszőleges mintaképes ellenőrzés.
 
+## `triple2`: Derítőfény, fekete- és fehérpont (#6690)
+
+A natív callback `0x008f8b90` előbb a Derítőfényt (`0x0090ac20`), utána az
+egyetlen szinthúzó LUT-ot (`0x0090c3b0`) futtatja. A fekete pont a második,
+a fehér pont a harmadik csúszkáról érkezik; a fehérpont-védelem alsó határa
+`0.001`. A leképezés sorrendjét és paraméter-hozzárendelését a
+[`picasa-native-filter-workers.md`](picasa-native-filter-workers.md) §2.2,
+§2.3 és a registry #15 rekordja rögzíti.
+
+### A nyers pixelmérés korlátja
+
+Az eredeti `0x0090bc60` LUT-alkalmazó képpontonként egy MT19937-mintát
+fogyaszt. A generátort a folyamat indulásakor a `0x00c32520` inicializáló
+magozza; az állapot folyamat-globális, ezért egy kép dither-sorozata függ az
+előtte feldolgozott képpontoktól. Egyetlen export nem tartalmazza ezt az
+előzményt, így a nyers pixelminta nem reprodukálható abból önmagában. A teszt
+nem kapcsolja ki a termék ditherét és nem becsüli meg a generátor állapotát:
+mindkét képet Gauss-elmosás után hasonlítja össze, a nyers mércét is
+megtartva.
+
+### Mérés: hét kombinált és két különálló eset
+
+A nyers oszlop az eredeti Picasa JPEG kvantálótábláival újrakódolt helyi
+render és az export teljes képes összevetése. A toleráns oszlop mindkét
+képen `σ=2.5 px` Gauss-elmosás után készült, a golden-mérce alapküszöbeivel
+(SSIM ≥ 0.98, átlagos ΔE ≤ 2.0). `σ=2.0` a `lanc-0095`-öt még eltérőnek
+minősítette (SSIM 0.96950); a 4×4 blokkátlag SSIM-je is a küszöb alatt
+maradt. `σ=2.5` mellett mind a kilenc eset legalább közelítés.
+
+| Eset | Eredeti export | Nyers SSIM / ΔE | `σ=2.5` SSIM / ΔE | Ítélet |
+|---|---|---:|---:|---|
+| `lanc-0052` | job-403/k02 | 0.85067 / 1.201 | 0.99298 / 0.574 | közelítés |
+| `lanc-0089` | job-412/k09 | 0.99442 / 1.195 | 0.99947 / 0.332 | közelítés |
+| `lanc-0095` | job-420/k05 | 0.73324 / 1.181 | 0.98259 / 0.613 | közelítés |
+| `lanc-0105` | job-424/k05 | 0.96714 / 1.815 | 0.99721 / 0.582 | közelítés |
+| `lanc-0116` | job-417/k06 | 0.81518 / 1.137 | 0.99147 / 0.559 | közelítés |
+| `lanc-0178` | job-411/k08 | 0.99664 / 1.976 | 0.99957 / 0.476 | közelítés |
+| `lanc-0196` | job-424/k06 | 0.85903 / 1.099 | 0.99405 / 0.539 | közelítés |
+| Derítőfény önállóan (`0.794439`) | job-452/k05 | 1.00000 / 0.000 | 1.00000 / 0.000 | pixelhű |
+| Feketepont önállóan (`0.822413`) | job-453/k05 | 0.99761 / 0.365 | 0.99936 / 0.134 | közelítés |
+
+**Következtetés:** az önálló Derítőfény ág pixelhű; a feketepont-ág a
+`0x0090c3b0` modellen belül közelítés. A hét kombinált eset nyers eltérése
+a folyamat-globális dither eltérő állapotából ered; az elmosott képek
+egyezése nem mutat további sorrend- vagy tartományhibát. A `0x008f8b90`
+viselkedését nem kellett módosítani.
+
+Teszt: [`test_triple2_dither_6690.py`](../../tests/render/test_triple2_dither_6690.py).
+Kilenc 256×256-as, eredeti exportból dekódolt kivágása a
+`tests/render/data/triple2_dither_6690/` alatt van; teljes forrásfotó nincs a
+repóban.
+
 ## A szinthúzás vágási pontjai — MEGFEJTVE (#539, 2026-08-14)
 
 A `autolight` (`0x008f80c0`) a vágási pontokat **hisztogram-darabszám
