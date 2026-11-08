@@ -281,6 +281,20 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: SQLite-verzió a Windows-csomagban
+        if: steps.tag.outputs.skip != 'true'
+        shell: bash
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          python - <<'PY'
+          import sqlite3
+
+          print(f"SQLite a PyInstaller Python-futtatókörnyezetében: {sqlite3.sqlite_version}")
+          if sqlite3.sqlite_version_info < (3, 51, 3):
+              print("::warning::A Windows-csomag SQLite-verziója régebbi 3.51.3-nál; a program induláskor figyelmeztet.")
+          PY
+
       - name: Függőségek + PyInstaller
         if: steps.tag.outputs.skip != 'true'
         shell: bash
@@ -626,6 +640,9 @@ jobs:
               if len(logs) != 1:
                   raise SystemExit(f"{case}: nem jött létre egyértelmű telepített hibanapló")
               log = logs[0].read_text(encoding="utf-8")
+              print(log)
+              if "SQLite " not in log:
+                  raise SystemExit(f"{case}: a telepített napló nem tartalmazza a betöltött SQLite-verziót")
               if result.returncode != 0 or "A főablak a splash után megjelent" not in log:
                   raise SystemExit(f"{case}: a telepített főablak nem jelent meg a splash után")
               print(f"{case}: a telepített főablak megjelent a splash után")

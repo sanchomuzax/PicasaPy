@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import faulthandler
+import logging
 import os
 import re
 import socket
+import sqlite3
 import sys
 import threading
 import time
@@ -15,6 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 _PYSIDE6_MAX_MINOR = 12
+_SQLITE_WAL_RESET_FIX_VERSION = (3, 51, 3)
 _VERSION_PREFIX = re.compile(r"^\s*(\d+)\.(\d+)(?:\.|$)")
 _thread = threading.Thread
 
@@ -36,7 +39,8 @@ def pyside6_is_supported(version: str) -> bool:
 def runtime_version_messages(pyside6_version: str, qt_version: str) -> tuple[str, ...]:
     """A konzolon és a hibanaplóban megjelenő verzióüzenetek."""
     messages = [
-        f"PicasaPy futtatókörnyezet: PySide6 {pyside6_version}; Qt {qt_version}."
+        f"PicasaPy futtatókörnyezet: PySide6 {pyside6_version}; Qt {qt_version}; "
+        f"SQLite {sqlite3.sqlite_version}."
     ]
     if not pyside6_is_supported(pyside6_version):
         messages.append(
@@ -45,6 +49,32 @@ def runtime_version_messages(pyside6_version: str, qt_version: str) -> tuple[str
             'python -m pip install "PySide6<6.12", majd indítsd újra a programot.'
         )
     return tuple(messages)
+
+
+def warn_if_sqlite_wal_reset_vulnerable(
+    *,
+    sqlite_version: str | None = None,
+    sqlite_version_info: tuple[int, int, int] | None = None,
+) -> bool:
+    """Naplózza, ha az indexhez használt SQLite régebbi a WAL-reset javításánál.
+
+    A Windowsos PyInstaller-csomag a build Python-futtatókörnyezetének
+    SQLite-könyvtárát viszi magával. A 3.51.3 előtti kiadások egy része
+    párhuzamos WAL-műveleteknél adatbázis-sérülést okozhat; ilyenkor a
+    hibanapló megőrzi a ténylegesen betöltött verziót és a figyelmeztetést.
+    """
+    active_version = sqlite_version or sqlite3.sqlite_version
+    active_version_info = sqlite_version_info or sqlite3.sqlite_version_info
+    if active_version_info >= _SQLITE_WAL_RESET_FIX_VERSION:
+        return False
+
+    logging.getLogger("picasapy.startup").warning(
+        "SQLite %s régebbi a WAL-reset hibát javító 3.51.3-as verziónál; "
+        "a korábbi kiadások párhuzamos WAL-műveleteknél adatbázis-sérülést "
+        "okozhatnak. A futtatókörnyezet SQLite 3.51.3+ verzióra frissítendő.",
+        active_version,
+    )
+    return True
 
 
 def process_age_ms(platform: str = sys.platform) -> int | None:
