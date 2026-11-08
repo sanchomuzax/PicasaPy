@@ -34,7 +34,7 @@ Az eseteket képenként úgy sorrendeztem, hogy a kevés hiányzó taggal bíró
 
 ## A feladott feladatok
 
-Minden feladat: `colab-job`, `tipus:ui_capture`, `allapot:varakozik` címkékkel nyílt, `v: 3`, `indulas: alapallapot`, `mintakeszlet: kombinalt`, cím: `#6585 egyszűrős pótmérés koteg-NNN`. A feladatfájlok a munkafában a `.bt/r6585p/koteg-NNN.job.json` és `.ini` alatt vannak (a `.bt` nem kerül a gitbe).
+Minden feladat: `colab-job`, `tipus:ui_capture`, `allapot:varakozik` címkékkel nyílt, `v: 3`, `indulas: alapallapot`, `mintakeszlet: kombinalt`, cím: `#6585 egyszűrős pótmérés koteg-NNN`. A feladatfájlok a munkafában a `.bt/r6585p/koteg-NNN.job.json` és `.ini` alatt vannak, a repóba nem kerülnek.
 
 | Köteg | Feladat | Esetek | Képek |
 |---|---:|---:|---|
