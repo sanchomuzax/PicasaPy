@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.80] - 2026-11-08
+
+- Az automatikus arckeresés változatlan szinkronnál nem olvassa újra a teljes könyvtárat, és a háttérben fékezve fut (#6694).
+
 ## [1.0.79] - 2026-11-08
 
 - A szerkesztőpanel-elrendezés tesztje már nem függ a tesztek futási sorrendjétől (#6709).
