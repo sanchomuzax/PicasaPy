@@ -1080,6 +1080,10 @@ számoló rajzoló még azonosítatlan; azonosítása után egy
 > A szerkesztői csempe kattintása külön kérdés: az élő út a következő
 > szakaszban címekkel végig van vezetve.
 
+**#6585: öt eltérő, egyébként önállóan egyező szűrőlánc minimalizálása:** a
+42 jelölt összevetése, az egyedi/páros leletek és a következő mérési lépések a
+[differenciális szűrőláncok lapján](differencialis-szuro-lancok.md) vannak.
+
 ### A `Pixelate` Shift-párjának élő kattintási útja (#2456, 2026-09-18)
 
 A csempe-tábla (`0x00c7e5a0`) a `Pixelate` második tokenjeként a
