@@ -1637,3 +1637,54 @@ A `+0x648` a `0x007fb210` betöltőben készül: a `layer:overlays/overlay` erő
 **Nyitott és megszerzési út.** A tényleges futás `Preferences\SlideshowEffectTime` és `Preferences\SimpleSlideshow` értéke, valamint a `+0x520` frissítési idő és az adott képkocka `alpha` értéke NINCS MEG. A Colab/Wine futásban új videót vagy időbélyeges képsort kell készíteni, és ugyanahhoz a képkockához rögzíteni a két beállításértéket, a `+0x520` időalapot, `+0x519` állapotot, valamint a régi `+0x444` és új `+0x46c` forrást. A már létező Ghidra-kimenetek tartalmazzák a `0x008001c0` és `0x0072df60` címeket; ugyanerre a statikus kérdésre új Ghidra-kör nem szükséges. Ez nem zárja le a #6532 videó-, teljes vezérlő- és forráshalmaz-feltételeit.
 
 **Fejlesztési átadás.** A statikus eredmény azt bizonyítja, hogy az eredeti `SimpleSlideshow=1` ága időben nemlineáris alpha-görbét használ, míg a PicasaPy-forrás lineáris, 1,400 ms-os alpha-átmenetet ír le. Az eltérő kód önmagában nem bizonyít felhasználói kimeneti hibát, mert a videó futásidejű Preferences értékei nincsenek rögzítve; ezért ebből a szakaszból önálló fejlesztői jegy még nem indokolt. A mérést követően az eredeti / nálunk / teendő táblát a mért alpha-képkockákkal kell kiegészíteni.
+
+#### 38.2.101 A job-373 felvétel ellenőrzése és a qshow billentyűútja (#6532, 2026-11-08)
+
+**Kérdés és hatókör.** A #6532 kéri az eredeti Picasa Időrend videós bizonyítékát, a látható vezérlések bináris útját és a PicasaPy-val való összevetését. Ez a kiegészítés a már létező job-373 felvételt ellenőrzi újra, és a qshow billentyűkezelő útját rögzíti. Nem állítja, hogy a teljes forráslista, a minden képkockára kiterjedő animáció vagy a futó Picasa beállításai ezzel megvannak.
+
+**Felvétel és mérés.** A helyi `~/.local/share/picasapy-meroadat/idorend/idorend-job373.mp4` fájl SHA-256 értéke `be0ba93e5ac9863f4fd98d5e3e73f03e77708a4e0cd9c7059d8d253ee13e9625`. A `ffprobe` és a dekódolt képkockák ellenőrzése:
+
+| érték/állítás | forrás |
+|---|---|
+| A fájl videója H.264, 1280×1024, 15/1 fps, 1500 képkocka és 100,000 s | mérés (`ffprobe`, job-373 fájl) |
+| A felvétel a Picasa könyvtárnézetét, az Időrend lapját, a Space után megjelenő OneUp/diavetítést és a későbbi könyvtárnézetet tartalmazza | mérés (job-373 dekódolt képkockák és kontaktlap) |
+| A felvétel teljes kimeneti példányának SHA-256 értéke a fenti | mérés (`sha256sum`, job-373 fájl) |
+| A qshow tényleges futásidejű `SlideshowEffectTime` és `SimpleSlideshow` értéke | NINCS MEG |
+| A job-373 billentyű-eseménynaplója | NINCS MEG |
+
+A videó a mérőadat-tar-on kívüli, külön helyi fájl; a tarban nem volt hozzá tartozó videótétel. A fájlt a spec-munkához nem másoltam a repóba. A videó tehát rendelkezésre áll a helyi kutatáshoz, de a release-be kerülő összehasonlító videó vagy képsor itt nem készült el.
+
+**Bináris billentyűút.** A célfüggvény `0x00801270` a `QDrawable::vftable` 12. slotja (vtable `0x00cbd66c`, slot byte offset `+0x30`; RTTI-index). A függvény utasításai a `WM_KEYDOWN` (`0x100`) üzenettípust dolgozzák fel; `WM_CHAR` (`0x102`) és az üzenetazonosító 0 külön ága nem kezeli billentyűként.
+
+| gomb | bináris út és pontos érték | megfigyelés/korlát |
+|---|---|---|
+| Escape | `0x00801270` → `0x007fb820` | qshow kilépési út; a pontos utána kijelölt kép a videó eseménynaplója nélkül nem rendelhető ehhez a gombhoz |
+| Left, Up | `0x00801270` → `0x008011b0`; a hívó a `0x00cf3a48` f32 konstansból 2,0-t ad át `0x007fd0c0`-nak | `0x007fd0c0` a qshow `+0x2f8` pályaadatát és QPC-időt használja, majd a `0x0072df60` görbét hívja; ez a pozitív irányú út |
+| Right, Down | `0x00801270` → `0x00801210`; ugyanennek a 2,0 értéknek az előjele negálódik a `0x007fd0c0` hívása előtt | ez a negatív irányú út |
+| Space | a `+0x3bb` állapotjelző szerint a `0x00801130` vagy a `0x00803110` ág | a videó a OneUp/diavetítés állapotát mutatja, de nem tartalmaz eseménynaplót; a két ág pontos futásidejű választása NINCS MEG |
+| Ctrl+Space | külön, `+0x3ba` jelzőt vizsgáló ág | ennek teljes látható hatása ebben a körben NINCS MEG |
+
+Az `0x00cf3a48` cím nyers PE-adatként kiolvasott f32 értéke 2,0; a `0x007fd0c0` az aktuális qshow-pályaadatot olvassa, QPC-alapú időpontot számol, a hívó paraméterét hozzáadja a QPC-időhöz, majd a görbeértéket frissíti. Ez a bináris út a gombokhoz tartozó irányt és átadott időparamétert igazolja; önmagában nem bizonyítja, hogy a job-373 konkrét futásban minden gombot lenyomtak.
+
+**Videós cáfoló kör és az időtartam helyesbítése.** A 38.2.85-ben idézett `n=226→247` (21 képkocka, 1,400 s), illetve `n=344→366` (22 képkocka, 1,467 s) párok látható állapotok közti választott mintavételi ablakok. A teljes képkockasor újraellenőrzése nem azonosította a két átmenet első és utolsó mozgó képkockáját; néhány szomszédos képkocka kis pixelkülönbsége a tömörítésből is eredhet. Ezért a két érték **nem** a teljes animáció igazolt időtartama. A teljes látható átmenet kezdő- és végképkockája: NINCS MEG. Beszerzési út: ugyanazon új Picasa-futás teljes képkockasorának veszteségmentes vagy képenkénti mentése, az események pontos időbélyegével.
+
+**PicasaPy-összevetés.**
+
+| Eredeti Picasa | Jelenlegi PicasaPy | Teendő |
+|---|---|---|
+| Az eredeti qshow a `0x00801270` handlerben kezeli az Escape, Left/Up, Right/Down és Space ágakat; a nyílirányú hívó a bináris `0x00cf3a48` 2,0 értékét adja a `0x007fd0c0` pályafrissítőnek. | A `TimelineView.qml:393-406` az Escape, balra/jobbra és Space gombot kezeli; a `TimelineView.qml:106-115` a nyilakhoz irányított `step` hívást és 2000 ms-os mozgásbeállítást ír le. Ez a fájlforrásból leolvasott implementáció, nem PicasaPy futásidejű videómérés. | A billentyűk és a léptetés statikus kódútjai megvannak. A két mozgás képkockánkénti egyezése és a konkrét futásidejű bemenetek NINCS MEG; ezeket összehasonlítható, időbélyeges eredeti és PicasaPy felvétellel kell mérni. |
+| A job-373 videón látszik a könyvtár → Időrend → OneUp → könyvtár nézetsor; a kártyákon és nagy háttérképen lévő felirat/csíkozás a forrásképek része (38.2.93). | A PicasaPy jelenlegi kártya- és háttérforrását a `timeline_controller.py:195-283` és `TimelinePanel.qml:34-80` írja le; a fájlszintű felirat/csíkozás-eredet nem futásidejű bizonyíték. | A job-373 felvétel és a korábbi képelemzés alátámasztja a tartalmat, de a teljes kártyasorrend, token futásidejű rekordjai és a release-összehasonlító képsor NINCS MEG. A forráslista teljes visszafejtéséhez külön mérés kell. |
+
+**A két független út és bizonyítottsági fok.** A út: a `0x00801270` utasításainak célzott diszasszemblálása, a gombágaktól az `0x008011b0`/`0x00801210` hívókon át a `0x007fd0c0` pályafrissítőig; a `0x00cf3a48` f32 adatértéket a PE-ből külön olvastam ki. B út: az RTTI/vtábla-index a `0x00801270`-et a `QDrawable` eseménykezelő slothoz rendeli, és ettől függetlenül a job-373 dekódolt képkockái igazolják, hogy a rögzített futásban megjelentek az Időrend és OneUp felületek. Az utak egyeznek a kezelő azonosításában és a megfigyelt felületek létezésében; a videó nem naplózza a gombokat, tehát a gomb→képkocka okozati megfeleltetés **feltételes**. A nyílágak statikus cím/előjel-értelmezése binárisból ellenőrzött, de a konkrét job-373 eseménysor nyitott. A videófájl megléte/tartalma **megerősített** két egymástól független mérési ellenőrzéssel: fájlmetaadat/hash, illetve dekódolt képkockák.
+
+**Cáfoló kísérlet.** Azt a következtetést próbáltam cáfolni, hogy a 38.2.85 két időértéke a teljes animációtartam. A szomszédos képkockák pixelkülönbségét ugyanazzal a ROI-val végignézve a kiválasztott határok nem adták meg az első és az utolsó animációs képkockát; a kis különbségek tömörítési maradvánnyal is magyarázhatók, ezért nem tekintettem őket mozgásnak. A cáfoló eredményt ellenőriztem a frame-rate és képkockaszám alapján: a két különbség valóban a kiválasztott indexek közötti idő, de ez nem teszi őket a teljes átmenet időtartamává. A 2,0 érték ellenpróbájaként a nyers `0x00cf3a48` bájtokat olvastam ki, és a callerben a `0x007fd0c0` felé vezető mindkét nyílágot ellenőriztem; a konstans és az irány előjele egyezik a hívó utasításával.
+
+**Nyitott.**
+
+- A job-373 futás `Preferences\SlideshowEffectTime`, `Preferences\SimpleSlideshow` tényleges értéke, a `+0x520` frissítési idő és a képkockánkénti alpha: NINCS MEG. Megszerzés: új Colab/Wine futásban a beállításértékek és qshow mezők időbélyeges rögzítése a videóval együtt.
+- A qshow `+0x50c` token aktuális értéke, a posting-list teljes rekord-/képazonosító-sorrendje és az összes látható kártya forráslistája: NINCS MEG. Megszerzés: futásidejű token és `CSlice+0x64` lista rögzítése, majd azonosítók képkockákkal való összevetése; a bináris statikus út a 38.2.63-ban dokumentált.
+- Az átmenetek első és utolsó látható képkockája, valamint a bal/jobb/Space/Escape események konkrét képkockái: NINCS MEG. Megszerzés: időbélyeges eseménynapló és képkockasor ugyanabból a futásból.
+- A release-be kerülő Picasa/PicasaPy összehasonlító videó vagy képsor: NINCS MEG; a helyi job-373 videó a kutatási könyvtárban van, nem került be a repóba.
+- A `0x00801270`, `0x007fd0c0` és `0x008001c0` címek meglévő Ghidra-kimenetben is szerepelnek; ezekhez az itt vizsgált statikus kérdésekhez új Ghidra-kört nem kérek.
+
+**A #6532 „Kész, ha” állapot.** A helyi eredeti Picasa-felvétel elérhető és az Időrend/OneUp felületek dekódolt képkockákon látszanak. A qshow billentyűút egy részére van bináriscím, de a teljes vezérlőlista, animáció, futásidejű forráshalmaz és Preferences-állapot még nem zárt. A teljes spec minden megvalósítandó pontja ezért nem tekinthető címekkel igazoltnak, és maradtak „NINCS MEG” pontok. Release-összehasonlító képsor/videó és implementációs jegy megnyitása a hívó feladata; a kutatás alapján ebből a szűk billentyűútból önálló kódváltoztatás nem következik.
