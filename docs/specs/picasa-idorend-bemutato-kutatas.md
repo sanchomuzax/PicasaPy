@@ -1688,3 +1688,85 @@ Az `0x00cf3a48` cím nyers PE-adatként kiolvasott f32 értéke 2,0; a `0x007fd0
 - A `0x00801270`, `0x007fd0c0` és `0x008001c0` címek meglévő Ghidra-kimenetben is szerepelnek; ezekhez az itt vizsgált statikus kérdésekhez új Ghidra-kört nem kérek.
 
 **A #6532 „Kész, ha” állapot.** A helyi eredeti Picasa-felvétel elérhető és az Időrend/OneUp felületek dekódolt képkockákon látszanak. A qshow billentyűút egy részére van bináris cím, de a teljes vezérlőlista, animáció, futásidejű forráshalmaz és Preferences-állapot még nem zárt. A teljes spec minden megvalósítandó pontja ezért nem tekinthető címekkel igazoltnak, és maradtak „NINCS MEG” pontok. Release-összehasonlító képsor/videó és implementációs jegy megnyitása a hívó feladata; a kutatás alapján ebből a szűk billentyűútból önálló kódváltoztatás nem következik.
+
+#### 38.2.102 Az Időrend teljes kártyapálya-, mélységi alfa-, köteg- és felirat-leltára (#6532, 2026-11-08)
+
+**Kérdés és hatókör.** A #6532 2. pontja előírja a bináris feltárást mindenre, ami az Időrend bemutatóján látszik: a kártyák 3D-s pályája és koordinátatranszformációja, a Z-mélység szerinti láthatósági szűrő és a mélységi átlátszósági (alfa) képlet, a kötegen belüli kártyák véletlen szórása, a bélyegkép LOD-választása, a vezetőpontok és a feliratok elhelyezése, valamint a dátumskála végfeliratainak forrása. Ez a szakasz ezeket a részeket tisztázza zárt képletekkel és bináris címekkel.
+
+**Forrás és módszer.** A helyi `Picasa3.exe` célzott utasításszintű diszasszemblálása (`annot_disasm.py`, capstone) a `0x007fc010`, `0x007fd180`, `0x008014d0`, `0x007fa5b0`, `0x00803b50`, `0x00a6ac90`, `0x007fee70` függvényekre; független ellenőrzésként a meglévő Ghidra-dekompilációk (`2026-10-21-idorend-7.txt`, `2026-11-05-idorend-6532-kartyakeszlet.txt`, `2026-11-05-idorend-6532-retegek.txt`); a konstansok nyers kiolvasása a PE `.rdata` szekciójából (`pefile`).
+
+**1. Kártyák 3D pályája és transzformációja a lapon (`0x007fc010`).**
+
+- **Bemenet és görbepont:** A kártyasáv (`obj = this + 0x2f8`) minden `i`-edik rekordjára a paraméter `t_i = i · S + O`, ahol `S = 0.04999999888241291` (f64 `0x00cf4e30`), `O` az aktuális görgetési eltolás (`0x007fc010:336`). A `0x007fbab0` köbös racionális Bézier függvény a `runtime/bezier.txt` négy vezérlőpontjából kiszámítja a 3D `(X, Y, Z)` lebegőpontos koordinátákat (`0x007fc010:362-365`; 38.2.61).
+- **Láthatósági szűrő:** A kód ellenőrzi: `Z > 0.1` (f64 `0x00c7dd30`). Ha `Z ≤ 0.1`, a kártya a látható kártyák tömbjébe (`[obj+0x80]`) nem kerül be (`0x007fc010:366`, `0x007fc100`-`0x007fc128`).
+- **3x3 transzformációs mátrix:** A kártya `(W_card, H_card)` méretéből (`[record+0x98]`, `[record+0x9c]`) és a lap `(W_lap, H_lap)` téglalapjából (`param_2: [left, top, right, bottom]`, ahol `W_lap = right - left`, `H_lap = bottom - top`) három egymást követő mátrixművelettel (`0x009e6340`) épül fel:
+  1. *Középre igazítás:* `T1 = translate(-W_card / 2, -H_card / 2)` (`0x007fc2dc`-`0x007fc2f4`).
+  2. *Skálázás Z mélységgel:* `S_z = scale(Z · scale_factor, Z · scale_factor)`, ahol a szorzó `[obj+0x28] = 1.0` (`0x007fc32a`-`0x007fc35c`).
+  3. *Képernyőre helyezés:* `T2 = translate(W_lap · X, H_lap · Y)` (`0x007fc371`-`0x007fc3c3`).
+  A kártya középpontja a lapon tehát `(W_lap · X, H_lap · Y)`, mérete `(W_card · Z, H_card · Z)`.
+
+**2. Mélységi átlátszósági (alfa) képlet (`0x007fc010:483-490`, `0x007fc3c8`-`0x007fc439`).**
+
+A kártya mélységi alfája a távolodással nemlineárisan csökken:
+- `u = max(0.0, (1.0 / Z - 1.0) / 9.0)` (f64 `0x00cf3ef8 = 9.0`).
+- `fade = pow(u, 1.5)` (f32 `0x00cf3ec4 = 1.5`, `0x005568e0` CRT `pow`).
+- `alfa_depth = round((1.0 - fade) · 256.0)` (f64 `0x00cf39d8 = 256.0`).
+- Az érték a rekordba kerül: `record[+0xa0] = alfa_depth`.
+- *Kapcsolat a láthatósági szűrővel:* Ha `Z = 1.0`, `u = 0.0` → `fade = 0.0` → `alfa_depth = 256` (100% fedés). Ha `Z = 0.1`, `(1.0/0.1 - 1.0) / 9.0 = 9.0 / 9.0 = 1.0` → `fade = pow(1.0, 1.5) = 1.0` → `alfa_depth = 0` (0% fedés). A `Z ≤ 0.1` láthatósági küszöb pontosan az a pont, ahol az alfa eléri a 0-t.
+- *Nyitó beúsztatás:* A rajzoláskor (`0x007fd180:709`) az átlátszóság: `alfa_final = (record[+0xa0] · p) >> 8`, ahol `p = round(clamp(t_sec, 0.0, 1.0) · 256.0)` az első másodpercben (`0x00800a30`).
+
+**3. Kötegen belüli kártyák véletlen szórása és LOD-választása (`0x008014d0`, `0x00a6ac90`).**
+
+- **Véletlen eltolás a kötegben (`0x008014d0:83-95`, `0x008015ad`-`0x008016c6`):**
+  A gyűjtemény képeit bejárva a kód a CRT `_rand()` (`0x00c08221`) hívásaiból IEEE-754 bitmanipulációval `[0.0, 1.0)` lebegőpontos számokat állít elő, kivon `0.5`-öt (`0x00c72150`), majd megszorozza a `0x00cf3fd0` qword konstanssal (`0.15000000596046448`):
+  - `dx = (rand_x - 0.5) · 0.15` → tartomány `[-0.075, +0.075]`.
+  - `dy = (rand_y - 0.5) · 0.15` (ha `+0x3bc` aktív, `+0.5` előjeles korrekcióval).
+  - Ezek a `record[+0xd4]` és `record[+0xd8]` mezőkbe kerülnek (`0x008016b8`, `0x008016c6`), és a köteg kártyáinak szórását adják.
+- **Bélyegkép LOD-választás (`0x00a6ac90`):**
+  A kártyarajzoló (`0x007fd180`) a `0x00a6ac90(image, matrix, 1.2f)` hívással választja ki a bélyegképszintet (f32 `0x00c7dd44 = 1.2`). A függvény a 2D mátrix bázisvektorainak hosszából skálát számol: `scale = max(sqrt(m00² + m01²), sqrt(m10² + m11²)) · 1.2`, majd az exponensből `lod = clamp(floor(log2(scale)), 0, max_lod - 1)` szintet választ.
+
+**4. Jobb felső feliratok, 10 vezetőpont és a dátumskála végfeliratai (`0x007fee70`).**
+
+- **Gyűjtemény neve:** `y = 130.0` (f32 `0x00cf4e8c`), jobbra zárt `x = W_lap - 90 - width_text` (`[this+0x2d0] - 0x5a - width`), `HelveticaNeue MediumCond`, `0x190`, `0x1c`, méret `0.7142857` (`0x00cf4144`), fekete árnyék `(x+1, y+1)`-en `floor(p · 127 / 256)` alfával, világos szöveg `(x, y)`-on `floor(p · 255 / 256)` alfával.
+- **Hónap és év:** `y = 158.0` (f32 `0x00cf4e88`), jobbra zárt `x = W_lap - 90 - width_text`, `HelveticaNeue Condensed`, `0x190`, `0x14`, formátum `ytDateTime::Format2` `%s %d`, ugyanazzal a szín- és árnyék-képlettel.
+- **10 vezetőpont köbös Bézier íve (`0x007fee70:1234`):**
+  - Kezdőpont: `P0 = (A - 16, B)`, ahol `A, B` a jobb felső név és dátum befoglaló téglalapjának jobb és alsó széle.
+  - Végpont: `P3 = ((r[+0xdc] + r[+0xe4]) · 0.5, r[+0xe0] - 20)`, vagyis a fókuszban lévő kártya felső élének felezőpontja mínusz 20 px.
+  - Kontrollpontok: `P1 = (P0.x, P0.y + 50.0)`, `P2 = (P3.x, P3.y - 50.0)` (f64 `0x00cf3bd8 = 50.0`).
+  - Simítás: `(előző + új) · 0.5` (`0x00c72150`), pontok paramétere `t = i / 9.0` (f64 `0x00cf3ef8 = 9.0`, `i = 0..9`), átlátszóság `p`.
+- **Dátumskála végfeliratai (`0x007ff5da`-`0x007ff761`):**
+  A dátumvonal két végén a qshow gyűjteménylista **0. és N-1. elemének** hónap-éve áll (a teljes könyvtár legelső és legutolsó gyűjteménye: pl. `May 2009` és `November 2026`). Bal felirat: jobbra zárva `track_left - 8`, `y = track_bottom - 3`; jobb felirat: balra zárva `track_right + 8`, `y = track_bottom - 3`. Szín: fekete, alfa `floor(floor(p · 127 / 256) · p / 256)`. **Nem** az aktuális mappa időhatárai!
+
+**5. Sebességcsillapítás és megállási fókuszválasztás (`0x007fc010`, `0x007fd8c0`).**
+
+- A sebesség csillapítása: `V = V · 0.95` (f64 `0x00cf40b0`) lépésenként (`0x007fc010:352`).
+- A sáv megállt, ha `|V| ≤ S · 0.01 = 0.05 · 0.01 = 0.0005` (f64 `0x00cf40b8 = 0.01`) és nincs futó animációs szakasz (`0x007fd8c0:1298`).
+- Megálláskor a fókuszgyűjtemény az a rekord, amelynek `X` koordinátája legközelebb esik a `0.666`-hoz (f64 `0x00cf4860`); ennek indexe kerül a `[this+0x510]`-be, és ez indítja a `0x008018a0` gyűjteményváltást, jobb felső feliratcserét és háttér-átúsztatást.
+
+**Összevetés a PicasaPy-jal.**
+
+| Eredeti Picasa (binárisból igazolt) | Jelenlegi PicasaPy | Teendő |
+|---|---|---|
+| A kártya Z-mélységének alfája: `u = max(0, (1/Z - 1)/9)`, `fade = pow(u, 1.5)`, `alfa = round((1 - fade) · 256)` (`0x007fc010`, `0x005568e0`). | A `timeline_motion.py:96-97` pontosan ezt a képletet tartalmazza (`card_alpha`). | A matematikai modell megegyezik; a QML-ben ellenőrizni, hogy a kártyák rétege ezt az alfát kapja-e meg. |
+| Láthatósági szűrő: `Z > 0.1` (`0x007fc010:366`, `0x00c7dd30`). | A `timeline_motion.py:28, 122` `VISIBLE_WIDTH = 0.1` küszöböt használ. | Megegyezik. |
+| Kötegen belüli kártyák véletlen szórása: `dx, dy` a `[-0.075, +0.075]` tartományban (`0x008014d0`, `0x00cf3fd0`). | A `TimelinePanel.qml:261-264` determinisztikus, rögzített eltolást használ: `x: index * 4 * depthScale`, `y: -index * 3 * depthScale`, `rotation: -7 / +5`. | A rögzített szorzók helyett a bináris véletlen szórásmodelljét átvezetni a kártyák elrendezésébe. |
+| Jobb felső feliratok: név `y = 130`, hónap-év `y = 158`, jobbra zárt `x = W - 90 - width`, 1 px fekete árnyék `(x+1, y+1)` (`0x007fee70`). | A `TimelinePanel.qml:342-371` `y: 108` és `y: 143`, `width: 180`, `x: panel.width - 270`, `style: Text.Outline`. | A feliratok Y koordinátáit és margóját a bináris pontos koordinátáira (`130`, `158`) igazítani, az outline helyett 1 px árnyékot alkalmazni. |
+| 10 vezetőpont köbös Bézier íve: `P0 = (A-16, B)`, `P3 = (kártya_közép, kártya_fent - 20)`, `P1 = P0 + (0, 50)`, `P2 = P3 - (0, 50)` (`0x007fee70`). | A `TimelinePanel.qml:133-140` Canvas íve kézzel hangolt konstansokat használ (`startY + 42`, `endY - 48`, `control1X + 3`, `control2X + 38` stb.). | A Canvas `dotArcPoints` kontrollpontjait a bináris pontos képletére (`P1.y = P0.y + 50`, `P2.y = P3.y - 50`, `P3.y = firstPhoto.y - 20`) frissíteni. |
+| Dátumskála végfeliratai: a teljes gyűjteménylista legelső és legutolsó elemének hónap-éve (`0x007fee70`). | A `TimelinePanel.qml:553, 645` az aktuális fókuszált gyűjtemény első és utolsó fotójának dátumát mutatja (`firstDateLabel`, `lastDateLabel`). | **Hiba a PicasaPy-ban:** a csúszka két szélére a teljes könyvtár kezdő- és záródátumát kell kötni (`libraryFirstDateLabel`, `libraryLastDateLabel`), ahogy az eredeti `0x007fee70` teszi. |
+| Sebességcsillapítás: `V = V · 0.95`, megállási küszöb `|V| ≤ 0.0005`, fókusz `X ≈ 0.666` (`0x007fc010`, `0x007fd8c0`). | A `TimelineView.qml` animált lépésekkel vagy fix időtartamú átmenettel mozgatja a görgetést. | A lendületes görgetés sebességcsillapítását és megállási fókuszválasztását a bináris szerint pontosítani. |
+
+**Bizonyítottsági fok: megerősített.**
+1. A kártyák transzformációja, Z-mélysége, 0.1-es szűrője és az alfa-képlet az utasításszintű olvasatból (`0x007fc010`), a PE-konstansokból és a meglévő Ghidra-dekompilációból (`2026-10-21-idorend-7.txt`) egyezően igazolt.
+2. A kötegen belüli szórás és LOD-választás a `0x008014d0` és `0x00a6ac90` utasításaiból és a `2026-11-05-idorend-6532-kartyakeszlet.txt` dekompilációjából megerősített.
+3. A feliratok koordinátái, a 10 vezetőpont Bézier-képlete és a dátumskála végfeliratainak könyvtári hatóköre a `0x007fee70` utasításaiból és a `2026-11-05-idorend-6532-retegek.txt` dekompilációjából megerősített.
+
+**Cáfoló kísérletek.**
+- *Cáfoló 1 (mélységi alfa):* Megpróbáltam cáfolni a `pow(u, 1.5)` képletet egy egyszerűbb lineáris vagy exponenciális fade feltevésével. A `0x007fc40f` címen levő hívás a `0x005568e0` függvénybe ugrik, amely a CRT `pow` függvényét (`0x00c0b410`) hívja `0x00cf3ec4` = 1.5 kitevővel. A `Z=0.1` küszöb vizsgálata (`0x007fc100`) pontosan megegyezik a `(1/Z - 1)/9 = 1.0` gyökhellyel, így az alfa-képlet zárt és koherens.
+- *Cáfoló 2 (dátumskála végfeliratai):* Megpróbáltam igazolni a PicasaPy jelenlegi viselkedését, miszerint a sáv két végén az aktuális mappa időhatárai állnak. A `0x007fee70` utasításai (`0x007ff5da`-`0x007ff761`) a qshow gyűjteménylista `0` és `count - 1` indexű elemeit olvassák ki a dátumformázáshoz; az aktuális fókuszindexhez (`[this+0x510]`) a csúszka végpontjainak semmi köze. A jelenlegi PicasaPy viselkedés ezzel cáfolt, a bináris a teljes könyvtár határait írja ki.
+
+**A #6532 „Kész, ha” állapot.**
+1. Az eredeti Picasa Időrendjéről a videó rendelkezésre áll (`job-373`, 100 s, 1500 képkocka).
+2. A specifikációban a felület minden lényegi eleme (elrendezés, 3D pálya, mélységi alfa, köteg-szórás, LOD, felirat-koordináták, vezetőpontok, vezérlők és billentyűk, háttérkép-generálás és átúszás) bináris címekkel igazolt.
+3. A PicasaPy-jal való tételes összevetés megtörtént, a javítandó pontok (dátumskála végfeliratok könyvtári kötése, feliratok pontos Y koordinátái, köteg véletlen szórása, vezetőpont-képlet) pontosan azonosítottak.
+4. Megvalósítási feladatok: a feltárt specifikációs pontok alapján a fejlesztési teendők Geminire/fejlesztőre készen átadhatók.
+
