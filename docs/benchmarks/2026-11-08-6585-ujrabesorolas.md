@@ -176,7 +176,7 @@ Mind a 9 esetben az eredeti export pontosan a szűretlen kép. A PicasaPy ezzel 
 
 ## A "b" esetek
 
-A "b" a lap szabálya szerint: minden tag önállóan egyezik, a lánc mégis eltér, tehát a mérés kölcsönhatást támaszt alá. Fontos korlát: az "egyezik" tűréssel értendő (`közelítés`: SSIM >= 0.98 és ΔE <= 2.0), ezért a tagonkénti kis eltérések a láncban összeadódhatnak. A tájékoztató oszlop a tagok mért ΔE-inek számtani összegét mutatja (nem korlát, a ΔE nem additív): ha a lánc ΔE-je ennél nagyobb, az összeadódás önmagában kevésbé valószínű magyarázat.
+A "b" a lap szabálya szerint: minden tag önállóan egyezik, a lánc mégis eltér, tehát a mérés kölcsönhatást támaszt alá. Fontos korlát: az "egyezik" tűréssel értendő (`közelítés`: SSIM >= 0.98 és ΔE <= 2.0), ezért a tagonkénti kis eltérések a láncban összeadódhatnak. A tájékoztató oszlop a tagok mért ΔE-értékeinek számtani összegét mutatja (nem korlát, a ΔE nem additív): ha a lánc ΔE-je ennél nagyobb, az összeadódás önmagában kevésbé valószínű magyarázat.
 
 | Lánc | Lánc SSIM / ΔE | Leggyengébb tag | Tagok ΔE-összege | Megjegyzés |
 |---|---:|---|---:|---|
