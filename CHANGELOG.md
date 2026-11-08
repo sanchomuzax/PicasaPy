@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.78] - 2026-11-08
+
+- Az exportpárbeszéd fókusztesztjei most egymástól függetlenül futnak (#6708).
+
 ## [1.0.77] - 2026-11-08
 
 - A filmátmenet-előnézet próbája hosszabb átfedéssel, hogy lassú gépen is jusson keveredő kocka (#6703).
