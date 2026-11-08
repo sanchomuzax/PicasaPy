@@ -180,6 +180,18 @@ class TestAFeloldasSzamaCSOKKENT:
 
         from picasapy.scanner import name_filters as nf
 
+        # A gyári szűrő példánya folyamatszintű gyorsítótárban él
+        # (`_gyari_szurok`, lru_cache). Hidegen az ELSŐ példányosítás öt
+        # előtag-feloldást végez, és a becsomagolt feloldó azt is
+        # megszámolná: a teszt így attól függött, hogy egy korábbi teszt
+        # már melegítette-e a gyorstárat (#6711). A mérés a bejárásé,
+        # nem a gyorstár feltöltéséé, ezért a kiinduló állapotot a teszt
+        # maga állítja be: a becsomagolás ELŐTT, a valódi feloldóval
+        # példányosítja a gyári szűrőt. Ha a gyorstár egyszer kiesne, a
+        # bejárás mappánként újra példányosítana, és a számláló ezt
+        # továbbra is elkapja.
+        nf.default_name_filters()
+
         szamlalo = {"feloldas": 0}
         eredeti = nf._normalised_path_parts
 
