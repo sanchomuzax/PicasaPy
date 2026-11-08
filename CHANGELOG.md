@@ -7,6 +7,9 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.77] - 2026-11-08
+
+- A filmátmenet-előnézet próbája hosszabb átfedéssel, hogy lassú gépen is jusson keveredő kocka (#6703).
 ## [1.0.76] - 2026-11-08
 
 - Gyorsult a finomhangolás, a színtelítettség, az automatikus szín, a TwoTone, az irányfény és a szivárványszűrő előnézeti számítása (#6686).
