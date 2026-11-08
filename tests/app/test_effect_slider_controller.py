@@ -10,6 +10,8 @@ A minta a `previewFinetune`/`setFinetune` páros (#20).
 
 from __future__ import annotations
 
+import threading
+
 import pytest
 
 from support.jpeg_factory import make_jpeg
@@ -69,9 +71,29 @@ class TestPreviewDoesNotCommit:
         editing.previewEffect("boost", [80.0])
         assert _chain(editing) == before, "az előnézet nem írhat a láncba"
 
-    def test_preview_bumps_the_revision(self, editing):
+    def test_preview_bumps_the_revision(self, editing, monkeypatch):
+        assert editing.waitForBackgroundWorkers(5.0)
+        provider = editing._provider
+        eredeti_register = provider.register
+        elindult = threading.Event()
+        folytathatja = threading.Event()
+
+        def megallitott_register(**request):
+            elindult.set()
+            assert folytathatja.wait(5.0)
+            eredeti_register(**request)
+
+        monkeypatch.setattr(provider, "register", megallitott_register)
         before = editing.revision
         editing.previewEffect("boost", [80.0])
+        try:
+            assert elindult.wait(3.0), "a háttér-render nem indult el"
+            assert editing.revision == before, (
+                "a képforrás a render befejezése előtt ne töltődjön újra"
+            )
+        finally:
+            folytathatja.set()
+        assert editing.waitForBackgroundWorkers(5.0)
         assert editing.revision > before, "a nézőnek újra kell rajzolnia"
 
     def test_preview_of_an_unknown_effect_is_ignored(self, editing):
