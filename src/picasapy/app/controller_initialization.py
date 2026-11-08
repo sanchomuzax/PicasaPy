@@ -5,6 +5,7 @@ from __future__ import annotations
 from .busy_registry import get_app_busy_registry
 from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
 from .models import FolderListModel, PhotoGridModel
+from picasapy.scanner.exclude import _resolve_exclude_roots
 
 
 def initialize_controller_state(
@@ -27,6 +28,7 @@ def initialize_controller_state(
     # a fájlformátum az eredeti Picasáéval kompatibilis.
     self._exclude_file = exclude_file
     self._face_excluded_roots = list(face_excluded)
+    self._face_excluded_resolved_roots = _resolve_exclude_roots(face_excluded)
     self._provider = provider
     # #459: sérült/betölthetetlen kép — elrejtés-felajánlás bekötése
     # MÁR itt (nem lusta, első-íráskor), mert a detektálás böngészés
