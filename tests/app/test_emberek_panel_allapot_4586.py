@@ -252,7 +252,7 @@ class TestPendingSet:
 
         assert pending and pending[0] == 3, pending
         assert ctl.pendingAmong(everything) == 0
-        assert all(b < a for a, b in zip(pending, pending[1:])), pending
+        assert all(b < a for a, b in zip(pending, pending[1:], strict=False)), pending
 
     def test_exclusion_check_is_cached_once_per_folder(
         self, qt_app, tmp_path
