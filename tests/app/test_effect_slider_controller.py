@@ -15,6 +15,7 @@ import threading
 import pytest
 
 from support.jpeg_factory import make_jpeg
+from support.varakozas import var_feltetelre
 
 
 @pytest.fixture
@@ -71,7 +72,7 @@ class TestPreviewDoesNotCommit:
         editing.previewEffect("boost", [80.0])
         assert _chain(editing) == before, "az előnézet nem írhat a láncba"
 
-    def test_preview_bumps_the_revision(self, editing, monkeypatch):
+    def test_preview_bumps_the_revision(self, editing, monkeypatch, qt_app):
         assert editing.waitForBackgroundWorkers(5.0)
         provider = editing._provider
         eredeti_register = provider.register
@@ -94,7 +95,9 @@ class TestPreviewDoesNotCommit:
         finally:
             folytathatja.set()
         assert editing.waitForBackgroundWorkers(5.0)
-        assert editing.revision > before, "a nézőnek újra kell rajzolnia"
+        assert var_feltetelre(
+            qt_app, lambda: editing.revision > before, 5.0
+        ), "a kész render után a nézőnek újra kell rajzolnia"
 
     def test_preview_of_an_unknown_effect_is_ignored(self, editing):
         before = (_chain(editing), editing.revision)

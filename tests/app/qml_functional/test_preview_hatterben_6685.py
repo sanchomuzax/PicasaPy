@@ -103,6 +103,8 @@ def test_valodi_kattintas_kozben_el_a_felulet_es_frissul_a_kep(
     render_intervals = []
     render_threads = []
     render_started = threading.Event()
+    previous_source = viewer_image.property("source")
+    previous_revision = edit.revision
 
     def observed_register(**request):
         start = time.monotonic()
@@ -135,8 +137,30 @@ def test_valodi_kattintas_kozben_el_a_felulet_es_frissul_a_kep(
         "csempekattintás",
     )
 
+    # A panel Slider eleme és a kész előnézeti képkocka csak a render után
+    # épül fel a 0/+5 px-es ablakon is. A csúszkamérést ezek után kezdjük.
+    assert var_feltetelre(
+        qt_app,
+        lambda: edit.revision > previous_revision,
+        10.0,
+    ), "az első előnézeti render nem frissítette a revíziót"
+    assert var_feltetelre(
+        qt_app,
+        lambda: (
+            (slider := panel.findChild(QObject, "effectParamSlider0")) is not None
+            and bool(slider.property("visible"))
+            and float(slider.property("width")) > 0
+        ),
+        10.0,
+    ), "az első render után a paramétercsúszka nem épült fel"
+    slider = panel.findChild(QObject, "effectParamSlider0")
+    assert var_feltetelre(
+        qt_app,
+        lambda: viewer_image.property("source") != previous_source,
+        5.0,
+    ), "a kész render nem frissítette a QML képforrását"
+
     # A tényleges csúszkahúzás után is a legutolsó render képe maradjon látható.
-    slider = _item(window, "effectParamSlider0")
     render_started.clear()
     render_baseline = len(render_intervals)
     worker_baseline = len(render_threads)
