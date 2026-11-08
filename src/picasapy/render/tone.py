@@ -21,6 +21,7 @@ import re
 
 import numpy as np
 
+from picasapy.lazy_cv2 import cv2
 from picasapy.render.curves import (
     apply_channel_luts,
     lut_ramp,
@@ -284,14 +285,30 @@ def apply_fill(image: np.ndarray, strength: float) -> np.ndarray:
     validate_image(image)
     if _clamp(strength, 0.0, 1.0) == 0.0:
         return image.copy()
-    values = image.astype(np.int32)
-    outer = values[..., 0] + values[..., 2]
-    luma4 = (outer + 2 * values[..., 1]) >> 2
-    weight = (_FILL_WEIGHT_FULL - luma4 * 256)[..., None]
+    # A képpontonkénti képlet csak a 8 bites csatornaértéktől és a 8 bites
+    # luma4-től függ. A 256×256-os tábla leváltja a három nagy, int32-es
+    # köztes képet; a képletek és az egész eltolások megegyeznek a natív úttal.
+    values = np.arange(256, dtype=np.int32)[None, :]
+    lumas = np.arange(256, dtype=np.int32)[:, None]
     mapped = fill_lut(strength)[values]
-    return np.clip(
+    weight = _FILL_WEIGHT_FULL - lumas * 256
+    fill_table = np.clip(
         values + (((mapped - values) * weight) >> 16), 0, 255
     ).astype(np.uint8)
+
+    channels = image.astype(np.uint16)
+    luma4 = (
+        channels[..., 0] + 2 * channels[..., 1] + channels[..., 2]
+    ) >> 2
+    result = np.empty_like(image)
+    maps = np.empty(image.shape[:2] + (2,), dtype=np.int16)
+    maps[..., 1] = luma4
+    for channel in range(3):
+        maps[..., 0] = image[..., channel]
+        result[..., channel] = cv2.remap(
+            fill_table, maps, None, cv2.INTER_NEAREST
+        )
+    return result
 
 
 def finetune_level_lut(highlights: float, shadows: float) -> np.ndarray:

@@ -317,10 +317,12 @@ class TestAFocalPixelateKozosUton:
         # Reverse: a kör KÜLSEJE éles, a belseje pixeles — a nagy sugár a
         # teljes képet lefedi, tehát a kimenet maga a pixelesített kép
         ki = apply_focal_pixelate(kep, impact=7.0, radius=400.0, hardness=100.0, reverse=True)
-        kicsi = resize_image(kep, int(90 / 7.0), int(60 / 7.0), smoothing=True)
+        # a célméret `trunc(v + 0,5)` (#4912, #6691): 12,86 -> 13 és 8,57 -> 9
+        kicsi_w, kicsi_h = int(90 / 7.0 + 0.5), int(60 / 7.0 + 0.5)
+        kicsi = resize_image(kep, kicsi_w, kicsi_h, smoothing=True)
         vart = resize_image(kicsi, 90, 60, smoothing=False)
         np.testing.assert_array_equal(ki, vart)
-        area = cv2.resize(kep, (int(90 / 7.0), int(60 / 7.0)), interpolation=cv2.INTER_AREA)
+        area = cv2.resize(kep, (kicsi_w, kicsi_h), interpolation=cv2.INTER_AREA)
         assert not np.array_equal(kicsi, area), "a kontroll nem különbözteti meg a két utat"
 
 
