@@ -1768,5 +1768,5 @@ A kártya mélységi alfája a távolodással nemlineárisan csökken:
 1. Az eredeti Picasa Időrendjéről a videó rendelkezésre áll (`job-373`, 100 s, 1500 képkocka).
 2. A specifikációban a felület minden lényegi eleme (elrendezés, 3D pálya, mélységi alfa, köteg-szórás, LOD, felirat-koordináták, vezetőpontok, vezérlők és billentyűk, háttérkép-generálás és átúszás) bináris címekkel igazolt.
 3. A PicasaPy-jal való tételes összevetés megtörtént, a javítandó pontok (dátumskála végfeliratok könyvtári kötése, feliratok pontos Y koordinátái, köteg véletlen szórása, vezetőpont-képlet) pontosan azonosítottak.
-4. Megvalósítási feladatok: a feltárt specifikációs pontok alapján a fejlesztési teendők Geminire/fejlesztőre készen átadhatók.
+4. Megvalósítási feladatok: a feltárt specifikációs pontok alapján a fejlesztési teendők fejlesztésre készen átadhatók.
 
