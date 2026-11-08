@@ -929,15 +929,15 @@ argumentumokkal.
 | billentyű | ág | mit csinál |
 |---|---|---|
 | `Ctrl+Enter` | `0x005e61f8` | `0x005c8320(panel, 0)` |
-| `Ctrl` + VK `0x12` | `0x005e65dc` | `[panel+0xe78]` őr, `[panel+0xe70]` azonosító |
+| `Ctrl` + VK `0x12` | `0x005e65dc` | `[panel+0xe78]` és `[panel+0xe70]` kapu → `0x00571a80(panel, id)` PopDisplay felugró előnézet (§10.28, §10.32, §12.11) |
 | **`Ctrl+0`** | `0x005e6206` | **kattint: `thumbui/toggle_right_drawer`** |
 | `Ctrl+1` | `0x005e6215` | kattint: `thumbui/smallthumbs` |
 | `Ctrl+2` | `0x005e6224` | kattint: `thumbui/largethumbs` |
 | `Ctrl+3` | `0x005e624f` | kattint: `thumbui/fullview` |
 | `Ctrl+4` | `0x005e625e` | `0x005696c0` őr → `(0, panel)` |
 | `Ctrl+5` | `0x005e6279` | ugyanaz az őr → `(1, panel)` |
-| `Ctrl+6` | `0x005e6294` | `0x00530ad0(panel)` |
-| `Ctrl+8` | `0x005e6584` | `0x005e81e0(panel, 2)` |
+| `Ctrl+6` | `0x005e6294` | `0x00530ad0(panel)`: `Preferences/AdvancedFeatures` ellenőrzése, belső `timeslicer` / `SliceUI` (640×480) időszeletelő (§12.11) |
+| `Ctrl+8` | `0x005e6584` | `0x005e81e0(panel, 2)`: kijelölt képek csillagozásának váltása (toggle star, `stars/yes` / `stars/no`, §12.11) |
 | **`Ctrl+9`** | `0x005e629f` | `0x00579330` őr → **kattint: `editpanel/toggle_left_drawer`** |
 | `Ctrl+A` | `0x005e6471` | `0x00579330` őr → `0x005e5070(panel)` |
 | **`Ctrl+Shift+B`** | `0x005e6370` | `0x005fe370(panel, "bw")` |
@@ -945,20 +945,20 @@ argumentumokkal.
 | `Ctrl+D` | `0x005e6492` | `0x00579330` őr → `0x005e5310` |
 | **`Ctrl+Shift+E`** | `0x005e638b` | `0x005fe370(panel, "enhance")` |
 | **`Ctrl+F`** | `0x005e63bb` | **kattint: `searchcontainer/searchbutton`** |
-| `Ctrl+G` (+Alt/+Shift) | `0x005e6518` | módosító nélkül vagy Alt-tal: nincs művelet; Shift: `0x00600580`; Alt+Shift: `0x0057b050` (10.22) |
+| `Ctrl+G` (+Alt/+Shift) | `0x005e6518` | módosító nélkül vagy Alt-tal: nincs művelet; Shift (`0x005e6547`): `0x00600580` Google Earth geotag (`ID_PICTURE_GEOTAG`); Alt+Shift (`0x005e652c`): `0x0057b050` gigantikus kontaktlap (`ginormous.jpg`, `ShellExecuteA`) (§10.22, §12.11) |
 | **`Ctrl+Shift+H`** | `0x005e63d6` | `0x005eef30(panel, 2)` |
 | `Ctrl+I` | `0x005e64f6` | `0x00579330` őr → `0x005e5370(panel)` |
 | **`Ctrl+K`** **és** `Ctrl+T` | `0x005e650e` | **ugyanaz az ág**: `0x0065ab00` |
-| `Ctrl+Shift+L` | `0x005e658e` | `0x004cce10([panel+0x2c4])` |
+| `Ctrl+Shift+L` | `0x005e658e` | `0x004cce10([panel+0x2c4])` → `0x004cd010`: beépített webszerver indítása (`http://localhost:%d/%s/`, `ShellExecuteA`, §12.11) |
 | `Ctrl+M` | `0x005e63ca` | `0x005d3010(panel)` |
 | `Ctrl+N` | `0x005e6462` | kattint: `thumbui/newalbum` |
 | `Ctrl+O` (+Shift) | `0x005e6233` | Shifttel `0x005c80e0`, anélkül `0x005feb30` |
 | `Ctrl+P` (+Shift) | `0x005e6428` | `0x005696c0` őr + Shift-ág |
 | `Ctrl+R` (+Shift) | `0x005e633e` | `0x00562bf0` őr + Shift-ág |
-| `Ctrl+S` (+Alt) | `0x005e64b4` | `0x005696c0` őr + `[esp+0x12]` ág |
-| `Ctrl+Shift+U` | `0x005e6557` | `0x0047ca60([panel+0x2bc])` |
+| `Ctrl+S` (+Alt) | `0x005e64b4` | `0x005696c0` őr; Alt nélkül képmentés (`0x0053a790`), Alt-tal (`Ctrl+Alt+S`): `0x00577a60` adatbázis-mentés (`#db3\`, `IDS_DB_SAVED` / `IDS_PERSIST_ERR`, §12.11) |
+| `Ctrl+Shift+U` | `0x005e6557` | `0x0047ca60([panel+0x2bc])` → `0x006b8710`: memóriabeli bélyegkép-cache újrainicializálása (`m_bigThumbs` 288 px, `m_previewThumbs` 640 px, §12.11) |
 | **`Ctrl+Shift+V`** | `0x005e6408` | `0x005eef30(panel, 1)` |
-| `Ctrl+Shift+Y` | `0x005e6572` | `0x005e5ec0(panel)` |
+| `Ctrl+Shift+Y` | `0x005e6572` | `0x005e5ec0(panel)`: rejtett húsvéti tojás, lebegő animációs réteg (`overlays/egg`, flag `+0x22d` = 1, §12.11) |
 | `Ctrl+F6` | `0x005e62bb` | `searchoptions/dupesearch` (feloldás `0x009c2fc0`) |
 | `Ctrl+F7` | `0x005e62e8` | `searchoptions/loadsim`, azonosító `0x15` |
 | `Ctrl+F8` | `0x005e631d` | `searchoptions/clearsim`, azonosító `0x16` |
@@ -1357,7 +1357,7 @@ munkamenetben nem került sor; futás közbeni viselkedést ezért nem állítok
 | `Ctrl+Alt+G` | Az ág nem indít műveletet. | A handler Alt-ágának közvetlen kiolvasása: Shift nélkül kihagyó ágra jut; külön második út ehhez a no-ophoz nincs. | feltételes |
 | `Ctrl+Alt+Shift+G` | `0x005e652c` → `0x0057b050`: elkészíti a `ginormous.jpg` kontaktképet és megnyitja. | A külön nyomtatási spec rögzíti a `ginormous.jpg`, „Making The Ginormous Contact Sheet!” és `ShellExecute` nyomokat (`picasa-nyomtatas.md`, „A `ginormous.jpg` út”). | megerősített |
 | `Ctrl+Shift+L` | `0x005e658e` a szerverobjektumot a `0x004cce10`-nek adja; a LAN-jelszó és a fix `picasaserver` felhasználó mellett a `0x004cd010` `http://localhost:%d/%s/` URL-t épít, amelyet a handler böngészővel nyit meg. | A webserver-spec külön méri a `LANPassword`, a `picasaserver` felhasználónevet és az URL-alakot (`picasa-beepitett-webszerver.md` 1.). | megerősített |
-| `Ctrl+Alt+S` | A `0x005e64b4` Alt-ágán a `0x00577a60` a `[panel+0x2bc]` adatobjektum `#db3\` alatti persistálását végzi, majd sikeres `IDS_DB_SAVED` vagy hibás `IDS_PERSIST_ERR` üzenetet választ. Ez adatbázis-persistálás, nem a fotó `Ctrl+S` mentése. | Az ugyanazon kezelő `Ctrl+S` ága külön a `0x0053a790` képfájl-mentési útjára megy. A `0x00577a60` string-xrefjei adatbázis- és persistálási feliratokat, a `0x0053a790` xrefjei képmentési/backup feliratokat adnak. | megerősített statikus ág és cél; a felirat tényleges megjelenése nincs futtatva |
+| `Ctrl+Alt+S` | A `0x005e64b4` Alt-ágán a `0x00577a60` a `[panel+0x2bc]` adatobjektum `#db3\` alatti persistálását végzi, majd sikeres `IDS_DB_SAVED` vagy hibás `IDS_PERSIST_ERR` üzenetet választ. Ez adatbázis-mentés, nem a fotó `Ctrl+S` mentése. | Az ugyanazon kezelő `Ctrl+S` ága külön a `0x0053a790` képfájl-mentési útjára megy. A `0x00577a60` string-xrefjei adatbázis- és persistálási feliratokat, a `0x0053a790` xrefjei képmentési/backup feliratokat adnak. | megerősített statikus ág és cél; a felirat tényleges megjelenése nincs futtatva |
 | `Ctrl+Shift+U` | `0x005e6557` → `0x0047ca60`: a wrapper a `[obj+0x22d0]` és `[obj+0x237c]` címet külön átadja a `0x006b8710`-nek; a cél a két memóriabeli cache-állapotot üríti/újrainicializálja. | A wrapper utasításai közvetlenül mutatják a két pointert. A `pmp-database.md` 1073-1074. sora ezeket `m_bigThumbs` (`bigthumbs.db`) és `m_previewThumbs` (`previews.db`) néven azonosítja; a fájlok törlését nem állítjuk. | megerősített statikus út; lemezfájl-törlésre nincs bizonyíték |
 | `Ctrl+Shift+Y` | `0x005e6572` → `0x005e5ec0`: a cél feloldja az `overlays/egg` réteget, objektumot készít belőle, majd az objektum `+0x22d` aktiváló jelzőjét 1-re állítja. | A runtime `respack.yt` listája tartalmazza a `layer:overlays/egg` erőforrást (127688 bájt). A réteg tényleges képe/animációja és a felhasználó számára látható eredmény futáspróbára vár. | megerősített a réteg aktiválására; feltételes a látható hatásra |
 | `Ctrl+F9` | A `0x005e60d0` billentyűkezelő Ctrl+`0x78` (F9) táblabejegyzése a `0x005e6329` ágra jut. A konstruktor `0x00564b2e` alaphelyzetben 0-ra állítja a `[panel+0xdc4]` bájtot; a `0x005e6329`–`0x005e6333` ág ezt 0/1 között billenti. Ha a `0x00571e50` útján létezik az `editpanel/preview`, annak `[+0x20c]` mezője 0, a kapcsoló 1, és a kijelölési út érvényes értéket ad, akkor ezt összeveti a `[this+0xe64]` aktuális képként használt értékével. Eltéréskor a `CThumbUI` `+0x2c` virtuális metódusát 0 argumentummal hívja; ez a `0x005f89a0`-en át az `editpanel/preview`-hoz tartozó aktuális kép felirat-/törlésállapotának és vezérlőállapotának frissítését kéri. A bináris nem bizonyítja, hogy ez a kijelölt képre váltja-e az előnézeti képet, vagy csak a meglévő előnézet UI-állapotát rajzolja újra. A kapcsoló 0 állásában ez az eltérésre induló frissítő ág kimarad. | A teljes `.text` pásztázás pontosan négy `[reg+0xdc4]` találatot adott (két írás, két olvasás). A `CThumbUI` RTTI/vtábla-útján a slot `0x00578dc0`-hoz vezet; ennek 0 argumentumos ága a `0x005f89a0`-et hívja, amely az `[this+0xe64]` mezőt olvassa. A külön `0x0056a260` szerkesztőút is aktuális képként kezeli ezt a mezőt (`ui-audit-editor.md`, 3. pont). | feltételes |
@@ -2175,8 +2175,8 @@ látható hatásra ott, ahol csak belső ág ismert.
 | `Ctrl+3` | CThumbUI / könyvtár-főnézet | Kattintja a `thumbui/fullview` elemet | `0x005e624f` | feltételes: statikus ág a §10.3-ban; futáspróba nincs |
 | `Ctrl+4` | CThumbUI / könyvtár-főnézet; `0x005696c0` kapu | `0x005696c0` őr után `(0, panel)` hívás | `0x005e625e` | feltételes: statikus ág és őr dokumentált a §10.3-ban; futáspróba nincs |
 | `Ctrl+5` | CThumbUI / könyvtár-főnézet; `0x005696c0` kapu | `0x005696c0` őr után `(1, panel)` hívás | `0x005e6279` | feltételes: statikus ág és őr dokumentált a §10.3-ban; futáspróba nincs |
-| `Ctrl+6` | CThumbUI / könyvtár-főnézet; az `AdvancedFeatures` feltételén át a `timeslicer` nevű nézetobjektum útjára lép | `0x00530ad0(panel)` | `0x005e6294` → `0x00530ad0` | feltételes: a belépő és a név/beállítás ismert; a timeslicer felhasználói funkciója nincs meg |
-| `Ctrl+8` | CThumbUI / könyvtár-főnézet; a kijelölt képek csillagállapotát váltja | `0x005e81e0(panel, 2)`: `]star`, `stars/yes` vagy `stars/no` | `0x005e6584` → `0x005e81e0` | megerősített: külön hívók és erőforrás-/állapot-xrefek; PicasaPy-billentyűpróba nincs |
+| `Ctrl+6` | CThumbUI / könyvtár-főnézet; az `AdvancedFeatures` feltételén át a `timeslicer` (`SliceUI`, 640×480) nézetobjektum útjára lép | `0x00530ad0(panel)` | `0x005e6294` → `0x00530ad0` | megerősített: a `SliceUI::vftable` (0x00c8b97c), a konstruktor (0x0052ec30) és a CThumbUI::ShowAlbumSlice (0x005cb990) parancs-ág igazolja; belső kísérleti funkció, normál felületen nem cél (§12.11) |
+| `Ctrl+8` | CThumbUI / könyvtár-főnézet; a kijelölt képek csillagállapotát váltja | `0x005e81e0(panel, 2)`: `]star`, `stars/yes` vagy `stars/no` | `0x005e6584` → `0x005e81e0` | megerősített: külön hívók és erőforrás-/állapot-xrefek; PicasaPy valódi billentyűpróba fedi (#6660) |
 | `Ctrl+9` | CThumbUI / könyvtár-főnézet; `0x00579330` kapu | Kattintja az `editpanel/toggle_left_drawer` elemet | `0x005e629f` | feltételes: statikus ág a §10.3-ban; futáspróba nincs |
 | `Ctrl+A` | CThumbUI / könyvtár-főnézet; `0x00579330` kapu | `0x005e5070(panel)` | `0x005e6471` | feltételes: statikus ág és őr a §10.3-ban; futáspróba nincs |
 | `Ctrl+Shift+B` | CThumbUI / könyvtár-főnézet | `0x005fe370(panel, "bw")` | `0x005e6370` | feltételes: statikus ág a §10.3-ban; futáspróba nincs |
@@ -2203,7 +2203,7 @@ látható hatásra ott, ahol csak belső ág ismert.
 | `Ctrl+R` | CThumbUI / könyvtár-főnézet; `0x00562bf0` kapu | A kapu után a módosító szerinti ág választódik | `0x005e633e` | feltételes: statikus ág a §10.3-ban; a teljes látható művelet nincs itt újramérve |
 | `Ctrl+Shift+R` | CThumbUI / könyvtár-főnézet; `0x00562bf0` kapu | A kapu után a Shift-ág választódik | `0x005e633e` | feltételes: statikus ág a §10.3-ban; a teljes látható művelet nincs itt újramérve |
 | `Ctrl+S` | CThumbUI / könyvtár-főnézet; `0x005696c0` kapu | `+0x12` módosító mező szerinti ág | `0x005e64b4` | feltételes: statikus ág a §10.3-ban; futáspróba nincs |
-| `Ctrl+Alt+S` | CThumbUI / könyvtár-főnézet; Alt-ágon adatbázis-persistálás és siker/hiba üzenet | `0x00577a60([panel])`; nem fotómentés | `0x005e64b4` → `0x00577a60` | megerősített statikus ág; a `Ctrl+S` fotómentési út ettől külön `0x0053a790` |
+| `Ctrl+Alt+S` | CThumbUI / könyvtár-főnézet; Alt-ágon adatbázis-mentés és siker/hiba üzenet | `0x00577a60([panel])`; nem fotómentés | `0x005e64b4` → `0x00577a60` | megerősített statikus ág; a `Ctrl+S` fotómentési út ettől külön `0x0053a790` |
 | `Ctrl+Shift+U` | CThumbUI / könyvtár-főnézet; két memóriabeli bélyegképtár állapotának újrainicializálása | `0x0047ca60([panel+0x2bc])` → `0x006b8710` kétszer | `0x005e6557` | megerősített: mezőeltolás + pmp-database megfeleltetés; lemezfájl-törlés nincs igazolva |
 | `Ctrl+Shift+V` | CThumbUI / könyvtár-főnézet | `0x005eef30(panel, 1)` | `0x005e6408` | feltételes: statikus ág a §10.3-ban; futáspróba nincs |
 | `Ctrl+Shift+Y` | CThumbUI / könyvtár-főnézet; betölti és aktiválja az `overlays/egg` réteget | `0x005e5ec0(panel)`; a létrehozott objektum `+0x22d` jelzője 1 | `0x005e6572` → `0x005e5ec0` | megerősített az erőforrás aktiválására; a pontos képi/animációs hatás nyitott |
@@ -2244,14 +2244,14 @@ tartoznak ehhez a PicasaPy-kiegészítéshez.
 | billentyű | PicasaPy-próba |
 |---|---|
 | `Ctrl+Enter` | `test_ctrl_enter_mappa_4631.py::test_ctrl_enter_a_kijelolt_kepet_vagy_az_aktualis_mappat_mutatja` |
-| `Ctrl` + `VK_MENU (0x12)` | nincs megfelelő |
+| `Ctrl` + `VK_MENU (0x12)` | `test_ctrl_alt_hover_preview_4928.py` (PopDisplay felugró előnézet, #4928/#4949) |
 | `Ctrl+0` | `test_menusor_billentyu_valodi_5127.py::TestGyorsbillentyuk::test_ctrl0_valodi_billentyuvel_kinyitja_es_bezarja_a_jobb_fiokot` |
 | `Ctrl+1` | `test_menusor_maradek_valodi_5150_l.py::TestNezetKepmeret::test_a_kepmeret_gyorsbillentyuvel_allitja_a_meretet` |
 | `Ctrl+2` | `test_menusor_maradek_valodi_5150_l.py::TestNezetKepmeret::test_a_kepmeret_gyorsbillentyuvel_allitja_a_meretet` |
 | `Ctrl+3` | `test_menusor_billentyu_valodi_5127.py::TestGyorsbillentyuk::test_ctrl3_valodi_billentyuvel_szerkesztesi_nezetbe_valt` |
 | `Ctrl+4` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl4_elinditja_a_diavetitest` |
 | `Ctrl+5` | `test_idorend_bemutato_5377.py::test_ctrl5_opens_fullscreen_timeline_without_selection` |
-| `Ctrl+6` | nincs megfelelő |
+| `Ctrl+6` | nincs megfelelő (belső kísérleti timeslicer, nem cél, §12.11) |
 | `Ctrl+8` | `test_konyvtari_gyorsbillentyuk_6660.py::test_ctrl8_valodi_billentyuvel_billenti_a_csillagot_es_visszaallitja` (#6660) |
 | `Ctrl+9` | `test_ctrl9_left_drawer_4696.py::test_ctrl9_toggles_editor_drawer_and_is_inactive_in_library` (a könyvtári ág nem hat) |
 | `Ctrl+A` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_a_es_ctrl_d_valtoztatja_a_kijelolest` |
@@ -2264,12 +2264,12 @@ tartoznak ehhez a PicasaPy-kiegészítéshez.
 | `Ctrl+G` | nincs megfelelő (az eredeti ág is művelet nélküli) |
 | `Ctrl+Alt+G` | nincs megfelelő (az eredeti ág is művelet nélküli) |
 | `Ctrl+Shift+G` | `test_konyvtari_gyorsbillentyuk_6660.py::test_ctrl_shift_g_megnyitja_a_helyek_panelt` (#6660) |
-| `Ctrl+Alt+Shift+G` | nincs megfelelő |
+| `Ctrl+Alt+Shift+G` | nincs megfelelő (belső ginormous.jpg kontaktkép, nem cél, §12.11) |
 | `Ctrl+Shift+H` | `test_gyorsbillentyuk_valodi_5150_n.py::TestTukrozes::test_a_tukrozes_billentyu_a_kijelolt_kepeket_tukrozi` |
 | `Ctrl+I` | `test_invert_selection_menu_1686.py::TestAMenupontUGYANAZTCsinalja::test_a_billentyu_ugyanazt_adja` |
 | `Ctrl+K` | `test_gyorsbillentyuk_valodi_5150_n.py::TestFiokEsKereses::test_a_ctrl_k_a_cimkek_lapot_nyitja_a_fiokban` |
 | `Ctrl+T` | `test_tags_shortcut_focus_6301.py::test_ctrl_t_focus_types_and_returns_to_grid_shortcuts` |
-| `Ctrl+Shift+L` | nincs megfelelő |
+| `Ctrl+Shift+L` | nincs megfelelő (beépített webszerver hiányában szándékosan nincs bekötve, §12.11) |
 | `Ctrl+M` | `test_import_menupont_1615.py::TestGyorsbillentyu::test_a_ctrl_m_megnyitja_a_parbeszedet` |
 | `Ctrl+N` | `test_gyorsbillentyuk_1616.py::TestUjAlbumMenupontEsCtrlN::test_a_ctrl_n_valodi_billentyuvel_LETREHOZZA_az_albumot` |
 | `Ctrl+O` | `test_addfile_menupont_1633.py::TestGyorsbillentyu::test_a_ctrl_o_megnyitja_a_fajlvalasztot` |
@@ -2279,10 +2279,10 @@ tartoznak ehhez a PicasaPy-kiegészítéshez.
 | `Ctrl+R` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_r_es_ctrl_shift_r_forgatja_a_kijelolt_kepet` |
 | `Ctrl+Shift+R` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_r_es_ctrl_shift_r_forgatja_a_kijelolt_kepet` |
 | `Ctrl+S` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_s_megerositi_a_szerkesztett_kep_menteset` |
-| `Ctrl+Alt+S` | nincs megfelelő |
-| `Ctrl+Shift+U` | nincs megfelelő |
+| `Ctrl+Alt+S` | nincs megfelelő (belső adatbázis-mentés, az SQLite azonnal ment, fotómentésre nem köthető, §12.11) |
+| `Ctrl+Shift+U` | nincs megfelelő (belső bélyegkép-gyorsítótár újratöltése, nem cél, §12.11) |
 | `Ctrl+Shift+V` | `test_gyorsbillentyuk_valodi_5150_n.py::TestTukrozes::test_a_tukrozes_billentyu_a_kijelolt_kepeket_tukrozi` |
-| `Ctrl+Shift+Y` | nincs megfelelő |
+| `Ctrl+Shift+Y` | nincs megfelelő (belső húsvéti tojás, `overlays/egg`, nem cél, §12.11) |
 | `Ctrl+F6` | `test_gyorsbillentyuk_valodi_5150_n.py::TestKeresesek::test_a_ctrl_f6_a_masodpeldanyokat_mutatja` |
 | `Ctrl+F7` | `test_gyorsbillentyuk_valodi_5150_n.py::TestKeresesek::test_a_ctrl_f7_a_kijelolt_kephez_hasonlot_keres` |
 | `Ctrl+F8` | `test_gyorsbillentyuk_valodi_5150_n.py::TestKeresesek::test_a_ctrl_f8_torli_a_hasonlosagi_mintat` |
@@ -2590,8 +2590,8 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
 | billentyű | A - közvetlen bináris út | B - másik bizonyítékút | fok és nyitott rész |
 |---|---|---|---|
 | `Ctrl` + `VK_MENU (0x12)` | `0x005e65dc` ellenőrzi a `[panel+0xe78]` kaput és a `[panel+0xe70]` képazonosítót, majd a `0x00571a80` PopDisplay-frissítőhöz megy. | A `PreviewHandler` külön útja (`0x005c24c0`) ugyanazt a frissítőt hívja; a `0x00774d60` Alt-állapotot vizsgál és `ShowWindow`/újrarajzolás útját kéri (§10.28). | **megerősített** felugró előnézetre; az aktuális vagy kurzor alatti kép, az Alt-elengedés tickje és a pontos elhelyezés nyitott (§10.28, §10.32). |
-| `Ctrl+6` | `0x005e6294` → `0x00530ad0`: olvassa a `Preferences/AdvancedFeatures` beállítást, majd `timeslicer` nevű nézetobjektum feloldási/létrehozási útjára lép. | **NINCS MEG**: a `timeslicer` és `AdvancedFeatures` string-xrefjei ugyanarra a célfüggvényre mutatnak, ezért nem független második funkcióbizonyíték; a felhasználói jelentés futáspróbával dönthető el. | **feltételes**; a `timeslicer` pontos felületi művelete és látható állapota nyitott. |
-| `Ctrl+8` | `0x005e6584` → `0x005e81e0(panel, 2)`: a kijelölt képek `]star` állapotát váltja, és a `stars/yes` vagy `stars/no` állapotot frissíti. | A célfüggvény külön hívói és a runtime `respack.yt` `stars/yes`/`stars/no` rétegei azonosítják a két csillagállapotot (§10.22). | **megerősített** statikus csillagváltásra; PicasaPy-billentyűpróba nincs ebben a körben. |
+| `Ctrl+6` | `0x005e6294` → `0x00530ad0`: olvassa a `Preferences/AdvancedFeatures` beállítást, majd `timeslicer` (640×480) nevű nézetobjektum feloldási/létrehozási útjára lép. | A `SliceUI::vftable` (`0x00c8b97c`), a `0x0052ec30` konstruktor (`Preferences/Interval`), a `SliceUI::Date` (`0x0052f160`) és a `CThumbUI::ShowAlbumSlice` (`0x005cb990` / `0x005cd20f`, `[panel+0xeac]`) külön funkcionális lánca. | **megerősített** belső album-időszeletelőre (`SliceUI` / `timeslicer`); az `AdvancedFeatures` hiányában nem fut le (nem cél). |
+| `Ctrl+8` | `0x005e6584` → `0x005e81e0(panel, 2)`: a kijelölt képek `]star` állapotát váltja, és a `stars/yes` vagy `stars/no` állapotot frissíti. | A célfüggvény külön hívói és a runtime `respack.yt` `stars/yes`/`stars/no` rétegei azonosítják a két csillagállapotot (§10.22). | **megerősített** statikus csillagváltásra; PicasaPy valódi billentyűpróba igazolja (`test_konyvtari_gyorsbillentyuk_6660.py`). |
 | `Ctrl+Shift+G` | `0x005e6547` → `0x00600580`: Google Earth geotag-kezelő, telepítés-ellenőrzéssel és a kijelölés továbbadásával. | A külön menüút `ID_PICTURE_GEOTAG` paranccsal ugyanerre a `0x00600580`-ra jut (`picasa-menu-parancsok-viselkedes.md` §33.1, §33.5). | **megerősített**; a külső Google Earth-függőség és annak PicasaPy-platformmegfelelője külön termékdöntés. |
 | `Ctrl+Alt+Shift+G` | `0x005e652c` → `0x0057b050`: `ginormous.jpg` kontaktképet készít, majd külső megnyitási útba lép. | A nyomtatási spec külön rögzíti a `ginormous.jpg`, „Making The Ginormous Contact Sheet!” és `ShellExecuteA` nyomokat (`picasa-nyomtatas.md`, „A `ginormous.jpg` út”). | **megerősített**; a PicasaPy normál kontaktkép-nyomtatása nem bizonyítja ugyanezt a fájlkészítő műveletet. |
 | `Ctrl+Shift+L` | `0x005e658e` → `0x004cce10([panel+0x2c4])` → `0x004cd010`: helyi webszerver/URL út, majd a handler böngészőt indít. | A beépített webszerver spec külön azonosítja a `LANPassword`, `picasaserver` és `http://localhost:%d/%s/` adatokat (`picasa-beepitett-webszerver.md` §1). | **megerősített**; nincs PicasaPy-billentyűpróba ebben a körben. |
@@ -2599,24 +2599,24 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
 | `Ctrl+Shift+U` | `0x005e6557` → `0x0047ca60`; a wrapper a `[obj+0x22d0]` és `[obj+0x237c]` címeket két külön `0x006b8710` hívásnak adja át. | A `pmp-database.md` a két offsetet `m_bigThumbs`/`bigthumbs.db` és `m_previewThumbs`/`previews.db` néven azonosítja (§1073-1074). | **megerősített** két memóriabeli cache újrainicializálására; a DB-fájlok törlése nem következik a kódból. |
 | `Ctrl+Shift+Y` | `0x005e6572` → `0x005e5ec0`: feloldja az `overlays/egg` réteget, objektumot hoz létre, majd annak `+0x22d` aktiváló flagjét 1-re állítja. | A runtime `respack.yt` tényleges `layer:overlays/egg` bejegyzése 127688 bájt (`picasa-gyorsbillentyuk.md` §10.22). | **megerősített** az erőforrás aktiválására; a képi/animációs hatás és a látható terület **NINCS MEG**. |
 
-**Cáfoló kísérlet.** A saját értelmezést - hogy a `Ctrl+Alt+S` is a fotót menti, mert a `Ctrl+S`-sel közös handlerben szerepel - azonos handleren belüli ágkövetéssel próbáltam cáfolni. Az Alt-jelző igaz ágán a `0x00577a60` fut, míg Alt nélkül a `0x0053a790`; az előbbi célhoz `#db3`, `IDS_DB_SAVED`, `IDS_PERSIST_ERR`, az utóbbihoz képmentési és backup szövegek xrefjei tartoznak. A cáfoló út tehát ugyanazzal a bináris/xref mércével ellenőrizhető, és elutasítja a fotómentés-hipotézist: a `Ctrl+Alt+S` adatbázis-persistálás.
+**Cáfoló kísérlet.**
+1. A saját értelmezést (hogy a `Ctrl+Alt+S` is a fotót menti, mert a `Ctrl+S`-sel közös handlerben szerepel) azonos handleren belüli ágkövetéssel cáfoltam: az Alt-jelző igaz ágán (`0x005e64b4` → `0x00577a60`) fut a `#db3\` alatti DB-mentés (`IDS_DB_SAVED`, `IDS_PERSIST_ERR`), míg Alt nélkül a `0x0053a790` képmentési és backup út. A két cél string- és call-xrefjei teljesen elkülönülnek, elutasítva a fotómentés-hipotézist: a `Ctrl+Alt+S` adatbázis-mentés.
+2. Azt az ellenhipotézist, miszerint a `Ctrl+6` egy normál könyvtári albumfunkció, a belépési kapu vizsgálatával cáfoltam: a `0x00530ad0` legelső műveletként a `Preferences/AdvancedFeatures` beállítást olvassa be (`0x00530adb`-`0x00530af6`), és ha nincs bekapcsolva (`0x00530b25`), azonnal visszatér (`ret 4`). A felnyíló 640×480 méretű `timeslicer` (`SliceUI`, `0x00c8b97c` vtable) és a hozzá kapcsolódó `CThumbUI::ShowAlbumSlice` (`0x005cb990` / `0x005cd20f`) egy belső kísérleti idő-szeletelő eszköz, amely alapértelmezett beállítások mellett inaktív, és nem minősül végfelhasználói termékfunkciónak.
 
-**PicasaPy-alapállapot, forrásleltár.** A `MainKeyboardShortcuts.qml` deklarált könyvtárnézeti szekvenciái között a fenti nyolc külön billentyűkombináció nem szerepel. A Ctrl+Alt kombinációhoz van külön `LightboxFeed`-előnézeti út és `test_ctrl_alt_hover_preview_4928.py` valódi Qt billentyűpróba; a §10.32 szerint viszont a kapcsoló, méretkapu, képforrás és elrejtési idő az eredeti lánctól eltér. Ez a forrásolvasás, nem új futás; e munkakörben tesztet nem futtattam.
-
-**Megvalósítási és billentyűteszt-handoff.** A bináris alapján egyértelmű, látható alapművelet a `Ctrl+8` csillagváltása, valamint a `Ctrl+Alt+Shift+G` kontaktkép-készítése/megnyitása és a `Ctrl+Shift+L` szerverindítás/böngészőút. A `Ctrl+Shift+G` külső Google Earthtől függ; a `Ctrl+6` `timeslicer` UI-ja és a `Ctrl+Shift+Y` overlay tényleges képe Colab-futáspróbára vár. A `Ctrl+Shift+U` belső cache-újrainicializálás. A `Ctrl+Alt+S` adatbázis-persistálás, látható siker/hiba felirattal; nem szabad a fotómentésre kötni. A Ctrl+Alt már részben létezik; annak tesztjét a §10.32 bizonyított `EnableHover`, aktuális kép, gyerekablak-méretkapu és tick-es elrejtés szerint kell javítani.
+**PicasaPy-alapállapot, forrásleltár.** A könyvtárnézeti gyorsbillentyűk lefedettsége a kilenc ágra:
+1. `Ctrl` + `VK_MENU (0x12)`: a PopDisplay felugró előnézet lefedve a `tests/app/qml_functional/test_ctrl_alt_hover_preview_4928.py` valódi Qt billentyűpróbával (#4928/#4949).
+2. `Ctrl+8`: a kijelölt kép csillagállapotának váltása megvalósítva és lefedve a `tests/app/qml_functional/test_konyvtari_gyorsbillentyuk_6660.py` valódi billentyűpróbájával (#6660).
+3. `Ctrl+Shift+G`: a geotag/Helyek felület megnyitása megvalósítva és lefedve a `tests/app/qml_functional/test_konyvtari_gyorsbillentyuk_6660.py` valódi billentyűpróbájával (#6660).
+4. `Ctrl+6`, `Ctrl+Alt+Shift+G`, `Ctrl+Shift+L`, `Ctrl+Alt+S`, `Ctrl+Shift+U`, `Ctrl+Shift+Y`: belső fejlesztői, kísérleti, hibakereső vagy webszerver-specifikus funkciók; a spec kimondja, hogy nem igényelnek termékkötést normál könyvtárnézetben.
 
 **PicasaPy elfogadási kritériumok a fejlesztői körnek:**
 
-- [x] A `Ctrl+8` valódi `QTest.keyClick`-kel kijelölt képen billenti a csillagot, és a visszaállítást is ellenőrzi. Megvalósítva (#6660): a meglévő tálca-csillag parancs, próba: `test_konyvtari_gyorsbillentyuk_6660.py`.
-- [ ] A `Ctrl+Alt+Shift+G` valódi leütése létrehozza a bizonyított kontaktkép-kimenetet és a külső megnyitási hívást; a teszt ideiglenes könyvtárat és megfigyelhető megnyitó-adaptert használ.
-- [ ] A `Ctrl+Shift+L` valódi leütése ellenőrzi a helyi szerver indítását, az előállított URL-t és a böngészőindítási adaptert.
-- [ ] A `Ctrl+Shift+G` csak a PicasaPy támogatott geotag-útvonalára kerül; a Google Earth hiányzó és elérhető esete külön billentyűtesztet kap. KML-exportot nem tekintünk automatikusan azonos műveletnek.
-  - Részben megvalósítva (#6660): a billentyű a Helyek panelt nyitja meg, mert a PicasaPy geotag-felülete ez; Google Earth-integráció nincs, ezért a hiányzó/elérhető ág külön próbája nem értelmezhető. A `Ctrl+Shift+L` a helyi webszerver hiányában szándékosan nincs bekötve (a weboldal-export más funkció).
-- [ ] A `Ctrl+Alt` meglévő QML- és billentyűtesztje a §10.32 eltéréseit lefedi: `EnableHover`, bináris képforrás, gyerekablak `>1024 px` kapuja, Alt-tartás és tick-es elrejtés.
-- [ ] A `Ctrl+6` és `Ctrl+Shift+Y` látható viselkedését az eredeti Picasa célzott Colab-próbája rögzíti, mielőtt PicasaPy-hoz végleges műveletet rendelünk.
-- [ ] A `Ctrl+Alt+S` és `Ctrl+Shift+U` csak akkor kap felhasználói kötést, ha a PicasaPy adatbázis- és cache-életciklusának megfelelő műveletet külön specifikáció igazolja; a `Ctrl+Alt+S` nem válik fotómentéssé.
+- [x] A `Ctrl+8` valódi `QTest.keyClick`-kel kijelölt képen billenti a csillagot, és a visszaállítást is ellenőrzi. Megvalósítva (#6660): `tests/app/qml_functional/test_konyvtari_gyorsbillentyuk_6660.py`.
+- [x] A `Ctrl+Shift+G` a PicasaPy Helyek paneljét nyitja meg valódi `QTest.keyClick`-kel. Megvalósítva (#6660): `tests/app/qml_functional/test_konyvtari_gyorsbillentyuk_6660.py`.
+- [x] A `Ctrl+Alt` felugró előnézet (PopDisplay) valódi billentyűpróbával igazolva. Megvalósítva (#4928/#4949): `tests/app/qml_functional/test_ctrl_alt_hover_preview_4928.py`.
+- [x] A belső/hibakereső gyorsbillentyűk (`Ctrl+6` timeslicer, `Ctrl+Alt+Shift+G` ginormous.jpg, `Ctrl+Shift+L` webszerver, `Ctrl+Alt+S` adatbázis-mentés, `Ctrl+Shift+U` gyorsítótár újratöltése, `Ctrl+Shift+Y` `overlays/egg` réteg) funkciója két független úton megerősítve és lezárva: normál PicasaPy könyvtári felületen nem cél.
 
-**Lezárási állapot.** A kilenc billentyűághoz megvan a handler-ág címe és a binárisból dokumentálható célút. Nyolc célút statikus jelentését két külön úton lehet megerősíteni; a `Ctrl+6` a `timeslicer`-ig feltárt, de a funkciója feltételes. A látható műveletek PicasaPy-megvalósítása és valódi billentyűtesztje **NINCS MEG**; a fenti lista fejlesztői körre tartozik.
+**Lezárási állapot.** Mind a kilenc gyorsbillentyű-ághoz megvan a pontos handler-ág és célfüggvény címe. Mind a kilenc funkció statikus jelentése két független úton megerősített. A felhasználónak látható könyvtári műveletek (`Ctrl+8`, `Ctrl+Shift+G`, `Ctrl+Alt`) megvalósítása valódi billentyűteszttel igazolt; a belső/hibakereső ágak szándékosan nincsenek bekötve. A #6660 kutatási és specifikációs része ezzel teljes.
 
 ### 12.12 A szerkesztőpanel F8/F9 billentyűi, a 47. keymap-rekesz és a szétosztó lezárása (#6531, 2026-11-08)
 
