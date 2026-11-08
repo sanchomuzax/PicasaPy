@@ -58,6 +58,81 @@ def test_konyvtar_ctrl_f_a_keresomezore_viszi_a_fokuszt(qml_app, qt_app):
     ), "a könyvtári Ctrl+F nem vitte a fókuszt a keresőmezőre"
 
 
+def test_szerkeszto_f8_f9_modosito_nelkul_nem_valtoztat_az_allapoton(
+    qml_app, qt_app
+):
+    """A szerkesztő F8/F9 leütése nem írhatja át a nézet vagy a kép állapotát."""
+    window, _controller, engine = qml_app
+    _aktiv_ablak(window, qt_app, 0)
+    window.setProperty("viewerOpen", True)
+    viewer = _objektum(window, "photoViewer")
+    panel = _objektum(window, "viewerEditorPanel")
+    edit_controller = engine.rootContext().contextProperty("editController")
+    viewer.setProperty("currentIndex", 0)
+    assert _varj(
+        qt_app,
+        lambda: viewer.isVisible()
+        and viewer.property("controllerReady")
+        and bool(edit_controller.property("previewSource")),
+    ), "a szerkesztő nézője és képmunkamenete nem nyílt meg"
+    panel.setProperty("activeTab", 2)
+    edit_controller.applyEffect("warm")
+    assert _varj(
+        qt_app,
+        lambda: edit_controller.property("effectChainCounts").get("warm", 0)
+        == 1
+        and edit_controller.property("canUndo") is True,
+    ), "az effekt vagy a visszavonási bejegyzés nem készült el"
+    assert _varj(
+        qt_app,
+        lambda: (effekt := window.findChild(QObject, "effectWarm")) is not None
+        and effekt.property("visible") is True,
+    ), "az effektlista nem épült fel"
+    viewer.forceActiveFocus()
+    assert _varj(qt_app, lambda: viewer.property("activeFocus")), (
+        "a néző nem kapott fókuszt"
+    )
+
+    def szerkeszto_allapot() -> tuple:
+        racs = _objektum(window, "effectsGrid")
+        effektlista = tuple(
+            elem.objectName()
+            for elem in racs.findChildren(QObject)
+            if elem.objectName().startswith("effect")
+        )
+        kep = _objektum(window, "viewerImage")
+        kepforras = kep.property("source")
+        kepforras = (
+            kepforras.toString()
+            if hasattr(kepforras, "toString")
+            else str(kepforras)
+        )
+        return (
+            panel.property("activeTab"),
+            viewer.property("currentIndex"),
+            str(viewer.property("currentFilePath")),
+            kepforras,
+            effektlista,
+            dict(edit_controller.property("effectChainCounts")),
+            tuple(edit_controller._undo_stack),
+            tuple(edit_controller._redo_stack),
+        )
+
+    elteresek = []
+    for billentyu in (Qt.Key.Key_F8, Qt.Key.Key_F9):
+        elotte = szerkeszto_allapot()
+        QTest.keyClick(window, billentyu, Qt.KeyboardModifier.NoModifier)
+        qt_app.processEvents()
+        utana = szerkeszto_allapot()
+        if utana != elotte:
+            elteresek.append((billentyu.name, elotte, utana))
+
+    assert not elteresek, (
+        "a módosító nélküli szerkesztőbillentyű megváltoztatta az állapotot: "
+        f"{elteresek!r}"
+    )
+
+
 @pytest.mark.parametrize("magassag_eltolas", [-5, 0, 5])
 def test_konyvtar_ctrl4_elinditja_a_diavetitest(
     qml_app, qt_app, magassag_eltolas

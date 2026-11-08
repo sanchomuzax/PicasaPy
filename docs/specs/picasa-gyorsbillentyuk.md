@@ -2232,11 +2232,12 @@ látható hatásra ott, ahol csak belső ág ismert.
 | `/`, `,`, `.` | Néző videólejátszója | A keymap megnevezése szerinti műveletek a fizikai billentyűtől a fogadóig **NINCS MEG**. A külön MovieMaker `MoviePreviewHandler` (`video_control_bar2`) belső műveletkódja ismert: `0x13` → pause/play (`0x00619ac0`); `0x18` + `VK_SPACE` → play/pause felületi állapot; `0x17` + `VK_SPACE` → stop; `0x0d` → feltételes fullscreen; `0x1f`/`0x20` → fullscreen-jelző be/ki. | A MovieMaker-fogadó: `0x006248e0`; a néző keymap-fizikai billentyűhöz kapcsolása **NINCS MEG**. A régi `0xBC/0xBE/0xBF` keresés csak meghatározott CMP-alakra terjedt ki. | Feltételes a belső kód→művelet ágra; nyitott a `/`, `,`, `.` fizikai billentyű→nézőfogadó út. Részletes lelet: `picasa-create-features.md` §2.7/c. |
 | Navigációs billentyűk (Backspace, Enter, Esc, Space, PgUp/PgDn, Home/End, nyilak, Insert/Delete, F1) | Fókuszált vezérlő vagy párbeszéd | Az általános út eseményobjektumot épít és a fókuszált elemnek továbbít; a konkrét parancs az elem saját kezelőjében van | `0x00a53b00` → `0x00a582f0`; táblák `0x00a53bb4` / `0x00a53ba8` | Az általános továbbítás megerősített (§10.18); az egyes dialogusok elemenkénti hatása a `picasa-eger-es-kijeloles.md` §8-ban van. |
 
-#### PicasaPy-próba index a CThumbUI-sorokhoz
+#### PicasaPy-próba index a §12 nézetenkénti billentyűsoraihoz
 
 Az alábbi hivatkozások valódi `QTest.keyClick` eseményt küldenek a főablaknak
 (a projektlap-sáv önálló QML-ablakának), és látható vagy állapotbeli hatást
-ellenőriznek. A `nincs megfelelő` azt jelenti, hogy a PicasaPy-ban nincs az
+ellenőriznek. Az index a CThumbUI-sorok mellett a szerkesztő és a videónéző
+nézetenkénti billentyűpróbáit is tartalmazza. A `nincs megfelelő` azt jelenti, hogy a PicasaPy-ban nincs az
 adott könyvtárnézeti művelethez tartozó billentyűút; ezt a jelentés külön
 eltérésként részletezi. Az eredeti Picasán végzett `ui_capture` próbák nem
 tartoznak ehhez a PicasaPy-kiegészítéshez.
@@ -2299,6 +2300,8 @@ tartoznak ehhez a PicasaPy-kiegészítéshez.
 | `F5` | `test_f5_konyvtar_frissites_4697.py::test_f5_refreshes_the_visible_folder_and_search_state` |
 | `F11` | `test_viewer_fullscreen_4569.py::test_f11_a_konyvtarnezetben_nem_valt_teljes_kepernyore` (az eredeti könyvtári út eltérését méri) |
 | `F12` | nincs megfelelő (a spec szerint nincs funkció) |
+| `F8`, `F9` (módosító nélkül, szerkesztő) | `test_gyorsbillentyu_matrix_6531.py::test_szerkeszto_f8_f9_modosito_nelkul_nem_valtoztat_az_allapoton` |
+| `/`, `,`, `.` (videónéző) | nincs megfelelő (a videós QML-próba a Qt videóbetöltésénél megakad, nyitott) |
 
 ### 12.1 F2 a megnyitott képnézőben - statikus út és feltételek
 
@@ -2381,7 +2384,7 @@ Ez az összesítés **nem** zárja le a teljes mátrixot: a §11 teszthivatkozá
 | `test_gyorsbillentyu_matrix_6531.py` | 11 passed | Könyvtári `Ctrl+F`: `QTest.keyClick` a főablakon, a keresőmező tényleges fókuszával. A korábbi 10 próba továbbra is zöld. |
 | `test_projektlap_billentyuk_2170.py` | 37 passed | `Ctrl+Tab`, `Ctrl+Shift+Tab` és módosított projektlapon `Ctrl+W`: valódi billentyűesemény, látható lapváltás / bezárási kérdés. |
 
-A §12 CThumbUI-sorainak PicasaPy-próbáját a fenti PicasaPy-próba index soronként hivatkozza. A `nincs megfelelő` soroknál nem adtam hozzá funkciót; az eltérések és a jelenlegi PicasaPy-viselkedés a munkafa `.codex-jelentes.md` fájljában szerepel. Az eredeti Picasa Colab-próbája ebben a kiegészítésben nem futott.
+A §12 itt felsorolt billentyűsorainak PicasaPy-próbáját a fenti PicasaPy-próba index soronként hivatkozza. A `nincs megfelelő` soroknál nem adtam hozzá funkciót; az eltérések és a jelenlegi PicasaPy-viselkedés a munkafa `.codex-jelentes.md` fájljában szerepel. Az eredeti Picasa Colab-próbája ebben a kiegészítésben nem futott.
 
 ### 12.5 A vetítés vezérlősávja és a videó billentyűi (2026-11-05)
 
@@ -2659,15 +2662,15 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
 
 | eset | eredeti Picasa | PicasaPy | állapot |
 |---|---|---|---|
-| Módosító nélküli `F8`/`F9` a szerkesztőben | A #375 képernyőképei (8-12.) azonosak, változás nem látszik (§12.12). | A tesztfában csak `Ctrl+F8`/`Ctrl+F9` leütéspróbát találtam; módosító nélküli F8/F9 `QTest.keyClick`-próbát nem. | Eredeti: mérve; PicasaPy: **NINCS MEG**. |
-| Videónézeti `/`, `,`, `.` | A #375 eredménysorában nem szerepelnek; a §12.4 szerint a Colab-végrehajtó ezeket videólejátszóban nem tudta megbízhatóan leütni. | A tesztfában egyik billentyűre sincs `QTest.keyClick`-próba; a §12.10 statikus lelete nem kezelőt, hanem teszthiányt igazol. | Mindkét oldali futáspróba: **NINCS MEG**. |
-| CThumbUI-próbaindex | A §12.3/#375 eredménytábla nyolc leütött sort rögzít; ez a táblázat nem teljes leltárpróba. | Az index 56 sorából 10 `nincs megfelelő` jelölésű, tehát ezekhez nincs hivatkozott QML-billentyűpróba: `Ctrl+Alt`, `Ctrl+6`, `Ctrl+G`, `Ctrl+Alt+G`, `Ctrl+Alt+Shift+G`, `Ctrl+Shift+L`, `Ctrl+Alt+S`, `Ctrl+Shift+U`, `Ctrl+Shift+Y`, `F12`. | Soronkénti egyezés: **NINCS MEG**. |
+| Módosító nélküli `F8`/`F9` a szerkesztőben | A #375 képernyőképei (8-12.) azonosak, változás nem látszik (§12.12). | `test_gyorsbillentyu_matrix_6531.py::test_szerkeszto_f8_f9_modosito_nelkul_nem_valtoztat_az_allapoton`: valódi `QTest.keyClick`; aktív lap, kép, effektlista, effektlánc és undo/redo verem változatlansága ellenőrizve. | **Mért, egyezik**; a PicasaPy-próba zöld. |
+| Videónézeti `/`, `,`, `.` | A #375 eredménysorában nem szerepelnek; a §12.4 szerint a Colab-végrehajtó ezeket videólejátszóban nem tudta megbízhatóan leütni. | A videós QML-próba megírható, de a Qt videóút a forrás betöltésénél megakad (helyben 90 s után időtúllépés), ezért nem került a tesztkészletbe; a három leütés PicasaPy-eredménye nem mért. | **Nyitott**: eredeti próba nincs, PicasaPy-próba helyben nem fejeződött be. |
+| CThumbUI-próbaindex | A §12.3/#375 eredménytábla nyolc leütött sort rögzít; ez a táblázat nem teljes leltárpróba. | A 56 könyvtárnézeti sorból 10 `nincs megfelelő` jelölésű, tehát ezekhez nincs hivatkozott QML-billentyűpróba: `Ctrl+Alt`, `Ctrl+6`, `Ctrl+G`, `Ctrl+Alt+G`, `Ctrl+Alt+Shift+G`, `Ctrl+Shift+L`, `Ctrl+Alt+S`, `Ctrl+Shift+U`, `Ctrl+Shift+Y`, `F12`. | Soronkénti egyezés: **NINCS MEG**. |
 
 **Helyi PicasaPy-futtatás (2026-11-08).** A 24, a §12-es PicasaPy-indexben hivatkozott különböző QML-tesztfájl a `scripts/run_tests.py` darabolt futtatójával futott. 23 fájl sikeresen befejeződött, összesen 244 teszttel; a `test_menusor_maradek_valodi_5150_l.py` két egymás utáni, 180 másodperces timeout után `exit 124`-gyel maradt befejezetlenül. A futtató ezt időtúllépésként, nem tesztbukásként osztályozta. A környezet PySide6 6.8.2.1, a futtató által jelzett CI-verzió 6.11.2; ez nem CI-azonos mérés. A fájlok lefutása nem oldja fel a soronként hiányzó teszteket, és a timeouttal végződött fájl sincs zöldként elszámolva.
 
-**Cáfoló kísérlet.** A tesztfában közvetlenül rákerestem a módosító nélküli `Key_F8`/`Key_F9` és a videó `Key_Slash`/`Key_Comma`/`Key_Period` `QTest.keyClick` hívásaira. Találat csak Ctrl+F8-ra és Ctrl+F9-re van; a puszta billentyűpróba hiányát ez az ellenőrzés megerősíti. A keresés negatívumát a §12.4 korábbi futásjegyzeteivel is összevetettem: azok ugyanezt a két próbahézagot nevezték meg.
+**Korábbi cáfoló kísérlet.** A mostani QML-próbák hozzáadása előtt a tesztfában közvetlenül rákerestem a módosító nélküli `Key_F8`/`Key_F9` és a videó `Key_Slash`/`Key_Comma`/`Key_Period` `QTest.keyClick` hívásaira. Találat csak Ctrl+F8-ra és Ctrl+F9-re volt. A jelen kör a szerkesztő F8/F9 hiányát valódi leütésekkel lefedte; a videó írásjelbillentyűit a helyi Qt Multimedia-elakadás miatt nem tudta megmérni.
 
-**Következtetés.** A 47. üres keymap-rekesz és a parancsszétosztó nem igényel gyorsbillentyű-próbasort: az egyikben nincs billentyűkötés, a másik parancsüzeneteket fogad. A többi leütési sorra a bináris lelet önmagában nem pótolja a két felületen kért futáspróbát. E körben nem állítok paritást, és a le nem futtatott esetből eltérést sem következtetek.
+**Következtetés.** A 47. üres keymap-rekesz és a parancsszétosztó nem igényel gyorsbillentyű-próbasort: az egyikben nincs billentyűkötés, a másik parancsüzeneteket fogad. A szerkesztő módosító nélküli F8/F9 sora mindkét felületen mért, az eredeti Picasa és a PicasaPy egyezik. A videó `/`, `,`, `.` sora, valamint a fennmaradó indexelt billentyűsorok kétoldali futáspróbája nyitott; róluk nem állítok paritást.
 
 **A #6531 „Kész, ha” teljesítéséhez hátra van:**
 
