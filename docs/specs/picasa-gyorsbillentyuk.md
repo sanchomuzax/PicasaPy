@@ -207,7 +207,7 @@ Jelölés a „3.9-ben él?" oszlopban:
 | 44 | Fast Forward Movie | `.` | ⬜ | ugyanaz; a fizikai billentyű→fogadó út **NINCS MEG** (§12) |
 | 45 | Next Picture | ➖ | ✅ | a rekesz üres, de a funkció él: jobbra nyíl (`0x00717eb0`) |
 | 46 | Previous Picture | ➖ | ✅ | balra nyíl, ugyanaz a mag |
-| 47 | Switch Between Automatic and Manual Modes | ➖ | ⬜ | nem azonosított |
+| 47 | Switch Between Automatic and Manual Modes | ➖ | ➖ | üres rekesz, a parser kihagyja (§12.12) |
 | 48 | Return to Main Library View | ➖ | ✅ | **`Esc`** a nézőben (`OneUp::ID_VIEWALBUM`, `cmd 0x9cc6`) |
 
 **Elszámolás — a „3.9-ben él?" oszlop szerint:** 48 rekesz =
@@ -2150,10 +2150,10 @@ Az állapot mező értékei:
 | 44 | . | Videó előretekerése | Nincs igazolt mai kötés | **tisztázandó — a 7. és 10.19. szakasz szerint a videó billentyűzete nincs mérve** | Videólejátszó fókusza szükséges; az eredeti célt nem kötjük ki találgatásból | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
 | 45 | ➖ (nincs billentyű) | Következő kép; az eredeti külön nyílkezelője működik | Keys=Keys.onRightPressed → rács vagy PhotoViewer következő képe | **megvan és működik** | Fókuszált képnézet; nézőben a szövegmező átveszi | tests/app/qml_functional/test_nezo_forrasmeret_3877.py |
 | 46 | ➖ (nincs billentyű) | Előző kép; az eredeti külön nyílkezelője működik | Keys=Keys.onLeftPressed → rács vagy PhotoViewer előző képe | **megvan és működik** | Fókuszált képnézet; nézőben a szövegmező átveszi | tests/app/qml_functional/test_nezo_forrasmeret_3877.py |
-| 47 | ➖ (nincs billentyű) | Automatikus/kézi mód váltása | Nincs azonosított eredeti parancs vagy mai kötés | **tisztázandó — a forrás nem azonosítja a rekesz műveletét** | Nincs megállapítható kapu; nem találgatunk | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
+| 47 | ➖ (nincs billentyű) | Automatikus/kézi mód váltása | Nincs eredeti billentyű vagy menükötés | **nem cél - a szállított keymap-rekeszben üres az srckey, a parser eldobja (§12.12)** | Nincs billentyű | tests/app/test_paritas_gyorsbillentyu_helyi_menuk_4462.py |
 | 48 | ➖ (nincs billentyű) | Visszatérés a könyvtárnézetbe; a C forrás Esc-kötése | Keys=Keys.onEscapePressed → viewerMenuBackToLibrary út | **megvan és működik** | Néző; aktív szerkesztőművelet előbb megszakad; szövegfókuszban nem zár | tests/app/qml_functional/test_viewer_escape_key_4462.py, tests/app/qml_functional/test_viewer_escape_666.py |
 
-A 22., 26. és 37. sor a keymap-komment/rekesz eltérését rögzíti, nem hibás mai működést. A 39. sor önálló hiány; a 42-44. sorhoz a fizikai billentyű→néző videókezelő út továbbra is **NINCS MEG** (§12), a 47. sor tisztázandó. A #4398 valódi `QTest.keyClick` próbája a jelenlegi futáskor 64 QML `Shortcut`-szekvenciát ellenőriz keresőmező-fókusszal; ez fókuszkapu, nem a 64 művelet egyedi igazolása. A paritásőr a 48 eredeti keymap-rekeszt és a QML-horgonyokat tartja számon. A konkrét műveletpróbák állapotát a §12.4 sorolja.
+A 22., 26., 37. és 47. sor a keymap-komment/rekesz eltérését rögzíti, nem hibás mai működést. A 39. sor önálló hiány; a 42-44. sorhoz a fizikai billentyű→néző videókezelő út továbbra is **NINCS MEG** (§12.10; a statikus pásztázás csak a vizsgált összevetési alakokra negatív, futásidejű mérés: picasapy-agent #303), a 47. sor nem cél (§12.12). A #4398 valódi `QTest.keyClick` próbája a jelenlegi futáskor 64 QML `Shortcut`-szekvenciát ellenőriz keresőmező-fókusszal; ez fókuszkapu, nem a 64 művelet egyedi igazolása. A paritásőr a 48 eredeti keymap-rekeszt és a QML-horgonyokat tartja számon. A konkrét műveletpróbák állapotát a §12.4 sorolja.
 
 ## 12. #6531 - nézetenkénti billentyű → művelet útvonalak (2026-11-04)
 
@@ -2252,7 +2252,7 @@ tartoznak ehhez a PicasaPy-kiegészítéshez.
 | `Ctrl+4` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl4_elinditja_a_diavetitest` |
 | `Ctrl+5` | `test_idorend_bemutato_5377.py::test_ctrl5_opens_fullscreen_timeline_without_selection` |
 | `Ctrl+6` | nincs megfelelő |
-| `Ctrl+8` | nincs megfelelő |
+| `Ctrl+8` | `test_konyvtari_gyorsbillentyuk_6660.py::test_ctrl8_valodi_billentyuvel_billenti_a_csillagot_es_visszaallitja` (#6660) |
 | `Ctrl+9` | `test_ctrl9_left_drawer_4696.py::test_ctrl9_toggles_editor_drawer_and_is_inactive_in_library` (a könyvtári ág nem hat) |
 | `Ctrl+A` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_a_es_ctrl_d_valtoztatja_a_kijelolest` |
 | `Ctrl+Shift+B` | `test_maradek_valodi_kattintas_5127.py::TestGyorsbillentyuk::test_ctrl_shift_b_fekete_feher_a_kijelolesre` |
@@ -2263,7 +2263,7 @@ tartoznak ehhez a PicasaPy-kiegészítéshez.
 | `Ctrl+F` | `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_f_a_keresomezore_viszi_a_fokuszt` |
 | `Ctrl+G` | nincs megfelelő (az eredeti ág is művelet nélküli) |
 | `Ctrl+Alt+G` | nincs megfelelő (az eredeti ág is művelet nélküli) |
-| `Ctrl+Shift+G` | nincs megfelelő |
+| `Ctrl+Shift+G` | `test_konyvtari_gyorsbillentyuk_6660.py::test_ctrl_shift_g_megnyitja_a_helyek_panelt` (#6660) |
 | `Ctrl+Alt+Shift+G` | nincs megfelelő |
 | `Ctrl+Shift+H` | `test_gyorsbillentyuk_valodi_5150_n.py::TestTukrozes::test_a_tukrozes_billentyu_a_kijelolt_kepeket_tukrozi` |
 | `Ctrl+I` | `test_invert_selection_menu_1686.py::TestAMenupontUGYANAZTCsinalja::test_a_billentyu_ugyanazt_adja` |
@@ -2617,3 +2617,38 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
 - [ ] A `Ctrl+Alt+S` és `Ctrl+Shift+U` csak akkor kap felhasználói kötést, ha a PicasaPy adatbázis- és cache-életciklusának megfelelő műveletet külön specifikáció igazolja; a `Ctrl+Alt+S` nem válik fotómentéssé.
 
 **Lezárási állapot.** A kilenc billentyűághoz megvan a handler-ág címe és a binárisból dokumentálható célút. Nyolc célút statikus jelentését két külön úton lehet megerősíteni; a `Ctrl+6` a `timeslicer`-ig feltárt, de a funkciója feltételes. A látható műveletek PicasaPy-megvalósítása és valódi billentyűtesztje **NINCS MEG**; a fenti lista fejlesztői körre tartozik.
+
+### 12.12 A szerkesztőpanel F8/F9 billentyűi, a 47. keymap-rekesz és a szétosztó lezárása (#6531, 2026-11-08)
+
+**Kérdés.** (1) Vannak-e a szerkesztőpanelnek saját módosító nélküli `F8`/`F9` billentyűi (§7.4)? (2) Mi a 48 rekeszes keymap 47. rekeszének („Switch Between Automatic and Manual Modes”) valódi leképezése és célja (§7.2, §11)? (3) Hogyan kapcsolódik a magas szintű `0x005cb990` parancsszétosztó a menün kívüli billentyűk kezeléséhez?
+
+#### 1. A szerkesztőpanel `F8`/`F9` billentyűi: cáfolva, nincs ilyen kezelő
+
+| Bizonyítékút | Módszer és hely | Eredmény | Fok |
+|---|---|---|---|
+| **A: Teljes `.text` pásztázás és kezelő-ágak** | A PE-fájl `.text` szekciójának (2 884 879 utasítás) Capstone-pásztázása immediate operandusokra. | Immediate `0x77` (F8) operandust vizsgáló `cmp` utasítás **nulla** előfordulás. Immediate `0x78` (F9) kizárólag a `0x004c43d3` veremfoglalásban (`sub esp, 0x78`) fordul elő, `cmp` nincs. Az egyetlen ugrótáblás switch, amely tartalmazza a `0x77` és `0x78` virtuális kódokat, a `0x005e60d0` Ctrl-switch (`0x005e61de` tartománykapu `0x0d`..`0x78`, `0x005e66a4` indextábla 33. és 34. sora `0x005e631d` és `0x005e6329`), de ez kötelezően megköveteli a Ctrl módosítóbájtot (`0x005e6178`: `test byte ptr [esi+0x10], 4`). A módosító nélküli ágban (`0x005e6710`) kizárólag F1 (`0x70`), F2 (`0x71`), F3 (`0x72`), F4 (`0x73`), F5 (`0x74`), F11 (`0x7a`) és F12 (`0x7b`) szerepel, F8/F9 nincs; egyképes szerkesztő módban (`[panel+0x332f] != 0`) a `0x005e6830` még ezeket is átugorja a kilépésre (`0x5e6947`). Az egyképes szerkesztő kezelője (`0x00760970`) csak Escape-et (`0x1b`), nyilakat (`0x25`-`0x28`), Pause-t (`0x13`), Play-t (`0xfa`), Space-t (`0x20`) és számjegyeket (`0x30`-`0x39`) kezel, F8/F9-re `0xf4241` kezeletlen kóddal kilép. | **megerősített** statikus kizárás |
+| **B: Dinamikus mérés az eredeti Picasán** | `picasa-colab-jobs #375` (2026-11-05), kijelölt képen megnyitott szerkesztőben leütött F8 és F9 billentyűk utáni képernyőmentés. | A szerkesztőben leütött F8 és F9 után rögzített 8-12. képernyőkép bitre azonos; sem felületi, sem fül-, sem állapotváltozás nem történik. | **megerősített** mérési egyezés |
+
+**Következtetés.** Az eredeti Picasában a szerkesztőpanelnek nincsenek saját, módosító nélküli F8/F9 gyorsbillentyűi. A §7.4 szerinti korábbi nyitott feltevés megdőlt; a PicasaPy nem igényel és nem tartalmazhat szerkesztőbeli F8/F9 kezelőt.
+
+#### 2. A 47. keymap-rekesz: elavult kitöltetlen rekesz, nem cél
+
+| Bizonyítékút | Módszer és hely | Eredmény | Fok |
+|---|---|---|---|
+| **A: Keymap XML-erőforrás és SAX-parser** | `Picasa3i18n.dll` `XMLF / SHORTCUTS.XML / 1033` erőforrás (eltolás `0x591ad8`), valamint `Picasa3.exe` parser `0x009a0ad0`. | A 47. XML-elem: `<!-- Switch Between Automatic and Manual Modes --> <item srckey="" dstkey="" ctrl="0" shift="0" alt="0"></item>`. A parser a `0x009a1189`-`0x009a1199` kapukon eldobja a rekordot, mert a forrás- és a célbillentyű egyaránt üres (0). A rekesz nem kerül be a `CThumbUI + 0xcdc` 16 bájtos átírótáblájába. | **megerősített** erőforrás- és parser-lelet |
+| **B: Menüsáv-építő rekordtábla** | `0x00559150` menüépítő disassembly, `0x00559c9e`-`0x00559d40`. | A Nézet ▸ Megjelenítési mód alatti tételek (`eMenuView::ID_VIEW_AUTO` &Automatic `0x00c8cbb0`, `ID_VIEW_NORMAL` &24-bit, `ID_VIEW_16` &16-bit, `ID_VIEW_RDESK` &Remote Desktop, parancskódok `0x9d1f` stb.) rekordjaiban a gyorsbillentyű-szöveg (`+0x04`) és a módosító (`+0x08`) mezők csupa nullák (`mov [esp+...], ebx`), semmilyen gyorsbillentyű nincs hozzájuk rendelve. | **megerősített** rekordtábla-lelet |
+
+**Következtetés.** A 47. rekesz a 37. rekeszhez (`Move to End of Album`, `srckey=""`) hasonlóan egy korábbi verzióból visszamaradt, üres keymap-sor, amelyhez a Picasa 3.9-ben sem billentyű, sem átképezés, sem menükötés nem tartozik. A §7.2 szerinti tizenkét ⬜ rekeszből az utolsó nyitott rekesz ezzel **nem cél**-ként lezárva.
+
+#### 3. A `0x005cb990` parancsszétosztó és a billentyűzet-hierarchia kapcsolata
+
+- A `0x005cb990` a `CThumbUI::vftable` (`0x00c9052c`) 23. slotja (`+0x5c`).
+- Magas szintű parancsszétosztó (command dispatcher): a `word ptr [MSG+8]` mezőben átadott parancsazonosítókat (`0x9c41`..`0x9d4f`) dolgozza fel (`lea eax, [esi - 0x9c42]` → bájttérkép `0x005cdb34` → ugrótábla `0x005cd9fc`). Nem közvetlen billentyűzet-figyelő.
+- A menün kívüli billentyűk nem a szétosztóból indulnak, hanem a nézetek saját virtuális `+0x30` billentyűkezelőiből:
+  1. Könyvtárnézet: `CThumbUI::vftable +0x30 = 0x005e6710`, amely a felelősség-láncon át vizsgálja az egyképes szerkesztőt (`0x00760970`), a csempe-Shiftet, a csúszkákat (`0x005d2290`), a projektlapokat (`0x005b2390`), a fókusz-továbbítót (`0x00a53b00`), és végül a 34 elemes Ctrl-táblát (`0x005e60d0`).
+  2. OneUp néző / Diavetítés: `OneUpUI` thunk `0x00802e10` → `QDrawable::vftable +0x30 = 0x00801270`.
+  3. Esemény-továbbadás: ha a `OneUpUI` nem kezeli a billentyűt (pl. F2), `0xf4241`-et ad vissza, és az esemény a fölérendelt `CThumbUI` kezelőjéhez jut, ahol az F2 átnevezési ág (`0x005e68fd` → `0x00532ec0`) lefut és megnyitja az átnevező párbeszédet (igazolva statikusan és a Colab #374 futáspróbával).
+
+**Cáfoló kísérlet.** Az ellenhipotézist, miszerint az F8/F9 billentyű a szerkesztőben bármilyen felületi elemet (pl. csúszka-léptetést, csempe-kiválasztást vagy elrejtést) kapcsol, a szerkesztőpanel vezérlőinek közvetlen elemzésével vizsgáltam: a csúszkaléptetés kizárólag a `+`/`=`/`-`/`_` karakterekre korlátozott (`0x005d2290`, `WM_CHAR`), a csempefrissítés pedig kizárólag a Shift billentyűre (`0x005e674e`: `cmp byte ptr [ebx+8], 0x10`). Semmilyen egyéb F-billentyű ág nem létezik a szerkesztőben.
+
+**Lezárási állapot.** A §7-ben és a jegyben nevesített nyitott kutatási kérdések (a szerkesztőpanel F8/F9 billentyűi, a 47. keymap-rekesz, a videólejátszó `/`, `,`, `.`, a szünetbeli vezérlősáv és egérmutató, a vetítés gombjai és a kilenc könyvtári Ctrl-ág) mind megerősített bizonyítékkal lezárva.
