@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import sys
+from contextlib import contextmanager
+from contextvars import copy_context
+from threading import Lock
+
 from .edit_controller_shared import (
     EMPTY_HISTOGRAM,
     EditSession,
@@ -13,10 +18,47 @@ from .edit_controller_shared import (
     _GPU_REVIZIO,
     _REVIZIO,
     _log,
-    chain_flags,
 )
 
 from .edit_controller_signals import EditControllerSignalsMixin as _Signals
+
+
+_PREVIEW_SWITCH_LOCK = Lock()
+_PREVIEW_SWITCH_USERS = 0
+_PREVIEW_SWITCH_RESTORE: float | None = None
+_PREVIEW_SWITCH_INTERVAL = 0.001
+
+
+@contextmanager
+def _preview_gil_fairness():
+    """A futó előnézeti workerek idejére sűrűbb GIL-szálváltást kér.
+
+    Néhány effekt NumPy-műveletek köré írt Python-sorhurkokat használ. Az
+    alapértelmezett GIL-időköz mellett ez a CPU-s worker a Qt GUI-szálát
+    éheztetheti; az 1 ms-os időköz a render idejére adódik, és az utolsó
+    párhuzamos worker végén visszaáll az előző érték.
+    """
+    global _PREVIEW_SWITCH_RESTORE, _PREVIEW_SWITCH_USERS
+    with _PREVIEW_SWITCH_LOCK:
+        if _PREVIEW_SWITCH_USERS == 0:
+            current = sys.getswitchinterval()
+            _PREVIEW_SWITCH_RESTORE = (
+                current if current > _PREVIEW_SWITCH_INTERVAL else None
+            )
+            if _PREVIEW_SWITCH_RESTORE is not None:
+                sys.setswitchinterval(_PREVIEW_SWITCH_INTERVAL)
+        _PREVIEW_SWITCH_USERS += 1
+    try:
+        yield
+    finally:
+        with _PREVIEW_SWITCH_LOCK:
+            _PREVIEW_SWITCH_USERS -= 1
+            if _PREVIEW_SWITCH_USERS == 0:
+                restore = _PREVIEW_SWITCH_RESTORE
+                _PREVIEW_SWITCH_RESTORE = None
+                if restore is not None:
+                    sys.setswitchinterval(restore)
+
 
 class EditControllerPreviewMixin:
     """Az előnézet, GPU-revízió és renderelési kérések kezelése."""
@@ -183,62 +225,67 @@ class EditControllerPreviewMixin:
 
 
     def _register_preview(self, session: EditSession | None = None) -> None:
-        """SZINKRON renderelés — az élő (csúszka-húzás alatti) előnézeté.
+        """Az előnézeti lánc renderelése háttérszálon (#6685).
 
-        Ezek az utak eleve a gyors, gyorsítótárazott lánc-prefixre épülnek
-        (#140), és a húzás minden lépésénél friss képet kell adniuk: a
-        háttérszálra tolásuk csak késleltetést és villogást hozna.
-
-        #819: KIVÉVE, ha a láncban `slow` jelzős szűrő van. A regiszter 13
-        ilyet jelöl meg; ezek a felület szálán számolva akadoztatják az
-        ablakot (a #504 Lomója percekig is elfut). Ilyenkor a háttér-útra
-        térünk — a kép így csak a renderelés VÉGÉN frissül, de a felület
-        él, és a közös haladásjelző csík magától pörög."""
-        aktiv = session if session is not None else self._session
-        nevek = [op.name for op in aktiv.ops]
-        _teljes, lassu, _ujrameretez = chain_flags(nevek)
-        # #3570: a saját (mért) lassú szűrőink is ide tartoznak
-        lassu = lassu or any(
-            nev.lower() in self.SAJAT_LASSU_SZUROK for nev in nevek
-        )
-        if lassu:
-            self._register_preview_async(session)
-            return
-        self._preview_job += 1
-        self._provider.register(**self._preview_request(session))
-        self._bump_gpu_revision()
+        Az effektköltség nem függhet a szűrőnevek kézzel karbantartott
+        listájától: az élő csúszka-előnézet is háttérbe kerül. A korábbi
+        képkocka a render végéig a szolgáltatónál marad, az elavult kérések
+        eredményét pedig a #546-os generáció-ellenőrzés dobja el. A
+        finetune2 GPU-útja külön marad, mert ott nincs CPU-s láncrenderelés."""
+        self._register_preview_async(session)
 
 
     def _register_preview_async(self, session: EditSession | None = None) -> None:
-        """#514: a MENTETT állapot újrarenderelése HÁTTÉRSZÁLON.
+        """#514: a CPU-s előnézeti lánc renderelése HÁTTÉRSZÁLON.
 
-        Ide a lassú, egykattintásos műveletek tartoznak (effekt hozzáadása,
-        vágás, visszavonás…). Korábban a GUI szálán futottak, ezért egy
-        percekig számoló effekt (#504: Lomo) alatt a felület befagyottnak
-        látszott, és a közös haladásjelző csík (#505) sem tudott animálni —
-        ugyanaz a szál számolt, ami rajzol. A `BackgroundWorkerMixin`-en át
-        indítva a csík MAGÁTÓL pörög (a busy-nyilvántartás a
-        `_start_background`-ben jelentkezik be).
+        Minden CPU-s előnézet ezt az utat használja, így az élő csúszka- és
+        egykattintásos render költsége sem a GUI-szálon jelentkezik. A
+        `BackgroundWorkerMixin` indítja a munkát; a #54-es előre dekódolt
+        szolgáltatói út és a #546-os elavult eredmény elleni védelem megmarad.
 
         A kép csak a renderelés VÉGÉN frissül: addig a korábbi előnézet
-        látszik, ami így is jobb, mint a befagyott felület."""
-        self._preview_job += 1
-        job = self._preview_job
+        látszik, ami így is jobb, mint a befagyott felület. #6685: egyszerre
+        egy render fut; a közben beérkező kérésekből csak a legutolsó marad."""
         request = self._preview_request(session)
+        # A gyors csúszka-előnézet és a renderhez tartozó más ContextVar-ok
+        # ugyanazzal az értékkel fussanak a workerben, mint az indító szálon.
+        render_context = copy_context()
+        with self._preview_queue_lock:
+            self._preview_job += 1
+            task = (self._preview_job, request, render_context)
+            if self._preview_worker_active:
+                self._preview_pending = task
+                return
+            self._preview_worker_active = True
+
+        try:
+            self._start_preview_worker(task)
+        except BaseException:
+            with self._preview_queue_lock:
+                self._preview_worker_active = False
+            raise
+
+    def _start_preview_worker(self, task) -> None:
+        job, request, render_context = task
 
         def still_current() -> bool:
             return job == self._preview_job
 
         def worker() -> None:
-            # #546: az elavultság-ellenőrzés a providerben, a TÁROLÁSSAL egy
-            # zár alatt fut le (`is_current`) — ha itt kívül néznénk meg,
-            # a régebbi render a zárért állva utóbb végezne, és felülírná a
-            # frissebb képet. A `shared_cache=False` miatt a háttér-render
-            # lokálisan dekódol: a GUI-szál soha nem vár rá záron.
             try:
-                self._provider.register(
-                    **request, shared_cache=False, is_current=still_current
-                )
+                # #546: az elavultság-ellenőrzés a providerben, a TÁROLÁSSAL
+                # egy zár alatt fut le (`is_current`) — ha itt kívül néznénk
+                # meg, a régebbi render a zárért állva utóbb végezne, és
+                # felülírná a frissebb képet. A `shared_cache=False` miatt a
+                # háttér-render lokálisan dekódol: a GUI-szál soha nem vár
+                # rá záron.
+                with _preview_gil_fairness():
+                    render_context.run(
+                        self._provider.register,
+                        **request,
+                        shared_cache=False,
+                        is_current=still_current,
+                    )
             except Exception as error:  # noqa: BLE001 — ld. lent
                 # #548: a háttérszálban elhaló kivétel NÉMA lenne (a
                 # `threading` excepthookja csak stderr-re ír): a kép
@@ -249,10 +296,31 @@ class EditControllerPreviewMixin:
                 _log.exception("Az előnézet háttérszálas renderelése elbukott")
                 self.editSaveFailed.emit(str(error))
                 return
-            if still_current():
-                self._previewRendered.emit()
+            else:
+                if still_current():
+                    self._previewRendered.emit()
+            finally:
+                self._finish_preview_worker()
 
         self._start_background(worker, name="picasapy-editpreview")
+
+    def _finish_preview_worker(self) -> None:
+        """A befejezett render után indítsa a legutóbbi várakozó kérést."""
+        with self._preview_queue_lock:
+            task = self._preview_pending
+            if task is None or task[0] != self._preview_job:
+                self._preview_pending = None
+                self._preview_worker_active = False
+                return
+
+            # A következő worker a zár felengedése előtt induljon el. Így a
+            # hívó nem tud egy régebbi várakozót elindulása közben felülírni.
+            self._preview_pending = None
+            try:
+                self._start_preview_worker(task)
+            except BaseException:
+                self._preview_worker_active = False
+                raise
 
 
     @Slot()
@@ -288,4 +356,3 @@ class EditControllerPreviewMixin:
         `revisionChanged`-től, ld. a `gpuRevisionChanged` docsztringjét."""
         self._gpu_revision = next(_GPU_REVIZIO)
         self.gpuRevisionChanged.emit()
-

@@ -66,6 +66,9 @@ class TestPickEffectColor:
     def test_a_kattintott_pont_szinet_hex_alakban_adja(self, controller, tmp_path):
         foto = _ketszinu_kep(tmp_path / "IMG_0001.jpg")
         controller.beginEdit("1", str(foto))
+        assert controller.waitForBackgroundWorkers(30.0), (
+            "a pipetta kezdeti előnézete nem renderelődött le"
+        )
 
         bal = controller.pickEffectColor(0.1, 0.5)
         jobb = controller.pickEffectColor(0.9, 0.5)
@@ -141,6 +144,9 @@ def _kattints(window, qt_app, elem, fx: float = 0.5, fy: float = 0.5) -> QPoint:
 def _elonezet_kepe(engine):
     """A pillanatnyi előnézet képe: ugyanaz, amit a néző kirajzol."""
     szerkeszto = engine.rootContext().contextProperty("editController")
+    assert szerkeszto.waitForBackgroundWorkers(30.0), (
+        "a szerkesztő előnézetének renderelése nem fejeződött be"
+    )
     azonosito = str(szerkeszto.previewSource).split(
         "image://editpreview/", 1
     )[1].split("?", 1)[0]
@@ -159,8 +165,10 @@ def _varhato_szin(kep, terulet, egesz: QPoint) -> str:
     return kep.pixelColor(x, y).name()
 
 
-def _nyisd_a_tint_panelt(window, qt_app):
+def _nyisd_a_tint_panelt(window, qt_app, height_delta=0):
     """A Színes árnyalás effekt paraméter-panelje, valódi kattintással."""
+    window.setHeight(int(window.height()) + height_delta)
+    qt_app.processEvents()
     window.setProperty("viewerOpen", True)
     viewer = window.findChild(QObject, "photoViewer")
     viewer.setProperty("currentIndex", 0)
@@ -202,11 +210,12 @@ def _kiadaskep_mentese(window) -> None:
     )
 
 
+@pytest.mark.parametrize("height_delta", [-5, 0, 5])
 def test_pipetta_valodi_kattintassal_a_kep_szinet_veszi_at(
-    mintakepes_app, qt_app
+    mintakepes_app, qt_app, height_delta
 ):
     window, _controller, engine = mintakepes_app
-    panel = _nyisd_a_tint_panelt(window, qt_app)
+    panel = _nyisd_a_tint_panelt(window, qt_app, height_delta)
     szin_mezo = _find_item(panel, "effectParamColor1")
     assert szin_mezo is not None and szin_mezo.isVisible()
 
@@ -221,9 +230,10 @@ def test_pipetta_valodi_kattintassal_a_kep_szinet_veszi_at(
     _kiadaskep_mentese(window)
 
 
-def test_megse_utan_a_regi_szin_marad(mintakepes_app, qt_app, tmp_path):
+@pytest.mark.parametrize("height_delta", [-5, 0, 5])
+def test_megse_utan_a_regi_szin_marad(mintakepes_app, qt_app, tmp_path, height_delta):
     window, _controller, engine = mintakepes_app
-    panel = _nyisd_a_tint_panelt(window, qt_app)
+    panel = _nyisd_a_tint_panelt(window, qt_app, height_delta)
     varhato = _pipettaz_a_kepen(window, qt_app, engine, panel)
     assert varhato != TINT_ALAP, "a próba értelmetlen: a minta a katalógus színe"
 
@@ -237,11 +247,12 @@ def test_megse_utan_a_regi_szin_marad(mintakepes_app, qt_app, tmp_path):
     assert _find_item(panel, "effectParamColor1").property("currentColor") == TINT_ALAP
 
 
+@pytest.mark.parametrize("height_delta", [-5, 0, 5])
 def test_alkalmazas_menti_a_pipettaval_valasztott_szint(
-    mintakepes_app, qt_app, tmp_path
+    mintakepes_app, qt_app, tmp_path, height_delta
 ):
     window, _controller, engine = mintakepes_app
-    panel = _nyisd_a_tint_panelt(window, qt_app)
+    panel = _nyisd_a_tint_panelt(window, qt_app, height_delta)
     varhato = _pipettaz_a_kepen(window, qt_app, engine, panel)
     assert varhato != TINT_ALAP, "a próba értelmetlen: a minta a katalógus színe"
 

@@ -198,6 +198,9 @@ class TestBekotes:
         vezerlo = _ModVezerlo()
         wire_display_mode(vezerlo, edit, provider)
         edit.beginEdit("p1", str(kep))
+        assert edit.waitForBackgroundWorkers(30.0), (
+            "a kezdeti előnézet renderelése nem fejeződött be"
+        )
         return vezerlo, edit, provider
 
     def test_a_kezdeti_allapot_atkerul(self, qt_app, kep):
