@@ -958,7 +958,7 @@ argumentumokkal.
 | `Ctrl+S` (+Alt) | `0x005e64b4` | `0x005696c0` őr; Alt nélkül képmentés (`0x0053a790`), Alt-tal (`Ctrl+Alt+S`): `0x00577a60` adatbázis-persistálás (`#db3\`, `IDS_DB_SAVED` / `IDS_PERSIST_ERR`, §12.11) |
 | `Ctrl+Shift+U` | `0x005e6557` | `0x0047ca60([panel+0x2bc])` → `0x006b8710`: memóriabeli bélyegkép-cache újrainicializálása (`m_bigThumbs` 288 px, `m_previewThumbs` 640 px, §12.11) |
 | **`Ctrl+Shift+V`** | `0x005e6408` | `0x005eef30(panel, 1)` |
-| `Ctrl+Shift+Y` | `0x005e6572` | `0x005e5ec0(panel)`: Easter egg lebegő animációs réteg (`overlays/egg`, flag `+0x22d` = 1, §12.11) |
+| `Ctrl+Shift+Y` | `0x005e6572` | `0x005e5ec0(panel)`: rejtett húsvéti tojás, lebegő animációs réteg (`overlays/egg`, flag `+0x22d` = 1, §12.11) |
 | `Ctrl+F6` | `0x005e62bb` | `searchoptions/dupesearch` (feloldás `0x009c2fc0`) |
 | `Ctrl+F7` | `0x005e62e8` | `searchoptions/loadsim`, azonosító `0x15` |
 | `Ctrl+F8` | `0x005e631d` | `searchoptions/clearsim`, azonosító `0x16` |
