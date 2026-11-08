@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.71] - 2026-11-08
+
+- Szűrőláncok differenciális besorolása (#6585), Időrend dátumskála a binárisból (#6532).
+- A generált szűrőláncok eltéréseit és a további Colab-méréseket összefoglaló táblázat készült (#6585).
+
 ## [1.0.70] - 2026-11-08
 
 - SQLite-verzió a naplóban (#6518), F8/F9 és billentyűút (#6531), Időrend billentyűútja (#6531).
