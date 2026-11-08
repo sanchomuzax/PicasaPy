@@ -36,6 +36,13 @@ def photo(tmp_path):
     return make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
 
 
+def _wait_preview(controller, qt_app=None):
+    """Az előnézetet worker tárolja; a GUI-jelzéshez eseményhurkot is futtatunk."""
+    assert controller.waitForBackgroundWorkers(10.0), "az előnézeti worker nem állt le"
+    if qt_app is not None:
+        qt_app.processEvents()
+
+
 class TestBeginEdit:
     def test_empty_ini_gives_empty_session(self, controller, photo):
         controller.beginEdit("1", str(photo))
@@ -64,6 +71,8 @@ class TestBeginEdit:
         masodik = EditController(provider)
         elso.beginEdit("1", str(photo))
         masodik.beginEdit("1", str(photo))
+        _wait_preview(elso, qt_app)
+        _wait_preview(masodik, qt_app)
         assert elso.previewSource != masodik.previewSource
         assert elso.gpuPrefixSource != masodik.gpuPrefixSource
         assert elso.gpuLutSource != masodik.gpuLutSource
@@ -87,6 +96,7 @@ class TestBeginEdit:
 
     def test_registers_with_preview_provider(self, controller, provider, photo):
         controller.beginEdit("1", str(photo))
+        _wait_preview(controller)
         image = provider.requestImage("1", None, None)
         assert (image.width(), image.height()) == (8, 6)
 
@@ -140,9 +150,14 @@ class TestPagingMemory:
         first = make_jpeg(tmp_path / "IMG_0001.jpg", size=(8, 6))
         second = make_jpeg(tmp_path / "IMG_0002.jpg", size=(8, 6))
         controller.beginEdit("1", str(first))
+        _wait_preview(controller)
         controller.beginEdit("2", str(second))
+        _wait_preview(controller)
         controller.beginEdit("1", str(first))  # visszalapozás: nincs újradekód
-        assert len(calls) == 2
+        _wait_preview(controller)
+        # A #546-os workerút nem írja a GUI-szál közös dekód-cache-ét;
+        # háttérben mindhárom kérés külön dekódol.
+        assert len(calls) == 3
 
 
 class TestToggleTool:
@@ -443,6 +458,7 @@ class TestCropToolPreview:
         assert (cropped.width(), cropped.height()) == (4, 3)
 
         controller.enterCropTool()
+        _wait_preview(controller)
         full = provider.requestImage("1", None, None)
         assert (full.width(), full.height()) == (8, 6)
 
@@ -460,7 +476,9 @@ class TestCropToolPreview:
         controller.beginEdit("1", str(photo))
         controller.applyCrop(0.0, 0.0, 0.5, 0.5)
         controller.enterCropTool()
+        _wait_preview(controller)
         controller.exitCropTool()
+        _wait_preview(controller)
         image = provider.requestImage("1", None, None)
         assert (image.width(), image.height()) == (4, 3)
 
@@ -570,6 +588,7 @@ class TestPreviewTilt:
         assert controller.waitForBackgroundWorkers(10.0)
         hivasok.clear()
         controller.previewTilt(0.3)
+        _wait_preview(controller)
         # a rendes és a GPU-előtag render is a húzás blokkjában fut
         assert hivasok and all(hivasok)
         huzas = len(hivasok)
@@ -612,6 +631,7 @@ class TestPreviewEffectGyorsPolaroid:
         assert controller.waitForBackgroundWorkers(10.0)
         hivasok.clear()
         controller.previewEffect("polaroid", [5.0])
+        _wait_preview(controller)
         assert hivasok and all(alpha == 255 and gyors for alpha, gyors in hivasok)
         huzas = len(hivasok)
         controller.applyEffectWithParams("polaroid", [5.0])
@@ -859,6 +879,7 @@ class TestGpuFinetunePreview:
     def test_begin_edit_on_empty_chain_is_gpu_eligible(self, controller, photo):
         """Üres lánc: a `set_finetune` a végére fűzné → GPU-alkalmas."""
         controller.beginEdit("1", str(photo))
+        _wait_preview(controller)
         assert controller.gpuPrefixSource.startswith("image://editpreview/1?gpuprefix=1")
         assert controller.gpuLutSource.startswith("image://editpreview/1?gpulut=1")
 
@@ -867,6 +888,7 @@ class TestGpuFinetunePreview:
     ):
         """#5984: ne adjon a QML kép-URL-t, amíg a provider nem tud képet adni."""
         controller.beginEdit("1", str(photo))
+        _wait_preview(controller)
         assert controller.gpuPrefixSource
         assert controller.gpuLutSource
 
@@ -878,6 +900,7 @@ class TestGpuFinetunePreview:
         assert controller.gpuLutSource == ""
 
         controller._register_preview()
+        _wait_preview(controller)
         assert controller.gpuPrefixSource.startswith("image://editpreview/1?gpuprefix=1")
         assert controller.gpuLutSource.startswith("image://editpreview/1?gpulut=1")
 
@@ -895,6 +918,7 @@ class TestGpuFinetunePreview:
 
     def test_end_edit_clears_gpu_sources(self, controller, photo):
         controller.beginEdit("1", str(photo))
+        _wait_preview(controller)
         assert controller.gpuPrefixSource != ""
         controller.endEdit()
         assert controller.gpuPrefixSource == ""
@@ -908,6 +932,7 @@ class TestGpuFinetunePreview:
         drága numpy-lánc pont a GPU-réteg által elkerülni kívánt módon
         futna újra minden húzási lépésnél."""
         controller.beginEdit("1", str(photo))
+        _wait_preview(controller)
         preview_before = controller.previewSource
         lut_before = controller.gpuLutSource
         controller.previewFinetuneGpu(0.0, 0.1, 0.2, -0.3)
@@ -1023,6 +1048,7 @@ class TestHistogramAndCameraSummary:
         # a JPEG-tömörítés a csatorna-értéket kissé eltolhatja (pl. 254), a
         # LÉNYEG a magas-piros / nulla-zöld-kék eloszlás
         controller.beginEdit("1", str(photo))
+        _wait_preview(controller)
         histogram = controller.histogram
         assert max(histogram["r"]) == 1.0
         assert histogram["r"].index(1.0) > 200
@@ -1725,12 +1751,15 @@ class TestTextStyle:
 
     def test_style_change_affects_live_preview(self, controller, provider, photo):
         controller.beginEdit("1", str(photo))
+        _wait_preview(controller)
         controller.enterTextTool()
         controller.setTextDraft("A")
         controller.previewTextPlacement(0.5, 0.5)
+        _wait_preview(controller)
         base = provider.requestImage("1", None, None)
         controller.setTextOutlineThickness(0.5)     # #2271: [0,1]
         controller.setTextOutlineColor("#00ff00")
+        _wait_preview(controller)
         styled = provider.requestImage("1", None, None)
         assert base != styled
 
@@ -1782,7 +1811,7 @@ class TestEffectRenderRunsOffTheUiThread:
         # a be-/kijelentkezés szálhatáron át, sorba állítva érkezik (ld.
         # busy_registry modul-docstring) — a kiindulási állapotot is csak
         # az események leürítése után szabad leolvasni
-        qt_app.processEvents()
+        _wait_preview(controller, qt_app)
         before = registry.activeCount
         release = threading.Event()
         entered = threading.Event()
@@ -1839,11 +1868,11 @@ class TestEffectRenderRunsOffTheUiThread:
         assert mismatched == [], "nem az utolsó (szépia) állapot látszik"
 
     def test_slider_preview_stays_synchronous(self, controller, provider, photo):
-        """Az élő csúszka-előnézet marad szinkron: a húzás minden lépésénél
-        AZONNAL friss képet kell adnia (nincs villogás, nincs késés)."""
+        """A háttérben renderelt csúszka-előnézet végül képet ad a providernek."""
         controller.beginEdit("1", str(photo))
+        _wait_preview(controller)
         controller.previewEffect("sat", [2.0])
-        # háttérszál el sem indult — a kép már most a helyén van
+        _wait_preview(controller)
         image = provider.requestImage("1", None, None)
         assert (image.width(), image.height()) == (8, 6)
 
@@ -1875,6 +1904,7 @@ class TestBackgroundRenderRaces:
         import threading
 
         controller.beginEdit("1", str(photo))
+        _wait_preview(controller)
         entered, release = threading.Event(), threading.Event()
         monkeypatch.setattr(
             provider, "register", self._blocking_register(provider, entered, release)
@@ -1985,6 +2015,7 @@ class TestBackgroundRenderRaces:
         import threading
 
         controller.beginEdit("1", str(photo))
+        _wait_preview(controller, qt_app)
         entered, release = threading.Event(), threading.Event()
         monkeypatch.setattr(
             provider, "register", self._blocking_register(provider, entered, release)
@@ -2007,6 +2038,7 @@ class TestNeutralColorPicker:
 
     def test_picked_color_lands_in_the_finetune_layer(self, controller, photo):
         controller.beginEdit("1", str(photo))
+        _wait_preview(controller)
         assert controller.pickNeutralColor(0.5, 0.5) is True
 
         ini_text = (photo.parent / ".picasa.ini").read_text(encoding="utf-8")

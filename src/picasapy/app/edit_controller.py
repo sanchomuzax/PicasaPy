@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from threading import Lock
+
 from .edit_controller_shared import (
     AZONOSSAG,
     BETUMERETEK,
@@ -187,6 +189,11 @@ class EditController(
         # csak az UTOLSÓ állapotot rendereli ki, és sosem írhat vissza egy
         # régebbi képet a frissebb fölé.
         self._preview_job = 0
+        # #6685: egyszerre egy előnézet-render futhat; a közben érkező
+        # kérésekből csak a legutolsó marad a sorban.
+        self._preview_queue_lock = Lock()
+        self._preview_worker_active = False
+        self._preview_pending = None
         self._previewRendered.connect(self._on_preview_rendered)
         # #798: a Shift élő követése. Az eseményszűrő az ALKALMAZÁSRA megy,
         # mert a billentyű-esemény a fókuszált elemhez érkezik, nem a
@@ -303,4 +310,3 @@ class EditController(
             if kulcs is not None and kulcs() == QtNamespace.Key.Key_Shift:
                 self._allitsd_a_shiftet(tipus == QEvent.Type.KeyPress)
         return super().eventFilter(figyelt, esemeny)
-
