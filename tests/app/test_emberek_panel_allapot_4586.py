@@ -16,6 +16,7 @@ from dataclasses import replace
 import pytest
 from PySide6.QtCore import Qt
 
+from picasapy.paths import path_key
 from support.jpeg_factory import make_jpeg
 from test_face_scan_controller import _make_controller, _run
 
@@ -228,33 +229,51 @@ class TestPendingSet:
     def test_a_photo_identified_during_the_run_leaves_the_pending_set(
         self, qt_app, tmp_path
     ):
+        """#4586: a futás közben azonosítottá vált fotó kikerül a függő halmazból.
+        #6694 óta a kizárási kapu mappánként egyszer fut, ezért a függő halmazt
+        a detektor hívásakor mérjük (korábban a kapu fotónkénti hívásában)."""
         root = _library(tmp_path)
         everything = [str(root / n) for n in ("a.jpg", "b.jpg", "c.jpg")]
-        calls = []
+        pending = []
 
         class _Detector:
             available = True
 
             def detect(self, _image):
+                pending.append(ctl.pendingAmong(everything))
                 (root / ".picasa.ini").write_text(
                     _IDENTIFIED_INI, encoding="utf-8")
                 return ()
 
+        ctl = _make_controller(qt_app, tmp_path, root, detector=_Detector())
+
+        _run(ctl.scanFinished, ctl.scanForFaces)
+        assert ctl.waitForBackgroundWorkers(5.0)
+
+        assert pending and pending[0] == 3, pending
+        assert ctl.pendingAmong(everything) == 0
+        assert all(b < a for a, b in zip(pending, pending[1:], strict=False)), pending
+
+    def test_exclusion_check_is_cached_once_per_folder(
+        self, qt_app, tmp_path
+    ):
+        root = _library(tmp_path)
+        calls = []
+
         def enabled(_folder):
-            calls.append(ctl.pendingAmong(everything))
+            calls.append(path_key(_folder))
             return True
 
         ctl = _make_controller(
-            qt_app, tmp_path, root, detector=_Detector(),
+            qt_app, tmp_path, root,
             face_detection_enabled=enabled,
         )
 
         _run(ctl.scanFinished, ctl.scanForFaces)
         assert ctl.waitForBackgroundWorkers(5.0)
 
-        # 3 előzetes hívás (a függő-halmaz felépítése), majd fotónként 1.
-        # A 3. fotó indulásakor az 1. detektálva, a 2. azonosított → csak 1 függő.
-        assert calls[3:] == [3, 2, 1], calls
+        # A kizárási kapu a pending halmaz építésekor, mappánként egyszer fut.
+        assert calls == [path_key(root)], calls
 
 
 class TestOverlappingScans:

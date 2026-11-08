@@ -23,6 +23,7 @@ from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.cvimage import (
+    _find_decoded_image,
     hosszabb_el,
     read_image_bytes,
     reduced_color_flag,
@@ -311,7 +312,12 @@ class ThumbnailCache(_CacheGenerationMixin, _CacheStorageMixin):
                 return None
             return target
         base_size = _edit_base_size(self._size)
-        base = self._decode_source(source, base_size)
+        base = self._decode_source(
+            source,
+            base_size,
+            mtime_ns=mtime_ns,
+            size_bytes=size_bytes,
+        )
         if base is None:
             return None
         rgb = cv2.cvtColor(scale_down(base, base_size),
@@ -359,25 +365,45 @@ class ThumbnailCache(_CacheGenerationMixin, _CacheStorageMixin):
         gyoker = self._root if px == self._size else self._root / f"sz{px}"
         return gyoker / digest[:2] / f"{digest}.jpg"
 
-    def _decode_source(self, source: Path, target: int | None = None):
+    def _decode_source(
+        self,
+        source: Path,
+        target: int | None = None,
+        *,
+        mtime_ns: int | None = None,
+        size_bytes: int | None = None,
+    ):
         """Forrás → BGR numpy kép: videónál egy képkocka, képnél imdecode.
 
         `target`: a redukált beolvasás célmérete (a szerkesztő-bázis
         nagyobb, mint a sima thumbnailé). Alapból a cache saját mérete."""
         if source.suffix.lower() in VIDEO_EXTENSIONS:
             return _decode_video_frame_isolated(source)
+        if mtime_ns is None or size_bytes is None:
+            try:
+                stat = source.stat()
+            except OSError:
+                return None
+            mtime_ns = stat.st_mtime_ns
+            size_bytes = stat.st_size
+        decode_goal = self._size if target is None else int(target)
+        shared = _find_decoded_image(
+            source, mtime_ns, size_bytes, decode_goal
+        )
+        if shared is not None:
+            return shared
         if nyers_utvonal(source):
             # #528: a nyers (RAW) fájlnak nincs `cv2` dekódere — a LibRaw-ra
             # kell mennie. A célméretet átadjuk: ha a fájlban van beágyazott
             # JPEG-előnézet, abból nagyságrenddel gyorsabb a bélyegkép.
-            return dekodol_nyerset(source, self._size if target is None else target)
+            return dekodol_nyerset(source, decode_goal)
         # #144: a forrást EGYSZER olvassuk be — a méret-próba és a dekódolás
         # ugyanabból a bájtpufferből dolgozik (korábban PIL Image.open +
         # np.fromfile kétszer nyitotta a fájlt, ami NAS-on drága).
         payload = read_image_bytes(source)
         if payload is None:
             return None
-        return cv2.imdecode(payload, self._read_flag(payload, target))
+        return cv2.imdecode(payload, self._read_flag(payload, decode_goal))
 
 
 def _open_video(source: Path) -> cv2.VideoCapture:
