@@ -39,7 +39,11 @@ from .application_services import _install_translator
 from .error_log import error_log_path, install_error_log, rotate_if_large
 from .platform_check import hianyzo_wayland_bovitmeny
 from .platform_storage import StorageAlreadyRunning, StorageMigrationError
-from .startup_diagnostics import runtime_version_messages, write_console
+from .startup_diagnostics import (
+    runtime_version_messages,
+    warn_if_sqlite_wal_reset_vulnerable,
+    write_console,
+)
 from .startup_status import StartupStatus
 
 def _startup_step_log_and_qt_setup(state):
@@ -172,6 +176,7 @@ def _startup_step_prepare_index_and_main_controller(state):
     # hogy adatbázis-hiba esetén legyen mit felajánlani megtekintésre
     error_log = install_error_log(data_dir) or error_log_path(data_dir)
     progress_log.install(error_log)
+    warn_if_sqlite_wal_reset_vulnerable()
     timeline.mark("hibanapló előkészítése")
     progress_log.mark("Hibanapló elérhető")
 
