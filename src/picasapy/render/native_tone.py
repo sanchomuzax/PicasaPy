@@ -63,6 +63,7 @@ import math
 
 import numpy as np
 
+from picasapy.lazy_cv2 import cv2
 from picasapy.render.curves import validate_image
 
 #: A natív LUT teljes kitérése: `255 · 256` (8.8 fixpont).
@@ -249,17 +250,33 @@ def apply_native_lut16(
         #: egészíti ki (`LUT[256] = LUT[255]`)
         tabla = np.concatenate([tabla, tabla[-1:]])
 
-    lo = tabla[:256][image.astype(np.int64)]
-    delta = (tabla[1:257] - tabla[:256])[image.astype(np.int64)]
+    # A bemeneti bájt és az egyetlen, képponthoz tartozó dither-minta együtt
+    # csak 256×256 állapotot ad. Előbb felépítjük ezek 8 bites kimeneti
+    # tábláját, utána egyetlen páros indexeléssel alkalmazzuk a három
+    # csatornára. A 16 bites lépések, az előjel nélküli `shr` és a
+    # csatornánként közös véletlen minta változatlan marad.
+    lo = tabla[:256]
+    delta = tabla[1:257] - lo
+    samples = np.arange(256, dtype=np.int64)[None, :]
+    szorzat = ((delta[:, None] * samples) & 0xFFFFFFFF) >> 8
+    ertek = lo[:, None] + szorzat - (delta[:, None] >> 1)
+    dither_lut = np.clip(ertek >> 8, 0, 255).astype(np.uint8)
 
-    magassag, szelesseg = image.shape[:2]
-    #: sorfolytonos bejárás: a minta a KÉPPONTHOZ tartozik, nem a csatornához
-    minta = _dither_minta(magassag * szelesseg).reshape(magassag, szelesseg, 1)
-
-    #: `shr` a 32 bites szorzaton (előjel nélkül), `sar` a többin (2.2/d)
-    szorzat = ((delta * minta) & 0xFFFFFFFF) >> 8
-    ertek = lo + szorzat - (delta >> 1)
-    return np.clip(ertek >> 8, 0, 255).astype(np.uint8)
+    height, width = image.shape[:2]
+    #: A PRNG streamjét int64-ben kell venni: a RandomState uint8 módja más
+    #: számsorozatot ad. A bájtra szűkítés az indexelés előtt veszteségmentes.
+    minta = _dither_minta(height * width).astype(np.uint8).reshape(height, width, 1)
+    result = np.empty_like(image)
+    maps = np.empty((height, width, 2), dtype=np.int16)
+    maps[..., 0] = minta[..., 0]
+    for channel in range(3):
+        # A forrás 256×256-os tábla; az x a dither-bájt, az y a LUT-index.
+        # Az int16 térkép egész koordinátákat tárol, így nincs interpoláció.
+        maps[..., 1] = image[..., channel]
+        result[..., channel] = cv2.remap(
+            dither_lut, maps, None, cv2.INTER_NEAREST
+        )
+    return result
 
 
 def apply_native_levels(
