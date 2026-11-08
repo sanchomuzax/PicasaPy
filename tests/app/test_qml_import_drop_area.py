@@ -172,9 +172,13 @@ class TestMainWiring:
 
         monkeypatch.setattr(controller, "_sync_folder_manager_tree", wait_for_release)
 
+        # Windowson a tmp_path rövid (8.3) alakban is jöhet, az index pedig a
+        # hosszú alakot tárolja: feloldott útvonalat vetünk össze, nem szöveget.
+        photo_resolved = photo.resolve()
+
         def photo_indexed():
             return any(
-                controller.photos.filePathAt(row) == str(photo)
+                Path(controller.photos.filePathAt(row)).resolve() == photo_resolved
                 for row in range(controller.photos.rowCount())
             )
 
@@ -183,7 +187,7 @@ class TestMainWiring:
                 "a főablak nem fogadta el a külső képfájl-húzást"
             )
             assert scan_started.wait(10), "az új mappa szkennelése nem indult el"
-            assert Path(controller.currentFolder) == extra
+            assert Path(controller.currentFolder).resolve() == extra.resolve()
             assert not photo_indexed(), "a teszt szkennelési kapuja nem fogta meg a munkát"
         finally:
             scan_may_continue.set()
@@ -193,10 +197,11 @@ class TestMainWiring:
         )
         assert varj_feltetelre(
             qt_app,
-            lambda: Path(str(photo_grid.property("anchorPath"))) == extra,
+            lambda: Path(str(photo_grid.property("anchorPath"))).resolve()
+            == extra.resolve(),
             masodperc=10.0,
         ), "a rács nem ugrott a behúzott kép csoportjára a szkennelés után"
-        assert Path(controller.currentFolder) == extra, (
+        assert Path(controller.currentFolder).resolve() == extra.resolve(), (
             "a szkennelés után a korábban nézett mappa maradt kijelölve"
         )
         assert Path(str(folder_pane.property("selectedPath"))) == extra, (
