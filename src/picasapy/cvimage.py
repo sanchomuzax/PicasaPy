@@ -14,6 +14,9 @@ logika ne duplikálódjon.
 from __future__ import annotations
 
 import io
+import os
+import threading
+from collections import OrderedDict
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
@@ -21,6 +24,66 @@ import numpy as np
 from PIL import Image, UnidentifiedImageError
 
 from picasapy.rawdecode import dekodol_nyerset, nyers_utvonal
+
+
+_DECODED_IMAGE_CACHE_LIMIT = 48 * 1024 * 1024
+_decoded_image_cache_lock = threading.Lock()
+_decoded_image_cache: OrderedDict[
+    tuple[str, int, int], tuple[int, np.ndarray, int]
+] = OrderedDict()
+_decoded_image_cache_size = 0
+
+
+def _decoded_image_key(source: str | Path, mtime_ns: int, size_bytes: int):
+    path = os.path.normcase(os.path.normpath(str(source)))
+    return path, int(mtime_ns), int(size_bytes)
+
+
+def _remember_decoded_image(
+    source: str | Path,
+    mtime_ns: int,
+    size_bytes: int,
+    goal: int,
+    image: np.ndarray,
+) -> None:
+    """Rövid ideig megosztja a face scan 960 px-es dekódját a bélyegképpel.
+
+    A cache LRU, felső korlátja 48 MiB; a tömböt a fogyasztók csak olvassák.
+    Az útvonal kulcsához nem hív `resolve()`-ot, így hálózati mappánál nem
+    kerül vissza a fotónkénti útvonal-felbontás.
+    """
+    global _decoded_image_cache_size
+    meret = int(image.nbytes)
+    if meret <= 0 or meret > _DECODED_IMAGE_CACHE_LIMIT:
+        return
+    key = _decoded_image_key(source, mtime_ns, size_bytes)
+    with _decoded_image_cache_lock:
+        regi = _decoded_image_cache.pop(key, None)
+        if regi is not None:
+            _decoded_image_cache_size -= regi[2]
+        _decoded_image_cache[key] = (int(goal), image, meret)
+        _decoded_image_cache_size += meret
+        while _decoded_image_cache_size > _DECODED_IMAGE_CACHE_LIMIT:
+            _old_key, (_old_goal, _old_image, old_size) = (
+                _decoded_image_cache.popitem(last=False)
+            )
+            _decoded_image_cache_size -= old_size
+
+
+def _find_decoded_image(
+    source: str | Path,
+    mtime_ns: int,
+    size_bytes: int,
+    goal: int,
+) -> np.ndarray | None:
+    """Visszaadja a jelenlegi fájlállapot legalább `goal` méretre dekódolt képét."""
+    key = _decoded_image_key(source, mtime_ns, size_bytes)
+    with _decoded_image_cache_lock:
+        item = _decoded_image_cache.get(key)
+        if item is None or item[0] < int(goal):
+            return None
+        _decoded_image_cache.move_to_end(key)
+        return item[1]
 
 
 # Nagy forráskép redukált (fél/negyed/nyolcad méretű) JPEG-dekódolása kíméli

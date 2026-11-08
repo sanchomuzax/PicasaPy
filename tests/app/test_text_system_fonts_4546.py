@@ -62,9 +62,15 @@ def test_selected_family_is_rendered_saved_and_loaded_again(
     edit_controller.setTextFontFamily(family)
     edit_controller.setTextDraft("System font")
     edit_controller.previewTextPlacement(0.3, 0.6)
+    assert edit_controller.waitForBackgroundWorkers(30.0), (
+        "a szöveg előnézeti renderelése nem fejeződött be"
+    )
     assert rendered_families[-1] == family
 
     edit_controller.applyText()
+    assert edit_controller.waitForBackgroundWorkers(30.0), (
+        "a mentett szöveg előnézeti renderelése nem fejeződött be"
+    )
     document = load_document(photo.parent / ".picasa.ini")
     section = document.section(photo.name)
     saved = parse_text(section.get("text"))

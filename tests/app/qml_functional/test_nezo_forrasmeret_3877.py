@@ -153,6 +153,19 @@ def _naplok(window) -> dict[str, Naplo]:
     return {nev: Naplo(_gyerek(window, nev)) for nev in ELEMEK}
 
 
+def _varj_elonezeti_renderre(qt_app, engine) -> None:
+    """A képkérés-ellenőrzés előtt várja meg a két szerkesztő-előnézetet."""
+    context = engine.rootContext()
+    edit_controller = context.contextProperty("editController")
+    second_preview = context.contextProperty("secondPreview")
+    controllers = (edit_controller, second_preview.controller)
+    for controller in controllers:
+        assert controller.waitForBackgroundWorkers(30.0), (
+            "a szerkesztő előnézetének renderelése nem fejeződött be"
+        )
+    qt_app.processEvents()
+
+
 def _vart_meret(url: str, forrasmeret: dict[str, tuple[int, int]]) -> tuple[int, int]:
     if url.startswith(SZOLGALTATO):
         return DOBOZ
@@ -161,13 +174,17 @@ def _vart_meret(url: str, forrasmeret: dict[str, tuple[int, int]]) -> tuple[int,
 
 
 def _ellenoriz(naplok, forrasmeret, lepes: str) -> None:
-    """Elemenként legfeljebb EGY kérés, mindegyik a HELYES párral, és
-    semmilyen betöltött kép nem nőtt a doboz fölé."""
+    """Elemenként legfeljebb egy KÉP-URI, minden kérés a HELYES párral.
+
+    A háttér-render befejezése új `rev` értékkel újrakéri ugyanazt az
+    `image://` képet; ez nem új tartalom és nem méretpár-váltás.
+    """
     hibak = []
     for nev, naplo in naplok.items():
         keresek = naplo.keresek()
-        if len(keresek) > 1:
-            hibak.append(f"{nev}: {len(keresek)} kérés: {keresek}")
+        kep_uriek = {url.partition("?")[0] for url, _szel, _mag in keresek}
+        if len(kep_uriek) > 1:
+            hibak.append(f"{nev}: több kép-URI: {keresek}")
         for url, szel, mag in keresek:
             if (szel, mag) != _vart_meret(url, forrasmeret):
                 hibak.append(f"{nev}: rossz pár: {url} @ {szel}x{mag}")
@@ -189,34 +206,47 @@ class TestEgyKepEgyBetoltes:
     """#3877, 2. pont. Rontás-kontroll: a PR első változatával (két külön
     kötés: `source: kepUrl`, `sourceSize: forrasMeret(…)`) a lépésnél a
     nyers fájlos elemek (elő-betöltők, a rejtett `photoElotte`) képenként
-    két kérést indítottak, köztük rossz párt; a kettős nézetre váltáskor a
+    két betöltési kérést indítottak, köztük rossz méretpárt; a kettős nézetre váltáskor a
     `photoElotte` a nyers fájl méretével kérte a szolgáltatót és fordítva."""
 
     def test_lepeskor_elemenkent_legfeljebb_egy_betoltes(self, lepes_kepek, qt_app):
-        window, _c, _e = lepes_kepek
+        window, _c, engine = lepes_kepek
         nezo = _nezot_nyit(window, qt_app)
+        _varj_elonezeti_renderre(qt_app, engine)
         _esemenyek(qt_app)
         naplok = _naplok(window)
-        for lepes in range(3):
+        alapmagassag = int(window.height())
+        for lepes, magassag_elteres in enumerate((-5, 0, 5)):
+            window.setHeight(alapmagassag + magassag_elteres)
+            _esemenyek(qt_app)
             QMetaObject.invokeMethod(nezo, "next", Qt.ConnectionType.DirectConnection)
+            _varj_elonezeti_renderre(qt_app, engine)
             _esemenyek(qt_app)
             _ellenoriz(naplok, _LEPES_FORRASMERET, f"next() #{lepes + 1}")
         assert nezo.property("currentIndex") == 3
-        for lepes in range(2):
+        for lepes, magassag_elteres in enumerate((0, -5)):
+            window.setHeight(alapmagassag + magassag_elteres)
+            _esemenyek(qt_app)
             QTest.keyClick(window, Qt.Key.Key_Left)
+            _varj_elonezeti_renderre(qt_app, engine)
             _esemenyek(qt_app)
             _ellenoriz(naplok, _LEPES_FORRASMERET, f"Bal nyíl #{lepes + 1}")
         assert nezo.property("currentIndex") == 1, "a Bal nyíl nem lapozott"
 
     @pytest.mark.parametrize("gomb", ["viewerLayoutAb", "viewerLayoutAa"])
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
     def test_kettos_nezetre_valtaskor_legfeljebb_egy_betoltes(
-        self, lepes_kepek, qt_app, gomb
+        self, lepes_kepek, qt_app, gomb, height_delta
     ):
-        window, _c, _e = lepes_kepek
+        window, _c, engine = lepes_kepek
         nezo = _nezot_nyit(window, qt_app)
+        _varj_elonezeti_renderre(qt_app, engine)
         _esemenyek(qt_app)
         naplok = _naplok(window)
+        window.setHeight(int(window.height()) + height_delta)
+        _esemenyek(qt_app)
         _klikk(qt_app, window, _gyerek(window, gomb))
+        _varj_elonezeti_renderre(qt_app, engine)
         _esemenyek(qt_app, var_ms=300)
         assert nezo.property("layoutMode") != "1up"
         _ellenoriz(naplok, _LEPES_FORRASMERET, f"{gomb} (a.jpg: 1440×2560)")

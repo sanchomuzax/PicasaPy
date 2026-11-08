@@ -9,8 +9,9 @@ erősségű oneclick pár (#347, #3927). A nyolc lépés, egész aritmetikával:
 2. generátor: **helyi MT19937**, ugyanazzal a magvető-függvénnyel
    (`0x00aa28f0`, szorzó `0x19660D` = 1664525), mint a `NoiseImageOperation`
    (`nativ_noise.picasa_mt19937`) — a magot a Picasa CRT-folyamából
-   három egymást követő `rand()` adja; a `grain_seed` ezt a renderbeli
-   sorszámból reprodukálja (#4936);
+   három egymást követő `rand()` adja; az önálló render ezt a renderbeli
+   sorszámból, a kötegelt export a közös kötegfolyamból reprodukálja (#4936,
+   #6712);
 3. erősség: `a = 0,5` ⇒ `k = trunc(256 − 256·a) = 128`;
 4. első zajmező, képpontonként egy MT-szó, csatornánként (R = 2., G = 1.,
    B = 0. bájt, mint a `nativ_noise.noise_layer`-ben) a 127 felé húzva
@@ -44,8 +45,12 @@ oszlopát visszaadja, ld. a fenti szakaszt a teljes táblázatért.
 
 from __future__ import annotations
 
-import numpy as np
 import operator
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
+
+import numpy as np
 
 from picasapy.render.nativ_noise import picasa_mt19937
 
@@ -66,13 +71,41 @@ _Y_R, _Y_G, _Y_B = 77, 151, 28
 _KOZEPTONUS_CSUCS = 160
 _KOZEPTONUS_KOZEP = 128
 
+# Minden exportköteg a saját, kontextusonként elkülönített CRT-állapotból indul.
+_CRT_STREAM_INITIAL_SEED = 1
+_ACTIVE_CRT_STATE: ContextVar[int | None] = ContextVar(
+    "picasapy_native_grain_crt_state", default=None
+)
+
+
+def _next_crt_grain_seed(state: int) -> tuple[int, int]:
+    """A CRT-folyam következő három húzásából magot és friss állapotot ad."""
+    values: list[int] = []
+    for _ in range(3):
+        state = (state * 0x343FD + 0x269EC3) & 0xFFFFFFFF
+        values.append((state >> 16) & 0x7FFF)
+    r1, r2, r3 = values
+    seed = (r3 ^ ((r2 ^ (r1 << 12)) << 12)) & 0xFFFFFFFF
+    return state, seed
+
+
+@contextmanager
+def _grain_rand_stream() -> Iterator[None]:
+    """Az exportköteg szemcsehívásai közös, elkülönített CRT-folyamot kapjanak."""
+    token = _ACTIVE_CRT_STATE.set(_CRT_STREAM_INITIAL_SEED)
+    try:
+        yield
+    finally:
+        _ACTIVE_CRT_STATE.reset(token)
+
 
 def grain_seed(ordinal: int) -> int:
     """A renderlánc ``ordinal``-edik szemcséjének Picasa-magja.
 
     A Picasa az MSVC CRT `rand()`-folyamából három egymást követő értéket
-    vesz minden szemcse-művelethez. A folyam új rendernél az alapállapotból
-    (1) indul; a sorszám renderenként értendő, és nem globális állapot.
+    vesz minden szemcse-művelethez. Exportköteg-kontextusban a következő
+    hármasból képez magot; azon kívül az alapállapotból (1) számolja ki a
+    megadott render-sorszámot, a korábbi viselkedést megőrizve.
     ``mag = r3 ^ ((r2 ^ (r1 << 12)) << 12)`` 32 bites eredménnyel.
     """
     if isinstance(ordinal, bool):
@@ -84,13 +117,16 @@ def grain_seed(ordinal: int) -> int:
     if index < 0:
         raise ValueError("a grain-sorszám nem lehet negatív")
 
-    state = 1
-    values: list[int] = []
-    for _ in range(3 * index + 3):
-        state = (state * 0x343FD + 0x269EC3) & 0xFFFFFFFF
-        values.append((state >> 16) & 0x7FFF)
-    r1, r2, r3 = values[-3:]
-    return (r3 ^ ((r2 ^ (r1 << 12)) << 12)) & 0xFFFFFFFF
+    state = _ACTIVE_CRT_STATE.get()
+    if state is not None:
+        next_state, seed = _next_crt_grain_seed(state)
+        _ACTIVE_CRT_STATE.set(next_state)
+        return seed
+
+    state = _CRT_STREAM_INITIAL_SEED
+    for _ in range(index + 1):
+        state, seed = _next_crt_grain_seed(state)
+    return seed
 
 
 def _bajtok_rgb(szavak: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

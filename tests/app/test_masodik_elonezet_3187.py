@@ -52,6 +52,12 @@ def _controller(provider, slot=""):
     return EditController(provider, slot=slot) if slot else EditController(provider)
 
 
+def _varj_az_elonezetekre(*vezerlok):
+    """A cache-állítások előtt várja meg a háttérben kért képeket."""
+    for vezerlo in vezerlok:
+        assert vezerlo.waitForBackgroundWorkers(10.0), "az előnézet nem készült el"
+
+
 class TestARekeszKulcs:
     """A rekesz nélküli vezérlő viselkedése VÁLTOZATLAN."""
 
@@ -72,6 +78,7 @@ class TestARekeszKulcs:
         GPU-előnézet alkalmas — ez a #22 tesztjének bejáratott alapja."""
         ctl = _controller(provider, slot="masodik")
         ctl.beginEdit("42", str(photo))
+        _varj_az_elonezetekre(ctl)
         assert ctl.gpuPrefixSource.startswith("image://editpreview/42@masodik?gpuprefix=1")
         assert ctl.gpuLutSource.startswith("image://editpreview/42@masodik?gpulut=1")
 
@@ -102,6 +109,7 @@ class TestKetFuggetlenAllapot:
 
         fo.applyEffect("sepia")
         masodik.applyEffect("bw")
+        _varj_az_elonezetekre(fo, masodik)
 
         assert [op.name for op in fo._session.ops] == ["sepia"]
         assert [op.name for op in masodik._session.ops] == ["bw"]
@@ -114,6 +122,7 @@ class TestKetFuggetlenAllapot:
         masodik = _controller(provider, slot="masodik")
         fo.beginEdit("42", str(photo))
         masodik.beginEdit("42", str(photo))
+        _varj_az_elonezetekre(fo, masodik)
 
         masodik.endEdit()
 
@@ -132,7 +141,7 @@ class TestKetFuggetlenAllapot:
         masodik.applyEffect("bw")
         # az effekt-hozzáadás HÁTTÉRSZÁLON renderel (#514) — determinista
         # bevárás, nem `sleep` (#999)
-        assert masodik.waitForBackgroundWorkers(10)
+        _varj_az_elonezetekre(fo, masodik)
 
         assert fo.histogram != masodik.histogram
 
@@ -211,6 +220,7 @@ class TestKetRekeszNemSzoritjaKiEgymast:
         fo.beginEdit("7", str(lru_kepek[0]))
         masodik.beginEdit("7", str(lru_kepek[0]))
         masodik.beginEdit("8", str(lru_kepek[1]))
+        _varj_az_elonezetekre(fo, masodik)
         assert _kulcsok(szolgaltato) == {"7", "8@masodik"}
 
     def test_a_fo_rekesz_lapozasa_nem_szoritja_ki_a_masodik_kepet(
@@ -220,6 +230,7 @@ class TestKetRekeszNemSzoritjaKiEgymast:
         masodik.beginEdit("8", str(lru_kepek[1]))
         fo.beginEdit("7", str(lru_kepek[0]))
         fo.beginEdit("9", str(lru_kepek[2]))
+        _varj_az_elonezetekre(fo, masodik)
         assert _kulcsok(szolgaltato) == {"9", "8@masodik"}
 
     def test_ugyanarra_a_fotora_nyitva_a_kep_bent_marad(
@@ -228,4 +239,5 @@ class TestKetRekeszNemSzoritjaKiEgymast:
         szolgaltato, fo, _masodik = ket_vezerlo
         fo.beginEdit("7", str(lru_kepek[0]))
         fo.beginEdit("7", str(lru_kepek[0]))
+        _varj_az_elonezetekre(fo)
         assert _kulcsok(szolgaltato) == {"7"}
