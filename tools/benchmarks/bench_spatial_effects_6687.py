@@ -77,8 +77,8 @@ def main() -> int:
     print(f"Forrás: {args.source}")
     print(f"Méret: {image.shape[1]}×{image.shape[0]} RGB uint8; futás: {args.runs}; bemelegítés: {args.warmups}")
     print(_system_line())
-    print("\n| Effekt | Futások (ms) | Medián (ms) |")
-    print("|---|---:|---:|")
+    print("\n| Effekt | Futások (ms) | Legjobb (ms) | Medián (ms) |")
+    print("|---|---:|---:|---:|")
     for name, effect in _effects():
         for _ in range(args.warmups):
             effect(image.copy())
@@ -89,7 +89,7 @@ def main() -> int:
             effect(input_image)
             samples.append((time.perf_counter() - started) * 1000.0)
         rendered = ", ".join(f"{sample:.1f}" for sample in samples)
-        print(f"| {name} | {rendered} | {statistics.median(samples):.1f} |")
+        print(f"| {name} | {rendered} | {min(samples):.1f} | {statistics.median(samples):.1f} |")
     return 0
 
 
