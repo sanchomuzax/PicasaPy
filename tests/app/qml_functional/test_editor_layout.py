@@ -5,6 +5,31 @@ from PySide6.QtCore import QObject
 from tests.app.qml_functional._editor_test_helpers import EditorTestHelpers
 
 
+#: A szerkesztőpanel mód-eszköz jelzői: bármelyik igaz értéke elrejti az
+#: effekt-paraméter alpanelt (`modeToolActive`), és kiteszi a mód-panelt.
+_MOD_ESZKOZ_JELZOK = ("cropActive", "retouchActive", "redeyeActive", "textActive")
+
+
+def _panel_alapallapotra(window, qt_app) -> None:
+    """A KÖZÖS ablak szerkesztőpanelét a kiinduló állapotba állítja (#6709).
+
+    A modul egyetlen ablakot használ, a panel tulajdonságai tehát tesztről
+    tesztre megmaradnak: a szöveg-eszköz tesztjei `textActive`-et, a
+    paraméter-alpanel próbája `paramPanelActive`-et hagyta bekapcsolva, és a
+    következő teszt ezt örökölte (a `modeToolActive` igaz maradt, az
+    alpanel `visible` értéke hamis). A sorrend a véletlenszerű futásban
+    más, ezért az állapotot nem a sorrend, hanem ez a lépés garantálja."""
+    panel = window.findChild(QObject, "viewerEditorPanel")
+    if panel is None:
+        return
+    # előbb az alpanel és a mód-eszközök, utána a fül: a fülváltás a nyitott
+    # alpanelt megszakítja, ennek nem kell lefutnia
+    for jelzo in ("paramPanelActive", *_MOD_ESZKOZ_JELZOK):
+        panel.setProperty(jelzo, False)
+    panel.setProperty("activeTab", 0)
+    qt_app.processEvents()
+
+
 class _ModulAblakMixin:
     """#2851: a modul KÖZÖS ablakán futó osztályok jelölője.
 
@@ -12,12 +37,17 @@ class _ModulAblakMixin:
     ini-t, se beállítást, se fájlt: felület-geometriát és kötést mér. A
     felület-állapotot (nyitott néző, aktív fül) minden teszt maga állítja be.
 
+    A szerkesztőpanel mód-eszköz- és alpanel-jelzőit viszont a fixture
+    állítja vissza minden teszt előtt (#6709): a próbák ezeket be is
+    kapcsolják, és a közös ablakon a következő teszt örökölné őket.
+
     Az állapotot író szerkesztési és navigációs tesztcsoportok
     SZÁNDÉKOSAN nem ilyenek: ini-t írnak, illetve saját könyvtárat építenek,
     tehát tesztenként friss ablakot kapnak."""
 
     @pytest.fixture
-    def qml_app(self, qml_app_module):
+    def qml_app(self, qml_app_module, qt_app):
+        _panel_alapallapotra(qml_app_module[0], qt_app)
         return qml_app_module
 
 
