@@ -35,6 +35,11 @@ Item {
         hostWindow.photoAt(hostWindow.currentIndex, 0)
     readonly property var previousBackgroundPhoto:
         hostWindow.photoAt(hostWindow.previousIndex, 0)
+    readonly property var labelAlphas:
+        (typeof timelineController !== "undefined" && timelineController)
+            ? timelineController.labelAlphas(
+                  Number(hostWindow.frameTransforms.alpha))
+            : [255, 127]
 
     // Amíg a háttérkép nincs kész (vagy nincs kijelölt fotó), a fedőréteg mért
     // átlátszatlan alapszíne látszik.
@@ -105,6 +110,12 @@ Item {
         objectName: "timelineCardArtwork"
         width: panel.width
         height: 400
+        // Mért értékek a job-373 felvétel 10. másodperces, 600×480-as lapján
+        // (#6713): a vezetőpontok középpontja a Bézier-ponttól mindkét
+        // irányban ennyivel odébb áll (a pontsprite a bal felső sarkával
+        // horgonyzik), a kezdőpont pedig a dátum alapvonala alatt ennyivel.
+        readonly property real dotSpriteAnchor: 4.4
+        readonly property real leaderBelowDateBaseline: 22.2
         readonly property var dotArcPoints: {
             var values = hostWindow.sliderValues()
             if (!(typeof timelineController !== "undefined" && timelineController) || values.length === 0)
@@ -121,43 +132,18 @@ Item {
                 width: focusWidth
             }
 
-            // A qshow mért A[i]/A[n-1] aránya és a duplikált pontok
-            // 0/7/14 px y-ága vezérli a pontok sorrendjét/helyét. A natív
-            // screen-space leképezés nincs mérve: ezért a pontokat a
-            // fejléc és a mért racionális Bézieren álló első kártya közötti,
-            // megnevezett képernyőíven helyezzük el.
-            var curveSpan = Math.max(1, panel.width - 4)
-            var measuredDots = timelineController.dotPositions(
-                values, 0, curveSpan, 0, 0, 0, 0)
-            var startX = collectionNameText.x
-                + collectionNameText.width - 8
-            var startY = collectionDateText.y + 42
-            var endX = firstPhoto.x + firstPhoto.width * 0.38
-            var endY = firstPhoto.y - 48
-            var control1X = startX + 3
-            var control1Y = startY + 50
-            var control2X = endX + 38
-            var control2Y = endY - 15
-            var points = []
-            for (var i = 0; i < measuredDots.length; ++i) {
-                var dot = measuredDots[i]
-                if (!dot.draw)
-                    continue
-                var parameter = 1 - dot.x / curveSpan
-                var oneMinusT = 1 - parameter
-                points.push({
-                    x: oneMinusT * oneMinusT * oneMinusT * startX
-                        + 3 * oneMinusT * oneMinusT * parameter * control1X
-                        + 3 * oneMinusT * parameter * parameter * control2X
-                        + parameter * parameter * parameter * endX,
-                    y: oneMinusT * oneMinusT * oneMinusT * startY
-                        + 3 * oneMinusT * oneMinusT * parameter * control1Y
-                        + 3 * oneMinusT * parameter * parameter * control2Y
-                        + parameter * parameter * parameter * endY
-                        + dot.y
-                })
-            }
-            return points
+            // A bináris a feliratblokk jobb alsó sarkától vezet az első
+            // kártya felső éle fölé; pontosan tíz, egyenletes t-mintával.
+            // A blokk alja nem a betűtípus lenyúlója: a job-373 10. másodperci
+            // képkockáján a dátum alapvonala alatt `leaderBelowDateBaseline`
+            // képponttal van (betűtípustól független, mért érték).
+            var startX = panel.width - 90 - 16
+            var startY = collectionDateText.y + collectionDateText.baselineOffset
+                + leaderBelowDateBaseline
+            var endX = firstPhoto.x + firstPhoto.width / 2
+            var endY = firstPhoto.y - 20
+            return timelineController.leaderPoints(
+                startX, startY, endX, endY)
         }
         onDotArcPointsChanged: requestPaint()
         onPaint: {
@@ -165,9 +151,12 @@ Item {
             context.clearRect(0, 0, width, height)
 
             var points = dotArcPoints
+            context.globalAlpha = Number(hostWindow.frameTransforms.alpha) / 256
             for (var i = 0; i < points.length; ++i) {
                 context.beginPath()
-                context.arc(points[i].x, points[i].y, 2.3, 0, 2 * Math.PI)
+                context.arc(points[i].x + dotSpriteAnchor,
+                            points[i].y + dotSpriteAnchor,
+                            2.3, 0, 2 * Math.PI)
                 context.fillStyle = "#172239"
                 context.fill()
             }
@@ -256,10 +245,15 @@ Item {
                     objectName: "timelineCarouselPhoto_"
                         + collectionDeck.deckIndex + "_" + index
                     property var photo: collectionDeck.collection.photos[index]
+                    readonly property var stackOffset:
+                        (typeof timelineController !== "undefined" && timelineController)
+                            ? timelineController.cardStackOffset(
+                                  collectionDeck.deckIndex, index)
+                            : [0, 0]
                     width: collectionDeck.width
                     height: collectionDeck.height
-                    x: index * 4 * collectionDeck.depthScale
-                    y: -index * 3 * collectionDeck.depthScale
+                    x: Number(stackOffset[0]) * width
+                    y: Number(stackOffset[1]) * height
                     z: index
                     rotation: index % 2 === 0 ? -7 : 5
                     readonly property bool imageLoaded: photoImage.status === Image.Ready
@@ -337,29 +331,58 @@ Item {
     }
 
     Text {
+        id: collectionNameShadow
+        objectName: "timelineCollectionNameShadow"
+        x: panel.width - 90 - collectionNameText.implicitWidth + 1
+        y: 130 - collectionNameText.baselineOffset + 1
+        width: collectionNameText.implicitWidth
+        height: collectionNameText.implicitHeight
+        horizontalAlignment: Text.AlignRight
+        text: collectionNameText.text
+        font: collectionNameText.font
+        color: Qt.rgba(0, 0, 0, Number(panel.labelAlphas[1]) / 255)
+    }
+
+    Text {
         id: collectionNameText
         objectName: "timelineCollectionName"
-        x: panel.width - 270
-        y: 108
-        width: 180
+        x: panel.width - 90 - implicitWidth
+        y: 130 - baselineOffset
+        width: implicitWidth
+        height: implicitHeight
         horizontalAlignment: Text.AlignRight
         text: {
             var collection = hostWindow.collectionAt(hostWindow.currentIndex)
             return collection ? collection.name : ""
         }
         color: "#ffffff"
-        font.pixelSize: 18
-        font.bold: true
-        style: Text.Outline
-        styleColor: "#252525"
+        opacity: Number(panel.labelAlphas[0]) / 255
+        font.family: "Helvetica Neue"
+        font.styleName: "Medium Condensed"
+        font.pixelSize: 20
+        font.weight: Font.Medium
+    }
+
+    Text {
+        id: collectionDateShadow
+        objectName: "timelineCollectionDateShadow"
+        x: panel.width - 90 - collectionDateText.implicitWidth + 1
+        y: 158 - collectionDateText.baselineOffset + 1
+        width: collectionDateText.implicitWidth
+        height: collectionDateText.implicitHeight
+        horizontalAlignment: Text.AlignRight
+        text: collectionDateText.text
+        font: collectionDateText.font
+        color: Qt.rgba(0, 0, 0, Number(panel.labelAlphas[1]) / 255)
     }
 
     Text {
         id: collectionDateText
         objectName: "timelineCollectionDate"
-        x: panel.width - 270
-        y: 143
-        width: 180
+        x: panel.width - 90 - implicitWidth
+        y: 158 - baselineOffset
+        width: implicitWidth
+        height: implicitHeight
         horizontalAlignment: Text.AlignRight
         text: {
             var collection = hostWindow.collectionAt(hostWindow.currentIndex)
@@ -367,8 +390,9 @@ Item {
         }
         color: "#ffffff"
         font.pixelSize: 14
-        style: Text.Outline
-        styleColor: "#252525"
+        opacity: Number(panel.labelAlphas[0]) / 255
+        font.family: "Helvetica Neue"
+        font.styleName: "Condensed"
     }
 
     Rectangle {
