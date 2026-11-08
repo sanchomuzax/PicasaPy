@@ -1001,7 +1001,7 @@ natív regisztráció (#567).
 *A mérés.* A `docs/benchmarks/2026-11-08-6585-ujrabesorolas.md` 9 esetéből 8
 tért el az eredeti exportjától (SSIM 0,906-0,973, ΔE 1,24-3,17). A 9 esetet
 (Colab-feladat 403, 408-414, 429; forráskép k02, k04, k05, k07, k08, k10;
-Impact 5,1-69,0, nem egész `W/Impact`) helyben újrarenderelve a hiba a
+Impact 5,1-69,0, nem egész `W/Impact`) helyben újra lefuttatva a hiba a
 **blokkrácsban** és a **keverésben** volt; a maszk helye és sugara jó (a belső
 körön belül, a kép 1-15 %-án, ΔE 0,007-0,053; a #3596 óta).
 Mérés és táblák: `docs/benchmarks/2026-11-08-6691-focal-pixelate.md`.
@@ -1036,7 +1036,7 @@ tárolt ablakokon a benchmark-lapon; a „kerekített méret + natív egész kev
 a 9 ablakból 6-ban a teljesen pixelezett részen ΔE ≤ 0,037, a lanc-0088
 ablakában **bitre egyező** (ΔE 0,000). A keverési sorrend (előbb Fade, utána
 maszk) a mérésből jön: a fordított sorrend 0,02-0,31 (a javított 0,008-0,123
-helyett) a teljes képen. *Bizonyítottság: a két képlet a #3442 binárisolvasata;
+helyett) a teljes képen. *Bizonyítottság: a két képlet a #3442 bináris olvasata;
 a sorrend mérés, **NINCS MEG** hozzá a `NestedImageOperation` alkalmazójának
 címe.*
 
@@ -1050,7 +1050,7 @@ kivágásain, ld. a tesztfájl fejét).
 maszk 0 és 1 között van) a tárolt ablakokban még ΔE 0,09-0,73 marad; a
 teljesen pixelezett részen és a belső körön belül nincs. A natív maszk
 kétmegállós színátmenet (a belső megálló `csonk(255 · inner / R)`,
-`0x00bc2b8a`-`0x00bc2d1d`), de a megállók KÖZÖTTI bájtképlet (kerekítés vagy
+`0x00bc2b8a`-`0x00bc2d1d`), de a megállók KÖZÖTTI bájtszintű képlet (kerekítés vagy
 csonkolás, a középpont fél képpontja) **nincs kiolvasva**. Négy változatot próbáltam a tárolt
 ablakokon (csonkoló/kerekítő bájt, középponttal és anélkül): egyik sem ad
 bitre egyező gyűrűt (a legjobb átlag 0,223 a mostani 0,332 helyett), ezért

@@ -22,13 +22,12 @@ import numpy as np
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from picasapy.lazy_cv2 import cv2
-from picasapy.render.color import apply_saturation
-from picasapy.render.directional import apply_dir_brite
-from picasapy.render.glimmer_tone import apply_twotone
-from picasapy.render.ops import apply_autocolor
-from picasapy.render.rainbow import apply_rainbow
-from picasapy.render.tone import apply_finetune2
+from picasapy.render.color import apply_saturation  # noqa: E402
+from picasapy.render.directional import apply_dir_brite  # noqa: E402
+from picasapy.render.glimmer_tone import apply_twotone  # noqa: E402
+from picasapy.render.ops import apply_autocolor  # noqa: E402
+from picasapy.render.rainbow import apply_rainbow  # noqa: E402
+from picasapy.render.tone import apply_finetune2  # noqa: E402
 
 Filter = tuple[str, Callable[[], np.ndarray]]
 

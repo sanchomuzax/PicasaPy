@@ -91,10 +91,10 @@ ablakban (>= 5000 képpont), a lanc-0088 ablakában bitre egyező.
 | lanc-0175 | job-429/k05 | 0,96717 | 3,172 | 0,99975 | 0,027 | közelítés |
 | lanc-0190 | job-403/k10 | 0,99282 | 0,683 | 0,99949 | 0,019 | közelítés |
 
-## 5. Nyitott: az átmeneti gyűrű bájtképlete
+## 5. Nyitott: az átmeneti gyűrű bájtszintű képlete
 
 Az átmeneti gyűrűben (maszk 0 és 1 között) az ablakokban ΔE 0,09-0,73 marad; ahol a
-maszk 0 vagy 1, ott nincs. Négy maszk-bájtváltozatot próbáltam (a spec kétmegállós
+maszk 0 vagy 1, ott nincs. A maszk négy bájtszintű változatát próbáltam (a spec kétmegállós
 színátmenet-képletével: a belső megálló `csonk(255 · inner / R)`; csonkoló vagy
 kerekítő bájt; középponttal és a pixel sarkával), ΔE átlag a 9 ablakon:
 
