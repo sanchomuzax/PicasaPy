@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.81] - 2026-11-08
+
+- A szerkesztő előnézete renderelés közben is friss marad, a csúszkahúzás közbeni kérések összevonása pedig csökkenti a felesleges számolást (#6685).
+
 ## [1.0.80] - 2026-11-08
 
 - Az automatikus arckeresés változatlan szinkronnál nem olvassa újra a teljes könyvtárat, és a háttérben fékezve fut (#6694).
