@@ -1,3 +1,4 @@
+import QtQuick.Window
 import PicasaPy
 
 // A főablak felső menüsorának bekötései; az elemeket a PicasaMenuBar kezeli.
@@ -48,6 +49,8 @@ PicasaMenuBar {
     //: contentItem nem kapja meg a teljes ablakot.
     visible: !hostWindow.quickViewerLaunch
              && !hostWindow.slideshowRunning && !hostWindow.timelineOpen
+             && (hostWindow.viewerOpen
+                 || hostWindow.visibility !== Window.FullScreen)
     // #1619: a rács `Ctrl+Delete`-je is ezen a példányon át ágazik el
     //: #671: a Fájl ▸ Kilépés a KÖZÖS úton fut — ott dől el, kérdez-e
     onExitRequested: hostWindow.kilepes()

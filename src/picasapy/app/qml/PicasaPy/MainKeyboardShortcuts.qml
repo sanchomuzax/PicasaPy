@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 
 // A főablak gyorsbillentyűi és a Súgó billentyűlistájának adatforrása.
 Item {
@@ -381,8 +382,23 @@ Item {
         id: shortcutViewerFullscreen
         objectName: "viewerFullscreenShortcut"
         sequence: "F11"
-        enabled: hostWindow.viewerOpen && !hostSlideshow.visible
-        onActivated: hostWindow.toggleViewerFullscreen()
+        property int libraryVisibilityBeforeFullscreen: Window.Windowed
+        enabled: !hostSlideshow.visible && !hostWindow.timelineOpen
+        onActivated: {
+            if (hostWindow.viewerOpen) {
+                hostWindow.toggleViewerFullscreen()
+                return
+            }
+
+            if (hostWindow.visibility === Window.FullScreen) {
+                hostWindow.visibility =
+                    libraryVisibilityBeforeFullscreen === Window.FullScreen
+                        ? Window.Windowed : libraryVisibilityBeforeFullscreen
+            } else {
+                libraryVisibilityBeforeFullscreen = hostWindow.visibility
+                hostWindow.visibility = Window.FullScreen
+            }
+        }
     }
 
 
