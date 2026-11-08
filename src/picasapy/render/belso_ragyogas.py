@@ -106,11 +106,11 @@ def _dobozmenetek(maszk: np.ndarray, tengely: int, blur: float, minoseg: int) ->
     kx, ky = (sulyok, egyseg) if tengely == 1 else (egyseg, sulyok)
     teljes = _TELJES * div
     for _ in range(minoseg):
-        fedes = (_TELJES - maszk.astype(np.int32)).astype(np.float32)
+        fedes = _TELJES - maszk
         osszeg = cv2.sepFilter2D(
             fedes, cv2.CV_32F, kx, ky, borderType=cv2.BORDER_CONSTANT
         ).reshape(fedes.shape)
-        maszk = ((teljes - np.rint(osszeg).astype(np.int64)) // div).astype(np.uint8)
+        maszk = ((teljes - np.rint(osszeg).astype(np.int32)) // div).astype(np.uint8)
     return maszk
 
 

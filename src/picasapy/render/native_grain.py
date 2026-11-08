@@ -105,8 +105,8 @@ def _bajtok_rgb(szavak: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]
     hűen futnak. A `apply_native_grain` a visszakeverés (6. lépés) ELŐTT
     `int32`-re bővíti vissza — az ottani `·210` szorzás a mért tartományban
     (kb. −38 000…35 000) már `int16`-ban túlcsordulna."""
-    bajtok = szavak.astype("<u4").view(np.uint8).reshape(*szavak.shape, 4).astype(np.int16)
-    return bajtok[..., 2], bajtok[..., 1], bajtok[..., 0]
+    bajtok = np.asarray(szavak, dtype="<u4").view(np.uint8).reshape(*szavak.shape, 4)
+    return tuple(bajtok[..., index].astype(np.int16) for index in (2, 1, 0))
 
 
 def _pull_127_fele(sik: np.ndarray, k: int) -> np.ndarray:

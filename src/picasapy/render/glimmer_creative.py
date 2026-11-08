@@ -22,6 +22,7 @@ from picasapy.render.belso_ragyogas import inner_glow
 from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_edges import edge_detection_b
 from picasapy.render.glimmer_frame_ops import add_border_sides
+from picasapy.render.glimmer_blend_ops import _overlay_alap
 from picasapy.render.glimmer_ops import (
     adjust_curves,
     alpha_blend,
@@ -116,17 +117,22 @@ def apply_pencil_sketch(image, radius: float = 2.0, contrast: float = 100.0, fad
 
     validate_image(image)
     base_a = autofix(apply_bw(image))
-    base_f = to_float(base_a)
     # az invertálás 8 bites görbe (`(0,255)→(255,0)`), utána a
     # `BlurImageOperation xblur = yblur = Radius` natív útja (#3580)
     inverted = 255 - base_a
-    blurred = to_float(blur_image_operation(inverted, radius, radius, quality=3))
-    added = apply_blend_mode(base_f, blurred, "add", 1.0)
-    overlaid = apply_blend_mode(added, base_f, "overlay", 1.0)
-    fixed_again = autofix(to_uint8(overlaid))
+    blurred = blur_image_operation(inverted, radius, radius, quality=3)
+    base_i = base_a.astype(np.int32)
+    added = base_i.copy()
+    np.add(added, blurred, out=added, casting="unsafe")
+    np.minimum(added, 255, out=added)
+    overlaid = _overlay_alap(added, base_i)
+    fixed_again = autofix(overlaid.astype(np.uint8))
     mid = 227.0 - contrast * 2.0
     curved = adjust_curves(fixed_again, master=((0.0, 0.0), (127.0, mid), (255.0, 255.0)))
-    return to_uint8(alpha_blend(to_float(image), to_float(curved), fade_alpha(fade)))
+    alpha = fade_alpha(fade)
+    if alpha == 1.0:
+        return curved
+    return to_uint8(alpha_blend(to_float(image), to_float(curved), alpha))
 
 
 # --- Holga / Lomo ------------------------------------------------------------
