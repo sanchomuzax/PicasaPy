@@ -2659,7 +2659,7 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
 
 | eset | eredeti Picasa | PicasaPy | állapot |
 |---|---|---|---|
-| Módosító nélküli `F8`/`F9` a szerkesztőben | A #375 képernyőképei (8–12.) azonosak, változás nem látszik (§12.12). | A tesztfában csak `Ctrl+F8`/`Ctrl+F9` leütéspróbát találtam; módosító nélküli F8/F9 `QTest.keyClick`-próbát nem. | Eredeti: mérve; PicasaPy: **NINCS MEG**. |
+| Módosító nélküli `F8`/`F9` a szerkesztőben | A #375 képernyőképei (8-12.) azonosak, változás nem látszik (§12.12). | A tesztfában csak `Ctrl+F8`/`Ctrl+F9` leütéspróbát találtam; módosító nélküli F8/F9 `QTest.keyClick`-próbát nem. | Eredeti: mérve; PicasaPy: **NINCS MEG**. |
 | Videónézeti `/`, `,`, `.` | A #375 eredménysorában nem szerepelnek; a §12.4 szerint a Colab-végrehajtó ezeket videólejátszóban nem tudta megbízhatóan leütni. | A tesztfában egyik billentyűre sincs `QTest.keyClick`-próba; a §12.10 statikus lelete nem kezelőt, hanem teszthiányt igazol. | Mindkét oldali futáspróba: **NINCS MEG**. |
 | CThumbUI-próbaindex | A §12.3/#375 eredménytábla nyolc leütött sort rögzít; ez a táblázat nem teljes leltárpróba. | Az index 56 sorából 10 `nincs megfelelő` jelölésű, tehát ezekhez nincs hivatkozott QML-billentyűpróba: `Ctrl+Alt`, `Ctrl+6`, `Ctrl+G`, `Ctrl+Alt+G`, `Ctrl+Alt+Shift+G`, `Ctrl+Shift+L`, `Ctrl+Alt+S`, `Ctrl+Shift+U`, `Ctrl+Shift+Y`, `F12`. | Soronkénti egyezés: **NINCS MEG**. |
 
