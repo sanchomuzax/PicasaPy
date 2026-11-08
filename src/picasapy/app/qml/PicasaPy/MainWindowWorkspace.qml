@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Window
 import PicasaPy
 
 // A könyvtár, a néző és az időrend közös tartalmi vászna.
@@ -13,36 +14,74 @@ Item {
     required property var hostController
     required property var hostRefs
 
+    property bool exportTimelineOpen: false
+    property bool exportTimelineSlideshowActive: false
+    property var exportTimelineSlideshowModel: null
+    property int exportVisibilityBeforeViewerFullscreen: Window.Windowed
+    property int exportVisibilityBeforeSlideshow: Window.Windowed
+    property bool slideshowOpen: false
+
     property alias exportDocumentTabStrip: documentTabStrip
     property alias exportPeoplePanel: jobbFiok.peoplePanel
-    property alias exportTimelineOpen: timelineView.timelineOpen
-    property alias exportTimelineSlideshowActive: timelineView.timelineSlideshowActive
-    property alias exportTimelineSlideshowModel: timelineView.timelineSlideshowModel
-    property alias exportVisibilityBeforeViewerFullscreen: slideshow.visibilityBeforeViewerFullscreen
-    property alias exportVisibilityBeforeSlideshow: slideshow.visibilityBeforeSlideshow
     property alias exportFolderPane: folderPane
     property alias exportRightDrawer: jobbFiok
-    property alias exportPhotoViewer: photoViewer
-    property alias exportSlideshow: slideshow
-    property alias exportTimelineView: timelineView
+    property var exportPhotoViewer: photoViewerLoader.item
+    property var exportSlideshow: slideshowLoader.item
+    property var exportTimelineView: timelineViewLoader.item
 
-    // #8: a diavetítés a főablak önálló vetítési rétege.
-    MainSlideshow {
-        id: slideshow
-        hostWindow: workspace.hostWindow
-        hostController: workspace.hostController
-        hostPhotoViewer: photoViewer
-        hostErrorBanner: workspace.hostWindow.errorBanner
-        hostErrorBannerText: workspace.hostWindow.errorBannerText
-        noScreensaverPicturesMessage: qsTr(
-            "The selected screensaver sources contain no available pictures.")
+    function ensurePhotoViewer() {
+        photoViewerLoader.betoltve = true
+        return photoViewerLoader.item
     }
 
-    PhotoViewer {
-        id: photoViewer
-        objectName: "photoViewer"
+    function ensureSlideshow() {
+        slideshowOpen = true
+        slideshowLoader.betoltve = true
+        return slideshowLoader.item
+    }
+
+    function ensureTimelineView() {
+        timelineViewLoader.betoltve = true
+        return timelineViewLoader.item
+    }
+
+    // #8: a diavetítés a főablak önálló vetítési rétege.
+    Loader {
+        id: slideshowLoader
+        objectName: "slideshowLoader"
         anchors.fill: parent
-        visible: hostWindow.viewerOpen
+        property bool betoltve: false
+        active: workspace.slideshowOpen || betoltve
+        onActiveChanged: if (active) betoltve = true
+        onLoaded: workspace.slideshowOpen = false
+        sourceComponent: Component {
+            MainSlideshow {
+                id: slideshow
+                hostWindow: workspace.hostWindow
+                hostController: workspace.hostController
+                hostPhotoViewer: workspace.exportPhotoViewer
+                hostErrorBanner: workspace.hostWindow.errorBanner
+                hostErrorBannerText: workspace.hostWindow.errorBannerText
+                noScreensaverPicturesMessage: qsTr(
+                    "The selected screensaver sources contain no available pictures.")
+            }
+        }
+    }
+
+    Loader {
+        id: photoViewerLoader
+        objectName: "photoViewerLoader"
+        anchors.fill: parent
+        property bool betoltve: false
+        active: workspace.hostWindow.viewerOpen || betoltve
+        visible: workspace.hostWindow.viewerOpen
+        onActiveChanged: if (active) betoltve = true
+        sourceComponent: Component {
+            PhotoViewer {
+                id: photoViewer
+                objectName: "photoViewer"
+                anchors.fill: parent
+                visible: workspace.hostWindow.viewerOpen
         // #305: null-őr
         photosModel: hostController ? hostController.photos : null
         // #422: a mentés-parancsok a nézőből — ugyanazok a megerősítések,
@@ -127,20 +166,31 @@ Item {
         // menüsáv KÖZÖS, nézetfüggő elágazásán megy át
         deleteRemovesFromAlbum: hostRefs.picasaMenuBar.deleteRemovesFromAlbum
         onDeleteRequested: hostRefs.picasaMenuBar.activateDeleteCommand()
+            }
+        }
     }
 
 
     // #5770: az Időrend állapota és ablaka a saját komponensében él.
-    MainTimeline {
-        id: timelineView
-        objectName: "timelineView"
-        transientParent: workspace.hostWindow
-        hostWindow: workspace.hostWindow
-        hostController: workspace.hostController
-        hostTimelineController: typeof timelineController !== "undefined"
-            ? timelineController : null
-        hostToolbar: hostRefs.toolbar
-        hostSlideshow: slideshow
+    Loader {
+        id: timelineViewLoader
+        objectName: "timelineViewLoader"
+        property bool betoltve: false
+        active: workspace.exportTimelineOpen || betoltve
+        onActiveChanged: if (active) betoltve = true
+        sourceComponent: Component {
+            MainTimeline {
+                id: timelineView
+                objectName: "timelineView"
+                transientParent: workspace.hostWindow
+                hostWindow: workspace.hostWindow
+                hostController: workspace.hostController
+                hostTimelineController: typeof timelineController !== "undefined"
+                    ? timelineController : null
+                hostToolbar: workspace.hostRefs.toolbar
+                hostSlideshow: workspace.exportSlideshow
+            }
+        }
     }
 
     // #985: a dokumentum-fülsáv (#944) a tartalomterület TETEJÉN, az
@@ -284,7 +334,7 @@ Item {
         hostWindow: workspace.hostWindow
         hostController: workspace.hostController
         hostToolbar: hostRefs.toolbar
-        hostPhotoViewer: photoViewer
+        hostPhotoViewer: workspace.exportPhotoViewer
         hostMainSplit: mainSplit
         hostMainLibraryCanvas: mainLibraryCanvas
         hostMainDialogs: hostRefs.mainDialogs

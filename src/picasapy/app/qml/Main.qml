@@ -81,7 +81,7 @@ ApplicationWindow {
     // `implicitHeight`-jét már kiszámolta, de a garanciát egy
     // `Layout.minimumHeight`-re bízta, amit semmi nem érvényesít az ablak
     // szintjén — ez az a hely, ahol érvényesíteni kell.
-    minimumHeight: photoViewer.requiredHeight
+    minimumHeight: (photoViewer ? photoViewer.requiredHeight : 0)
                    + (window.menuBar ? window.menuBar.height : 0)
     // #1367: az ablak nem mehet olyan keskenyre, hogy az alsó
     // műveletsáv kilógjon — a #1345 fix gombcellái óta a sáv nem
@@ -285,6 +285,12 @@ ApplicationWindow {
     function ureseidAFiokot() { mainWindowLibraryActions.ureseidAFiokot() }
     function fokuszAKeresore() { mainWindowLibraryActions.fokuszAKeresore() }
     function openPhotoViewer(row) { mainWindowLibraryActions.openPhotoViewer(row) }
+    function ensurePhotoViewer() { return mainWindowWorkspace.ensurePhotoViewer() }
+    function ensureSlideshow() { return mainWindowWorkspace.ensureSlideshow() }
+    function ensureTimelineView() { return mainWindowWorkspace.ensureTimelineView() }
+    function ensurePhotoContextMenu() {
+        return mainWindowPeripheralLayers.ensurePhotoContextMenu()
+    }
     function startQuickViewer() { mainWindowLibraryActions.startQuickViewer() }
     function nezdEsSzerkeszd() { mainWindowLibraryActions.nezdEsSzerkeszd() }
     function hideSelection() { mainWindowLibraryActions.hideSelection() }
@@ -317,7 +323,8 @@ ApplicationWindow {
     Connections {
         target: photoViewer
         function onPeopleOpenChanged() {
-            if (photoViewer.peopleOpen) window.unnamedFaceRevision++
+            if (photoViewer && photoViewer.peopleOpen)
+                window.unnamedFaceRevision++
         }
     }
     // a kijelölt képek közül a futó keresés által még nem ellenőrzöttek
@@ -418,7 +425,10 @@ ApplicationWindow {
     function addTagToRows(rowList, keyword) { mainLibrarySelectionState.addTagToRows(rowList, keyword) }
     function selectedPaths() { return mainLibrarySelectionState.selectedPaths() }
     function resetFacesForPaths(paths) { mainLibrarySelectionState.resetFacesForPaths(paths) }
-    function openPhotoContextMenu(index, item, x, y) { mainLibrarySelectionState.openPhotoContextMenu(index, item, x, y) }
+    function openPhotoContextMenu(index, item, x, y) {
+        window.ensurePhotoContextMenu()
+        mainLibrarySelectionState.openPhotoContextMenu(index, item, x, y)
+    }
     function splitFolderHere() { mainLibrarySelectionState.splitFolderHere() }
     function handleThumbClick(index, modifiers) { mainLibrarySelectionState.handleThumbClick(index, modifiers) }
     function _folderOfRow(row) { return mainLibrarySelectionState._folderOfRow(row) }
@@ -507,7 +517,7 @@ ApplicationWindow {
     // engedélyezett marad — enélkül a felhasználó egy képet néz, és a
     // RÁCS kijelölése menne nyomtatásra.
     function printTargetRows() {
-        if (slideshow.visible)
+        if (slideshow && slideshow.visible)
             return slideshow.currentIndex >= 0 ? [slideshow.currentIndex] : []
         if (window.viewerOpen)
             return window.photoActionRows()
