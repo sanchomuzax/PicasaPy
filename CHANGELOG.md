@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.70] - 2026-11-08
+
+- SQLite-verzió a naplóban (#6518), F8/F9 és billentyűút (#6531), Időrend billentyűútja (#6531).
+- SQLite-verzió a naplóban (#6518), F8/F9 és billentyűút (#6531), Időrend billentyűútja (#6532).
+- Az indulási napló kiírja a betöltött SQLite-verziót, és figyelmeztet, ha az régebbi a 3.51.3-nál, amelyben egy ismert hiba az arckeresés indexét is sértheti (#6518).
+
 ## [1.0.69] - 2026-11-08
 
 - Ha mozgatáskor néhány képet nem sikerül áthelyezni (például mert a OneDrive épp zárolja), azok a régi mappában maradnak és ott látszanak is; a program egyszer újrapróbálja, és fájlonként megmutatja a hiba okát (#6658).
