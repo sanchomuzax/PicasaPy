@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.72] - 2026-11-08
+
+- Kilenc Ctrl-ág funkciója a binárisból (#6660), egyszűrős pótmérés feladása (#6660).
+- Kilenc Ctrl-ág funkciója a binárisból (#6660), egyszűrős pótmérés feladása (#6585).
 ## [1.0.71] - 2026-11-08
 
 - Szűrőláncok differenciális besorolása (#6585), Időrend dátumskála a binárisból (#6532).
