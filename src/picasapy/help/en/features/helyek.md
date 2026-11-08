@@ -5,7 +5,8 @@ one to the file automatically; you can add one to other photos yourself.
 
 ## The Places panel
 
-Open **View** ▸ **Places**, or use the Places button in the photo tray.
+Open **View** ▸ **Places**, use the Places button in the photo tray, or
+press `Ctrl+Shift+G` in the library.
 The map shows markers for photos with a location, and the number of
 located photos appears above it.
 

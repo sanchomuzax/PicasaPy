@@ -9,8 +9,8 @@ Two general rules from the original Picasa apply:
   for example, search, rename, or a caption - the key belongs to that field.
   `Ctrl+A` selects the field's text, the arrow keys move within it, and
   `Enter` or `Esc` acts on the field.
-- Library shortcuts work in the library. `Ctrl+A`, `Ctrl+D`, `Ctrl+I`, and
-  `Ctrl+H` do nothing while you are in the enlarged viewer; the viewer has
+- Library shortcuts work in the library. `Ctrl+A`, `Ctrl+D`, `Ctrl+I`,
+  `Ctrl+H`, `Ctrl+8`, and `Ctrl+Shift+G` do nothing while you are in the enlarged viewer; the viewer has
   its own shortcuts.
 
 ## File
@@ -72,11 +72,13 @@ select photos with a lasso.
 | `Ctrl+5` | Timeline: a full-screen presentation of your folders. See [Viewing photos](nezegetes.md). |
 | `Ctrl+T` | Open or close the Tags panel |
 | `Ctrl+K` | Open the Tags panel, same as `Ctrl+T` |
+| `Ctrl+Shift+G` | Open the **Places** panel - see [Places and geotags](helyek.md). Library only. |
 | `Ctrl+0` | Show or hide the right-hand panel |
 | `Ctrl+3` | Open the selected photo in the viewer |
 | `Ctrl+F` | Move focus to the search field |
 | `F3` | Move focus to the search field, same as `Ctrl+F`; it does not work in the viewer |
 | `F4` | Add or remove a star on the selected photos, like the star button in the Photo Tray. It also works in the viewer, but not during a slideshow or while typing. |
+| `Ctrl+8` | Add or remove a star on the selected photos, like `F4`. Library only, not in the viewer. |
 | `Ctrl+F6` | Switch to the duplicate view |
 | `Ctrl+F7` | **Find Similar Pictures** |
 | `Ctrl+F8` | Clear the similarity sample |

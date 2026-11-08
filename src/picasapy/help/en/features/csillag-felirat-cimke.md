@@ -22,6 +22,8 @@ ways:
   in the selection.
 - Press `F4` to do the same thing, either in the library or in the
   viewer. If the tray button is disabled, F4 will do nothing too.
+- In the library, `Ctrl+8` does the same (it does not work in the
+  viewer).
 - During a slideshow, use the star control on the toolbar.
 
 The **Starred Photos** album in the left pane gathers starred pictures,

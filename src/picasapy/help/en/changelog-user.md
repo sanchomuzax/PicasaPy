@@ -2,6 +2,31 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-08
+
+### Keyboard shortcuts
+
+- In the library, `Ctrl+8` adds or removes a star on the selected photos,
+  and `Ctrl+Shift+G` opens the **Places** panel, as in the original
+  Picasa. See [Keyboard shortcuts](features/billentyuk.md).
+
+### Import
+
+- When you drop a folder or photo onto the window, the folder is
+  selected and the grid jumps to its photos. Dropping a folder that is
+  already in the library re-reads it from disk. See
+  [Import](features/importalas.md).
+- **Import from Picasa...** finds the old Picasa data folder by itself,
+  on Windows too, and fills it in. The path-rewriting fields are gone; on
+  Windows, folders now come across without rewriting (before, none did).
+
+### File operations
+
+- If some photos cannot be moved (for example, because OneDrive has them
+  locked), PicasaPy tries once more, lists the reason for each file at
+  the end, and the photos left behind are shown in the old folder. See
+  [File operations](features/fajlmuveletek.md).
+
 ## 2026-11-07
 
 ### Timeline

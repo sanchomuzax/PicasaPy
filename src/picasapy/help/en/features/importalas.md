@@ -110,7 +110,13 @@ can add a watched folder.
 ## Drag and drop
 
 You can drag photos or folders directly onto the application window.
-PicasaPy adds them and shows progress.
+PicasaPy adds them and shows progress. The dropped folder (for a photo,
+its folder) is selected in the left pane, and the grid jumps to its
+photos as soon as they are loaded.
+
+If you drop a folder that is already in the library, PicasaPy re-reads
+it from disk: anything added since appears, and anything that is gone
+is removed from the view.
 
 ## Transfer watched folders from Picasa
 
@@ -160,18 +166,17 @@ password” in [The library](konyvtar.md).
 
 If no old Picasa data is found on the computer, the dialog reports it.
 
-### Choose a Picasa data folder manually
+### The Picasa2 data folder
 
-By default, leave the Picasa2 data-folder field empty and PicasaPy
-searches for the data itself. If the data is elsewhere - for example,
-in a copied `Picasa2` folder or on a Windows drive accessed from Linux
- - enter or browse to that folder.
+PicasaPy looks for your old Picasa data itself, on Windows and on Linux.
+When it finds it, it fills in the **Picasa2 data folder** field as the
+dialog opens, so usually you only need to start the import. If the data
+is elsewhere (for example, in a `Picasa2` folder copied from an old
+computer), type the folder in the field or choose it with **Browse...**.
+If the field is empty, PicasaPy uses the installations it detected.
 
-Because Picasa stored Windows paths, also map the old paths to the
-photos' current location:
-
-- Enter the Windows path prefix Picasa used, such as `C:/Pictures`.
-- Enter the matching local folder, such as `/home/user/Pictures`.
-
-Both mapping fields are required when you choose a data folder
-manually. The dialog reports an error if either one is empty.
+You do not need to rewrite any paths: on Windows, PicasaPy uses the
+paths stored by the old Picasa as they are. If the photos have since
+moved away from where the old Picasa knew them, PicasaPy cannot find
+them, and the summary at the end shows this (for example, 0 folders
+updated).

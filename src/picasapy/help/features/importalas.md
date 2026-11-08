@@ -130,7 +130,13 @@ hibára fut, az ablak megmondja.
 ## Húzd-és-ejtsd
 
 Képeket vagy mappákat közvetlenül az ablakra is húzhatsz. A program
-átveszi őket, és jelzi a haladást.
+átveszi őket, és jelzi a haladást. A behúzott mappa (képnél a kép
+mappája) a bal hasábon kijelölődik, és a rács a képeihez ugrik, amint
+betöltődtek.
+
+Ha olyan mappát húzol be, amely már szerepel a könyvtárban, a program
+újraolvassa a lemezről: ami azóta odakerült, megjelenik, ami eltűnt,
+kikerül a nézetből.
 
 ## Átvétel a Picasából
 
@@ -195,22 +201,18 @@ adtál meg saját jelszót. A sajátodat nem írja felül. A jelszóról
 Ha a program nem talál régi Picasa-adatot a gépen, ezt írja ki: „Nem
 találtunk Picasa-adatokat ezen a gépen."
 
-### Kézzel megadott Picasa-adatmappa
+### A Picasa2-adatmappa
 
-Alapból a program maga keresi meg a gépen a régi Picasa adatait — ehhez
-hagyd üresen a **Picasa2-adatmappa** mezőt. Ha az adatok máshol vannak
-(például egy régi gépről átmásolt `Picasa2` mappában, vagy Linuxon egy
-windowsos lemezen), a mezőbe írd be, vagy a **Tallózás…** gombbal
-válaszd ki a mappát.
+A program maga keresi meg a gépen a régi Picasa adatait, Windowson és
+Linuxon is. Amit talál, azt az ablak megnyitásakor beírja a
+**Picasa2-adatmappa** mezőbe, így általában csak az **Importálás**
+gombot kell megnyomnod. Ha az adatok máshol vannak (például egy régi
+gépről átmásolt `Picasa2` mappában), a mezőbe írd be, vagy a
+**Tallózás…** gombbal válaszd ki a mappát. Ha a mező üres, a program a
+felismert telepítéseket használja.
 
-Ilyenkor a program azt is tudni akarja, hol vannak most a képek, mert a
-régi Picasa windowsos útvonalakat tárolt. Ezt a **meghajtó-leképezés**
-két mezőjében adod meg:
-
-- **Windows-útvonal előtagja** — ahogy a régi Picasa ismerte a képek
-  helyét, például `C:/Pictures`;
-- **A megfelelő helyi mappa** — ahol ugyanezek a képek most vannak,
-  például `/home/felhasználó/Képek`.
-
-Kézi adatmappánál **mindkét mezőt** ki kell tölteni; ha valamelyik üres,
-az ablak szól: „Adja meg a meghajtó-leképezés mindkét útvonalát."
+Útvonalat átírni nem kell: Windowson a régi Picasa által tárolt
+útvonalakat változatlanul használja. Ha viszont a képek azóta máshová
+kerültek, mint ahol a régi Picasa ismerte őket, a program nem találja
+meg őket, és ezt a végén a jelentés is mutatja (például „0 mappa
+frissült").
