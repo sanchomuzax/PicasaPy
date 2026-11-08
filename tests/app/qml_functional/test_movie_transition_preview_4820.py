@@ -668,7 +668,9 @@ def test_a_futo_elonezet_megallitas_nelkul_tobb_keveredo_kockat_mutat(
         dialog.setProperty("movieClipSources", sources)
         dialog.setProperty("previewSource", sources[0])
         _elem(window, "movieSeconds").setProperty("value", 20)
-        _elem(window, "movieOverlapSlider").setProperty("value", 0.4)
+        # #6703: 0,4 s-os átfedésnél lassú gépen a kockák az átmenet két végére
+        # estek (keveredés nélkül); 1,5 s alatt a közepéről is jut kocka.
+        _elem(window, "movieOverlapSlider").setProperty("value", 1.5)
         _select_transition(window, qt_app, "dissolve")
         qt_app.processEvents()
         controller.movieTransitionPreviewReady.connect(collect)
