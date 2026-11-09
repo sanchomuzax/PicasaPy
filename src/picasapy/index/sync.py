@@ -15,9 +15,11 @@ import re
 import sqlite3
 import stat as stat_module
 import time
+from contextlib import contextmanager
+from contextvars import ContextVar
 from collections.abc import Callable, Collection
 from pathlib import Path
-from typing import NamedTuple
+from typing import Iterator, NamedTuple
 
 from picasapy.halozati_ut import elerheto
 from picasapy.index.queries import HIDDEN_INI_PENDING
@@ -148,6 +150,28 @@ _SCAN_STATE_DDL = (
 )
 
 logger = logging.getLogger(__name__)
+
+_ALBUM_PRUNE_DEFERRED: ContextVar[bool] = ContextVar(
+    "picasapy_album_prune_deferred", default=False
+)
+
+
+@contextmanager
+def _defer_album_pruning(conn: sqlite3.Connection) -> Iterator[None]:
+    """A célzott mappaszinkronok árvatakarítását a teljes adag végére tolja."""
+    if _ALBUM_PRUNE_DEFERRED.get():
+        yield
+        return
+    token = _ALBUM_PRUNE_DEFERRED.set(True)
+    try:
+        yield
+    except BaseException:
+        raise
+    else:
+        _prune_albums(conn)
+        conn.commit()
+    finally:
+        _ALBUM_PRUNE_DEFERRED.reset(token)
 
 # #209: streamelt sync — mappánkénti haladás-jelzés. Paraméterek:
 # (mappa útvonala, kész mappák száma, összes ismert mappa, az eddig talált
@@ -321,8 +345,10 @@ def sync_tree(
     # Az albumhivatkozások csak azután árvaszűrhetők, hogy a teljes fa összes
     # definíciója beolvasódott. Mappánkénti törlésnél a bejárási sorrend
     # eltüntetné azokat a más mappában lévő tagságokat, amelyek definíciója
-    # csak egy később feldolgozott mappában található (#6599).
-    _prune_albums(conn)
+    # csak egy később feldolgozott mappában található (#6599). A dirty-worker
+    # külső adagja ezt a takarítást a batch végére halasztja.
+    if not _ALBUM_PRUNE_DEFERRED.get():
+        _prune_albums(conn)
     conn.commit()
 
 
@@ -458,7 +484,8 @@ def sync_folder(
         folder_result = _sync_folder(conn, scan)
         if (scan.files or scan.has_ini) and not folder_result.retry:
             _store_scan_state(conn, scan, filetype_signature)
-    # Az egyetlen mappa teljes adatát már frissítettük; a globális album-
-    # definíciók alapján most már biztonságos kivezetni az árva hivatkozásokat.
-    _prune_albums(conn)
+    # Az egyetlen mappa teljes adatát már frissítettük; adagban a globális
+    # albumdefiníciók takarítását a hívó a teljes adag végéig halasztja.
+    if not _ALBUM_PRUNE_DEFERRED.get():
+        _prune_albums(conn)
     conn.commit()

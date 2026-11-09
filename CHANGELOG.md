@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.90] - 2026-11-09
+
+- A könyvtárak szinkronja kevesebb háttértár-művelettel és alacsonyabb háttérprioritással fut (#6698).
+
 ## [1.0.89] - 2026-11-09
 
 - Gyorsabban számol a Holga-szerű, a Lágy fókusz, a Ceruzarajz, a Ragyogás, a Képpontnagyítás, a Filmszemcse és az Árnyékvetés effekt, az előnézetben és exportnál is (#6687).
