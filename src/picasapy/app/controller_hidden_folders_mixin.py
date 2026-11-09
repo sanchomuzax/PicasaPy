@@ -311,6 +311,8 @@ class HiddenFoldersMixin:
         if show == self.showOnlyBigImages:
             return
         self._get_settings().setValue(SHOW_ONLY_BIG_IMAGES_KEY, show)
+        # #6751: a bal sáv darabszáma és mappái is a szűrőt követik
+        self._reload_folders()
         self._refresh_view()
         self.statusChanged.emit()
 

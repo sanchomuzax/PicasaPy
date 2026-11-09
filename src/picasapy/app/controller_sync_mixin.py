@@ -157,7 +157,8 @@ class AppControllerSyncMixin:
         # felvillanást okozna — a _refresh_view frissíti a szűkítettet.
         if mode not in ("search", "search-folder"):
             with open_index(self._db_path) as conn:
-                self._folders.load(conn)  # #321: a fa sorrendje rögzített
+                # #321: a fa sorrendje rögzített; #6751: a kis képek szűrője itt is
+                self._folders.load(conn, kis_kepek_rejtve=self.showOnlyBigImages)
                 self._load_albums(conn)  # #9: a bal hasáb albumlistája
                 # #26 (Emberek) + #1029 (Projektek): mindkettő a `.picasa.ini`-kből
                 # él, ezért EGY söprésből áll elő (#1601). Induláskor pedig
