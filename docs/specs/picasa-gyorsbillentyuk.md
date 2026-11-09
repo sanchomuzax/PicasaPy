@@ -2696,12 +2696,12 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
 | kb-1 | `ctrl+1` | kis bélyegképes nézetre váltott a rács (693 315 px diff) | kattintja a `thumbui/smallthumbs` elemet | egyezik |
 | kb-1 | `ctrl+2` | semmi sem változott (a bélyegképek kicsik maradtak, 0 px diff) | kattintja a `thumbui/largethumbs` elemet | eltér (nem állította vissza a nagy méretet) |
 | kb-1 | `ctrl+5` | teljes képernyős Időrend (Timeline / `qshow`) nézet nyílt meg | `0x005696c0` őr után `(1, panel)` Időrend indítása | egyezik (ablak beragadt) |
-| kb-1 | `ctrl+6` | nem dönthető el (a beragadt `qshow` ablak miatt) | `timeslicer` (`SliceUI`), `AdvancedFeatures` hiányában inaktív | nem dönthető el |
-| kb-1 | `ctrl+8` | nem dönthető el (a beragadt `qshow` ablak miatt) | kijelölt kép csillagozása (`0x005e81e0`) | nem dönthető el |
-| kb-1 | `ctrl+9` | nem dönthető el (a beragadt `qshow` ablak miatt) | `editpanel/toggle_left_drawer` (könyvtárban inaktív) | nem dönthető el |
-| kb-1 | `ctrl+a` | nem dönthető el (a beragadt `qshow` ablak miatt) | összes kijelölése (`0x005e5070`) | nem dönthető el |
-| kb-1 | `ctrl+shift+b` | nem dönthető el (a beragadt `qshow` ablak miatt) | fekete-fehér effekt (`0x005fe370`) | nem dönthető el |
-| kb-1 | `ctrl+c` | nem dönthető el (a beragadt `qshow` ablak miatt) | másolás vágólapra (`0x005fe9f0`) | nem dönthető el |
+| kb-6 | `ctrl+6` | semmi sem változott (0 px diff; picasa-colab-jobs #456, 07. kép) | `timeslicer` (`SliceUI`), `AdvancedFeatures` hiányában inaktív | egyezik (inaktív funkció) |
+| kb-6 | `ctrl+8` | semmi sem változott (0 px diff; nem csillagoz; picasa-colab-jobs #456, 10. kép) | kijelölt kép csillagozása (`0x005e81e0`) | eltér (könyvtárnézetben nem csillagoz; az F4 kezeli) |
+| kb-6 | `ctrl+9` | semmi sem változott (0 px diff; picasa-colab-jobs #456, 13. kép) | `editpanel/toggle_left_drawer` (könyvtárban inaktív) | egyezik (`0x00579330` őr miatt inaktív) |
+| kb-6 | `ctrl+a` | semmi sem változott (0 px diff; picasa-colab-jobs #456, 16. kép) | összes kijelölése (`0x005e5070`) | eltér (`0x00579330` őr miatt könyvtárban inaktív) |
+| kb-6 | `ctrl+shift+b` | fekete-fehér effekt lefutott a képre és a tálcára (22 665 px diff; picasa-colab-jobs #456, 19. kép) | fekete-fehér effekt (`0x005fe370`) | egyezik |
+| kb-6 | `ctrl+c` | semmi sem változott (0 px diff; vágólapra másolás; picasa-colab-jobs #456, 22. kép) | másolás vágólapra (`0x005fe9f0`) | egyezik (nincs felületi változás) |
 | kb-2 | `ctrl+x` | a kijelölési tálcán (Selection Tray) az állapotjelző jelvény megváltozott (96 px diff) | kivágás vágólapra (`0x005fe9f0`) | egyezik |
 | kb-2 | `ctrl+d` | semmi sem változott (a kijelölés megmaradt, 0 px diff) | kijelölés megszüntetése (`0x005e5310`) | eltér (a kijelölést nem szüntette meg) |
 | kb-2 | `ctrl+shift+e` | automatikus színkorrekció ("Jó napom van") lefutott a képre (22 587 px diff) | `0x005fe370(panel, "enhance")` | egyezik |
@@ -2710,20 +2710,20 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
 | kb-2 | `ctrl+alt+g` | semmi sem változott (0 px diff) | Shift nélkül nincs művelet | egyezik |
 | kb-2 | `ctrl+shift+g` | "Warning" párbeszéd nyílt: Google Earth nincs telepítve (Escape bezárta) | Google Earth geotag parancs (`0x00600580`) ellenőrzéssel | egyezik |
 | kb-2 | `ctrl+alt+shift+g` | `ginormous.jpg` kontaktkép megnyílt külső képnézőben ('foo' ablak) | `ginormous.jpg` kontaktkép készítése és megnyitása (`0x0057b050`) | egyezik (ablak beragadt) |
-| kb-2 | `ctrl+shift+h` | nem dönthető el (a beragadt 'foo' ablak miatt) | vízszintes tükrözés (`0x005eef30(panel, 2)`) | nem dönthető el |
-| kb-2 | `ctrl+i` | nem dönthető el (a beragadt 'foo' ablak miatt) | kijelölés megfordítása (`0x005e5370`) | nem dönthető el |
-| kb-2 | `ctrl+k` | nem dönthető el (a beragadt 'foo' ablak miatt) | Címkék (Tags) fiók nyitása (`0x0065ab00`) | nem dönthető el |
+| kb-6 | `ctrl+shift+h` | vízszintes tükrözés lefutott a képre és a tálcára (21 766 px diff; picasa-colab-jobs #456, 25. kép) | vízszintes tükrözés (`0x005eef30(panel, 2)`) | egyezik |
+| kb-6 | `ctrl+i` | semmi sem változott (0 px diff; picasa-colab-jobs #456, 28. kép) | kijelölés megfordítása (`0x005e5370`) | eltér (`0x00579330` őr miatt könyvtárban inaktív) |
+| kb-6 | `ctrl+k` | Címkék (Tags) fiók megnyílt a jobb oldalon (661 173 px diff; picasa-colab-jobs #456, 31. kép) | Címkék (Tags) fiók nyitása (`0x0065ab00`) | egyezik (fiók megnyílt, nyitva maradt) |
 | kb-3 | `ctrl+t` | Címkék (Tags) fiók megnyílt a jobb oldalon (661 278 px diff) | Címkék (Tags) fiók nyitása (`0x0065ab00`) | egyezik (fiók beragadt) |
 | kb-3 | `ctrl+shift+l` | semmi sem változott (0 px diff) | webszerver indítás és böngésző megnyitás (`0x004cce10`) | eltér (Wine alatt nem indult el böngésző) |
 | kb-3 | `ctrl+m` | semmi sem változott (0 px diff) | Import párbeszéd megnyitása (`0x005d3010`) | eltér (nem nyílt meg Import ablak) |
 | kb-3 | `ctrl+n` | semmi sem változott (0 px diff) | új album párbeszéd (`thumbui/newalbum`) | eltér (nem nyílt meg új album ablak) |
 | kb-3 | `ctrl+shift+o` | külső néző (`Wine Internet Explorer`) nyílt meg a kép URL-jével | kép megnyitása rendszer-megnyitóval (`0x005c80e0`) | egyezik (ablak beragadt) |
-| kb-3 | `ctrl+p` | nem dönthető el (a beragadt külső böngészőablak miatt) | nyomtatási párbeszéd (`0x005e6428`) | nem dönthető el |
-| kb-3 | `ctrl+shift+p` | nem dönthető el (a beragadt külső böngészőablak miatt) | indexkép-nyomtatási párbeszéd (`0x005e6428`) | nem dönthető el |
-| kb-3 | `ctrl+r` | nem dönthető el (a beragadt külső böngészőablak miatt) | kép forgatása jobbra (`0x005e633e`) | nem dönthető el |
-| kb-3 | `ctrl+shift+r` | nem dönthető el (a beragadt külső böngészőablak miatt) | kép forgatása balra (`0x005e633e`) | nem dönthető el |
-| kb-3 | `ctrl+s` | nem dönthető el (a beragadt külső böngészőablak miatt) | kép mentése lemezre (`0x005e64b4`) | nem dönthető el |
-| kb-3 | `ctrl+alt+s` | nem dönthető el (a beragadt külső böngészőablak miatt) | adatbázis-mentés (`0x00577a60`) | nem dönthető el |
+| kb-7 | `ctrl+p` | nyomtatási nézet megnyílt a felületen (1 119 286 px diff, Escape bezárta; picasa-colab-jobs #457, 13. kép) | nyomtatási párbeszéd (`0x005e6428`) | egyezik |
+| kb-7 | `ctrl+shift+p` | kontaktlap-nyomtatási nézet megnyílt (1 117 101 px diff, Escape bezárta; picasa-colab-jobs #457, 17. kép) | indexkép-nyomtatási párbeszéd (`0x005e6428`) | egyezik |
+| kb-6 | `ctrl+r` | kép jobbra forgatása (90 fok CW) lefutott a képre (21 821 px diff; picasa-colab-jobs #456, 34. kép) | kép forgatása jobbra (`0x005e633e`) | egyezik |
+| kb-6 | `ctrl+shift+r` | semmi sem változott (0 px diff; kép nem forgott; picasa-colab-jobs #456, 37. kép) | kép forgatása balra (`0x005e633e`) | eltér (könyvtárnézetben a Ctrl+Shift+R nem forgat balra) |
+| kb-7 | `ctrl+s` | semmi sem változott (0 px diff; mentetlen változás hiányában; picasa-colab-jobs #457, 07. kép) | kép mentése lemezre (`0x005e64b4`) | egyezik (módosítatlan képnél nincs látható változás) |
+| kb-7 | `ctrl+alt+s` | semmi sem változott (0 px diff; háttérbeli DB-mentés a `#db3` alá; picasa-colab-jobs #457, 10. kép) | adatbázis-mentés (`0x00577a60`) | egyezik (háttérbeli művelet, képernyőn nem látható) |
 | kb-4 | `ctrl+shift+u` | semmi sem változott (0 px diff) | bélyegképtár újraindítása (`0x0047ca60`, belső cache) | egyezik |
 | kb-4 | `ctrl+shift+v` | semmi sem változott (0 px diff) | függőleges tükrözés (`0x005eef30(panel, 1)`) | eltér (nem tükrözte a képet a könyvtárban) |
 | kb-4 | `ctrl+shift+y` | plüssmaci húsvéti tojás (`overlays/egg`) megjelent alul jobb szélen (7 653 px diff) | `overlays/egg` betöltése és aktiválása (`0x005e5ec0`) | egyezik (terület igazolva) |
@@ -2751,6 +2751,7 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
    - **kb-2 ('foo' / külső képnéző):** a `Ctrl+Alt+Shift+G` előállította és külső alkalmazásban megnyitotta a `ginormous.jpg` kontaktképet (`win: ['Picasa 3', 'foo']`). A külső nézegetőablak a 29. lépésbeli `Escape`-re nyitva maradt, így a `Ctrl+Shift+H`, `Ctrl+I`, `Ctrl+K` billentyűk könyvtárnézeti hatása nem dönthető el.
    - **kb-3 (`Wine Internet Explorer`):** a `Ctrl+Shift+O` a rendszer alapértelmezett képmegnyitójával (`Wine Internet Explorer`) nyitotta meg a kijelölt képet. A külső böngésző nem zárt be az `Escape`-re, ezért a `Ctrl+P`, `Ctrl+Shift+P`, `Ctrl+R`, `Ctrl+Shift+R`, `Ctrl+S`, `Ctrl+Alt+S` billentyűk alatta futottak le, könyvtári hatásuk nem dönthető el.
    - **kb-3 (Tags fiók):** a `Ctrl+T` kinyitotta a jobb oldali Címkék (Tags) fiókot. Az `Escape` leütése csak a szövegmező fókuszát vette el, de magát a fiókot nem csukta be.
+   - **kb-6 és kb-7 (picasa-colab-jobs #456 és #457, 2026-11-09):** a korábban beragadt ablakok miatt eldönthetetlen 15 billentyű újramérése tiszta indulással, az ablakot nyitó billentyűket a sor végére hagyva sikeresen lezajlott. Ezzel a könyvtárnézet mind az 52 gyorsbillentyűjének eredeti futásidejű viselkedése ismertté vált.
 
 2. **A specifikáció pontosítására és javítására szoruló pontok:**
    - **`F11` (könyvtárnézet):** a korábbi §12 táblázat és a `tests/app/qml_functional/test_viewer_fullscreen_4569.py` teszt abból az elméleti feltevésből indult ki, hogy az `F11` a könyvtárnézetben nem vált teljes képernyőre. A picasa-colab-jobs #451 mérése (kb-5, 25. kép) ezt **megcáfolta**: az eredeti Picasában az `F11` hatására eltűnik a Windows ablakkeret és címsor, és a könyvtárnézet keret nélküli teljes képernyős (borderless fullscreen) megjelenítésre vált. A specifikáció §12 sorát és a PicasaPy elvárt működését javítani kell.
@@ -2761,3 +2762,11 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
    - **`Ctrl+D` (kijelölés):** a specifikáció szerint a `0x005e5310` hívás törölné a kijelölést; az eredeti felületen egy kijelölt bélyegkép mellett leütve a kijelölés nem szűnt meg (kb-2, 10. kép).
    - **`Ctrl+Shift+V` (tükrözés):** a `0x005eef30(panel, 1)` ág könyvtárnézetben nem tükrözte a kijelölt képet (kb-4, 10. kép).
    - **Párbeszédpanelek megjelenése:** a `Ctrl+Shift+G` által kiváltott "Warning" dialógus ("In order to use the geotagging features in Picasa, you will need to install Google Earth. Click 'Learn More...' to go to the Google Earth home page.", Learn More... / Cancel gombok) és az `F2` "Rename Files" párbeszédpanelje ("Please enter a new name for these files:", fájlnévmező, "Include in filename: Date, Image resolution", "Example:") lépésenkénti képpel és OCR-rel ellenőrzött.
+   - **`Ctrl+Shift+B` (fekete-fehér):** a könyvtárnézetben a kijelölt képre és a képtálcára is azonnal alkalmazza a fekete-fehér effekttel való átalakítást (kb-6, 19. kép, 22 665 px diff, a színszórás 16,12-ről 1,50-re esett).
+   - **`Ctrl+Shift+H` (vízszintes tükrözés):** a könyvtárnézetben a kijelölt képet és a tálcát vízszintesen tükrözi (kb-6, 25. kép, 21 766 px diff, a tükrözött képtől 0,10 px az eltérés; szemben a `Ctrl+Shift+V`-vel, ami inaktív marad).
+   - **`Ctrl+R` és `Ctrl+Shift+R` (forgatás):** a `Ctrl+R` a rácsban és a tálcán 90 fokkal jobbra (óramutató járásával megegyezően) forgatja a kijelölt képet (kb-6, 34. kép, 21 821 px diff, a 90 fokkal forgatott képtől 2,43 px az eltérés). A `Ctrl+Shift+R` ezzel szemben a könyvtárnézetben nem hajt végre balra forgatást (kb-6, 37. kép, 0 px diff).
+   - **`Ctrl+P` és `Ctrl+Shift+P` (nyomtatási felületek):** mindkét billentyű a főablak felületén vált teljes méretű belső nyomtatási nézetre (kb-7, 13. kép 1 119 286 px diff a sima nyomtatásnál, illetve 17. kép 1 117 101 px diff az indexkép/Contact sheet nyomtatásnál). A megnyílt nyomtatási nézetet az `Escape` billentyű azonnal és tisztán bezárja (0 px diff a kiinduláshoz képest).
+   - **`Ctrl+8` (csillagozás):** a könyvtárnézetben a `Ctrl+8` nem módosítja a kijelölt kép csillagozási állapotát (kb-6, 10. kép, 0 px diff); a csillagozás gyorsbillentyűje a könyvtárban az `F4`.
+   - **`Ctrl+A` és `Ctrl+I` (kijelölés):** a könyvtárnézeti kezelőben a `0x00579330` szerkesztő-előnézeti őr mögött találhatók, így a könyvtár rácsában mindkettő inaktív marad (kb-6, 16. kép és 28. kép, 0 px diff, a kijelölés nem változik; hasonlóan a `Ctrl+D`-hez).
+   - **`Ctrl+K` (Címkék fiók):** a `Ctrl+T`-hez hasonlóan kinyitja a jobb oldali Címkék (Tags) fiókot (kb-6, 31. kép, 661 173 px diff), és az `Escape` ennél sem zárja be a fiókot, csupán a szövegmező fókuszát veszi el.
+   - **`Ctrl+C`, `Ctrl+S`, `Ctrl+Alt+S`:** a `Ctrl+C` (vágólapra másolás), a `Ctrl+S` (mentetlen változás hiányában nincs lemezmentés) és a `Ctrl+Alt+S` (háttérbeli adatbázis-mentés a `#db3` alá) a felületen 0 px diff-et eredményez, képi változást nem okoz.
