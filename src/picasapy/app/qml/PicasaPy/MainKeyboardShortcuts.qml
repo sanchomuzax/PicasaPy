@@ -383,7 +383,8 @@ Item {
         objectName: "viewerFullscreenShortcut"
         sequence: "F11"
         property int libraryVisibilityBeforeFullscreen: Window.Windowed
-        enabled: !hostSlideshow.visible && !hostWindow.timelineOpen
+        enabled: !hostWindow._szovegmezoneVanFokusz && !hostSlideshow.visible
+                 && !hostWindow.timelineOpen
         onActivated: {
             if (hostWindow.viewerOpen) {
                 hostWindow.toggleViewerFullscreen()
