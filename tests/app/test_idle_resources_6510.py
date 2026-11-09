@@ -61,7 +61,5 @@ def test_az_or_felismeri_a_futo_ismetlodo_qtimert(qml_app):
 def test_a_szurt_belyegkep_memoriakerete_legfeljebb_16_mib():
     from picasapy.app.thumbnail_provider_constants import _FILTERED_MEMO_CAPACITY
 
-    # A QImage legfeljebb 256 × 256 × 4 bájt, egy méretű bejegyzésre számolva.
-    memoria = _FILTERED_MEMO_CAPACITY * 256 * 256 * 4
-
-    assert memoria <= 16 * 1024**2
+    # A korlát bájtban számol; a bélyegkép mérete és a DPR nem skálázza.
+    assert _FILTERED_MEMO_CAPACITY == 16 * 1024**2

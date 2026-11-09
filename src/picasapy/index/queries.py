@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -55,7 +56,7 @@ def _select(
     )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PhotoRecord:
     id: int
     folder_path: str
@@ -546,7 +547,7 @@ def _records(rows: sqlite3.Cursor) -> tuple[PhotoRecord, ...]:
     return tuple(
         PhotoRecord(
             id=row["id"],
-            folder_path=row["folder_path"],
+            folder_path=sys.intern(row["folder_path"]),
             name=row["name"],
             kind=row["kind"],
             size=row["size"],
