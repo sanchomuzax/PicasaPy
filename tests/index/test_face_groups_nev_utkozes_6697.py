@@ -16,5 +16,5 @@ def test_almodul_import_utan_is_fuggveny():
         "from picasapy.index import face_groups\n"
         "assert callable(face_groups)\n"
     ) % _SRC
-    r = subprocess.run([sys.executable, "-c", kod], capture_output=True, text=True, check=False)
+    r = subprocess.run([sys.executable, "-c", kod], capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
     assert r.returncode == 0, r.stderr
