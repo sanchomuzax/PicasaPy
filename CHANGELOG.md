@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.84] - 2026-11-09
+
+- A diavetítésből megnyitott Időrend háttérképe megbízhatóan töltődik be, a felület nem akad meg (#6735).
+
 ## [1.0.83] - 2026-11-09
 
 - A main két piros tesztje: figyelőindulás bevárása és stabil rácsszivárgás-mérés (#4073).
