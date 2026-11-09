@@ -112,6 +112,7 @@ from .platform_storage import (
 )
 from .startup_status import StartupStatus as StartupStatus
 from .startup_maintenance import StartupMaintenance as StartupMaintenance, StartupMaintenanceStep
+from .startup_maintenance import thumb_cache_takaritas_sorba
 from .application_startup_state import (
     _startup_step_prepare_state,
     _startup_step_read_arguments,
@@ -636,22 +637,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
                 state.controller,
                 state.storage_bootstrap.migration_notice,
             )
-        # #6697: a cache-takarítás az első képkocka után, de a kezdeti feed
-        # és a könyvtárszinkron elindítása után kerüljön a soros karbantartásba.
-        state.startup_maintenance.enqueue(
-            "thumb-cache",
-            (
-                StartupMaintenanceStep(
-                    key="thumb_cache_prune",
-                    name="A bélyegkép-gyorstár takarítása",
-                    status_text=None,
-                    work=state.thumb_cache.maybe_prune,
-                ),
-            ),
-        )
-        elapsed_ms = (
-            time.monotonic() - startup_state["first_frame_at"]
-        ) * 1000
+        thumb_cache_takaritas_sorba(state)  # #6697: az első kép és a szinkron indítása után
+        elapsed_ms = (time.monotonic() - startup_state["first_frame_at"]) * 1000
         _jelentsd_az_indulast(timeline, state, roots, reszletes_idovonal, early_startup)
 
         def _finish_splash() -> None:

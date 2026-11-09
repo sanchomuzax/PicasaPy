@@ -1,5 +1,9 @@
 """SQLite index: gyors lekérdezések a könyvtárra, ismételhető szinkronnal."""
 
+import importlib
+import sys as _sys
+import types as _types
+
 from .album_collage import (
     COLLAGE_PROJECT_NAME,
     albums_with_collage,
@@ -183,7 +187,6 @@ __all__ = [
     "watched_root_missing",
 ]
 
-import importlib
 
 _LAZY_FACE_EXPORTS = {
     "face_groups": ".face_groups",
@@ -235,3 +238,22 @@ def __getattr__(name: str):
 
 def __dir__():
     return sorted(set(globals()) | set(_LAZY_FACE_EXPORTS))
+
+
+
+class _IndexModule(_types.ModuleType):
+    """A `face_groups` almodul neve ütközik a `face_groups()` függvényével.
+
+    Az almodul első importja a csomag attribútumát a modulra állítaná, és a
+    `picasapy.index.face_groups(...)` hívás „module object is not callable”
+    hibával állna le. A mainen az előre futó `from .face_groups import
+    face_groups` sor írta vissza a függvényt; a lusta betöltés mellett ezt
+    itt kell megtartani (#6697)."""
+
+    def __setattr__(self, name, value):
+        if name in _LAZY_FACE_EXPORTS and isinstance(value, _types.ModuleType):
+            return
+        super().__setattr__(name, value)
+
+
+_sys.modules[__name__].__class__ = _IndexModule

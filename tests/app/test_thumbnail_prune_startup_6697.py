@@ -40,9 +40,14 @@ def test_takaritas_a_frame_callback_utani_startup_sorban_van():
 
     assert "QTimer.singleShot(0, _start_and_finish)" in first_frame
     assert "maybe_prune" not in startup_batch
-    assert 'key="thumb_cache_prune"' in maintenance_finished
-    assert "state.thumb_cache.maybe_prune" in maintenance_finished
+    assert "thumb_cache_takaritas_sorba(state)" in maintenance_finished
     assert maintenance_finished.index("_start_initial_scan(") < maintenance_finished.index(
-        'key="thumb_cache_prune"'
+        "thumb_cache_takaritas_sorba(state)"
     )
+    from picasapy.app.startup_maintenance import thumb_cache_takaritas_sorba
+    import inspect
+
+    lepes = inspect.getsource(thumb_cache_takaritas_sorba)
+    assert 'key="thumb_cache_prune"' in lepes
+    assert "state.thumb_cache.maybe_prune" in lepes
     assert "maybe_prune" not in preparation
