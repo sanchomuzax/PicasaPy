@@ -302,3 +302,32 @@ def test_grain2_meret_es_mag_szerint_gyorsitotarazott_teret_kever_bajtra_azonosa
     assert generator_calls == [(seed, 2 * 13 * 19)]
     np.testing.assert_array_equal(kapott1, vart1)
     np.testing.assert_array_equal(kapott2, vart2)
+
+
+def test_grain2_kotegfolyam_gyorsitotarazott_zaja_egyezik_a_friss_folyammal(monkeypatch):
+    image = np.full((17, 23, 3), 127, dtype=np.uint8)
+    cached_noise = native_grain._grain_noise_rgb
+    uncached_noise = cached_noise.__wrapped__
+
+    def render_batch(images):
+        with native_grain._grain_rand_stream():
+            return [
+                native_grain.apply_native_grain(image, native_grain.grain_seed(0))
+                for image in images
+            ]
+
+    cached_noise.cache_clear()
+    with monkeypatch.context() as patch:
+        patch.setattr(native_grain, "_grain_noise_rgb", uncached_noise)
+        standalone_uncached = render_batch([image])[0]
+        batch_uncached = render_batch([image, image])
+
+    cached_noise.cache_clear()
+    standalone_cached = render_batch([image])[0]
+    batch_cached = render_batch([image, image])
+
+    np.testing.assert_array_equal(standalone_cached, standalone_uncached)
+    np.testing.assert_array_equal(batch_cached[0], batch_uncached[0])
+    np.testing.assert_array_equal(batch_cached[1], batch_uncached[1])
+    np.testing.assert_array_equal(batch_cached[0], standalone_cached)
+    assert not np.array_equal(batch_cached[1], standalone_cached)
