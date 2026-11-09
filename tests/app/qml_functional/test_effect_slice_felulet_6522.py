@@ -103,6 +103,7 @@ def test_soha_allasban_a_bal_fiok_a_regi_helyen_marad(qml_app, qt_app):
 def test_a_doboz_sosem_takarja_az_effektpanel_alkalmaz_gombjat(qml_app, qt_app, magassag):
     from tests.app.qml_functional.test_alapertek_felirat_4559 import (
         _child,
+        _nyisd_meg_a_nezot,
         _nyisd_meg_az_effektet,
     )
 
@@ -111,6 +112,8 @@ def test_a_doboz_sosem_takarja_az_effektpanel_alkalmaz_gombjat(qml_app, qt_app, 
     window.resize(1280, magassag)
     window.show()
     assert var_feltetelre(qt_app, lambda: abs(window.height() - magassag) < 1, 5.0)
+    # #6700: a segéd már nem nyitja meg a nézőt, ezt a valódi úton tesszük
+    _nyisd_meg_a_nezot(window, qt_app)
     panel = window.findChild(QObject, "viewerEditorPanel")
     _nyisd_meg_az_effektet(window, panel, qt_app, "effectDirTint", "dir_tint")
     for _ in range(20):

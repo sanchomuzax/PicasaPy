@@ -8,7 +8,8 @@ from __future__ import annotations
 
 
 import pytest
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QMetaObject, Qt
+from PySide6.QtTest import QTest
 
 from picasapy.app.faces_helper import FacesHelper
 from picasapy.ini import load_document
@@ -79,6 +80,19 @@ def test_reset_faces_modifier_branch_asks_before_global_change_and_cancel_is_saf
     row = controller.photos.rowOfPath(str(first))
     assert row >= 0
     _kijeloles(window, qt_app, [row])
+    grid = _objektum(window, "photoGrid")
+    assert grid is not None
+    QMetaObject.invokeMethod(
+        grid, "forceActiveFocus", Qt.ConnectionType.DirectConnection
+    )
+    QTest.keyClick(window, Qt.Key.Key_Return)
+    assert _varj(
+        qt_app,
+        lambda: window.property("viewerOpen") is True
+        and _objektum(window, "photoViewer") is not None,
+    ), "az Enter nem nyitotta meg a képnézőt a rácsból"
+    viewer = _objektum(window, "photoViewer")
+
     _menu_bar, _menu, _fejlec, item = _nyisd_meg_felso_menut(
         qt_app, window, "picture", "menuPictureResetFaces"
     )
@@ -122,7 +136,6 @@ def test_reset_faces_modifier_branch_asks_before_global_change_and_cancel_is_saf
         lambda: _objektum(window, "resetFacesConfirmDialog").property("visible")
         is True,
     )
-    viewer = _objektum(window, "photoViewer")
     revision_before = viewer.property("facesEditRevision")
     _kattints(qt_app, _objektum(window, "resetFacesConfirmButton"))
 

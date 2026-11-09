@@ -39,6 +39,9 @@ def test_felso_sav_vetites_es_nezo_onallo_komponensben_marad():
 
     # A teljes nézőblokk változatlanul a Workspace-ben marad, a szétbontás
     # további körében sem emeljük át külön komponensbe.
-    assert re.search(
-        r"^    PhotoViewer\s*\{\n        id: photoViewer", workspace, re.MULTILINE
-    )
+    assert re.search(r"^    Loader\s*\{\n        id: photoViewerLoader", workspace, re.MULTILINE)
+    viewer_loader = workspace.split("id: photoViewerLoader", 1)[1].split(
+        "\n    }", 1
+    )[0]
+    assert "active: workspace.hostWindow.viewerOpen || betoltve" in viewer_loader
+    assert re.search(r"\bPhotoViewer\s*\{\s*id: photoViewer", viewer_loader)

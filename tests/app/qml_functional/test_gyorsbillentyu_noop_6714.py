@@ -291,14 +291,26 @@ def test_videonezet_irasjelbillentyui_nem_valtoztatjak_a_lejatszast(
     qml_app_6714, qt_app
 ):
     window, controller, engine = qml_app_6714
+    # #6700: a néző csak az első megnyitáskor épül fel; előbb egy állóképen
+    # nyitjuk meg, így a videó Loader még üres, amikor a helyettesítő bekerül.
+    kep_row = next(
+        row
+        for row in range(controller.photos.rowCount())
+        if not controller.photos.isVideoAt(row)
+    )
+    window.setProperty("viewerOpen", True)
+    assert _varj(
+        qt_app, lambda: window.findChild(QObject, "photoViewer") is not None
+    ), "a néző nem jött létre a megnyitáskor"
     viewer = _objektum(window, "photoViewer")
+    viewer.setProperty("currentIndex", kep_row)
     loader = _objektum(window, "videoLoader")
     komponens = QQmlComponent(engine)
     komponens.setData(_FAKE_VIDEO_PLAYER, QUrl())
     assert not komponens.isError(), komponens.errorString()
 
-    # A néző még rejtett, így a helyettesítő a MediaPlayer létrehozása előtt
-    # kerül a videó Loaderbe; a teszt sosem indít valódi Qt-videódekódolást.
+    # Állóképnél a videó Loader üres, így a helyettesítő a MediaPlayer
+    # létrehozása előtt kerül bele; a teszt sosem indít valódi Qt-videódekódolást.
     loader.setProperty("source", "")
     loader.setProperty("sourceComponent", komponens)
     video_row = next(

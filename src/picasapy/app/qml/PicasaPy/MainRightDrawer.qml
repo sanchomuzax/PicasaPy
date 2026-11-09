@@ -149,7 +149,9 @@ PeoplePanel {
     objectName: "peoplePanel"
     visible: drawerRoot.hostWindow.peoplePanelOpen
     anchors.fill: parent
-    manualAddActive: drawerRoot.hostWindow.viewerOpen && drawerRoot.hostPhotoViewer.facesEditMode
+    manualAddActive: drawerRoot.hostWindow.viewerOpen
+                     && drawerRoot.hostPhotoViewer
+                     && drawerRoot.hostPhotoViewer.facesEditMode
     headerRefreshKey: drawerRoot.hostController
         ? [drawerRoot.hostWindow.selectedRows().join(","),
            drawerRoot.hostWindow.unnamedFacesOpen
@@ -203,9 +205,13 @@ PeoplePanel {
     }
     onManualAddRequested: {
         if (!drawerRoot.hostWindow.viewerOpen) drawerRoot.hostWindow.nezdEsSzerkeszd()
-        if (drawerRoot.hostWindow.viewerOpen) drawerRoot.hostPhotoViewer.beginManualFaceAdd()
+        if (drawerRoot.hostWindow.viewerOpen) {
+            var viewer = drawerRoot.hostWindow.ensurePhotoViewer()
+            if (viewer) viewer.beginManualFaceAdd()
+        }
     }
-    onManualCancelRequested: drawerRoot.hostPhotoViewer.cancelManualFaceAdd()
+    onManualCancelRequested: if (drawerRoot.hostPhotoViewer)
+        drawerRoot.hostPhotoViewer.cancelManualFaceAdd()
     onCloseRequested: drawerRoot.hostWindow.ureseidAFiokot()
 }
 
