@@ -7,6 +7,15 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.83] - 2026-11-09
+
+- A main két piros tesztje: figyelőindulás bevárása és stabil rácsszivárgás-mérés (#4073).
+- Az eredeti Picasa könyvtárnézeti gyorsbillentyűinek teljes leltára és futásidejű ellenőrzése a bináris alapján (#6531).
+- A Derítőfény v2 (triple2) eredeti exportjaihoz a dithert figyelmen kívül hagyó mérés és golden teszt készült (#6690).
+- A mappafigyelő figyelmen kívül hagyja a fájlolvasásokat, és a hálózati könyvtárakat háttérben, célzott időzített újraolvasással ellenőrzi (#6696).
+- Az Időrend kártyakötegei, jobb felső feliratai és vezetőpont-íve az eredeti képletei szerint rajzolódnak: a köteg kártyái stabil szórással állnak, a felirat jobbra zárt árnyékkal, a 10 pont az eredeti köbös ívén (#6713).
+- A könyvtárnézetben is működik az F11 teljes képernyős módja, mint az eredeti Picasában (#6722).
+
 ## [1.0.82] - 2026-11-08
 
 - A könyvtárnézeti gyorsbillentyűk futásidejű ellenőrzése az eredeti Picasán (52 billentyű próbaeredményének rögzítése a specifikációban) (#6531).
