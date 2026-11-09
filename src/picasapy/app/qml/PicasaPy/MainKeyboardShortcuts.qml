@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 
 // A főablak gyorsbillentyűi és a Súgó billentyűlistájának adatforrása.
 Item {
@@ -381,15 +382,32 @@ Item {
         id: shortcutViewerFullscreen
         objectName: "viewerFullscreenShortcut"
         sequence: "F11"
-        enabled: hostWindow.viewerOpen && !hostSlideshow.visible
-        onActivated: hostWindow.toggleViewerFullscreen()
+        property int libraryVisibilityBeforeFullscreen: Window.Windowed
+        enabled: !hostWindow._szovegmezoneVanFokusz && !hostWindow.slideshowRunning
+                 && !hostWindow.timelineOpen
+        onActivated: {
+            if (hostWindow.viewerOpen) {
+                hostWindow.toggleViewerFullscreen()
+                return
+            }
+
+            if (hostWindow.visibility === Window.FullScreen) {
+                hostWindow.visibility =
+                    libraryVisibilityBeforeFullscreen === Window.FullScreen
+                        ? Window.Windowed : libraryVisibilityBeforeFullscreen
+            } else {
+                libraryVisibilityBeforeFullscreen = hostWindow.visibility
+                hostWindow.visibility = Window.FullScreen
+            }
+        }
     }
 
 
     // Az Időrend kijelölés nélkül is megnyitható.
     Shortcut {
         sequence: "Ctrl+5"
-        enabled: !hostWindow._szovegmezoneVanFokusz && !hostWindow.viewerOpen && !hostSlideshow.visible
+        enabled: !hostWindow._szovegmezoneVanFokusz
+                 && !hostWindow.viewerOpen && !hostWindow.slideshowRunning
         onActivated: hostWindow.toggleTimeline()
     }
 
@@ -399,7 +417,8 @@ Item {
     Shortcut {
         id: shortcutRename
         sequence: "F2"
-        enabled: !hostWindow._szovegmezoneVanFokusz && !hostSlideshow.visible
+        enabled: !hostWindow._szovegmezoneVanFokusz
+                 && !hostWindow.slideshowRunning
         onActivated: if (hostWindow.photoActionRows().length > 0)
                          hostFileOpsDialogs.ensure().openRenameMany(
                              hostWindow.photoActionRows())
@@ -439,7 +458,8 @@ Item {
         // `Ctrl+Delete`. A korábbi `Delete` a #422 azóta felülírt feltevése
         // volt.
         sequence: "Ctrl+Delete"
-        enabled: hostWindow.viewerOpen && !hostWindow._szovegmezoneVanFokusz
+        enabled: hostWindow.viewerOpen && hostPhotoViewer
+                 && !hostWindow._szovegmezoneVanFokusz
                  && hostPhotoViewer._kijeloltSort() >= 0
         // #4621: a nézőben is a KÖZÖS, nézetfüggő elágazáson megy át
         // (albumból megnyitott képen eltávolít, nem lemezről töröl)
@@ -499,7 +519,8 @@ Item {
                 shortcutPropertiesPanel.sequence,
                 shortcutViewerFullscreen.sequence
             ]).concat(hostDocumentTabStrip.keyboardShortcutSequences)
-                .concat(hostPhotoViewer.keyboardShortcutSequences)
+                .concat(hostPhotoViewer
+                    ? hostPhotoViewer.keyboardShortcutSequences : [])
         },
         {
             title: hostPicasaMenuBar.keyboardShortcutGroupTitles.folder,

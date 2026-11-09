@@ -1,0 +1,323 @@
+{
+  "description": "256x256 crops decoded from the original source photos and Picasa exports for issue #6690; source images are landscapes.",
+  "crop_sources": {
+    "k02.jpg": {
+      "file": "forras_k02.png",
+      "crop": [
+        512,
+        224,
+        256,
+        256
+      ]
+    },
+    "k05.jpg": {
+      "file": "forras_k05.png",
+      "crop": [
+        512,
+        272,
+        256,
+        256
+      ]
+    },
+    "k06.jpg": {
+      "file": "forras_k06.png",
+      "crop": [
+        512,
+        160,
+        256,
+        256
+      ]
+    },
+    "k08.jpg": {
+      "file": "forras_k08.png",
+      "crop": [
+        512,
+        288,
+        256,
+        256
+      ]
+    },
+    "k09.jpg": {
+      "file": "forras_k09.png",
+      "crop": [
+        512,
+        288,
+        256,
+        256
+      ]
+    }
+  },
+  "comparison": {
+    "method": "GaussianBlur",
+    "sigma_px": 2.5,
+    "ssim_min": 0.98,
+    "delta_e_mean_max": 2.0,
+    "ignored_border_px": 12,
+    "jpeg_settings": {
+      "subsampling": 2,
+      "qtables": {
+        "0": [
+          4,
+          3,
+          3,
+          4,
+          6,
+          10,
+          13,
+          16,
+          3,
+          3,
+          4,
+          5,
+          7,
+          15,
+          16,
+          14,
+          4,
+          3,
+          4,
+          6,
+          10,
+          15,
+          18,
+          15,
+          4,
+          4,
+          6,
+          8,
+          13,
+          23,
+          21,
+          16,
+          5,
+          6,
+          10,
+          15,
+          18,
+          28,
+          27,
+          20,
+          6,
+          9,
+          14,
+          17,
+          21,
+          27,
+          29,
+          24,
+          13,
+          17,
+          20,
+          23,
+          27,
+          31,
+          31,
+          26,
+          19,
+          24,
+          25,
+          25,
+          29,
+          26,
+          27,
+          26
+        ],
+        "1": [
+          4,
+          5,
+          6,
+          12,
+          26,
+          26,
+          26,
+          26,
+          5,
+          5,
+          7,
+          17,
+          26,
+          26,
+          26,
+          26,
+          6,
+          7,
+          15,
+          26,
+          26,
+          26,
+          26,
+          26,
+          12,
+          17,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26,
+          26
+        ]
+      }
+    },
+    "raw_and_smoothed_full_image_metrics_included": true
+  },
+  "cases": [
+    {
+      "id": "lanc-0052",
+      "source": "forras_k02.png",
+      "export": "lanc-0052.png",
+      "filters": "triple2=1,0.246858,0.780767,0.172505;",
+      "raw_full": {
+        "ssim": 0.85067,
+        "delta_e_mean": 1.201
+      },
+      "gaussian_full": {
+        "ssim": 0.99298,
+        "delta_e_mean": 0.574
+      }
+    },
+    {
+      "id": "lanc-0089",
+      "source": "forras_k09.png",
+      "export": "lanc-0089.png",
+      "filters": "triple2=1,0.127180,0.190318,0.055157;",
+      "raw_full": {
+        "ssim": 0.99442,
+        "delta_e_mean": 1.195
+      },
+      "gaussian_full": {
+        "ssim": 0.99947,
+        "delta_e_mean": 0.332
+      }
+    },
+    {
+      "id": "lanc-0095",
+      "source": "forras_k05.png",
+      "export": "lanc-0095.png",
+      "filters": "triple2=1,0.613640,0.987095,0.051496;",
+      "raw_full": {
+        "ssim": 0.73324,
+        "delta_e_mean": 1.181
+      },
+      "gaussian_full": {
+        "ssim": 0.98259,
+        "delta_e_mean": 0.613
+      }
+    },
+    {
+      "id": "lanc-0105",
+      "source": "forras_k05.png",
+      "export": "lanc-0105.png",
+      "filters": "triple2=1,0.794439,0.822413,0.416504;",
+      "raw_full": {
+        "ssim": 0.96714,
+        "delta_e_mean": 1.815
+      },
+      "gaussian_full": {
+        "ssim": 0.99721,
+        "delta_e_mean": 0.582
+      }
+    },
+    {
+      "id": "lanc-0116",
+      "source": "forras_k06.png",
+      "export": "lanc-0116.png",
+      "filters": "triple2=1,0.500244,0.837205,0.579954;",
+      "raw_full": {
+        "ssim": 0.81518,
+        "delta_e_mean": 1.137
+      },
+      "gaussian_full": {
+        "ssim": 0.99147,
+        "delta_e_mean": 0.559
+      }
+    },
+    {
+      "id": "lanc-0178",
+      "source": "forras_k08.png",
+      "export": "lanc-0178.png",
+      "filters": "triple2=1,0.218250,0.303895,0.317896;",
+      "raw_full": {
+        "ssim": 0.99664,
+        "delta_e_mean": 1.976
+      },
+      "gaussian_full": {
+        "ssim": 0.99957,
+        "delta_e_mean": 0.476
+      }
+    },
+    {
+      "id": "lanc-0196",
+      "source": "forras_k06.png",
+      "export": "lanc-0196.png",
+      "filters": "triple2=1,0.632434,0.867620,0.690895;",
+      "raw_full": {
+        "ssim": 0.85903,
+        "delta_e_mean": 1.099
+      },
+      "gaussian_full": {
+        "ssim": 0.99405,
+        "delta_e_mean": 0.539
+      }
+    },
+    {
+      "id": "job-452",
+      "source": "forras_k05.png",
+      "export": "job-452.png",
+      "filters": "triple2=1,0.794439,0,1;",
+      "raw_full": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.0
+      },
+      "gaussian_full": {
+        "ssim": 1.0,
+        "delta_e_mean": 0.0
+      }
+    },
+    {
+      "id": "job-453",
+      "source": "forras_k05.png",
+      "export": "job-453.png",
+      "filters": "triple2=1,0,0.822413,1;",
+      "raw_full": {
+        "ssim": 0.99761,
+        "delta_e_mean": 0.365
+      },
+      "gaussian_full": {
+        "ssim": 0.99936,
+        "delta_e_mean": 0.134
+      }
+    }
+  ]
+}

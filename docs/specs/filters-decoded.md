@@ -1080,6 +1080,10 @@ számoló rajzoló még azonosítatlan; azonosítása után egy
 > A szerkesztői csempe kattintása külön kérdés: az élő út a következő
 > szakaszban címekkel végig van vezetve.
 
+**#6585: öt eltérő, egyébként önállóan egyező szűrőlánc minimalizálása:** a
+42 jelölt összevetése, az egyedi/páros leletek és a következő mérési lépések a
+[differenciális szűrőláncok lapján](differencialis-szuro-lancok.md) vannak.
+
 ### A `Pixelate` Shift-párjának élő kattintási útja (#2456, 2026-09-18)
 
 A csempe-tábla (`0x00c7e5a0`) a `Pixelate` második tokenjeként a
@@ -1896,6 +1900,58 @@ figyelembe veszi a `Preferences/CarefulEnhance` beállítást.
 
 **Ezekhez már nem a felhasználó Picasája kell**, hanem a meglévő
 dekompilátum feldolgozása vagy egy tetszőleges mintaképes ellenőrzés.
+
+## `triple2`: Derítőfény, fekete- és fehérpont (#6690)
+
+A natív callback `0x008f8b90` előbb a Derítőfényt (`0x0090ac20`), utána az
+egyetlen szinthúzó LUT-ot (`0x0090c3b0`) futtatja. A fekete pont a második,
+a fehér pont a harmadik csúszkáról érkezik; a fehérpont-védelem alsó határa
+`0.001`. A leképezés sorrendjét és paraméter-hozzárendelését a
+[`picasa-native-filter-workers.md`](picasa-native-filter-workers.md) §2.2,
+§2.3 és a registry #15 rekordja rögzíti.
+
+### A nyers pixelmérés korlátja
+
+Az eredeti `0x0090bc60` LUT-alkalmazó képpontonként egy MT19937-mintát
+fogyaszt. A generátort a folyamat indulásakor a `0x00c32520` inicializáló
+magozza; az állapot folyamat-globális, ezért egy kép dither-sorozata függ az
+előtte feldolgozott képpontoktól. Egyetlen export nem tartalmazza ezt az
+előzményt, így a nyers pixelminta nem reprodukálható abból önmagában. A teszt
+nem kapcsolja ki a termék ditherét és nem becsüli meg a generátor állapotát:
+mindkét képet Gauss-elmosás után hasonlítja össze, a nyers mércét is
+megtartva.
+
+### Mérés: hét kombinált és két különálló eset
+
+A nyers oszlop az eredeti Picasa JPEG kvantálótábláival újrakódolt helyi
+render és az export teljes képes összevetése. A toleráns oszlop mindkét
+képen `σ=2.5 px` Gauss-elmosás után készült, a golden-mérce alapküszöbeivel
+(SSIM ≥ 0.98, átlagos ΔE ≤ 2.0). `σ=2.0` a `lanc-0095`-öt még eltérőnek
+minősítette (SSIM 0.96950); a 4×4 blokkátlag SSIM-je is a küszöb alatt
+maradt. `σ=2.5` mellett mind a kilenc eset legalább közelítés.
+
+| Eset | Eredeti export | Nyers SSIM / ΔE | `σ=2.5` SSIM / ΔE | Ítélet |
+|---|---|---:|---:|---|
+| `lanc-0052` | job-403/k02 | 0.85067 / 1.201 | 0.99298 / 0.574 | közelítés |
+| `lanc-0089` | job-412/k09 | 0.99442 / 1.195 | 0.99947 / 0.332 | közelítés |
+| `lanc-0095` | job-420/k05 | 0.73324 / 1.181 | 0.98259 / 0.613 | közelítés |
+| `lanc-0105` | job-424/k05 | 0.96714 / 1.815 | 0.99721 / 0.582 | közelítés |
+| `lanc-0116` | job-417/k06 | 0.81518 / 1.137 | 0.99147 / 0.559 | közelítés |
+| `lanc-0178` | job-411/k08 | 0.99664 / 1.976 | 0.99957 / 0.476 | közelítés |
+| `lanc-0196` | job-424/k06 | 0.85903 / 1.099 | 0.99405 / 0.539 | közelítés |
+| Derítőfény önállóan (`0.794439`) | job-452/k05 | 1.00000 / 0.000 | 1.00000 / 0.000 | pixelhű |
+| Feketepont önállóan (`0.822413`) | job-453/k05 | 0.99761 / 0.365 | 0.99936 / 0.134 | közelítés |
+
+**Következtetés:** az önálló Derítőfény ág pixelhű; a feketepont-ág a
+`0x0090c3b0` modellen belül közelítés. A hét kombinált eset nyers eltérése
+a folyamat-globális dither eltérő állapotából ered; az elmosott képek
+egyezése nem mutat további sorrend- vagy tartományhibát. A `0x008f8b90`
+viselkedését nem kellett módosítani.
+
+Teszt: [`test_triple2_dither_6690.py`](../../tests/render/test_triple2_dither_6690.py).
+Kilenc 256×256-as, eredeti exportból dekódolt kivágása a
+`tests/render/data/triple2_dither_6690/` alatt van; teljes forrásfotó nincs a
+repóban.
 
 ## A szinthúzás vágási pontjai — MEGFEJTVE (#539, 2026-08-14)
 
@@ -8721,13 +8777,14 @@ nem az xref-index negatív találatára épül.
 | `debug` | natív sor #1: rekord `0x00cd0658`, callback `0x008f8360`, helper `0x008f9bf0`, képi worker `0x00aa1840` | **Igen.** A callback a vörös `0xffff0000` jelölő színét, méretét és képpontskálázott helyét továbbítja a workernek. | **feltételes**: bináris callbackút igazolt; 684-es `debug` golden-export `NINCS MEG`, a jelölő perem-/alfa-profiljának pontos képlete `NINCS MEG`. |
 | `focalpixelate` | a kisbetűs név eljut a diszpécserig, de a teljes 49 rekordos táblában nincs ilyen natív rekord vagy callback | **Nem.** | **megerősített**: a teljes natív tábla bejárása mellett a 684-es `min`, `alap` és `max` export dekódolt RGB-képe egymással és a tétlen kontrollokkal bitre azonos. |
 | `picnikfocalpixelate` / `PicnikFocalPixelate` | nem a 49-es natív táblából jön; Glimmer factory `0x008f9fe0`, worker `0x008f9a60`, leírása `filterdesc.xml` | **Igen.** A körkörös alfa-maszk után alacsony felbontású `W/Impact × H/Impact` átméretezés, majd teljes méretű legközelebbi szomszédos visszaméretezés fut. | **megerősített**: a descriptor és a bináris műveletgráf egyezik a 684-es eredeti exporttal; `min` és `alap` eltér a `Fade=100` kontrolltól (átlagos abszolút RGB-eltérés 2,174615, illetve 6,835422; 187819, illetve 366698 eltérő pixel a 614400-ból). |
-| `rainbow` | natív sor #37: rekord `0x00cd0898`, callback `0x008f92d0`; színező worker `0x009db4f0` | **Igen.** Hat vízszintes színsávot ír. Az algoritmus alább. | **megerősített a renderelés tényére**: a callbackút és a `k08` eredeti exportjának sáv-/határmérése egyezik; az algoritmuskód 3.9-es verzióazonossága nyitott. |
+| `rainbow` | natív sor #37: rekord `0x00cd0898`, callback `0x008f92d0`; színező worker `0x009db4f0` | **Igen.** Hat vízszintes színsávot ír. Az algoritmus alább. | **megerősített**: a #6743 #460→#461 izolált és `lanc-0056` teljes láncmérése a CarefulEnhance kikapcsolt ágával, valamint a nearest-even paraméterkerekítéssel egyezik; az algoritmuskód 3.9-es verzióazonossága nyitott. |
 | `whitept` | natív sor #20: rekord `0x00cd0788`, callback `0x008f9270`; nemsemleges pipettaszínnél a `0x0090eda0` 3×3-as mátrix workert hívja (alkalmazóképlet: „Az `autocolor` ALKALMAZÓJA”) | **Igen, ha a kiválasztott fehérpont nem semleges.** | **feltételes**: a callbackág binárisan igazolt. A 684-es `whitept__alap` szürke `0xffc0c0c0` beállítása tétlen; aktív, nemsemleges fehérponttal végzett exportmérés `NINCS MEG`. |
 
 A hat névből tehát egyedül a kisbetűs `focalpixelate` bizonyítottan
 nem renderelődik. A `PicnikFocalPixelate` descriptor-alapú renderútja már
-létezik; a `colorfix`, `debug`, `rainbow` és `whitept`
-PicasaPy-modellje hiányzik vagy nincs az eredetivel egyezően modellezve.
+létezik; a `colorfix`, `debug` és `whitept` PicasaPy-modellje hiányzik vagy
+nincs az eredetivel egyezően modellezve. A `rainbow` útvonal #6743-ban
+összevetve lett az eredeti exporttal.
 
 ### A `rainbow` algoritmusa
 
@@ -8740,10 +8797,15 @@ A callback sorrendje a `0x008f92d0` körüli hívásokból:
    nem a kimeneti kép átlátszatlansága: `lo' = lo + 0,30·(loMin - lo)`,
    `hi' = hi + 0,30·(hiMax - hi)`. A `loMin` a csatornák alsó
    vágópontjainak közös minimuma, a `hiMax` a felsők közös maximuma.
-   A `CarefulEnhance` állapota a lépés `0,5`-ös skáláját és
-   `252` fehérpontját választja a normál `1,0` és `255` helyett.
+   A callback a `Preferences/CarefulEnhance` állapotát olvassa
+   (`0x008f92d0`). Bekapcsolva a lépés `0,5`-ös skálát és `252` fehérpontot
+   használ a normál `1,0` és `255` helyett; a kikapcsolt ág ezeket az
+   alapértékeket hagyja meg. A #461 eredeti Rainbow-export a kikapcsolt ággal
+   egyezik, ezért a PicasaPy renderlánca is ezt használja.
 3. Színmegőrzés / telítetlenítés: a tag második paramétere `p`,
-   az `0x008f9352-0x008f9364` címen egészre csonkolva. Ha `p=256`,
+   az `0x008f9352-0x008f9364` közötti natív `ROUND` konverzióval egészre
+   kerekítve (x87 alapértelmezett nearest-even módban). Így a
+   `244.890456` értékből `p=245` lesz. Ha `p=256`,
    a lépés kimarad; egyébként `w=256-p`, és a
    `0x009a9550` worker (`0x008f9392` hívóhely) minden
    `C` csatornán alkalmazza:

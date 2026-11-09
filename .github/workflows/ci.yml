@@ -235,9 +235,20 @@ jobs:
     # mátrix kimaradt — így a kötelező státuszt SOHA nem adhatja meg más
     # workflow „kihagyva" állapotban (a GitHub a kihagyottat sikernek
     # számolja, és auto-merge mellett ez beolvasztott volna egy bukó kört).
-    needs: [valtozas, darabok-ubuntu, docs-orok]
+    needs: [valtozas, darabok-ubuntu, docs-orok, lint]
     if: always()
     steps:
+      # picasapy-agent#312: a `lint` nem kötelező ellenőrzés, a #6718 piros
+      # lint mellett is beolvadt auto-merge-dzsel. A bukását EZ a lépés
+      # emeli a kötelező státuszba, ugyanúgy, mint a dokumentáció-őrökét.
+      - name: A lint zöld
+        if: ${{ needs.valtozas.outputs.kod == 'true' }}
+        run: |
+          if [ "${{ needs.lint.result }}" != "success" ]; then
+            echo "A Lint (ruff) job nem zöld: ${{ needs.lint.result }}"
+            exit 1
+          fi
+
       - name: A tesztválasztó nem talált futtatandó tesztet
         # A docs-only kiválasztás üres; ez siker, a Dokumentáció-őrök lépése
         # alább külön teszi kötelezővé az erre az esetre futó ellenőrzéseket.

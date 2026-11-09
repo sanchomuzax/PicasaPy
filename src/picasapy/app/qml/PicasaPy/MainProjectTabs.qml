@@ -77,7 +77,8 @@ QtObject {
     //: sáv látszott. Az ablak teljes képernyőre váltott (a kérés kiment),
     //: a vetítés mégis dobozban maradt — a jegy 3. esete, platformfüggetlenül.
     //: Az eredetiben a vetítés alatt SEMMI MÁS nem látszik (#1903).
-    readonly property bool slideshowRunning: hostSlideshow.visible
+    readonly property bool slideshowRunning:
+        hostSlideshow ? hostSlideshow.visible : false
 
     // A „Vissza a kollázshoz" gomb csak a „Továbbiak..." után jelenik meg
     // (spec 4.3/13.): az eredeti is AKKOR rakja a könyvtár lapjára.

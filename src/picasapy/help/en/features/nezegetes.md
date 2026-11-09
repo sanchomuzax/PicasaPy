@@ -40,8 +40,13 @@ At the bottom and edges of the viewer:
 ### Full screen: F11
 
 F11 switches the viewer to full screen; press it again to restore the
-previous window size. It affects the open viewer only. A slideshow
-controls its own full-screen state.
+previous window size. A slideshow controls its own full-screen state.
+
+F11 also works in the library, as in the original Picasa: there the
+whole program window switches to full screen and the menu bar is hidden
+until you leave it. Press F11 again to restore the previous window size.
+It has no effect in Timeline, and while you are typing in a text field,
+such as the search field, the key stays with the field.
 
 A picture opened from the library appears in the program window; the
 viewer does not switch to full screen by itself. The full-screen startup
@@ -281,8 +286,10 @@ in the [Movie](mozgofilm.md) editor.
 
 Choose **View** ▸ **Timeline** (Ctrl+5) to see an animated, full-screen
 overview of your library. Each folder and album with pictures is a card
-with stacked-photo imagery, its name, and a month and year, such as
-July 2024. All cards sit on one curved track like a carousel: when you
+showing its photos as a stack of slightly rotated pictures. The name of
+the selected card and its month and year, such as July 2024, appear in
+the top-right corner, aligned to the right, and an arc of ten dots
+leads from the label down to the card. All cards sit on one curved track like a carousel: when you
 move, the whole row glides along and the selected card always lands in
 the same place. The background is a faded, grey version of the first
 photo of the selected folder or album, and it cross-fades to the new one

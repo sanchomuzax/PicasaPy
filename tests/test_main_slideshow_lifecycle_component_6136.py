@@ -70,7 +70,7 @@ def test_a_foablak_regi_nevei_atjarokent_megmaradnak():
         ), f"a főablak látható függvényneve nem őrzi a belépőt: {function}"
         assert re.search(
             rf"function\s+{function}\s*\([^)]*\)\s*\{{\s*"
-            rf"hostRefs\.slideshow\.{function}\(",
+            rf"hostWindow\.ensureSlideshow\(\)\.{function}\(",
             commands,
             re.DOTALL,
         ), f"a parancskomponens nem vezeti át a(z) {function} hívást"

@@ -121,7 +121,8 @@ Item {
     Connections {
         target: typeof controller !== "undefined" ? controller : null
         function onDiskOperationSucceededPaths(paths) {
-            hostPhotoViewer.frissitsdALemezműveletUtániElőnézetet(paths)
+            if (hostPhotoViewer)
+                hostPhotoViewer.frissitsdALemezműveletUtániElőnézetet(paths)
         }
         function onSaveFailedDetails(details) {
             saveDialogs.ensure().jelezdAbukottMentest(details)
@@ -379,7 +380,8 @@ Item {
         // #4586: a keresés közben is frissül a panel névtelen-arc listája —
         // összevonva, és csak nyitott panel mellett
         function onFacesStored() {
-            if (hostWindow.peoplePanelOpen || hostPhotoViewer.peopleOpen)
+            if (hostWindow.peoplePanelOpen
+                    || (hostPhotoViewer && hostPhotoViewer.peopleOpen))
                 { if (!hostUnnamedFaceRefreshTimer.running) hostUnnamedFaceRefreshTimer.start() }
         }
         function onFaceSuggestionsChanged() { hostWindow._javaslatFrissult() }

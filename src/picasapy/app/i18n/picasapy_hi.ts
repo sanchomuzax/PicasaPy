@@ -8703,9 +8703,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>PicasaPy से बाहर निकलें</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>पृष्ठभूमि में काम अभी भी चल रहा है (निर्यात, वेब निर्यात या चेहरा स्कैन). अभी बाहर निकलने पर काम रुक जाएगा और बाद में फिर शुरू नहीं होगा.</translation>
+            <translation>बैकग्राउंड में काम अभी भी चल रहा है। अभी बाहर निकलने पर निर्यात और वेब निर्यात रुक जाएंगे और फिर शुरू नहीं होंगे; PicasaPy को अगली बार शुरू करने पर चेहरे खोजना जारी रहेगा।</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9464,9 +9464,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>पृष्ठभूमि में काम अभी भी चल रहा है (निर्यात, वेब निर्यात या चेहरा स्कैन). अभी बाहर निकलने पर काम रुक जाएगा और बाद में फिर शुरू नहीं होगा.</translation>
+            <translation>बैकग्राउंड में काम अभी भी चल रहा है। अभी बाहर निकलने पर निर्यात और वेब निर्यात रुक जाएंगे और फिर शुरू नहीं होंगे; PicasaPy को अगली बार शुरू करने पर चेहरे खोजना जारी रहेगा।</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

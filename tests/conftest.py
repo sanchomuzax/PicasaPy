@@ -29,6 +29,11 @@ def pytest_configure(config):
         "markers",
         "valodi_kepmappa: a teszt a rendszer VALÓDI képmappáját méri (#2897)",
     )
+    config.addinivalue_line(
+        "markers",
+        "halasztott_nezetek: a QML-fixture nem építi fel előre a nézőt, az"
+        " Időrendet és a vetítést (#6700)",
+    )
     # #4817: a `.qm` nincs a repóban — a futásidejű fordítás a `.ts`-ből
     # itt készül el (csak a hiányzó vagy elavult fájl fordul újra)
     from pathlib import Path

@@ -8703,9 +8703,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>PicasaPy afsluiten</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Er is nog achtergrondwerk bezig (exporteren, webexporteren of gezichten scannen). Als u nu afsluit, wordt dit gestopt en later niet hervat.</translation>
+            <translation>Er is nog achtergrondwerk bezig. Als u nu afsluit, stoppen exporteren en webexporteren en worden ze niet hervat; gezichten zoeken gaat verder wanneer u PicasaPy de volgende keer start.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9464,9 +9464,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Er is nog achtergrondwerk bezig (exporteren, webexporteren of gezichten scannen). Als u nu afsluit, wordt dit gestopt en later niet hervat.</translation>
+            <translation>Er is nog achtergrondwerk bezig. Als u nu afsluit, stoppen exporteren en webexporteren en worden ze niet hervat; gezichten zoeken gaat verder wanneer u PicasaPy de volgende keer start.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

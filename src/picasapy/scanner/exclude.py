@@ -59,11 +59,22 @@ def is_excluded(folder: str | Path, exclude_roots: tuple[str | Path, ...]) -> bo
     gyökerek között (a kizárás az alfákra is érvényes). Ez a függvény csak
     az arcfelismerés-kapcsoló állapotát dönti el (#449) — az általános
     indexelésre NINCS hatással."""
-    if not exclude_roots:
+    return _is_excluded_resolved(folder, _resolve_exclude_roots(exclude_roots))
+
+
+def _resolve_exclude_roots(
+    exclude_roots: tuple[str | Path, ...] | list[str | Path],
+) -> tuple[Path, ...]:
+    """A beállított kizárási gyökerek feloldása egyszer, a lista változásakor."""
+    return tuple(Path(root).resolve() for root in exclude_roots)
+
+
+def _is_excluded_resolved(folder: str | Path, resolved_roots: tuple[Path, ...]) -> bool:
+    """Már feloldott gyökerekkel dönt, a mappa feloldása nélkülözhetetlenül egyszer."""
+    if not resolved_roots:
         return False
-    resolved = Path(folder).resolve()
-    for root in exclude_roots:
-        resolved_root = Path(root).resolve()
-        if resolved == resolved_root or resolved_root in resolved.parents:
-            return True
-    return False
+    resolved_folder = Path(folder).resolve()
+    return any(
+        resolved_folder == root or root in resolved_folder.parents
+        for root in resolved_roots
+    )

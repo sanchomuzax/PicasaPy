@@ -27,8 +27,8 @@ _PALETTA = (
 
 
 def _spec_szerinti_rainbow_kimenet(image: np.ndarray, preserve: int) -> np.ndarray:
-    """A #5296 képleteit alkalmazó teszt-orákulum, a meglévő szinthúzóval."""
-    stretched = apply_channel_levels_stretch(image, blend=0.30, careful=True)
+    """A #5296 képleteit és a #6743-ban mért alapállapotot követő orákulum."""
+    stretched = apply_channel_levels_stretch(image, blend=0.30, careful=False)
     luma = (
         77 * stretched[..., 0].astype(np.int32)
         + 151 * stretched[..., 1].astype(np.int32)

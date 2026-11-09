@@ -8703,9 +8703,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>PicasaPy を終了</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>バックグラウンド処理（エクスポート、ウェブエクスポート、顔のスキャン）が実行中です。今終了すると処理は停止し、後で再開されません。</translation>
+            <translation>バックグラウンド処理がまだ実行中です。今終了すると、エクスポートとウェブエクスポートは停止し、再開されません。顔のスキャンは次回 PicasaPy を起動したときに続行されます。</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9464,9 +9464,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>バックグラウンド処理（エクスポート、ウェブエクスポート、顔のスキャン）が実行中です。今終了すると処理は停止し、後で再開されません。</translation>
+            <translation>バックグラウンド処理がまだ実行中です。今終了すると、エクスポートとウェブエクスポートは停止し、再開されません。顔のスキャンは次回 PicasaPy を起動したときに続行されます。</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

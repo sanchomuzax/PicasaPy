@@ -68,7 +68,6 @@ class EditControllerEffectsParamsMixin:
             return
         with gyors_elonezet():
             self._register_preview(preview_session)
-        self._bump_revision()
 
 
     @Slot()
