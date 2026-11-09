@@ -58,7 +58,11 @@ def test_zoom_allapot_az_uj_aliasfelulet_elott_epul_fel() -> None:
     assert viewer.index("property real zoomValue: 0") < viewer.index(
         "property alias editorPanel: viewerLayout.editorPanel"
     )
-    assert "viewerZoomValue: hostPhotoViewer.zoomValue" in main_family
+    # #6700: a néző halasztva épül fel, ezért a kötés a hiányát is kezeli
+    assert (
+        "viewerZoomValue: hostPhotoViewer ? hostPhotoViewer.zoomValue : 0"
+        in main_family
+    )
     # #6050: a csúszka a TrayTopRow komponensbe került; a stabil
     # értékforrás továbbra is a TrayBar gyökértulajdonsága.
     assert "value: trayRoot.viewerZoomValue" in tray_top_row
