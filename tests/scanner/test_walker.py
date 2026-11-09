@@ -3,6 +3,7 @@
 import pytest
 
 from picasapy.scanner import scan_tree
+from picasapy.scanner import walker
 
 
 @pytest.fixture
@@ -208,6 +209,32 @@ class TestScanTreeSkip:
         folder = scan_tree(tree)[0]
         assert folder.skipped is False
         assert folder.mtime_ns == 0
+
+    def test_rescan_egy_statbol_adja_at_a_mappa_mtimejat(self, tree, monkeypatch):
+        """#6698: a hurkovedelem statjat hasznalja a mappa frissessegehez is."""
+        import os
+        from types import SimpleNamespace
+
+        eredeti_stat = os.stat
+        statolt_mappak = []
+
+        def szamlalo(ut, *args, **kwargs):
+            eredmeny = eredeti_stat(ut, *args, **kwargs)
+            if os.path.abspath(ut) == os.path.abspath(tree / "nyaralas"):
+                statolt_mappak.append(ut)
+            return eredmeny
+
+        # Csak a walker modul os-fogantyúját cseréljük; az os globális
+        # modulját nem, mert azt a pathlib és a pytest is használja.
+        monkeypatch.setattr(
+            walker,
+            "os",
+            SimpleNamespace(stat=szamlalo, scandir=os.scandir),
+        )
+
+        scan_tree(tree, skip=lambda *_: False)
+
+        assert len(statolt_mappak) == 1
 
 
 class TestScanFolder:

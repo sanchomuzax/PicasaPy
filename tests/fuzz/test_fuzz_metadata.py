@@ -183,9 +183,9 @@ def test_video_metadata_a_vegyes_dekoderadatokat_vegyes_eredmenyre_kepezi(
     capture = _FakeVideoCapture(cv2, sebesseg, kockaszam, megnyilt)
     monkeypatch.setattr(cv2, "VideoCapture", lambda _ut: capture)
     with fuzz_keret():
-        eredmeny = read_video_metadata("fuzz.mp4")
+        eredmeny = read_video_metadata("fuzz.avi")
 
-    assert eredmeny.movie_format == "MP4"
+    assert eredmeny.movie_format == "AVI"
     ervenyes = (
         megnyilt
         and math.isfinite(sebesseg)

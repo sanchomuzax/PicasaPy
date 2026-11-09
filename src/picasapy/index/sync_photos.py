@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 from typing import NamedTuple
 
 from picasapy.index.queries import HIDDEN_INI_PENDING
@@ -32,6 +33,40 @@ from picasapy.scanner import (
 from .sync_compat import legacy
 
 logger = logging.getLogger("picasapy.index.sync")
+
+_MAX_METADATA_WORKERS = 4
+_PHOTO_UPSERT_SQL = (
+    "INSERT INTO photos"
+    "(folder_id, name, kind, size, mtime_ns, star, hidden, caption_ini,"
+    " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini,"
+    " taken_at, orientation, width, height, caption_file, keywords_file,"
+    " movie_format, frame_rate, duration_seconds,"
+    " exif_lat, exif_lon, first_seen_mtime_ns)"
+    " VALUES (" + ", ".join("?" for _ in range(25)) + ") "
+    "ON CONFLICT(folder_id, name) DO UPDATE SET "
+    # #2486: az első látáskori mtime nem íródik felül az ütközési ágon.
+    "first_seen_mtime_ns = COALESCE(photos.first_seen_mtime_ns,"
+    " excluded.first_seen_mtime_ns), "
+    "kind = excluded.kind, size = excluded.size, "
+    "mtime_ns = excluded.mtime_ns, star = excluded.star, "
+    "hidden = excluded.hidden, "
+    "caption_ini = excluded.caption_ini, "
+    "keywords_ini = excluded.keywords_ini, "
+    "rotate_steps = excluded.rotate_steps, "
+    "flip_flags = excluded.flip_flags, "
+    "filters = excluded.filters, "
+    "geotag_ini = excluded.geotag_ini, "
+    "taken_at = excluded.taken_at, orientation = excluded.orientation, "
+    # #4332: a kézi felvételi dátum fájlmódosításkor is megmarad.
+    "taken_at_override = photos.taken_at_override, "
+    "width = excluded.width, height = excluded.height, "
+    "caption_file = excluded.caption_file, "
+    "keywords_file = excluded.keywords_file, "
+    "movie_format = excluded.movie_format, "
+    "frame_rate = excluded.frame_rate, "
+    "duration_seconds = excluded.duration_seconds, "
+    "exif_lat = excluded.exif_lat, exif_lon = excluded.exif_lon"
+)
 
 
 class _FolderSyncResult(NamedTuple):
@@ -85,6 +120,7 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> _FolderSyncResul
     document = _load_ini(scan)
     _sync_folder_hidden(conn, folder_id, scan, document)
     new_count = 0
+    upserts = []
     for media in scan.files:
         section = document.section(media.name) if document else None
         ini_fields = (
@@ -110,7 +146,7 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> _FolderSyncResul
             if media.kind == "video" and current[2] is None:
                 # #4580: a v20-ról migrált sorokból a fájl újraolvasása tölti
                 # fel a videómezőket.
-                _upsert_photo(conn, folder_id, scan, media, ini_fields)
+                upserts.append((media, ini_fields))
             elif current[1] != ini_fields:
                 conn.execute(
                     "UPDATE photos SET star = ?, hidden = ?, caption_ini = ?,"
@@ -122,7 +158,22 @@ def _sync_folder(conn: sqlite3.Connection, scan: FolderScan) -> _FolderSyncResul
         else:
             if current is None:
                 new_count += 1  # #209: eddig nem indexelt fotó
-            _upsert_photo(conn, folder_id, scan, media, ini_fields)
+            upserts.append((media, ini_fields))
+    if upserts:
+        def read_values(request):
+            media, ini_fields = request
+            return _photo_upsert_values(folder_id, scan, media, ini_fields)
+
+        if len(upserts) == 1:
+            values = [read_values(upserts[0])]
+        else:
+            with ThreadPoolExecutor(
+                max_workers=min(_MAX_METADATA_WORKERS, len(upserts))
+            ) as workers:
+                # executor.map megtartja a `scan.files` sorrendjét, így a
+                # SQLite-írások is abban a sorrendben futnak le a kapcsolaton.
+                values = list(workers.map(read_values, upserts))
+        conn.executemany(_PHOTO_UPSERT_SQL, values)
     nevek = [media.name for media in scan.files]
     _prune_photos(conn, folder_id, nevek)
     # #2038: a származás-öröklés (`origin_keys`) útvonalra van kulcsolva, és a
@@ -198,6 +249,19 @@ def _upsert_photo(
     media: MediaFile,
     ini_fields: tuple,
 ) -> None:
+    conn.execute(
+        _PHOTO_UPSERT_SQL,
+        _photo_upsert_values(folder_id, scan, media, ini_fields),
+    )
+
+
+def _photo_upsert_values(
+    folder_id: int,
+    scan: FolderScan,
+    media: MediaFile,
+    ini_fields: tuple,
+) -> tuple:
+    """Egy változott fájl metaadatát olvassa, és az upsert sorát állítja elő."""
     meta = (
         legacy("read_file_metadata")(scan.path / media.name)
         if media.kind == "photo"
@@ -208,64 +272,25 @@ def _upsert_photo(
         if media.kind == "video"
         else EMPTY_VIDEO_METADATA
     )
-    conn.execute(
-        "INSERT INTO photos"
-        "(folder_id, name, kind, size, mtime_ns, star, hidden, caption_ini,"
-        " keywords_ini, rotate_steps, flip_flags, filters, geotag_ini,"
-        " taken_at, orientation, width, height, caption_file, keywords_file,"
-        " movie_format, frame_rate, duration_seconds,"
-        " exif_lat, exif_lon, first_seen_mtime_ns)"
-        " VALUES (" + ", ".join("?" for _ in range(25)) + ") "
-        "ON CONFLICT(folder_id, name) DO UPDATE SET "
-        # #2486: a BEFAGYASZTÁS egyetlen sora. A `mtime_ns` az élő érték —
-        # a változás-detektálásé, a bélyegkép-gyorstáré, a „legutóbbi
-        # változtatás" rendezésé —, a `first_seen_mtime_ns` viszont az
-        # ELSŐ látáskori, és az ütközési ágon SOHA nem íródik felül. A
-        # `COALESCE` csak a még üres (v17 elé indexelt, majd újra
-        # feltűnő) sort tölti fel.
-        "first_seen_mtime_ns = COALESCE(photos.first_seen_mtime_ns,"
-        " excluded.first_seen_mtime_ns), "
-        "kind = excluded.kind, size = excluded.size, "
-        "mtime_ns = excluded.mtime_ns, star = excluded.star, "
-        "hidden = excluded.hidden, "
-        "caption_ini = excluded.caption_ini, "
-        "keywords_ini = excluded.keywords_ini, "
-        "rotate_steps = excluded.rotate_steps, "
-        "flip_flags = excluded.flip_flags, "
-        "filters = excluded.filters, "
-        "geotag_ini = excluded.geotag_ini, "
-        "taken_at = excluded.taken_at, orientation = excluded.orientation, "
-        # #4332: a kézi dátum a fájl változása után is megmarad — a program
-        # saját Mentése is átírja a fájlt, és az eredeti Picasa a dátumot a
-        # saját adatbázisában tartja.
-        "taken_at_override = photos.taken_at_override, "
-        "width = excluded.width, height = excluded.height, "
-        "caption_file = excluded.caption_file, "
-        "keywords_file = excluded.keywords_file, "
-        "movie_format = excluded.movie_format, "
-        "frame_rate = excluded.frame_rate, "
-        "duration_seconds = excluded.duration_seconds, "
-        "exif_lat = excluded.exif_lat, exif_lon = excluded.exif_lon",
-        (
-            folder_id,
-            media.name,
-            media.kind,
-            media.size,
-            media.mtime_ns,
-            *ini_fields,
-            meta.taken_at,
-            meta.orientation,
-            meta.width,
-            meta.height,
-            meta.caption,
-            ",".join(meta.keywords) or None,
-            video_meta.movie_format,
-            video_meta.frame_rate,
-            video_meta.duration_seconds,
-            meta.latitude,
-            meta.longitude,
-            media.mtime_ns,
-        ),
+    return (
+        folder_id,
+        media.name,
+        media.kind,
+        media.size,
+        media.mtime_ns,
+        *ini_fields,
+        meta.taken_at,
+        meta.orientation,
+        meta.width,
+        meta.height,
+        meta.caption,
+        ",".join(meta.keywords) or None,
+        video_meta.movie_format,
+        video_meta.frame_rate,
+        video_meta.duration_seconds,
+        meta.latitude,
+        meta.longitude,
+        media.mtime_ns,
     )
 
 
@@ -355,6 +380,57 @@ def _sync_albums(conn, folder_id: int, document) -> None:
         row["name"]: row["id"]
         for row in conn.execute("SELECT id, name FROM photos WHERE folder_id = ?", (folder_id,))
     }
+
+    expected_albums = (
+        tuple(
+            sorted(
+                (
+                    album.token,
+                    album.name,
+                    album.date,
+                    album.description,
+                    album.location,
+                )
+                for album in albums_of(document)
+            )
+        )
+        if document is not None
+        else ()
+    )
+    expected_memberships = set()
+    if document is not None:
+        for name, photo_id in photo_ids.items():
+            section = document.section(name)
+            if section is None:
+                continue
+            refs = section.get("albums")
+            if not refs:
+                continue
+            photo_places = places_of_section(section)
+            expected_memberships.update(
+                (photo_id, token, photo_places.get(token))
+                for token in parse_album_refs(refs)
+            )
+
+    current_albums = tuple(
+        tuple(row)
+        for row in conn.execute(
+            "SELECT token, name, date, description, location FROM albums"
+            " WHERE folder_id = ? ORDER BY token",
+            (folder_id,),
+        )
+    )
+    current_memberships = {
+        tuple(row)
+        for row in conn.execute(
+            "SELECT pa.photo_id, pa.token, pa.place FROM photo_albums pa"
+            " JOIN photos p ON p.id = pa.photo_id WHERE p.folder_id = ?",
+            (folder_id,),
+        )
+    }
+    if current_albums == expected_albums and current_memberships == expected_memberships:
+        return
+
     conn.execute(
         "DELETE FROM photo_albums WHERE photo_id IN (SELECT id FROM photos WHERE folder_id = ?)",
         (folder_id,),

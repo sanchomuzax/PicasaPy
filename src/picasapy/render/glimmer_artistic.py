@@ -97,7 +97,10 @@ def apply_pixelate(image, impact: float = 20.0, fade: float = 0.0, blend_mode: i
     small_h = max(1, int(height / impact + 0.5))
     small = resize_image(image, small_w, small_h, smoothing=True)
     pixelated = resize_image(small, width, height, smoothing=False)
-    return to_uint8(apply_blend_mode(to_float(image), to_float(pixelated), mode, fade_alpha(fade)))
+    alpha = fade_alpha(fade)
+    if mode == "normal" and alpha == 1.0:
+        return pixelated
+    return to_uint8(apply_blend_mode(to_float(image), to_float(pixelated), mode, alpha))
 
 
 #: A `PicnikGrain` leírójának rögzített `randomSeed`-je (`filterdesc.xml`,
