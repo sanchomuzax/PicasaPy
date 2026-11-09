@@ -22,6 +22,7 @@ A lecsatolt meghajtó (a szülő sincs meg) védelme változatlan.
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 import pytest
 
@@ -135,7 +136,7 @@ def test_atnevezes_nem_figyelt_nevre_kovetve(qt_app, tmp_path, kepernyokepek):
             "az átnevezett mappát a program nem követte az új nevére"
         )
         assert str(a) not in _mappak(ctl)
-        assert ctl._roots == [str(b)]
+        assert [Path(r) for r in ctl._roots] == [b]
     finally:
         _leallit(ctl)
 
