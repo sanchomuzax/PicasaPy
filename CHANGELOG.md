@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.87] - 2026-11-09
+
+- Az Intézőben átnevezett figyelt mappa régi neve eltűnik a bal sávból, és a bal sáv darabszáma és mappái a Kis képek beállítást követik, ahogy az eredeti Picasában (#6751).
+- A program induláskor és frissítés előtt eltávolítja a frissítősegéd korábbi, ottmaradt másolatait (#6752).
+- Kilépéskor a futó arckeresés megáll, és a következő indításkor a még nem vizsgált képekkel folytatódik (#6753).
+
 ## [1.0.86] - 2026-11-09
 
 - A mappa nélküli menüpróba a vezérlőn át állítja az üres mappát (#6748).
