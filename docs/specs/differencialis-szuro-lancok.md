@@ -90,3 +90,32 @@ A minimális jelöltek nem igazoltak új, egyértelműen javítható algoritmush
 Következő mérés: a #6690 `triple2` javítása után újrafuttatni az `lanc-0089` és `lanc-0178` releváns láncait, majd a `lanc-0056` esetén külön mérni a `TwoTone → rainbow` nem szomszédos párt, a `lanc-0005` esetén pedig a hiányzó háromtagú részláncokat. Ha ezek után egy részlánc továbbra is eltér, annak köztes renderelt képével kell folytatni a szűrőállapot lokalizálását.
 
 **Fájlforrás:** az eredeti Colab-exportok és `jeloltek.json` a helyi, nem verziózott `.tmp/meres/minimalizalas/` adatcsomag részei. A fenti teljes táblázat ezek 2026-11-08-i mérési eredményét őrzi.
+
+## Folytatás: a teljes láncok és a `lanc-0056` pármérése (2026-11-09)
+
+### Módszer
+
+A teljes `lanc-0056`, `lanc-0089` és `lanc-0178` láncot, valamint a `TwoTone → rainbow` párt a PicasaPy `apply_filters` útvonalán rendereltem. A k06, k09 és k08 forrásfájlokat a `minimalizalas/forras/` könyvtárból párosítottam. A teljes láncok eredetije a `teljes-458/export__kNN.jpg`, a páré a `teljes-459/export__k06.jpg`. A két korábbi kihagyásos kontrollt is újrarendereltem, az eredetijük a `minimalizalas/eredeti/min-01` és `min-03` könyvtárban van. Mind a hat saját render elkészült, kihagyott szűrő nélkül, az összevetett képek mérete egyezett.
+
+A helyi PNG-t a megfelelő Picasa JPEG mintavételezésével és kvantálótábláival kódoltam újra. Ezután mindkét dekódolt RGB-képre `cv2.GaussianBlur(..., (0, 0), sigmaX=2.5, sigmaY=2.5)` került. Az SSIM és CIE76 ΔE számítása a `tools/golden/compare_render.py` meglévő megvalósításával történt. Az ítélet a korábbi küszöböt használja: SSIM ≥ 0.98 és ΔE ≤ 2.0.
+
+### Eredmények
+
+| Lánc | Picasa referencia | Nyers SSIM / ΔE | Gauss σ=2.5 SSIM / ΔE | Ítélet |
+|---|---|---:|---:|---|
+| `lanc-0056` teljes | `teljes-458/export__k06.jpg` | 0.99326 / 2.635 | 0.99814 / 2.536 | eltér |
+| `lanc-0056-nelkul-1` (`gamma` nélkül) | `minimalizalas/eredeti/min-01/export__k06.jpg` | 0.99423 / 2.758 | 0.99827 / 2.661 | eltér |
+| `lanc-0056-nelkul-3` (`linblur` nélkül) | `minimalizalas/eredeti/min-03/export__k06.jpg` | 0.98812 / 2.442 | 0.99819 / 2.315 | eltér |
+| `TwoTone → rainbow` | `teljes-459/export__k06.jpg` | 0.98416 / 4.746 | 0.99525 / 4.604 | eltér |
+| `lanc-0089` teljes | `teljes-458/export__k09.jpg` | 0.98564 / 2.136 | 0.99830 / 0.683 | egyezik |
+| `lanc-0178` teljes | `teljes-458/export__k08.jpg` | 0.99225 / 2.977 | 0.99921 / 0.725 | egyezik |
+
+Az újramért kihagyásos kontrollok ítélete megegyezik az előző körével. A σ=2.5-ös értékek az előző jelentés számaitól legfeljebb 0.00002 SSIM-mel és 0.015 ΔE-vel térnek el; a két eset besorolása változatlan.
+
+### Lokalizálás és következő mérés
+
+A `lanc-0056` teljes lánc, a `gamma` nélküli és a `linblur` nélküli változat is eltér. A `TwoTone → rainbow` önmagában is eltér, nagyobb ΔE-vel. A meglévő egyszűrős kontrollban a `TwoTone` pixelhű (SSIM 1.00000, ΔE 0.000), a `rainbow` közelítés (0.99428, 0.853). A legkisebb mért reprodukáló eset így a két szűrő egymásutánja; a külön-külön kapott eredmények alapján a rainbow lépése vizsgálandó elsőként.
+
+Érintett PicasaPy-fájl: `src/picasapy/render/rainbow.py`. A natív callback `0x008f92d0`; az útvonal a szinthúzó `0x009db610` és a sávszínező `0x009db4f0` munkafüggvényt is hívja. A `TwoTone` kontrollja a `0x00bb87b0` Glimmer-munkavégző. A teljes kimeneti mérés nem választja szét, hogy a rainbow ezen belül melyik lépése, vagy a két lépés közötti állapotátadás okozza az eltérést. Ezért egyértelmű kerekítési, vágási vagy sorrendi hibát nem állapítottam meg, és renderkódot, golden referenciát vagy tesztet nem módosítottam.
+
+**Következő mérés:** k06-on a Colabban exportálni a Picasa `TwoTone=1,-27.961551,76.839183,9.626150,00227d84,003194d5` eredményét. Ezt a Picasa-exportált képet azonos bemenetként használva külön alkalmazni a `rainbow=1,244.890456` szűrőt az eredeti Picasában és a PicasaPy `apply_rainbow` útján, majd ugyanazzal a JPEG-egyeztetéssel és σ=2.5 mércével összevetni. Ez eldönti, hogy a rainbow önállóan tér-e el a TwoTone által előállított színtartományon; ha egyezik, a következő mérés az eredeti lánc köztes pufferének veszteségmentes kinyerése és a rainbow lépéssorrendjének összevetése.
