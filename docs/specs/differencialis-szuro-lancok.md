@@ -119,3 +119,27 @@ A `lanc-0056` teljes lánc, a `gamma` nélküli és a `linblur` nélküli válto
 Érintett PicasaPy-fájl: `src/picasapy/render/rainbow.py`. A natív callback `0x008f92d0`; az útvonal a szinthúzó `0x009db610` és a sávszínező `0x009db4f0` munkafüggvényt is hívja. A `TwoTone` kontrollja a `0x00bb87b0` Glimmer-munkavégző. A teljes kimeneti mérés nem választja szét, hogy a rainbow ezen belül melyik lépése, vagy a két lépés közötti állapotátadás okozza az eltérést. Ezért egyértelmű kerekítési, vágási vagy sorrendi hibát nem állapítottam meg, és renderkódot, golden referenciát vagy tesztet nem módosítottam.
 
 **Következő mérés:** k06-on a Colabban exportálni a Picasa `TwoTone=1,-27.961551,76.839183,9.626150,00227d84,003194d5` eredményét. Ezt a Picasa-exportált képet azonos bemenetként használva külön alkalmazni a `rainbow=1,244.890456` szűrőt az eredeti Picasában és a PicasaPy `apply_rainbow` útján, majd ugyanazzal a JPEG-egyeztetéssel és σ=2.5 mércével összevetni. Ez eldönti, hogy a rainbow önállóan tér-e el a TwoTone által előállított színtartományon; ha egyezik, a következő mérés az eredeti lánc köztes pufferének veszteségmentes kinyerése és a rainbow lépéssorrendjének összevetése.
+
+## Utómérés: Rainbow javítása (#6743, 2026-11-09)
+
+A fenti következő mérés a #6743-ban elkészült. Az első elkülönített eredmény alapján a hibát nem a gradiens iránya vagy a sávok fázisa okozta: a `0x008f92d0` callback a `Preferences/CarefulEnhance` beállítást olvassa, a #461 eredeti Rainbow-export pedig a kikapcsolt ággal egyezett. A PicasaPy addig feltétel nélkül a bekapcsolt ágat használta, ami a vörös csatornán átlagosan `+11,3` eltérést adott. Emellett a `244.890456` színmegőrzési paramétert a natív callback `ROUND`-olja, ezért az értéke `245`, nem `244`.
+
+Az izolált mérést a #460 Picasa TwoTone-exportján futtattam, és a #461 `export__k06tt.jpg` Rainbow-exportjával vetettem össze. A saját render a kikapcsolt CarefulEnhance-ágat és `p=245` értéket használta. A PicasaPy képet a referencia JPEG mintavételezésével és kvantálótábláival kódoltam újra; a σ=2.5 értékek előtt mindkét dekódolt képre `cv2.GaussianBlur(..., sigmaX=2.5, sigmaY=2.5)` került. A meglévő `tools/golden/compare_render.py` mércéje:
+
+| Mérce | Nyers | Gauss σ=2.5 |
+|---|---:|---:|
+| SSIM | 0.996303 | 0.998929 |
+| CIE76 ΔE átlag | 0.964923 | 0.819804 |
+| CIE76 ΔE 99. percentilis | 3.419133 | 2.280455 |
+
+A teszt referenciája a #461 exportból vágott 208×597 képpont, így reprodukálható, kis golden mintát ad az eredeti #460 bemenethez.
+
+A javítás után a `lanc-0056` teljes láncot újramértem a `minimalizalas/forras/k06.jpg` bemeneten, a `teljes-458/export__k06.jpg` eredeti referenciával, minden szűrő kihagyása nélkül. A PicasaPy render újrakódolása és az összevetés ugyanazt a JPEG-egyeztetést és Gauss-mércét használta:
+
+| Mérce | Nyers | Gauss σ=2.5 |
+|---|---:|---:|
+| SSIM | 0.996036 | 0.998966 |
+| CIE76 ΔE átlag | 0.582303 | 0.487303 |
+| CIE76 ΔE 99. percentilis | 2.540715 | 1.798259 |
+
+A javítás után a lánc a meglévő SSIM ≥ 0.98 és Gauss utáni ΔE ≤ 2.0 küszöb szerint egyezik. A sávok vízszintes iránya, fázisa és szorzókeverése nem változott.
