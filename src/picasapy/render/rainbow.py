@@ -1,7 +1,8 @@
 """A Picasa `rainbow` szűrője (#5304).
 
 A lépések és a konstansok a `docs/specs/filters-decoded.md` #5296
-szakaszából származnak: 30%-os szinthúzás CarefulEnhance móddal,
+szakaszából származnak: 30%-os szinthúzás a CarefulEnhance kikapcsolt
+állapotával (az eredeti #461 exporton mérve),
 paraméterezett színmegőrzés, az első sáv színéből számolt gamma-LUT az egész
 képre, majd a hat palettaszín
 maximális csatornájával normalizált szorzókeverés.
@@ -25,6 +26,11 @@ _PALETTE: tuple[tuple[int, int, int], ...] = (
     (66, 66, 236),
     (127, 59, 161),
 )
+
+# A natív callback a Preferences/CarefulEnhance állapotát olvassa. A Picasa
+# #461 exportja a kikapcsolt ággal egyezik; a renderláncban nincs ilyen
+# felhasználói beállítás, ezért ezt a mért alapállapotot használjuk.
+_RAINBOW_CAREFUL_ENHANCE = False
 
 
 @lru_cache(maxsize=len(_PALETTE))
@@ -125,12 +131,15 @@ def apply_rainbow(image: np.ndarray, preserve: int = 0) -> np.ndarray:
 
     A szinthúzó ugyanaz a `0x009db610`, amit az `enhance` és az
     `autocontrast` is használ, de a rainbow callback 0,30-as vágópont-keverést
-    és CarefulEnhance állapotot ad át. A `preserve` egész értékét a lánc a
-    második paraméterből csonkolja; 256-nál a telítetlenítő lépés kimarad.
-    A mag képet vesz át és képet ad vissza, fájlhoz nem nyúl.
+    és a Preferences/CarefulEnhance kikapcsolt állapotát adja át. A `preserve`
+    egész paramétert a lánc a natív `ROUND` szerint kerekíti; 256-nál a
+    telítetlenítő lépés kimarad. A mag képet vesz át és képet ad vissza,
+    fájlhoz nem nyúl.
     """
     validate_image(image)
-    stretched = apply_channel_levels_stretch(image, blend=0.30, careful=True)
+    stretched = apply_channel_levels_stretch(
+        image, blend=0.30, careful=_RAINBOW_CAREFUL_ENHANCE
+    )
     preserved = _preserve_color(stretched, preserve)
     return _colorize_bands(preserved)
 

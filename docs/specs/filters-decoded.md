@@ -8777,13 +8777,14 @@ nem az xref-index negatív találatára épül.
 | `debug` | natív sor #1: rekord `0x00cd0658`, callback `0x008f8360`, helper `0x008f9bf0`, képi worker `0x00aa1840` | **Igen.** A callback a vörös `0xffff0000` jelölő színét, méretét és képpontskálázott helyét továbbítja a workernek. | **feltételes**: bináris callbackút igazolt; 684-es `debug` golden-export `NINCS MEG`, a jelölő perem-/alfa-profiljának pontos képlete `NINCS MEG`. |
 | `focalpixelate` | a kisbetűs név eljut a diszpécserig, de a teljes 49 rekordos táblában nincs ilyen natív rekord vagy callback | **Nem.** | **megerősített**: a teljes natív tábla bejárása mellett a 684-es `min`, `alap` és `max` export dekódolt RGB-képe egymással és a tétlen kontrollokkal bitre azonos. |
 | `picnikfocalpixelate` / `PicnikFocalPixelate` | nem a 49-es natív táblából jön; Glimmer factory `0x008f9fe0`, worker `0x008f9a60`, leírása `filterdesc.xml` | **Igen.** A körkörös alfa-maszk után alacsony felbontású `W/Impact × H/Impact` átméretezés, majd teljes méretű legközelebbi szomszédos visszaméretezés fut. | **megerősített**: a descriptor és a bináris műveletgráf egyezik a 684-es eredeti exporttal; `min` és `alap` eltér a `Fade=100` kontrolltól (átlagos abszolút RGB-eltérés 2,174615, illetve 6,835422; 187819, illetve 366698 eltérő pixel a 614400-ból). |
-| `rainbow` | natív sor #37: rekord `0x00cd0898`, callback `0x008f92d0`; színező worker `0x009db4f0` | **Igen.** Hat vízszintes színsávot ír. Az algoritmus alább. | **megerősített a renderelés tényére**: a callbackút és a `k08` eredeti exportjának sáv-/határmérése egyezik; az algoritmuskód 3.9-es verzióazonossága nyitott. |
+| `rainbow` | natív sor #37: rekord `0x00cd0898`, callback `0x008f92d0`; színező worker `0x009db4f0` | **Igen.** Hat vízszintes színsávot ír. Az algoritmus alább. | **megerősített**: a #6743 #460→#461 izolált és `lanc-0056` teljes láncmérése a CarefulEnhance kikapcsolt ágával, valamint a nearest-even paraméterkerekítéssel egyezik; az algoritmuskód 3.9-es verzióazonossága nyitott. |
 | `whitept` | natív sor #20: rekord `0x00cd0788`, callback `0x008f9270`; nemsemleges pipettaszínnél a `0x0090eda0` 3×3-as mátrix workert hívja (alkalmazóképlet: „Az `autocolor` ALKALMAZÓJA”) | **Igen, ha a kiválasztott fehérpont nem semleges.** | **feltételes**: a callbackág binárisan igazolt. A 684-es `whitept__alap` szürke `0xffc0c0c0` beállítása tétlen; aktív, nemsemleges fehérponttal végzett exportmérés `NINCS MEG`. |
 
 A hat névből tehát egyedül a kisbetűs `focalpixelate` bizonyítottan
 nem renderelődik. A `PicnikFocalPixelate` descriptor-alapú renderútja már
-létezik; a `colorfix`, `debug`, `rainbow` és `whitept`
-PicasaPy-modellje hiányzik vagy nincs az eredetivel egyezően modellezve.
+létezik; a `colorfix`, `debug` és `whitept` PicasaPy-modellje hiányzik vagy
+nincs az eredetivel egyezően modellezve. A `rainbow` útvonal #6743-ban
+összevetve lett az eredeti exporttal.
 
 ### A `rainbow` algoritmusa
 
@@ -8796,10 +8797,15 @@ A callback sorrendje a `0x008f92d0` körüli hívásokból:
    nem a kimeneti kép átlátszatlansága: `lo' = lo + 0,30·(loMin - lo)`,
    `hi' = hi + 0,30·(hiMax - hi)`. A `loMin` a csatornák alsó
    vágópontjainak közös minimuma, a `hiMax` a felsők közös maximuma.
-   A `CarefulEnhance` állapota a lépés `0,5`-ös skáláját és
-   `252` fehérpontját választja a normál `1,0` és `255` helyett.
+   A callback a `Preferences/CarefulEnhance` állapotát olvassa
+   (`0x008f92d0`). Bekapcsolva a lépés `0,5`-ös skálát és `252` fehérpontot
+   használ a normál `1,0` és `255` helyett; a kikapcsolt ág ezeket az
+   alapértékeket hagyja meg. A #461 eredeti Rainbow-export a kikapcsolt ággal
+   egyezik, ezért a PicasaPy renderlánca is ezt használja.
 3. Színmegőrzés / telítetlenítés: a tag második paramétere `p`,
-   az `0x008f9352-0x008f9364` címen egészre csonkolva. Ha `p=256`,
+   az `0x008f9352-0x008f9364` közötti natív `ROUND` konverzióval egészre
+   kerekítve (x87 alapértelmezett nearest-even módban). Így a
+   `244.890456` értékből `p=245` lesz. Ha `p=256`,
    a lépés kimarad; egyébként `w=256-p`, és a
    `0x009a9550` worker (`0x008f9392` hívóhely) minden
    `C` csatornán alkalmazza:
