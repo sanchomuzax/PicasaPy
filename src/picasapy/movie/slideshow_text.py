@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from picasapy.lazy_cv2 import cv2
-from picasapy.lazy_numpy import np
+import numpy as np
 from PIL import Image, ImageColor, ImageDraw
 
 

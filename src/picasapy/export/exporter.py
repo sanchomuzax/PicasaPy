@@ -18,7 +18,7 @@ from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from picasapy.cvimage import scale_down
 from picasapy.ini import IniDocument, load_or_empty

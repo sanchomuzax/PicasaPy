@@ -65,7 +65,7 @@ from dataclasses import dataclass
 from typing import NamedTuple
 
 from picasapy.lazy_cv2 import cv2
-from picasapy.lazy_numpy import np
+import numpy as np
 from picasapy.lazy_import import lazy_callable
 
 from .themes import (

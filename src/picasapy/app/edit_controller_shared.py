@@ -10,7 +10,7 @@ import re
 import logging
 from pathlib import Path
 
-from picasapy.lazy_numpy import np
+import numpy as np
 from PIL import Image, UnidentifiedImageError
 from PySide6.QtCore import (
     Property,

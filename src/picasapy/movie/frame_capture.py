@@ -34,7 +34,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 #: A képkocka kiterjesztése — mérve (`0x00c80a50`).
 KEPKOCKA_KITERJESZTES = ".jpg"

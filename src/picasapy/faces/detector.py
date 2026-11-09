@@ -10,7 +10,7 @@ import threading
 from dataclasses import dataclass
 from pathlib import Path
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 try:
     # #1611: a lusta helyettes — az OpenCV csak az első tényleges

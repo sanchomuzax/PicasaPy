@@ -20,7 +20,7 @@ import threading
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from picasapy.cvimage import (
     _find_decoded_image,

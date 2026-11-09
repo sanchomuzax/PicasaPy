@@ -4,20 +4,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from picasapy.lazy_cv2 import cv2
 from picasapy.ini.rect64 import Rect64
 
 # `0x00cf48f8`: a float32(0.499) érték double-ként tárolva.
-# Pontosan a `float(np.float32(0.499))` értéke; a skalár nem indokol NumPy-
-# importot a modul betöltésekor (#6688).
-_DELTA = 0.49900001287460327
+_DELTA = float(np.float32(0.499))
 # `0x00cf4160`: külön double konstans, csak a végső ROUND-hoz.
 _ROUND_BIAS = 0.499
 _LOW_RES_FACE_WIDTH = 136.5
-# A megadott érték már pontosan reprezentálható float32-ként.
-_MAX_ZOOM = 1.2999999523162842
+_MAX_ZOOM = np.float32(1.2999999523162842)
 
 
 @dataclass(frozen=True)

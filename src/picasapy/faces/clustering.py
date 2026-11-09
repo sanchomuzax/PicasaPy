@@ -49,7 +49,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 #: A Picasa `facethresh0`/`facethresh1` beállításának 10 lépcsője
 #: (`runtime/options.fen`, issue #26) — a LÉPCSŐZÉST vesszük át.

@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from picasapy.lazy_cv2 import cv2
 from picasapy.lazy_import import lazy_callable
-from picasapy.lazy_numpy import np
+import numpy as np
 
 # #6688: a render csomag az első exportált EXIF-bélyegképig nem töltődik be
 # (a metaadat-modul az indulási láncban van)

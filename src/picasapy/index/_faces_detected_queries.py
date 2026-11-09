@@ -9,7 +9,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from .hidden_scope import visible_folder_sql
 from .queries import PhotoRecord, _records, _select
@@ -219,7 +219,7 @@ def named_centroids(conn: sqlite3.Connection) -> dict[str, "np.ndarray"]:
     arc — modell/lenyomat nélkül üres, tehát a javaslat-ág egyszerűen nem
     talál el (nem hibázik).
     """
-    from picasapy.lazy_numpy import np
+    import numpy as np
 
     sums: dict[str, tuple[np.ndarray, int]] = {}
     rows = conn.execute(

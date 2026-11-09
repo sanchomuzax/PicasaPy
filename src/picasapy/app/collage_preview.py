@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import threading
 
-from picasapy.lazy_numpy import np
+import numpy as np
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickImageProvider
 

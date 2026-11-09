@@ -39,7 +39,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from picasapy.scanner.filetypes import RAW_EXTENSIONS
 

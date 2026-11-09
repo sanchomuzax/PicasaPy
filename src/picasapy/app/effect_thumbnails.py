@@ -36,7 +36,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 from urllib.parse import parse_qs
 
-from picasapy.lazy_numpy import np
+import numpy as np
 import itertools
 import shiboken6
 from PySide6.QtCore import (

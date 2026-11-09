@@ -42,7 +42,7 @@ render-magja UTÁN fut, tehát sem a lemezre írt bélyegkép, sem a memóriabel
 
 from __future__ import annotations
 
-from picasapy.lazy_numpy import np
+import numpy as np
 from PySide6.QtGui import QImage
 
 from picasapy.lazy_import import lazy_callable

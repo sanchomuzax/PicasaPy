@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeAlias
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from picasapy.cvimage import dekodolj_forrast
 from picasapy.lazy_import import lazy_callable

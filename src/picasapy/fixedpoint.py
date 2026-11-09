@@ -51,7 +51,7 @@ számolás buktatójával együtt, amibe a #926 is beleszaladt — a
 
 from __future__ import annotations
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 __all__ = ["c_int_div"]
 

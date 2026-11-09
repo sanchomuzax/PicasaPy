@@ -42,7 +42,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from picasapy.fixedpoint import c_int_div
 

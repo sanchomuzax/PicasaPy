@@ -35,7 +35,7 @@ import os
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
-from picasapy.lazy_numpy import np
+import numpy as np
 from PySide6.QtCore import Property, Signal, Slot, QUrl
 
 from picasapy.cvimage import read_image_bytes

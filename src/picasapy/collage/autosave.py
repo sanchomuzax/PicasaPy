@@ -35,7 +35,7 @@ import logging
 import os
 from pathlib import Path
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from picasapy.lazy_cv2 import cv2
 from picasapy.collage.cxf import CxfProject, dumps, loads

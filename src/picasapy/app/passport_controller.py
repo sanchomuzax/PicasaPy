@@ -20,7 +20,7 @@ import logging
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
-from picasapy.lazy_numpy import np
+import numpy as np
 from PySide6.QtCore import QObject, QStandardPaths, QUrl, Signal, Slot
 
 from picasapy.app.face_scan_controller import _DETECT_MAX_DIMENSION

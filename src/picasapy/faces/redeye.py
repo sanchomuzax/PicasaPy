@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from math import hypot, isfinite
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from picasapy.cvimage import scale_down
 from picasapy.faces.detector import (

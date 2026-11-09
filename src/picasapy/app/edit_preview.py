@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from picasapy.lazy_numpy import np
+import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickImageProvider

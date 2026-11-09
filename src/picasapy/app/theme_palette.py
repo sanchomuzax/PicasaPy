@@ -43,7 +43,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from picasapy.lazy_numpy import np
+import numpy as np
 from PySide6.QtGui import QColor
 
 from .display_mode_paint import apply_display_mode, display_mode_changes_pixels

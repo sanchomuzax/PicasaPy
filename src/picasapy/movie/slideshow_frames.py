@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from picasapy.lazy_cv2 import cv2
-from picasapy.lazy_numpy import np
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from picasapy.ini import IniDocument

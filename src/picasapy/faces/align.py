@@ -18,7 +18,7 @@ import math
 from dataclasses import dataclass
 
 from picasapy.lazy_cv2 import cv2
-from picasapy.lazy_numpy import np
+import numpy as np
 
 #: A két szem közti táv a kimeneti szélesség hányadaként (Picasa-szerű
 #: arc-indexkép: a szemek nem a szélen, hanem a felső harmadban ülnek).

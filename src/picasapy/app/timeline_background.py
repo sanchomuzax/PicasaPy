@@ -9,7 +9,7 @@ from pathlib import Path
 
 from picasapy.cvimage import dekodolj_forrast, hosszabb_el, scale_down_picasa_mag
 from picasapy.lazy_cv2 import cv2
-from picasapy.lazy_numpy import np
+import numpy as np
 from PySide6.QtCore import QSize, QRectF, Qt
 from PySide6.QtGui import (
     QColor,

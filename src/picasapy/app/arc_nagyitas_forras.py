@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from picasapy.lazy_numpy import np
+import numpy as np
 from PySide6.QtGui import QImage, QTransform
 
 from picasapy.cvimage import read_image_bytes, reduced_color_flag, scale_down_picasa_mag

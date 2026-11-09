@@ -10,7 +10,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from picasapy.faces.detector import FaceDetection, FaceLandmarks
 

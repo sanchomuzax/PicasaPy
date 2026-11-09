@@ -1,4 +1,4 @@
-"""A képszerkesztő csomag és a NumPy az első ablakkép előtt kimarad (#6688).
+"""A képszerkesztő csomag az első ablakkép előtt kimarad (#6688).
 
 Az őr a #4913 mintáját követi: NEM időt mér, hanem a betöltött modulok
 listáját olvassa ki egy külön processzben. Három szinten nézi meg:
@@ -45,7 +45,6 @@ print(json.dumps({
     "render": sorted(
         nev for nev in sys.modules if nev.startswith("picasapy.render")
     ),
-    "numpy": "numpy" in sys.modules,
 }))
 """
 
@@ -67,7 +66,6 @@ def figyelo(state):
         "render": sorted(
             nev for nev in sys.modules if nev.startswith("picasapy.render")
         ),
-        "numpy": "numpy" in sys.modules,
     }
     print("__JELOLO__" + json.dumps(leltar), flush=True)
     return eredeti(state)
@@ -144,7 +142,6 @@ utana_pixel = utana.pixelColor(0, 0).getRgb()
 print(json.dumps({
     "render_before_editor": render_elotte,
     "render_after_effect": "picasapy.render" in sys.modules,
-    "numpy_after_effect": "numpy" in sys.modules,
     "effect_chain": controller.effectChain,
     "pixel_changed": elotte_pixel != utana_pixel,
     "image_size": [utana.width(), utana.height()],
@@ -216,12 +213,12 @@ def _utolso_json(process: subprocess.CompletedProcess):
     return json.loads(process.stdout.strip().splitlines()[-1])
 
 
-def test_a_render_es_a_numpy_az_alkalmazasmodul_importjakor_nem_toltodik_be():
+def test_a_render_az_alkalmazasmodul_importjakor_nem_toltodik_be():
     betoltve = _utolso_json(_futtasd(_IMPORT_PROGRAM, env=_kornyezet(), timeout=120))
 
-    assert not betoltve["render"] and not betoltve["numpy"], (
+    assert not betoltve["render"], (
         "betöltődött az `application` importjakor: "
-        f"render={betoltve['render'][:10]}, numpy={betoltve['numpy']}"
+        f"render={betoltve['render'][:10]}"
     )
 
 
@@ -248,9 +245,9 @@ def test_a_render_az_elso_ablakkep_elott_nem_toltodik_be(tmp_path: Path):
     )
     betoltve = json.loads(sorok[-1])
 
-    assert not betoltve["render"] and not betoltve["numpy"], (
+    assert not betoltve["render"], (
         "az ablak első képkockája előtt betöltődött: "
-        f"render={betoltve['render'][:10]}, numpy={betoltve['numpy']}"
+        f"render={betoltve['render'][:10]}"
     )
 
 
@@ -291,7 +288,6 @@ def test_a_szerkeszto_elso_effektje_betolti_es_hasznalja_a_rendert(tmp_path: Pat
 
     assert eredmeny["render_before_editor"] is False
     assert eredmeny["render_after_effect"] is True
-    assert eredmeny["numpy_after_effect"] is True
     assert eredmeny["effect_chain"] == "sepia=1;"
     assert eredmeny["pixel_changed"] is True
     assert eredmeny["image_size"] == [16, 12]

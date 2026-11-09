@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from picasapy.lazy_numpy import np
+import numpy as np
 from picasapy.lazy_import import lazy_callable
 from .shadow import ShadowParams, shadow_params
 from .themes import (

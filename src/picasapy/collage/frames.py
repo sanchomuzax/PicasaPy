@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from .fitting import picasa_round
 from .themes import BORDER_THEMES, NOBORDER, POLAROID, WHITEBORDER

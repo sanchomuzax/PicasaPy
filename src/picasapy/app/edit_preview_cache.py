@@ -6,7 +6,7 @@ from pathlib import Path
 
 from typing import TYPE_CHECKING
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from picasapy.ini.filters import FilterOp
 from picasapy.lazy_import import lazy_callable

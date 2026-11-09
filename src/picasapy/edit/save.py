@@ -166,7 +166,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2 as cv2
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from picasapy.edit.session import EditSession
 from picasapy.ini import (

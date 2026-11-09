@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from picasapy.lazy_numpy import np
+import numpy as np
 
 from picasapy.ini.filters import FilterOp
 from picasapy.lazy_cv2 import cv2
