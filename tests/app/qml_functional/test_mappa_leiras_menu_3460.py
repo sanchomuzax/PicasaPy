@@ -9,6 +9,7 @@ vált. Személynézetben — ahol nincs „a" mappa vagy album — tiltott.
 from __future__ import annotations
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
+from tests.support.varakozas import var_feltetelre
 
 
 def _child(root, name):
@@ -74,8 +75,11 @@ def test_album_nezetben_a_tetel_aktiv(qml_app, qt_app):
 
 
 def test_mappa_nelkul_a_tetel_tiltott(qml_app, qt_app):
-    window, _controller, _engine = qml_app
+    window, controller, _engine = qml_app
     sav = window.property("menuBar")
-    sav.setProperty("currentFolder", "")
-    qt_app.processEvents()
+    # #6748: a menüsor `currentFolder`-e a vezérlőhöz kötött; a Pythonból
+    # írt érték a kötést nem bontja, egy késve érkező vezérlőjelzés
+    # visszaírta. Ezért a valódi állapotot állítjuk: nincs kijelölt mappa.
+    controller.selectFolder("")
+    assert var_feltetelre(qt_app, lambda: sav.property("currentFolder") == "", 5.0)
     assert _child(window, "menuFolderEditDescription").property("enabled") is False
