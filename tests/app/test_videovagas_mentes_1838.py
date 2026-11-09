@@ -18,6 +18,8 @@ Amit a lap kikötése szerint tudni kell:
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from pathlib import Path
 
 import pytest
@@ -161,7 +163,7 @@ class TestMentes:
 
         foto = _video(tmp_path, nev="IMG_1.JPG")
         modell = PhotoGridModel()
-        modell.set_photos((PhotoRecord(**{**foto.__dict__, "kind": "image"}),))
+        modell.set_photos((replace(foto, kind="image"),))
         _Vezerlo(modell).setMovieTrim(0, 839, -1)
         assert not (tmp_path / PICASA_INI_NAME).exists()
 
