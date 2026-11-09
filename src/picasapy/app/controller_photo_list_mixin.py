@@ -14,7 +14,7 @@ from .search_results import group_by_folder
 _log = logging.getLogger(__name__)
 
 
-class _InitialFeedSignals(QObject):
+class InitialFeedSignals(QObject):
     """Az induláskori olvasószál eredményét a felület szálának adja át."""
 
     ready = Signal(int, object, str)
@@ -27,11 +27,11 @@ class AppControllerPhotoListMixin:
         generation = self._initial_feed_generation
         folder_sort = self.folderSort
         folder_sort_reverse = self.folderSortReverse
-        signals = _InitialFeedSignals(self)
-        signals.ready.connect(
+        initial_feed_signals = InitialFeedSignals(self)
+        initial_feed_signals.ready.connect(
             self._on_initial_feed_ready, Qt.ConnectionType.QueuedConnection
         )
-        self._initial_feed_signals = signals
+        self._initial_feed_signals = initial_feed_signals
 
         def load_feed() -> None:
             try:
@@ -44,11 +44,11 @@ class AppControllerPhotoListMixin:
                     )
                 after = self._index_stamp()
             except Exception as error:  # noqa: BLE001 — a syncFinished még frissíthet
-                signals.ready.emit(
+                initial_feed_signals.ready.emit(
                     generation, None, f"{type(error).__name__}: {error}"
                 )
                 return
-            signals.ready.emit(generation, (before, after, records), "")
+            initial_feed_signals.ready.emit(generation, (before, after, records), "")
 
         self._start_background(load_feed, name="picasapy-initial-library-feed")
 
