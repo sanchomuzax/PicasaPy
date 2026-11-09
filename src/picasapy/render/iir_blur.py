@@ -156,8 +156,16 @@ def apply_picasa_blur(
     work = image.astype(np.int32)
     if radius_x > 0.0:
         coefficient = blur_coefficient(radius_x)
-        work = _sweep_axis_zero(work.transpose(1, 0, 2), coefficient).transpose(1, 0, 2)
+        # A transposed view would make every recurrence step stride across
+        # the whole row. Copy once so NumPy can vectorize each independent
+        # column/channel plane from contiguous memory.
+        transposed = np.ascontiguousarray(work.transpose(1, 0, 2))
+        work = _sweep_axis_zero(transposed, coefficient).transpose(1, 0, 2)
     if radius_y > 0.0:
+        # The x sweep leaves a transposed view. Restore row-major storage for
+        # the second recurrence axis; each step still keeps the native order
+        # and fixed-point rounding unchanged.
+        work = np.ascontiguousarray(work)
         work = _sweep_axis_zero(work, blur_coefficient(radius_y))
     return work.astype(np.uint8)
 

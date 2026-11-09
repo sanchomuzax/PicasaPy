@@ -44,8 +44,10 @@ oszlopát visszaadja, ld. a fenti szakaszt a teljes táblázatért.
 
 from __future__ import annotations
 
-import numpy as np
+from functools import lru_cache
 import operator
+
+import numpy as np
 
 from picasapy.render.nativ_noise import picasa_mt19937
 
@@ -150,15 +152,9 @@ def _simit_haromszor(sik: np.ndarray) -> np.ndarray:
     return p
 
 
-def apply_native_grain(image: np.ndarray, seed: int) -> np.ndarray:
-    """A `grain`/`grain2` munkafüggvénye, a natív nyolc lépés szerint.
-
-    `image` RGB `uint8` (H, W, 3) — a hívó felel az alakellenőrzésért
-    (`picasapy.render.curves.validate_image`). `seed` a helyi MT19937
-    magja: a lánc a Picasa CRT-folyamából, renderenkénti sorszámmal adja.
-    Rögzített bemeneti kép és lánc így determinisztikus.
-    """
-    height, width = image.shape[:2]
+@lru_cache(maxsize=1)
+def _grain_noise_rgb(height: int, width: int, seed: int) -> np.ndarray:
+    """A kész zajtér bájtjai méret+mag kulccsal, egy képre korlátozva."""
     szavak = picasa_mt19937(seed, 2 * height * width).reshape(2, height, width)
     kezdeti_szavak, friss_szavak = szavak[0], szavak[1]
 
@@ -168,8 +164,6 @@ def apply_native_grain(image: np.ndarray, seed: int) -> np.ndarray:
     b = _simit_haromszor(_pull_127_fele(b, _K_BEEGETETT))
 
     friss_r, friss_g, friss_b = _bajtok_rgb(friss_szavak)
-    # int32-re bővítve: a `·210` szorzás túlcsordulna `int16`-ban (ld.
-    # `_bajtok_rgb` docsztringje).
     r = friss_r.astype(np.int32) + (
         ((r.astype(np.int32) - friss_r) * _VISSZAKEVERES_SULY) >> 8
     )
@@ -184,14 +178,30 @@ def apply_native_grain(image: np.ndarray, seed: int) -> np.ndarray:
     r = np.clip(r + (((y - r) * _SZURKITES_SULY) >> 8), 0, 255)
     g = np.clip(g + (((y - g) * _SZURKITES_SULY) >> 8), 0, 255)
     b = np.clip(b + (((y - b) * _SZURKITES_SULY) >> 8), 0, 255)
+    zaj = np.stack((r, g, b), axis=-1).astype(np.uint8)
+    zaj.flags.writeable = False
+    return zaj
 
+
+def apply_native_grain(image: np.ndarray, seed: int) -> np.ndarray:
+    """A `grain`/`grain2` munkafüggvénye, a natív nyolc lépés szerint.
+
+    `image` RGB `uint8` (H, W, 3) — a hívó felel az alakellenőrzésért
+    (`picasapy.render.curves.validate_image`). `seed` a helyi MT19937
+    magja: a lánc a Picasa CRT-folyamából, renderenkénti sorszámmal adja.
+    Rögzített bemeneti kép és lánc így determinisztikus.
+    """
+    height, width = image.shape[:2]
+    zaj = _grain_noise_rgb(height, width, int(seed))
     kep = image.astype(np.int32)
     kimenet = np.empty_like(kep)
-    for csatorna, zaj in enumerate((r, g, b)):
+    for csatorna in range(3):
         c = kep[..., csatorna]
         suly = _KOZEPTONUS_CSUCS - np.abs(_KOZEPTONUS_KOZEP - c)
         kimenet[..., csatorna] = np.clip(
-            c + ((suly * (zaj - _KOZEPTONUS_KOZEP)) >> 8), 0, 255
+            c + ((suly * (zaj[..., csatorna].astype(np.int32) - _KOZEPTONUS_KOZEP)) >> 8),
+            0,
+            255,
         )
     return kimenet.astype(np.uint8)
 

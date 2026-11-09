@@ -16,6 +16,9 @@ TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
 
 from __future__ import annotations
 
+from functools import lru_cache
+
+from picasapy.lazy_cv2 import cv2
 import numpy as np
 
 from picasapy.render.belso_ragyogas import inner_glow
@@ -40,6 +43,7 @@ from picasapy.render.glimmer_ops import (
     to_uint8,
 )
 from picasapy.render.nativ_blur import blur_image_operation
+from picasapy.render.nativ_noise import picasa_mt19937
 
 # --- Cinemascope -------------------------------------------------------------
 
@@ -138,6 +142,50 @@ def apply_pencil_sketch(image, radius: float = 2.0, contrast: float = 100.0, fad
 # --- Holga / Lomo ------------------------------------------------------------
 
 
+@lru_cache(maxsize=1)
+def _holga_contrast_lut() -> np.ndarray:
+    """A Holga kontrasztmátrixának byte-pontos, 256 elemű csatorna-LUT-ja."""
+    ramp = np.arange(256, dtype=np.uint8).reshape(1, 256, 1)
+    ramp_rgb = np.repeat(ramp, 3, axis=2)
+    lookup = simple_color_matrix(ramp_rgb, contrast=25.0)[0, :, 0].copy().reshape(256, 1)
+    lookup.flags.writeable = False
+    return lookup
+
+
+def _holga_contrast_exact(image: np.ndarray) -> np.ndarray:
+    """A három külön fixpontos csatornamenet helyett egy natív byte-LUT."""
+    return cv2.LUT(image, _holga_contrast_lut())
+
+
+@lru_cache(maxsize=2)
+def _holga_noise_plane(height: int, width: int, seed: int, low: int) -> np.ndarray:
+    """A Holga szürke, egész zajmintája; a kulcs a méret, mag és alsó határ."""
+    low = int(low)
+    span = 256 - low
+    draws = picasa_mt19937(seed, height * width).reshape(height, width)
+    plane = (draws % np.uint32(span) + np.uint32(low)).astype(np.uint8)
+    plane.flags.writeable = False
+    return plane
+
+
+def _holga_noise_blend(image: np.ndarray, low: int) -> np.ndarray:
+    """Egy szürke zajcsatorna keverése az eredeti egész blend-képlettel."""
+    height, width = image.shape[:2]
+    noise = _holga_noise_plane(height, width, 5, int(low))[..., np.newaxis]
+    base = image.astype(np.int32)
+    multiply = (base * noise.astype(np.int32)) // 255
+    weight = int(np.float32(0.6) * np.float32(256.0))
+    if weight > 0:
+        weight -= 1
+    result = base * (255 - weight) + multiply * weight
+    result >>= 8
+    if width % 2:
+        result[:, -1, :] = multiply[:, -1, :] + (
+            (base[:, -1, :] - multiply[:, -1, :]) * weight >> 8
+        )
+    return np.clip(result, 0, 255).astype(np.uint8)
+
+
 def apply_holga(image, blur: float = 70.0, grain: float = 30.0, fade: float = 0.0):
     """`Holga=1,Blur,Grain,Fade` — körkörös maszk (`innerR=0,9·R`,
     `outerR=(2−Blur/100)·R`) → `AutoFix` → belső ragyogás (fekete, 1,4) →
@@ -153,11 +201,9 @@ def apply_holga(image, blur: float = 70.0, grain: float = 30.0, fade: float = 0.
     blurred = to_float(blur_image_operation(glowed, 18.0, 20.0, quality=3))
     masked = to_uint8(masked_blend(to_float(glowed), blurred, mask))
     tinted = bw_tint(masked, (255, 102, 102))
-    matrixed = simple_color_matrix(tinted, contrast=25.0)
+    matrixed = _holga_contrast_exact(tinted)
     low = max(0.0, 255.0 - round(grain / 200.0 * 255.0))
-    noised = apply_noise(
-        matrixed, seed=5, low=low, high=255.0, grayscale=True, blend_alpha=0.6, blend_mode="multiply"
-    )
+    noised = _holga_noise_blend(matrixed, int(low))
     return to_uint8(alpha_blend(to_float(image), to_float(noised), fade_alpha(fade)))
 
 

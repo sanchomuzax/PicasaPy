@@ -3,15 +3,19 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from picasapy.lazy_cv2 import cv2
 from picasapy.render import (
     belso_ragyogas,
     glimmer_artistic,
+    glimmer_color_ops,
     glimmer_creative,
     glimmer_frame_ops,
+    glimmer_tone,
     iir_blur,
     nativ_blur,
+    native_grain,
 )
 from picasapy.render.native_grain import _bajtok_rgb
 
@@ -141,3 +145,160 @@ def test_pencil_sketch_egesz_keverese_megtartja_a_regi_kepet(monkeypatch):
     kapott = glimmer_creative.apply_pencil_sketch(image, radius=2.0, contrast=100.0, fade=0.0)
 
     np.testing.assert_array_equal(kapott, vart)
+
+
+def test_iir_menetei_folytonos_puffert_hasznalnak_es_megtartjak_a_bajtokat(monkeypatch):
+    image = np.random.default_rng(6693).integers(0, 256, (67, 83, 3), dtype=np.uint8)
+    vart = _legacy_iir(image, 4.75, 3.25)
+    eredeti = iir_blur._sweep_axis_zero
+    folytonos = []
+
+    def _figyelt(values, coefficient):
+        folytonos.append(values.flags.c_contiguous)
+        return eredeti(values, coefficient)
+
+    monkeypatch.setattr(iir_blur, "_sweep_axis_zero", _figyelt)
+    kapott = iir_blur.apply_picasa_blur(image, 4.75, 3.25)
+
+    assert folytonos == [True, True]
+    np.testing.assert_array_equal(kapott, vart)
+
+
+def test_local_contrast_egesz_kulonbsegekkel_azonos_kimenetu(monkeypatch):
+    image = np.random.default_rng(6694).integers(0, 256, (37, 53, 3), dtype=np.uint8)
+    vart = glimmer_tone.apply_local_contrast(image, radius=7.0, strength=1.5)
+    eredeti = glimmer_color_ops._szorzott_resz
+    tipushalmaz = []
+
+    def _figyelt(difference, strength):
+        tipushalmaz.append(difference.dtype)
+        return eredeti(difference, strength)
+
+    monkeypatch.setattr(glimmer_color_ops, "_szorzott_resz", _figyelt)
+    kapott = glimmer_tone.apply_local_contrast(image, radius=7.0, strength=1.5)
+
+    assert tipushalmaz == [np.dtype(np.int16), np.dtype(np.int16)]
+    np.testing.assert_array_equal(kapott, vart)
+
+
+def test_holga_szurke_kontraszt_lutja_bajtra_azonos_es_kis_puffert_hasznal(monkeypatch):
+    szurke = np.random.default_rng(6695).integers(0, 256, (29, 41), dtype=np.uint8)
+    image = np.repeat(szurke[..., np.newaxis], 3, axis=2)
+    eredeti = glimmer_color_ops.simple_color_matrix
+    vart = eredeti(image, contrast=25.0)
+    alakok = []
+
+    def _figyelt(values, **kwargs):
+        alakok.append(values.shape)
+        return eredeti(values, **kwargs)
+
+    glimmer_creative._holga_contrast_lut.cache_clear()
+    monkeypatch.setattr(glimmer_creative, "simple_color_matrix", _figyelt)
+    kapott = glimmer_creative._holga_contrast_exact(image)
+
+    assert alakok == [(1, 256, 3)]
+    np.testing.assert_array_equal(kapott, vart)
+
+
+@pytest.mark.parametrize("width", [46, 47])
+def test_holga_zajkeverese_bajtra_azonos_es_a_zajplane_gyorsitotarazott(monkeypatch, width):
+    szurke = np.random.default_rng(6696).integers(0, 256, (31, width), dtype=np.uint8)
+    image = np.repeat(szurke[..., np.newaxis], 3, axis=2)
+    vart = glimmer_creative.apply_noise(
+        image,
+        seed=5,
+        low=217,
+        high=255.0,
+        grayscale=True,
+        blend_alpha=0.6,
+        blend_mode="multiply",
+    )
+    glimmer_creative._holga_noise_plane.cache_clear()
+    zaj1 = glimmer_creative._holga_noise_plane(31, width, 5, 217)
+    zaj2 = glimmer_creative._holga_noise_plane(31, width, 5, 217)
+
+    def _tiltott(*args, **kwargs):
+        raise AssertionError("a Holga szürke zajkeverése nem kérhet teljes RGB zajréteget")
+
+    monkeypatch.setattr(glimmer_creative, "apply_noise", _tiltott)
+    monkeypatch.setattr(glimmer_creative, "apply_blend_mode", _tiltott)
+    kapott = glimmer_creative._holga_noise_blend(image, 217)
+
+    assert zaj1 is zaj2
+    assert not zaj1.flags.writeable
+    np.testing.assert_array_equal(kapott, vart)
+
+
+def test_holga_belso_ragyogasanak_meretfuggo_sulya_gyorsitotarazott(monkeypatch):
+    image = np.random.default_rng(6699).integers(0, 256, (97, 131, 3), dtype=np.uint8)
+    clear_cache = getattr(belso_ragyogas._lekicsinyitett_suly, "cache_clear", None)
+    if clear_cache is not None:
+        clear_cache()
+    eredeti = belso_ragyogas.ragyogas_maszk_oszlopai
+    hivasok = []
+
+    def _figyelt(*args, **kwargs):
+        hivasok.append(args)
+        return eredeti(*args, **kwargs)
+
+    monkeypatch.setattr(belso_ragyogas, "ragyogas_maszk_oszlopai", _figyelt)
+    elso = belso_ragyogas.inner_glow(image, (0, 0, 0), 70.0, 60.0, 1.4)
+    masodik = belso_ragyogas.inner_glow(image, (0, 0, 0), 70.0, 60.0, 1.4)
+
+    assert len(hivasok) == 1
+    np.testing.assert_array_equal(masodik, elso)
+
+
+def _legacy_native_grain(image: np.ndarray, seed: int) -> np.ndarray:
+    """A régi, gyorsítótár nélküli zajtér- és képpontkeverő referenciája."""
+    height, width = image.shape[:2]
+    words = native_grain.picasa_mt19937(seed, 2 * height * width).reshape(2, height, width)
+    first, fresh = words[0], words[1]
+    r, g, b = _bajtok_rgb(first)
+    r = native_grain._simit_haromszor(native_grain._pull_127_fele(r, native_grain._K_BEEGETETT))
+    g = native_grain._simit_haromszor(native_grain._pull_127_fele(g, native_grain._K_BEEGETETT))
+    b = native_grain._simit_haromszor(native_grain._pull_127_fele(b, native_grain._K_BEEGETETT))
+    fresh_r, fresh_g, fresh_b = _bajtok_rgb(fresh)
+    r = fresh_r.astype(np.int32) + (((r.astype(np.int32) - fresh_r) * native_grain._VISSZAKEVERES_SULY) >> 8)
+    g = fresh_g.astype(np.int32) + (((g.astype(np.int32) - fresh_g) * native_grain._VISSZAKEVERES_SULY) >> 8)
+    b = fresh_b.astype(np.int32) + (((b.astype(np.int32) - fresh_b) * native_grain._VISSZAKEVERES_SULY) >> 8)
+    y = (native_grain._Y_B * b + native_grain._Y_G * g + native_grain._Y_R * r) >> 8
+    r = np.clip(r + (((y - r) * native_grain._SZURKITES_SULY) >> 8), 0, 255)
+    g = np.clip(g + (((y - g) * native_grain._SZURKITES_SULY) >> 8), 0, 255)
+    b = np.clip(b + (((y - b) * native_grain._SZURKITES_SULY) >> 8), 0, 255)
+    source = image.astype(np.int32)
+    output = np.empty_like(source)
+    for channel, noise in enumerate((r, g, b)):
+        center_weight = native_grain._KOZEPTONUS_CSUCS - np.abs(
+            native_grain._KOZEPTONUS_KOZEP - source[..., channel]
+        )
+        output[..., channel] = np.clip(
+            source[..., channel]
+            + ((center_weight * (noise - native_grain._KOZEPTONUS_KOZEP)) >> 8),
+            0,
+            255,
+        )
+    return output.astype(np.uint8)
+
+
+def test_grain2_meret_es_mag_szerint_gyorsitotarazott_teret_kever_bajtra_azonosan(monkeypatch):
+    first = np.random.default_rng(6697).integers(0, 256, (13, 19, 3), dtype=np.uint8)
+    second = np.random.default_rng(6698).integers(0, 256, (13, 19, 3), dtype=np.uint8)
+    seed = 1234
+    vart1 = _legacy_native_grain(first, seed)
+    vart2 = _legacy_native_grain(second, seed)
+    eredeti = native_grain.picasa_mt19937
+    generator_calls = []
+
+    def _figyelt(seed_value, count):
+        generator_calls.append((seed_value, count))
+        return eredeti(seed_value, count)
+
+    native_grain._grain_noise_rgb.cache_clear()
+    monkeypatch.setattr(native_grain, "picasa_mt19937", _figyelt)
+    kapott1 = native_grain.apply_native_grain(first, seed)
+    kapott2 = native_grain.apply_native_grain(second, seed)
+
+    assert generator_calls == [(seed, 2 * 13 * 19)]
+    np.testing.assert_array_equal(kapott1, vart1)
+    np.testing.assert_array_equal(kapott2, vart2)
