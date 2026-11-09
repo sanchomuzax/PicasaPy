@@ -29,6 +29,7 @@ from ..timeline_motion import (
     CARD_STEP,
     DEFAULT_BEZIER_POINTS,
     animator_position,
+    card_stack_offset,
     carousel_layout,
     clamp_offset,
     frame_transforms,
@@ -38,7 +39,9 @@ from ..timeline_motion import (
     slider_index,
     slider_thumb_x,
     slideshow_easing,
+    timeline_leader_points,
     timeline_dot_positions,
+    timeline_text_alphas,
 )
 
 
@@ -76,6 +79,25 @@ class TimelineController(QObject):
     @Slot(float, int, result="QVariantList")
     def carouselLayout(self, offset: float, count: int) -> list:
         return carousel_layout(offset, count)
+
+    @Slot(int, int, result="QVariantList")
+    def cardStackOffset(self, collection_index: int, photo_index: int) -> list:
+        return list(card_stack_offset(collection_index, photo_index))
+
+    @Slot(float, float, float, float, result="QVariantList")
+    def leaderPoints(
+        self, start_x: float, start_y: float, end_x: float, end_y: float
+    ) -> list:
+        return [
+            {"x": x, "y": y}
+            for x, y in timeline_leader_points(
+                (start_x, start_y), (end_x, end_y)
+            )
+        ]
+
+    @Slot(float, result="QVariantList")
+    def labelAlphas(self, progress: float) -> list:
+        return list(timeline_text_alphas(progress))
 
     @Slot(float, int, result=float)
     def clampOffset(self, offset: float, count: int) -> float:
