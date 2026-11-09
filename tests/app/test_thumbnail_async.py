@@ -1,5 +1,7 @@
 """#144: aszinkron thumbnail-provider (QThreadPool) + szűrt-thumb memóriacache."""
 
+from dataclasses import replace
+
 from picasapy.edit.session import EditSession
 from picasapy.index import open_index, photos_in_folder, sync_tree
 from picasapy.ini.rect64 import Rect64, encode_rect64
@@ -129,9 +131,7 @@ class TestFilteredThumbMemo:
         records = _library(tmp_path, ini_body=_crop_ini(["kep0.jpg"]))
         provider = _provider(tmp_path, records)
         plain = provider.requestImage(str(records[0].id), None, None)
-        rotated_record = records[0].__class__(
-            **{**records[0].__dict__, "rotate_steps": 1}
-        )
+        rotated_record = replace(records[0], rotate_steps=1)
         provider.register_photos((rotated_record,))
         rotated = provider.requestImage(str(records[0].id), None, None)
         # 90°-os forgatás: a memo NEM adhatja vissza a forgatatlan képet
@@ -147,9 +147,7 @@ class TestFilteredThumbMemo:
         provider = _provider(tmp_path, records)
         cropped = provider.requestImage(str(records[0].id), None, None)
         assert abs(cropped.width() / cropped.height() - 1.0) < 0.1
-        plain_record = records[0].__class__(
-            **{**records[0].__dict__, "filters": None}
-        )
+        plain_record = replace(records[0], filters=None)
         provider.register_photos((plain_record,))
         plain = provider.requestImage(str(records[0].id), None, None)
         assert abs(plain.width() / plain.height() - 2.0) < 0.1
@@ -158,9 +156,14 @@ class TestFilteredThumbMemo:
         from picasapy.app.thumbnail_provider import _FilteredThumbMemo
         from PySide6.QtGui import QImage
 
-        memo = _FilteredThumbMemo(capacity=3)
+        capacity_bytes = 3 * 4 * 4 * 4
+        memo = _FilteredThumbMemo(capacity=capacity_bytes)
         for i in range(5):
             memo.put(("k", i), QImage(4, 4, QImage.Format.Format_RGB32))
+        assert (
+            sum(image.sizeInBytes() for image in memo._items.values())
+            <= capacity_bytes
+        )
         assert len(memo._items) == 3
-        assert memo.get(("k", 0)) is None  # a legrégebbi kilakoltatva
+        assert memo.get(("k", 0)) is None  # a két legrégebbi bájtkeret miatt kimegy
         assert memo.get(("k", 4)) is not None

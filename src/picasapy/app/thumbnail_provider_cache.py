@@ -20,6 +20,7 @@ class _FilteredThumbMemo:
     def __init__(self, capacity: int = _FILTERED_MEMO_CAPACITY):
         self._capacity = capacity
         self._items: OrderedDict[tuple, QImage] = OrderedDict()
+        self._size_bytes = 0
         self._lock = threading.Lock()
 
     def get(self, key: tuple) -> QImage | None:
@@ -36,10 +37,20 @@ class _FilteredThumbMemo:
         """A rekesz ürítése (#598) — a kézi gyorsítótár-ürítés hívja."""
         with self._lock:
             self._items.clear()
+            self._size_bytes = 0
 
     def put(self, key: tuple, image: QImage) -> None:
+        cached_image = QImage(image)
+        image_bytes = cached_image.sizeInBytes()
         with self._lock:
-            self._items[key] = QImage(image)
+            previous = self._items.pop(key, None)
+            if previous is not None:
+                self._size_bytes -= previous.sizeInBytes()
+            if image_bytes > self._capacity:
+                return
+            self._items[key] = cached_image
+            self._size_bytes += image_bytes
             self._items.move_to_end(key)
-            while len(self._items) > self._capacity:
-                self._items.popitem(last=False)
+            while self._size_bytes > self._capacity:
+                _, evicted = self._items.popitem(last=False)
+                self._size_bytes -= evicted.sizeInBytes()
