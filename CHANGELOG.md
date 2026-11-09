@@ -7,6 +7,12 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.89] - 2026-11-09
+
+- Gyorsabban számol a Holga-szerű, a Lágy fókusz, a Ceruzarajz, a Ragyogás, a Képpontnagyítás, a Filmszemcse és az Árnyékvetés effekt, az előnézetben és exportnál is (#6687).
+- A fotórekordok és a szűrt bélyegképek kevesebb memóriát foglalnak nagy könyvtárban (#6699).
+- A zárt program mellett átnevezett figyelt mappa után a következő indításkor nem jelenik meg téves „A szkennelendő gyökér nem létezik” hibasáv (#6762).
+
 ## [1.0.88] - 2026-11-09
 
 - A kilépési kérdés pontosan megmondja, hogy az exportálás és a webes exportálás megszakad, az arckeresés pedig a következő indításkor folytatódik (#6756).
