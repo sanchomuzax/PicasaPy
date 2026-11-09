@@ -85,6 +85,7 @@ from .library_controller_activity import (
 from .library_controller_folders import _LibraryFoldersMixin
 from .library_controller_sync import _LibrarySyncMixin
 from .library_controller_resync import _LibraryResyncMixin
+from .library_controller_eltunt_gyoker import _LibraryEltuntGyokerMixin
 
 logger = logging.getLogger(__name__)
 
@@ -261,6 +262,7 @@ class LibraryMixin(
     _LibraryFoldersMixin,
     _LibrarySyncMixin,
     _LibraryResyncMixin,
+    _LibraryEltuntGyokerMixin,
     FolderManagerSaveMixin,
     BackgroundWorkerMixin,
 ):

@@ -1,3 +1,4 @@
+import QtQuick.Window
 import PicasaPy
 
 // A főablak felső menüsorának bekötései; az elemeket a PicasaMenuBar kezeli.
@@ -48,6 +49,8 @@ PicasaMenuBar {
     //: contentItem nem kapja meg a teljes ablakot.
     visible: !hostWindow.quickViewerLaunch
              && !hostWindow.slideshowRunning && !hostWindow.timelineOpen
+             && (hostWindow.viewerOpen
+                 || hostWindow.visibility !== Window.FullScreen)
     // #1619: a rács `Ctrl+Delete`-je is ezen a példányon át ágazik el
     //: #671: a Fájl ▸ Kilépés a KÖZÖS úton fut — ott dől el, kérdez-e
     onExitRequested: hostWindow.kilepes()
@@ -59,7 +62,10 @@ PicasaMenuBar {
     onViewAndEditRequested: hostWindow.nezdEsSzerkeszd()
     // #4622: ugyanaz a kapuzott bezárás, amelyet a nézőből kilépő
     // visszatérési műveletek használnak; az onClosed frissíti a rácsot.
-    onReturnToLibraryRequested: hostPhotoViewer.kerBezaras()
+    onReturnToLibraryRequested: {
+        var viewer = hostWindow.ensurePhotoViewer()
+        if (viewer) viewer.kerBezaras()
+    }
     onTimelineRequested: hostWindow.toggleTimeline()
     onUnhideRequested: hostWindow.unhideHiddenSelection()
     onWriteXmpFacesDialogRequested:
@@ -381,7 +387,8 @@ PicasaMenuBar {
     // kötegelt undo-verembe, mert a rotate= külön kulcs.
     onBatchApplyEffectRequested: (name) => {
         if (hostWindow.viewerOpen) {
-            if (hostPhotoViewer.selectMenuEffect(name)) return
+            var viewer = hostWindow.ensurePhotoViewer()
+            if (viewer && viewer.selectMenuEffect(name)) return
             var row = hostWindow.photoActionIndex()
             if (row < 0) return
             if (name === "rotate_cw") hostController.rotateRight(row)

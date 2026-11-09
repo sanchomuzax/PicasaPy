@@ -19,10 +19,13 @@ from picasapy.index import (
 from picasapy.paths import normalize_path, path_key
 from picasapy.scanner import (
     LibraryWatcher,
-    is_excluded,
     read_scan_list,
     write_exclude_folders,
     write_watched_folders,
+)
+from picasapy.scanner.exclude import (
+    _is_excluded_resolved,
+    _resolve_exclude_roots,
 )
 from picasapy.scanner.filetypes import RAW_EXTENSIONS
 
@@ -459,7 +462,7 @@ class _LibraryFoldersMixin:
         érkezik."""
         if not path:
             return True
-        return not is_excluded(path, tuple(self._face_excluded_roots))
+        return not _is_excluded_resolved(path, self._face_excluded_resolved_roots)
 
     @Slot(str, bool)
     def setFaceDetectionEnabled(self, path: str, enabled: bool) -> None:
@@ -503,6 +506,7 @@ class _LibraryFoldersMixin:
         if not enabled:
             self._jeloljuk_kizartnak(path)
         self._face_excluded_roots = roots
+        self._face_excluded_resolved_roots = _resolve_exclude_roots(roots)
         # #1334: OK-fázisban a fájl a mentési út 3. lépésében íródik, és
         # csak akkor, ha a két lista bármelyike nem üres (a KAPU) — a
         # szándékot addig a piszkozat tartja
@@ -545,4 +549,5 @@ class _LibraryFoldersMixin:
             tuple(self._roots),
             lambda folders: self.watcherDirty.emit(list(folders)),
         )
-        self._watcher.start()
+        if not getattr(self, "_watcher_start_pending", False):
+            self._start_watcher_background()

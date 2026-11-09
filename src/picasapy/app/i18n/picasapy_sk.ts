@@ -8721,9 +8721,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>Ukončiť PicasaPy</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Stále prebieha práca na pozadí (export, webový export alebo vyhľadávanie tvárí). Ak teraz skončíte, zastaví sa a neskôr nebude pokračovať.</translation>
+            <translation>Na pozadí stále prebieha práca. Ak teraz ukončíte aplikáciu, export a webový export sa zastavia a nebudú pokračovať; vyhľadávanie tvárí bude pokračovať pri ďalšom spustení PicasaPy.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9494,9 +9494,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Stále prebieha práca na pozadí (export, webový export alebo vyhľadávanie tvárí). Ak teraz skončíte, zastaví sa a neskôr nebude pokračovať.</translation>
+            <translation>Na pozadí stále prebieha práca. Ak teraz ukončíte aplikáciu, export a webový export sa zastavia a nebudú pokračovať; vyhľadávanie tvárí bude pokračovať pri ďalšom spustení PicasaPy.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

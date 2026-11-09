@@ -6,6 +6,7 @@ import sqlite3
 
 from PySide6.QtCore import Slot
 from picasapy.index import open_index
+from picasapy.halozati_ut import halozati_gyoker
 from picasapy.lazy_cv2 import elore_betolt
 
 from .library_controller_activity import _FILETYPE_SNAPSHOT_UNSET
@@ -20,7 +21,23 @@ class _LibrarySyncRescanMixin:
     #: mixin-felbontáskor még megvolt (`8de1358e`), azóta kiesett.
     @Slot()
     def rescan(self) -> None:
-        """Teljes újrapásztázás — az ötperces időzítő és a „Frissítés" menü.
+        """Teljes újrapásztázás — a „Frissítés" menü kézi művelete."""
+        self._start_rescan(self._sync_worker)
+
+    def _rescan_network_roots(self) -> None:
+        """Az időzített teljes újraolvasás csak UNC-gyökereket pásztáz (#6696)."""
+        roots = tuple(
+            root for root in tuple(self._roots) if halozati_gyoker(root) is not None
+        )
+        if roots:
+            self._start_rescan(self._sync_worker_roots, args=(roots,))
+        else:
+            # A célmappa-beállítás frissüljön a helyi könyvtár teljes
+            # újraolvasása nélkül is (#6696).
+            self._projekt_kimenet_cache = None
+
+    def _start_rescan(self, worker, *, args=()) -> None:
+        """Egy teljes vagy hálózati gyökérre szűkített scan elindítása.
 
         #1456: a `_dirty_running`-ot IS nézi. Enélkül a célzott szinkron
         (`_on_folders_dirty`, #1440) mellé indult egy második index-író, és
@@ -30,8 +47,9 @@ class _LibrarySyncRescanMixin:
 
         **Kihagy, nem várólistáz.** A #1440 `_pending_dirty` várólistája ott
         azért kell, mert egy KONKRÉT mappa jelzése veszne el; itt nincs
-        ilyen: a rescan az egészet nézi, az időzítő öt perc múlva újra
-        próbál, és a futó szinkron végén amúgy is frissül a nézet.
+        ilyen: a kézi teljes rescan vagy a hálózati gyökerek időzített
+        újraolvasása később újra próbál, a futó szinkron végén pedig
+        amúgy is frissül a nézet.
         """
         if self._sync_running or self._dirty_running:
             return  # egy író elég; a futó szinkron végén úgyis frissülünk
@@ -48,15 +66,29 @@ class _LibrarySyncRescanMixin:
         # megváltozása vagy egy újonnan létrejött célmappa legkésőbb öt
         # perc múlva bekerül a tízmásodperces körbe.
         self._projekt_kimenet_cache = None
-        self._start_background(
-            self._sync_worker,
-            name="picasapy-sync-rescan",
-            cancel=self.cancelScan,
-        )
+        if args:
+            self._start_background(
+                worker,
+                args=args,
+                name="picasapy-sync-rescan",
+                cancel=self.cancelScan,
+            )
+        else:
+            self._start_background(
+                worker,
+                name="picasapy-sync-rescan",
+                cancel=self.cancelScan,
+            )
 
 
     def _sync_worker(
         self, enabled_filetypes=_FILETYPE_SNAPSHOT_UNSET
+    ) -> None:
+        """Teljes indexszinkron a pillanatképen szereplő összes gyökérre."""
+        self._sync_worker_roots(tuple(self._roots), enabled_filetypes)
+
+    def _sync_worker_roots(
+        self, roots, enabled_filetypes=_FILETYPE_SNAPSHOT_UNSET
     ) -> None:
         """Háttér-szinkron. Egy rossz gyökér (pl. elavult Windows-útvonal a
         WatchedFolders-ből) nem nyelhet el mindent némán: hibánként jelzünk,
@@ -74,7 +106,7 @@ class _LibrarySyncRescanMixin:
             with open_index(self._db_path) as conn:
                 # pillanatkép: a lista a főszálon menet közben módosulhat
                 # (#216, removeWatchedFolder) — az iteráció ettől független
-                for root in tuple(self._roots):
+                for root in tuple(roots):
                     should_stop = self._make_should_stop(root)
                     if should_stop():
                         continue  # már az indulás előtt eltávolították

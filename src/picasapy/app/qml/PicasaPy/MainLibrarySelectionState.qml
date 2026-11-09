@@ -56,7 +56,9 @@ Item {
     // ezért ott nem használható a menü célpontjának.
     function photoActionRows() {
         if (hostWindow.viewerOpen) {
-            var sor = Number(hostPhotoViewer._kijeloltSort())
+            var viewer = hostWindow.ensurePhotoViewer()
+            if (!viewer) return []
+            var sor = Number(viewer._kijeloltSort())
             return sor >= 0 ? [sor] : []
         }
         return hostWindow.selectedRows()
@@ -72,7 +74,10 @@ Item {
     }
 
     function photoActionIndex() {
-        if (hostWindow.viewerOpen) return Number(hostPhotoViewer._kijeloltSort())
+        if (hostWindow.viewerOpen) {
+            var viewer = hostWindow.ensurePhotoViewer()
+            return viewer ? Number(viewer._kijeloltSort()) : -1
+        }
         if (hostWindow.selectedIndex >= 0) return hostWindow.selectedIndex
         var sorok = hostWindow.selectedRows()
         return sorok.length > 0 ? Number(sorok[0]) : -1
@@ -157,7 +162,8 @@ Item {
             return
         if (hostFaceScanController.resetFacesForPhotos(paths) > 0) {
             if (hostController) hostController.refreshCollections()
-            hostPhotoViewer.facesEditRevision += 1
+            var viewer = hostWindow.ensurePhotoViewer()
+            if (viewer) viewer.facesEditRevision += 1
             // A hiányzó modellről a meglévő Arckeresés ablak ad érthető
             // okot és letöltési lehetőséget; reset után ne maradjon néma.
             if (!hostFaceScanController.isAvailable())

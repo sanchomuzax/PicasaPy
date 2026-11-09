@@ -33,6 +33,13 @@ automatikusan arcokat keres. Ez alapból be van kapcsolva; a
 [Beállítások](beallitasok.md)). Ha az arckeresés valamiért nem tud
 elindulni, az okát a program a hibanaplóba írja, nem hagyja némán.
 
+A háttérkeresés **kíméli a gépet**: amíg dolgozol a programban (az utolsó
+billentyűleütés, kattintás vagy egérmozdulat után fél percig), és amíg a
+nézőben vagy a szerkesztőben egy kép nyitva van, szünetel, utána pedig
+fékezve, szünetekkel halad. Ha a könyvtár nem változott, nem olvas be
+mindent újra. Az **Eszközök ▸ Arcok keresése…** ablakból indított keresés
+nem vár, az a lehető leggyorsabban fut.
+
 A keresés **ritkán jelöl arcot ott, ahol nincs**: egy tájképen vagy
 más, arc nélküli felvételen nem jelenik meg téves keret.
 

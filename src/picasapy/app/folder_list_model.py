@@ -84,6 +84,35 @@ def folder_order(
     ))
 
 
+
+def _kis_kepek_nelkul(conn: sqlite3.Connection, folders: list) -> list:
+    """A „Csak nagy képek” szűrő a mappalistán is (#6751).
+
+    Az eredetiben a szűrő a kép gyűjteménybe vételénél dönt (a közös
+    hozzáadási ág, `0x0065f3c6`-`0x0065f5a9`), ezért a kiszűrt kép a mappába
+    sem kerül be: a darabszám csak a látható képeket számolja, és a csak kis
+    képeket tartalmazó mappa nem jelenik meg. A rács ugyanezt a szabályt
+    használja (`controller_photo_list_mixin._show`)."""
+    from .small_picture_filter import is_big_picture
+
+    rejtett: dict[str, int] = {}
+    for path, kind, width, height in conn.execute(
+        "SELECT f.path, p.kind, p.width, p.height FROM photos p "
+        "JOIN folders f ON f.id = p.folder_id"
+    ):
+        if kind in ("photo", "image") and not is_big_picture(width, height):
+            rejtett[path] = rejtett.get(path, 0) + 1
+    if not rejtett:
+        return folders
+    eredmeny = []
+    for sor in folders:
+        name, path, count, *tobbi = sor
+        kiszurt = rejtett.get(path, 0)
+        if kiszurt and count - kiszurt <= 0:
+            continue
+        eredmeny.append((name, path, count - kiszurt, *tobbi))
+    return eredmeny
+
 class FolderListModel(QAbstractListModel):
     """Mappa-lista évszám-elválasztó sorokkal (Picasa-minta).
 
@@ -115,6 +144,7 @@ class FolderListModel(QAbstractListModel):
         *,
         include_hidden: bool = False,
         exclude_paths: Iterable[str] = (),
+        kis_kepek_rejtve: bool = False,
     ) -> None:
         """Mappalista Picasa-rendezéssel.
 
@@ -139,6 +169,8 @@ class FolderListModel(QAbstractListModel):
             )
             if sor[1] not in kizart
         ]
+        if kis_kepek_rejtve:
+            folders = _kis_kepek_nelkul(conn, folders)
         # #1637/2: a rejtett mappák nem VEGYÜLNEK vissza a listába — a
         # végén, saját fejléc alatt állnak. Az eredetiben az elrejtés
         # adatvédelmi funkció (`IDS_HIDDEN` = „Rejtett mappák"), nem

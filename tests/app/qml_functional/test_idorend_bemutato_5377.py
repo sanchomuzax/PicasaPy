@@ -3,7 +3,7 @@
 from pathlib import Path
 from math import cos, radians, sin
 
-from PySide6.QtCore import QObject, QPointF, Qt
+from PySide6.QtCore import Q_ARG, Q_RETURN_ARG, QMetaObject, QObject, QPointF, Qt
 from PySide6.QtGui import QColor
 from PySide6.QtTest import QTest
 import pytest
@@ -17,6 +17,15 @@ def _child(parent, name):
     child = parent.findChild(QObject, name)
     assert child is not None, f"{name} nem található"
     return child
+
+
+def _repeater_item_at(repeater, index):
+    """A Repeater-delegátumok nem kereshetők `findChild`-dal: `itemAt` kell."""
+    item = QMetaObject.invokeMethod(
+        repeater, "itemAt", Q_RETURN_ARG("QQuickItem*"), Q_ARG(int, index)
+    )
+    assert item is not None, f"a(z) {index}. kártyaréteg nem található"
+    return item
 
 
 def _wait(qt_app, predicate, seconds=10.0):
@@ -171,13 +180,29 @@ def test_rendered_timeline_scales_480px_panel_to_full_window(
     for object_name in (
         "timelineBackgroundImage",
         "timelineCollectionName",
+        "timelineCollectionNameShadow",
         "timelineCollectionDate",
+        "timelineCollectionDateShadow",
         "timelineControlBar",
         "timelineSliderTrack",
         "timelineSliderThumb",
         "timelineDateDots",
     ):
         _child(timeline, object_name)
+    name = _child(timeline, "timelineCollectionName")
+    date = _child(timeline, "timelineCollectionDate")
+    name_shadow = _child(timeline, "timelineCollectionNameShadow")
+    date_shadow = _child(timeline, "timelineCollectionDateShadow")
+    assert abs(name.property("y") + name.property("baselineOffset") - 130) <= 0.01
+    assert abs(date.property("y") + date.property("baselineOffset") - 158) <= 0.01
+    assert abs(name.property("x") + name.property("width") - (panel.property("width") - 90)) <= 0.01
+    assert abs(date.property("x") + date.property("width") - (panel.property("width") - 90)) <= 0.01
+    assert abs(name_shadow.property("x") - name.property("x") - 1) <= 0.01
+    assert abs(name_shadow.property("y") - name.property("y") - 1) <= 0.01
+    assert abs(date_shadow.property("x") - date.property("x") - 1) <= 0.01
+    assert abs(date_shadow.property("y") - date.property("y") - 1) <= 0.01
+    assert abs(name.property("opacity") - 255 / 255) <= 0.001
+    assert QColor(name_shadow.property("color")).alpha() == 127
     control_bar = _child(timeline, "timelineControlBar")
     control_top = control_bar.mapToItem(panel, QPointF(0, 0))
     assert abs(control_top.y() - 403) <= 3
@@ -186,6 +211,12 @@ def test_rendered_timeline_scales_480px_panel_to_full_window(
     assert abs(slider_top.y() - 452) <= 3
     carousel_deck = _child(timeline, "timelineCarouselDeck")
     assert carousel_deck.property("count") == len(reference_collections)
+    expected_layout = timeline_controller.carouselLayout(
+        timeline.property("carouselOffset"), len(reference_collections)
+    )
+    for index, item in enumerate(expected_layout):
+        card_layer = _repeater_item_at(carousel_deck, index)
+        assert abs(card_layer.property("opacity") - item["alpha"] / 256) <= 0.001
     photo_geometry = timeline.property("currentPhotoCardGeometry").toVariant()
     assert len(photo_geometry) >= 3, (
         "a fókuszban levő gyűjtemény képei nem alkotnak több bélyegből álló köteget"
@@ -242,53 +273,49 @@ def test_rendered_timeline_scales_480px_panel_to_full_window(
             for first, second in zip(card_bounds, card_bounds[1:], strict=False)
         ), "a bélyegképek nem fednek egymásra látható kötegként"
 
-        first_card = card_geometry[0]
         first_curve = timeline_controller.bezierAt(focus_parameter)
-        actual_card_center = QPointF(
-            panel.mapToItem(timeline.contentItem(), QPointF(
-                first_card["x"] + first_card["width"] / 2,
-                first_card["y"] + first_card["height"] / 2,
-            ))
-        )
-        expected_card_center = panel.mapToItem(
-            timeline.contentItem(),
-            QPointF(
-                first_curve["x"] * panel.property("width"),
-                first_curve["y"] * panel.property("height"),
-            ),
-        )
-        assert abs(actual_card_center.x() - expected_card_center.x()) <= 3
-        assert abs(actual_card_center.y() - expected_card_center.y()) <= 3
+        for index, card in enumerate(card_geometry):
+            dx, dy = timeline_controller.cardStackOffset(0, index)
+            actual_card_center = panel.mapToItem(
+                timeline.contentItem(),
+                QPointF(
+                    card["x"] + card["width"] / 2,
+                    card["y"] + card["height"] / 2,
+                ),
+            )
+            expected_card_center = panel.mapToItem(
+                timeline.contentItem(),
+                QPointF(
+                    first_curve["x"] * panel.property("width")
+                    + dx * card["width"],
+                    first_curve["y"] * panel.property("height")
+                    + dy * card["height"],
+                ),
+            )
+            assert abs(actual_card_center.x() - expected_card_center.x()) <= 3
+            assert abs(actual_card_center.y() - expected_card_center.y()) <= 3
 
         artwork = _child(timeline, "timelineCardArtwork")
-        arc_points = artwork.property("dotArcPoints").toVariant()
-        dot_values = [
-            float(collection.get("sliderPosition", 0))
-            for collection in reference_collections
-        ]
-        measured_dots = timeline_controller.dotPositions(
-            dot_values,
-            0,
-            max(0, int(panel.property("width")) - 4),
-            0,
-            0,
-            0,
-            0,
+        arc_points = artwork.property("dotArcPoints")
+        if hasattr(arc_points, "toVariant"):
+            arc_points = arc_points.toVariant()
+        start_x = panel.property("width") - 90 - 16
+        start_y = (
+            date.property("y")
+            + date.property("baselineOffset")
+            + artwork.property("leaderBelowDateBaseline")
         )
+        end_x = first_curve["x"] * panel.property("width")
+        end_y = (
+            first_curve["y"] * panel.property("height")
+            - 72 * first_curve["z"] / 2
+            - 20
+        )
+        control_1_x, control_1_y = start_x, start_y + 50
+        control_2_x, control_2_y = end_x, end_y - 50
         expected_arc = []
-        first_card = card_geometry[0]
-        start_x = name.property("x") + name.property("width") - 8
-        start_y = date.property("y") + 42
-        end_x = first_card["x"] + first_card["width"] * 0.38
-        end_y = first_card["y"] - 48
-        control_1_x, control_1_y = start_x + 3, start_y + 50
-        control_2_x, control_2_y = end_x + 38, end_y - 15
-        for dot in measured_dots:
-            if not dot["draw"]:
-                continue
-            curve_parameter = 1 - dot["x"] / max(
-                1, int(panel.property("width")) - 4
-            )
+        for index in range(10):
+            curve_parameter = index / 9
             one_minus_t = 1 - curve_parameter
             expected_arc.append(
                 (
@@ -299,18 +326,41 @@ def test_rendered_timeline_scales_480px_panel_to_full_window(
                     one_minus_t**3 * start_y
                     + 3 * one_minus_t**2 * curve_parameter * control_1_y
                     + 3 * one_minus_t * curve_parameter**2 * control_2_y
-                    + curve_parameter**3 * end_y
-                    + dot["y"],
+                    + curve_parameter**3 * end_y,
                 )
             )
-        assert len(arc_points) == len(expected_arc), (
-            "a timelinedot pontok száma nem az A tömb mért elemeit követi"
-        )
+        assert len(arc_points) == 10, "a vezetőívnek tíz mintapontja van"
         for actual, (expected_x, expected_y) in zip(
             arc_points, expected_arc, strict=True
         ):
             assert abs(actual["x"] - expected_x) <= 1
             assert abs(actual["y"] - expected_y) <= 1
+
+        # A pontsprite a Bézier-pont bal felső sarkához horgonyzik: a rajzolt
+        # kör közepe a ponttól `dotSpriteAnchor` képponttal odébb áll.
+        anchor = artwork.property("dotSpriteAnchor")
+
+        def dot_pixel_matches(first_point, anchored):
+            offset = anchor if anchored else 0.0
+            centre = panel.mapToItem(
+                timeline.contentItem(),
+                QPointF(first_point["x"] + offset, first_point["y"] + offset),
+            ).toPoint()
+            frame = timeline.grabWindow()
+            colour = frame.pixelColor(centre.x(), centre.y())
+            return (
+                abs(colour.red() - 0x17) <= 30
+                and abs(colour.green() - 0x22) <= 30
+                and abs(colour.blue() - 0x39) <= 30
+            )
+
+        last_point = arc_points[-1]
+        assert _wait(
+            qt_app, lambda: dot_pixel_matches(last_point, anchored=True)
+        ), "a vezetőív utolsó pontja nem a horgonyzott helyen látszik"
+        assert not dot_pixel_matches(last_point, anchored=False), (
+            "a vezetőpont a horgonyeltolás nélküli helyen is sötét: nem tolódott el"
+        )
 
     resized_center = panel.mapToItem(
         timeline.contentItem(),

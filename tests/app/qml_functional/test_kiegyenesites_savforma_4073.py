@@ -121,9 +121,16 @@ def _pont_scene(elem, x: float, y: float) -> QPoint:
     return QPoint(round(pont.x()), round(pont.y()))
 
 
-def _kulonbozo_pixelek(egy: QImage, ketto: QImage, rect: QRect) -> int:
+def _stabil_szivargas(racsos: QImage, elotte: QImage, utana: QImage, rect: QRect) -> int:
+    """A rács szivárgása: ahol a két rács nélküli kép egyezik, de a rácsos eltér.
+
+    A két rács nélküli kép közé fogott mérés a közben változó (pl. lenyomott,
+    animált) gombállapotot nem számolja szivárgásnak; a valódi, állandó
+    rácsszivárgást ugyanúgy megfogja, mint az egyetlen összevetés.
+    """
     return sum(
-        egy.pixelColor(x, y) != ketto.pixelColor(x, y)
+        elotte.pixelColor(x, y) == utana.pixelColor(x, y)
+        and racsos.pixelColor(x, y) != elotte.pixelColor(x, y)
         for y in range(rect.top(), rect.bottom() + 1)
         for x in range(rect.left(), rect.right() + 1)
     )
@@ -674,8 +681,15 @@ def test_ablakszelesseg_sweepben_egesz_pixeles_a_sor_es_nem_szivarog_at_a_racs(
         for _ in range(8):
             qt_app.processEvents()
         racsos = window.grabWindow()
+        overlay.setProperty("visible", False)
+        for _ in range(5):
+            qt_app.processEvents()
+        racs_nelkul_utana = window.grabWindow()
+        overlay.setProperty("visible", True)
+        for _ in range(5):
+            qt_app.processEvents()
         gombpar = _vezerlo_rect(apply).united(_vezerlo_rect(cancel))
-        szivargas = _kulonbozo_pixelek(racsos, racs_nelkul, gombpar)
+        szivargas = _stabil_szivargas(racsos, racs_nelkul, racs_nelkul_utana, gombpar)
         QTest.mouseRelease(
             window,
             Qt.MouseButton.LeftButton,

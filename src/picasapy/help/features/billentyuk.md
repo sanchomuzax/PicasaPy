@@ -84,6 +84,7 @@ tartományhoz, húzás a rács üres részéről lasszós kijelöléshez.
 | F5 | A megnyitott mappa frissítése: beolvassa a lemezen történt változásokat, és frissíti a nézetet és a keresés eredményét |
 | Alt+Enter | Tulajdonságok panel |
 | Ctrl+Alt (nyomva tartva) | A kijelölt kép nagy előnézete külön ablakban - lásd [A könyvtár](konyvtar.md) |
+| F11 | A könyvtárban az egész programablakot teljes képernyőre váltja, és újra megnyomva visszaállítja; teljes képernyőn a menüsor elrejtőzik. Az Időrendben és gépelés közben nem hat |
 
 > A **Ctrl+3** ugyanazt csinálja, mint a **Nézet ▸ Szerkesztési nézet**
 > és a **Kép ▸ Megjelenítés és szerkesztés** menüpont: megnyitja a
@@ -141,7 +142,7 @@ felszabadítja az arányt.
 | F | Arcok megjelenítése |
 | Shift+F | Arcok szerkesztése |
 | Ctrl+9 | A bal oldali szerkesztőpanel elrejtése és előhozása |
-| F11 | Teljes képernyő be- és kikapcsolása (a diavetítés közben nem hat) |
+| F11 | Teljes képernyő be- és kikapcsolása (a diavetítés közben és gépelés közben nem hat) |
 | Szóköz | Állóképnél diavetítést indít a látott képtől; videónál elindítja vagy megállítja a lejátszást |
 | Esc | Vissza a könyvtárhoz |
 | Enter | Vissza a könyvtárhoz, ha egyetlen állóképet nézel, és nincs nyitva szerkesztőeszköz; bekapcsolt egykattintásos kilépésnél, videón vagy két kép mellett a következő képre lép |

@@ -68,6 +68,10 @@
           {
             "type": "command",
             "command": "f=\"$CLAUDE_PROJECT_DIR/scripts/hooks/basetemp_kapu.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\""
+          },
+          {
+            "type": "command",
+            "command": "f=\"$CLAUDE_PROJECT_DIR/scripts/hooks/szalkozi_futas_kapu.py\"; [ -f \"$f\" ] || exit 0; python3 \"$f\""
           }
         ]
       },

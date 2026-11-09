@@ -22,11 +22,10 @@ maradék három NEM ilyen fájl, tehát a `start()` nem az egyetlen út.
 
 ## Amit ez a fájl állít
 
-A `LibraryWatcher.stop()` `join(timeout=5)`-öt hív, és utána **minden
-esetben** eldobta a megfigyelőre mutató referenciát. Ha a join
-időtúllépéssel tér vissza, a szál TOVÁBB FUT, a hívó viszont már
-leállítottnak hiszi — a szál pedig egy lebontás alatt álló objektumra
-mutató kezelővel dolgozik.
+A `LibraryWatcher.stop()` legfeljebb 30 másodpercig bevárja az indító- és
+megfigyelőszálat, mielőtt a hívó elengedhetné a figyelőre mutató referenciát. Ha egy megfigyelő a
+`join()` után is futónak látszik, a referenciát meg kell tartani — különben a
+szál egy lebontás alatt álló objektumra mutató kezelővel dolgozhat.
 
 ⚠️ **Ez a mechanizmus, nem a bizonyított diagnózis.** Hogy az
 összeomlásokat tényleg ez okozza-e, a következő CI-összeomlás
@@ -42,7 +41,7 @@ from picasapy.scanner.watcher import LibraryWatcher
 
 
 class _NemAllMeg:
-    """Olyan megfigyelő, aminek a `join`-ja időtúllépéssel tér vissza."""
+    """Olyan megfigyelő, ami a `join()` után is futónak látszik."""
 
     def __init__(self) -> None:
         self.stop_hivva = False
@@ -86,7 +85,7 @@ class TestALeallas:
         assert figyelo.leallt() is False
         assert any(
             "figyelő" in rekord.message.lower() for rekord in caplog.records
-        ), "az időtúllépés némán maradt"
+        ), "a join() utáni futó megfigyelőről nem készült figyelmeztetés"
 
     def test_a_leallt_ures_figyelore_is_valaszol(self):
         figyelo = LibraryWatcher((), lambda _mappak: None)

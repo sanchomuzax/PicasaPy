@@ -43,9 +43,14 @@ A néző alján és szélein a következőket találod:
 ### Teljes képernyő: F11
 
 Az **F11** a nézőt teljes képernyőre váltja, és újra megnyomva visszaállítja
-az ablakot az előző méretére. A billentyű csak a nyitott nézőben hat; a
-diavetítés a saját teljes képernyős állapotát kezeli, ott az F11 nem nyúl
-hozzá.
+az ablakot az előző méretére. A diavetítés a saját teljes képernyős
+állapotát kezeli, ott az F11 nem nyúl hozzá.
+
+Az F11 a **könyvtárban** is működik, ahogy az eredeti Picasában: ott az
+egész programablak vált teljes képernyőre, a menüsor pedig addig
+elrejtőzik. Újra megnyomva az ablak visszakapja az előző méretét. Az
+Időrendben nem hat, és ha egy szövegmezőben (például a keresőben) állsz,
+a billentyű a mezőé marad.
 
 A könyvtárból megnyitott kép a program ablakában jelenik meg, a néző nem
 vált magától teljes képernyőre. Az **Eszközök ▸ Fotómegjelenítő
@@ -385,8 +390,10 @@ készítőjében maradt meg.
 
 A **Nézet ▸ Időrend** (Ctrl+5) teljes képernyős, animált bemutatót nyit a
 könyvtáradról. Minden mappa és minden album egy **kártya**: a képei
-egymásra rakott fotókként látszanak, mellette a neve és a hónap meg az
-év (például *Július 2024*). Az összes kártya egyetlen íves pályán sorakozik,
+egymásra rakott, kissé elforgatott fotókként látszanak. A kiválasztott
+kártya neve és a hónap meg az év (például *Július 2024*) a kép **jobb
+felső sarkában** áll, jobbra igazítva, és a feliratból egy tíz pontból
+álló, íves pontsor vezet le a kártyáig. Az összes kártya egyetlen íves pályán sorakozik,
 mint egy körhinta: lapozáskor az egész sor elúszik, és a kiválasztott
 kártya mindig ugyanarra a helyre érkezik. A háttér a kiválasztott mappa
 vagy album első képének fakított, szürke változata; kártyaváltáskor az

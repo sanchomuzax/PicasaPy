@@ -49,7 +49,7 @@ QtObject {
             hostWindow.viewerVisibilityManaged = false
             hostWindow.viewerOpen = true
         }
-        hostPhotoViewer.show(row)
+        hostWindow.ensurePhotoViewer().show(row)
     }
 
     // A közvetlen fájlargumentumos indulás ugyanazt a viewer-ablakmódot
@@ -65,7 +65,7 @@ QtObject {
             ? Window.FullScreen : Window.Windowed
         hostWindow.viewerVisibilityManaged = true
         hostWindow.viewerOpen = true
-        hostPhotoViewer.show(0)
+        hostWindow.ensurePhotoViewer().show(0)
     }
 
     function nezdEsSzerkeszd() {
