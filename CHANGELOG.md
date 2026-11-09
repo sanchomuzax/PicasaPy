@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.88] - 2026-11-09
+
+- A kilépési kérdés pontosan megmondja, hogy az exportálás és a webes exportálás megszakad, az arckeresés pedig a következő indításkor folytatódik (#6756).
+
 ## [1.0.87] - 2026-11-09
 
 - Az Intézőben átnevezett figyelt mappa régi neve eltűnik a bal sávból, és a bal sáv darabszáma és mappái a Kis képek beállítást követik, ahogy az eredeti Picasában (#6751).
