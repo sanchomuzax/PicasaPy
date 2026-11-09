@@ -22,6 +22,8 @@ TimelineView {
     onTimelineOpenChanged: {
         if (hostWindow.timelineOpen !== timelineOpen)
             hostWindow.timelineOpen = timelineOpen
+        if (hostTimelineController && hostTimelineController.setTimelineOpen)
+            hostTimelineController.setTimelineOpen(timelineOpen)
     }
     onTimelineSlideshowActiveChanged: {
         if (hostWindow.timelineSlideshowActive !== timelineSlideshowActive)

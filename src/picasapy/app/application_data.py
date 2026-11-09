@@ -253,7 +253,9 @@ def _kollazs_gyoker(settings: QSettings) -> tuple[str, ...]:
         )
         return ()
 
-def _exportcelok_visszavetele(index_db: Path, settings: QSettings) -> None:
+def _exportcelok_visszavetele(
+    index_db: Path, settings: QSettings, *, controller=None
+) -> bool:
     """A #1565 visszavétele SAJÁT kapcsolaton, az első képkocka UTÁN (#1667).
 
     Az indexkarbantartásnak semmi köze ahhoz, hogy az ablak megjelenjen —
@@ -264,14 +266,34 @@ def _exportcelok_visszavetele(index_db: Path, settings: QSettings) -> None:
     kidobott.
 
     A hiba nyelt — egy önjavítás soha nem viheti el a felületet —, de
-    naplózva."""
+    naplózva. Visszatérési értéke jelzi, hogy változott-e az index.
+
+    Ha a könyvtárvezérlőt is megkapja, az érintett mappák ini-gyorstárát is
+    a háttérmunkában frissíti."""
     try:
         with open_index(index_db) as conn:
+            total_changes_before = conn.total_changes
+            cache_was_ready = (
+                controller._side_pane_cache_ready(conn)
+                if controller is not None
+                else True
+            )
             _ujraindexelt_exportcelok(conn, settings)
+            if controller is not None:
+                return controller._finish_index_sync(
+                    conn,
+                    total_changes_before,
+                    cache_was_ready,
+                    existing_exported_folders(
+                        settings.value(EXPORTED_FOLDERS_SETTINGS_KEY)
+                    ),
+                )
+            return conn.total_changes != total_changes_before
     except Exception:  # noqa: BLE001 - a felület már áll, ez csak karbantartás
         logging.getLogger(__name__).warning(
             "az exportcélok visszavétele hibára futott", exc_info=True
         )
+        return False
 
 def _data_dir(platform: str | None = None) -> Path:
     """Az index-SQLite (+ zárolófájl) mappája — ha a "Move Database"

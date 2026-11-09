@@ -18,7 +18,6 @@ from PySide6.QtCore import Property, QLocale, QObject, Signal, Slot
 
 from picasapy.index import (
     PhotoRecord,
-    album_photos,
     albums_in_index,
     all_photos,
     open_index,
@@ -50,13 +49,22 @@ class TimelineController(QObject):
 
     collectionsChanged = Signal()
 
-    def __init__(self, db_path: Path, provider, parent: QObject | None = None):
+    def __init__(
+        self,
+        db_path: Path,
+        provider,
+        parent: QObject | None = None,
+        sync_controller=None,
+    ):
         """`provider`: a MEGLÉVŐ (az AppControllerrel közös) ThumbnailProvider
         - a bélyegkép-URL-ek (`image://thumbs/<id>`) csak akkor oldódnak fel,
         ha a fotó nála regisztrálva van (`register_photos`)."""
         super().__init__(parent)
         self._db_path = db_path
         self._provider = provider
+        self._sync_controller = sync_controller
+        self._timeline_open = False
+        self._dirty = True
         self._collections: list[dict] = []
         self._collection_records_by_id: dict[str, tuple[PhotoRecord, ...]] = {}
         self._collection_slideshow_model: PhotoGridModel | None = None
@@ -65,6 +73,16 @@ class TimelineController(QObject):
     def collections(self) -> list:
         """A teljes könyvtár gyűjteménykártyái, legrégebbi dátum szerint."""
         return self._collections
+
+    @Slot(bool)
+    def setTimelineOpen(self, is_open: bool) -> None:
+        """Nyitáskor betölti az elhalasztott vagy elavult Időrend-adatokat."""
+        is_open = bool(is_open)
+        if self._timeline_open == is_open:
+            return
+        self._timeline_open = is_open
+        if is_open and self._dirty:
+            self._do_reload()
 
     @Slot(float, result="QVariantMap")
     def bezierAt(self, t: float) -> dict:
@@ -181,34 +199,52 @@ class TimelineController(QObject):
 
     @Slot()
     def reload(self) -> None:
-        """A teljes könyvtár friss lekérdezése és újracsoportosítása.
+        """Nyitott Időrendben frissít, zárva csak piszkosnak jelöli.
 
-        A rejtett képek kimaradnak (a fő rács alapértelmezésével
-        összhangban, #17) - józan alapértelmezés, hogy a böngészhető
-        áttekintésben ne látsszanak rejtett fotók; a Timeline egyelőre
-        nem ismeri a Nézet → Rejtett képek kapcsolót.
-
-        #4887: a rejtett MAPPÁK képeit már maga a lekérdezés kihagyja (a
-        közös kapu, `index/hidden_scope.py`), a kapcsoló tényleges értéke
-        szerint.
+        A nyitott nézet csak akkor kérdez újra, ha az utolsó szinkron tényleg
+        megváltoztatta az indexet vagy egy ini-t. A rekordokat mindig a teljes
+        indexből olvassa, a rács pillanatnyi szűrésétől függetlenül.
         """
+        if not self._timeline_open:
+            self._dirty = True
+            return
+        if (
+            self._sync_controller is not None
+            and getattr(self._sync_controller, "_last_sync_changed", True) is False
+        ):
+            return
+        self._do_reload()
+
+    def _do_reload(self) -> None:
+        self._dirty = False
         with open_index(self._db_path) as conn:
             records = tuple(r for r in all_photos(conn) if not r.hidden)
-            albums = tuple(
-                (
-                    album,
-                    tuple(
-                        r for r in album_photos(conn, album.token) if not r.hidden
-                    ),
-                )
-                for album in albums_in_index(conn)
+            albums = albums_in_index(conn)
+            visible_by_id = {record.id: record for record in records}
+            photos_by_album: dict[str, list[PhotoRecord]] = {
+                album.token: [] for album in albums
+            }
+            for row in conn.execute(
+                "SELECT pa.token, pa.photo_id FROM photo_albums pa "
+                "JOIN photos p ON p.id = pa.photo_id "
+                "JOIN folders f ON f.id = p.folder_id "
+                "ORDER BY pa.token, (pa.place IS NULL), pa.place, f.path, p.name"
+            ):
+                photo = visible_by_id.get(row["photo_id"])
+                album_photos = photos_by_album.get(row["token"])
+                if photo is not None and album_photos is not None:
+                    album_photos.append(photo)
+            album_records = tuple(
+                (album, tuple(photos_by_album[album.token])) for album in albums
             )
         # a bélyegkép-provider regisztere a TELJES könyvtárral bővül -
         # ez szuperhalmaza bármely szűkebb (mappa/keresés) nézetnek, tehát
         # a főrács regisztrációját sosem szűkíti (nem veszít kulcsot)
         self._provider.register_photos(records)
         locale = QLocale()
-        self._collections = self._collections_to_qml(records, locale, albums)
+        self._collections = self._collections_to_qml(
+            records, locale, album_records
+        )
         self.collectionsChanged.emit()
 
     def _collections_to_qml(

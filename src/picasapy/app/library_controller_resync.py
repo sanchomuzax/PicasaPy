@@ -470,14 +470,23 @@ class _LibraryResyncMixin:
         helyi = to_local_path(path) or str(path)
         mappa = Path(normalize_path(helyi)).parent
         szurok = getattr(self, "_filetype_scan_snapshot", None)
+        self._last_sync_changed = True
 
         def munka() -> None:
             from picasapy.index.sync import sync_folder
 
             opciok = {} if szurok is None else {"enabled_filetypes": szurok}
             with open_index(self._db_path) as conn:
+                total_changes_before = conn.total_changes
+                cache_was_ready = self._side_pane_cache_ready(conn)
                 sync_folder(conn, mappa, mappa, **opciok)
-            self.syncFinished.emit()
+                self._finish_index_sync(
+                    conn,
+                    total_changes_before,
+                    cache_was_ready,
+                    (str(mappa),),
+                )
+                self.syncFinished.emit()
 
         self._start_background(munka, name="picasapy-sync-dirty")
 
@@ -566,22 +575,35 @@ class _LibraryResyncMixin:
             return  # figyelt gyökér alatt — azt a #1539 ága vitte
         if path_key(str(mappa)) not in self._exported_folder_keys():
             return  # nem nyilvántartott exportcél — a #1539 határa marad
-        try:
-            with open_index(self._db_path) as conn:
-                scan_options = {}
-                enabled_filetypes = getattr(
-                    self, "_filetype_scan_snapshot", None
+        self._last_sync_changed = True
+
+        def worker() -> None:
+            try:
+                with open_index(self._db_path) as conn:
+                    total_changes_before = conn.total_changes
+                    cache_was_ready = self._side_pane_cache_ready(conn)
+                    scan_options = {}
+                    enabled_filetypes = getattr(
+                        self, "_filetype_scan_snapshot", None
+                    )
+                    if enabled_filetypes is not None:
+                        scan_options["enabled_filetypes"] = enabled_filetypes
+                    _legacy().sync_folder(conn, mappa, mappa, **scan_options)
+                    self._finish_index_sync(
+                        conn,
+                        total_changes_before,
+                        cache_was_ready,
+                        (str(mappa),),
+                    )
+            except Exception:  # noqa: BLE001 - index-gond nem buktathat exportot
+                _legacy().logger.warning(
+                    "Az exportcél nem került az indexbe: %s", mappa, exc_info=True
                 )
-                if enabled_filetypes is not None:
-                    scan_options["enabled_filetypes"] = enabled_filetypes
-                _legacy().sync_folder(conn, mappa, mappa, **scan_options)
-        except Exception:  # noqa: BLE001 - index-gond nem buktathat exportot
-            _legacy().logger.warning(
-                "Az exportcél nem került az indexbe: %s", mappa, exc_info=True
-            )
-            return
-        # a rács a `syncFinished`-re olvassa újra a feedet (`_reload_after_sync`)
-        self.syncFinished.emit()
+                return
+            # A rács és az oldalpanel frissítése a kész index után történik.
+            self.syncFinished.emit()
+
+        self._start_background(worker, name="picasapy-sync-exported-folder")
 
     def _exported_folder_keys(self) -> set[str]:
         """A nyilvántartott, MA IS LÉTEZŐ exportcélok összehasonlítható

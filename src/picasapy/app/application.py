@@ -612,7 +612,9 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
                         name="Exportmappák ellenőrzése",
                         status_text=None,
                         work=lambda: _exportcelok_visszavetele(
-                            state.data_dir / "index.db", QSettings()
+                            state.data_dir / "index.db",
+                            QSettings(),
+                            controller=state.controller,
                         ),
                     ),
                 ),
@@ -625,7 +627,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     def _maintenance_batch_finished(batch_key: str) -> None:
         if batch_key == "exported":
             # az újraindexelt exportmappák a nézetekben is megjelenjenek
-            state.controller.syncFinished.emit()
+            if getattr(state.controller, "_last_sync_changed", False):
+                state.controller.syncFinished.emit()
             return
         if batch_key != "initial":
             return

@@ -40,8 +40,16 @@ from __future__ import annotations
 import logging
 import sqlite3
 import threading
+from collections.abc import Iterable
 
-from picasapy.index.side_pane import SidePaneCollections, load_side_pane_collections
+from PySide6.QtCore import QMetaObject, Qt, Slot
+from picasapy.index import open_index
+from picasapy.index.side_pane import (
+    SidePaneCollections,
+    cached_side_pane_collections,
+    refresh_side_pane_cache,
+    side_pane_cache_ready,
+)
 from picasapy.ini import central_contacts_path
 
 logger = logging.getLogger(__name__)
@@ -63,7 +71,13 @@ class SidePaneMixin:
 
     # -- háttérszál oldala ---------------------------------------------------
 
-    def _precompute_side_pane(self, conn: sqlite3.Connection) -> None:
+    def _precompute_side_pane(
+        self,
+        conn: sqlite3.Connection,
+        folders: Iterable[str] | None = None,
+        *,
+        refresh: bool = True,
+    ) -> bool:
         """A gyűjtemények előállítása a HÁTTÉRSZÁLON, letéve átvételre.
 
         A `_sync_worker` hívja, a saját kapcsolatával, közvetlenül a
@@ -72,18 +86,59 @@ class SidePaneMixin:
 
         A hiba nyelt, de NAPLÓZVA: egy diagnosztikai kellemetlenség soha
         nem viheti el a háttér-szinkront, viszont vakon sem állhatunk."""
+        central_path = central_contacts_path(self._db_path)
         try:
-            collections = load_side_pane_collections(
-                conn, central_path=central_contacts_path(self._db_path)
+            if refresh:
+                refresh_side_pane_cache(
+                    conn, folders, central_path=central_path
+                )
+            collections = cached_side_pane_collections(
+                conn, central_path=central_path
             )
+            if collections is None:
+                return False
         except Exception:  # noqa: BLE001 — a szinkron nem hiúsulhat meg tőle
             logger.warning(
                 "a hasáb gyűjteményeinek háttérbeli előállítása hibára futott",
                 exc_info=True,
             )
-            return
+            return False
         with _ATADAS_ZAR:
             self._side_pane_stash = collections
+        return True
+
+    def _refresh_side_pane_cache(
+        self,
+        conn: sqlite3.Connection,
+        folders: Iterable[str] | None = None,
+    ) -> bool:
+        """Az ini-gyorstárat frissíti a háttérszálon, előállítás nélkül."""
+        return refresh_side_pane_cache(
+            conn,
+            folders,
+            central_path=central_contacts_path(self._db_path),
+        )
+
+    def _side_pane_cache_ready(self, conn: sqlite3.Connection) -> bool:
+        return side_pane_cache_ready(conn)
+
+    def _finish_index_sync(
+        self,
+        conn: sqlite3.Connection,
+        total_changes_before: int,
+        cache_was_ready: bool,
+        folders: Iterable[str] | None = None,
+    ) -> bool:
+        """Egy szinkron index- és ini-változását összesíti a jelzés előtt."""
+        index_changed = conn.total_changes != total_changes_before
+        if not cache_was_ready:
+            folders = None
+        ini_changed = self._refresh_side_pane_cache(conn, folders=folders)
+        changed = index_changed or ini_changed
+        self._last_sync_changed = changed
+        if changed or not cache_was_ready:
+            self._precompute_side_pane(conn, refresh=False)
+        return changed
 
     # -- a felület szála -----------------------------------------------------
 
@@ -91,8 +146,8 @@ class SidePaneMixin:
         """Az előre kiszámolt eredmény ÁTVÉTELE (egyszer használatos).
 
         A kivétel után a letét ürül: a következő frissítés vagy kap újat a
-        háttérszáltól, vagy maga söpör — elavult adatot nem szolgálunk ki
-        másodszor."""
+        háttérszáltól, vagy a memóriabeli gyorstárból állítja elő; lemezről
+        nem söpör."""
         with _ATADAS_ZAR:
             stash = getattr(self, "_side_pane_stash", None)
             self._side_pane_stash = None
@@ -101,14 +156,57 @@ class SidePaneMixin:
     def _load_side_pane(self, conn: sqlite3.Connection) -> None:
         """A hasáb két ini-alapú gyűjteményének frissítése.
 
-        Ha a háttérszál már letette az eredményt, azt vesszük át (nulla
-        lemezmunka a felület szálán); különben itt söprünk — EGYETLEN
-        menetben mindkettőhöz."""
+        Ha a háttérszál már letette az eredményt, azt vesszük át. Máskülönben
+        a mappánkénti gyorstárból állítjuk elő; ini-fájl olvasása itt nincs.
+        Hiányos gyorstárnál a betöltés a háttérszálon indul el."""
         collections = self._take_side_pane_stash()
         if collections is None:
-            collections = load_side_pane_collections(
+            collections = cached_side_pane_collections(
                 conn, central_path=central_contacts_path(self._db_path)
             )
+        if collections is None:
+            self._schedule_side_pane_warmup()
+            return
+        self._init_custom_collections()
+        self._apply_side_pane(collections)
+
+    def _schedule_side_pane_warmup(self) -> None:
+        """Hiányzó gyorstárat tölt fel háttérben, majd a felületen alkalmazza."""
+        if getattr(self, "_side_pane_warmup_running", False):
+            return
+        if getattr(self, "_sync_running", False) or getattr(
+            self, "_dirty_running", False
+        ):
+            return
+        self._side_pane_warmup_running = True
+
+        def worker() -> None:
+            try:
+                with open_index(self._db_path) as conn:
+                    self._precompute_side_pane(conn)
+            finally:
+                try:
+                    QMetaObject.invokeMethod(
+                        self,
+                        "_apply_side_pane_stash",
+                        Qt.ConnectionType.QueuedConnection,
+                    )
+                except RuntimeError:
+                    logger.debug("az oldalpanel-gyorstár alkalmazása elmaradt")
+
+        try:
+            self._start_background(worker, name="picasapy-side-pane-cache")
+        except BaseException:
+            self._side_pane_warmup_running = False
+            raise
+
+    @Slot()
+    def _apply_side_pane_stash(self) -> None:
+        """A háttérbeli első betöltés eredményét a felületi szálon alkalmazza."""
+        self._side_pane_warmup_running = False
+        collections = self._take_side_pane_stash()
+        if collections is None:
+            return
         self._init_custom_collections()
         self._apply_side_pane(collections)
 

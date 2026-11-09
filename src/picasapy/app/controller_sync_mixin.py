@@ -139,6 +139,13 @@ class AppControllerSyncMixin:
         visszatérve a feed így a megnyitás előtti pozícióján marad."""
         self._reload(preserve_scroll=True)
 
+    @Slot()
+    def _reload_after_sync_if_changed(self) -> None:
+        """A syncFinished nézeteit csak tényleges index- vagy ini-változás frissíti."""
+        if getattr(self, "_last_sync_changed", True) is False:
+            return
+        self._reload(preserve_scroll=True)
+
     def _reload(
         self, preserve_scroll: bool = False, defer_collections: bool = False
     ) -> None:
