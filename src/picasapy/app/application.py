@@ -636,6 +636,19 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
                 state.controller,
                 state.storage_bootstrap.migration_notice,
             )
+        # #6697: a cache-takarítás az első képkocka után, de a kezdeti feed
+        # és a könyvtárszinkron elindítása után kerüljön a soros karbantartásba.
+        state.startup_maintenance.enqueue(
+            "thumb-cache",
+            (
+                StartupMaintenanceStep(
+                    key="thumb_cache_prune",
+                    name="A bélyegkép-gyorstár takarítása",
+                    status_text=None,
+                    work=state.thumb_cache.maybe_prune,
+                ),
+            ),
+        )
         elapsed_ms = (
             time.monotonic() - startup_state["first_frame_at"]
         ) * 1000

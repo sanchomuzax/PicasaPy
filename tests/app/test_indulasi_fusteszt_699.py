@@ -71,6 +71,7 @@ class TestIndulas:
         controller.recordSavedChain(str(mappa / "a.jpg"), "holga=1;")
 
         controller.start()
+        assert controller.waitForBackgroundWorkers(20.0)
         qt_app.processEvents()
 
         assert controller.photos.rowCount() > 0, (

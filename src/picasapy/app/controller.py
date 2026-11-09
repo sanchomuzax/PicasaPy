@@ -322,6 +322,9 @@ class AppController(
             # megnyitható marad (a bélyegképek a gyorsítótárból jönnek), de
             # az eredeti fájlok most nem érhetők el.
             self.folderUnavailable.emit(folder_path)
+        if getattr(self, "_defer_initial_feed", False):
+            self._deferred_folder_activation = folder_path
+            return
         if already_in_feed:
             # currentFolder/folderDescription frissült — jelzés a QML-nek
             self.statusChanged.emit()

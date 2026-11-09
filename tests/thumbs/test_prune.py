@@ -6,7 +6,8 @@ import time
 import pytest
 
 from picasapy.thumbs import ThumbnailCache
-from picasapy.thumbs.prune import prune_cache_dir, prune_in_background
+from picasapy.thumbs import prune as prune_module
+from picasapy.thumbs.prune import prune_cache_dir, prune_if_needed, prune_in_background
 
 
 def _make_entry(root, shard, name, size, age_seconds):
@@ -67,6 +68,50 @@ class TestPruneCacheDir:
         prune_cache_dir(tmp_path, 0)
         assert stray.exists()
 
+    def test_bejaras_scandirral_mukodik_rglob_nelkul(self, tmp_path, monkeypatch):
+        """A teljes cache-keresés scandirrel történik, nem Path.rglobbal."""
+        old = _make_entry(tmp_path, "aa", "regi.jpg", 100, age_seconds=2000)
+
+        def nincs_rglob(*_args, **_kwargs):
+            raise AssertionError("a gyorstár-takarító Path.rglobot használt")
+
+        monkeypatch.setattr(type(tmp_path), "rglob", nincs_rglob)
+        assert prune_cache_dir(tmp_path, 0) == 100
+        assert not old.exists()
+
+
+class TestPruneSchedule:
+    def test_nem_olvas_ujra_napon_belul_valtozatlan_cache_eseten(
+        self, tmp_path, monkeypatch
+    ):
+        _make_entry(tmp_path, "aa", "a.jpg", 50, age_seconds=10)
+        assert prune_if_needed(tmp_path, 1000) == 0
+
+        scans = 0
+        original = prune_module._scan_cache_dir
+
+        def counted_scan(root):
+            nonlocal scans
+            scans += 1
+            return original(root)
+
+        monkeypatch.setattr(prune_module, "_scan_cache_dir", counted_scan)
+        assert prune_if_needed(tmp_path, 1000) == 0
+        assert scans == 0
+
+    def test_merettullepesnel_napon_belul_is_takarit(self, tmp_path):
+        _make_entry(tmp_path, "aa", "regi.jpg", 100, age_seconds=3000)
+        retained = _make_entry(tmp_path, "bb", "uj.jpg", 100, age_seconds=1000)
+        assert prune_if_needed(tmp_path, 100) == 100
+        assert retained.exists()
+
+        extra = _make_entry(tmp_path, "cc", "ujabb.jpg", 100, age_seconds=1)
+        future = time.time() + 5
+        os.utime(extra.parent, (future, future))
+        assert prune_if_needed(tmp_path, 100) == 100
+        assert not retained.exists()
+        assert extra.exists()
+
 
 class TestCacheIntegration:
     def test_cache_prune_uses_configured_limit(self, tmp_path):
@@ -74,10 +119,8 @@ class TestCacheIntegration:
         _make_entry(root, "aa", "regi.jpg", 100, age_seconds=2000)
         kept = _make_entry(root, "bb", "uj.jpg", 100, age_seconds=1000)
         cache = ThumbnailCache(root, size=64, max_bytes=100)
-        # Az induláskori háttér-takarítót bevárjuk, hogy ne versenyezzen
-        # se a szinkron prune-nal, se a tmp-mappa teszt végi törlésével.
-        assert cache._prune_thread is not None
-        cache._prune_thread.join(5)
+        # #6697: a konstruktor már nem indít takarítást; a kérés explicit.
+        assert cache._prune_thread is None
         cache.prune()
         assert list(root.rglob("*.jpg")) == [kept]
 
@@ -89,19 +132,14 @@ class TestCacheIntegration:
         assert entry.exists()
 
     def test_background_prune_runs_at_init(self, tmp_path):
+        """#6697: a konstruktor nem takarít, karbantartási kérésre igen."""
         root = tmp_path / "cache"
-        _make_entry(root, "aa", "regi.jpg", 100, age_seconds=2000)
+        old = _make_entry(root, "aa", "regi.jpg", 100, age_seconds=2000)
         _make_entry(root, "bb", "uj.jpg", 100, age_seconds=1000)
         cache = ThumbnailCache(root, size=64, max_bytes=100)
-        # Determinasztikus várakozás: a szál bevárása kiveszi az időzítés-
-        # függő flakiness-t (terhelt gépen az 5 mp-es poll kevés volt).
-        assert cache._prune_thread is not None
-        cache._prune_thread.join(30)
-        deadline = time.time() + 5
-        while time.time() < deadline:
-            if len(list(root.rglob("*.jpg"))) == 1:
-                break
-            time.sleep(0.02)
+        assert cache._prune_thread is None
+        assert old.exists()
+        cache.maybe_prune()
         assert len(list(root.rglob("*.jpg"))) == 1
 
     def test_background_thread_is_daemon(self, tmp_path):
