@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.85] - 2026-11-09
+
+- A Rainbow szűrő színei most az eredeti Picasa szerint alakulnak, a vörös árnyalat nem lesz túl erős (#6743).
+
 ## [1.0.84] - 2026-11-09
 
 - A diavetítésből megnyitott Időrend háttérképe megbízhatóan töltődik be, a felület nem akad meg (#6735).
