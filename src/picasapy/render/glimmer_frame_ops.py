@@ -493,11 +493,11 @@ def _compose_drop_shadow(
         alfa[top : top + height, left : left + width] = (
             source_alpha.astype(np.uint16) * shadow_alpha // 255
         ).astype(np.uint8)
-    alfa = nativ_blur_csatorna(alfa, blur_px, blur_px, _DROPSHADOW_QUALITY).astype(np.uint32)
+    alfa = nativ_blur_csatorna(alfa, blur_px, blur_px, _DROPSHADOW_QUALITY)
 
     # a keverés (`0x008f48b0`) egész: `(S·α + D·(255 − α)) // 255`
-    hatter = np.array(background_color, dtype=np.uint32)
-    arnyek = np.array(shadow_color, dtype=np.uint32)
+    hatter = np.array(background_color, dtype=np.uint16)
+    arnyek = np.array(shadow_color, dtype=np.uint16)
     canvas = (arnyek * alfa[..., np.newaxis] + hatter * (255 - alfa[..., np.newaxis])) // 255
     canvas = canvas.astype(np.uint8)
 
@@ -505,10 +505,10 @@ def _compose_drop_shadow(
     if source_alpha is None:
         source_area[:] = image
     else:
-        alpha = source_alpha.astype(np.uint32)[..., np.newaxis]
+        alpha = source_alpha.astype(np.uint16)[..., np.newaxis]
         source_area[:] = (
-            image.astype(np.uint32) * alpha
-            + source_area.astype(np.uint32) * (255 - alpha)
+            image.astype(np.uint16) * alpha
+            + source_area.astype(np.uint16) * (255 - alpha)
         ) // 255
     return canvas
 

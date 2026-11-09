@@ -10,6 +10,7 @@ from picasapy.halozati_ut import halozati_gyoker
 
 from .library_controller_activity import _FILETYPE_SNAPSHOT_UNSET
 from .hatter_prioritas import kerjafonal_alacsony_prioritasa
+from .library_controller_eltunt_gyoker import atnevezett_gyoker
 from .library_controller_sync import _legacy
 
 
@@ -121,7 +122,10 @@ class _LibrarySyncRescanMixin:
                             enabled_filetypes=enabled_filetypes,
                         )
                     except (OSError, RuntimeError, sqlite3.OperationalError) as error:
-                        errors.append(f"{root}: {error}")
+                        # #6762: az átnevezett gyökeret a szinkron végén a
+                        # #6751 rendezője követi; ez nem hiba
+                        if not atnevezett_gyoker(conn, root):
+                            errors.append(f"{root}: {error}")
                 # #1601: a hasáb ini-alapú gyűjteményei MÉG ITT, a
                 # háttérszálon állnak elő — a `syncFinished` utáni
                 # `_reload()` így csak átveszi őket, és a felület szála

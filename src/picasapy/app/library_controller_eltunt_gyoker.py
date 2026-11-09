@@ -88,6 +88,16 @@ def atnevezett_testver(gyoker: str | Path, nevek: frozenset[str]) -> str | None:
     return talalatok[0] if len(talalatok) == 1 else None
 
 
+def atnevezett_gyoker(conn, gyoker: str | Path) -> bool:
+    """Igaz, ha az eltűnt figyelt gyökeret a #6751 szabálya szerint átnevezték.
+
+    A szinkronmunkás ezt nem jelenti hibának (#6762): a szinkron végén a
+    rendező követi az új nevet, a hibasáv pedig téves riasztás volna."""
+    if Path(gyoker).is_dir() or not szulo_jelen_van(gyoker):
+        return False
+    return atnevezett_testver(gyoker, indexelt_fajlnevek(conn, str(gyoker))) is not None
+
+
 class _LibraryEltuntGyokerMixin:
     @Slot()
     def _eltunt_gyokerek_rendezese(self) -> None:

@@ -281,7 +281,9 @@ def _szorzott_resz(kulonbseg: np.ndarray, strength: float) -> np.ndarray:
 
 
 def _elmosott(image: np.ndarray, radius: float) -> np.ndarray:
-    return blur_image_operation(image, radius, radius, quality=3).astype(np.float32)
+    # The native blur already returns uint8. Keep its bytes for callers that
+    # only need integer differences instead of allocating a float32 image.
+    return blur_image_operation(image, radius, radius, quality=3)
 
 
 
@@ -314,10 +316,14 @@ def xml_local_contrast(image: np.ndarray, radius: float, strength: float) -> np.
     azaz `ki = elm + C·(be − elm)`; `C = 1`-nél bitre azonosság (#688).
     Az elmosás a natív `BlurImageOperation(R, R, 3)`. `uint8` RGB be és ki.
     """
-    be = image.astype(np.float32)
-    elm = _elmosott(image, radius)
-    a = np.clip(elm - _szorzott_resz(elm - be, strength), 0.0, 255.0)
-    ki = np.clip(a + _szorzott_resz(be - elm, strength), 0.0, 255.0)
+    be = image.astype(np.int16)
+    elm = _elmosott(image, radius).astype(np.int16)
+    a = np.clip(
+        elm.astype(np.int32) - _szorzott_resz(elm - be, strength), 0, 255
+    ).astype(np.uint8)
+    ki = np.clip(
+        a.astype(np.int16) + _szorzott_resz(be - elm, strength), 0, 255
+    )
     return ki.astype(np.uint8)
 
 
