@@ -11,8 +11,9 @@ from pathlib import Path
 _GYOKER = Path(__file__).resolve().parents[1]
 _APP = _GYOKER / "src" / "picasapy" / "app"
 
-# #6440: ez a két függvény SZÁNDÉKOSAN változott: a háttérmunka-jegy és a
-# munkanév az állapotsávnak szól. A többi lenyomat változatlan.
+# #6440: a dirty-worker két függvénye a háttérmunka-jegy és a munkanév miatt
+# változott. #6696: a rescan és a worker a hálózati gyökérre szűrt időzítést
+# kezeli; a többi lenyomat változatlan.
 _MOZGATOTT_FORRASOK = {
     # #6476: szándékos változás, a változatlan mappa célzott szinkronja kimarad
     ("library_controller_sync_dirty.py", "_LibrarySyncDirtyMixin", "_on_folders_dirty"):
@@ -36,9 +37,9 @@ _MOZGATOTT_FORRASOK = {
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_stale_feed_folders"):
         "0601d410bcca2cd082900df88b0f8edad2e0af553f2027d7e48582c1312a8209",
     ("library_controller_sync_rescan.py", "_LibrarySyncRescanMixin", "rescan"):
-        "fd7977decad838d35058406f4e0ad06286c5045c6c3747ced91fe8776c649a54",
+        "2f1d5760ed225142b887b30c65b70d8bc5f4a352dd7fdecd78694a2634d0b02b",
     ("library_controller_sync_rescan.py", "_LibrarySyncRescanMixin", "_sync_worker"):
-        "1b13fb5e366de8333a4ef46a3fab332865a8e7e749c92b2e61b4ba8bf741c3f6",
+        "0d8b4c19b48d127012deca61a38f3dc39712cdc8107001b0d28aab88c3a28ce8",
     (
         "library_controller_sync_dirty.py",
         "_LibrarySyncDirtyMixin",

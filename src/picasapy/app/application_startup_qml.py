@@ -263,6 +263,11 @@ def _startup_step_register_qml_context(state):
     # (1–2. lépcső) eddig sehol nem volt elérve a QML-ből. A `faces_helper`
     # átadása a tömeges névadáshoz kell (`assignNameToFaces` a MEGLÉVŐ
     # `FacesHelper.addFace()` úton ír, ld. `face_scan_controller.py`).
+    from .face_scan_activity import FaceScanActivityMonitor
+
+    face_scan_activity = FaceScanActivityMonitor(app, engine)
+    state.face_scan_activity_monitor = face_scan_activity
+    app.aboutToQuit.connect(face_scan_activity.stop)
     FaceScanController = _app._lazy_app_symbol("FaceScanController")
     face_scan_controller = FaceScanController(
         data_dir / "index.db",
@@ -272,6 +277,7 @@ def _startup_step_register_qml_context(state):
         settings=QSettings(),
         face_detection_enabled=controller.faceDetectionEnabledFor,
     )
+    face_scan_controller._scan_should_pause = face_scan_activity.should_pause
     # #6067: a regisztrált értékeket induláskor rögzítjük, hogy egy későbbi
     # alapérték-változás ne módosítsa a felhasználó által látott állapotot.
     initialize_option_settings(

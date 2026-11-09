@@ -55,10 +55,19 @@ def _elem(window, nev):
 
 
 def _megnyit(window, qt_app, sor=0):
+    parbeszed = _elem(window, "exportDialog")
+    # A fájl közös ablakot használ (#2851). Ha az előző próba nyitva hagyta
+    # a párbeszédet, az új `open()` nem vált ki új `onOpened` eseményt, így
+    # a fókusz és a kijelölés a korábbi próbából maradna meg.
+    if parbeszed.property("visible"):
+        QMetaObject.invokeMethod(
+            parbeszed, "close", Qt.ConnectionType.DirectConnection
+        )
+        qt_app.processEvents()
+
     window.setProperty("selectedIndexes", [sor])
     window.setProperty("selectedIndex", sor)
     qt_app.processEvents()
-    parbeszed = _elem(window, "exportDialog")
     QMetaObject.invokeMethod(
         parbeszed, "openForSelection", Qt.ConnectionType.DirectConnection
     )
@@ -301,6 +310,22 @@ class TestHelyEsNev:
 
         assert mezo.property("activeFocus") is True
         assert str(mezo.property("selectedText")) == str(mezo.property("text"))
+
+    def test_ismetelt_megnyitaskor_visszaall_a_mappanev_fokusza(
+        self, qml_app, qt_app
+    ):
+        """A közös ablakban az előző próba fókusza nem szivároghat át."""
+        window, _controller, _engine = qml_app
+        _megnyit(window, qt_app)
+
+        radio = _elem(window, "exportSizeResizeRadio")
+        radio.forceActiveFocus()
+        qt_app.processEvents()
+        assert radio.property("activeFocus") is True
+
+        _megnyit(window, qt_app)
+        mezo = _elem(window, "exportFolderNameField")
+        assert mezo.property("activeFocus") is True
 
     def test_a_mappanev_fajlnev_szurt(self, qml_app, qt_app):
         """`filter="filename"` — a Windows tiltott halmaza

@@ -209,6 +209,13 @@ class FaceScanController(
         #: NAS-on drága. Az album megnyitása, a mellőzés/visszavétel és a
         #: keresés vége frissíti.
         self._ini_ignored_cache: tuple[IniIgnoredFace, ...] | None = None
+        #: #6694: a mappa ini-jének olcsó állapota. Változatlan szinkronnál
+        #: ebből látszik, hogy a #3670-es mellőzés-átvételt nem kell újra
+        #: lefuttatni; a kulcs útvonala nem `resolve()`-olt.
+        self._face_ini_signatures: dict[str, tuple[int, int] | None] = {}
+        #: A startup QML-réteg a GUI-szálon frissülő aktivitásfigyelőhöz köti.
+        #: A teszt-/önálló vezérlőkben nincs aktivitáskapu.
+        self._scan_should_pause: Callable[[], bool] = lambda: False
         self._stop_event: threading.Event | None = None
         #: #4517: a modellhiány oka munkamenetenként egyszer kerül a naplóba.
         self._unavailable_logged = False

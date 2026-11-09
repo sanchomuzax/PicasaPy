@@ -29,6 +29,9 @@ def _hozzaad(controller, content: str, x: float, y: float) -> None:
     controller.setTextDraft(content)
     controller.previewNewTextPlacement(x, y)
     controller.applyText()
+    assert controller.waitForBackgroundWorkers(30.0), (
+        "a szöveg előnézeti renderelése nem fejeződött be"
+    )
 
 
 def test_ket_felirat_hozzaadhato_es_iniben_round_trip(controller, photo):

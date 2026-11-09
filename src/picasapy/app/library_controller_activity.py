@@ -187,9 +187,9 @@ class _LibraryActivityMixin:
     def start(self) -> None:
         """Indulás: modellek betöltése, háttér-szinkron, élő figyelés.
 
-        Az inotify-figyelő az azonnali frissülést adja; NAS-mounton
-        (SMB/NFS) nem érkezik esemény, ezért 5 percenként periodikus
-        rescan fut fallbackként (a Picasa is folyamatosan pásztázott)."""
+        Az inotify-figyelő az azonnali frissülést adja; UNC-megosztáson
+        nem érkezik esemény, ezért ott 5 percenként teljes rescan fut
+        fallbackként. A watchdog rekurzív felállítása háttérszálon fut."""
         from PySide6.QtCore import QTimer
 
         self._dedupe_roots()
@@ -218,15 +218,20 @@ class _LibraryActivityMixin:
         self._reload(defer_collections=True)
         if not self._current_folder:
             self.restoreSession()
+        self._watcher_start_pending = True
+        self._watcher_start_timer = QTimer(self)
+        self._watcher_start_timer.setSingleShot(True)
+        self._watcher_start_timer.timeout.connect(
+            self._start_watcher_when_ready
+        )
         self.rescan()
         self._watcher = LibraryWatcher(
             tuple(self._roots),
             lambda folders: self.watcherDirty.emit(list(folders)),
         )
-        self._watcher.start()
         self._rescan_timer = QTimer(self)
         self._rescan_timer.setInterval(5 * 60 * 1000)
-        self._rescan_timer.timeout.connect(self.rescan)
+        self._rescan_timer.timeout.connect(self._rescan_network_roots)
         self._rescan_timer.start()
         # #1275: a LÁTOTT mappa célzott, olcsó újraolvasása — ez az, ami
         # hálózati megosztáson egyáltalán működik (ld. FOLDER_POLL_MS).
@@ -234,6 +239,29 @@ class _LibraryActivityMixin:
         self._folder_poll_timer.setInterval(_legacy().FOLDER_POLL_MS)
         self._folder_poll_timer.timeout.connect(self._poll_current_folder)
         self._folder_poll_timer.start()
+
+    def _start_watcher_background(self) -> None:
+        """A watchdog rekurzív felállítása ne a felület szálát foglalja."""
+        watcher = self._watcher
+        if watcher is not None:
+            watcher._start_background()
+
+    def _start_watcher_when_ready(self) -> None:
+        """Az első GUI-s újratöltés után indítsuk a watchdogot (#6696)."""
+        if not getattr(self, "_watcher_start_pending", False):
+            return
+        if getattr(self, "_sync_running", False) or getattr(
+            self, "_dirty_running", False
+        ):
+            return
+        self._watcher_start_pending = False
+        self._start_watcher_background()
+
+    def _queue_watcher_start_after_reload(self) -> None:
+        """A GUI-s újratöltés végén, a Qt-eseményciklus következő körére."""
+        timer = getattr(self, "_watcher_start_timer", None)
+        if getattr(self, "_watcher_start_pending", False) and timer is not None:
+            timer.start(0)
 
     def _dedupe_roots(self) -> None:
         """#507: a betöltött (esetleg régi, még nem normalizált
@@ -255,6 +283,10 @@ class _LibraryActivityMixin:
 
     def shutdown(self) -> None:
         """Leállítás: figyelő, időzítő és kért cache-takarítás (#5897)."""
+        self._watcher_start_pending = False
+        if getattr(self, "_watcher_start_timer", None) is not None:
+            self._watcher_start_timer.stop()
+            self._watcher_start_timer = None
         if self._rescan_timer is not None:
             self._rescan_timer.stop()
         if getattr(self, "_folder_poll_timer", None) is not None:

@@ -97,6 +97,79 @@ def card_alpha(width: float) -> int:
     return round((1.0 - depth**1.5) * 256.0)
 
 
+def card_stack_offset(
+    collection_index: int, photo_index: int
+) -> tuple[float, float]:
+    """A köteg egy kártyájának stabil, bináris tartományú szórása (#6713).
+
+    A qshow minden kártyánál két `_rand()` értéket használ a
+    `(rand - 0.5) * 0.15` képlethez. Itt a gyűjtemény- és fotóindex ad stabil
+    magot, hogy a köteg két megnyitáskor azonos helyre kerüljön.
+    """
+    if collection_index < 0 or photo_index < 0:
+        raise ValueError("a köteg indexei nem lehetnek negatívak")
+
+    mask = 0xFFFFFFFF
+    state = (
+        0x9E3779B9
+        ^ ((collection_index + 1) * 0x85EBCA6B)
+        ^ ((photo_index + 1) * 0xC2B2AE35)
+    ) & mask
+    if state == 0:
+        state = 1
+
+    def next_random() -> float:
+        nonlocal state
+        state ^= (state << 13) & mask
+        state &= mask
+        state ^= state >> 17
+        state &= mask
+        state ^= (state << 5) & mask
+        state &= mask
+        return state / 4294967296.0
+
+    return tuple((next_random() - 0.5) * 0.15 for _ in range(2))
+
+
+def timeline_leader_points(
+    p0: Sequence[float], p3: Sequence[float]
+) -> tuple[tuple[float, float], ...]:
+    """A 10 pontú eredeti Időrend-vezetőív (#6713, `0x007fee70`)."""
+    if len(p0) != 2 or len(p3) != 2:
+        raise ValueError("a vezetőív kezdő- és végpontja kétdimenziós")
+    x0, y0 = map(float, p0)
+    x3, y3 = map(float, p3)
+    if not all(isfinite(value) for value in (x0, y0, x3, y3)):
+        raise ValueError("a vezetőív koordinátái csak végesek lehetnek")
+    x1, y1 = x0, y0 + 50.0
+    x2, y2 = x3, y3 - 50.0
+    points = []
+    for index in range(10):
+        t = index / 9.0
+        one_minus_t = 1.0 - t
+        points.append(
+            (
+                one_minus_t**3 * x0
+                + 3.0 * one_minus_t**2 * t * x1
+                + 3.0 * one_minus_t * t**2 * x2
+                + t**3 * x3,
+                one_minus_t**3 * y0
+                + 3.0 * one_minus_t**2 * t * y1
+                + 3.0 * one_minus_t * t**2 * y2
+                + t**3 * y3,
+            )
+        )
+    return tuple(points)
+
+
+def timeline_text_alphas(progress: float) -> tuple[int, int]:
+    """Az eredeti fehér felirat és 1 px-es fekete árnyék alfa-bájtjai."""
+    if not isfinite(progress):
+        raise ValueError("a felirat alpha-értéke csak véges lehet")
+    bounded = min(256.0, max(0.0, progress))
+    return floor(bounded * 255.0 / 256.0), floor(bounded * 127.0 / 256.0)
+
+
 def carousel_layout(
     offset: float,
     count: int,
