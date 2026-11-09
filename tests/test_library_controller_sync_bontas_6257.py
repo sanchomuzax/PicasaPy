@@ -11,16 +11,15 @@ from pathlib import Path
 _GYOKER = Path(__file__).resolve().parents[1]
 _APP = _GYOKER / "src" / "picasapy" / "app"
 
-# #6440: ez a két függvény SZÁNDÉKOSAN változott: a háttérmunka-jegy és a
-# munkanév az állapotsávnak szól. A többi lenyomat változatlan.
+# #6440 és #6698: az itt frissített függvénylenyomatok szándékos módosításai.
 _MOZGATOTT_FORRASOK = {
     # #6476: szándékos változás, a változatlan mappa célzott szinkronja kimarad
     ("library_controller_sync_dirty.py", "_LibrarySyncDirtyMixin", "_on_folders_dirty"):
-        "9956e23223b860974e1258a8500b34307cd0ac5d62740b8fdf93131ad78bcaf2",
+        "38dccd48ba10eeb0817cbd760a789ed50c65d0abd232bad81114f669af5870e0",
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_root_for_folder"):
         "f5afe5e6920a3047137f970df48e26bd2eeec92e67c8b544b126859d86d66efd",
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_poll_current_folder"):
-        "133685095838d90897ab13cf8edd7a223ceea8e455d386c42ebaefa99f25837c",
+        "f5bfba83bc9be104e360305f62562ca79816cdfae78965cab55309b81375025f",
     (
         "library_controller_sync_sweep.py",
         "_LibrarySyncSweepMixin",
@@ -36,9 +35,9 @@ _MOZGATOTT_FORRASOK = {
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_stale_feed_folders"):
         "0601d410bcca2cd082900df88b0f8edad2e0af553f2027d7e48582c1312a8209",
     ("library_controller_sync_rescan.py", "_LibrarySyncRescanMixin", "rescan"):
-        "fd7977decad838d35058406f4e0ad06286c5045c6c3747ced91fe8776c649a54",
+        "1c17191631813649e7de82e2ab80cd71eadcd4cf775f5eb2ee68ead0b3e94326",
     ("library_controller_sync_rescan.py", "_LibrarySyncRescanMixin", "_sync_worker"):
-        "1b13fb5e366de8333a4ef46a3fab332865a8e7e749c92b2e61b4ba8bf741c3f6",
+        "d0c09c9ecf3e26c469e5ebcb5b3972e55e45f8870c9b84c4ee1715575ab62f11",
     (
         "library_controller_sync_dirty.py",
         "_LibrarySyncDirtyMixin",

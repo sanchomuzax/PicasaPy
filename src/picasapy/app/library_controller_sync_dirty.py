@@ -9,11 +9,13 @@ from pathlib import Path
 
 from PySide6.QtCore import QMetaObject, Qt, Slot
 from picasapy.index import open_index, remove_folder_tree
+from picasapy.index.sync import _defer_album_pruning
 from picasapy.scanner import DirectoryChange
 
 from .busy_activity import munka_neve
 from .busy_registry import get_app_busy_registry
 from .folder_freshness import folder_fingerprint
+from .hatter_prioritas import kerjafonal_alacsony_prioritasa
 from .library_controller_sync import _legacy
 
 
@@ -72,9 +74,16 @@ class _LibrarySyncDirtyMixin:
 
         enabled_filetypes = getattr(self, "_filetype_scan_snapshot", None)
 
+        # A fallback videó-metaadat olvasó OpenCV-t használ; az első
+        # betöltést a worker elindítása előtt, a hívó (GUI-)szál végzi.
+        from picasapy.lazy_cv2 import elore_betolt
+
+        elore_betolt()
+
         ujjlenyomatok = self._dirty_ujjlenyomatok_tar()
 
         def worker():
+            kerjafonal_alacsony_prioritasa()
             # #6476: ha MINDEN mappa ujjlenyomata változatlan, nincs mit
             # újratölteni, tehát `syncFinished` sem megy ki
             osszes = kihagyott = 0
@@ -82,7 +91,7 @@ class _LibrarySyncDirtyMixin:
             locked_folders = []
             synced_folders = []
             try:
-                with open_index(self._db_path) as conn:
+                with open_index(self._db_path) as conn, _defer_album_pruning(conn):
                     for folder in _legacy()._coalesce_watcher_changes(paths):
                         change = folder if isinstance(folder, DirectoryChange) else None
                         folder_path = change.path if change is not None else str(folder)
