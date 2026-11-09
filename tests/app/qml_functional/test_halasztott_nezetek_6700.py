@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
 from PySide6.QtTest import QTest
 
@@ -16,6 +17,7 @@ def _wait(qt_app, condition, message):
     assert var_feltetelre(qt_app, condition, 5.0), message
 
 
+@pytest.mark.halasztott_nezetek
 def test_a_fooldali_nezetek_az_elso_megnyitasig_nem_epulnek_fel(
     qml_app, qt_app
 ):
