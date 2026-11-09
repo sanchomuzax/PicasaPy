@@ -61,6 +61,12 @@ def _shutdown_application_qml(state, kilepesi_kod: int = 0) -> int:
     from .worker_thread import running_background_workers, wait_for_all_background_workers
 
     try:
+        face_scan_controller = getattr(state, "face_scan_controller", None)
+        if face_scan_controller is not None:
+            # A normál kilépési út már megkapta az `aboutToQuit` jelzést, de
+            # a korai QML-leállítási ágak is ezen a közös beváráson mennek át.
+            # A kereső a következő képhatáron lezárja és commitolja a kötegét.
+            face_scan_controller.cancelScan()
         effect_slice_controller = getattr(state, "effect_slice_controller", None)
         if effect_slice_controller is not None:
             effect_slice_controller.shutdown()
@@ -277,6 +283,9 @@ def _startup_step_register_qml_context(state):
         settings=QSettings(),
         face_detection_enabled=controller.faceDetectionEnabledFor,
     )
+    # Bármely Qt.quit() út (Fájl ▸ Kilépés, ablakbezárás vagy Exit Now) az
+    # eseményhurok leállása előtt kérje az arckeresés rendezett megszakítását.
+    app.aboutToQuit.connect(face_scan_controller.cancelScan)
     face_scan_controller._scan_should_pause = face_scan_activity.should_pause
     # #6067: a regisztrált értékeket induláskor rögzítjük, hogy egy későbbi
     # alapérték-változás ne módosítsa a felhasználó által látott állapotot.
