@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-import builtins
+import json
+import os
+import subprocess
 import struct
+import sys
+from pathlib import Path
 
 import pytest
-
-from picasapy.metadata.video import read_video_metadata
 
 
 def _box(kind: bytes, payload: bytes) -> bytes:
@@ -42,23 +44,35 @@ def _minimal_mp4() -> bytes:
 
 @pytest.mark.parametrize("suffix", ("mp4", "mov"))
 def test_mp4_es_mov_atomokbol_olvassa_a_hosszt_es_fps_t(
-    suffix, tmp_path, monkeypatch
+    suffix, tmp_path
 ):
     path = tmp_path / f"video.{suffix}"
     path.write_bytes(_minimal_mp4())
-    imported_cv2 = []
-    original_import = builtins.__import__
+    script = (
+        "import json, sys\n"
+        "from picasapy.metadata.video import read_video_metadata\n"
+        "metadata = read_video_metadata(sys.argv[1])\n"
+        "assert metadata.movie_format == sys.argv[2].upper()\n"
+        "assert metadata.frame_rate == 30.0\n"
+        "assert metadata.duration_seconds == 6.0\n"
+        "assert 'cv2' not in sys.modules\n"
+        "print(json.dumps({'format': metadata.movie_format}))\n"
+    )
+    repo_root = Path(__file__).resolve().parents[2]
+    env = os.environ.copy()
+    source_path = str(repo_root / "src")
+    env["PYTHONPATH"] = os.pathsep.join(
+        part for part in (source_path, env.get("PYTHONPATH", "")) if part
+    )
+    completed = subprocess.run(
+        [sys.executable, "-c", script, str(path), suffix],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+    )
 
-    def track_cv2_import(name, *args, **kwargs):
-        if name == "cv2":
-            imported_cv2.append(name)
-        return original_import(name, *args, **kwargs)
-
-    monkeypatch.setattr(builtins, "__import__", track_cv2_import)
-
-    metadata = read_video_metadata(path)
-
-    assert metadata.movie_format == suffix.upper()
-    assert metadata.frame_rate == 30.0
-    assert metadata.duration_seconds == 6.0
-    assert imported_cv2 == []
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout) == {"format": suffix.upper()}

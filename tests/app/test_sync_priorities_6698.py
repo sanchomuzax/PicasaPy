@@ -35,10 +35,42 @@ def test_rescan_elore_betolti_a_cv2_t_a_hivas_szalatol(monkeypatch):
         cancelScan=lambda: None,
         _start_background=lambda worker, **kwargs: events.append("worker-start"),
     )
+    def start_rescan(worker):
+        return rescan_module._LibrarySyncRescanMixin._start_rescan(controller, worker)
+
+    controller._start_rescan = start_rescan
 
     rescan_module._LibrarySyncRescanMixin.rescan(controller)
 
     assert events == ["cv2-load", "worker-start"]
+
+
+def test_teljes_szinkron_worker_alacsony_prioritasu(tmp_path, monkeypatch):
+    from picasapy.index import open_index
+
+    events = []
+    db_path = tmp_path / "index.db"
+    with open_index(db_path):
+        pass
+    monkeypatch.setattr(
+        rescan_module,
+        "kerjafonal_alacsony_prioritasa",
+        lambda: events.append("low-priority"),
+        raising=False,
+    )
+    controller = SimpleNamespace(
+        _sync_worker_filetype_snapshot=None,
+        _filetype_scan_snapshot=None,
+        _roots=(),
+        _db_path=db_path,
+        _precompute_side_pane=lambda _conn: events.append("sync"),
+        syncFailed=_Signal(events, "failed"),
+        syncFinished=_Signal(events, "finished"),
+    )
+
+    rescan_module._LibrarySyncRescanMixin._sync_worker_roots(controller, ())
+
+    assert events[:2] == ["low-priority", "sync"]
 
 
 def test_dirty_worker_alacsony_prioritasu_es_egyetlen_album_prune(
@@ -72,7 +104,9 @@ def test_dirty_worker_alacsony_prioritasu_es_egyetlen_album_prune(
     )
     monkeypatch.setattr(dirty_module, "folder_fingerprint", lambda _path: None)
     monkeypatch.setattr(dirty_module, "open_index", lambda _path: open_index(db_path))
-    monkeypatch.setattr(lazy_cv2, "elore_betolt", lambda: None)
+    monkeypatch.setattr(
+        lazy_cv2, "elore_betolt", lambda: events.append("cv2-load")
+    )
 
     legacy = SimpleNamespace(
         _coalesce_watcher_changes=lambda values: values,
@@ -100,8 +134,10 @@ def test_dirty_worker_alacsony_prioritasu_es_egyetlen_album_prune(
     dirty_module._LibrarySyncDirtyMixin._on_folders_dirty(
         controller, [str(folder) for folder in folders]
     )
+    assert events == ["cv2-load"]
     workers[0]()
 
+    assert events.index("cv2-load") < events.index("low-priority")
     assert events.count("low-priority") == 1
     assert events.count("prune") == 1
     assert events.index("low-priority") < events.index("prune")
