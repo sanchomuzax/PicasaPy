@@ -36,7 +36,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 from urllib.parse import parse_qs
 
-import numpy as np
+from picasapy.lazy_numpy import np
 import itertools
 import shiboken6
 from PySide6.QtCore import (
@@ -61,12 +61,16 @@ from picasapy.app.edit_controller import (
 from picasapy.app.effect_params import format_param_values, resolve_effect_params
 from picasapy.ini import PhotoCropReader
 from picasapy.ini.filters import FilterOp, parse_filters
-from picasapy.render import apply_filters, normalize_crop_ops
-from picasapy.render.elonezeti_arany import elonezeti_arany
+from picasapy.lazy_import import lazy_callable
 from picasapy.scanner import PICASA_INI_NAME
 
 from .thumbnail_provider import PLACEHOLDER_COLOR
 from .worker_thread import register_pool_owner
+
+# #6688: a render csomag az első effekt-bélyegkép rajzolásáig nem töltődik be
+apply_filters = lazy_callable("picasapy.render", "apply_filters")
+normalize_crop_ops = lazy_callable("picasapy.render", "normalize_crop_ops")
+elonezeti_arany = lazy_callable("picasapy.render.elonezeti_arany", "elonezeti_arany")
 
 if TYPE_CHECKING:
     from picasapy.index import PhotoRecord

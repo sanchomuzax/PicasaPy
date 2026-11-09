@@ -16,7 +16,7 @@ import os
 import threading
 from pathlib import Path
 
-import numpy as np
+from picasapy.lazy_numpy import np
 
 try:
     # #1611: a lusta helyettes — az OpenCV csak az első tényleges

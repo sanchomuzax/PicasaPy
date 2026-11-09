@@ -8,7 +8,7 @@ futva se akaszthassa a nézőt (#25 — "ésszerű ritkítás")."""
 
 from __future__ import annotations
 
-import numpy as np
+from picasapy.lazy_numpy import np
 
 BUCKET_COUNT = 256
 # e pixelszám fölött ritkítunk (stride-mintavétel) — a hisztogram ALAKJA

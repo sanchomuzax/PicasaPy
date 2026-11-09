@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 import math
 
-import numpy as np
+from picasapy.lazy_numpy import np
 
 
 _HOG_EPSILON = 1e-8

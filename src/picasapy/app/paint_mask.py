@@ -29,7 +29,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import numpy as np
+from picasapy.lazy_numpy import np
 
 #: A legkisebb értelmes ecset-átmérő a KIRAJZOLT kép arányában. A mért
 #: `startValueFactor = 0.03` / `maximumFactor = 0.2` (a `filterdesc.xml`

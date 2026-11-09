@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-import numpy as np
+from picasapy.lazy_numpy import np
 import picasapy.edit.save as api
 
 

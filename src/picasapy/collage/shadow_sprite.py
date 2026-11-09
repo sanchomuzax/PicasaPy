@@ -59,7 +59,7 @@ import math
 from functools import lru_cache
 
 from picasapy.lazy_cv2 import cv2
-import numpy as np
+from picasapy.lazy_numpy import np
 
 from .shadow import BLUR_TO_SIGMA, BOUNDS_GROWTH_FACTOR
 

@@ -16,13 +16,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import numpy as np
+from picasapy.lazy_numpy import np
 from PySide6.QtGui import QImage, QTransform
 
 from picasapy.cvimage import read_image_bytes, reduced_color_flag, scale_down_picasa_mag
 from picasapy.lazy_cv2 import cv2
 from picasapy.rawdecode import nyers_utvonal
-from picasapy.render.flip import FLIP_HORIZONTAL, FLIP_VERTICAL
+from picasapy.ini.flip import FLIP_HORIZONTAL, FLIP_VERTICAL
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
 

@@ -81,6 +81,12 @@ BETUMERETEK: tuple[int, ...] = (
     8, 10, 12, 14, 16, 18, 20, 22, 26, 30, 36, 48, 60, 72, 84, 96
 )
 
+#: Az alapértelmezett betűcsalád kulcsa - a Picasa szöveg-eszköze is
+#: talpatlan betűvel indult. Itt, az `ini` rétegben él (#6688), hogy az
+#: indulási út a `picasapy.render` csomag betöltése nélkül is olvashassa; a
+#: `render.text_fonts` innen veszi át és újraexportálja.
+DEFAULT_FAMILY = "arial"
+
 #: A `.picasa.ini`-be írt szám és a listaérték közti osztó. Az átváltás a
 #: `0x005b35a0`-ból, utasításról utasításra: `érték × (magasság ÷ 360)`;
 #: a `360.0` a `0xcf3d50`-en. Az író `méret ÷ magasság`-ot tárol (#2271),

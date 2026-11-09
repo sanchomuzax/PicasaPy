@@ -22,10 +22,13 @@ csatornánként azonosak).
 
 from __future__ import annotations
 
-import numpy as np
-
 from picasapy.lazy_cv2 import cv2
-from picasapy.render.glimmer_ops import resize_image
+from picasapy.lazy_import import lazy_callable
+from picasapy.lazy_numpy import np
+
+# #6688: a render csomag az első exportált EXIF-bélyegképig nem töltődik be
+# (a metaadat-modul az indulási láncban van)
+resize_image = lazy_callable("picasapy.render.glimmer_ops", "resize_image")
 
 #: a küszöb: a szélesség és a magasság ennél NAGYOBB kell legyen
 KUSZOB = 300

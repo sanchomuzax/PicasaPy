@@ -49,7 +49,7 @@ meg, ezek a mi értékeink.
 from __future__ import annotations
 
 from picasapy.lazy_cv2 import cv2
-import numpy as np
+from picasapy.lazy_numpy import np
 
 #: A helykitöltő HOSSZABB éle képpontban (mérve: 640 × 453).
 PLACEHOLDER_LONG_EDGE = 640

@@ -27,6 +27,8 @@ from typing import NamedTuple
 
 from PIL import ImageFont
 
+from picasapy.ini.text_overlay import DEFAULT_FAMILY
+
 #: Ahol TrueType-fájlokat keresünk. A sorrend számít: a rendszer saját
 #: mappái előbb, mert ott állnak az eredeti (Arial, Times) betűk, ha
 #: egyáltalán telepítve vannak.
@@ -87,10 +89,6 @@ FONT_FAMILIES: tuple[FontFamily, ...] = (
          "DejaVuSansMono-BoldOblique.ttf"),
     ),
 )
-
-#: Az alapértelmezett család kulcsa — a Picasa szöveg-eszköze is
-#: talpatlan betűvel indult.
-DEFAULT_FAMILY = "arial"
 
 _FAMILY_BY_KEY = {family.key: family for family in FONT_FAMILIES}
 

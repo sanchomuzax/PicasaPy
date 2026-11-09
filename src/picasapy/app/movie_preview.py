@@ -10,7 +10,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 
-import numpy as np
+from picasapy.lazy_numpy import np
 from PySide6.QtCore import QRunnable, QSize, QThreadPool, Signal
 from PySide6.QtGui import QImage, QImageReader
 from PySide6.QtQuick import QQuickImageProvider

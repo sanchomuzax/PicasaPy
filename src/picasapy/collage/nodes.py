@@ -25,14 +25,18 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
-import numpy as np
+from picasapy.lazy_numpy import np
+from picasapy.lazy_import import lazy_callable
 
 from .fitting import picasa_round
 from .frames import apply_border, polaroid_geometry, white_border_width
 from .layout import Placement
-from .render import _paste, _rotated_paste, fit_to_frame
 from .shadow import ShadowParams, draw_shadow
 from .themes import BORDER_THEMES, NOBORDER, POLAROID, WHITEBORDER
+
+_paste = lazy_callable("picasapy.collage.render", "_paste")
+_rotated_paste = lazy_callable("picasapy.collage.render", "_rotated_paste")
+fit_to_frame = lazy_callable("picasapy.collage.render", "fit_to_frame")
 
 
 # --- A csomópont-modell és a lapegység-koordinátarendszer (#942) -------------

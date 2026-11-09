@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import Signal, Slot
 
 from picasapy.ini import with_backuphash
-from picasapy.render.flip import (
+from picasapy.ini.flip import (
     FLIP_MASK,
     FLIP_HORIZONTAL,
     FLIP_VERTICAL,

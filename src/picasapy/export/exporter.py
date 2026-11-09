@@ -18,17 +18,16 @@ from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
 
-import numpy as np
+from picasapy.lazy_numpy import np
 
 from picasapy.cvimage import scale_down
 from picasapy.ini import IniDocument, load_or_empty
 from picasapy.ini.filters import parse_filters_prefix
 from picasapy.ini.photo_crop import log_unreadable_ini_once
+from picasapy.ini.text_overlay import DEFAULT_FAMILY as DEFAULT_FAMILY
 from picasapy.ioutil import write_atomic
 from picasapy.metadata.export_metadata import bajtmasolas, frissitett_metaadat
-from picasapy.render.native_grain import _grain_rand_stream
-from picasapy.render.text_fonts import DEFAULT_FAMILY as DEFAULT_FAMILY
-from picasapy.render.text_fonts import load_font
+from picasapy.lazy_import import lazy_callable
 from picasapy.scanner import PICASA_INI_NAME
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
@@ -73,6 +72,10 @@ from .export_settings import (
 )
 
 _LOG = logging.getLogger(__name__)
+
+# #6688: a render csomag csak export/render használatakor töltődjön be.
+_grain_rand_stream = lazy_callable("picasapy.render.native_grain", "_grain_rand_stream")
+load_font = lazy_callable("picasapy.render.text_fonts", "load_font")
 
 # Az `ExportSettings` immutábilis (frozen dataclass), ezért egyetlen
 # modul-szintű példány biztonságosan megosztható alapértékként — elkerüli a

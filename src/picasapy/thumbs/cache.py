@@ -20,7 +20,7 @@ import threading
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
-import numpy as np
+from picasapy.lazy_numpy import np
 
 from picasapy.cvimage import (
     _find_decoded_image,
@@ -33,8 +33,7 @@ from picasapy.cvimage import (
 from picasapy.ini.filters import FilterOp, serialize_filters
 from picasapy.ioutil import write_atomic
 from picasapy.rawdecode import dekodol_nyerset, nyers_hosszabb_el, nyers_utvonal
-from picasapy.render import apply_filters, normalize_crop_ops
-from picasapy.render.elonezeti_arany import elonezeti_arany
+from picasapy.lazy_import import lazy_callable
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 from picasapy.thumbs.prune import prune_cache_dir, prune_in_background
 from picasapy.thumbs.szintek import szint_cellahoz, szintek
@@ -50,6 +49,12 @@ from picasapy.thumbs.cache_policy import (
     _ffmpeg_allapot,
     _futtato,
 )
+
+# #6688: a render csomag az első SZERKESZTETT bélyegkép elkészítéséig nem
+# töltődik be (a szerkesztetlen bélyegképek a render nélkül készülnek).
+apply_filters = lazy_callable("picasapy.render", "apply_filters")
+normalize_crop_ops = lazy_callable("picasapy.render", "normalize_crop_ops")
+elonezeti_arany = lazy_callable("picasapy.render.elonezeti_arany", "elonezeti_arany")
 
 __all__ = [
     "FilterOp",

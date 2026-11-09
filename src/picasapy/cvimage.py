@@ -20,7 +20,7 @@ from collections import OrderedDict
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
-import numpy as np
+from picasapy.lazy_numpy import np
 from PIL import Image, UnidentifiedImageError
 
 from picasapy.rawdecode import dekodol_nyerset, nyers_utvonal

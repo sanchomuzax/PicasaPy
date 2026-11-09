@@ -43,10 +43,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-import numpy as np
+from picasapy.lazy_numpy import np
 from PySide6.QtGui import QColor
 
-from ..render.display_modes import apply_display_mode, display_mode_changes_pixels
+from .display_mode_paint import apply_display_mode, display_mode_changes_pixels
 
 
 #: #4412: a 16 bites mód képpontonként eltérő ZAJT ad (spec 5.3) — egy egyszínű

@@ -46,7 +46,6 @@ from xml.etree import ElementTree  # noqa: F401 - régi importút
 from PySide6.QtCore import Property, QUrl, Signal, Slot  # noqa: F401 - régi importút
 from PySide6.QtGui import QImageReader  # noqa: F401 - régi importút
 
-from picasapy.collage import write_collage  # noqa: F401 - régi importút
 from picasapy.collage.autosave import (
     discard_autosave,  # noqa: F401 - régi importút
     has_recoverable_draft,  # noqa: F401 - régi importút
@@ -54,7 +53,9 @@ from picasapy.collage.autosave import (
     write_autosave,  # noqa: F401 - régi importút
 )
 from picasapy.collage.draft import project_from_nodes  # noqa: F401 - régi importút
-from picasapy.collage.picasa_render import PicasaCollageSettings, make_picasa_collage  # noqa: F401 - régi importút
+from picasapy.collage.picasa_render_settings import (
+    PicasaCollageSettings,  # noqa: F401 - régi importút
+)
 from picasapy.app.collage_preview import CollagePreviewProvider  # noqa: F401 - régi importút
 from picasapy.app.movie_preview import MovieTransitionPreviewProvider  # noqa: F401 - régi importút
 from picasapy.collage.themes import BORDER_THEMES, COLLAGE_THEMES, NOBORDER  # noqa: F401 - régi importút
@@ -78,6 +79,11 @@ from .formatting import to_local_path
 from .poster_controller import PosterMixin
 from .create_movie_mixin import _CreateMovieMixin
 from .create_collage_mixin import _CreateCollageMixin
+
+from picasapy.lazy_import import lazy_callable
+
+write_collage = lazy_callable("picasapy.collage.render", "write_collage")  # noqa: F401 - régi importút
+make_picasa_collage = lazy_callable("picasapy.collage.picasa_render", "make_picasa_collage")  # noqa: F401 - régi importút
 
 logger = logging.getLogger(__name__)
 

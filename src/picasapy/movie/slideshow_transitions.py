@@ -6,7 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
-import numpy as np
+from picasapy.lazy_numpy import np
 
 from picasapy.cvimage import dekodolj_forrast
 

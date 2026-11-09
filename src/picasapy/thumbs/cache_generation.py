@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
-import numpy as np
+from picasapy.lazy_numpy import np
 
 from picasapy.cvimage import read_image_bytes, reduced_color_flag, scale_down_picasa_mag
 

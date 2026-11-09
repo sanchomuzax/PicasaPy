@@ -16,7 +16,7 @@ from __future__ import annotations
 import sqlite3
 from collections.abc import Mapping
 
-import numpy as np
+from picasapy.lazy_numpy import np
 
 from picasapy.faces.clustering import (
     DEFAULT_CLUSTER_THRESHOLD,

@@ -5,12 +5,17 @@ from __future__ import annotations
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
-import numpy as np
+from picasapy.lazy_numpy import np
 
 from picasapy.cvimage import dekodolj_forrast
 from picasapy.ini.filters import FilterOp
-from picasapy.render import apply_filters, normalize_crop_ops
-from picasapy.render.flip import apply_flip
+from picasapy.lazy_import import lazy_callable
+
+# #6688: a render csomag csak az első exportáláskor töltődik be (az `export`
+# az indulási láncban van, az első ablakképhez a render nem kell).
+apply_filters = lazy_callable("picasapy.render", "apply_filters")
+normalize_crop_ops = lazy_callable("picasapy.render", "normalize_crop_ops")
+apply_flip = lazy_callable("picasapy.render.flip", "apply_flip")
 
 
 # #1611: FÜGGVÉNY, nem modulszintű konstans — modulszinten a `cv2.ROTATE_*`

@@ -24,7 +24,7 @@ import tempfile
 from typing import NamedTuple
 
 from picasapy.lazy_cv2 import cv2
-import numpy as np
+from picasapy.lazy_numpy import np
 from PIL import ImageFont
 
 from picasapy.cvimage import dekodolj_forrast

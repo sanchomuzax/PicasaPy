@@ -6,9 +6,8 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-import numpy as np
-
-from .render import _decode, fit_to_frame
+from picasapy.lazy_numpy import np
+from picasapy.lazy_import import lazy_callable
 from .shadow import ShadowParams, shadow_params
 from .themes import (
     BORDER_THEMES,
@@ -17,6 +16,9 @@ from .themes import (
     NOBORDER,
     PICTUREGRID,
 )
+
+_decode = lazy_callable("picasapy.collage.render", "_decode")
+fit_to_frame = lazy_callable("picasapy.collage.render", "fit_to_frame")
 
 _DEFAULT_WIDTH = 1600
 _DEFAULT_HEIGHT = 1200

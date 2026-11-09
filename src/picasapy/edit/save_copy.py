@@ -60,7 +60,7 @@ from datetime import datetime
 from dataclasses import dataclass
 from pathlib import Path
 
-import numpy as np
+from picasapy.lazy_numpy import np
 
 from picasapy.edit.save import (
     SaveError,

@@ -41,7 +41,7 @@ from picasapy.metadata import (
     read_video_metadata,
 )
 from picasapy.paths import normalize_path
-from picasapy.render.flip import FLIP_MASK
+from picasapy.ini.flip import FLIP_MASK
 from picasapy.scanner import (
     FolderScan,
     HibasBejegyzes,

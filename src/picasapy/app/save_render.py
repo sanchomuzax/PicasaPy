@@ -11,16 +11,20 @@ from __future__ import annotations
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
-import numpy as np
+from picasapy.lazy_numpy import np
 
 from picasapy.cvimage import read_image_bytes
 from picasapy.edit.session import EditSession
 from picasapy.ini import PhotoCropReader
-from picasapy.render.chain import apply_filters, normalize_crop_ops
-from picasapy.render.flip import apply_flip
+from picasapy.lazy_import import lazy_callable
 from picasapy.scanner import PICASA_INI_NAME
 
 from .paint_mask import maszk_vonasokbol, van_mentett_ecsetvonas
+
+# #6688: a render csomag az első mentésig nem töltődik be
+apply_filters = lazy_callable("picasapy.render.chain", "apply_filters")
+normalize_crop_ops = lazy_callable("picasapy.render.chain", "normalize_crop_ops")
+apply_flip = lazy_callable("picasapy.render.flip", "apply_flip")
 
 _CROP_READER = PhotoCropReader()
 

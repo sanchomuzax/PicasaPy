@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 
-import numpy as np
+from picasapy.lazy_numpy import np
 from PySide6.QtGui import QImage
 
 

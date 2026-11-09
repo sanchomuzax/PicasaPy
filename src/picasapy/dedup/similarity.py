@@ -13,10 +13,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeAlias
 
-import numpy as np
+from picasapy.lazy_numpy import np
 
 from picasapy.cvimage import dekodolj_forrast
-from picasapy.resample import lanczos4_kicsinyites
+from picasapy.lazy_import import lazy_callable
+
+lanczos4_kicsinyites = lazy_callable(
+    "picasapy.resample", "lanczos4_kicsinyites"
+)
 
 RGB565Feature: TypeAlias = tuple[int, ...]
 HistogramFeature: TypeAlias = tuple[int, ...]

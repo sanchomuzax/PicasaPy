@@ -6,14 +6,18 @@ import io
 from pathlib import Path
 
 from picasapy.lazy_cv2 import cv2
-import numpy as np
+from picasapy.lazy_numpy import np
 from PIL import Image, ImageDraw, UnidentifiedImageError
 
-from picasapy.render.flip import FLIP_MASK
-from picasapy.render.text_fonts import DEFAULT_FAMILY, load_font
+from picasapy.ini.flip import FLIP_MASK
+from picasapy.ini.text_overlay import DEFAULT_FAMILY
+from picasapy.lazy_import import lazy_callable
 
 from .export_models import ExportItem
 from .export_settings import ExportSettings
+
+# #6688: a render csomag csak az első vízjel-rajzoláskor töltődik be
+load_font = lazy_callable("picasapy.render.text_fonts", "load_font")
 
 
 # A bájthű (no-op) másolás csak valódi JPEG-forrásra alkalmazható — más

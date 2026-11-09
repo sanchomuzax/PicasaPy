@@ -7,11 +7,14 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-import numpy as np
+from picasapy.lazy_numpy import np
 
 from picasapy.ini.filters import FilterOp
 from picasapy.lazy_cv2 import cv2
-from picasapy.render import apply_filters
+from picasapy.lazy_import import lazy_callable
+
+# #6688: a render csomag az első effekt-térszelvény rajzolásáig nem töltődik be
+apply_filters = lazy_callable("picasapy.render", "apply_filters")
 
 SLICE_STEPS = 12
 TONE_COLUMNS = 33

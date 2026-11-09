@@ -5,7 +5,7 @@ from __future__ import annotations
 import functools
 from pathlib import Path
 
-import numpy as np
+from picasapy.lazy_numpy import np
 from PySide6.QtCore import QSize
 from PySide6.QtGui import QColorSpace, QImage, QImageReader
 
