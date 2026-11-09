@@ -19,7 +19,7 @@ _APP = _GYOKER / "src" / "picasapy" / "app"
 _MOZGATOTT_FORRASOK = {
     # #6476: szándékos változás, a változatlan mappa célzott szinkronja kimarad
     ("library_controller_sync_dirty.py", "_LibrarySyncDirtyMixin", "_on_folders_dirty"):
-        "38dccd48ba10eeb0817cbd760a789ed50c65d0abd232bad81114f669af5870e0",
+        "04f31aab2e6941e80555f210c2b862fdebbdfac86027e1e91869e585b7748799",
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_root_for_folder"):
         "f5afe5e6920a3047137f970df48e26bd2eeec92e67c8b544b126859d86d66efd",
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_poll_current_folder"):

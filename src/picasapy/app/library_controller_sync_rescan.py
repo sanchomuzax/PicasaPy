@@ -7,7 +7,6 @@ import sqlite3
 from PySide6.QtCore import Slot
 from picasapy.index import open_index
 from picasapy.halozati_ut import halozati_gyoker
-from picasapy.lazy_cv2 import elore_betolt
 
 from .library_controller_activity import _FILETYPE_SNAPSHOT_UNSET
 from .hatter_prioritas import kerjafonal_alacsony_prioritasa
@@ -53,9 +52,10 @@ class _LibrarySyncRescanMixin:
         """
         if self._sync_running or self._dirty_running:
             return  # egy író elég; a futó szinkron végén úgyis frissülünk
-        # A videó fallback-olvasója az OpenCV-t használja. A natív modul első
-        # betöltése a GUI-szálon történjen, mielőtt a metaadat-worker indul.
-        elore_betolt()
+        # Az OpenCV-t itt szándékosan NEM töltjük elő: az indulás is teljes
+        # újraolvasás, és az előtöltés üres könyvtárnál is betöltené (#6510
+        # őre). Az MP4/MOV metaadata atom-olvasóval jön; a ritka egyéb
+        # videóformátum a régi módon, a háttérszálon tölti be (#6698).
         self._sync_running = True
         self._sync_worker_filetype_snapshot = getattr(
             self, "_filetype_scan_snapshot", None

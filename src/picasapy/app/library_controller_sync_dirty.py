@@ -74,12 +74,6 @@ class _LibrarySyncDirtyMixin:
 
         enabled_filetypes = getattr(self, "_filetype_scan_snapshot", None)
 
-        # A fallback videó-metaadat olvasó OpenCV-t használ; az első
-        # betöltést a worker elindítása előtt, a hívó (GUI-)szál végzi.
-        from picasapy.lazy_cv2 import elore_betolt
-
-        elore_betolt()
-
         ujjlenyomatok = self._dirty_ujjlenyomatok_tar()
 
         def worker():

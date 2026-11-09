@@ -20,7 +20,9 @@ class _Signal:
         self.events.append((self.name, args))
 
 
-def test_rescan_elore_betolti_a_cv2_t_a_hivas_szalatol(monkeypatch):
+def test_rescan_nem_tolti_elo_a_cv2_t(monkeypatch):
+    """Az indulás is teljes újraolvasás: az előtöltés üres könyvtárnál is
+    betöltené az OpenCV-t (#6510 őre)."""
     events = []
     monkeypatch.setattr(
         rescan_module,
@@ -42,7 +44,7 @@ def test_rescan_elore_betolti_a_cv2_t_a_hivas_szalatol(monkeypatch):
 
     rescan_module._LibrarySyncRescanMixin.rescan(controller)
 
-    assert events == ["cv2-load", "worker-start"]
+    assert events == ["worker-start"]
 
 
 def test_teljes_szinkron_worker_alacsony_prioritasu(tmp_path, monkeypatch):
@@ -134,10 +136,10 @@ def test_dirty_worker_alacsony_prioritasu_es_egyetlen_album_prune(
     dirty_module._LibrarySyncDirtyMixin._on_folders_dirty(
         controller, [str(folder) for folder in folders]
     )
-    assert events == ["cv2-load"]
+    assert "cv2-load" not in events
     workers[0]()
 
-    assert events.index("cv2-load") < events.index("low-priority")
+    assert "cv2-load" not in events
     assert events.count("low-priority") == 1
     assert events.count("prune") == 1
     assert events.index("low-priority") < events.index("prune")
