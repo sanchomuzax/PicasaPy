@@ -8703,9 +8703,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>PicasaPy’den Çık</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Arka planda bir işlem hâlâ çalışıyor (dışa aktarma, web dışa aktarma veya yüz taraması). Şimdi çıkarsanız işlem durur ve daha sonra devam etmez.</translation>
+            <translation>Arka plan çalışması hâlâ sürüyor. Şimdi çıkarsanız dışa aktarma ve web dışa aktarma durur ve devam etmez; yüz araması PicasaPy'yi bir sonraki başlatışınızda sürer.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9464,9 +9464,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Arka planda bir işlem hâlâ çalışıyor (dışa aktarma, web dışa aktarma veya yüz taraması). Şimdi çıkarsanız işlem durur ve daha sonra devam etmez.</translation>
+            <translation>Arka plan çalışması hâlâ sürüyor. Şimdi çıkarsanız dışa aktarma ve web dışa aktarma durur ve devam etmez; yüz araması PicasaPy'yi bir sonraki başlatışınızda sürer.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

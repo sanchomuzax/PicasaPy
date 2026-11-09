@@ -8712,9 +8712,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>Avsluta PicasaPy</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Bakgrundsarbete pågår fortfarande (export, webbexport eller ansiktssökning). Om du avslutar nu stoppas arbetet och återupptas inte senare.</translation>
+            <translation>Bakgrundsarbete pågår fortfarande. Om du avslutar nu stoppas export och webbexport och återupptas inte; ansiktssökningen fortsätter nästa gång du startar PicasaPy.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9479,9 +9479,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Bakgrundsarbete pågår fortfarande (export, webbexport eller ansiktssökning). Om du avslutar nu stoppas arbetet och återupptas inte senare.</translation>
+            <translation>Bakgrundsarbete pågår fortfarande. Om du avslutar nu stoppas export och webbexport och återupptas inte; ansiktssökningen fortsätter nästa gång du startar PicasaPy.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

@@ -8721,9 +8721,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>Ukončit PicasaPy</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Na pozadí stále probíhá práce (export, export webu nebo hledání obličejů). Pokud nyní aplikaci ukončíte, práce se zastaví a později nebude pokračovat.</translation>
+            <translation>Na pozadí stále probíhá práce. Pokud nyní ukončíte aplikaci, export a webový export se zastaví a nebudou obnoveny; hledání obličejů bude pokračovat při příštím spuštění PicasaPy.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9494,9 +9494,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Na pozadí stále probíhá práce (export, export webu nebo hledání obličejů). Pokud nyní aplikaci ukončíte, práce se zastaví a později nebude pokračovat.</translation>
+            <translation>Na pozadí stále probíhá práce. Pokud nyní ukončíte aplikaci, export a webový export se zastaví a nebudou obnoveny; hledání obličejů bude pokračovat při příštím spuštění PicasaPy.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

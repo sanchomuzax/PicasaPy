@@ -8712,9 +8712,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>Salir de PicasaPy</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Aún hay tareas en segundo plano en ejecución (exportación, exportación web o búsqueda de caras). Si sales ahora, se detendrán y no se reanudarán más tarde.</translation>
+            <translation>Aún hay tareas en segundo plano. Si sales ahora, la exportación y la exportación web se detendrán y no se reanudarán; la búsqueda de caras continuará la próxima vez que inicies PicasaPy.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9479,9 +9479,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Aún hay tareas en segundo plano en ejecución (exportación, exportación web o búsqueda de caras). Si sales ahora, se detendrán y no se reanudarán más tarde.</translation>
+            <translation>Aún hay tareas en segundo plano. Si sales ahora, la exportación y la exportación web se detendrán y no se reanudarán; la búsqueda de caras continuará la próxima vez que inicies PicasaPy.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

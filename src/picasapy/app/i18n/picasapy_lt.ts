@@ -8721,9 +8721,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>Išeiti iš „PicasaPy“</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Fone vis dar vyksta operacija (eksportavimas, žiniatinklio eksportavimas arba veidų paieška). Jei išeisite dabar, ji bus sustabdyta ir vėliau nebus tęsiama.</translation>
+            <translation>Fone vis dar vyksta darbai. Jei išeisite dabar, eksportavimas ir eksportavimas į žiniatinklį bus sustabdyti ir nebus tęsiami; veidų paieška bus tęsiama kitą kartą paleidus „PicasaPy“.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9494,9 +9494,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Fone vis dar vyksta operacija (eksportavimas, žiniatinklio eksportavimas arba veidų paieška). Jei išeisite dabar, ji bus sustabdyta ir vėliau nebus tęsiama.</translation>
+            <translation>Fone vis dar vyksta darbai. Jei išeisite dabar, eksportavimas ir eksportavimas į žiniatinklį bus sustabdyti ir nebus tęsiami; veidų paieška bus tęsiama kitą kartą paleidus „PicasaPy“.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

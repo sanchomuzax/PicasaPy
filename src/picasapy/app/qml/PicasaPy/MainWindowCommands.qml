@@ -286,9 +286,9 @@ Item {
             //: a `decisionKey` SZÁNDÉKOSAN üres: az adatvesztéssel járó
             //: kérdést nem lehet „ne kérdezze újra"-val elnyomni
             ensure().ask("", qsTr(
-                "Background work is still running (export, web export or "
-                + "face scanning). If you exit now, it stops and does not "
-                + "resume later."))
+                "Background work is still running. If you exit now, export and "
+                + "web export stop and do not resume; face scanning continues "
+                + "the next time you start PicasaPy."))
         }
         sourceComponent: Component {
             ConfirmDialog {
