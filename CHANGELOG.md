@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.86] - 2026-11-09
+
+- A mappa nélküli menüpróba a vezérlőn át állítja az üres mappát (#6748).
+- A program gyorsabban indul: a képnéző, az Időrend és a vetítés csak az első megnyitáskor töltődik be (#6700).
+
 ## [1.0.85] - 2026-11-09
 
 - A Rainbow szűrő színei most az eredeti Picasa szerint alakulnak, a vörös árnyalat nem lesz túl erős (#6743).
