@@ -16,6 +16,7 @@ import json
 import logging
 import os
 from pathlib import Path
+import re
 import sys
 import tempfile
 import time
@@ -150,6 +151,7 @@ def _inditsd_a_segedet(args: list[str], *, emelt: bool) -> bool:
 
 #: A `tempfile.gettempdir` modulszintű fogantyúja (#1375): a teszt EZT cserélje.
 _tempdir = tempfile.gettempdir
+_unlink = Path.unlink
 
 
 def _seged_inditasi_helyek(install_dir: Path) -> list[Path]:
@@ -159,6 +161,27 @@ def _seged_inditasi_helyek(install_dir: Path) -> list[Path]:
     ott futhat program, ott a segéd is); a csere a telepítési mappát
     átnevezi, ezért a segéd nem lehet annak a belsejében."""
     return [install_dir.parent / "PicasaPy-update", Path(_tempdir())]
+
+
+_REGI_SEGED_MASOLAT_MINTA = re.compile(r"PicasaPyUpdateHelper-\d+\.exe")
+
+
+def regi_segedek_takaritasa(mappa: Path, megtartando: Path | None = None) -> None:
+    """Törli a korábbi, számozott frissítősegéd-másolatokat a megadott mappából."""
+    mappa = Path(mappa)
+    megtartando = Path(megtartando) if megtartando is not None else None
+    try:
+        for fajl in mappa.iterdir():
+            if not _REGI_SEGED_MASOLAT_MINTA.fullmatch(fajl.name) or not fajl.is_file():
+                continue
+            if megtartando is not None and fajl == megtartando:
+                continue
+            try:
+                _unlink(fajl)
+            except OSError as hiba:
+                logger.info("Régi frissítősegéd-másolat kihagyva: %s (%s)", fajl, hiba)
+    except OSError as hiba:
+        logger.info("A frissítősegéd-másolatok mappája nem olvasható: %s (%s)", mappa, hiba)
 
 
 def _masold_a_segedet(forras: Path, cel: Path) -> None:
@@ -715,7 +738,11 @@ class UpdateController(QObject):
         update_eredmeny.ird_varakozik(jelzo, self.availableVersion)
         # #6458: előbb a program mellől (a telepítési mappa testvérmappájából),
         # mert céges gépen a %TEMP%-ből induló programok gyakran tiltottak
-        for mappa in _seged_inditasi_helyek(install_dir):
+        inditasi_helyek = _seged_inditasi_helyek(install_dir)
+        for mappa in inditasi_helyek:
+            cel = mappa / f"PicasaPyUpdateHelper-{os.getpid()}.exe"
+            regi_segedek_takaritasa(mappa, megtartando=cel)
+        for mappa in inditasi_helyek:
             cel = mappa / f"PicasaPyUpdateHelper-{os.getpid()}.exe"
             try:
                 _masold_a_segedet(helper, cel)
