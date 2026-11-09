@@ -32,7 +32,13 @@ that and writes details to the application log.
 Face search also runs in the background for new pictures by default.
 Turn it off on the **Name Tags** tab in **Settings** (see
 [Settings](beallitasok.md)). If the search cannot start, the reason is
-written to the log. Detection rarely marks a face where there is none;
+written to the log. The background search is gentle on your computer: it
+pauses while you are working in the program (for half a minute after
+your last key press, click, or mouse movement) and while a picture is
+open in the viewer or editor, and otherwise it runs at a slower pace with
+short breaks. If your library has not changed, it does not reread
+everything. A search started from **Tools** ▸ **Find Faces** does not
+wait; it runs as fast as it can. Detection rarely marks a face where there is none;
 landscapes and other pictures without faces are normally left alone.
 
 ### Each picture is scanned only once

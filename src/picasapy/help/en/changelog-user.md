@@ -2,6 +2,33 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-09
+
+### Full screen
+
+- `F11` now works in the library too: it switches the whole program
+  window to full screen and hides the menu bar until you leave. It does
+  not fire while you are typing, for example in the search field. See
+  [Viewing photos](features/nezegetes.md).
+
+### Timeline
+
+- Card photos appear as a slightly rotated stack, the name and date sit
+  in the top-right corner, and an arc of dots leads from them to the
+  card, as in the original. See [Viewing photos](features/nezegetes.md).
+
+### Editor
+
+- Every effect preview is calculated in the background, so the window
+  stays responsive even while you drag a slider. See
+  [Editor](features/szerkeszto.md).
+
+### Faces
+
+- The background face search pauses while you are working in the program
+  or a picture is open, and otherwise runs at a slower pace, so it puts
+  less load on your computer. See [People and faces](features/emberek.md).
+
 ## 2026-11-08
 
 ### Keyboard shortcuts

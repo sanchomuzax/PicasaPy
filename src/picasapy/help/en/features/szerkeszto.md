@@ -44,11 +44,12 @@ once; see [Batch Edit](csoportos-szerkesztes.md).
 
 ## Slow effects and the preview
 
-Some effects require substantial processing, including Sharpen, Film
-Grain, Glow, Cross Process, Comic Book, Drop Shadow, HDR-ish, Holga-ish,
-Lomo-ish, Neon, Orton-ish, Pencil Sketch, and Posterize. Their previews
-are calculated in the background instead of immediately as you drag a
-slider:
+Effect previews are calculated in the background, even while you drag
+a slider. For most effects you will not notice, but some require
+substantial processing, including Sharpen, Film Grain, Glow, Cross
+Process, Comic Book, Drop Shadow, HDR-ish, Holga-ish, Lomo-ish, Neon,
+Orton-ish, Pencil Sketch, and Posterize. With these, background
+calculation means:
 
 - The window remains usable: menus open and sliders move while the
   calculation runs.
