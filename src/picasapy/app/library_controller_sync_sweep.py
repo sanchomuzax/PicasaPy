@@ -8,6 +8,7 @@ from PySide6.QtCore import Slot
 from picasapy.index import folder_scan_stamps, open_index
 
 from .folder_freshness import next_sweep_batch, stale_folders
+from .hatter_prioritas import kerjafonal_alacsony_prioritasa
 from .library_controller_sync import _legacy
 
 
@@ -89,6 +90,7 @@ class _LibrarySyncSweepMixin:
         self._sweep_running = True
 
         def worker():
+            kerjafonal_alacsony_prioritasa()
             # ⚠️ A kiválasztott mappa jelzése AKKOR IS ki kell hogy menjen,
             # ha a pecsét-ellenőrzés elhasal — különben a #1435 kényelmi
             # gyorsítása megbénítaná a #1275 alapgaranciáját.

@@ -9,6 +9,8 @@ from picasapy.index import open_index
 from picasapy.halozati_ut import halozati_gyoker
 
 from .library_controller_activity import _FILETYPE_SNAPSHOT_UNSET
+from .hatter_prioritas import kerjafonal_alacsony_prioritasa
+from .library_controller_eltunt_gyoker import atnevezett_gyoker
 from .library_controller_sync import _legacy
 
 
@@ -51,6 +53,10 @@ class _LibrarySyncRescanMixin:
         """
         if self._sync_running or self._dirty_running:
             return  # egy író elég; a futó szinkron végén úgyis frissülünk
+        # Az OpenCV-t itt szándékosan NEM töltjük elő: az indulás is teljes
+        # újraolvasás, és az előtöltés üres könyvtárnál is betöltené (#6510
+        # őre). Az MP4/MOV metaadata atom-olvasóval jön; a ritka egyéb
+        # videóformátum a régi módon, a háttérszálon tölti be (#6698).
         self._sync_running = True
         self._sync_worker_filetype_snapshot = getattr(
             self, "_filetype_scan_snapshot", None
@@ -97,6 +103,7 @@ class _LibrarySyncRescanMixin:
             )
         errors = []
         self._last_sync_changed = True
+        kerjafonal_alacsony_prioritasa()
         try:
             with open_index(self._db_path) as conn:
                 total_changes_before = conn.total_changes
@@ -118,7 +125,10 @@ class _LibrarySyncRescanMixin:
                             enabled_filetypes=enabled_filetypes,
                         )
                     except (OSError, RuntimeError, sqlite3.OperationalError) as error:
-                        errors.append(f"{root}: {error}")
+                        # #6762: az átnevezett gyökeret a szinkron végén a
+                        # #6751 rendezője követi; ez nem hiba
+                        if not atnevezett_gyoker(conn, root):
+                            errors.append(f"{root}: {error}")
                 # Hideg induláskor az első gyorstár-feltöltés is kell. Későbbi
                 # változatlan körben csak a mtime/méret ellenőrzés fut; sem az
                 # ini tartalma, sem a gyűjtemények nem épülnek újra.

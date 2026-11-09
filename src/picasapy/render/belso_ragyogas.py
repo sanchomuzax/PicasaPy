@@ -31,6 +31,7 @@ A render-effekt nem nyúl a lemezhez: képet kap, képet ad.
 from __future__ import annotations
 
 import math
+from functools import lru_cache
 
 import numpy as np
 
@@ -106,11 +107,11 @@ def _dobozmenetek(maszk: np.ndarray, tengely: int, blur: float, minoseg: int) ->
     kx, ky = (sulyok, egyseg) if tengely == 1 else (egyseg, sulyok)
     teljes = _TELJES * div
     for _ in range(minoseg):
-        fedes = (_TELJES - maszk.astype(np.int32)).astype(np.float32)
+        fedes = _TELJES - maszk
         osszeg = cv2.sepFilter2D(
             fedes, cv2.CV_32F, kx, ky, borderType=cv2.BORDER_CONSTANT
         ).reshape(fedes.shape)
-        maszk = ((teljes - np.rint(osszeg).astype(np.int64)) // div).astype(np.uint8)
+        maszk = ((teljes - np.rint(osszeg).astype(np.int32)) // div).astype(np.uint8)
     return maszk
 
 
@@ -196,6 +197,7 @@ def _kever(image: np.ndarray, suly: np.ndarray, tablak: list[np.ndarray]) -> np.
     return lapos[index]
 
 
+@lru_cache(maxsize=2)
 def _lekicsinyitett_suly(
     height: int, width: int, xblur: float, yblur: float,
     strength: float, minoseg: int, fx: np.float32, fy: np.float32,
@@ -206,7 +208,9 @@ def _lekicsinyitett_suly(
     bx = float(np.float32(fx * np.float32(xblur)))
     by = float(np.float32(fy * np.float32(yblur)))
     oszlopok, vissza = ragyogas_maszk_oszlopai(kis_h, kis_w, bx, by, minoseg)
-    return resize_column_plane(ragyogas_suly(oszlopok, strength), vissza, width, height)
+    suly = resize_column_plane(ragyogas_suly(oszlopok, strength), vissza, width, height)
+    suly.flags.writeable = False
+    return suly
 
 
 def inner_glow(

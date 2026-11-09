@@ -9,11 +9,13 @@ from pathlib import Path
 
 from PySide6.QtCore import QMetaObject, Qt, Slot
 from picasapy.index import open_index, remove_folder_tree
+from picasapy.index.sync import _defer_album_pruning
 from picasapy.scanner import DirectoryChange
 
 from .busy_activity import munka_neve
 from .busy_registry import get_app_busy_registry
 from .folder_freshness import folder_fingerprint
+from .hatter_prioritas import kerjafonal_alacsony_prioritasa
 from .library_controller_sync import _legacy
 
 
@@ -75,6 +77,7 @@ class _LibrarySyncDirtyMixin:
         ujjlenyomatok = self._dirty_ujjlenyomatok_tar()
 
         def worker():
+            kerjafonal_alacsony_prioritasa()
             # #6476: ha MINDEN mappa ujjlenyomata változatlan, nincs mit
             # újratölteni, tehát `syncFinished` sem megy ki
             osszes = kihagyott = 0
@@ -83,7 +86,7 @@ class _LibrarySyncDirtyMixin:
             synced_folders = []
             self._last_sync_changed = True
             try:
-                with open_index(self._db_path) as conn:
+                with open_index(self._db_path) as conn, _defer_album_pruning(conn):
                     total_changes_before = conn.total_changes
                     cache_was_ready = self._side_pane_cache_ready(conn)
                     for folder in _legacy()._coalesce_watcher_changes(paths):
