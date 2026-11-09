@@ -1,6 +1,6 @@
 # A térbeli effektek zárómérése (#6687)
 
-Mérés: 2026-11-09, RPi5 / aarch64, 2560×1707 RGB. A forrás mindkét kódfánál ugyanaz a repóbeli golden-kit fotó volt. A főág a `origin/main` `90feecebbcaaa3cc6b7b2d853af2413bfbab557d` commitja, az ág a zárókör munkafája. A mérő egy bemelegítés után három mintát vett, mintánként váltott sorrendben futtatva a főágat és az ágat; az érték a három futás mediánja. A mérés induló `uptime` terhelése 5,09 / 7,06 / 6,82 (1/5/15 perc), a teljes mérés alatt az 1 perces load 4,57 és 11,92 között változott. Az értékelés a páros arányokra támaszkodik, nem az abszolút időkre.
+Mérés: 2026-11-09, RPi5 / aarch64, 2560×1707 RGB. A forrás mindkét kódfánál ugyanaz a repóbeli golden-kit fotó volt. A főág a `origin/main` `90feecebbcaaa3cc6b7b2d853af2413bfbab557d` commitja, az ág a zárókör munkafája. A mérő egy bemelegítés után három mintát vett, mintánként váltott sorrendben futtatva a főágat és az ágat; az érték a három futás mediánja. A mérés induló `uptime` terhelése 5,09 / 7,06 / 6,82 (1/5/15 perc), a teljes mérés alatt az egyperces terhelés 4,57 és 11,92 között változott. Az értékelés a páros arányokra támaszkodik, nem az abszolút időkre.
 
 | Szűrő | Főág (ms) | Ág (ms) | Gyorsulás |
 |---|---:|---:|---:|
@@ -15,7 +15,7 @@ Mérés: 2026-11-09, RPi5 / aarch64, 2560×1707 RGB. A forrás mindkét kódfán
 
 ## A kétszeres gyorsulást el nem érő szűrők
 
-- **Holga:** A kontrasztlépés eredeti fixpontos színmátrixa 256 szürkeértékre előállított LUT-tal fut; a lebegőpontos `cv2.transform` próba ebből 36 bájtot eltérően számolt. A zajkeverésnél a `base * noise // 255`, majd a súlyozás `>> 8` és az utolsó páratlan oszlop külön képlete is egész kerekítést tartalmaz, ezért lebegőpontos OpenCV-keverés nem bájtazonos.
+- **Holga:** A kontrasztlépés eredeti fixpontos színmátrixa a 256 lehetséges szürke értékre előre kiszámolt LUT-tal fut; a lebegőpontos `cv2.transform` próba ebből 36 bájtot eltérően számolt. A zajkeverésnél a `base * noise // 255`, majd a súlyozás `>> 8` és az utolsó páratlan oszlop külön képlete is egész kerekítést tartalmaz, ezért lebegőpontos OpenCV-keverés nem bájtazonos.
 - **radblur:** A forró rész a Picasa IIR-elmosás: minden rekurzív lépés a `((pixel << 7) - állapot) * k >> 16` fixpontos frissítést, majd `állapot >> 7` bájtra vágást végez, és a visszamenet már a vágott előremeneti képet olvassa. Egyetlen OpenCV Gaussian vagy dobozszűrő más köztes kerekítést adna.
 - **LocalContrast:** A natív `BlurImageOperation` hat dobozmenete minden menet után `sum // divisor` szerint vágja a képet bájtra. Erre jön a `strength` Q11-egész szorzása, `>> 9`, majd `+2 >> 2` és a menetenkénti telítés; egy összevont OpenCV-szűrő ezt a kerekítési sorrendet megváltoztatná. A mért ág ezen a gépen 0,95× lett, tehát lassabb a főágnál.
 - **Pixelate:** A kicsinyítés a Picasa `ResizeImageOperation` 14 bites fixpontos doboz-súlyait használja, a két tengely külön kerekítési szabályával és a köztes bájtképpel. Az `INTER_AREA` eltérő területi súly- és kerekítési szabálya a nem egész arányú méreteknél nem ad minden képpontra azonos eredményt.
