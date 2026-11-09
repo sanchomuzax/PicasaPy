@@ -14,14 +14,16 @@ _APP = _GYOKER / "src" / "picasapy" / "app"
 # #6440: a dirty-worker két függvénye a háttérmunka-jegy és a munkanév miatt
 # változott. #6696: a rescan és a worker a hálózati gyökérre szűrt időzítést
 # kezeli; a többi lenyomat változatlan.
+# #6698: a rescan, a worker és a dirty-adag a háttérprioritás és a kötegelt
+# albumtakarítás miatt változott.
 _MOZGATOTT_FORRASOK = {
     # #6476: szándékos változás, a változatlan mappa célzott szinkronja kimarad
     ("library_controller_sync_dirty.py", "_LibrarySyncDirtyMixin", "_on_folders_dirty"):
-        "9956e23223b860974e1258a8500b34307cd0ac5d62740b8fdf93131ad78bcaf2",
+        "04f31aab2e6941e80555f210c2b862fdebbdfac86027e1e91869e585b7748799",
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_root_for_folder"):
         "f5afe5e6920a3047137f970df48e26bd2eeec92e67c8b544b126859d86d66efd",
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_poll_current_folder"):
-        "133685095838d90897ab13cf8edd7a223ceea8e455d386c42ebaefa99f25837c",
+        "f5bfba83bc9be104e360305f62562ca79816cdfae78965cab55309b81375025f",
     (
         "library_controller_sync_sweep.py",
         "_LibrarySyncSweepMixin",

@@ -11,6 +11,7 @@ from PySide6.QtCore import QRunnable
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickImageResponse, QQuickTextureFactory
 
+from .hatter_prioritas import kerjafonal_alacsony_prioritasa
 from .thumbnail_provider_constants import PLACEHOLDER_COLOR
 
 if TYPE_CHECKING:
@@ -139,6 +140,7 @@ class _PrefetchJob(QRunnable):
         self._provider = provider
 
     def run(self) -> None:
+        kerjafonal_alacsony_prioritasa()
         self._provider._run_prefetch_job()
 
 
