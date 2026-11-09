@@ -52,3 +52,24 @@ def test_timeline_header_keeps_the_original_condensed_font_and_no_outline():
     assert 'font.styleName: "Medium Condensed"' in qml
     assert 'font.styleName: "Condensed"' in qml
     assert "style: Text.Outline" not in qml
+
+
+def test_timeline_background_provider_images_stay_on_the_gui_thread():
+    qml = (
+        Path(__file__).resolve().parents[2]
+        / "src/picasapy/app/qml/PicasaPy/TimelinePanel.qml"
+    ).read_text(encoding="utf-8")
+
+    for object_name in (
+        "timelinePreviousBackgroundImage",
+        "timelineBackgroundImage",
+    ):
+        object_position = qml.index(f'objectName: "{object_name}"')
+        image_start = qml.rfind("\n    Image {", 0, object_position)
+        image_end = qml.find("\n    }", object_position)
+        assert image_start >= 0 and image_end >= 0
+        image_block = qml[image_start:image_end]
+
+        assert "asynchronous: false" in image_block, (
+            f"{object_name} Python-képszolgáltatóját a Qt háttérszála hívná"
+        )

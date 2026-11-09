@@ -48,6 +48,8 @@ Item {
         color: Theme.dark ? Theme.panelBg : "#8a8a8a"
     }
 
+    // A Python-képszolgáltatót ne a Qt betöltőszála hívja, mert a panel
+    // képkocka-kötései közben szintén Python-slotok kérik a GIL-t.
     Image {
         objectName: "timelinePreviousBackgroundImage"
         anchors.fill: parent
@@ -59,7 +61,7 @@ Item {
             Math.max(1, panel.width * panel.scale),
             Math.max(1, panel.height * panel.scale))
         fillMode: Image.Stretch
-        asynchronous: true
+        asynchronous: false
         cache: true
         smooth: true
         mipmap: true
@@ -78,7 +80,7 @@ Item {
             Math.max(1, panel.width * panel.scale),
             Math.max(1, panel.height * panel.scale))
         fillMode: Image.Stretch
-        asynchronous: true
+        asynchronous: false
         cache: true
         smooth: true
         mipmap: true
