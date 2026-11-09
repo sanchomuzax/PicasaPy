@@ -1,5 +1,7 @@
 """#59: a rács-bélyegkép a szerkesztett (filters= láncos) képet mutatja."""
 
+from dataclasses import replace
+
 from picasapy.edit.session import EditSession
 from picasapy.index import open_index, photos_in_folder, sync_tree
 from picasapy.ini.rect64 import Rect64, encode_rect64
@@ -144,7 +146,7 @@ class TestThumbUrlCacheBuster:
         model.set_photos(records)
         url_a = model.thumbUrlAt(0)
         assert "&f=" in url_a
-        plain = records[0].__class__(**{**records[0].__dict__, "filters": None})
+        plain = replace(records[0], filters=None)
         model.set_photos((plain,))
         assert model.thumbUrlAt(0) != url_a
 
