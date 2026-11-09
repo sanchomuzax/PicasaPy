@@ -14,7 +14,7 @@ nézőképet is elmenti. Az ablakot −5 / 0 / +5 px magassággal ismétli.
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import QObject, Qt
+from PySide6.QtCore import QMetaObject, QObject, Qt
 from PySide6.QtTest import QTest
 
 from tests.support.varakozas import var_feltetelre
@@ -61,8 +61,24 @@ def _varj(qt_app, feltetel, uzenet: str, masodperc: float = 10.0):
     raise AssertionError(uzenet)
 
 
+def _nyisd_meg_a_nezot(ablak, qt_app):
+    ablak.setProperty("selectedIndexes", [0])
+    ablak.setProperty("selectedIndex", 0)
+    grid = ablak.findChild(QObject, "photoGrid")
+    assert grid is not None, "a fotórács nem jött létre"
+    QMetaObject.invokeMethod(
+        grid, "forceActiveFocus", Qt.ConnectionType.DirectConnection
+    )
+    QTest.keyClick(ablak, Qt.Key.Key_Return)
+    _varj(
+        qt_app,
+        lambda: ablak.property("viewerOpen") is True
+        and ablak.findChild(QObject, "photoViewer") is not None,
+        "az Enter nem nyitotta meg a képnézőt a rácsból",
+    )
+
+
 def _nyisd_meg_az_effektet(ablak, panel, qt_app, csempe: str, kulcs: str):
-    ablak.setProperty("viewerOpen", True)
     nezo = ablak.findChild(QObject, "photoViewer")
     assert nezo is not None
     nezo.setProperty("currentIndex", 0)
@@ -101,6 +117,7 @@ def test_alapertek_es_felirat_az_eredeti_szerint(
     felirat_szoveg,
 ):
     ablak, _vezerlo, _engine = hu_app
+    _nyisd_meg_a_nezot(ablak, qt_app)
     panel = ablak.findChild(QObject, "viewerEditorPanel")
     assert panel is not None
     _nyisd_meg_az_effektet(ablak, panel, qt_app, csempe, kulcs)
@@ -139,6 +156,7 @@ def test_alapertek_kerul_a_lancba(
     """Az alapértékkel alkalmazott effekt a `.picasa.ini` láncába is az
     alapértéket írja (dir_tint: a Feather 0,25 a harmadik paraméter)."""
     ablak, _vezerlo, _engine = hu_app
+    _nyisd_meg_a_nezot(ablak, qt_app)
     panel = ablak.findChild(QObject, "viewerEditorPanel")
     assert panel is not None
     _nyisd_meg_az_effektet(ablak, panel, qt_app, csempe, kulcs)

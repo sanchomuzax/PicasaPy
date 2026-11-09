@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, QPoint, Qt
+from PySide6.QtCore import QObject, QPoint, Qt
 from PySide6.QtGui import QWindow
 from PySide6.QtTest import QTest
 
@@ -47,13 +47,18 @@ def _wait(qt_app, predicate, message: str) -> None:
 def _start_show(window, qt_app):
     window.show()
     window.setVisibility(QWindow.Visibility.Windowed)
-    show = _child(window, "slideshowView")
-    QMetaObject.invokeMethod(
-        show,
-        "start",
-        Qt.ConnectionType.DirectConnection,
-        Q_ARG("QVariant", 0),
+    QTest.keyClick(
+        window, Qt.Key.Key_4, Qt.KeyboardModifier.ControlModifier
     )
+    _wait(
+        qt_app,
+        lambda: (
+            (show := window.findChild(QObject, "slideshowView")) is not None
+            and show.isVisible()
+        ),
+        "a Ctrl+4 nem indította el a vetítést",
+    )
+    show = _child(window, "slideshowView")
     _wait(qt_app, lambda: show.property("visible") is True, "a vetítés nem indult el")
     show.setProperty("playing", False)
     controls = _child(window, "slideshowControls")
@@ -78,25 +83,23 @@ def _timeline_button_and_transition(window):
     )
 
 
-def _start_timeline_slideshow(window, qt_app, folder: Path) -> None:
-    QMetaObject.invokeMethod(
-        window, "toggleTimeline", Qt.ConnectionType.DirectConnection
+def _start_timeline_slideshow(window, qt_app):
+    QTest.keyClick(
+        window, Qt.Key.Key_5, Qt.KeyboardModifier.ControlModifier
     )
     _wait(
         qt_app,
         lambda: window.property("timelineOpen") is True,
         "a Nézet ▸ Időrend belépése nem nyitotta meg a bemutatót",
     )
-    QMetaObject.invokeMethod(
-        window,
-        "startTimelineSlideshow",
-        Qt.ConnectionType.DirectConnection,
-        Q_ARG("QVariant", str(folder)),
-    )
+    timeline = _child(window, "timelineView")
+    _wait(qt_app, timeline.isVisible, "a Ctrl+5 nem jelenítette meg az Időrendet")
+    QTest.keyClick(timeline, Qt.Key.Key_Space)
     _wait(
         qt_app,
-        lambda: window.property("timelineSlideshowActive") is True,
-        "az Időrend-kártya nem indította el a saját diavetítését",
+        lambda: window.findChild(QObject, "slideshowView") is not None
+        and window.property("timelineSlideshowActive") is True,
+        "az Időrend Space billentyűje nem indította el a vetítést",
     )
     controls = _child(window, "slideshowControls")
     controls.setProperty("shown", True)
@@ -105,6 +108,7 @@ def _start_timeline_slideshow(window, qt_app, folder: Path) -> None:
         lambda: controls.property("opacity") >= 0.99,
         "az Időrendből indított vetítés vezérlősávja nem jelent meg",
     )
+    return _child(window, "slideshowView")
 
 
 def test_normal_slideshow_shows_timeline_instead_of_transition(
@@ -138,10 +142,9 @@ def test_big_slideshow_disabled_shows_transition_instead_of_timeline(
 def test_timeline_started_slideshow_shows_transition_instead_of_timeline(
     qml_app_5653, qt_app
 ):
-    window, controller, _engine = qml_app_5653
-    show = _child(window, "slideshowView")
+    window, _controller, _engine = qml_app_5653
+    show = _start_timeline_slideshow(window, qt_app)
     _set_screen_depth(show, 32)
-    _start_timeline_slideshow(window, qt_app, Path(controller._roots[0]))
 
     timeline, transition = _timeline_button_and_transition(window)
     assert not timeline.isVisible()

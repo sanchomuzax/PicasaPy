@@ -43,6 +43,21 @@ def _atmenetvalasztot_engedelyez(controller):
     controller.statusChanged.emit()
 
 
+def _nyisd_meg_a_vetitot(window, qt_app):
+    QTest.keyClick(
+        window, Qt.Key.Key_4, Qt.KeyboardModifier.ControlModifier
+    )
+    assert varj_feltetelre(
+        qt_app,
+        lambda: (
+            (show := window.findChild(QObject, "slideshowView")) is not None
+            and show.isVisible()
+        ),
+        masodperc=10.0,
+    ), "a Ctrl+4 nem nyitotta meg a vetítést"
+    return _gyerek(window, "slideshowView")
+
+
 def _kozep(item):
     return item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
 
@@ -118,7 +133,7 @@ def mentett_kenburnsaoi(tmp_path):
 def test_a_valaszto_pontosan_a_het_eredeti_atmenetet_mutatja(qml_app, qt_app):
     window, controller, _engine = qml_app
     _atmenetvalasztot_engedelyez(controller)
-    show = _gyerek(window, "slideshowView")
+    show = _nyisd_meg_a_vetitot(window, qt_app)
     combo = _gyerek(window, "slideshowTransitionBox")
     popup = _gyerek(window, "picasaComboPopup")
     lista = _gyerek(window, "picasaComboList")
@@ -139,7 +154,7 @@ def test_a_valaszto_pontosan_a_het_eredeti_atmenetet_mutatja(qml_app, qt_app):
 def test_az_alapertek_dissolve(qml_app, qt_app):
     window, controller, _engine = qml_app
     _atmenetvalasztot_engedelyez(controller)
-    show = _gyerek(window, "slideshowView")
+    show = _nyisd_meg_a_vetitot(window, qt_app)
     combo = _gyerek(window, "slideshowTransitionBox")
 
     assert show.property("transitionKind") == "dissolve"
@@ -151,7 +166,7 @@ def test_mentett_kenburnsaoi_betoltesekor_dissolve_lesz(
 ):
     window, controller, _engine = qml_app
     _atmenetvalasztot_engedelyez(controller)
-    show = _gyerek(window, "slideshowView")
+    show = _nyisd_meg_a_vetitot(window, qt_app)
     combo = _gyerek(window, "slideshowTransitionBox")
 
     assert controller.property("slideshowTransition") == "dissolve"

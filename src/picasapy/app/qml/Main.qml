@@ -288,9 +288,6 @@ ApplicationWindow {
     function ensurePhotoViewer() { return mainWindowWorkspace.ensurePhotoViewer() }
     function ensureSlideshow() { return mainWindowWorkspace.ensureSlideshow() }
     function ensureTimelineView() { return mainWindowWorkspace.ensureTimelineView() }
-    function ensurePhotoContextMenu() {
-        return mainWindowPeripheralLayers.ensurePhotoContextMenu()
-    }
     function startQuickViewer() { mainWindowLibraryActions.startQuickViewer() }
     function nezdEsSzerkeszd() { mainWindowLibraryActions.nezdEsSzerkeszd() }
     function hideSelection() { mainWindowLibraryActions.hideSelection() }
@@ -425,10 +422,7 @@ ApplicationWindow {
     function addTagToRows(rowList, keyword) { mainLibrarySelectionState.addTagToRows(rowList, keyword) }
     function selectedPaths() { return mainLibrarySelectionState.selectedPaths() }
     function resetFacesForPaths(paths) { mainLibrarySelectionState.resetFacesForPaths(paths) }
-    function openPhotoContextMenu(index, item, x, y) {
-        window.ensurePhotoContextMenu()
-        mainLibrarySelectionState.openPhotoContextMenu(index, item, x, y)
-    }
+    function openPhotoContextMenu(index, item, x, y) { mainLibrarySelectionState.openPhotoContextMenu(index, item, x, y) }
     function splitFolderHere() { mainLibrarySelectionState.splitFolderHere() }
     function handleThumbClick(index, modifiers) { mainLibrarySelectionState.handleThumbClick(index, modifiers) }
     function _folderOfRow(row) { return mainLibrarySelectionState._folderOfRow(row) }

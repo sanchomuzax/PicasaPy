@@ -15,7 +15,7 @@ Item {
     property alias exportErrorBanner: mainErrorBanner
     property alias exportGiftCdHost: giftCdHost
     property alias exportBackupHost: backupHost
-    property var exportPhotoContextMenu: photoContextMenuLoader.item
+    property alias exportPhotoContextMenu: photoContextMenu
     property alias exportErrorBannerText: mainErrorBanner.messageText
     property alias exportActivityCancelConfirm: mainWindowDialogStack.exportActivityCancelConfirm
     property alias exportXmpFacesWriteDialog: mainWindowDialogStack.exportXmpFacesWriteDialog
@@ -41,12 +41,6 @@ Item {
     property alias exportMoveDatabaseDialog: mainWindowDialogStack.exportMoveDatabaseDialog
     property alias exportCompactDatabaseDialog: mainWindowDialogStack.exportCompactDatabaseDialog
     property alias exportPicasaDataImportDialog: mainWindowDialogStack.exportPicasaDataImportDialog
-
-    function ensurePhotoContextMenu() {
-        photoContextMenuLoader.megnyitasKerve = true
-        photoContextMenuLoader.betoltve = true
-        return photoContextMenuLoader.item
-    }
 
     // A lebegő háttérmunka- és folyamatjelzők önálló komponensben (#6136).
     MainActivityPanels {
@@ -125,32 +119,20 @@ Item {
 
     // -- fájlműveletek (#15): kontextusmenü + dialógusok --------------------
 
-    Loader {
-        id: photoContextMenuLoader
-        objectName: "photoContextMenuLoader"
-        anchors.fill: parent
-        property bool megnyitasKerve: false
-        property bool betoltve: false
-        active: megnyitasKerve || betoltve
-        onActiveChanged: if (active) betoltve = true
-        onLoaded: megnyitasKerve = false
-        sourceComponent: Component {
-            MainPhotoContextMenu {
-                id: photoContextMenu
-                hostWindow: layers.hostWindow
-                hostController: layers.hostController
-                hostFileOpsController: typeof fileOpsController !== "undefined"
-                    ? fileOpsController : null
-                hostFileOpsDialogs: hostRefs.fileOpsDialogs
-                hostMainDialogs: hostRefs.mainDialogs
-                hostMoveToNewPersonDialog: hostRefs.moveToNewPersonDialog
-                hostOpenWithDialog: hostRefs.openWithDialog
-                hostRemoveFromAlbumDialog: hostRefs.removeFromAlbumDialog
-                hostRemovePeopleFacesDialog: hostRefs.removePeopleFacesDialog
-                hostSaveDialogs: hostRefs.saveDialogs
-                hostToolbar: hostRefs.toolbar
-            }
-        }
+    MainPhotoContextMenu {
+        id: photoContextMenu
+        hostWindow: layers.hostWindow
+        hostController: layers.hostController
+        hostFileOpsController: typeof fileOpsController !== "undefined"
+            ? fileOpsController : null
+        hostFileOpsDialogs: hostRefs.fileOpsDialogs
+        hostMainDialogs: hostRefs.mainDialogs
+        hostMoveToNewPersonDialog: hostRefs.moveToNewPersonDialog
+        hostOpenWithDialog: hostRefs.openWithDialog
+        hostRemoveFromAlbumDialog: hostRefs.removeFromAlbumDialog
+        hostRemovePeopleFacesDialog: hostRefs.removePeopleFacesDialog
+        hostSaveDialogs: hostRefs.saveDialogs
+        hostToolbar: hostRefs.toolbar
     }
 
 

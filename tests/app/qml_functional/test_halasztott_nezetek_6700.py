@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from PySide6.QtTest import QTest
 
 from tests.support.varakozas import var_feltetelre
 
@@ -35,12 +36,14 @@ def test_a_fooldali_nezetek_az_elso_megnyitasig_nem_epulnek_fel(
             f"a(z) {loader_name} induláskor aktív"
         )
 
-    assert QMetaObject.invokeMethod(
-        window,
-        "openPhotoViewer",
-        Qt.ConnectionType.DirectConnection,
-        Q_ARG("QVariant", 0),
+    window.setProperty("selectedIndexes", [0])
+    window.setProperty("selectedIndex", 0)
+    grid = _child(window, "photoGrid")
+    assert grid is not None, "a fotórács nem jött létre"
+    QMetaObject.invokeMethod(
+        grid, "forceActiveFocus", Qt.ConnectionType.DirectConnection
     )
+    QTest.keyClick(window, Qt.Key.Key_Return)
     _wait(qt_app, lambda: _child(window, "photoViewer") is not None,
           "a néző első megnyitásakor nem épült fel")
     viewer = _child(window, "photoViewer")
@@ -52,15 +55,15 @@ def test_a_fooldali_nezetek_az_elso_megnyitasig_nem_epulnek_fel(
         "a néző bezárásakor megsemmisült, ezért elveszhet az állapota"
     )
 
-    assert QMetaObject.invokeMethod(
-        window, "toggleTimeline", Qt.ConnectionType.DirectConnection
+    QTest.keyClick(
+        window, Qt.Key.Key_5, Qt.KeyboardModifier.ControlModifier
     )
     _wait(qt_app, lambda: _child(window, "timelineView") is not None,
           "az Időrend első megnyitásakor nem épült fel")
     timeline = _child(window, "timelineView")
     _wait(qt_app, timeline.isVisible, "a felépült Időrend nem látszik")
-    assert QMetaObject.invokeMethod(
-        window, "toggleTimeline", Qt.ConnectionType.DirectConnection
+    QTest.keyClick(
+        window, Qt.Key.Key_5, Qt.KeyboardModifier.ControlModifier
     )
     _wait(qt_app, lambda: timeline.isVisible() is False,
           "az Időrend bezárása után továbbra is látszik")
@@ -68,11 +71,8 @@ def test_a_fooldali_nezetek_az_elso_megnyitasig_nem_epulnek_fel(
         "az Időrend bezárásakor megsemmisült"
     )
 
-    QMetaObject.invokeMethod(
-        window,
-        "startSlideshow",
-        Qt.ConnectionType.DirectConnection,
-        Q_ARG("QVariant", 0),
+    QTest.keyClick(
+        window, Qt.Key.Key_4, Qt.KeyboardModifier.ControlModifier
     )
     _wait(qt_app, lambda: _child(window, "slideshowView") is not None,
           "a vetítés első indításakor nem épült fel")
@@ -87,19 +87,14 @@ def test_a_fooldali_nezetek_az_elso_megnyitasig_nem_epulnek_fel(
     )
 
 
-def test_a_foto_helyi_menuje_csak_elso_megnyitaskor_epul_fel(
-    qml_app, qt_app
-):
+def test_a_foto_helyi_menuje_indulaskor_is_fel_epul(qml_app, qt_app):
     window, _controller, _engine = qml_app
     qt_app.processEvents()
 
-    assert _child(window, "photoContextMenu") is None, (
-        "a rács helyi menüje már induláskor felépült"
-    )
-    loader = _child(window, "photoContextMenuLoader")
-    assert loader is not None, "hiányzik a photoContextMenuLoader"
-    assert loader.property("active") is False, (
-        "a photoContextMenuLoader induláskor aktív"
+    menu = _child(window, "photoContextMenu")
+    assert menu is not None, "a rács helyi menüje nem épült fel induláskor"
+    assert _child(window, "photoContextMenuLoader") is None, (
+        "a rács helyi menüje nem maradt az eredeti azonnali betöltésen"
     )
 
     grid = _child(window, "photoGrid")
@@ -113,11 +108,8 @@ def test_a_foto_helyi_menuje_csak_elso_megnyitaskor_epul_fel(
         Q_ARG("QVariant", 5),
         Q_ARG("QVariant", 5),
     )
-    _wait(qt_app, lambda: _child(window, "photoContextMenu") is not None,
-          "a fotó helyi menüje első megnyitásakor nem épült fel")
-    menu = _child(window, "photoContextMenu")
     _wait(qt_app, lambda: menu.property("visible") is True,
-          "a felépült fotó helyi menü nem nyílt meg")
+          "a már felépült fotó helyi menü nem nyílt meg")
     QMetaObject.invokeMethod(menu, "close", Qt.ConnectionType.DirectConnection)
     qt_app.processEvents()
     assert _child(window, "photoContextMenu") is menu, (
