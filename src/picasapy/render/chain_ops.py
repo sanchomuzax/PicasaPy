@@ -243,7 +243,7 @@ def _apply_tint_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
 
 
 def _apply_rainbow_op(image: np.ndarray, op: FilterOp) -> np.ndarray:
-    # Élő alak: `rainbow=1,színmegőrzés`; a natív callback ROUND-olja a floatot.
+    # Élő alak: `rainbow=1,színmegőrzés`; a natív callback ROUND függvénnyel kerekíti a floatot.
     preserve = int(round(float(op.params[1]))) if len(op.params) > 1 else 0
     return apply_rainbow(image, preserve=preserve)
 

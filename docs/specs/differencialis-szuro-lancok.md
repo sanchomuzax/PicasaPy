@@ -122,7 +122,7 @@ A `lanc-0056` teljes lánc, a `gamma` nélküli és a `linblur` nélküli válto
 
 ## Utómérés: Rainbow javítása (#6743, 2026-11-09)
 
-A fenti következő mérés a #6743-ban elkészült. Az első elkülönített eredmény alapján a hibát nem a gradiens iránya vagy a sávok fázisa okozta: a `0x008f92d0` callback a `Preferences/CarefulEnhance` beállítást olvassa, a #461 eredeti Rainbow-export pedig a kikapcsolt ággal egyezett. A PicasaPy addig feltétel nélkül a bekapcsolt ágat használta, ami a vörös csatornán átlagosan `+11,3` eltérést adott. Emellett a `244.890456` színmegőrzési paramétert a natív callback `ROUND`-olja, ezért az értéke `245`, nem `244`.
+A fenti következő mérés a #6743-ban elkészült. Az első elkülönített eredmény alapján a hibát nem a gradiens iránya vagy a sávok fázisa okozta: a `0x008f92d0` callback a `Preferences/CarefulEnhance` beállítást olvassa, a #461 eredeti Rainbow-export pedig a kikapcsolt ággal egyezett. A PicasaPy addig feltétel nélkül a bekapcsolt ágat használta, ami a vörös csatornán átlagosan `+11,3` eltérést adott. Emellett a `244.890456` színmegőrzési paramétert a natív callback `ROUND` függvénnyel kerekíti, ezért az értéke `245`, nem `244`.
 
 Az izolált mérést a #460 Picasa TwoTone-exportján futtattam, és a #461 `export__k06tt.jpg` Rainbow-exportjával vetettem össze. A saját render a kikapcsolt CarefulEnhance-ágat és `p=245` értéket használta. A PicasaPy képet a referencia JPEG mintavételezésével és kvantálótábláival kódoltam újra; a σ=2.5 értékek előtt mindkét dekódolt képre `cv2.GaussianBlur(..., sigmaX=2.5, sigmaY=2.5)` került. A meglévő `tools/golden/compare_render.py` mércéje:
 
