@@ -16,6 +16,7 @@ import numpy as np
 
 from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_frame_ops import (
+    _compose_drop_shadow,
     add_border_sides,
     compose_drop_shadow,
     draw_border,
@@ -90,6 +91,44 @@ def apply_drop_shadow(
     """
     validate_image(image)
     return draw_drop_shadow(image, shadow_color, background_color, distance, angle, blur, fade)
+
+
+def _apply_drop_shadow_with_alpha(
+    image,
+    distance: float,
+    angle: float,
+    blur: float,
+    shadow_color: tuple[int, int, int],
+    background_color: tuple[int, int, int],
+    fade: float,
+    *,
+    alpha: int,
+):
+    """A láncbeli DropShadow belső alfát is figyelembe veszi (#6788).
+
+    A nyilvános `apply_drop_shadow` API változatlanul opaque bemenetű marad;
+    a lánc az A=0 pixeleket maszkként adja át, ugyanúgy, ahogy a Polaroid
+    rögzített árnyék-lépése teszi.
+    """
+    if alpha not in (0, 255):
+        raise ValueError(f"A DropShadow alfaállapota csak 0 vagy 255 lehet: {alpha}")
+    if alpha == 255:
+        return apply_drop_shadow(image, distance, angle, blur, shadow_color, background_color, fade)
+
+    validate_image(image)
+    blur_px, offset, pads = drop_shadow_padding(distance, angle, blur)
+    source_alpha = np.zeros(image.shape[:2], dtype=np.uint8)
+    return _compose_drop_shadow(
+        image,
+        shadow_color,
+        background_color,
+        offset,
+        blur_px,
+        0,
+        fade,
+        pads=pads,
+        source_alpha=source_alpha,
+    )
 
 
 def apply_museum_matte(
