@@ -5,9 +5,9 @@ rákérdez: *„Uploads are in progress. Would you like to exit now? (Uploads wi
 resume next time you run Picasa.)"* — két gombbal (`Exit Now` / `Keep Going`).
 
 Nálunk a „feltöltés" megfelelője **bármelyik** nyilvántartott háttérmunka
-(export, webexport, kötegelt effekt, arc-szkennelés), és az **nem** folytatódik
-legközelebb — ezért a szöveg a mi valóságunkat mondja, nem az eredetit
-fordítja. A gombpár az eredeti alakját követi.
+(export, webexport, kötegelt effekt, arc-szkennelés). Kilépéskor az exportok
+megszakadnak, az arckeresés pedig a következő indításkor folytatódik. A
+gombpár az eredeti alakját követi.
 
 ⚠️ Ez az őr a FORRÁST méri (a kötések helyét), nem élő ablakot zár be: a
 `Qt.quit()` a próba processzét vinné magával.
@@ -90,10 +90,18 @@ class TestAKerdesFeltetele:
         assert 'ensure().ask("", qsTr(' in _COMMANDS[kezd : kezd + 500]
 
     def test_a_szoveg_KIMONDJA_hogy_nem_folytatodik(self):
-        """Az eredeti azt ígéri, hogy a feltöltés legközelebb folytatódik —
-        a mi háttérmunkánk NEM, tehát ezt nem fordíthatjuk le."""
-        assert "does not" in _COMMANDS and "resume later" in _COMMANDS
-        assert "resume next time" not in _COMMANDS
+        """Az exportok leállnak, az arckeresés a következő indításkor folytatódik."""
+        assert (
+            '"Background work is still running. If you exit now, export and "'
+            in _COMMANDS
+        )
+        assert (
+            '+ "web export stop and do not resume; face scanning continues "'
+            in _COMMANDS
+        )
+        assert (
+            '+ "the next time you start PicasaPy."' in _COMMANDS
+        )
 
 
 class TestAVezerloOldal:

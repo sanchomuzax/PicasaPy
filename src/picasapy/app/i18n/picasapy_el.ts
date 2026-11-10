@@ -8703,9 +8703,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>Έξοδος από το PicasaPy</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Η εργασία παρασκηνίου συνεχίζεται (εξαγωγή, εξαγωγή ιστού ή αναζήτηση προσώπων). Αν κλείσετε τώρα, θα διακοπεί και δεν θα συνεχιστεί αργότερα.</translation>
+            <translation>Η εργασία στο παρασκήνιο συνεχίζεται. Αν κλείσετε τώρα, η εξαγωγή και η εξαγωγή ιστού θα σταματήσουν και δεν θα συνεχιστούν· η αναζήτηση προσώπων θα συνεχιστεί την επόμενη φορά που θα εκκινήσετε το PicasaPy.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9464,9 +9464,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Η εργασία παρασκηνίου συνεχίζεται (εξαγωγή, εξαγωγή ιστού ή αναζήτηση προσώπων). Αν κλείσετε τώρα, θα διακοπεί και δεν θα συνεχιστεί αργότερα.</translation>
+            <translation>Η εργασία στο παρασκήνιο συνεχίζεται. Αν κλείσετε τώρα, η εξαγωγή και η εξαγωγή ιστού θα σταματήσουν και δεν θα συνεχιστούν· η αναζήτηση προσώπων θα συνεχιστεί την επόμενη φορά που θα εκκινήσετε το PicasaPy.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

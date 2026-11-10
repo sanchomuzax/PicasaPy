@@ -48,7 +48,8 @@ _REGI_NYILVANOS_NEVEK = {
 # UTF-8 bájtokat rögzíti; AST-t csak a forrássorok megkeresésére használ.
 _MOZGATOTT_FORRASOK = {
     ("cache_storage.py", "_CacheStorageMixin", "__init__"):
-        "34dc32867b361a762e927d0748289f0028c94a714375e3a06afba0239b89b654",
+        # #6697: a konstruktor már nem indít takarítószálat az első képkocka előtt.
+        "24bb4d96d72725d23049c5966c4ca681534c2d2c8f0832418e469a3ea1282aa7",
     ("cache_storage.py", "_CacheStorageMixin", "prune"):
         "31aa3ce9541519e614fb14a5c541cc94e878cfca648f9c07690a73d8f6a8f999",
     ("cache_storage.py", "_CacheStorageMixin", "levels"):
@@ -64,7 +65,7 @@ _MOZGATOTT_FORRASOK = {
     ("cache_generation.py", "_CacheGenerationMixin", "get_or_create"):
         "40eccd18239ec51f6ad3355ced36f28dec0bb330cd34e42631229ecf69954979",
     ("cache_generation.py", "_CacheGenerationMixin", "_szint_forras"):
-        "d7fda426a6c2be4e668411f2421d1e2866c345342c14d39d4c248d7ae8959154",
+        "2cc40cc756617360eda9dc7d24ec0390236db5d3cfd29e7cb4275ad376f0425e",
     ("cache_generation.py", "_CacheGenerationMixin", "_read_flag"):
         "7211f543ff7fb63a48e796c78672678b95b3ae128d1ccddff2cd9cea0bce5e11",
 }

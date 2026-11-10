@@ -14,8 +14,36 @@ SlideshowView {
     id: slideshow
     objectName: "slideshowView"
     anchors.fill: parent
-    property int visibilityBeforeViewerFullscreen: Window.Windowed
-    property int visibilityBeforeSlideshow: Window.Windowed
+    property int visibilityBeforeViewerFullscreen:
+        hostWindow.visibilityBeforeViewerFullscreen
+    property int visibilityBeforeSlideshow: hostWindow.visibilityBeforeSlideshow
+
+    // A régi, írható QML-tulajdonságokat megtartjuk a főablaki állapot mellett.
+    onVisibilityBeforeViewerFullscreenChanged: {
+        if (hostWindow.visibilityBeforeViewerFullscreen
+                !== visibilityBeforeViewerFullscreen)
+            hostWindow.visibilityBeforeViewerFullscreen =
+                visibilityBeforeViewerFullscreen
+    }
+    onVisibilityBeforeSlideshowChanged: {
+        if (hostWindow.visibilityBeforeSlideshow !== visibilityBeforeSlideshow)
+            hostWindow.visibilityBeforeSlideshow = visibilityBeforeSlideshow
+    }
+    Connections {
+        target: slideshow.hostWindow
+        function onVisibilityBeforeViewerFullscreenChanged() {
+            if (slideshow.visibilityBeforeViewerFullscreen
+                    !== slideshow.hostWindow.visibilityBeforeViewerFullscreen)
+                slideshow.visibilityBeforeViewerFullscreen =
+                    slideshow.hostWindow.visibilityBeforeViewerFullscreen
+        }
+        function onVisibilityBeforeSlideshowChanged() {
+            if (slideshow.visibilityBeforeSlideshow
+                    !== slideshow.hostWindow.visibilityBeforeSlideshow)
+                slideshow.visibilityBeforeSlideshow =
+                    slideshow.hostWindow.visibilityBeforeSlideshow
+        }
+    }
 
     function toggleViewerFullscreen() {
         if (!hostWindow.viewerOpen || slideshow.visible) return
@@ -32,7 +60,8 @@ SlideshowView {
     function startSlideshow(fromIndex) {
         var index = fromIndex
         if (index < 0)
-            index = hostWindow.viewerOpen ? hostPhotoViewer.currentIndex
+            index = hostWindow.viewerOpen && hostPhotoViewer
+                ? hostPhotoViewer.currentIndex
                                           : Math.max(0, hostWindow.selectedIndex)
         hostWindow.visibilityBeforeSlideshow = hostWindow.visibility
         hostWindow.visibility = Window.FullScreen
@@ -69,7 +98,8 @@ SlideshowView {
         }
         if (slideshow.currentIndex >= 0) {
             if (hostWindow.viewerOpen) {
-                hostPhotoViewer.show(slideshow.currentIndex)
+                if (hostPhotoViewer)
+                    hostPhotoViewer.show(slideshow.currentIndex)
             } else {
                 hostWindow.selectedIndex = slideshow.currentIndex
                 hostWindow.selectedIndexes = [slideshow.currentIndex]

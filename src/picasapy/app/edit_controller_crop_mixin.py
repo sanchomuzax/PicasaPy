@@ -49,6 +49,12 @@ class EditControllerCropMixin:
 
     def crop(self) -> Rect64 | None:
         """A munkamenet hatályos vágása a megnyitáskori crop= szabályával."""
+        if not self._session.ops:
+            # Üres láncban nincs `crop64`, így vágás sincs, akármi a `crop=`
+            # (a normalizálás üres láncból mindig üres láncot ad). #6688: a
+            # `hasCrop` induláskor, fotó nélkül is lefut, és a normalizálás
+            # miatt be kellene tölteni a `picasapy.render` csomagot.
+            return None
         # ugyanabból a normalizálásból, amelyik renderel: a felület és a kép
         # nem válhat el (árva `crop=` lánc-vágás nélkül → nincs aktív vágás)
         value, readable = self._crop_value_for_session(self._session)

@@ -36,9 +36,10 @@ def _gyerek(window, nev):
 
 
 def _nezot_nyit(window, qt_app):
+    window.setProperty("viewerOpen", True)
+    qt_app.processEvents()
     nezo = _gyerek(window, "photoViewer")
     nezo.setProperty("currentIndex", 0)
-    nezo.setProperty("visible", True)
     qt_app.processEvents()
     return nezo
 

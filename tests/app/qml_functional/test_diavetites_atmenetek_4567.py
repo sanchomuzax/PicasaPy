@@ -38,6 +38,21 @@ def _gyerek(gyoker, nev):
     return obj
 
 
+def _nyisd_meg_a_vetitot(window, qt_app):
+    QTest.keyClick(
+        window, Qt.Key.Key_4, Qt.KeyboardModifier.ControlModifier
+    )
+    assert varj_feltetelre(
+        qt_app,
+        lambda: (
+            (show := window.findChild(QObject, "slideshowView")) is not None
+            and show.isVisible()
+        ),
+        masodperc=10.0,
+    ), "a Ctrl+4 nem nyitotta meg a vetítést"
+    return _gyerek(window, "slideshowView")
+
+
 def _kozep(item):
     return item.mapToScene(QPointF(item.width() / 2, item.height() / 2))
 
@@ -115,7 +130,7 @@ def test_minden_atmenet_kattintassal_valaszthato_es_lejatszhato(
     window, controller, _engine = qml_app
     controller._get_settings().setValue("Preferences/BigSlideshow2", False)
     controller.statusChanged.emit()
-    show = _gyerek(window, "slideshowView")
+    show = _nyisd_meg_a_vetitot(window, qt_app)
     combo = _gyerek(window, "slideshowTransitionBox")
     popup = _gyerek(window, "picasaComboPopup")
     lista = _gyerek(window, "picasaComboList")

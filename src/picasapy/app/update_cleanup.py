@@ -90,6 +90,13 @@ def start_startup_cleanup() -> None:
                 cleanup_previous_installation(install_dir)
             except Exception:
                 logger.exception("Az induláskori eltávolító-takarítás nem sikerült")
+            try:
+                from . import update_manager
+
+                for mappa in update_manager._seged_inditasi_helyek(install_dir):
+                    update_manager.regi_segedek_takaritasa(mappa)
+            except Exception:
+                logger.exception("Az induláskori frissítősegéd-takarítás nem sikerült")
 
         szal = _thread(
             target=takarits,

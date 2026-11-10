@@ -138,6 +138,10 @@ class AppControllerSyncMixin:
         így a QML nem görget a mappa tetejére (scrollToGroup). A nézőből
         visszatérve a feed így a megnyitás előtti pozícióján marad."""
         self._reload(preserve_scroll=True)
+        folder = getattr(self, "_deferred_folder_activation", None)
+        self._deferred_folder_activation = None
+        if folder and folder == self._current_folder:
+            self.folderActivated.emit(folder)
 
     def _reload(
         self, preserve_scroll: bool = False, defer_collections: bool = False
@@ -157,7 +161,8 @@ class AppControllerSyncMixin:
         # felvillanást okozna — a _refresh_view frissíti a szűkítettet.
         if mode not in ("search", "search-folder"):
             with open_index(self._db_path) as conn:
-                self._folders.load(conn)  # #321: a fa sorrendje rögzített
+                # #321: a fa sorrendje rögzített; #6751: a kis képek szűrője itt is
+                self._folders.load(conn, kis_kepek_rejtve=self.showOnlyBigImages)
                 self._load_albums(conn)  # #9: a bal hasáb albumlistája
                 # #26 (Emberek) + #1029 (Projektek): mindkettő a `.picasa.ini`-kből
                 # él, ezért EGY söprésből áll elő (#1601). Induláskor pedig

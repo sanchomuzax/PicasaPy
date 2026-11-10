@@ -8,7 +8,7 @@ from pathlib import Path
 
 from PySide6.QtGui import QImage, QTransform
 
-from picasapy.render.flip import FLIP_HORIZONTAL, FLIP_VERTICAL
+from picasapy.ini.flip import FLIP_HORIZONTAL, FLIP_VERTICAL
 from picasapy.scanner import PICASA_INI_NAME
 from .display_mode_paint import apply_display_mode_to_qimage, display_mode_from_thumb_id
 from .arc_nagyitas_url import arc_from_thumb_id, arcra_vag, szukseges_hosszabb_el

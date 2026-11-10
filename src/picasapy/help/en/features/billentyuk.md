@@ -85,6 +85,7 @@ select photos with a lasso.
 | `F5` | Refresh the open folder: scan for changes on disk and update the view and search results |
 | `Alt+Enter` | Open **Properties** |
 | Hold `Ctrl+Alt` | Show a large preview of the selected photo in a separate window. See [The library](konyvtar.md). |
+| `F11` | In the library, switch the whole program window to full screen; press it again to restore it. The menu bar is hidden while in full screen. It has no effect in Timeline or while typing. |
 
 `Ctrl+3` does the same thing as **View** ▸ **Edit View** and
 **Picture** ▸ **View and Edit**: it opens the selected photo in the viewer.
@@ -141,7 +142,7 @@ key immediately removes the constraint.
 | `F` | **Show Faces** |
 | `Shift+F` | **Edit Faces** |
 | `Ctrl+9` | Hide or show the left editor panel |
-| `F11` | Toggle full-screen mode; it has no effect during a slideshow |
+| `F11` | Toggle full-screen mode; it has no effect during a slideshow or while typing |
 | `Space` | On a still photo, starts a slideshow from the photo you are looking at; on a video, starts or pauses playback |
 | `Esc` | Return to the library |
 | `Enter` | Return to the library when viewing one still photo with no editing tool open. With single-click exit enabled, while viewing a video, or while comparing two photos, it advances to the next photo instead. |

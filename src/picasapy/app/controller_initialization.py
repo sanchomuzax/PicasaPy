@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
+
 from .busy_registry import get_app_busy_registry
 from .filetype_preferences import enabled_filetypes as load_enabled_filetypes
 from .models import FolderListModel, PhotoGridModel
+from picasapy.scanner.exclude import _resolve_exclude_roots
 
 
 def initialize_controller_state(
@@ -27,6 +30,7 @@ def initialize_controller_state(
     # a fájlformátum az eredeti Picasáéval kompatibilis.
     self._exclude_file = exclude_file
     self._face_excluded_roots = list(face_excluded)
+    self._face_excluded_resolved_roots = _resolve_exclude_roots(face_excluded)
     self._provider = provider
     # #459: sérült/betölthetetlen kép — elrejtés-felajánlás bekötése
     # MÁR itt (nem lusta, első-íráskor), mert a detektálás böngészés
@@ -122,13 +126,20 @@ def initialize_controller_state(
     # #173: a háttér-sync frissítsen, de NE görgessen a mappa tetejére
     # (folderActivated) — az elvenné a nézőből visszatérő felhasználó
     # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.
+    # #6751: az átnevezett vagy törölt figyelt mappa a frissítés ELŐTT rendeződik
+    self.syncFinished.connect(self._eltunt_gyokerek_rendezese)
     self.syncFinished.connect(self._reload_after_sync)
     # #1181: a szinkron alatt elhalasztott mappa-frissítések
     self.syncFinished.connect(self._flush_pending_dirty)
     # #209: mappánkénti haladás a workerből (queued) + panel-lezárás
     self.syncProgress.connect(self._on_sync_progress)
     self.syncFinished.connect(self._on_import_finished)
-    self.watcherDirty.connect(self._on_folders_dirty)
+    self.syncFinished.connect(
+        self._queue_watcher_start_after_reload, Qt.ConnectionType.QueuedConnection
+    )
+    self.watcherDirty.connect(
+        self._on_folders_dirty, Qt.ConnectionType.QueuedConnection
+    )
     provider.activeCountChanged.connect(self._on_thumb_active)
     # #505: a közös busy-nyilvántartás (bármely controller munkája,
     # ld. `busy_registry.py`) LÁTHATÓ-állapot-változása közvetlenül a

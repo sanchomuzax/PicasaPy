@@ -24,10 +24,10 @@ from picasapy.cvimage import scale_down
 from picasapy.ini import IniDocument, load_or_empty
 from picasapy.ini.filters import parse_filters_prefix
 from picasapy.ini.photo_crop import log_unreadable_ini_once
+from picasapy.ini.text_overlay import DEFAULT_FAMILY as DEFAULT_FAMILY
 from picasapy.ioutil import write_atomic
 from picasapy.metadata.export_metadata import bajtmasolas, frissitett_metaadat
-from picasapy.render.text_fonts import DEFAULT_FAMILY as DEFAULT_FAMILY
-from picasapy.render.text_fonts import load_font
+from picasapy.lazy_import import lazy_callable
 from picasapy.scanner import PICASA_INI_NAME
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
@@ -72,6 +72,10 @@ from .export_settings import (
 )
 
 _LOG = logging.getLogger(__name__)
+
+# #6688: a render csomag csak export/render használatakor töltődjön be.
+_grain_rand_stream = lazy_callable("picasapy.render.native_grain", "_grain_rand_stream")
+load_font = lazy_callable("picasapy.render.text_fonts", "load_font")
 
 # Az `ExportSettings` immutábilis (frozen dataclass), ezért egyetlen
 # modul-szintű példány biztonságosan megosztható alapértékként — elkerüli a
@@ -121,34 +125,35 @@ def export_photos(
     # fájlrendszer ábécésorrendje 1000+ elemnél se törje meg a sorrendet
     # ("0999-..." < "1000-..." csak azonos szélesség mellett igaz).
     number_width = max(3, len(str(len(items))))
-    for index, item in enumerate(items, start=1):
-        source = Path(item.source)
-        prefix = f"{index:0{number_width}d}-" if settings.add_numbers else ""
-        try:
-            crop_ini_readable = True
-            crop = None
-            if source.suffix.lower() not in VIDEO_EXTENSIONS:
-                try:
-                    crop = _source_crop(source, source_ini_cache)
-                except OSError as error:
-                    crop_ini_readable = False
-                    log_unreadable_ini_once(
-                        source.parent / PICASA_INI_NAME, error
+    with _grain_rand_stream():
+        for index, item in enumerate(items, start=1):
+            source = Path(item.source)
+            prefix = f"{index:0{number_width}d}-" if settings.add_numbers else ""
+            try:
+                crop_ini_readable = True
+                crop = None
+                if source.suffix.lower() not in VIDEO_EXTENSIONS:
+                    try:
+                        crop = _source_crop(source, source_ini_cache)
+                    except OSError as error:
+                        crop_ini_readable = False
+                        log_unreadable_ini_once(
+                            source.parent / PICASA_INI_NAME, error
+                        )
+                exported.append(
+                    _export_one(
+                        source,
+                        item,
+                        target_dir,
+                        settings,
+                        prefix,
+                        crop,
+                        crop_ini_readable,
                     )
-            exported.append(
-                _export_one(
-                    source,
-                    item,
-                    target_dir,
-                    settings,
-                    prefix,
-                    crop,
-                    crop_ini_readable,
                 )
-            )
-        except Exception as error:  # noqa: BLE001 — egy rossz elem nem állíthatja le a köteget
-            failed.append(source)
-            reasons.append(str(error))
+            except Exception as error:  # noqa: BLE001 — egy rossz elem nem állíthatja le a köteget
+                failed.append(source)
+                reasons.append(str(error))
     _write_ini_metadata(target_dir, tuple(zip(items, exported, strict=False)))
     return ExportReport(
         exported=tuple(exported),

@@ -3,16 +3,28 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from picasapy.faces.redeye import detect_eye_circles
 from picasapy.ini import PhotoCropReader
 from picasapy.ini.filters import FilterOp
 from picasapy.ini.rect64 import decode_rect64
-from picasapy.render import count_redeye_spots, normalize_crop_ops
-from picasapy.render.chain_geometry import AZONOSSAG, Matrix, _szorzat
-from picasapy.render.chain_report import validate_and_clamp_op
-from picasapy.render.op_geometry import LancHelyzet, invertal, op_geometria
+from picasapy.lazy_import import lazy_callable
 from picasapy.scanner import PICASA_INI_NAME
+
+if TYPE_CHECKING:
+    from picasapy.render.chain_geometry import Matrix
+    from picasapy.render.op_geometry import LancHelyzet
+
+# #6688: a render csomag az első vörösszem-keresésig nem töltődik be
+count_redeye_spots = lazy_callable("picasapy.render", "count_redeye_spots")
+normalize_crop_ops = lazy_callable("picasapy.render", "normalize_crop_ops")
+_szorzat = lazy_callable("picasapy.render.chain_geometry", "_szorzat")
+validate_and_clamp_op = lazy_callable(
+    "picasapy.render.chain_report", "validate_and_clamp_op"
+)
+invertal = lazy_callable("picasapy.render.op_geometry", "invertal")
+op_geometria = lazy_callable("picasapy.render.op_geometry", "op_geometria")
 
 _REDEYE_DETECTION_SPLIT = FilterOp("__redeye_detection_split__", ())
 
@@ -149,6 +161,9 @@ class EditPreviewRedeyeMixin:
         ld. `_resolve_source` #546-os megjegyzését). Ha a forrás nem
         dekódolható, üres köröket és méret nélküli geometriai adatot ad.
         """
+        from picasapy.render.chain_geometry import AZONOSSAG
+        from picasapy.render.op_geometry import LancHelyzet
+
         key = str(photo_id)
         path = Path(path)
         detection_ops, post_ops = _normalize_redeye_ops(

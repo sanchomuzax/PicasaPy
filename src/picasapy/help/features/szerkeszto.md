@@ -48,12 +48,13 @@ ugyanezt — lásd [Csoportos szerkesztés](csoportos-szerkesztes.md).
 
 ## A lassú effektek és az előnézet
 
-Tucatnyi effekt sokat számol: ilyen az **Élesítés**, a **Filmszemcse**,
-a **Ragyogás**, az **Áttűnés**, a **Képregény**, az **Árnyékvetés**, a
-**HDR-szerű**, a **Holga-szerű**, a **Lomo-szerű**, a **Neon**, az
-**Orton-szerű**, a **Ceruzarajz** és a **Poszterizálás**. Ezeknél az előnézet a
-**háttérben** készül el, nem abban a pillanatban, ahogy a csúszkát
-húzod:
+Az effektek előnézete a **háttérben** készül el, akkor is, amikor egy
+csúszkát húzol. A legtöbb effektnél ez észrevétlen, de van, amelyik sokat
+számol: ilyen az **Élesítés**, a **Filmszemcse**, a **Ragyogás**, az
+**Áttűnés**, a **Képregény**, az **Árnyékvetés**, a **HDR-szerű**, a
+**Holga-szerű**, a **Lomo-szerű**, a **Neon**, az **Orton-szerű**, a
+**Ceruzarajz** és a **Poszterizálás**. Ezeknél látszik igazán, mit jelent
+a háttérben számolás:
 
 - **Az ablak közben használható marad**: a menük nyílnak, a csúszka
   mozog, semmi nem fagy be.

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from picasapy.ini.legacy_effects import DEAD_LEGACY_OPS as DEAD_LEGACY_OPS
+
 #: Az exe-string-bányászat (`docs/specs/picasa-exe-strings.md`, #347) által
 #: AZONOSÍTOTT, de golden-méréssel MÉG NEM KALIBRÁLT `filters=` nevek. A lánc
 #: FELISMERI őket — parse/round-trip rendben megy, és az `apply_filters`
@@ -55,18 +57,10 @@ KNOWN_UNRENDERED_OPS = frozenset(
     }
 )
 
-#: #567 — HALOTT (legacy) szűrőnevek: a `filterdesc.xml`-ben még ott állnak,
-#: de a 3.9.141.259 build natív regisztrációs táblájában NINCS hozzájuk sem
-#: render-callback, sem névregisztráció. Ezek tehát nem „még nem
-#: implementált" effektek: maga a Picasa sem futtatta már őket, konfigurációs
-#: maradványok. A lánc kihagyja őket (a `skipped`-ben megjelennek), és a
-#: `ChainReport.legacy_warnings` külön, egyértelműen kimondja, hogy halott
-#: bejegyzésről van szó.
-#:
-#: A kisbetűs `focalpixelate` NEM azonos az élő `PicnikFocalPixelate`
-#: Glimmer-effekttel: az utóbbi saját néven, saját callbackkel regisztrált,
-#: és a saját handlerén fut. A kettőt szándékosan nem vezetjük egy kulcsra.
-DEAD_LEGACY_OPS = frozenset({"focalpixelate"})
+#: #567 - a HALOTT (legacy) szűrőnevek (`DEAD_LEGACY_OPS`) leírása a
+#: forrásnál van: #6688 óta a régi effektek katalógusa mellett él
+#: (`picasapy.ini.legacy_effects`), hogy az indulási út a render csomag
+#: nélkül is olvashassa. A lánc a fenti újraexportot használja.
 
 #: #687 történeti állapota: a #685 mérőszett a colorfix/whitept ágakat
 #: hatástalannak mérte, mert nem a visszafejtett pipettaszín-paraméterrel

@@ -12,7 +12,6 @@ from pathlib import Path
 from PySide6.QtCore import QCoreApplication
 from PySide6.QtGui import QFontDatabase, QGuiApplication, QIcon, QPixmap
 
-from picasapy.render.text_fonts import clear_family_cache
 from ._application_constants import _SPLASH_MIN_VISIBLE_MS
 from . import application as _app
 from .platform_storage import MigrationNotice
@@ -45,8 +44,12 @@ def _install_ui_font(app: QGuiApplication) -> None:
         if font_id >= 0:
             families.extend(QFontDatabase.applicationFontFamilies(font_id))
     # #4964: a betű-regisztráció megváltoztatta a családlistát, a korábbi
-    # lenyíló-gyorsítótár már nem stimmel
-    clear_family_cache()
+    # lenyíló-gyorsítótár már nem stimmel. #6688: a gyorsítótár csak akkor
+    # létezhet, ha a betűcsalád-modul már betöltődött; az első ablakkép előtt
+    # a `picasapy.render` csomagot nem töltjük be miatta.
+    text_fonts = sys.modules.get("picasapy.render.text_fonts")
+    if text_fonts is not None:
+        text_fonts.clear_family_cache()
     if _app._UI_FONT_FAMILY not in families:
         return
     font = app.font()

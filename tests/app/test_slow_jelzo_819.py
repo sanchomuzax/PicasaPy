@@ -11,14 +11,15 @@ szálán számolt, és az ablak akadozott.
 
 Melyik ÚTON megy a renderelés: a szinkron vagy a háttérszálas. A jelző
 puszta értéke semmit nem bizonyít — a #819 első fele épp arról szólt, hogy
-az adat megvolt, és nem történt tőle semmi.
+az adat megvolt, és nem történt tőle semmi. A #6685 óta minden CPU-s
+előnézet háttérbe kerül, ezért a gyors és üres lánc is aszinkron.
 
 ⚠️ A háttér-út nem ingyen van: a kép csak a renderelés VÉGÉN frissül.
-Ezért csak a `slow` láncoknál választjuk — a gyorsaknál a szinkron út ad
-azonnali visszajelzést a csúszka alatt.
 """
 
 from __future__ import annotations
+
+import threading
 
 import pytest
 
@@ -41,9 +42,24 @@ def vezerlo(qt_app, tmp_path):
 
 def _hatterben_futott(ctl, hivas) -> bool:
     """Igaz, ha a hívás HÁTTÉRSZÁLAT indított."""
-    elotte = len(ctl._bg_worker_set())
-    hivas()
-    return len(ctl._bg_worker_set()) > elotte
+    assert ctl.waitForBackgroundWorkers(10.0)
+    provider = ctl._provider
+    eredeti_register = provider.register
+    render_szal = []
+    elindult = threading.Event()
+
+    def figyelt_register(**request):
+        render_szal.append(threading.current_thread())
+        elindult.set()
+        eredeti_register(**request)
+
+    provider.register = figyelt_register
+    try:
+        hivas()
+        return elindult.wait(3.0) and render_szal[0] is not threading.current_thread()
+    finally:
+        provider.register = eredeti_register
+        assert ctl.waitForBackgroundWorkers(10.0)
 
 
 class TestASlowLanc:
@@ -60,15 +76,15 @@ class TestASlowLanc:
         )
 
     def test_a_GYORS_lanc_szinkron_marad(self, vezerlo):
-        """A csúszka alatt azonnali visszajelzés kell; a háttér-út csak a
-        renderelés végén frissít."""
+        """A név történeti; a gyors lánc is háttérszálon renderel (#6685)."""
         from dataclasses import replace
 
         vezerlo._session = replace(
             vezerlo._session, ops=(FilterOp("sepia", ("1",)),)
         )
 
-        assert not _hatterben_futott(vezerlo, vezerlo._register_preview)
+        assert _hatterben_futott(vezerlo, vezerlo._register_preview)
 
     def test_URES_lanc_szinkron(self, vezerlo):
-        assert not _hatterben_futott(vezerlo, vezerlo._register_preview)
+        """Az üres lánc regisztrálása is a közös aszinkron útvonalat használja."""
+        assert _hatterben_futott(vezerlo, vezerlo._register_preview)

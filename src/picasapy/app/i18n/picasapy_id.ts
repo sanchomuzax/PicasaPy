@@ -8703,9 +8703,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>Keluar dari PicasaPy</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pekerjaan latar belakang masih berjalan (ekspor, ekspor web, atau pemindaian wajah). Jika keluar sekarang, pekerjaan berhenti dan tidak dilanjutkan nanti.</translation>
+            <translation>Pekerjaan latar belakang masih berlangsung. Jika Anda keluar sekarang, ekspor dan ekspor web akan berhenti dan tidak dilanjutkan; pencarian wajah akan berlanjut saat Anda menjalankan PicasaPy lagi.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9464,9 +9464,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Pekerjaan latar belakang masih berjalan (ekspor, ekspor web, atau pemindaian wajah). Jika keluar sekarang, pekerjaan berhenti dan tidak dilanjutkan nanti.</translation>
+            <translation>Pekerjaan latar belakang masih berlangsung. Jika Anda keluar sekarang, ekspor dan ekspor web akan berhenti dan tidak dilanjutkan; pencarian wajah akan berlanjut saat Anda menjalankan PicasaPy lagi.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

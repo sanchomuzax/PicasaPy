@@ -29,13 +29,16 @@ TrayBar {
         hostWindow.openConfigureButtonsContextMenu(anchorItem, x, y)
     }
     //: #3756: a kettős nézet aktív felét mutatja az alsó sáv.
-    viewerIndex: hostPhotoViewer.aktivSor
+    viewerIndex: hostPhotoViewer ? hostPhotoViewer.aktivSor : -1
     // #2564: a nagyítás állapota a nézőé, a művelet jelzésként megy vissza.
-    viewerZoomValue: hostPhotoViewer.zoomValue
-    viewerZoomAvailable: hostWindow.viewerOpen && hostPhotoViewer.photoOverlaysUsable
-    onZoomFitRequested: hostPhotoViewer.zoomFit()
-    onZoomActualRequested: hostPhotoViewer.zoomActual()
-    onZoomValueRequested: (ertek) => hostPhotoViewer.setZoomValue(ertek)
+    viewerZoomValue: hostPhotoViewer ? hostPhotoViewer.zoomValue : 0
+    viewerZoomAvailable: hostWindow.viewerOpen && hostPhotoViewer
+                         && hostPhotoViewer.photoOverlaysUsable
+    onZoomFitRequested: if (hostPhotoViewer) hostPhotoViewer.zoomFit()
+    onZoomActualRequested: if (hostPhotoViewer) hostPhotoViewer.zoomActual()
+    onZoomValueRequested: (ertek) => {
+        if (hostPhotoViewer) hostPhotoViewer.setZoomValue(ertek)
+    }
     onExportRequested: hostExportDialogs.ensure().openForSelection()
     // #1917: a tálca helyi menüje a főablak műveleteit hívja.
     onViewAndEditRequested: hostWindow.nezdEsSzerkeszd()

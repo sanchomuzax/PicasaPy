@@ -4,15 +4,24 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from picasapy.ini.filters import FilterOp
-from picasapy.render import apply_filters
-from picasapy.render.chain_geometry import TartalomHely
-from picasapy.render.elonezeti_arany import gyors_elonezet_aktiv
-from picasapy.render.op_geometry import LancHelyzet
+from picasapy.lazy_import import lazy_callable
 
 from . import edit_preview_source
+
+if TYPE_CHECKING:
+    from picasapy.render.chain_geometry import TartalomHely
+    from picasapy.render.op_geometry import LancHelyzet
+
+# #6688: a render csomag az első előnézeti rendereléskor töltődik be
+apply_filters = lazy_callable("picasapy.render", "apply_filters")
+gyors_elonezet_aktiv = lazy_callable(
+    "picasapy.render.elonezeti_arany", "gyors_elonezet_aktiv"
+)
 
 # LRU-kapacitás (#128): az aktuális és az előző fotó marad a gyorsítótárban.
 _LRU_CAPACITY = 2
@@ -129,6 +138,8 @@ class EditPreviewCacheMixin:
         if source_array is None:
             return None, None, None
         if not ops:
+            from picasapy.render.op_geometry import LancHelyzet
+
             height, width = source_array.shape[:2]
             return source_array, None, LancHelyzet.kezdo(width, height)
         if any(op.name.casefold() in {"grain", "grain2"} for op in ops):
@@ -202,6 +213,8 @@ class EditPreviewCacheMixin:
             helyzet = jelentes.helyzet
             alpha = jelentes.alpha
         else:
+            from picasapy.render.op_geometry import LancHelyzet
+
             prefix_array = source_array
             magassag, szelesseg = source_array.shape[:2]
             helyzet = LancHelyzet.kezdo(szelesseg, magassag)

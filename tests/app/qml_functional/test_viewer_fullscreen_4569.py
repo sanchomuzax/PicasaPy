@@ -22,9 +22,12 @@ def test_f11_a_nezoben_be_es_kikapcsolja_a_teljes_kepernyot(
     window.show()
     window.requestActivate()
 
-    viewer = window.findChild(QObject, "photoViewer")
-    assert viewer is not None
+    # #6700: a néző csak az első megnyitáskor épül fel
     window.setProperty("viewerOpen", True)
+    assert _varj(
+        qt_app, lambda: window.findChild(QObject, "photoViewer") is not None
+    ), "a néző nem jött létre a megnyitáskor"
+    viewer = window.findChild(QObject, "photoViewer")
     viewer.setProperty("currentIndex", 0)
     assert _varj(qt_app, lambda: viewer.isVisible()), "a néző nem épült fel"
 
@@ -55,13 +58,35 @@ def test_f11_a_nezoben_be_es_kikapcsolja_a_teljes_kepernyot(
     assert viewer.isVisible(), "a visszaállítás bezárta a nézőt"
 
 
-def test_f11_a_konyvtarnezetben_nem_valt_teljes_kepernyore(qml_app, qt_app):
+@pytest.mark.parametrize("magassag_eltolas", (-5, 0, 5))
+def test_f11_a_konyvtarnezetben_be_es_kikapcsolja_a_teljes_kepernyot(
+    qml_app, qt_app, magassag_eltolas
+):
     window, _controller, _engine = qml_app
+    window.setHeight(window.height() + magassag_eltolas)
     window.setVisibility(window.Visibility.Windowed)
     window.show()
     window.requestActivate()
     assert window.property("viewerOpen") is False
+    menu_bar = window.property("menuBar")
+    assert menu_bar is not None and menu_bar.isVisible()
 
     QTest.keyClick(window, Qt.Key.Key_F11)
 
-    assert window.visibility() == window.Visibility.Windowed
+    assert _varj(
+        qt_app,
+        lambda: window.visibility() == window.Visibility.FullScreen,
+    ), "az F11 nem kapcsolta teljes képernyőre a könyvtárnézetet"
+    assert _varj(qt_app, lambda: not menu_bar.isVisible()), (
+        "a könyvtári teljes képernyőben látható maradt a menüsáv"
+    )
+
+    QTest.keyClick(window, Qt.Key.Key_F11)
+
+    assert _varj(
+        qt_app,
+        lambda: window.visibility() == window.Visibility.Windowed,
+    ), "a második F11 nem állította vissza a könyvtárnézet ablakát"
+    assert _varj(qt_app, lambda: menu_bar.isVisible()), (
+        "a visszaállított könyvtárnézetben nem jelent meg a menüsáv"
+    )

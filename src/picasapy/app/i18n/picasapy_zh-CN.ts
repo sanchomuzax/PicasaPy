@@ -8703,9 +8703,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>退出 PicasaPy</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>后台任务仍在运行（导出、网页导出或头像扫描）。如果现在退出，任务会停止，之后也不会恢复。</translation>
+            <translation>后台任务仍在运行。如果现在退出，导出和网页导出将停止且不会恢复；人脸扫描会在下次启动 PicasaPy 时继续。</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9464,9 +9464,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>后台任务仍在运行（导出、网页导出或头像扫描）。如果现在退出，任务会停止，之后也不会恢复。</translation>
+            <translation>后台任务仍在运行。如果现在退出，导出和网页导出将停止且不会恢复；人脸扫描会在下次启动 PicasaPy 时继续。</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

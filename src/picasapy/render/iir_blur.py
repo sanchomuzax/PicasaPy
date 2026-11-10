@@ -93,10 +93,10 @@ def blur_coefficient(radius: float) -> int:
 def _sweep_axis_zero(values: np.ndarray, coefficient: int) -> np.ndarray:
     """Oda-vissza IIR-menet a 0. tengely mentén, egész aritmetikával.
 
-    A `values` int64 tömb (N, …) alakban, 0…255 értékekkel; az eredmény új
-    tömb — a bemenetet nem írjuk felül. (Az int64 nem fényűzés: a
-    `(x − s) · k` szorzat 32 biten éppen csak elférne, és a felső határon
-    némán körbefordulna.)
+    A `values` int32 tömb (N, …) alakban, 0…255 értékekkel; az eredmény új
+    tömb — a bemenetet nem írjuk felül. A fixpontos állapot legfeljebb
+    `255·128 = 32640`, az együttható legfeljebb `32767`, tehát a legnagyobb
+    szorzat `1 069 514 880`, biztonságosan az int32 tartományában van.
     """
     result = np.empty_like(values)
     delta = np.empty_like(values[0])
@@ -153,11 +153,19 @@ def apply_picasa_blur(
     (`FUN_009dd0d0(kep, blurX, blurY, …)`).
     """
     validate_image(image)
-    work = image.astype(np.int64)
+    work = image.astype(np.int32)
     if radius_x > 0.0:
         coefficient = blur_coefficient(radius_x)
-        work = _sweep_axis_zero(work.transpose(1, 0, 2), coefficient).transpose(1, 0, 2)
+        # A transposed view would make every recurrence step stride across
+        # the whole row. Copy once so NumPy can vectorize each independent
+        # column/channel plane from contiguous memory.
+        transposed = np.ascontiguousarray(work.transpose(1, 0, 2))
+        work = _sweep_axis_zero(transposed, coefficient).transpose(1, 0, 2)
     if radius_y > 0.0:
+        # The x sweep leaves a transposed view. Restore row-major storage for
+        # the second recurrence axis; each step still keeps the native order
+        # and fixed-point rounding unchanged.
+        work = np.ascontiguousarray(work)
         work = _sweep_axis_zero(work, blur_coefficient(radius_y))
     return work.astype(np.uint8)
 

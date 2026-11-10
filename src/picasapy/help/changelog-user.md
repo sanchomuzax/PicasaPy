@@ -4,6 +4,31 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-09
+
+**Teljes képernyő**
+
+- Az **F11** a könyvtárban is működik: az egész programablakot teljes
+  képernyőre váltja, a menüsor addig elrejtőzik. Gépelés közben (például
+  a keresőben) nem sül el. Lásd [Nézegetés](features/nezegetes.md).
+
+**Időrend**
+
+- A kártyák képei kissé elforgatott kötegben látszanak, a név és a dátum
+  a jobb felső sarokba került, és egy íves pontsor vezet tőle a kártyáig,
+  mint az eredetiben. Lásd [Nézegetés](features/nezegetes.md).
+
+**Szerkesztő**
+
+- Minden effekt előnézete a háttérben számol, így a felület csúszkahúzás
+  közben sem akad meg. Lásd [Szerkesztő](features/szerkeszto.md).
+
+**Arcok**
+
+- A háttérben futó arckeresés szünetel, amíg dolgozol a programban vagy
+  egy kép nyitva van, egyébként fékezve halad, így kevésbé terheli a
+  gépet. Lásd [Emberek és arcok](features/emberek.md).
+
 ## 2026-11-08
 
 **Billentyűk**

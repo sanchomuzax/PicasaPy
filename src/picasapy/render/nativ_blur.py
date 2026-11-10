@@ -81,9 +81,10 @@ def _menet(kep: np.ndarray, tengely: int, k: int, h: int, w: int, oszto: int) ->
     vágott (ismételt) mintákon, utána egész osztás. A részösszeg a teljes
     sugártartományban legfeljebb 64 515 (`255 · (2w + 2^k · (2h − 1))`,
     mérve r = 1,01 … 253-ra), tehát a float32-es OpenCV-szűrő EGÉSZ
-    pontossággal számolja (#3084: a numpy-futóösszeg a célgép előnézeti
-    felbontásán 7 s volt). A `sepFilter2D` nem vált Fourier-útra, mint a
-    `filter2D` nagy kernelnél.
+    pontossággal számolja (#3084). A CV_32F kimenet közvetlenül a uint8
+    bemenetből készül; az egész összeg int32-be fér, így nincs teljes képes
+    float32-bemeneti másolat és az osztás is helyben végezhető. A
+    `sepFilter2D` nem vált Fourier-útra, mint a `filter2D` nagy kernelnél.
     """
     from picasapy.lazy_cv2 import cv2
 
@@ -93,11 +94,12 @@ def _menet(kep: np.ndarray, tengely: int, k: int, h: int, w: int, oszto: int) ->
     sulyok[-1] += w
     egyseg = np.ones(1, dtype=np.float32)
     kx, ky = (sulyok, egyseg) if tengely == 1 else (egyseg, sulyok)
-    bemenet = kep.astype(np.float32)
-    osszeg = cv2.sepFilter2D(bemenet, cv2.CV_32F, kx, ky, borderType=cv2.BORDER_REPLICATE)
+    osszeg = cv2.sepFilter2D(kep, cv2.CV_32F, kx, ky, borderType=cv2.BORDER_REPLICATE)
     if osszeg.ndim == 2:
         osszeg = osszeg[..., np.newaxis]
-    return (osszeg.astype(np.int64) // oszto).astype(np.uint8)
+    osszeg = osszeg.astype(np.int32)
+    np.floor_divide(osszeg, oszto, out=osszeg)
+    return osszeg.astype(np.uint8)
 
 
 def _vagott_sugar(sugar: float, hossz: int) -> np.float32:

@@ -7,6 +7,80 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.92] - 2026-11-10
+
+- A képszerkesztő feldolgozómoduljai csak az első használatkor töltődnek be, így gyorsabban indul a program (#6688).
+
+## [1.0.91] - 2026-11-10
+
+- A képek gyorsabban jelennek meg induláskor, a gyorstár takarítása az első ablak után fut, az arcfelismerő modulok pedig csak szükség esetén töltődnek be (#6697).
+
+## [1.0.90] - 2026-11-09
+
+- A könyvtárak szinkronja kevesebb háttértár-művelettel és alacsonyabb háttérprioritással fut (#6698).
+
+## [1.0.89] - 2026-11-09
+
+- Gyorsabban számol a Holga-szerű, a Lágy fókusz, a Ceruzarajz, a Ragyogás, a Képpontnagyítás, a Filmszemcse és az Árnyékvetés effekt, az előnézetben és exportnál is (#6687).
+- A fotórekordok és a szűrt bélyegképek kevesebb memóriát foglalnak nagy könyvtárban (#6699).
+- A zárt program mellett átnevezett figyelt mappa után a következő indításkor nem jelenik meg téves „A szkennelendő gyökér nem létezik” hibasáv (#6762).
+
+## [1.0.88] - 2026-11-09
+
+- A kilépési kérdés pontosan megmondja, hogy az exportálás és a webes exportálás megszakad, az arckeresés pedig a következő indításkor folytatódik (#6756).
+
+## [1.0.87] - 2026-11-09
+
+- Az Intézőben átnevezett figyelt mappa régi neve eltűnik a bal sávból, és a bal sáv darabszáma és mappái a Kis képek beállítást követik, ahogy az eredeti Picasában (#6751).
+- A program induláskor és frissítés előtt eltávolítja a frissítősegéd korábbi, ottmaradt másolatait (#6752).
+- Kilépéskor a futó arckeresés megáll, és a következő indításkor a még nem vizsgált képekkel folytatódik (#6753).
+
+## [1.0.86] - 2026-11-09
+
+- A mappa nélküli menüpróba a vezérlőn át állítja az üres mappát (#6748).
+- A program gyorsabban indul: a képnéző, az Időrend és a vetítés csak az első megnyitáskor töltődik be (#6700).
+
+## [1.0.85] - 2026-11-09
+
+- A Rainbow szűrő színei most az eredeti Picasa szerint alakulnak, a vörös árnyalat nem lesz túl erős (#6743).
+
+## [1.0.84] - 2026-11-09
+
+- A diavetítésből megnyitott Időrend háttérképe megbízhatóan töltődik be, a felület nem akad meg (#6735).
+
+## [1.0.83] - 2026-11-09
+
+- A main két piros tesztje: figyelőindulás bevárása és stabil rácsszivárgás-mérés (#4073).
+- Az eredeti Picasa könyvtárnézeti gyorsbillentyűinek teljes leltára és futásidejű ellenőrzése a bináris alapján (#6531).
+- A Derítőfény v2 (triple2) eredeti exportjaihoz a dithert figyelmen kívül hagyó mérés és golden teszt készült (#6690).
+- A mappafigyelő figyelmen kívül hagyja a fájlolvasásokat, és a hálózati könyvtárakat háttérben, célzott időzített újraolvasással ellenőrzi (#6696).
+- Az Időrend kártyakötegei, jobb felső feliratai és vezetőpont-íve az eredeti képletei szerint rajzolódnak: a köteg kártyái stabil szórással állnak, a felirat jobbra zárt árnyékkal, a 10 pont az eredeti köbös ívén (#6713).
+- A könyvtárnézetben is működik az F11 teljes képernyős módja, mint az eredeti Picasában (#6722).
+
+## [1.0.82] - 2026-11-08
+
+- A könyvtárnézeti gyorsbillentyűk futásidejű ellenőrzése az eredeti Picasán (52 billentyű próbaeredményének rögzítése a specifikációban) (#6531).
+- Az eltérő szűrőláncok minimalizálásának mérési eredményei bekerülnek a műszaki dokumentációba (#6585).
+- A szövegigazító ikonok tesztje tesztenként rendesen lebontja az alkalmazást, így windowson sem omlik össze véletlen sorrendben (#6710).
+- A kötegelt exportban a szemcse az eredeti Picasa véletlenszám-folyamát követi, így a több képes export szemcséje képpontra egyezik az eredetivel (#6712).
+- A hiányzó könyvtári és videónézeti billentyűkhöz valódi leütéses próbák készültek (#6714).
+
+## [1.0.81] - 2026-11-08
+
+- A szerkesztő előnézete renderelés közben is friss marad, a csúszkahúzás közbeni kérések összevonása pedig csökkenti a felesleges számolást (#6685).
+
+## [1.0.80] - 2026-11-08
+
+- Az automatikus arckeresés változatlan szinkronnál nem olvassa újra a teljes könyvtárat, és a háttérben fékezve fut (#6694).
+
+## [1.0.79] - 2026-11-08
+
+- A szerkesztőpanel-elrendezés tesztje már nem függ a tesztek futási sorrendjétől (#6709).
+- A bejárás feloldásszámláló tesztje már nem függ a tesztek futási sorrendjétől (#6711).
+## [1.0.78] - 2026-11-08
+
+- Az exportpárbeszéd fókusztesztjei most egymástól függetlenül futnak (#6708).
+
 ## [1.0.77] - 2026-11-08
 
 - A filmátmenet-előnézet próbája hosszabb átfedéssel, hogy lassú gépen is jusson keveredő kocka (#6703).

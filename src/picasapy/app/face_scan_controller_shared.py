@@ -13,7 +13,11 @@ from pathlib import Path
 from PySide6.QtCore import QSettings, Property, QLocale, QObject, Qt, Signal, Slot
 from PySide6.QtGui import QGuiApplication
 
-from picasapy.cvimage import dekodolj_forrast, scale_down
+from picasapy.cvimage import (
+    _remember_decoded_image,
+    dekodolj_forrast,
+    scale_down,
+)
 from picasapy.faces import detector as detector_module
 from picasapy.faces import embedder as embedder_module
 from picasapy.faces import model_download
