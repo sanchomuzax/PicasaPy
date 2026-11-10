@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.96] - 2026-11-10
+
+- A rövid arckeresési sorok folyamatos használat közben is végigfutnak, és a keresés jelzése csak feldolgozáskor látszik (#6793).
+
 ## [1.0.95] - 2026-11-10
 
 - Az Irányított fényerő után alkalmazott Vetett árnyék az eredeti Picasához hasonlóan a háttérszínt mutatja a kép helyén (#6788).
