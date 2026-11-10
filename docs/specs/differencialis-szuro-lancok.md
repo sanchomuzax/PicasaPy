@@ -143,3 +143,54 @@ A javítás után a `lanc-0056` teljes láncot újramértem a `minimalizalas/for
 | CIE76 ΔE 99. percentilis | 2.540715 | 1.798259 |
 
 A javítás után a lánc a meglévő SSIM ≥ 0.98 és Gauss utáni ΔE ≤ 2.0 küszöb szerint egyezik. A sávok vízszintes iránya, fázisa és szorzókeverése nem változott.
+
+## #6746 - sötétkék eltérés az `IR → warm → triple2` láncban (2026-11-10)
+
+### Bináris út: a láncpuffer és a triple2 magja
+
+A `FUN_00907f30` láncvégrehajtó a filter render-slotját (`+0x80`) hívja az aktuális képleíróval és egy kimeneti képleíróval (`0x00908077`-`0x00908087`, a kimeneti leíró előkészítése: `0x00908235`-`0x00908240`). A `CGenericFilter` render-slot `0x008f6e40` az objektum `+0x0c` callbackjét hívja. A `0x008f8b90` triple2-callback a láncban így ugyanazon képpuffer API-n kapja az előző tag kimenetét.
+
+A `0x008f8b90` a Derítőfényt (`0x0090ac20`), majd az aktív fekete-/fehérpont-ágat futtatja. A `0x0090c430` a `0x0090c1e0` LUT-építőt, majd a `0x0090be70` pixelmagot hívja. A mag a képleíró `+0x10` pointeréről byte-ként olvassa a B, G, R csatornát (`0x0090bed0`-`0x0090bee4`), képpontonként 4 bájtot lép, és BGRA dwordöt ír vissza ugyanabba a pufferbe (`0x0090beb3`-`0x0090beb9`, `0x0090c002`). Ezen a láncúton a triple2 tehát **8 bites csatornánkénti BGRA pixeleket** fogyaszt és állít elő; nincs 16 bites vagy lebegőpontos pixelközi felületre utaló művelet. A LUT ettől különbözik: 257 darab 16 bites, 8.8 fixpontos értéket tartalmaz.
+
+### A szinthúzás kerekítése és ditherje
+
+A paraméterek `triple2=1,0.127180,0.190318,0.055157`. A fekete pont nagyobb a fehér pontnál, ezért a LUT csökkenő szakaszt is tartalmaz. A pixelmag képlete a `0x0090beed`-`0x0090bfe8` utasítások szerint:
+
+```text
+r = MT19937_next() & 0xff
+delta = LUT[c + 1] - LUT[c]
+v = LUT[c] + ((delta * r) >>> 8) - (delta >>_aritmetikai 1)
+out = clamp(v >>_aritmetikai 8, 0, 255)
+```
+
+Nincs `+128` kerekítőtag: a pixelenkénti 8 bites eredmény 8.8 fixpontos értékből aritmetikai jobbra tolással és végső vágással készül. A csökkenő delta szorzata viszont **előjel nélkül** tolódik (`shr`), míg a fél-delta és a végső osztás előjeles (`sar`); a csökkenő szakaszon ez a natív telítési viselkedés része, nem helyettesíthető szokásos kerekítéssel. A 16 bites LUT bejegyzés előállításában `fistp` szerepel (`0x0090c27f`), ezért annak eredményét az x87 vezérlőszava is befolyásolja. Az eredeti alkalmazás e hívás előtti x87 vezérlőszava **NINCS MEG**.
+
+A mag képpontonként egy mintát olvas a folyamat-globális MT19937 állapotból: az index `0x00d67f74`, az állapottömb `0x00d67f7c` (`0x0090beed`-`0x0090bf25`). Ugyanazt a mintát használja mindhárom csatornához. A minták fázisa ezért a korábban feldolgozott képpontoktól függ; ezt a #3092 viselkedést és a PicasaPy rögzített hívásonkénti mintájának korlátját a `picasa-native-filter-workers.md` 2.2/d szakasza részletezi.
+
+### QEMU-mérés és független ellenőrzés
+
+A harness az eredeti `0x008f8b90` callbacket futtatta 1331 sötétkék bemeneti pixelre (`R=20…30`, `G=55…65`, `B=120…130`) a fenti paraméterekkel. Az alapértelmezett skalár QEMU-CPU és a `-cpu max` kimenete 5324 bájton bitre azonos volt; a célzott callback, LUT-építő, pixelmag és MT-twist diszasszemblálásban nincs MMX/SSE vektorutasítás.
+
+| Összevetés | Eredmény |
+|---|---|
+| Natív LUT vs. PicasaPy LUT; QEMU x87 vezérlőszó `0x037f` | 256/256 bejegyzés egyezik |
+| Natív Derítőfény utáni puffer vs. `apply_fill` | 1331/1331 pixel egyezik |
+| Natív workerből rögzített LUT és dither-sorozat mellett natív vs. PicasaPy `triple2` | 1331/1331 pixel egyezik; max. csatornaeltérés 0 |
+| PicasaPy saját, hívásonként inicializált mintasorával a natív callback kimenete | 1324/1331 pixel egyezik; a 7 eltérés a vörös csatornán van, rendszeres színeltolás nélkül |
+
+Ez két külön bizonyítási út: **A)** az utasításszintű olvasás megadja a bájtos pixelműveletet, a fixpontos képletet és a dither globális állapotát; **B)** a QEMU-ban futó natív callback rögzített köztes pufferével, LUT-jével és mintasorozatával a PicasaPy kimenete képpontosan azonos. A mag algoritmikus egyezése ezen a bemeneti rácson **megerősített**. A hét eltérés a saját mintasorral nem cáfolja ezt: a natív RNG-fázist nem azonosítja, és egyik csatornán sem ad rendszeres eltérést.
+
+**Cáfoló kísérlet:** az azonos bemenet/LUT/mintasorozat próba eltérést mutatott volna, ha a PicasaPy pixelképlete más lenne; nem mutatott. Az első instrumentált QEMU-összevetés visszaugró kódrészlete felülírta az EAX mintaregisztert, ezért azt a kimenetet elvetettem. A regisztermegőrző `push célcím; ret` visszaugrással megismételt próba adja a fenti mérési eredményeket.
+
+### Következtetés a teljes láncról és a #6746 kész-feltételéről
+
+A fenti bizonyíték **nem igazol PicasaPy `triple2` képlethibát**, így a mag javítása nem indokolt. A teljes lánc eltérésének eredete viszont **nyitott**: nincs veszteségmentes mérés az eredeti Picasa tényleges, triple2 előtti BGRA pufferéről és a `0x00d67f74` + `0x00d67f7c` dither-állapotáról. A #462/#463 lépésenkénti JPEG út nem helyettesíti ezt: a jegyben rögzített mérés szerint az eredeti Picasa teljes lánca és a saját, JPEG-exporttal szétválasztott útja a sötétkék tartomány kék csatornáján átlagosan 10,3 szinttel tér el.
+
+| #6746 kész-feltétel | Állapot és bizonyíték |
+|---|---|
+| Teljes lánc: SSIM ≥ 0,98 | ✅ #436, Gauss σ=2,5 után SSIM 0,99785 |
+| Teljes lánc: Gauss utáni átlagos ΔE ≤ 2,0 | ✅ #436, σ=2,5 után ΔE átlag 0,720 |
+| Sötétkék foltok p99 ΔE < 3 | ⛔ #436, σ=2,5 után p99 6,28; 3,2% pixel ΔE>4 |
+| Golden a Colab-exportból vágott kis mintával | ⛔ E kutatási körben új minta/golden nem készült |
+
+**Következő döntő mérés:** az eredeti Picasa teljes `IR → warm → triple2` futásában és a PicasaPy megfelelő futásában veszteségmentesen rögzíteni ugyanazt a triple2 előtti BGRA puffert, valamint közvetlenül a `0x0090be70` hívás előtt a `0x00d67f74` indexet és a `0x00d67f7c` 624 szavas állapotot. A puffer egyezése és eltérése a mintasorral szétválasztja a bemeneti képkülönbséget az RNG-fázistól. A QEMU LUT mérés x87 módja `0x037f`; az eredeti alkalmazás módját külön kell leolvasni, ha a LUT-re kiterjedő pixelhű bizonyítás szükséges.
