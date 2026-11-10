@@ -259,6 +259,7 @@ class BackgroundWorkerMixin:
         name: str | None = None,
         cancel: Callable[[], None] | None = None,
         on_error: Callable[[Exception], None] | None = None,
+        busy: bool = True,
     ) -> threading.Thread:
         """Egy `target` HÁTTÉRSZÁLON indítása, nyilvántartva.
 
@@ -266,11 +267,10 @@ class BackgroundWorkerMixin:
         a halmaz mindig csak a TÉNYLEG futó szálakat tartalmazza, nem nő
         korlátlanul hosszú futás alatt sok hívással.
 
-        #505: a busy-nyilvántartás bejelentkezése/kijelentkezése ITT, EGY
-        helyen történik — a hívó controllernek nem kell külön hívnia. A
-        `begin()` a hívó (jellemzően GUI-) szálon fut, MIELŐTT a szál
-        elindulna; az `end()` a `finally`-ben — kivétellel leálló munkánál
-        is, hogy a csík ne pörögjön örökre.
+        #505: alapértelmezésben a busy-bejelentkezés/kijelentkezés ITT,
+        EGY helyen történik. A `busy=False` feladatok (#6793: az automatikus
+        arckeresés) saját, párosított `begin()`/`end()` hívásokkal csak az
+        aktív feldolgozási szakaszt jelentik be.
 
         #2966: a `cancel` egy leállító visszahívás. Ha meg van adva, a
         munka MEGSZAKÍTHATÓKÉNT jelentkezik be, és a jobb-felső sarki
@@ -285,7 +285,7 @@ class BackgroundWorkerMixin:
         workers = self._bg_worker_set()
         registry = get_app_busy_registry()
         # #6440: a munka neve az állapotsávon a szálnévből lesz (ld. busy_activity.py)
-        munka_jegy = registry.begin(munka_neve(name))
+        munka_jegy = registry.begin(munka_neve(name)) if busy else None
         # #2966: ha a hívó adott leállítót, a munka a jobb-felső sarki
         # jelzőn MEGSZAKÍTHATÓKÉNT jelenik meg. A bejelentkezés — a
         # `begin()`-hez hasonlóan — a hívó szálán, a szálindítás ELŐTT
@@ -375,7 +375,8 @@ class BackgroundWorkerMixin:
                 try:
                     if cancel_jegy is not None:
                         registry.unregister_cancel(cancel_jegy)
-                    registry.end(munka_jegy)
+                    if munka_jegy is not None:
+                        registry.end(munka_jegy)
                 finally:
                     workers.discard(thread)
                     # #988/#999: a folyamat-szintű nyilvántartásból is
@@ -398,7 +399,8 @@ class BackgroundWorkerMixin:
                 _ALL_WORKERS.discard(thread)
             if cancel_jegy is not None:
                 registry.unregister_cancel(cancel_jegy)
-            registry.end(munka_jegy)
+            if munka_jegy is not None:
+                registry.end(munka_jegy)
             raise
         return thread
 

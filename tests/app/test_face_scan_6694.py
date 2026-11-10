@@ -144,7 +144,8 @@ def test_automatic_scan_waits_during_user_activity(qt_app, tmp_path):
 
     root = tmp_path / "kepek"
     root.mkdir()
-    make_jpeg(root / "a.jpg", size=(100, 100))
+    for number in range(21):
+        make_jpeg(root / f"{number:02}.jpg", size=(100, 100))
     detector = _FakeDetector()
     ctl = _make_controller(qt_app, tmp_path, root, detector=detector)
     ctl.setSuggestionsEnabled(False)
@@ -164,7 +165,7 @@ def test_automatic_scan_waits_during_user_activity(qt_app, tmp_path):
 
     activity.clear()
     assert ctl.waitForBackgroundWorkers(5.0)
-    assert len(detector.calls) == 1
+    assert len(detector.calls) == 21
 
 
 def test_automatic_scan_waits_for_a_duration_proportional_to_detection(

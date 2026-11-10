@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import sqlite3
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import closing, contextmanager, nullcontext
 
+from .busy_activity import munka_neve
+from .busy_registry import get_app_busy_registry
 from .face_scan_controller_signals import FaceScanControllerSignalsMixin as _Signals
 from .hatter_prioritas import arckeres_szal_elokeszitese, arckeres_szal_lezarasa
 from .face_scan_controller_shared import (
@@ -33,6 +35,8 @@ from .face_scan_controller_shared import (
     scale_down,
     threading,
 )
+
+_AUTOMATIC_SCAN_UNPAUSED_LIMIT = 20
 
 
 class FaceScanControllerScanMixin:
@@ -337,6 +341,7 @@ class FaceScanControllerScanMixin:
             args=(stop_event, photos),
             kwargs={"automatic": automatic},
             name="picasapy-face-scan",
+            busy=not automatic,
         )
 
 
@@ -385,13 +390,26 @@ class FaceScanControllerScanMixin:
         *,
         automatic: bool,
         delay_seconds: float = 0.0,
+        pause_for_activity: bool = True,
+        on_busy_changed: Callable[[bool], None] | None = None,
     ) -> bool:
         """Aktivitás alatt vár, különben a detektálási idővel arányosan fékez."""
         remaining = max(0.0, delay_seconds)
+        paused = False
         while not stop_event.is_set():
-            if automatic and self._scan_should_pause():
+            if (
+                automatic
+                and pause_for_activity
+                and self._scan_should_pause()
+            ):
+                if not paused and on_busy_changed is not None:
+                    on_busy_changed(False)
+                paused = True
                 stop_event.wait(0.25)
                 continue
+            if paused and on_busy_changed is not None:
+                on_busy_changed(True)
+            paused = False
             if remaining <= 0:
                 return True
             started = time.perf_counter()
@@ -413,8 +431,34 @@ class FaceScanControllerScanMixin:
         scanned = 0
         if automatic is None:
             automatic = self._automatic_scan
+        scan_started = time.perf_counter()
+        phase_times = {
+            "index": 0.0,
+            "ini_stat": 0.0,
+            "pending": 0.0,
+            "ini_reconcile": 0.0,
+            "decode_detect": 0.0,
+            "database_save": 0.0,
+            "activity_wait": 0.0,
+        }
+        pending_total = 0
+        busy_ticket: int | None = None
+
+        def set_scan_busy(active: bool) -> None:
+            nonlocal busy_ticket
+            if not automatic:
+                return
+            if active and busy_ticket is None:
+                busy_ticket = get_app_busy_registry().begin(
+                    munka_neve("picasapy-face-scan")
+                )
+            elif not active and busy_ticket is not None:
+                get_app_busy_registry().end(busy_ticket)
+                busy_ticket = None
+
         try:
             with self._open_index_for_scan() as conn:
+                phase_started = time.perf_counter()
                 # #4887: a szkennelés a rejtett mappák képein is fut (az
                 # eredménye a megjelenítéskor szűrődik)
                 photos = (
@@ -423,11 +467,15 @@ class FaceScanControllerScanMixin:
                     else scoped_photos
                 )
                 scan_states = self._read_face_scan_states(conn)
+                phase_times["index"] += time.perf_counter() - phase_started
                 ini_cache: dict = {}
                 enabled_cache: dict[str, bool] = {}
+                phase_started = time.perf_counter()
                 changed_ini_dirs, current_ini_signatures = (
                     self._changed_ini_directories(photos)
                 )
+                phase_times["ini_stat"] += time.perf_counter() - phase_started
+                phase_started = time.perf_counter()
                 detection_pending = self._build_pending(
                     conn,
                     photos,
@@ -435,6 +483,7 @@ class FaceScanControllerScanMixin:
                     ini_cache=ini_cache,
                     enabled_cache=enabled_cache,
                 )
+                phase_times["pending"] += time.perf_counter() - phase_started
                 with self._pending_lock:
                     if not self._owns_scan(stop_event):
                         detection_pending = set()
@@ -443,6 +492,7 @@ class FaceScanControllerScanMixin:
                 self._set_unchecked_files(pending_total)
 
                 reconcile_photos = []
+                phase_started = time.perf_counter()
                 if changed_ini_dirs:
                     for photo in photos:
                         folder = Path(photo.folder_path)
@@ -460,6 +510,9 @@ class FaceScanControllerScanMixin:
                 # képenkénti SQL, detektor- vagy útvonal-felbontási munka.
                 if not detection_pending and not reconcile_photos:
                     self._face_ini_signatures.update(current_ini_signatures)
+                    phase_times["ini_reconcile"] += (
+                        time.perf_counter() - phase_started
+                    )
                 else:
                     reconcile_batch = 0
                     for photo in reconcile_photos:
@@ -477,6 +530,9 @@ class FaceScanControllerScanMixin:
                             reconcile_batch = 0
                     if reconcile_batch:
                         conn.commit()
+                    phase_times["ini_reconcile"] += (
+                        time.perf_counter() - phase_started
+                    )
 
                     if detection_pending and not self._detector.available:
                         if not self._unavailable_logged:
@@ -502,6 +558,7 @@ class FaceScanControllerScanMixin:
                         nonlocal found, scanned
                         if not batch:
                             return
+                        save_started = time.perf_counter()
                         for photo, faces, ini_faces in batch:
                             replace_faces(conn, photo.id, faces)
                             _mark_previously_ignored(conn, photo.id, ini_faces)
@@ -514,6 +571,9 @@ class FaceScanControllerScanMixin:
                             found += len(faces)
                             scanned += 1
                         conn.commit()
+                        phase_times["database_save"] += (
+                            time.perf_counter() - save_started
+                        )
                         for done, (_photo, faces, _ini_faces) in enumerate(
                             batch, start=scanned - len(batch) + 1
                         ):
@@ -524,14 +584,27 @@ class FaceScanControllerScanMixin:
                         batch.clear()
 
                     processed = 0
+                    pause_for_activity = (
+                        automatic
+                        and pending_total > _AUTOMATIC_SCAN_UNPAUSED_LIMIT
+                    )
                     for photo in pending_photos:
-                        if not self._wait_for_scan_slot(
-                            stop_event, automatic=automatic
-                        ):
+                        wait_started = time.perf_counter()
+                        slot_available = self._wait_for_scan_slot(
+                            stop_event,
+                            automatic=automatic,
+                            pause_for_activity=pause_for_activity,
+                            on_busy_changed=set_scan_busy,
+                        )
+                        phase_times["activity_wait"] += (
+                            time.perf_counter() - wait_started
+                        )
+                        if not slot_available:
                             commit_batch()
                             conn.commit()
                             self.scanCancelled.emit()
                             return
+                        set_scan_busy(True)
                         photo_path = Path(photo.folder_path) / photo.name
                         try:
                             ini_faces = ini_faces_of(photo_path, ini_cache)
@@ -544,6 +617,7 @@ class FaceScanControllerScanMixin:
                                 source_size=photo.size,
                             )
                             elapsed = time.perf_counter() - started
+                            phase_times["decode_detect"] += elapsed
                             batch.append((photo, faces, ini_faces))
                             self._mark_checked(photo_path, stop_event)
                             processed += 1
@@ -554,11 +628,18 @@ class FaceScanControllerScanMixin:
                                 self._report_scan(processed, pending_total)
                             if len(batch) >= self._SCAN_COMMIT_BATCH_SIZE:
                                 commit_batch()
-                            if not self._wait_for_scan_slot(
+                            wait_started = time.perf_counter()
+                            slot_available = self._wait_for_scan_slot(
                                 stop_event,
                                 automatic=automatic,
                                 delay_seconds=elapsed if automatic else 0.0,
-                            ):
+                                pause_for_activity=pause_for_activity,
+                                on_busy_changed=set_scan_busy,
+                            )
+                            phase_times["activity_wait"] += (
+                                time.perf_counter() - wait_started
+                            )
+                            if not slot_available:
                                 commit_batch()
                                 conn.commit()
                                 self.scanCancelled.emit()
@@ -584,6 +665,24 @@ class FaceScanControllerScanMixin:
             self.scanFailed.emit(str(error))
             return
         finally:
+            set_scan_busy(False)
+            _log.info(
+                "arckeres fázisidők: index=%.3fs, .picasa.ini stat=%.3fs, "
+                "függőlista=%.3fs, ini-egyeztetés=%.3fs, "
+                "dekódolás/detektálás=%.3fs, indexmentés=%.3fs, "
+                "aktivitásvárakozás=%.3fs, teljes=%.3fs; függő=%d, "
+                "feldolgozott=%d",
+                phase_times["index"],
+                phase_times["ini_stat"],
+                phase_times["pending"],
+                phase_times["ini_reconcile"],
+                phase_times["decode_detect"],
+                phase_times["database_save"],
+                phase_times["activity_wait"],
+                time.perf_counter() - scan_started,
+                pending_total,
+                scanned,
+            )
             arckeres_szal_lezarasa(elozo_szalszam)
             self._ini_ignored_cache = None
             with self._pending_lock:
