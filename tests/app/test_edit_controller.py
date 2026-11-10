@@ -2,6 +2,7 @@
 
 import os
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -143,7 +144,10 @@ class TestPagingMemory:
 
         #: #819: a dekóder `full_res` kapcsolót is kap
         def counting_decode(path, **kulcsszavak):
-            calls.append(path)
+            # #6796: egy korábbi teszt háttérdekódolása átcsúszhat ide;
+            # csak a saját tmp_path képei számítanak.
+            if Path(path).parent == tmp_path:
+                calls.append(path)
             return original(path, **kulcsszavak)
 
         monkeypatch.setattr(edit_preview_source, "_decode_source", counting_decode)
