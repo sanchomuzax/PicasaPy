@@ -85,7 +85,12 @@ class _RegistryKemlelo:
         monkeypatch.setattr(registry, "begin", begin_szamlalo)
         monkeypatch.setattr(registry, "end", end_szamlalo)
 
-    def ellenoriz(self, mit: str) -> None:
+    def ellenoriz(self, mit: str, qt_app=None) -> None:
+        # #6794: a munka végét jelző jelzés után egy MÁSIK háttérmunka (pl. az
+        # export utáni ini-/oldalsáv-frissítés) még futhat; a kijelentkezését
+        # határidővel megvárjuk. A valódi hiányzó `end()` így is bukást ad.
+        if qt_app is not None:
+            _wait_until(qt_app, lambda: self.end >= self.begin)
         assert self.begin >= 1, (
             f"a(z) {mit} nem jelentkezett be a busy-nyilvántartásba "
             f"(begin={self.begin}) — a _start_background automatikus "
@@ -110,7 +115,7 @@ class TestBatchEffectBusy:
         assert _wait_until(
             qt_app, lambda: not controller.backgroundWorkersRunning()
         ), "a kötegelt effekt háttérmunkája nem állt le"
-        kemlelo.ellenoriz("kötegelt effekt")
+        kemlelo.ellenoriz("kötegelt effekt", qt_app)
         assert _wait_until(qt_app, lambda: controller.isWorking is False), (
             "isWorking a kötegelt effekt után is igaz maradt"
         )
@@ -134,7 +139,7 @@ class TestExportBusy:
         assert _wait_until(qt_app, lambda: bool(finished)), (
             "az export nem jelzett befejezést (exportFinished)"
         )
-        kemlelo.ellenoriz("export")
+        kemlelo.ellenoriz("export", qt_app)
         assert _wait_until(qt_app, lambda: controller.isWorking is False), (
             "isWorking az export után is igaz maradt"
         )
