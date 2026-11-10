@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import functools
 from collections import OrderedDict
 from pathlib import Path
 
@@ -24,7 +25,6 @@ from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.app.effect_params import resolve_effect_params
 from picasapy.ini.filters import FilterOp, parse_filters
-from picasapy.render.registry import FILTER_REGISTRY
 
 from . import edit_preview_source
 from .effect_slice_paint import render_slice_image
@@ -61,12 +61,31 @@ _NEZETEK = {
         "picnikfocalpixelate", "pixelate", "sixties", "vignette",
     },
 }
-EFFECT_VIEW_TYPES = {
-    effect: view_type
-    for view_type, effects in _NEZETEK.items()
-    for effect in effects
-}
-EFFECT_VIEW_TYPES.update({key: "none" for key in FILTER_REGISTRY if key not in EFFECT_VIEW_TYPES})
+
+
+@functools.cache
+def _effect_view_types() -> dict[str, str]:
+    """Effekt-kulcs → nézettípus; a regiszter minden további effektje `none`.
+
+    #6688: az első kérésre épül fel, mert a regiszter a `picasapy.render`
+    csomagban van, ami az első ablakkép előtt nem töltődhet be."""
+    from picasapy.render.registry import FILTER_REGISTRY
+
+    types = {
+        effect: view_type
+        for view_type, effects in _NEZETEK.items()
+        for effect in effects
+    }
+    types.update({key: "none" for key in FILTER_REGISTRY if key not in types})
+    return types
+
+
+def __getattr__(name: str):
+    if name == "EFFECT_VIEW_TYPES":
+        return _effect_view_types()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 _VIEW_ORDER = ("tone", "color", "image", "point", "grain", "none")
 # A Finomhangolás fül négy csúszkája: (finetune2-paraméterhely, min, max, felirat)
 _FINETUNE_SLIDERS = (
@@ -85,7 +104,7 @@ _PHOTO_PROBE_EFFECTS = frozenset(
 
 def classify_effect(name: str) -> str:
     """Effekt nézettípusa. Ismeretlen lánctaghoz a biztonságos üres nézet jár."""
-    return EFFECT_VIEW_TYPES.get(str(name).casefold(), "none")
+    return _effect_view_types().get(str(name).casefold(), "none")
 
 
 def _file_mtime(path: Path | None) -> int | None:

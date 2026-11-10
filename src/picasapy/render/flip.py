@@ -44,23 +44,22 @@ mindkét tengelyre tükrözve a sorrend közömbös.
 
 from __future__ import annotations
 
+from picasapy.ini.flip import (
+    FLIP_HORIZONTAL,
+    FLIP_MASK,
+    FLIP_VERTICAL,
+    toggled_flip,
+)
 from picasapy.lazy_cv2 import cv2
 import numpy as np
 
-#: Vízszintes tükrözés (bal-jobb) — az ini-maszk 0. bitje (#2976).
-FLIP_HORIZONTAL = 1
-#: Függőleges tükrözés (fel-le) — az ini-maszk 1. bitje (#2976).
-FLIP_VERTICAL = 2
-#: A két bit együtt. Ennél nagyobb értéket nem értelmezünk.
-FLIP_MASK = FLIP_VERTICAL | FLIP_HORIZONTAL
-
-
-def toggled_flip(flags: int, direction: int) -> int:
-    """A jelző ki/be kapcsolása egy irányra — a csillag mintája.
-
-    Ugyanarra az irányra másodszor nyomva visszaáll az eredeti állapot, mert
-    a tükrözés önmaga inverze. Az értelmezhetetlen bitek leesnek."""
-    return (int(flags or 0) ^ int(direction or 0)) & FLIP_MASK
+__all__ = [
+    "FLIP_HORIZONTAL",
+    "FLIP_MASK",
+    "FLIP_VERTICAL",
+    "apply_flip",
+    "toggled_flip",
+]
 
 
 def apply_flip(image: np.ndarray, flags: int) -> np.ndarray:

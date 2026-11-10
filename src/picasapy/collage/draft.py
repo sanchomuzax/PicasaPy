@@ -56,7 +56,8 @@ from collections.abc import Mapping, Sequence
 
 from .cxf import CxfBackground, CxfNode, CxfProject
 from .nodes import SHEET_UNITS, CollageNode
-from .picasa_render import PicasaCollageSettings, contact_sheet_cell_scale
+from .picasa_render_layouts import contact_sheet_cell_scale
+from .picasa_render_settings import PicasaCollageSettings
 from .page_formats import format_text, is_known_format
 from .themes import (
     BORDER_THEMES,

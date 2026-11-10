@@ -8,10 +8,13 @@ from pathlib import Path
 from picasapy.index import PhotoRecord
 from picasapy.ini.filters import parse_filters_prefix
 from picasapy.lazy_cv2 import cv2
-from picasapy.render import normalize_crop_ops
+from picasapy.lazy_import import lazy_callable
 from picasapy.scanner import PICASA_INI_NAME
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 from .print_controller_shared import _log
+
+# #6688: a render csomag az első nyomtatásig nem töltődik be
+normalize_crop_ops = lazy_callable("picasapy.render", "normalize_crop_ops")
 
 
 class PrintControllerSourceMixin:

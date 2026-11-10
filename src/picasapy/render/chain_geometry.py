@@ -48,16 +48,14 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+from picasapy.ini.affine import AZONOSSAG as AZONOSSAG, Matrix as Matrix
 from picasapy.ini.filters import FilterOp
 from picasapy.render.dinamikus_csuszka import felirat_sorok
 from picasapy.render.glimmer_frame_ops import drop_shadow_padding
 from picasapy.render.elonezeti_arany import skalazott_border_vastagsag, skalazott_vastagsag
 
-#: 2×3-as affin mátrix: `((a, b, c), (d, e, f))`, azaz
-#: `x' = a·x + b·y + c`, `y' = d·x + e·y + f`.
-Matrix = tuple[tuple[float, float, float], tuple[float, float, float]]
-
-AZONOSSAG: Matrix = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
+# A `Matrix` (2×3-as affin mátrix) és az `AZONOSSAG` definíciója #6688 óta a
+# könnyű `ini` rétegben van (`picasapy.ini.affine`); a nevek innen is elérhetők.
 
 #: A `Polaroid` rögzített árnyék-paraméterei (`glimmer_frames`).
 _POLAROID_SHADOW_BLUR_PX = 8

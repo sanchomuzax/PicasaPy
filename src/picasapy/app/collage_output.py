@@ -43,9 +43,6 @@ from pathlib import Path
 
 from PySide6.QtCore import QStandardPaths
 
-from picasapy.collage import write_collage
-from picasapy.collage.cxf import dumps
-from picasapy.collage.draft import project_from_nodes
 from picasapy.ini.folder_category import (
     CATEGORY_KEY,
     FOLDER_SECTION,
@@ -60,18 +57,27 @@ from picasapy.ini.io import (
     save_document,
 )
 from picasapy.ini.names import INI_NAME
-from picasapy.collage.nodes import CollageNode
-from picasapy.collage.picasa_render import (
-    PicasaCollageSettings,
-    make_picasa_collage,
-    render_nodes,
-)
 from picasapy.collage.themes import (
     FRAMEGRID,
     MULTIEXP,
     PICTUREGRID,
     REGULARGRID,
 )
+from picasapy.lazy_import import lazy_callable
+
+# #6688: a kollázs renderelőjére az első mentésig nincs szükség; ezek a
+# függvény- és osztálykonstruktorok csak a használatkor húzzák be a NumPy-t.
+CollageNode = lazy_callable("picasapy.collage.nodes", "CollageNode")
+PicasaCollageSettings = lazy_callable(
+    "picasapy.collage.picasa_render", "PicasaCollageSettings"
+)
+dumps = lazy_callable("picasapy.collage.cxf", "dumps")
+make_picasa_collage = lazy_callable(
+    "picasapy.collage.picasa_render", "make_picasa_collage"
+)
+project_from_nodes = lazy_callable("picasapy.collage.draft", "project_from_nodes")
+render_nodes = lazy_callable("picasapy.collage.picasa_render", "render_nodes")
+write_collage = lazy_callable("picasapy.collage", "write_collage")
 
 logger = logging.getLogger(__name__)
 

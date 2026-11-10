@@ -15,13 +15,16 @@ from pathlib import Path
 
 from PySide6.QtCore import Slot
 
-from picasapy.collage import draft_placeholder, write_collage
+from picasapy.collage import draft_placeholder
 from picasapy.collage.autosave import discard_autosave, read_autosave, write_autosave
 from picasapy.collage.draft import project_from_nodes
-from picasapy.collage.picasa_render import render_nodes
+from picasapy.lazy_import import lazy_callable
 
 from . import collage_output as output
 from . import collage_prefs as prefs
+
+write_collage = lazy_callable("picasapy.collage.render", "write_collage")
+render_nodes = lazy_callable("picasapy.collage.picasa_render", "render_nodes")
 
 logger = logging.getLogger(__name__)
 

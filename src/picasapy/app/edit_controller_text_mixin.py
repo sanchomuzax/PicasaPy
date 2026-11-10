@@ -33,6 +33,20 @@ from .edit_controller_signals import EditControllerSignalsMixin as _Signals
 class EditControllerTextMixin:
     """A szöveg-overlay tulajdonságai, elhelyezése és stílusa."""
 
+    @property
+    def _text_family(self) -> str:
+        """A szöveg-eszköz betűcsaládja; az alapértelmezés az ELSŐ olvasáskor
+        számolódik (#6688). A `default_family()` a `picasapy.render` csomagot
+        és a Qt betűcsalád-adatbázist tölti, ami a vezérlő létrehozásakor, az
+        első ablakkép előtt nem fér bele."""
+        if self._text_family_value is None:
+            self._text_family_value = default_family()
+        return self._text_family_value
+
+    @_text_family.setter
+    def _text_family(self, value: str) -> None:
+        self._text_family_value = value
+
     @Property(str, notify=_Signals.toolsChanged)
     def textDraft(self) -> str:
         """A szöveg-eszköz megnyitásakor a mezőbe töltendő piszkozat — a

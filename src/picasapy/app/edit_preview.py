@@ -18,26 +18,26 @@ from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QImage
 from PySide6.QtQuick import QQuickImageProvider
 
-from picasapy.ini import PhotoCropReader
-from picasapy.ini.filters import FilterOp
-from picasapy.render import apply_filters, normalize_crop_ops
-from picasapy.render.chain_geometry import TartalomHely
-from picasapy.render.display_modes import (
+from picasapy.app.display_mode_paint import (
     apply_display_mode,
     display_mode_changes_pixels,
 )
-from picasapy.render.elonezeti_arany import elonezeti_arany
-from picasapy.render.op_geometry import LancHelyzet
-from picasapy.render.registry import chain_flags
-from picasapy.render.text_fonts import DEFAULT_FAMILY
-from picasapy.render.text_overlay import apply_text_overlay
+from picasapy.ini import PhotoCropReader
+from picasapy.ini.filters import FilterOp
+from picasapy.ini.text_overlay import DEFAULT_FAMILY
+from picasapy.lazy_import import lazy_callable
 from picasapy.scanner import PICASA_INI_NAME
+
+if TYPE_CHECKING:
+    from picasapy.render.chain_geometry import TartalomHely
+    from picasapy.render.op_geometry import LancHelyzet
 
 from .edit_preview_cache import EditPreviewCacheMixin, _LRU_CAPACITY
 from .edit_preview_redeye import (
@@ -66,6 +66,13 @@ from .histogram_helper import EMPTY_HISTOGRAM, compute_rgb_histogram
 
 # #151/7: a placeholder-szürke egyetlen helyen (thumbnail_provider) definiált
 from .thumbnail_provider import PLACEHOLDER_COLOR as _PLACEHOLDER_COLOR
+
+# #6688: a render csomag az első szerkesztői előnézetig nem töltődik be
+apply_filters = lazy_callable("picasapy.render", "apply_filters")
+normalize_crop_ops = lazy_callable("picasapy.render", "normalize_crop_ops")
+elonezeti_arany = lazy_callable("picasapy.render.elonezeti_arany", "elonezeti_arany")
+chain_flags = lazy_callable("picasapy.render.registry", "chain_flags")
+apply_text_overlay = lazy_callable("picasapy.render.text_overlay", "apply_text_overlay")
 
 _PLACEHOLDER_SIZE = 16
 

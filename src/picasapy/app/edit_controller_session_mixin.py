@@ -198,7 +198,9 @@ class EditControllerSessionMixin:
         self._text_outline_thickness = _DEFAULT_TEXT_OUTLINE_THICKNESS
         self._text_fill_enabled = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity = _DEFAULT_TEXT_OPACITY
-        self._text_family = default_family()
+        # #6688: az alapértelmezett családot a `_text_family` az első
+        # olvasáskor számolja újra (az `endEdit` induláskor is lefut)
+        self._text_family_value = None
         self._text_size_pt = _DEFAULT_TEXT_SIZE_PT
         self._text_size_edited = False
         self._text_bold = _DEFAULT_TEXT_BOLD

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, Signal, Slot
 from picasapy.app.collage_preview import CollagePreviewProvider
-from picasapy.collage.picasa_render import PicasaCollageSettings
+from picasapy.collage.picasa_render_settings import PicasaCollageSettings
 from picasapy.collage.themes import NOBORDER
 
 class _LegacyCollageCall:

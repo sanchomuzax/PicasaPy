@@ -45,10 +45,26 @@ from __future__ import annotations
 import numpy as np
 from PySide6.QtGui import QImage
 
-from picasapy.render.display_modes import (
-    apply_display_mode,
-    display_mode_changes_pixels,
+from picasapy.lazy_import import lazy_callable
+
+#: A képpontot mozdító módok neve: a `render.display_modes.
+#: PIXEL_AFFECTING_MODES` másolata (#6688). A bélyegkép-URL építése minden
+#: rács-csempénél eldönti, kell-e mód-cimke, és ehhez nem tölthető be a
+#: `picasapy.render` csomag az első ablakkép előtt. Az egyezést a
+#: `tests/perf/test_lusta_render_import_6688.py` őrzi.
+_PIXEL_AFFECTING_MODES = frozenset(
+    {"overflow", "dither16", "projector", "lcd", "linear", "mac", "bw", "sepia"}
 )
+
+#: A mód alkalmazása a képpontokra: a render csomag az első valódi
+#: átalakításig nem töltődik be.
+apply_display_mode = lazy_callable("picasapy.render.display_modes", "apply_display_mode")
+
+
+def display_mode_changes_pixels(mode: str) -> bool:
+    """Mozdít-e ez a mód képpontot? (Ismeretlen/üres módra `False`.)"""
+    return mode in _PIXEL_AFFECTING_MODES
+
 
 #: A bélyegkép-URL lekérdezés-kulcsa. Rövid, mert a meglévő cimkék is azok
 #: (`r` = forgatás, `f` = filters-lánc, `m`/`s` = mtime/méret).
