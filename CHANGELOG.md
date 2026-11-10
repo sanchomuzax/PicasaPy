@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.94] - 2026-11-10
+
+- Exportáláskor ritkán előforduló összeomlás kockázata csökken: a képszerkesztő moduljai az ablak megjelenése után a fő szálon töltődnek be, nem háttérszálon (#6775).
+
 ## [1.0.93] - 2026-11-10
 
 - A könyvtári rácsban a Ctrl+Balra az előző képre lép (#6776).
