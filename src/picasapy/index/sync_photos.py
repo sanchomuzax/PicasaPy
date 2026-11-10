@@ -24,7 +24,7 @@ from picasapy.metadata import (
     EMPTY_METADATA,
     EMPTY_VIDEO_METADATA,
 )
-from picasapy.render.flip import FLIP_MASK
+from picasapy.ini.flip import FLIP_MASK
 from picasapy.scanner import (
     FolderScan,
     MediaFile,

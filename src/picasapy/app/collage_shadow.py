@@ -41,7 +41,7 @@ import logging
 from PySide6.QtCore import Property, Signal, Slot
 
 from picasapy.collage.nodes import SHEET_UNITS
-from picasapy.collage.picasa_render import shadow_for_settings
+from picasapy.collage.picasa_render_settings import shadow_for_settings
 from picasapy.collage.shadow import CellEdgeTooSmall
 from picasapy.collage.shadow_sprite import (
     sprite_border,

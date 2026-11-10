@@ -62,9 +62,9 @@ eszköz.
 
 from __future__ import annotations
 
-from PySide6.QtCore import QCoreApplication
+import functools
 
-from picasapy.render.legacy_effects import LEGACY_EFFECTS
+from PySide6.QtCore import QCoreApplication
 
 #: A szerkesztő-panel fordítási kontextusa — a `.ts`-ben itt vannak az
 #: eszköz- és effekt-gombok magyar feliratai.
@@ -169,8 +169,15 @@ _ALIASES: dict[str, str] = {
 }
 
 
+@functools.cache
 def _build_labels() -> dict[str, tuple[str, str]]:
-    """Művelet-kulcs → (angol felirat, fordítási kontextus)."""
+    """Művelet-kulcs → (angol felirat, fordítási kontextus).
+
+    #6688: az első kérésre épül fel és utána gyorsítótárból jön, mert a régi
+    effektek katalógusa a `picasapy.render` csomagban van, ami az első
+    ablakkép előtt nem töltődhet be."""
+    from picasapy.render.legacy_effects import LEGACY_EFFECTS
+
     labels: dict[str, tuple[str, str]] = {
         key: (label, _PANEL_CONTEXT)
         for key, label in {**_tools(), **_effects()}.items()
@@ -184,8 +191,12 @@ def _build_labels() -> dict[str, tuple[str, str]]:
     return labels
 
 
-#: A teljes névtár: művelet-kulcs → (angol felirat, fordítási kontextus).
-ACTION_LABELS: dict[str, tuple[str, str]] = _build_labels()
+def __getattr__(name: str):
+    """`ACTION_LABELS`: a teljes névtár (művelet-kulcs → angol felirat,
+    fordítási kontextus), az első olvasáskor felépítve (#6688)."""
+    if name == "ACTION_LABELS":
+        return _build_labels()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 #: A renderelő által ismert, de NÉV NÉLKÜLI szűrők. Ezekhez az eredeti
 #: programban nem tartozik felületi felirat (nincs gombjuk, és a
@@ -214,7 +225,8 @@ def action_label(action: str) -> str:
     """
     if not action:
         return ""
-    entry = ACTION_LABELS.get(action) or ACTION_LABELS.get(action.casefold())
+    labels = _build_labels()
+    entry = labels.get(action) or labels.get(action.casefold())
     if entry is None:
         return action
     label, context = entry
@@ -240,7 +252,7 @@ def _stack_label(base: str, action: str) -> str:
 
 
 __all__ = [
-    "ACTION_LABELS",
+    "ACTION_LABELS",  # noqa: F822 - lusta név, a modul `__getattr__`-je adja
     "UNNAMED_CHAIN_KEYS",
     "action_label",
     "redo_label",

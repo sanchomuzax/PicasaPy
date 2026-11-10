@@ -32,14 +32,15 @@ from pathlib import Path
 from picasapy.metadata import megjelenitett_meret
 from typing import NamedTuple
 
-from picasapy.collage.picasa_render import (
-    PicasaCollageSettings,
-    layout_nodes_for_aspects,
-)
+from picasapy.collage.picasa_render_settings import PicasaCollageSettings
 from picasapy.collage.pile import UniformSource, scatter_centers
 from picasapy.collage.themes import FRAMEGRID, PICTUREPILE
-
+from picasapy.lazy_import import lazy_callable
 from .collage_model import SHEET_UNITS, CollageNode
+
+layout_nodes_for_aspects = lazy_callable(
+    "picasapy.collage.picasa_render_placement", "layout_nodes_for_aspects"
+)
 
 
 class CollageSource(NamedTuple):

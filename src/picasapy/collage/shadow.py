@@ -66,8 +66,8 @@ from typing import NamedTuple
 
 from picasapy.lazy_cv2 import cv2
 import numpy as np
+from picasapy.lazy_import import lazy_callable
 
-from .render import screen_rotation
 from .themes import (
     CONTACTSHEET,
     FRAMEGRID,
@@ -77,6 +77,8 @@ from .themes import (
     REGULARGRID,
     capabilities_for,
 )
+
+screen_rotation = lazy_callable("picasapy.collage.render", "screen_rotation")
 
 # --- A tizenkét konstans (spec 9/b.2) ---------------------------------------
 #

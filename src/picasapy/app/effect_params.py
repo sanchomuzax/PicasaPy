@@ -58,10 +58,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
-from picasapy.render.chain import can_offer_filter_control
-from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS
-from picasapy.render.registry import FILTER_REGISTRY
-
 
 @dataclass(frozen=True)
 class EffectParam:
@@ -145,6 +141,11 @@ def _legacy_registry_params(name: str) -> tuple[EffectParam, ...]:
     koordinátái a mentett láncban a csúszkák előtt állnak, míg a három
     irányított effekt korongja közvetlenül a két csúszkát vezérli.
     """
+    # #6688: a render csomag az effekt-paraméterek első feloldásakor töltődik be
+    from picasapy.render.chain import can_offer_filter_control
+    from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS
+    from picasapy.render.registry import FILTER_REGISTRY
+
     if name not in LEGACY_EFFECT_KEYS or not can_offer_filter_control(name):
         return ()
     spec = FILTER_REGISTRY.get(name)

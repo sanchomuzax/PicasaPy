@@ -59,7 +59,6 @@ from picasapy.perf.tesztuzem import (
     tarolo_tipusa as tarolo_tipusa,
     tesztuzem_bekapcsolva as tesztuzem_bekapcsolva,
 )
-from picasapy.render.text_fonts import clear_family_cache as clear_family_cache
 from picasapy.scanner import (
     EXCLUDE_FOLDERS_NAME as EXCLUDE_FOLDERS_NAME,
     WATCHED_FOLDERS_NAME as WATCHED_FOLDERS_NAME,
@@ -162,6 +161,9 @@ _LAZY_APP_SYMBOLS = {
     "ThumbnailProvider": ".thumbnail_provider",
     "TimelineController": ".timeline_controller",
     "WebExportController": ".webexport_controller",
+    # #6688: a régi `application.clear_family_cache` név megmarad, de a render
+    # csomag csak az első olvasáskor töltődik be (abszolút modulnév)
+    "clear_family_cache": "picasapy.render.text_fonts",
     "sorted_folder_rows": ".models",
     "wire_color_management": ".color_management_controller",
     "wire_display_mode": ".display_mode_controller",
