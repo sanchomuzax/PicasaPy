@@ -2,6 +2,39 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-10
+
+### Exiting
+
+- If you exit while the background face search is running, the program
+  now really exits, and the search continues with the pictures it has not
+  checked yet the next time you start it. The question shown on exit now
+  says exactly that export and web export stop, while the face search
+  continues. See [People and faces](features/emberek.md) and
+  [FAQ](faq.md).
+
+### Library
+
+- If you renamed a watched folder outside the program, its old name
+  disappears from the left pane, the folder shows under its new name, and
+  no false error bar appears. See [Library](features/konyvtar.md).
+- **View** ▸ **Small Pictures** now applies to the left pane too: folder
+  counts include only the pictures that are shown, and a folder with only
+  small pictures is hidden while the option is off.
+
+### Effects
+
+- The **Rainbow** effect's colours are closer to the original Picasa:
+  red tones used to come out slightly lighter.
+
+### Speed and updates
+
+- The program starts faster, uses less memory, library syncing puts less
+  load on your computer, and several effects are calculated faster with
+  unchanged results.
+- Leftover helper copies from earlier updates are deleted automatically.
+  See [Settings](features/beallitasok.md).
+
 ## 2026-11-09
 
 ### Full screen

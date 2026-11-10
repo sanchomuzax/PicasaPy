@@ -96,6 +96,8 @@ the fingerprint in the release's `SHA256SUMS` file. A failed check prevents
 replacement. After a successful download, choose **Restart now** or
 **Update on exit**. Restarting waits for background work to finish. The previous
 version is kept, and the updater restores it if the new copy fails to start.
+Leftover copies of the update helper from earlier updates are deleted
+automatically at startup and before an update, so they do not pile up on disk.
 
 After **Update on exit**, the version label in the upper-right corner shows a
 circular arrow and the new version number, so you can see the update is

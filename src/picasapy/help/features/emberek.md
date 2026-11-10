@@ -40,6 +40,10 @@ fékezve, szünetekkel halad. Ha a könyvtár nem változott, nem olvas be
 mindent újra. Az **Eszközök ▸ Arcok keresése…** ablakból indított keresés
 nem vár, az a lehető leggyorsabban fut.
 
+Ha kilépsz a programból, miközben a háttérkeresés fut, a keresés a
+következő képnél megáll, és elmenti, amit addig talált. A következő
+indításkor onnan folytatja, a még át nem nézett képekkel.
+
 A keresés **ritkán jelöl arcot ott, ahol nincs**: egy tájképen vagy
 más, arc nélküli felvételen nem jelenik meg téves keret.
 
