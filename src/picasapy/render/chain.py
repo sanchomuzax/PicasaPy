@@ -593,6 +593,8 @@ def apply_filters(
                 result = handler(result, op, grain_ordinal)
             elif key == "polaroid":
                 result = handler(result, op, alpha=alpha_state)
+            elif key == "dropshadow":
+                result = glimmer._apply_drop_shadow_op_with_alpha(result, op, alpha=alpha_state)
             else:
                 result = handler(result, op)
         except Exception:
@@ -601,12 +603,12 @@ def apply_filters(
             _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
             skipped.append(op.name)
         else:
-            # #5299: a Picasa pixel-worker egyes kimeneteinek alfáját nem írja
-            # át. Csak a kutatási specben megnevezett írókat követjük; a többi
+            # #5299/#6788: egyes Picasa pixel-workerek nem írják át az alfát.
+            # Csak a kutatási specben megnevezett írókat követjük; a többi
             # effekt mai, háromcsatornás viselkedése változatlan.
-            if key in {"dir_sat", "blur"}:
+            if key in {"dir_sat", "dir_brite", "blur"}:
                 alpha_state = _ALPHA_TRANSPARENT
-            elif key == "colortemp" or key == "polaroid":
+            elif key in {"colortemp", "polaroid", "dropshadow"}:
                 alpha_state = 255
             if key in {"grain", "grain2"}:
                 grain_ordinal += 1
@@ -639,13 +641,15 @@ def apply_filters(
         try:
             if op.name.casefold() == "polaroid":
                 result = handler(result, op, alpha=alpha_state)
+            elif op.name.casefold() == "dropshadow":
+                result = glimmer._apply_drop_shadow_op_with_alpha(result, op, alpha=alpha_state)
             else:
                 result = handler(result, op)
         except Exception:
             _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
             skipped.append(op.name)
             continue
-        if op.name.casefold() == "polaroid":
+        if op.name.casefold() in {"polaroid", "dropshadow"}:
             alpha_state = 255
         alkalmazott_keretek.append(op)
     content_placement = None

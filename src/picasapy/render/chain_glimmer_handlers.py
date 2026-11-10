@@ -246,7 +246,11 @@ def apply_rounded_edges_op(image, op: FilterOp):
 
 
 def apply_drop_shadow_op(image, op: FilterOp):
-    return frames.apply_drop_shadow(
+    return _apply_drop_shadow_op_with_alpha(image, op, alpha=255)
+
+
+def _apply_drop_shadow_op_with_alpha(image, op: FilterOp, *, alpha: int):
+    return frames._apply_drop_shadow_with_alpha(
         image,
         distance=_float_at(op, 0, 4.0),
         angle=_float_at(op, 1, 90.0),
@@ -254,6 +258,7 @@ def apply_drop_shadow_op(image, op: FilterOp):
         shadow_color=_color_at(op, 3, (0, 0, 0)),
         background_color=_color_at(op, 4, (255, 255, 255)),
         fade=_float_at(op, 5, 30.0),
+        alpha=alpha,
     )
 
 
