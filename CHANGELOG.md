@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.91] - 2026-11-10
+
+- A képek gyorsabban jelennek meg induláskor, a gyorstár takarítása az első ablak után fut, az arcfelismerő modulok pedig csak szükség esetén töltődnek be (#6697).
+
 ## [1.0.90] - 2026-11-09
 
 - A könyvtárak szinkronja kevesebb háttértár-művelettel és alacsonyabb háttérprioritással fut (#6698).
