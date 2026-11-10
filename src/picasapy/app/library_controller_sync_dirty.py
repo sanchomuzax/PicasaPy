@@ -84,8 +84,11 @@ class _LibrarySyncDirtyMixin:
             errors = []
             locked_folders = []
             synced_folders = []
+            self._last_sync_changed = True
             try:
                 with open_index(self._db_path) as conn, _defer_album_pruning(conn):
+                    total_changes_before = conn.total_changes
+                    cache_was_ready = self._side_pane_cache_ready(conn)
                     for folder in _legacy()._coalesce_watcher_changes(paths):
                         change = folder if isinstance(folder, DirectoryChange) else None
                         folder_path = change.path if change is not None else str(folder)
@@ -168,6 +171,16 @@ class _LibrarySyncDirtyMixin:
                                     conn.rollback()
                             else:
                                 errors.append(f"{folder_path}: {error}")
+                    refresh_folders = synced_folders or None
+                    if not cache_was_ready:
+                        refresh_folders = None
+                    self._finish_index_sync(
+                        conn,
+                        total_changes_before,
+                        cache_was_ready,
+                        folders=refresh_folders,
+                        force_refresh=felhasznaloi,
+                    )
             finally:
                 # #1440: a jelzőt az EMITEK ELŐTT engedjük el.
                 #
@@ -202,7 +215,12 @@ class _LibrarySyncDirtyMixin:
                         messages.append("; ".join(errors))
                     if messages:
                         self.syncFailed.emit("\n".join(messages))
-                    if osszes and kihagyott == osszes and not messages:
+                    if (
+                        osszes
+                        and kihagyott == osszes
+                        and not messages
+                        and not self._last_sync_changed
+                    ):
                         # #6476: nincs újratöltés, de a várólistát be kell hozni
                         QMetaObject.invokeMethod(
                             self, "_flush_pending_dirty", Qt.ConnectionType.QueuedConnection

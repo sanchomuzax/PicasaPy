@@ -129,6 +129,10 @@ class AppControllerSyncMixin:
         névadása után hívandó a QML-ből, hogy az első névadásnál keletkező
         új Emberek-album azonnal megjelenjen (`_reload_after_sync` mintája:
         a görgetési pozíció megmarad)."""
+        # #6695: kifejezett felhasználói lépés (névadás) után a hasáb
+        # azonnal frissüljön, hideg gyorstárnál is (a main is itt söpört).
+        with open_index(self._db_path) as conn:
+            self._refresh_side_pane_cache(conn)
         self._reload(preserve_scroll=True)
 
     @Slot()
@@ -142,6 +146,18 @@ class AppControllerSyncMixin:
         self._deferred_folder_activation = None
         if folder and folder == self._current_folder:
             self.folderActivated.emit(folder)
+
+    def _emit_sync_finished_if_changed(self) -> None:
+        """#6695: a háttérmunka végén csak tényleges változásnál jelez."""
+        if getattr(self, "_last_sync_changed", False):
+            self.syncFinished.emit()
+
+    @Slot()
+    def _reload_after_sync_if_changed(self) -> None:
+        """A syncFinished nézeteit csak tényleges index- vagy ini-változás frissíti."""
+        if getattr(self, "_last_sync_changed", True) is False:
+            return
+        self._reload(preserve_scroll=True)
 
     def _reload(
         self, preserve_scroll: bool = False, defer_collections: bool = False

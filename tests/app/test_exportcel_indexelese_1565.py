@@ -258,11 +258,11 @@ class TestAzExportaltKepekCsomopontNemUresRacsotNyit:
         szabad indulnia, különben minden ilyen export fölöslegesen nyitna
         egy második index-kapcsolatot és olvasná be ugyanazt a mappát.
 
-        A mérés szinkron: az `indexExportedFolder` a `syncFinished`-et a
-        munka VÉGÉN, még a híváson belül bocsátja ki, a #1539 ága viszont
-        háttérszálon dolgozik — `processEvents()` nélkül tehát csak az itteni
-        ág számlálhat. Enélkül az állítás nélkül a kapu némán eltávolítható
-        volt (mutációval mérve: mind az öt teszt zöld maradt)."""
+        A figyelt gyökér alatti korai kilépésnek nincs jelzése; a külső
+        exportcél indexelése viszont háttérszálon fut, ezért a Qt-események
+        feldolgozásával, határidősen várjuk meg. Enélkül az állítás nélkül a
+        kapu némán eltávolítható volt (mutációval mérve: mind az öt teszt
+        zöld maradt)."""
         from picasapy.app.exported_folders import EXPORTED_FOLDERS_SETTINGS_KEY
 
         ctl, library, _tmp_path = egyseg
@@ -300,6 +300,9 @@ class TestAzExportaltKepekCsomopontNemUresRacsotNyit:
 
         ctl.indexExportedFolder(str(kivul / "IMG_0001.jpg"))
 
+        assert _var(qt_app, lambda: bool(jelzesek)), (
+            "a külső exportcél indexelése nem adott szinkronjelzést"
+        )
         assert jelzesek == [1]
 
 

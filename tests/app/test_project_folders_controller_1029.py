@@ -9,9 +9,20 @@ A `controller.projectFolders` a `albums`/`people` property mintáját követi:
 from __future__ import annotations
 
 import pytest
+import time
 from PySide6.QtCore import QSettings
 
 _PROJECTS = "[Picasa]\nP2category=Projects (internal)\n"
+
+
+def _wait(qt_app, predicate, timeout: float = 15.0) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        qt_app.processEvents()
+        if predicate():
+            return
+        time.sleep(0.05)
+    pytest.fail("A háttérszinkron nem fejeződött be határidőn belül")
 
 
 @pytest.fixture
@@ -44,6 +55,14 @@ def controller(qt_app, tmp_path, library):
         settings=settings,
         watched_file=tmp_path / "WatchedFolders.txt",
     )
+    def prepare_cache():
+        with open_index(tmp_path / "index.db") as conn:
+            app_controller._precompute_side_pane(conn)
+
+    app_controller._start_background(
+        prepare_cache, name="test-side-pane-cache-warmup"
+    )
+    assert app_controller.waitForBackgroundWorkers(20.0)
     # a valódi indulás sorrendje: a szinkron UTÁN tölt a bal hasáb
     app_controller._reload_after_sync()
     return app_controller
@@ -64,11 +83,11 @@ class TestProjectFoldersProperty:
         assert isinstance(controller.projectFolders, list)
 
     def test_new_project_folder_appears_after_reload(
-        self, controller, tmp_path, library
+        self, controller, qt_app, library
     ):
         """A mentett kollázs mappája a következő szinkron után LÁTSZIK —
         enélkül a felhasználó hiába kapja meg a kulcsot az ini-be."""
-        from picasapy.index import open_index, sync_tree
+        from picasapy.scanner import DirectoryChange
 
         (library / "Filmek").mkdir()
         # kép nélküli mappát a beolvasó nem indexel (walker._scan_folder)
@@ -76,9 +95,12 @@ class TestProjectFoldersProperty:
         (library / "Filmek" / ".picasa.ini").write_text(
             _PROJECTS, encoding="utf-8"
         )
-        with open_index(tmp_path / "index.db") as conn:
-            sync_tree(conn, library)
-        controller._reload_after_sync()
+        finished = []
+        controller.syncFinished.connect(lambda: finished.append(True))
+        controller._on_folders_dirty(
+            [DirectoryChange(str(library / "Filmek"), "created")]
+        )
+        _wait(qt_app, lambda: bool(finished))
 
         assert [row["name"] for row in controller.projectFolders] == [
             "Filmek",

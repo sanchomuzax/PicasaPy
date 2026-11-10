@@ -102,9 +102,12 @@ class _LibrarySyncRescanMixin:
                 getattr(self, "_filetype_scan_snapshot", None),
             )
         errors = []
+        self._last_sync_changed = True
         kerjafonal_alacsony_prioritasa()
         try:
             with open_index(self._db_path) as conn:
+                total_changes_before = conn.total_changes
+                cache_was_ready = self._side_pane_cache_ready(conn)
                 # pillanatkép: a lista a főszálon menet közben módosulhat
                 # (#216, removeWatchedFolder) — az iteráció ettől független
                 for root in tuple(roots):
@@ -126,12 +129,14 @@ class _LibrarySyncRescanMixin:
                         # #6751 rendezője követi; ez nem hiba
                         if not atnevezett_gyoker(conn, root):
                             errors.append(f"{root}: {error}")
-                # #1601: a hasáb ini-alapú gyűjteményei MÉG ITT, a
-                # háttérszálon állnak elő — a `syncFinished` utáni
-                # `_reload()` így csak átveszi őket, és a felület szála
-                # egyetlen `.picasa.ini`-t sem olvas. A söprés a szinkron
-                # UTÁN fut, hogy a frissen felvett mappák is benne legyenek.
-                self._precompute_side_pane(conn)
+                # Hideg induláskor az első gyorstár-feltöltés is kell. Későbbi
+                # változatlan körben csak a mtime/méret ellenőrzés fut; sem az
+                # ini tartalma, sem a gyűjtemények nem épülnek újra.
+                self._finish_index_sync(
+                    conn,
+                    total_changes_before,
+                    cache_was_ready,
+                )
         except Exception as error:  # pl. index-migrációs hiba
             errors.append(str(error))
         finally:

@@ -302,15 +302,24 @@ class _LibraryFoldersMixin:
             should_stop=self._make_should_stop(path)
         )
         enabled_filetypes = getattr(self, "_filetype_scan_snapshot", None)
+        self._last_sync_changed = True
 
         def worker():
             try:
                 with open_index(self._db_path) as conn:
+                    total_changes_before = conn.total_changes
+                    cache_was_ready = self._side_pane_cache_ready(conn)
                     self._sync_folder_manager_tree(
                         conn,
                         path,
                         progress=progress,
                         enabled_filetypes=enabled_filetypes,
+                    )
+                    self._finish_index_sync(
+                        conn,
+                        total_changes_before,
+                        cache_was_ready,
+                        (path,),
                     )
             finally:
                 self.syncFinished.emit()
@@ -361,15 +370,24 @@ class _LibraryFoldersMixin:
         # meg nem szakítható munka
         progress = self._make_progress_emitter()
         enabled_filetypes = getattr(self, "_filetype_scan_snapshot", None)
+        self._last_sync_changed = True
 
         def worker():
             try:
                 with open_index(self._db_path) as conn:
+                    total_changes_before = conn.total_changes
+                    cache_was_ready = self._side_pane_cache_ready(conn)
                     self._sync_folder_manager_tree(
                         conn,
                         path,
                         progress=progress,
                         enabled_filetypes=enabled_filetypes,
+                    )
+                    self._finish_index_sync(
+                        conn,
+                        total_changes_before,
+                        cache_was_ready,
+                        (path,),
                     )
             finally:
                 self.syncFinished.emit()

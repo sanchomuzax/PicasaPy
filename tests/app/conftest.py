@@ -259,7 +259,9 @@ def _build_qml_app(qt_app, tmp_path):
     face_scan_controller = FaceScanController(db, faces_helper=faces_helper)
     # Időrend nézet (#24) — az application.py bekötésének tükre: a
     # thumbnail-provider a controllerrel KÖZÖS példány
-    timeline_controller = TimelineController(db, provider)
+    timeline_controller = TimelineController(
+        db, provider, sync_controller=controller
+    )
     controller.syncFinished.connect(timeline_controller.reload)
     engine = QQmlApplicationEngine()
     from picasapy.app.color_palette import ColorPaletteProvider

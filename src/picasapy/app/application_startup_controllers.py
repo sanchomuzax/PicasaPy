@@ -268,7 +268,9 @@ def _startup_step_create_library_controllers(state):
     # legyenek. Háttér-szinkron után a nézet friss adatot mutasson, ha
     # épp nyitva van — a TimelineView.qml a megnyitáskor is újratölt.
     TimelineController = _app._lazy_app_symbol("TimelineController")
-    timeline_controller = TimelineController(data_dir / "index.db", provider)
+    timeline_controller = TimelineController(
+        data_dir / "index.db", provider, sync_controller=controller
+    )
     controller.syncFinished.connect(timeline_controller.reload)
     # #440: a mentés-készletek hídja. A jelölteket a FIGYELT GYÖKEREK
     # alól szedi (a szűrést a készlet fájlszűrője végzi).

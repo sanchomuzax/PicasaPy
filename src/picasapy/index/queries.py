@@ -31,15 +31,18 @@ SELECT p.id, f.path AS folder_path, p.name, p.kind, p.size, p.mtime_ns,
        p.width, p.height,
        p.geotag_ini, p.exif_lat, p.exif_lon, p.first_seen_mtime_ns,
        p.movie_format, p.frame_rate, p.duration_seconds,
-       -- #463: a bélyegkép arc-jelvényeihez — hány felismert arc van a
-       -- képen, és hány vár még névadásra. A `face` tábla származtatott
-       -- adat (index/faces_detected.py); LEFT JOIN, hogy az arc-szkennelés
-       -- előtti (üres táblás) állapot is működjön.
-       (SELECT COUNT(*) FROM face WHERE face.photo_id = p.id) AS face_count,
-       (SELECT COUNT(*) FROM face
-         WHERE face.photo_id = p.id AND face.state = 'unnamed'
-       ) AS unnamed_face_count
+       -- #463/#6695: a bélyegkép arc-jelvényei csoportosított LEFT JOIN-ból
+       -- jönnek, így a számlálás nem fut le képenként kétszer.
+       COALESCE(fc.face_count, 0) AS face_count,
+       COALESCE(fc.unnamed_face_count, 0) AS unnamed_face_count
 FROM photos p JOIN folders f ON f.id = p.folder_id AND {lathato}
+LEFT JOIN (
+    SELECT photo_id,
+           COUNT(*) AS face_count,
+           COUNT(CASE WHEN state = 'unnamed' THEN 1 END) AS unnamed_face_count
+    FROM face
+    GROUP BY photo_id
+) fc ON fc.photo_id = p.id
 """
 
 

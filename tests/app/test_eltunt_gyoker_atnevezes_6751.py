@@ -93,9 +93,17 @@ def _leallit(ctl):
 
 
 def _ujraolvas(ctl, qt_app):
-    assert _var(qt_app, lambda: not ctl._sync_running, 20.0)
+    assert _var(
+        qt_app, lambda: not ctl._sync_running and not ctl._dirty_running, 20.0
+    )
+    kesz = []
+    ctl.syncFinished.connect(lambda: kesz.append(True))
     ctl.rescan()
-    assert _var(qt_app, lambda: not ctl._sync_running, 20.0)
+    assert _var(
+        qt_app,
+        lambda: bool(kesz) and not ctl._sync_running and not ctl._dirty_running,
+        20.0,
+    )
 
 
 def test_atnevezes_mar_figyelt_testverre_a_regi_kikerul(

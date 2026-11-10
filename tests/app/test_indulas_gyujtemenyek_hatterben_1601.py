@@ -33,6 +33,7 @@ azt fogja meg, ami elromlott.
 from __future__ import annotations
 
 import threading
+import time
 
 import pytest
 from PySide6.QtCore import QSettings
@@ -43,6 +44,16 @@ from support.jpeg_factory import make_jpeg
 _ROY = "b8e4117cf1d6615b"
 _RECT = "3f840000c3509f84"
 _PROJECTS = "[Picasa]\nP2category=Projects (internal)\n"
+
+
+def _wait(qt_app, predicate, timeout: float = 15.0) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        qt_app.processEvents()
+        if predicate():
+            return
+        time.sleep(0.05)
+    pytest.fail("A háttérszinkron nem fejeződött be határidőn belül")
 
 
 @pytest.fixture
@@ -184,6 +195,8 @@ class TestSzinkronUtVáltozatlanulMukodik:
         self, controller, qt_app
     ):
         controller._reload_after_sync()
+        assert controller.waitForBackgroundWorkers(20.0)
+        _wait(qt_app, lambda: bool(controller.people))
         assert [
             {key: person[key] for key in ("name", "count")}
             for person in controller.people
@@ -194,8 +207,12 @@ class TestSzinkronUtVáltozatlanulMukodik:
     def test_a_szinkron_ut_is_egy_sopressel_dolgozik(
         self, controller, qt_app, sopres_naplo
     ):
+        fo_szal = threading.get_ident()
         controller._reload_after_sync()
+        assert controller.waitForBackgroundWorkers(20.0)
+        _wait(qt_app, lambda: bool(controller.people))
         utvonalak = [path for _szal, path in sopres_naplo]
         assert len(utvonalak) == 2, (
             f"két ini-s mappa → két olvasás, mégis: {utvonalak}"
         )
+        assert all(szal != fo_szal for szal, _path in sopres_naplo)

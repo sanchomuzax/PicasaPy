@@ -64,4 +64,13 @@ def test_az_exportcel_csoport_vege_frissiti_a_nezeteket():
     befejezes = _fuggveny(_run_fa(), "_maintenance_batch_finished")
     forras = ast.unparse(befejezes)
     assert "'exported'" in forras or '"exported"' in forras
-    assert "syncFinished.emit()" in forras
+    # #6695: a jelzés csak tényleges változásnál megy ki, a vezérlő segédjén át
+    assert "_emit_sync_finished_if_changed()" in forras
+
+
+def test_a_feltételes_jelzes_csak_valtozasnal_syncfinished():
+    from picasapy.app.controller_sync_mixin import AppControllerSyncMixin
+
+    forras = inspect.getsource(AppControllerSyncMixin._emit_sync_finished_if_changed)
+    assert "_last_sync_changed" in forras
+    assert "self.syncFinished.emit()" in forras

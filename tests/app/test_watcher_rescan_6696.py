@@ -152,7 +152,9 @@ def test_watcher_jelzes_kifejezetten_sorbaallitva_erkezik_a_vezerlohoz():
         "self._queue_watcher_start_after_reload, Qt.ConnectionType.QueuedConnection"
         in forras
     )
-    assert forras.index("self.syncFinished.connect(self._reload_after_sync)") < (
+    assert forras.index(
+        "self.syncFinished.connect(self._reload_after_sync_if_changed)"
+    ) < (
         forras.index("self._queue_watcher_start_after_reload")
     )
 

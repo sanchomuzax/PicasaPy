@@ -27,16 +27,22 @@ def _wait_for(qt_app, predicate, timeout_ms=10000):
 
 class TestTimelineEntryPoints:
     def test_internal_toggle_opens_and_closes_timeline(self, qml_app, qt_app):
-        window, _controller, _lib, _engine = qml_app
+        window, _controller, _lib, engine = qml_app
+        timeline_controller = engine.rootContext().contextProperty(
+            "timelineController"
+        )
         grid = _child(window, "photoGrid")
         assert grid.property("visible") is True
+        assert timeline_controller._timeline_open is False
         _invoke(qt_app, window, "toggleTimeline")
         assert window.property("timelineOpen") is True
+        assert timeline_controller._timeline_open is True
         view = _child(window, "timelineView")
         assert view.property("visible") is True
         assert grid.property("visible") is False
         _invoke(qt_app, window, "toggleTimeline")
         assert window.property("timelineOpen") is False
+        assert timeline_controller._timeline_open is False
         assert view.property("visible") is False
 
     @pytest.mark.parametrize("height", [795, 800, 805])

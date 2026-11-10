@@ -46,6 +46,14 @@ def _new_controller(qt_app, tmp_path, library, settings):
         settings=settings,
         watched_file=tmp_path / "WatchedFolders.txt",
     )
+    def prepare_cache():
+        with open_index(tmp_path / "index.db") as conn:
+            controller._precompute_side_pane(conn)
+
+    controller._start_background(
+        prepare_cache, name="test-side-pane-cache-warmup"
+    )
+    assert controller.waitForBackgroundWorkers(20.0)
     controller._reload_after_sync()
     return controller
 

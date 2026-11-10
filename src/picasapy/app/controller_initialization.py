@@ -128,7 +128,7 @@ def initialize_controller_state(
     # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.
     # #6751: az átnevezett vagy törölt figyelt mappa a frissítés ELŐTT rendeződik
     self.syncFinished.connect(self._eltunt_gyokerek_rendezese)
-    self.syncFinished.connect(self._reload_after_sync)
+    self.syncFinished.connect(self._reload_after_sync_if_changed)
     # #1181: a szinkron alatt elhalasztott mappa-frissítések
     self.syncFinished.connect(self._flush_pending_dirty)
     # #209: mappánkénti haladás a workerből (queued) + panel-lezárás
