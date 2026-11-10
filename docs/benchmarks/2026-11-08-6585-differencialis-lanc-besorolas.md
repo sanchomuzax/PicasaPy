@@ -310,3 +310,25 @@ Az egyszűrős `egy-001` (`colorfix=1,ffca3cff,-0.164578;`) eredeti exportja a v
 **Következtetés.** A „c” csoport mind a hat nagy eltérésű sora (ΔE 11 és 92 között) és a `lanc-0186` a köteg adathibája, nem a PicasaPy renderelőjének hibája. A köteg a #6617 előtt készült, amikor a generátor a szín, majd hőmérséklet sorrendet írta. Ezt az eredeti Picasa elveti, a PicasaPy pedig régi mentésként natív sorrendre alakítja és alkalmazza. A #6617 óta a generátor (`format_param_values`) natív sorrendben ír (`colorfix=1,<hőmérséklet>,<szín>`), így egy új köteg már a valódi `colorfix`-utat méri. A `lanc-0052` maradék eltérése a láncban maradt többi tagé (`QuantizePalette`, `Matte` és társai), ez az „a” besorolású sor.
 
 A „c” csoport így 30-ról 23 sorra szűkül. Mind a 23 maradék eltérés kicsi (ΔE 0,47 és 3,67 között), és 21-ben véletlen szemcsézés (`grain`, `grain2`, `PicnikGrain`), `PicnikFocalPixelate` vagy `triple2` áll (kivétel: `lanc-0056` és `lanc-0113`). A következő lépés ezek leszűkítése egyszűrős Colab-mérésekkel a láncbeli bemeneten.
+
+## Újramérés a mostani kóddal (2026-11-10 délután)
+
+A 200 láncot a `68741414d` állapotú fő ággal helyben újrarendereltem, és ugyanazokkal az eredeti exportokkal vetettem össze (`differencialis_lanc.py sajat`, majd `osszevet`). Eredmény: **176 egyezik, 24 tér el** (korábban 168 és 32).
+
+Nyolc lánc vált egyezővé: `lanc-0022`, `0048`, `0056`, `0067`, `0088`, `0115`, `0142`, `0175`. Ebből hétben `PicnikFocalPixelate` áll, ezt a #6691 igazította az eredetihez. A `lanc-0056`-ban `rainbow` van, ezt a #6743 javította. Egyezőből egy sem lett eltérő.
+
+A 24 eltérés besorolása:
+
+| Csoport | Láncok | Ok |
+|---|---|---|
+| régi sorrendű `colorfix` (8) | 0005, 0052, 0080, 0101, 0124, 0144, 0186, 0190 | a köteg adathibája (előző szakasz); a 0052-ben a többi tag is eltér |
+| ismert együttállás (1) | 0045 | egyenként hibátlan szűrők együtt (`a` csoport) |
+| véletlen szemcsézés (8) | 0010, 0043, 0060, 0065, 0117, 0119, 0140, 0169 | `grain`, `grain2` vagy `PicnikGrain` a láncban |
+| `triple2` (6) | 0089, 0095, 0105, 0116, 0178, 0196 | a folyamatszintű dither-fázis (#3092) |
+| erősített közelítés (1) | 0113 | lásd lent |
+
+**`lanc-0113` leszűkítése.** Hat Colab-mérés (picasa-colab-jobs #486-#491), mindegyikben egy tag kihagyva. A `radsat` nélkül a lánc gyakorlatilag pixelhű (SSIM 0.99985, ΔE 0.064). Bármely más tag kihagyásakor egyezik vagy a határon marad (ΔE 0,22 és 0,85 között). Ugyanez a `radsat` ugyanezen a képen egymagában egyezik (`egy-043`: SSIM 0.99692, ΔE 0.351, `közelítés`). Következtetés: a `radsat` kis közelítési hibáját a mögötte álló `glow2`, `HeatMap`, `Sixties` és `HDR` felerősíti. Ez nem új hiba, hanem a `radsat` meglévő közelítésének láncbeli következménye. Ha a `radsat` pixelhűvé válik, ez a lánc is egyezni fog.
+
+**`lanc-0056` leszűkítése.** Öt Colab-mérés (#481-#485): mind az öt, egy taggal rövidebb változat egyezett. Az ok a táblázat elavulása volt, a teljes lánc a mostani kóddal is egyezik (SSIM 0.99603, ΔE 0.587).
+
+Ezzel a véletlen és a `triple2` nélküli láncok között nem maradt megmagyarázatlan eltérés. A szemcsés láncok összevetéséhez a szemcsét ki kell zárni a mérésből, vagy a #6712 óta a kötegelt exportra érvényes `rand()`-folyammal kell renderelni. A `triple2`-csoport a #3092-höz tartozik.
