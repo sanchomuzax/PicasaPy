@@ -52,6 +52,10 @@ def controller(qt_app, tmp_path, library):
     # `_apply_side_pane` frissíti újra a Mappák listát (#2031)
     with open_index(tmp_path / "index.db") as conn:
         ctl._load_side_pane(conn)
+    # #6695: hideg gyorstárnál a betöltés háttérben fut, és sorba állítva
+    # kerül a felületi szálra.
+    assert ctl.waitForBackgroundWorkers(20.0)
+    qt_app.processEvents()
     return ctl
 
 

@@ -338,3 +338,23 @@ def test_refresh_collections_latja_a_meleg_gyorstar_utani_ini_irast(
     controller.refreshCollections()
 
     assert [c["name"] for c in controller.customCollections] == ["Utazas"]
+
+
+def test_refresh_collections_latja_az_iras_utan_letrejott_uj_init(
+    qt_app, library_setup
+):
+    """Az első névadás olyan mappába is írhat, amelynek eddig nem volt
+    ini-je: a frissítés ezt a hiányzó gyorstár-bejegyzést helyben pótolja,
+    nem halasztja háttérbe."""
+    controller, _timeline, root, *_rest, db_path, _provider = library_setup
+    uj = root / "mappa_c"
+    uj.mkdir()
+    make_jpeg(uj / "c1.jpg", size=(32, 32))
+    (uj / ".picasa.ini").write_text(
+        "[Picasa]\nP2category=Csalad\n", encoding="utf-8"
+    )
+    with open_index(db_path) as conn:
+        sync_tree(conn, uj)
+    controller.refreshCollections()
+
+    assert [c["name"] for c in controller.customCollections] == ["Csalad"]

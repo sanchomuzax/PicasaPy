@@ -63,6 +63,8 @@ MUNKANEVEK: dict[str, str] = {
     "picasapy-foldertree-roots": QT_TRANSLATE_NOOP(KONTEXTUS, "Loading folders"),
     # #6697: induláskor a meglévő index képlistája, a bejárás előtt
     "picasapy-initial-library-feed": QT_TRANSLATE_NOOP(KONTEXTUS, "Loading folders"),
+    "picasapy-side-pane-cache": QT_TRANSLATE_NOOP(KONTEXTUS, "Loading folders"),
+    "picasapy-sync-exported-folder": QT_TRANSLATE_NOOP(KONTEXTUS, "Syncing changed folders"),
     "picasapy-foldertree": QT_TRANSLATE_NOOP(KONTEXTUS, "Loading subfolders"),
     "picasapy-capture-frame": QT_TRANSLATE_NOOP(KONTEXTUS, "Capturing movie frame"),
     "picasapy-frissesseg-sweep": QT_TRANSLATE_NOOP(KONTEXTUS, "Checking folders for changes"),

@@ -48,6 +48,7 @@ from picasapy.index.side_pane import (
     SidePaneCollections,
     cached_side_pane_collections,
     refresh_side_pane_cache,
+    side_pane_cache_missing,
     side_pane_cache_ready,
 )
 from picasapy.ini import central_contacts_path
@@ -60,6 +61,11 @@ logger = logging.getLogger(__name__)
 #: zárral védenék ugyanazt a letétet). A védett szakasz két attribútum-
 #: művelet, tehát a közös zár versengése mérhetetlen.
 _ATADAS_ZAR = threading.Lock()
+
+#: #6695: ennyi hiányzó ini-s mappát a felület szála maga pótol (egy-egy
+#: felhasználói írás új ini-je); ennél több hiány hideg gyorstárat jelent,
+#: azt a háttérszál tölti fel.
+_HELYBEN_POTOLHATO_MAPPA = 32
 
 
 class SidePaneMixin:
@@ -161,12 +167,21 @@ class SidePaneMixin:
         """A hasáb két ini-alapú gyűjteményének frissítése.
 
         Ha a háttérszál már letette az eredményt, azt vesszük át. Máskülönben
-        a mappánkénti gyorstárból állítjuk elő; ini-fájl olvasása itt nincs.
-        Hiányos gyorstárnál a betöltés a háttérszálon indul el."""
+        a mappánkénti gyorstárból állítjuk elő, előtte csak a megváltozott
+        idejű vagy méretű ini-ket olvasva újra. Hiányos gyorstárnál a
+        betöltés a háttérszálon indul el."""
         collections = self._take_side_pane_stash()
         if collections is None:
+            central_path = central_contacts_path(self._db_path)
+            # #6695: a felületi írások (névadás, személy törlése,
+            # kategóriaváltás) ini-változását azonnal látni kell, akkor is,
+            # ha az írás új ini-t hozott létre. A frissítés csak a hiányzó
+            # és a megváltozott idejű vagy méretű ini-ket olvassa; a hideg
+            # (nagyrészt üres) gyorstárat a háttér tölti fel.
+            if side_pane_cache_missing(conn) <= _HELYBEN_POTOLHATO_MAPPA:
+                refresh_side_pane_cache(conn, central_path=central_path)
             collections = cached_side_pane_collections(
-                conn, central_path=central_contacts_path(self._db_path)
+                conn, central_path=central_path
             )
         if collections is None:
             self._schedule_side_pane_warmup()
