@@ -25,7 +25,7 @@ hogy a kiadott főablakban látható Idővonal-gombnak kell lennie.
 
 #### 38.2.1 Az Időrend bemutató-útja és bizonyított határai (#4443 kutatás)
 
-**Állapotfrissítés (#6532, 2026-11-10).** A korábbi nyitott pontok közül
+**Állapotfrissítés (#6532, 2026-11-11).** A korábbi nyitott pontok közül
 lezárva: a CThumbUI+0x2c0 objektum típusa (38.2.69), a qshow
 gyűjteménykártya-listájának dátumkulcs szerinti növekvő rendezése (38.2.105),
 a kártyák képi modellje és feliratai (38.2.93-94, 38.2.97-98, 38.2.102), a
@@ -35,6 +35,15 @@ CAlbumState-leírók teljes forráshalmaza és szűrésük jelentése (38.2.105)
 qshow-lista és a PicasaPy-gyűjtemények azonossága, a pontos billentyű-esemény
 és képkocka közti időzítés (38.2.104), a sliderthumb felhasználói művelete,
 valamint a kilépés utáni általános nézet és kijelölés (38.2.81-83).
+
+**A 38.2.107 pontosítása.** A `0x004b8ee0`/`0x004b8470` út `+0x148/+0x14c`
+mezője ordinal-lista, és a `0x004b29d0` argumentumszerződése ismert; a
+`0x006dc4c0` `+0x2c0` mezőjének tulajdonos-osztálya viszont nem azonos a
+`CThumbUI+0x2c0` típussal bizonyíték nélkül. A `0x005de8e0` CThumbUI
+virtuális módszer külön explicit `param_1` argumentumot továbbít. A
+`0x0044f7c0` dátumgetter `CColumn<double>` `+0x58` mutatójának írója
+`0x00499650`; a qwordok naptári kódolása nyitott. Részletek a
+[bemutató-kutatás 38.2.107. szakaszában](picasa-idorend-bemutato-kutatas.md).
 
 **A út - utasításszintű olvasat.** A billentyűkezelő `0x005e6279` ága
 ellenőrzi a `0x005696c0` őrt, majd `1` argumentummal hívja a

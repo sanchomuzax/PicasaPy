@@ -1972,3 +1972,61 @@ A dobozok `y` koordinátája is változik: az 1. váltás előtt/után a piros-k
 - A dátumtömb írója NINCS MEG; megszerzési út: a `0x0044f7c0` beolvasási útjának hívóitól és a CThumbDB vtable-adatútjaitól a `+0xbc8+0x58` írásáig visszakövetés, majd az író osztályhoz kötésének ellenőrzése.
 
 **Módosított fájlok ebben a szakaszban.** Ez a 38.2.106-os utánkövetés csak a kutatási specet és annak indexleírását bővíti; nincs új PicasaPy-futásmérés, kódváltozás vagy új implementációs eltérés.
+
+#### 38.2.107 A dátumoszlop írója és a qshow-híd nyitott határai (#6532, 2026-11-11)
+
+**Hatókör.** A friss Ghidra-kimenetek és a binárisból végzett célzott, memóriakorlátos diszasszembly alapján követtem a `0x0044f7c0` dátumgetter `+0xbc8+0x58` útját, valamint a `0x006dc4c0`-ból induló CAlbumState-alakú listát. A tömbmutató írója lezárható; a benne levő `double` érték naptári kódolása, a bemeneti objektum konkrét osztálya és a qshow-listához vezető átalakító út továbbra is nyitott.
+
+**A `+0xbc8+0x58` dátumtömbmutató írója.** A `0x00415790` CThumbDB-konstruktor a másodlagos bázis vtable-jét a teljes objektum `+0x48` mezőjébe írja (`0x00415804`, cél: `0x00c81fa4`). E bázis `+0x20` virtuális helye a `0x0044f7c0` (`0x00c81fc4`), amely a `this+0xbc8` alobjektumra lép (`0x0044f80f`), annak vtable `+0x18` helyét hívja (`0x0044f844`-`0x0044f84b`), majd az alobjektum `+0x58` mutatójából kér indexelt qwordot (`0x0044f857`-`0x0044f871`). A getter `this`-e a teljes CThumbDB-objektum `+0x48` címe, ezért az alobjektum kezdete a teljes objektum `+0xc10`, az olvasott mutató mezője pedig `+0xc68`.
+
+Független konstruktorút köti ugyanezt az alobjektumot a dátumoszlophoz: a `0x00415790` a `"date"` mező-kulcs előkészítése után a teljes objektum `+0xc10` címét adja a `0x00495d30`-nak (`0x00415950`-`0x0041596f`). Ez a konstruktor a `0x00c822d4` vtable-t írja be és a saját `+0x58` mezőjét nullázza (`0x00495d45`-`0x00495d80`). Az RTTI ezt `CColumn<double,1,322043906>`-ként nevezi meg; a vtable `+0x18` slotja a `0x00495d90`.
+
+A `0x00495d90` az üres `+0x54` gyorsítótár esetén meghívja a `0x00499650`-et. Ez a lekérő (`0x006a41e0`, azonosítóargumentuma `0x13320002`) által visszaadott struktúracímhez `0x234`-et ad, az eredeti címet a `+0x54` mezőbe és a kapott `+0x234` mutatót a CColumn `+0x58` mezőjébe írja (`0x00499670`-`0x00499688`). A `0x0044f7c0` getter ugyanezt a `+0x58` mezőt fogyasztja. A pontos író tehát **`0x00499650`**, az adatlekérő hívás **`0x006a41e0`**.
+
+| Állítás | Bizonyíték | Fok |
+|---|---|---|
+| A dátumgetter a CThumbDB `+0x48` bázis `+0xbc8` alobjektumának `+0x58` mutatójából olvas. | bináris (`0x00415790`, `0x00415804`, `0x0044f7c0`, `0x00c81fc4`) | megerősített: getter és külön konstruktor/vtable út egyezik |
+| Az alobjektum a `CColumn<double,1,322043906>` dátumoszlop. | bináris (`0x00415790`, `0x00415950`-`0x0041596f`, `0x00495d30`, RTTI `0x00c822d4`) | megerősített |
+| A `+0x58` mutatót a `0x00499650` tölti, a `0x006a41e0` által visszaadott struktúra `+0x234` címére állítva. | bináris (`0x00495d90`, `0x00499650`, `0x006a41e0`) | megerősített: a vtable-fogyasztó és az író külön utasításútja egyezik |
+| A visszaadott `double` qwordok pontos naptári epochja, egysége vagy átalakítása. | **NINCS MEG** | nyitott |
+
+A `2026-10-22-idorend-38.txt` meglévő dekompilációja a `0x006a41e0` generikus oszloplekérését írja le, a `0x13320002` azonosítóhoz tartozó dátumformátumot és naptári átalakítást nem. A CColumn típusa igazolja a lebegőpontos tárolást, de abból nem következik epoch vagy képlet; ilyen értéket nem adok meg.
+
+**A qshow-lista és a szűrők.** A `0x006dc4c0` a paraméterként kapott objektum `+0x2c0` értékét adja a `0x004b8ee0`-nak (`0x006dc626`-`0x006dc62c`). A `0x004b8ee0` a `[+0x138]` 0x24 bájtos rekordjai közül a `+0x0c != 0` feltételű rekordok *sorszámát* írja a `+0x148` dword-tömbbe, és a `+0x14c` elemszámot növeli (`0x004b9022`, `0x004b9028`, `0x004b90b4`, `0x004b90c7`). Ez az alak CAlbumState-rekordokkal kompatibilis; a `0x006dc4c0` bemeneti objektumának konkrét RTTI-osztálya ettől még nem bizonyított.
+
+A `0x004b8470` a `+0x148` dword-listát `+0x14c >> 1` elemszámmal olvassa. Ha a `[this+0x9d]` bájt nem nulla, a `0x004461a0` a `[this+0xc4]` objektumot és az aktuális sorszámot kapja; hamis visszatérésnél az elem kimarad (`0x004b85a0`-`0x004b85bf`). A `0x004461a0` helyi utasításolvasata szerint a bemeneti objektum `+0x48` mezőjének vtable `+0x14` slotját hívja meg kimeneti mutatóval, majd a kimenet nulláját és egy `& 0xffffff00 == 0x100` tesztet használ. Ez a gépi feltétel ismert, de a mező és a predikátum tartalmi jelentése **NINCS MEG**.
+
+A `0x004b8470` az EAX-ban kapott sorszámot és egy veremre tett kontextust ad a `0x004b29d0`-nak (`0x004b85c1`-`0x004b85c8`). A kontextus `+0x48` mezője a `0x004b8470` `this`-e, a `+0x4c` mező a `this+0xc4` értéke (`0x004b851b`-`0x004b8523`). A `0x004b29d0` a `[+0x138 + sorszám*0x24 + 0x0c] == 2` feltételt vizsgálja, majd a `0x0044ddd0` útján kér le további dwordot; a rekord mezőinek jelentése **NINCS MEG**. A `0x38` bájtos kimeneti rekord nem lehet a qshow `0xf8` bájtos kártyalistájának ugyanaz a nyers puffer, de köztes átalakítás nincs kizárva.
+
+**A `+0x2c0` mező osztálya: a hasonló eltolás nem típusbizonyíték.** A `0x005de8e0` a CThumbUI vtable egyik metódusa (`0x00c90584`, 22. slot), de `__thiscall` függvény: a saját `this`-e ECX-ben marad. A `0x005dedb3`-`0x005dedbc` utasítások egy külön veremargumentumot és a másik paramétert adják a `0x005d3290`-nak; a Ghidra-kimenet (`2026-10-21-koteg-1021b.txt`) ezt `FUN_005d3290(param_1,param_2)` alakban mutatja. A `0x005d3290` a saját `param_1` értékét adja tovább a `0x006dc4c0`-nak (`2026-10-29-koteg-33.txt`). Ezért nem következik, hogy a `0x006dc4c0` `[param_1+0x2c0]` mezője a `CThumbUI+0x2c0` `CAlbumState` pointer; a vtable-módszer `this`-e nem az átadott első paraméter. A paraméter pontos osztálya **NINCS MEG**.
+
+| Állítás | Bizonyíték | Fok |
+|---|---|---|
+| A `+0x148/+0x14c` mező dword sorszámlista a `+0x138` 0x24 bájtos rekordtömbhöz. | bináris (`0x004b8ee0`, `0x004b8470`) | megerősített a lista alakjára; a futásidejű bemeneti osztály nyitott |
+| A `0x004b29d0` argumentumai: sorszám EAX-ban és a `+0x48/+0x4c` mezőjű stack-kontextus. | bináris (`0x004b8470`, `0x004b29d0`) | megerősített |
+| A `[this+0x9d]` predikátum és a rekord `+0x0c == 2` mező értelmezése. | NINCS MEG; a gépi feltétel címei: `0x004461a0`, `0x004b29d0` | nyitott |
+| A `0x006dc4c0` bemeneti paraméterének `+0x2c0` mezőtulajdonosa és osztálya. | NINCS MEG; a `0x005de8e0` explicit paramétert ad tovább, nem a saját `this`-ét | nyitott |
+| A `0x004b29d0`/`0x0044ddd0` kimenetének azonossága vagy átalakítása a qshow `+0xac` bemenetévé. | NINCS MEG; rekordméretek: `0x38` és `0xf8` | nyitott |
+
+**A két független út.**
+
+- **Qshow-lista:** A út: a `0x004b8ee0` előállítja a sorszámokat a rekordtömbből. B út: a külön `0x004b8470` fogyasztja ugyanazt a listát és a sorszámot a `0x004b29d0`-nak adja; annak `+0x0c == 2` rekordvizsgálata azonos indexelési alapot használ. A két út a lista alakjában egyezik. Egyik sem igazolja a `0x006dc4c0` paraméter RTTI-osztályát vagy a qshow `+0xac` kimeneti kapcsolatot.
+- **Dátumoszlop:** A út: a `0x0044f7c0` a CThumbDB másodlagos bázisának `+0xbc8+0x58` mutatóját olvassa, a konstruktorút pedig ugyanarra a teljes objektumbeli `+0xc10` CColumn-példányra mutat. B út: a `CColumn<double>` RTTI-vtable `+0x18` célja `0x00495d90`, amelynek lusta betöltője a `0x00499650` írót hívja. A fogyasztó és az író ugyanahhoz a CColumn `+0x58` mezőhöz vezet.
+
+**Cáfoló kísérlet.** Két kézenfekvő, de hibás azonosságot vizsgáltam. (1) A hét közvetlen `+0xc20` író egyike, a `0x006ba4a0`, nem a dátum-CColumn írója: a CThumbDB konstruktor a külön `+0x3200` alobjektum címét adja neki (`0x00415ed4`-`0x00415f05`), és a `+0xc20` saját címhez képesti mezője nem a CThumbDB `+0xbc8+0x58` út. A `0x00477920` korábbi jelöltje is más `+0x1a48+0x58` tárolót ír. (2) A `CThumbUI+0x2c0` típust nem vetítettem rá a `0x006dc4c0`-ra: a `0x005de8e0` vtable-függvényben ECX a saját `this`, az explicit `param_1` ettől külön kerül a `0x005d3290`-ba. A gépi kód mindkét cáfolatot közvetlenül ellenőrzi.
+
+**Bizonyítottsági fok.** A CColumn dátummutató konkrét írója **megerősített**; a naptári képlet **nyitott**. A listaproducer és -fogyasztó sorszámlistája, valamint a `0x004b29d0` argumentumszerződése a felsorolt bináris utak szerint megerősített. A bemeneti objektum konkrét osztálya, a szűrők jelentése, a qshow-kártyalistával való átalakító kapcsolat és a PicasaPy teljes gyűjteménylistájával való azonosság **nyitott**. E körből új, bizonyított PicasaPy-eltérés nem következik.
+
+**A #6532 „Kész, ha” pontjai.** (1) ✅ Az eredeti videókat a job-373 és job-446 felvétel dokumentálja (38.2.101, 38.2.104). (2) ⛔ Nem minden megvalósítandó részhez van binárisból igazolt forráshalmaz, szűrőjelentés és dátumkódolás. (3) ⛔ A teljes qshow-kártyakészlet és a PicasaPy-lista futásidejű azonosságára nincs tételes összevetés; új fejlesztési eltérés nem bizonyított. (4) ⛔ A #6713 meglévő fejlesztési jegy a korábban igazolt eltérésekre hivatkozik, de ebben a körben nem készült kiadásba adható összehasonlító videó vagy képsor.
+
+**Nyitott.**
+
+- Ghidra-kör kell: 0x005de8e0 - a CThumbUI vtable-módszer explicit `param_1` argumentumának forrása és osztálya; a meglévő `2026-10-21-koteg-1021b.txt` csak a `0x005d3290`-nak történő továbbadást mutatja, nem az argumentum típusát. A `0x006dc4c0` `+0x2c0` mezőjének tulajdonosa e nélkül nem dönthető el. [blokkoló]
+- Ghidra-kör kell: 0x004461a0 - a `+0x48` alobjektum `+0x14` virtuális helyének típusa és a kimeneti zászló tartalmi jelentése; a helyi diszasszembly csak a gépi null-/bitfeltételt adja meg. [blokkoló]
+- Ghidra-kör kell: 0x0044ddd0 - a `0x004b29d0` által kért dword pontos rekordforrása és van-e átalakító kapcsolat a qshow `+0xac` bemenetéhez; a helyi utasításolvasat a `+0x988/+0xc78` mezőutakat mutatja, de nem nevezi meg a descriptor szemantikáját. [blokkoló]
+- Ghidra-kör kell: 0x006a41e0 - a `0x13320002` `date` adatlekérésének numerikus naptári kódolása és a visszaadott `+0x234` qword-sor jelentése; a meglévő `2026-10-22-idorend-38.txt` generikus oszlop-cache viselkedést mutat, nem a dátum átalakítását. [blokkoló]
+- A qshow bemeneti rekordok teljes forráshalmaza, az album/mappa/csoport kategóriák azonossága és a PicasaPy-gyűjteményekkel való futásidejű egyezés **NINCS MEG**. A megszerzéshez az előző három Ghidra-kérdés után az azonos eredeti Picasa-futás descriptor-azonosítóit és kártyáit kell mérni.
+
+**Új kutatási jegyjavaslat.** Nincs; ezek a nyitott pontok a #6532 „Kész, ha” feltételeihez tartoznak.
+
+**Módosított fájlok ebben a szakaszban.** Ez a 38.2.107 a helyi bináris/Ghidra-bizonyítékot dokumentálja; kódot, tesztet, eredeti binárist vagy mérőadatot nem módosítottam.
