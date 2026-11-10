@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.97] - 2026-11-11
+
+- Megbízhatóbbá váltak a Windowsos indulási és felületi regresszió-ellenőrzések (#6800).
+
 ## [1.0.96] - 2026-11-10
 
 - A rövid arckeresési sorok folyamatos használat közben is végigfutnak, és a keresés jelzése csak feldolgozáskor látszik (#6793).
