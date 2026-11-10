@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 import pytest
@@ -11,6 +10,7 @@ from PySide6.QtGui import QColor, QImage
 from PySide6.QtTest import QTest
 
 from tests.support.create_dialogs_components_6051 import create_dialogs_source_text
+from tests.support.varakozas import var_feltetelre
 
 
 def _elem(gyoker, nev):
@@ -20,14 +20,7 @@ def _elem(gyoker, nev):
 
 
 def _varj(qt_app, feltetel, masodperc=10.0):
-    hatarido = time.monotonic() + masodperc
-    while time.monotonic() < hatarido:
-        qt_app.processEvents()
-        if feltetel():
-            return True
-        QTest.qWait(50)
-    qt_app.processEvents()
-    return bool(feltetel())
+    return var_feltetelre(qt_app, feltetel, masodperc)
 
 
 def _kattint(window, qt_app, elem, x_arany=0.5):
@@ -113,12 +106,24 @@ def test_kattintott_elonezet_atmenetet_es_szoveges_diakepet_mutat(
                 film = _elem(window, "movieDialog")
                 assert _varj(
                     qt_app,
-                    lambda film=film: int(
+                    lambda film=film, transition_image=transition_image: int(
                         film.property("previewDisplayedGeneration")
                     )
                         >= int(film.property("previewLatestRequestGeneration"))
-                    and bool(film.property("previewTransitionFrameSource")),
-                ), "az átmenet legfrissebb képkockája nem érkezett meg"
+                    and bool(film.property("previewTransitionFrameSource"))
+                    and transition_image.property("progress") == 1.0
+                    and transition_image.property("sourceSize").width() > 0
+                    and transition_image.property("sourceSize").height() > 0,
+                    masodperc=20.0,
+                ), (
+                    "az átmenet legfrissebb képkockája nem érkezett meg vagy nem "
+                    "töltődött be: "
+                    f"generációk={film.property('previewDisplayedGeneration')}/"
+                    f"{film.property('previewLatestRequestGeneration')}, "
+                    f"forrás={film.property('previewTransitionFrameSource')!r}, "
+                    f"képforrás={transition_image.property('source')!r}, "
+                    f"betöltés={transition_image.property('progress')}"
+                )
 
                 viewport = _elem(window, "moviePreviewViewport")
                 kep = window.grabWindow()

@@ -6,9 +6,17 @@ from math import sqrt
 from pathlib import Path
 from statistics import median
 
-from PySide6.QtCore import QObject, QPoint, QPointF, QRect, Qt
+from PySide6.QtCore import QObject, QPointF, QRect, Qt
 from PySide6.QtGui import QColor, QImage, QPainter
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
+from tests.app.qml_functional._kiegyenesites_helpers_4058 import (
+    _felvetel,
+    _felvetel_kirajzolas_utan,
+    _kep_betoltve,
+    _pont,
+    _tilt_huzasa_egerrel,
+)
 
 
 ABLAK = (1280, 1005)
@@ -69,11 +77,6 @@ def _beallit_ablak(window, qt_app, ablak: tuple[int, int] = ABLAK) -> None:
         qt_app.processEvents()
 
 
-def _pont(item, x: float, y: float) -> QPoint:
-    pont = item.mapToScene(QPointF(x, y))
-    return QPoint(round(pont.x()), round(pont.y()))
-
-
 def _kattint(window, elem, qt_app) -> None:
     assert elem.width() > 0 and elem.height() > 0, "a vezérlő nem látható"
     QTest.mouseClick(
@@ -93,13 +96,6 @@ def _nezobe_lep(window, qt_app, index: int = 0):
     for _ in range(8):
         qt_app.processEvents()
     return viewer
-
-
-def _felvetel(window, utvonal: Path) -> QImage:
-    kep = window.grabWindow()
-    assert not kep.isNull(), "a néző ablaka nem rajzolódott ki"
-    assert kep.save(str(utvonal), "PNG"), f"nem menthető a felvétel: {utvonal}"
-    return kep
 
 
 def _vezerlo_rect(elem) -> QRect:
@@ -299,41 +295,6 @@ def test_kiegyenesites_megse_visszaallitja_a_megnyitaskori_munkamenetet(
     }, f"újranyitás után nem üres a szerkesztés: {ujranyitva!r}"
 
 
-def _tilt_huzasa_egerrel(window, qt_app, slider) -> None:
-    kezdo = _pont(slider, slider.width() / 2, slider.height() / 2)
-    veg = _pont(slider, slider.width() * 0.78, slider.height() / 2)
-    QTest.mouseRelease(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, kezdo)
-    for _ in range(8):
-        qt_app.processEvents()
-    assert slider.property("pressed") is False, "az előző próba lenyomva hagyta az egeret"
-    slider.setProperty("value", 0.0)
-    for _ in range(8):
-        qt_app.processEvents()
-    assert float(slider.property("value")) == 0.0, "a csúszka nem a nulla kiindulóértéken áll"
-    try:
-        QTest.mouseMove(window, kezdo, 10)
-        for _ in range(8):
-            qt_app.processEvents()
-        QTest.mousePress(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, kezdo)
-        for _ in range(8):
-            qt_app.processEvents()
-        assert slider.property("pressed") is True, "az egérlenyomás nem érte el a csúszkát"
-        koztes = _pont(slider, slider.width() * 0.62, slider.height() / 2)
-        QTest.mouseMove(window, koztes, 10)
-        for _ in range(8):
-            qt_app.processEvents()
-        assert slider.property("pressed") is True, "a csúszka elengedte a köztes húzásnál"
-        QTest.mouseMove(window, veg, 10)
-        for _ in range(8):
-            qt_app.processEvents()
-        assert slider.property("pressed") is True, "a csúszka elengedte a végpont előtt"
-        assert abs(float(slider.property("value"))) >= 0.2
-    finally:
-        QTest.mouseRelease(window, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, veg)
-        for _ in range(8):
-            qt_app.processEvents()
-
-
 def _kepterulet_toolbar_folott(image, toolbar) -> QRect:
     rect = _vezerlo_rect(image)
     rect.setHeight(max(1, _vezerlo_rect(toolbar).top() - rect.top()))
@@ -376,6 +337,9 @@ def test_kiegyenesites_nyitva_letiltja_a_csempeket_es_nem_valtoztat_a_kepen(
         for nev, ikon in ikonok.items()
     }
     image = _item(window, "viewerImage")
+    assert var_feltetelre(qt_app, lambda: _kep_betoltve(image), 10.0), (
+        "a szerkesztő főképe nem töltődött be"
+    )
 
     _kattint(window, _item(window, "editToolTilt"), qt_app)
     tilt_nyitva = panel.property("tiltActive") is True
@@ -387,21 +351,29 @@ def test_kiegyenesites_nyitva_letiltja_a_csempeket_es_nem_valtoztat_a_kepen(
     grid = _item(window, "straightenGridOverlay")
     toolbar = _item(window, "editorToolBar")
     grid.setProperty("visible", False)
-    for _ in range(5):
-        qt_app.processEvents()
     kep_rect = _kepterulet_toolbar_folott(image, toolbar)
-    nyitaskori_1 = _felvetel(window, tmp_path / "csempe-tilt-nyitva-1.png")
-    nyitaskori_2 = _felvetel(window, tmp_path / "csempe-tilt-nyitva-2.png")
+    nyitaskori_1 = _felvetel_kirajzolas_utan(
+        window, qt_app, tmp_path / "csempe-tilt-nyitva-1.png"
+    )
+    nyitaskori_2 = _felvetel_kirajzolas_utan(
+        window, qt_app, tmp_path / "csempe-tilt-nyitva-2.png"
+    )
     zaj = _kulonbozo_pixelek(nyitaskori_1, nyitaskori_2, kep_rect)
     assert zaj == 0, f"a változatlan render zajszintje {zaj} képpont"
     grid.setProperty("visible", True)
 
     slider = _item(window, "tiltSlider")
-    _tilt_huzasa_egerrel(window, qt_app, slider)
+    _tilt_huzasa_egerrel(
+        window,
+        qt_app,
+        slider,
+        preview_image=image,
+        preview_controller=edit_controller,
+    )
     grid.setProperty("visible", False)
-    for _ in range(5):
-        qt_app.processEvents()
-    huzas_utan = _felvetel(window, tmp_path / "csempe-tilt-huzas-utan.png")
+    huzas_utan = _felvetel_kirajzolas_utan(
+        window, qt_app, tmp_path / "csempe-tilt-huzas-utan.png"
+    )
     huzas_diff = _kulonbozo_pixelek(nyitaskori_1, huzas_utan, kep_rect)
     assert huzas_diff > 0, "a valódi csúszkahúzás nem változtatta meg a kép kimenetét"
     grid.setProperty("visible", True)
@@ -411,9 +383,9 @@ def test_kiegyenesites_nyitva_letiltja_a_csempeket_es_nem_valtoztat_a_kepen(
     _kattint(window, _item(window, "editToolTilt"), qt_app)
     tilt_nyitva_kattintas_utan = panel.property("tiltActive") is True
     grid.setProperty("visible", False)
-    for _ in range(5):
-        qt_app.processEvents()
-    csempe_utan = _felvetel(window, tmp_path / "csempe-tilt-bezaras-utan.png")
+    csempe_utan = _felvetel_kirajzolas_utan(
+        window, qt_app, tmp_path / "csempe-tilt-bezaras-utan.png"
+    )
     csempe_diff = _kulonbozo_pixelek(huzas_utan, csempe_utan, kep_rect)
 
     hibak = []
@@ -591,9 +563,16 @@ def test_kiegyenesites_aa_fokuszcsere_visszarajzolja_a_mentett_fokepet(
     # amelyben a húzás utáni képet mérjük. A keret így nem torzítja a mérést.
     _kattint(window, _item(window, "viewerSwapFocus"), qt_app)
     assert viewer.property("aktivOldal") == "jobb"
+    assert var_feltetelre(qt_app, lambda: _kep_betoltve(image_jobb), 10.0), (
+        "az aa-nézet jobb oldali képe nem töltődött be"
+    )
     cel_rect = _vezerlo_rect(image_jobb).adjusted(3, 3, -3, -3)
-    fokusz_kontroll_1 = _felvetel(window, tmp_path / "aa-fokusz-kontroll-1.png")
-    fokusz_kontroll_2 = _felvetel(window, tmp_path / "aa-fokusz-kontroll-2.png")
+    fokusz_kontroll_1 = _felvetel_kirajzolas_utan(
+        window, qt_app, tmp_path / "aa-fokusz-kontroll-1.png"
+    )
+    fokusz_kontroll_2 = _felvetel_kirajzolas_utan(
+        window, qt_app, tmp_path / "aa-fokusz-kontroll-2.png"
+    )
     zaj = _kulonbozo_pixelek(fokusz_kontroll_1, fokusz_kontroll_2, cel_rect)
     assert zaj == 0, f"az aa-változatlan render zajszintje {zaj} képpont"
 
@@ -604,17 +583,26 @@ def test_kiegyenesites_aa_fokuszcsere_visszarajzolja_a_mentett_fokepet(
     grid = _item(window, "straightenGridOverlay")
     toolbar = _item(window, "editorToolBar")
     grid.setProperty("visible", False)
-    for _ in range(5):
-        qt_app.processEvents()
+    assert var_feltetelre(qt_app, lambda: _kep_betoltve(image_bal), 10.0), (
+        "az aa-nézet bal oldali képe nem töltődött be"
+    )
     bal_rect = _kepterulet_toolbar_folott(image_bal, toolbar)
-    bal_eszkoz_nyitva = _felvetel(window, tmp_path / "aa-bal-eszkoz-nyitva.png")
+    bal_eszkoz_nyitva = _felvetel_kirajzolas_utan(
+        window, qt_app, tmp_path / "aa-bal-eszkoz-nyitva.png"
+    )
     grid.setProperty("visible", True)
 
-    _tilt_huzasa_egerrel(window, qt_app, _item(window, "tiltSlider"))
+    _tilt_huzasa_egerrel(
+        window,
+        qt_app,
+        _item(window, "tiltSlider"),
+        preview_image=image_bal,
+        preview_controller=edit_controller,
+    )
     grid.setProperty("visible", False)
-    for _ in range(5):
-        qt_app.processEvents()
-    bal_huzas_utan = _felvetel(window, tmp_path / "aa-bal-huzas-utan.png")
+    bal_huzas_utan = _felvetel_kirajzolas_utan(
+        window, qt_app, tmp_path / "aa-bal-huzas-utan.png"
+    )
     bal_huzas_diff = _kulonbozo_pixelek(bal_eszkoz_nyitva, bal_huzas_utan, bal_rect)
     assert bal_huzas_diff > 0, "az aa-fél képe nem változott a valódi húzásra"
     grid.setProperty("visible", True)
@@ -624,7 +612,9 @@ def test_kiegyenesites_aa_fokuszcsere_visszarajzolja_a_mentett_fokepet(
     _kattint(window, _item(window, "viewerSwapFocus"), qt_app)
     assert panel.property("tiltActive") is False
     assert viewer.property("aktivOldal") == "jobb"
-    fokusz_utan = _felvetel(window, tmp_path / "aa-fokuszcsere-utan.png")
+    fokusz_utan = _felvetel_kirajzolas_utan(
+        window, qt_app, tmp_path / "aa-fokuszcsere-utan.png"
+    )
     fokusz_diff = _kulonbozo_pixelek(fokusz_kontroll_1, fokusz_utan, cel_rect)
 
     ini_utana = ini_path.read_bytes() if ini_path.exists() else None

@@ -81,10 +81,13 @@ def _prepare_person(window, controller, qt_app, tmp_path, height_offset):
     pane = _find(window, "folderPane")
     assert pane is not None
     pane.setProperty("peopleCollapsed", False)
-    assert _wait(
-        qt_app,
-        lambda: _visible_item(window, f"personItem_{_PERSON_NAME}") is not None,
-    ), "a Teszt Elek Emberek-album sora nem jelent meg"
+    def person_row_has_geometry():
+        row = _visible_item(window, f"personItem_{_PERSON_NAME}")
+        return row is not None and row.width() > 0 and row.height() > 0
+
+    assert _wait(qt_app, person_row_has_geometry), (
+        "a Teszt Elek Emberek-album sora nem kapott kattintható méretet"
+    )
     return pane, ini_path
 
 
