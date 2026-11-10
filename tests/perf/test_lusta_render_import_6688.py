@@ -111,8 +111,11 @@ print(json.dumps([elotte, utana, "picasapy.render.chain" in sys.modules]))
 # töltődik be, és egy valós effekt módosítja is a képpontokat.
 _SZERKESZTO_HASZNALAT_PROGRAM = r"""
 import json
+import os
 import sys
 from pathlib import Path
+
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PIL import Image
 from PySide6.QtGui import QGuiApplication

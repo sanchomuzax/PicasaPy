@@ -80,10 +80,10 @@ from .poster_controller import PosterMixin
 from .create_movie_mixin import _CreateMovieMixin
 from .create_collage_mixin import _CreateCollageMixin
 
-from picasapy.lazy_import import lazy_callable
+from picasapy.lazy_import import lazy_callable as _lazy_callable
 
-write_collage = lazy_callable("picasapy.collage.render", "write_collage")  # noqa: F401 - régi importút
-make_picasa_collage = lazy_callable("picasapy.collage.picasa_render", "make_picasa_collage")  # noqa: F401 - régi importút
+write_collage = _lazy_callable("picasapy.collage.render", "write_collage")  # noqa: F401 - régi importút
+make_picasa_collage = _lazy_callable("picasapy.collage.picasa_render", "make_picasa_collage")  # noqa: F401 - régi importút
 
 logger = logging.getLogger(__name__)
 
