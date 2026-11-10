@@ -59,7 +59,6 @@ from picasapy.perf.tesztuzem import (
     tarolo_tipusa as tarolo_tipusa,
     tesztuzem_bekapcsolva as tesztuzem_bekapcsolva,
 )
-from picasapy.render.text_fonts import clear_family_cache as clear_family_cache
 from picasapy.scanner import (
     EXCLUDE_FOLDERS_NAME as EXCLUDE_FOLDERS_NAME,
     WATCHED_FOLDERS_NAME as WATCHED_FOLDERS_NAME,
@@ -112,6 +111,7 @@ from .platform_storage import (
 )
 from .startup_status import StartupStatus as StartupStatus
 from .startup_maintenance import StartupMaintenance as StartupMaintenance, StartupMaintenanceStep
+from .startup_maintenance import thumb_cache_takaritas_sorba
 from .application_startup_state import (
     _startup_step_prepare_state,
     _startup_step_read_arguments,
@@ -161,6 +161,9 @@ _LAZY_APP_SYMBOLS = {
     "ThumbnailProvider": ".thumbnail_provider",
     "TimelineController": ".timeline_controller",
     "WebExportController": ".webexport_controller",
+    # #6688: a régi `application.clear_family_cache` név megmarad, de a render
+    # csomag csak az első olvasáskor töltődik be (abszolút modulnév)
+    "clear_family_cache": "picasapy.render.text_fonts",
     "sorted_folder_rows": ".models",
     "wire_color_management": ".color_management_controller",
     "wire_display_mode": ".display_mode_controller",
@@ -636,9 +639,8 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
                 state.controller,
                 state.storage_bootstrap.migration_notice,
             )
-        elapsed_ms = (
-            time.monotonic() - startup_state["first_frame_at"]
-        ) * 1000
+        thumb_cache_takaritas_sorba(state)  # #6697: az első kép és a szinkron indítása után
+        elapsed_ms = (time.monotonic() - startup_state["first_frame_at"]) * 1000
         _jelentsd_az_indulast(timeline, state, roots, reszletes_idovonal, early_startup)
 
         def _finish_splash() -> None:

@@ -10,11 +10,14 @@ from pathlib import Path
 from PySide6.QtCore import Slot
 
 from picasapy.edit.session import EditSession
-from picasapy.render.chain import can_render_filter
+from picasapy.lazy_import import lazy_callable
 
 from .save_error_kind import save_error_kind
 from .save_errors import _FAILED_DETAILS_LIMIT, _SAVE_ERRORS
 from .save_render import _render_for_save
+
+# #6688: a render csomag az első mentésig nem töltődik be
+can_render_filter = lazy_callable("picasapy.render.chain", "can_render_filter")
 
 
 class SaveRowsMixin:

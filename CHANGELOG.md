@@ -7,6 +7,47 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.92] - 2026-11-10
+
+- A képszerkesztő feldolgozómoduljai csak az első használatkor töltődnek be, így gyorsabban indul a program (#6688).
+
+## [1.0.91] - 2026-11-10
+
+- A képek gyorsabban jelennek meg induláskor, a gyorstár takarítása az első ablak után fut, az arcfelismerő modulok pedig csak szükség esetén töltődnek be (#6697).
+
+## [1.0.90] - 2026-11-09
+
+- A könyvtárak szinkronja kevesebb háttértár-művelettel és alacsonyabb háttérprioritással fut (#6698).
+
+## [1.0.89] - 2026-11-09
+
+- Gyorsabban számol a Holga-szerű, a Lágy fókusz, a Ceruzarajz, a Ragyogás, a Képpontnagyítás, a Filmszemcse és az Árnyékvetés effekt, az előnézetben és exportnál is (#6687).
+- A fotórekordok és a szűrt bélyegképek kevesebb memóriát foglalnak nagy könyvtárban (#6699).
+- A zárt program mellett átnevezett figyelt mappa után a következő indításkor nem jelenik meg téves „A szkennelendő gyökér nem létezik” hibasáv (#6762).
+
+## [1.0.88] - 2026-11-09
+
+- A kilépési kérdés pontosan megmondja, hogy az exportálás és a webes exportálás megszakad, az arckeresés pedig a következő indításkor folytatódik (#6756).
+
+## [1.0.87] - 2026-11-09
+
+- Az Intézőben átnevezett figyelt mappa régi neve eltűnik a bal sávból, és a bal sáv darabszáma és mappái a Kis képek beállítást követik, ahogy az eredeti Picasában (#6751).
+- A program induláskor és frissítés előtt eltávolítja a frissítősegéd korábbi, ottmaradt másolatait (#6752).
+- Kilépéskor a futó arckeresés megáll, és a következő indításkor a még nem vizsgált képekkel folytatódik (#6753).
+
+## [1.0.86] - 2026-11-09
+
+- A mappa nélküli menüpróba a vezérlőn át állítja az üres mappát (#6748).
+- A program gyorsabban indul: a képnéző, az Időrend és a vetítés csak az első megnyitáskor töltődik be (#6700).
+
+## [1.0.85] - 2026-11-09
+
+- A Rainbow szűrő színei most az eredeti Picasa szerint alakulnak, a vörös árnyalat nem lesz túl erős (#6743).
+
+## [1.0.84] - 2026-11-09
+
+- A diavetítésből megnyitott Időrend háttérképe megbízhatóan töltődik be, a felület nem akad meg (#6735).
+
 ## [1.0.83] - 2026-11-09
 
 - A main két piros tesztje: figyelőindulás bevárása és stabil rácsszivárgás-mérés (#4073).

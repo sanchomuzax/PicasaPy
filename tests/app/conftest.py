@@ -6,6 +6,7 @@ import pytest
 
 from support.fixture_guards import qml_warning_guard, user_folder_guard
 from support.folder_hierarchy_wiring import wire_folder_hierarchy
+from support.halasztott_nezetek import nezetek_elore
 from support.print_wiring import wire_passport, wire_print
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -361,6 +362,7 @@ def _build_qml_app(qt_app, tmp_path):
     window = engine.rootObjects()[0]
     controller._reload()
     controller.selectFolder(str(lib))
+    nezetek_elore(window)
     qt_app.processEvents()
     yield window, controller, lib, engine
     effect_slice_controller.shutdown()

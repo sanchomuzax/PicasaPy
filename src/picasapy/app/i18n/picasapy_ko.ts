@@ -8703,9 +8703,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>PicasaPy 종료</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>내보내기, 웹 내보내기 또는 얼굴 검색과 같은 백그라운드 작업이 아직 실행 중입니다. 지금 종료하면 작업이 중단되고 나중에 다시 시작되지 않습니다.</translation>
+            <translation>백그라운드 작업이 아직 실행 중입니다. 지금 종료하면 내보내기와 웹 내보내기가 중단되고 다시 시작되지 않습니다. 얼굴 스캔은 다음에 PicasaPy를 시작할 때 계속됩니다.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9464,9 +9464,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>내보내기, 웹 내보내기 또는 얼굴 검색과 같은 백그라운드 작업이 아직 실행 중입니다. 지금 종료하면 작업이 중단되고 나중에 다시 시작되지 않습니다.</translation>
+            <translation>백그라운드 작업이 아직 실행 중입니다. 지금 종료하면 내보내기와 웹 내보내기가 중단되고 다시 시작되지 않습니다. 얼굴 스캔은 다음에 PicasaPy를 시작할 때 계속됩니다.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

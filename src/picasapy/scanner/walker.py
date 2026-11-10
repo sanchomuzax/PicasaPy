@@ -377,6 +377,7 @@ def _walk(
         current, file_entries, skip, with_state=skip is not None, hibas=hibas,
         enabled_filetypes=enabled_filetypes,
         include_ini_only=include_ini_only,
+        folder_mtime_ns=stat.st_mtime_ns,
     )
     if scan is not None:
         out.append(scan)
@@ -449,6 +450,7 @@ def _scan_folder(
     hibas: list[HibasBejegyzes] | None = None,
     enabled_filetypes: Collection[str] | None = None,
     include_ini_only: bool = False,
+    folder_mtime_ns: int | None = None,
 ) -> FolderScan | None:
     by_name = {entry.name: entry for entry in entries}
     has_ini = PICASA_INI_NAME in by_name or PICASA_INI_LEGACY_NAME in by_name
@@ -468,13 +470,18 @@ def _scan_folder(
         or (enabled_filetypes is not None and recognised_media)
     ):
         return None
-    mtime_ns = 0
+    mtime_ns = (
+        folder_mtime_ns
+        if with_state and folder_mtime_ns is not None
+        else 0
+    )
     ini_mtime_ns: int | None = None
-    if with_state:
+    if with_state and folder_mtime_ns is None:
         try:
             mtime_ns = os.stat(path).st_mtime_ns
         except OSError:
             mtime_ns = 0
+    if with_state:
         ini_mtime_ns = _ini_mtime(by_name)
         if skip is not None and mtime_ns and skip(path, mtime_ns, ini_mtime_ns):
             return FolderScan(

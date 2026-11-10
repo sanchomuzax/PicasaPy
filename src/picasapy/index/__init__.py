@@ -1,5 +1,9 @@
 """SQLite index: gyors lekérdezések a könyvtárra, ismételhető szinkronnal."""
 
+import importlib
+import sys as _sys
+import types as _types
+
 from .album_collage import (
     COLLAGE_PROJECT_NAME,
     albums_with_collage,
@@ -15,45 +19,8 @@ from .colors import (
     save_colors,
 )
 from .database import open_index
-from .face_groups import (
-    face_groups,
-    group_unnamed_faces,
-    javaslatokat_ujraszamol,
-    lazitott_lepcso,
-)
 from .hidden_scope import hidden_folders_visible, set_hidden_folders_visible
 from .ignored_ini_faces import IniIgnoredFace, ignored_ini_faces
-from .faces_detected import (
-    PendingEmbeddingFace,
-    UnnamedFace,
-    clear_faces,
-    detected_face_count,
-    face_embedding,
-    faces_missing_embedding,
-    ignored_faces,
-    named_centroids,
-    mark_faces_ignored,
-    mark_faces_named,
-    delete_faces_in_folder,
-    face_scan_done,
-    faces_for_photo,
-    forget_face_scan,
-    mark_face_scan,
-    mark_folder_excluded,
-    replace_faces,
-    replace_imported_unnamed_faces,
-    reset_all_faces,
-    store_embedding,
-    unnamed_album_photos,
-    unnamed_photo_count,
-    unnamed_face_count,
-    set_suggested_name,
-    suggested_faces,
-    suggested_faces_for,
-    unignore_faces,
-    unnamed_faces,
-    unnamed_faces_for_photos,
-)
 from .fast_key_source import IndexFastKeySource
 from .hashes import load_dhashes, load_fast_keys, save_dhashes, save_fast_keys
 from .queries import (
@@ -219,3 +186,74 @@ __all__ = [
     "folder_looks_offline",
     "watched_root_missing",
 ]
+
+
+_LAZY_FACE_EXPORTS = {
+    "face_groups": ".face_groups",
+    "group_unnamed_faces": ".face_groups",
+    "javaslatokat_ujraszamol": ".face_groups",
+    "lazitott_lepcso": ".face_groups",
+    "PendingEmbeddingFace": ".faces_detected",
+    "UnnamedFace": ".faces_detected",
+    "clear_faces": ".faces_detected",
+    "detected_face_count": ".faces_detected",
+    "face_embedding": ".faces_detected",
+    "faces_missing_embedding": ".faces_detected",
+    "ignored_faces": ".faces_detected",
+    "named_centroids": ".faces_detected",
+    "mark_faces_ignored": ".faces_detected",
+    "mark_faces_named": ".faces_detected",
+    "delete_faces_in_folder": ".faces_detected",
+    "face_scan_done": ".faces_detected",
+    "faces_for_photo": ".faces_detected",
+    "forget_face_scan": ".faces_detected",
+    "mark_face_scan": ".faces_detected",
+    "mark_folder_excluded": ".faces_detected",
+    "replace_faces": ".faces_detected",
+    "replace_imported_unnamed_faces": ".faces_detected",
+    "reset_all_faces": ".faces_detected",
+    "store_embedding": ".faces_detected",
+    "unnamed_album_photos": ".faces_detected",
+    "unnamed_photo_count": ".faces_detected",
+    "unnamed_face_count": ".faces_detected",
+    "set_suggested_name": ".faces_detected",
+    "suggested_faces": ".faces_detected",
+    "suggested_faces_for": ".faces_detected",
+    "unignore_faces": ".faces_detected",
+    "unnamed_faces": ".faces_detected",
+    "unnamed_faces_for_photos": ".faces_detected",
+}
+
+
+def __getattr__(name: str):
+    """Az arcmodulokat csak az első csomagszintű használatkor importálja."""
+    module_name = _LAZY_FACE_EXPORTS.get(name)
+    if module_name is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(module_name, __name__)
+    value = getattr(module, name)
+    globals()[name] = value
+    return value
+
+
+def __dir__():
+    return sorted(set(globals()) | set(_LAZY_FACE_EXPORTS))
+
+
+
+class _IndexModule(_types.ModuleType):
+    """A `face_groups` almodul neve ütközik a `face_groups()` függvényével.
+
+    Az almodul első importja a csomag attribútumát a modulra állítaná, és a
+    `picasapy.index.face_groups(...)` hívás „module object is not callable”
+    hibával állna le. A mainen az előre futó `from .face_groups import
+    face_groups` sor írta vissza a függvényt; a lusta betöltés mellett ezt
+    itt kell megtartani (#6697)."""
+
+    def __setattr__(self, name, value):
+        if name in _LAZY_FACE_EXPORTS and isinstance(value, _types.ModuleType):
+            return
+        super().__setattr__(name, value)
+
+
+_sys.modules[__name__].__class__ = _IndexModule

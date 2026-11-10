@@ -185,6 +185,8 @@ class FolderViewMixin:
                 # vannak — a hasáb-gyűjtemények betöltése cache-eli őket —,
                 # tehát nem kell újabb `.picasa.ini`-söprés.
                 exclude_paths=[m.path for m in self._project_folders],
+                # #6751: a „Csak nagy képek” szűrő a bal sávot is szűri
+                kis_kepek_rejtve=self.showOnlyBigImages,
             )
         self.statusChanged.emit()
 

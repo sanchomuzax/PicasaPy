@@ -53,8 +53,8 @@ from PySide6.QtQuick import QQuickImageProvider
 from picasapy.app.display_mode_paint import (
     DISPLAY_MODE_QUERY_KEY,
     apply_display_mode_to_qimage,
+    display_mode_changes_pixels,
 )
-from picasapy.render.display_modes import display_mode_changes_pixels
 
 _log = logging.getLogger(__name__)
 

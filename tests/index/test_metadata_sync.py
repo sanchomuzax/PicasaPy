@@ -86,3 +86,63 @@ class TestChangeDetection:
         photo = photos_in_folder(conn, library)[1]
         assert photo.star is True
         assert (photo.width, photo.height) == (8, 6)  # fájl-metaadat megmaradt
+
+    def test_changed_metadata_is_read_in_parallel_and_upserted_as_a_batch(
+        self, conn, library, monkeypatch
+    ):
+        """#6698: a lemezolvasás párhuzamos, az SQLite-írás rendezett köteg."""
+        import threading
+        import time
+
+        from picasapy.index import sync as sync_module
+
+        sync_module.sync_tree(conn, library)
+        names = tuple(f"uj_{index}.jpg" for index in range(4))
+        for name in names:
+            make_jpeg(library / name)
+
+        lock = threading.Lock()
+        active = 0
+        max_active = 0
+        original_read = sync_module.read_file_metadata
+
+        def slow_read(path):
+            nonlocal active, max_active
+            with lock:
+                active += 1
+                max_active = max(max_active, active)
+            try:
+                time.sleep(0.04)
+                return original_read(path)
+            finally:
+                with lock:
+                    active -= 1
+
+        monkeypatch.setattr(sync_module, "read_file_metadata", slow_read)
+
+        class ConnectionProxy:
+            def __init__(self, connection):
+                self.connection = connection
+                self.photo_batches = []
+
+            def execute(self, *args, **kwargs):
+                return self.connection.execute(*args, **kwargs)
+
+            def executemany(self, sql, rows):
+                rows = list(rows)
+                if sql.lstrip().startswith("INSERT INTO photos"):
+                    self.photo_batches.append(rows)
+                return self.connection.executemany(sql, rows)
+
+            def __getattr__(self, name):
+                return getattr(self.connection, name)
+
+        proxy = ConnectionProxy(conn)
+        sync_module.sync_tree(proxy, library, incremental=False)
+
+        assert max_active > 1
+        assert len(proxy.photo_batches) == 1
+        assert [row[1] for row in proxy.photo_batches[0]] == list(names)
+        assert [photo.name for photo in photos_in_folder(conn, library)] == sorted(
+            ("IMG_0001.jpg", "IMG_0002.jpg", *names)
+        )

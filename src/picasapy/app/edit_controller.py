@@ -288,7 +288,9 @@ class EditController(
         self._text_outline_thickness: int = _DEFAULT_TEXT_OUTLINE_THICKNESS
         self._text_fill_enabled: bool = _DEFAULT_TEXT_FILL_ENABLED
         self._text_opacity: float = _DEFAULT_TEXT_OPACITY
-        self._text_family: str = default_family()
+        # #6688: az alapértelmezett családot a `_text_family` az első
+        # olvasáskor számolja (ld. `EditControllerTextMixin._text_family`)
+        self._text_family_value: str | None = None
         self._text_size_pt: int = _DEFAULT_TEXT_SIZE_PT
         self._text_size_edited = False
         self._text_bold: bool = _DEFAULT_TEXT_BOLD

@@ -47,8 +47,7 @@ from picasapy.edit.save_copy import (
 )
 from picasapy.edit.session import EditSession
 from picasapy.ini import IniConflictError, IniSaveError, PhotoCropReader
-from picasapy.render.chain import apply_filters, can_render_filter, normalize_crop_ops
-from picasapy.render.flip import apply_flip
+from picasapy.lazy_import import lazy_callable
 from picasapy.scanner import PICASA_INI_NAME
 
 from .paint_mask import maszk_vonasokbol, van_mentett_ecsetvonas
@@ -61,6 +60,13 @@ from .save_progress import SaveProgressMixin
 from .save_render import _CROP_READER, _render_for_save
 from .save_restore import SaveRestoreMixin
 from .save_rows import SaveRowsMixin
+
+# #6688: a render csomag az első mentésig nem töltődik be; a nevek a régi
+# importútvonalon (és a tesztek foltozásához) megmaradnak.
+apply_filters = lazy_callable("picasapy.render.chain", "apply_filters")
+can_render_filter = lazy_callable("picasapy.render.chain", "can_render_filter")
+normalize_crop_ops = lazy_callable("picasapy.render.chain", "normalize_crop_ops")
+apply_flip = lazy_callable("picasapy.render.flip", "apply_flip")
 
 
 def _konyvtar_tartalma(konyvtar: Path) -> list[Path]:

@@ -256,7 +256,8 @@ Item {
     //: Az eredeti a programzáráskor is kérdez (`SC_CLOSE` → `0x0057c4e0` →
     //: `0x005e45c0` → `0x0056aad0`), és Mégsére nem zár be (`0x0057c59c`).
     function aaKapu(folytatas) {
-        return !hostWindow.viewerOpen || hostRefs.photoViewer.aaKilepesKapu(folytatas)
+        return !hostWindow.viewerOpen
+            || hostWindow.ensurePhotoViewer().aaKilepesKapu(folytatas)
     }
 
     //: #671 4. pont: a kilépés NEM kérdez — KIVÉVE, ha háttérmunka fut.
@@ -285,9 +286,9 @@ Item {
             //: a `decisionKey` SZÁNDÉKOSAN üres: az adatvesztéssel járó
             //: kérdést nem lehet „ne kérdezze újra"-val elnyomni
             ensure().ask("", qsTr(
-                "Background work is still running (export, web export or "
-                + "face scanning). If you exit now, it stops and does not "
-                + "resume later."))
+                "Background work is still running. If you exit now, export and "
+                + "web export stop and do not resume; face scanning continues "
+                + "the next time you start PicasaPy."))
         }
         sourceComponent: Component {
             ConfirmDialog {
@@ -340,7 +341,8 @@ Item {
     // Picasa gyorsbillentyűk: Ctrl+R jobbra, Ctrl+Shift+R balra forgat.
     // Diavetítés közben (#8) a vetített kép a célpont, nem a rács-kijelölés.
     function rotateTargetRow() {
-        if (hostRefs.slideshow.visible) return hostRefs.slideshow.currentIndex
+        if (hostWindow.slideshowRunning && hostRefs.slideshow)
+            return hostRefs.slideshow.currentIndex
         return hostRefs.trayBar.starTargetRow
     }
     // #103: csak-videó célpontnál a forgatás tiltott — a tálca ↺/↻
@@ -351,7 +353,7 @@ Item {
         // a QML-engine leépítésekor is újraértékelődhet
         if (!hostController) return false
         var rows = hostWindow.viewerOpen
-            ? [hostRefs.photoViewer.currentIndex]
+            ? [hostWindow.ensurePhotoViewer().currentIndex]
             : hostWindow.selectedRows()
         if (rows.length === 0) return false
         for (var k = 0; k < rows.length; ++k)
@@ -368,29 +370,42 @@ Item {
     //: A cél a KIJELÖLÉS (az eredeti ága is a panelre hat); nézőben a
     //: megnyitott kép, a forgatás `rotateTargetRow` mintája szerint.
     function tukrozesiSorok() {
-        if (hostWindow.viewerOpen) return [hostRefs.photoViewer._kijeloltSort()]
+        if (hostWindow.viewerOpen)
+            return [hostWindow.ensurePhotoViewer()._kijeloltSort()]
         return hostWindow.selectedRows()
     }
 
     // Az Időrend főablaki belépői megőrzik az eddigi QML-neveket.
     function timelineCollectionForId(collectionId) {
-        return hostRefs.timelineView.timelineCollectionForId(collectionId)
+        return hostWindow.ensureTimelineView()
+            .timelineCollectionForId(collectionId)
     }
     function selectTimelineCollection(collection) {
-        return hostRefs.timelineView.selectTimelineCollection(collection)
+        return hostWindow.ensureTimelineView()
+            .selectTimelineCollection(collection)
     }
-    function closeTimeline() { hostRefs.timelineView.closeTimeline() }
-    function toggleTimeline() { hostRefs.timelineView.toggleTimeline() }
+    function closeTimeline() {
+        hostWindow.ensureTimelineView().closeTimeline()
+    }
+    function toggleTimeline() {
+        hostWindow.ensureTimelineView().toggleTimeline()
+    }
     function startTimelineSlideshow(collectionId) {
-        hostRefs.timelineView.startTimelineSlideshow(collectionId)
+        hostWindow.ensureTimelineView().startTimelineSlideshow(collectionId)
     }
 
     // A teljes képernyős állapotot a vetítési komponens birtokolja; a régi
     // főablaki QML-nevek megmaradnak a hívóknak és a teszteknek.
-    function toggleViewerFullscreen() { hostRefs.slideshow.toggleViewerFullscreen() }
-    function startSlideshow(fromIndex) { hostRefs.slideshow.startSlideshow(fromIndex) }
-    function startScreensaverPreview() { hostRefs.slideshow.startScreensaverPreview() }
-    function exitSlideshow() { hostRefs.slideshow.exitSlideshow() }
+    function toggleViewerFullscreen() {
+        hostWindow.ensureSlideshow().toggleViewerFullscreen()
+    }
+    function startSlideshow(fromIndex) {
+        hostWindow.ensureSlideshow().startSlideshow(fromIndex)
+    }
+    function startScreensaverPreview() {
+        hostWindow.ensureSlideshow().startScreensaverPreview()
+    }
+    function exitSlideshow() { hostWindow.ensureSlideshow().exitSlideshow() }
 
     // #922: a képtálca tartalma ÁLLAPOTKÉNT, nem közvetlen kötésként. Egy
     // `controller.heldCount`-ra épülő kötés a `controller` null állapotában

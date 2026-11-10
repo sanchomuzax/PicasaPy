@@ -126,6 +126,8 @@ def initialize_controller_state(
     # #173: a háttér-sync frissítsen, de NE görgessen a mappa tetejére
     # (folderActivated) — az elvenné a nézőből visszatérő felhasználó
     # görgetési pozícióját. A scroll-to-top csak explicit mappa-választásé.
+    # #6751: az átnevezett vagy törölt figyelt mappa a frissítés ELŐTT rendeződik
+    self.syncFinished.connect(self._eltunt_gyokerek_rendezese)
     self.syncFinished.connect(self._reload_after_sync)
     # #1181: a szinkron alatt elhalasztott mappa-frissítések
     self.syncFinished.connect(self._flush_pending_dirty)

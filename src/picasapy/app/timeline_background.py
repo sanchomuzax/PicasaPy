@@ -24,13 +24,17 @@ from PySide6.QtQuick import QQuickImageProvider
 
 from picasapy.app.display_mode_paint import apply_display_mode_to_qimage
 from picasapy.app.display_mode_paint import display_mode_from_thumb_id
-from picasapy.render.chain import apply_filters, normalize_crop_ops
-from picasapy.render.elonezeti_arany import elonezeti_arany
-from picasapy.render.flip import FLIP_HORIZONTAL, FLIP_VERTICAL
-from picasapy.render.native_tone import native_gamma_lut
-from picasapy.render.ops_levels import apply_enhance
+from picasapy.ini.flip import FLIP_HORIZONTAL, FLIP_VERTICAL
+from picasapy.lazy_import import lazy_callable
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 from picasapy.scanner import PICASA_INI_NAME
+
+# #6688: a render csomag az idővonal-háttér első rajzolásáig nem töltődik be
+apply_filters = lazy_callable("picasapy.render.chain", "apply_filters")
+normalize_crop_ops = lazy_callable("picasapy.render.chain", "normalize_crop_ops")
+elonezeti_arany = lazy_callable("picasapy.render.elonezeti_arany", "elonezeti_arany")
+native_gamma_lut = lazy_callable("picasapy.render.native_tone", "native_gamma_lut")
+apply_enhance = lazy_callable("picasapy.render.ops_levels", "apply_enhance")
 
 _ALAP_SZELESSEG = 600
 _ALAP_MAGASSAG = 480

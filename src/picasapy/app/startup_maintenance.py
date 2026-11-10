@@ -118,3 +118,20 @@ class StartupMaintenance(BackgroundWorkerMixin, QObject):
 
 
 __all__ = ["StartupMaintenance", "StartupMaintenanceStep"]
+
+def thumb_cache_takaritas_sorba(state) -> None:
+    """A bélyegkép-gyorstár takarítása a soros indulási karbantartásba (#6697).
+
+    Az első képkocka, a kezdeti képlista és a könyvtárszinkron elindítása után
+    fut, hogy ne versenyezzen az indulással."""
+    state.startup_maintenance.enqueue(
+        "thumb-cache",
+        (
+            StartupMaintenanceStep(
+                key="thumb_cache_prune",
+                name="A bélyegkép-gyorstár takarítása",
+                status_text=None,
+                work=state.thumb_cache.maybe_prune,
+            ),
+        ),
+    )

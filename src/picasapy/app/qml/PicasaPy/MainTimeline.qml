@@ -13,9 +13,43 @@ TimelineView {
     required property var hostToolbar
     required property var hostSlideshow
 
-    property bool timelineOpen: false
-    property bool timelineSlideshowActive: false
-    property var timelineSlideshowModel: null
+    property bool timelineOpen: hostWindow.timelineOpen
+    property bool timelineSlideshowActive: hostWindow.timelineSlideshowActive
+    property var timelineSlideshowModel: hostWindow.timelineSlideshowModel
+
+    // A komponens korábbi írható tulajdonságait megőrizzük, miközben az
+    // állapot a főablakban él, hogy a nézet a betöltése előtt is lekérdezhető legyen.
+    onTimelineOpenChanged: {
+        if (hostWindow.timelineOpen !== timelineOpen)
+            hostWindow.timelineOpen = timelineOpen
+    }
+    onTimelineSlideshowActiveChanged: {
+        if (hostWindow.timelineSlideshowActive !== timelineSlideshowActive)
+            hostWindow.timelineSlideshowActive = timelineSlideshowActive
+    }
+    onTimelineSlideshowModelChanged: {
+        if (hostWindow.timelineSlideshowModel !== timelineSlideshowModel)
+            hostWindow.timelineSlideshowModel = timelineSlideshowModel
+    }
+    Connections {
+        target: timeline.hostWindow
+        function onTimelineOpenChanged() {
+            if (timeline.timelineOpen !== timeline.hostWindow.timelineOpen)
+                timeline.timelineOpen = timeline.hostWindow.timelineOpen
+        }
+        function onTimelineSlideshowActiveChanged() {
+            if (timeline.timelineSlideshowActive
+                    !== timeline.hostWindow.timelineSlideshowActive)
+                timeline.timelineSlideshowActive =
+                    timeline.hostWindow.timelineSlideshowActive
+        }
+        function onTimelineSlideshowModelChanged() {
+            if (timeline.timelineSlideshowModel
+                    !== timeline.hostWindow.timelineSlideshowModel)
+                timeline.timelineSlideshowModel =
+                    timeline.hostWindow.timelineSlideshowModel
+        }
+    }
 
     visible: timelineOpen
     collectionsModel: hostTimelineController
@@ -54,7 +88,7 @@ TimelineView {
         var collection = timeline.collectionAt(timeline.currentIndex)
         if (collection)
             timeline.selectTimelineCollection(collection)
-        timeline.timelineOpen = false
+        hostWindow.timelineOpen = false
     }
 
     function toggleTimeline() {
@@ -64,7 +98,7 @@ TimelineView {
         }
         if (hostTimelineController)
             hostTimelineController.reload()
-        timeline.timelineOpen = true
+        hostWindow.timelineOpen = true
     }
 
     function startTimelineSlideshow(collectionId) {
@@ -78,13 +112,13 @@ TimelineView {
         if (!collectionModel || collectionModel.rowCount() <= 0)
             return
         timeline.selectTimelineCollection(collection)
-        timeline.timelineOpen = false
-        timeline.timelineSlideshowModel = collectionModel
-        timeline.timelineSlideshowActive = true
+        hostWindow.timelineOpen = false
+        hostWindow.timelineSlideshowModel = collectionModel
+        hostWindow.timelineSlideshowActive = true
         hostWindow.visibilityBeforeSlideshow = hostWindow.visibility
         hostWindow.visibility = Window.FullScreen
-        hostSlideshow.start(0)
-        if (!hostSlideshow.visible)
+        hostWindow.startSlideshow(0)
+        if (!hostWindow.slideshowRunning)
             hostWindow.exitSlideshow()
     }
 

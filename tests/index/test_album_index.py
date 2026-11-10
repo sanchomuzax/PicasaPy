@@ -131,6 +131,43 @@ class TestResync:
         sync_tree(conn, library, incremental=False)
         assert _TOKEN_B not in {album.token for album in albums_in_index(conn)}
 
+    def test_unchanged_ini_does_not_rewrite_album_rows(self, conn, library):
+        """#6698: a változatlan ini második szinkronja nem ír albumtáblát."""
+        conn.execute("CREATE TEMP TABLE album_dml_count(n INTEGER NOT NULL)")
+        conn.execute("INSERT INTO album_dml_count VALUES (0)")
+        for tabla, muvelet in (
+            ("albums", "INSERT"),
+            ("albums", "DELETE"),
+            ("photo_albums", "INSERT"),
+            ("photo_albums", "DELETE"),
+        ):
+            conn.execute(
+                f"CREATE TEMP TRIGGER album_dml_{tabla}_{muvelet.lower()} "
+                f"AFTER {muvelet} ON {tabla} BEGIN "
+                "UPDATE album_dml_count SET n = n + 1; END"
+            )
+
+        sync_tree(conn, library, incremental=False)
+
+        assert conn.execute("SELECT n FROM album_dml_count").fetchone()[0] == 0
+
+    def test_deferred_sync_tree_prunes_albums_once(self, conn, library, monkeypatch):
+        """#6698: a dirty adagban a teljes részfa-sync is egy prune-t kér."""
+        from picasapy.index import sync as sync_module
+
+        calls = []
+        original_prune = sync_module._prune_albums
+
+        def count_prune(connection):
+            calls.append(None)
+            return original_prune(connection)
+
+        monkeypatch.setattr(sync_module, "_prune_albums", count_prune)
+        with sync_module._defer_album_pruning(conn):
+            sync_tree(conn, library, incremental=False)
+
+        assert len(calls) == 1
+
 
 def test_v26_migration_creates_persistent_empty_album_store(tmp_path):
     db = tmp_path / "index.db"

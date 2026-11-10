@@ -22,9 +22,12 @@ def test_f11_a_nezoben_be_es_kikapcsolja_a_teljes_kepernyot(
     window.show()
     window.requestActivate()
 
-    viewer = window.findChild(QObject, "photoViewer")
-    assert viewer is not None
+    # #6700: a néző csak az első megnyitáskor épül fel
     window.setProperty("viewerOpen", True)
+    assert _varj(
+        qt_app, lambda: window.findChild(QObject, "photoViewer") is not None
+    ), "a néző nem jött létre a megnyitáskor"
+    viewer = window.findChild(QObject, "photoViewer")
     viewer.setProperty("currentIndex", 0)
     assert _varj(qt_app, lambda: viewer.isVisible()), "a néző nem épült fel"
 

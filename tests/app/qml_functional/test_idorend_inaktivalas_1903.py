@@ -81,7 +81,8 @@ class TestABillentyu:
         blokk = blokk_horgonyra(_MAIN, 'sequence: "Ctrl+5"')
         # aktív, de a néző, a vetítés és a szövegmező-fókusz alatt nem sül el
         assert "enabled: false" not in blokk
-        for feltetel in ("!hostWindow.viewerOpen", "!hostSlideshow.visible",
+        # #6700: a vetítés halasztva épül fel, ezért a futását az ablak jelzi
+        for feltetel in ("!hostWindow.viewerOpen", "!hostWindow.slideshowRunning",
                          "!hostWindow._szovegmezoneVanFokusz"):
             assert feltetel in blokk
 

@@ -64,22 +64,14 @@ from picasapy.ini.text_overlay import (
     serialize_text,
     serialize_text_active,
 )
-from picasapy.metadata import read_exif_details
-from picasapy.render.chain import (
+from picasapy.ini.affine import AZONOSSAG, Matrix
+from picasapy.ini.legacy_effects import (
     DEAD_LEGACY_OPS,
-    can_offer_filter_control,
-    normalize_crop_ops,
+    LEGACY_EFFECT_KEYS,
+    LEGACY_EFFECTS,
 )
-from picasapy.render.chain_geometry import AZONOSSAG, Matrix
-from picasapy.render.op_geometry import invertal
-from picasapy.render.legacy_effects import LEGACY_EFFECT_KEYS, LEGACY_EFFECTS
-from picasapy.render.registry import chain_flags
-from picasapy.render.registry import one_click_keys
-from picasapy.render.elonezeti_arany import gyors_elonezet
-from picasapy.render.crop_suggest import suggest_crops
-from picasapy.render.gpu_point_pipeline import build_finetune2_lut
-from picasapy.render.text_fonts import default_family, family_labels
-from picasapy.render.tone import estimate_neutral_color, parse_neutral_argb
+from picasapy.lazy_import import lazy_callable
+from picasapy.metadata import read_exif_details
 from picasapy.scanner import PICASA_INI_NAME
 
 from . import formatting
@@ -87,6 +79,25 @@ from .edit_action_names import redo_label, undo_label
 from .edit_preview import EditPreviewProvider, TextOverlaySpec
 from .histogram_helper import EMPTY_HISTOGRAM
 from .worker_thread import BackgroundWorkerMixin
+
+# #6688: a `picasapy.render` csomag (~70 modul) az első ablakkép előtt nem
+# töltődhet be, ezért a szerkesztő render-függvényei lusta
+# hivatkozások: a modulszintű nevek (és a tesztek foltozása) megmaradnak, a
+# csomag az első HÍVÁSKOR töltődik be. A tiszta adat (a régi effektek
+# katalógusa, az azonossági mátrix) az `ini` rétegből jön.
+_can_offer_filter_control = lazy_callable(
+    "picasapy.render.chain", "can_offer_filter_control"
+)
+normalize_crop_ops = lazy_callable("picasapy.render.chain", "normalize_crop_ops")
+invertal = lazy_callable("picasapy.render.op_geometry", "invertal")
+chain_flags = lazy_callable("picasapy.render.registry", "chain_flags")
+gyors_elonezet = lazy_callable("picasapy.render.elonezeti_arany", "gyors_elonezet")
+suggest_crops = lazy_callable("picasapy.render.crop_suggest", "suggest_crops")
+build_finetune2_lut = lazy_callable("picasapy.render.gpu_point_pipeline", "build_finetune2_lut")
+default_family = lazy_callable("picasapy.render.text_fonts", "default_family")
+family_labels = lazy_callable("picasapy.render.text_fonts", "family_labels")
+estimate_neutral_color = lazy_callable("picasapy.render.tone", "estimate_neutral_color")
+parse_neutral_argb = lazy_callable("picasapy.render.tone", "parse_neutral_argb")
 
 #: #3819: a `?rev=` cache-buster FOLYAMATSZINTŰ számlálókból jön, nem
 #: példányonként 0-ról. A Qt kép-gyorstára folyamatszintű, kulcsa az URL és a
@@ -155,9 +166,75 @@ _EFFECT_PARAMS: dict[str, tuple[str, ...]] = {
 #: kézzel karbantartott lista — így a fül soha nem kínálhat olyan effektet,
 #: amelyik utána kivételbe futna, sem olyat, aminek a csúszkatartományán
 #: belül mérten nincs hatása (#1142).
-_LEGACY_EFFECT_NAMES = tuple(
-    sorted(key for key in LEGACY_EFFECT_KEYS if can_offer_filter_control(key))
+#:
+#: ⚠️ #6688: a számítás a `picasapy.render` csomagot töltené be, ezért az
+#: eredmény ide van rögzítve (az import az indulás kritikus útján áll). Az
+#: egyezést a `tests/perf/test_lusta_render_import_6688.py` őrzi a renderelő
+#: igazságforrásával: ha a renderelő kínálata változik, az őr bukik, és ezt a
+#: listát kell frissíteni.
+_LEGACY_EFFECT_NAMES = (
+    "autobacklight",
+    "autocontrast",
+    "backlight",
+    "blur",
+    "colorfix",
+    "colortemp",
+    "contrast",
+    "dir_brite",
+    "dir_sat",
+    "dir_sharp",
+    "fill",
+    "gamma",
+    "linblur",
+    "radtint",
+    "rainbow",
+    "shadow",
+    "triple",
+    "triple2",
+    "triple3",
+    "whitept",
 )
+
+
+#: A kék jelvényt kapó (egygombos) szűrők kulcsai, a `render.registry.
+#: one_click_keys()` mai értéke. A QML ezt is az első ablakkép előtt kérdezi
+#: le (`oneClickEffects`), ezért rögzítve van, hogy ne kelljen betölteni a
+#: `picasapy.render` csomagot (#6688). Az egyezést a
+#: `tests/perf/test_lusta_render_import_6688.py` őrzi.
+_ONE_CLICK_KEYS = (
+    "autobacklight",
+    "autocolor",
+    "autocontrast",
+    "autolight",
+    "bw",
+    "enhance",
+    "grain",
+    "grain2",
+    "invert",
+    "movieend",
+    "moviestart",
+    "sepia",
+    "warm",
+)
+
+
+def one_click_keys() -> tuple[str, ...]:
+    """A kék jelvényt kapó szűrők kulcsai (`render.registry.one_click_keys`)."""
+    return _ONE_CLICK_KEYS
+
+
+def can_offer_filter_control(name: str) -> bool:
+    """Kínálhatjuk-e a szűrőt ÁLLÍTHATÓ vezérlőként (`render.chain`, #1142)?
+
+    A régi effektek fülének gombjait a QML induláskor, az első ablakkép előtt
+    kérdezi le (`legacyEffects`). Ezekre a választ a fent rögzített
+    `_LEGACY_EFFECT_NAMES` adja, hogy ne kelljen betölteni a `picasapy.render`
+    csomagot (#6688); minden más névre a renderelő dönt."""
+    if name in LEGACY_EFFECT_KEYS:
+        return name in _LEGACY_EFFECT_NAMES
+    return _can_offer_filter_control(name)
+
+
 _EFFECT_NAMES = (
     # #2141: az 1. effekt-fül első hat csempéje az EREDETI elsődlegesét
     # hívja (a `0x00c7e5a0` csempe-tábla szerint). Az `unsharp`, `grain`

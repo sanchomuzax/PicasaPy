@@ -8721,9 +8721,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>Ieşiţi din PicasaPy</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>O operaţie în fundal este încă în curs (exportare, export web sau scanarea chipurilor). Dacă ieşiţi acum, aceasta se va opri şi nu va fi reluată ulterior.</translation>
+            <translation>Încă sunt activități în desfășurare în fundal. Dacă ieșiți acum, exportarea și exportarea web se vor opri și nu vor fi reluate; căutarea fețelor va continua la următoarea pornire a PicasaPy.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9494,9 +9494,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>O operaţie în fundal este încă în curs (exportare, export web sau scanarea chipurilor). Dacă ieşiţi acum, aceasta se va opri şi nu va fi reluată ulterior.</translation>
+            <translation>Încă sunt activități în desfășurare în fundal. Dacă ieșiți acum, exportarea și exportarea web se vor opri și nu vor fi reluate; căutarea fețelor va continua la următoarea pornire a PicasaPy.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

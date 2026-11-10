@@ -8703,9 +8703,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>Sair do PicasaPy</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ainda há tarefas em segundo plano em andamento (exportação, exportação para a web ou pesquisa de rostos). Se você sair agora, elas serão interrompidas e não serão retomadas depois.</translation>
+            <translation>Ainda há tarefas em segundo plano. Se você sair agora, a exportação e a exportação para a web serão interrompidas e não serão retomadas; a pesquisa de rostos continuará na próxima vez que você iniciar o PicasaPy.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9464,9 +9464,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Ainda há tarefas em segundo plano em andamento (exportação, exportação para a web ou pesquisa de rostos). Se você sair agora, elas serão interrompidas e não serão retomadas depois.</translation>
+            <translation>Ainda há tarefas em segundo plano. Se você sair agora, a exportação e a exportação para a web serão interrompidas e não serão retomadas; a pesquisa de rostos continuará na próxima vez que você iniciar o PicasaPy.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

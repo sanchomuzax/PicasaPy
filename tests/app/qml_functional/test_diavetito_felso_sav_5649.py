@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import Q_ARG, QMetaObject, QPoint, QPointF, Qt
+from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPen, QWindow
 from PySide6.QtQuick import QQuickItem
 from PySide6.QtTest import QTest
@@ -108,16 +108,18 @@ def test_felso_sav_es_lejatszas_azonos_allapotot_valt_es_a_tobbi_kattintas_marad
         qt_app, lambda: window.height() == celmagassag, 2.0
     ), f"az ablak nem vette fel a kért magasságot: {window.height()}"
 
+    QTest.keyClick(
+        window, Qt.Key.Key_4, Qt.KeyboardModifier.ControlModifier
+    )
+    assert varj_feltetelre(
+        qt_app,
+        lambda: (
+            (show := window.findChild(QQuickItem, "slideshowView")) is not None
+            and show.isVisible()
+        ),
+        10.0,
+    ), "a Ctrl+4 nem indította el a vetítést"
     show = _gyerek(window, "slideshowView")
-    QMetaObject.invokeMethod(
-        show,
-        "start",
-        Qt.ConnectionType.DirectConnection,
-        Q_ARG("QVariant", 0),
-    )
-    assert varj_feltetelre(qt_app, lambda: show.property("visible") is True), (
-        "a vetítés nem indult el"
-    )
     show.setProperty("playing", False)
     controls = _gyerek(window, "slideshowControls")
     controls.setProperty("shown", True)

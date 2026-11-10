@@ -8721,9 +8721,9 @@ picasapy-origin-key: stringres:IBackgroundNotify::cancel</extracomment>
             <translation>Iziet no PicasaPy</translation>
         </message>
         <message>
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Joprojām notiek darbs fonā (eksportēšana, tīmekļa eksportēšana vai seju meklēšana). Ja iziesiet tagad, tas tiks pārtraukts un vēlāk neturpināsies.</translation>
+            <translation>Fonā joprojām notiek darbs. Ja iziesiet tagad, eksportēšana un tīmekļa eksportēšana tiks pārtraukta un netiks turpināta; seju meklēšana turpināsies nākamajā PicasaPy palaišanas reizē.</translation>
         </message>
         <message>
             <source>Exit Now</source>
@@ -9494,9 +9494,9 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBigBtn</extracomment>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="297" />
-            <source>Background work is still running (export, web export or face scanning). If you exit now, it stops and does not resume later.</source>
+            <source>Background work is still running. If you exit now, export and web export stop and do not resume; face scanning continues the next time you start PicasaPy.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation>Joprojām notiek darbs fonā (eksportēšana, tīmekļa eksportēšana vai seju meklēšana). Ja iziesiet tagad, tas tiks pārtraukts un vēlāk neturpināsies.</translation>
+            <translation>Fonā joprojām notiek darbs. Ja iziesiet tagad, eksportēšana un tīmekļa eksportēšana tiks pārtraukta un netiks turpināta; seju meklēšana turpināsies nākamajā PicasaPy palaišanas reizē.</translation>
         </message>
         <message>
             <location filename="../src/picasapy/app/qml/PicasaPy/MainWindowCommands.qml" line="306" />

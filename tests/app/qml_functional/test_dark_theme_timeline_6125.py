@@ -1,10 +1,21 @@
 """#6125 — az Időrend vezérlői követik az alkalmazás sötét témáját."""
 
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QObject, Qt
+from PySide6.QtTest import QTest
+
+from tests.support.varakozas import var_feltetelre
 
 
-def test_timeline_controls_use_dark_theme_tokens(qml_app):
+def test_timeline_controls_use_dark_theme_tokens(qml_app, qt_app):
     window, controller, engine = qml_app
+    QTest.keyClick(
+        window, Qt.Key.Key_5, Qt.KeyboardModifier.ControlModifier
+    )
+    assert var_feltetelre(
+        qt_app,
+        lambda: window.findChild(QObject, "timelineView") is not None,
+        5.0,
+    ), "a Ctrl+5 nem nyitotta meg az Időrendet"
     timeline = window.findChild(QObject, "timelineView")
     assert timeline is not None
     date_label = timeline.findChild(QObject, "timelineFirstDate")

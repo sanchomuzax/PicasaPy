@@ -28,6 +28,7 @@ from support.folder_hierarchy_wiring import wire_folder_hierarchy
 from support.print_wiring import wire_passport, wire_print
 from support.jpeg_factory import make_jpeg
 from support import keep_burkok
+from support.halasztott_nezetek import nezetek_elore
 from support.render_test_helpers import rogzitett_betu_context
 
 
@@ -143,6 +144,7 @@ def _build_qml_app(
     email_vezerlo: bool = False,
     show_only_big_images: bool | None = False,
     keep_modul=None,
+    nezetek_elore_epit: bool = True,
 ):
     """Teljes app betöltése és biztonságos lebontása egy gyökérmappában.
 
@@ -415,6 +417,8 @@ def _build_qml_app(
     window = _validated_qml_root_window(engine.rootObjects())
     controller._reload()
     controller.selectFolder(str(lib))
+    if nezetek_elore_epit:
+        nezetek_elore(window)
     qt_app.processEvents()
     yield window, controller, engine
     effect_slice_controller.shutdown()
@@ -460,7 +464,12 @@ def qml_app(qt_app, tmp_path, request):
     # tesztek kérik, amelyek a rögzített betűs fixture-t is megadják.
     if "rogzitett_betu" in request.fixturenames:
         request.getfixturevalue("rogzitett_betu")
-    yield from _build_qml_app(qt_app, tmp_path, keep_modul=request.module)
+    yield from _build_qml_app(
+        qt_app,
+        tmp_path,
+        keep_modul=request.module,
+        nezetek_elore_epit=request.node.get_closest_marker("halasztott_nezetek") is None,
+    )
 
 
 @pytest.fixture

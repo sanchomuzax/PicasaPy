@@ -215,9 +215,15 @@ class _LibraryActivityMixin:
         # betöltést az alább induló háttér-szinkron szála végzi el, és a
         # `syncFinished` → `_reload_after_sync()` hozza be (a lista addig
         # üres, ugyanúgy, ahogy egy frissen felvett mappa esetén is).
-        self._reload(defer_collections=True)
-        if not self._current_folder:
-            self.restoreSession()
+        self._defer_initial_feed = True
+        try:
+            self._reload(defer_collections=True)
+            if not self._current_folder:
+                self.restoreSession()
+        finally:
+            self._defer_initial_feed = False
+        # #6697: a meglévő indexet a bejárás előtt, háttérszálon olvassuk és rendezzük.
+        self._start_initial_feed_load()
         self._watcher_start_pending = True
         self._watcher_start_timer = QTimer(self)
         self._watcher_start_timer.setSingleShot(True)
