@@ -289,3 +289,24 @@ A 15 egyszűrős státuszváltozás közül csak a `DropShadow`-próba tartozik 
 Az `r6585i/lancok.json` 9 olyan `colorfix` műveletet tartalmaz 8 láncban, amelynek első paramétere hex szín (`colorfix=1,ff...,hőmérséklet`), vagyis a #6617 előtti sorrendet használja. A #6617-höz tartozó job-407 mérés és a jelenlegi kód tesztje szerint az eredeti Picasa ezt az alakot figyelmen kívül hagyja, míg a PicasaPy régi mentésként beolvassa és alkalmazza. Ezeket a fagyasztott adatbeli sorokat mértem le, de mai, érvényes `colorfix`-láncok eredményeként nem szabad értelmezni. A megadott munkafeladatot nem bővítettem a köteg újragenerálásával.
 
 A korábbi egyszűrős mérés 18 eltéréséből 15 most egyezik. A teljes láncoknál viszont az archív és friss 200 soros táblázat státusza és metrikája változatlan: 168 egyezik, 32 eltér. A `lanc-0045` egyenként hibátlan szűrőinek együttállása bizonyított eltérés; a további 30 „c” sorhoz nincs elegendő azonos bemenetű egyszűrős adat vagy véletlen szemcsézés zavarja az összevetést.
+
+## A régi sorrendű `colorfix` tagok kiszűrése (2026-11-10)
+
+Az előző szakasz feltevését lemértem. A 32 eltérő láncból az a 8, amelyben hex első paraméterű `colorfix` tag áll, újra renderelődött úgy, hogy ezeket a tagokat kihagytam, a lánc többi tagja változatlan maradt. Az összevetés ugyanazzal az eredeti Picasa-exporttal és ugyanazokkal a golden küszöbökkel történt.
+
+| Azonosító | Előtte: SSIM / ΔE | A tag nélkül: SSIM / ΔE | Ítélet |
+|---|---|---|---|
+| lanc-0005 | 0.76627 / 29.271 | 0.98611 / 0.608 | egyezik |
+| lanc-0052 | 0.41064 / 139.805 | 0.85688 / 1.153 | eltér |
+| lanc-0080 | 0.80866 / 91.311 | 1.00000 / 0.000 | egyezik |
+| lanc-0101 | 0.97000 / 49.235 | 0.99637 / 0.554 | egyezik |
+| lanc-0124 | 0.89940 / 11.270 | 0.99779 / 0.093 | egyezik |
+| lanc-0144 | 0.83592 / 62.688 | 0.98889 / 0.933 | egyezik |
+| lanc-0186 | 0.97919 / 1.075 | 1.00000 / 0.000 | egyezik |
+| lanc-0190 | 0.98653 / 37.440 | 0.99188 / 0.889 | egyezik |
+
+Az egyszűrős `egy-001` (`colorfix=1,ffca3cff,-0.164578;`) eredeti exportja a változatlan forrásképpel bitre egyezik (SSIM 1.00000, ΔE 0.000), tehát a Picasa ezt a tagot sem alkalmazta.
+
+**Következtetés.** A „c” csoport mind a hat nagy eltérésű sora (ΔE 11 és 92 között) és a `lanc-0186` a köteg adathibája, nem a PicasaPy renderelőjének hibája. A köteg a #6617 előtt készült, amikor a generátor a szín, majd hőmérséklet sorrendet írta. Ezt az eredeti Picasa elveti, a PicasaPy pedig régi mentésként natív sorrendre alakítja és alkalmazza. A #6617 óta a generátor (`format_param_values`) natív sorrendben ír (`colorfix=1,<hőmérséklet>,<szín>`), így egy új köteg már a valódi `colorfix`-utat méri. A `lanc-0052` maradék eltérése a láncban maradt többi tagé (`QuantizePalette`, `Matte` és társai), ez az „a” besorolású sor.
+
+A „c” csoport így 30-ról 23 sorra szűkül. Mind a 23 maradék eltérés kicsi (ΔE 0,47 és 3,67 között), és 21-ben véletlen szemcsézés (`grain`, `grain2`, `PicnikGrain`), `PicnikFocalPixelate` vagy `triple2` áll (kivétel: `lanc-0056` és `lanc-0113`). A következő lépés ezek leszűkítése egyszűrős Colab-mérésekkel a láncbeli bemeneten.
