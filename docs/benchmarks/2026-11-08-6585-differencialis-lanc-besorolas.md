@@ -322,7 +322,7 @@ A 24 eltérés besorolása:
 | Csoport | Láncok | Ok |
 |---|---|---|
 | régi sorrendű `colorfix` (8) | 0005, 0052, 0080, 0101, 0124, 0144, 0186, 0190 | a köteg adathibája (előző szakasz); a 0052-ben a többi tag is eltér |
-| ismert együttállás (1) | 0045 | egyenként hibátlan szűrők együtt (`a` csoport) |
+| együttállás (1) | 0045 | egyenként hibátlan szűrők együtt (`b` csoport), ΔE 93,95: leszűkítése a következő lépés |
 | véletlen szemcsézés (8) | 0010, 0043, 0060, 0065, 0117, 0119, 0140, 0169 | `grain`, `grain2` vagy `PicnikGrain` a láncban |
 | `triple2` (6) | 0089, 0095, 0105, 0116, 0178, 0196 | a folyamatszintű dither-fázis (#3092) |
 | erősített közelítés (1) | 0113 | lásd lent |
