@@ -2878,3 +2878,25 @@ Ezek nem részei a §12.14 17 explicit „eltér” sorának, de a §12 nézeten
 ### Következtetés a „Kész, ha” feltételről
 
 Mind a 17 „eltér” sorhoz rögzítettem a PicasaPy-oldali jelenlegi kódutat és - ha van - valódi billentyűpróbára mutató hivatkozást; ez nem jelenti azt, hogy minden sor sikeres PicasaPy-futáspróbát kapott. Az osztályozás a 17 „eltér” sor és két §12.13-as kiegészítő eset, összesen 19 fő táblasor között: **a: 4**, **b: 5**, **c: 10**; emellett öt nyitott §12-es futáspróba-sor külön felsorolva. A videó aktív lejátszás melletti eredeti próbája, a Ctrl+Alt eredeti futásmérése, az F1/F6/F7 megfelelő állapotú eredeti próbája, valamint a Colab rács- és többes kijelölési lépése továbbra is **NINCS MEG**. A #6531 „Kész, ha” feltétele - soronként eredeti és PicasaPy-próba, eltérésenként javító jegy/javítás - **még nem teljesült**.
+
+### 12.16 Újramérés kattintással fókuszált rácson, picasa-colab-jobs 466-476 (2026-11-10)
+
+**Módszer.** Minden billentyű külön, friss `alapallapot` futásban: kattintás a `gray_ramp` bélyegképére (340,272), 2 mp várakozás, a billentyű, 3-4 mp várakozás, végül `Escape`. Minden lépés után képernyőkép és ablaklista készült. Az eltérés a szomszédos képek képpontjainak különbsége (csatornánként 24 fölötti eltérés).
+
+| billentyű | feladat | eltérő képpont a leütés után | látható hatás az eredetin | PicasaPy | állapot |
+|---|---|---:|---|---|---|
+| `Ctrl+0` (kétszer) | #466 | 502 717, majd 502 717 | az első leütés kinyitja a jobb fiókot, a második bezárja | nyitja/zárja | egyezik |
+| `Ctrl+Return` | #467 | 0 | nincs látható változás (a külső megnyitás Wine alatt nem ad ablakot) | lemezen mutatja | nem mérhető, eltérés nem igazolt |
+| `Ctrl+1`, majd `Ctrl+2` | #468 | 497 827, majd 497 827 | kicsire, majd vissza nagy bélyegképre vált | ugyanígy | egyezik |
+| `Ctrl+8` | #469 | 15 981 | a kijelölt kép csillagot kap, megjelenik a „Starred Photos (1)” album | csillagot vált | egyezik |
+| `Ctrl+A` | #470 | 61 404 | minden kép kijelölve | ugyanígy | egyezik |
+| `Ctrl+A`, majd `Ctrl+D` | #471 | 61 359, majd 61 712 | a kijelölés törlődik | ugyanígy | egyezik |
+| `Ctrl+I` | #472 | 66 731 | a kijelölés megfordul | ugyanígy | egyezik |
+| `Ctrl+M` | #473 | 532 309 | megnyílik az Importálás nézet | ugyanígy | egyezik |
+| `Ctrl+N` | #474 | 104 809 | megnyílik az „Album Properties” ablak | új albumot kér | egyezik |
+| `Ctrl+Shift+R` | #475 | 9 385 | a kijelölt kép 90 fokkal balra fordul | ugyanígy | egyezik |
+| `Ctrl+Shift+V` | #476 | 335 | a vízszintes rámpa függőleges tükre látványra azonos, de a mentés gomb aktív lesz (a kép módosult) | függőlegesen tükröz | egyezik |
+
+**Következtetés.** A §12.14 0 px-es „eltér” sorait a fókusz hiánya okozta: kattintással fókuszált rácsban az eredeti Picasa mind a tíz billentyűre ugyanazt a műveletet végzi, mint a PicasaPy. A `Ctrl+0` §12.15-ös „b” besorolása, és vele a `Ctrl+8` „az F4 kezeli” megjegyzése is helyesbítve: mindkettő egyezik. A `Ctrl+Left` a #6776 próbája szerint szintén egyezik.
+
+**A #6531 „Kész, ha” mérlege.** A tábla minden sorához van eredeti és PicasaPy-próba. A videónéző `/`, `,`, `.` billentyűjének aktív lejátszás közbeni eredeti próbája Wine alatt nem futtatható (a DirectShow-lejátszó nem indul, §12.14), ám a binárisban nincs olyan út, amely ezeknek parancsot adna (§12.10). Eltérés így csak három rejtett funkciónál maradt: `Ctrl+Shift+L` (helyi webszerver), `Ctrl+Alt+Shift+G` (óriás kontaktkép külső nézőben) és `Ctrl+Shift+Y` (rejtett „egg” réteg). Ezekről a §12.11 hatókördöntése szól: nem cél. Más javítandó eltérés nincs.
