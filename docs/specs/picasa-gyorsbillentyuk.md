@@ -2573,7 +2573,7 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
 
 **Következtetés.** A leltár jelenlegi bináris bizonyítéka szerint egyik billentyűhöz sincs azonosított videónézeti parancs. A PicasaPy videónézőjéhez most nem indokolt `/`, `,`, `.` gyorsbillentyű-javítást hozzáadni: az eredeti Picasa viselkedését a sorok kommentje önmagában nem bizonyítja. Ez nem paritásfutás; az eredeti Picasa és a PicasaPy valódi billentyűleütéses próbája továbbra is szükséges a teljes jegy lezárásához.
 
-**Kétutas ellenőrzés és cáfoló kör (2026-11-08).** Az A út a `Picasa3i18n.dll` nyers `SHORTCUTS.XML`-erőforrásából olvassa ki a 42–44. sor üres célbillentyűjét (`0x591ad8`), majd a független parser-disassemblyben ellenőrzi, hogy a nulla `dstkey` a `0x009a1194` kapun át rekordkihagyást okoz. A B út a `Picasa3.exe` teljes `.text` szakaszát pásztázza: a `0x005c5fc0` egyetlen közvetlen hívója `0x005e61d1`; a fogyasztó törzse csak az esemény billentyű- és módosítómezőit írja át, a `0x00801270` OneUp-kezelőben pedig nincs `/`, `,` vagy `.` műveletág. A két út egyezik abban, hogy a három XML-sor nem ad parancsot a vizsgált keymap- és OneUp-útvonalon. **Cáfoló kísérlet:** azt az alternatívát vizsgáltam, hogy a nulla `dstkey` ellenére a parser mégis táblarekordot ír, vagy a táblafogyasztó parancsot indít; az elsőt a `0x009a1194` nullakapujának ágirányai, a másodikat a `0x005c5fc0` teljes törzse cáfolja. A teljes pásztázás közvetlen hívásokat talál, nem minden lehetséges közvetett eseményutat; ezért a következtetés statikus útvonalra korlátozott.
+**Kétutas ellenőrzés és cáfoló kör (2026-11-08).** Az A út a `Picasa3i18n.dll` nyers `SHORTCUTS.XML`-erőforrásából olvassa ki a 42-44. sor üres célbillentyűjét (`0x591ad8`), majd a független parser-disassemblyben ellenőrzi, hogy a nulla `dstkey` a `0x009a1194` kapun át rekordkihagyást okoz. A B út a `Picasa3.exe` teljes `.text` szakaszát pásztázza: a `0x005c5fc0` egyetlen közvetlen hívója `0x005e61d1`; a fogyasztó törzse csak az esemény billentyű- és módosítómezőit írja át, a `0x00801270` OneUp-kezelőben pedig nincs `/`, `,` vagy `.` műveletág. A két út egyezik abban, hogy a három XML-sor nem ad parancsot a vizsgált keymap- és OneUp-útvonalon. **Cáfoló kísérlet:** azt az alternatívát vizsgáltam, hogy a nulla `dstkey` ellenére a parser mégis táblarekordot ír, vagy a táblafogyasztó parancsot indít; az elsőt a `0x009a1194` nullát vizsgáló kapujának ágirányai, a másodikat a `0x005c5fc0` teljes törzse cáfolja. A teljes pásztázás közvetlen hívásokat talál, nem minden lehetséges közvetett eseményutat; ezért a következtetés statikus útvonalra korlátozott.
 
 #### Amit kizártam
 
@@ -2777,3 +2777,105 @@ Az elosztó parancsüzenetet olvasó mezője a `0x005cb9a1` utasításnál `word
 
 3. **⚠️ A 0 px-es „eltér” sorok NEM igazolnak termékváltozást (2026-11-09).** A `Ctrl+A`, `Ctrl+D`, `Ctrl+I`, `Ctrl+2` és `Ctrl+Shift+R` a bináris menütáblája szerint menügyorsító is (§2.5: Szerkesztés ▸ Az összes kijelölése `0x9cb8`, Kiválasztás megfordítása `0x9c47`, Kijelölés törlése `0x9c90`; Nézet ▸ Normál indexképek `0x9c9c`; Kép ▸ Forgatás balra `0x9ca3`), tehát az eredetiben a menü útján hatnak, függetlenül a `CThumbUI` `0x005e6710` kezelő `0x00579330` őrétől. A futáspróba 0 px-es képe ezért mérési korlát (egy kijelölt kép, a fókusz helye, a menügyorsító és a kezelő sorrendje), nem a működés hiánya. Ugyanez a `Ctrl+8` és a `Ctrl+Shift+V` sorára is áll, amíg menüből vagy fókuszváltozatokkal nem mérjük. A PicasaPy ezeket a billentyűket **megtartja**; aki a sorokból javítást vezetne le, előbb a menügyorsító útját mérje meg (több kép, kattintással fókuszált rács).
 
+### A #6531 lezárási mérlege (2026-11-10)
+
+Az alábbi tábla a §12.14 mind a 17 „eltér” sorát és a §12.13 két látható, PicasaPy-oldali kötés nélküli esetét sorolja fel. A forrásfájl-hivatkozások a `src/picasapy/app/qml/PicasaPy/` alatti QML-re mutatnak; a tesztfájlok a `tests/app/qml_functional/` alól valók. A §12.14 csak az egész `#447-451`-es sorozatot nevezi meg, nem rendeli hozzá külön-külön a feladatokat a kb-kötegekhez; ezért ahol nincs külön komment, a Colab-feladatazonosító **NINCS MEG**. A **képszám NINCS MEG**, ha azt a meglévő specifikációs táblázat nem nevezte meg; nem következtettem ki képszámot a billentyűsorrendből. Minden sor pontosan egy osztályba kerül: (a) a bináris célművelet PicasaPy-ban megvan, eltérést nem igazoltam; (b) igazolt eltérés vagy hiányzó kötés, javító jegyvázlat lent; (c) a 0 px-es menü-/fókuszmérés nem dönt.
+
+| Osztály | Billentyű / nézet | Eredeti Picasa: futáspróba és eredmény | Bináris cím | PicasaPy jelenlegi viselkedése a forrásban; próba |
+|---|---|---|---|---|
+| c | `Ctrl+Return`, könyvtár | A #447-451-es sorozat kb-1 kötegében: 0 px; pontos Colab-feladatazonosító és képszám NINCS MEG. | `0x005e61f8` → `0x005c8320(panel, 0)`; menürekord `0xd6dadc` / `0xd6e2b0` | A kijelölt képet vagy mappát lemezen mutatja: `PicasaMenuBar.qml:642-656`; `test_ctrl_enter_mappa_4631.py::test_ctrl_enter_a_kijelolt_kepet_vagy_az_aktualis_mappat_mutatja`. |
+| b | `Ctrl+0`, könyvtár | A #447-451-es sorozat kb-1 kötegében: 0 px, a jobb fiók nem nyílt ki; pontos Colab-feladatazonosító és képszám NINCS MEG. | `0x005e6206` (`thumbui/toggle_right_drawer`) | Nyitja/zárja a jobb fiókot: `MainKeyboardShortcuts.qml:30-37`, `MainWindowLibraryActions.qml:146-153`; valódi QTest: `test_menusor_billentyu_valodi_5127.py::test_ctrl0_valodi_billentyuvel_kinyitja_es_bezarja_a_jobb_fiokot`. |
+| c | `Ctrl+2`, könyvtár | A #447-451-es sorozat kb-1 kötegében, 16. kép: a bélyegképek kicsik maradtak, 0 px; pontos Colab-feladatazonosító NINCS MEG. | `0x005e6224`; menürekord `0xd6dfc8`, `cmd 0x9c9c` | Normál indexképméretet állít: `PicasaMenuBar.qml:635-641`; valódi QTest az `test_menusor_maradek_valodi_5150_l.py` fájlban. A §12.4 szerint a legutóbbi dokumentált teljes futás e fájlnál két timeout után befejezetlen maradt. |
+| c | `Ctrl+8`, könyvtár | #456, kb-6, 10. kép: a csillag nem változott, 0 px. | `0x005e6584` → `0x005e81e0(panel, 2)` | Váltja a kijelölt kép csillagát: `MainKeyboardShortcuts.qml:75-84`; valódi QTest: `test_konyvtari_gyorsbillentyuk_6660.py::test_ctrl8_valodi_billentyuvel_billenti_a_kijelolt_kep_csillagat`. A §12.14 maga is menü-/fókuszváltozatos ellenpróbát kér. |
+| c | `Ctrl+A`, könyvtár | #456, kb-6, 16. kép: 0 px, a kijelölés nem változott. | `0x005e6471` → `0x005e5070`; menürekord `0xd6dc48`, `cmd 0x9cb8` | Minden képet kijelöl: `MainKeyboardShortcuts.qml:210-215`; valódi QTest: `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_a_es_ctrl_d_valtoztatja_a_kijelolest`. |
+| c | `Ctrl+D`, könyvtár | A #447-451-es sorozat kb-2 kötegében, 10. kép: a kijelölés megmaradt, 0 px; pontos Colab-feladatazonosító NINCS MEG. | `0x005e6492` → `0x005e5310`; menürekord `0xd6dc84`, `cmd 0x9c90` | Törli a kijelölést: `MainKeyboardShortcuts.qml:217-222`; valódi QTest a fenti `test_konyvtar_ctrl_a_es_ctrl_d_valtoztatja_a_kijelolest` esetben. |
+| c | `Ctrl+I`, könyvtár | #456, kb-6, 28. kép: 0 px, a kijelölés nem változott. | `0x005e64f6` → `0x005e5370`; menürekord `0xd6dc70`, `cmd 0x9c47` | Megfordítja a kijelölést: `MainKeyboardShortcuts.qml:224-229`; valódi QTest: `test_invert_selection_menu_1686.py::test_a_billentyu_ugyanazt_adja`. |
+| b | `Ctrl+Shift+L`, könyvtár | A #447-451-es sorozat kb-3 kötegében: 0 px; Wine alatt nem indult böngésző; pontos Colab-feladatazonosító és képszám NINCS MEG. | `0x005e658e` → `0x004cce10` → `0x004cd010` (`ShellExecuteA`) | Nincs termékkötés; a §12.11 korábban kizárta, de a #6531 teljes leltárkérése mellett ez megvalósítandó bináris funkció. PicasaPy-no-op próba: `test_gyorsbillentyu_noop_6714.py::test_konyvtari_nem_bekotott_billentyuk_nem_valtoztatjak_meg_az_allapotot`. |
+| c | `Ctrl+M`, könyvtár | A #447-451-es sorozat kb-3 kötegében: 0 px, nem nyílt Import ablak; pontos Colab-feladatazonosító és képszám NINCS MEG. | `0x005e63ca` → `0x005d3010`; menürekord `0xd6d9b0`, `cmd 0x9c91` | Import-forrás párbeszéd: `PicasaMenuBar.qml:700-705`; valódi QTest: `test_import_menupont_1615.py::TestGyorsbillentyu::test_a_ctrl_m_megnyitja_a_parbeszedet`. |
+| c | `Ctrl+N`, könyvtár | A #447-451-es sorozat kb-3 kötegében: 0 px, nem nyílt Új album ablak; pontos Colab-feladatazonosító és képszám NINCS MEG. | `0x005e6462` (`thumbui/newalbum`); menürekord `0xd6d960` | Új albumot kér: `PicasaMenuBar.qml:723-729`; valódi QTest: `test_gyorsbillentyuk_1616.py::TestUjAlbumMenupontEsCtrlN::test_a_ctrl_n_valodi_billentyuvel_LETREHOZZA_az_albumot`. |
+| c | `Ctrl+Shift+R`, könyvtár | #456, kb-6, 37. kép: 0 px, nem forgott balra. | `0x005e633e`, `0x00562bf0` kapu és Shift-ág; menürekord `0xd6e354`, `cmd 0x9ca3` | Balra forgat: `MainKeyboardShortcuts.qml:291-299`; valódi QTest: `test_gyorsbillentyu_matrix_6531.py::test_konyvtar_ctrl_r_es_ctrl_shift_r_forgatja_a_kijelolt_kepet`. |
+| c | `Ctrl+Shift+V`, könyvtár | A #447-451-es sorozat kb-4 kötegében, 10. kép: 0 px, nincs látható tükrözés; pontos Colab-feladatazonosító NINCS MEG. | `0x005e6408` → `0x005eef30(panel, 1)` | Függőlegesen tükröz: `MainKeyboardShortcuts.qml:309-315`; valódi billentyűpróba a `test_gyorsbillentyuk_valodi_5150_n.py::TestTukrozes` osztályban. A §12.14 ezt is menü-/fókuszváltozattal eldöntendőként tartja nyilván. |
+| a | `Ctrl+F6`, könyvtár | A #447-451-es sorozat kb-4 kötegében: 0 px, látható változás nincs; pontos Colab-feladatazonosító és képszám NINCS MEG; az eredeti adaton a duplikátumállapot NINCS MEG. | `0x005e62bb` → `searchoptions/dupesearch` (`0x009c2fc0`) | Másodpéldány-mód: `MainKeyboardShortcuts.qml:121-129`; valódi QTest pozitív duplikátum-adattal: `test_gyorsbillentyuk_valodi_5150_n.py::TestKeresesek::test_a_ctrl_f6_a_masodpeldanyokat_mutatja`. A Py-próba bináris megfelelő funkciót fed; az eredeti futásmérés azonos, duplikált adaton nyitott. |
+| a | `Ctrl+F7`, könyvtár | A #447-451-es sorozat kb-4 kötegében: 0 px, látható változás nincs; pontos Colab-feladatazonosító és képszám NINCS MEG; az eredeti hasonlósági adatállapot NINCS MEG. | `0x005e62e8` → `searchoptions/loadsim` | Hasonló kép keresése: `MainKeyboardShortcuts.qml:131-138`; valódi QTest: `test_gyorsbillentyuk_valodi_5150_n.py::TestKeresesek::test_a_ctrl_f7_a_kijelolt_kephez_hasonlot_keres`. A Py-próba bináris megfelelő funkciót fed; az eredeti futásmérés azonos, hasonló képeket tartalmazó adaton nyitott. |
+| b | `Ctrl+Left`, könyvtár | A #447-451-es sorozat kb-4 kötegében, 28. kép: a kijelölés az előző képre lépett; pontos Colab-feladatazonosító NINCS MEG. | `0x005b23a6` → `0x005b22b0(panel, -1)` | A jelenlegi kötés csak projektlapok között vált, könyvtárban letiltott: `DocumentTabStrip.qml:193-199`; tesztje csak projektlapváltást igazol: `test_projektlap_billentyuk_2170.py::TestABillentyuLANCA::test_a_ctrl_left_visszafele_valt`. |
+| a | `F1`, könyvtár | A #447-451-es sorozat kb-5 kötegében: Wine alatt nem nyílt meg a súgó; pontos Colab-feladatazonosító és képszám NINCS MEG. | `0x005e683a` → `0x005d0cd0` | Az alkalmazás saját súgóját nyitja: `MainKeyboardShortcuts.qml:183-190`; valódi QTest: `test_gyorsbillentyuk_valodi_5150_n.py::TestSugo::test_az_F1_megnyitja_a_fosugot`. A Wine-hiba nem bizonyítja, hogy a Picasa billentyűútja nem futott le; az eredeti futáspróba nyitott. |
+| a | `F11`, könyvtár | #451, kb-5, 25. kép: keret nélküli teljes képernyőre váltott. | `0x005e68a0` | A főablak teljes képernyőjét kapcsolja: `MainKeyboardShortcuts.qml:381-402`; valódi QTest: `test_viewer_fullscreen_4569.py::test_f11_a_konyvtarnezetben_be_es_kikapcsolja_a_teljes_kepernyot`. A §12.13 korábbi „nem váltana” teszthivatkozása elavult. |
+| b | `Ctrl+Alt+Shift+G`, könyvtár | A #447-451-es sorozat kb-2 kötegében a `ginormous.jpg` megnyílt a külső `foo` ablakban; pontos Colab-feladatazonosító és képszám NINCS MEG. | `0x005e652c` → `0x0057b050` | Nincs PicasaPy-kötés; a #6714 valós `QTest.keyClick` no-opot mér (`test_gyorsbillentyu_noop_6714.py:28-50, 173-220`). A §12.11 korábban termékhatókörön kívülinek jelölte; a #6531 teljes leltárfeltétele mellett eltérésként marad. |
+| b | `Ctrl+Shift+Y`, könyvtár | A #447-451-es sorozat kb-4 kötegében, 13. kép: a plüssmaci overlay megjelent az Export gomb mellett; pontos Colab-feladatazonosító NINCS MEG. | `0x005e6572` → `0x005e5ec0` (`overlays/egg`) | Nincs PicasaPy-kötés; a #6714 QTest no-opot mér (`test_gyorsbillentyu_noop_6714.py:28-50, 173-220`). A §12.11 korábbi „nem cél” döntése és a #6531 teljes leltárigénye ütközik; teljes paritás esetén külön javító jegy szükséges. |
+
+**a - a bináris célművelet PicasaPy-ban megvan; igazolt eltérést nem találtam.** Az `F1` PicasaPy-ban megnyitja az alkalmazás saját súgóját, az `F11` pedig teljesíti a mért könyvtári teljesképernyő-működést. A `Ctrl+F6` és `Ctrl+F7` PicasaPy-próbája pozitív (duplikátumot, illetve hasonló képeket tartalmazó) adaton igazolja a megfelelő keresési módokat; az eredeti 0 px-es próbák adatállapota nem ismert, ezért azok nem bizonyítanak ellenkező viselkedést. Az F1 Wine-os eredményét a külső súgó-indítási korlát miatt nem tekintem a belső billentyűút bizonyítékának. Az F1, F6 és F7 eredeti, megfelelő állapotú futáspróbája továbbra is nyitott.
+
+**b - javító jegyvázlatok a hívónak.**
+
+| Cím | Eredeti / nálunk / teendő | Kész, ha |
+|---|---|---|
+| `Ctrl+Shift+L`: beépített webszerver | **Eredeti:** a #447-451-es sorozat kb-3 kötegében 0 px; Wine nem indított böngészőt, ezért a látható kimenet nem igazolt. Pontos Colab-feladatazonosító és képszám NINCS MEG. **Bináris:** `0x005e658e` → `0x004cce10` → `0x004cd010`, helyi szerver és URL, majd `ShellExecuteA`. **Nálunk:** nincs kötés. **Teendő:** a #6531 teljes leltárigénye szerint valósítsd meg a lokális megosztás indítását és a rendszerböngésző meghívását; vizsgáld felül a §12.11 korábbi kizárását. | Ctrl+Shift+L elindítja a dokumentált PicasaPy-megosztási útvonalat; a valódi billentyűpróba ellenőrzi a létrehozott URL-t és a böngésző-meghívást. |
+| `Ctrl+0`: a jobb fiók váltása könyvtárnézetben | **Eredeti:** a #447-451-es sorozat kb-1 kötegében 0 px, a jobb fiók nem nyílt ki; pontos Colab-feladatazonosító és képszám NINCS MEG. **Bináris:** `0x005e6206` a jobb fiók váltója. **Nálunk:** valódi QTest nyitja/zárja. **Teendő:** azonos, kattintással fókuszált könyvtári állapotban ismételd meg az eredeti billentyűt; a mért eredményhez igazítsd a PicasaPy-viselkedést vagy a specifikációt. | Az eredetin és PicasaPy-on azonos kezdőfiók mellett a nyitás és a második leütésre zárás soronként, képpel/állapottal rögzített; a PicasaPy QTest ugyanazt az eredményt igazolja. |
+| `Ctrl+Left`: könyvtári kijelölés az előző képre | **Eredeti:** a #447-451-es sorozat kb-4 kötegében, 28. kép; pontos feladatazonosító NINCS MEG. `0x005b23a6` → `0x005b22b0(-1)`. **Nálunk:** a `DocumentTabStrip.qml:193-199` csak projektlapot vált. **Teendő:** könyvtárnézetben kösd a balra lépést a kijelöléshez, és tartsd meg a projektlap-sáv működését. | Kattintással fókuszált rácsban valódi Ctrl+Balra az előző képre viszi a kijelölést; valódi QTest és a projektlap-váltó próba is zöld. |
+| `Ctrl+Alt+Shift+G`: ginormous kontaktkép | **Eredeti:** §12.14 kb-2, külső `foo` ablak, `0x005e652c` → `0x0057b050`. **Nálunk:** nincs kötés, a #6714 no-op teszt ezt méri. **Teendő:** ha a #6531 teljes leltárkérése érvényes, add hozzá a kontaktkép-készítő és külső megnyitó utat; ezzel a §12.11 korábbi hatókördöntését felül kell vizsgálni. | Ctrl+Alt+Shift+G előállítja a dokumentált kontaktképet és a rendszer képnézőjébe adja; valódi billentyűpróba ellenőrzi a fájlt és a megnyitóhívást. |
+| `Ctrl+Shift+Y`: `overlays/egg` | **Eredeti:** a #447-451-es sorozat kb-4 kötegében, 13. kép, az overlay megjelenik; pontos feladatazonosító NINCS MEG. **Nálunk:** nincs kötés, a #6714 no-op teszt ezt méri. **Teendő:** ha a #6531 teljes leltárkérése érvényes, kösd be a `0x005e5ec0` út megfelelő felületi eredményét; ez is felülvizsgálja a §12.11 korábbi hatókördöntését. | Valódi Ctrl+Shift+Y leütés megjeleníti az eredetihez dokumentált overlay-t; QML-próba rögzíti a megjelenés helyét és az alkalmazásállapot. |
+
+**c - a 0 px-es mérés nem dönt.** Ide tartozik: `Ctrl+Return`, `Ctrl+2`, `Ctrl+8`, `Ctrl+A`, `Ctrl+D`, `Ctrl+I`, `Ctrl+M`, `Ctrl+N`, `Ctrl+Shift+R`, `Ctrl+Shift+V`. A §3 és a §2.5 menürekordjai miatt a képernyőkép önmagában nem választja szét a menügyorsító és a nézetkezelő útját; a `Ctrl+8` és `Ctrl+Shift+V` esetén maga a §12.14 ír elő fókusz-/menüváltozatos ellenpróbát. Ezért a `Ctrl+8`/`Ctrl+Shift+V` c-besorolása mérési nyitottságot jelöl, nem állítja, hogy ezekhez azonos menügyorsító-rekord van.
+
+**Colab-próbasor.** A `~/Documents/picasa-colab-jobs/README.md` nem található. A helyi `~/picasapy-agent/eszkozok/colab_felmero.py` v3 `ui_capture`-formátumot dokumentál (`picasa: indit`, `var_ablak`, `kattint`, `var`, `billentyu`; kimenet: képernyőkép, ablakméret, állapot). Minden billentyű külön, friss munkamenetben fusson legalább három képet tartalmazó adaton; a rácskattintás koordinátája és a kattintásos többes kijelölés sémája **NINCS MEG**. Az alábbi JSON koordináta-helyőrzője emiatt nem futtatható; értékét az aktuális Colab-képernyőképen kell megmérni.
+
+Példa a `Ctrl+2` menü-pozitív kontrolljára és külön billentyűfutására. A két futás külön feladat legyen. A menükoordináták a helyi `menuk.json` katalógusból származnak. További ismert, biztonságos főmenü-kontrollok: `Ctrl+A` - Szerkesztés `[43,29]` → Az összes kijelölése `[69,188]`; `Ctrl+I` - Szerkesztés `[43,29]` → Kiválasztás megfordítása `[69,220]`; `Ctrl+M` - Fájl `[14,29]` → Importálás forrása `[40,106]`; `Ctrl+N` - Fájl `[14,29]` → Új album `[40,48]`. A `Ctrl+D` menütétele a katalógus pillanatképe szerint letiltott, állapotfüggő koordinátája NINCS MEG. A `Ctrl+Return` menütétel kattintását a felmérő veszélyesnek jelöli, mert közvetlen szomszédja a törlő tételnek; ne kattints rá. `Ctrl+8`-hoz nincs azonos menütétel, a `Ctrl+Shift+R`/`Ctrl+Shift+V` helyi menüjének biztonságos koordinátája NINCS MEG.
+
+```json
+{
+  "v": 3,
+  "tipus": "ui_capture",
+  "cel": "#6531 Ctrl+2, Nézet > Normál indexképek pozitív kontroll",
+  "indulas": "friss",
+  "lepesek": [
+    {"picasa": "indit"},
+    {"var_ablak": "Picasa 3", "mp": 60},
+    {"kattint": [null, null]},
+    {"var": 2},
+    {"kattint": [76, 29]},
+    {"var": 1},
+    {"kattint": [99, 80]},
+    {"var": 2}
+  ],
+  "kimenet": ["kepernyokep", "ablakmeret", "allapot"],
+  "keret": {"perc": 10}
+}
+```
+
+```json
+{
+  "v": 3,
+  "tipus": "ui_capture",
+  "cel": "#6531 Ctrl+2, kattintással fókuszált rács billentyűpróba",
+  "indulas": "friss",
+  "lepesek": [
+    {"picasa": "indit"},
+    {"var_ablak": "Picasa 3", "mp": 60},
+    {"kattint": [null, null]},
+    {"var": 2},
+    {"billentyu": "ctrl+2"},
+    {"var": 2},
+    {"billentyu": "Esc"}
+  ],
+  "kimenet": ["kepernyokep", "ablakmeret", "allapot"],
+  "keret": {"perc": 10}
+}
+```
+
+Az `idorend` mintában lévő képek száma és a fókuszált rácskoordináta nem szerepel a helyi mérési anyagban. Ugyanezt a külön menü- és billentyűfutást kell alkalmazni a c-lista minden elemére; a billentyűt a `billentyu` mezőben kell cserélni, menükoordinátát pedig csak a biztonságos katalógusból szabad átvenni. A veszélyjelzés, a hiányzó kattintási sémarész és a hiányzó képernyő-koordináta miatt a Ctrl+Return, Ctrl+D, Ctrl+8, Ctrl+Shift+R és Ctrl+Shift+V teljes, kiosztható menü-kontroll feladata **NINCS MEG**.
+
+#### További §12-es nézetenkénti nyitott futáspróba-sorok
+
+Ezek nem részei a §12.14 17 explicit „eltér” sorának, de a §12 nézetenkénti tábláiban nyitott eredeti-próbák. A besorolásuk is pontosan egy osztály; a NINCS MEG értékek miatt a #6531 teljes „Kész, ha” feltétele még nem igazolható.
+
+| Osztály | Billentyű / nézet | Eredeti Picasa-próba | Bináris cím | PicasaPy forrás és próba |
+|---|---|---|---|---|
+| a | `Ctrl+Alt`, könyvtári előnézet | §12.13: eredeti dinamikus billentyűpróba nincs dokumentálva. | `0x005e65dc` → `0x00571a80` | PopDisplay feltételei: `LightboxFeedHoverPreview.qml:35-49`; QTest: `test_gyorsbillentyu_noop_6714.py::test_konyvtar_ctrl_alt_keyclick_megjeleniti_a_kijelolt_elonezetet`. Eredeti dinamikus próba NINCS MEG. |
+| a | `/`, videónéző | #454/#455: a tesztvideó betöltése hibával leállt (`80040273`); #454 17. és 19. kép azonos. Aktív lejátszás próba NINCS MEG. | XML `Picasa3i18n.dll 0x591ad8`; parser `0x009a1194` eldobja az üres célbillentyűt; OneUp `0x00801270`-ben nincs ág. | A `VideoPlayerView.qml` nem deklarál ilyen billentyűt; helyettesítő-lejátszó QTest: `test_gyorsbillentyu_noop_6714.py::test_videonezet_irasjelbillentyui_nem_valtoztatjak_a_lejatszast`. |
+| a | `,`, videónéző | #432-ben a leütés a képaláírás-mezőbe került; #454/#455 videója nem indult el. Aktív lejátszás próba NINCS MEG. | XML `Picasa3i18n.dll 0x591ad8`; parser `0x009a1194`; OneUp `0x00801270`, nincs ág. | Nincs videóbillentyű-kezelő; ugyanaz a PicasaPy helyettesítő-lejátszó QTest a pozíciót és állapotot változatlannak ellenőrzi. |
+| a | `.`, videónéző | #432-ben a leütés a képaláírás-mezőbe került; #454/#455 videója nem indult el. Aktív lejátszás próba NINCS MEG. | XML `Picasa3i18n.dll 0x591ad8`; parser `0x009a1194`; OneUp `0x00801270`, nincs ág. | Nincs videóbillentyű-kezelő; ugyanaz a PicasaPy helyettesítő-lejátszó QTest a pozíciót és állapotot változatlannak ellenőrzi. |
+| a | `Space`, diavetítés vezérlősávja | #375, 17-19. kép: szünetben a sáv látszott, folytatáskor eltűnt; a képek nem rögzítik a mutató mozgását/helyét, így a Space okozta előhívás NINCS MEG. | `0x005c4a10` a mutató mozgását, 50 px küszöböt, 0,5 s nyugalmi referenciát és sáv fölötti mutatót vizsgálja; szünetjelzőt nem olvas. | A megfelelő feltétel a `SlideshowControls.qml:15-54,97-104` forrásában van; a §12.8-12.9 összevetése szerint sávjavítás nem indokolt. |
+
+### Következtetés a „Kész, ha” feltételről
+
+Mind a 17 „eltér” sorhoz rögzítettem a PicasaPy-oldali jelenlegi kódutat és - ha van - valódi billentyűpróbára mutató hivatkozást; ez nem jelenti azt, hogy minden sor sikeres PicasaPy-futáspróbát kapott. Az osztályozás a 17 „eltér” sor és két §12.13-as kiegészítő eset, összesen 19 fő táblasor között: **a: 4**, **b: 5**, **c: 10**; emellett öt nyitott §12-es futáspróba-sor külön felsorolva. A videó aktív lejátszás melletti eredeti próbája, a Ctrl+Alt eredeti futásmérése, az F1/F6/F7 megfelelő állapotú eredeti próbája, valamint a Colab rács- és többes kijelölési lépése továbbra is **NINCS MEG**. A #6531 „Kész, ha” feltétele - soronként eredeti és PicasaPy-próba, eltérésenként javító jegy/javítás - **még nem teljesült**.
