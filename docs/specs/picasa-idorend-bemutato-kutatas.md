@@ -1935,3 +1935,40 @@ A dobozok `y` koordinátája is változik: az 1. váltás előtt/után a piros-k
 - A job-446 tényleges Preferences-értékei és a +0x520 frissítési időalapja NINCS MEG; megszerzésükhöz az eseményekkel szinkron új Wine-videó és ugyanabban a futásban rögzített beállítások szükségesek.
 
 **Módosított fájlok ebben a szakaszban.** A 38.2.105-ös mérleg a 2026-11-10-i helyi diszasszemblálás eredményeivel bővült; az összevető táblák PicasaPy-kódreferenciái nem futásidejű mérések.
+
+#### 38.2.106 A bemeneti lista hívási hídja és a dátumtömb nyitott írója (#6532, 2026-11-10)
+
+**Hatókör.** A `0x004b8470` upstream listáját a `0x006dc4c0` hívó felől ellenőriztem, és újraértékeltem, összeköthető-e a qshow bemenetével. A dátumgetter `0x0044f7c0` íróját célzottan kerestem a helyi `.text`-ben és a CThumbDB RTTI-vtable metódusai között. A kör nem futtatott Picasát és nem módosított termékkódot.
+
+**A hívási út.** A `0x006dc4c0` a `[esp+0x68]` értékét `EBP`-be tölti (`0x006dc4c5`), majd a `[EBP+0x2c0]` értéket adja `EAX`-ban a `0x004b8ee0`-nak (`0x006dc626`-`0x006dc62c`). A `0x004b8ee0` meghívja a `0x004b8470`-et (`0x004b9192`); a `0x004b8470` pedig a megtartott indexek feldolgozásakor a `0x004b29d0`-t hívja (`0x004b85c8`). A bináris-index xref-jei ugyanezt a függvényláncot adják: `0x006dc4c0 → 0x004b8ee0 → 0x004b8470 → 0x004b29d0`.
+
+**A lista és a szűrés tényleges határa.** A `0x004b8470` a `[this+0x148]` dword-tömb `+[index*4]` értékét olvassa; a ciklusszám a `[this+0x14c] >> 1`. Ha a `[this+0x9d]` bájt nem nulla, a `0x004461a0` kapja a `[this+0xc4]` értéket és az aktuális indexet, és a hamis eredmény kihagyja a `0x004b29d0` hívását. A feltétel tartalmi jelentése NINCS MEG. A `0x004b29d0` a CAlbumState-ként korábban azonosított objektum `[+0x138 + index*0x24 + 0x0c]` mezőjét `2`-höz hasonlítja, majd a `0x0044ddd0` segítségével további elemet kér; a mező szemantikája szintén NINCS MEG. A `0x004b8470` által épített rekord `0x38` bájtos (`push 0x38`, `0x004b8568`); a qshow `0x007fc7c0` builderének kártyarekordja `0xf8` bájtos. Ez kizárja, hogy a két rekordlista ugyanaz a nyers puffer legyen, de nem zárja ki köztük az adaptert.
+
+**A qshow-val való kapcsolat.** A `CThumbUI+0x2c0` `CAlbumState` pointerét a 38.2.69 két külön úton azonosítja; a qshow elemlekérője a külön `CThumbUI+0x2bc` szolgáltató `+0x20` virtuális helyére jut (`0x00562cc0`). A mostani híd `0x006dc4c0`-ban ugyancsak numerikusan `+0x2c0`-ról olvas, de a függvény `[esp+0x68]` objektumának osztálya és a mező típusa nincs azonosítva. Ezért az azonos eltolás nem bizonyítja, hogy ugyanarról a CAlbumState-ról van szó; a `0x004b8470` kimenetének qshow `[this+0xac]` bemeneti leíróihoz vagy a qshow szolgáltatójához vezető útja továbbra is NINCS MEG.
+
+**A dátumtömb.** A `0x0044f7c0` getter `0x0044f80f`-nél a `this+0xbc8` alobjektumra lép, `0x0044f857`-nél annak `+0x58` tömbjéből olvas, és hiányzó elemnél a `+0x60` qwordot adja vissza. A korábban vizsgált `0x00477920` másik, `this+0x1a48+0x58` tárolóba ír; ezért nem a keresett író. A kapuzott teljes `.text`-pásztázás és a CThumbDB RTTI-vtable metódusain futtatott `offset_map.py` nem adott osztályhoz kötött írócímet. Az utóbbi korlátozott negatív eredmény (regiszterfelismerési és RTTI-lefedettségi határral), nem bizonyíték arra, hogy nincs író. A pontos tömbíró és a qword naptári jelentése NINCS MEG.
+
+**Bizonyíték és bizonyítottsági fok.**
+
+| Állítás | Forrás | Fok |
+|---|---|---|
+| A hívási lánc `0x006dc4c0 → 0x004b8ee0 → 0x004b8470 → 0x004b29d0`. | bináris (`0x006dc626`, `0x004b9192`, `0x004b85c8`) + xref (`binary-index/xrefs`, meglévő Ghidra-hívólista) | megerősített a függvényhívásokra |
+| A `0x006dc4c0` bemeneti objektumának `+0x2c0` mezője `CAlbumState`, illetve ez a qshow-lista forrása. | NINCS MEG | nyitott |
+| A `0x004b8470` ciklusmezői, opcionális szűrőhívása és `0x38` rekordépítése. | bináris (`0x004b8470`, `0x004b29d0`, `0x004ae600`) | feltételes; az utasításút olvasható, a mezők jelentése és osztálya nem |
+| A `0x0044f7c0` getter által olvasott `+0xbc8+0x58` tömb írója és a dátum qword naptári jelentése. | NINCS MEG | nyitott |
+
+**A két független út.** A út: az eredeti PE függvényenkénti utasításolvasása mutatja a `[EBP+0x2c0]` adatátadást és a következő közvetlen hívásokat. B út: a bináris-index xref-táblája és a már meglévő `2026-10-21-idorend-25.txt` hívói és hívott függvényeinek listája külön is ugyanazt a függvényláncot sorolja fel. A két út egyezik a hívási kapcsolatokban. Az objektum osztályára, a mező típusára és a qshow-listával való azonosságra egyik út sem ad bizonyítékot, ezért ezek nem megerősített állítások.
+
+**Cáfoló kísérlet.** Azt a hipotézist próbáltam cáfolni, hogy a `0x004b8470`-ben épített `0x38` bájtos rekordlista maga a qshow `0xf8` bájtos kártyalistája: a rekordméretek eltérnek (`0x004b8568`, illetve `0x007fc7c0`), tehát a nyers pufferazonosság nem tartható. Ez a cáfoló próba ugyanazzal a mércével közvetlen gépi kódot vizsgált; egy köztes átalakítót nem cáfol. A dátumíró jelöltjeként próbáltam elfogadni a `0x00477920`-at is, de a függvény másik `+0x1a48+0x58` tárolót ír, nem a getter `+0xbc8+0x58` útját. A kapuzott pásztázás pozitív kontrolljai megvoltak; a CThumbDB `offset_map.py` negatív találatát nem tekintettem globális bizonyítéknak.
+
+**A #6532 „Kész, ha” pontjai.** (1) ✅ Eredeti videók: a job-373 és job-446 helyi felvételeit a 38.2.101 és 38.2.104 dokumentálja. (2) ⛔ A teljes működés minden megvalósítandó pontja nincs bináris címmel igazolva: a forráshalmaz, szűrőszemantika, qshow-azonosság, dátumtömb írója és több futásidejű beállítás nyitott. (3) ⛔ Ebből a körből nem következik új, bizonyított fejlesztői eltérés; a #6713 tulajdonosi jegyszöveg szerinti lezárása nem igazolja a teljes #6532 feltételt. (4) ⛔ PicasaPy-val összehasonlító, kiadásba adható videó/képsor nincs dokumentálva.
+
+**Nyitott.**
+
+- Ghidra-kör kell: 0x006dc4c0 - a `[esp+0x68]`-ről érkező objektum osztálya és a `+0x2c0` mező tagtípusa; a meglévő Ghidra-kimenet csak a `0x004b8ee0` hívási xref-jét sorolja fel, a teljes `0x006dc4c0` dekompilációt nem tartalmazza. [blokkoló]
+- Ghidra-kör kell: 0x004b8470 - a 38.2.105-ben jelzett kérés pontosítása: a `+0x148/+0x14c` lista típusa, a `[this+0x9d]`/`+0xc4` szűrés szemantikája, és van-e átalakító út a `+0x158` `0x38` rekordlistától a qshow `[this+0xac]` bemenetéhez vagy a `CThumbUI+0x2bc` szolgáltató `+0x20` helyéhez. A meglévő `0x004b29d0` dekompiláció ezekre nem válaszol. [blokkoló]
+- A dátumtömb írója és naptári jelentése a 38.2.105-ben már nyitott Ghidra-kérdés; a jelen kör nem talált új írót. A megszerzési út változatlan: a `0x0044f7c0` getter hívóinak és a CThumbDB betöltő/vtable útjainak visszakövetése.
+- A `0x004b29d0` által vizsgált `+0x0c==2` mező, a `0x004461a0` predikátum és a teljes qshow-bemeneti halmaz jelentése NINCS MEG; megszerzési út: a fenti célzott Ghidra-kör, majd a builder és a CThumbUI szolgáltató közti közvetlen pointer-/vtable-adatút végigkövetése.
+- A dátumtömb írója NINCS MEG; megszerzési út: a `0x0044f7c0` beolvasási útjának hívóitól és a CThumbDB vtable-adatútjaitól a `+0xbc8+0x58` írásáig visszakövetés, majd az író osztályhoz kötésének ellenőrzése.
+
+**Módosított fájlok ebben a szakaszban.** Ez a 38.2.106-os utánkövetés csak a kutatási specet és annak indexleírását bővíti; nincs új PicasaPy-futásmérés, kódváltozás vagy új implementációs eltérés.
