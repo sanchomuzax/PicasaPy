@@ -54,3 +54,15 @@ def lazy_callable(module_name: str, attribute: str) -> Callable[..., Any]:
     tovabbito.__qualname__ = attribute
     tovabbito.__doc__ = f"Lusta hivatkozás: {module_name}.{attribute} (#6688)."
     return tovabbito
+
+
+def render_elore_betolt() -> None:
+    """A render-csomag első betöltése a hívó szálon történjen (#6775)."""
+    importlib.import_module("picasapy.render")
+
+
+def render_elotoltese_utan(inditas: Callable[[], None]) -> None:
+    """Az első képkocka után előbb a render-csomag töltődik a fő szálon,
+    csak utána indul az indulási háttérmunka (#6775)."""
+    render_elore_betolt()
+    inditas()

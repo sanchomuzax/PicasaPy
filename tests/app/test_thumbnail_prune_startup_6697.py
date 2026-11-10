@@ -38,7 +38,7 @@ def test_takaritas_a_frame_callback_utani_startup_sorban_van():
         "def _maintenance_batch_finished", 1
     )[1].split("state.startup_maintenance.batchFinished.connect", 1)[0]
 
-    assert "QTimer.singleShot(0, _start_and_finish)" in first_frame
+    assert "lambda: render_elotoltese_utan(_start_and_finish)" in first_frame
     assert "maybe_prune" not in startup_batch
     assert "thumb_cache_takaritas_sorba(state)" in maintenance_finished
     assert maintenance_finished.index("_start_initial_scan(") < maintenance_finished.index(
