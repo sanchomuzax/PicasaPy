@@ -48,7 +48,8 @@ _REGI_NYILVANOS_NEVEK = {
 # UTF-8 bájtokat rögzíti; AST-t csak a forrássorok megkeresésére használ.
 _MOZGATOTT_FORRASOK = {
     ("cache_storage.py", "_CacheStorageMixin", "__init__"):
-        "34dc32867b361a762e927d0748289f0028c94a714375e3a06afba0239b89b654",
+        # #6697: a konstruktor már nem indít takarítószálat az első képkocka előtt.
+        "24bb4d96d72725d23049c5966c4ca681534c2d2c8f0832418e469a3ea1282aa7",
     ("cache_storage.py", "_CacheStorageMixin", "prune"):
         "31aa3ce9541519e614fb14a5c541cc94e878cfca648f9c07690a73d8f6a8f999",
     ("cache_storage.py", "_CacheStorageMixin", "levels"):

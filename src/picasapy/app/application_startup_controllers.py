@@ -340,3 +340,4 @@ def _startup_step_create_library_controllers(state):
     state.import_source_controller = import_source_controller
     state._lathato_fotok = _lathato_fotok
     state._talca_fotok = _talca_fotok
+
