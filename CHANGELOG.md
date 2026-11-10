@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.93] - 2026-11-10
+
+- A könyvtári rácsban a Ctrl+Balra az előző képre lép (#6776).
+- Szinkron után a program csak akkor tölti újra a képeket és a gyűjteményeket, ha tényleg változott valami; a módosult adatok továbbra is frissülnek (#6695).
+
 ## [1.0.92] - 2026-11-10
 
 - A képszerkesztő feldolgozómoduljai csak az első használatkor töltődnek be, így gyorsabban indul a program (#6688).
