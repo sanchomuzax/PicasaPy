@@ -16,10 +16,12 @@ _APP = _GYOKER / "src" / "picasapy" / "app"
 # kezeli; a többi lenyomat változatlan.
 # #6698: a rescan, a worker és a dirty-adag a háttérprioritás és a kötegelt
 # albumtakarítás miatt változott.
+# #6695: a dirty-adag az explicit frissítési kérést is figyelembe veszi,
+# a teljes worker pedig az index/ini változását jelzi.
 _MOZGATOTT_FORRASOK = {
     # #6476: szándékos változás, a változatlan mappa célzott szinkronja kimarad
     ("library_controller_sync_dirty.py", "_LibrarySyncDirtyMixin", "_on_folders_dirty"):
-        "04f31aab2e6941e80555f210c2b862fdebbdfac86027e1e91869e585b7748799",
+        "70c62407559ad934ef7c798ef3d2eba73767fd965bb69300139fe1cc3e17498b",
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_root_for_folder"):
         "f5afe5e6920a3047137f970df48e26bd2eeec92e67c8b544b126859d86d66efd",
     ("library_controller_sync_sweep.py", "_LibrarySyncSweepMixin", "_poll_current_folder"):
@@ -42,6 +44,11 @@ _MOZGATOTT_FORRASOK = {
         "2f1d5760ed225142b887b30c65b70d8bc5f4a352dd7fdecd78694a2634d0b02b",
     ("library_controller_sync_rescan.py", "_LibrarySyncRescanMixin", "_sync_worker"):
         "0d8b4c19b48d127012deca61a38f3dc39712cdc8107001b0d28aab88c3a28ce8",
+    (
+        "library_controller_sync_rescan.py",
+        "_LibrarySyncRescanMixin",
+        "_sync_worker_roots",
+    ): "3d422f249409b1723edf7440ed0d85a1aa8d4e78c60d9dd49ac4df47f23a4cfe",
     (
         "library_controller_sync_dirty.py",
         "_LibrarySyncDirtyMixin",

@@ -6,6 +6,7 @@ import os
 import threading
 import time
 from contextlib import contextmanager
+from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QSettings
@@ -199,9 +200,9 @@ class TestIniGyorstar:
         with open_index(db_path) as conn:
             collections = load_side_pane_collections(conn)
 
-        assert olvasasok == [str(folder_b / ".picasa.ini")]
-        assert [row.path for row in collections.project_folders] == [str(folder_b)]
-        assert str(folder_a / ".picasa.ini") not in olvasasok
+        assert [Path(path) for path in olvasasok] == [folder_b / ".picasa.ini"]
+        assert [Path(row.path) for row in collections.project_folders] == [folder_b]
+        assert folder_a / ".picasa.ini" not in [Path(path) for path in olvasasok]
 
 
 class TestIniValtozasUtaniFrissites:
@@ -235,7 +236,7 @@ class TestIniValtozasUtaniFrissites:
 
         assert controller._last_sync_changed is True
         assert racs_frissitesek == [True]
-        assert any(row["path"] == str(folder_b) for row in controller.projectFolders)
+        assert any(Path(row["path"]) == folder_b for row in controller.projectFolders)
         with open_index(db_path) as conn:
             photo = next(row for row in all_photos(conn) if row.name == "b1.jpg")
         assert photo.star is True

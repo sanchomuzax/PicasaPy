@@ -133,7 +133,9 @@ class _LibrarySyncRescanMixin:
                 # változatlan körben csak a mtime/méret ellenőrzés fut; sem az
                 # ini tartalma, sem a gyűjtemények nem épülnek újra.
                 self._finish_index_sync(
-                    conn, total_changes_before, cache_was_ready
+                    conn,
+                    total_changes_before,
+                    cache_was_ready,
                 )
         except Exception as error:  # pl. index-migrációs hiba
             errors.append(str(error))

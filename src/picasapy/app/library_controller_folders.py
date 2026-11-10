@@ -316,7 +316,10 @@ class _LibraryFoldersMixin:
                         enabled_filetypes=enabled_filetypes,
                     )
                     self._finish_index_sync(
-                        conn, total_changes_before, cache_was_ready, (path,)
+                        conn,
+                        total_changes_before,
+                        cache_was_ready,
+                        (path,),
                     )
             finally:
                 self.syncFinished.emit()
@@ -381,7 +384,10 @@ class _LibraryFoldersMixin:
                         enabled_filetypes=enabled_filetypes,
                     )
                     self._finish_index_sync(
-                        conn, total_changes_before, cache_was_ready, (path,)
+                        conn,
+                        total_changes_before,
+                        cache_was_ready,
+                        (path,),
                     )
             finally:
                 self.syncFinished.emit()

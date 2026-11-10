@@ -128,6 +128,7 @@ class SidePaneMixin:
         total_changes_before: int,
         cache_was_ready: bool,
         folders: Iterable[str] | None = None,
+        force_refresh: bool = False,
     ) -> bool:
         """Egy szinkron index- és ini-változását összesíti a jelzés előtt."""
         index_changed = conn.total_changes != total_changes_before
@@ -135,7 +136,10 @@ class SidePaneMixin:
             folders = None
         ini_changed = self._refresh_side_pane_cache(conn, folders=folders)
         changed = index_changed or ini_changed
-        self._last_sync_changed = changed
+        # Kifejezett frissítésnél vagy már elvégzett kimenetírás után a nézet
+        # akkor is követi a változást, ha azt egy korábbi indexelő lépés már
+        # beírta, ezért a mostani kapcsolat total_changes értéke nem mutatja.
+        self._last_sync_changed = changed or force_refresh
         if changed or not cache_was_ready:
             self._precompute_side_pane(conn, refresh=False)
         return changed

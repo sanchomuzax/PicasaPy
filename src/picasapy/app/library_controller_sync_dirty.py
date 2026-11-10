@@ -179,6 +179,7 @@ class _LibrarySyncDirtyMixin:
                         total_changes_before,
                         cache_was_ready,
                         folders=refresh_folders,
+                        force_refresh=felhasznaloi,
                     )
             finally:
                 # #1440: a jelzőt az EMITEK ELŐTT engedjük el.
