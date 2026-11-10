@@ -69,3 +69,31 @@ def test_a_cv2_melegites_megelozi_a_szalinditast(vezerlo, tmp_path, monkeypatch)
     assert naplo == ["cv2", "szal"], (
         "a cv2 betöltésének a szálindítás ELŐTT kell megtörténnie"
     )
+
+
+def test_a_render_csomag_melegitese_megelozi_a_szalinditast(
+    vezerlo, tmp_path, monkeypatch
+):
+    naplo: list[str] = []
+    monkeypatch.setattr(
+        export_controller, "elore_betolt", lambda: naplo.append("cv2")
+    )
+    monkeypatch.setattr(
+        export_controller,
+        "render_elore_betolt",
+        lambda: naplo.append("render"),
+    )
+    monkeypatch.setattr(
+        type(vezerlo),
+        "_start_background",
+        lambda self, *a, **k: naplo.append("szal"),
+    )
+    monkeypatch.setattr(
+        export_controller, "has_enough_free_space", lambda *a, **k: True
+    )
+
+    vezerlo.exportRows([0], str(tmp_path / "cel"), 0, 85)
+
+    assert naplo == ["cv2", "render", "szal"], (
+        "a render csomagnak a hívó szálon kell betöltődnie a háttérszál előtt"
+    )

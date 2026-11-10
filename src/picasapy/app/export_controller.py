@@ -23,6 +23,7 @@ from picasapy.export import (
 )
 from picasapy.fileops import has_enough_free_space, required_bytes_for
 from picasapy.lazy_cv2 import elore_betolt
+from picasapy.lazy_import import render_elore_betolt
 
 from picasapy.scanner.filetypes import VIDEO_EXTENSIONS
 
@@ -470,6 +471,10 @@ class ExportMixin(BackgroundWorkerMixin):
         # `_ensure_output_resync_wired()`-nél (#1539): ami a GUI-szálra
         # való, az a szálindítás elé kerül.
         elore_betolt()
+        # #6775: a lusta export-hivatkozások első hívása a háttérszálon
+        # töltené be a render-csomagot; még a szál indítása előtt tegyük ezt
+        # a hívó (GUI-)szálon.
+        render_elore_betolt()
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
         self._start_background(worker, name="picasapy-export")
 

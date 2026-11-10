@@ -44,6 +44,7 @@ from PySide6.QtQuickControls2 import QQuickStyle as QQuickStyle
 
 from picasapy.index import open_index, prune_foreign_folders
 from picasapy.index.sync import sync_folder as sync_folder
+from picasapy.lazy_import import render_elotoltese_utan
 from picasapy.perf import (
     default_log_dir as default_log_dir,
     start_startup_timeline as start_startup_timeline,
@@ -665,7 +666,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
         progress_log.mark("Első főablak-képkocka; a rács megjelent")
         _allitsd_le_az_akadasfigyelot(early_startup)
         # #6510: a multimédia-eszközlistát a Rögzítés panel naplózza
-        QTimer.singleShot(0, _start_and_finish)
+        QTimer.singleShot(0, lambda: render_elotoltese_utan(_start_and_finish))
 
     app = state.app
     controller = state.controller
