@@ -48,7 +48,7 @@ from picasapy.index.side_pane import (
     SidePaneCollections,
     cached_side_pane_collections,
     refresh_side_pane_cache,
-    side_pane_cache_missing,
+    side_pane_cache_coverage,
     side_pane_cache_ready,
 )
 from picasapy.ini import central_contacts_path
@@ -62,9 +62,10 @@ logger = logging.getLogger(__name__)
 #: művelet, tehát a közös zár versengése mérhetetlen.
 _ATADAS_ZAR = threading.Lock()
 
-#: #6695: ennyi hiányzó ini-s mappát a felület szála maga pótol (egy-egy
-#: felhasználói írás új ini-je); ennél több hiány hideg gyorstárat jelent,
-#: azt a háttérszál tölti fel.
+#: #6695: részben kész gyorstárnál ennyi hiányzó ini-s mappát a felület
+#: szála maga pótol (egy-egy felhasználói írás új ini-je). A teljesen üres
+#: vagy ennél hiányosabb gyorstárat a háttérszál tölti fel (#1601: a teljes
+#: ini-söprés nem futhat a felület szálán).
 _HELYBEN_POTOLHATO_MAPPA = 32
 
 
@@ -178,7 +179,8 @@ class SidePaneMixin:
             # ha az írás új ini-t hozott létre. A frissítés csak a hiányzó
             # és a megváltozott idejű vagy méretű ini-ket olvassa; a hideg
             # (nagyrészt üres) gyorstárat a háttér tölti fel.
-            if side_pane_cache_missing(conn) <= _HELYBEN_POTOLHATO_MAPPA:
+            missing, total = side_pane_cache_coverage(conn)
+            if not missing or (missing < total and missing <= _HELYBEN_POTOLHATO_MAPPA):
                 refresh_side_pane_cache(conn, central_path=central_path)
             collections = cached_side_pane_collections(
                 conn, central_path=central_path

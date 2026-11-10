@@ -142,7 +142,8 @@ def _idovonal(ctrl):
     from picasapy.app.timeline_controller import TimelineController
 
     idovonal = TimelineController(ctrl._db_path, ctrl._provider)
-    idovonal.reload()
+    # #6695: az Időrend a megnyitásakor tölt be (csukva csak elavultnak jelöl)
+    idovonal.setTimelineOpen(True)
     return sorted(
         photo["name"]
         for collection in idovonal.collections

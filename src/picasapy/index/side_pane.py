@@ -64,14 +64,15 @@ def side_pane_cache_ready(conn: sqlite3.Connection) -> bool:
         return all(path in _SIDE_PANE_CACHE for path in paths)
 
 
-def side_pane_cache_missing(conn: sqlite3.Connection) -> int:
-    """Hány ini-s mappa hiányzik a gyorstárból (0 = kész gyorstár)?"""
+def side_pane_cache_coverage(conn: sqlite3.Connection) -> tuple[int, int]:
+    """(hiányzó, összes) ini-s mappa a gyorstárban; (0, n) = kész gyorstár."""
     paths = tuple(
         str(row["path"])
         for row in conn.execute("SELECT path FROM folders WHERE has_ini = 1")
     )
     with _SIDE_PANE_CACHE_LOCK:
-        return sum(1 for path in paths if path not in _SIDE_PANE_CACHE)
+        missing = sum(1 for path in paths if path not in _SIDE_PANE_CACHE)
+    return missing, len(paths)
 
 
 def refresh_side_pane_cache(
@@ -265,6 +266,6 @@ __all__ = [
     "clear_side_pane_cache",
     "load_side_pane_collections",
     "refresh_side_pane_cache",
-    "side_pane_cache_missing",
+    "side_pane_cache_coverage",
     "side_pane_cache_ready",
 ]
