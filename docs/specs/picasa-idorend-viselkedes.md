@@ -25,6 +25,17 @@ hogy a kiadott főablakban látható Idővonal-gombnak kell lennie.
 
 #### 38.2.1 Az Időrend bemutató-útja és bizonyított határai (#4443 kutatás)
 
+**Állapotfrissítés (#6532, 2026-11-10).** A korábbi nyitott pontok közül
+lezárva: a CThumbUI+0x2c0 objektum típusa (38.2.69), a qshow
+gyűjteménykártya-listájának dátumkulcs szerinti növekvő rendezése (38.2.105),
+a kártyák képi modellje és feliratai (38.2.93-94, 38.2.97-98, 38.2.102), a
+billentyűk statikus qshow-útja (38.2.63, 38.2.101), valamint az Exit
+host/callback-útja (38.2.63, 38.2.68). Nyitva marad a bemeneti
+CAlbumState-leírók teljes forráshalmaza és szűrésük jelentése (38.2.105), a
+qshow-lista és a PicasaPy-gyűjtemények azonossága, a pontos billentyű-esemény
+és képkocka közti időzítés (38.2.104), a sliderthumb felhasználói művelete,
+valamint a kilépés utáni általános nézet és kijelölés (38.2.81-83).
+
 **A út - utasításszintű olvasat.** A billentyűkezelő `0x005e6279` ága
 ellenőrzi a `0x005696c0` őrt, majd `1` argumentummal hívja a
 `0x005e8a70`-et; a `Ctrl+5` menürekordja a `0x9ccc` parancsra mutat
@@ -39,10 +50,12 @@ gyűjteménytől kér elemszámot
 (`0x004a0980`), majd `0`-tól a kapott elemszámig indexelve meghívja a
 `CThumbUI` vtable `+0x90` metódusát (`0x005e9490-0x005e94f1`). Ez a metódus
 `0x00562cc0`-n keresztül a `CThumbUI+0x2bc` szolgáltató `+0x20` virtuális
-metódusának adja át az indexet. Ez bizonyítja az indexelt bemeneti sorozat
-bejárását; a szolgáltató konkrét típusa, hogy az aktuális mappa/album, teljes
-könyvtár vagy Picture Tray adatait adja-e, továbbá a bejárás előtti dátum-
-rendezés és a képernyőn mutatott kártyák **NINCS MEG**.
+metódusának adja át az indexet. A CThumbUI+0x2c0 objektum CAlbumState típusa
+lezárva (38.2.69). A qshow kártyaépítője a bemeneti descriptor-listát két
+feltétel szerint szűri, majd a dátumkulcsok növekvő sorrendjében építi fel a
+0xf8 bájtos kártyarekordokat (lezárva: 38.2.105). A CAlbumState teljes
+forráshalmaza, a szűrőmezők jelentése, valamint a képernyőn megjelenő összes
+kártya azonosítása **NINCS MEG**.
 
 `0x005e943d-0x005e944d` a `CThumbUI::MakeTimeline` és a „Preparing
 timeline…” szöveget adja át a `0x009ae560` helpernek. A helper diszasszemblálása
@@ -54,8 +67,10 @@ kéri le, majd a `0x007fb210` overlay-felépítőt. Utóbbi a
 `timelinedot`, `sliderthumb`, `startbutton` és `overlay` nevű rétegeket tölti
 be. A `oneup/timeline` gomb `0x008032e0` kattintási ága meghívja a
 `0x007fda00`-et; az állapotváltás időforrást kér, a `0x00802230` átmeneti
-frissítőt indítja, és állapotjelzőket állít. Az átmenet pontos képi tartalma,
-végpontjai és időtartama **NINCS MEG**.
+frissítőt indítja, és állapotjelzőket állít. A kártyák pályája, mélységi
+alfája, a köteg szórása, a feliratok és a vezetőív képlete lezárva
+(38.2.102); a megjelenési és lapozási képkockák pontos billentyű-időbélyege,
+valamint a fizikai utolsó mozgó képkocka **NINCS MEG** (38.2.104).
 
 Az `oneup/prev` és `oneup/next` kattintási ág a `0x00802980`/`0x008029f0`
 képlista-indexet lépteti. A OneUpUI eseménykezelő `0x00803180` kezeli a
@@ -69,9 +84,10 @@ csak a OneUpUI és örökölt eseményút olvasata: a főablak globális gyorsbi
 
 Az `oneup/exit` kattintás a `0x008032e0`-ben a OneUpUI vtable `+0x24`
 metódusával elkéri a `this+0x50` objektumot, majd annak vtable `+0x14`
-metódusát hívja két nulla argumentummal. A visszahívás konkrét célobjektuma
-és az utána látható nézet **NINCS MEG**; a statikus híváslánc nem bizonyítja,
-hogy a kilépés pontosan melyik képernyőre tér vissza.
+metódusát hívja két nulla argumentummal. A qshow host/callback-útja lezárva
+(38.2.63, 38.2.68); a job-239/240/241 mérések csak az adott futások
+visszatérési nézetét és kijelölését rögzítik (38.2.81-83). Az általános,
+minden bemenetre érvényes kilépési nézet és kijelölés **NINCS MEG**.
 
 **B út - független `respack.yt`-erőforrás-leltár.** A helyi Picasa 3.7
 telepítés `runtime/respack.yt` csomagjából kinyert teljes `oneup.tre` minden
@@ -106,9 +122,9 @@ időzít, vagy hogy a fogantyú húzással mit állít.
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| A `0x005e8a70` indexelt szolgáltatói sorozatot jár be, majd a `0x008037e0` → `0x007fb210` oneup/overlay bemutatóútba lép. A teljes tartalom, forráshalmaz, dátumsorrend és kártyák **NINCS MEG**. | A `TimelineView.qml` év-/hónap-rács. A Nézet ▸ Időrend menüpont és `Ctrl+5` tiltott; a `timelineRequested` jelzésnek nincs bekötése, aktív eszköztárgomb nincs. | A rácsot ne tekintsük az eredeti bemutató megfelelőjének. A képek és sorrend implementációja előtt a szolgáltató típusát, a bemeneti halmazt és a dátum-/kártyamodellt kell azonosítani. |
-| Az `oneup.tre` képnéző-, Exit/Timeline-, prev/next, automatikus lejátszás-, forgatás-, csillag-, átmenet-, felirat- és kijelzési idő vezérlőket sorol fel. Az overlay-rétegek között sáv, két pontgrafika és fogantyú van; a fogantyú szemantikus művelete **NINCS MEG**. | A jelenlegi rácsban nincs oneup bemutató-vezérlősáv vagy ilyen overlay. | A bizonyított vezérlők megjelenítése specifikálható; a timeline sáv tartalmát, a `sliderthumb` műveletét és a dátumkártyákat csak célzott kódkövetés vagy eredeti futtatási próba után szabad bekötni. |
-| A `0x008032e0` a `timeline`, `exit`, `prev`, `next` gombokat kezeli. `0x00803180` a görgőt navigációra, az `0x319/1` eseményt az Exit útjára küldi; a sima `WM_KEYDOWN/UP`-hoz a OneUpUI út nem rendel műveletet. Az Exit konkrét visszatérési célja **NINCS MEG**. | A menü és a `Ctrl+5` tiltott; futó bemutató és teszt nincs. | A billentyűmátrixot eredeti futtatásban kell próbálni; az Exit célját a `this+0x50` objektum dinamikus típusának és callbackjének követésével kell igazolni. |
+| A `0x005e8a70` út CAlbumState-elemekből indul; a qshow kártyalistáját a `0x007fc7c0` dátumkulcs szerint növekvően építi fel (lezárva: 38.2.105). A CAlbumState forráshalmaza, szűrőinek jelentése és a teljes kártyakészlet **NINCS MEG**. | A `TimelineController.reload()` nem rejtett fotókból mappakártyákat, valamint nem üres, indexelt albumokból albumkártyákat készít; a gyűjteménykártyák sorrendje a legkorábbi tagdátum, név és azonosító szerint történik (forrás: `timeline_controller.py:183-264`). | A qshow és a PicasaPy gyűjteményhalmazának azonossága nincs bizonyítva; a forráskód szerinti listák összevetése nem igazolja a futásidejű rekord-egyezést. |
+| Az `oneup.tre` képnéző-, Exit/Timeline-, prev/next, automatikus lejátszás-, forgatás-, csillag-, átmenet-, felirat- és kijelzési idő vezérlőket sorol fel. Az overlay-rétegek között sáv, két pontgrafika és fogantyú van; a fogantyú szemantikus művelete **NINCS MEG**. | A PicasaPy jelenlegi Időrendje kártyapályát, dátumpont-sort, lapozást és OneUp-diavetítésre váltó útvonalat ad; a sliderthumb eredeti szemantikájával való megfelelés nincs igazolva. | A vezérlőút részben megfeleltethető; a sliderthumb pontos dátum-/fotóindex-hatását csak bináris út és eredeti futásidejű ellenőrzés után lehet egyezőnek vagy eltérőnek minősíteni. |
+| A `0x008032e0` és `0x00803180` gomb-, egér- és qshow-billentyűútja binárisan dokumentált (38.2.63, 38.2.101); az Exit host/callback-útja lezárva (38.2.68). A teljes billentyű-esemény/képkocka-időzítés és az általános visszatérési állapot **NINCS MEG** (38.2.104, 38.2.81-83). | A jelenlegi `TimelineView.qml` aktív Időrend-nézetet, lapozást és billentyűkezelést tartalmaz; forrás: `TimelineView.qml:82-115,393-406`. | A statikus kezelőutak ismertek; az eredeti és a PicasaPy futásidejű eseményidőzítését szinkron felvétel nélkül ne tekintsük egyezőnek vagy eltérőnek. |
 | A `thumbui/timelinebutton` akciónév létezik, de a csomagolt `thumbui.tre` rejtettnek jelöli (`m_hidden`); a súgó „Timeline view of all your photos”. | Nincs aktív főablaki Időrend-eszköztárgomb. | Az eredeti főablaki gomb láthatóságát ne következtessük ki a parancs létezéséből; ehhez futó Picasa-képernyőkép kell. |
 
 **Cáfoló kísérlet.** Megpróbáltam cáfolni azt az értelmezést, hogy a `timeline`
@@ -131,14 +147,12 @@ utasításból származik; becsült érték nincs. A `CTransTimeline` név a
 film-/People Albums másik hívási láncában szerepel
 (`picasa-create-features.md` 2038-2138); itt nem használtam Időrend-bizonyítékként.
 
-**Nyitott - következő pontos lépés:**
+**Korabeli nyitott pontok állapota (2026-11-10):**
 
-- `Ghidra-kör kell: 0x005e8a70 - az indexelt szolgáltató konkrét típusa és forráshalmaza (mappa/album, teljes könyvtár vagy Picture Tray), a dátum szerinti rendezés, valamint a megjelenő dátum-/mappakártyák építése. [blokkoló]`
+- A CThumbUI+0x2c0 típusa és a qshow kártya dátumkulcs szerinti rendezése lezárva (38.2.69, 38.2.105). A CAlbumState-lista pontos forráshalmaza, a szűrők szemantikája és a teljes kártyakészlet **NINCS MEG**; meglévő Ghidra-kimeneteket a címre ellenőrizni kell, mielőtt új kört kérünk.
 - `Ghidra-kör kell: 0x00a52890 - az örökölt UI-eseménykezelő hogyan irányítja a OneUpUI egérle/fel/mozgatás eseményeit; a sliderthumb réteghez vezet-e húzásos hit-test vagy értékkötés. [blokkoló]`
-- `Ghidra-kör kell: 0x005e60d0 - a globális billentyűkezelő mely gyorsbillentyűi maradnak aktívak a OneUpUI megjelenésekor, és van-e külön billentyűút az Exithez vagy a lapozáshoz. [blokkoló]`
-- `Ghidra-kör kell: 0x008032e0 - az oneup/exit által elért this+0x50 objektum konkrét típusa, a vtable +0x14 callback célja és a visszatérési nézet. [blokkoló]`
-- `Ghidra-kör kell: 0x007fda00 - a Timeline gomb átmenetének tényleges vizuális tartalma, kezdő/végállapota és időzítése. [blokkoló]`
-- A tényleges kártyakép, Timeline sáv állapota, a billentyűk és Exit célja: **NINCS MEG**. A statikus kör után az eredeti Picasa futó módjában célzott billentyű-/húzáspróba és képernyőkép kell; QEMU-harness csak akkor használható, ha a Picasa felületet ezen a képen megjeleníti és az inputot továbbítja.
+- A qshow billentyűút statikus kezelői és az Exit host/callback-útja lezárva (38.2.63, 38.2.68, 38.2.101); a teljes billentyű-képkocka-időzítés és az általános visszatérési állapot **NINCS MEG** (38.2.81-83, 38.2.104).
+- A kártyakép rajzolási modellje, a feliratok, a pálya és az overlay-háttérképlánc lezárva (38.2.93-94, 38.2.97-98, 38.2.102). A sliderthumb felhasználói művelete és a dátumsáv teljes állapotváltozása **NINCS MEG**.
 
 #### 38.2.2 Futás közbeni megfigyelés, job-102 (#4443)
 
