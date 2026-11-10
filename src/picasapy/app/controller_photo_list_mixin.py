@@ -2,27 +2,99 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QLocale
-from picasapy.index import albums_in_index
+import logging
+
+from PySide6.QtCore import QLocale, QObject, Qt, Signal, Slot
+from picasapy.index import albums_in_index, open_index
 from . import formatting
 from .models import folder_order
 from .small_picture_filter import is_big_picture
 from .search_results import group_by_folder
 
+_log = logging.getLogger(__name__)
+
+
+class InitialFeedSignals(QObject):
+    """Az induláskori olvasószál eredményét a felület szálának adja át."""
+
+    ready = Signal(int, object, str)
+
 
 class AppControllerPhotoListMixin:
-    def _feed_records(self, conn) -> tuple:
+    def _start_initial_feed_load(self) -> None:
+        """A meglévő könyvtár képlistáját a bejárás előtt olvassa be."""
+        self._initial_feed_generation = getattr(self, "_initial_feed_generation", 0) + 1
+        generation = self._initial_feed_generation
+        folder_sort = self.folderSort
+        folder_sort_reverse = self.folderSortReverse
+        initial_feed_signals = InitialFeedSignals(self)
+        initial_feed_signals.ready.connect(
+            self._on_initial_feed_ready, Qt.ConnectionType.QueuedConnection
+        )
+        self._initial_feed_signals = initial_feed_signals
+
+        def load_feed() -> None:
+            try:
+                before = self._index_stamp()
+                with open_index(self._db_path) as conn:
+                    records = self._feed_records(
+                        conn,
+                        folder_sort=folder_sort,
+                        folder_sort_reverse=folder_sort_reverse,
+                    )
+                after = self._index_stamp()
+            except Exception as error:  # noqa: BLE001 — a syncFinished még frissíthet
+                initial_feed_signals.ready.emit(
+                    generation, None, f"{type(error).__name__}: {error}"
+                )
+                return
+            initial_feed_signals.ready.emit(generation, (before, after, records), "")
+
+        self._start_background(load_feed, name="picasapy-initial-library-feed")
+
+    @Slot(int, object, str)
+    def _on_initial_feed_ready(self, generation: int, stamp, error: str) -> None:
+        """A kezdeti feed átvétele a felület szálán."""
+        if generation != getattr(self, "_initial_feed_generation", 0):
+            return
+        if self._view_mode[0] != "folder":
+            return
+        if error:
+            _log.warning("a kezdeti könyvtárfeed lekérdezése hibára futott: %s", error)
+            records = ()
+        else:
+            before, after, records = stamp
+            if before != after or after != self._index_stamp():
+                return  # a syncFinished út tölti újra a megváltozott indexet
+
+        self._show(records)
+        folder = getattr(self, "_deferred_folder_activation", None)
+        self._deferred_folder_activation = None
+        if folder and folder == self._current_folder:
+            self.folderActivated.emit(folder)
+
+    def _feed_records(
+        self,
+        conn,
+        *,
+        folder_sort: str | None = None,
+        folder_sort_reverse: bool | None = None,
+    ) -> tuple:
         """A teljes könyvtár a Mappa ▸ Rendezés szerint (#64, #321).
 
         A sorrendet KÜLÖN kérdezzük le, nem a bal hasáb modelljéből vesszük:
         a fa a saját rögzített sorrendjében áll, a rács a beállítást követi.
         """
-        order = {
-            path: i
-            for i, path in enumerate(
-                folder_order(conn, self.folderSort, self.folderSortReverse)
-            )
-        }
+        if folder_sort is None and folder_sort_reverse is None:
+            # A megszokott, főszálas hívások a beállításból olvasnak.
+            sorted_folders = folder_order(conn, self.folderSort, self.folderSortReverse)
+        else:
+            if folder_sort is None:
+                folder_sort = self.folderSort
+            if folder_sort_reverse is None:
+                folder_sort_reverse = self.folderSortReverse
+            sorted_folders = folder_order(conn, folder_sort, folder_sort_reverse)
+        order = {path: i for i, path in enumerate(sorted_folders)}
         from . import controller as controller_module
 
         return tuple(

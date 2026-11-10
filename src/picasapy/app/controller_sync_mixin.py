@@ -138,6 +138,10 @@ class AppControllerSyncMixin:
         így a QML nem görget a mappa tetejére (scrollToGroup). A nézőből
         visszatérve a feed így a megnyitás előtti pozícióján marad."""
         self._reload(preserve_scroll=True)
+        folder = getattr(self, "_deferred_folder_activation", None)
+        self._deferred_folder_activation = None
+        if folder and folder == self._current_folder:
+            self.folderActivated.emit(folder)
 
     @Slot()
     def _reload_after_sync_if_changed(self) -> None:
