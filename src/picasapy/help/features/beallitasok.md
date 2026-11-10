@@ -105,6 +105,8 @@ azonnali újraindítás (**Újraindítás most**) és a kilépéskori telepíté
 (**Frissítés kilépéskor**) között. Az azonnali
 újraindítás megvárja a futó háttérmunkát; a csere után az előző verzió
 megmarad, és ha az új példány nem indul el, a program visszaállítja.
+A korábbi frissítésekből megmaradt frissítősegéd-másolatokat a program
+induláskor és frissítés előtt magától törli, így nem gyűlnek a lemezen.
 
 A **Frissítés kilépéskor** után a jobb felső verziófelirat egy környíllal
 és az új verziószámmal jelzi, hogy a frissítés vár; fölé víve az egeret

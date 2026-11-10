@@ -444,6 +444,10 @@ látszanak, pipa nélkül (ez az alapállás) nem. A beállítás megmarad a
 következő indításig. A fájlokhoz ez nem nyúl, csak azt dönti el, mi kerül a
 rácsra.
 
+A kapcsoló a bal hasábot is követi: a mappák melletti darabszám csak a
+látható képeket számolja, és az a mappa, amelyben csak kis képek vannak,
+pipa nélkül nem jelenik meg a bal hasábon.
+
 ### Megjelenítési mód az indexképeken
 
 A **Nézet ▸ Megjelenítési mód** almenü választása — köztük a **16 bites
@@ -803,3 +807,12 @@ Más a helyzet, ha egy mappát a programon kívül (például a fájlkezelőben)
 együtt eltűnik a bal hasábból, ahogy az eredeti Picasában is. Ha éppen
 egy ilyen, már nem létező mappára húznál képet, a program nem kezd
 fájlműveletbe.
+
+Ha egy figyelt mappát a programon kívül **átnevezel** (például a
+fájlkezelőben, akár zárt program mellett), a PicasaPy ezt felismeri: a
+régi név eltűnik a bal hasábról, és a mappát az új nevén figyeli tovább.
+Ha az új név már eleve figyelt mappa volt, csak a régi név kerül ki.
+Ilyenkor hibasáv sem jelenik meg. Ez akkor működik, ha az átnevezett
+mappa ugyanabban a szülőmappában maradt; a máshová áthelyezett vagy
+lecsatolt lemezen lévő mappát a program továbbra is elérhetetlennek
+tekinti, és nem felejti el.

@@ -64,13 +64,15 @@ sudo apt install qt6-wayland
 
 The `qtwayland5` package is for Qt 5 and cannot be used by PicasaPy.
 
-### “A background task is still running ... If you exit now, it will stop and will not resume later.”
+### “Background work is still running. If you exit now, export and web export stop...”
 
 This appears when background work is still running as you exit, for example
-an export, web export, batch effect, or face search. Choose the option to
-exit to cancel the work; it will not resume the next time you start the
-application. Choose the option to continue if you want to return and wait
-for the work to finish.
+an export, a web export, or the face search. After **Exit Now**, export and
+web export stop and do not resume the next time you start the application.
+The face search is not lost: the program saves the part it has finished and,
+the next time you start it, continues with the pictures it has not checked
+yet. Choose the option to continue if you want to return and wait for the
+work to finish.
 
 The same confirmation appears if you close the window with its X button.
 It cannot be disabled because work could otherwise be lost.

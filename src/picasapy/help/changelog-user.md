@@ -4,6 +4,39 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-10
+
+**Kilépés**
+
+- Ha kilépsz, miközben a háttérben arckeresés fut, a program most
+  tényleg kilép, és a keresés a következő indításkor a még át nem
+  nézett képekkel folytatódik. A kilépéskor felugró kérdés pontosan
+  megírja, hogy az exportálás és a webes exportálás megszakad, az
+  arckeresés viszont folytatódik. Lásd [Emberek és arcok](features/emberek.md)
+  és [Gyakori kérdések](faq.md).
+
+**Könyvtár**
+
+- Ha egy figyelt mappát a programon kívül átneveztél, a régi neve
+  eltűnik a bal hasábról, a mappa az új nevén látszik, és nem jelenik
+  meg miatta téves hibasáv. Lásd [Könyvtár](features/konyvtar.md).
+- A **Nézet ▸ Kis képek** kapcsoló a bal hasábot is követi: a
+  darabszám csak a látható képeket számolja, a csak kis képeket
+  tartalmazó mappa pipa nélkül nem jelenik meg.
+
+**Effektek**
+
+- A **Szivárvány** effekt színei közelebb kerültek az eredeti
+  Picasáéhoz: a vörös árnyalatok eddig kissé világosabbak voltak.
+
+**Sebesség és frissítés**
+
+- A program gyorsabban indul, kevesebb memóriát használ, a könyvtár
+  szinkronizálása kevésbé terheli a gépet, és több effekt gyorsabban
+  számol, változatlan eredménnyel.
+- A korábbi frissítésekből megmaradt segédprogram-másolatok maguktól
+  törlődnek. Lásd [Beállítások](features/beallitasok.md).
+
 ## 2026-11-09
 
 **Teljes képernyő**

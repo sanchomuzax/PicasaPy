@@ -201,6 +201,8 @@ By default, the grid shows only larger pictures, as in the original Picasa. Very
 
 The **View** ▸ **Small Pictures** option also shows smaller pictures. With a check mark they are shown; without one (the default) they are not. The setting is remembered until the next time you start the program. It does not change the files; it only decides what appears in the grid.
 
+The option applies to the left pane too: the count next to a folder includes only the pictures that are shown, and a folder that contains only small pictures does not appear in the left pane while the option is off.
+
 ### Display mode for thumbnails
 
 The mode chosen in **View** ▸ **Display Mode**, including **16-bit (dithered)**, is used for thumbnails too. See [Viewing photos](nezegetes.md).
@@ -360,4 +362,6 @@ Two things to know:
 If a watched folder is on a disconnected drive or an unavailable network share, PicasaPy does not forget it. Its pictures stay in the database and thumbnails come from the cache. The folder is marked, and the program tells you if you try to open or edit one of its pictures.
 
 It is different if you delete a folder outside the program, for example in your file manager, while its drive is available. The folder and its pictures disappear from the left pane, as they do in the original Picasa. If you try to drag a picture to a folder that no longer exists, the program does not start a file operation.
+
+If you rename a watched folder outside the program (for example in your file manager, even while the program is closed), PicasaPy recognises it: the old name disappears from the left pane, and the folder is watched under its new name. If the new name was already a watched folder, only the old name is removed. No error bar appears in this case. This works when the renamed folder stays in the same parent folder; a folder moved elsewhere or on a disconnected drive is still treated as unavailable and is not forgotten.
 

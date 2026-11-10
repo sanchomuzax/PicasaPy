@@ -69,13 +69,15 @@ sudo apt install qt6-wayland
 A gépen esetleg meglévő `qtwayland5` csomag a Qt 5-höz tartozik, ezt a
 program nem tudja használni.
 
-### „Még fut háttérmunka … Ha most kilép, az leáll, és később nem folytatódik."
+### „Még fut háttérmunka. Ha most kilép, az exportálás és a webes exportálás megszakad…"
 
-Kilépéskor kapod, ha épp fut valamilyen háttérmunka — például egy
-exportálás, egy weboldal-exportálás, egy csoportos effektezés vagy egy
-arcfelismerés. A **Kilépés most** megszakítja a munkát, és az **nem
-folytatódik** a következő indításkor; a **Folytatás** visszavisz a
-programba, hogy megvárd a végét.
+Kilépéskor kapod, ha épp fut valamilyen háttérmunka, például egy
+exportálás, egy weboldal-exportálás vagy az arckeresés. A **Kilépés
+most** után az exportálás és a webes exportálás megszakad, és **nem
+folytatódik** a következő indításkor. Az arckeresés viszont nem vész
+el: a program a félbehagyott részt elmenti, és a következő indításkor
+a még át nem nézett képekkel folytatja. A **Folytatás** visszavisz a
+programba, hogy megvárd a munka végét.
 
 Ez a kérdés akkor is előjön, ha az ablak „X" gombjával zárnád be a
 programot, és szándékosan nem lehet kikapcsolni: adat múlhat rajta.

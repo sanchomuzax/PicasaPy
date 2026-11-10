@@ -38,7 +38,10 @@ your last key press, click, or mouse movement) and while a picture is
 open in the viewer or editor, and otherwise it runs at a slower pace with
 short breaks. If your library has not changed, it does not reread
 everything. A search started from **Tools** ▸ **Find Faces** does not
-wait; it runs as fast as it can. Detection rarely marks a face where there is none;
+wait; it runs as fast as it can. If you exit the program while the
+background search is running, it stops at the next picture and saves what it
+has found so far; the next time you start the program, it continues with the
+pictures it has not checked yet. Detection rarely marks a face where there is none;
 landscapes and other pictures without faces are normally left alone.
 
 ### Each picture is scanned only once
