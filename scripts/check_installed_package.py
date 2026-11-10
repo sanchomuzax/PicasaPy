@@ -134,6 +134,14 @@ def check_startup() -> list[str]:
 
         try:
             controller.start()
+            # #6697: a meglévő index képlistája háttérszálon készül, és az
+            # eseményhurokban kerül a rácsra (az éles program is így látja).
+            import time
+
+            hatarido = time.monotonic() + 15.0
+            while controller.photos.rowCount() < 1 and time.monotonic() < hatarido:
+                app.processEvents()
+                time.sleep(0.02)
         except Exception as hiba:  # noqa: BLE001 — bármi az indulási úton bukás
             return [f"a program nem indul el: {type(hiba).__name__}: {hiba}"]
         finally:

@@ -7,7 +7,7 @@ import threading
 from pathlib import Path
 
 from picasapy.ioutil import write_atomic
-from picasapy.thumbs.prune import prune_cache_dir, prune_in_background
+from picasapy.thumbs.prune import prune_cache_dir, prune_if_needed
 from picasapy.thumbs.szintek import szint_cellahoz, szintek
 
 
@@ -18,9 +18,10 @@ class _CacheStorageMixin:
         size: int = 256,
         max_bytes: int | None = None,
     ):
-        """`max_bytes`: a lemez-cache méretkorlátja (#144) — ha meg van
-        adva, induláskor háttérszálon lefut az LRU-takarító, hogy a
-        `~/.cache` alatti tár ne nőjön korlátlanul."""
+        """`max_bytes`: a lemez-cache méretkorlátja (#144).
+
+        Az induláskori takarítást a felület első képkockája után a
+        `StartupMaintenance` sor indítja (#6697)."""
         self._root = Path(root)
         self._size = size
         #: #598: a tár SZINTJEI (72 · 144 · a rács maximuma). A felső szint
@@ -29,11 +30,8 @@ class _CacheStorageMixin:
         #: érvényes marad, és csak a két új kis szint épül fel menet közben.
         self._szintek = szintek(size)
         self._max_bytes = max_bytes
-        # A szál referenciáját eltároljuk, hogy a hívó (pl. teszt) be
-        # tudja várni — enélkül a takarítás versenyezne a mappa-törléssel.
+        # #6697: a cache létrehozása nem indít munkát az első képkocka előtt.
         self._prune_thread: threading.Thread | None = None
-        if max_bytes is not None:
-            self._prune_thread = prune_in_background(self._root, max_bytes)
 
     def prune(self) -> int:
         """Szinkron LRU-takarítás a beállított korlátig; a törölt bájtok
@@ -41,6 +39,14 @@ class _CacheStorageMixin:
         if self._max_bytes is None:
             return 0
         return prune_cache_dir(self._root, self._max_bytes)
+
+    def maybe_prune(self, min_interval_seconds: float = 86400.0) -> int:
+        """Karbantartási takarítás naponta legfeljebb egyszer, mérettúllépéskor is (#6697)."""
+        if self._max_bytes is None:
+            return 0
+        return prune_if_needed(
+            self._root, self._max_bytes, min_interval_seconds=min_interval_seconds
+        )
 
     @property
     def levels(self) -> tuple[int, ...]:
