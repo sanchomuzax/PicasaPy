@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.92] - 2026-11-10
+
+- A képszerkesztő feldolgozómoduljai csak az első használatkor töltődnek be, így gyorsabban indul a program (#6688).
+
 ## [1.0.91] - 2026-11-10
 
 - A képek gyorsabban jelennek meg induláskor, a gyorstár takarítása az első ablak után fut, az arcfelismerő modulok pedig csak szükség esetén töltődnek be (#6697).
