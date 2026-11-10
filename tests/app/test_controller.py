@@ -65,6 +65,20 @@ def _do_photo_op(controller, action) -> None:
     wait_for_photo_op(controller, action)
 
 
+def _dispose_controller(controller) -> None:
+    """A vezérlő szálai után a Qt-objektumot is determinisztikusan bontsa le."""
+    from PySide6.QtCore import QCoreApplication, QEvent
+
+    controller.shutdown()
+    assert controller.waitForBackgroundWorkers(30.0), (
+        "AppController-háttérszál maradt futva a teardownban"
+    )
+    controller.deleteLater()
+    QCoreApplication.sendPostedEvents(
+        controller, QEvent.Type.DeferredDelete
+    )
+
+
 @pytest.fixture
 def controller(qt_app, tmp_path, library):
     from picasapy.app.controller import AppController
@@ -89,6 +103,12 @@ def controller(qt_app, tmp_path, library):
         settings=settings,
         watched_file=tmp_path / "WatchedFolders.txt",
     )
+    # #6791: a teljes controller-próba a kész oldalpanel-cache-t használja.
+    # Hideg cache-nél az `_reload()` háttér-söprést indít, aztán a
+    # `restoreSession()` ugyanitt rögtön egy második indexkapcsolatot nyit;
+    # a tesztben nincs szükség erre az indulási versenyre.
+    with open_index(ctl._db_path) as conn:
+        ctl._precompute_side_pane(conn)
     ctl._reload()
     yield ctl
     # #3042: a teardown a PROGRAM kilépési útját követi — előbb `shutdown()`,
@@ -97,11 +117,9 @@ def controller(qt_app, tmp_path, library):
     # CI-n `exit -11`-gyel omlott össze a fájl (kétszer, egymás után),
     # tehermentes gépen viszont zöld volt. Ez a #430 / #438 / #988 / #999
     # osztály, és a program `application.py`-ja pontosan így zár.
-    ctl.shutdown()
-    # #438: minden nyilvántartott daemon-szál bevárása, AMÍG a controller
-    # még él — a #430 SIGSEGV-osztály elkerülése (ld.
-    # picasapy.app.worker_thread.BackgroundWorkerMixin).
-    assert ctl.waitForBackgroundWorkers(30.0), "háttérszál nem állt le a teardownban"
+    # #438: a szálak leállítása után a Qt-objektum is legyen megszüntetve,
+    # hogy ne maradjon későbbi eseményciklusra kézbesíthető slotja.
+    _dispose_controller(ctl)
 
 
 class TestController:
@@ -421,13 +439,18 @@ class TestToggleStar:
             settings=settings,
         )
         errors = []
-        # #2757: a `syncFinished` megérkezését a hurok maga tartja nyilván
-        ctl.syncFailed.connect(errors.append)
-        loop = hangos_hurok(ctl.syncFinished)
-        ctl.rescan()
-        loop.exec()
-        assert loop.jelzes_megjott
-        assert errors and "Pictures" in errors[0]
+        try:
+            # #2757: a `syncFinished` megérkezését a hurok maga tartja nyilván
+            ctl.syncFailed.connect(errors.append)
+            loop = hangos_hurok(ctl.syncFinished)
+            ctl.rescan()
+            loop.exec()
+            assert loop.jelzes_megjott
+            assert errors and "Pictures" in errors[0]
+        finally:
+            # Ez a teszt nem a `controller` fixture-t használja; a jelzés
+            # még a munkaszál lezáró szakasza előtt megérkezhet.
+            _dispose_controller(ctl)
 
     def test_rescan_not_reentrant(self, controller, monkeypatch):
         # Futó szinkron alatt az újabb rescan nem indíthat második írót.
@@ -812,6 +835,13 @@ class TestFolderSwitchNoReload:
     mappaváltáskor a tartalma nem változik, ezért NEM olvasható újra az
     egész index (50k fotónál több száz ms lenne), csak görgetés kell."""
 
+    @pytest.fixture(autouse=True)
+    def _dispose_controllers(self):
+        self._controllers = []
+        yield
+        for controller in self._controllers:
+            _dispose_controller(controller)
+
     def _controller(self, qt_app, tmp_path):
         from picasapy.app.controller import AppController
         from picasapy.app.thumbnail_provider import ThumbnailProvider
@@ -836,6 +866,7 @@ class TestFolderSwitchNoReload:
         ctl = AppController(
             tmp_path / "index.db", (str(root),), provider, settings=settings
         )
+        self._controllers.append(ctl)
         ctl._reload_folders()
         return ctl, root
 
@@ -904,6 +935,14 @@ class TestFolderSwitchNoReload:
 
 
 class TestSessionRestore:
+    @pytest.fixture(autouse=True)
+    def _wait_for_controllers(self):
+        """A kézzel létrehozott vezérlők háttérmunkája ne éljen át a teszten."""
+        self._controllers = []
+        yield
+        for controller in self._controllers:
+            _dispose_controller(controller)
+
     def _settings(self, tmp_path):
         from PySide6.QtCore import QSettings
 
@@ -922,12 +961,18 @@ class TestSessionRestore:
         with open_index(tmp_path / "index.db") as conn:
             sync_tree(conn, library)
         provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
-        return AppController(
+        controller = AppController(
             tmp_path / "index.db",
             (str(library),),
             provider,
             settings=settings,
         )
+        # A kézzel létrehozott példányoknál is elkerüljük az `_reload()`
+        # hideg-cache ágának párhuzamos indexnyitását.
+        with open_index(controller._db_path) as conn:
+            controller._precompute_side_pane(conn)
+        self._controllers.append(controller)
+        return controller
 
     def test_restore_selects_saved_folder(self, qt_app, tmp_path, library):
         from picasapy.index import open_index
@@ -1015,10 +1060,13 @@ class TestThumbCaptionMode:
             provider,
             settings=settings,
         )
-        ctl.setThumbCaptionMode("filename")
-        settings.sync()
-        assert ctl.thumbCaptionMode == "filename"
-        assert settings.value("view/thumbCaption") == "filename"
+        try:
+            ctl.setThumbCaptionMode("filename")
+            settings.sync()
+            assert ctl.thumbCaptionMode == "filename"
+            assert settings.value("view/thumbCaption") == "filename"
+        finally:
+            _dispose_controller(ctl)
 
     def test_invalid_mode_ignored(self, controller):
         controller.setThumbCaptionMode("resolution")
