@@ -2573,6 +2573,8 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
 
 **Következtetés.** A leltár jelenlegi bináris bizonyítéka szerint egyik billentyűhöz sincs azonosított videónézeti parancs. A PicasaPy videónézőjéhez most nem indokolt `/`, `,`, `.` gyorsbillentyű-javítást hozzáadni: az eredeti Picasa viselkedését a sorok kommentje önmagában nem bizonyítja. Ez nem paritásfutás; az eredeti Picasa és a PicasaPy valódi billentyűleütéses próbája továbbra is szükséges a teljes jegy lezárásához.
 
+**Kétutas ellenőrzés és cáfoló kör (2026-11-08).** Az A út a `Picasa3i18n.dll` nyers `SHORTCUTS.XML`-erőforrásából olvassa ki a 42–44. sor üres célbillentyűjét (`0x591ad8`), majd a független parser-disassemblyben ellenőrzi, hogy a nulla `dstkey` a `0x009a1194` kapun át rekordkihagyást okoz. A B út a `Picasa3.exe` teljes `.text` szakaszát pásztázza: a `0x005c5fc0` egyetlen közvetlen hívója `0x005e61d1`; a fogyasztó törzse csak az esemény billentyű- és módosítómezőit írja át, a `0x00801270` OneUp-kezelőben pedig nincs `/`, `,` vagy `.` műveletág. A két út egyezik abban, hogy a három XML-sor nem ad parancsot a vizsgált keymap- és OneUp-útvonalon. **Cáfoló kísérlet:** azt az alternatívát vizsgáltam, hogy a nulla `dstkey` ellenére a parser mégis táblarekordot ír, vagy a táblafogyasztó parancsot indít; az elsőt a `0x009a1194` nullakapujának ágirányai, a másodikat a `0x005c5fc0` teljes törzse cáfolja. A teljes pásztázás közvetlen hívásokat talál, nem minden lehetséges közvetett eseményutat; ezért a következtetés statikus útvonalra korlátozott.
+
 #### Amit kizártam
 
 - A menüsáv és helyi menü `0x00a6b250` feliratépítő útja gyorsbillentyű-szöveget állít elő. Ez nem azonos a `0x005c5fc0` billentyűesemény-átírójával, és nem ad videóparancsot a három üres `dstkey` sorhoz.
@@ -2580,6 +2582,8 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
 - A `0x006248e0` a MovieMaker előnézet `MoviePreviewHandler`-e. Annak belső műveletkódjaihoz nem találtam a keymap 42-44. soraitól vezető hívási láncot.
 - A `CreateAcceleratorTableA` út (`0x00923110`) egy üres OLE gyorsítótáblát állít elő; ez nem a 42-44. sorok eseményfogyasztója.
 - Nem használtam önmagában negatív xref-találatot. A kizárások közvetlen kezelőtörzsön, vtable-feloldáson és a teljes `.text`-pásztázáson alapulnak.
+
+Az elosztó parancsüzenetet olvasó mezője a `0x005cb9a1` utasításnál `word ptr [eax+8]`; a `0x005cba5d` a `0x9c42` alapazonosítót vonja ki az indexképzéshez, amely a `0x005cdb34` bájttáblán és a `0x005cd9fc` ugrótáblán keresztül választ ágat. Ez megerősíti, hogy a `0x005cb990` parancsazonosítót diszpécsel, nem közvetlenül billentyűt olvas.
 
 #### Nyitott
 
@@ -2667,6 +2671,8 @@ A 42-44. sor módosító nélküli, és a parser ki is hagyja őket az átírór
 | CThumbUI-próbaindex | A §12.3/#375 eredménytábla nyolc leütött sort rögzít; ez a táblázat nem teljes leltárpróba. | A 56 könyvtárnézeti sorból 10 `nincs megfelelő` jelölésű, tehát ezekhez nincs hivatkozott QML-billentyűpróba: `Ctrl+Alt`, `Ctrl+6`, `Ctrl+G`, `Ctrl+Alt+G`, `Ctrl+Alt+Shift+G`, `Ctrl+Shift+L`, `Ctrl+Alt+S`, `Ctrl+Shift+U`, `Ctrl+Shift+Y`, `F12`. | Soronkénti egyezés: **NINCS MEG**. |
 
 **Helyi PicasaPy-futtatás (2026-11-08).** A 24, a §12-es PicasaPy-indexben hivatkozott különböző QML-tesztfájl a `scripts/run_tests.py` darabolt futtatójával futott. 23 fájl sikeresen befejeződött, összesen 244 teszttel; a `test_menusor_maradek_valodi_5150_l.py` két egymás utáni, 180 másodperces timeout után `exit 124`-gyel maradt befejezetlenül. A futtató ezt időtúllépésként, nem tesztbukásként osztályozta. A környezet PySide6 6.8.2.1, a futtató által jelzett CI-verzió 6.11.2; ez nem CI-azonos mérés. A fájlok lefutása nem oldja fel a soronként hiányzó teszteket, és a timeouttal végződött fájl sincs zöldként elszámolva.
+
+**Célzott újrafuttatás (2026-11-08).** A meglévő `tests/app/qml_functional/test_gyorsbillentyu_matrix_6531.py` fájl önállóan is zöld lett a `scripts/run_tests.py --fajllista` futtatóval (kilépőkód `0`). Benne a módosító nélküli F8/F9-próba valódi `QTest.keyClick` eseményt küld, és ellenőrzi a szerkesztési állapot változatlanságát. Ez a célzott helyi futás nem pótolja a hiányzó, minden táblasorra kiterjedő PicasaPy-próbát; az eredeti Picasát ebben a munkamenetben nem futtattam. A helyi Qt 6.8.2.1 és a CI-ben jelzett 6.11.2 eltér.
 
 **Korábbi cáfoló kísérlet.** A mostani QML-próbák hozzáadása előtt a tesztfában közvetlenül rákerestem a módosító nélküli `Key_F8`/`Key_F9` és a videó `Key_Slash`/`Key_Comma`/`Key_Period` `QTest.keyClick` hívásaira. Találat csak Ctrl+F8-ra és Ctrl+F9-re volt. A jelen kör a szerkesztő F8/F9 hiányát valódi leütésekkel lefedte; a videó írásjelbillentyűit a helyi Qt Multimedia-elakadás miatt nem tudta megmérni.
 
