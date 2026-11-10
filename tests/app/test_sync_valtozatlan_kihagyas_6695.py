@@ -319,3 +319,22 @@ class TestAllPhotosGroupedFaceCounts:
         )
         assert "GROUP BY photo_id" in queries._SELECT_SABLON
         assert "LEFT JOIN" in queries._SELECT_SABLON
+
+
+def test_refresh_collections_latja_a_meleg_gyorstar_utani_ini_irast(
+    qt_app, library_setup
+):
+    """A névadás utáni `refreshCollections` ne a régi gyorstárból dolgozzon:
+    a közben írt ini-változás (itt egy új egyéni gyűjtemény) a következő
+    szinkron nélkül is megjelenjen."""
+    controller, _timeline, _root, folder_a, *_ = library_setup
+    assert [c["name"] for c in controller.customCollections] == []
+
+    ini = folder_a / ".picasa.ini"
+    ini.write_text(
+        "[Picasa]\nP2category=Utazas\n[a1.jpg]\nstar=yes\ncaption=Starred photo\n",
+        encoding="utf-8",
+    )
+    controller.refreshCollections()
+
+    assert [c["name"] for c in controller.customCollections] == ["Utazas"]

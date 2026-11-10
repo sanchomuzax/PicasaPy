@@ -129,6 +129,11 @@ class AppControllerSyncMixin:
         névadása után hívandó a QML-ből, hogy az első névadásnál keletkező
         új Emberek-album azonnal megjelenjen (`_reload_after_sync` mintája:
         a görgetési pozíció megmarad)."""
+        # #6695: a hasáb a mappánkénti ini-gyorstárból él; a névadás
+        # ini-írását csak a gyorstár frissítése után látja.
+        with open_index(self._db_path) as conn:
+            self._refresh_side_pane_cache(conn)
+            self._precompute_side_pane(conn, refresh=False)
         self._reload(preserve_scroll=True)
 
     @Slot()

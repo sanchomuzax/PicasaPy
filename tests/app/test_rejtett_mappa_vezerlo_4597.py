@@ -6,7 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QCoreApplication, QSettings
 
 from picasapy.index import is_folder_hidden, open_index, sync_tree
 from picasapy.ini import load_document, read_folder_category
@@ -32,6 +32,10 @@ def _epit_vezerlo(tmp_path, library):
         watched_file=tmp_path / "WatchedFolders.txt",
     )
     controller._reload_after_sync()
+    # #6695: hideg gyorstárnál a gyűjtemények háttérben töltődnek be,
+    # és a felületi szálon, sorba állítva kerülnek a hasábba.
+    assert controller.waitForBackgroundWorkers(20.0)
+    QCoreApplication.processEvents()
     controller.library = library
     return controller
 
