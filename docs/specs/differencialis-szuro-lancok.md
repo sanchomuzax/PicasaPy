@@ -338,16 +338,16 @@ között a súlyozott cellák összege a `[esp+0x14]` változóba gyűlik. A
 nullánál kerüli el a két súlypont-osztást (`0x0090fbc2`, `0x0090fbc9`).
 Pozitív minimumösszeg miatti korai kilépés ezen az úton nincs: az 1-es
 összeggel is oszt. Nulla összegnél az addig felhalmozott nullás nyomatékokból
-semleges becslés keletkezik. A `0x0090fbcd–0x0090fbf4` a két súlypontot
-−32 és 32 közé szorítja, majd a `0x0090fc61–0x0090fc85` a két kimeneti
+semleges becslés keletkezik. A `0x0090fbcd-0x0090fbf4` a két súlypontot
+-32 és 32 közé szorítja, majd a `0x0090fc61-0x0090fc85` a két kimeneti
 értéket 0 és 255 közé korlátozza. A `0x0090fc99` írja a csomagolt becslést.
 A PicasaPy `estimate_illuminant` ugyanezt a nulla-ágat és ezeket a korlátokat
 használja. Ez a lelet nem bizonyítja, hogy a teljes kétprogramos út minden
 részlete azonos.
 
-**Független ellenőrzés:** a bináris `0x0090fbb3–0x0090fca4` utasításait
+**Független ellenőrzés:** a bináris `0x0090fbb3-0x0090fca4` utasításait
 QEMU i386 alatt izolált állapottal futtatva a (súlyösszeg, x-nyomaték,
-y-nyomaték) = (0, 0, 0) a `0x00808080`, az (1, 28, −28) a `0x00f08044`
+y-nyomaték) = (0, 0, 0) a `0x00808080`, az (1, 28, -28) a `0x00f08044`
 csomagot adja. A második tehát `(kR,kB)=(240,68)`, nem semleges. Ez a
 kódrészlet végrehajtása, nem a teljes becslő vagy Picasa-export mérése.
 A saját becslővel külön, 144 képpontos fekete képen 127 darab RGB
