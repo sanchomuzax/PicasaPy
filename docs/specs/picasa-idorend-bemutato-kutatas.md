@@ -2196,8 +2196,58 @@ Ghidra-források (Colab, Ghidra 12.1.2): `referencia/ghidra/2026-11-10-6532-cola
 
 **Nyitott.**
 
-- `Ghidra-kör kell: 0x004aa9f0 - a CAlbumState +0x0c állapotkódjainak jelentése, különösen mitől és milyen gyűjteményeknél lesz az érték 2 [blokkoló]`
-- `Ghidra-kör kell: 0x004b1a90 - a CAlbumState +0x158 tömbjébe tett 0x38 bájtos rekordok +0x30 és +0x18 mezőinek forrása és jelentése, valamint hogy a +0x30 == 1 mely gyűjteménytípushoz tartozik [blokkoló]`
+- A `0x004aa9f0` és `0x004b1a90` célzott dekompilációja elkészült 2026-11-11-én. A kapott kimenet igazolja a mezők gépi kezelését, de nem nevezi meg a `+0x0c` állapotkódok és a `+0x30` rekordkódok gyűjteménytípusait. A pontosítás a 38.2.111 szakaszban van; az új eredmény nem zárja le ezt a szemantikai kérdést.
 - A teljes eredeti gyűjteményhalmaz és a PicasaPy mappa/album/egyéb listájával való azonosság: **NINCS MEG**. A megszerzéshez a fenti mezőnevek feloldása, majd ugyanazon könyvtár descriptor- és kártyalistájának összevetése kell.
 
 **Módosított fájlok ebben a szakaszban.** A 38.2.109 mezőíróra és típusjelentésre vonatkozó nyitott sorait a 38.2.110 pontosítja. A 38.2.110 dokumentálja a `+0x0c` írót, a qshow kapukat, a PicasaPy kategóriahalmazát és a megmaradt blokkoló kérdéseket. Kódot, tesztet, eredeti binárist, videót vagy mérőadatot nem módosítottam.
+
+#### 38.2.111 Gyűjteményállapot és a köztes rekordkódok (#6532, 2026-11-11)
+
+**Hatókör és módszer.** A vizsgálat a `2026-11-11-6532-colab-decomp-5.txt`, `2026-11-11-6532-colab-158-30-irok.txt`, `2026-11-11-6532-colab-decomp-3.txt` és `2026-11-10-6532-colab-decomp.txt` Ghidra-kimeneteit, a binary-index string-xrefjeit, valamint az eredeti bináris célzott `annot_disasm.py` olvasását kapcsolta össze. Az utasításokat külön útvonalként ellenőriztem a Ghidra-C mellett. Nem készült új Ghidra-kör vagy futásidejű gyűjteménylista.
+
+**A `CAlbumState +0x0c` állapotkódjai.** A `0x004ab520` a `CAlbumState +0x138 + index*0x24 + 0x0c` mező írója. A `0x004a8bb0` a `1` értéket `3`-ra, a `2` értéket `4`-re; a `0x004a8bf0` a `3` értéket `1`-re, a `4` értéket `2`-re váltja. A `0x004aa9f0` a sor metaadatait és több szolgáltatói feltételt vizsgálva hívja ezeket az átmeneteket, illetve ír `0` vagy `1` értéket. A `0x004aae90` útja `2`-t is írhat a sorba. A `0x004a8a30` hívó soronként futtatja a `0x004aa9f0`-et, majd összeveti a `+0x0c` értéket a korábbival. Ez állapotmezőt és állapotfrissítést igazol, nem gyűjteménytípust.
+
+A `0x004b8470` a mappa/album útvonalat külön `+0x9d` mezővel és a `0x004461a0` predikátummal kezeli. A `0x004b29d0` csak akkor épít 0x38 bájtos rekordot a `CAlbumState` sorból, ha a `+0x0c == 2`. A kód `2` szükséges továbbítási állapot ezen az útvonalon. Nincs bináris bizonyíték arra, hogy a `2` egy adott gyűjteménytípus neve volna.
+
+**A `+0x158` listában szereplő 0x38 bájtos rekordok.** A közös építő `0x004a0720` az első argumentumát a rekord `+0x30` mezőjébe, a harmadik argumentumát a `+0x18` byte-ba írja. A `0x004ae600` e mezőket másoláskor megőrzi. A qshow `0x007fc7c0` csak azt a rekordot veszi fel a kártyalistájába, amelynél `+0x30 == 1` és `+0x18 == 0`.
+
+| Kód vagy mező | Binárisból igazolható kapcsolat | Gyűjteménytípus jelentése |
+|---|---|---|
+| `CAlbumState +0x0c == 2` | A `0x004b29d0` ezen a kapun át készít köztes rekordot; a `0x004ab520` írja az állapotmezőt. | **NINCS MEG.** Állapotkód, nem bizonyított típusnév. |
+| rekord `+0x30 == 1` | A `0x004b29d0` ezt adja át a közös rekordépítőnek; a qshow `0x007fc7c0` ezt fogadja el kártyakapuként. | A `CAlbumState` út rekordja, a mappa/album konkrét megfeleltetése **NINCS MEG**. |
+| rekord `+0x30 == 5` | A `0x004b1c80` ezt hozza létre a `0x004b6190` `Folders` faépítő útjában. | A folder-fa út rekordja, de az `5` általános gyűjteménytípus jelentése **NINCS MEG**. A qshow kártyakapuján nem megy át. |
+| rekord `+0x30 == 6` vagy `7` | A `0x006dc4c0` a getterből olvasott rekordokon külön kezeli ezeket a számokat. | A létrehozó és a gyűjteménytípus **NINCS MEG**. |
+| rekord `+0x18` | A `0x004a0720` harmadik argumentumának byte-ja; a qshow `0` értéket követel meg. A `0x004b1c80` kód `5` létrehozásakor `!bVar14` kerül ide. | A mező pontos neve és üzleti jelentése **NINCS MEG**. |
+
+A `0x004b1c80` a `Folders` fa felől valóban létrehoz `+0x30 == 5` rekordot. Ugyanott a `6` és `7` számot egy helyi változó kapja meg bizonyos rekordtulajdonságok alapján, de nem ezek kerülnek a rekord `+0x30` mezőjébe. A `0x006dc4c0` fogyasztó oldalról mutatja, hogy az `5`, `6`, `7` külön kód, másik ágban az `1`, `5`, `6`, `7` egy csoportként elfogadott. Ez a vizsgálat nem nevezi meg a kódokhoz tartozó felhasználói műveletet.
+
+**Kategóriacímkék és a PicasaPy összevetése.** A `0x004abe70` út karakterlánc-xrefjei között szerepel a `Folders on Disk`, `My Albums`, `Exported Pictures`, `Other Stuff`, `Labels`, `People`, `Screensaver`, `Starred Photos`, `Recently Updated`, `Emailed`, `Uploaded`, `Outlook` és `Hello Albums~`. Ez azt igazolja, hogy a descriptorépítő környezet ismeri ezeket a címkéket, de nem kapcsolja őket az egyes `+0x158` rekordok `+0x30` kódjaihoz, és nem bizonyítja, melyek jutnak a qshow kártyalistájába.
+
+A jelenlegi `src/picasapy/app/timeline_controller.py:269-299,357-382` kódja csak mappa- és nem üres albumkártyákat épít, és a gyűjtemény legkorábbi EXIF `datetime` értékét használja. A `:293-299` a teljes `datetime` értéket is használja a rendezésben; napra vetített `toordinal()` csak a csúszkakoordinátához kerül a `:301-320` sorokban. Ez felülírja a 38.2.109 azon akkori állítását, hogy a jelenlegi forrás `.date()`-tal napra csonkolja a dátumot. A bináris kódok és a PicasaPy mappa/album fajtái közötti azonosítás hiányában tényleges típuseltérés **nem igazolódott**.
+
+**Két független bizonyítási út.**
+
+- **A út, CAlbumState.** A `0x004ab520` utasításszintű írása és a `0x004a8bb0`, `0x004a8bf0`, `0x004aa9f0` külön hívói/átmenetei ugyanazt a `+0x0c` mezőt használják. A független `0x004b29d0` fogyasztó `2` értéket követel meg. Az utak egyeznek abban, hogy ez változó állapotkód és qshow-előfeltétel; az emberi típusnév egyikből sem olvasható ki.
+- **B út, köztes rekord.** A `0x004a0720` argumentumai a `+0x30` és `+0x18` mezőbe kerülnek; a `0x004ae600` továbbmásolja ezeket; a `0x007fc7c0` a `1/0` értékeket a kártyakapuként ellenőrzi. A `0x004b1c80` külön, `Folders` útvonalon hoz létre `5` kódú rekordot, míg a `0x006dc4c0` több kódot fogyaszt. Az utak egyeznek a kódok gépi szerepében, a kategórianevek megfeleltetése nyitott.
+- **PicasaPy-forrás.** Független alkalmazásrétegként közvetlenül igazolja, hogy jelenleg csak `folder` és `album` kártya készül. Bináris megfeleltető adat nélkül nem bizonyítja, hogy az eredeti lista ugyanezt vagy ennél többet tartalmaz.
+
+**Cáfoló kísérlet.** Próbáltam cáfolni, hogy a `+0x30` azonos eltolása minden találatnál azonos gyűjteménytípust jelent. A `0x006f4ea0` talált írás RTTI-je `LHUpload`, szövegkörnyezete feltöltési állapotokhoz tartozik, nem a CThumbUI qshow listájához. A `0x004b1c80` kód `6` és `7` értékei pedig helyi változóba íródnak, nem a rekord `+0x30` mezőjébe. A cáfolat ugyanúgy közvetlen utasításokra, függvénykörnyezetre és RTTI-re épül, nem az index negatív találatára. Így az offset önmagában nem elég a típusmegfeleltetéshez.
+
+**Bizonyítottsági fok.** A `+0x0c` állapotmező írója és átmenetei, a `2` qshow-előfeltétele, a rekordépítő argumentumok, a qshow `+0x30 == 1` és `+0x18 == 0` kapuja, továbbá az `5` kódú `Folders` faút **megerősített**. A `1`, `5`, `6`, `7` rekordkódok teljes gyűjteménytípus-megfeleltetése, a `+0x18` szemantikája, valamint az eredeti és PicasaPy gyűjteményhalmaz teljes összevetése **nyitott**. A #6532 e részének összesített bizonyítottsága ezért **feltételes**.
+
+**A #6532 „Kész, ha” pontjai.** (1) ✅ A korábbi felvételeket a 38.2.101 és 38.2.104 szakasz dokumentálja; ebben a körben új videó nem készült. (2) ⛔ A vizsgált állapot- és rekordkapuk címmel igazoltak, de a kódok típusnevei és a teljes qshow forráshalmaz nyitott. (3) ⛔ A PicasaPy mappa/album halmaza dokumentált, de eredeti típusmegfeleltetés hiányában teljes pontonkénti összevetés nincs. (4) ⛔ Az előzményben szereplő #6713 megvalósítási jegy státusza GitHub nélkül nem ellenőrizhető; ebből a körből nem igazolódott új fejlesztési eltérés, ezért új fejlesztői jegy nem indokolt. A kiadási összehasonlító videó vagy képsor ebben a körben nem készült.
+
+**Javasolt jegytörzs-bővítés.**
+
+> Az új Ghidra-kimenet a `CAlbumState +0x0c == 2` állapotot a qshow egyik listaépítési előfeltételeként igazolja (`0x004b29d0`), de nem gyűjteménytípusként. A 0x38 bájtos köztes rekord `+0x30 == 1` és `+0x18 == 0` feltételekkel jut a qshow kártyalistájába (`0x004a0720`, `0x004ae600`, `0x007fc7c0`). A `+0x30 == 5` kód a `Folders` faépítő útban keletkezik (`0x004b1c80`, `0x004b6190`), a `6` és `7` forrása, valamint a `+0x18` üzleti jelentése továbbra sem bizonyított. A PicasaPy jelenlegi vezérlője csak mappa- és nem üres albumkártyát épít (`src/picasapy/app/timeline_controller.py:269-299`). Ebből a körből nincs bizonyított fejlesztési eltérés, ezért kódmódosításra vonatkozó feladatlista nem adható. A teljes eredeti típuslista és a PicasaPy megfeleltetés maradjon nyitott kutatási feladat.
+
+**Új kutatási jegyjavaslatok.** Nincs külön jegyjavaslat; a nyitott típusmegfeleltetés és halmaz-összevetés a #6532 tárgykörébe tartozik.
+
+**Nyitott.**
+
+- `Ghidra-kör kell: 0x004b0fb0 - a 0x004b6190 Folders útjából hívott rekurzív összesítő hogyan jut rekordhoz, és van-e olyan kimeneti útja, amely a +0x158 listába +0x30 == 6 vagy 7 értéket tesz, illetve milyen felületi gyűjteményhez tartozik [blokkoló]`. A `2026-11-11-6532-colab-158-30-irok.txt` a `0x004b6190` hívását mutatja, de a `0x004b0fb0` függvényt nem dekompilálja. A helyi diszasszemblálás önmagában csak rekurzív összesítést igazol, rekordtípust nem.
+- A `+0x18` byte pontos jelentése és az 1, 5, 6, 7 kódok valamennyi létrehozó útjának típusneve: **NINCS MEG**.
+- A `CAlbumState +0x0c` kódok felhasználói jelentése, különösen hogy milyen rekordoknál áll elő a `2`: **NINCS MEG**. A `0x004aa9f0` és `0x004aae90` dekompilációi a mezőállapot frissítését mutatják, a gyűjteménytípushoz kapcsoló feltételt nem nevezik meg.
+- Az eredeti qshow teljes gyűjteményhalmaza és az egyező minta PicasaPy kártyáival végzett mérés: **NINCS MEG**.
+
+**Módosított fájlok ebben a szakaszban.** Ez a 38.2.111 szakasz dokumentálja a 2026-11-11-i Ghidra-forrásokat, a célzott diszasszemblálás és string-xref ellenőrzést, a cáfoló kísérletet, a PicasaPy jelenlegi kódállapotát és a maradék kérdéseket. Kódot, tesztet, eredeti binárist, videót vagy mérőadatot nem módosítottam.
