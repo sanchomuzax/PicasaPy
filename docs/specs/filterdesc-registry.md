@@ -12628,7 +12628,7 @@ ki = ⌊(t·α_forrás + 255·(255 − α_forrás)) / 255⌋ ,  ki.alfa = 255
 ```
 
 ⇒ ahol a forrás átlátszó, ott a kimenet fehér; teljesen fedő forrásnál
-(minden fénykép) a kimenet bitre a felső elem. A fordító akkor fűzi a
+(például a fénykép eredeti bemenetén) a kimenet bitre a felső elem. A fordító akkor fűzi a
 művelet után, ha a `maskWithSourceAlpha` attribútum igaz (`[op+0x20]`,
 beolvasás `0x00bc4962`–`0x00bc496c`; kiírás `0x00bc4b23`–`0x00bc4b41`) — a
 `filterdesc.xml`-ben két helyen: a `Cinemascope` zajrétegén (`:762`) és a
@@ -12641,7 +12641,7 @@ beolvasás `0x00bc4962`–`0x00bc496c`; kiírás `0x00bc4b23`–`0x00bc4b41`) �
 | maszkolt keverés | `⌊(t·m + b·(255−m))/255⌋`, `m` = a maszk ALFA-bájtja | `masked_blend`: lebegőpontos `b·(1−m) + t·m`, `rint` — **8 164 890 / 16 777 216 hármas (48,7%) tér el, max 1** | csonkoló egész képlet — a #3442 része |
 | kimeneti alfa | 255 | `PicnikGrain`-nél a lánc A=0/255 állapotát követjük (#6812) | a maszk kimenete minden esetben 255 |
 | `PartialMask` a téglalapon kívül | `vtbl+0x08 ≈ 1` ? felső : alsó | nem mérve (a maszkjaink teljes képet adnak) | nincs, amíg minden `outerAlpha` 0 vagy 1 |
-| `MaskWithSourceAlpha` | fehérre kompozitál a forrás alfájával | A=0/255 állapot a `PicnikGrain`-hez (#6812) | fedő forrásnál bitre no-op; A=0-nál fehér kimenet |
+| `MaskWithSourceAlpha` | fehérre kompozitál a forrás alfájával | A=0/255 állapot a `PicnikGrain`-hez (#6812) | fedő forrásnál bitre no-op; A=0-nál fehér felső réteg |
 | ecset-újraszámolás | csak a piszkos téglalap | — | teljesítmény-kérdés, nem pixel-kérdés |
 
 *Bizonyítottsági fok:* a képlet, a három végrehajtó adatfolyama és a
@@ -12683,7 +12683,25 @@ olvassa: `0x008f4810` a harmadik operandus alfa-bájtját kinyeri
 (`0x008f48a1`-`0x008f48aa`; skalár ág: `0x008f4a45`). A végrehajtó
 `0x00bd1350` a felső réteget fehér, fedő alapra kompozitálja a forrás
 alfájával (`0x00bd13dc` -> `0x009a91a0`): A=255-nél a szemcseréteg marad,
-A=0-nál fehér lesz a kimenet. A kimeneti alfa mindkét ágon 255.
+A=0-nál a zajréteg lesz fehér, nem feltétlenül a teljes effekt kimenete. A maszk kimeneti alfája mindkét ágon 255.
+
+**#6839, a beágyazott réteg és a keret alfaútja.** A `filterdesc.xml:915-930`
+a zajt a `NestedImageOperation` gyermekeként adja meg: a maszk az alsó
+veremelem, vagyis a beágyazott művelet bemenete, az aktuális lánckép alfáját
+használja, és a zajréteget fehérre kompozitálja. Ezután a leíró szerinti
+5-ös Multiply a fehér felső réteggel az alapot, a 7-es Screen fehéret ad.
+A `0x00bd1350` végrehajtó alsó veremelemet használó kompozitja
+`0x00bd13dc → 0x009a91a0`, a `0x008f4810` kernel a harmadik operandus
+alfáját `0x008f482c` alatt olvassa.
+
+A `MuseumMatte` leírója (`filterdesc.xml:1071-1097`) először fekete belső
+ragyogást (`BlendAlpha=0,7`), majd Border, újabb belső ragyogás
+(`BlendAlpha=0,6`) és végső Border műveletet ad meg. A=0 esetén az első
+ragyogás alakja üres: a teljes belső kép sötétül, a `0x009dc4b0` keverő
+súlya 178, így az eredmény `be·77 >> 8`. Az első Border fedőre állítja az
+alfát (`0x00aa1840 → 0x009ab410`), ezért a második ragyogás már fedő
+forrással fut. Colab #577-#595 és az r6830 tíz leszűkített lánca igazolja
+az út viselkedését: ΔE 0,000-1,290; a két célzott láncon 0,989 és 0,781.
 
 **`Soften`.** A leíró egy `BlurImageOperation`-t ad meg, amelynek
 `BlendAlpha=(100-Fade)·0,8/100`; a `PaintEffectCanvas` ezen az úton nem ad
