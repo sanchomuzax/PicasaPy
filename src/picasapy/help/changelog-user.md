@@ -4,6 +4,26 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-11
+
+**Arcok**
+
+- Ha csak néhány kép vár arckeresésre, a háttérkeresés munka közben is
+  végigfut rajtuk, nem áll meg. Amíg a keresés szünetel, a
+  háttérművelet-jelző nem pörög feleslegesen. Lásd
+  [Emberek és arcok](features/emberek.md).
+
+**Effektek**
+
+- Ha az **Irányított fényesség** után **Árnyékvetést** teszel a képre, a
+  kép helyén az eredeti Picasához hasonlóan a háttérszín látszik.
+
+**Sebesség és stabilitás**
+
+- Szinkronizálás után a program csak akkor tölti újra a képeket és a
+  gyűjteményeket, ha tényleg változott valami.
+- Exportáláskor ritkábban fordulhat elő összeomlás.
+
 ## 2026-11-10
 
 **Kilépés**
