@@ -398,7 +398,7 @@ Az eredeti hívó `0x008f82a0` a képszerkezetet EAX-ban adja át a
 | Az eredeti Picasa tényleges, autocolor előtti RGB-puffere a 004 futásban | NINCS MEG |
 
 Az A út a `0x0090f8f0` utasításainak olvasása: a szűrés, a két előjeles
-osztás, a 64×64-es binelés, a köbös Chebyshev-súlyozás és a súlypont
+osztás, a 64×64-es cellákba sorolás, a köbös Chebyshev-súlyozás és a súlypont
 kiszámítása. A B út a teljes eredeti becslő QEMU-futtatása az előállított
 képen; a natív nyers hisztogram mind a 4096 cellában egyezik a PicasaPy
 hisztogramjával. Egy külön, a `cv2.remap` táblájától független egész
