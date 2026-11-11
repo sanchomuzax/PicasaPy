@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from picasapy.paths import normalize_path
+
 from tests.app.qml_functional._mappa_kep_menu_5150_helpers import (
     app_epitese, elokeszit, tetel_kattintasa, varj,
 )
@@ -21,7 +23,8 @@ def app(qt_app, tmp_path):
 @pytest.mark.parametrize('entry,count', [('file', 1), ('context', 1), ('context', 2)])
 def test_uj_mappa_kattintassal(app, qt_app, height_offset, entry, count):
     window, controller, _ = app
-    source = elokeszit(window, qt_app, controller)
+    # az index és a vezérlő normalize_path alakú utat ad (Windowson a hosszú nevet)
+    source = Path(normalize_path(elokeszit(window, qt_app, controller)))
     window.resize(window.width(), window.height() + height_offset)
     qt_app.processEvents()
     paths = [Path(controller.photos.filePathAt(i)) for i in range(count)]
