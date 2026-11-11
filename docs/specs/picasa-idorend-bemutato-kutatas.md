@@ -2309,3 +2309,59 @@ Ez lezárja azt a szűk kérdést, hogy a nyolc rekordépítő hívó közül me
 - A billentyűesemények első és utolsó mozgó képkockához kötése, valamint a Wine futás tényleges Preferences-értékei továbbra is nyitottak (`38.2.104`).
 
 **Módosított fájlok ebben a szakaszban.** A 38.2.112 az új Ghidra-kimenetek alapján lezárja a `0x004a0720` nyolc hívójának kód- és kapu-leltárát, frissíti a `0x004b0fb0` nyitott kérdését, és megőrzi a teljes felhasználói kategóriahalmazt nyitottként. Kódot, tesztet, eredeti binárist, videót vagy mérőadatot nem módosítottam.
+
+#### 38.2.113 A Recently Updated időablaka és nyitott rekordkapcsolata (#6532, 2026-11-11)
+
+**Kérdés és hatókör.** A `Recently Updated` / `CThumbDB::RecentUpdate` / `]updated` kulcs útján meghatározható-e a gyűjtemény tagsága, elemszáma, sorrendje és qshow-beli CAlbumState kapcsolata? A vizsgálat a `0x0055ece0` helyi utasításait, a már meglévő Ghidra-kimeneteket, az index pozitív string-xrefjeit, a job-239 korábban dokumentált képkockáját és a PicasaPy forrását kapcsolja össze. Teljes `.text` pásztázás és új futásidejű adatfelvétel nem történt.
+
+**Kategória létrehozása és kulcsa.** A `0x004a66e0` `FastStart == 0` ágában meghívja a `0x004abe70`-et. Ennek meglévő Ghidra-dekompilációjában a `CThumbDB::RecentUpdate` címke után a `0x004ad220(in_EAX, "]updated", 0, 0)` hívás szerepel. Az eredeti bináris pozitív xrefje a `"]updated"` karakterláncot a `0x004abe70` és `0x0055ece0` függvényekben is megtalálja. Ez bizonyítja a kulcs regisztrációs és fogyasztói útját, de nem köti még ugyanahhoz a futásidejű CAlbumState-sorhoz.
+
+**Dátumszűrő.** A `0x0055ece0` `0x0055f08e`-`0x0055f0bd` ága a CThumbDB rekordlekérője (`0x004edf60`) által kitöltött descriptor `+4/+8` qwordját a `0x0098b650` függvénynek adja. Ez a segéd Windows `FILETIME`-ot helyi időre alakít Picasa-dátummá. A másik operandust a `0x0098b770(7)` állítja elő. A `0x0098b770` meghívja a `__time64` rutint (`0x00c0a421`, import/xref: `GetSystemTimeAsFileTime`), majd az aktuális `__time64` értékből kivonja a hívó `EAX=7` argumentumának 86400 másodperces napokkal vett szorzatát (`0x15180`). Az eredményt Picasa-dátummá kódolja a `0x0098b550`-en. A `fcomp` ág csak a küszöbnél szigorúan későbbi rekorddátumot engedi tovább ebbe a szűrőágba. A jelölt rekordok időablaka pontosan gördülő 604800 másodperc.
+
+A `0x0055ece0` ezen ágában a `0x004edf60` descriptor típusmezőjének `0x15`, `0x17`, `0x18` és `0x1a` értékei kihagyják ezt a dátumellenőrzést. A rutin más előfeltételei és a rekord `FILETIME` mezőjének üzleti jelentése nem teljesen tisztázott; ezért a hét napos feltétel a vizsgált ág bizonyított feltétele, nem a teljes albumtagság leírása.
+
+**Elemszám és sorrend.** A `0x0055f0db`-`0x0055f101` út a `RecentLimit` beállítást `0xfa` alapértékkel olvassa. A `0x0055f162`-`0x0055f191` az elemszámot ehhez a limithez hasonlítja, és túllépéskor ismételten eltávolítja az utolsó indexű elemet a `0x006caf20` hívásával. Az alapérték mellett a megőrzött lista legfeljebb 250 elemes; beállított `RecentLimit` esetén annak értéke érvényesül. A `0x0055ece0` index szerint járja be bemenetét, a `0x006c9e80` pedig a kulcs alapján megtalált elemet eltávolítja, majd a kapott indexre újra beszúrja. A beszúrási pozíció forrása és a lista teljes rendezési szabálya **NINCS MEG**. A hét napos forrás-időbélyeg üzleti jelentése, például fájlmódosítás vagy importesemény, **NINCS MEG**.
+
+**CAlbumState és qshow határa.** A `0x004b8ee0`/`0x004b8470` út CAlbumState sorokat gyűjt, a `0x004b29d0` pedig csak a forrássor `+0x0c == 2` állapotánál készít qshow rekordot. Ezzel szemben a `0x004b3770` `CAlbumBuilder::updated` út hívóhelyei (`0x004b3886`, `0x004b3b50`, `0x004b3f4b`) a `0x004a0720` hívásain keresztül a különálló köztes rekord `+0x30` mezőjébe `2` értéket írnak (`38.2.112`). A qshow szűrője (`0x007fc7c0`) `+0x30 == 1` és `+0x18 == 0` rekordot fogad el. A két különböző rekord `2` mezőértéke nem azonosítható egymással. A `0x004b3770` út hónap-éves `Updated` címkéje ezért önmagában nem bizonyítja a `Recently Updated` album CAlbumState-sorának qshow-hoz jutását.
+
+A job-239 `kepernyo__02.png` képkockáján az eredeti Picasa `Albums (1)` alatt `Recently Updated (24)` látszik, és a qshow-léptetésben ugyanez a címke utolsóként megjelenik (`38.2.81`). Ez egy mért futás címkéje és darabszáma, nem a 24 kép azonosítója vagy a bináris tagsági szabálya. A PicasaPy `TimelineController._collections_to_qml()` mappákat és nem üres albumokat ad a listához (`src/picasapy/app/timeline_controller.py:269-299`); az alkalmazás forrásában nem találtam `Recently` szöveget. Különleges `RecentUpdate` albumépítő út nincs igazolva a PicasaPy forrásában.
+
+| Állítás | Forrás |
+|---|---|
+| A `FastStart == 0` ág és a `CThumbDB::RecentUpdate` / `]updated` kategória felvétele. | bináris (`0x004a66e0`, `0x004abe70`, `0x004ad220`; meglévő Ghidra-kimenet `2026-11-11-6532-colab-decomp-3.txt`) |
+| A `]updated` kulcs fogyasztói ága, a `7 * 86400 = 604800` másodperces gördülő küszöb és a szigorú dátum-összehasonlítás. | bináris (`0x0055ece0`, `0x0098b770`, `0x0098b650`, import `0x00c0a421`, `0x0098b550`) |
+| A hét napos dátumtesztet kihagyó descriptor típusok: `0x15`, `0x17`, `0x18`, `0x1a`. | bináris (`0x0055ece0`, `0x004edf60`) |
+| A dátummező rekordon belüli helye: descriptor `+4/+8`, FILETIME alak. | bináris (`0x004edf60`, `0x0055ece0`, `0x0098b650`) |
+| A `RecentLimit` alapértéke `0xfa = 250` elem, a beállított érték felülírhatja. | bináris (`0x0055ece0`, `0x0055f162`, `0x006caf20`) |
+| A `0x004b3770` hívóhelyei `+0x30 == 2` köztes rekordot készítenek, amit a qshow `+0x30 == 1` kapuja nem fogad el. | bináris (`0x004b3886`, `0x004b3b50`, `0x004b3f4b`, `0x007fc7c0`; részletek: 38.2.112) |
+| A qshow forrássor `+0x0c == 2` előfeltétele, és a külön köztes rekord `+0x30 == 1`, `+0x18 == 0` kapuja. | bináris (`0x004b29d0`, `0x007fc7c0`) |
+| Job-239 katalógusban a címke és a 24-es darabszám. | mérés (`job-239/kepernyo__02.png`, 38.2.81) |
+| A job-373 és job-446 eredeti videó rendelkezésre állása. | mérés (38.2.101, 38.2.104) |
+| PicasaPy által épített mappa- és nem üres albumkártyák. | mérés (forrásleolvasás: `src/picasapy/app/timeline_controller.py:269-299`) |
+| Külön `Recently Updated` építőút hiánya a PicasaPy Időrend forrásában. | mérés (forrásleolvasás: `src/picasapy/app/timeline_controller.py:269-299`; `rg -n 'Recently' src/picasapy` üres eredmény) |
+| A descriptor FILETIME eseményjelentése, a teljes tagsági feltétel és a rendezési kulcs. | NINCS MEG |
+| A `Recently Updated` CAlbumState-sor `+0x0c == 2` állapotba írása és annak útja a qshow-hoz. | NINCS MEG |
+
+**A két független út.** A út: a `0x0055ece0` utasításai átadják a `7` értéket a `0x0098b770`-nek, FILETIME dátumot hasonlítanak a küszöbhöz, majd a `RecentLimit` alapján darabszámot korlátoznak. B út: az import/xref-adat a `0x00c0a421` címet `GetSystemTimeAsFileTime` forrásként azonosítja; a külön dátumkódoló/dekódoló út a `0x0098b320` és `0x0098b550` címeken 86400 másodperces napot és 1899-12-30 kezdőnapot igazol (`38.2.108`). A két út egyezik a hétnapos küszöb dátumreprezentációjában. Ez nem azonosítja a rekordidő üzleti eseményét vagy a teljes lista rendezését.
+
+**Cáfoló kísérlet.** Azt a feltevést próbáltam cáfolni, hogy a `7` egy évet vagy a `250` napot jelent. A `0x0098b770` `7 * 0x15180` aritmetikája, az aktuális `__time64` értékből történő kivonása és az utána következő dátumkódolás a `7` értéket napokban mért időtartamként azonosítja. A `RecentLimit` utáni elemszám-összehasonlítás és az utolsó index ismételt törlése a `250` értéket elemszámkorlátnak azonosítja. Az alternatív olvasatot a hívó és segéd utasításai külön is alátámasztják. Azt a feltevést is ellenőriztem, hogy `CAlbumBuilder::updated` maga a Recently Updated lista: az általa előállított `+0x30 == 2` köztes rekord qshow `+0x30 == 1` feltételén nem megy át. Ezt a két út külön rekordmezőinek ellenőrzése cáfolja.
+
+**Bizonyítottsági fok.** A `]updated` kulcs használata, a hét napos időhatár és a `RecentLimit` alapértelmezett 250-es elemkorlátja binárisból igazolt. A teljes albumtagság, az időbélyeg eseményjelentése, a rendezés, a frissítés kiváltója és a CAlbumState/qshow kapcsolat **nyitott**. Az összes kért részre vonatkozó kutatás ezért **feltételes**, nem teljes.
+
+**A #6532 „Kész, ha” pontjai.** (1) ✅ Eredeti videó elérhető és dokumentált a job-373 és job-446 alapján (`38.2.101`, `38.2.104`); ebben a körben új felvétel nem készült. (2) ⛔ A Recently Updated ághoz a hét napos küszöb és elemszámkorlát igazolt, de a mező eseményjelentése, teljes tagsága, rendezése és CAlbumState kapcsolata nyitott. (3) ⛔ A PicasaPy forrása mappa- és nem üres albumkártyákat épít, de ugyanazon katalóguson futtatott teljes lista-összevetés és a RecentUpdate pontos tagsági szabálya hiányzik. (4) ⛔ A korábbi fejlesztési jegy #6713 a tulajdonosi átadás szerint létezik; ebből a helyi munkamenetből a státusza nem ellenőrizhető. A Recently Updated hiányát leíró pontos fejlesztői elfogadási feltételhez a bináris lista- és CAlbumState-híd még nem teljes; kiadási összehasonlító videó vagy képsor ebben a körben nem készült.
+
+**Javasolt jegytörzs-bővítés.**
+
+> A `docs/specs/picasa-idorend-bemutato-kutatas.md` 38.2.113 szakasza alapján a binárisban külön `CThumbDB::RecentUpdate` / `]updated` gyűjteményág van. A `0x0055ece0` ezen ágában a rekord descriptorának FILETIME értékét a jelenlegi idő mínusz 7 nap küszöbéhez hasonlítja, és a lista elemszámát a `RecentLimit` beállításhoz korlátozza, amelynek alapértéke 250. A job-239 futásban `Recently Updated (24)` látszott. A pontos FILETIME-esemény, a teljes tagsági és rendezési szabály, a CAlbumState `+0x0c == 2` sorral való kapcsolat és az ugyanazon katalóguson végzett PicasaPy-összehasonlítás **NINCS MEG**. E bizonyíték még nem ad pontos implementációs feladatlistát; ezeket a kérdéseket a #6532 kutatási elfogadási feltételei között kell tartani.
+
+**Új kutatási jegyjavaslatok.** Nincs külön jegy; a nyitott pontok a #6532 részei.
+
+**Nyitott.**
+
+- `Ghidra-kör kell: 0x0055ece0 - melyik CThumbDB mező üzleti dátuma kerül a descriptor +4/+8 FILETIME helyére, milyen további feltételek szabják meg a tagságot, mi a lista sorrendje és mely hívó/frissítési esemény futtatja ezt az ágat [blokkoló]`. A meglévő Ghidra-fájlokban ez a függvény dekompilációként nincs meg; a helyi utasítások megadják a dátumhatárt és korlátot, de nem az eseménynevet, a hívási ütemezést vagy a teljes sorrendet.
+- `Ghidra-kör kell: 0x00440bc0 - a 0x0055ece0 által ]updated lekérdezésből visszakapott értéket hogyan oldja fel albumrekordra és indexelt elem-listára, és mi adja a beszúrási pozíciót [blokkoló]`. A függvény helyi diszasszemblye a `]album:` kulcs és az indexelt listaágak jelenlétét mutatja, de nem azonosítja a RecentUpdate rendezési szabályát.
+- `Ghidra-kör kell: 0x004ad220 - a 0x004abe70 által ]updated kulccsal meghívott kategóriaépítő hogyan kapcsolja a provider eredményét CAlbumState-sorhoz [blokkoló]`. A meglévő `0x004abe70` dekompiláció megmutatja a címkét és hívást, a célfüggvény kimenete nincs meg.
+- `Ghidra-kör kell: 0x004aae90 - melyik CAlbumState-sorhoz írja ez a függvény a +0x0c == 2 értéket, és hogyan köthető a sor a ]updated kategóriához [blokkoló]`. A meglévő `2026-11-11-6532-colab-158-30-irok.txt` kimenete megmutat általános állapotfrissítést és 2 értékű írást, de nem azonosítja a Recently Updated sort.
+- A `0x004b3770` `Updated ` csoportosító és a `]updated` album közötti futásidejű lista-azonosság **NINCS MEG**. Megszerzéséhez a célzott Ghidra-eredményt a CAlbumState sorok és qshow tokenek azonos futásból rögzített listájával kell egyeztetni.
+
+**Módosított fájlok ebben a szakaszban.** A 38.2.113 a `Recently Updated` kulcs pozitív kódútját, a hét napos dátumfeltételt, a 250 elemű alapkorlátot és a fennmaradó tagsági/qshow kérdéseket rögzíti. Kódot, tesztet, videót, eredeti binárist vagy mérőadatot nem módosítottam.
