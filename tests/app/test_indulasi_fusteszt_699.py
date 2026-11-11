@@ -18,6 +18,7 @@ objektumokat és mentett munkamenetet** használ — csonk nélkül.
 from __future__ import annotations
 
 import re
+import time
 from pathlib import Path
 
 import pytest
@@ -73,6 +74,15 @@ class TestIndulas:
         controller.start()
         assert controller.waitForBackgroundWorkers(20.0)
         qt_app.processEvents()
+        # #6824: a háttérszálak eredménye sorba állított jelzéssel érkezik, és
+        # a kézbesítése újabb háttérbetöltést indíthat (a szinkron vége után a
+        # mappa újra betöltődik). Egyetlen `processEvents` ezért Windowson
+        # néha az üres köztes állapotot látta: a lánc végéig várunk.
+        hatarido = time.monotonic() + 20.0
+        while controller.photos.rowCount() == 0 and time.monotonic() < hatarido:
+            time.sleep(0.05)
+            controller.waitForBackgroundWorkers(20.0)
+            qt_app.processEvents()
 
         assert controller.photos.rowCount() > 0, (
             "az indulás után a rácsnak tartalmaznia kell a mentett mappa képeit"
