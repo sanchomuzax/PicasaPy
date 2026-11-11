@@ -12785,6 +12785,27 @@ picasapy-origin-key: stringres:geo::init_err</extracomment>
             <translation>Ak chcete zobraziť vlastnosti, vyberte fotografiu.</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Properties of %s:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PropertiesPanel::info_single</extracomment>
+            <translation>Vlastnosti %s:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Location</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytImageMetadata::FilePath</extracomment>
+            <translation>Umiestnenie</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IPTC::Keywords</extracomment>
+            <translation>Značky</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="28" />
             <source>Edit Tags</source>
             <extracomment>picasapy-origin: picasa

@@ -84,6 +84,7 @@ class PhotoOpsTransformMixin:
             return document.with_removed(photo.name, "hidden")
 
         self._apply_batch(valid, mutate)
+        self._reload_folders()
 
     @Slot(list)
     def toggleStarMany(self, rows) -> None:
