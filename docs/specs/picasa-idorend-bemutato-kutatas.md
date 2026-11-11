@@ -2030,3 +2030,51 @@ A `0x004b8470` az EAX-ban kapott sorszámot és egy veremre tett kontextust ad a
 **Új kutatási jegyjavaslat.** Nincs; ezek a nyitott pontok a #6532 „Kész, ha” feltételeihez tartoznak.
 
 **Módosított fájlok ebben a szakaszban.** Ez a 38.2.107 a helyi bináris/Ghidra-bizonyítékot dokumentálja; kódot, tesztet, eredeti binárist vagy mérőadatot nem módosítottam.
+
+#### 38.2.108 A qshow bemeneti osztálya, szűrője és dátumkódolása (#6532, 2026-11-11)
+
+**Hatókör és módszer.** A 2026-11-11-i Colab Ghidra-kimeneteket az eredeti `Picasa3.exe` utasításszintű olvasatával ellenőriztem. A qshow-hidat a korábbi `38.2.63` és `38.2.69` adatútjaival, a `0x004461a0` predikátumot pedig a `picasa-keptalca.md` 20.3 szakaszának két független felhasználásával kereszteztem. A dátumkódolásnál a gettert, a dekódolót, a kódolót és azok konstansait vizsgáltam. Új Wine-mérés és PicasaPy-futásidejű összevetés nem készült.
+
+**A 38.2.107 osztályra vonatkozó állításának javítása.** A `0x006dc4c0` bemeneti objektuma a `CThumbUI`, nem egy ismeretlen osztályú, `+0x2c0` mezővel bíró külön objektum. A `0x005de8e0` a `CThumbUI` vtable `0x00c90584` slotja (`0x00c9052c` vtable). A metódus a belépő `ECX` értékét `0x005de8f6`-nál elmenti; a `0x005dedb3`-`0x005dedbc` helyen az eseményargumentum mellett ezt az elmentett `this` pointert is átadja a `0x005d3290`-nak. A `0x005d3290` ugyanezt az első paramétert továbbadja a `0x006dc4c0`-nak. A `0x006dc4c0` a `CThumbUI+0x2c0` mezőt adja a `0x004b8ee0`-nak. A `38.2.69` független konstruktor- és RTTI-útja ezt a mezőt `CAlbumState`-ként azonosítja.
+
+**A qshow-híd közvetlen.** A `0x005e96d9` a `CThumbUI+0x2c0` pointert a MakeTimeline paraméterrekord `+0x14` mezőjébe teszi. A `0x007fa7f0` ezt változtatás nélkül másolja a oneup `+0x2f4` mezőjébe, majd a `0x007fb9f0` a pointert a qshow `+0xac` mezőjébe írja (`0x007fb9f0`, `mov [esi+0xac], ecx`). A qshow kártyaépítője, `0x007fc7c0`, ebből a CAlbumState pointerből olvas. A `0x004b8ee0`/`0x004b8470` út ugyanezen CAlbumState lista- és rekordmezőit dolgozza fel. A különböző rekordméretű köztes adatok a qshow saját kártyarekordjaivá alakulnak, de a CAlbumState pointer előtt nincs külön adapter. Ez lezárja a pointerhíd kérdését, nem nevezi meg a CAlbumState teljes forráshalmazát.
+
+**A `+0x9d` szűrő gépi hatása.** A `0x005db823` a `thumbui/soloview` és `thumbui/folderview` kulcsok értékét a `0x004a7300` setternek adja; a setter az elsőt a CAlbumState `+0x9c`, a másodikat a `+0x9d` mezőbe írja. A `0x004b8470` nem nulla `+0x9d` esetén a `0x004461a0` predikátumot hívja, hamis visszatérés esetén kihagyja az adott sort. A `picasa-keptalca.md` 20.3 a predikátum két másik felhasználásából igazolja, hogy nem nulla eredménye albumot, nulla eredménye mappát jelent. Így ezen az útvonalon a nem nulla `+0x9d` az albumként besorolt sort tartja meg. A beállítás felhasználói jelentését nem vezetem le pusztán a kulcs nevéből.
+
+**A rekord `+0x0c` mezőjének határa.** A `0x004b29d0` a `CAlbumState+0x138 + index*0x24 + 0x0c` értéket `2`-vel hasonlítja össze; az elfogadott ágon a `0x0044ddd0` további adatot kér. A bináris tehát igazolja, hogy a `2` egy elfogadott rekordállapot a qshow felé vezető listában. A tartalmi címke, például hogy albumot vagy más gyűjteményfajtát jelöl-e, **NINCS MEG**. A `0x004ba420` a rekord mezőit másolja, de az értéket nem állítja elő. A már vizsgált `0x004a66e0`, `0x004abe70` és `0x004a57a0` sem adott bizonyított írócímet vagy enumnevet.
+
+**A dátum-qword kódolása.** A `0x0044f7c0` a CThumbDB dátumoszlopának `double` qwordját olvassa; a lusta oszlopbetöltő `0x00499650` a `0x006a41e0` `0x13320002` lekérésének eredményéből tölti a tárolót (lásd `38.2.107`). A qshow `0x007fc4c0` útja a `0x0098ba30` és `0x0098b9e0` átalakítókon, majd a `0x0098b550` kódolón halad át; a dátumot dekódoló segéd a `0x0098b320`. A kódoló 86400 másodperccel számolja a nap törtrészét (`0x00cf3f20`), és a dátumnapokból kivonja a 693959-es alapot (`0x000a96c7`). A bináris naptári napösszeg-képlet szerint ez 1899-12-30 napja: `1899*365 + 460 + 334 + 30 = 693959`. A `0x0098b320` ugyanazt a nap/törtrész felbontást és a Gergely-naptári 400/100/4 éves ciklusokat használja. A qword tehát Gergely-naptári napok sorszáma 1899-12-30 kezdőnappal, a törtrész pedig a napon belüli idő. A dekódoló tartományhatárai `-657434` és `2958465` (`0x00cf3f38`, `0x00cf3f40`).
+
+**A képszolgáltató slotja.** A qshow `[this+0x2e4]` virtuális `+8` célja `0x00424b10`. A `CThumbDB+0x4c` beágyazott felületének vtable-je `0x00c820a8`; a konstruktor- és vtable-adatút ezt köti a szolgáltatóhoz. A hívás a kártyarekordot és a kért méretet adja át. A forrásméret-lépcső és a 640 px-es küszöb részletes bizonyítéka a `38.2.97` szakaszban van; az új Ghidra-kör nem talált eltérést.
+
+| Állítás | Forrás |
+|---|---|
+| A `0x006dc4c0` bemeneti objektuma CThumbUI, `+0x2c0` mezője CAlbumState. | bináris (`0x005de8e0`, `0x005d3290`, `0x006dc4c0`, `0x004a1560`, vtable `0x00c9052c`, RTTI `0x00c8368c`) |
+| A qshow `+0xac` ugyanazt a CAlbumState pointert kapja; a qshow utána maga építi kártyarekordjait. | bináris (`0x005e96d9`, `0x007fa7f0`, `0x007fb9f0`, `0x007fc7c0`) |
+| Nem nulla `+0x9d` mellett az albumként besorolt sort megtartja a predikátum. | bináris (`0x005db823`, `0x004a7300`, `0x004b8470`, `0x004461a0`; a predikátum jelentésének külön ellenőrzése: `0x00537fb0`) |
+| A rekord `+0x0c == 2` jelentése az elfogadott státuszon túl. | NINCS MEG |
+| A dátum `double` kezdőnapja, egysége és törtrészének szerepe. | bináris (`0x0044f7c0`, `0x00499650`, `0x0098b320`, `0x0098b550`, `0x00cf3f20`, `0x00cf3f38`, `0x00cf3f40`, `0x000a96c7`) |
+| A `[this+0x2e4]` képszolgáltató virtuális `+8` célja. | bináris (`0x00802230`, `0x00415790`, `0x00424b10`, vtable `0x00c820a8`; részletek: `38.2.97`) |
+| A qshow teljes futásidejű forráshalmaza és annak azonossága a PicasaPy Időrend-listájával. | NINCS MEG |
+
+**A két független út.** A út: a `0x005de8e0` mentett `this` pointerét a hívási utasítások a `0x005d3290`-on keresztül a `0x006dc4c0`-ig viszik; a qshow paraméterrekord útja ugyanezen `CThumbUI+0x2c0` pointert adja a qshow `+0xac` mezőjének. B út: a `CThumbUI` vtable RTTI-azonosítása és a `0x004a1560` konstruktor `CAlbumState` vtable-írása külön típustámpontot ad, összhangban a `38.2.69` korábbi típusbizonyításával. A két út egyezik a bemeneti osztályban és a pointerben.
+
+A dátumnál A út a getter és a dekódolók útja, amely a qwordot napra és napon belüli törtrészre bontja. B út a kódoló külön naptári mezőkből képzett napösszege, amelyből kivonja a 693959 alapot és 86400-zal osztja az időt. A két irány ugyanazt az epochot és egységet adja. A `0x004461a0` jelentését két külön UI-felhasználás, az albumkijelölés és a mappa kijelölése ellenőrzi (`picasa-keptalca.md` 20.3).
+
+**Cáfoló kísérlet.** Megpróbáltam megtartani a 38.2.107 korábbi olvasatát, miszerint a CThumbUI virtuális metódusának `this` pointere nem jut el a `0x006dc4c0`-ig. A `0x005de8e0` mentett ECX-értékét közvetlenül a `0x005d3290` első argumentumába, onnan pedig a `0x006dc4c0` első argumentumába követtem; ez cáfolja a korábbi olvasatot. Külön próbáltam a qwordot Unix-másodpercnek tekinteni: a naptári dekódoló és kódoló közös 86400-as osztója, 693959-es kezdőnapja és Gergely-naptári ciklusai ezt cáfolják. A rekord `+0x0c` tartalmi értelmezését nem próbáltam azonosítani puszta mezőnévből vagy hasonló rekordból.
+
+**Bizonyítottsági fok.** A bemeneti CThumbUI/CAlbumState osztályazonosság, a qshow pointerhíd, a `+0x9d` album-predikátumának hatása, a dátum-qword kódolása és a képszolgáltató `0x00424b10` célja **megerősített**, mert két független bináris vagy bináris és RTTI/UI út egyezik. A `+0x0c == 2` rekordállapot tartalmi neve, a teljes qshow forráshalmaz és annak PicasaPy-listával való azonossága **nyitott**. E körben új PicasaPy-viselkedési eltérés nem igazolódott.
+
+**A #6532 „Kész, ha” pontjai.** (1) ✅ Az eredeti videó dokumentált: job-373 és job-446 (`38.2.101`, `38.2.104`); a billentyű-leütések pontos képkockakapcsolata továbbra is nyitott. (2) ⛔ A teljes forráshalmaz, a `+0x0c == 2` szemantikai címkéje, a PicasaPy-listával való azonosság és a billentyű-képkocka szinkron még nem igazolt. (3) ✅ A felhasználó által átadott jegyelőzmény megvalósítási jegyként nevezi meg a #6713-at; a GitHub-állapotot nem ellenőriztem. (4) ⛔ Kiadásba adható PicasaPy-összehasonlító videó vagy képsor nincs dokumentálva.
+
+**Következő konkrét vizsgálat és nyitott pontok.** A `+0x0c` jelentéséhez előbb a CAlbumState `+0x138` 0x24 bájtos rekordjainak mezőíróját kell utasításszinten megtalálni. A következő helyi célpontok a `0x004a66e0` rekordpuffer-kezelése és hívásai, majd a `0x004abe70` és `0x004a57a0` feltöltő út; a `0x004ba420` már vizsgált rekordmásoló, nem értékíró. Csak a konkrét mezőíró azonosítása után érdemes annak pontos címére új Ghidra-kört kérni. A teljes forráshalmazhoz a `0x004b8ee0` → `0x004b8470` → `0x004b29d0` szűrőút minden bemeneti ága és a `0x007fc7c0` kártyaépítő futásidejű listája szükséges; enélkül PicasaPy-eltérés nem állítható.
+
+**Nyitott.**
+
+- A rekord `+0x0c == 2` tartalmi jelentése **NINCS MEG**. Következő út: mezőíró keresése a `0x004a66e0`, `0x004abe70`, `0x004a57a0` feltöltési ágai mentén; utána az azonosított konkrét író célzott Ghidra-dekompilációja.
+- A teljes qshow-bemeneti gyűjteményhalmaz és a PicasaPy-listával való futásidejű egyezés **NINCS MEG**. Következő út: a `0x004b8ee0`, `0x004b8470`, `0x004b29d0` szűréseinek teljes adatútja, majd ugyanazon futásból gyűjtött descriptorok és kártyák összevetése a PicasaPy listájával.
+- A billentyű-események és az első/utolsó mozgó képkocka pontos kapcsolata, valamint a tényleges Wine Preferences-értékek **NINCS MEG** (`38.2.104`). Megszerzéséhez képkockára szinkronizált eseménynapló és azonos futásból mentett beállítások szükségesek.
+
+**Új kutatási jegyjavaslat.** Nincs; a nyitott pontok a #6532 meglévő elfogadási feltételei.
+
+**Módosított fájlok ebben a szakaszban.** Ez a 38.2.108 a 2026-11-11-i Ghidra-kimenetekkel és a helyi bináris ellenőrzéssel javítja a 38.2.107 osztályolvasatát, valamint lezárja a dátumkódolást és a qshow-hidat. Kódot, tesztet, videót, eredeti binárist vagy mérőadatot nem módosítottam.
