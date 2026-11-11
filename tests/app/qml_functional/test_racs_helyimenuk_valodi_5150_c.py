@@ -36,7 +36,6 @@ from tests.app.qml_functional._racs_helyimenuk_5150_helpers import (
     almenu_megnyitasa,
     egyezik,
     elokeszit_str,
-    fileops_athelyezo,
     foto_utja,
     gyerek,
     ini_ertek,
@@ -213,9 +212,11 @@ class TestFotoMenu:
             and nev not in [foto.name for foto in controller.photos.photos],
         ), "a Hide kattintás nem rejtette el a képet a rácsról"
 
-    def test_az_athelyezes_valodi_kattintassal_megnyitja_a_mappavalasztot(
+    def test_az_athelyezes_valodi_kattintassal_megnyitja_a_mappa_tulajdonsagait(
         self, mappa_app, qt_app
     ):
+        # #6844: az eredetiben a kép helyi menüjének „Move to New Folder...”
+        # tétele a Mappa tulajdonságai ablakot nyitja, nem mappaválasztót.
         window, controller, _motor = mappa_app
         elokeszit_str(window, qt_app, controller)
         kijelol(window, qt_app, [0])
@@ -223,10 +224,10 @@ class TestFotoMenu:
         jobbklikk_fotón(window, qt_app, 0)
         kattints(window, qt_app, gyerek(window, "contextMenuMove"))
 
-        dialog = fileops_athelyezo(window)
-        assert dialog is not None, "a fájl-áthelyező párbeszéd nem jött létre"
+        dialog = gyerek(window, "moveToNewFolderDialog")
+        assert dialog is not None, "az új mappa párbeszéde nem jött létre"
         assert varj(qt_app, lambda: nyitott(dialog)), (
-            "a Move kattintás nem nyitotta meg az áthelyező párbeszédet"
+            "a Move kattintás nem nyitotta meg a Mappa tulajdonságai ablakot"
         )
         zar(qt_app, dialog)
 
