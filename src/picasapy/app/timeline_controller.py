@@ -372,12 +372,13 @@ class TimelineController(QObject):
         )
 
     @staticmethod
-    def _exif_date(record: PhotoRecord) -> date | None:
+    def _exif_date(record: PhotoRecord) -> datetime | None:
         """Csak az indexelt felvételi dátumot használja; fájlidőre nem esik vissza."""
         if not record.taken_at:
             return None
         try:
-            return datetime.fromisoformat(record.taken_at).date()
+            # #6807: időzónás érték (pl. videó `...Z`) se keveredjen a naiv EXIF-időkkel
+            return datetime.fromisoformat(record.taken_at).replace(tzinfo=None)
         except ValueError:
             return None
 
