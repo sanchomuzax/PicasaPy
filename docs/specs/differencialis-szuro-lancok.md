@@ -194,3 +194,66 @@ A fenti bizonyíték **nem igazol PicasaPy `triple2` képlethibát**, így a mag
 | Golden a Colab-exportból vágott kis mintával | ⛔ E kutatási körben új minta/golden nem készült |
 
 **Következő döntő mérés:** az eredeti Picasa teljes `IR → warm → triple2` futásában és a PicasaPy megfelelő futásában veszteségmentesen rögzíteni ugyanazt a triple2 előtti BGRA puffert, valamint közvetlenül a `0x0090be70` hívás előtt a `0x00d67f74` indexet és a `0x00d67f7c` 624 szavas állapotot. A puffer egyezése és eltérése a mintasorral szétválasztja a bemeneti képkülönbséget az RNG-fázistól. A QEMU LUT mérés x87 módja `0x037f`; az eredeti alkalmazás módját külön kell leolvasni, ha a LUT-re kiterjedő pixelhű bizonyítás szükséges.
+
+## #6822 - a triple3 és a szemcseszűrők véletlenállapota (2026-11-11)
+
+A `triple3` callbackje (`0x008f8ce0`) az aktív ágon a `0x0090c430`-on át
+hívja a `0x0090be70` LUT-magot (`0x008f8d8b`, `0x0090c478`). A mag a
+folyamat globális MT-objektumának `0x00d67f74` indexét és `0x00d67f7c`
+állapottömbjét használja, és egy képpontonkénti húzást oszt meg a három
+csatorna között (`0x0090beed`-`0x0090bf7a`). A fenti #6746 szakaszban
+szereplő, azonos mintasorral végzett natív QEMU-összevetés a közös mag
+képletét külön is ellenőrizte; az ottani mérés nem a #6822 exportja.
+Forrás: `bináris (0x008f8ce0, 0x0090c430, 0x0090be70)`;
+`mérés (#6746 QEMU, 1331 pixel azonos LUT-tal és mintákkal)`.
+
+A globális objektum magját az indulási táblából hivatkozott `0x00c32520`
+állítja elő: három egymást követő CRT `_rand` hívás eredménye `r1`, `r2`,
+`r3`, a mag pedig `r3 XOR ((r2 XOR (r1 << 12)) << 12)`, 32 bites
+aritmetikával. A `0x00c416b0` táblabejegyzés a `0x00c32520`-ra mutat;
+a magot a `0x00aa28f0` bontja ki. A kezdőérték `0x2d8228be` **akkor**,
+ha a szál CRT-állapota 1 és ez az első három húzás: a CRT kezdőállapota
+`0x00bf0474`-nél 1, a léptetés `0x00c08221`-nél történik. A korábbi
+indulási tábla-auditot a `picasa-native-filter-workers.md` 2.2 szakasza
+rögzíti. Az adott export előtti tényleges MT-állapot ettől még nem ismert:
+a korábbi húzások megváltoztatják. Forrás: `bináris (0x00c416b0,
+0x00c32520, 0x00bf0474, 0x00c08221, 0x00aa28f0)`; `NINCS MEG
+(a #6822 exportjában a triple3 előtti MT-állapot)`.
+
+A `0x00aa28f0` kiterjesztése `s[0]=seed`,
+`s[i]=(0x0019660d * (s[i-1] XOR (s[i-1] >> 30)) + i) mod 2^32`
+`i=1..623` mellett, az index 624. Ez eltér a szabványos magkiterjesztéstől;
+az azonos seed átadása önmagában nem igazolja a NumPy MT19937 azonos
+állapotát. A `0x6c078965` közvetlen utasításoperandusra végzett teljes
+`.text` pásztázás nem talált találatot; pozitív kontroll a `0x00aa290b`
+`0x0019660d` operandusa. A pásztázás nem zárja ki a másképp előállított
+konstansokat vagy a közvetett hívásokat. Forrás: `bináris (0x00aa28f0,
+0x00aa290b)`; `mérés (paszta.py .text utasításpásztázás)`.
+
+| Út | Állapot és mag | Forrás |
+|---|---|---|
+| `triple3` LUT | Folyamat-globális; a magvetés nem a pixelmagban történik. | `bináris (0x00c32520, 0x0090beed)` |
+| `grain2` / `grain` | Külön verembeli objektum minden workerhíváson; három CRT `_rand` eredményéből új mag. Ugyanaz a magkiterjesztő és twist, de más állapot. | `bináris (0x008f8918, 0x0090a349, 0x0090a366, 0x0090a3e8)` |
+| `PicnikGrain` Noise | Külön verembeli objektum, a leíró szerinti `randomSeed=1`; nem a triple3 globális objektuma. | `bináris (0x00bce8f2, 0x00bce90e)`; `mérés (filterdesc.xml, PicnikGrain leíró)` |
+
+**Cáfolat:** a közös twistfüggvény nem bizonyít közös állapotot: a grain2
+indexét a `0x0090a391` és `0x0090a47b` veremmezőből olvassa, illetve oda
+írja, a triple3 a `0x0090bf0f` és `0x0090bf1f` címen a globális indexet.
+Ez az inicializálás célcímétől különálló ellenőrzés, de ugyanabból a diszasszemblált útból származik. Forrás:
+`bináris (0x0090a391, 0x0090a47b, 0x0090bf0f, 0x0090bf1f)`.
+
+**Határ:** a `glow`, `autocolor` és `dir_brite` teljes, közvetett hívásokat
+is magába foglaló véletlenállapot-hatása és a #6819 eltérésének oka nincs
+bizonyítva. A #6822 Colab-leszűkítése a triple3 eltérését és a HeatMap-pel
+növekvő eltérést méri, de önmagában nem igazolja, hogy kizárólag az
+MT-fázis okozza. Pixelpontos következtetéshez ugyanazon eredeti exportban
+rögzíteni kell a triple3 előtti dekódolt bemenetet, a LUT-ot, az MT teljes
+állapotát és indexét, majd azonos feltételekkel a kimenetet összevetni.
+Forrás: `mérés (picasa-colab-jobs #529-#532, #538-#540, #546, jegyben
+közölt értékek)`; `NINCS MEG (export előtti puffer, LUT és MT-állapot)`.
+
+*Bizonyítottsági fok: **feltételes** a grain2 és triple3 külön állapota,
+mert két külön utasításcsoport támasztja alá, de független futás közbeni
+állapotmérés itt nem történt; **feltételes** a kezdőmag konkrét értéke az
+említett kezdeti és sorrendi feltételek mellett; **nyitott** a
+#6822 eltérésének pontos oka és a konkrét export pixelhű reprodukciója.*
