@@ -31,8 +31,11 @@ gyűjteménykártya-listájának dátumkulcs szerinti növekvő rendezése (38.2
 a kártyák képi modellje és feliratai (38.2.93-94, 38.2.97-98, 38.2.102), a
 billentyűk statikus qshow-útja (38.2.63, 38.2.101), valamint az Exit
 host/callback-útja (38.2.63, 38.2.68). Nyitva marad a bemeneti
-CAlbumState-leírók teljes forráshalmaza és a `+0x0c == 2` kategória jelentése
-(38.2.109), a qshow-lista és a PicasaPy-gyűjtemények azonossága, valamint a
+CAlbumState-leírók teljes forráshalmaza és a `+0x0c == 2` állapotkód tartalmi
+jelentése (38.2.110). A mező írója `0x004ab520`; a qshow ezt az állapotot
+szükséges bemeneti feltételként használja. A qshow 0x38 bájtos rekordjának
+`+0x30 == 1` és `+0x18 == 0` kapuja szintén ismert, de a kódok gyűjteménytípusa
+nyitott. A qshow-lista és a PicasaPy-gyűjtemények azonossága, valamint a
 PicasaPy dátumforrásának az eredeti descriptor dátumával való megfelelése.
 A PicasaPy napszakot eldobó dátumkezelési eltérése forráskódból látszik
 (38.2.109), de a tényleges sorrendi hatás pontosan egyező dátumforrású adaton
@@ -67,8 +70,9 @@ metódusának adja át az indexet. A CThumbUI+0x2c0 objektum CAlbumState típusa
 lezárva (38.2.69). A qshow kártyaépítője a bemeneti descriptor-listát két
 feltétel szerint szűri, majd a dátumkulcsok növekvő sorrendjében építi fel a
 0xf8 bájtos kártyarekordokat (lezárva: 38.2.105). A CAlbumState teljes
-forráshalmaza, a szűrőmezők jelentése, valamint a képernyőn megjelenő összes
-kártya azonosítása **NINCS MEG**.
+forráshalmaza, a szűrőmezők gyűjteménytípushoz kötése, valamint a képernyőn
+megjelenő összes kártya azonosítása **NINCS MEG**. A `+0x0c` írója és a
+numerikus kapuk részletei a bemutató-kutatás 38.2.110 szakaszában vannak.
 
 `0x005e943d-0x005e944d` a `CThumbUI::MakeTimeline` és a „Preparing
 timeline…” szöveget adja át a `0x009ae560` helpernek. A helper diszasszemblálása
