@@ -11,7 +11,7 @@ mintáját követi (a `controller.py`-beli bekötés az integrátor dolga)."""
 from __future__ import annotations
 
 import pytest
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSettings, Qt
 
 from support.jpeg_factory import make_jpeg
 from support.qt_wait import hangos_hurok
