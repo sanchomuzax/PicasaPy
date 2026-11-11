@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.100] - 2026-11-11
+
+- A Ceruzarajz szűrő színes képeken pontosabban követi az eredeti Picasa megjelenését (#6818).
+
 ## [1.0.99] - 2026-11-11
 
 - A PicnikGrain és a Lágyítás szűrőláncban is a Picasa alfaállapotát követi (#6812).
