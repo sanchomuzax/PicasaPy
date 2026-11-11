@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.101] - 2026-11-11
+
+- A differenciális szűrőláncok eredménye külön jelöli a véletlenállapot-függő eseteket (#6585).
+
 ## [1.0.100] - 2026-11-11
 
 - A Ceruzarajz szűrő színes képeken pontosabban követi az eredeti Picasa megjelenését (#6818).
