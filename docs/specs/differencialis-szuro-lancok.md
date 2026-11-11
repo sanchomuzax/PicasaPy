@@ -257,3 +257,75 @@ mert két külön utasításcsoport támasztja alá, de független futás közbe
 állapotmérés itt nem történt; **feltételes** a kezdőmag konkrét értéke az
 említett kezdeti és sorrendi feltételek mellett; **nyitott** a
 #6822 eltérésének pontos oka és a konkrét export pixelhű reprodukciója.*
+
+## `lanc-0132`: az autocolor becslésének érzékenysége (2026-11-11, #6585)
+
+A k02.jpg bemeneten az r6830 eredeti 004 exportja a
+`colorfix=1,0.049146,ff2af3a5;rainbow=1,151.657621;autocolor=1;`
+lánchoz tartozik. A PicasaPy aktuális `apply_filters` kimenete bájtra
+megegyezik a meglévő saját 004 PNG RGB-képpontjaival. A mérés a saját képet a
+referencia JPEG mintavételezésével és kvantálótábláival kódolja, majd a
+`tools/golden/compare_render.py` CIE76 és SSIM mércéjét használja.
+
+| Saját változat a 004 eredeti exporthoz | SSIM | Átlagos CIE76 ΔE |
+|---|---:|---:|
+| `colorfix;rainbow;autocolor` | 0.927504 | 47.759275 |
+| `colorfix;rainbow` | 0.989601 | 1.275051 |
+
+**Mérés:** az automatikus színkorrekció a saját köztes képen az eltérést
+nagymértékben növeli. A kis eltérés az autocolor nélkül **nem bizonyítja**,
+hogy a két program köztes RGB-puffere azonos, vagy hogy az eredetiben az
+autocolor biztosan tétlen volt: csak a végső JPEG áll rendelkezésre.
+
+A `0x008f82fa` a `0x0090f8f0` becslőt hívja, majd a `0x008f8313`
+a `0x0090eda0` mátrixalkalmazót. A `0x0090f9b6` és `0x0090f9e8`
+közötti szűrés a zöld értéket és az RGB csatornák arányát vizsgálja;
+a `0x0090fa6b` kétdimenziós hisztogramot tölt. A `0x0090fae1` szorzás
+után a `0x0090fae4` cellánként nyolc bittel jobbra tol, a
+`0x0090fbc2` és `0x0090fbc9` előjeles osztás. Az autocolor útja tehát
+becslés és 3×3-as színmátrix, a `0x009db610` szinthúzó a rainbow útján
+szerepel. A saját megfelelő a `render/autocolor_matrix.py`
+`estimate_illuminant` és `render/ops_levels.py` `apply_autocolor`.
+
+A saját köztes képen, független hisztogram-újraszámítással: 15 899 képpont
+felel meg az RGB-feltételeknek, de a cellánkénti egész súlyozás összege csak
+1. Az egyetlen nem nulla cella `(kék/zöld=4, vörös/zöld=60)`: darabszáma
+144, súlya 2, így `(144*2)>>8 = 1`. A súlypont `(28,-28)`, az ebből kapott
+becslés `(kR,kB)=(240,68)`; a `colorfix` után, a rainbow előtt `(220,220)`.
+Az RGB csatornák közül a vöröshöz mindenütt 1-et hozzáadva a súlyozott
+összeg 0 és a becslés `(128,128)`. Ez kontrollált saját bemeneti perturbáció,
+nem az eredeti puffer rekonstrukciója. A JPEG-kódolt saját köztes képen a
+súlyozott összeg 145 és a becslés `(136,91)`: az export JPEG-je nem
+helyettesíti veszteségmentesen a lánc köztes pufferét.
+
+A 32 bites szorzási túlcsordulás ellenőrzése ezen a képen: a legnagyobb
+cellaszorzat 288, túlcsorduló cellák száma 0; a natív 32 bites szorzat
+újrajátszása ugyanazt az `(240,68)` becslést adta. A becslő a
+`0x0090f99d` és `0x0090f9b0` között csak az RGB bájtokat bontja ki,
+az alfa nem szerepel a kiválasztásban. A PicasaPy mindkét előző szűrőt
+255-ös alfaosztályba sorolja; a natív alfaosztályt a
+[filterdesc-registry](filterdesc-registry.md) rögzíti. Ez nem zár ki
+más, a szűrőlánc pufferével kapcsolatos eltérést.
+
+**Cáfoló kontroll:** az eredeti 001 és 002 exporttal, azonos
+JPEG-egyeztetéssel, a teljes saját kontroll ΔE-je 1.095706 és 0.170866;
+az autocolor elhagyásával 25.925625 és 41.611907. Az általános
+„autocolor mindig ki van kapcsolva” feltevés ezekre a kontrollokra nem áll.
+E kontrollok `shadow` tagot is tartalmaznak, a 004 pedig nem, tehát nem a
+hármas mindhárom tiszta kéttagú részhalmazát mérik.
+
+**Bizonyítottság: feltételes.** A saját hisztogram törékenységét a független
+újraszámítás és a natív súlyozó utasítások alátámasztják; a tényleges
+kétprogramos eltérés oka és a javítandó szűrő még nem bizonyított. Az eredeti
+köztes puffer és az eredeti gain értéke **NINCS MEG**. A javításhoz nem
+szabad új minimum-mintaszámot vagy becsült küszöböt bevezetni.
+
+**Következő célzott mérés:** ugyanazon k02 forráson és azonos Picasa-export
+beállítással egymás mellett exportálandó a
+`colorfix=1,0.049146,ff2af3a5;rainbow=1,151.657621;` és a fenti teljes
+hármas, `shadow` nélkül. A két eredeti export különbsége ellenőrzi az eredeti
+autocolor tényleges hatását. A döntő mérés az eredeti `0x0090f8f0`
+bemeneti RGB-pufferének és a `0x0090fc99` által írt gainnek a kinyerése
+ugyanabban a futásban; ezt a saját köztes pufferrel és becsléssel kell
+összevetni. Ha csak JPEG-export szerezhető, abból az eredeti memóriabeli
+gain nem következtethető pontosan.
