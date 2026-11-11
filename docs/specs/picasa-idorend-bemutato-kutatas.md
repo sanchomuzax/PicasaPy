@@ -2480,3 +2480,19 @@ A teljes `.text` pásztázás nem futott: a szükséges külső `systemd` memór
 - `Ghidra-kör kell: 0x004aae90 - a ]updated providerazonosítót a konkrét sorindexhez kötő út és az 1-es előállásának feltétele; a meglévő kimenet az általános 1-ről 2-re váltást mutatja [blokkoló]`
 
 A korábban dokumentált eredeti videók és a #6713 megvalósítási jegy léte változatlan (38.2.101, 38.2.104, 38.2.102). A teljes bináris bizonyítás és az azonos mintás tételes összevetés nem teljes; ebből a körből teljes Recently Updated fejlesztési jegy nem vezethető le.
+
+#### 38.2.117 A dátumot adó rekord kiválasztásának feltételes átirányítása (#6532, 2026-11-11)
+
+A 38.2.114 `0x004edf60` rekordolvasójában a `+4/+8` szavak forrása nem minden esetben a közvetlenül indexelt rekord. A `0x004edfaf`-`0x004edfe0` a `+0x3f0` mutatótömbből választ; nulla mutatónál az objektum `+0x3f8` alaprekordjára esik vissza. Ha a kiválasztott rekord `+0x18` dwordja `0x3e9`, és a `+0x20` indexe nem `0xffffffff`, valamint kisebb a `+0x3f4 >> 1` elemszámnál, a `0x004edfe2`-`0x004ee01b` ugyanebből a tömbből a célrekordot választja ki, null mutatónál ismét az alaprekordot. A `0x004ee08a`-`0x004ee093` az így kiválasztott rekord `+4/+8` szavait másolja a kimenetbe. Az átirányítás ellenőrzése ezen az úton egyszer történik; ez nem bizonyít tetszőleges hosszúságú lánckövetést. A rekordtípus emberi jelentése **NINCS MEG**.
+
+Ha a célindex `0xffffffff` vagy kívül esik a tartományon, az eredeti kiválasztás marad. Ha a végül kiválasztott rekord `+0x18` értéke nulla, a `0x004ee02a`-`0x004ee02d` a `+4/+8` másolását kihagyó ágra ugrik (`0x004ee0cc`); ez az ág ezeket a kimeneti mezőket nem állítja be. Ez a megállapítás a másolásig tartó út és az adott ág leírása: a `0x004ee0e7` utáni további feldolgozás külön vizsgálandó.
+
+**Bizonyítottság: megerősített** a fenti feltételes kiválasztásra. A út: a `2026-11-11-6532-colab-decomp-10.txt` `FUN_004edf60` kimenete; B út: a helyi bináris független, utasításonkénti olvasása (`0x004edfe2`-`0x004ee01b`, `0x004ee02a`-`0x004ee02d`, `0x004ee08a`-`0x004ee093`, `0x004ee0cc`-`0x004ee0e1`). A két olvasat egyezik. **Cáfoló próba:** az érvénytelen célindexre is átirányítást feltételezve az `0xffffffff`-összehasonlítás és a határellenőrzés ugrásait, valamint külön a dekompilált feltételeket vizsgáltuk; mindkettő az eredeti kiválasztást tartja meg. A további `0x004ee0e7` utáni ágat külön ellenőrizve a következtetés csak a fent megjelölt rekordválasztásra korlátozódik.
+
+| Állítás | Forrás |
+|---|---|
+| A `0x3e9` típus érvényes `+0x20` célindex esetén másik forrásrekordot választ a `+4/+8` másolásához. | bináris (`0x004edfe2`-`0x004ee01b`, `0x004ee08a`-`0x004ee093`) |
+| Nulla `+0x18` mellett a szavak másolása ezen az ágon elmarad. | bináris (`0x004ee02a`-`0x004ee02d`, `0x004ee0cc`-`0x004ee0e1`) |
+| A `+4/+8` szavak írója és időpontjának eseményjelentése, a `0x3e9` típus felhasználói jelentése. | NINCS MEG |
+
+A `]updated` út tényleges bemenetein az átirányítás előfordulása és az időbélyeg eredete nem igazolt; ebből önmagában PicasaPy-eltérés vagy fejlesztési feladat nem következik. A 38.2.116 nyitott Ghidra-kérdései érvényesek, az időbélyeg íróját a közvetlen és az esetleg átirányított rekordra egyaránt keresni kell.
