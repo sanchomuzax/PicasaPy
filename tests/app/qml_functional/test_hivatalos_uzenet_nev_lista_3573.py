@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
 from PySide6.QtTest import QTest
+from tests.support.varakozas import var_feltetelre
 
 
 def _felepit(window, burok: str) -> None:
@@ -58,11 +59,14 @@ def test_a_serult_fajl_uzenet_soronkent_listazza_a_fajlokat(qml_app, qt_app):
 
     controller.brokenPhotosDetected.emit(
         [{"id": 1, "name": "a.jpg"}, {"id": 2, "name": "b.jpg"}])
-    # a valódi út: az összegyűjtő időzítő (400 ms) lejár, és az nyitja meg
+    # a valódi út: az összegyűjtő időzítő (400 ms) lejár, és az nyitja meg.
+    # #6824: a fix 700 ms Windowson néha kevés volt (üres felirat), ezért a
+    # felirat megjelenéséig várunk.
     QTest.qWait(700)
-    qt_app.processEvents()
+    cimke = window.findChild(QObject, "brokenPhotoMessageLabel")
+    var_feltetelre(qt_app, lambda: bool(cimke.property("text")))
 
-    szoveg = window.findChild(QObject, "brokenPhotoMessageLabel").property("text")
+    szoveg = cimke.property("text")
     assert szoveg == (
         "PicasaPy had a problem loading this file(s)\na.jpg\nb.jpg"
         "\nWould you like to hide the files on disk?"
