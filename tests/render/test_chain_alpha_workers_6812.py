@@ -81,14 +81,25 @@ def test_ansel_utan_a_picnikgrain_nem_feher_maszkot_kap() -> None:
     assert not np.all(report.image == 255)
 
 
-@pytest.mark.parametrize(("input_alpha", "expected_alpha"), ((0, 255), (255, 0)))
-def test_invert_megforditja_a_negyedik_alfa_csatornat(
-    input_alpha: int, expected_alpha: int
-) -> None:
+@pytest.mark.parametrize("input_alpha", (0, 255))
+def test_invert_megorzi_a_negyedik_alfa_csatornat(input_alpha: int) -> None:
     report = apply_filters(_kep(), parse_filters("Invert=1;"), input_alpha=input_alpha)
 
     assert report.skipped == ()
-    assert report.alpha == expected_alpha
+    # Az eredeti Picasa mérése szerint az Invert a forrásalfát őrzi (#6836).
+    assert report.alpha == input_alpha
+
+
+def test_invert_utan_a_dropshadow_a_kepet_rajzolja_6836() -> None:
+    operations = parse_filters(
+        "radtint=1,0.5,0.5,0.25;unsharp2=1,0.6;Invert=1;"
+        "DropShadow=1,0,90,0,000000,00e2e2e2,0;"
+    )
+    report = apply_filters(_kep(), operations)
+
+    assert report.skipped == ()
+    center = report.image[report.image.shape[0] // 2, report.image.shape[1] // 2]
+    assert np.any(center != np.array((0xE2, 0xE2, 0xE2), dtype=np.uint8))
 
 
 @pytest.mark.parametrize(
@@ -120,7 +131,7 @@ def test_opaque_glimmer_retegek_visszaallitjak_a_nullazott_alfat(glimmer: str) -
 )
 def test_fade_100_megorzi_a_bemeneti_alfaallapotot(glimmer: str) -> None:
     source = _kep()
-    operations = parse_filters(f"Invert=1;{glimmer}")
+    operations = parse_filters(f"shadow=1,0.5,0.5,0.5;{glimmer}")
 
     report = apply_filters(source, operations, input_alpha=255)
 
@@ -131,7 +142,6 @@ def test_fade_100_megorzi_a_bemeneti_alfaallapotot(glimmer: str) -> None:
 def test_minden_kezelohoz_van_alfa_besorolas() -> None:
     from picasapy.render.chain import (
         _ALPHA_FADE_BLENDERS,
-        _ALPHA_INVERTING_WORKERS,
         _ALPHA_NO_WORKER_OPS,
         _ALPHA_SOURCE_PRESERVING_WORKERS,
         _ALPHA_WORKER_OUTPUTS,
@@ -142,7 +152,6 @@ def test_minden_kezelohoz_van_alfa_besorolas() -> None:
     classified = (
         set(_ALPHA_WORKER_OUTPUTS)
         | set(_ALPHA_SOURCE_PRESERVING_WORKERS)
-        | set(_ALPHA_INVERTING_WORKERS)
         | set(_ALPHA_FADE_BLENDERS)
     )
 
