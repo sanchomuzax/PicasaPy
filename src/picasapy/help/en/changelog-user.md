@@ -2,6 +2,27 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-11
+
+### Faces
+
+- If only a few pictures are waiting for face search, the background
+  search finishes them even while you work instead of stopping. While the
+  search is paused, the background activity indicator no longer spins
+  for nothing. See [People and faces](features/emberek.md).
+
+### Effects
+
+- If you apply **Drop Shadow** after **Directional Brightness**, the
+  background colour shows where the picture was, as in the original
+  Picasa.
+
+### Speed and stability
+
+- After a sync, the program reloads pictures and collections only if
+  something actually changed.
+- Crashes during export are less likely.
+
 ## 2026-11-10
 
 ### Exiting

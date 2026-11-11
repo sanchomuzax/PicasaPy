@@ -36,8 +36,11 @@ written to the log. The background search is gentle on your computer: it
 pauses while you are working in the program (for half a minute after
 your last key press, click, or mouse movement) and while a picture is
 open in the viewer or editor, and otherwise it runs at a slower pace with
-short breaks. If your library has not changed, it does not reread
-everything. A search started from **Tools** ▸ **Find Faces** does not
+short breaks. If only a few pictures are waiting (twenty or fewer), the
+search does not stop while you work but finishes them. While the
+background search is paused, the background activity indicator does not
+spin; it only shows while the program is actually checking pictures. If
+your library has not changed, it does not reread everything. A search started from **Tools** ▸ **Find Faces** does not
 wait; it runs as fast as it can. If you exit the program while the
 background search is running, it stops at the next picture and saves what it
 has found so far; the next time you start the program, it continues with the
