@@ -2,6 +2,7 @@
 `PhotoRecord`-ból (#463: a piros geo-pin jelvény is innen jön)."""
 
 from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import QLocale
@@ -50,6 +51,66 @@ class TestPhotoToQmlHasGeo:
 
 
 class TestTimelineCollectionCards:
+    def test_same_day_collections_sort_by_full_taken_at_not_name(self, qt_app):
+        controller = TimelineController(Path("unused-index.db"), provider=None)
+        later = replace(
+            _record(),
+            id=1,
+            folder_path="/library/Alpha",
+            name="later.jpg",
+            taken_at="2024-05-08T17:45:00",
+        )
+        earlier = replace(
+            _record(),
+            id=2,
+            folder_path="/library/Zulu",
+            name="earlier.jpg",
+            taken_at="2024-05-08T09:15:00",
+        )
+
+        collections = controller._collections_to_qml(
+            (later, earlier), QLocale("en_US")
+        )
+
+        assert TimelineController._exif_date(earlier) == datetime(
+            2024, 5, 8, 9, 15
+        )
+        assert [item["name"] for item in collections] == ["Zulu", "Alpha"]
+        assert [item["dateValue"] for item in collections] == [
+            datetime(2024, 5, 8).toordinal(),
+            datetime(2024, 5, 8).toordinal(),
+        ]
+        assert [item["dateLabel"] for item in collections] == [
+            "May 2024",
+            "May 2024",
+        ]
+        assert [item["firstDateLabel"] for item in collections] == [
+            "May 2024",
+            "May 2024",
+        ]
+        assert [item["lastDateLabel"] for item in collections] == [
+            "May 2024",
+            "May 2024",
+        ]
+        assert [item["sliderPosition"] for item in collections] == [0.0, 0.0]
+
+    def test_timezone_aware_taken_at_sorts_with_naive_ones(self, qt_app):
+        controller = TimelineController(Path("unused-index.db"), provider=None)
+        aware = replace(
+            _record(), id=1, folder_path="/library/Video",
+            name="clip.mp4", taken_at="2024-05-08T12:00:00Z",
+        )
+        naive = replace(
+            _record(), id=2, folder_path="/library/Photo",
+            name="photo.jpg", taken_at="2024-05-08T09:15:00",
+        )
+
+        collections = controller._collections_to_qml(
+            (aware, naive), QLocale("en_US")
+        )
+
+        assert [item["name"] for item in collections] == ["Photo", "Video"]
+
     def test_cards_are_chronological_and_slideshow_model_is_folder_scoped(
         self, qt_app
     ):
