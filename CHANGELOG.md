@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.98] - 2026-11-11
+
+- Az Időrend az azonos napi gyűjteményeket a legkorábbi teljes felvételi időpont alapján rendezi (#6807).
+
 ## [1.0.97] - 2026-11-11
 
 - Megbízhatóbbá váltak a Windowsos indulási és felületi regresszió-ellenőrzések (#6800).
