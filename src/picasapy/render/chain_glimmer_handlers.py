@@ -15,8 +15,6 @@ from __future__ import annotations
 
 import math
 
-import numpy as np
-
 from picasapy.ini.filters import FilterOp
 from picasapy.render import glimmer_artistic as artistic
 from picasapy.render import glimmer_creative as creative
@@ -210,11 +208,9 @@ def apply_picnik_grain_op(image, op: FilterOp, *, alpha: int = 255):
     """A `maskWithSourceAlpha` maszk alfaállapotát is figyelembe veszi (#6812)."""
     if alpha not in (0, 255):
         raise ValueError(f"A PicnikGrain alfaállapota csak 0 vagy 255 lehet: {alpha}")
-    if alpha == 0:
-        # A MaskWithSourceAlphaInstruction fehérre kompozitál: forrás A=0-nál
-        # nem a zaj vagy a bemeneti RGB kerül a kimenetbe.
-        return np.full_like(image, 255)
-    return artistic.apply_picnik_grain(image, grain=_float_at(op, 0, 10.0), lighten=_bool_at(op, 1, False))
+    return artistic.apply_picnik_grain(
+        image, grain=_float_at(op, 0, 10.0), lighten=_bool_at(op, 1, False), alpha=alpha
+    )
 
 
 # --- Frames (MÉRETNÖVELŐ) ----------------------------------------------------
@@ -271,9 +267,10 @@ def _apply_drop_shadow_op_with_alpha(image, op: FilterOp, *, alpha: int):
     )
 
 
-def apply_museum_matte_op(image, op: FilterOp):
+def apply_museum_matte_op(image, op: FilterOp, *, alpha: int = 255):
     return frames.apply_museum_matte(
         image,
+        alpha=alpha,
         outer_thickness=skalazott_vastagsag(_float_at(op, 0, 25.0)),
         inner_thickness=skalazott_vastagsag(_float_at(op, 1, 40.0)),
         outer_color=_color_at(op, 2, (0x1A, 0x0E, 0x03)),

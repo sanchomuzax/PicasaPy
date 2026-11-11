@@ -712,7 +712,7 @@ def apply_filters(
                 result = handler(result, op, alpha=alpha_state)
             elif key == "dropshadow":
                 result = glimmer._apply_drop_shadow_op_with_alpha(result, op, alpha=alpha_state)
-            elif key == "picnikgrain":
+            elif key in {"picnikgrain", "museummatte"}:
                 result = handler(result, op, alpha=alpha_state)
             else:
                 result = handler(result, op)
@@ -752,7 +752,7 @@ def apply_filters(
         op, op_warnings = validate_and_clamp_op(op)
         range_warnings.extend(op_warnings)
         try:
-            if op.name.casefold() == "polaroid":
+            if op.name.casefold() in {"polaroid", "museummatte"}:
                 result = handler(result, op, alpha=alpha_state)
             elif op.name.casefold() == "dropshadow":
                 result = glimmer._apply_drop_shadow_op_with_alpha(result, op, alpha=alpha_state)
