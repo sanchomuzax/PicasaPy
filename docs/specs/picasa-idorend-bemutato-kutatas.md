@@ -2251,3 +2251,61 @@ A jelenlegi `src/picasapy/app/timeline_controller.py:269-299,357-382` kódja csa
 - Az eredeti qshow teljes gyűjteményhalmaza és az egyező minta PicasaPy kártyáival végzett mérés: **NINCS MEG**.
 
 **Módosított fájlok ebben a szakaszban.** Ez a 38.2.111 szakasz dokumentálja a 2026-11-11-i Ghidra-forrásokat, a célzott diszasszemblálás és string-xref ellenőrzést, a cáfoló kísérletet, a PicasaPy jelenlegi kódállapotát és a maradék kérdéseket. Kódot, tesztet, eredeti binárist, videót vagy mérőadatot nem módosítottam.
+
+#### 38.2.112 A köztes rekord nyolc hívójának kódjai és qshow-kapui (#6532, 2026-11-11)
+
+**Kérdés és hatókör.** A `0x004a0720` mind a nyolc hívójának argumentumaiból megállapítható-e a köztes rekord `+0x30` kódja, `+0x18` értéke és a hívó gyűjteményi környezete, majd ezekből melyik környezet jut át a qshow szűrőin? A kérdés az összes közvetlen hívó kódútját fedi, nem az összes futásidejű `CAlbumState`-sor nevét.
+
+**Módszer.** A `2026-11-11-6532-colab-004a0720-hivok.txt` mind a nyolc hívó dekompilációját, a `2026-11-11-6532-colab-decomp-6.txt` pedig a rekordépítőt, a qshow útban hívott `0x004b0fb0` függvényt és a hívólistát adja. Az argumentumokat célzott `annot_disasm.py` olvasattal ellenőriztem a hívási helyeken. A qshow kapuját a `0x007fc7c0` külön diszasszemblálása igazolja. Teljes `.text` pásztázás nem történt.
+
+**A mezők jelentése.** A `0x004a0720` első argumentumát dwordként a 0x38 bájtos köztes rekord `+0x30` mezőjébe, harmadik argumentumát byte-ként a `+0x18` mezőbe írja. A `CAlbumState` forrásrekord `+0x0c == 2` feltétele egy másik rekord másik mezője, amelyet a `0x004b29d0` a köztes rekord építése előtt ellenőriz. A három kaput nem szabad egyetlen rekord mezőiként összevonni.
+
+| Hívó és hely | `+0x30` | `+0x18` | Binárisból igazolható hívási környezet | Qshow-eredmény |
+|---|---:|---:|---|---|
+| `0x004b29d0`, `0x004b2ab4` | `1` | `0` | `CAlbumState`-sor továbbítása. A forrás sor `+0x0c` mezője `2` kell legyen; a `0x004b8470` út opcionálisan mappa/album predikátumot is alkalmaz. | Átjut, ha a forrásállapot és a további lista-feltételek is teljesülnek. |
+| `0x004b2e10`, `0x004b2f9a` | `3` | a forrássor `+0x1d` byte-ja | Állapothoz kapcsolódó kiegészítő rekord, a `state`, `super:` és `(%d)` szövegkörnyezetben. | Nem jut át, a `+0x30` érték nem `1`. |
+| `0x004b2e10`, `0x004b3281` | `0` | `param_1` alsó byte-ja | Állapotváltozás alatti kiegészítő rekord. | Nem jut át. |
+| `0x004b3770`, `0x004b3886`, `0x004b3b50`, `0x004b3f4b` | `2` | `1` | Albumépítő `Updated` út; karakterlánc-xref: `Updated ` és `CAlbumBuilder::updated`. | Nem jut át. |
+| `0x004b34a0`, `0x004b35a2` | `2` | `1` | A `0x004b3770` albumépítő segédútja. | Nem jut át. |
+| `0x004b1c80`, `0x004b1eac` | `5` | `!bVar14` | A `0x004b6190` `Folders` faútja. | Nem jut át. |
+| `0x004b1c80`, `0x004b22ce` | `2` | `1` | A `Folders` fa gyermek/alrekordja. | Nem jut át. |
+| `0x004b1a90`, `0x004b1acb` | `8` | `0` | A `0x004b1c80` hívója, a `Folders` faág segédrekordja. | Nem jut át. |
+| `0x004b80d0`, `0x004b81fd` | `2` | `1` | Peer/public-host felsorolás; `ytPeerHost` és `public/` szövegkörnyezet. | Nem jut át. |
+| `0x004b7f00`, `0x004b7f17` | `9` | `0` | A `0x004b80d0` public-host alútja. | Nem jut át. |
+
+A sorok összesen 12 közvetlen hívási helyet fednek le. A `+0x18` két esetben futásidejű byte-tól függ: a táblázat a ténylegesen átadott kifejezést adja meg, nem helyettesíti becsléssel.
+
+**A `0x004b0fb0` korábbi nyitott kérdése.** A `2026-11-11-6532-colab-decomp-6.txt` teljes dekompilációja szerint ez a függvény rekurzívan összesíti a gyermekrekordok dátumát és számlálóit. Nem hívja a `0x004a0720` rekordépítőt. A saját összesítő csomópontján ír `+0x30` eltolásra egy double értéket, de ez nem a 0x38 bájtos köztes rekord `+0x30` kódmezője; a függvény nem állít elő `+0x30 == 6` vagy `7` rekordot. A `0x004b6190` Folders-ágából való meghívása tehát nem nyit ilyen rekordlétrehozó utat. A korábban erre a függvényre irányuló Ghidra-kérés lezárható a meglévő dekompilációval.
+
+**Mit jelent a kapu a gyűjteményhalmazra.** A nyolc hívó numerikus és hívási-környezeti leltára teljes. E leltárban egyedül a `0x004b29d0` generikus `CAlbumState`-listaút ad `+0x30 == 1`, `+0x18 == 0` rekordot. A `Folders` fa saját `5`, `8` és `2` kódú rekordjai, az `Updated` albumépítő, valamint a peer/public-host út `2` és `9` kódjai nem mennek át ezen a qshow kapun. A `+0x18 == 0` értéket önmagában adó kód `8` és `9` sem elég.
+
+Ez lezárja azt a szűk kérdést, hogy a nyolc rekordépítő hívó közül melyik kódcsoport felel meg a qshow kapujának. A numerikus hívó/környezet leltár teljes, de a kód és felületi gyűjteménytípus közötti tábla nem teljes, ezért a #6532 teljes gyűjteményhalmaz-kérdése nem zárult le. A `+0x30 == 1` út a `CAlbumState` által kiválasztott sort fogadja el, de a mostani hívó-argumentumok nem nevezik meg, hogy ebből melyik sor a `Folders on Disk`, album, `People`, `Starred Photos`, `Uploaded` vagy más felületi kategória. E kategórianevek előfordulása a `0x004abe70` építőútban önmagában nem bizonyítja, hogy mely soruk kap `CAlbumState +0x0c == 2` állapotot és jut be a qshow listájába. A típusonkénti teljes forráshalmaz **NINCS MEG**.
+
+**PicasaPy-összevetés.** A `src/picasapy/app/timeline_controller.py` `TimelineController._collections_to_qml()` mappánként képez kártyát, majd az albumok közül csak a nem üreseket adja hozzá (`:269-299`). Az eredeti job-239 felvétel dokumentált képkockáin mappák és a `Recently Updated` nevű elem látható (`38.2.81`). A kódút-leltár megerősíti a mappa/album adatút egy részét, de nem köti az összes látható nevet a `+0x30 == 1` rekordhoz; a PicasaPy és a teljes eredeti halmaz közötti hiány vagy többlet ezért nem bizonyított. Új fejlesztési eltérés ebből a körből **nem igazolódott**.
+
+**Független bizonyítási utak.**
+
+- **A út, Ghidra.** A `2026-11-11-6532-colab-004a0720-hivok.txt` dekompilációinak 12 hívási helye megadja a közös rekordépítő argumentumait és a hívók szövegkörnyezetét. A `2026-11-11-6532-colab-decomp-6.txt` megadja, mely mezőbe kerül az első és harmadik argumentum.
+- **B út, helyi bináris.** A hívási helyek célzott diszasszemblálása ellenőrzi az átadott konstansokat és változókat. A `0x007fc7c0` külön kódútja a `+0x30 == 1`, `+0x18 == 0` feltételt vizsgálja; a `0x004b8ee0 -> 0x004b8470 -> 0x004b29d0` hívási lánc a `CAlbumState +0x0c == 2` előfeltételt külön igazolja. A dekompiláció és az utasítás/xref út egyezik.
+- **C út, alkalmazás és mérés.** A PicasaPy controller saját forrása mappát és nem üres albumot képez. A job-239 mérés mappaneveket és egy `Recently Updated` nevű elemet mutat. Ez függetlenül megerősíti, hogy mindkét általános felületi forma megjelenik, de nem bizonyítja az eredeti katalógus teljességét vagy a meg nem figyelt kategóriák hiányát.
+
+**Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy a köztes rekord `+0x30` kódja egyetlen felhasználói gyűjteménytípust jelöl. A `2` érték három elkülönülő környezetben szerepel: `Updated` albumépítőben (`0x004b3770`), `Folders` fa gyermekrekordjaként (`0x004b1c80`) és peer/public-host felsorolásban (`0x004b80d0`). A hívók dekompilációi és a helyi hívásutasítások mindhárom konkrét értéket megerősítik. Az egy kód és egy gyűjteménytípus feltevés cáfolódott; ezért a kódokból önmagukban nem szabad felhasználói kategórianév-készletet következtetni.
+
+**Bizonyítottsági fok.** A köztes rekord mezőírása, mind a nyolc hívó tizenkét argumentumátadása, a kód-környezet párosítás és a qshow numerikus kapuja **megerősített**: a Ghidra-kimenet és az utasításszintű ellenőrzés egyezik. A teljes eredeti gyűjteményhalmaz és annak PicasaPy-listával való teljes egyezése **nyitott**, mert a generikus `CAlbumState +0x0c == 2` sorokat nem kötöttük minden felületi kategóriához.
+
+**A #6532 „Kész, ha” pontjai.** (1) ✅ Az eredeti felvételek job-373 és job-446 anyagát a 38.2.101 és 38.2.104 szakasz dokumentálja; ebben a körben új videó nem készült. (2) ⛔ A nyolc hívó rekordkódja és qshow-kapuja címmel igazolt, de a teljes típusonkénti forráshalmaz és több korábban nyitott időzítési részlet még nincs lezárva. (3) ⛔ A PicasaPy mappákat és nem üres albumokat listáz; az összes eredeti felületi típusra teljes, tételes összevetés nincs, és új fejlesztési eltérés nem bizonyított. (4) ⛔ Kiadásba adható, PicasaPy-val párhuzamos összehasonlító videó vagy képsor nincs dokumentálva. A gyűjteményhalmaz-kérdés szűk hívó/kódkapu része lezárult, a teljes #6532 elfogadási feltétel nem.
+
+**Javasolt jegytörzs-bővítés.**
+
+> A `0x004a0720` mind a nyolc hívójának argumentumai és a qshow szűrői a `docs/specs/picasa-idorend-bemutato-kutatas.md` 38.2.112 szakaszában vannak dokumentálva. A 12 hívási helyből egyedül a `0x004b29d0` generikus CAlbumState-út ad qshow által elfogadott `+0x30 == 1`, `+0x18 == 0` rekordot, és ehhez a forrássor `+0x0c == 2` állapota is kell. A Folders-fa, Updated albumépítő és peer/public-host rekordkódjai ezen a kapun nem mennek át. A `0x004b0fb0` rekurzív összesítő, nem rekordépítő. Az eredeti teljes forráshalmaz nyitott marad: a generikus CAlbumState sorok felhasználói kategóriákhoz kötése még nincs bizonyítva. A PicasaPy mappa- és nem üres albumkártyáit építi (`src/picasapy/app/timeline_controller.py:269-299`); e kutatási körben konkrét típuseltérés nem igazolódott.
+
+**Új kutatási jegyjavaslatok.** Nincs külön jegyjavaslat; a megmaradt kategória-tagsági kérdés a #6532 teljes forráshalmazának része.
+
+**Nyitott.**
+
+- A `CAlbumState +0x138` sorok felhasználói kategóriája és a `+0x0c == 2` állapotba kerülő sorok teljes listája **NINCS MEG**. A következő bizonyíték a kategórianévvel és ugyanazon sor állapotkódjával együtt rögzített futásidejű lista vagy az építő és a sorállapot közötti teljes adatút.
+- A People, Starred Photos, Uploaded és egyéb speciális csoportok qshow-tagsága **NINCS MEG**. A `0x004abe70` kategórianév-xrefje önmagában nem bizonyít tagságot.
+- A PicasaPy teljes gyűjteménylistájának és az eredeti qshow teljes listájának ugyanazon katalóguson mért egyezése **NINCS MEG**.
+- A billentyűesemények első és utolsó mozgó képkockához kötése, valamint a Wine futás tényleges Preferences-értékei továbbra is nyitottak (`38.2.104`).
+
+**Módosított fájlok ebben a szakaszban.** A 38.2.112 az új Ghidra-kimenetek alapján lezárja a `0x004a0720` nyolc hívójának kód- és kapu-leltárát, frissíti a `0x004b0fb0` nyitott kérdését, és megőrzi a teljes felhasználói kategóriahalmazt nyitottként. Kódot, tesztet, eredeti binárist, videót vagy mérőadatot nem módosítottam.
