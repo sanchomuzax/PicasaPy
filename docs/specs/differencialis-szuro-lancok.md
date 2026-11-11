@@ -373,3 +373,52 @@ pufferen kell a PicasaPy becslőjét futtatni. A JPEG köztes export erre
 nem alkalmas a fent kimutatott újrakódolási érzékenység miatt. A belső
 puffer és a natív becslés jelenleg **NINCS MEG**, ezért új küszöb vagy
 fejlesztési javítás nem vezethető le.
+
+### A teljes becslő ugyanazon a RGB-pufferen (2026-11-12)
+
+**Megerősített ezen a pufferen:** a `colorfix=1,0.049146,ff2af3a5;`
+`rainbow=1,151.657621;` lánc utáni, `720×1280×3` RGB `uint8` kép SHA-256
+lenyomata `1883825cbad6136e31b1f3e6239f5a88982bb4c22c09345393db974fb9002367`.
+Ezt a változatlan képet adtam a PicasaPy `estimate_illuminant` függvényének
+és az eredeti `0x0090f8f0` becslőnek QEMU i386 alatt. A natív bemeneti
+szerkezet stride-ja 1280 pixel, szélessége 1280, magassága 720; a pixel
+DWORD-ok `0x00RRGGBB` alakban ugyanazokat az RGB-bájtokat tartalmazták.
+Az eredeti hívó `0x008f82a0` a képszerkezetet EAX-ban adja át a
+`0x008f82fa` híváskor.
+
+| Érték vagy állítás | Forrás |
+|---|---|
+| A `0x0090f8f0` függvény indexelt mérete 965 bájt | bináris (`0x0090f8f0`, függvényrekord és diszasszemblálás) |
+| A két becslő gainje: `kR=240`, `kB=68`; a mátrix zöld gainje 128 | mérés, ugyanazon RGB-puffer, natív QEMU és PicasaPy |
+| A `0x0090fc99` által írt becslőcsomag `0x00f08044` | mérés, eredeti Picasa-becslő QEMU i386 alatt |
+| A becslés előtti szűrésen átment pixelek és a nyers hisztogram összege: 15899 | mérés, eredeti QEMU-hisztogram |
+| A 4096 hisztogramcellából eltérő cellák száma a natív és a PicasaPy hisztogram között: 0 | mérés, cellánkénti összevetés |
+| Súlyozott összeg: 1; nyomatékok: `(28,-28)` | mérés, eredeti QEMU-becslő belső állapota |
+| A nem nulla súlyozott cella `(B-bin=4,R-bin=60)`: nyers darabszám 144, súly 2, kimenő súly 1 | mérés, QEMU-hisztogram és külön egész-aritmetikájú újraszámítás |
+| Az eredeti Picasa tényleges, autocolor előtti RGB-puffere a 004 futásban | NINCS MEG |
+
+Az A út a `0x0090f8f0` utasításainak olvasása: a szűrés, a két előjeles
+osztás, a 64×64-es binelés, a köbös Chebyshev-súlyozás és a súlypont
+kiszámítása. A B út a teljes eredeti becslő QEMU-futtatása az előállított
+képen; a natív nyers hisztogram mind a 4096 cellában egyezik a PicasaPy
+hisztogramjával. Egy külön, a `cv2.remap` táblájától független egész
+képletes újraszámítás ugyanezt a hisztogramot, súlyösszeget, nyomatékokat
+és gainpárt adta. A két út egyezik.
+
+**Következtetés:** a becslő nem okoz eltérést ezen az azonos bemeneten.
+A korábbi export-összevetésben a PicasaPy autocolor előtti képe az eredeti
+004 exporthoz `SSIM=0.989601`, átlagos CIE76 `ΔE=1.275051` értékkel
+egyezett, míg a teljes PicasaPy lánc `SSIM=0.927504`, `ΔE=47.759275`
+értéket adott. A feladat feltételes ágával összhangban a további vizsgálat
+az eredeti `colorfix` utáni `rainbow` kimenetére, vagyis az autocolor
+bemeneti pufferére kerül. A 004 JPEG a lánc utáni, veszteséges export;
+ebből nem állapítható meg pontosan, hogy a `colorfix` vagy a `rainbow`
+egyenként melyik bájtban tér el. Egyikhez sem vezethető le javítás.
+
+**Következő célzott mérés:** az eredeti Picasa teljes 004 futásában a
+`0x0090f8f0` belépésekor rögzíteni kell a stride-ot, a méreteket és a teljes
+RGB-puffert, valamint a `0x0090fc99` becslőcsomagját. A veszteségmentes
+natív puffert kell összehasonlítani ezzel a PicasaPy-pufferrel. Ha az
+egyedi `colorfix` és `rainbow` lépések közti felelősséget is meg kell
+nevezni, mindkét lépés eredeti kimenetét külön kell rögzíteni. A 004 JPEG
+ehhez nem elég.
