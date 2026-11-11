@@ -117,10 +117,8 @@ def apply_pencil_sketch(image, radius: float = 2.0, contrast: float = 100.0, fad
     fölé `OVERLAY`-jal → `AutoFix` → mestergörbe `(127, 227−2·Contrast)`.
     Radius `[1,3..5]` (alap 2), Contrast `[0..200]` (alap 100).
     """
-    from picasapy.render.color import apply_bw
-
     validate_image(image)
-    base_a = autofix(apply_bw(image))
+    base_a = autofix(bw_tint(image, (255, 255, 255)))
     # az invertálás 8 bites görbe (`(0,255)→(255,0)`), utána a
     # `BlurImageOperation xblur = yblur = Radius` natív útja (#3580)
     inverted = 255 - base_a

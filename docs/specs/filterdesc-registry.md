@@ -12732,3 +12732,15 @@ nevek nem képpontmunkások, ezért változatlanul hagyják a követett állapot
   (`psrld 0x18`);
 - „a `PartialMask` a téglalapon kívül is a maszk értékével kever” — egyetlen
   küszöbölt szám dönt (felső vagy alsó).
+
+### A PencilSketch szürkítése (#6818)
+
+A fenti PencilSketch-recept `BWImageOperation` lépése a Glimmer saját
+színmátrixa, nem a különálló `bw` szűrő telítetlenítője. A mátrixépítő
+`0x00bbdd80` alapértelmezett fehér szűrőszínnel a 0,3086 / 0,6094 /
+0,0820 súlyokat állítja elő; a közös alkalmazó `0x00bc16b0` és a
+`0x008f21a0` / `0x008f2640` fixpontos képpontút 632 / 1248 / 168
+Q11 együtthatót használ. A három tagot külön `>> 9` eltolás, összegzés,
+`+ 2` és `>> 2` követi. A korábbi PencilSketch-implementáció ehelyett a
+`bw` 77 / 151 / 28 egész súlyait használta. A két művelet részletes
+bináris levezetése: `filters-decoded.md`, `BWImageOperation` szakasz.
