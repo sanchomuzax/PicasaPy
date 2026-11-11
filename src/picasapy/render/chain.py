@@ -87,6 +87,123 @@ _log = logging.getLogger(__name__)
 _CROP_WARNING_LOCK = threading.Lock()
 _CROP_WARNINGS: set[tuple[str, str]] = set()
 _ALPHA_TRANSPARENT = 0
+_ALPHA_OPAQUE = 255
+_ALPHA_WORKER_OUTPUTS = {
+    # A 0x0090e680-as Ansel-kernel a felső bájtot 0xff-re állítja
+    # (0x0090e98f, 0x0090e9ad); a régi, téves 0 besorolás regressziót okozott.
+    "ansel": _ALPHA_OPAQUE,
+    "blur": _ALPHA_TRANSPARENT,
+    "dir_brite": _ALPHA_TRANSPARENT,
+    "dir_sharp": _ALPHA_TRANSPARENT,
+    "dir_sat": _ALPHA_TRANSPARENT,
+    "shadow": _ALPHA_TRANSPARENT,
+    "autobacklight": _ALPHA_OPAQUE,
+    "autocontrast": _ALPHA_OPAQUE,
+    "autocolor": _ALPHA_OPAQUE,
+    "autolight": _ALPHA_OPAQUE,
+    "backlight": _ALPHA_OPAQUE,
+    "boost": _ALPHA_OPAQUE,
+    "border": _ALPHA_OPAQUE,
+    "cinemascope": _ALPHA_OPAQUE,
+    "colorfix": _ALPHA_OPAQUE,
+    "colortemp": _ALPHA_OPAQUE,
+    "comicize": _ALPHA_OPAQUE,
+    "contrast": _ALPHA_OPAQUE,
+    "desat": _ALPHA_OPAQUE,
+    "dir_tint": _ALPHA_OPAQUE,
+    "dropshadow": _ALPHA_OPAQUE,
+    "enhance": _ALPHA_OPAQUE,
+    "finetune": _ALPHA_OPAQUE,
+    "finetune2": _ALPHA_OPAQUE,
+    "fill": _ALPHA_OPAQUE,
+    "grain": _ALPHA_OPAQUE,
+    "grain2": _ALPHA_OPAQUE,
+    "glow": _ALPHA_OPAQUE,
+    "glow2": _ALPHA_OPAQUE,
+    "linblur": _ALPHA_OPAQUE,
+    "localcontrast": _ALPHA_OPAQUE,
+    "museummatte": _ALPHA_OPAQUE,
+    "picnikgrain": _ALPHA_OPAQUE,
+    "polaroid": _ALPHA_OPAQUE,
+    "radblur": _ALPHA_OPAQUE,
+    "rainbow": _ALPHA_OPAQUE,
+    "radsat": _ALPHA_OPAQUE,
+    "roundededges": _ALPHA_OPAQUE,
+    "sat": _ALPHA_OPAQUE,
+    "sixties": _ALPHA_OPAQUE,
+    "tint": _ALPHA_OPAQUE,
+    "triple": _ALPHA_OPAQUE,
+    "triple2": _ALPHA_OPAQUE,
+    "triple3": _ALPHA_OPAQUE,
+    "warm": _ALPHA_OPAQUE,
+    "whitept": _ALPHA_OPAQUE,
+}
+_ALPHA_SOURCE_PRESERVING_WORKERS = frozenset(
+    {
+        "bw",
+        "gamma",
+        "radtint",
+        "redeye",
+        "retouch",
+        "sepia",
+        "tilt",
+        "unsharp",
+        "unsharp2",
+    }
+)
+_ALPHA_INVERTING_WORKERS = frozenset({"invert"})
+# A Glimmer-blend alfaírója csak akkor állít 255-öt, ha ténylegesen kever:
+# Fade=100-nál a BlendInstruction az alsó réteget hagyja meg. Az index a
+# flag utáni Fade-paraméter pozíciója a filterdesc.xml-ben.
+_ALPHA_FADE_BLENDERS = {
+    "crossprocess": 0,
+    "focalzoom": 5,
+    "hdr": 2,
+    "heatmap": 1,
+    "holga": 2,
+    "ir": 0,
+    "lomo": 1,
+    "matte": 2,
+    "neon": 0,
+    "nightvision": 2,
+    "orton": 2,
+    "pencilsketch": 2,
+    "picnikfocalpixelate": 5,
+    "picniktint": 0,
+    "pixelate": 2,
+    "quantizepalette": 2,
+    "reanimatedeyecolor": 1,
+    "soften": 1,
+    "twotone": 2,
+    "vignette": 2,
+}
+# Ezek nem pixelmunkások: jelzők, geometriai kivágások vagy a lánc által
+# kihagyott leírók. Nem változtatják meg az alfaállapotot.
+_ALPHA_NO_WORKER_OPS = frozenset(
+    {
+        "crop",
+        "crop64",
+        "debug",
+        "focalpixelate",
+        "movieend",
+        "moviestart",
+        "picnik",
+        "rot",
+        "save",
+    }
+)
+
+
+def _alpha_after_worker(key: str, op: FilterOp, alpha_before: int) -> int:
+    """A worker/bináris-policy alapján számolja a következő réteg alfáját."""
+    if key in _ALPHA_INVERTING_WORKERS:
+        return _ALPHA_OPAQUE if alpha_before == _ALPHA_TRANSPARENT else _ALPHA_TRANSPARENT
+    if key in _ALPHA_SOURCE_PRESERVING_WORKERS:
+        return alpha_before
+    if key in _ALPHA_FADE_BLENDERS:
+        fade = _effect_float(op, _ALPHA_FADE_BLENDERS[key], 50.0 if key == "soften" else 0.0)
+        return alpha_before if fade >= 100.0 else _ALPHA_OPAQUE
+    return _ALPHA_WORKER_OUTPUTS[key]
 
 def normalize_crop_ops(
     ops: tuple[FilterOp, ...],
@@ -578,6 +695,8 @@ def apply_filters(
             except Exception:
                 _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
                 skipped.append(op.name)
+            else:
+                alpha_state = _alpha_after_worker(key, op, alpha_state)
             continue
         if key in glimmer.PAINTABLE_MASK_OPS:
             # #3541: a Vámpírszem ecsetmaszk nélkül változatlan marad; a másik
@@ -595,6 +714,8 @@ def apply_filters(
                 result = handler(result, op, alpha=alpha_state)
             elif key == "dropshadow":
                 result = glimmer._apply_drop_shadow_op_with_alpha(result, op, alpha=alpha_state)
+            elif key == "picnikgrain":
+                result = handler(result, op, alpha=alpha_state)
             else:
                 result = handler(result, op)
         except Exception:
@@ -603,13 +724,7 @@ def apply_filters(
             _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
             skipped.append(op.name)
         else:
-            # #5299/#6788: egyes Picasa pixel-workerek nem írják át az alfát.
-            # Csak a kutatási specben megnevezett írókat követjük; a többi
-            # effekt mai, háromcsatornás viselkedése változatlan.
-            if key in {"dir_sat", "dir_brite", "blur"}:
-                alpha_state = _ALPHA_TRANSPARENT
-            elif key in {"colortemp", "polaroid", "dropshadow"}:
-                alpha_state = 255
+            alpha_state = _alpha_after_worker(key, op, alpha_state)
             if key in {"grain", "grain2"}:
                 grain_ordinal += 1
             if mert_sorrend:
@@ -649,8 +764,7 @@ def apply_filters(
             _log.exception("Filter-bejegyzés kihagyva (hibás paraméter): %s", op)
             skipped.append(op.name)
             continue
-        if op.name.casefold() in {"polaroid", "dropshadow"}:
-            alpha_state = 255
+        alpha_state = _alpha_after_worker(op.name.casefold(), op, alpha_state)
         alkalmazott_keretek.append(op)
     content_placement = None
     if mert_sorrend:

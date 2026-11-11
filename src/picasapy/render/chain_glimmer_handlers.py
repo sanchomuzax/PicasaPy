@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import math
 
+import numpy as np
+
 from picasapy.ini.filters import FilterOp
 from picasapy.render import glimmer_artistic as artistic
 from picasapy.render import glimmer_creative as creative
@@ -204,7 +206,14 @@ def apply_pixelate_op(image, op: FilterOp):
     )
 
 
-def apply_picnik_grain_op(image, op: FilterOp):
+def apply_picnik_grain_op(image, op: FilterOp, *, alpha: int = 255):
+    """A `maskWithSourceAlpha` maszk alfaállapotát is figyelembe veszi (#6812)."""
+    if alpha not in (0, 255):
+        raise ValueError(f"A PicnikGrain alfaállapota csak 0 vagy 255 lehet: {alpha}")
+    if alpha == 0:
+        # A MaskWithSourceAlphaInstruction fehérre kompozitál: forrás A=0-nál
+        # nem a zaj vagy a bemeneti RGB kerül a kimenetbe.
+        return np.full_like(image, 255)
     return artistic.apply_picnik_grain(image, grain=_float_at(op, 0, 10.0), lighten=_bool_at(op, 1, False))
 
 
