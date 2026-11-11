@@ -73,6 +73,26 @@ class TrayAlbumMixin(_TraySignalsMixin):
         )
         return True
 
+    def showSelectedFolderToken(self, folder_path: str) -> bool:
+        """Az újonnan létrehozott és kiválasztott mappa átmeneti tálcajelzése."""
+        self._ensure_tray_wired()
+        with open_index(self._db_path) as conn:
+            records = photos_in_folder(conn, folder_path)
+        if not records:
+            return False
+        self._tray_apply(
+            tray.with_album_token(
+                self._tray_nelkul_auto_token(),
+                tray.TrayAlbumToken(
+                    key=str(folder_path),
+                    photo_count=len(records),
+                    cover_photo_id=int(records[0].id),
+                    held=False,
+                ),
+            )
+        )
+        return True
+
     @Slot(str, result=bool)
     def showSelectedAlbumToken(self, album_token: str) -> bool:
         """Az ALBUM-kijelölés tokenje — a mért szabály kimenete (#2741).
