@@ -69,10 +69,15 @@ def _make_controller(tmp_path, *, face=False, embedding_observations=None):
             )
         conn.commit()
 
+    from PySide6.QtCore import QSettings
+
     return FaceScanController(
         index_path,
         detector=_Detector(),
         embedder=_Embedder(embedding_observations),
+        settings=QSettings(
+            str(tmp_path / "face_settings.ini"), QSettings.Format.IniFormat
+        ),
     )
 
 

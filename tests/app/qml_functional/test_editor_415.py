@@ -79,7 +79,7 @@ def _build_app(qt_app, tmp_path, photo_size):
 
     confirm_settings = ConfirmSettingsBridge(settings=settings)
     edit_preview = EditPreviewProvider()
-    edit_controller = EditController(edit_preview)
+    edit_controller = EditController(edit_preview, settings=settings)
     effect_thumb_provider = EffectThumbnailProvider(provider.photo_record)
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
@@ -101,7 +101,9 @@ def _build_app(qt_app, tmp_path, photo_size):
     )
     faces_helper = FacesHelper()
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
-    face_scan_controller = FaceScanController(db, faces_helper=faces_helper)
+    face_scan_controller = FaceScanController(
+        db, faces_helper=faces_helper, settings=settings
+    )
     engine.rootContext().setContextProperty(
         "faceScanController", face_scan_controller
     )
@@ -109,7 +111,9 @@ def _build_app(qt_app, tmp_path, photo_size):
     controller.syncFinished.connect(timeline_controller.reload)
     engine.rootContext().setContextProperty("timelineController", timeline_controller)
     import_source_controller = ImportSourceController(
-        provider, add_folder=controller.addWatchedFolder
+        provider,
+        add_folder=controller.addWatchedFolder,
+        settings=settings,
     )
     engine.rootContext().setContextProperty(
         "importSourceController", import_source_controller

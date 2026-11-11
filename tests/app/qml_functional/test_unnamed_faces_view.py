@@ -651,6 +651,7 @@ class _NoDetector:
 def _real_controller(tmp_path):
     """Valódi `FaceScanController` + `FacesHelper` egy egyarcos képpel —
     a kattintás végén a `.picasa.ini`-t olvassuk vissza."""
+    from PySide6.QtCore import QSettings
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.faces.detector import FaceDetection, FaceLandmarks
@@ -673,9 +674,10 @@ def _real_controller(tmp_path):
         conn.commit()
         face_id = conn.execute("SELECT id FROM face").fetchone()["id"]
     helper = FacesHelper()
+    settings = QSettings(str(tmp_path / "face_settings.ini"), QSettings.Format.IniFormat)
     ctl = FaceScanController(
         tmp_path / "index.db", detector=_NoDetector(), embedder=_NoDetector(),
-        faces_helper=helper,
+        faces_helper=helper, settings=settings,
     )
     _KEEPALIVE.extend([helper, ctl])
     return ctl, lib, face_id

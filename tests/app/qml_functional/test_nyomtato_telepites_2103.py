@@ -174,8 +174,11 @@ class HamisParbeszed:
 
 
 @pytest.fixture()
-def vezerlo(qt_app):
-    return PrintController(lambda: [])
+def vezerlo(qt_app, tmp_path):
+    from PySide6.QtCore import QSettings
+
+    settings = QSettings(str(tmp_path / "print.ini"), QSettings.Format.IniFormat)
+    return PrintController(lambda: [], settings=settings)
 
 
 #: Egy név, amit a hamis `QPrinterInfo` ismerni fog.

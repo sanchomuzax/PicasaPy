@@ -100,8 +100,10 @@ class TestAzUzenet:
 class TestNyomtatas:
     def test_piszkozatot_NEM_nyomtat(self, qt_app, kollazsok, tmp_path):
         mappa, piszkozat, _kesz = kollazsok
+        settings = QSettings(str(tmp_path / "print.ini"), QSettings.Format.IniFormat)
         vezerlo = PrintController(
-            photo_source=lambda: [_Foto(str(mappa), piszkozat.name)]
+            photo_source=lambda: [_Foto(str(mappa), piszkozat.name)],
+            settings=settings,
         )
         hibak: list[str] = []
         vezerlo.printFailed.connect(hibak.append)
@@ -116,8 +118,10 @@ class TestNyomtatas:
     def test_KESZ_kollazst_nyomtat(self, qt_app, kollazsok, tmp_path):
         """Az ellenkező irányú őr: a tiltás CSAK a piszkozatra vonatkozik."""
         mappa, _piszkozat, kesz = kollazsok
+        settings = QSettings(str(tmp_path / "print.ini"), QSettings.Format.IniFormat)
         vezerlo = PrintController(
-            photo_source=lambda: [_Foto(str(mappa), kesz.name)]
+            photo_source=lambda: [_Foto(str(mappa), kesz.name)],
+            settings=settings,
         )
         cel = tmp_path / "nyomat.pdf"
 

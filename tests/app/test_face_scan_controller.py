@@ -89,8 +89,15 @@ def _make_controller(
     embedder_factory=None,
     face_detection_enabled=None,
 ):
+    from PySide6.QtCore import QSettings
+
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.index import open_index, sync_tree
+
+    if settings is None:
+        settings = QSettings(
+            str(tmp_path / "face_settings.ini"), QSettings.Format.IniFormat
+        )
 
     with open_index(tmp_path / "index.db") as conn:
         sync_tree(conn, library)
@@ -105,12 +112,21 @@ def _make_controller(
     return ctl
 
 
-def _make_controller_with_faces_helper(qt_app, tmp_path, library, detector=None):
+def _make_controller_with_faces_helper(
+    qt_app, tmp_path, library, detector=None, settings=None
+):
     """A `_make_controller` mintája, valódi `FacesHelper`-rel — a #3670
     ini-írásos teszteknek."""
+    from PySide6.QtCore import QSettings
+
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.app.faces_helper import FacesHelper
     from picasapy.index import open_index, sync_tree
+
+    if settings is None:
+        settings = QSettings(
+            str(tmp_path / "face_settings.ini"), QSettings.Format.IniFormat
+        )
 
     with open_index(tmp_path / "index.db") as conn:
         sync_tree(conn, library)
@@ -120,6 +136,7 @@ def _make_controller_with_faces_helper(qt_app, tmp_path, library, detector=None)
         detector=detector if detector is not None else _FakeDetector(),
         embedder=_FakeEmbedder(),
         faces_helper=faces_helper,
+        settings=settings,
     )
     return ctl, faces_helper
 
@@ -409,6 +426,9 @@ class TestScanForFaces:
             index_path,
             detector=_FakeDetector(),
             embedder=_FakeEmbedder(),
+            settings=QSettings(
+                str(tmp_path / "face_settings.ini"), QSettings.Format.IniFormat
+            ),
         )
         open_index_original = scan_module.open_index
 
@@ -486,6 +506,9 @@ class TestScanForFaces:
             index_path,
             detector=_FakeDetector(),
             embedder=_FakeEmbedder(),
+            settings=QSettings(
+                str(tmp_path / "face_settings.ini"), QSettings.Format.IniFormat
+            ),
         )
         ctl._run_scan(Event())
         open_index_original = embedding_module.open_index
@@ -1058,6 +1081,9 @@ class TestAssignNameToFaces:
             detector=_FakeDetector(),
             embedder=_FakeEmbedder(),
             faces_helper=faces_helper,
+            settings=QSettings(
+                str(tmp_path / "face_settings.ini"), QSettings.Format.IniFormat
+            ),
         )
         return ctl, faces_helper
 
@@ -1773,6 +1799,9 @@ class TestBaseRuleRegression:
             detector=_FakeDetector(),
             embedder=_FakeEmbedder(),
             faces_helper=faces_helper,
+            settings=QSettings(
+                str(tmp_path / "face_settings.ini"), QSettings.Format.IniFormat
+            ),
         )
 
         _run(ctl.scanFinished, ctl.scanForFaces)
