@@ -2452,3 +2452,31 @@ A külön CAlbumState-frissítő útban a `0x004afcb0` meghívja a `0x004aae90` 
 - `Ghidra-kör kell: 0x004aae90, a ]updated providerazonosító melyik sorba kerül, és milyen feltétellel lesz a sor +0x0c mezője 2 [blokkoló]`. A meglévő dekompiláció az általános sorbejárást mutatja, a kulcs konkrét sorhoz kötését nem; a 0x004b86d0 új kimenete az indexelt segédértékeket, nem ezt az azonosságot mutatja.
 
 **A #6532 készültsége.** A korábbi eredeti videók dokumentáltak (38.2.101, 38.2.104). A teljes spec, a tételes azonos mintás összevetés és az új, pontos fejlesztési jegy feltételei a fenti hiányok miatt nem teljesülnek; a korábban megnyitott #6713 a 38.2.102-ben azonosított eltérésekre vonatkozik. A Recently Updated teljes fejlesztési feladatlistája nem vezethető le biztonsággal.
+
+#### 38.2.116 Recently Updated: a bemeneti kapuk és a sorállapot átmenete (#6532, 2026-11-11)
+
+**Forrás.** `~/picasapy-agent/referencia/ghidra/2026-11-11-6532-colab-decomp-10.txt` és `~/picasapy-agent/referencia/ghidra/2026-11-11-6532-colab-10-iro-es-hivok.txt`; az eredeti 3.9.141.259 bináris SHA-256 értéke `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`. Az utasításokat helyi célzott diszasszembly is ellenőrizte. A hívókat tartalmazó fájl 109 dekompilált hívót sorol fel; közöttük a `0x0055ece0` tartalmazza a `]updated` ágat. Ez fogyasztó, a rekordidő eredetét önmagában nem bizonyítja.
+
+**A feldolgozás további kapui.** A `0x0055ece0` csak a `0x005608f0` nulla visszatérése után folytatja a vizsgált utat (`0x0055ed38`-`0x0055ed3f`), és a bemeneti elemszám (`param_2[3] >> 1`) nem lehet nulla (`0x0055ed59`-`0x0055ed6c`). A `0x004e39c0(param_2[1])` eredményének `+0x18` mezője `1` vagy `0x19` kell legyen (`0x0055ed88`-`0x0055ed98`). A beszúrás előtti úton a `0x00425f60` nulla visszatérése is feltétel; ha `param_2` `+0x29` bájtja nulla, előbb a `0x00456610` nulla visszatérése is kell (`0x0055eedc`-`0x0055ef1c`). Ezek bináris kapuk, nem a teljes albumtagság szemantikus definíciói. A `param_2[2]` előállítója és sorrendje **NINCS MEG**.
+
+**A sorfrissítő ága.** A `0x004aae90` a sor `+0x0c` mezőjére egymás után két feltételt alkalmaz: az első `1` vagy `2`, a második `3` vagy `1` értéket enged (`0x004ab31d`-`0x004ab33b`). Metszetük kizárólag `1`. Az ilyen sor indexével hívott `0x004b0190` nulla visszatérése után a két ágon `2` argumentummal hívja a `0x004ab520`-at (`0x004ab359`-`0x004ab360`, `0x004ab45f`-`0x004ab46b`, `0x004ab494`-`0x004ab49b`); utóbbi az indexelt `+0x0c` mezőbe ír (`0x004ab570`-`0x004ab57d`). A `]updated` kulcs konkrét sorhoz kötése **NINCS MEG**, ezért ez az átmenet nem bizonyítja, hogy a kérdéses album sora átmegy rajta.
+
+**A hívás feltétele, nem az eredeti esemény.** A `0x004afcb0` a `0x004a8a30` után akkor jut a `0x004aae90` hívásáig, ha a `+0x166` vagy a `+0x161` bájt nem nulla (`0x004afcfd`-`0x004afd1a`). A jelzőket kiváltó esemény és a DBLoader 0. slotját meghívó út **NINCS MEG**; a sorfrissítő és a DBLoader diszpécselése külön kérdés.
+
+**Cáfoló kísérlet.** Feltevés: a `2` állapotú sor közvetlenül eljut a `0x004aae90` 2-t író ágához. A dekompilátum két egymásba ágyazott feltétele, és ettől külön a gépi `cmp`/ugrás lánc is cáfolja: az első kapun átjutó `2` a másodikon kiesik. A cáfolatot a külön `0x004ab520` író utasításai is ellenőrzik: valóban a vizsgált sor `+0x0c` mezőjét írja. Ez a kizárás csak e függvény adott útjára vonatkozik. Másik ellenőrzés: a `0x00503920` dekompilátumban a rekordtömbön talált `piVar19[3]` és `[4]` írás `+0x0c` és `+0x10`, nem a `0x004ee08a`-`0x004ee093` által másolt `+4/+8`, tehát nem bizonyítja a keresett dátum forrását.
+
+| Állítás | Forrás | Fok |
+|---|---|---|
+| A sor állapota az itt vizsgált 2-re állító úton előzőleg 1 | bináris (`0x004ab31d`-`0x004ab33b`, `0x004ab359`, `0x004ab46b`, `0x004ab49b`, `0x004ab57d`) | megerősített: vezérlés és külön mezőíró |
+| A `0x004afcb0` sorfrissítési hívása jelzőkhöz kötött | bináris (`0x004afcfd`-`0x004afd1a`) | megerősített: hívó utasításai és a meghívott függvény jelzőkezelése (`0x004aae90`) |
+| A `]updated` bemeneti és feldolgozási kapui | bináris (`0x0055ed38`-`0x0055ed98`, `0x0055eedc`-`0x0055ef1c`, `0x0055f074`) | megerősített: hívási út és külön gépi utasítások |
+| A dátumot létrehozó esemény, a bemeneti tömb előállítója és sorrendje, a DBLoader dispatch, a `]updated` sorazonossága | NINCS MEG | nyitott |
+
+A teljes `.text` pásztázás nem futott: a szükséges külső `systemd` memóriakorlát létrehozását a környezet megtagadta. Az index negatív találata nem bizonyíték. A meglévő kimeneteket az alábbi címekre előzetesen ellenőriztük; az új kérdések a meglévő törzsek által nem megválaszolt adatfolyamra vonatkoznak.
+
+- `Ghidra-kör kell: 0x004edf60 - a +0x3f0 rekordtömb kiválasztott rekordjának +4/+8 írója és az oda kerülő idő eseménye; a meglévő kimenet csak a másolást mutatja [blokkoló]`
+- `Ghidra-kör kell: 0x0055ece0 - a param_2[2] tömböt előállító és rendező út, valamint a 0x00425f60 és 0x00456610 kapuk jelentése; a meglévő kimenet a fogyasztóoldalt mutatja [blokkoló]`
+- `Ghidra-kör kell: 0x004e4ea0 - a +0x484 listában regisztrált objektum 0. slotjának tényleges indirekt hívója, argumentuma és kiváltó eseménye; a meglévő kimenet a regisztrációt mutatja [blokkoló]`
+- `Ghidra-kör kell: 0x004aae90 - a ]updated providerazonosítót a konkrét sorindexhez kötő út és az 1-es előállásának feltétele; a meglévő kimenet az általános 1-ről 2-re váltást mutatja [blokkoló]`
+
+A korábban dokumentált eredeti videók és a #6713 megvalósítási jegy léte változatlan (38.2.101, 38.2.104, 38.2.102). A teljes bináris bizonyítás és az azonos mintás tételes összevetés nem teljes; ebből a körből teljes Recently Updated fejlesztési jegy nem vezethető le.
