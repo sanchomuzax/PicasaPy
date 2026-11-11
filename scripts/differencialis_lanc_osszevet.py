@@ -17,7 +17,12 @@ if str(_REPO_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 from picasapy.cvimage import read_image_bytes  # noqa: E402
+from picasapy.ini import parse_filters  # noqa: E402
 from picasapy.lazy_cv2 import cv2  # noqa: E402
+
+# A CRT-vetést és a globális állapotot a differenciális láncok specifikációja
+# (#6822) dokumentálja; a PicnikGrain rögzített maggal dolgozik.
+_VELETLENFUGGO_SZUROK = frozenset({"grain", "grain2", "triple3"})
 
 
 def _load_golden_comparator():
@@ -102,6 +107,10 @@ def compare_record(
         "koteg": record["koteg"],
         "kep": record["kep"],
         "filters": record["filters"],
+        "veletlenfuggo": "igen" if any(
+            op.name.casefold() in _VELETLENFUGGO_SZUROK
+            for op in parse_filters(record["filters"])
+        ) else "nem",
         "ssim": None,
         "delta_e": None,
         "egyezes": "hiányzik",
@@ -158,6 +167,7 @@ def _write_results(output_dir: Path, rows: list[dict[str, Any]]) -> None:
         "koteg",
         "kep",
         "filters",
+        "veletlenfuggo",
         "ssim",
         "delta_e",
         "egyezes",
@@ -174,6 +184,17 @@ def _write_results(output_dir: Path, rows: list[dict[str, Any]]) -> None:
     local_error = sum(row["egyezes"] == "helyi hiba" for row in rows)
     corrupt = sum(row["egyezes"] == "hibás export" for row in rows)
     missing = sum(row["egyezes"] == "hiányzik" for row in rows)
+    random_rows = [row for row in rows if row["veletlenfuggo"] == "igen"]
+    random_matched = sum(row["egyezes"] == "egyezik" for row in random_rows)
+    random_different = sum(row["egyezes"] == "eltér" for row in random_rows)
+    stable_rows = [row for row in rows if row["veletlenfuggo"] == "nem"]
+    stable_matched = sum(row["egyezes"] == "egyezik" for row in stable_rows)
+    stable_measured = sum(row["egyezes"] in {"egyezik", "eltér"} for row in stable_rows)
+    stable_rate = (
+        f"{stable_matched}/{stable_measured} "
+        f"({100 * stable_matched / stable_measured:.1f}%)".replace(".", ",")
+        if stable_measured else "nincs értékelhető mérés"
+    )
 
     lines = [
         "# Differenciális szűrőlánc-összevetés",
@@ -183,6 +204,10 @@ def _write_results(output_dir: Path, rows: list[dict[str, Any]]) -> None:
         "",
         f"Összesen: {len(rows)} | Egyezik: {matched} | Eltér: {different} | "
         f"Helyi hiba: {local_error} | Hibás export: {corrupt} | Hiányzik: {missing}",
+        f"Véletlenállapot-függő: {len(random_rows)} | Egyezik: {random_matched} | "
+        f"Eltér: {random_different}",
+        f"Véletlenállapot-függők nélkül: {stable_rate}",
+        "Az egyezési arány csak az értékelhető, egyező vagy eltérő méréseket számolja.",
         "",
         "| Lánc | Köteg | Kép | filters= | SSIM | ΔE átlag | Eredmény |",
         "|---|---|---|---|---:|---:|---|",
