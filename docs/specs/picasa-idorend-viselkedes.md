@@ -31,8 +31,12 @@ gyűjteménykártya-listájának dátumkulcs szerinti növekvő rendezése (38.2
 a kártyák képi modellje és feliratai (38.2.93-94, 38.2.97-98, 38.2.102), a
 billentyűk statikus qshow-útja (38.2.63, 38.2.101), valamint az Exit
 host/callback-útja (38.2.63, 38.2.68). Nyitva marad a bemeneti
-CAlbumState-leírók teljes forráshalmaza és szűrésük jelentése (38.2.105), a
-qshow-lista és a PicasaPy-gyűjtemények azonossága, a pontos billentyű-esemény
+CAlbumState-leírók teljes forráshalmaza és a `+0x0c == 2` kategória jelentése
+(38.2.109), a qshow-lista és a PicasaPy-gyűjtemények azonossága, valamint a
+PicasaPy dátumforrásának az eredeti descriptor dátumával való megfelelése.
+A PicasaPy napszakot eldobó dátumkezelési eltérése forráskódból látszik
+(38.2.109), de a tényleges sorrendi hatás pontosan egyező dátumforrású adaton
+még nincs megmérve. Nyitott továbbá a pontos billentyű-esemény
 és képkocka közti időzítés (38.2.104), a sliderthumb felhasználói művelete,
 valamint a kilépés utáni általános nézet és kijelölés (38.2.81-83).
 
@@ -131,7 +135,7 @@ időzít, vagy hogy a fogantyú húzással mit állít.
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| A `0x005e8a70` út CAlbumState-elemekből indul; a qshow kártyalistáját a `0x007fc7c0` dátumkulcs szerint növekvően építi fel (lezárva: 38.2.105). A CAlbumState forráshalmaza, szűrőinek jelentése és a teljes kártyakészlet **NINCS MEG**. | A `TimelineController.reload()` nem rejtett fotókból mappakártyákat, valamint nem üres, indexelt albumokból albumkártyákat készít; a gyűjteménykártyák sorrendje a legkorábbi tagdátum, név és azonosító szerint történik (forrás: `timeline_controller.py:183-264`). | A qshow és a PicasaPy gyűjteményhalmazának azonossága nincs bizonyítva; a forráskód szerinti listák összevetése nem igazolja a futásidejű rekord-egyezést. |
+| A `0x005e8a70` út CAlbumState-elemekből indul; a qshow kártyalistáját a dátum-qword szerint növekvően rendezi (`0x007fc4c0`, `0x0049cd60`, lezárva: 38.2.105). A `+0x138` sorok `+0x0c` mezőjét `0x004b29d0` `2`-vel szűri, a qshow pedig további `+0x30 == 1` és `+0x18 == 0` feltételt vizsgál. A mező írója, a `2` kategóriája és a teljes kártyahalmaz **NINCS MEG** (38.2.109). | A `TimelineController.reload()` nem rejtett fotókból mappakártyákat, valamint nem üres, indexelt albumokból albumkártyákat készít; a dátum napra csonkolt, és a gyűjtemények sorrendje dátum, név, azonosító szerint történik (`timeline_controller.py:218-239,269-299,357-382`). | A dátumkulcs napra csonkolása forráskódból igazolt eltérés; a látható sorrendkülönbség az eredeti descriptor dátumforrásának és a PicasaPy legkorábbi EXIF-dátumának megfeleltetése után dönthető el. A qshow és a PicasaPy gyűjteményhalmazának azonossága nincs bizonyítva. |
 | Az `oneup.tre` képnéző-, Exit/Timeline-, prev/next, automatikus lejátszás-, forgatás-, csillag-, átmenet-, felirat- és kijelzési idő vezérlőket sorol fel. Az overlay-rétegek között sáv, két pontgrafika és fogantyú van; a fogantyú szemantikus művelete **NINCS MEG**. | A PicasaPy jelenlegi Időrendje kártyapályát, dátumpont-sort, lapozást és OneUp-diavetítésre váltó útvonalat ad; a sliderthumb eredeti szemantikájával való megfelelés nincs igazolva. | A vezérlőút részben megfeleltethető; a sliderthumb pontos dátum-/fotóindex-hatását csak bináris út és eredeti futásidejű ellenőrzés után lehet egyezőnek vagy eltérőnek minősíteni. |
 | A `0x008032e0` és `0x00803180` gomb-, egér- és qshow-billentyűútja binárisan dokumentált (38.2.63, 38.2.101); az Exit host/callback-útja lezárva (38.2.68). A teljes billentyű-esemény/képkocka-időzítés és az általános visszatérési állapot **NINCS MEG** (38.2.104, 38.2.81-83). | A jelenlegi `TimelineView.qml` aktív Időrend-nézetet, lapozást és billentyűkezelést tartalmaz; forrás: `TimelineView.qml:82-115,393-406`. | A statikus kezelőutak ismertek; az eredeti és a PicasaPy futásidejű eseményidőzítését szinkron felvétel nélkül ne tekintsük egyezőnek vagy eltérőnek. |
 | A `thumbui/timelinebutton` akciónév létezik, de a csomagolt `thumbui.tre` rejtettnek jelöli (`m_hidden`); a súgó „Timeline view of all your photos”. | Nincs aktív főablaki Időrend-eszköztárgomb. | Az eredeti főablaki gomb láthatóságát ne következtessük ki a parancs létezéséből; ehhez futó Picasa-képernyőkép kell. |

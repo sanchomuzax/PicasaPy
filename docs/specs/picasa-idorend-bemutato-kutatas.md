@@ -2078,3 +2078,71 @@ A dátumnál A út a getter és a dekódolók útja, amely a qwordot napra és n
 **Új kutatási jegyjavaslat.** Nincs; a nyitott pontok a #6532 meglévő elfogadási feltételei.
 
 **Módosított fájlok ebben a szakaszban.** Ez a 38.2.108 a 2026-11-11-i Ghidra-kimenetekkel és a helyi bináris ellenőrzéssel javítja a 38.2.107 osztályolvasatát, valamint lezárja a dátumkódolást és a qshow-hidat. Kódot, tesztet, videót, eredeti binárist vagy mérőadatot nem módosítottam.
+
+#### 38.2.109 A CAlbumState forrásút szűrői és a PicasaPy dátumkulcsa (#6532, 2026-11-11)
+
+**Hatókör és módszer.** A 2026-11-11-i Colab Ghidra-kimeneteket a `0x004a66e0`, `0x004abe70`, `0x004a57a0`, `0x004ba420`, `0x004b8ee0`, `0x004b8470`, `0x004b29d0` és `0x007fc7c0` címeknél olvastam. A forráslistát, a qshow-szűrőket és a dátummezőt célzott `annot_disasm.py` olvasattal, az osztálymezőt pedig RTTI-alapú `offset_map.py` leltárral ellenőriztem. A teljes `.text` eltoláskeresés első művelete `paszta.memoria_kapu()` volt. A PicasaPy összevetés a `timeline_controller.py` és a `TimelineView.qml` aktuális forrását követi. Új Picasa/Wine-felvétel nem készült.
+
+**A bemeneti descriptorok felépítése.** A `0x004a66e0` a CAlbumState `+0x138` mutatójú, `+0x13c` számlálójú, `0x24` bájtos rekordsorozatának kapacitását kezeli. A meglévő sorokat a `0x004ba420` másolja. A `0x004a66e0` `FastStart == 0` esetben a `0x004abe70` és a `0x004a57a0` feltöltő útvonalat hívja. A `0x004abe70` szövegei között szerepel a `Folders on Disk`, `My Albums`, `Exported Pictures`, `Other Stuff`, `Labels`, `People`, továbbá feltételes `Outlook` és `Hello Albums~`. A `Starred Photos`, `Screensaver`, `Recently Updated`, `Emailed` és `Uploaded` ágak is szerepelnek. Ezek az építőútban megjelenő nevek és belső kulcsok, nem bizonyítják, hogy mindegyikből látható Időrend-kártya lesz. A `0x004a57a0` CThumbDB-elemek több `+0x18` típusértékét és további jelzőit szűri; ezek a típusok nincsenek a látott forrásban gyűjteménynévhez kötve.
+
+**A lista és a qshow-szűrők.** A `0x004b8ee0` végigmegy a `+0x138` rekordokon. A `+0x0c != 0` rekord indexét a `+0x148` sorszámlistához adja, ha a lista `+0x14c` jelzőjének bit 0 értéke nulla; minden ilyen rekordnál a `0x004b86d0` is lefut. A `0x004baaa0` rendezi a sorszámlistát, majd a `0x004b8470` felépíti a `+0x158/+0x15c` 0x38 bájtos köztes listát.
+
+A `0x004b8470` a `[this+0x9d] == 0` esetben közvetlenül meghívja a `0x004b29d0`-t. Nem nulla `+0x9d` esetén csak az az index jut tovább, amelyre a `0x004461a0` igazat ad. Ennek a predikátumnak a külön, `picasa-keptalca.md` 20.3 szakaszában igazolt jelentése szerint az igaz albumot, a hamis mappát jelöl. A `0x004b29d0` a `CAlbumState+0x138 + index*0x24 + 0x0c` értékét `2`-vel hasonlítja össze; ha nem egyezik, nem tesz 0x38 bájtos rekordot a köztes listába. A mező értékének írója és a `2` kategórianeve továbbra is **NINCS MEG**.
+
+A qshow `0x007fc7c0` a `+0x158/+0x15c` listát olvassa, és csak a 0x38 bájtos rekord `+0x30 == 1` és `+0x18 == 0` feltételű elemeinek sorszámát tartja meg. A megtartott sorokhoz a CThumbDB adatútján kér adatot, és felépíti a saját 0xf8 bájtos kártyarekordjait. Ez összeköti a listaépítést a qshow-val, de a köztes numerikus mezők nem nevezik meg a forrásul szolgáló gyűjteményfajtát.
+
+**PicasaPy összevetés.** A `TimelineController._do_reload()` a látható indexelt fotókból mappák szerint gyűjt, majd az ismert albumok közül a nem üreseket adja hozzá (`src/picasapy/app/timeline_controller.py:218-239,269-291`). Az album- és mappakártya dátuma a legkorábbi tag EXIF-dátum (`:357-382`). A dátumot a `datetime.fromisoformat(...).date()` napra csonkolja, majd a sorrend azonos napnál név és azonosító szerint dönt (`:293-299`). A nap-szintű `sliderPosition` a `date.toordinal()` értékek különbségéből készül (`:301-320`); a `TimelineView.qml` ezt a normalizált értéket használja (`:73-79`).
+
+Az eredeti qshow dátumkulcsa `double`: a `0x0098b550` a naptári napösszegből levonja a `0x000a96c7` értéket, és a másodpercet a `0x00cf3f20` 86400-as osztójával a nap törtrészévé alakítja. A dekódoló `0x0098b320` ezt a napot és törtrészt visszabontja. A kezdőnap `1899-12-30`, a törtrész tehát napszakot is őriz (részletes kétirányú bizonyíték: 38.2.108). A qshow ezt a teljes dátum-qwordot növekvő sorrendben használja (`0x007fc4c0`, `0x0049cd60`). Ez a rendezés dátumkulcsra vonatkozó bizonyíték, nem a kártyák pályán elfoglalt pozíciójának képlete.
+
+**Eredeti / nálunk / teendő.**
+
+| Eredeti Picasa | Jelenlegi PicasaPy | Teendő |
+|---|---|---|
+| A qshow kártyák sorrendje a dátum-qword szerint növekvő; a qword nap-törtrésze időt is kódol (`0x007fc4c0`, `0x0049cd60`, `0x0098b550`). A CAlbumState teljes kártyaforrása és a `+0x0c == 2` kategóriája **NINCS MEG**. | Csak mappa- és nem üres albumkártyák készülnek. A dátum napra csonkolt, a gyűjtemények sorrendje dátum, név, azonosító (`timeline_controller.py:269-299,357-382`). | A PicasaPy dátumkulcsa őrizze meg a napszakot, és azonos naptári nap esetén a teljes időponttal rendezzen. A forrásokból még nem igazolt, hogy egy eredeti descriptor dátumkulcsa pontosan a PicasaPy által számított legkorábbi EXIF-időpontnak felel meg, ezért a felhasználói sorrendkülönbség erre az egyező adatra feltételes. A gyűjteményfajták egyeztetése csak a CAlbumState mező jelentésének feloldása után zárható le. |
+
+**Bizonyíték.**
+
+| Állítás | Forrás |
+|---|---|
+| A CAlbumState `+0x138/+0x13c` rekordpuffere `0x24` bájtos sorokkal működik; `0x004ba420` másolja a mezőket. | bináris (`0x004a66e0`, `0x004ba420`) |
+| A `0x004b8ee0` a nem nulla `+0x0c` rekordok sorszámát gyűjti, a `0x004b8470` alkalmazza a `+0x9d` útvonalat. | bináris (`0x004b8ee0`, `0x004b8470`, `0x004461a0`) |
+| A `+0x0c == 2` a `0x004b29d0` szükséges feltétele a köztes rekord létrehozásához. | bináris (`0x004b29d0`) |
+| A qshow kártyaépítő további `+0x30 == 1` és `+0x18 == 0` feltételt vizsgál. | bináris (`0x007fc7c0`, `0x004ae4e0`) |
+| A dátum-qword napszakot kódoló törtrészt és `1899-12-30` kezdőnapot használ. | bináris (`0x0044f7c0`, `0x0098b320`, `0x0098b550`, `0x00cf3f20`, `0x000a96c7`) |
+| A qshow dátumkulcs szerinti iránya növekvő. | bináris (`0x007fc4c0`, `0x0049cd60`) |
+| A PicasaPy `taken_at` értékét naptári napra csonkolja, a gyűjteményt a legkorábbi tagdátummal, majd dátum, név és azonosító szerint rendezi. | PicasaPy-forráskód (`src/picasapy/app/timeline_controller.py:293-299,357-382`) |
+| A +0x138 rekordok +0x0c mezőjének írója, illetve a `2` kategórianeve. | NINCS MEG |
+| A qshow-ban ténylegesen megjelenő összes gyűjteményfajta. | NINCS MEG |
+
+**A két független út.**
+
+- **A út, eredeti bináris.** A `0x004b8ee0` a CAlbumState listából sorszámokat gyűjt; a `0x004b8470` ebből tölti a `+0x158/+0x15c` köztes listát; a `0x007fc7c0` ugyanennek a CAlbumState objektumnak a listáját használja a kártyaépítéshez. A korábban lezárt `0x005e96d9` → `0x007fa7f0` → `0x007fb9f0` pointerút külön igazolja, hogy a qshow ezt a CAlbumState pointert kapja (`38.2.108`). A forrásneveknél a `0x004abe70` hívásai és a hozzájuk tartozó bináris karakterláncok egyeznek.
+- **B út, PicasaPy forráskód.** A controller kifejezetten mappa- és albumgyűjteményeket készít, `.date()`-tal elveszíti a napszakot, és azonos napnál névvel rendez. A QML a normalizált `sliderPosition` mezőt használja. Ez független implementációs rétegként megerősíti a kódok közötti dátumfelbontás-eltérést, de nem igazolja, hogy a teljes eredeti descriptorlista azonos az app kártyahalmazával.
+- **Egyezés.** Az eredeti dátum-qword napszakot is tárol, a PicasaPy pedig az `taken_at` értéket napra csonkolja; ez a két implementáció összevetésében megerősített felbontásbeli eltérés. Látható sorrendi hatása akkor áll elő, ha a megfelelő gyűjteménydátumok ugyanarra a naptári napra esnek, de eltér az időpontjuk. Azt, hogy az eredeti descriptor dátuma ugyanazt az adatot jelenti-e, mint a PicasaPy legkorábbi EXIF-dátuma, még nem igazoltuk. A teljes halmaz azonossága nyitott.
+
+**Cáfoló kísérlet.** Megpróbáltam cáfolni azt a feltételezést, hogy a `+0x0c != 0` önmagában azt jelenti, hogy a sor kártyaként megjelenik. A `0x004b29d0` külön `== 2` feltételt alkalmaz, majd a `0x007fc7c0` még két további rekordmezőt vizsgál; ezért a nem nulla értékből nem következik kártyatagság. A cáfoló út ugyanazon mércével ellenőrizve közvetlen gépi feltételeken alapul, nem index-negatív találaton. Azt is próbáltam cáfolni, hogy a Python ordinal epoch önmagában eltolná a PicasaPy normalizált csúszkáját: a `sliderPosition` képlet mindkét végpontból levonja az első ordinalértéket, így az állandó epocheltolás kiesik. A maradó eltérés a napszak eldobása.
+
+**Bizonyítottsági fok.** A `+0x0c != 0`, `+0x0c == 2`, `+0x9d` és a qshow végső mezőszűrői gépi feltétele **megerősített**. A PicasaPy kódjának napra csonkolása és az eredeti qword törtrészének megőrzése közötti implementációs eltérés **megerősített**; tényleges, felhasználó által látható sorrendváltás csak azonos napi, eltérő időkulcsú gyűjteménynél következik, futásidejű mintakészlet még nincs. A qshow teljes forráshalmaza és a `+0x0c == 2` mező neve **nyitott**. Az összes kérdésre vonatkozó bizonyítottság ezért **feltételes**.
+
+**A #6532 „Kész, ha” pontjai.** (1) ✅ A korábbi eredeti felvételek a 38.2.101 és 38.2.104 szakaszban vannak dokumentálva; új felvétel ebben a körben nem készült. (2) ⛔ A qshow végső feltételei és a CAlbumState-építőút bővült, de a `+0x0c` mező írója, a `2` kategóriája és a teljes kártyaforrás nyitott. (3) ⛔ A PicasaPy napra csonkolási eltérése azonosított, de a teljes forráshalmazzal való tételes összevetés nem zárult le. (4) ⛔ A korábban nevezett #6713 nem fedi le bizonyítottan ezt az időbélyeg-eltérést; ehhez fejlesztési jegyszöveg javasolható, de GitHub-művelet és kiadási összehasonlító videó vagy képsor nincs ebben a munkamenetben.
+
+**Javasolt jegytörzs-bővítés.**
+
+> Javasolt cím: Időrend: őrizze meg a gyűjtemény dátumkulcsának napszakát. Eredeti: a qshow a dátum-qword teljes értékével rendez (`0x007fc4c0`, `0x0049cd60`); a qword nap-törtrésze napszakot is tartalmaz (`0x0098b550`). Nálunk: a `src/picasapy/app/timeline_controller.py:357-382` az EXIF-időpontot naptári napra csonkolja, majd a `:293-299` azonos napnál név és gyűjteményazonosító szerint rendez. Teendő: a `_exif_date()` és a gyűjtemény `date` mezője őrizze meg az időpontot, a rendezés használja a teljes értéket. Az eredeti descriptor dátumának PicasaPy legkorábbi EXIF-dátumával való azonosságát külön kell igazolni, mielőtt a dátumforrás megfelelőségét állítjuk.
+>
+> Kész, ha a gyűjtemény dátumkulcsa megőrzi az időpontot, az azonos naptári napra eső, eltérő időpontú megfelelő rekordok sorrendje a teljes kulcs szerint alakul, és a tesztadat összeköti a PicasaPy dátumforrását az eredeti descriptor dátumával. A dátumvonal pozícióképlete külön bináris igazolást igényel. A pontos qshow forráshalmazt ettől külön, a `+0x0c == 2` jelentésének feloldása után kell egyeztetni.
+
+**Új kutatási jegyjavaslatok.** Nincs külön kutatási jegy; a mezőíró és a kategóriatagság a #6532 meglévő nyitott kérdése.
+
+**Nyitott.**
+
+- Ghidra-kör kell: 0x004a66e0 - a `CAlbumState+0x138` sor `+0x0c` mezőjének tényleges írója és a `2` érték tartalmi neve a `0x004abe70` és `0x004a57a0` feltöltő útvonalain át; a meglévő teljes dekompiláció csak a vektorkezelést, a másolást és a két hívott feltöltőt mutatja, az író célját nem. [blokkoló]
+- Ghidra-kör kell: 0x007fc7c0 - a köztes rekord `+0x30 == 1` és `+0x18 == 0` mezőinek típusneve, valamint hogy mely bemeneti gyűjteményfajták maradnak meg; a meglévő teljes dekompiláció csak a numerikus feltételt és a kártyaépítő adatutat mutatja. [blokkoló]
+- A `0x004abe70` által épített speciális kategóriák közül melyek élik túl a fenti szűrőket, és az eredeti futásban milyen névvel jelennek meg: **NINCS MEG**. A megszerzéshez a mezőíró és a `2` jelentésének fenti feloldása, majd azonos futású descriptor- és kártyalista kell.
+- A teljes mappák, albumok és virtuális gyűjtemények qshow-kártyahalmazának összevetése a PicasaPy-val: **NINCS MEG**. A megszerzéshez ugyanazon könyvtárból kinyert eredeti descriptorlistát a PicasaPy `TimelineController._collections_to_qml()` kimenetével kell összevetni.
+- A PicasaPy dátumkulcs tényleges felhasználói eltérése azonos napra eső rekordokkal: **NINCS MEG** mérés. A megszerzéshez az eredeti qword kulcsok és a PicasaPy kártyasorrend egy azonos, időpontot is tartalmazó mintakészletre történő felvétele szükséges.
+
+**Módosított fájlok ebben a szakaszban.** A 38.2.109 bővíti a qshow upstream szűrőútját, a PicasaPy dátumkezelési összevetését és a lezáratlan kérdéseket. Kódot, tesztet, eredeti binárist, videót vagy mérőadatot nem módosítottam.
+
+Ghidra-források (Colab, Ghidra 12.1.2): `referencia/ghidra/2026-11-10-6532-colab-decomp`, `referencia/ghidra/2026-11-10-6532-colab-bc8-58-irok`, `referencia/ghidra/2026-11-11-6532-colab-decomp-2`, `referencia/ghidra/2026-11-11-6532-colab-decomp-3` (picasapy-agent). Fejlesztési jegy ebből a körből: #6807.
