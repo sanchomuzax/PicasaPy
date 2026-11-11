@@ -137,6 +137,8 @@ def apply_museum_matte(
     outer_thickness: float = 25.0,
     inner_color=(0xF0, 0xEA, 0xE4),
     inner_thickness: float = 40.0,
+    *,
+    alpha: int = 255,
 ):
     """`MuseumMatte=1,OuterThickness,InnerThickness,színOuter,színInner` —
     belső ragyogás (fekete, `xblur = 2·0,02·max(W,H)/4`, `strength 1,3`,
@@ -155,7 +157,12 @@ def apply_museum_matte(
     # gyűrűs kép méretéből az alap 0,251 és a max 0,343 lenne, így 0,230 és
     # 0,287). Az alfa a művelet `BlendAlpha`-ja.
     xblur = 2.0 * 0.02 * max(height, width) / 4.0
-    glowed_inner = inner_glow(image, (0, 0, 0), xblur, xblur, 1.3, alpha=0.7)
+    if alpha == 0:
+        # Üres alfaalak mellett az első fekete ragyogás mindenhol teljes.
+        # BlendAlpha=0,7: k=178, az alsó réteg súlya 255-178=77.
+        glowed_inner = ((image.astype(np.uint16) * 77) >> 8).astype(np.uint8)
+    else:
+        glowed_inner = inner_glow(image, (0, 0, 0), xblur, xblur, 1.3, alpha=0.7)
     ringed_inner = add_ring(glowed_inner, inner_thickness, inner_color)
     glowed_outer = inner_glow(ringed_inner, (0, 0, 0), xblur, xblur, 1.3, alpha=0.6)
     return add_ring(glowed_outer, outer_thickness, outer_color)

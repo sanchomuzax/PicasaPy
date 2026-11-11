@@ -9,6 +9,8 @@ TISZTA: új tömböt ad vissza, a bemenetet sosem mutálja.
 
 from __future__ import annotations
 
+import numpy as np
+
 from picasapy.render.curves import validate_image
 from picasapy.render.glimmer_ops import (
     BLEND_MODE_BY_INDEX,
@@ -113,7 +115,7 @@ _PICNIK_GRAIN_VILAGOSITO_MOD = 7
 _PICNIK_GRAIN_SOTETITO_MOD = 5
 
 
-def apply_picnik_grain(image, grain: float = 10.0, lighten: bool = False):
+def apply_picnik_grain(image, grain: float = 10.0, lighten: bool = False, *, alpha: int = 255):
     """`PicnikGrain=1,Grain,Lighten` — szürke zaj a `NoiseImageOperation`
     natív generátorával (MT19937, Picasa-magvetés, #3736) a leíró rögzített
     `randomSeed = 1`-ével. `Lighten` esetén a zaj `[0, 2,55·Grain]`, a mód
@@ -134,6 +136,10 @@ def apply_picnik_grain(image, grain: float = 10.0, lighten: bool = False):
         low, high, mode = 0.0, 2.55 * grain, _PICNIK_GRAIN_VILAGOSITO_MOD
     else:
         low, high, mode = 255.0 - 2.55 * grain, 255.0, _PICNIK_GRAIN_SOTETITO_MOD
+    if alpha == 0:
+        # A maszk a zajréteget fehéríti, ezt keveri a kiválasztott mód.
+        layer = np.full_like(image, 255, dtype=np.float32)
+        return to_uint8(apply_blend_mode(to_float(image), layer, mode, 1.0))
     return apply_noise(
         image,
         seed=_PICNIK_GRAIN_SEED,
