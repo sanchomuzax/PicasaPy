@@ -329,3 +329,47 @@ bemeneti RGB-pufferének és a `0x0090fc99` által írt gainnek a kinyerése
 ugyanabban a futásban; ezt a saját köztes pufferrel és becsléssel kell
 összevetni. Ha csak JPEG-export szerezhető, abból az eredeti memóriabeli
 gain nem következtethető pontosan.
+
+### Az autocolor kis súlyösszegének kapuja (2026-11-11)
+
+**Megerősített a vizsgált becslőágon:** a `0x0090fb32` és `0x0090fb77`
+között a súlyozott cellák összege a `[esp+0x14]` változóba gyűlik. A
+`0x0090fbb5` ezt **nullával** hasonlítja össze; a `0x0090fbb9` csak
+nullánál kerüli el a két súlypont-osztást (`0x0090fbc2`, `0x0090fbc9`).
+Pozitív minimumösszeg miatti korai kilépés ezen az úton nincs: az 1-es
+összeggel is oszt. Nulla összegnél az addig felhalmozott nullás nyomatékokból
+semleges becslés keletkezik. A `0x0090fbcd–0x0090fbf4` a két súlypontot
+−32 és 32 közé szorítja, majd a `0x0090fc61–0x0090fc85` a két kimeneti
+értéket 0 és 255 közé korlátozza. A `0x0090fc99` írja a csomagolt becslést.
+A PicasaPy `estimate_illuminant` ugyanezt a nulla-ágat és ezeket a korlátokat
+használja. Ez a lelet nem bizonyítja, hogy a teljes kétprogramos út minden
+részlete azonos.
+
+**Független ellenőrzés:** a bináris `0x0090fbb3–0x0090fca4` utasításait
+QEMU i386 alatt izolált állapottal futtatva a (súlyösszeg, x-nyomaték,
+y-nyomaték) = (0, 0, 0) a `0x00808080`, az (1, 28, −28) a `0x00f08044`
+csomagot adja. A második tehát `(kR,kB)=(240,68)`, nem semleges. Ez a
+kódrészlet végrehajtása, nem a teljes becslő vagy Picasa-export mérése.
+A saját becslővel külön, 144 képpontos fekete képen 127 darab RGB
+`(60,32,17)` képpont `(128,128)`-at, 128 darab `(240,68)`-at adott:
+a súlyozott összeg a 2-es cellasúly és a cellánkénti 8 bites eltolás miatt
+0-ról 1-re vált. A nem nulla összegre feltételezett kaput ez a célzott
+ellenpélda cáfolja; más minőségvizsgálatot a teljes láncra nem zár ki.
+
+**Új eredeti exportmérés:** a k02 `colorfix;rainbow` és
+`colorfix;rainbow;autocolor` JPEG-ek dekódolt RGB-átlaga rendre
+`(162,441590; 90,369685; 93,576364)`, illetve
+`(161,475699; 90,390607; 92,591095)`. Közvetlen összevetésük SSIM-je
+`0,988790`, átlagos CIE76 ΔE-je `1,102313` (további JPEG-kódolás nélkül).
+Ez kis exportkülönbség, nem bizonyítja a belső puffer vagy a mátrix pontos
+azonosságát. A fenti becslőágra vonatkozó eredmény **megerősített**; a
+`lanc-0132` eltérésének oka továbbra is **nyitott**.
+
+**Következő döntő mérés:** ugyanabban az eredeti futásban a
+`0x008f82fa` hívásakor a becslő bemeneti RGB-pufferét és méretét, a
+`0x0090fbb5` ponton a súlyösszeget és két nyomatékot, valamint a
+`0x0090fc99` által kiírt becslést kell rögzíteni; ugyanezen a nyers
+pufferen kell a PicasaPy becslőjét futtatni. A JPEG köztes export erre
+nem alkalmas a fent kimutatott újrakódolási érzékenység miatt. A belső
+puffer és a natív becslés jelenleg **NINCS MEG**, ezért új küszöb vagy
+fejlesztési javítás nem vezethető le.
