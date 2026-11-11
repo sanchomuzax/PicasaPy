@@ -81,15 +81,19 @@ class TestAlbumContextMenu:
         valódi tétel lett (az album tulajdonságai az `album.fen`
         párbeszédén szerkeszthetők). A viselkedését a
         `test_album_tulajdonsagok_*_3173.py` méri.
+        ⭐ #6849: a „Feltöltés a Google Fotókba…” szintén KIKERÜLT —
+        aktív tétel, az album képeit küldi feltöltésre.
         """
         menu = _load(qml_engine, "AlbumContextMenu")
         for name in (
             "albumMenuOnlineActions",
-            "albumMenuUploadToGooglePhotos",
         ):
             assert menu.findChild(QObject, name).property("enabled") is False
         assert menu.findChild(
             QObject, "albumMenuDelete"
+        ).property("enabled") is True
+        assert menu.findChild(
+            QObject, "albumMenuUploadToGooglePhotos"
         ).property("enabled") is True
 
         # #4535: a Névcímkék hozzáadása az album tagképeit vizsgálja.

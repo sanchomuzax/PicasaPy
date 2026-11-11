@@ -130,8 +130,15 @@ def test_harom_helyi_menu_feltoltesi_tetele_es_kep(qt_app):
         actual_text = item.property("text")
         if actual_text != expected_text:
             hibak.append(f"{item_name}: {actual_text!r} != {expected_text!r}")
-        if item.property("retired") is not True:
-            hibak.append(f"{item_name}: a retired jelölés hiányzik")
+        if item_name == "contextMenuUploadToWebAlbums":
+            if item.property("retired") is not True:
+                hibak.append(f"{item_name}: a retired jelölés hiányzik")
+        else:
+            # #6849: a Google Fotók él, a tétel nem retired és aktív
+            if item.property("retired") is True:
+                hibak.append(f"{item_name}: a Google Fotók nem megszűnt, nem lehet retired")
+            if item.property("enabled") is not True:
+                hibak.append(f"{item_name}: a tételnek aktívnak kell lennie")
         prefix = {
             "folderContextMenu": "folderMenuUploadTo",
             "photoContextMenu": "contextMenuUploadTo",
