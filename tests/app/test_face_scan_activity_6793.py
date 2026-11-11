@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import traceback
 
 from picasapy.app.busy_activity import munka_neve
 from picasapy.app.busy_registry import get_app_busy_registry
@@ -123,14 +124,20 @@ def test_unchanged_second_scan_skips_decode_and_logs_phase_times(
     decoded = []
     original_decode = scan_module.dekodolj_forrast
 
+    # #6824: Windowson ingadozva 4 dekódolás jött 2 helyett, Linuxon nem
+    # reprodukálható. Bukáskor a szál neve és a hívó függvények is látszanak,
+    # hogy a következő windowsos bukás megnevezze a második dekódoló utat.
     def counted_decode(*args, **kwargs):
-        decoded.append(args[0])
+        hivok = "<".join(
+            frame.name for frame in traceback.extract_stack(limit=6)[:-1][::-1]
+        )
+        decoded.append((args[0], threading.current_thread().name, hivok))
         return original_decode(*args, **kwargs)
 
     monkeypatch.setattr(scan_module, "dekodolj_forrast", counted_decode)
     _run(ctl.scanFinished, ctl.scanNewFaces)
     assert ctl.waitForBackgroundWorkers(5.0)
-    assert len(decoded) == 2
+    assert len(decoded) == 2, f"dekódolások (fájl, szál, hívók): {decoded}"
     decoded.clear()
 
     with caplog.at_level(logging.INFO):

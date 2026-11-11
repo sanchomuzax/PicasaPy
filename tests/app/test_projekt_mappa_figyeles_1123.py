@@ -283,6 +283,10 @@ class TestMindenKorbenSorraKerul:
         controller.selectFolder(str(library / "nyaralas"))
         assert _var(qt_app, lambda: controller.photos.rowCount() == 2)
         kollazsok = str(library / "Picasa" / "Kollázsok")
+        # #6824: a vezérlő saját, 10 mp-es mappafigyelő időzítője a lassú
+        # Windows-futón a három kézi kör közben is elsülhet, és egy negyedik
+        # kört ad (CI 42990562883: 4 == 3). A teszt a köröket maga indítja.
+        controller._folder_poll_timer.stop()
 
         adagok: list[tuple[str, ...]] = []
         monkeypatch.setattr(

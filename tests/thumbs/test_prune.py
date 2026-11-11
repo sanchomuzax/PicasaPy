@@ -85,6 +85,12 @@ class TestPruneSchedule:
         self, tmp_path, monkeypatch
     ):
         _make_entry(tmp_path, "aa", "a.jpg", 50, age_seconds=10)
+        # #6824: a shardmappa is legyen régi. Windowson a `time.time()` és a
+        # fájlrendszer időbélyege eltérő felbontású, így a frissen létrehozott
+        # mappa ideje a rögzített ellenőrzési időpont UTÁNINAK látszhat, és a
+        # második hívás változásnak venné (CI 42990562883: 1 == 0).
+        old = time.time() - 10
+        os.utime(tmp_path / "aa", (old, old))
         assert prune_if_needed(tmp_path, 1000) == 0
 
         scans = 0
