@@ -2496,3 +2496,23 @@ Ha a célindex `0xffffffff` vagy kívül esik a tartományon, az eredeti kivála
 | A `+4/+8` szavak írója és időpontjának eseményjelentése, a `0x3e9` típus felhasználói jelentése. | NINCS MEG |
 
 A `]updated` út tényleges bemenetein az átirányítás előfordulása és az időbélyeg eredete nem igazolt; ebből önmagában PicasaPy-eltérés vagy fejlesztési feladat nem következik. A 38.2.116 nyitott Ghidra-kérdései érvényesek, az időbélyeg íróját a közvetlen és az esetleg átirányított rekordra egyaránt keresni kell.
+
+**Kiegészítés: a keresett FILETIME rekordmezője és írói.** A fenti táblázat íróra vonatkozó `NINCS MEG` sora részben feloldható. A `0x004edf60` által másolt első FILETIME a `thumbindex.db` rekord első időmezője (`pmp-database.md` 10.3 és 15.1); ez nem azonos a második, aktuális fájlmódosítási időt tároló mezővel. A `0x004eeb10` ugyanazon `+0x3f0` mutatótömb indexelt rekordjának `+4` címére írja a konvertált értéket (`0x004eeb6d`, `0x004eeba4`, `0x004eebad`). A `0x00425f60` a `0x00427844` címen a `0x37` metaadatkulcsot kéri, és sikeres olvasás és dátumkonverzió után a `0x00427898` címen hívja az írót. A kulcs az EXIF `DateTimeOriginal` mezője (`picasa-metaadat-tulajdonsagok.md` 3., `0x00c788d8`). A mező tehát ebben az esetben a felvétel metaadat-dátuma, nem a kép első indexelésének időpontja. A `0x004ef3c0` és `0x004ef5a0` dátumállító utak ugyanezt az első mezőt módosíthatják (`pmp-database.md` 15.1; `0x004ef666`, `0x004ef66e`), ezért az érték nem feltétlenül marad örökre változatlan.
+
+**Kezdőérték: feltárt rekordépítő út, korlátozott következtetés.** A `0x004e753f` és `0x004e7545` a bejáró `WIN32_FIND_DATAA` szerkezetéből a `ftLastWriteTime` két szavát tölti, a `0x004e756a` átadja a `0x0040f980` rekordépítőnek. Ez a két szót az első és a második FILETIME-ba egyaránt beírja (`0x0040f9b6`-`0x0040f9db`); a `0x004e7689` a képzett rekordot egy rekordtömbbe másolja. A két időmező egyezését korábbi katalógusmérés is vizsgálta (`pmp-database.md` 10.4). Az itt feltárt útból még nem következik, hogy az adott `]updated` bemenet minden metaadat nélküli rekordja ezen az úton kerül a getter tárolójába: a teljes kapcsolat és az esetleges más írók **NINCS MEG**. Így az első mező nem nevezhető általánosan sem aktuális fájlmódosítási időnek, sem minden esetben kizárólag EXIF-időnek.
+
+**Mérés és cáfolat.** A job-545 és job-547 képein mindkét gyűjtemény 24 képet jelez; a mappában első szürke átmenet az album 21., a második színtábla a 24. eleme. Ez cáfolja, hogy a két megjelenített lista azonos sorrendű volna; önmagában nem azonosítja az album rendezési kulcsát. A job-551 beszámoló szerint forgatás, lemezre mentés és újraindítás után a szürke átmenet helye változatlan maradt. Az, hogy a mentés valóban megváltoztatta-e a fájl módosítási idejét, nincs mérve, ezért e próba önmagában nem zárja ki annak szerepét. A binárisban az első és második FILETIME külön mező (`0x004ee08a`, `0x004ee09c`), és a friss fájlidőt a vizsgált frissítési út a másodikba írja (`0x004e74dc`, `0x004e74df`); ez külön ellenőrzi a cáfolat korlátját.
+
+| Állítás | Forrás | Fok |
+|---|---|---|
+| Az olvasott első FILETIME érvényes metaadat esetén a `DateTimeOriginal` értékéből is íródik. | bináris (`0x00427844`, `0x00427898`, `0x004eeb6d`, `0x004eebad`, `0x00c788d8`) | megerősített: írói adatfolyam és független metaadatkulcs-tábla |
+| A vizsgált rekordépítő a fájl módosítási idejét mindkét időmezőbe bemásolja. | bináris (`0x004e753f`, `0x004e756a`, `0x0040f9b6`, `0x0040f9db`); mérés (`pmp-database.md` 10.4) | megerősített erre az építőútra |
+| A `]updated` teljes bemeneti sorrendje és a metaadat nélküli rekord végleges útja. | NINCS MEG | nyitott |
+
+A meglévő dekompilátumok ellenőrzése után a korábbi kérdés pontosítható:
+
+- `Ghidra-kör kell: 0x004e62d0 - a 0x004e753b által épített rekordtömb útja a 0x004edf60 +0x3f0 tárolójába és a metaadat nélküli rekord kezdeti értékének megőrzése [blokkoló]`. A rendelkezésre álló kimenetek csak hívóként említik, a törzse nincs meg.
+- `Ghidra-kör kell: 0x0055ece0 - a param_2[2] előállítója és sorrendje, valamint a nem dátum jellegű kapuk jelentése [blokkoló]`. A meglévő dekompilátum a fogyasztót mutatja, az előállítót nem.
+- `Ghidra-kör kell: 0x004e4ea0 - a regisztrált DBLoader 0. slotjának tényleges hívója, argumentuma és kiváltó eseménye [blokkoló]`. A meglévő kimenet a regisztrációt mutatja.
+
+A teljes tagság és sorrend továbbra sincs igazolva, ezért a Recently Updated teljes megvalósítására kész fejlesztői jegy ebből még nem vezethető le.
