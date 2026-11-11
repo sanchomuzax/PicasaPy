@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.102] - 2026-11-11
+
+- Az Invert után a DropShadow (vetett árnyék) a megfordított képet rajzolja ki, nem egyetlen színfoltot: az Invert az eredeti Picasához hasonlóan megőrzi a kép átlátszóságát (#6836).
+
 ## [1.0.101] - 2026-11-11
 
 - A differenciális szűrőláncok eredménye külön jelöli a véletlenállapot-függő eseteket (#6585).
