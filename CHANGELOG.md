@@ -7,6 +7,10 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.99] - 2026-11-11
+
+- A PicnikGrain és a Lágyítás szűrőláncban is a Picasa alfaállapotát követi (#6812).
+
 ## [1.0.98] - 2026-11-11
 
 - Az Időrend az azonos napi gyűjteményeket a legkorábbi teljes felvételi időpont alapján rendezi (#6807).
