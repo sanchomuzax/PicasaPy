@@ -27,8 +27,8 @@ képnézeté. Ezt a mérés derítette ki.
 
 ## A forrás
 
-A gomb a FEJLÉCHEZ tartozó csoport képeit adja át — nem a kijelölést és
-nem a tálcát. Az eredeti is a panelhez tartozó halmazzal dolgozik.
+A mappa-fejléc a SAJÁT csoportján belüli kijelölést adja át, ha van ilyen;
+egyébként a csoport összes képét. A másik mappa kijelölése nem kerül bele.
 """
 from __future__ import annotations
 
@@ -113,13 +113,16 @@ class TestABekotes:
         )
 
     def test_a_CSOPORT_kepeit_adja_at_nem_a_kijelolest(self):
-        """A fejléc a SAJÁT csoportjához tartozik; a kijelölés vagy a
-        tálca más halmaz. Az eredeti is a panelhez tartozó képekkel
-        dolgozik.
+        """A fejléc a csoport kijelölését szűri; üres eredménynél a teljes
+        csoportot adja át.
         """
         blokk = blokk_horgony_utan(_FEED, "onCollageRequested")
         assert "modelData.start" in blokk and "modelData.count" in blokk, (
             "a gomb nem a csoport sorait adja át"
+        )
+        assert "selectedIndexes" in blokk and "sorok.length === 0" in blokk, (
+            "a kijelölést a csoport tartományára kell szűrni, majd üres "
+            "kijelölésnél a teljes csoportot kell használni"
         )
 
     def test_kattintasra_megnyilik_a_kollazs_lap(self, qml_app, qt_app):
@@ -147,4 +150,8 @@ class TestAmitKIMONDUNK:
         assert "arc" in reszlet.lower(), (
             "a forrás nem mondja ki, hogy ez a fejléc az arc-nézetet is "
             "kiszolgálja"
+        )
+        assert "kijelöl" in reszlet.lower() and "csoport" in reszlet.lower(), (
+            "a #1006 indoklása mondja ki a csoporton belüli kijelölés "
+            "kezelését"
         )

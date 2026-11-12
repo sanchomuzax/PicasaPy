@@ -44,6 +44,7 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
         self._photos_upload_error = ""
         self._photos_upload_finished = False
         self._photos_upload_cancel_event = None
+        self._photos_upload_pending_paths = None
         self.googlePhotosProgressReported.connect(self._on_photos_upload_progress)
         self.googlePhotosCurrentFileReported.connect(self._on_photos_upload_current_file)
         self.googlePhotosUploadResultReported.connect(self._on_photos_upload_result)
@@ -108,7 +109,11 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
     @Property(bool, notify=googlePhotosChanged)
     def googlePhotosUploadEnabled(self) -> bool:
         self._ensure_google_photos_wired()
-        return self.googlePhotosSignedIn and self.heldCount > 0 and not self._photos_upload_running
+        return (
+            self.heldCount > 0
+            and not self._photos_upload_running
+            and not self._google_photos_auth_busy
+        )
 
     @Property(bool, notify=_TraySignalsMixin.photosUploadChanged)
     def photosUploadRunning(self) -> bool:
@@ -261,22 +266,42 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
         from picasapy.google_photos import GooglePhotosApiClient, GooglePhotosError
 
         self._ensure_google_photos_wired()
-        if self._photos_upload_running:
+        if self._photos_upload_running or self._google_photos_auth_busy:
+            return False
+        paths = self._photos_upload_pending_paths
+        self._photos_upload_pending_paths = None
+        if paths is None:
+            paths = tuple(str(path) for path in self.heldPaths)
+        else:
+            paths = tuple(str(path) for path in paths)
+        if not paths:
+            self._photos_upload_error = "empty_tray"
+            self.photosUploadChanged.emit()
             return False
         refresh_token = self._google_photos_credentials.get_secret("refresh_token")
         credentials = self._effective_google_photos_credentials()
         if credentials is None or not refresh_token:
-            return False
+            self._photos_upload_pending_paths = paths
+            self._photos_upload_error = ""
+            self._photos_upload_phase = "authenticating"
+            self._photos_upload_done = 0
+            self._photos_upload_total = len(paths)
+            self._photos_upload_current_name = ""
+            self._photos_upload_finished = False
+            self.signInGooglePhotos()
+            if not self._google_photos_auth_busy and not self.googlePhotosSignedIn:
+                self._photos_upload_pending_paths = None
+                self._photos_upload_error = (
+                    self._google_photos_auth_error or "auth_failed"
+                )
+                self._photos_upload_phase = "error"
+            self.photosUploadChanged.emit()
+            return self._google_photos_auth_busy or self.googlePhotosSignedIn
         client_id, client_secret = credentials
         oauth = self._google_photos_oauth
         transport = self._google_photos_transport
         # `heldPaths` a teljes tálcát adja a beszúrási sorrendjében; a rács
         # pillanatnyi kijelölése és a tálca-tokenek nem kerülnek átadásra.
-        paths = tuple(str(path) for path in self.heldPaths)
-        if not paths:
-            self._photos_upload_error = "empty_tray"
-            self.photosUploadChanged.emit()
-            return False
         cancel_event = threading.Event()
         self._photos_upload_cancel_event = cancel_event
         self._photos_upload_running = True
@@ -337,9 +362,47 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
             return False
         return True
 
+    @Slot(list, result=bool)
+    def uploadGooglePhotosFromHeaderRows(self, rows) -> bool:
+        """A mappa-fejléc sorait rögzíti, majd ugyanazon a feltöltési úton küldi."""
+        self._ensure_google_photos_wired()
+        if self._photos_upload_running or self._google_photos_auth_busy:
+            return False
+        paths = []
+        photos = getattr(self, "_photos", None)
+        if photos is not None:
+            for row in rows or ():
+                try:
+                    path = photos.filePathAt(int(row))
+                except (IndexError, TypeError, ValueError):
+                    continue
+                if path:
+                    paths.append(str(path))
+        if not paths:
+            self._photos_upload_error = "empty_source"
+            self._photos_upload_phase = "error"
+            self._photos_upload_finished = False
+            self.photosUploadChanged.emit()
+            return False
+        self._photos_upload_pending_paths = tuple(paths)
+        return self.uploadGooglePhotosTray()
+
     @Slot()
     def cancelGooglePhotosUpload(self) -> None:
         self._ensure_google_photos_wired()
+        if self._google_photos_auth_busy:
+            flow = self._google_photos_auth_flow
+            if flow is not None:
+                flow.cancel()
+            self._google_photos_auth_busy = False
+            self._google_photos_auth_flow = None
+            self._photos_upload_pending_paths = None
+            self._google_photos_auth_error = "cancelled"
+            self._photos_upload_error = "cancelled"
+            self._photos_upload_phase = "error"
+            self.googlePhotosChanged.emit()
+            self.photosUploadChanged.emit()
+            return
         cancel_event = self._photos_upload_cancel_event
         if self._photos_upload_running and cancel_event is not None:
             cancel_event.set()
@@ -377,6 +440,8 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
     @Slot(str, str, str)
     def _on_google_photos_auth_result(self, refresh_token: str, error: str, account: str) -> None:
         self._ensure_google_photos_wired()
+        pending_paths = self._photos_upload_pending_paths
+        self._photos_upload_pending_paths = None
         if refresh_token:
             self._google_photos_credentials.set_secret("refresh_token", refresh_token)
             self._set_google_photos_account(account)
@@ -386,4 +451,11 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
             self._google_photos_auth_error = error or "auth_failed"
         self._google_photos_auth_busy = False
         self._google_photos_auth_flow = None
+        if refresh_token and pending_paths is not None:
+            self._photos_upload_pending_paths = pending_paths
+            self.uploadGooglePhotosTray()
+        elif pending_paths is not None:
+            self._photos_upload_error = error or "auth_failed"
+            self._photos_upload_phase = "error"
+            self.photosUploadChanged.emit()
         self.googlePhotosChanged.emit()

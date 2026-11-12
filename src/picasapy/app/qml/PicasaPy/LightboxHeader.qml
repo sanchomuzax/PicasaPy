@@ -44,12 +44,14 @@ ColumnLayout {
     //: „Csillagozottak kijelölése" (`select_star`) - ugyanaz a parancs,
     //: mint a menüsávban; itt is a jelenlegi mappára hat (#1145).
     signal selectStarredRequested()
-    //: #1006: kollázs a fejléc csoportjából. Az eredetiben NÉGY belépési
-    //: pont van; nálunk kettő működött (Létrehozás menü, kimeneti sáv), a
-    //: két fejléc-gomb hiányzott.
+    //: #1006: a mappa-fejléc a csoport kijelölt képeit adja át, ha van
+    //: csoporton belüli kijelölés; egyébként a teljes csoportot.
+    //: Az eredetiben NÉGY belépési pont van; nálunk kettő működött
+    //: (Létrehozás menü, kimeneti sáv), a két fejléc-gomb hiányzott.
     signal collageRequested()
-    //: #4539: a mappa-fejléc film-gombja - ugyanaz a csoport-kép halmaz,
-    //: mint a kollázsnál (a fejléc SAJÁT csoportjának képei).
+    signal uploadRequested()
+    //: #4539: a mappa-fejléc film-gombja mindig a teljes csoportot
+    //: használja, a kollázs kijelölésétől függetlenül.
     signal movieRequested()
     //: A két `faceheaderpanel` filmgomb ugyanazt a meglévő Filmkészítőt
     //: nyitja meg az aktuális személy-album képeivel.

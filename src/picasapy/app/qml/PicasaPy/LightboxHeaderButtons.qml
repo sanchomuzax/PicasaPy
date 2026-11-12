@@ -93,9 +93,10 @@ Item {
     // (`headerpanel`) és az ARC-fejléc (`faceheaderpanel`), mindkettőn
     // ugyanez a gomb. A mi felületünkön a személy képei UGYANEBBEN a
     // rácsban, ugyanezzel a fejléccel jelennek meg - nincs külön
-    // arc-fejléc. Ez az egy gomb tehát mindkét belépési pontot
-    // lefedi; külön arc-fejlécet építeni olyan felületet hozna létre,
-    // ami nálunk nem létezik.
+    // arc-fejléc. A mappa csoportján belüli kijelölés kerül a kollázsba;
+    // kijelölés nélkül a teljes csoport. Ez az egy gomb tehát mindkét
+    // belépési pontot lefedi; külön arc-fejlécet építeni olyan felületet
+    // hozna létre, ami nálunk nem létezik.
     //
     // #2187: ez a döntés maradt - az arc-fejléc SAJÁT vezérlői (a
     // javaslat-munkafolyamat) ezért ugyanebbe a fejlécbe kerültek, a
@@ -272,7 +273,10 @@ Item {
         visible: !header.personAlbumHeaderMode
         height: 22
         text: header.feliratSzammal(qsTr("Upload")) + " ▾"
-        enabled: false
+        enabled: typeof controller !== "undefined" && controller
+            && !controller.googlePhotosAuthBusy
+            && !controller.photosUploadRunning
+        onClicked: header.uploadRequested()
         Layout.preferredHeight: 22
     }
 
