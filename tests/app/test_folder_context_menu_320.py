@@ -121,16 +121,19 @@ class TestFolderContextMenu:
         # #1638: a „Mappa törlése…" KIKERÜLT ebből a listából — azóta él,
         # és a mappát a lomtárba teszi. A tétel LÉTE változatlanul őrzött a
         # fenti sorrend-tesztben.
+        # #6849: a „Feltöltés a Google Fotókba…” szintén KIKERÜLT — él,
+        # a mappa képeit küldi feltöltésre.
         for name in (
             "folderMenuHideFolder",
-            "folderMenuUploadToGooglePhotos",
         ):
             item = menu.findChild(QObject, name)
             assert item is not None, f"{name} hiányzik"
             assert item.property("enabled") is False, f"{name} nem szürke"
 
         # #4535: a Névcímkék hozzáadása tényleges mappa-keresést indít.
+        # #6849: a Google Fotók-feltöltés aktív.
         assert menu.findChild(QObject, "folderMenuAddNameTags").property("enabled")
+        assert menu.findChild(QObject, "folderMenuUploadToGooglePhotos").property("enabled")
 
     def test_sort_submenu_items_are_one_off_commands(self, qml_engine, qt_app):
         """A rendezés egyszeri művelet, a menü nem mutat tartós módot."""

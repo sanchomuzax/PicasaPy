@@ -77,6 +77,14 @@ Item {
             if (controller)
                 controller.sortAlbum(albumContextMenu.albumToken, mode)
         }
+        onUploadToGooglePhotosRequested: function(token) {
+            if (controller && controller.uploadGooglePhotosAlbum) {
+                var ok = controller.uploadGooglePhotosAlbum(token)
+                if (ok && folderPane && folderPane.appWindow && folderPane.appWindow.footer
+                        && typeof folderPane.appWindow.footer.openGooglePhotosUploadDialog === "function")
+                    folderPane.appWindow.footer.openGooglePhotosUploadDialog()
+            }
+        }
     }
 
     ConfirmDialog {
@@ -334,6 +342,14 @@ Item {
         onExportAsHtmlRequested:
             if (folderPane.appWindow && folderPane.appWindow.openWebExport)
                 folderPane.appWindow.openWebExport()
+        onUploadToGooglePhotosRequested: function(path) {
+            if (controller && controller.uploadGooglePhotosFolder) {
+                var ok = controller.uploadGooglePhotosFolder(path)
+                if (ok && folderPane && folderPane.appWindow && folderPane.appWindow.footer
+                        && typeof folderPane.appWindow.footer.openGooglePhotosUploadDialog === "function")
+                    folderPane.appWindow.footer.openGooglePhotosUploadDialog()
+            }
+        }
     }
 
     // #1249: az eredeti megerősítés — a MAPPA NEVÉVEL, és kimondja az

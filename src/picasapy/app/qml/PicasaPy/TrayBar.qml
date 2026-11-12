@@ -104,6 +104,10 @@ Column {
             trayRightPane.activateStar()
     }
 
+    function openGooglePhotosUploadDialog() {
+        trayRightPane.openGooglePhotosUploadDialog()
+    }
+
     // a forgatás/csillag célsora — a Main rotateTargetRow()-ja is ezt kéri
     readonly property int starTargetRow: trayRightPane.starTargetRow
 

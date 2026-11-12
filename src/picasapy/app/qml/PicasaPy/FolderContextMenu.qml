@@ -70,6 +70,7 @@ PicasaMenu {
     signal deleteFolderRequested()
     signal exportAsHtmlRequested()
     signal addNameTagsRequested(string folderPath)
+    signal uploadToGooglePhotosRequested(string folderPath)
 
     // -- 1. blokk: mappaleírás ---------------------------------------------
 
@@ -237,12 +238,10 @@ PicasaMenu {
 
     // -- 7. blokk: megosztás ---------------------------------------------------
 
-    PicasaMenuItem {
+    MenuItem {
         objectName: "folderMenuUploadToGooglePhotos"
         text: qsTr("Upload to Google &Photos...")
-        placeholder: false
-        // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
-        retired: true
+        onTriggered: menu.uploadToGooglePhotosRequested(menu.folderPath)
     }
     MenuSeparator {}
 

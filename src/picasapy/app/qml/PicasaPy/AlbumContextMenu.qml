@@ -44,6 +44,7 @@ PicasaMenu {
     signal refreshThumbnailsRequested()
     signal exportAsHtmlRequested()
     signal addNameTagsRequested(string albumToken)
+    signal uploadToGooglePhotosRequested(string albumToken)
     //: #4599: az album egyszeri átrendezése — `mode`: date | name | size |
     //: reverse. A Shift (csökkenő sorrend) állapotát a vezérlő olvassa a
     //: kiválasztás pillanatában (a QML-nek nincs rá API-ja).
@@ -140,12 +141,10 @@ PicasaMenu {
         // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
         retired: true
     }
-    PicasaMenuItem {
+    MenuItem {
         objectName: "albumMenuUploadToGooglePhotos"
         text: qsTr("Upload to Google &Photos...")
-        placeholder: false
-        // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
-        retired: true
+        onTriggered: menu.uploadToGooglePhotosRequested(menu.albumToken)
     }
     MenuItem {
         objectName: "albumMenuExportAsHtml"
