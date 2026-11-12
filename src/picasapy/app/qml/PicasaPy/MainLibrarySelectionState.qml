@@ -42,10 +42,23 @@ Item {
         return false
     }
 
+    function vanMentetlenForgatas(sorok) {
+        if (!hostController || !hostController.photos || !sorok) return false
+        for (var i = 0; i < sorok.length; ++i) {
+            if (hostController.photos.rotateAt(Number(sorok[i])) !== 0)
+                return true
+        }
+        return false
+    }
+
     readonly property bool kijelolesbenVanMentetlenSzerkesztes:
         hostController
         ? (hostController.photos.revision,
            hostWindow.vanMentetlenSzerkesztes(hostWindow.selectedRows())) : false
+    readonly property bool kijelolesbenVanMentetlenForgatas:
+        hostController
+        ? (hostController.photos.revision,
+           hostWindow.vanMentetlenForgatas(hostWindow.selectedRows())) : false
     readonly property bool muveletiCelbanVanMentetlenSzerkesztes:
         hostController
         ? (hostController.photos.revision,

@@ -37,6 +37,15 @@ Item {
         }
     }
 
+    Connections {
+        target: typeof fileOpsController !== "undefined"
+                ? fileOpsController : null
+        function onSplitFolderCompleted(path) {
+            if (controller && controller.selectFolder)
+                controller.selectFolder(path)
+        }
+    }
+
     AlbumContextMenu {
         id: albumContextMenu
         onAddNameTagsRequested: function(token) {

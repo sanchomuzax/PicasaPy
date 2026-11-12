@@ -12783,6 +12783,27 @@ picasapy-origin-key: stringres:geo::init_err</extracomment>
             <translation>Selecciona una imagen para ver sus propiedades.</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Properties of %s:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PropertiesPanel::info_single</extracomment>
+            <translation>Propiedades de %s:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Location</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytImageMetadata::FilePath</extracomment>
+            <translation>Ubicación</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IPTC::Keywords</extracomment>
+            <translation>Etiquetas</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="28" />
             <source>Edit Tags</source>
             <extracomment>picasapy-origin: picasa

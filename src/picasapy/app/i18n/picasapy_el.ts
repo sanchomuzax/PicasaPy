@@ -12768,6 +12768,27 @@ picasapy-origin-key: stringres:geo::init_err</extracomment>
             <translation>Επιλέξτε μια φωτογραφία για να δείτε τις ιδιότητές της.</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Properties of %s:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PropertiesPanel::info_single</extracomment>
+            <translation>Ιδιότητες του %s:</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Location</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytImageMetadata::FilePath</extracomment>
+            <translation>Τοποθεσία</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IPTC::Keywords</extracomment>
+            <translation>Ετικέτες</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="28" />
             <source>Edit Tags</source>
             <extracomment>picasapy-origin: picasa

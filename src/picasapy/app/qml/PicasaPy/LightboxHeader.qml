@@ -35,6 +35,7 @@ ColumnLayout {
     // #5883: csak akkor menthetők a kijelöltek, ha valamelyik képen van
     // mentetlen szerkesztési lánc.
     property bool hasPendingEdits: false
+    property bool hasPendingRotation: false
 
     //: „Szerkesztések mentése lemezre" (`save_edits`) - a kijelölt képek
     //: szerkesztéseit a FÁJLBA írja. A művelet maga a #444 mentés-

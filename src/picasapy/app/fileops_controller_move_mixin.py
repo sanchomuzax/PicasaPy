@@ -215,6 +215,7 @@ class FileOpsControllerMoveMixin:
                     if not marado:
                         _compat.safe_move(str(companion), str(target / companion.name))
                     break
+            self.splitFolderCompleted.emit(str(target))
         except _compat._OPERATION_ERRORS as error:
             self.operationFailed.emit("split_folder", str(error))
 

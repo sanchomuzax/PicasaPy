@@ -118,6 +118,7 @@ class FileOpsController(
 
     photoRenamed = Signal(str, str)  # (régi_út, új_út)
     photoMoved = Signal(str, str)  # (régi_út, új_út)
+    splitFolderCompleted = Signal(str)  # (új_mappa_út)
     newFolderMoveFinished = Signal(str)  # sikeres áthelyezés célmappája
     # #6658: a hibás fájl mozgatása is változtathatott a lemezen (pl. az
     # ini-írás a fájl áthelyezése után bukott el), ezért a forrás/cél indexét

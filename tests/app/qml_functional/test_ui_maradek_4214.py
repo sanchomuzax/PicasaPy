@@ -241,10 +241,12 @@ def test_propertiespanel_lista_a_fooldal_fiokaban_minden_magassagon(
         assert _item(window, "rightDrawerTitle").property("text") == "Properties"
         rows = _item(panel, "propertyList")
         assert int(rows.property("count")) > 0
+        # #6848: az eredeti Picasa panelje a fájlútvonalat "Location" felirattal
+        # mutatja (referenciakép: 2026-11-11-6845-tulajdonsagok-panel).
         assert _wait_for(
             qt_app,
             lambda rows=rows: any(
-                text == "File Path" for text in _visible_texts(rows)
+                text == "Location" for text in _visible_texts(rows)
             ),
         ), "a kijelölt kép fájlútvonala nem látszik a tulajdonságlistában"
 
