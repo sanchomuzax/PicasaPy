@@ -960,6 +960,201 @@ képkocka.
 Nem mérhető: az Időrend (Ctrl+5) és a diavetítés (Ctrl+4) a Wine alatt
 fekete képet ad. A Shift+kattintásos tartománykijelölést a végrehajtó lépés-
 készlete nem tudja előállítani (módosítóbillentyűs kattintás nincs benne).
+## Főmenük folyamatai (#6845)
+
+Mérés dátuma: 2026-11-12. Hatókör: a négy megnevezett főmenü 38 tétele, az eredeti ki00-ki07 képek indexei szerint. Az eredeti ki08 az Edit, Folder, Create és Help menüt tartalmazza, nem része a körnek. Minden PicasaPy-futás két kijelölt képpel indult; a QML-menüparancsot kattintás indította, majd 3 másodperc múlva 1280x1024-es offscreen Qt-felvétel és állapot készült. Q12 E-Mailt az email vezérlő bekapcsolásával, Q30 Picture Properties műveletet a helyes menüazonosítóval újramértem; a táblázat a javított futásokat használja.
+
+Az eredeti célképet az indexben megadott képszám azonosítja. A szennyezett képből eredeti viselkedésre nem következtetek. A fókuszt csak ott nevezem meg, ahol az állapot rögzítette; ez nem bizonyítja a billentyű-alapgombot. Az Enter viselkedést nem mértem, ezért az alapgomb NINCS MEG.
+
+| Menü | Tétel | Eredeti (kép) | PicasaPy | Eltérés | Felelős fájl |
+|---|---|---|---|---|---|
+| File | New Album | ki00/kepernyo__11.png: Album Properties, Name, Date, Music, Place, Description, OK, Cancel | Q00: nincs párbeszéd; Untitled album jön létre 2 képpel, a .picasa.ini mindkét képhez albumtokent kap | Eltér: eredeti előbb adatbevitelt kér, PicasaPy azonnal létrehozza | PicasaFileMenu.qml |
+| File | Add Folder to Picasa | ki00/kepernyo__17.png: Folder Manager | Q01: folderManagerDialog, mappafa, scan-beállítások, OK, Cancel, Help | A nyitófelület egyezik; további szkennelési hatás nem mért | FolderManagerDialog.qml |
+| File | Add File to Picasa | ki00/kepernyo__23.png: fájlválasztó | Q02: addFileDialog, Open, Cancel | A fájlválasztó megnyílik | AddFileDialog.qml |
+| File | Import From | ki00/kepernyo__29.png: importálási ablak | Q03: importSourceDialog; forrás, fájltípus, cél, névadás, másolás utáni művelet, Import, Close | A nyitófelület megnyílik; importot nem indítottam | ImportSourceDialog.qml |
+| File | Import from Google Photos | ki00/kepernyo__35.png: főablak, látható változás nélkül | Q04: főablak marad, menüpont inaktív | Nyitott: eredeti műveleti hatás nem látható, PicasaPy nem indít importot | PicasaFileMenu.qml |
+| File | Open File(s) in an Editor | ki01/kepernyo__11.png: Wine Internet Explorer és helyi fájl-URL | Q05: fileOpsErrorDialog, az alapértelmezett alkalmazás nem tudta megnyitni a 2 képet | Eltérésjelölt; offscreen külső alkalmazás indítás miatt valódi asztalon újramérendő | PicasaFileMenu.qml |
+| File | Move to New Folder | ki01/kepernyo__17.png: előző Internet Explorer ablak maradt a képen | Q06: moveToNewFolderDialog | A mérés szennyezett, újramérendő | FolderPropertiesDialog.qml |
+| File | Rename | ki01/kepernyo__23.png: előző Internet Explorer ablak maradt a képen | Q07: renameManyDialog | A mérés szennyezett, újramérendő | SaveDialogs.qml |
+| File | Save As | ki01/kepernyo__29.png: előző Internet Explorer ablak maradt a képen | Q08: saveAsFileDialog, Save As fájlválasztó | A mérés szennyezett, újramérendő | SaveDialogs.qml |
+| File | Save a Copy | ki01/kepernyo__35.png: előző Internet Explorer ablak maradt a képen | Q09: 2 másolat készült, értesítés; rács 26 fájlra nőtt | A mérés szennyezett, újramérendő; PicasaPy lemez/rács hatása rögzített | SaveDialogs.qml |
+| File | Export Picture to Folder | ki02/kepernyo__11.png: Export, Resize to 800 pixels, Automatic, vízjel és sorszámozás ki | Q10: exportDialog, Use original size, Automatic, vízjel és sorszámozás ki | A resize választás eltér a felvett állapotban; profil-előzmény nincs meg | ExportDialogs.qml |
+| File | Print | ki02/kepernyo__17.png: nyomtatási ablak és előnézet | Q11: 3 másodperc után főablak, másik ablak nélkül | Látható eltérésjelölt; offscreen mérés miatt valódi kijelzőn újramérendő | PrintDialog.qml |
+| File | E-Mail | ki02/kepernyo__23.png: Select Email, Native Mail Client, Google Mail, emlékezzen jelölő, Help, Cancel | Q12: emailChoiceDialog ugyanilyen választóval, Native Mail Client kiválasztva | A látható folyamat egyezik; Enter-alapgomb nem próbált | EmailChoiceDialog.qml |
+| File | Order Prints | ki02/kepernyo__29.png: Shop még nem látszik, a következő képen már igen | Q13: File menü maradt nyitva, külön ablak nincs | A mérés szennyezett, újramérendő | PicasaFileMenu.qml |
+| View | Small Thumbnails | ki02/kepernyo__35.png: előző Order Prints Shop ablaka látszik | Q14: tömör rács, 8 oszlop | A mérés szennyezett, újramérendő | PicasaViewMenu.qml |
+| View | Normal Thumbnails | ki03/kepernyo__11.png: normál bélyegképrács | Q15: normál rács marad | A látható nézet egyezik | PicasaViewMenu.qml |
+| View | Edit View | ki03/kepernyo__17.png: szerkesztő nézet | Q16: szerkesztő nézet | A látható nézet egyezik | PicasaViewMenu.qml |
+| View | Properties | ki03/kepernyo__23.png: Properties panel | Q17: Properties panel | A panel megnyílása egyezik | PicasaViewMenu.qml |
+| View | Tags | ki03/kepernyo__29.png: Tags panel | Q18: Tags panel | A panel megnyílása egyezik | PicasaViewMenu.qml |
+| View | People | ki03/kepernyo__35.png: People panel | Q19: People panel | A panel megnyílása egyezik | PicasaViewMenu.qml |
+| View | Places | ki04/kepernyo__11.png: főablak, Places panel nélkül | Q20: Places panel, 0 helyhez rendelt kép; térkép nincs | Látható eltérés; tesztképeken nincs földrajzi adat, tartalmi viselkedés nyitott | PicasaViewMenu.qml |
+| View | Slideshow | ki04/kepernyo__17.png: főablak, diavetítés nélkül | Q21: teljes képernyős diavetítés | Látható eltérés a képen; eredeti késleltetett állapot újramérendő | PicasaViewMenu.qml |
+| View | Timeline | ki04/kepernyo__23.png: főablak, idővonal nélkül | Q22: timelineView ablak, 800x800 | Látható eltérés, az eredeti képen nincs idővonal | PicasaViewMenu.qml |
+| View | Search Options | ki04/kepernyo__29.png: főablak, popup nélkül | Q23: searchOptionsPopup; csak arcos képek vagy csak duplikátumok | Látható eltérés a célképek között | PicasaViewMenu.qml |
+| View | Small Pictures | ki04/kepernyo__35.png: főablak és képrács | Q24: főablak és képrács, nincs lényegi látható változás | A képen egyezik; rejtett beállítás és későbbi hatás nincs vizsgálva | PicasaViewMenu.qml |
+| View | Hidden Pictures | ki05/kepernyo__11.png: nincs látható rejtett kép | Q25: nincs változás, tesztmappában nincs rejtett kép | Nyitott: rejtett képes adaton mérendő | PicasaViewMenu.qml |
+| View | Use Color Management | ki05/kepernyo__17.png: látható ICC/színváltozás nélkül | Q26: nincs látható panel vagy képi változás | Nyitott: színprofilos kép és mérése nélkül nem dönthető el | PicasaViewMenu.qml |
+| Picture | View and Edit | ki05/kepernyo__23.png: képszerkesztő nézet | Q27: képszerkesztő nézet | A látható nézet egyezik | PicasaPictureMenu.qml |
+| Picture | Undo All Edits | ki05/kepernyo__29.png: megerősítés, Remove Edits és No | Q28: undoAllEditsDialog, két gomb; Remove Edits fókuszban | A látható párbeszéd egyezik; a visszavonást nem hagytam jóvá | PicasaPictureMenu.qml |
+| Picture | Reset Faces | ki05/kepernyo__35.png: nincs arcadat látható | Q29: nincs változás, tesztmappában nincs arcadat | Nyitott: arcot tartalmazó tesztadaton újramérendő | PicasaPictureMenu.qml |
+| Picture | Properties | ki06/kepernyo__11.png: Picture Properties tartalma | Q30: Properties drawer; File Path, File Size, Dimensions, File Date, JPEG Quality, Keywords | A panel megnyílik; mezőnkénti értékparitás nincs dokumentálva | PropertiesPanel.qml |
+| Tools | Folder Manager | ki06/kepernyo__17.png: Folder Manager | Q31: folderManagerDialog, mappafa és figyelési beállítások | A nyitóablak egyezik; összes beállítás és lemez/indexhatás nincs végigpróbálva | FolderManagerDialog.qml |
+| Tools | People Manager | ki06/kepernyo__23.png: People Manager | Q32: peopleManagerDialog | A nyitóablak egyezik; személyadat-hatás nincs végigpróbálva | PeopleManagerDialog.qml |
+| Tools | Batch Upload | ki06/kepernyo__29.png: főablak, bejelentkezés a következő képen jelenik meg | Q33: Tools menü marad nyitva, külön ablak nincs | A mérés szennyezett, újramérendő | PicasaToolsMenu.qml |
+| Tools | Adjust Date and Time | ki06/kepernyo__35.png: előző Batch Upload bejelentkezési ablaka | Q34: adjustTimestampDialog, két kép; jelenlegi/új dátum és idő, relatív vagy azonos dátum, OK, Cancel | A mérés szennyezett, újramérendő | AdjustTimestampDialog.qml |
+| Tools | Configure Buttons | ki07/kepernyo__11.png: Available: Geo-Tag, Order Prints, Collage, BlogThis; Current üres | Q35: configureButtonsDialog; Available üres, Current 4 alapgomb; Add, Remove, Move Up/Down, Reset, OK, Cancel | A lista eltér; profil-előzmény nincs meg | ConfigureButtonsDialog.qml |
+| Tools | Options | ki07/kepernyo__17.png: General, E-Mail, File Types, Slideshow, Printing, Network, Web Albums, Name Tags | Q36: optionsDialog, 680x460; ezeken túl Google Photos lap; OK fókuszban | A látható lapkészlet eltér; profil és verzió hatása nem különült el | OptionsDialog.qml |
+| Tools | Back Up Pictures | ki07/kepernyo__23.png: 2 kép kijelölve, backup folyamat és Wine IMAPI2 hibaablak | Q37: BackupHost, rács 0 kép, kijelölés törlődik; New Set, Select All/None, Burn, Cancel, Restore | Felület és kijelölés eltér; eredeti lemezírás Wine hiba miatt nem mérhető | BackupHost.qml |
+
+### Mért eltérésjelöltek
+
+- New Album: az eredeti a létrehozás előtt Album Properties ablakot nyit; PicasaPy azonnal létrehozza az albumot. A helyi .picasa.ini és mindkét kép hozzárendelése igazolja a PicasaPy oldali hatást.
+- Export: az eredeti képen 800 pixeles resize, PicasaPyban eredeti méret szerepel; a profil-előzmény hiánya miatt ez csak a felvett állapot eltérése.
+- Print: PicasaPyban 3 másodpercen belül nem jelent meg ablak; valódi kijelzőn újramérendő.
+- Places, Slideshow, Timeline és Search Options: a PicasaPy célfelület eltér az eredeti képen látható főablaktól. A késleltetett állapotot ellenőrizni kell; Placeshez földrajzi adatok szükségesek.
+- Configure Buttons és Options: a lista/lapkészlet eltér; profilt és termékverziót külön kell mérni.
+- Back Up Pictures: a PicasaPy rács és kijelölés eltér; eredeti lemezre írás nem mérhető Wine IMAPI2 hibával.
+- Open File(s) in an Editor: PicasaPy alapalkalmazás hibát jelzett offscreen; valódi asztali futásban mérendő.
+
+### Szennyezett és korlátozott eredeti felvételek
+
+Újramérendő: Move to New Folder, Rename, Save As, Save a Copy, Order Prints, Small Thumbnails, Batch Upload és Adjust Date and Time. Az Open Editor képe a saját Internet Explorer ablakát mutatja, de PicasaPy külső alkalmazásindítása offscreen nem összehasonlítható. Import from Google Photos, Hidden Pictures, Use Color Management és Reset Faces hatása a szolgáltatás vagy megfelelő tesztadat hiánya miatt nem mérhető. Print, Slideshow és Timeline késleltetett megjelenését valódi kijelzőn kell ellenőrizni.
+
+### A jegy „Kész, ha” pontjai a 38 főmenü tételre
+
+- PicasaPy oldali kattintásos mérés mind a 38 sorhoz: ✅ Q00-Q37; Q12 és Q30 javított futással.
+- Eredeti oldali megbízható kép minden sorhoz: ⛔ nyolc eredeti sor szennyezett vagy késleltetett hatású; újramérendőként jelölve.
+- Minden sor bizonyíték szerinti besorolása: ✅ bizonytalan esetek nyitottként, korlátozottként vagy szennyezettként szerepelnek.
+- A paritas-ellenorzes.md frissítése: ✅ mind a 38 sorhoz eredeti képazonosító, PicasaPy állapot, eltérés és felelős felületi fájl szerepel.
+- Eltérések külön termékjegyei: ✅ a New Album, a Copy All Effects, a Remove from Picasa, az Export as HTML Page és a Gift CD eltérése a #6861 megvalósítási jegyben.
+
+A mérési képek és nyers futásállapotok csak az engedélyezett ideiglenes területen voltak; a feladat végén törlődnek. A tartós eredmény ez a táblázat és a .codex-jelentes.md. Ez a kör csak a 38 főmenüt fedi le; az eredeti jegy 20 mappanézetbeli művelete nincs késznek nyilvánítva.
+
+
+### Főmenük folyamatai, második rész (#6860)
+
+Az eredeti oldalon a `job00-index.json` - `job04-index.json` képkocka-hivatkozásait vizsgáltam. A PicasaPy oldalon minden tételt külön, izolált 24 képes próbafutásban nyitottam meg, két kijelölt képpel, Qt `QTest.mouseClick` egérkattintással, majd 3 másodperc várakozással. A panel- és ablakállapotot, címet, látható vezérlőket, kijelölést és az aktív fókuszt rögzítettem.
+
+A felvevő az `activeFocus` állapotot rögzítette, de a Qt Quick vezérlők alapértelmezett gombját nem. Ezért az alapértelmezett gomb mindenhol `NINCS MEG`; az aktív fókusz külön adat, és nem tekintem alapértelmezett gombnak. Ahol a PicasaPy-ablak neve, címe vagy fő vezérlői nem látszanak, ezt külön jelölöm.
+
+| Menü | Tétel | Eredeti (a kép alapján) | PicasaPy | Eltérés | Felelős fájl |
+|---|---|---|---|---|---|
+| Edit | Copy All Effects | `ki00/kepernyo__11.png`, `__12.png`: két kép kijelölve; `Info` ablak: “Please select a single picture to copy the effects from.” | Nincs új ablak vagy panel; a kijelölés `[0, 1]` marad. A vágólap tartalmát nem mértem. | Az eredeti elutasítja a többképes kijelölést és üzenetet mutat; PicasaPyben nem jelent meg üzenet. | `PicasaEditMenu.qml`, `PicasaMenuBar.qml` |
+| Edit | Select All | `ki00/kepernyo__17.png`: mind a 24 kép kijelölve, a tálcán 24 kép látszik. | Nincs ablak; mind a 24 tesztkép kijelölt. | A mért állapot egyezik. | `PicasaEditMenu.qml`, `PicasaMenuBar.qml` |
+| Edit | Select Starred | `ki00/kepernyo__23.png`: a képek nincsenek kijelölve. | Nincs ablak; a próbában nem volt csillagozott kép, kijelölés `[]`. | A mért állapot egyezik a csillagozatlan mintán. | `PicasaEditMenu.qml`, `PicasaMenuBar.qml` |
+| Edit | Invert Selection | `ki00/kepernyo__29.png`: nincs kijelölt kép; a képernyő nem mutatja a kétképes kiinduló állapot megfordítását. | Nincs ablak; a `[0, 1]` kijelölésből `[2..23]`, azaz 22 kép lett kijelölve. | Az eredeti képkocka nem igazolja a várt eredményt; újramérendő. | `PicasaEditMenu.qml`, `PicasaMenuBar.qml` |
+| Edit | Clear Selection | `ki00/kepernyo__34.png` - `__36.png`: a menü nyitva, a `Clear Selection` szürke; a képen a mappa kijelölt, a képtálca üres. Nem a kétképes induló állapot látszik. | Nincs ablak; a `[0, 1]` kijelölés `[]` lett. | Az eredeti felvétel állapota nem alkalmas az eredmény összevetésére; újramérendő. | `PicasaEditMenu.qml`, `PicasaMenuBar.qml` |
+| Folder | Edit Description | `ki01/kepernyo__11.png`: `Folder Properties`; Name, Date, `Automatic date`, Music jelölő és Browse, Place taken, Description, OK / Cancel. | `folderPropertiesDialog`, cím `Folder Properties`; Name `PicasaTeszt`, Date mező `15 Jan 2020` helyőrző, `Automatic date`, Music jelölő, letiltott Browse, Place taken, Description, OK / Cancel. A fókusz a Name mezőn van. | A fő mezők és gombok egyeznek. A dátum eltérő megjelenése a két próbamappa eltérő dátumadata mellett nem általánosítható. | `PicasaFolderMenu.qml`, `FolderPropertiesDialog.qml` |
+| Folder | Refresh Thumbnails | `ki01/kepernyo__17.png`: a mappanézet látszik, új ablak vagy panel nem. | Nincs új ablak vagy panel; a kijelölés `[0, 1]` marad. | A látható állapot egyezik; a háttérben végzett frissítés tartalmát a képkocka nem mutatja. | `PicasaFolderMenu.qml` |
+| Folder | Print Contact Sheet | `ki01/kepernyo__23.png`: `Print Layout`; Wallet, 3.5×5, 4×6, 5×7, 8×10, Full Page méretek, Shrink to Fit / Crop to Fit, Border/Text Options, PDF nyomtató, Copies per Photo, Print / Cancel. | `printDialog`, `Print...`; 2 kép, 1 oldal, `Contact Sheet`, oszlopok `4`, méretek 10×15, 13×18, 15×20, 20×25 cm, Contact Sheet, FullPage; Border and Text Options, `Print to a PDF file...`, Help / Print / Close. Nincs telepített nyomtató, a Print és Printer Setup letiltott. | A párbeszéd szerkezete és méretlistája eltér. A Print letiltását a nyomtató nélküli mérőgép okozza, ezért az nem igazolt termékeltérés. | `PicasaFolderMenu.qml`, `PrintDialog.qml` |
+| Folder | Export as HTML Page | `ki01/kepernyo__29.png`: 640 px, filmhez First frame, cím `PicasaTeszt`, előre megadott exportmappa, hat sablon és XML választó, előnézet, Export / Cancel. | `webExportDialog`, cím `Export as HTML Page...`; 640 px, First frame, cím `PicasaTeszt`, mappa `(not selected)`, Browse; nincs látható sablonlista vagy előnézet, Export letiltva, Cancel. | A célmappa és sablonok hiányoznak, így Export nem indítható. | `PicasaFolderMenu.qml`, `WebExportDialog.qml` |
+| Folder | Remove from Picasa | `ki01/kepernyo__35.png`: `Confirm`, kérdés a `C:\PicasaTeszt\` és almappái eltávolításáról, Remove Folder / Cancel. | `removeFolderConfirmDialog`, cím `Confirm`; `Do not ask again`, Remove Folder / Cancel. A kérdés szövege nem látható. | PicasaPyből hiányzik a megerősítő kérdés szövege. A Remove Folder gomb fókuszban volt, de az alapértelmezett gomb nincs megmérve. | `PicasaFolderMenu.qml`, `MainDialogs.qml` |
+| Folder | Move | `ki02/kepernyo__11.png`: `Browse for Folder`, üres mappalista, Make New Folder, OK / Cancel. | `moveFolderDialog`, `Move Folder`; a rendszer mappaválasztója a próbaprojekt gyökerét és alkönyvtárait mutatja, Open / Cancel. Nem választottam célmappát. | A párbeszéd és induló hely eltér. A választó natív megjelenése és gyökere platform- illetve próbakörnyezet-függő; a művelet kimenete nincs mérve. | `PicasaFolderMenu.qml`, `FolderPaneMenus.qml` |
+| Folder | View Slideshow | `ki02/kepernyo__17.png`: teljes képernyős diakép. | Teljes képernyős `SlideshowView`; nincs külön párbeszédpanel. | A mért megjelenítési mód egyezik. | `PicasaFolderMenu.qml`, `SlideshowView.qml` |
+| Create | Make a Poster | `ki02/kepernyo__23.png`: `Poster Settings`, 200%, Paper size 4x6, Overlap tiles, OK / Cancel. | `posterDialog`, `Poster Settings`; 200%, Paper size 10x15, Overlap tiles, OK / Cancel. | A papírméret felirata eltér; a két beállítás közötti megfelelést külön nem mértem. A fókusz és az alapértelmezett gomb nincs meg. | `PicasaCreateMenu.qml`, `PosterCreateDialog.qml` |
+| Create | Create a Gift CD | `ki02/kepernyo__29.png`: Gift CD panel, CD név `PicasaTeszt`, Include Slideshow, fotóméret; az IMAPI2 hibaablak szerint a CD motor nem érhető el, OK / No. | Beágyazott Gift CD panel; CD Name mező üres, 16 karakteres korlát, Photo Size `Original Size`, Add More, Burn Disc, Cancel. Nincs IMAPI2 hibaablak. | A PicasaPy panelen nem látszik az Include Slideshow választó vagy az eredetiben előtöltött név. A CD-írás eredménye egyik képből sem állapítható meg. | `PicasaCreateMenu.qml`, `GiftCdHost.qml`, `PublishPanel.qml` |
+| Create | Publish to Blogger | `ki02/kepernyo__35.png`: a fő Picasa ablak látszik, külső böngésző vagy céloldal nem. | A `Publish to Blogger...` menüpont szürke és letiltott; nincs új ablak. | Az eredeti kép nem mutatja, mit nyit a parancs; a PicasaPy tétel letiltott. Az eredeti cél mérésre vár. | `PicasaCreateMenu.qml` |
+| Create | Set as Desktop | `ki03/kepernyo__11.png`: Confirm kérdés az asztali háttér lecseréléséről, Set Desktop / No. | `wallpaperConfirmDialog`, `Confirm`, azonos kérdésszöveg és Set Desktop / No. A Set Desktop fókuszban volt. | A mért megerősítés egyezik. A műveletet nem erősítettem meg. | `PicasaCreateMenu.qml`, `MainDialogs.qml` |
+| Create | Picture Collage | `ki03/kepernyo__17.png`: Picture Collage panel, Settings / Clips, elrendezés, Draw Shadows, Show Captions, Desktop Background, Create Collage, Reset, Close. | `Collage` munkalap; Settings / Clips (2), Picture Pile, 4:3, Draw Shadows és Show Captions bejelölve, Desktop Background, Create Collage, Reset, Close. | A fő panel, beállítások és gombok egyeznek. | `PicasaCreateMenu.qml`, `CollageCreateDialog.qml` |
+| Help | Help Contents and Index | `ki04/kepernyo__11.png`, `__12.png`: csak a főablak látszik, a súgócél nem. A kép nem igazolja a megnyíló tartalmat. | `helpDialog` réteg, `mainHelpWindow`, cím `Help Contents and Index`; kereső, tartalomnézet és Close. | Az eredeti cél a kép alapján nyitott kérdés; újramérendő. | `PicasaHelpMenu.qml`, `HelpDialog.qml` |
+| Help | Keyboard Shortcuts | `ki04/kepernyo__17.png`: csak a főablak látszik, célablak nem. A bináris viselkedési spec szerint a parancs böngészőt nyit, `answer=11139`. | `helpDialog` réteg, `mainHelpWindow`, cím `Help Contents and Index`; a lap címe `Keyboard Shortcuts`, billentyűlista, kereső és Close. | Az eredeti böngészős cél és a PicasaPy beépített súgóoldala eltér. A megadott eredeti kép nem mutatja a böngészőt. | `PicasaHelpMenu.qml`, `HelpDialog.qml`, `MainKeyboardShortcuts.qml` |
+| Help | About Picasa | `ki04/kepernyo__23.png`: `About Picasa`, 3.9.141 (Build 259) for Linux, licenc-hivatkozás és OK. | `aboutDialog`, `About PicasaPy`, v1.0.102, Website / Privacy Policy / Terms of Service és OK. | A márkanév és verzió természetesen eltér; az ablak megnyitása egyezik. | `PicasaHelpMenu.qml`, `AboutDialog.qml` |
+| Help | Uninstalling Picasa | `ki04/kepernyo__29.png`: a főablak látszik, az eltávolító célja nem. Az eredeti menükatalógus szerint a tétel létezik, a cél telepítő-specifikus. | Nincs ilyen tétel a PicasaPy Help menüben; a kattintásmérő nem talált egyező menüelemet. | A menütétel hiányzik, az eredeti eltávolító viselkedés nyitott és platformfüggő. | `PicasaHelpMenu.qml` |
+| Help | Picasa Forums | `ki04/kepernyo__35.png`: a főablak látszik, böngészőablak nem. A bináris index a menü-diszpécserhez rendeli a `http://forums.picasa.com/` URL-t; a kép nem mutatja a nyitást. | A `Picasa Forums` tétel szürke és letiltott; nincs böngészőablak. | Az eredeti külső fórumhivatkozás és a letiltott PicasaPy-tétel eltér. A kép az eredeti böngészőindítást nem igazolja. | `PicasaHelpMenu.qml` |
+
+#### Igazolt eltérések és javasolt fejlesztési jegyek
+
+- **Copy All Effects:** két kép kijelölésekor az eredeti egyképes korlátozó üzenetet mutat, PicasaPy nem. Javasolt fejlesztés: ellenőrizze a kijelölés darabszámát, és két vagy több kép esetén jelenítse meg az eredetihez igazított figyelmeztetést. A másolt effekt tartalmát ez a kör nem mérte.
+- **Print Contact Sheet:** az eredeti `Print Layout` felület és a PicasaPy `Print...` ablakának elrendezése és méretválasztói eltérnek. Javasolt fejlesztés: a nyomtatási párbeszédablak felületének közelítése az eredetihez; a nyomtató nélküli mérésből ne következzen a Print gomb állandó tiltása.
+- **Export as HTML Page:** PicasaPyben nincs előre kiválasztott exportmappa, sablonlista vagy előnézet, és az Export letiltott. Javasolt fejlesztés: az eredeti alapértelmezett célmappa, sablonválasztás és előnézet biztosítása, Export csak a hiányzó kötelező mező kitöltéséig legyen tiltott.
+- **Remove from Picasa:** a PicasaPy Confirm ablakában nem látható az eltávolítási kérdés. Javasolt fejlesztés: jelenjen meg a mappa nevét és almappáit megnevező kérdés, a Remove Folder és Cancel gombok előtt.
+- **Create a Gift CD:** PicasaPy mérésében üres CD-név mező és nincs Include Slideshow választó, miközben az eredeti képen ezek vannak. Javasolt fejlesztés: a CD név alapértékének és a diavetítés-választónak a paritása; a CD-írási út külön mérendő.
+- **Help webtételek:** az eredeti `Keyboard Shortcuts` és `Picasa Forums` bináris útja külső böngészőcélra utal, PicasaPyben az egyik helyi súgóoldalra jut, a másik letiltott. Javasolt fejlesztés csak termékdöntés után: a helyi súgó vagy az eredeti külső cél kívánt viselkedésének rögzítése.
+
+A megvalósítás a #6861 jegyben folyik. A `Make a Poster` méretfeliratát, az `Edit Description` dátumát és a `Move` rendszerpárbeszédét nem emelem fejlesztési eltéréssé, mert a mért eltérésből azonos próbaadat és platform nélkül nem következik hibás működés.
+
+#### Szennyezett vagy hiányos eredeti képek, újramérendő
+
+- `Edit > Invert Selection`, `ki00/kepernyo__29.png`: a képen nincs kijelölés, ezért a két kijelölt képből induló hatás nem látható.
+- `Edit > Clear Selection`, `ki00/kepernyo__34.png` - `__36.png`: a menüpont szürke, a képen mappakijelölés és üres képtálca látható.
+- `Create > Publish to Blogger`, `ki02/kepernyo__35.png`: a böngésző vagy megnyitott cél nem látható.
+- `Help > Help Contents and Index`, `ki04/kepernyo__11.png` - `__12.png`: a súgócél nem látható.
+- `Help > Keyboard Shortcuts`, `ki04/kepernyo__17.png`: a böngésző nem látható; a böngészős útvonalat a meglévő bináris spec rögzíti.
+- `Help > Uninstalling Picasa`, `ki04/kepernyo__29.png`: az eltávolító cél nem látható.
+- `Help > Picasa Forums`, `ki04/kepernyo__35.png`: a böngésző nem látható; az URL-t a bináris index adja.
+
+Másik tétel ablakát egyik fenti képen sem láttam. A hiányos képkocka nem bizonyítja, hogy a parancs nem indult el.
+
+#### A jegy „Kész, ha” pontjai
+
+- ✅ Mind a 22 tétel táblázatban szerepel az eredeti kép, a PicasaPy állapota, az eltérés és a felelős QML-fájl megadásával.
+- ✅ A hiányos vagy hibás kiinduló állapotú eredeti képek külön újramérendő listában vannak; ezekre nem állítottam be nem látott eredményt.
+- ✅ A Copy All Effects, a Remove from Picasa, az Export as HTML Page és a Gift CD eltérése a #6861 megvalósítási jegybe került.
+
+
+## Tálca és mappa-eszköztár (#6862)
+
+A PicasaPy-oszlop minden sora két kijelölt képpel, valódi QTest-egérkattintással
+és a kattintás után 3 másodperccel készült. A képernyőkép és az állapotfájl a
+mérés idején a munkafa `.bt/6862/` könyvtárában volt; a feladat előírása szerint
+az ideiglenes mérési fájlok a munka lezárásakor törlendők. Az eredeti kockák és
+az őket megelőző/követő állapotok a megadott `job-639` és `job-640` felvételek.
+
+| Gomb | Eredeti Picasa 3.9 | PicasaPy (2 kijelölés, QTest) | Eltérés / mérési korlát | Felelős PicasaPy-fájl |
+|---|---|---|---|---|
+| Tálca: Email | job-639/9: „Select Email”; Native Mail Client és Google Mail választás, emlékezzen jelölőnégyzet, Help/Cancel. | A `trayEmailButton` megnyitja az `emailChoiceDialog`-ot. | A folyamat egyezik. Az eredeti tálcagomb és a `0x005cb990` menü-diszpécser közötti konkrét hívási kapcsolat nincs igazolva; a PicasaPy tálca és Fájl/E-Mail ugyanarra a `sendSelectionByEmail()` műveletre fut. | `TrayActionArea.qml`, `MainTrayBar.qml`, `MainWindowCommands.qml` |
+| Tálca: Print | job-639/14: teljes Print Layout nézet, lap- és képelrendezés, nyomtatóválasztó, előnézet, Print/Cancel. | A `trayPrintButton` bal oldali `printDialog` panelt nyit, két kép számlálójával és előnézettel; nincs telepített nyomtató. | A nyomtatási folyamat megnyílik, de a felület és a nézet eltér. Nyomtatás végrehajtása nem mérhető nyomtató hiányában. A tálca és a PicasaPy menü ugyanazt az `openPrint()` műveletet hívja. | `TrayActionArea.qml`, `MainTrayBar.qml`, `MainWindowCommands.qml`, `MainWindowDialogStack.qml`, `PrintDialog.qml` |
+| Tálca: Export | job-639/19: Export to Folder, két kép, Resize to 800 pixels, minőség, film, vízjel, Export/Cancel. | Az `exportDialog` megnyílik; „Use original size” aktív, célhely `<Pictures>/Picasa/Exports`. | A párbeszéd folyamata egyezik, de az értékek eltérnek. Ez egy mentett profilállapot mérése, nem tiszta profil alapértékének összehasonlítása. A tálca és a PicasaPy menü ugyanazt az `openForSelection()` műveletet hívja. | `TrayActionArea.qml`, `MainTrayBar.qml`, `ExportDialogs.qml` |
+| Tálca: Upload to Google Photos | job-639/24: a kattintás után job-639/25-től „Log in to Google” ablak nyitva. | A `trayUploadButton` látható, de bejelentkezés nélkül tiltott; kattintásra nem nyit ablakot. | Igazolt eltérés: az eredeti felkínálja a bejelentkezést, a PicasaPy tálcagombja nem indítható el. A hitelesítés utáni feltöltést egyik oldalon sem hajtottuk végre. | `TrayActionArea.qml`; engedélyezési állapot: `tray_google_photos_controller.py` |
+| Mappa-eszköztár: diavetítés | job-639/29: a Google-belépő már nyitva van a job-639/24 Upload óta; a diavetítés hatása nem látszik. | A `headerPlayButton` teljes képernyős diavetítést indít. | Az eredeti kimenet ebből a felvételből nyitott. A PicasaPy fejléc a csoport kezdősorát adja át; a menü ugyanahhoz az indító művelethez `-1` indexet ad. Az eredeti fejlécgomb menüparancshoz rendelése nincs igazolva. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml`, `MainLibraryCanvas.qml`, `MainSlideshow.qml` |
+| Mappa-eszköztár: kollázs | job-640/9: kollázsprojekt; két kijelölt kép a vásznon, „Clips (22)”. | A `headerCollageButton` Kollázs projektlapot nyit, 24 klippel/csomóponttal; a kijelölés és a held sorok továbbra is csak `[0, 1]`. | Igazolt eltérés: a fejléc a teljes 24 képes csoportot adja át, míg az eredeti mérésben két kép van betöltve, 22 maradék klippel. A PicasaPy menübelépő forrása külön útvonal. Az eredeti menü `ID_COLLAGEMAKER` és az `outputlayout/collage` azonos bináris kezelőre fut; a képkockán kattintott fejlécvezérlő és a bináris UI-címke közti kapcsolat nem szerepel a meglévő kimenetben. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml`, `MainProjectTabs.qml` |
+| Mappa-eszköztár: film | job-640/14: „This feature is not supported for Linux” hiba. | A `headerMovieButton` Filmkészítő lapot nyit 24 klippel. | Az eredeti Windows-filmfolyamat és a forrásképek paritása a Linux-hiba miatt nem mérhető; a PicasaPy a teljes csoportot adja át. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml`, `MainProjectTabs.qml`, `CreateDialogs.qml` |
+| Mappa-eszköztár: csillag | job-640/19: a két kép kijelölve marad a kattintás után. | A `headerSelectStarredButton` után a kijelölés üres; a mérési képek egyike sincs csillagozva. | Az eredeti képek csillag-metaadata nem szerepel a job állapotfájljaiban, ezért azonos bemeneti csillagállapot mellett nem hasonlítható össze. Az eredeti `ID_SELECTSTAR` menüparancs ismert, a fejlécgomb menü-diszpécserhez kötése nincs igazolva. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml` |
+| Mappa-eszköztár: Upload | job-640/24: a kattintás után job-640/25-től Google-belépő nyitva. | A `headerUploadButton` látható, 86×22 képpontos és tiltott; kattintásra nincs ablak. A QML-ben a gomb `enabled: false`, kattintáskezelője nincs. | Igazolt eltérés: az eredeti gomb bejelentkezési folyamatot indít, a PicasaPy fejlécgomb nem működik. | `LightboxHeaderButtons.qml` |
+| Mappa-eszköztár: Upload lenyíló | job-640/29: a korábbi Upload után már nyitva lévő Google-belépő elfedi a lenyíló saját hatását. | A gomb jobb szélére, a nyíl helyére kattintva sem nyílik menü; a vezérlő tiltott. | Az eredeti lenyíló működése nyitott kérdés a szennyezett kocka miatt. A PicasaPy-gombnak nincs használható lenyílója. | `LightboxHeaderButtons.qml` |
+
+### Eredeti menü-diszpécser és a gombok azonossága
+
+A meglévő `0x005cb990` Ghidra-kimenet és a menüépítő kimenet az alábbi
+menüparancs-azonosítókat támasztja alá: `ID_FILE_EMAIL` = `0x9c97`,
+`ID_FILE_EXPORTTOFOLDER` = `0x9c81`, `ID_FILE_PRINT` = `0xe107`,
+`ID_ALBUM_SLIDESHOW` = `0x9c6d`, `ID_VIEW_SLIDESHOW` = `0x9c9f`,
+`ID_COLLAGEMAKER` = `0x9d62`, `ID_TOOLS_UPLOAD` = `0x9df7`,
+`ID_SELECTSTAR` = `0x9d5b`. A diszpécserben a két slideshow-ID közös
+`FUN_005e8a70` függvényre fut, de külön parancsazonosító marad.
+
+Két eredeti gombút kapcsolható közvetlenül a menüparancs közös kezelőjéhez:
+az `outputlayout/collage` ág és a `0x9d62` menüág is `FUN_007463c0`-t hívja;
+a `thumbui/webupload` ág és a `0x9df7` menüág is `FUN_0059e920`-t hívja.
+Ezek a közös kezelőt, nem feltétlenül azonos eseményküldési útvonalat
+igazolják. A `0x005cb990` menüágak és a konkrét job-639/640 Email, Print,
+Export, slideshow, film és csillag fejléc-/tálcagombja közötti közvetlen
+kapcsolatot a meglévő diszasszemblálási kimenet nem igazolja; az ilyen
+azonosság nyitott, nem következtethető ki a feliratból.
+
+PicasaPy oldalon a tray Email/Print/Export gombok rendre ugyanazt a
+`sendSelectionByEmail()`, `openPrint()` és `openForSelection()` műveletet
+hívják, mint a főmenü megfelelő tételei. A fejléc kollázsa a teljes
+mappacsoportot adja át, míg a főmenü a tartott/kijelölt sorokból indul; a
+fejléc diavetítése a csoport kezdősorát, a menü az alapértelmezett `-1`
+értéket adja át. A fejléc Upload gombjának nincs eseménykezelője.
+
+### Bizonyítottság és következő mérés
+
+Megerősített eltérés a kollázs bemeneti halmaza, valamint a Google Photos
+Upload engedélyezési/bejelentkezési útja: az eredeti képkockák, a PicasaPy
+valós kattintásos állapota és az ettől külön olvasott forráskód egymást
+támasztják alá. A Print nézetének különbsége is látható, a tényleges
+nyomtatás viszont nyomtató hiányában nyitott. Az Export értékkülönbsége,
+a csillag eredménye, a slideshow, a Film és az Upload lenyíló eredeti
+folyamata nem dönthető el teljesen a megadott mérésekből. A slideshow és
+Upload-lenyíló új eredeti mérése a kérdéses gombot korábbi Upload nélkül
+kattintsa; a Filmhez Windows környezetben készült felvétel kell; a
+csillagnál az eredeti képek csillag-metaadatát is rögzíteni kell.
+
+A kollázs bemeneti halmazának és a kijelentkezett Upload gomboknak az eltérése a #6865 megvalósítási jegyben.
+
 
 ## Folyamatszintű összevetés (#6845)
 
