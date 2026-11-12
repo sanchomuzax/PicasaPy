@@ -277,6 +277,14 @@ class WebExportController(BackgroundWorkerMixin, QObject):
 
         return str(pictures_dir() / self.HTML_EXPORT_MAPPA)
 
+    @Slot(str, result=str)
+    def defaultWebExportTargetForFolder(self, folder_path: str) -> str:  # noqa: N802
+        """A Picasa HTML-export mappájának almappája az aktuális mappanévvel."""
+        base = self.defaultWebExportTarget()
+        folder_name = str(folder_path or "").rstrip("/\\")
+        folder_name = folder_name.replace("\\", "/").rsplit("/", 1)[-1]
+        return str(Path(base) / folder_name) if base and folder_name else base
+
     @Slot(str, str, str, int, bool)
     def generateWebExport(
         self,

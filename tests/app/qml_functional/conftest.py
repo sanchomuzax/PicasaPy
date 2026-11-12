@@ -142,6 +142,7 @@ def _build_qml_app(
     belyegkep_meret: int = 32,
     valodi_belyegkep: bool = False,
     email_vezerlo: bool = False,
+    web_export_vezerlo: bool = False,
     show_only_big_images: bool | None = False,
     keep_modul=None,
     nezetek_elore_epit: bool = True,
@@ -418,6 +419,16 @@ def _build_qml_app(
     if email_controller is not None:
         engine.rootContext().setContextProperty(
             "emailController", email_controller
+        )
+    if web_export_vezerlo:
+        from picasapy.app.webexport_controller import WebExportController
+
+        web_export_controller = WebExportController(
+            photo_source=lambda: controller.photos.photos,
+            settings=settings,
+        )
+        engine.rootContext().setContextProperty(
+            "webExportController", web_export_controller
         )
     engine.load(str(app_module._APP_DIR / "qml" / "Main.qml"))
     window = _validated_qml_root_window(engine.rootObjects())

@@ -240,8 +240,7 @@ Rectangle {
 
     function eltavolitasAPicasabol(path) {
         if (!path) return
-        paneMenus.folderContextMenu.folderPath = path
-        paneMenus.removeFolderConfirm.open()
+        _askRemoveFolder(path)
     }
 
     //: #422/#3460: a mappa `album.fen` párbeszéde (név, dátum, hely,

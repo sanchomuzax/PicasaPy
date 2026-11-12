@@ -199,8 +199,12 @@ Window {
             if (typeof webExportController.webExportPrefs === "function")
                 prefs = webExportController.webExportPrefs()
             if (webExportWindow.targetFolder.length === 0) {
-                webExportWindow.targetFolder = prefs.targetDir
-                    || webExportController.defaultWebExportTarget()
+                var defaultTarget = typeof webExportController
+                        .defaultWebExportTargetForFolder === "function"
+                    ? webExportController.defaultWebExportTargetForFolder(
+                        String(controller.currentFolder || ""))
+                    : webExportController.defaultWebExportTarget()
+                webExportWindow.targetFolder = prefs.targetDir || defaultTarget
             }
             // A mentett sablont azonosító alapján keressük. HTML-módban az
             // eredeti lista első eleme (Template 1, szürke háttér) az alap;

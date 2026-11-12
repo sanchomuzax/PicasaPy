@@ -58,12 +58,12 @@ Item {
         dialogs.appWindow.clearSelection()
     }
 
-    //: #2911: a kép-helyi menü PicasaPy-kiegészítése a kijelölt képekből
-    //: készít albumot, névbekérés nélkül. Az eszköztár külön útja a #5812
-    //: alapján az Album Properties párbeszédet nyitja, és üres albumot ment.
+    // A Fájl menü és a kép helyi menüje ugyanazt az Album Properties
+    // párbeszédet nyitja, mint az eszköztár; a kijelölt sorok csak az OK után
+    // kerülnek be az albumba.
     function openNewAlbum(rows) {
         if (!controller || !rows || rows.length === 0) return
-        controller.createAlbum(dialogs.ujAlbumNeve, rows)
+        dialogs.openNewAlbumProperties(controller.currentFolder, rows)
     }
 
     // #5812: az eszköztár új album gombja az Album Properties párbeszédet

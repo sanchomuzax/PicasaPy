@@ -37,7 +37,18 @@ Rectangle {
     color: Theme.chromeBg
     clip: true
 
-    function nyisd() { host.nyitva = true }
+    function aktualisMappaNeve() {
+        var path = host.appController
+                ? String(host.appController.currentFolder || "") : ""
+        path = path.replace(/[\\/]+$/, "")
+        var reszek = path.split(/[\\/]/)
+        return reszek.length > 0 ? reszek[reszek.length - 1] : ""
+    }
+
+    function nyisd() {
+        panel.cdName = host.aktualisMappaNeve()
+        host.nyitva = true
+    }
 
     function indit(cel) {
         if (!host.appController)

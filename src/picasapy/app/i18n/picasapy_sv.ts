@@ -8207,6 +8207,13 @@ picasapy-origin-key: stringres:eMenuPicture::BatchEdit</extracomment>
         <name>PublishPanel</name>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
+            <source>Include Slideshow</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Text(publish/label_optionbox1)</extracomment>
+            <translation>Inkludera bildspel</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>The items selected with a checkmark above will be included on your Gift CD.   To add more items click the "Add More" button below.</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: tooltips:Label(publish/giftcdtext)</extracomment>
@@ -9256,6 +9263,20 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
     </context>
     <context>
         <name>MainWindowDialogStack</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="0" />
+            <source>Info</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytApp::InfoTitle</extracomment>
+            <translation>Information</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="0" />
+            <source>Please select a single picture to copy the effects from.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SELECT_ONE_ONLY</extracomment>
+            <translation>Välj en enstaka bild att kopiera effekter från.</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="328" />
             <source>Do you want to cancel this operation?</source>

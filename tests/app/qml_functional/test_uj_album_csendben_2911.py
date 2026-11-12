@@ -1,17 +1,15 @@
-"""A kijelöléses „Új album" utak csendben hoznak létre albumot (#2911).
+"""A kijelöléses „Új album" utak az Album Properties ablakot nyitják (#2911).
 
 ## A mérés
 
-Az eredeti `thumbui/newalbum` kezelője (`0x005eb810`, 245 bájt) **nem nyit
-névbekérőt**: felépíti az album-leírót, a nevét az `IDS_DEFAULT_ALBUM_NAME`
-erőforrásból tölti (`0x0055cfb2 push 0x8a`), létrehozza az albumot, és kész.
-Nincs számozás és nincs dátum — minden alkalommal ugyanaz a név.
+Az eredeti `thumbui/newalbum` menüútja az Album Properties ablakot nyitja.
+Az alapnév az `IDS_DEFAULT_ALBUM_NAME` erőforrásból jön; az album és a
+kijelölt képek csak a jóváhagyás után kerülnek a gyűjteménybe.
 
 ## Amit ez az őr állít
 
-- a Fájl menü, a Ctrl+N, a kép-helyi menü és a bal hasábra ejtés
-  névbekérés nélkül készít albumot; az eszköztár útja a #5812 szerint
-  külön Album Properties párbeszédet használ;
+- a Fájl menü és a kép-helyi menü az eszköztárral azonos Album Properties
+  párbeszédet használja, és csak jóváhagyáskor készít albumot;
 - a név a felület saját, FORDÍTHATÓ felirata (a próba-motorban a forrásalak
   `Untitled`; hogy magyarul „Névtelen", azt a
   `tests/app/test_ujalbum_nev_forditas_2911.py` méri a `.qm`-ből);
@@ -23,6 +21,8 @@ Nincs számozás és nincs dátum — minden alkalommal ugyanaz a név.
 from __future__ import annotations
 
 from PySide6.QtCore import QMetaObject, QObject, Qt
+from tests.app.qml_functional._felsomenupontok_helpers_4329 import _kattints
+from tests.support.varakozas import var_feltetelre
 
 
 def _elem(gyoker, nev):
@@ -59,7 +59,7 @@ class TestEszkoztarParbeszed:
 
 
 class TestKijelolesesBelepo:
-    def test_a_menutetel(self, qml_app, qt_app):
+    def test_a_menutetel_album_properties_abla_kot_nyit(self, qml_app, qt_app):
         window, controller, _engine = qml_app
         _kijelol(window, qt_app, 0)
 
@@ -70,23 +70,28 @@ class TestKijelolesesBelepo:
         )
         qt_app.processEvents()
 
-        assert [a["name"] for a in controller.albums] == ["Untitled"]
+        dialog = _elem(window, "toolbarNewAlbumPropertiesDialog")
+        assert dialog.property("opened") is True
+        assert dialog.property("title") == "Album Properties"
+        assert controller.albums == []
 
-    def test_a_racs_helyi_menuje(self, qml_app, qt_app):
+    def test_a_racs_helyi_menuje_album_properties_abla_kot_nyit(self, qml_app, qt_app):
         window, controller, _engine = qml_app
         _kijelol(window, qt_app, 0)
 
         _elem(window, "photoContextMenu").newAlbumRequested.emit()
         qt_app.processEvents()
 
-        assert [a["name"] for a in controller.albums] == ["Untitled"]
+        dialog = _elem(window, "toolbarNewAlbumPropertiesDialog")
+        assert dialog.property("opened") is True
+        assert dialog.property("title") == "Album Properties"
+        assert controller.albums == []
 
     # #5105: a bal hasábra ejtést valódi egérhúzás teszteli: test_huzas_hianyzoi_5008.py (új album terület).
 
 
 class TestNincsParbeszed:
-    def test_a_nevbekero_MEGSZUNT(self, qml_app, qt_app):
-        """A `newAlbumDialog` már nem létezik — nem „csak nem nyílik meg"."""
+    def test_a_regi_nevbekero_helyett_album_properties_nyilik(self, qml_app, qt_app):
         window, _controller, _engine = qml_app
         _kijelol(window, qt_app, 0)
 
@@ -98,6 +103,7 @@ class TestNincsParbeszed:
         qt_app.processEvents()
 
         assert window.findChild(QObject, "newAlbumDialog") is None
+        assert _elem(window, "toolbarNewAlbumPropertiesDialog").property("opened")
 
     def test_a_kepek_bekerulnek_az_uj_albumba(self, qml_app, qt_app, tmp_path):
         """A kijelölés a tagság — enélkül üres album jönne létre, amit a
@@ -107,6 +113,15 @@ class TestNincsParbeszed:
 
         _elem(window, "photoContextMenu").newAlbumRequested.emit()
         qt_app.processEvents()
+
+        dialog = _elem(window, "toolbarNewAlbumPropertiesDialog")
+        assert dialog.property("opened") is True
+        assert controller.albums == []
+        _kattints(qt_app, _elem(dialog, "folderPropertiesOkButton"))
+        assert var_feltetelre(
+            qt_app, lambda: len(controller.albums) == 1, 5.0
+        ), "az OK nem hozta létre az albumot"
+        assert controller.albums[0]["name"] == "Untitled"
 
         token = controller.albums[0]["token"]
         ini = (tmp_path / "kepek" / ".picasa.ini").read_text(encoding="utf-8")
