@@ -294,7 +294,8 @@ move, the whole row glides along and the selected card always lands in
 the same place. The background is a faded, grey version of the first
 photo of the selected folder or album, and it cross-fades to the new one
 when you change cards. Cards are ordered by the oldest capture date in each folder
-or album. Items with no capture dates appear at the end without a date;
+or album; if two cards start on the same day, the one with the earlier
+capture time comes first. Items with no capture dates appear at the end without a date;
 empty albums and hidden photos do not appear. Timeline always opens at
 the first card.
 

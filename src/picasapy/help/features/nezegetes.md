@@ -398,7 +398,8 @@ mint egy körhinta: lapozáskor az egész sor elúszik, és a kiválasztott
 kártya mindig ugyanarra a helyre érkezik. A háttér a kiválasztott mappa
 vagy album első képének fakított, szürke változata; kártyaváltáskor az
 előző háttér lassan átúszik az újba. A kártyák a legrégebbi képük **felvételi
-dátuma** szerint követik egymást. Ha egy mappában vagy albumban egyetlen
+dátuma** szerint követik egymást; ha két kártya ugyanazon a napon
+kezdődik, a korábbi felvételi időpontú kerül előre. Ha egy mappában vagy albumban egyetlen
 képnek sincs felvételi dátuma, a kártyája dátum nélkül, a sor **végére**
 kerül. Az üres albumok nem kapnak kártyát, és a rejtett képek sem
 jelennek meg.
