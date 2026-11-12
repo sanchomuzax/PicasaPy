@@ -591,7 +591,7 @@ Item {
                     fileOpsController.deletePhotoPermanently(paths[i])
             }
             var photoCount = typeof controller !== "undefined"
-                && controller.photos ? controller.photos.rowCount() : 0
+                && controller && controller.photos ? controller.photos.rowCount() : 0
             if (photoCount > 0) {
                 var nextRow = Math.min(Math.max(firstRow, 0), photoCount - 1)
                 dialogs.appWindow.selectedIndexes = [nextRow]

@@ -42,14 +42,15 @@ def sorted_folder_rows(
     if include_hidden is None:
         include_hidden = show_hidden_folders(conn)
     rejtett_szuro = "" if include_hidden else " WHERE f.hidden = 0"
-    rejtett_foto_szuro = "" if include_hidden else " AND p.hidden = 0"
+    # A csak rejtett képet tartalmazó mappa sora megmarad (a HAVING az
+    # összes képet számolja), csak a darabszáma lesz 0.
+    darab = "count(p.id)" if include_hidden else "count(CASE WHEN p.hidden = 0 THEN p.id END)"
     db_rows = conn.execute(
         "SELECT f.path, f.date, f.offline, f.hidden, f.unread,"
-        " count(p.id) AS n,"
+        f" {darab} AS n,"
         " COALESCE(SUM(p.size), 0) AS total_size,"
         " COALESCE(MAX(p.mtime_ns), 0) AS last_change"
         " FROM folders f LEFT JOIN photos p ON p.folder_id = f.id"
-        f"{rejtett_foto_szuro}"
         f"{rejtett_szuro}"
         " GROUP BY f.id HAVING f.has_ini = 0 OR count(p.id) > 0"
         " ORDER BY f.path"
