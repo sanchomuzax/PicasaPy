@@ -482,7 +482,13 @@ class TestExport:
         tetel_kattintasa(window, qt_app, "&File", "menuFileExport")
         assert varj(qt_app, lambda: latszik(window, "exportDialog"))
         mezo = _elem(window, "exportSizeField")
-        assert mezo.property("enabled") is False, (
+        # #6866: az eredeti Picasa alapja az átméretezés (800 képpont), ezért
+        # előbb az eredeti méretre kell váltani.
+        assert mezo.property("enabled") is True, (
+            "az alapértelmezett átméretezés mellett a méretmező tiltott"
+        )
+        _nev_kattintasa(window, qt_app, "exportSizeOriginalRadio")
+        assert varj(qt_app, lambda: mezo.property("enabled") is False), (
             "a méretmező az eredeti méret mellett engedélyezett"
         )
         elotte = mezo.property("text")
