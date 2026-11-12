@@ -69,12 +69,16 @@ frissül, tehát azt látod, ami a lemezen van.
 ## Áthelyezés
 
 - **Fájl ▸ Áthelyezés új mappába…** — a kijelölt képek új mappába
-  kerülnek. A parancs a **Mappa tulajdonságai** ablakot nyitja, ahogy az
+  kerülnek. Ugyanez a parancs a kép helyi menüjében is ott van. A parancs a **Mappa tulajdonságai** ablakot nyitja, ahogy az
   eredeti Picasa: a név mezőben **Névtelen** áll, a dátum a mai nap, és
   itt adhatod meg a helyszínt, a leírást és a zenét is. Az **OK** után
   készül el a mappa, és kerülnek bele a képek; a **Mégse** semmit nem
   változtat. Ha a név üres, tiltott jelet tartalmaz, vagy már van ilyen
-  nevű mappa, a program szól, és nem mozgat semmit.
+  nevű mappa, a program szól, és nem mozgat semmit. Sikeres áthelyezés
+  után, amint a program beolvasta az új mappát, a bal hasábon ki is
+  jelöli, a képtálcán pedig egyetlen borítókép áll a
+  `Kiválasztott mappa` felirattal és a képek számával. Ha közben másik
+  mappára kattintottál, a program nem ugrik vissza.
 - A képeket **húzással** is átteheted egy másik mappára a bal hasábon.
 
 Áthelyezés közben haladásjelző mutatja, hányadik fájlnál tart.
