@@ -62,6 +62,10 @@ Item {
         //: mért `mousedown`-ja. Kijelölést vált, nem művelet.
         lenyomasra: true
         text: header.feliratSzammal("☆")
+        //: #6871: csillagozott kép nélkül a mappában tiltott (a mért
+        //: `select_star` állapot). A csoport csillagait nézi, nem a
+        //: kijelölést - épp ez a gomb csinál kijelölést a csillagosokból.
+        enabled: header.starredCount > 0
         Layout.preferredHeight: 22
         ToolTip.text: qsTr("Select starred photos")
         ToolTip.visible: hovered
@@ -273,12 +277,144 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         visible: !header.personAlbumHeaderMode
         height: 22
-        text: header.feliratSzammal(qsTr("Upload")) + " ▾"
+        text: header.feliratSzammal(qsTr("Upload"))
         enabled: typeof controller !== "undefined" && controller
             && !controller.googlePhotosAuthBusy
             && !controller.photosUploadRunning
         onClicked: header.uploadRequested()
         Layout.preferredHeight: 22
+    }
+
+    PicasaButton {
+        id: onlineOptionsGomb
+        objectName: "headerOnlineOptionsButton"
+        x: feltoltesGomb.x + feltoltesGomb.width
+        anchors.verticalCenter: parent.verticalCenter
+        visible: !header.personAlbumHeaderMode
+        width: 24
+        height: 22
+        ToolTip.text: qsTr("Online options")
+        ToolTip.visible: hovered
+        ToolTip.delay: Theme.tooltipDelay
+        onClicked: onlineOptionsMenu.popup(
+            onlineOptionsGomb, 0, onlineOptionsGomb.height)
+        contentItem: Text {
+            text: "▾"
+            color: Theme.textDark
+            font: onlineOptionsGomb.font
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+    }
+
+    PicasaMenu {
+        id: onlineOptionsMenu
+        objectName: "headerOnlineOptionsMenu"
+        //: #6870: az eredetiben (job-646) a láthatósági, méret-, csillag-,
+        //: online nézet- és törlés-tételek csak szinkronizált mappánál
+        //: aktívak. A PicasaPy-ban online album-szinkron nincs (a fejléc
+        //: „Sync to Web” kapcsolója is funkció nélküli, #423), ezért ez az
+        //: állapot mindig hamis; ha egyszer lesz szinkron, ezt kell bekötni.
+        readonly property bool mappaSzinkronban: false
+
+        MenuItem {
+            objectName: "headerOnlineMenuEnableSync"
+            //: picasapy-origin-key: stringres:syncoptionsmenu::enable
+            text: qsTr("Enable Sync")
+            // A fejléc „Sync to Web” kapcsolója nálunk funkció nélküli
+            // (#423), ezért a tétel a mappa feltöltését indítja el, ugyanazzal
+            // a bejelentkezési úttal, mint az Upload felirat-rész.
+            onTriggered: header.uploadRequested()
+        }
+        MenuSeparator { objectName: "headerOnlineMenuSepAfterEnableSync" }
+        MenuItem {
+            objectName: "headerOnlineMenuPublic"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_PUBLIC
+            text: qsTr("Public on the web")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
+        MenuItem {
+            objectName: "headerOnlineMenuUnlisted"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_UNLISTED
+            text: qsTr("Limited, anyone with the link")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
+        MenuItem {
+            objectName: "headerOnlineMenuLimited"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_SIGNIN_REQUIRED
+            text: qsTr("Limited")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
+        MenuItem {
+            objectName: "headerOnlineMenuOnlyYou"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_ONLY_YOU
+            text: qsTr("Only you")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
+        MenuSeparator { objectName: "headerOnlineMenuSepAfterPrivacy" }
+        MenuItem {
+            objectName: "headerOnlineMenuWidth800"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_800
+            text: qsTr("800 Max. Width")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
+        MenuItem {
+            objectName: "headerOnlineMenuWidth1024"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1024
+            text: qsTr("1024 Max. Width")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
+        MenuItem {
+            objectName: "headerOnlineMenuWidth1600"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1600
+            text: qsTr("1600 Max. Width")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
+        MenuItem {
+            objectName: "headerOnlineMenuWidth2048"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_2048
+            text: qsTr("2048 Max. Width")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
+        MenuItem {
+            objectName: "headerOnlineMenuOriginalSize"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_FULL_SIZE
+            text: qsTr("Original Size Images")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
+        MenuSeparator { objectName: "headerOnlineMenuSepAfterSize" }
+        MenuItem {
+            objectName: "headerOnlineMenuStarredOnly"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_STARS
+            text: qsTr("Starred Images Only")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
+        MenuSeparator { objectName: "headerOnlineMenuSepAfterStarred" }
+        MenuItem {
+            objectName: "headerOnlineMenuViewOnline"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_VIEW_ONLINE
+            text: qsTr("View Online")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
+        MenuItem {
+            objectName: "headerOnlineMenuRefreshStatus"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_REFRESH_ONLINE
+            text: qsTr("Refresh Online Status")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
+        MenuItem {
+            objectName: "headerOnlineMenuCopyUrl"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_COPY_URL
+            text: qsTr("Copy URL")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
+        MenuSeparator { objectName: "headerOnlineMenuSepBeforeDelete" }
+        MenuItem {
+            objectName: "headerOnlineMenuDeleteAlbum"
+            //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_DELETE_ONLINE_ALBUM
+            text: qsTr("Delete Online Album")
+            enabled: onlineOptionsMenu.mappaSzinkronban
+        }
     }
 
     // #1792: a testreszabott gombsor segédei.
