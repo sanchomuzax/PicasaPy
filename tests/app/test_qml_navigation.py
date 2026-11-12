@@ -46,7 +46,7 @@ def qml_nav_app(qt_app, tmp_path_factory):
     provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
     controller = AppController(db, (str(lib),), provider, settings=settings)
     edit_preview = EditPreviewProvider()
-    edit_controller = EditController(edit_preview)
+    edit_controller = EditController(edit_preview, settings=settings)
     engine = QQmlApplicationEngine()
     engine.addImageProvider("thumbs", provider)
     engine.addImageProvider("editpreview", edit_preview)

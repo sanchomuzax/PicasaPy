@@ -78,7 +78,12 @@ def vezerlo(qt_app, tmp_path):
         set_suggested_name(conn, arcok[photo_ids["b.jpg"]], "Anna")
         set_suggested_name(conn, arcok[photo_ids["c.jpg"]], "Béla")
         conn.commit()
-    return FaceScanController(db, faces_helper=FacesHelper()), db
+    from PySide6.QtCore import QSettings
+
+    settings = QSettings(
+        str(tmp_path / "face_settings.ini"), QSettings.Format.IniFormat
+    )
+    return FaceScanController(db, faces_helper=FacesHelper(), settings=settings), db
 
 
 class TestDarabszam:

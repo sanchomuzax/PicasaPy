@@ -204,8 +204,11 @@ Item {
 """
 
     @pytest.fixture
-    def fa(self, qt_app):
-        controller = FolderHierarchyController()
+    def fa(self, qt_app, tmp_path):
+        from PySide6.QtCore import QSettings
+
+        settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+        controller = FolderHierarchyController(settings=settings)
         controller.setFolders([
             {"path": "/kepek/nyaralas", "count": 2},
             {"path": "/kepek/szulinap", "count": 1},

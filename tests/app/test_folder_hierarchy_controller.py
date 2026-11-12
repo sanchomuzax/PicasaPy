@@ -8,6 +8,7 @@ jelzés), a kirajzolást a
 from __future__ import annotations
 
 import pytest
+from PySide6.QtCore import QSettings
 
 from picasapy.app.folder_hierarchy_controller import FolderHierarchyController
 
@@ -19,8 +20,9 @@ _FOLDERS = [
 
 
 @pytest.fixture
-def controller(qt_app):
-    ctrl = FolderHierarchyController()
+def controller(qt_app, tmp_path):
+    settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    ctrl = FolderHierarchyController(settings=settings)
     ctrl.setFolders(_FOLDERS)
     return ctrl
 
@@ -189,8 +191,9 @@ class TestSignals:
 class TestAncestorMatching:
     """Az előtag-egyezés nem elég: a határon elválasztónak kell állnia."""
 
-    def test_a_similarly_named_sibling_is_not_an_ancestor(self, qt_app):
-        ctrl = FolderHierarchyController()
+    def test_a_similarly_named_sibling_is_not_an_ancestor(self, qt_app, tmp_path):
+        settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+        ctrl = FolderHierarchyController(settings=settings)
         ctrl.setFolders(
             [
                 {"path": "/mnt/photoXYZ/mely", "count": 1},
@@ -233,7 +236,8 @@ class TestTheIndexFeedsTheTree:
                 for _name, path, count, *_rest in sorted_folder_rows(conn)
             ]
 
-        ctrl = FolderHierarchyController()
+        settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+        ctrl = FolderHierarchyController(settings=settings)
         ctrl.setFolders(folders)
         ctrl.expandAll()
         sorok = {row["path"]: row for row in ctrl.rows}
@@ -323,7 +327,7 @@ class TestMentesSorok:
         assert [s["path"] for s in controller.mentesSorok([])] == [""]
 
     def test_windowson_a_visszaperjeles_cel_a_perjeles_faban(
-        self, qt_app, monkeypatch
+        self, qt_app, monkeypatch, tmp_path
     ):
         """A `BackupController` `str(Path)`-t ad (Windowson `C:\\…`, más
         betűzéssel is), a fa perjeles — a találkozás a vezérlőben normalizál,
@@ -331,7 +335,8 @@ class TestMentesSorok:
         from picasapy.app import folder_hierarchy_controller as modul
 
         monkeypatch.setattr(modul, "_platform", lambda: "win32")
-        ctrl = FolderHierarchyController()
+        settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+        ctrl = FolderHierarchyController(settings=settings)
         ctrl.setFolders([
             {"path": "C:/Users/sancho/Kepek/2024/nyaralas", "count": 2},
             {"path": "C:/Users/sancho/Kepek/masik", "count": 1},
@@ -346,11 +351,14 @@ class TestMentesSorok:
         assert jeloltek[0]["mentesUt"] == cel
         assert "C:/Users/sancho/Kepek/masik" not in [s["path"] for s in sorok]
 
-    def test_posixon_a_mas_betuzesu_cel_nem_egyezik(self, qt_app, monkeypatch):
+    def test_posixon_a_mas_betuzesu_cel_nem_egyezik(
+        self, qt_app, monkeypatch, tmp_path
+    ):
         from picasapy.app import folder_hierarchy_controller as modul
 
         monkeypatch.setattr(modul, "_platform", lambda: "linux")
-        ctrl = FolderHierarchyController()
+        settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+        ctrl = FolderHierarchyController(settings=settings)
         ctrl.setFolders([{"path": "/mnt/photo/Nyar", "count": 1}])
 
         sorok = ctrl.mentesSorok(["/mnt/photo/nyar"])

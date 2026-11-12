@@ -151,7 +151,9 @@ class FileOpsControllerMoveMixin:
         except _compat._OPERATION_ERRORS as error:
             self.operationFailed.emit("move_to_new_folder", str(error))
             return
-        self._run_batch("move", _compat.move_photos, paths, str(target), _compat.RENAME)
+        result = self._run_batch("move", _compat.move_photos, paths, str(target), _compat.RENAME)
+        if result and result.done:
+            self.newFolderMoveFinished.emit(str(target))
 
     @Slot(list, str, str, str, str, bool, str)
     def splitFolderHere(
@@ -217,7 +219,7 @@ class FileOpsControllerMoveMixin:
         except _compat._OPERATION_ERRORS as error:
             self.operationFailed.emit("split_folder", str(error))
 
-    def _run_batch(self, operation, function, paths, dest_folder, policy) -> None:
+    def _run_batch(self, operation, function, paths, dest_folder, policy):
         _compat = _controller_module()
         dest = _compat.Path(_compat._to_local_path(dest_folder))
 
@@ -281,6 +283,7 @@ class FileOpsControllerMoveMixin:
             len(result.failed),
             _compat._first_failure_reason(result),
         )
+        return result
 
     @Slot(str, str)
     def moveFolder(self, folder: str, dest_parent: str) -> None:  # noqa: N802

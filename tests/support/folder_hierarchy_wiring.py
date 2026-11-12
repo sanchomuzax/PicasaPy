@@ -18,7 +18,7 @@ import logging
 import sqlite3
 
 
-def wire_folder_hierarchy(engine, controller, db_path):
+def wire_folder_hierarchy(engine, controller, db_path, settings=None):
     """A vezérlő létrehozása, feltöltése és regisztrálása a QML-kontextusba.
 
     A visszatérési érték a vezérlő — a hívó fixture tartsa életben, amíg a
@@ -28,7 +28,7 @@ def wire_folder_hierarchy(engine, controller, db_path):
     from picasapy.app.models import sorted_folder_rows
     from picasapy.index import open_index
 
-    folder_hierarchy_controller = FolderHierarchyController()
+    folder_hierarchy_controller = FolderHierarchyController(settings=settings)
 
     def _reload() -> None:
         # az `application.py._reload_folder_hierarchy` tükre — a sérült
