@@ -7,6 +7,13 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.104] - 2026-11-12
+
+- Az Info és a Remove from Picasa megerősítő ablakában a szöveg előtt az eredetihez hasonló ikon áll (kék „i”, illetve a színes logó) (#6864).
+- A mappa-eszköztár kollázsa kijelöléskor a kijelölt képeket, egyébként a teljes mappát nyitja meg; a tálca és a mappa Upload gombja kijelentkezve is bejelentkezéssel indítja a feltöltést. (#6865).
+- A Fájl menü Másolat mentése parancsa több kijelölt kép esetén csak a fókuszban lévő képről készít másolatot (#6866).
+- Az Export Picture to Folder mentett beállítás nélkül az eredeti szerint a 800 képpontos átméretezéssel nyílik (#6866).
+
 ## [1.0.103] - 2026-11-12
 
 - A differenciális szűrőláncok táblázata külön jelzi a véletlenállapot-függő méréseket (#6585).
