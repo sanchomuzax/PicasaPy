@@ -60,3 +60,16 @@ def test_ures_nevezo_nem_ad_felrevezeto_aranyt(tmp_path):
     osszevet.compare_all(tmp_path, tmp_path)
     report = (tmp_path / "eredmeny.md").read_text(encoding="utf-8")
     assert "Véletlenállapot-függők nélkül: nincs értékelhető mérés" in report
+
+
+def test_markdown_tablazat_soronkent_jeloli_a_veletlenfuggeset(tmp_path):
+    records = [
+        {"azonosito": "a", "koteg": "k", "kep": "a.jpg", "filters": "grain2=1;"},
+        {"azonosito": "b", "koteg": "k", "kep": "b.jpg", "filters": "bw=1;"},
+    ]
+    (tmp_path / "lancok.json").write_text(json.dumps(records), encoding="utf-8")
+    osszevet.compare_all(tmp_path, tmp_path)
+    report = (tmp_path / "eredmeny.md").read_text(encoding="utf-8")
+    assert "| Véletlenállapot-függő |" in report
+    assert "`grain2=1;` | igen |" in report
+    assert "`bw=1;` | nem |" in report
