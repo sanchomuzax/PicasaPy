@@ -70,7 +70,13 @@ Properties** window. Its name initially reads **Untitled** and its date
 is set to today. You can also enter a place, description, and music.
 The folder and move are created after you choose **OK**; **Cancel**
 leaves everything unchanged. An empty name, an invalid character, or an
-existing folder name prevents the move.
+existing folder name prevents the move. The command is in the
+**File** menu and in the picture's context menu (**Move to New
+Folder...**). After a successful move, as soon as the program has read
+the new folder, it selects it in the left pane, and the Picture Tray
+shows one cover picture with the **Folder Selected** label and the
+picture count. If you clicked another folder in the meantime, the
+program does not jump back.
 
 A progress indicator shows which file is being moved.
 

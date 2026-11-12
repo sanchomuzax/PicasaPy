@@ -2,6 +2,31 @@
 
 A user-focused changelog: only changes you can see on screen. The detailed, developer-facing changelog is in the program's <code>CHANGELOG.md</code> file.
 
+## 2026-11-12
+
+### File operations
+
+- **Move to New Folder...** in the picture's context menu now also opens
+  the **Folder Properties** window, like the command in the **File**
+  menu. After a successful move, the program selects the new folder and
+  shows it in the Picture Tray with the **Folder Selected** label. See
+  [File operations](features/fajlmuveletek.md).
+
+### Timeline
+
+- Cards of folders and albums that start on the same day follow each
+  other by capture time. See [Viewing](features/nezegetes.md).
+
+### Effects
+
+- Applying several effects in a row is closer to the original Picasa:
+  - after **Invert Colors**, **Drop Shadow** draws the inverted picture
+    instead of a flat patch;
+  - after **Directional Brightness**, **Film Grain** and **Museum Matte**
+    show the picture.
+- The black-and-white base of **Pencil Sketch** uses the original
+  Picasa colour mix.
+
 ## 2026-11-11
 
 ### Faces

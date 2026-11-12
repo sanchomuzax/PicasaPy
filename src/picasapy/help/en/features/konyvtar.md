@@ -246,7 +246,7 @@ The same strip appears if you go to the library with **Get more...** on the **Mo
 
 ### When you click an album
 
-If you select an album in the left pane while no picture is selected, the tray shows one cover picture instead of thumbnails, along with the selection and picture count - for example, “Selected album - 12 photos.” As soon as you select a picture, thumbnails take its place. In a People album, the tray also shows one picture: the person's portrait, with the number of pictures in the selected album. This does not apply to folders; their usual appearance does not change.
+If you select an album in the left pane while no picture is selected, the tray shows one cover picture instead of thumbnails, along with the selection and picture count - for example, “Selected album - 12 photos.” As soon as you select a picture, thumbnails take its place. In a People album, the tray also shows one picture: the person's portrait, with the number of pictures in the selected album. This does not apply to folders; their usual appearance does not change. The exception is the new folder selected right after **Move to New Folder...**: the tray briefly shows one cover picture in the same way (see [File operations](fajlmuveletek.md)).
 
 The tray has its own selection, independent of the grid. Click a picture in the tray to select it (a blue outline marks it); use Ctrl to add or remove one, and Shift to select a range. Selecting pictures in the grid does not clear the tray selection.
 
