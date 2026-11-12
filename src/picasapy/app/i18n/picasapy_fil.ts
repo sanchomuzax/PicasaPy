@@ -21028,4 +21028,99 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>I-click: i-pause o ipagpatuloy ang pag-ikot. I-drag: iikot.</translation>
         </message>
     </context>
+    <context>
+        <name>RecentlyUpdatedContextMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="29" />
+            <source>&amp;Edit Album Description...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_EDITCAPTIONS</extracomment>
+            <translation>&amp;I-edit ang Pagsasalarawan ng Album...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="39" />
+            <source>Select &amp;All Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
+            <translation>Piliin &amp;Lahat ng Mga Larawan</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="44" />
+            <source>&amp;Clear Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Folder::ID_CLEAR_SELECTION</extracomment>
+            <translation>&amp;Limasin ang Pinili</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="49" />
+            <source>&amp;Invert Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_SELECT_INVERT</extracomment>
+            <translation>&amp;Baligtarin ang Pinili</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="59" />
+            <source>&amp;Refresh Thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_REFRESH_THUMB</extracomment>
+            <translation>I-refresh ang mga &amp;Thumbnail</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="64" />
+            <source>Sort &amp;Album By</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::SortAlbumBy</extracomment>
+            <translation>Pag-uri-uriin &amp;Ang Album Ayon Sa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="68" />
+            <source>&amp;Date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Petsa</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="73" />
+            <source>&amp;Name</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Pangalan</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="78" />
+            <source>&amp;Size</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Laki</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="83" />
+            <source>&amp;Reverse order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::ID_REVERSESORT</extracomment>
+            <translation>&amp;Baligtarin ang pagkaka-ayos</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="94" />
+            <source>&amp;Delete Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Burahin ang Album</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="105" />
+            <source>Upload to Google &amp;Photos...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>I-upload sa Google &amp;Photos...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="116" />
+            <source>E&amp;xport as HTML Page...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>I-&amp;export bilang HTML Page...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="121" />
+            <source>&amp;Add name tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
+            <translation>&amp;Magdagdag ng mga name tag</translation>
+        </message>
+    </context>
 </TS>

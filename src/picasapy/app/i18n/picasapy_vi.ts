@@ -21027,4 +21027,99 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>Nhấp: tạm dừng hoặc tiếp tục xoay. Kéo: xoay.</translation>
         </message>
     </context>
+    <context>
+        <name>RecentlyUpdatedContextMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="29" />
+            <source>&amp;Edit Album Description...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_EDITCAPTIONS</extracomment>
+            <translation>&amp;Chỉnh sửa mô tả Album...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="39" />
+            <source>Select &amp;All Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
+            <translation>Chọn &amp;Tất cả Ảnh</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="44" />
+            <source>&amp;Clear Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Folder::ID_CLEAR_SELECTION</extracomment>
+            <translation>&amp;Xóa lựa chọn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="49" />
+            <source>&amp;Invert Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_SELECT_INVERT</extracomment>
+            <translation>Đả&amp;o lựa chọn</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="59" />
+            <source>&amp;Refresh Thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_REFRESH_THUMB</extracomment>
+            <translation>&amp;Làm mới hình thu nhỏ</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="64" />
+            <source>Sort &amp;Album By</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::SortAlbumBy</extracomment>
+            <translation>Sắp xếp &amp;anbom theo</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="68" />
+            <source>&amp;Date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Ngày</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="73" />
+            <source>&amp;Name</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Tên</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="78" />
+            <source>&amp;Size</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Kích thước</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="83" />
+            <source>&amp;Reverse order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::ID_REVERSESORT</extracomment>
+            <translation>&amp;Đảo ngược trật tự</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="94" />
+            <source>&amp;Delete Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Xóa album</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="105" />
+            <source>Upload to Google &amp;Photos...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Tải lên Google Photos...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="116" />
+            <source>E&amp;xport as HTML Page...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;Xuất dưới dạng trang HTML...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="121" />
+            <source>&amp;Add name tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
+            <translation>&amp;Thêm thẻ tên</translation>
+        </message>
+    </context>
 </TS>

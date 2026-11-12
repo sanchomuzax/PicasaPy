@@ -21043,4 +21043,99 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <translation>לחיצה: השהיה או המשך של הסיבוב. גרירה: סיבוב.</translation>
         </message>
     </context>
+    <context>
+        <name>RecentlyUpdatedContextMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="29" />
+            <source>&amp;Edit Album Description...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_EDITCAPTIONS</extracomment>
+            <translation>‏&amp;ערוך תיאור אלבום...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="39" />
+            <source>Select &amp;All Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
+            <translation>‏בחר את &amp;כל התמונות</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="44" />
+            <source>&amp;Clear Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Folder::ID_CLEAR_SELECTION</extracomment>
+            <translation>‏&amp;נקה בחירה</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="49" />
+            <source>&amp;Invert Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_SELECT_INVERT</extracomment>
+            <translation>‏&amp;הפוך בחירה</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="59" />
+            <source>&amp;Refresh Thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_REFRESH_THUMB</extracomment>
+            <translation>‏&amp;רענן תמונות ממוזערות</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="64" />
+            <source>Sort &amp;Album By</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::SortAlbumBy</extracomment>
+            <translation>‏מיין &amp;אלבום לפי</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="68" />
+            <source>&amp;Date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;תאריך</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="73" />
+            <source>&amp;Name</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;שם</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="78" />
+            <source>&amp;Size</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;גודל</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="83" />
+            <source>&amp;Reverse order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::ID_REVERSESORT</extracomment>
+            <translation>‏&amp;סדר הפוך</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="94" />
+            <source>&amp;Delete Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>&amp;מחק אלבום</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="105" />
+            <source>Upload to Google &amp;Photos...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>העלה אל Google &amp;Photos...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="116" />
+            <source>E&amp;xport as HTML Page...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>יצא כעמוד &amp;HTML...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="121" />
+            <source>&amp;Add name tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
+            <translation>‏&amp;הוסף תגי תמונה</translation>
+        </message>
+    </context>
 </TS>
