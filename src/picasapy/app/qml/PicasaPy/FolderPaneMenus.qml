@@ -37,6 +37,15 @@ Item {
         }
     }
 
+    Connections {
+        target: typeof fileOpsController !== "undefined"
+                ? fileOpsController : null
+        function onSplitFolderCompleted(path) {
+            if (controller && controller.selectFolder)
+                controller.selectFolder(path)
+        }
+    }
+
     AlbumContextMenu {
         id: albumContextMenu
         onAddNameTagsRequested: function(token) {
@@ -229,7 +238,16 @@ Item {
     FolderDialog {
         id: moveFolderDialog
         objectName: "moveFolderDialog"
-        title: qsTr("Move Folder")
+        //: picasapy-origin: picasapy; a rendszer mappaválasztó eredeti címe.
+        title: qsTr("Browse for Folder")
+        // A natív mappaböngésző adja a fastruktúrát és a Make New Folder műveletet.
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:il_OKButton
+        acceptLabel: qsTr("OK")
+        rejectLabel: qsTr("Cancel")
+        currentFolder: typeof fileOpsController !== "undefined"
+            && fileOpsController && folderPane._movingFolder.length > 0
+            ? fileOpsController.parentFolderUrl(folderPane._movingFolder) : ""
         onAccepted: {
             if (folderPane._movingFolder.length > 0
                     && typeof fileOpsController !== "undefined"
@@ -330,6 +348,9 @@ Item {
         property string pendingPath: ""
         title: qsTr("Delete Folder")
         yesText: qsTr("Delete Folder")
+        cancelVisible: false
+        rememberVisible: false
+        focusNoOnOpen: true
         onConfirmed: {
             if (typeof fileOpsController !== "undefined" && fileOpsController
                     && deleteFolderConfirm.pendingPath !== "")
@@ -349,6 +370,7 @@ Item {
         yesText: qsTr("Remove Folder")
         //: job-348: Remove Folder / Cancel; Enter az elfogadást választja.
         noVisible: false
+        rememberVisible: false
         focusYesOnOpen: true
         onConfirmed: {
             // #1249: a removeWatchedFolder CSAK pontos figyelt-gyökérre

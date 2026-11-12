@@ -55,6 +55,8 @@ Column {
                        ? feed.appWindow.selectedIndexes.length : 0
         hasPendingEdits: feed.appWindow
             ? feed.appWindow.kijelolesbenVanMentetlenSzerkesztes : false
+        hasPendingRotation: feed.appWindow
+            ? feed.appWindow.kijelolesbenVanMentetlenForgatas : false
         // zöld ▸ (#8): a mappa vetítése az első képétől
         onPlayRequested: feed.slideshowRequested(
             groupCol.modelData.start)

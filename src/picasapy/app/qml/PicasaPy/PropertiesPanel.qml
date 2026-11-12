@@ -21,6 +21,10 @@ Rectangle {
         ? (panel.appController.photos.revision,
            panel.appController.photos.itemAt(panel.focusRow))
         : ({})
+    readonly property string focusedFileName: {
+        if (!panel.focusedPhoto) return ""
+        return String(panel.focusedPhoto.name || "")
+    }
     readonly property var selectedKeywords:
         panel.appController && panel.selectedRows.length > 0
         ? (panel.appController.photos.revision,
@@ -41,6 +45,18 @@ Rectangle {
         //: #754: a CÍM és a bezáró gomb a FIÓK közös fejlécében él
         //: (`RightDrawer`), nem a panelben — az eredetiben egy fejléc
         //: van, és annak címe a lap neve.
+
+        Text {
+            objectName: "propertiesFileTitle"
+            visible: panel.hasSelection
+            Layout.fillWidth: true
+            text: qsTr("Properties of %s:").replace(
+                "%s", panel.focusedFileName)
+            wrapMode: Text.WordWrap
+            font.pixelSize: Theme.fontSize
+            font.bold: true
+            color: Theme.ink
+        }
 
         Text {
             visible: !panel.hasSelection
@@ -67,7 +83,11 @@ Rectangle {
                 spacing: 1
                 Text {
                     width: parent.width
-                    text: modelData.label
+                    // A sorforrás a Python API régi címkéit tartja meg;
+                    // a panelen az eredeti Picasa feliratai jelennek meg.
+                    text: modelData.label === "File Path" ? qsTr("Location")
+                        : modelData.label === "Keywords" ? qsTr("Tags")
+                        : modelData.label
                     font.pixelSize: Theme.fontSize - 2
                     color: Theme.textGray
                 }

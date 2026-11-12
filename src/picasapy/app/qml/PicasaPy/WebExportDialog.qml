@@ -199,11 +199,16 @@ Window {
             if (typeof webExportController.webExportPrefs === "function")
                 prefs = webExportController.webExportPrefs()
             if (webExportWindow.targetFolder.length === 0) {
-                var defaultTarget = typeof webExportController
-                        .defaultWebExportTargetForFolder === "function"
-                    ? webExportController.defaultWebExportTargetForFolder(
-                        String(controller.currentFolder || ""))
-                    : webExportController.defaultWebExportTarget()
+                var defaultTarget = ""
+                if (typeof webExportController.defaultWebExportTargetForFolder
+                        === "function") {
+                    defaultTarget =
+                        webExportController.defaultWebExportTargetForFolder(
+                            webExportWindow.currentFolderTitle())
+                } else if (typeof webExportController.defaultWebExportTarget
+                        === "function") {
+                    defaultTarget = webExportController.defaultWebExportTarget()
+                }
                 webExportWindow.targetFolder = prefs.targetDir || defaultTarget
             }
             // A mentett sablont azonosító alapján keressük. HTML-módban az

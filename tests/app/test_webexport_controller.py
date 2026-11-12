@@ -361,3 +361,18 @@ class TestArnyekASablonbol4849:
         assert 'class="item-figure shadow"' not in (
             target / "index0.html"
         ).read_text(encoding="utf-8")
+
+
+class TestAMappaNevevelBovitettCelmappa:
+    """#6852: az eredeti a mappa helyi menüjéből nyitott HTML-exportnál az
+    alapmappa alá a mappa nevét is hozzáteszi (`…\\Picasa HTML Exports\\<mappa>\\`)."""
+
+    def test_a_mappa_nevet_hozzaadja(self, monkeypatch, tmp_path, controller):
+        alap = tmp_path / "Picasa HTML Exports"
+        monkeypatch.setattr(controller, "defaultWebExportTarget", lambda: str(alap))
+        assert Path(controller.defaultWebExportTargetForFolder("Balaton")) == alap / "Balaton"
+
+    def test_mappanev_nelkul_az_alapmappa(self, monkeypatch, tmp_path, controller):
+        alap = tmp_path / "Picasa HTML Exports"
+        monkeypatch.setattr(controller, "defaultWebExportTarget", lambda: str(alap))
+        assert Path(controller.defaultWebExportTargetForFolder("")) == alap
