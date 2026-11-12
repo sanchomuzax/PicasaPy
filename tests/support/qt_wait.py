@@ -9,6 +9,7 @@ szükség.
 
 from __future__ import annotations
 
+import gc
 import time
 from collections.abc import Callable
 
@@ -142,10 +143,18 @@ class HangosHurok(QEventLoop):
         veszfek.setSingleShot(True)
         veszfek.timeout.connect(self.quit)
         veszfek.start(self._timeout_ms)
+        # #6858: a várakozás alatt a ciklikus gyűjtő szünetel, mint a
+        # `varj_feltetelre`-ben (#3265): a fő szál szemétgyűjtése élő
+        # háttérszál mellett szegmentálást okozott (test_controller.py).
+        gc_szunetel = gc.isenabled()
+        if gc_szunetel:
+            gc.disable()
         try:
             eredmeny = super().exec(*args, **kwargs)
         finally:
             veszfek.stop()
+            if gc_szunetel:
+                gc.enable()
         # ⚠️ MÉRVE (2026-09-08): egy kézbesítési kör AKKOR IS kell, ha a
         # jelzés megjött. A hurok saját szlotja és a hívóé KÜLÖN posztolt
         # esemény (szálak közti kapcsolatnál kapcsolatonként egy), és a
