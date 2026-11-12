@@ -105,8 +105,9 @@ _MEZOK: dict[str, tuple[str, Any, Any]] = {
         SIZE_PRESETS[DEFAULT_SIZE_INDEX],
         lambda ertek, alap: _int(ertek, alap, also=1, felso=100000),
     ),
-    # a méret-rádió: hamis = „Eredeti méret használata" (spec 3.2)
-    "resize": ("export/resize", False, _bool),
+    # a méret-rádió: igaz = „Átméretezés: 800 képpont" (spec 3.2, #6866: a
+    # Colab tiszta profilja, mentett kulcs nélkül, ezzel nyílik, job-642/645)
+    "resize": ("export/resize", True, _bool),
     # `FileExportQualityType` (0…4)
     #
     # ⚠️ Az ALAPÉRTÉKE a specben nincs kimérve (a kulcs beolvasása

@@ -51,8 +51,9 @@ class SaveCopyMixin:
     # az, hogy a hívó ad-e célútvonalat:
     #
     #   * `saveCopyRows(rows)`  - nem ad ⇒ a mért `-001` minta,
-    #     kérdés nélkül, TÖBB képre is (a menüpont felirata ellipszis
-    #     nélküli: `Save a Cop&y`).
+    #     kérdés nélkül. A QML-hívó a fókuszban lévő sort adja át
+    #     egyetlen sorként (a menüpont felirata ellipszis nélküli:
+    #     `Save a Cop&y`).
     #   * `saveRowAs(row, url)` - ad ⇒ a fájlválasztóból jött út, EGY
     #     képre (`Save &As...`, ellipszissel).
 

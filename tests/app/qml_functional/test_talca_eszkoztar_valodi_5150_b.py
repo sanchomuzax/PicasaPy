@@ -4,9 +4,10 @@
   album);
 - `zoomFitButton`, `zoomActualButton` - a néző nagyítás-párja: az illesztés
   a nagyítást 0-ra, a valódi méret a `zoomDetent`-re (0,5) állítja;
-- `trayUploadButton`, `trayOrderButton`, `trayShareButton`, `trayBlogButton` -
-  LETILTVA, és nincs kezelőjük. A valódi kattintásnak nincs hatása, és a
-  tiltottságot külön mérjük.
+- `trayOrderButton`, `trayShareButton`, `trayBlogButton` - LETILTVA, és nincs
+  kezelőjük. A valódi kattintásnak nincs hatása, és a tiltottságot külön mérjük.
+- `trayUploadButton` a #6865 óta kijelentkezve is elindítja az OAuth-ot; ezt a
+  `test_google_photos_upload_6865.py` kattintásos próbája méri.
 
 Már valódi kattintással fedett tételek (nem ismételjük):
 - `trayEmailButton`, `trayExportButton`: test_talca_gombok_valodi_kattintas_5127.py:99, :123
@@ -120,7 +121,7 @@ def test_a_zoom_actual_gomb_a_valodi_meretre_allitja_a_nagyitast(talca_app, qt_a
 
 @pytest.mark.parametrize(
     "nev",
-    ["trayUploadButton", "trayOrderButton", "trayShareButton", "trayBlogButton"],
+    ["trayOrderButton", "trayShareButton", "trayBlogButton"],
 )
 def test_a_letiltott_talcagomb_valodi_kattintasra_nem_valtoztat_semmit(
     talca_app, qt_app, nev

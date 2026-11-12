@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- #6864: saját, stilizált hatszínű zárblendés logó; nem az eredeti erőforrás. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <circle cx="16" cy="16" r="15" fill="#f5f5f5" stroke="#b8b8b8" stroke-width="1"/>
+  <path d="M16 16 16 1a15 15 0 0 1 13 7.5z" fill="#f04d43"/>
+  <path d="M16 16 29 8.5a15 15 0 0 1 0 15z" fill="#ff9b2f"/>
+  <path d="M16 16 29 23.5A15 15 0 0 1 16 31z" fill="#efcf2d"/>
+  <path d="M16 16 16 31a15 15 0 0 1-13-7.5z" fill="#61ad50"/>
+  <path d="M16 16 3 23.5a15 15 0 0 1 0-15z" fill="#35a8cd"/>
+  <path d="M16 16 3 8.5A15 15 0 0 1 16 1z" fill="#8d5a9f"/>
+  <circle cx="16" cy="16" r="4.2" fill="#fff"/>
+</svg>

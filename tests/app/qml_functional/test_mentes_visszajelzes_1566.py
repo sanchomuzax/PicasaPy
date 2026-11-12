@@ -168,19 +168,25 @@ class TestMasolatMenteseErtesit:
             sav.property("lastPayload")
         )
 
-    def test_KET_kepnel_a_TOBBES_szamu_felirat(self, qml_app, qt_app):
-        """Az eredeti mentés-családja végig két külön alakot tart
-        (`progfile`/`progfiles`, `messagetag1`/`messagetagX`) — a
-        visszajelzés sem mondhat „1 másolat”-ot kettőre."""
+    def test_KET_kepnel_a_fokusz_masolatara_egyetlen_ertesites_jon(
+        self, qml_app, qt_app
+    ):
         window, controller, _engine = qml_app
         sav = _sav(window)
         _kijelol(window, qt_app, [0, 1])
+        window.setProperty("selectedIndex", 1)
+        qt_app.processEvents()
+        fokuszban = Path(str(controller.photos.filePathAt(1)))
 
         _masolat_mentese(window, controller, qt_app)
 
-        assert sav.property("cellCount") == 1, "kép-darabonként külön értesítés"
-        assert sav.property("lastTitle") == "2 copies saved", (
+        assert sav.property("cellCount") == 1, "a másolatról nem egy értesítés jött"
+        assert sav.property("lastTitle") == "Copy saved", (
             sav.property("lastTitle")
+        )
+        masolat = fokuszban.parent / f"{fokuszban.stem}-001{fokuszban.suffix}"
+        assert Path(sav.property("lastPayload")) == masolat, (
+            "az értesítés nem a fókuszban lévő képről készült másolatra mutat"
         )
 
 

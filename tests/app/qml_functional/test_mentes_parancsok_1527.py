@@ -180,10 +180,14 @@ class TestMasolatMentese:
             f"(előtte {elotte} sor, most {nevek})"
         )
 
-    def test_tobb_kijelolt_kepre_MINDEGYIKROL_keszul_masolat(self, qml_app, qt_app):
+    def test_tobb_kijelolt_kepnel_CSAK_A_FOKUSZBAN_LEVOROL_keszul_masolat(
+        self, qml_app, qt_app
+    ):
         window, controller, _engine = qml_app
         _kijelol(window, qt_app, [0, 1])
         utak = [Path(str(controller.photos.filePathAt(i))) for i in (0, 1)]
+        window.setProperty("selectedIndex", 1)
+        qt_app.processEvents()
 
         wait_for_signal(
             controller.saveCopyFinished,
@@ -192,10 +196,12 @@ class TestMasolatMentese:
             process_events_with=qt_app,
         )
 
-        for ut in utak:
-            assert (ut.parent / f"{ut.stem}-001{ut.suffix}").exists(), (
-                f"{ut.name} másolata hiányzik"
-            )
+        assert (utak[1].parent / f"{utak[1].stem}-001{utak[1].suffix}").exists(), (
+            "a fókuszban lévő kép másolata hiányzik"
+        )
+        assert not (utak[0].parent / f"{utak[0].stem}-001{utak[0].suffix}").exists(), (
+            "a fókuszon kívüli képről is készült másolat"
+        )
 
     def test_a_masolat_NEM_kap_ini_bejegyzest_a_forrase_valtozatlan(
         self, qml_app, qt_app
