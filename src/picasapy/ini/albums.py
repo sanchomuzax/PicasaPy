@@ -17,6 +17,10 @@ from .folder_music import read_music_settings, with_music_settings
 # kulcsának felel meg, nem az `albums=` listában szereplő saját albumnak.
 STAR_ALBUM_TOKEN = "]star"
 
+# A Picasa különleges, virtuális Legutóbb frissítve (Recently Updated) albuma (#6851).
+# 7 napos láthatósági ablak, legfeljebb 250 kép, legutóbb felvett kép elöl.
+RECENT_ALBUM_TOKEN = "]updated"
+
 
 @dataclass(frozen=True)
 class Album:

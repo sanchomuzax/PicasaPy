@@ -7,8 +7,9 @@ import time
 from PySide6.QtCore import Property, Slot
 from picasapy.index import (
     album_photos, open_index, photos_up_to_age, photos_with_faces,
-    starred_photos, video_photos,
+    recently_updated_photos, starred_photos, video_photos,
 )
+from picasapy.ini import RECENT_ALBUM_TOKEN
 from . import formatting, kor_szuro
 from .controller_signals import AppControllerSignalsMixin as _Signals
 
@@ -29,6 +30,16 @@ class ViewFilterMixin:
         veszi le. A két belépő nézete és törlési szemantikája külön marad.
         """
         self._show_starred_photos("starred_album")
+
+    @Slot()
+    def showRecentlyUpdatedAlbum(self) -> None:  # noqa: N802
+        """A bal oldali Legutóbb frissítve (Recently Updated) különleges albumát nyitja meg (#6851)."""
+        self._view_mode = ("recent_album", RECENT_ALBUM_TOKEN)
+        started = time.perf_counter()
+        with open_index(self._db_path) as conn:
+            records = recently_updated_photos(conn)
+            self._recently_updated_count = len(records)
+        self._show_filtered(records, time.perf_counter() - started)
 
     def _show_starred_photos(self, mode: str) -> None:
         self._view_mode = (mode, "")
@@ -128,6 +139,9 @@ class ViewFilterMixin:
         egy szűrt nézet (nem új nézetmód), a mappa-kontextus megmarad a
         clearFilter-es visszaváltáshoz."""
         if not token:
+            return
+        if token == RECENT_ALBUM_TOKEN or token == "]updated":
+            self.showRecentlyUpdatedAlbum()
             return
         self._view_mode = ("album", token)
         started = time.perf_counter()

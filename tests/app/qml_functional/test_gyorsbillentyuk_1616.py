@@ -96,6 +96,19 @@ def _clear_selection(window, qt_app):
     qt_app.processEvents()
 
 
+
+def _album_ablak_ok(window, qt_app) -> None:
+    """#6861: a Fájl ▸ New Album / Ctrl+N az Album Properties ablakot nyitja
+    (Colab-mérés), az album az OK után jön létre."""
+    dialog = window.findChild(QObject, "toolbarNewAlbumPropertiesDialog")
+    assert dialog is not None and dialog.property("opened") is True, (
+        "nem nyílt meg az Album Properties ablak"
+    )
+    ok = dialog.findChild(QObject, "folderPropertiesOkButton")
+    assert ok is not None, "az Album Properties OK gombja nem található"
+    QMetaObject.invokeMethod(ok, "clicked", Qt.ConnectionType.DirectConnection)
+    qt_app.processEvents()
+
 class TestUjAlbumMenupontEsCtrlN:
     """A Fájl ▸ Új album… tétel és a `Ctrl+N` ÉLŐ, kijelöléshez kötve."""
 
@@ -130,7 +143,7 @@ class TestUjAlbumMenupontEsCtrlN:
         assert felirat.replace("&", "") == "New Album...\tCtrl+N"
 
     def test_a_menupontra_kattintva_LETREJON_az_album(self, qml_app, qt_app):
-        """#2911: a menütétel csendben hoz létre albumot (nincs névbekérő)."""
+        """#6861: a menütétel az Album Properties ablakot nyitja, OK után jön létre az album."""
         window, controller, _engine = qml_app
         _select_row(window, qt_app, 0)
         assert controller.albums == []
@@ -140,6 +153,8 @@ class TestUjAlbumMenupontEsCtrlN:
             tetel, "triggered", Qt.ConnectionType.DirectConnection
         )
         qt_app.processEvents()
+        assert controller.albums == [], "az album az OK előtt létrejött"
+        _album_ablak_ok(window, qt_app)
 
         assert [a["name"] for a in controller.albums] == ["Untitled"], (
             "a Fájl ▸ Új album… nem hozta létre az albumot"
@@ -154,6 +169,7 @@ class TestUjAlbumMenupontEsCtrlN:
 
         QTest.keyClick(window, Qt.Key_N, Qt.ControlModifier)
         qt_app.processEvents()
+        _album_ablak_ok(window, qt_app)
 
         assert [a["name"] for a in controller.albums] == ["Untitled"], (
             "a Ctrl+N nem hozta létre az albumot"
@@ -259,6 +275,7 @@ class TestUjAlbumMenupontEsCtrlN:
         )
         qt_app.processEvents()
         assert window.findChild(QObject, "renameDialog") is not None
+        _album_ablak_ok(window, qt_app)
         assert [a["name"] for a in controller.albums] == ["Untitled"]
 
 

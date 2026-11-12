@@ -79,7 +79,8 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         height: 22
         text: header.feliratSzammal(qsTr("Save"))
-        enabled: header.selectedCount > 0 && header.hasPendingEdits
+        enabled: header.selectedCount > 0
+                 && (header.hasPendingEdits || header.hasPendingRotation)
         Layout.preferredHeight: 22
         ToolTip.text: qsTr("Save edited photos to disk")
         ToolTip.visible: hovered

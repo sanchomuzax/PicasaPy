@@ -473,6 +473,8 @@ PicasaMenu {
     MenuItem {
         objectName: "contextMenuCopyFullPath"
         text: qsTr("Copy Full Path")
+        visible: menu.kijeloltKepekSzama === 1
+        height: visible ? implicitHeight : 0
         onTriggered: menu.copyFullPathRequested()
     }
     MenuSeparator {}

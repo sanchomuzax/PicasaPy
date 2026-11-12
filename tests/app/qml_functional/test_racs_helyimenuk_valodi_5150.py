@@ -308,17 +308,19 @@ class TestMappaMenuGyujtemenyEsCimkek:
             f"az Add name tags kattintás nem a mappa vizsgálatát indította: {hivasok}"
         )
 
-    def test_a_felolto_tetel_valodi_kattintasra_nem_csinal_semmit(
+    def test_a_feltolto_tetel_aktiv_es_kattinthato(
         self, mappa_app, qt_app
     ):
-        """A megszűnt szolgáltatás tétele tiltott: nincs kezelője, nincs hatása."""
+        """#6849: a Google Fotók-feltöltés él, a mappa helyi menüjében a tétel aktív."""
         window, controller, _motor = mappa_app
         cel = elokeszit_str(window, qt_app, controller)
         elotte = sorrend(controller, cel)
 
         menu = jobbklikk_mappan(window, qt_app, cel)
         tetel = gyerek(window, "folderMenuUploadToGooglePhotos")
-        assert tetel.property("enabled") is False, "a megszűnt tétel nincs letiltva"
+        assert tetel.property("enabled") is True, "a Google Fotók tétele aktív kell legyen (#6849)"
+        assert tetel.property("retired") is not True
+
         kattints(window, qt_app, tetel)
 
         assert sorrend(controller, cel) == elotte

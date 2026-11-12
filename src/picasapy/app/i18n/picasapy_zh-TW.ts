@@ -7812,6 +7812,19 @@ picasapy-origin-key: stringres:il_Cancel</extracomment>
             <translation>移動資料夾</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="233" />
+            <source>Browse for Folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>瀏覽資料夾</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="237" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_OKButton</extracomment>
+            <translation>確定</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="241" />
             <source>Are you sure you want to move the folder "%1" and its contents to the Recycle Bin?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
@@ -8196,6 +8209,13 @@ picasapy-origin-key: stringres:eMenuPicture::BatchEdit</extracomment>
     </context>
     <context>
         <name>PublishPanel</name>
+        <message>
+            <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
+            <source>Include Slideshow</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: tooltips:Text(publish/label_optionbox1)</extracomment>
+            <translation>包含投影播放</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/PublishPanel.qml" line="0" />
             <source>The items selected with a checkmark above will be included on your Gift CD.   To add more items click the "Add More" button below.</source>
@@ -9243,6 +9263,20 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
     </context>
     <context>
         <name>MainWindowDialogStack</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="0" />
+            <source>Info</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytApp::InfoTitle</extracomment>
+            <translation>說明</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="0" />
+            <source>Please select a single picture to copy the effects from.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SELECT_ONE_ONLY</extracomment>
+            <translation>請選取一張要複製效果的來源圖片。</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="328" />
             <source>Do you want to cancel this operation?</source>
@@ -12753,6 +12787,27 @@ picasapy-origin-key: stringres:geo::init_err</extracomment>
             <source>Select a picture to see its properties.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>選取圖片以查看其屬性。</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Properties of %s:</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:PropertiesPanel::info_single</extracomment>
+            <translation>%s 的內容：</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Location</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytImageMetadata::FilePath</extracomment>
+            <translation>位置</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/PropertiesPanel.qml" />
+            <source>Tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IPTC::Keywords</extracomment>
+            <translation>標記</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/PropertiesPanel.qml" line="28" />
@@ -17676,6 +17731,12 @@ picasapy-origin-key: stringres:CAlbumList::liststicky5;stringres:IDS_VIRTUALCAT<
             <translation>相簿</translation>
         </message>
         <message>
+            <source>Recently Updated</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:CThumbDB::RecentUpdate</extracomment>
+            <translation>最近更新</translation>
+        </message>
+        <message>
             <source>Starred photos</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:CThumbDB::starredphotos</extracomment>
@@ -20965,6 +21026,101 @@ picasapy-origin-key: stringres:AspectRatioList:Square</extracomment>
             <source>Click: pause or resume spin. Drag: rotate.</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>按一下：暫停或繼續旋轉。拖曳：旋轉。</translation>
+        </message>
+    </context>
+    <context>
+        <name>RecentlyUpdatedContextMenu</name>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="29" />
+            <source>&amp;Edit Album Description...</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_EDITCAPTIONS</extracomment>
+            <translation>編輯相簿說明(&amp;E)...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="39" />
+            <source>Select &amp;All Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_SELECTALLPICTURES</extracomment>
+            <translation>選取所有圖片(&amp;A)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="44" />
+            <source>&amp;Clear Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Folder::ID_CLEAR_SELECTION</extracomment>
+            <translation>清除選擇(&amp;C)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="49" />
+            <source>&amp;Invert Selection</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_SELECT_INVERT;stringres:eMenuEdit::ID_SELECT_INVERT</extracomment>
+            <translation>反向選取(&amp;I)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="59" />
+            <source>&amp;Refresh Thumbnails</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_REFRESH_THUMB</extracomment>
+            <translation>重新整理縮圖(&amp;R)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="64" />
+            <source>Sort &amp;Album By</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::SortAlbumBy</extracomment>
+            <translation>相簿排序依據(&amp;A)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="68" />
+            <source>&amp;Date</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>日期(&amp;D)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="73" />
+            <source>&amp;Name</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>名稱(&amp;N)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="78" />
+            <source>&amp;Size</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>大小(&amp;S)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="83" />
+            <source>&amp;Reverse order</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::ID_REVERSESORT</extracomment>
+            <translation>反向排序 (&amp;R)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="94" />
+            <source>&amp;Delete Album</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>刪除相簿(&amp;D)</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="105" />
+            <source>Upload to Google &amp;Photos...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>上傳至 Google 相簿(&amp;P)...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="116" />
+            <source>E&amp;xport as HTML Page...</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation>匯出為 HTML 網頁(&amp;X)...</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="121" />
+            <source>&amp;Add name tags</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Album::ID_ALBUM_FILTERFACES</extracomment>
+            <translation>加上名稱標記(&amp;A)</translation>
         </message>
     </context>
 </TS>

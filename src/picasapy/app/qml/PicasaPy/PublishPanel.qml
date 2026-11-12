@@ -49,6 +49,8 @@ Item {
 
     //: a `namelimitext` MÉRT felirata mondja ki: legfeljebb 16 karakter
     readonly property int cdNevHossz: 16
+    //: a Gift CD gazdája a megnyitott mappa nevét tölti be
+    property string cdName: ""
 
     //: #3503: hány elem van a képtálcán — üres tálcával nincs mit írni
     property int elemekSzama: 0
@@ -171,6 +173,14 @@ Item {
             text: qsTr("Add More...")
             onClicked: panel.tovabbiakKert()
         }
+        CheckBox {
+            objectName: "publishIncludeSlideshowCheck"
+            x: 137; y: 130; width: 175; height: 28
+            //: picasapy-origin: picasa
+            //: picasapy-origin-key: tooltips:Text(publish/label_optionbox1)
+            text: qsTr("Include Slideshow")
+            checked: true
+        }
         //: #3503: `publish/picsizemenu` (177,168 – 306,189) — a négy MÉRT
         //: fokozat (`0x0066f658`–`0x0066f670`), a `CPublishSizeList`
         //: feliratokkal
@@ -195,6 +205,8 @@ Item {
         TextField {
             id: cdNevMezo
             objectName: "publishCdName"
+            text: panel.cdName
+            onTextEdited: panel.cdName = text
             x: 458; y: 83; width: 167; height: 14
             font.pixelSize: Theme.fontSize
             //: #3503: a mért mező csak 14 képpont magas — a stílus alap

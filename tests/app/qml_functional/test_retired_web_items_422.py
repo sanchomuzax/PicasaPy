@@ -46,9 +46,7 @@ NYUGDIJAZOTT = {
     ),
     "AlbumContextMenu.qml": (
         "albumMenuOnlineActions",
-        "albumMenuUploadToGooglePhotos",
     ),
-    "FolderContextMenu.qml": ("folderMenuUploadToGooglePhotos",),
 }
 
 MIND = tuple(

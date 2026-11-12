@@ -209,15 +209,15 @@ def _write_results(output_dir: Path, rows: list[dict[str, Any]]) -> None:
         f"Véletlenállapot-függők nélkül: {stable_rate}",
         "Az egyezési arány csak az értékelhető, egyező vagy eltérő méréseket számolja.",
         "",
-        "| Lánc | Köteg | Kép | filters= | SSIM | ΔE átlag | Eredmény |",
-        "|---|---|---|---|---:|---:|---|",
+        "| Lánc | Köteg | Kép | filters= | Véletlenállapot-függő | SSIM | ΔE átlag | Eredmény |",
+        "|---|---|---|---|---|---:|---:|---|",
     ]
     for row in rows:
         ssim = "—" if row["ssim"] is None else f"{row['ssim']:.5f}"
         delta_e = "—" if row["delta_e"] is None else f"{row['delta_e']:.3f}"
         lines.append(
             f"| {row['azonosito']} | {row['koteg']} | {row['kep']} | "
-            f"`{row['filters']}` | {ssim} | {delta_e} | {row['egyezes']} |"
+            f"`{row['filters']}` | {row['veletlenfuggo']} | {ssim} | {delta_e} | {row['egyezes']} |"
         )
     (output_dir / "eredmeny.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 

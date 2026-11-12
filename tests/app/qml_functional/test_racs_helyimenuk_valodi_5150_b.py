@@ -234,23 +234,33 @@ class TestAlbumMenu:
         )
         zar(qt_app, dialog)
 
-    @pytest.mark.parametrize(
-        "nev",
-        [
-            "albumMenuOnlineActions",
-            "albumMenuUploadToGooglePhotos",
-        ],
-    )
     def test_a_megszunt_szolgaltatas_tetele_valodi_kattintasra_nem_csinal_semmit(
-        self, mappa_app, qt_app, album_token, nev
+        self, mappa_app, qt_app, album_token
     ):
         window, controller, _motor = mappa_app
         cel = cel_utja(controller)
         elotte = sorrend(controller, cel)
 
         menu = self._album_menu(window, qt_app, album_token)
-        tetel = gyerek(window, nev)
-        assert tetel.property("enabled") is False, f"{nev}: a megszűnt tétel nincs letiltva"
+        tetel = gyerek(window, "albumMenuOnlineActions")
+        assert tetel.property("enabled") is False, "albumMenuOnlineActions: a megszűnt tétel nincs letiltva"
+        kattints(window, qt_app, tetel)
+
+        assert sorrend(controller, cel) == elotte
+        zar(qt_app, menu)
+
+    def test_az_album_google_photos_feltolto_tetel_aktiv(
+        self, mappa_app, qt_app, album_token
+    ):
+        """#6849: a Google Fotók él, az album helyi menüjében a tétel aktív."""
+        window, controller, _motor = mappa_app
+        cel = cel_utja(controller)
+        elotte = sorrend(controller, cel)
+
+        menu = self._album_menu(window, qt_app, album_token)
+        tetel = gyerek(window, "albumMenuUploadToGooglePhotos")
+        assert tetel.property("enabled") is True, "albumMenuUploadToGooglePhotos: a tételnek aktívnak kell lennie"
+        assert tetel.property("retired") is not True
         kattints(window, qt_app, tetel)
 
         assert sorrend(controller, cel) == elotte

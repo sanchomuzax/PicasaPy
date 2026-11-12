@@ -407,11 +407,14 @@ ApplicationWindow {
     }
     readonly property bool kijelolesbenVanMentetlenSzerkesztes:
         mainLibrarySelectionState.kijelolesbenVanMentetlenSzerkesztes
+    readonly property bool kijelolesbenVanMentetlenForgatas:
+        mainLibrarySelectionState.kijelolesbenVanMentetlenForgatas
     readonly property bool muveletiCelbanVanMentetlenSzerkesztes:
         mainLibrarySelectionState.muveletiCelbanVanMentetlenSzerkesztes
 
     function selectedRows() { return mainLibrarySelectionState.selectedRows() }
     function vanMentetlenSzerkesztes(sorok) { return mainLibrarySelectionState.vanMentetlenSzerkesztes(sorok) }
+    function vanMentetlenForgatas(sorok) { return mainLibrarySelectionState.vanMentetlenForgatas(sorok) }
     function photoActionRows() { return mainLibrarySelectionState.photoActionRows() }
     function prepareRenameSelection(row, newName) { mainLibrarySelectionState.prepareRenameSelection(row, newName) }
     function photoActionIndex() { return mainLibrarySelectionState.photoActionIndex() }

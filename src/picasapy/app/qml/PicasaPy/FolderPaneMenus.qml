@@ -13,6 +13,7 @@ Item {
     property var folderHierarchyController: null
 
     property alias albumContextMenu: albumContextMenu
+    property alias recentlyUpdatedContextMenu: recentlyUpdatedContextMenu
     property alias deleteAlbumConfirm: deleteAlbumConfirm
     property alias peopleAlbumContextMenu: peopleAlbumContextMenu
     property alias peopleAlbumDeleteConfirmation: peopleAlbumDeleteConfirmation
@@ -34,6 +35,15 @@ Item {
         function onHideFolderRequested(ut) {
             if (controller && ut.length > 0)
                 controller.toggleFolderHidden(ut)
+        }
+    }
+
+    Connections {
+        target: typeof fileOpsController !== "undefined"
+                ? fileOpsController : null
+        function onSplitFolderCompleted(path) {
+            if (controller && controller.selectFolder)
+                controller.selectFolder(path)
         }
     }
 
@@ -67,6 +77,43 @@ Item {
         onSortAlbumRequested: function(mode) {
             if (controller)
                 controller.sortAlbum(albumContextMenu.albumToken, mode)
+        }
+        onUploadToGooglePhotosRequested: function(token) {
+            if (controller && controller.uploadGooglePhotosAlbum) {
+                var ok = controller.uploadGooglePhotosAlbum(token)
+                if (ok && folderPane && folderPane.appWindow && folderPane.appWindow.footer
+                        && typeof folderPane.appWindow.footer.openGooglePhotosUploadDialog === "function")
+                    folderPane.appWindow.footer.openGooglePhotosUploadDialog()
+            }
+        }
+    }
+
+    RecentlyUpdatedContextMenu {
+        id: recentlyUpdatedContextMenu
+        onAddNameTagsRequested: function(token) {
+            if (typeof faceScanController !== "undefined" && faceScanController)
+                faceScanController.scanAlbum(token)
+        }
+        onSelectAllRequested:
+            if (folderPane.appWindow && folderPane.appWindow.selectAll) folderPane.appWindow.selectAll()
+        onClearSelectionRequested:
+            if (folderPane.appWindow && folderPane.appWindow.clearSelection)
+                folderPane.appWindow.clearSelection()
+        onInvertSelectionRequested:
+            if (folderPane.appWindow && folderPane.appWindow.invertSelection)
+                folderPane.appWindow.invertSelection()
+        onRefreshThumbnailsRequested:
+            if (controller) controller.resyncFolder(controller.currentFolder)
+        onExportAsHtmlRequested:
+            if (folderPane.appWindow && folderPane.appWindow.openWebExport)
+                folderPane.appWindow.openWebExport()
+        onEditDescriptionRequested: folderPane.openAlbumDescription(
+            recentlyUpdatedContextMenu.albumToken, recentlyUpdatedContextMenu.albumName)
+        onDeleteAlbumRequested: folderPane._askDeleteAlbum(
+            recentlyUpdatedContextMenu.albumToken, recentlyUpdatedContextMenu.albumName)
+        onSortAlbumRequested: function(mode) {
+            if (controller)
+                controller.sortAlbum(recentlyUpdatedContextMenu.albumToken, mode)
         }
     }
 
@@ -229,7 +276,16 @@ Item {
     FolderDialog {
         id: moveFolderDialog
         objectName: "moveFolderDialog"
-        title: qsTr("Move Folder")
+        //: picasapy-origin: picasapy; a rendszer mappaválasztó eredeti címe.
+        title: qsTr("Browse for Folder")
+        // A natív mappaböngésző adja a fastruktúrát és a Make New Folder műveletet.
+        //: picasapy-origin: picasa
+        //: picasapy-origin-key: stringres:il_OKButton
+        acceptLabel: qsTr("OK")
+        rejectLabel: qsTr("Cancel")
+        currentFolder: typeof fileOpsController !== "undefined"
+            && fileOpsController && folderPane._movingFolder.length > 0
+            ? fileOpsController.parentFolderUrl(folderPane._movingFolder) : ""
         onAccepted: {
             if (folderPane._movingFolder.length > 0
                     && typeof fileOpsController !== "undefined"
@@ -316,6 +372,14 @@ Item {
         onExportAsHtmlRequested:
             if (folderPane.appWindow && folderPane.appWindow.openWebExport)
                 folderPane.appWindow.openWebExport()
+        onUploadToGooglePhotosRequested: function(path) {
+            if (controller && controller.uploadGooglePhotosFolder) {
+                var ok = controller.uploadGooglePhotosFolder(path)
+                if (ok && folderPane && folderPane.appWindow && folderPane.appWindow.footer
+                        && typeof folderPane.appWindow.footer.openGooglePhotosUploadDialog === "function")
+                    folderPane.appWindow.footer.openGooglePhotosUploadDialog()
+            }
+        }
     }
 
     // #1249: az eredeti megerősítés — a MAPPA NEVÉVEL, és kimondja az
@@ -330,6 +394,9 @@ Item {
         property string pendingPath: ""
         title: qsTr("Delete Folder")
         yesText: qsTr("Delete Folder")
+        cancelVisible: false
+        rememberVisible: false
+        focusNoOnOpen: true
         onConfirmed: {
             if (typeof fileOpsController !== "undefined" && fileOpsController
                     && deleteFolderConfirm.pendingPath !== "")
@@ -349,6 +416,7 @@ Item {
         yesText: qsTr("Remove Folder")
         //: job-348: Remove Folder / Cancel; Enter az elfogadást választja.
         noVisible: false
+        rememberVisible: false
         focusYesOnOpen: true
         onConfirmed: {
             // #1249: a removeWatchedFolder CSAK pontos figyelt-gyökérre

@@ -19,7 +19,8 @@ import sqlite3
 from dataclasses import dataclass
 
 from .hidden_scope import visible_folder_sql
-from .queries import PhotoRecord, _records, _select
+from .queries import PhotoRecord, _records, _select, recently_updated_photos
+from picasapy.ini import RECENT_ALBUM_TOKEN
 
 
 @dataclass(frozen=True)
@@ -187,6 +188,8 @@ def album_photos(conn: sqlite3.Connection, token: str) -> tuple[PhotoRecord, ...
     Ismeretlen token esetén üres eredmény (nem hiba): a hasáb és az ini
     átmenetileg eltérhet, ha közben egy másik program írta az ini-t.
     """
+    if token == RECENT_ALBUM_TOKEN or token == "]updated":
+        return recently_updated_photos(conn)
     rows = conn.execute(
         f"{_select(conn)} JOIN photo_albums pa ON pa.photo_id = p.id"
         " WHERE pa.token = ?"

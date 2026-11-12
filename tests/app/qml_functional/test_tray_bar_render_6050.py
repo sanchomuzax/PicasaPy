@@ -115,7 +115,19 @@ def _talca_kivagas(window, menu=None) -> tuple[QImage, int, int]:
                 jobb = min(window.width(), max(jobb, popup_jobb))
                 also = min(window.height(), max(also, popup_also))
 
-    teljes = window.grabWindow()
+    # A háttérmunka fény-hulláma (`busySweep`, #70) csak akkor látszik, ha a
+    # bélyegkép-készítés épp fut: a felvétel idejére rejtjük, különben a
+    # képpont-összevetés a háttérmunka időzítésén múlik (main CI, 2026-11-12).
+    hullam = window.findChild(QObject, "busySweep")
+    hullam = hullam if isinstance(hullam, QQuickItem) else None
+    regi_atlatszosag = hullam.opacity() if hullam is not None else None
+    if hullam is not None:
+        hullam.setOpacity(0.0)
+    try:
+        teljes = window.grabWindow()
+    finally:
+        if hullam is not None:
+            hullam.setOpacity(regi_atlatszosag)
     assert not teljes.isNull(), "a főablakról nem készült képkocka"
     kep = teljes.copy(bal, felso, jobb - bal, also - felso)
     assert not kep.isNull(), "a tálca képkivágása üres"

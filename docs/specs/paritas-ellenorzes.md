@@ -960,3 +960,9 @@ képkocka.
 Nem mérhető: az Időrend (Ctrl+5) és a diavetítés (Ctrl+4) a Wine alatt
 fekete képet ad. A Shift+kattintásos tartománykijelölést a végrehajtó lépés-
 készlete nem tudja előállítani (módosítóbillentyűs kattintás nincs benne).
+
+## Folyamatszintű összevetés (#6845)
+
+| Parancs | Eredeti | PicasaPy | Eltérés |
+|---|---|---|---|
+| Copy Full Path | Egy kijelölt képnél látható a Delete from Disk alatt, kettőnél hiányzik. | A javítás előtt két kijelöltnél is látszott; a javítás után csak egynél látszik. | A `PhotoContextMenu.qml` menüpontja nem vette figyelembe a kijelöltek számát; javítva. |
