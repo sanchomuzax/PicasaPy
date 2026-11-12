@@ -142,6 +142,7 @@ _ALPHA_SOURCE_PRESERVING_WORKERS = frozenset(
     {
         "bw",
         "gamma",
+        "invert",
         "radtint",
         "redeye",
         "retouch",
@@ -151,7 +152,6 @@ _ALPHA_SOURCE_PRESERVING_WORKERS = frozenset(
         "unsharp2",
     }
 )
-_ALPHA_INVERTING_WORKERS = frozenset({"invert"})
 # A Glimmer-blend alfaírója csak akkor állít 255-öt, ha ténylegesen kever:
 # Fade=100-nál a BlendInstruction az alsó réteget hagyja meg. Az index a
 # flag utáni Fade-paraméter pozíciója a filterdesc.xml-ben.
@@ -196,8 +196,6 @@ _ALPHA_NO_WORKER_OPS = frozenset(
 
 def _alpha_after_worker(key: str, op: FilterOp, alpha_before: int) -> int:
     """A worker/bináris-policy alapján számolja a következő réteg alfáját."""
-    if key in _ALPHA_INVERTING_WORKERS:
-        return _ALPHA_OPAQUE if alpha_before == _ALPHA_TRANSPARENT else _ALPHA_TRANSPARENT
     if key in _ALPHA_SOURCE_PRESERVING_WORKERS:
         return alpha_before
     if key in _ALPHA_FADE_BLENDERS:
@@ -714,7 +712,7 @@ def apply_filters(
                 result = handler(result, op, alpha=alpha_state)
             elif key == "dropshadow":
                 result = glimmer._apply_drop_shadow_op_with_alpha(result, op, alpha=alpha_state)
-            elif key == "picnikgrain":
+            elif key in {"picnikgrain", "museummatte"}:
                 result = handler(result, op, alpha=alpha_state)
             else:
                 result = handler(result, op)
@@ -754,7 +752,7 @@ def apply_filters(
         op, op_warnings = validate_and_clamp_op(op)
         range_warnings.extend(op_warnings)
         try:
-            if op.name.casefold() == "polaroid":
+            if op.name.casefold() in {"polaroid", "museummatte"}:
                 result = handler(result, op, alpha=alpha_state)
             elif op.name.casefold() == "dropshadow":
                 result = glimmer._apply_drop_shadow_op_with_alpha(result, op, alpha=alpha_state)

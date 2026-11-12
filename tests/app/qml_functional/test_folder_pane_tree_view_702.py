@@ -117,16 +117,18 @@ def _var_a_hasab_elrendezesere(qt_app, pane) -> None:
 
 
 @pytest.fixture
-def render_pane(qt_app):
+def render_pane(qt_app, tmp_path):
     """Kirajzolt `QQuickView` a FolderPane-nel + egy élő fa-vezérlővel.
 
     Controller nélkül töltjük be (a hasáb minden controller-hivatkozása
     null-őrös, #305) — a fa adatforrását közvetlenül a property-n adjuk át,
     pontosan úgy, ahogy a `Main.qml` bekötése fogja."""
     import picasapy.app.application as app_module
+    from PySide6.QtCore import QSettings
 
     def _render(*, folders=None, tree: bool = False, height: int = _HASAB_MAGASSAG):
-        hierarchy = FolderHierarchyController()
+        settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+        hierarchy = FolderHierarchyController(settings=settings)
         hierarchy.setFolders(_FOLDERS if folders is None else folders)
 
         engine = QQmlEngine()

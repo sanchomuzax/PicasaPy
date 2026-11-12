@@ -65,7 +65,10 @@ def _webexport_vezerlo(engine, controller):
     kell életben tartania."""
     from picasapy.app.webexport_controller import WebExportController
 
-    vezerlo = WebExportController(photo_source=lambda: controller.photos.photos)
+    settings = controller._get_settings() if controller is not None else None
+    vezerlo = WebExportController(
+        photo_source=lambda: controller.photos.photos, settings=settings
+    )
     engine.rootContext().setContextProperty("webExportController", vezerlo)
     return vezerlo
 

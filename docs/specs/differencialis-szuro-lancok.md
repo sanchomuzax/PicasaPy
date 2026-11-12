@@ -257,3 +257,168 @@ mert két külön utasításcsoport támasztja alá, de független futás közbe
 állapotmérés itt nem történt; **feltételes** a kezdőmag konkrét értéke az
 említett kezdeti és sorrendi feltételek mellett; **nyitott** a
 #6822 eltérésének pontos oka és a konkrét export pixelhű reprodukciója.*
+
+## `lanc-0132`: az autocolor becslésének érzékenysége (2026-11-11, #6585)
+
+A k02.jpg bemeneten az r6830 eredeti 004 exportja a
+`colorfix=1,0.049146,ff2af3a5;rainbow=1,151.657621;autocolor=1;`
+lánchoz tartozik. A PicasaPy aktuális `apply_filters` kimenete bájtra
+megegyezik a meglévő saját 004 PNG RGB-képpontjaival. A mérés a saját képet a
+referencia JPEG mintavételezésével és kvantálótábláival kódolja, majd a
+`tools/golden/compare_render.py` CIE76 és SSIM mércéjét használja.
+
+| Saját változat a 004 eredeti exporthoz | SSIM | Átlagos CIE76 ΔE |
+|---|---:|---:|
+| `colorfix;rainbow;autocolor` | 0.927504 | 47.759275 |
+| `colorfix;rainbow` | 0.989601 | 1.275051 |
+
+**Mérés:** az automatikus színkorrekció a saját köztes képen az eltérést
+nagymértékben növeli. A kis eltérés az autocolor nélkül **nem bizonyítja**,
+hogy a két program köztes RGB-puffere azonos, vagy hogy az eredetiben az
+autocolor biztosan tétlen volt: csak a végső JPEG áll rendelkezésre.
+
+A `0x008f82fa` a `0x0090f8f0` becslőt hívja, majd a `0x008f8313`
+a `0x0090eda0` mátrixalkalmazót. A `0x0090f9b6` és `0x0090f9e8`
+közötti szűrés a zöld értéket és az RGB csatornák arányát vizsgálja;
+a `0x0090fa6b` kétdimenziós hisztogramot tölt. A `0x0090fae1` szorzás
+után a `0x0090fae4` cellánként nyolc bittel jobbra tol, a
+`0x0090fbc2` és `0x0090fbc9` előjeles osztás. Az autocolor útja tehát
+becslés és 3×3-as színmátrix, a `0x009db610` szinthúzó a rainbow útján
+szerepel. A saját megfelelő a `render/autocolor_matrix.py`
+`estimate_illuminant` és `render/ops_levels.py` `apply_autocolor`.
+
+A saját köztes képen, független hisztogram-újraszámítással: 15 899 képpont
+felel meg az RGB-feltételeknek, de a cellánkénti egész súlyozás összege csak
+1. Az egyetlen nem nulla cella `(kék/zöld=4, vörös/zöld=60)`: darabszáma
+144, súlya 2, így `(144*2)>>8 = 1`. A súlypont `(28,-28)`, az ebből kapott
+becslés `(kR,kB)=(240,68)`; a `colorfix` után, a rainbow előtt `(220,220)`.
+Az RGB csatornák közül a vöröshöz mindenütt 1-et hozzáadva a súlyozott
+összeg 0 és a becslés `(128,128)`. Ez kontrollált saját bemeneti perturbáció,
+nem az eredeti puffer rekonstrukciója. A JPEG-kódolt saját köztes képen a
+súlyozott összeg 145 és a becslés `(136,91)`: az export JPEG-je nem
+helyettesíti veszteségmentesen a lánc köztes pufferét.
+
+A 32 bites szorzási túlcsordulás ellenőrzése ezen a képen: a legnagyobb
+cellaszorzat 288, túlcsorduló cellák száma 0; a natív 32 bites szorzat
+újrajátszása ugyanazt az `(240,68)` becslést adta. A becslő a
+`0x0090f99d` és `0x0090f9b0` között csak az RGB bájtokat bontja ki,
+az alfa nem szerepel a kiválasztásban. A PicasaPy mindkét előző szűrőt
+255-ös alfaosztályba sorolja; a natív alfaosztályt a
+[filterdesc-registry](filterdesc-registry.md) rögzíti. Ez nem zár ki
+más, a szűrőlánc pufferével kapcsolatos eltérést.
+
+**Cáfoló kontroll:** az eredeti 001 és 002 exporttal, azonos
+JPEG-egyeztetéssel, a teljes saját kontroll ΔE-je 1.095706 és 0.170866;
+az autocolor elhagyásával 25.925625 és 41.611907. Az általános
+„autocolor mindig ki van kapcsolva” feltevés ezekre a kontrollokra nem áll.
+E kontrollok `shadow` tagot is tartalmaznak, a 004 pedig nem, tehát nem a
+hármas mindhárom tiszta kéttagú részhalmazát mérik.
+
+**Bizonyítottság: feltételes.** A saját hisztogram törékenységét a független
+újraszámítás és a natív súlyozó utasítások alátámasztják; a tényleges
+kétprogramos eltérés oka és a javítandó szűrő még nem bizonyított. Az eredeti
+köztes puffer és az eredeti gain értéke **NINCS MEG**. A javításhoz nem
+szabad új minimum-mintaszámot vagy becsült küszöböt bevezetni.
+
+**Következő célzott mérés:** ugyanazon k02 forráson és azonos Picasa-export
+beállítással egymás mellett exportálandó a
+`colorfix=1,0.049146,ff2af3a5;rainbow=1,151.657621;` és a fenti teljes
+hármas, `shadow` nélkül. A két eredeti export különbsége ellenőrzi az eredeti
+autocolor tényleges hatását. A döntő mérés az eredeti `0x0090f8f0`
+bemeneti RGB-pufferének és a `0x0090fc99` által írt gainnek a kinyerése
+ugyanabban a futásban; ezt a saját köztes pufferrel és becsléssel kell
+összevetni. Ha csak JPEG-export szerezhető, abból az eredeti memóriabeli
+gain nem következtethető pontosan.
+
+### Az autocolor kis súlyösszegének kapuja (2026-11-11)
+
+**Megerősített a vizsgált becslőágon:** a `0x0090fb32` és `0x0090fb77`
+között a súlyozott cellák összege a `[esp+0x14]` változóba gyűlik. A
+`0x0090fbb5` ezt **nullával** hasonlítja össze; a `0x0090fbb9` csak
+nullánál kerüli el a két súlypont-osztást (`0x0090fbc2`, `0x0090fbc9`).
+Pozitív minimumösszeg miatti korai kilépés ezen az úton nincs: az 1-es
+összeggel is oszt. Nulla összegnél az addig felhalmozott nullás nyomatékokból
+semleges becslés keletkezik. A `0x0090fbcd-0x0090fbf4` a két súlypontot
+-32 és 32 közé szorítja, majd a `0x0090fc61-0x0090fc85` a két kimeneti
+értéket 0 és 255 közé korlátozza. A `0x0090fc99` írja a csomagolt becslést.
+A PicasaPy `estimate_illuminant` ugyanezt a nulla-ágat és ezeket a korlátokat
+használja. Ez a lelet nem bizonyítja, hogy a teljes kétprogramos út minden
+részlete azonos.
+
+**Független ellenőrzés:** a bináris `0x0090fbb3-0x0090fca4` utasításait
+QEMU i386 alatt izolált állapottal futtatva a (súlyösszeg, x-nyomaték,
+y-nyomaték) = (0, 0, 0) a `0x00808080`, az (1, 28, -28) a `0x00f08044`
+csomagot adja. A második tehát `(kR,kB)=(240,68)`, nem semleges. Ez a
+kódrészlet végrehajtása, nem a teljes becslő vagy Picasa-export mérése.
+A saját becslővel külön, 144 képpontos fekete képen 127 darab RGB
+`(60,32,17)` képpont `(128,128)`-at, 128 darab `(240,68)`-at adott:
+a súlyozott összeg a 2-es cellasúly és a cellánkénti 8 bites eltolás miatt
+0-ról 1-re vált. A nem nulla összegre feltételezett kaput ez a célzott
+ellenpélda cáfolja; más minőségvizsgálatot a teljes láncra nem zár ki.
+
+**Új eredeti exportmérés:** a k02 `colorfix;rainbow` és
+`colorfix;rainbow;autocolor` JPEG-ek dekódolt RGB-átlaga rendre
+`(162,441590; 90,369685; 93,576364)`, illetve
+`(161,475699; 90,390607; 92,591095)`. Közvetlen összevetésük SSIM-je
+`0,988790`, átlagos CIE76 ΔE-je `1,102313` (további JPEG-kódolás nélkül).
+Ez kis exportkülönbség, nem bizonyítja a belső puffer vagy a mátrix pontos
+azonosságát. A fenti becslőágra vonatkozó eredmény **megerősített**; a
+`lanc-0132` eltérésének oka továbbra is **nyitott**.
+
+**Következő döntő mérés:** ugyanabban az eredeti futásban a
+`0x008f82fa` hívásakor a becslő bemeneti RGB-pufferét és méretét, a
+`0x0090fbb5` ponton a súlyösszeget és két nyomatékot, valamint a
+`0x0090fc99` által kiírt becslést kell rögzíteni; ugyanezen a nyers
+pufferen kell a PicasaPy becslőjét futtatni. A JPEG köztes export erre
+nem alkalmas a fent kimutatott újrakódolási érzékenység miatt. A belső
+puffer és a natív becslés jelenleg **NINCS MEG**, ezért új küszöb vagy
+fejlesztési javítás nem vezethető le.
+
+### A teljes becslő ugyanazon a RGB-pufferen (2026-11-12)
+
+**Megerősített ezen a pufferen:** a `colorfix=1,0.049146,ff2af3a5;`
+`rainbow=1,151.657621;` lánc utáni, `720×1280×3` RGB `uint8` kép SHA-256
+lenyomata `1883825cbad6136e31b1f3e6239f5a88982bb4c22c09345393db974fb9002367`.
+Ezt a változatlan képet adtam a PicasaPy `estimate_illuminant` függvényének
+és az eredeti `0x0090f8f0` becslőnek QEMU i386 alatt. A natív bemeneti
+szerkezet stride-ja 1280 pixel, szélessége 1280, magassága 720; a pixel
+DWORD-ok `0x00RRGGBB` alakban ugyanazokat az RGB-bájtokat tartalmazták.
+Az eredeti hívó `0x008f82a0` a képszerkezetet EAX-ban adja át a
+`0x008f82fa` híváskor.
+
+| Érték vagy állítás | Forrás |
+|---|---|
+| A `0x0090f8f0` függvény indexelt mérete 965 bájt | bináris (`0x0090f8f0`, függvényrekord és diszasszemblálás) |
+| A két becslő gainje: `kR=240`, `kB=68`; a mátrix zöld gainje 128 | mérés, ugyanazon RGB-puffer, natív QEMU és PicasaPy |
+| A `0x0090fc99` által írt becslőcsomag `0x00f08044` | mérés, eredeti Picasa-becslő QEMU i386 alatt |
+| A becslés előtti szűrésen átment pixelek és a nyers hisztogram összege: 15899 | mérés, eredeti QEMU-hisztogram |
+| A 4096 hisztogramcellából eltérő cellák száma a natív és a PicasaPy hisztogram között: 0 | mérés, cellánkénti összevetés |
+| Súlyozott összeg: 1; nyomatékok: `(28,-28)` | mérés, eredeti QEMU-becslő belső állapota |
+| A nem nulla súlyozott cella `(B-bin=4,R-bin=60)`: nyers darabszám 144, súly 2, kimenő súly 1 | mérés, QEMU-hisztogram és külön egész-aritmetikájú újraszámítás |
+| Az eredeti Picasa tényleges, autocolor előtti RGB-puffere a 004 futásban | NINCS MEG |
+
+Az A út a `0x0090f8f0` utasításainak olvasása: a szűrés, a két előjeles
+osztás, a 64×64-es cellákba sorolás, a köbös Chebyshev-súlyozás és a súlypont
+kiszámítása. A B út a teljes eredeti becslő QEMU-futtatása az előállított
+képen; a natív nyers hisztogram mind a 4096 cellában egyezik a PicasaPy
+hisztogramjával. Egy külön, a `cv2.remap` táblájától független egész
+képletes újraszámítás ugyanezt a hisztogramot, súlyösszeget, nyomatékokat
+és gainpárt adta. A két út egyezik.
+
+**Következtetés:** a becslő nem okoz eltérést ezen az azonos bemeneten.
+A korábbi export-összevetésben a PicasaPy autocolor előtti képe az eredeti
+004 exporthoz `SSIM=0.989601`, átlagos CIE76 `ΔE=1.275051` értékkel
+egyezett, míg a teljes PicasaPy lánc `SSIM=0.927504`, `ΔE=47.759275`
+értéket adott. A feladat feltételes ágával összhangban a további vizsgálat
+az eredeti `colorfix` utáni `rainbow` kimenetére, vagyis az autocolor
+bemeneti pufferére kerül. A 004 JPEG a lánc utáni, veszteséges export;
+ebből nem állapítható meg pontosan, hogy a `colorfix` vagy a `rainbow`
+egyenként melyik bájtban tér el. Egyikhez sem vezethető le javítás.
+
+**Következő célzott mérés:** az eredeti Picasa teljes 004 futásában a
+`0x0090f8f0` belépésekor rögzíteni kell a stride-ot, a méreteket és a teljes
+RGB-puffert, valamint a `0x0090fc99` becslőcsomagját. A veszteségmentes
+natív puffert kell összehasonlítani ezzel a PicasaPy-pufferrel. Ha az
+egyedi `colorfix` és `rainbow` lépések közti felelősséget is meg kell
+nevezni, mindkét lépés eredeti kimenetét külön kell rögzíteni. A 004 JPEG
+ehhez nem elég.

@@ -143,7 +143,7 @@ class TestScrollAnchorOnHide:
 
         confirm_settings = ConfirmSettingsBridge(settings=settings)
         edit_preview = EditPreviewProvider()
-        edit_controller = EditController(edit_preview)
+        edit_controller = EditController(edit_preview, settings=settings)
         effect_thumb_provider = EffectThumbnailProvider(provider.photo_record)
         fileops_controller = FileOpsController()
         app_module.wire_fileops(fileops_controller, controller)
@@ -162,7 +162,9 @@ class TestScrollAnchorOnHide:
             settings=settings,
         )
         faces_helper = FacesHelper()
-        face_scan_controller = FaceScanController(db, faces_helper=faces_helper)
+        face_scan_controller = FaceScanController(
+            db, faces_helper=faces_helper, settings=settings
+        )
         timeline_controller = TimelineController(db, provider)
         controller.syncFinished.connect(timeline_controller.reload)
         engine = QQmlApplicationEngine()

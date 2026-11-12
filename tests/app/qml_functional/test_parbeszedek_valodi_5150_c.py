@@ -164,8 +164,10 @@ class TestAltalanosFul:
         )
         assert _varj(qt_app, lambda: bool(importer.property("autoExclude")) is False)
         # a sync kiírja az importáló tárát a lemezre; az új példány már onnan olvas
-        importer._get_settings().sync()
-        assert QSettings("PicasaPy", "PicasaPy").value("import/autoexclude") == "false", (
+        tar = importer._get_settings()
+        tar.sync()
+        lemezrol = QSettings(tar.fileName(), QSettings.Format.IniFormat)
+        assert str(lemezrol.value("import/autoexclude")).lower() == "false", (
             "a kikapcsolt Duplikátumok jelölő értéke nem került a lemezre"
         )
         _zar(qt_app, beallitasok)

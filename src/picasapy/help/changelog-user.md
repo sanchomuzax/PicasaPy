@@ -4,6 +4,32 @@ Felhasználói szemszögű változásnapló: csak az, ami a képernyőn is
 látszik. A részletes, fejlesztői változásnapló a program `CHANGELOG.md`
 fájljában van.
 
+## 2026-11-12
+
+**Fájlműveletek**
+
+- A kép helyi menüjének **Áthelyezés új mappába…** parancsa is a
+  **Mappa tulajdonságai** ablakot nyitja, mint a **Fájl** menüé. Sikeres
+  áthelyezés után a program kijelöli az új mappát, és a képtálcán
+  `Kiválasztott mappa` felirattal mutatja. Lásd
+  [Fájlműveletek](features/fajlmuveletek.md).
+
+**Időrend**
+
+- Az ugyanazon a napon kezdődő mappák és albumok kártyái a felvétel
+  időpontja szerint követik egymást. Lásd [Nézegetés](features/nezegetes.md).
+
+**Effektek**
+
+- Több effekt egymás utáni alkalmazása közelebb került az eredeti
+  Picasa eredményéhez:
+  - a **Színinvertálás** után az **Árnyékvetés** a megfordított képet
+    rajzolja, nem egyszínű foltot;
+  - az **Irányított fényesség** után a **Filmszemcse** és a **Múzeumi
+    matt** a képet mutatja.
+- A **Ceruzarajz** fekete-fehér alapja az eredeti Picasa
+  színkeverésével készül.
+
 ## 2026-11-11
 
 **Arcok**

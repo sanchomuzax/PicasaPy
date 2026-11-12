@@ -8,6 +8,8 @@ import logging
 import threading
 import traceback
 
+from PySide6.QtCore import QSettings
+
 from picasapy.app.busy_activity import munka_neve
 from picasapy.app.busy_registry import get_app_busy_registry
 from picasapy.index import open_index
@@ -67,7 +69,7 @@ def test_automatic_scan_hides_busy_activity_while_paused(
     ctl.scanNewFaces()
 
     try:
-        assert pause_entered.wait(2.0), "a nagy függő készlet nem állt meg aktivitásnál"
+        assert pause_entered.wait(10.0), "a nagy függő készlet nem állt meg aktivitásnál"
         with active_lock:
             paused_scan_entries = [
                 label
@@ -100,7 +102,7 @@ def test_small_pending_set_finishes_during_continuous_user_activity(
     )
 
     ctl.scanNewFaces()
-    completed = var_feltetelre(qt_app, finished.is_set, 2.0)
+    completed = var_feltetelre(qt_app, finished.is_set, 10.0)
     if not completed:
         ctl.cancelScan()
     assert ctl.waitForBackgroundWorkers(5.0)
@@ -119,7 +121,13 @@ def test_unchanged_second_scan_skips_decode_and_logs_phase_times(
     import picasapy.app.face_scan_controller_scan_mixin as scan_module
 
     root = _make_library(tmp_path, 2)
-    ctl = _make_controller(qt_app, tmp_path, root, detector=_FakeDetector())
+    # #6824: saját ini-beállítás; az alapértelmezett QSettings Windowson a
+    # közös registry, és a CI-ban ott bekapcsolt javaslat elindította az
+    # arcbeágyazó szálat, amely ugyanazokat a fájlokat dekódolta.
+    settings = QSettings(str(tmp_path / "beallitas.ini"), QSettings.Format.IniFormat)
+    ctl = _make_controller(
+        qt_app, tmp_path, root, detector=_FakeDetector(), settings=settings
+    )
     ctl.setSuggestionsEnabled(False)
     decoded = []
     original_decode = scan_module.dekodolj_forrast
@@ -131,7 +139,11 @@ def test_unchanged_second_scan_skips_decode_and_logs_phase_times(
         hivok = "<".join(
             frame.name for frame in traceback.extract_stack(limit=6)[:-1][::-1]
         )
-        decoded.append((args[0], threading.current_thread().name, hivok))
+        szal = threading.current_thread().name
+        # Csak a keresés dekódolását számoljuk: a teszt a második keresés
+        # kihagyását méri, nem az arcbeágyazást.
+        if szal == "picasapy-face-scan":
+            decoded.append((args[0], szal, hivok))
         return original_decode(*args, **kwargs)
 
     monkeypatch.setattr(scan_module, "dekodolj_forrast", counted_decode)

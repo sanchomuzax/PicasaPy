@@ -12628,7 +12628,7 @@ ki = ⌊(t·α_forrás + 255·(255 − α_forrás)) / 255⌋ ,  ki.alfa = 255
 ```
 
 ⇒ ahol a forrás átlátszó, ott a kimenet fehér; teljesen fedő forrásnál
-(minden fénykép) a kimenet bitre a felső elem. A fordító akkor fűzi a
+(például a fénykép eredeti bemenetén) a kimenet bitre a felső elem. A fordító akkor fűzi a
 művelet után, ha a `maskWithSourceAlpha` attribútum igaz (`[op+0x20]`,
 beolvasás `0x00bc4962`–`0x00bc496c`; kiírás `0x00bc4b23`–`0x00bc4b41`) — a
 `filterdesc.xml`-ben két helyen: a `Cinemascope` zajrétegén (`:762`) és a
@@ -12641,7 +12641,7 @@ beolvasás `0x00bc4962`–`0x00bc496c`; kiírás `0x00bc4b23`–`0x00bc4b41`) �
 | maszkolt keverés | `⌊(t·m + b·(255−m))/255⌋`, `m` = a maszk ALFA-bájtja | `masked_blend`: lebegőpontos `b·(1−m) + t·m`, `rint` — **8 164 890 / 16 777 216 hármas (48,7%) tér el, max 1** | csonkoló egész képlet — a #3442 része |
 | kimeneti alfa | 255 | `PicnikGrain`-nél a lánc A=0/255 állapotát követjük (#6812) | a maszk kimenete minden esetben 255 |
 | `PartialMask` a téglalapon kívül | `vtbl+0x08 ≈ 1` ? felső : alsó | nem mérve (a maszkjaink teljes képet adnak) | nincs, amíg minden `outerAlpha` 0 vagy 1 |
-| `MaskWithSourceAlpha` | fehérre kompozitál a forrás alfájával | A=0/255 állapot a `PicnikGrain`-hez (#6812) | fedő forrásnál bitre no-op; A=0-nál fehér kimenet |
+| `MaskWithSourceAlpha` | fehérre kompozitál a forrás alfájával | A=0/255 állapot a `PicnikGrain`-hez (#6812) | fedő forrásnál bitre no-op; A=0-nál fehér felső réteg |
 | ecset-újraszámolás | csak a piszkos téglalap | — | teljesítmény-kérdés, nem pixel-kérdés |
 
 *Bizonyítottsági fok:* a képlet, a három végrehajtó adatfolyama és a
@@ -12683,7 +12683,25 @@ olvassa: `0x008f4810` a harmadik operandus alfa-bájtját kinyeri
 (`0x008f48a1`-`0x008f48aa`; skalár ág: `0x008f4a45`). A végrehajtó
 `0x00bd1350` a felső réteget fehér, fedő alapra kompozitálja a forrás
 alfájával (`0x00bd13dc` -> `0x009a91a0`): A=255-nél a szemcseréteg marad,
-A=0-nál fehér lesz a kimenet. A kimeneti alfa mindkét ágon 255.
+A=0-nál a zajréteg lesz fehér, nem feltétlenül a teljes effekt kimenete. A maszk kimeneti alfája mindkét ágon 255.
+
+**#6839, a beágyazott réteg és a keret alfaútja.** A `filterdesc.xml:915-930`
+a zajt a `NestedImageOperation` gyermekeként adja meg: a maszk az alsó
+veremelem, vagyis a beágyazott művelet bemenete, az aktuális lánckép alfáját
+használja, és a zajréteget fehérre kompozitálja. Ezután a leíró szerinti
+5-ös Multiply a fehér felső réteggel az alapot, a 7-es Screen fehéret ad.
+A `0x00bd1350` végrehajtó alsó veremelemet használó kompozitja
+`0x00bd13dc → 0x009a91a0`, a `0x008f4810` kernel a harmadik operandus
+alfáját `0x008f482c` alatt olvassa.
+
+A `MuseumMatte` leírója (`filterdesc.xml:1071-1097`) először fekete belső
+ragyogást (`BlendAlpha=0,7`), majd Border, újabb belső ragyogás
+(`BlendAlpha=0,6`) és végső Border műveletet ad meg. A=0 esetén az első
+ragyogás alakja üres: a teljes belső kép sötétül, a `0x009dc4b0` keverő
+súlya 178, így az eredmény `be·77 >> 8`. Az első Border fedőre állítja az
+alfát (`0x00aa1840 → 0x009ab410`), ezért a második ragyogás már fedő
+forrással fut. Colab #577-#595 és az r6830 tíz leszűkített lánca igazolja
+az út viselkedését: ΔE 0,000-1,290; a két célzott láncon 0,989 és 0,781.
 
 **`Soften`.** A leíró egy `BlurImageOperation`-t ad meg, amelynek
 `BlendAlpha=(100-Fade)·0,8/100`; a `PaintEffectCanvas` ezen az úton nem ad
@@ -12718,13 +12736,12 @@ nevek nem képpontmunkások, ezért változatlanul hagyják a követett állapot
 |---|---|---|
 | **0** | `blur`, `dir_brite`, `dir_sat`, `dir_sharp`, `shadow` | `blur`: `0x0090cf60 -> 0x0090c6b0`, csak B/G/R tárolás (`0x0090c97f`); az irányított család (`0x0090d8b0`, `0x0090dbb0`, `0x0090d600`) RGB-dwordokat ír, a `dir_sat` tárolása `0x0090dd9f-0x0090ddbf`; `shadow` mag `0x0090d170`, dword-tárolás `0x0090d3a9` csak összerakott RGB-vel. |
 | **255**, natív fix író | `ansel`, `autobacklight`, `autocolor`, `autocontrast`, `autolight`, `backlight`, `colorfix`, `colortemp`, `contrast`, `desat`, `dir_tint`, `enhance`, `finetune`, `finetune2`, `fill`, `grain`, `grain2`, `glow`, `glow2`, `linblur`, `radblur`, `rainbow`, `radsat`, `sat`, `tint`, `triple`, `triple2`, `triple3`, `warm`, `whitept` | `ansel` és `desat` közös pixelmunkása `0x0090e680`: az `0x0090e98f` maszkolás után az `0x0090e9ad` tárolás felső bájtja `0xff`. A többi natív belépő→mag kapcsolatot a fenti két natív táblázat címei rögzítik; ide csak olyan worker került, amelynek kimeneti alfaírása a binárisban fix `0xff`. A már külön dokumentált példa a `colortemp` (`0x0090ea10`, `0x0090ebd4-0x0090ec01`). |
-| **Forrásalfa megőrzése** | `bw`, `gamma`, `radtint`, `redeye`, `retouch`, `sepia`, `tilt`, `unsharp`, `unsharp2` | `gamma` LUT-munkása `0x00aa40a0` az alfa-bájtot átengedi; az `unsharp` mag `0x0090c4a0` a forrás A-ját viszi a kimenetbe (`0x0090c5f5-0x0090c667`); a `tilt` `0x0090a720 -> 0x009e6df0` négy bájtos mintavételezőt használ. `redeye`/`retouch` klasszikus képmunkás callbackje nulla a natív regiszterben (`0x00cd06e8`, `0x00cd06f8`); a history-régiók az RGB-t szerkesztik, alfaírójuk nincs. A B/W, szépia és radiális tint kimeneti alfaútját a natív callback-/magcímek és a forrásnégyes másolása rögzíti: `0x008f84c0 -> 0x009a9550`, `0x008f8950 -> 0x0090a120`, `0x008f8730 -> 0x0090b370`. |
-| **Alfa megfordítása** | `invert` | Az `AdjustCurvesImageOperation` képpontfutószalagja `0x00bcb2f0`: a negyedik csatornát beolvassa (`0x00bcb41e-0x00bcb422`), az alfa-LUT-on átviszi (`+0xc00`), majd visszaírja (`0x00bcb4b4`). Az `Invert` leírója a master görbét 0→255 és 255→0 értékekkel állítja be; ezért a követett bináris állapot 0 és 255 között vált. |
+| **Forrásalfa megőrzése** | `bw`, `gamma`, `invert`, `radtint`, `redeye`, `retouch`, `sepia`, `tilt`, `unsharp`, `unsharp2` | `gamma` LUT-munkása `0x00aa40a0` az alfa-bájtot átengedi; az `unsharp` mag `0x0090c4a0` a forrás A-ját viszi a kimenetbe (`0x0090c5f5-0x0090c667`); a `tilt` `0x0090a720 -> 0x009e6df0` négy bájtos mintavételezőt használ. `redeye`/`retouch` klasszikus képmunkás callbackje nulla a natív regiszterben (`0x00cd06e8`, `0x00cd06f8`); a history-régiók az RGB-t szerkesztik, alfaírójuk nincs. A B/W, szépia és radiális tint kimeneti alfaútját a natív callback-/magcímek és a forrásnégyes másolása rögzíti: `0x008f84c0 -> 0x009a9550`, `0x008f8950 -> 0x0090a120`, `0x008f8730 -> 0x0090b370`. |
 | **Fade-keverés**: Fade<100 -> **255**, Fade=100 -> bemeneti állapot | `crossprocess`, `focalzoom`, `hdr`, `heatmap`, `holga`, `ir`, `lomo`, `matte`, `neon`, `nightvision`, `orton`, `pencilsketch`, `picnikfocalpixelate`, `picniktint`, `pixelate`, `quantizepalette`, `reanimatedeyecolor`, `soften`, `twotone`, `vignette` | A leírók `BlendAlpha=1-Fade/100` alakja a `BlendInstruction`-re fordul (`0x00bd0700`); a nem nulla keverési ág a `0x009dc4b0`-t futtatja, a közös alfaíró `0x009a99c0` A=255-öt tárol. Nulla súlynál a végrehajtó az alsó, bemeneti réteget hagyja meg. A `Soften` egyetlen eltérése a saját `BlendAlpha=(100-Fade)·0,8/100` képlete, ezért az A=255 küszöbe ugyanúgy Fade<100. A Fade-paraméterhelyeket a `chain.py` `_ALPHA_FADE_BLENDERS` táblája rögzíti. |
 | **255**, végső Glimmer-réteg | `boost`, `border`, `cinemascope`, `comicize`, `dropshadow`, `localcontrast`, `museummatte`, `picnikgrain`, `polaroid`, `roundededges`, `sixties` | A keverő alfaírója `0x009a99c0`; a `Boost` binárisan `BlendAlpha=100`-at ad, amit a végrehajtó 1,0-ra vág (`0x00bd0742-0x00bd0778`). A `Border`/`RoundedEdges`/`Sixties`/`MuseumMatte` leírói végső `BorderImageOperation`-t tartalmaznak; a keret alfaútja és az opaque cél fölötti kompozit `0x00aa1840 -> 0x009ab410` alatt dokumentált. A `DropShadow` és `Polaroid` forrásalfás hátterezése az előző, #6788-as alfaállapotot is használó részekben szerepel. A `PicnikGrain` külön bizonyítéka a G) fejezet elején áll. |
 | **Nincs worker / változatlan állapot** | `crop`, `crop64`, `debug`, `focalpixelate`, `movieend`, `moviestart`, `picnik`, `rot`, `save` | `crop`/`crop64` képpont-kiválasztás, a `debug` ismert, de nem renderelt; a `focalpixelate` halott legacy név. A `rot`, `save`, `picnik` és mozi-jelzők natív callbackje nulla vagy történelem-token (a klasszikus natív regiszter 49 rekordos táblája); ezek egyikének sincs alfaíró pixelmunkása. |
 
-**Láncszabály.** A kód a worker sikeres futása után az előző kategóriák egyikét alkalmazza. A Glimmer Fade=100 és a forrásalfa-őrző utak nem kapnak téves 255-ös felülírást; az `invert` az alfacsatornára is ráengedi az inverz LUT-ot. A festhető-maszkos ág ugyanezt a policy-t futtatja; a későre halasztott keretek a tényleges alkalmazási sorrendben frissítik az állapotot.
+**Láncszabály.** A kód a worker sikeres futása után az előző kategóriák egyikét alkalmazza. A Glimmer Fade=100 és a forrásalfa-őrző utak nem kapnak téves 255-ös felülírást; az `invert` megőrzi a forrásalfát. A #6585 r6830 `lanc-0011` láncának Colab #572-#576 mérése szerint Invert nélkül és DropShadow nélkül külön-külön egyezés látszik, együtt eltérés, az eredeti képe pedig átlátszatlan marad. A `0x00bcb2f0` futószalag a negyedik csatornát a `+0xc00` alfa-LUT-on viszi át (olvasás `0x00bcb41e`, írás `0x00bcb4b4`); az Invert leírója a master görbét állítja. Az alfa megőrzése a mérésen alapul, az alfa-LUT identitása itt nincs binárisan igazolva. A festhető-maszkos ág ugyanezt a policy-t futtatja; a későre halasztott keretek a tényleges alkalmazási sorrendben frissítik az állapotot.
 
 ### Amit KIZÁRTAM
 
