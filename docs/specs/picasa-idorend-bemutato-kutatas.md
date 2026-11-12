@@ -2595,29 +2595,29 @@ A teljes tagság és sorrend továbbra sincs igazolva, ezért a Recently Updated
 
 **A #6532 készültsége.** Az eredeti videók dokumentáltak (38.2.101, 38.2.104); a teljes bináris spec és az azonos mintán elvégzett teljes összevetés nem kész. Az átadás szerint a #6713 megvalósítási jegy létezik, aktuális állapota itt nem ellenőrizhető. Kiadási összehasonlító videó vagy képsor nem igazolt. A teljes tagság és végső sorrend hiányában új fejlesztési jegytörzs nem állítható össze becslés nélkül.
 
-##### 38.2.121/a A három helyi bináriscél eredménye (2026. november 12.)
+##### 38.2.121/a A három helyi bináris cél eredménye (2026. november 12.)
 
 **Hatókör és bizalmi fok.** A Picasa3.exe 3.9.141.259 helyi példányát vizsgáltam, SHA 256: `644b7bec89a2e4d57d119d15aa36af1df12a4c3547b692bc0462af35a93ddc96`. A következtetés **feltételes**: az utasítások és a meglévő dekompiláció együtt azonosítják a három út működését, de futásos megfigyelés nem történt, és néhány segédfüggvény szemantikája nyitva marad.
 
 **A két független út.** A út: a `0x004ed5e0` utasításai virtuális `+8` hívást végeznek a `+0x54` objektumon, a `0x004e41f0` pedig `ytDirScanner` táblát ír ebbe az objektumba. B út: a PE `0x00c86be0` táblájának `+8` szava közvetlenül `0x004ebff0`, és az RTTI leltár ugyanezt a táblát `ytDirScanner::vftable` néven azonosítja. A két út a visszahívás címében egyezik. A listaírásnál az utasításszintű regiszterút `0x004ea360` felől a `0x004e5210` és `0x004e5070` függvényhez vezet; a külön teljes mezőpásztázás a `0x004e5070` függvényt azonosítja a `+0x3f0/+0x3f4` írójaként. Ezek a megfigyelések a belső lista írását megerősítik, a rejtett alias teljes kizárását nem.
 
-**A visszahívás és a két külön tároló.** A `0x004ed5e0` a tulajdonos `+0x54` objektum virtuális `+8` helyét hívja az index átadásával (`0x004ed660` től `0x004ed668` ig). A `0x004e41f0` a `ytDirScanner` táblát írja az objektumba, a PE vtable `0x00c86be0` `+8` eleme pedig `0x004ebff0`. A `0x004e5a80` kimeneti indexvektorának címét a hívó adja át külön paraméterként; a `0x004ed5e0` sem ezt, sem a vektor címét nem továbbítja a visszahívásnak.
+**A visszahívás és a két külön tároló.** A `0x004ed5e0` a tulajdonos `+0x54` objektum virtuális `+8` helyét hívja az index átadásával (`0x004ed660`-`0x004ed668`). A `0x004e41f0` a `ytDirScanner` táblát írja az objektumba, a PE vtable `0x00c86be0` `+8` eleme pedig `0x004ebff0`. A `0x004e5a80` kimeneti indexvektorának címét a hívó adja át külön paraméterként; a `0x004ed5e0` sem ezt, sem a vektor címét nem továbbítja a visszahívásnak.
 
 A visszahívás közvetett mellékhatása mégis látható. A `0x004ebff0` a saját objektummutatójával hívja a `0x004ea360` függvényt. A `0x004ea360` megfelelő eseményágában a `0x004e5210` a scanner objektummutatóját adja a `0x004e5070` függvénynek. Ez a függvény a scanner saját `+0x3f0/+0x3f4` pointerlistájához fűz `0x2c` bájtos rekordot, a darabszám utáni helyre. Ez a beágyazott scanner tárolója; nem a `0x004e5a80` hívója által átadott kimeneti indexvektor. A megvizsgált hívási út tehát belső rekordlistát módosít, a kimeneti vektor közvetlen vagy közvetett módosítására nem találtam adatutat. Rejtett globális alias teljes kizárása **NINCS MEG**.
 
 **A `0x00425f60` kilépési EAX értékei.** A hívó `0x0055ef1a` címen teszteli az EAX értékét; nulla esetén továbbmegy, nem nulla esetén a `0x0055f849` címre ugrik. Az alábbi felsorolásban minden visszatérés előtti utolsó EAX író utasítás szerepel.
 
 * `0x0042605f`: az utolsó író `0x00426046`, az érték 2.
-* `0x0042617f`: az utolsó író `0x00426167`, mentett helpereredmény, a visszatéréshez nem nulla kell.
+* `0x0042617f`: az utolsó író `0x00426167`, mentett segédfüggvény-eredmény, a visszatéréshez nem nulla kell.
 * `0x004261e0`: az utolsó író `0x004261c8`, mentett virtuális hívás eredménye, a visszatéréshez nem nulla kell.
 * `0x004265ce`: az utolsó író `0x004265b5`, az érték `0xf4242`.
 * `0x0042663c`: az utolsó író `0x00426624`, a `0x005b1570` hívás mentett EAX értéke.
 * `0x004281e9`: az utolsó író `0x004281d0`, az érték 3, ha a méret vagy a számított kiterjedés nem pozitív.
-* `0x00428400`: az utolsó író `0x004283ea`, EDI, csak nem nulla helpereredmény után.
+* `0x00428400`: az utolsó író `0x004283ea`, EDI, csak nem nulla segédfüggvény-eredmény után.
 
-A nulla visszatérés egyetlen lehetséges kilépése a `0x0042663c`: ehhez a `0x004265d1` által ellenőrzött helyi jelzőnek nem nullának kell lennie, és a mentett eredmény nem lehet `0xf4242`. A `0x005b1570` a kapott típusérték szerint választ segédfüggvényt, majd nulla helpereredményt is továbbvihet (`0x005b19bf`). A pontos típusok és azok feltételei, amelyeknél ezek a segédfüggvények nullát adnak, **NINCS MEG**. Biztosan nem nulla a másik hat kilépés EAX értéke.
+A nulla visszatérés egyetlen lehetséges kilépése a `0x0042663c`: ehhez a `0x004265d1` által ellenőrzött helyi jelzőnek nem nullának kell lennie, és a mentett eredmény nem lehet `0xf4242`. A `0x005b1570` a kapott típusérték szerint választ segédfüggvényt, majd nulla segédfüggvény-eredményt is továbbvihet (`0x005b19bf`). A pontos típusok és azok feltételei, amelyeknél ezek a segédfüggvények nullát adnak, **NINCS MEG**. Biztosan nem nulla a másik hat kilépés EAX értéke.
 
-**A `+0x538/+0x53c` sor forrása és sorrendje.** A `0x004e41f0` konstruktor nullázza a két mezőt (`0x004e44a2`, `0x004e44a8`); a `0x004e4960` felszabadítás után nullázza őket (`0x004e49f9`, `0x004e4a06`). Ugyanez a konstruktor nullázza a forráslisták `+0xe4/+0xe8` és `+0xec/+0xf0` mezőit (`0x004e4258` tól `0x004e4272` ig), amelyeket a `0x004e4960` is ürít (`0x004e4e37` től `0x004e4e71` ig). A `0x004ea360` építi, majd feldolgozás után üríti a sort és e két forráslistát. A teljes mezőpásztázás egy további `+0xe4` írást talált a `0x004e2140` címen, de ez a `CChangeLoggerWindows` konstruktorának nullázása (`0x00c86d08` vtable), ezért nem a scanner forráslistájának írója. A forráslisták tényleges feltöltő útja **NINCS MEG**.
+**A `+0x538/+0x53c` sor forrása és sorrendje.** A `0x004e41f0` konstruktor nullázza a két mezőt (`0x004e44a2`, `0x004e44a8`); a `0x004e4960` felszabadítás után nullázza őket (`0x004e49f9`, `0x004e4a06`). Ugyanez a konstruktor nullázza a forráslisták `+0xe4/+0xe8` és `+0xec/+0xf0` mezőit (`0x004e4258`-`0x004e4272`), amelyeket a `0x004e4960` is ürít (`0x004e4e37`-`0x004e4e71`). A `0x004ea360` építi, majd feldolgozás után üríti a sort és e két forráslistát. A teljes mezőpásztázás egy további `+0xe4` írást talált a `0x004e2140` címen, de ez a `CChangeLoggerWindows` konstruktorának nullázása (`0x00c86d08` vtable), ezért nem a scanner forráslistájának írója. A forráslisták tényleges feltöltő útja **NINCS MEG**.
 
 * A `+0x334/+0x338` bemenet elemeit növekvő indexben adja át a `0x00706c80` függvénynek.
 * A `+0xe4/+0xe8` bemenet minden eleméből `3` értékű rekordot készít, és a sor végére fűzi (`0x004ea63a`, számláló növelése: `0x004ea681`).
@@ -2630,8 +2630,8 @@ A `3` értékű rekord tehát a `+0xe4/+0xe8` bemeneti lista egyik eleme. A feld
 
 **Bizonyíték.**
 
-* A virtuális `+8` célja `0x004ebff0`: bináris (`0x004e41f0`, `0x00c86be0`, `0x004ed660` től `0x004ed668` ig).
-* A scanner belső listájához rekordot fűz: bináris (`0x004eb554`, `0x004e542d` től `0x004e542f` ig, `0x004e5070`).
+* A virtuális `+8` célja `0x004ebff0`: bináris (`0x004e41f0`, `0x00c86be0`, `0x004ed660`-`0x004ed668`).
+* A scanner belső listájához rekordot fűz: bináris (`0x004eb554`, `0x004e542d`-`0x004e542f`, `0x004e5070`).
 * A `0x00425f60` hét visszatérési címének utolsó EAX írója: bináris (`0x00426046`, `0x00426167`, `0x004261c8`, `0x004265b5`, `0x00426624`, `0x004281d0`, `0x004283ea`).
 * A `+0x538/+0x53c` mezők inicializálása, bővítése és ürítése: bináris (`0x004e41f0`, `0x004e4960`, `0x004ea360`).
 * A három bemenet bejárási iránya és rekordfűzése: bináris (`0x004ea360`, `0x00706c80`).
