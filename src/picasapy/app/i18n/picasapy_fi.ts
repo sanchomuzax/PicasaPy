@@ -7824,7 +7824,7 @@ picasapy-origin-key: stringres:il_Cancel</extracomment>
             <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="233" />
             <source>Browse for Folder</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
-            <translation type="unfinished" />
+            <translation>Selaa kansioita</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="237" />
