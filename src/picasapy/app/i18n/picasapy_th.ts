@@ -21070,7 +21070,7 @@ picasapy-origin-key: stringres:Album::ID_REFRESH_THUMB</extracomment>
             <source>Sort &amp;Album By</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Album::SortAlbumBy</extracomment>
-            <translation>เรียงลำดับอัลบั้มตาม</translation>
+            <translation>&amp;เรียงลำดับอัลบั้มตาม</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="68" />

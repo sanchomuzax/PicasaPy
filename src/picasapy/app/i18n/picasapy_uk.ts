@@ -21126,7 +21126,7 @@ picasapy-origin-key: stringres:Album::SortAlbumBy</extracomment>
             <source>&amp;Reverse order</source>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:Sort::ID_REVERSESORT;stringres:eMenuLabelFolder::ID_REVERSESORT</extracomment>
-            <translation>Зворотний порядок</translation>
+            <translation>&amp;Зворотний порядок</translation>
         </message>
         <message>
             <location filename="../qml/PicasaPy/RecentlyUpdatedContextMenu.qml" line="94" />
