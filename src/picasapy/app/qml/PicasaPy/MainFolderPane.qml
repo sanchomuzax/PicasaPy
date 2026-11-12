@@ -40,6 +40,8 @@ FolderPane {
                          ? hostFolderHierarchyController : null
     selectedPath: hostController ? hostController.currentFolder : ""
     starredActive: hostController ? hostController.filterActive : false
+    recentlyUpdatedActive: hostController ? hostController.currentAlbumToken === "]updated" : false
+    recentlyUpdatedCount: hostController ? hostController.recentlyUpdatedCount : 0
     searchActive: hostController ? hostController.searchActive : false
     searchQuery: hostController ? hostController.searchQuery : ""
     searchResultCount: hostController ? hostController.searchResultCount : 0
@@ -79,6 +81,12 @@ FolderPane {
         hostWindow.clearSelection()
         hostWindow.unnamedFacesOpen = false
         hostController.showStarredAlbum()
+    }
+    onRecentlyUpdatedChosen: {
+        hostToolbar.clearSearch()
+        hostWindow.clearSelection()
+        hostWindow.unnamedFacesOpen = false
+        hostController.showRecentlyUpdatedAlbum()
     }
     onAlbumChosen: function(token) {
         if (!hostController) return

@@ -43,6 +43,7 @@ def initialize_controller_state(
     self._quick_view_photo_ids: tuple[str, ...] = ()
     self._init_screensaver()
     self._albums: list = []  # #9: a bal hasáb Albumok gyűjteménye
+    self._recently_updated_count = 0  # #6851: Recently Updated fotók száma
     self._current_folder = ""
     self._status = ""
     self._folder_date = ""

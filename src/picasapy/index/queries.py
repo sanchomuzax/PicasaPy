@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import sqlite3
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -205,6 +206,47 @@ def all_photos(
 def starred_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     rows = conn.execute(f"{_select(conn)} WHERE p.star = 1 ORDER BY f.path, p.name")
     return _records(rows)
+
+
+def recently_updated_photos(
+    conn: sqlite3.Connection,
+    cutoff_ns: int | None = None,
+    limit: int = 250,
+) -> tuple[PhotoRecord, ...]:
+    """A legutóbb frissített (módosított) fotók (#6851): a Recently Updated album.
+
+    A 7 napos gördülő ablak szerint a fájl módosítási ideje (p.mtime_ns)
+    szigorúan nagyobb a most - 7 nap küszöbnél.
+    A sorrend: a katalógus rekordsorrendjének fordítottja (p.id DESC),
+    azaz a legutóbb felvett kép áll legelöl. Legfeljebb `limit` darabig (alapérték 250).
+    """
+    if cutoff_ns is None:
+        cutoff_ns = int((time.time() - 7 * 86400) * 1_000_000_000)
+    rows = conn.execute(
+        f"{_select(conn)} WHERE p.mtime_ns > ?"
+        " ORDER BY p.id DESC LIMIT ?",
+        (int(cutoff_ns), int(limit)),
+    )
+    return _records(rows)
+
+
+def count_recently_updated_photos(
+    conn: sqlite3.Connection,
+    cutoff_ns: int | None = None,
+    limit: int = 250,
+) -> int:
+    """A Recently Updated album elemeinek száma (#6851), legfeljebb `limit`."""
+    if cutoff_ns is None:
+        cutoff_ns = int((time.time() - 7 * 86400) * 1_000_000_000)
+    lathato = visible_folder_sql(conn, "f")
+    sor = conn.execute(
+        f"SELECT COUNT(*) AS n FROM ("
+        f"  SELECT p.id FROM photos p JOIN folders f ON f.id = p.folder_id AND {lathato}"
+        f"  WHERE p.mtime_ns > ? ORDER BY p.id DESC LIMIT ?"
+        f")",
+        (int(cutoff_ns), int(limit)),
+    ).fetchone()
+    return int(sor["n"]) if sor is not None else 0
 
 
 def video_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
