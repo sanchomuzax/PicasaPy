@@ -130,8 +130,11 @@ következtetés: ez maga a fájl, amiből a Picasa a párbeszédet felépíti.
 
 ### 3.2 Képméret
 
-- `radiogroup` **két** választással; az alapértelmezett az „Eredeti méret
-  használata".
+- `radiogroup` **két** választással; az alapértelmezett az **„Átméretezés:"
+  800 képponttal** (#6866). Mérve: a Colab tiszta profilja, amelynek
+  registry-jében nincs mentett export-kulcs (job-645), ezzel nyitja az
+  Export Picture to Folder ablakot (job-642). A korábbi „Eredeti méret
+  használata" állítás egy mentett beállítású tulajdonosi képből jött.
 - Az átméretező sor **egészében le van tiltva**, amíg a rádió nem az
   „Átméretezés:"-en áll (`<bind attr="enabled" source="sizeradio"/>`).
 - A számmező **`filter="digits"`** — csak számjegy írható be.

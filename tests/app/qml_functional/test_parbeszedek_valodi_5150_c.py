@@ -315,7 +315,11 @@ class TestExportParbeszed:
         _elokeszit(window, qt_app, controller)
         dialog = _export_megnyit(window, qt_app)
         sor = _gyerek(dialog, "exportSizeRow")
-        assert sor.property("enabled") is False, "az eredeti méret az alapérték"
+        assert sor.property("enabled") is True, "az Átméretezés az alapérték (#6866)"
+        _klikk_ablakban(qt_app, window, _gyerek(dialog, "exportSizeOriginalRadio"))
+        assert _varj(qt_app, lambda: sor.property("enabled") is False), (
+            "az Eredeti méret radio kattintása nem tiltotta le a méretsort"
+        )
 
         _klikk_ablakban(qt_app, window, _gyerek(dialog, "exportSizeResizeRadio"))
 

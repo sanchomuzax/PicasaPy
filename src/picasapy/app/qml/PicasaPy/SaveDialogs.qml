@@ -59,9 +59,9 @@ Item {
         }
     }
 
-    // #1527 — „Másolat mentése": nem kérdez semmit (a felirata ellipszis
-    // nélküli), a célnevet a mért `-001` minta adja. A teljes kijelölésre
-    // hat: a hivatalos hibaüzenete is többes számú („…a fájlok mentése").
+    // #1527/#6866 — „Másolat mentése": nem kérdez semmit (a felirata
+    // ellipszis nélküli), a célnevet a mért `-001` minta adja. A hívó a
+    // fókuszban lévő sort adja át egyetlen elemként.
     function openSaveCopy(rows) {
         if (!rows || rows.length === 0) return
         controller.saveCopyRows(rows)
