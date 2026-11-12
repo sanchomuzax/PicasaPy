@@ -126,13 +126,12 @@ FolderPane {
                        : 0
     ignoredFacesActive: hostWindow.unnamedFacesOpen
                         && hostWindow.facesAlbumMode === "ignored"
-    // #455: fogd-és-vidd — a húzott KIJELÖLÉS kerül albumba. Az új
-    // album ugyanazt a névkérő párbeszédet kapja, mint a menüből
-    // indított (Fájl → Új album), hogy ne legyen két, kicsit
-    // másképp viselkedő út ugyanarra.
+    // #455: fogd-és-vidd — a húzott KIJELÖLÉS kerül albumba. Az
+    // eredetiben ezen az úton nincs névbekérő (#2911, mérve), ezért
+    // nem a menük Album Properties párbeszédét nyitja (#6861).
     onNewAlbumPhotosDropped: function(rows) {
         if (rows && rows.length > 0)
-            hostFileOpsDialogs.ensure().openNewAlbum(rows)
+            hostFileOpsDialogs.ensure().createAlbumFromDrop(rows)
     }
     onPhotosDroppedOnAlbum: function(token, rows) {
         if (hostController && rows && rows.length > 0)

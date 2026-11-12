@@ -111,6 +111,9 @@ Item {
         //: picasapy-origin-key: stringres:ytApp::InfoTitle
         title: qsTr("Info")
         standardButtons: Dialog.Ok
+        // #1599/#1748: rögzített szélesség, különben a tördelő címke és a
+        // Dialog implicitWidth-je kötési hurokba fut Fusion stílussal
+        implicitWidth: 400
 
         contentItem: Label {
             objectName: "copyAllEffectsInfoText"

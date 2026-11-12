@@ -75,6 +75,13 @@ Item {
         dialogs.openNewAlbumProperties(controller.currentFolder, rows)
     }
 
+    //: #2911: a képek albumlistára ejtése az eredetiben névbekérő nélkül,
+    //: azonnal „Untitled” albumot készít (mérve); ez az út NEM a menüké.
+    function createAlbumFromDrop(rows) {
+        if (!controller || !rows || rows.length === 0) return
+        controller.createAlbum(dialogs.ujAlbumNeve, rows)
+    }
+
     // #5812: az eszköztár új album gombja az Album Properties párbeszédet
     // nyitja. Jóváhagyáskor a controller az albumdefiníciót az aktuális
     // mappa ini-jébe írja, képtagság létrehozása nélkül.

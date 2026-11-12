@@ -64,7 +64,6 @@ controller.pasteEffects ELDÖNTVE (#1534) — a beillesztés; a felületé a KÖ
 # -- FELVÁLTVA: a felület egy másik, bővebb alakot hív ---------------------
 controller.setDarkTheme FELVÁLTVA — a menü a toggleDarkTheme-et hívja (PicasaMenuBar.qml)
 controller.removeWatchedFolder FELVÁLTVA — a #1249 óta a bővebb removeFolder megy a QML-ből
-controller.createAlbum FELVÁLTVA (#6861) — a New Album az Album Properties párbeszéden át a createAlbumWithProperties-t hívja; a createAlbum a mappa-album út (Pythonból) magja
 controller.folderDescription FELVÁLTVA — a felület a mappánkénti folderDescriptionOf(path) alakot hívja
 folderHierarchyController.setSimplified FELVÁLTVA — a menü a toggleSimplified-et hívja, az hívja ezt
 folderHierarchyController.setAlbumThumbs FELVÁLTVA — a menü a toggleAlbumThumbs-t hívja, az hívja ezt
