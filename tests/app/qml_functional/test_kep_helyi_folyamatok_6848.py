@@ -122,7 +122,7 @@ def test_mappa_felosztasa_a_kattintott_keptol_mozgat_es_kijeloli_az_uj_mappat(
         menu = jobbklikk_fotón(window, qt_app, 4)
         kattints(window, qt_app, gyerek(window, "contextMenuSplitFolder"))
         dialog = gyerek(window, "folderPropertiesDialog")
-        assert varj(qt_app, lambda: dialog.property("visible") is True)
+        assert varj(qt_app, lambda dialog=dialog: dialog.property("visible") is True)
         nev = gyerek(window, "folderPropertiesNameField")
         assert dialog.property("title") == "Folder Properties"
         assert nev.property("text") == "Untitled"
@@ -131,11 +131,11 @@ def test_mappa_felosztasa_a_kattintott_keptol_mozgat_es_kijeloli_az_uj_mappat(
         assert gyerek(window, "folderPropertiesUseMusic").property("checked") is False
         if elteres < 5:
             kattints(window, qt_app, gyerek(window, "folderPropertiesCancelButton"))
-            assert varj(qt_app, lambda: dialog.property("visible") is False)
+            assert varj(qt_app, lambda dialog=dialog: dialog.property("visible") is False)
         else:
             kattints(window, qt_app, gyerek(window, "folderPropertiesOkButton"))
             assert varj(qt_app, lambda: len(list(cel.glob("*.jpg"))) == 20)
-            assert varj(qt_app, lambda: controller.currentFolder == str(cel))
+            assert varj(qt_app, lambda: Path(controller.currentFolder) == cel)
             assert varj(qt_app, lambda: _mappaszam(controller, cel) == 20)
             assert varj(qt_app, lambda: _mappaszam(controller, source) == 4)
             assert controller.photos.rowCount() == 24
@@ -159,10 +159,14 @@ def test_elrejtes_ket_keppel_csokkenti_a_lathato_racs_darabszamat(app_24, qt_app
         menu = jobbklikk_fotón(window, qt_app, elso_sor)
         kattints(window, qt_app, gyerek(window, "contextMenuHide"))
         vart_darab = 24 - 2 * alkalom
-        assert varj(qt_app, lambda: controller.photos.rowCount() == vart_darab), (
+        assert varj(
+            qt_app, lambda vart_darab=vart_darab: controller.photos.rowCount() == vart_darab
+        ), (
             "az elrejtett képek nem tűntek el a mappanézet darabszámából"
         )
-        assert varj(qt_app, lambda: _mappaszam(controller, source) == vart_darab), (
+        assert varj(
+            qt_app, lambda vart_darab=vart_darab: _mappaszam(controller, source) == vart_darab
+        ), (
             "a bal oldali mappaszám nem követte az elrejtést"
         )
         assert kijelolt(window) == []
@@ -186,11 +190,13 @@ def test_forgatas_jobbra_ket_kepen_mentesre_varo_allapotot_ad(app_24, qt_app):
         kattints(window, qt_app, gyerek(window, "contextMenuRotateRight"))
         assert varj(
             qt_app,
-            lambda: all(_ini_ertek(ut, ut.name, "rotate") == "rotate(1)" for ut in utvonalak),
+            lambda utvonalak=utvonalak: all(
+                _ini_ertek(ut, ut.name, "rotate") == "rotate(1)" for ut in utvonalak
+            ),
         ), "a Rotate Clockwise nem forgatta el a kijelölt képpárt"
         save = keres_vizualis(window, "headerSaveEditsButton")
         assert save is not None, "a mappafejléc Save gombja hiányzik"
-        assert varj(qt_app, lambda: save.property("enabled") is True), (
+        assert varj(qt_app, lambda save=save: save.property("enabled") is True), (
             "a forgatás után a mappafejléc Save gombja inaktív maradt"
         )
         zar(qt_app, menu)
