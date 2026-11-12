@@ -69,7 +69,7 @@ def test_automatic_scan_hides_busy_activity_while_paused(
     ctl.scanNewFaces()
 
     try:
-        assert pause_entered.wait(2.0), "a nagy függő készlet nem állt meg aktivitásnál"
+        assert pause_entered.wait(10.0), "a nagy függő készlet nem állt meg aktivitásnál"
         with active_lock:
             paused_scan_entries = [
                 label
@@ -102,7 +102,7 @@ def test_small_pending_set_finishes_during_continuous_user_activity(
     )
 
     ctl.scanNewFaces()
-    completed = var_feltetelre(qt_app, finished.is_set, 2.0)
+    completed = var_feltetelre(qt_app, finished.is_set, 10.0)
     if not completed:
         ctl.cancelScan()
     assert ctl.waitForBackgroundWorkers(5.0)

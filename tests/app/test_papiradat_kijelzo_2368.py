@@ -33,10 +33,12 @@ from PySide6.QtGui import QPageLayout, QPageSize
 
 
 @pytest.fixture
-def vezerlo(qt_app):
+def vezerlo(qt_app, tmp_path):
+    from PySide6.QtCore import QSettings
     from picasapy.app.print_controller import PrintController
 
-    return PrintController(lambda: [])
+    settings = QSettings(str(tmp_path / "print.ini"), QSettings.Format.IniFormat)
+    return PrintController(lambda: [], settings=settings)
 
 
 def _elrendezes(meret: QPageSize.PageSizeId, fekvo: bool = False) -> QPageLayout:

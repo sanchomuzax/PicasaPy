@@ -50,12 +50,14 @@ Item {
 
 
 @pytest.fixture
-def tree(qt_app):
+def tree(qt_app, tmp_path):
     """(kirajzolt gyökér-elem, vezérlő) — a valós bekötés kicsinyített mása."""
     import picasapy.app.application as app_module
+    from PySide6.QtCore import QSettings
     from PySide6.QtQml import QQmlComponent
 
-    controller = FolderHierarchyController()
+    settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    controller = FolderHierarchyController(settings=settings)
     controller.setFolders(_FOLDERS)
 
     view = QQuickView()

@@ -41,6 +41,7 @@ def controller(qt_app, tmp_path):
 
     A könyvtár üres: ezek a slotok csak a fájlrendszert nézik (a kimenet
     mellett áll-e a `.mxf`), nem az indexet."""
+    from PySide6.QtCore import QSettings
     from picasapy.app.controller import AppController
     from picasapy.app.thumbnail_provider import ThumbnailProvider
     from picasapy.index import open_index
@@ -51,7 +52,10 @@ def controller(qt_app, tmp_path):
     with open_index(tmp_path / "index.db"):
         pass
     szolgaltato = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
-    ctl = AppController(tmp_path / "index.db", (str(konyvtar),), szolgaltato)
+    settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+    ctl = AppController(
+        tmp_path / "index.db", (str(konyvtar),), szolgaltato, settings=settings
+    )
     yield ctl
     assert ctl.waitForBackgroundWorkers(30.0)
 

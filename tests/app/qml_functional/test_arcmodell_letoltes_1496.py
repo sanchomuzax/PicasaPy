@@ -32,7 +32,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
-from PySide6.QtCore import QMetaObject, QObject, Qt, QUrl
+from PySide6.QtCore import QMetaObject, QObject, QSettings, Qt, QUrl
 from PySide6.QtQml import QQmlComponent, QQmlEngine
 
 import picasapy.app.application as app_module
@@ -169,12 +169,14 @@ def _vezerlo(tmp_path, detektor, lenyomatolo, detektor_gyar=None, lenyomat_gyar=
     konyvtar.mkdir(exist_ok=True)
     with open_index(tmp_path / "index.db") as conn:
         sync_tree(conn, str(konyvtar))
+    settings = QSettings(str(tmp_path / "face_settings.ini"), QSettings.Format.IniFormat)
     return FaceScanController(
         tmp_path / "index.db",
         detector=detektor,
         embedder=lenyomatolo,
         detector_factory=detektor_gyar,
         embedder_factory=lenyomat_gyar,
+        settings=settings,
     )
 
 

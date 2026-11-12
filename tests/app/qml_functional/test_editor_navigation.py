@@ -60,7 +60,7 @@ class TestViewerFolderBoundedNavigation:
         provider = ThumbnailProvider(ThumbnailCache(tmp_path / "thumbs", size=32))
         controller = AppController(db, (str(lib),), provider, settings=settings)
         edit_preview = EditPreviewProvider()
-        edit_controller = EditController(edit_preview)
+        edit_controller = EditController(edit_preview, settings=settings)
         engine = QQmlApplicationEngine()
         engine.addImageProvider("thumbs", provider)
         engine.addImageProvider("editpreview", edit_preview)
@@ -92,7 +92,9 @@ class TestViewerFolderBoundedNavigation:
         )
         faces_helper = FacesHelper()
         engine.rootContext().setContextProperty("facesHelper", faces_helper)
-        face_scan_controller = FaceScanController(db, faces_helper=faces_helper)
+        face_scan_controller = FaceScanController(
+            db, faces_helper=faces_helper, settings=settings
+        )
         engine.rootContext().setContextProperty(
             "faceScanController", face_scan_controller
         )
@@ -102,7 +104,9 @@ class TestViewerFolderBoundedNavigation:
             "timelineController", timeline_controller
         )
         import_source_controller = ImportSourceController(
-            provider, add_folder=controller.addWatchedFolder
+            provider,
+            add_folder=controller.addWatchedFolder,
+            settings=settings,
         )
         engine.rootContext().setContextProperty(
             "importSourceController", import_source_controller

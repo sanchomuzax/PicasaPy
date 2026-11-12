@@ -54,10 +54,12 @@ def provider(qt_app):
 
 
 @pytest.fixture
-def controller(qt_app, provider):
+def controller(qt_app, provider, tmp_path):
+    from PySide6.QtCore import QSettings
     from picasapy.app.edit_controller import EditController
 
-    return EditController(provider)
+    settings = QSettings(str(tmp_path / "picker_settings.ini"), QSettings.Format.IniFormat)
+    return EditController(provider, settings=settings)
 
 
 class TestPickEffectColor:

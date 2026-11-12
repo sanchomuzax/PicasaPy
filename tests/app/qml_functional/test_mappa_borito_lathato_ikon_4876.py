@@ -90,7 +90,10 @@ def megjelenit(qt_app, tmp_path):
         return [boritos_kep] if mappa == utak[_BORITOS_NEV] else []
 
     def _epit(*, fa: bool):
-        hierarchy = FolderHierarchyController()
+        from PySide6.QtCore import QSettings
+
+        settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
+        hierarchy = FolderHierarchyController(settings=settings)
         hierarchy.setFolders([{"path": u, "count": 1} for u in utak.values()])
         hierarchy.setAlbumThumbs(True)  # a lapos listában ez kapcsolja be
         engine = QQmlEngine()
