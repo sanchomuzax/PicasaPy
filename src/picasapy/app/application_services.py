@@ -92,7 +92,7 @@ def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
 
         controller.syncFinished.connect(after_sync)
         # ha a szinkron a jelzés előtt már lefutott, ne várjunk a következőre
-        QTimer.singleShot(0, after_sync)
+        QTimer.singleShot(0, controller, after_sync)
 
     fileops.newFolderMoveFinished.connect(select_new_folder_when_indexed)
     fileops.photoMoveFailed.connect(lambda old, dest: refresh(old, dest))
