@@ -8578,6 +8578,102 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/play);headerpan
             <translation>Penja</translation>
         </message>
         <message>
+            <source>Online options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
+            <translation>Opcions en línia</translation>
+        </message>
+        <message>
+            <source>Enable Sync</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:syncoptionsmenu::enable</extracomment>
+            <translation>Activa la sincronització</translation>
+        </message>
+        <message>
+            <source>Public on the web</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_PUBLIC</extracomment>
+            <translation>Públic al web</translation>
+        </message>
+        <message>
+            <source>Limited, anyone with the link</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_UNLISTED</extracomment>
+            <translation>Limitat, qualsevol persona amb l'enllaç</translation>
+        </message>
+        <message>
+            <source>Limited</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_SIGNIN_REQUIRED</extracomment>
+            <translation>Limitat</translation>
+        </message>
+        <message>
+            <source>Only you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_ONLY_YOU</extracomment>
+            <translation>Només l'usuari</translation>
+        </message>
+        <message>
+            <source>800 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_800</extracomment>
+            <translation>Amplada màx. 800</translation>
+        </message>
+        <message>
+            <source>1024 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1024</extracomment>
+            <translation>Amplada màx. 1.024</translation>
+        </message>
+        <message>
+            <source>1600 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1600</extracomment>
+            <translation>Amplada màx. de 1.600</translation>
+        </message>
+        <message>
+            <source>2048 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_2048</extracomment>
+            <translation>Amplada màx. 2048</translation>
+        </message>
+        <message>
+            <source>Original Size Images</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_FULL_SIZE</extracomment>
+            <translation>Imatges de mida original</translation>
+        </message>
+        <message>
+            <source>Starred Images Only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_STARS</extracomment>
+            <translation>Només imatges destacades</translation>
+        </message>
+        <message>
+            <source>View Online</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_VIEW_ONLINE</extracomment>
+            <translation>Visualitza en línia</translation>
+        </message>
+        <message>
+            <source>Refresh Online Status</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_REFRESH_ONLINE</extracomment>
+            <translation>Actualitza l'estat en línia</translation>
+        </message>
+        <message>
+            <source>Copy URL</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_COPY_URL</extracomment>
+            <translation>Copia l'URL</translation>
+        </message>
+        <message>
+            <source>Delete Online Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_DELETE_ONLINE_ALBUM</extracomment>
+            <translation>Suprimeix l'àlbum en línia</translation>
+        </message>
+        <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Desa</translation>

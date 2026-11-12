@@ -8587,6 +8587,102 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/play);headerpan
             <translation>Įkelti</translation>
         </message>
         <message>
+            <source>Online options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
+            <translation>Interneto parinktys</translation>
+        </message>
+        <message>
+            <source>Enable Sync</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:syncoptionsmenu::enable</extracomment>
+            <translation>Įjungti sinchronizavimą</translation>
+        </message>
+        <message>
+            <source>Public on the web</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_PUBLIC</extracomment>
+            <translation>Vieša žiniatinklyje</translation>
+        </message>
+        <message>
+            <source>Limited, anyone with the link</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_UNLISTED</extracomment>
+            <translation>Apribota, visi, turintys nuorodą</translation>
+        </message>
+        <message>
+            <source>Limited</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_SIGNIN_REQUIRED</extracomment>
+            <translation>Apribota</translation>
+        </message>
+        <message>
+            <source>Only you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_ONLY_YOU</extracomment>
+            <translation>Tik jūs</translation>
+        </message>
+        <message>
+            <source>800 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_800</extracomment>
+            <translation>Maks. 800 pločio</translation>
+        </message>
+        <message>
+            <source>1024 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1024</extracomment>
+            <translation>Maks. 1024 pločio</translation>
+        </message>
+        <message>
+            <source>1600 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1600</extracomment>
+            <translation>Maks. 1 600 pločio</translation>
+        </message>
+        <message>
+            <source>2048 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_2048</extracomment>
+            <translation>Maks. 2048 pločio</translation>
+        </message>
+        <message>
+            <source>Original Size Images</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_FULL_SIZE</extracomment>
+            <translation>Originalaus dydžio vaizdai</translation>
+        </message>
+        <message>
+            <source>Starred Images Only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_STARS</extracomment>
+            <translation>Tik žvaigždute pažymėti vaizdai</translation>
+        </message>
+        <message>
+            <source>View Online</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_VIEW_ONLINE</extracomment>
+            <translation>Peržiūrėti internete</translation>
+        </message>
+        <message>
+            <source>Refresh Online Status</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_REFRESH_ONLINE</extracomment>
+            <translation>Atnaujinti prisijungimo būseną</translation>
+        </message>
+        <message>
+            <source>Copy URL</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_COPY_URL</extracomment>
+            <translation>Kopijuoti URL</translation>
+        </message>
+        <message>
+            <source>Delete Online Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_DELETE_ONLINE_ALBUM</extracomment>
+            <translation>Trinti interneto albumą</translation>
+        </message>
+        <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Išsaugoti</translation>

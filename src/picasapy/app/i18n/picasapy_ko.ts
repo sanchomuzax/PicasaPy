@@ -8569,6 +8569,102 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/play);headerpan
             <translation>업로드</translation>
         </message>
         <message>
+            <source>Online options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
+            <translation>온라인 옵션</translation>
+        </message>
+        <message>
+            <source>Enable Sync</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:syncoptionsmenu::enable</extracomment>
+            <translation>동기화 사용</translation>
+        </message>
+        <message>
+            <source>Public on the web</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_PUBLIC</extracomment>
+            <translation>웹에 공개</translation>
+        </message>
+        <message>
+            <source>Limited, anyone with the link</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_UNLISTED</extracomment>
+            <translation>제한 공개, 링크가 있는 사용자에게만 공개</translation>
+        </message>
+        <message>
+            <source>Limited</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_SIGNIN_REQUIRED</extracomment>
+            <translation>제한 공개</translation>
+        </message>
+        <message>
+            <source>Only you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_ONLY_YOU</extracomment>
+            <translation>비공개</translation>
+        </message>
+        <message>
+            <source>800 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_800</extracomment>
+            <translation>최대 너비 800</translation>
+        </message>
+        <message>
+            <source>1024 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1024</extracomment>
+            <translation>최대 너비 1024</translation>
+        </message>
+        <message>
+            <source>1600 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1600</extracomment>
+            <translation>최대 너비 1600</translation>
+        </message>
+        <message>
+            <source>2048 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_2048</extracomment>
+            <translation>최대 너비 2048</translation>
+        </message>
+        <message>
+            <source>Original Size Images</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_FULL_SIZE</extracomment>
+            <translation>원본 크기 이미지</translation>
+        </message>
+        <message>
+            <source>Starred Images Only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_STARS</extracomment>
+            <translation>별표 표시된 이미지만</translation>
+        </message>
+        <message>
+            <source>View Online</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_VIEW_ONLINE</extracomment>
+            <translation>온라인으로 보기</translation>
+        </message>
+        <message>
+            <source>Refresh Online Status</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_REFRESH_ONLINE</extracomment>
+            <translation>온라인 상태 새로고침</translation>
+        </message>
+        <message>
+            <source>Copy URL</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_COPY_URL</extracomment>
+            <translation>URL 복사</translation>
+        </message>
+        <message>
+            <source>Delete Online Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_DELETE_ONLINE_ALBUM</extracomment>
+            <translation>온라인 앨범 삭제</translation>
+        </message>
+        <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>저장</translation>

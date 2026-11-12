@@ -8580,6 +8580,102 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/play);headerpan
             <translation>Feltöltés</translation>
         </message>
         <message>
+            <source>Online options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
+            <translation>Online opciók</translation>
+        </message>
+        <message>
+            <source>Enable Sync</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:syncoptionsmenu::enable</extracomment>
+            <translation>Szinkronizálás engedélyezése</translation>
+        </message>
+        <message>
+            <source>Public on the web</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_PUBLIC</extracomment>
+            <translation>Nyilvános az interneten</translation>
+        </message>
+        <message>
+            <source>Limited, anyone with the link</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_UNLISTED</extracomment>
+            <translation>Korlátozott, a link birtokában bárki</translation>
+        </message>
+        <message>
+            <source>Limited</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_SIGNIN_REQUIRED</extracomment>
+            <translation>Korlátozott</translation>
+        </message>
+        <message>
+            <source>Only you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_ONLY_YOU</extracomment>
+            <translation>Csak Ön</translation>
+        </message>
+        <message>
+            <source>800 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_800</extracomment>
+            <translation>800 (maximális szélesség)</translation>
+        </message>
+        <message>
+            <source>1024 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1024</extracomment>
+            <translation>1024 (maximális szélesség)</translation>
+        </message>
+        <message>
+            <source>1600 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1600</extracomment>
+            <translation>1600 (maximális szélesség)</translation>
+        </message>
+        <message>
+            <source>2048 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_2048</extracomment>
+            <translation>2048 (maximális szélesség)</translation>
+        </message>
+        <message>
+            <source>Original Size Images</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_FULL_SIZE</extracomment>
+            <translation>Eredeti méretű képek</translation>
+        </message>
+        <message>
+            <source>Starred Images Only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_STARS</extracomment>
+            <translation>Csak csillagozott képek</translation>
+        </message>
+        <message>
+            <source>View Online</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_VIEW_ONLINE</extracomment>
+            <translation>Megtekintés online</translation>
+        </message>
+        <message>
+            <source>Refresh Online Status</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_REFRESH_ONLINE</extracomment>
+            <translation>Online állapot frissítése</translation>
+        </message>
+        <message>
+            <source>Copy URL</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_COPY_URL</extracomment>
+            <translation>URL-cím másolása</translation>
+        </message>
+        <message>
+            <source>Delete Online Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_DELETE_ONLINE_ALBUM</extracomment>
+            <translation>Online album törlése</translation>
+        </message>
+        <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Mentés</translation>

@@ -8569,6 +8569,102 @@ picasapy-origin-key: faceheaderpaneltext:Tooltip(faceheaderpanel/play);headerpan
             <translation>Carregar</translation>
         </message>
         <message>
+            <source>Online options</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: headerpaneltext:Tooltip(headerpanel/sync_options)</extracomment>
+            <translation>Opções on-line</translation>
+        </message>
+        <message>
+            <source>Enable Sync</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:syncoptionsmenu::enable</extracomment>
+            <translation>Activar sincronização</translation>
+        </message>
+        <message>
+            <source>Public on the web</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_PUBLIC</extracomment>
+            <translation>Público na internet</translation>
+        </message>
+        <message>
+            <source>Limited, anyone with the link</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_UNLISTED</extracomment>
+            <translation>Limitado. Qualquer pessoa com o link</translation>
+        </message>
+        <message>
+            <source>Limited</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_SIGNIN_REQUIRED</extracomment>
+            <translation>Limitado</translation>
+        </message>
+        <message>
+            <source>Only you</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_ONLY_YOU</extracomment>
+            <translation>Apenas você</translation>
+        </message>
+        <message>
+            <source>800 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_800</extracomment>
+            <translation>Largura máxima de 800</translation>
+        </message>
+        <message>
+            <source>1024 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1024</extracomment>
+            <translation>Largura máx. de 1024</translation>
+        </message>
+        <message>
+            <source>1600 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1600</extracomment>
+            <translation>Largura máx. de 1600</translation>
+        </message>
+        <message>
+            <source>2048 Max. Width</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_2048</extracomment>
+            <translation>Largura máxima de 2048</translation>
+        </message>
+        <message>
+            <source>Original Size Images</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_FULL_SIZE</extracomment>
+            <translation>Imagens em tamanho original</translation>
+        </message>
+        <message>
+            <source>Starred Images Only</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_STARS</extracomment>
+            <translation>Apenas imagens marcadas com estrela</translation>
+        </message>
+        <message>
+            <source>View Online</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_VIEW_ONLINE</extracomment>
+            <translation>Ver on-line</translation>
+        </message>
+        <message>
+            <source>Refresh Online Status</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_REFRESH_ONLINE</extracomment>
+            <translation>Actualizar estado on-line</translation>
+        </message>
+        <message>
+            <source>Copy URL</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_COPY_URL</extracomment>
+            <translation>Copiar URL</translation>
+        </message>
+        <message>
+            <source>Delete Online Album</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:SyncOpts::ID_SYNC_DELETE_ONLINE_ALBUM</extracomment>
+            <translation>Eliminar álbum on-line</translation>
+        </message>
+        <message>
             <source>Save</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Guardar</translation>
