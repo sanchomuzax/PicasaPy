@@ -84,14 +84,16 @@ def _valt(vezerlo, qt_app):
 class TestKepmeret:
     """Spec 3.2: két rádió + `filter="digits"` mező + 7 fogásos csúszka."""
 
-    def test_ket_radio_van_es_az_eredeti_meret_az_alapertelmezett(
+    def test_ket_radio_van_es_az_atmeretezes_az_alapertelmezett(
         self, qml_app, qt_app
     ):
+        """#6866: mentett beállítás nélkül az eredeti Resize to, 800 pixellel nyílik."""
         window, _controller, _engine = qml_app
         _megnyit(window, qt_app)
 
-        assert _elem(window, "exportSizeOriginalRadio").property("checked") is True
-        assert _elem(window, "exportSizeResizeRadio").property("checked") is False
+        assert _elem(window, "exportSizeOriginalRadio").property("checked") is False
+        assert _elem(window, "exportSizeResizeRadio").property("checked") is True
+        assert _elem(window, "exportSizeField").property("text") == "800"
 
     def test_az_atmeretezo_sor_le_van_tiltva_amig_az_eredeti_az_aktiv(
         self, qml_app, qt_app
@@ -100,6 +102,7 @@ class TestKepmeret:
         „képpont" felirat és a csúszka EGYÜTT szürkül."""
         window, _controller, _engine = qml_app
         _megnyit(window, qt_app)
+        _valt(_elem(window, "exportSizeOriginalRadio"), qt_app)
 
         for nev in ("exportSizeField", "exportSizePixelsLabel", "exportSizeSlider"):
             assert _elem(window, nev).property("enabled") is False, nev
@@ -398,7 +401,7 @@ class TestMegorzottBeallitasok:
         window, controller, _engine = qml_app
         parbeszed = _megnyit(window, qt_app)
         parbeszed.setProperty("targetFolder", str(tmp_path / "ki"))
-        _valt(_elem(window, "exportSizeResizeRadio"), qt_app)
+        _elem(window, "exportSizeResizeRadio").setProperty("checked", True)  # #6866: már az alap
         _elem(window, "exportSizeSlider").setProperty("value", 0)
         _elem(window, "exportQualityPreset").setProperty("currentIndex", 2)
         _valt(_elem(window, "exportAddNumbersCheck"), qt_app)
@@ -448,7 +451,7 @@ class TestAtmeretezesVegponttolVegpontig:
         parbeszed = _megnyit(window, qt_app)
         cel = tmp_path / "ki"
         parbeszed.setProperty("targetFolder", str(cel))
-        _valt(_elem(window, "exportSizeResizeRadio"), qt_app)
+        _elem(window, "exportSizeResizeRadio").setProperty("checked", True)  # #6866: már az alap
         _elem(window, "exportSizeField").setProperty("text", "48")
         qt_app.processEvents()
 

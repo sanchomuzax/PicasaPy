@@ -60,8 +60,8 @@ class TestKilencKulcs:
         # `FileExportSize` alapértéke 3 (`0x00738c58`), a hét fogás
         # harmadik indexe → 800 képpont
         assert beallitasok["size"] == 3
-        # a méret-rádió alapja az „Eredeti méret használata" (spec 3.2)
-        assert beallitasok["resize"] is False
+        # a méret-rádió alapja az „Átméretezés" (spec 3.2, #6866)
+        assert beallitasok["resize"] is True
         # `FileExportQuality` alapértéke 0x55 = 85 (`0x0073962d`)
         assert beallitasok["quality"] == 85
         # `FileExportQualityType`: a mentetlen alapállapot az

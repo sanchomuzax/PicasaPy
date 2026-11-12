@@ -338,7 +338,10 @@ PicasaMenuBar {
     onRevertRequested: hostSaveDialogs.ensure().openRevert(hostWindow.photoActionRows())
     // #1527: a mentés-család két új tagja
     onSaveAsRequested: hostSaveDialogs.ensure().openSaveAs(hostWindow.photoActionIndex())
-    onSaveCopyRequested: hostSaveDialogs.ensure().openSaveCopy(hostWindow.photoActionRows())
+    onSaveCopyRequested: {
+        var row = hostWindow.photoActionIndex()
+        if (row >= 0) hostSaveDialogs.ensure().openSaveCopy([row])
+    }
     onSlideshowRequested: hostWindow.startSlideshow(-1)
     // #3460/#4630: a Mappa/Album menü a megnyitott hely leírását szerkeszti
     currentFolder: hostController ? hostController.currentFolder : ""

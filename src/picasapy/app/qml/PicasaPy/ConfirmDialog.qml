@@ -38,6 +38,9 @@ Dialog {
     // ilyenkor a hívó `false`-ra állítja, hogy a gomb LÁTHATÓAN tiltott
     // legyen, ne egy néma no-op (CLAUDE.md #459 feladat, (j) szabály).
     property bool yesEnabled: true
+    // #6864: néhány eredeti megerősítőn a szöveg előtt ikon áll. A többi
+    // hívó alapértelmezés szerint változatlanul ikon nélkül marad.
+    property string iconType: "none"
     // #459: az eredeti Picasa némely dialógusán a gombfelirat NEM
     // "Yes"/"No" (pl. sérült kép: "Hide Files" / "Don't Hide") — a
     // gombok viselkedése (accept/deny) változatlan, csak a felirat hívó-
@@ -117,13 +120,34 @@ Dialog {
     ColumnLayout {
         spacing: 12
 
-        Text {
-            objectName: root.namePrefix + "MessageLabel"
+        RowLayout {
             Layout.preferredWidth: 320
-            text: root.message
-            wrapMode: Text.WordWrap
-            font.pixelSize: Theme.fontSize
-            color: Theme.ink
+            spacing: root.iconType === "none" ? 0 : 12
+
+            Image {
+                objectName: root.namePrefix + "Icon"
+                source: root.iconType === "info"
+                    ? "icons/dialog-info.svg"
+                    : (root.iconType === "picasa"
+                       ? "icons/dialog-picasa-logo.svg" : "")
+                visible: root.iconType !== "none"
+                sourceSize: Qt.size(32, 32)
+                fillMode: Image.PreserveAspectFit
+                Layout.preferredWidth: visible ? 32 : 0
+                Layout.preferredHeight: visible ? 32 : 0
+                Layout.alignment: Qt.AlignVCenter
+            }
+
+            Text {
+                objectName: root.namePrefix + "MessageLabel"
+                Layout.preferredWidth: root.iconType === "none" ? 320 : 276
+                Layout.fillWidth: true
+                text: root.message
+                wrapMode: Text.WordWrap
+                font.pixelSize: Theme.fontSize
+                color: Theme.ink
+                Layout.alignment: Qt.AlignVCenter
+            }
         }
 
         CheckBox {

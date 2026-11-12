@@ -110,9 +110,10 @@ QtObject {
     /** #1006: kollázs a MEGADOTT sorokból — a fejléc-gomb belépője.
 
         A `openCollageTab()` a tálcát vagy a kijelölést veszi
-        (`collageSourceRows`); a fejléc viszont a SAJÁT csoportjához
-        tartozik, tehát a sorokat ő adja meg. A többi lépés — a néző
-        elhagyása, a lap aktiválása — ugyanaz, ezért egy helyen él. */
+        (`collageSourceRows`); a fejléc viszont a saját csoportjának
+        kijelölt sorait, vagy kijelölés híján a teljes csoportot adja meg.
+        A többi lépés — a néző elhagyása, a lap aktiválása — ugyanaz,
+        ezért egy helyen él. */
     function openCollageFromRows(rows) {
         if (!hostController) return
         if (!hostWindow.aaKapu(function () { hostWindow.openCollageFromRows(rows) })) return

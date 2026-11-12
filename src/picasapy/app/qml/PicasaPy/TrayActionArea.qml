@@ -182,16 +182,36 @@ Item {
                     Item { Layout.fillWidth: true }
                     PicasaButton {
                         objectName: "googlePhotosUploadCancelButton"
-                        text: actionArea.actionController && actionArea.actionController.photosUploadRunning
+                        text: actionArea.actionController
+                                && (actionArea.actionController.photosUploadRunning
+                                    || actionArea.actionController.googlePhotosAuthBusy)
                             ? qsTr("Cancel") : qsTr("Close")
                         onClicked: {
-                            if (actionArea.actionController && actionArea.actionController.photosUploadRunning)
+                            if (actionArea.actionController
+                                    && (actionArea.actionController.photosUploadRunning
+                                        || actionArea.actionController.googlePhotosAuthBusy))
                                 actionArea.actionController.cancelGooglePhotosUpload()
                             else
                                 googlePhotosUploadDialog.close()
                         }
                     }
                 }
+            }
+        }
+
+        // A mappa-fejléc is innen indítja ugyanazt az OAuth/feltöltési
+        // folyamatot. A közös dialógus mutatja a várakozást, hibát és Mégsét.
+        Connections {
+            target: actionArea.actionController
+            ignoreUnknownSignals: true
+
+            function onPhotosUploadChanged() {
+                var ctl = actionArea.actionController
+                if (!ctl)
+                    return
+                if (ctl.googlePhotosAuthBusy || ctl.photosUploadRunning
+                        || ctl.photosUploadError || ctl.photosUploadFinished)
+                    googlePhotosUploadDialog.open()
             }
         }
 

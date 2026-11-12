@@ -410,6 +410,7 @@ Item {
     ConfirmDialog {
         id: removeFolderConfirm
         namePrefix: "removeFolderConfirm"
+        iconType: "picasa"
         //: CThumbUI::ManageAlbumConfirm; job-348: a cím az eredetiben Confirm.
         title: qsTr("Confirm")
         // az eredeti igen-gombja: `CThumbUI:ManageAlbumYesButton`
