@@ -310,6 +310,12 @@ Item {
     PicasaMenu {
         id: onlineOptionsMenu
         objectName: "headerOnlineOptionsMenu"
+        //: #6870: az eredetiben (job-646) a láthatósági, méret-, csillag-,
+        //: online nézet- és törlés-tételek csak szinkronizált mappánál
+        //: aktívak. A PicasaPy-ban online album-szinkron nincs (a fejléc
+        //: „Sync to Web” kapcsolója is funkció nélküli, #423), ezért ez az
+        //: állapot mindig hamis; ha egyszer lesz szinkron, ezt kell bekötni.
+        readonly property bool mappaSzinkronban: false
 
         MenuItem {
             objectName: "headerOnlineMenuEnableSync"
@@ -325,89 +331,89 @@ Item {
             objectName: "headerOnlineMenuPublic"
             //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_PUBLIC
             text: qsTr("Public on the web")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
         MenuItem {
             objectName: "headerOnlineMenuUnlisted"
             //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_UNLISTED
             text: qsTr("Limited, anyone with the link")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
         MenuItem {
             objectName: "headerOnlineMenuLimited"
             //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_SIGNIN_REQUIRED
             text: qsTr("Limited")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
         MenuItem {
             objectName: "headerOnlineMenuOnlyYou"
             //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_ONLY_YOU
             text: qsTr("Only you")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
         MenuSeparator { objectName: "headerOnlineMenuSepAfterPrivacy" }
         MenuItem {
             objectName: "headerOnlineMenuWidth800"
             //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_800
             text: qsTr("800 Max. Width")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
         MenuItem {
             objectName: "headerOnlineMenuWidth1024"
             //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1024
             text: qsTr("1024 Max. Width")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
         MenuItem {
             objectName: "headerOnlineMenuWidth1600"
             //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_1600
             text: qsTr("1600 Max. Width")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
         MenuItem {
             objectName: "headerOnlineMenuWidth2048"
             //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_2048
             text: qsTr("2048 Max. Width")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
         MenuItem {
             objectName: "headerOnlineMenuOriginalSize"
             //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_FULL_SIZE
             text: qsTr("Original Size Images")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
         MenuSeparator { objectName: "headerOnlineMenuSepAfterSize" }
         MenuItem {
             objectName: "headerOnlineMenuStarredOnly"
             //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_STARS
             text: qsTr("Starred Images Only")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
         MenuSeparator { objectName: "headerOnlineMenuSepAfterStarred" }
         MenuItem {
             objectName: "headerOnlineMenuViewOnline"
             //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_VIEW_ONLINE
             text: qsTr("View Online")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
         MenuItem {
             objectName: "headerOnlineMenuRefreshStatus"
             //: picasapy-origin-key: stringres:SyncOpts::ID_REFRESH_ONLINE
             text: qsTr("Refresh Online Status")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
         MenuItem {
             objectName: "headerOnlineMenuCopyUrl"
             //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_COPY_URL
             text: qsTr("Copy URL")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
         MenuSeparator { objectName: "headerOnlineMenuSepBeforeDelete" }
         MenuItem {
             objectName: "headerOnlineMenuDeleteAlbum"
             //: picasapy-origin-key: stringres:SyncOpts::ID_SYNC_DELETE_ONLINE_ALBUM
             text: qsTr("Delete Online Album")
-            enabled: false
+            enabled: onlineOptionsMenu.mappaSzinkronban
         }
     }
 
