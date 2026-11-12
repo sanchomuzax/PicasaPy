@@ -221,7 +221,7 @@ def _build_qml_app(qt_app, tmp_path):
 
     confirm_settings = ConfirmSettingsBridge(settings=settings)
     edit_preview = EditPreviewProvider()
-    edit_controller = EditController(edit_preview)
+    edit_controller = EditController(edit_preview, settings=settings)
     effect_slice_controller = EffectSliceController(edit_controller, settings=settings)
     # megjelenítési mód (#1575/#1576) — az application.py bekötésének tükre.
     # A név életben tartja az átvezetőt, amíg a motor él.
@@ -256,7 +256,9 @@ def _build_qml_app(qt_app, tmp_path):
     )
     faces_helper = FacesHelper(db)
     # #26 (3. lépcső) — az application.py bekötésének tükre
-    face_scan_controller = FaceScanController(db, faces_helper=faces_helper)
+    face_scan_controller = FaceScanController(
+        db, faces_helper=faces_helper, settings=settings
+    )
     # Időrend nézet (#24) — az application.py bekötésének tükre: a
     # thumbnail-provider a controllerrel KÖZÖS példány
     timeline_controller = TimelineController(
@@ -324,7 +326,7 @@ def _build_qml_app(qt_app, tmp_path):
     # épülő teszt zölden mérne egy halott menüt
     # a névre kötés életben tartja a vezérlőt, amíg a motor él
     _folder_hierarchy_controller = wire_folder_hierarchy(
-        engine, controller, db
+        engine, controller, db, settings=settings
     )
     engine.rootContext().setContextProperty("dedupController", dedup_controller)
     engine.rootContext().setContextProperty(

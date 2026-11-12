@@ -225,7 +225,7 @@ def _build_qml_app(
     confirm_settings = ConfirmSettingsBridge(settings=settings)
     # szerkesztő-híd (#19) — az application.py bekötésének tükre
     edit_preview = EditPreviewProvider()
-    edit_controller = EditController(edit_preview)
+    edit_controller = EditController(edit_preview, settings=settings)
     effect_slice_controller = EffectSliceController(edit_controller, settings=settings)
     # #3187: a kettős nézet MÁSODIK felének vezérlője — az application.py
     # bekötésének tükre. Itt (a `wire_display_mode` ELŐTT) kell létrejönnie,
@@ -234,7 +234,9 @@ def _build_qml_app(
     # a lenti, engine-hez kötött szakaszban követi, mint eddig.
     from picasapy.app.second_preview import SecondPreview
 
-    edit_controller_masodik = EditController(edit_preview, slot="masodik")
+    edit_controller_masodik = EditController(
+        edit_preview, slot="masodik", settings=settings
+    )
     # megjelenítési mód (#1575/#1576) — az application.py bekötésének tükre.
     # A név életben tartja az átvezetőt, amíg a motor él.
     _display_mode_bridge = app_module.wire_display_mode(
@@ -351,13 +353,15 @@ def _build_qml_app(
     # is kell — a féloldalas tükrözés ott már majdnem átcsúszott.
     # a névre kötés életben tartja a vezérlőt, amíg a motor él
     _folder_hierarchy_controller = wire_folder_hierarchy(
-        engine, controller, db
+        engine, controller, db, settings=settings
     )
     # arc-keretek (#147) — az application.py bekötésének tükre
     faces_helper = FacesHelper(db)
     engine.rootContext().setContextProperty("facesHelper", faces_helper)
     # #26 (3. lépcső) — az application.py bekötésének tükre
-    face_scan_controller = FaceScanController(db, faces_helper=faces_helper)
+    face_scan_controller = FaceScanController(
+        db, faces_helper=faces_helper, settings=settings
+    )
     engine.rootContext().setContextProperty(
         "faceScanController", face_scan_controller
     )
@@ -369,7 +373,9 @@ def _build_qml_app(
     )
     # Import forrásból (#23) — az application.py bekötésének tükre
     import_source_controller = ImportSourceController(
-        provider, add_folder=controller.addWatchedFolder
+        provider,
+        add_folder=controller.addWatchedFolder,
+        settings=settings,
     )
     engine.rootContext().setContextProperty(
         "importSourceController", import_source_controller

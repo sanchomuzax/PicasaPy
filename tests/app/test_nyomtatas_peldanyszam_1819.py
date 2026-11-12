@@ -142,7 +142,8 @@ class TestALapszam:
             _FakePhoto(folder_path=str(tmp_path), name=jo.name),
             _FakePhoto(folder_path=str(tmp_path), name="film.mp4"),
         ]
-        ctl = PrintController(photo_source=lambda: photos)
+        settings = QSettings(str(tmp_path / "print.ini"), QSettings.Format.IniFormat)
+        ctl = PrintController(photo_source=lambda: photos, settings=settings)
         assert ctl.printPageCount([0, 1], 3) == 3
 
 

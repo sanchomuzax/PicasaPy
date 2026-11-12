@@ -78,7 +78,7 @@ def _assert_recent_layout(swatches, recent):
 def test_three_real_color_clicks_update_recent_slots_and_persist(qml_app, qt_app):
     from PySide6.QtCore import QObject
 
-    window, _, _ = qml_app
+    window, controller, _ = qml_app
     window.setProperty("viewerOpen", True)
     qt_app.processEvents()
     viewer = window.findChild(QObject, "photoViewer")
@@ -146,7 +146,7 @@ def test_three_real_color_clicks_update_recent_slots_and_persist(qml_app, qt_app
         _click_item(window, swatch, qt_app)
         assert _variant(panel.property("paramEffectValues"))[0] == expected
 
-    settings = QSettings("PicasaPy", "PicasaPy")
+    settings = controller._get_settings()
     settings.sync()
     assert [settings.value(f"picker/mru_{index}", "") for index in range(5)] == [
         "#a349a4",
@@ -158,7 +158,7 @@ def test_three_real_color_clicks_update_recent_slots_and_persist(qml_app, qt_app
     from picasapy.app.edit_controller import EditController
     from picasapy.app.edit_preview import EditPreviewProvider
 
-    restarted_controller = EditController(EditPreviewProvider())
+    restarted_controller = EditController(EditPreviewProvider(), settings=settings)
     assert restarted_controller.recentPickerColors == [
         "#a349a4",
         "#ff7f27",

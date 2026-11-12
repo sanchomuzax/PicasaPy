@@ -61,7 +61,11 @@ def wire_fileops(fileops: FileOpsController, controller: AppController) -> None:
 
     def select_new_folder_when_indexed(folder: str) -> None:
         from picasapy.index import photos_in_folder
+        from picasapy.paths import normalize_path
 
+        # az index a mappautat normalize_path alakban tárolja (Windowson a
+        # feloldott, hosszú nevű út), a lekérdezés pontos egyezéssel keres
+        folder = str(normalize_path(folder))
         previous = controller.currentFolder
         active = True
 
