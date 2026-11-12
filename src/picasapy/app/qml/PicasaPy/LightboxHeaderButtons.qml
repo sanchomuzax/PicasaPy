@@ -62,6 +62,10 @@ Item {
         //: mért `mousedown`-ja. Kijelölést vált, nem művelet.
         lenyomasra: true
         text: header.feliratSzammal("☆")
+        //: #6871: csillagozott kép nélkül a mappában tiltott (a mért
+        //: `select_star` állapot). A csoport csillagait nézi, nem a
+        //: kijelölést - épp ez a gomb csinál kijelölést a csillagosokból.
+        enabled: header.starredCount > 0
         Layout.preferredHeight: 22
         ToolTip.text: qsTr("Select starred photos")
         ToolTip.visible: hovered

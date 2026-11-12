@@ -53,6 +53,15 @@ Column {
         // #1823: a fejléc-gombok a KIJELÖLÉS darabszámát írják ki.
         selectedCount: feed.appWindow && feed.appWindow.selectedIndexes
                        ? feed.appWindow.selectedIndexes.length : 0
+        //: #6871: a csoport csillagozott képeinek száma. A `revision` a
+        //: reaktív trigger (a cellák `info` kötésének mintája): a
+        //: csillagozás és a csillag levétele is növeli, így a gomb
+        //: azonnal követi.
+        starredCount: groupCol.ctl
+            ? (groupCol.ctl.photos.revision,
+               groupCol.ctl.photos.starredCountIn(
+                   groupCol.modelData.start, groupCol.modelData.count))
+            : 0
         hasPendingEdits: feed.appWindow
             ? feed.appWindow.kijelolesbenVanMentetlenSzerkesztes : false
         hasPendingRotation: feed.appWindow

@@ -84,6 +84,10 @@ class PhotoGridModel(QAbstractListModel):
     def starAt(self, row: int) -> bool:
         return PhotoGridAccess.starAt(self, row)
 
+    @Slot(int, int, result=int)
+    def starredCountIn(self, start: int, count: int) -> int:
+        return PhotoGridAccess.starredCountIn(self, start, count)
+
     @Slot(int, result=bool)
     def isVideoAt(self, row: int) -> bool:
         return PhotoGridAccess.isVideoAt(self, row)
