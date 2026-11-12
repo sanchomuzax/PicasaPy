@@ -68,6 +68,20 @@ class PhotoGridAccess:
         """A sor csillag-állapota (a tálca ★ gombjának színezéséhez)."""
         return 0 <= row < len(self._photos) and self._photos[row].star
 
+    def starredCountIn(self, start: int, count: int) -> int:
+        """A `start`-tól induló `count` sor közül hány csillagozott (#6871).
+
+        A mappa-fejléc csillag gombja ebből tudja, hogy van-e a csoportban
+        mit kijelölni (az eredetiben csillagozott kép nélkül tiltott).
+        Egyetlen hívás, nem soronkénti `starAt`: a nagy mappa fejléce
+        minden csillagozásnál újraszámolja, és a soronkénti QML-hívás
+        tízezres csoportnál érezhetően lassítana. A tartományt a modell
+        végéhez vágjuk, az érvénytelen (negatív) bemenet nulla."""
+        if count <= 0:
+            return 0
+        eleje = max(0, start)
+        return sum(1 for foto in self._photos[eleje : eleje + count] if foto.star)
+
     def isVideoAt(self, row: int) -> bool:
         """Videó-e a sor (#14) — a néző erre vált lejátszó-nézetre."""
         return 0 <= row < len(self._photos) and self._photos[row].kind == "video"

@@ -36,6 +36,10 @@ ColumnLayout {
     // mentetlen szerkesztési lánc.
     property bool hasPendingEdits: false
     property bool hasPendingRotation: false
+    //: #6871: hány csillagozott kép van EBBEN a csoportban - a gazda
+    //: tölti. A csillag gomb ettől függ (nem a kijelöléstől): csillagozott
+    //: kép nélkül tiltott, mint az eredetiben.
+    property int starredCount: 0
 
     //: „Szerkesztések mentése lemezre" (`save_edits`) - a kijelölt képek
     //: szerkesztéseit a FÁJLBA írja. A művelet maga a #444 mentés-
