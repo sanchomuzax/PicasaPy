@@ -163,16 +163,22 @@ class TestRemoveFromAlbumWiring:
 
 
 class TestUjAlbumCsendben:
-    """#2911: az „Új album" NÉVBEKÉRÉS NÉLKÜL hoz létre „Névtelen" albumot.
+    """#6861: a kép helyi menüjének Add to Album ▸ New Album... sora az
+    Album Properties ablakot nyitja, az album az OK után jön létre.
 
-    ⚠️ Ez a három próba korábban azt állította, hogy megnyílik a
-    `newAlbumDialog`. Az a mai állapot leírása volt; a bináris mérése
-    (`thumbui/newalbum`, kezelő `0x005eb810`) szerint az eredetiben ezen az
-    úton NINCS névbekérő: a kezelő az `IDS_DEFAULT_ALBUM_NAME` nevű albumot
-    hozza létre, és kész. A SZÁNDÉK változatlan: a helyi menü tétele
-    ugyanazon az egy úton indítja az album-készítést, és üres kijelölésnél
-    nem csinál semmit.
+    Mérve: Colab job-644 (2026-11-12), két kijelölt képpel. A korábbi
+    állítás (#2911, `thumbui/newalbum`, `0x005eb810`: névbekérés nélkül)
+    NEM erre az útra vonatkozik; a képek albumlistára ejtése marad
+    névbekérő nélküli (`test_album_drag_drop_455.py`).
     """
+
+    @staticmethod
+    def _ok(window, qt_app):
+        dialog = window.findChild(QObject, "toolbarNewAlbumPropertiesDialog")
+        assert dialog is not None and dialog.property("opened") is True
+        ok = dialog.findChild(QObject, "folderPropertiesOkButton")
+        QMetaObject.invokeMethod(ok, "clicked", Qt.ConnectionType.DirectConnection)
+        qt_app.processEvents()
 
     def test_a_menu_tetele_LETREHOZZA_az_albumot(self, qml_app, qt_app):
         window, controller, _engine = qml_app
@@ -181,6 +187,8 @@ class TestUjAlbumCsendben:
         menu = _child(window, "photoContextMenu")
         menu.newAlbumRequested.emit()
         qt_app.processEvents()
+        assert controller.albums == [], "az album az OK előtt létrejött"
+        self._ok(window, qt_app)
 
         nevek = [a["name"] for a in controller.albums]
         assert len(nevek) == 1, nevek
@@ -198,6 +206,7 @@ class TestUjAlbumCsendben:
 
         _child(window, "photoContextMenu").newAlbumRequested.emit()
         qt_app.processEvents()
+        self._ok(window, qt_app)
 
         assert [a["name"] for a in controller.albums] == ["Untitled"]
         ini = (tmp_path / "kepek" / ".picasa.ini").read_text(encoding="utf-8")
