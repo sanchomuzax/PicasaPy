@@ -37,6 +37,7 @@ Item {
     property alias exportMoveDatabaseDialog: moveDatabaseDialog
     property alias exportCompactDatabaseDialog: compactDatabaseDialog
     property alias exportPicasaDataImportDialog: picasaDataImportDialog
+    property alias exportCopyAllEffectsInfoDialog: copyAllEffectsInfoDialog
 
     // #444: Mentés / Visszaállítás / Utolsó mentés visszavonása
     // #1720: halasztott példányosítás — a párbeszéd csak az első
@@ -348,6 +349,66 @@ Item {
                 onConfirmed: {
                     if (typeof controller !== "undefined" && controller)
                         controller.cancelActivity()
+                }
+            }
+        }
+    }
+
+
+    // #6864: az eredeti tájékoztató több kép kijelölésekor. Csak a
+    // Szerkesztés ▸ Copy All Effects parancs építi fel.
+    DeferredDialog {
+        id: copyAllEffectsInfoDialog
+        objectName: "copyAllEffectsInfoDialogLoader"
+        anchors.fill: parent
+        sourceComponent: Component {
+            Dialog {
+                id: copyAllEffectsInfo
+                objectName: "copyAllEffectsInfoDialog"
+                readonly property string iconType: "info"
+                title: qsTr("Info")
+                modal: true
+                focus: true
+                anchors.centerIn: parent ? Overlay.overlay : undefined
+
+                ColumnLayout {
+                    spacing: 12
+
+                    RowLayout {
+                        Layout.preferredWidth: 320
+                        spacing: 12
+
+                        Image {
+                            objectName: "copyAllEffectsInfoIcon"
+                            source: "icons/dialog-info.svg"
+                            sourceSize: Qt.size(32, 32)
+                            fillMode: Image.PreserveAspectFit
+                            Layout.preferredWidth: 32
+                            Layout.preferredHeight: 32
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Text {
+                            objectName: "copyAllEffectsInfoMessageLabel"
+                            text: qsTr(
+                                "Please select a single picture to copy the effects from.")
+                            wrapMode: Text.WordWrap
+                            font.pixelSize: Theme.fontSize
+                            color: Theme.ink
+                            Layout.preferredWidth: 276
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+                    }
+
+                    PicasaButton {
+                        objectName: "copyAllEffectsInfoOkButton"
+                        text: qsTr("OK")
+                        Layout.alignment: Qt.AlignHCenter
+                        Keys.onReturnPressed: copyAllEffectsInfo.accept()
+                        Keys.onEnterPressed: copyAllEffectsInfo.accept()
+                        onClicked: copyAllEffectsInfo.accept()
+                    }
                 }
             }
         }

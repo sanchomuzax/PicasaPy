@@ -9257,6 +9257,20 @@ picasapy-origin-key: stringres:CThumbUI::SaveSearchBig</extracomment>
     <context>
         <name>MainWindowDialogStack</name>
         <message>
+            <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" />
+            <source>Info</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:ytApp::InfoTitle</extracomment>
+            <translation>Information</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_OKButton</extracomment>
+            <translation>OK</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/MainWindowDialogStack.qml" line="328" />
             <source>Do you want to cancel this operation?</source>
             <extracomment>picasapy-origin: picasa
@@ -20318,6 +20332,13 @@ picasapy-origin: picasa</extracomment>
     </context>
     <context>
         <name>MainMenuBar</name>
+        <message>
+            <location filename="../qml/PicasaPy/MainMenuBar.qml" />
+            <source>Please select a single picture to copy the effects from.</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_SELECT_ONE_ONLY</extracomment>
+            <translation>Välj en enstaka bild att kopiera effekter från.</translation>
+        </message>
         <message>
             <location filename="../qml/PicasaPy/MainMenuBar.qml" line="208" />
             <source>This will create an album with more than 1000 images.  Do you want to continue?</source>

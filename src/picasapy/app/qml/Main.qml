@@ -73,6 +73,7 @@ ApplicationWindow {
     property alias moveDatabaseDialog: mainWindowPeripheralLayers.exportMoveDatabaseDialog
     property alias compactDatabaseDialog: mainWindowPeripheralLayers.exportCompactDatabaseDialog
     property alias picasaDataImportDialog: mainWindowPeripheralLayers.exportPicasaDataImportDialog
+    property alias copyAllEffectsInfoDialog: mainWindowPeripheralLayers.exportCopyAllEffectsInfoDialog
     width: 1280
     height: 800
     // #641: az ablak nem mehet olyan kicsire, hogy a szerkesztő bal panelje

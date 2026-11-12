@@ -367,7 +367,14 @@ PicasaMenuBar {
     // `effects_controller`-t (az a crop64-et is átvinné).
     // #305: null-őr — ld. fenti Connections
     hasAllEffectsClipboard: hostController ? hostController.hasAllEffectsClipboard : false
-    onCopyAllEffectsRequested: hostController.copyAllEffects(hostWindow.photoActionRows())
+    onCopyAllEffectsRequested: {
+        var rows = hostWindow.photoActionRows()
+        if (rows.length !== 1) {
+            hostWindow.copyAllEffectsInfoDialog.open()
+            return
+        }
+        if (hostController) hostController.copyAllEffects(rows)
+    }
     onPasteAllEffectsRequested: hostController.pasteAllEffects(hostWindow.photoActionRows())
     // #1475: a két kötegelt visszavonás — a Szerkesztés menü élén álló
     // tételek. Kijelölés-független: a köteg a SAJÁT, művelet idején

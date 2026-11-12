@@ -41,6 +41,7 @@ Item {
     property alias exportMoveDatabaseDialog: mainWindowDialogStack.exportMoveDatabaseDialog
     property alias exportCompactDatabaseDialog: mainWindowDialogStack.exportCompactDatabaseDialog
     property alias exportPicasaDataImportDialog: mainWindowDialogStack.exportPicasaDataImportDialog
+    property alias exportCopyAllEffectsInfoDialog: mainWindowDialogStack.exportCopyAllEffectsInfoDialog
 
     // A lebegő háttérmunka- és folyamatjelzők önálló komponensben (#6136).
     MainActivityPanels {
