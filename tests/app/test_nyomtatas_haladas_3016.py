@@ -66,11 +66,14 @@ class _FakePhoto:
 
 
 def _vezerlo_harom_keppel(tmp_path):
+    from PySide6.QtCore import QSettings
+
     fotok = []
     for i in range(3):
         forras = make_jpeg(tmp_path / f"kep{i}.jpg", size=(200, 120))
         fotok.append(_FakePhoto(folder_path=str(tmp_path), name=forras.name))
-    return PrintController(photo_source=lambda: fotok), fotok
+    settings = QSettings(str(tmp_path / "print.ini"), QSettings.Format.IniFormat)
+    return PrintController(photo_source=lambda: fotok, settings=settings), fotok
 
 
 def _egyetlen_cellas_lapot_kenyszerit(monkeypatch):

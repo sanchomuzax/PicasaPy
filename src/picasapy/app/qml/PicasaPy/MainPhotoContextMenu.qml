@@ -58,7 +58,7 @@ PhotoContextMenu {
         hostWindow.selectedRows())
     onResetFacesRequested: hostWindow.resetFacesForPaths(hostWindow.selectedPaths())
     onHideToggleRequested: hostWindow.toggleHiddenSelection()
-    onMoveRequested: hostFileOpsDialogs.ensure().openMove(hostWindow.selectedPaths())
+    onMoveRequested: hostFileOpsDialogs.ensure().openMoveToNewFolder(hostWindow.selectedPaths())
     onDeleteRequested: hostFileOpsDialogs.ensure().openDelete(hostWindow.selectedPaths())
     onLocateRequested: {
         var p = hostController.photos.filePathAt(hostWindow.fileOpTargetRow)

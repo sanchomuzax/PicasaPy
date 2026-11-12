@@ -41,6 +41,7 @@ def _face(eltolas: float = 0.0) -> FaceDetection:
 def vezerlo(qt_app, tmp_path):
     """`a.jpg`: két arc, mindkettő „Anna"-javaslat. `b.jpg`: egy
     „Anna"-javaslat. `c.jpg`: egy „Béla"-javaslat."""
+    from PySide6.QtCore import QSettings
     from picasapy.app.face_scan_controller import FaceScanController
     from picasapy.app.faces_helper import FacesHelper
 
@@ -62,7 +63,8 @@ def vezerlo(qt_app, tmp_path):
             nev = "Béla" if row["photo_id"] == photo_ids["c.jpg"] else "Anna"
             set_suggested_name(conn, row["id"], nev)
         conn.commit()
-    return FaceScanController(db, faces_helper=FacesHelper()), db, root
+    settings = QSettings(str(tmp_path / "face_settings.ini"), QSettings.Format.IniFormat)
+    return FaceScanController(db, faces_helper=FacesHelper(), settings=settings), db, root
 
 
 def _ut(root, nev: str) -> str:
