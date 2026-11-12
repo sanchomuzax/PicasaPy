@@ -79,6 +79,9 @@ _EXPECTED_ICONS = (
     "face-suggestion-badge.svg",
     # #5183: a Név nélküliek album címének személy-sziluettje
     "person-silhouette.svg",
+    # #6864: a megerősítő ablak saját rajzú információ- és Picasa-logója
+    "dialog-info.svg",
+    "dialog-picasa-logo.svg",
     "tray-clear.svg",
     # #2537: a „További lehetőségek…" gomb ikonja
     # (`outputlayout/export7_icon`, MÉRVE 13 × 7)

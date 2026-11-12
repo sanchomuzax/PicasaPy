@@ -115,13 +115,28 @@ Item {
         // Dialog implicitWidth-je kötési hurokba fut Fusion stílussal
         implicitWidth: 400
 
-        contentItem: Label {
-            objectName: "copyAllEffectsInfoText"
-            width: 360
-            wrapMode: Text.WordWrap
-            //: picasapy-origin: picasa
-            //: picasapy-origin-key: stringres:IDS_SELECT_ONE_ONLY
-            text: qsTr("Please select a single picture to copy the effects from.")
+        // #6864: az eredeti Info ablakában a szöveg előtt kék „i” ikon áll
+        readonly property string iconType: "info"
+
+        contentItem: Row {
+            spacing: 12
+            Image {
+                objectName: "copyAllEffectsInfoIcon"
+                anchors.verticalCenter: parent.verticalCenter
+                source: "icons/dialog-info.svg"
+                sourceSize: Qt.size(32, 32)
+                width: 32
+                height: 32
+            }
+            Label {
+                objectName: "copyAllEffectsInfoText"
+                width: 316
+                anchors.verticalCenter: parent.verticalCenter
+                wrapMode: Text.WordWrap
+                //: picasapy-origin: picasa
+                //: picasapy-origin-key: stringres:IDS_SELECT_ONE_ONLY
+                text: qsTr("Please select a single picture to copy the effects from.")
+            }
         }
     }
 
