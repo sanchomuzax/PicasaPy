@@ -7,6 +7,11 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.105] - 2026-11-12
+
+- A mappa fejlécének Upload gombja külön Online options menüt nyit, az Enable Sync pedig elindítja a mappa feltöltését (#6870).
+- A mappa fejlécének csillaggombja csak akkor aktív, ha a mappában van csillagozott kép, ahogy az eredetiben (#6871).
+
 ## [1.0.104] - 2026-11-12
 
 - Az Info és a Remove from Picasa megerősítő ablakában a szöveg előtt az eredetihez hasonló ikon áll (kék „i”, illetve a színes logó) (#6864).
