@@ -3,6 +3,7 @@
 és a háttérszálon + resync végzett `renamePhotosMany`."""
 
 import dataclasses
+import gc
 
 import pytest
 from PySide6.QtCore import QLocale
@@ -74,7 +75,13 @@ def _stamp(controller, name) -> str:
 
 
 def _do_rename(controller, action) -> None:
-    wait_for_photo_op(controller, action)
+    # #6858: a CI-n a főszál szemétgyűjtése az átnevező háttérszál futása
+    # közben szegmenshibát okozott; a várakozás idejére a gyűjtés szünetel.
+    gc.disable()
+    try:
+        wait_for_photo_op(controller, action)
+    finally:
+        gc.enable()
 
 
 class TestRenamePreview:
