@@ -1091,3 +1091,66 @@ Másik tétel ablakát egyik fenti képen sem láttam. A hiányos képkocka nem 
 - ✅ Mind a 22 tétel táblázatban szerepel az eredeti kép, a PicasaPy állapota, az eltérés és a felelős QML-fájl megadásával.
 - ✅ A hiányos vagy hibás kiinduló állapotú eredeti képek külön újramérendő listában vannak; ezekre nem állítottam be nem látott eredményt.
 - ✅ A Copy All Effects, a Remove from Picasa, az Export as HTML Page és a Gift CD eltérése a #6861 megvalósítási jegybe került.
+
+
+## Tálca és mappa-eszköztár (#6862)
+
+A PicasaPy-oszlop minden sora két kijelölt képpel, valódi QTest-egérkattintással
+és a kattintás után 3 másodperccel készült. A képernyőkép és az állapotfájl a
+mérés idején a munkafa `.bt/6862/` könyvtárában volt; a feladat előírása szerint
+az ideiglenes mérési fájlok a munka lezárásakor törlendők. Az eredeti kockák és
+az őket megelőző/követő állapotok a megadott `job-639` és `job-640` felvételek.
+
+| Gomb | Eredeti Picasa 3.9 | PicasaPy (2 kijelölés, QTest) | Eltérés / mérési korlát | Felelős PicasaPy-fájl |
+|---|---|---|---|---|
+| Tálca: Email | job-639/9: „Select Email”; Native Mail Client és Google Mail választás, emlékezzen jelölőnégyzet, Help/Cancel. | A `trayEmailButton` megnyitja az `emailChoiceDialog`-ot. | A folyamat egyezik. Az eredeti tálcagomb és a `0x005cb990` menü-diszpécser közötti konkrét hívási kapcsolat nincs igazolva; a PicasaPy tálca és Fájl/E-Mail ugyanarra a `sendSelectionByEmail()` műveletre fut. | `TrayActionArea.qml`, `MainTrayBar.qml`, `MainWindowCommands.qml` |
+| Tálca: Print | job-639/14: teljes Print Layout nézet, lap- és képelrendezés, nyomtatóválasztó, előnézet, Print/Cancel. | A `trayPrintButton` bal oldali `printDialog` panelt nyit, két kép számlálójával és előnézettel; nincs telepített nyomtató. | A nyomtatási folyamat megnyílik, de a felület és a nézet eltér. Nyomtatás végrehajtása nem mérhető nyomtató hiányában. A tálca és a PicasaPy menü ugyanazt az `openPrint()` műveletet hívja. | `TrayActionArea.qml`, `MainTrayBar.qml`, `MainWindowCommands.qml`, `MainWindowDialogStack.qml`, `PrintDialog.qml` |
+| Tálca: Export | job-639/19: Export to Folder, két kép, Resize to 800 pixels, minőség, film, vízjel, Export/Cancel. | Az `exportDialog` megnyílik; „Use original size” aktív, célhely `<Pictures>/Picasa/Exports`. | A párbeszéd folyamata egyezik, de az értékek eltérnek. Ez egy mentett profilállapot mérése, nem tiszta profil alapértékének összehasonlítása. A tálca és a PicasaPy menü ugyanazt az `openForSelection()` műveletet hívja. | `TrayActionArea.qml`, `MainTrayBar.qml`, `ExportDialogs.qml` |
+| Tálca: Upload to Google Photos | job-639/24: a kattintás után job-639/25-től „Log in to Google” ablak nyitva. | A `trayUploadButton` látható, de bejelentkezés nélkül tiltott; kattintásra nem nyit ablakot. | Igazolt eltérés: az eredeti felkínálja a bejelentkezést, a PicasaPy tálcagombja nem indítható el. A hitelesítés utáni feltöltést egyik oldalon sem hajtottuk végre. | `TrayActionArea.qml`; engedélyezési állapot: `tray_google_photos_controller.py` |
+| Mappa-eszköztár: diavetítés | job-639/29: a Google-belépő már nyitva van a job-639/24 Upload óta; a diavetítés hatása nem látszik. | A `headerPlayButton` teljes képernyős diavetítést indít. | Az eredeti kimenet ebből a felvételből nyitott. A PicasaPy fejléc a csoport kezdősorát adja át; a menü ugyanahhoz az indító művelethez `-1` indexet ad. Az eredeti fejlécgomb menüparancshoz rendelése nincs igazolva. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml`, `MainLibraryCanvas.qml`, `MainSlideshow.qml` |
+| Mappa-eszköztár: kollázs | job-640/9: kollázsprojekt; két kijelölt kép a vásznon, „Clips (22)”. | A `headerCollageButton` Kollázs projektlapot nyit, 24 klippel/csomóponttal; a kijelölés és a held sorok továbbra is csak `[0, 1]`. | Igazolt eltérés: a fejléc a teljes 24 képes csoportot adja át, míg az eredeti mérésben két kép van betöltve, 22 maradék klippel. A PicasaPy menübelépő forrása külön útvonal. Az eredeti menü `ID_COLLAGEMAKER` és az `outputlayout/collage` azonos bináris kezelőre fut; a képkockán kattintott fejlécvezérlő és a bináris UI-címke közti kapcsolat nem szerepel a meglévő kimenetben. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml`, `MainProjectTabs.qml` |
+| Mappa-eszköztár: film | job-640/14: „This feature is not supported for Linux” hiba. | A `headerMovieButton` Filmkészítő lapot nyit 24 klippel. | Az eredeti Windows-filmfolyamat és a forrásképek paritása a Linux-hiba miatt nem mérhető; a PicasaPy a teljes csoportot adja át. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml`, `MainProjectTabs.qml`, `CreateDialogs.qml` |
+| Mappa-eszköztár: csillag | job-640/19: a két kép kijelölve marad a kattintás után. | A `headerSelectStarredButton` után a kijelölés üres; a mérési képek egyike sincs csillagozva. | Az eredeti képek csillag-metaadata nem szerepel a job állapotfájljaiban, ezért azonos bemeneti csillagállapot mellett nem hasonlítható össze. Az eredeti `ID_SELECTSTAR` menüparancs ismert, a fejlécgomb menü-diszpécserhez kötése nincs igazolva. | `LightboxHeaderButtons.qml`, `LightboxFeedGroup.qml` |
+| Mappa-eszköztár: Upload | job-640/24: a kattintás után job-640/25-től Google-belépő nyitva. | A `headerUploadButton` látható, 86×22 képpontos és tiltott; kattintásra nincs ablak. A QML-ben a gomb `enabled: false`, kattintáskezelője nincs. | Igazolt eltérés: az eredeti gomb bejelentkezési folyamatot indít, a PicasaPy fejlécgomb nem működik. | `LightboxHeaderButtons.qml` |
+| Mappa-eszköztár: Upload lenyíló | job-640/29: a korábbi Upload után már nyitva lévő Google-belépő elfedi a lenyíló saját hatását. | A gomb jobb szélére, a nyíl helyére kattintva sem nyílik menü; a vezérlő tiltott. | Az eredeti lenyíló működése nyitott kérdés a szennyezett kocka miatt. A PicasaPy-gombnak nincs használható lenyílója. | `LightboxHeaderButtons.qml` |
+
+### Eredeti menü-diszpécser és a gombok azonossága
+
+A meglévő `0x005cb990` Ghidra-kimenet és a menüépítő kimenet az alábbi
+menüparancs-azonosítókat támasztja alá: `ID_FILE_EMAIL` = `0x9c97`,
+`ID_FILE_EXPORTTOFOLDER` = `0x9c81`, `ID_FILE_PRINT` = `0xe107`,
+`ID_ALBUM_SLIDESHOW` = `0x9c6d`, `ID_VIEW_SLIDESHOW` = `0x9c9f`,
+`ID_COLLAGEMAKER` = `0x9d62`, `ID_TOOLS_UPLOAD` = `0x9df7`,
+`ID_SELECTSTAR` = `0x9d5b`. A diszpécserben a két slideshow-ID közös
+`FUN_005e8a70` függvényre fut, de külön parancsazonosító marad.
+
+Két eredeti gombút kapcsolható közvetlenül a menüparancs közös kezelőjéhez:
+az `outputlayout/collage` ág és a `0x9d62` menüág is `FUN_007463c0`-t hívja;
+a `thumbui/webupload` ág és a `0x9df7` menüág is `FUN_0059e920`-t hívja.
+Ezek a közös kezelőt, nem feltétlenül azonos eseményküldési útvonalat
+igazolják. A `0x005cb990` menüágak és a konkrét job-639/640 Email, Print,
+Export, slideshow, film és csillag fejléc-/tálcagombja közötti közvetlen
+kapcsolatot a meglévő diszasszemblálási kimenet nem igazolja; az ilyen
+azonosság nyitott, nem következtethető ki a feliratból.
+
+PicasaPy oldalon a tray Email/Print/Export gombok rendre ugyanazt a
+`sendSelectionByEmail()`, `openPrint()` és `openForSelection()` műveletet
+hívják, mint a főmenü megfelelő tételei. A fejléc kollázsa a teljes
+mappacsoportot adja át, míg a főmenü a tartott/kijelölt sorokból indul; a
+fejléc diavetítése a csoport kezdősorát, a menü az alapértelmezett `-1`
+értéket adja át. A fejléc Upload gombjának nincs eseménykezelője.
+
+### Bizonyítottság és következő mérés
+
+Megerősített eltérés a kollázs bemeneti halmaza, valamint a Google Photos
+Upload engedélyezési/bejelentkezési útja: az eredeti képkockák, a PicasaPy
+valós kattintásos állapota és az ettől külön olvasott forráskód egymást
+támasztják alá. A Print nézetének különbsége is látható, a tényleges
+nyomtatás viszont nyomtató hiányában nyitott. Az Export értékkülönbsége,
+a csillag eredménye, a slideshow, a Film és az Upload lenyíló eredeti
+folyamata nem dönthető el teljesen a megadott mérésekből. A slideshow és
+Upload-lenyíló új eredeti mérése a kérdéses gombot korábbi Upload nélkül
+kattintsa; a Filmhez Windows környezetben készült felvétel kell; a
+csillagnál az eredeti képek csillag-metaadatát is rögzíteni kell.
+
+A kollázs bemeneti halmazának és a kijelentkezett Upload gomboknak az eltérése a #6865 megvalósítási jegyben.
