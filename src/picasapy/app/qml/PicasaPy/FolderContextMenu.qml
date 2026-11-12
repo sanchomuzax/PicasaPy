@@ -70,6 +70,7 @@ PicasaMenu {
     signal deleteFolderRequested()
     signal exportAsHtmlRequested()
     signal addNameTagsRequested(string folderPath)
+    signal uploadToGooglePhotosRequested(string folderPath)
 
     // -- 1. blokk: mappaleírás ---------------------------------------------
 
@@ -132,23 +133,23 @@ PicasaMenu {
     }
     PicasaMenu {
         objectName: "folderMenuSortBy"
-        // az eredeti `Sort` menüosztálya: Dátum · Név · Méret · Fordított
+        // az eredeti `Sort` menüosztálya: Név · Dátum · Méret · Fordított
         // sorrend (spec A.2)
         title: qsTr("S&ort Folder By")
 
         // #4890: ezek egyszeri parancsok. A rendezett lista marad meg,
         // ezért nincs aktív mód vagy kijelölt menütétel.
         MenuItem {
-            objectName: "folderMenuSortByDate"
-            text: qsTr("&Date")
-            checkable: false
-            onTriggered: menu.sortModeRequested("date")
-        }
-        MenuItem {
             objectName: "folderMenuSortByName"
             text: qsTr("&Name")
             checkable: false
             onTriggered: menu.sortModeRequested("name")
+        }
+        MenuItem {
+            objectName: "folderMenuSortByDate"
+            text: qsTr("&Date")
+            checkable: false
+            onTriggered: menu.sortModeRequested("date")
         }
         MenuItem {
             objectName: "folderMenuSortBySize"
@@ -177,7 +178,6 @@ PicasaMenu {
             checkable: false
             onTriggered: menu.sortModeRequested("priority")
         }
-        MenuSeparator {}
         MenuItem {
             objectName: "folderMenuSortReverse"
             text: qsTr("&Reverse order")
@@ -238,12 +238,10 @@ PicasaMenu {
 
     // -- 7. blokk: megosztás ---------------------------------------------------
 
-    PicasaMenuItem {
+    MenuItem {
         objectName: "folderMenuUploadToGooglePhotos"
         text: qsTr("Upload to Google &Photos...")
-        placeholder: false
-        // #422: megszűnt szolgáltatás — véglegesen szürke, nem hátralévő munka
-        retired: true
+        onTriggered: menu.uploadToGooglePhotosRequested(menu.folderPath)
     }
     MenuSeparator {}
 

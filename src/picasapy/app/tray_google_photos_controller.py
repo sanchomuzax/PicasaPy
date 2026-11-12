@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 from pathlib import Path
 
@@ -10,6 +11,8 @@ from PySide6.QtGui import QDesktopServices
 
 from ..google_photos_fiok import account_email_from_tokens
 from .tray_state_controller import _TraySignalsMixin
+
+_LOG = logging.getLogger(__name__)
 
 
 googlePhotosChanged = _TraySignalsMixin.googlePhotosChanged
@@ -255,9 +258,9 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
                 name="picasapy-google-photos-revoke",
             )
 
-    @Slot(result=bool)
-    def uploadGooglePhotosTray(self) -> bool:
-        """A teljes tálca rögzített pillanatképét küldi feltöltésre."""
+    def _start_photos_upload(
+        self, paths: tuple[str, ...], *, empty_error: str = "empty_tray"
+    ) -> bool:
         from picasapy.google_photos import GooglePhotosApiClient, GooglePhotosError
 
         self._ensure_google_photos_wired()
@@ -270,11 +273,8 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
         client_id, client_secret = credentials
         oauth = self._google_photos_oauth
         transport = self._google_photos_transport
-        # `heldPaths` a teljes tálcát adja a beszúrási sorrendjében; a rács
-        # pillanatnyi kijelölése és a tálca-tokenek nem kerülnek átadásra.
-        paths = tuple(str(path) for path in self.heldPaths)
         if not paths:
-            self._photos_upload_error = "empty_tray"
+            self._photos_upload_error = empty_error
             self.photosUploadChanged.emit()
             return False
         cancel_event = threading.Event()
@@ -336,6 +336,56 @@ class TrayGooglePhotosMixin(_TraySignalsMixin):
             self.googlePhotosChanged.emit()
             return False
         return True
+
+    @Slot(result=bool)
+    def uploadGooglePhotosTray(self) -> bool:
+        """A teljes tálca rögzített pillanatképét küldi feltöltésre."""
+        # `heldPaths` a teljes tálcát adja a beszúrási sorrendjében; a rács
+        # pillanatnyi kijelölése és a tálca-tokenek nem kerülnek átadásra.
+        paths = tuple(str(path) for path in self.heldPaths)
+        return self._start_photos_upload(paths, empty_error="empty_tray")
+
+    @Slot(str, result=bool)
+    def uploadGooglePhotosFolder(self, folder_path: str) -> bool:
+        """A megadott mappa képeit küldi Google Fotók-feltöltésre."""
+        self._ensure_google_photos_wired()
+        if not self.googlePhotosSignedIn:
+            self.signInGooglePhotos()
+            return False
+        folder_str = str(folder_path or "").strip()
+        if not folder_str:
+            return False
+        try:
+            from picasapy.index import open_index, photos_in_folder
+
+            with open_index(self._db_path) as conn:
+                rekordok = photos_in_folder(conn, folder_str)
+        except Exception:
+            _LOG.exception("a mappa képei nem olvashatók a Google Fotók-feltöltéshez: %s", folder_str)
+            rekordok = ()
+        paths = tuple(str(Path(r.folder_path) / r.name) for r in rekordok)
+        return self._start_photos_upload(paths, empty_error="empty_folder")
+
+    @Slot(str, result=bool)
+    def uploadGooglePhotosAlbum(self, album_token: str) -> bool:
+        """A megadott album képeit küldi Google Fotók-feltöltésre."""
+        self._ensure_google_photos_wired()
+        if not self.googlePhotosSignedIn:
+            self.signInGooglePhotos()
+            return False
+        token_str = str(album_token or "").strip()
+        if not token_str:
+            return False
+        try:
+            from picasapy.index import album_photos, open_index
+
+            with open_index(self._db_path) as conn:
+                rekordok = album_photos(conn, token_str)
+        except Exception:
+            _LOG.exception("az album képei nem olvashatók a Google Fotók-feltöltéshez: %s", token_str)
+            rekordok = ()
+        paths = tuple(str(Path(r.folder_path) / r.name) for r in rekordok)
+        return self._start_photos_upload(paths, empty_error="empty_album")
 
     @Slot()
     def cancelGooglePhotosUpload(self) -> None:

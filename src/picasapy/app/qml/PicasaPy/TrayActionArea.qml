@@ -9,6 +9,10 @@ Item {
     property var trayBar
     anchors.fill: parent
 
+    function openGooglePhotosUploadDialog() {
+        googlePhotosUploadDialog.open()
+    }
+
         // `thumbui/separator`: 2 képpont, `0, .365, -3` … `1, 1, -17`,
         // y 50…52 a sáv tetejétől — nálunk (a 20-as infó-csík alatt)
         // y 30…32.

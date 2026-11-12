@@ -19,6 +19,7 @@ from .photo_ops_compat import _WRITE_ERRORS, update_document
 
 class PhotoOpsEffectClipboardMixin:
     allEffectsClipboardChanged = Signal()
+    copyAllEffectsNeedsSinglePhoto = Signal()
     def _ensure_effect_clipboard(self) -> None:
         """Lusta állapot-inicializálás (#150-minta: nem kell az __init__-et
         (forró fájl) módosítani a szelet bevezetéséhez). Szándékosan KÜLÖN
@@ -50,7 +51,7 @@ class PhotoOpsEffectClipboardMixin:
 
     @Slot(list)
     def copyAllEffects(self, rows) -> None:
-        """„Az összes effektus másolása": a kijelölés ELSŐ képének TELJES
+        """„Az összes effektus másolása”: egy kijelölt kép TELJES
         `filters=` lánca kerül az alkalmazás-szintű vágólapra — a vágással
         (`crop64`) és a régió-adatokkal (`redeye`/`retouch`) együtt, ahogy az
         eredeti Picasa másolója teszi (#1544; a szűrés a `mode="history"`
@@ -60,6 +61,9 @@ class PhotoOpsEffectClipboardMixin:
         photos = self._photos.photos
         valid_rows = [int(r) for r in rows if 0 <= int(r) < len(photos)]
         if not valid_rows:
+            return
+        if len(valid_rows) > 1:
+            self.copyAllEffectsNeedsSinglePhoto.emit()
             return
         photo = photos[valid_rows[0]]
         self._effect_clipboard_value = copy_all_effects(photo.filters)

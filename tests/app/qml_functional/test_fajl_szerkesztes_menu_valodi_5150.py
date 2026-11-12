@@ -26,7 +26,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QMetaObject, Qt
+from PySide6.QtCore import QMetaObject, QObject, Qt
 from PySide6.QtTest import QSignalSpy
 
 from conftest import _build_qml_app
@@ -120,6 +120,19 @@ def _zar_ha_nyitva(window, qt_app, nev: str) -> None:
         qt_app.processEvents()
 
 
+
+def _album_ablak_ok(window, qt_app) -> None:
+    """#6861: a Fájl ▸ New Album / Ctrl+N az Album Properties ablakot nyitja
+    (Colab-mérés), az album az OK után jön létre."""
+    dialog = window.findChild(QObject, "toolbarNewAlbumPropertiesDialog")
+    assert dialog is not None and dialog.property("opened") is True, (
+        "nem nyílt meg az Album Properties ablak"
+    )
+    ok = dialog.findChild(QObject, "folderPropertiesOkButton")
+    assert ok is not None, "az Album Properties OK gombja nem található"
+    QMetaObject.invokeMethod(ok, "clicked", Qt.ConnectionType.DirectConnection)
+    qt_app.processEvents()
+
 class TestUjAlbumEsMappa:
     def test_az_uj_album_valodi_kattintassal_letrehozza_az_albumot(
         self, fajl_app, qt_app
@@ -129,6 +142,13 @@ class TestUjAlbumEsMappa:
         assert controller.albums == []
 
         _fajl_tetelt_kattint(window, qt_app, "menuFileNewAlbum")
+        assert _varj(
+            qt_app,
+            lambda: (d := window.findChild(QObject, "toolbarNewAlbumPropertiesDialog"))
+            is not None and d.property("opened") is True,
+        ), "a Fájl ▸ Új album… nem nyitotta meg az Album Properties ablakot"
+        assert controller.albums == [], "az album az OK előtt létrejött"
+        _album_ablak_ok(window, qt_app)
 
         assert _varj(
             qt_app, lambda: [a["name"] for a in controller.albums] == ["Untitled"]

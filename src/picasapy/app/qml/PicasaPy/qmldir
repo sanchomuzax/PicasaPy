@@ -202,6 +202,7 @@ PassportErrorDialog 1.0 PassportErrorDialog.qml
 FolderContextMenu 1.0 FolderContextMenu.qml
 AlbumContextMenu 1.0 AlbumContextMenu.qml
 PeopleAlbumContextMenu 1.0 PeopleAlbumContextMenu.qml
+RecentlyUpdatedContextMenu 1.0 RecentlyUpdatedContextMenu.qml
 FolderListContextMenu 1.0 FolderListContextMenu.qml
 CollectionContextMenu 1.0 CollectionContextMenu.qml
 CollectionHeader 1.0 CollectionHeader.qml

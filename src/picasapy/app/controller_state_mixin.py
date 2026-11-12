@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Property, Slot
-from picasapy.ini import STAR_ALBUM_TOKEN
+from picasapy.ini import RECENT_ALBUM_TOKEN, STAR_ALBUM_TOKEN
 from .search_results import groups_to_qml
 from .controller_signals import AppControllerSignalsMixin as _Signals
 
@@ -62,7 +62,14 @@ class AppControllerStateMixin:
         mode, param = self._view_mode
         if mode == "starred_album":
             return STAR_ALBUM_TOKEN
+        if mode == "recent_album":
+            return RECENT_ALBUM_TOKEN
         return param if mode == "album" else ""
+
+    @Property(int, notify=_Signals.albumsChanged)
+    def recentlyUpdatedCount(self):
+        """A Recently Updated album fotóinak száma (#6851)."""
+        return getattr(self, "_recently_updated_count", 0)
 
     @Property(str, notify=_Signals.statusChanged)
     def statusText(self):

@@ -34,16 +34,20 @@ def sorted_folder_rows(
     (feed) viszont a Mappa ▸ Rendezés beállítását követi (#1454-ig ez a
     menü Nézet ▸ Mappanézet néven szerepelt — tévesen).
     """
-    # #1637: a REJTETT mappák alapból kimaradnak — ugyanaz a Nézet ▸
-    # Rejtett képek kapcsoló hozza vissza őket, ami a rejtett fotókat.
+    # #1637: a REJTETT mappák alapból kimaradnak, a mappaszám pedig csak
+    # látható fotókat számol. Ugyanaz a Nézet ▸ Rejtett képek kapcsoló hozza
+    # vissza a rejtett mappákat és képeket.
     # #4887: `None` = a felület által az indexszel közölt láthatóság
     # (képernyővédő-forráslista, feed-sorrend).
     if include_hidden is None:
         include_hidden = show_hidden_folders(conn)
     rejtett_szuro = "" if include_hidden else " WHERE f.hidden = 0"
+    # A csak rejtett képet tartalmazó mappa sora megmarad (a HAVING az
+    # összes képet számolja), csak a darabszáma lesz 0.
+    darab = "count(p.id)" if include_hidden else "count(CASE WHEN p.hidden = 0 THEN p.id END)"
     db_rows = conn.execute(
         "SELECT f.path, f.date, f.offline, f.hidden, f.unread,"
-        " count(p.id) AS n,"
+        f" {darab} AS n,"
         " COALESCE(SUM(p.size), 0) AS total_size,"
         " COALESCE(MAX(p.mtime_ns), 0) AS last_change"
         " FROM folders f LEFT JOIN photos p ON p.folder_id = f.id"

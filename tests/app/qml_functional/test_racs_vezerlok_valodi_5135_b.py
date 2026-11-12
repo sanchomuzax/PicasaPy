@@ -143,8 +143,16 @@ class TestFotoMenuUjAlbum:
 
         _kattints_mindenablakban(qt_app, "contextMenuNewAlbum")
 
+        dialog = _gyerek(window, "toolbarNewAlbumPropertiesDialog")
+        assert _varj(qt_app, lambda: dialog.property("opened") is True), (
+            "a New Album kattintás nem nyitotta meg az Album Properties ablakot"
+        )
+        assert len(controller.albums) == albumok_elotte, (
+            "az album az OK előtt létrejött"
+        )
+        _kattints_mindenablakban(qt_app, "folderPropertiesOkButton")
         assert _varj(qt_app, lambda: len(controller.albums) == albumok_elotte + 1), (
-            "a New Album kattintás nem hozott létre új albumot"
+            "az OK nem hozta létre az új albumot"
         )
 
 

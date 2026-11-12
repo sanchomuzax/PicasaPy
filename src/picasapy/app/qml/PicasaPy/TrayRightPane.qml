@@ -16,6 +16,10 @@ Item {
         trayTopRow.activateStar()
     }
 
+    function openGooglePhotosUploadDialog() {
+        trayActionArea.openGooglePhotosUploadDialog()
+    }
+
     x: trayBar.splitX
     y: 6
     width: Math.max(0, trayBar.width - trayBar.rightMargin - x)
@@ -27,6 +31,7 @@ Item {
         trayBar: trayRightPane.trayBar
     }
     TrayActionArea {
+        id: trayActionArea
         anchors.fill: parent
         trayRoot: trayRightPane.trayRoot
         actionController: trayRightPane.trayController

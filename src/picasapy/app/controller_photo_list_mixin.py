@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from PySide6.QtCore import QLocale, QObject, Qt, Signal, Slot
-from picasapy.index import albums_in_index, open_index
+from picasapy.index import albums_in_index, count_recently_updated_photos, open_index
 from . import formatting
 from .models import folder_order
 from .small_picture_filter import is_big_picture
@@ -193,6 +193,7 @@ class AppControllerPhotoListMixin:
             }
             for album in albums_in_index(conn)
         ]
+        self._recently_updated_count = count_recently_updated_photos(conn)
         self.albumsChanged.emit()
 
     def _album_placeholder_name(self, token: str) -> str:

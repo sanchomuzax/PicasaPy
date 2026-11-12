@@ -73,12 +73,13 @@ class TestAlbumsListedInPane:
     ):
         window, controller, _ = qml_app
         header = window.findChild(QObject, "albumsHeader")
-        assert header.property("text").endswith("(1)")  # csak a csillagozott sor
+        # #6851: a Recently Updated és a csillagozott sor 2 beépített sor
+        assert header.property("text").endswith("(2)")
 
         lib = tmp_path / "kepek"
         _sync_with_album(controller, tmp_path, lib, qt_app)
 
-        assert header.property("text").endswith("(2)")  # + 1 album
+        assert header.property("text").endswith("(3)")  # + 1 album
 
 
 class TestAlbumClickWiring:

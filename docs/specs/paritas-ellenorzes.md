@@ -1154,3 +1154,10 @@ kattintsa; a Filmhez Windows környezetben készült felvétel kell; a
 csillagnál az eredeti képek csillag-metaadatát is rögzíteni kell.
 
 A kollázs bemeneti halmazának és a kijelentkezett Upload gomboknak az eltérése a #6865 megvalósítási jegyben.
+
+
+## Folyamatszintű összevetés (#6845)
+
+| Parancs | Eredeti | PicasaPy | Eltérés |
+|---|---|---|---|
+| Copy Full Path | Egy kijelölt képnél látható a Delete from Disk alatt, kettőnél hiányzik. | A javítás előtt két kijelöltnél is látszott; a javítás után csak egynél látszik. | A `PhotoContextMenu.qml` menüpontja nem vette figyelembe a kijelöltek számát; javítva. |

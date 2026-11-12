@@ -39,10 +39,14 @@ Flickable {
             albumsModel: folderPane.albumsModel
             selectedAlbumToken: folderPane.selectedAlbumToken
             starredActive: folderPane.starredActive
+            recentlyUpdatedActive: folderPane.recentlyUpdatedActive
+            recentlyUpdatedCount: folderPane.recentlyUpdatedCount
             searchResultsText: folderPane.searchResultsAlbumText
             rowHeight: folderPane.rowHeight
             onToggled: folderPane.toggleCollection("albums")
             onStarredChosen: folderPane.starredChosen()
+            onRecentlyUpdatedChosen: folderPane.recentlyUpdatedChosen()
+            onRecentlyUpdatedContextMenuRequested: folderPane.openRecentlyUpdatedContextMenu()
             onAlbumChosen: function(token) { folderPane.albumChosen(token) }
             onAlbumContextMenuRequested: function(token, name) {
                 folderPane.openAlbumContextMenu(token, name)

@@ -39,7 +39,16 @@ Item {
         moveToNewFolderDialog.openFor(paths)
     }
     function openDelete(paths) {
-        deleteConfirmDialog.openFor(paths)
+        var pathsSnapshot = paths ? paths.slice(0) : []
+        // A Kép helyi menüből indított törlésnél a menü a `triggered`
+        // esemény végén még fókuszt állít vissza. A megerősítőt csak a
+        // menü bezárása után nyitjuk, hogy a Cancel gomb kezdeti fókusza
+        // és az Enter viselkedése érvényesüljön.
+        Qt.callLater(function() {
+            if (dialogs.appWindow)
+                dialogs.appWindow.requestActivate()
+            deleteConfirmDialog.openFor(pathsSnapshot)
+        })
     }
     // #457/2: a köteg indítása — előbb MEGNÉZZÜK, van-e névütközés, és csak
     // akkor kérdezünk (az eredeti sem kérdezett fölöslegesen); ütközés nélkül
@@ -58,10 +67,17 @@ Item {
         dialogs.appWindow.clearSelection()
     }
 
-    //: #2911: a kép-helyi menü PicasaPy-kiegészítése a kijelölt képekből
-    //: készít albumot, névbekérés nélkül. Az eszköztár külön útja a #5812
-    //: alapján az Album Properties párbeszédet nyitja, és üres albumot ment.
+    // A Fájl menü és a kép helyi menüje ugyanazt az Album Properties
+    // párbeszédet nyitja, mint az eszköztár; a kijelölt sorok csak az OK után
+    // kerülnek be az albumba.
     function openNewAlbum(rows) {
+        if (!controller || !rows || rows.length === 0) return
+        dialogs.openNewAlbumProperties(controller.currentFolder, rows)
+    }
+
+    //: #2911: a képek albumlistára ejtése az eredetiben névbekérő nélkül,
+    //: azonnal „Untitled” albumot készít (mérve); ez az út NEM a menüké.
+    function createAlbumFromDrop(rows) {
         if (!controller || !rows || rows.length === 0) return
         controller.createAlbum(dialogs.ujAlbumNeve, rows)
     }
@@ -567,13 +583,29 @@ Item {
             }
         }
         onConfirmed: {
+            var firstRow = Number(dialogs.appWindow.selectedIndex)
+            if (dialogs.appWindow.selectedRows) {
+                var selectedRows = dialogs.appWindow.selectedRows()
+                for (var r = 0; r < selectedRows.length; ++r) {
+                    var row = Number(selectedRows[r])
+                    if (firstRow < 0 || row < firstRow) firstRow = row
+                }
+            }
             for (var i = 0; i < paths.length; ++i) {
                 if (trashAvailable)
                     fileOpsController.deletePhoto(paths[i])
                 else
                     fileOpsController.deletePhotoPermanently(paths[i])
             }
-            dialogs.appWindow.clearSelection()
+            var photoCount = typeof controller !== "undefined"
+                && controller && controller.photos ? controller.photos.rowCount() : 0
+            if (photoCount > 0) {
+                var nextRow = Math.min(Math.max(firstRow, 0), photoCount - 1)
+                dialogs.appWindow.selectedIndexes = [nextRow]
+                dialogs.appWindow.selectedIndex = nextRow
+            } else {
+                dialogs.appWindow.clearSelection()
+            }
         }
     }
 

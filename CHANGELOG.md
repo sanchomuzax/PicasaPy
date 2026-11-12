@@ -7,6 +7,23 @@ fájl a lényegi, ember által írt kiemeléseket rögzíti.
 
 ## [Nem kiadott]
 
+## [1.0.103] - 2026-11-12
+
+- A differenciális szűrőláncok táblázata külön jelzi a véletlenállapot-függő méréseket (#6585).
+- Windowson stabilabbak a tesztek: a beállítások tesztenként elszigetelve, a korábban ingadozó tesztek javítva (#6824).
+- Az Irányított fényerő után a Filmszemcse (PicnikGrain) és a Múzeumi paszpartu (MuseumMatte) az eredeti Picasához hasonlóan a képet mutatja, nem fehér vagy kifakult foltot (#6839).
+- A kijelölt képek helyi menüjéből az Áthelyezés új mappába ismét a Mappa tulajdonságai ablakot nyitja, és OK után az új mappa a képeivel azonnal megjelenik és kijelölődik a bal hasábban (#6844).
+- Windowson is kijelölődik az új mappa az Áthelyezés új mappába után, akkor is, ha az indexelés a párbeszéd bezárása után fejeződik be (#6844).
+- Több kép kijelölésekor a helyi menü már nem kínálja az egyetlen kép teljes elérési útjának másolását (#6848).
+- Egy kép elrejtése után a bal oldali mappalista is a megmaradt látható képek számát mutatja, nem a rejtettekkel együtt számolt értéket (#6848).
+- A Tulajdonságok panel az eredeti Picasához hasonlóan a „Properties of fájlnév:” címet viseli, a mezők felirata pedig Location és Tags (#6848).
+- A kép helyi menüjéből nyitott törlési megerősítő ablakban a Cancel gomb kapja az alapfókuszt, így az Enter nem töröl, és törlés után a következő kép lesz kijelölve (#6848).
+- A mappa felosztása után a program az új mappára vált, a kép elforgatása után pedig a fejléc Save gombja aktív lesz (#6848).
+- A mappa és az album helyi menüjében a Google Fotók-feltöltés aktívvá vált (#6849).
+- A bal oldali Albumok szakaszban megjelent a Legutóbb frissítve (Recently Updated) különleges album (#6851).
+- A mappák rendezése, megerősítése, áthelyezése és HTML-exportja az eredeti Picasa viselkedéséhez igazodik (#6852).
+- A File menü és a kép helyi menüjének New Album parancsa az Album Properties ablakot nyitja, a Copy All Effects több kijelölt képnél figyelmeztet, a Folder ▸ Remove from Picasa megnevezi a mappát, az Export as HTML Page előtöltött céllal nyílik, a Gift CD pedig a mappa nevével és Include Slideshow választóval (#6861).
+
 ## [1.0.102] - 2026-11-11
 
 - Az Invert után a DropShadow (vetett árnyék) a megfordított képet rajzolja ki, nem egyetlen színfoltot: az Invert az eredeti Picasához hasonlóan megőrzi a kép átlátszóságát (#6836).

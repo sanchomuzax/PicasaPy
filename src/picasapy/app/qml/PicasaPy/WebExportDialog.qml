@@ -199,8 +199,17 @@ Window {
             if (typeof webExportController.webExportPrefs === "function")
                 prefs = webExportController.webExportPrefs()
             if (webExportWindow.targetFolder.length === 0) {
-                webExportWindow.targetFolder = prefs.targetDir
-                    || webExportController.defaultWebExportTarget()
+                var defaultTarget = ""
+                if (typeof webExportController.defaultWebExportTargetForFolder
+                        === "function") {
+                    defaultTarget =
+                        webExportController.defaultWebExportTargetForFolder(
+                            webExportWindow.currentFolderTitle())
+                } else if (typeof webExportController.defaultWebExportTarget
+                        === "function") {
+                    defaultTarget = webExportController.defaultWebExportTarget()
+                }
+                webExportWindow.targetFolder = prefs.targetDir || defaultTarget
             }
             // A mentett sablont azonosító alapján keressük. HTML-módban az
             // eredeti lista első eleme (Template 1, szürke háttér) az alap;
