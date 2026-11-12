@@ -7812,6 +7812,19 @@ picasapy-origin-key: stringres:il_Cancel</extracomment>
             <translation>फ़ोल्डर ले जाएं</translation>
         </message>
         <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="233" />
+            <source>Browse for Folder</source>
+            <extracomment>picasapy-origin: picasapy</extracomment>
+            <translation type="unfinished" />
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="237" />
+            <source>OK</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:il_OKButton</extracomment>
+            <translation>ठीक</translation>
+        </message>
+        <message>
             <location filename="../qml/PicasaPy/FolderPaneMenus.qml" line="241" />
             <source>Are you sure you want to move the folder "%1" and its contents to the Recycle Bin?</source>
             <extracomment>picasapy-origin: picasapy</extracomment>

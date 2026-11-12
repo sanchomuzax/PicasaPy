@@ -53,7 +53,7 @@ from picasapy.fileops.safe_move import safe_move
 from picasapy.scanner import PICASA_INI_NAME
 
 from .controller import _to_local_path
-from .formatting import to_local_path
+from .formatting import to_file_url, to_local_path
 from .fileops_controller_move_mixin import FileOpsControllerMoveMixin
 from .fileops_controller_delete_mixin import FileOpsControllerDeleteMixin
 from .fileops_controller_clipboard_mixin import FileOpsControllerClipboardMixin
@@ -109,6 +109,12 @@ class FileOpsController(
     QObject,
 ):
     """A QML fájlművelet-kontextusmenüjéhez tervezett híd."""
+
+    @Slot(str, result=QUrl)
+    def parentFolderUrl(self, path: str) -> QUrl:  # noqa: N802
+        """A mappa szülőjének `file:` URL-je a mappaválasztó kezdőhelyéhez."""
+        local_path = to_local_path(path)
+        return to_file_url(str(Path(local_path).parent)) if local_path else QUrl()
 
     photoRenamed = Signal(str, str)  # (régi_út, új_út)
     photoMoved = Signal(str, str)  # (régi_út, új_út)
