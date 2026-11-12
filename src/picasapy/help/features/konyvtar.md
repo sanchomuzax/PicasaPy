@@ -535,7 +535,9 @@ borítókép** a felirattal, hogy mi van kiválasztva és hány kép van benne
 bélyegképek veszik át a helyét. Egy **személy albumánál** (az Emberek
 csoportban) ugyanígy egyetlen kép áll a tálcán: a személy arcképe, a
 kiválasztott album képszámával. A mappákra ez nem vonatkozik: a
-mappanézet megszokott kinézete nem változik.
+mappanézet megszokott kinézete nem változik. Kivétel az **Áthelyezés új
+mappába…** után frissen kijelölt új mappa: ott a tálca egy ideig
+ugyanígy egyetlen borítóképet mutat (lásd [Fájlműveletek](fajlmuveletek.md)).
 
 A tálcának **saját kijelölése** van, a rácsétól függetlenül. A tálcán
 egy képre kattintva kijelölöd (kék kerettel jelöli), Ctrl-lal
