@@ -21,6 +21,8 @@ Rectangle {
     property alias foldersModel: paneContent.folderListModel
     property string selectedPath: ""
     property bool starredActive: false
+    property bool recentlyUpdatedActive: false
+    property int recentlyUpdatedCount: 0
     property bool searchActive: false
     property string searchQuery: ""
     property int searchResultCount: 0
@@ -190,6 +192,7 @@ Rectangle {
     signal hiddenPasswordRequested()
     signal collectionPasswordRequested(string collectionName)
     signal starredChosen()
+    signal recentlyUpdatedChosen()
     signal albumChosen(string token)
     signal personChosen(string name)
     signal unnamedFacesChosen()
@@ -345,6 +348,9 @@ Rectangle {
         paneMenus.albumContextMenu.albumToken = token
         paneMenus.albumContextMenu.albumName = name
         paneMenus.albumContextMenu.popup()
+    }
+    function openRecentlyUpdatedContextMenu() {
+        paneMenus.recentlyUpdatedContextMenu.popup()
     }
     function _askDeleteAlbum(token, name) {
         if (!token) return

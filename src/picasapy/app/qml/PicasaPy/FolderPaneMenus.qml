@@ -13,6 +13,7 @@ Item {
     property var folderHierarchyController: null
 
     property alias albumContextMenu: albumContextMenu
+    property alias recentlyUpdatedContextMenu: recentlyUpdatedContextMenu
     property alias deleteAlbumConfirm: deleteAlbumConfirm
     property alias peopleAlbumContextMenu: peopleAlbumContextMenu
     property alias peopleAlbumDeleteConfirmation: peopleAlbumDeleteConfirmation
@@ -84,6 +85,35 @@ Item {
                         && typeof folderPane.appWindow.footer.openGooglePhotosUploadDialog === "function")
                     folderPane.appWindow.footer.openGooglePhotosUploadDialog()
             }
+        }
+    }
+
+    RecentlyUpdatedContextMenu {
+        id: recentlyUpdatedContextMenu
+        onAddNameTagsRequested: function(token) {
+            if (typeof faceScanController !== "undefined" && faceScanController)
+                faceScanController.scanAlbum(token)
+        }
+        onSelectAllRequested:
+            if (folderPane.appWindow && folderPane.appWindow.selectAll) folderPane.appWindow.selectAll()
+        onClearSelectionRequested:
+            if (folderPane.appWindow && folderPane.appWindow.clearSelection)
+                folderPane.appWindow.clearSelection()
+        onInvertSelectionRequested:
+            if (folderPane.appWindow && folderPane.appWindow.invertSelection)
+                folderPane.appWindow.invertSelection()
+        onRefreshThumbnailsRequested:
+            if (controller) controller.resyncFolder(controller.currentFolder)
+        onExportAsHtmlRequested:
+            if (folderPane.appWindow && folderPane.appWindow.openWebExport)
+                folderPane.appWindow.openWebExport()
+        onEditDescriptionRequested: folderPane.openAlbumDescription(
+            recentlyUpdatedContextMenu.albumToken, recentlyUpdatedContextMenu.albumName)
+        onDeleteAlbumRequested: folderPane._askDeleteAlbum(
+            recentlyUpdatedContextMenu.albumToken, recentlyUpdatedContextMenu.albumName)
+        onSortAlbumRequested: function(mode) {
+            if (controller)
+                controller.sortAlbum(recentlyUpdatedContextMenu.albumToken, mode)
         }
     }
 

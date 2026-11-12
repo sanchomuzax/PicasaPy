@@ -19,12 +19,16 @@ ColumnLayout {
     property var albumsModel: []
     property string selectedAlbumToken: ""
     property bool starredActive: false
+    property bool recentlyUpdatedActive: false
+    property int recentlyUpdatedCount: 0
     property string searchResultsText: ""
     // #730: a hasáb egységes sormagassága — egyetlen forrásból
     property int rowHeight: 22
 
     signal toggled()
     signal starredChosen()
+    signal recentlyUpdatedChosen()
+    signal recentlyUpdatedContextMenuRequested()
     signal albumChosen(string token)
     signal albumContextMenuRequested(string token, string name)
     // #455: fogd-és-vidd az albumlistára — új album, illetve meglévőbe
@@ -44,9 +48,9 @@ ColumnLayout {
     CollectionHeader {
         Layout.fillWidth: true
         label: qsTr("Albums")
-        // #9: a csillagozott sor + a virtuális albumok; #5194: kereséskor
-        // az új találatsor is a csoport része.
-        itemCount: 1 + section.albumsModel.length
+        // #9, #6851: a Recently Updated + a csillagozott sor + a virtuális albumok;
+        // #5194: kereséskor az új találatsor is a csoport része.
+        itemCount: 2 + section.albumsModel.length
                    + (section.searchResultsText.length > 0 ? 1 : 0)
         labelObjectName: "albumsHeader"
         collapsed: section.collapsed
@@ -131,6 +135,49 @@ ColumnLayout {
                 color: Theme.textDark
                 font.pixelSize: Theme.fontSize
             }
+        }
+    }
+
+    Rectangle {
+        id: recentlyUpdatedItem
+        objectName: "recentlyUpdatedItem"
+        visible: !section.collapsed
+        Layout.fillWidth: true
+        Layout.preferredHeight: section.rowHeight
+        color: section.recentlyUpdatedActive ? Theme.panelSelectionActive
+               : (recentlyUpdatedMouse.containsMouse ? Theme.panelSelection : "transparent")
+        Row {
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left; anchors.leftMargin: 16
+            spacing: 5
+            SpecialAlbumIcon {
+                objectName: "recentlyUpdatedRowIcon"
+                anchors.verticalCenter: parent.verticalCenter
+            }
+            Text {
+                id: recentlyUpdatedLabel
+                objectName: "recentlyUpdatedLabel"
+                text: qsTr("Recently Updated") + " (" + section.recentlyUpdatedCount + ")"
+                font.pixelSize: Theme.fontSize
+                color: section.recentlyUpdatedActive || recentlyUpdatedMouse.containsMouse
+                       ? Theme.panelSelectionText : Theme.textDark
+            }
+        }
+        MouseArea {
+            id: recentlyUpdatedMouse
+            objectName: "recentlyUpdatedMouse"
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: function(mouse) {
+                if (mouse.button === Qt.RightButton) {
+                    section.recentlyUpdatedContextMenuRequested()
+                    return
+                }
+                section.recentlyUpdatedChosen()
+            }
+
+            PressFeedbackOverlay { pressSource: parent }
         }
     }
 

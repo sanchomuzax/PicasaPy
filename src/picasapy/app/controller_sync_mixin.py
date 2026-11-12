@@ -8,6 +8,7 @@ from picasapy.index import (
     album_photos,
     geotagged_photos,
     open_index,
+    recently_updated_photos,
     search_photos,
     starred_photos,
     video_photos,
@@ -85,6 +86,11 @@ class AppControllerSyncMixin:
             started = time.perf_counter()
             with open_index(self._db_path) as conn:
                 records = starred_photos(conn)
+            self._show_filtered(records, time.perf_counter() - started)
+        elif mode == "recent_album":
+            started = time.perf_counter()
+            with open_index(self._db_path) as conn:
+                records = recently_updated_photos(conn)
             self._show_filtered(records, time.perf_counter() - started)
         elif mode == "videos":
             # #1830: enélkül egy frissítés némán visszadobná a felhasználót
