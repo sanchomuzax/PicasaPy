@@ -166,10 +166,13 @@ class TestMinosegiSavok:
         # ugyanazok maradnak; itt nem rögzítünk betűméretet vagy pixelhelyet.
         alapmagassag = int(dialog.property("height"))
         for magassag in (alapmagassag - 5, alapmagassag, alapmagassag + 5):
-            dialog.setProperty("height", magassag)
+            foablak = dialog.window()
+            foablak.setHeight(
+                foablak.height() + magassag - dialog.height()
+            )
             assert varj_feltetelre(
                 qt_app,
-                lambda vart=magassag: int(dialog.property("height")) == vart
+                lambda vart=magassag: round(dialog.height()) == vart
                 and len(sav_feliratok()) == 3,
                 3,
             ), f"az ellenőrzőlista nem állt helyre {magassag} px magasságnál"

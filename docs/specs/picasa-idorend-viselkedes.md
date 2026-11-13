@@ -25,21 +25,23 @@ hogy a kiadott főablakban látható Idővonal-gombnak kell lennie.
 
 #### 38.2.1 Az Időrend bemutató-útja és bizonyított határai (#4443 kutatás)
 
-**Állapotfrissítés (#6532, 2026-11-11).** A korábbi nyitott pontok közül
+**Állapotfrissítés (#6532, 2026-11-13).** A korábbi nyitott pontok közül
 lezárva: a CThumbUI+0x2c0 objektum típusa (38.2.69), a qshow
 gyűjteménykártya-listájának dátumkulcs szerinti növekvő rendezése (38.2.105),
 a kártyák képi modellje és feliratai (38.2.93-94, 38.2.97-98, 38.2.102), a
 billentyűk statikus qshow-útja (38.2.63, 38.2.101), valamint az Exit
 host/callback-útja (38.2.63, 38.2.68). Nyitva marad a bemeneti
 CAlbumState-leírók teljes forráshalmaza és a `+0x0c == 2` állapotkód tartalmi
-jelentése (38.2.110). A mező írója `0x004ab520`; a qshow ezt az állapotot
+jelentése (38.2.111-112). A mező írója `0x004ab520`; a qshow ezt az állapotot
 szükséges bemeneti feltételként használja. A qshow 0x38 bájtos rekordjának
-`+0x30 == 1` és `+0x18 == 0` kapuja szintén ismert, de a kódok gyűjteménytípusa
-nyitott. A qshow-lista és a PicasaPy-gyűjtemények azonossága, valamint a
-PicasaPy dátumforrásának az eredeti descriptor dátumával való megfelelése.
-A PicasaPy napszakot eldobó dátumkezelési eltérése forráskódból látszik
-(38.2.109), de a tényleges sorrendi hatás pontosan egyező dátumforrású adaton
-még nincs megmérve. Nyitott továbbá a pontos billentyű-esemény
+`+0x30 == 1` és `+0x18 == 0` kapuja is ismert, de a kódok gyűjteménytípusa és
+a teljes kártyahalmaz nyitott. A qshow-lista és a PicasaPy-gyűjtemények
+azonossága, valamint az eredeti descriptor dátumának és a PicasaPy dátumának
+megfelelése nincs megmérve. A PicasaPy a legkorábbi EXIF `datetime` értéket
+használja a kártyák rendezésére; a napra vetített `toordinal()` csak a csúszka
+koordinátáját képezi (38.2.111). Ez javítja a 38.2.109 korábbi állítását:
+forráskód alapján nem igazolt, hogy a PicasaPy a rendezéskor eldobja a
+napszakot. Nyitott továbbá a pontos billentyű-esemény
 és képkocka közti időzítés (38.2.104), a sliderthumb felhasználói művelete,
 valamint a kilépés utáni általános nézet és kijelölés (38.2.81-83).
 
@@ -139,7 +141,7 @@ időzít, vagy hogy a fogantyú húzással mit állít.
 
 | Eredeti | Nálunk | Teendő |
 |---|---|---|
-| A `0x005e8a70` út CAlbumState-elemekből indul; a qshow kártyalistáját a dátum-qword szerint növekvően rendezi (`0x007fc4c0`, `0x0049cd60`, lezárva: 38.2.105). A `+0x138` sorok `+0x0c` mezőjét `0x004b29d0` `2`-vel szűri, a qshow pedig további `+0x30 == 1` és `+0x18 == 0` feltételt vizsgál. A mező írója, a `2` kategóriája és a teljes kártyahalmaz **NINCS MEG** (38.2.109). | A `TimelineController.reload()` nem rejtett fotókból mappakártyákat, valamint nem üres, indexelt albumokból albumkártyákat készít; a dátum napra csonkolt, és a gyűjtemények sorrendje dátum, név, azonosító szerint történik (`timeline_controller.py:218-239,269-299,357-382`). | A dátumkulcs napra csonkolása forráskódból igazolt eltérés; a látható sorrendkülönbség az eredeti descriptor dátumforrásának és a PicasaPy legkorábbi EXIF-dátumának megfeleltetése után dönthető el. A qshow és a PicasaPy gyűjteményhalmazának azonossága nincs bizonyítva. |
+| A `0x005e8a70` út CAlbumState-elemekből indul; a qshow kártyalistáját a dátum-qword szerint növekvően rendezi (`0x007fc4c0`, `0x0049cd60`, 38.2.105). A `+0x138` sorok `+0x0c` mezőjét a `0x004b29d0` `2`-vel szűri, majd a qshow a köztes rekord `+0x30 == 1` és `+0x18 == 0` kapuit alkalmazza. A teljes CAlbumState-forráshalmaz és a numerikus kódok gyűjteménytípushoz rendelése **NINCS MEG** (38.2.111-112). | A `TimelineController.reload()` látható fotókból mappa-, valamint nem üres indexelt albumkártyákat készít. A dátum az egyes gyűjtemények legkorábbi EXIF `datetime` értéke; rendezéskor a teljes dátumot, majd a nevet és az azonosítót használja. A `toordinal()` csak a csúszka koordinátáját adja (`timeline_controller.py:218-239,269-320,357-382`). | Az eredeti qshow-sorokat és dátum-qwordot még nem kötöttük azonos mappákhoz/albumokhoz és EXIF-dátumokhoz, ezért látható sorrendi vagy gyűjteménytípus-eltérés **NINCS MEG**. A 38.2.111 korrigálja a 38.2.109 korábbi, napszak eldobására vonatkozó állítását. |
 | Az `oneup.tre` képnéző-, Exit/Timeline-, prev/next, automatikus lejátszás-, forgatás-, csillag-, átmenet-, felirat- és kijelzési idő vezérlőket sorol fel. Az overlay-rétegek között sáv, két pontgrafika és fogantyú van; a fogantyú szemantikus művelete **NINCS MEG**. | A PicasaPy jelenlegi Időrendje kártyapályát, dátumpont-sort, lapozást és OneUp-diavetítésre váltó útvonalat ad; a sliderthumb eredeti szemantikájával való megfelelés nincs igazolva. | A vezérlőút részben megfeleltethető; a sliderthumb pontos dátum-/fotóindex-hatását csak bináris út és eredeti futásidejű ellenőrzés után lehet egyezőnek vagy eltérőnek minősíteni. |
 | A `0x008032e0` és `0x00803180` gomb-, egér- és qshow-billentyűútja binárisan dokumentált (38.2.63, 38.2.101); az Exit host/callback-útja lezárva (38.2.68). A teljes billentyű-esemény/képkocka-időzítés és az általános visszatérési állapot **NINCS MEG** (38.2.104, 38.2.81-83). | A jelenlegi `TimelineView.qml` aktív Időrend-nézetet, lapozást és billentyűkezelést tartalmaz; forrás: `TimelineView.qml:82-115,393-406`. | A statikus kezelőutak ismertek; az eredeti és a PicasaPy futásidejű eseményidőzítését szinkron felvétel nélkül ne tekintsük egyezőnek vagy eltérőnek. |
 | A `thumbui/timelinebutton` akciónév létezik, de a csomagolt `thumbui.tre` rejtettnek jelöli (`m_hidden`); a súgó „Timeline view of all your photos”. | Nincs aktív főablaki Időrend-eszköztárgomb. | Az eredeti főablaki gomb láthatóságát ne következtessük ki a parancs létezéséből; ehhez futó Picasa-képernyőkép kell. |

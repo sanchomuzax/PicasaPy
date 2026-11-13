@@ -184,12 +184,14 @@ class TestKimenet:
         window, _controller, _engine = qml_app
         _kijelol(window, qt_app, [0, 1])
         parbeszed = _menubol_nyit(window, qt_app)
+        cel = tmp_path / "ok.pdf"
 
-        _nyomtat(window, qt_app, parbeszed, tmp_path / "ok.pdf")
+        _nyomtat(window, qt_app, parbeszed, cel)
 
-        eredmeny = _elem(window, "printResultText")
-        assert eredmeny.property("visible") is True
-        assert str(eredmeny.property("text")).strip()
+        assert cel.is_file()
+        assert parbeszed.property("visible") is False
+        assert _elem(window, "mainSplit").property("visible") is True
+        assert Path(str(parbeszed.property("lastResult"))) == cel
 
 
 class TestCelpont:
@@ -272,8 +274,9 @@ class TestNemaElutasitasNincs:
 
         _nyomtat(window, qt_app, parbeszed, tmp_path / "reszleges.pdf")
 
-        figyelmeztetes = _elem(window, "printSkippedText")
-        assert figyelmeztetes.property("visible") is True, (
-            "egy kép kimaradt, és a párbeszéd sikert mutatott"
-        )
-        assert ut.name in str(figyelmeztetes.property("text"))
+        kimaradt = parbeszed.property("lastSkipped")
+        if hasattr(kimaradt, "toVariant"):
+            kimaradt = kimaradt.toVariant()
+        assert ut.name in list(kimaradt)
+        assert parbeszed.property("visible") is False
+        assert _elem(window, "mainSplit").property("visible") is True

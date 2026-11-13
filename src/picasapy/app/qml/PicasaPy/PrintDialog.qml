@@ -4,7 +4,8 @@ import QtQuick.Dialogs
 import QtQuick.Layouts
 
 // Nyomtatás (#32 RÉSZLEGES kör, bekötve a #1472-ben) — a `Fájl ▸
-// Nyomtatás…` (Ctrl+P) és a képtálca „Nyomtatás" gombja ezt nyitja.
+// Nyomtatás…` (Ctrl+P) és a képtálca „Nyomtatás" gombja a könyvtárnézet
+// helyén nyitja meg.
 //
 // ⚠️ Ez NEM a Picasa teljes nyomtatási sablonrendszere (`print.fen` /
 // `reviewprint.fen`, állítható margó). A méretválasztó a #5683 óta az
@@ -16,72 +17,36 @@ import QtQuick.Layouts
 // tehát meg sem nyitható (ld. a `print_controller.py` docstringjét). A
 // lista ELSŐ tétele a PDF-fájlba nyomtatás — enélkül a párbeszéd egy
 // nyomtató nélküli gépen semmit nem tudna csinálni.
-Window {
+Item {
     id: printWindow
     objectName: "printDialog"
-    title: qsTr("Print...")
-    modality: Qt.ApplicationModal
+    property var appWindow: null
+    property string title: qsTr("Print...")
+    implicitWidth: 480
+    implicitHeight: alapMagassag
+    visible: false
 
-    //: #3544: a Shift+F1 fejezete. Külön ablakos, modális párbeszéd: a
-    //: főablak súgója mögé kerülne, ezért a `WindowHelp` a párbeszéd FÖLÖTT,
-    //: külön ablakban nyitja.
+    //: #3544: a Shift+F1 fejezete. A `WindowHelp` külön súgóablakban nyitja.
     property string helpTopic: "features/nyomtatas.md"
     WindowHelp {
         id: printWindowHelp
         tema: printWindow.helpTopic
     }
-    width: 480
-    height: alapMagassag
-    // #4795: a kezdőmagasság a tartalomhoz igazodik, de legfeljebb a
-    // képernyő elérhető magassága (kis ráhagyással). Nyitáskor számoljuk,
-    // hogy a felhasználó utólagos átméretezését ne írja felül kötés.
+    //: A régi különablakos méretezés értékei megmaradnak a komponens
+    //: kompatibilitási felületén; beágyazott nézetben a főablak mérete dönt.
     readonly property int kepernyoRahagyas: 48
     readonly property int keretMargo: 12
     readonly property int alapMagassag: 420
-    // A nyitás utáni elrendezés lecsengéséig (az utolsó magasság-változás
-    // után `meretezesIdozito.interval` ms) a méretezés függőben van.
     property bool meretezesFuggoben: false
-    Timer {
-        id: meretezesIdozito
-        interval: 100
-        onTriggered: {
-            printWindow.meretezesFuggoben = false
-            printWindow.height = printWindow.kezdoMagassag()
-        }
+    property var selectionBeforeOpen: null
+    property int selectedIndexBeforeOpen: -1
+    function kezdoMagassag() { return Math.round(height) }
+
+    Rectangle {
+        anchors.fill: parent
+        color: Theme.canvasBg
+        z: -1
     }
-    Connections {
-        target: printDialogContent.content
-        function onImplicitHeightChanged() {
-            if (printWindow.meretezesFuggoben)
-                meretezesIdozito.restart()
-        }
-    }
-    Connections {
-        target: printDialogContent.statusPanel.statusBox
-        function onImplicitHeightChanged() {
-            if (printWindow.meretezesFuggoben)
-                meretezesIdozito.restart()
-        }
-    }
-    function kezdoMagassag() {
-        // ⚠️ csak az ELSŐ elrendezés UTÁN hívandó (ld. `meretezesIdozito`):
-        // rejtett ablakban a Layout nem rendeződik újra, az implicitHeight
-        // elavult (az előző nyitás/mód tartalmát tükrözi).
-        var statusMagassag = printDialogContent.statusPanel.visible
-                             ? printDialogContent.statusPanel.Layout.preferredHeight : 0
-        var kell = printDialogContent.content.implicitHeight + statusMagassag
-                   + printDialogContent.buttonRow.implicitHeight
-                   + 2 * keretMargo + printDialogContent.frame.spacing
-                   + (printDialogContent.statusPanel.visible ? printDialogContent.frame.spacing : 0)
-        // ⚠️ többmonitoros gépen a `Screen` az ablak képernyőjét adja, ami
-        // nyitáskor még nem biztos, hogy a végleges — a plafon közelítés.
-        var plafon = Math.max(minimumHeight,
-                              Screen.desktopAvailableHeight - kepernyoRahagyas)
-        return Math.round(Math.min(Math.max(alapMagassag, kell), plafon))
-    }
-    minimumWidth: 420
-    minimumHeight: 380
-    color: Theme.canvasBg
 
     // #305 mintája: null-őr. A vezérlőt az `application.py` regisztrálja;
     // a menüsávot/ablakot önmagában betöltő próbák nem.
@@ -265,7 +230,27 @@ Window {
 
     function valasszNyomtatasiModot(optimized) { printDialogLogic.valasszNyomtatasiModot(optimized) }
 
-    function nyisd(targetRows, utlevelUrl, contactMode) { printDialogLogic.nyisd(targetRows, utlevelUrl, contactMode) }
+    function nyisd(targetRows, utlevelUrl, contactMode) {
+        if (printWindow.appWindow) {
+            if (!printWindow.visible) {
+                var kijeloles = printWindow.appWindow.selectedIndexes || []
+                printWindow.selectionBeforeOpen = []
+                for (var i = 0; i < kijeloles.length; ++i)
+                    printWindow.selectionBeforeOpen.push(Number(kijeloles[i]))
+                printWindow.selectedIndexBeforeOpen =
+                    printWindow.appWindow.selectedIndex
+            }
+            printWindow.appWindow.viewerOpen = false
+            var tabs = printWindow.appWindow.documentTabStrip
+            if (tabs)
+                tabs.activateTab(tabs.libraryTabId)
+            printWindow.appWindow.printViewOpen = true
+        }
+        printDialogLogic.nyisd(targetRows, utlevelUrl, contactMode)
+    }
+
+    function open() { openForRows(appWindow ? appWindow.printTargetRows() : []) }
+    function close() { visible = false }
 
     function startPrint() { printDialogLogic.startPrint() }
 
@@ -286,19 +271,33 @@ Window {
         && (!printWindow.pdfSelected || printWindow.pdfTarget.length > 0)
         && !printWindow._printing
 
-    //: #1401: a bezárt nézet nem hagyhatja a vezérlőt útlevél-módban —
-    //: a következő nyomtatás különben a kivágott képet nyomtatná.
     onVisibleChanged: {
         if (printWindow.visible) {
-            printWindow.meretezesFuggoben = true  // #4795
-            meretezesIdozito.restart()
+            if (printWindow.appWindow)
+                printWindow.appWindow.printViewOpen = true
         }
         if (!printWindow.visible) {
-            meretezesIdozito.stop()
-            printWindow.meretezesFuggoben = false
+            if (printWindow.appWindow) {
+                printWindow.appWindow.printViewOpen = false
+                if (printWindow.selectionBeforeOpen !== null) {
+                    printWindow.appWindow.selectedIndexes =
+                        printWindow.selectionBeforeOpen
+                    printWindow.appWindow.selectedIndex =
+                        printWindow.selectedIndexBeforeOpen
+                }
+            }
+            printWindow.selectionBeforeOpen = null
+            printWindow.selectedIndexBeforeOpen = -1
+            if (printWindow.printCtl)
+                printWindow.printCtl.clearPassportSource()
         }
-        if (!printWindow.visible && printWindow.printCtl)
-            printWindow.printCtl.clearPassportSource()
+    }
+
+    Shortcut {
+        sequence: "Escape"
+        context: Qt.WindowShortcut
+        enabled: printWindow.visible
+        onActivated: printWindow.visible = false
     }
 
     // #1590: a `Mappa ▸ Bélyegképek nyomtatása…` belépési pontja — ugyanaz
@@ -313,6 +312,7 @@ Window {
             // a feladat véget ért: a haladás-sor eltűnik
             printWindow.printTotalPages = 0
             printWindow.printDonePages = 0
+            printWindow.visible = false
         }
         function onPrintFailed(message) {
             printWindow._printing = false

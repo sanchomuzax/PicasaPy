@@ -1,5 +1,4 @@
-"""#4795 — a Nyomtatás ablak kezdőmagassága a tartalomhoz igazodik, a
-Nyomtatás/Close gombsor és a nyomtatóválasztó nem lóg ki alóla.
+"""#4795 — a nyomtatási nézet vezérlői a főablak tartalmában maradnak.
 
 Renderelt (mapToScene) és kattintásos (QTest.mouseClick) próbák; kis
 ablakmagasságnál a gombsor rögzített marad, a tartalom görgethető.
@@ -32,12 +31,12 @@ def _elem(root, nev):
     return obj
 
 
-def _alja(elem) -> float:
-    return elem.mapToScene(QPointF(0, elem.height())).y()
+def _alja(elem, gyoker) -> float:
+    return elem.mapToItem(gyoker, QPointF(0, elem.height())).y()
 
 
-def _tetje(elem) -> float:
-    return elem.mapToScene(QPointF(0, 0)).y()
+def _tetje(elem, gyoker) -> float:
+    return elem.mapToItem(gyoker, QPointF(0, 0)).y()
 
 
 def _var(qt_app, feltetel, masodperc=10.0) -> bool:
@@ -48,9 +47,15 @@ def _nyit(qml_app, qt_app):
     window, _c, _e = qml_app
     _kijelol(window, qt_app, [0])
     parbeszed = _menubol_nyit(window, qt_app)
-    # az első elrendezés után méretezi magát az ablak (nyitás-időzítő)
+    # A nyomtatási nézet a főablak tartalmi méretét követi.
     assert _var(qt_app, lambda: not parbeszed.property("meretezesFuggoben"))
     return window, parbeszed
+
+
+def _allit_nezetmagassagot(window, parbeszed, celmagassag, qt_app):
+    elteres = celmagassag - round(parbeszed.height())
+    window.setHeight(round(window.height()) + elteres)
+    assert _var(qt_app, lambda: round(parbeszed.height()) == celmagassag)
 
 
 def _hatar(parbeszed, elem) -> float:
@@ -59,7 +64,7 @@ def _hatar(parbeszed, elem) -> float:
     szulo = elem.parent()
     while szulo is not None:
         if szulo.objectName() == "printContentFlick":
-            return szulo.mapToScene(QPointF(0, szulo.height())).y()
+            return szulo.mapToItem(parbeszed, QPointF(0, szulo.height())).y()
         szulo = szulo.parent()
     return float(parbeszed.height())
 
@@ -68,24 +73,24 @@ def _bent_van(parbeszed, nevek):
     for nev in nevek:
         elem = _elem(parbeszed, nev)
         hatar = _hatar(parbeszed, elem)
-        assert _alja(elem) <= hatar, (
-            f"{nev} alja ({_alja(elem)}) kilóg a látható területből ({hatar} px)"
+        assert _alja(elem, parbeszed) <= hatar, (
+            f"{nev} alja ({_alja(elem, parbeszed)}) "
+            f"kilóg a látható területből ({hatar} px)"
         )
-        assert _tetje(elem) >= 0
+        assert _tetje(elem, parbeszed) >= 0
 
 
 def _nem_ures_a_kepkocka(parbeszed, nev) -> bool:
-    """A renderelt kép az elem helyén nem csupa háttérszínű képpont."""
-    kep = parbeszed.grabWindow()
+    """A vezérlő szöveg nélküli szélén a keret eltér a kitöltéstől."""
+    kep = parbeszed.window().grabWindow()
     elem = _elem(parbeszed, nev)
     x = int(elem.mapToScene(QPointF(0, 0)).x())
     y = int(elem.mapToScene(QPointF(0, 0)).y())
-    sz, m = int(elem.width()), int(elem.height())
-    hatar = int(_hatar(parbeszed, elem))
-    assert y + m <= hatar, f"{nev} kilóg, a képkockán nem látszik"
-    kivagas = kep.copy(x, y, sz, m)
-    szinek = {kivagas.pixel(i, j) for i in range(0, sz, 3) for j in range(0, m, 3)}
-    return len(szinek) > 2
+    assert x + 5 < kep.width() and y + int(elem.height()) <= kep.height()
+    kozepsor = y + int(elem.height()) // 2
+    keret = kep.pixel(x, kozepsor)
+    kitoltes = kep.pixel(x + 4, kozepsor)
+    return keret != kitoltes
 
 
 GOMBOK = ["printStartButton", "printCloseButton"]
@@ -139,9 +144,11 @@ class TestHibaSzoveg:
         hiba = _elem(parbeszed, "printErrorText")
         assert hiba.property("visible") is True
         gombsor = _elem(parbeszed, "printStartButton")
-        assert _alja(hiba) <= _tetje(gombsor), "a hiba a gombsor alá/mögé lóg"
-        assert _alja(hiba) <= parbeszed.height()
-        assert _tetje(hiba) >= 0
+        assert _alja(hiba, parbeszed) <= _tetje(gombsor, parbeszed), (
+            "a hiba a gombsor alá/mögé lóg"
+        )
+        assert _alja(hiba, parbeszed) <= parbeszed.height()
+        assert _tetje(hiba, parbeszed) >= 0
 
 
 class TestKattintas:
@@ -155,12 +162,16 @@ class TestKattintas:
 
         gomb = _elem(parbeszed, "printStartButton")
         assert gomb.property("enabled") is True
+        helyi_pont = gomb.mapToItem(
+            parbeszed,
+            QPointF(gomb.width() / 2, gomb.height() / 2),
+        ).toPoint()
         pont = gomb.mapToScene(
             QPointF(gomb.width() / 2, gomb.height() / 2)
         ).toPoint()
-        assert 0 <= pont.y() < parbeszed.height()
+        assert 0 <= helyi_pont.y() < parbeszed.height()
         QTest.mouseClick(
-            parbeszed,
+            window,
             Qt.MouseButton.LeftButton,
             Qt.KeyboardModifier.NoModifier,
             pont,
@@ -172,26 +183,24 @@ class TestKattintas:
 class TestKisAblak:
     @pytest.mark.parametrize("magassag", [500, 420])
     def test_kis_ablakban_a_gombsor_latszik(self, qml_app, qt_app, magassag):
-        _w, parbeszed = _nyit(qml_app, qt_app)
-        parbeszed.resize(parbeszed.width(), magassag)
-        assert _var(qt_app, lambda: parbeszed.height() == magassag)
+        window, parbeszed = _nyit(qml_app, qt_app)
+        _allit_nezetmagassagot(window, parbeszed, magassag, qt_app)
         qt_app.processEvents()
         _bent_van(parbeszed, GOMBOK)
         # a tartalom görgethető: van Flickable a tartalom körül
         assert _elem(parbeszed, "printContentFlick") is not None
 
     def test_kezdomagassag_nem_nagyobb_a_kepernyonel(self, qml_app, qt_app):
-        _w, parbeszed = _nyit(qml_app, qt_app)
-        kepernyo = parbeszed.screen()
+        window, parbeszed = _nyit(qml_app, qt_app)
+        kepernyo = window.screen()
         assert kepernyo is not None, "az ablaknak nincs képernyője"
         assert parbeszed.height() <= kepernyo.availableGeometry().height()
 
 
 class TestHosszuStatusz:
     def test_hosszu_kihagyott_lista_nem_tolja_ki_a_gombsort(self, qml_app, qt_app):
-        _w, parbeszed = _nyit(qml_app, qt_app)
-        parbeszed.resize(parbeszed.width(), 420)
-        assert _var(qt_app, lambda: parbeszed.height() == 420)
+        window, parbeszed = _nyit(qml_app, qt_app)
+        _allit_nezetmagassagot(window, parbeszed, 420, qt_app)
         parbeszed.setProperty(
             "lastSkipped", [f"hosszu_fajlnev_{i:03d}.jpg" for i in range(60)]
         )

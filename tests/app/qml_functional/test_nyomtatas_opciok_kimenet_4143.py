@@ -62,6 +62,14 @@ def _click(item, *, x_fraction=0.5, y_fraction=0.5):
     QCoreApplication.processEvents()
 
 
+def _set_view_height(dialog, height):
+    host = dialog.window()
+    host.setHeight(round(host.height() + height - dialog.height()))
+    assert _hataridon_belul(
+        lambda: round(dialog.height()) == round(height)
+    ), f"a főablak tartalmi nézete nem vette fel a {height} px magasságot"
+
+
 def _hataridon_belul(feltetel, *, masodperc=3.0):
     hatarido = time.monotonic() + masodperc
     while time.monotonic() < hatarido:
@@ -161,8 +169,7 @@ class TestNyomtatasOpcioKimenet:
 
         # A 420 px-es párbeszédablakban az utolsó sorra görgetünk: ez
         # reprodukálja a CI-ben levágott, alul megnyíló választót.
-        dialog.setHeight(425)
-        qt_app.processEvents()
+        _set_view_height(dialog, 425)
         scroll = _child(panel, "printOptionScrollView")
         tartalom = scroll.property("contentItem")
         tartalommagassag = float(tartalom.property("contentHeight"))
@@ -175,12 +182,10 @@ class TestNyomtatasOpcioKimenet:
 
         # A CI ablakmagasságát ±5 px-en is bejárjuk. A nagy nézetben minden
         # opció kezelhető, így a próba a teljes kattintásos utat is lefedi.
-        dialog.setHeight(800)
-        qt_app.processEvents()
+        _set_view_height(dialog, 800)
         alapmagassag = int(dialog.height())
         for elteres in (-5, 0, 5):
-            dialog.setHeight(alapmagassag + elteres)
-            qt_app.processEvents()
+            _set_view_height(dialog, alapmagassag + elteres)
             _click(_child(panel, "printOptionSource0"))
             assert _variant(panel.property("options"))["textSource"] == 0
 
@@ -195,8 +200,7 @@ class TestNyomtatasOpcioKimenet:
             (0, 4, 0xFF00AA00),
             (5, 3, 0xFFFF0000),
         ):
-            dialog.setHeight(alapmagassag + elteres)
-            qt_app.processEvents()
+            _set_view_height(dialog, alapmagassag + elteres)
             _szovegszin_kivalasztasa(
                 panel, dialog, szinvalaszto, szinindex, vart_szin
             )

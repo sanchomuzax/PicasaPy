@@ -42,6 +42,8 @@ from concurrent.futures import CancelledError as FutureCancelledError
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
+from PySide6.QtCore import Q_ARG, QMetaObject, Qt
+
 from .busy_activity import munka_neve
 from .busy_registry import get_app_busy_registry
 
@@ -88,6 +90,19 @@ _Thread = threading.Thread
 #: controllerek is.
 _ALL_WORKERS: set[threading.Thread] = set()
 _ALL_WORKERS_LOCK = threading.Lock()
+
+
+def _invoke_registry_slot(registry, slot: str, *arguments) -> bool:
+    """Egy regisztrált Qt-slot sorba állítása a registry saját szálára."""
+    try:
+        return bool(
+            QMetaObject.invokeMethod(
+                registry, slot, Qt.ConnectionType.QueuedConnection, *arguments
+            )
+        )
+    except RuntimeError:
+        # A QApplication lebontásakor a C++ QObject már megszűnhet.
+        return False
 
 
 @runtime_checkable
@@ -278,9 +293,9 @@ class BackgroundWorkerMixin:
         szálról hívódhat (a felhasználó a GUI-szálról kattint), ezért csak
         jelzőt állítson (`threading.Event`), ne végezzen munkát.
 
-        Ha meg van adva, az `on_error` callback a worker szálon kapja meg a
+        Ha meg van adva, az `on_error` callback a GUI-szálon kapja meg a
         targetből kikerülő normál `Exception` objektumot. A controller ezen
-        keresztül Qt-jelzést küldhet; közvetlen UI-állapotot ne módosítson.
+        keresztül Qt-jelzést küldhet.
         Callback nélkül a traceback továbbra is a naplóba kerül."""
         workers = self._bg_worker_set()
         registry = get_app_busy_registry()
@@ -346,37 +361,32 @@ class BackgroundWorkerMixin:
                             name or "?",
                         )
                     if on_error is not None:
-                        try:
-                            on_error(error)
-                        except BaseException:  # noqa: BLE001 — a worker ne jusson az excepthookig
-                            _log.exception(
-                                "háttérszál hiba-visszajelzése is hibával állt le: %s",
+                        if not _invoke_registry_slot(
+                            registry,
+                            "_dispatch_worker_error",
+                            Q_ARG("QVariant", on_error),
+                            Q_ARG("QVariant", error),
+                        ):
+                            _log.debug(
+                                "a workerhiba callback nem került sorba: %s",
                                 name or "?",
                             )
             finally:
-                # ⚠️ #999 — A SORREND ITT SZÁMÍT, ÉS KORÁBBAN FORDÍTVA VOLT.
-                #
-                # A `registry.end()` Qt-JELZÉST emitál (`_endRequested`,
-                # `busy_registry.py`). A régi alak előbb vette ki a szálat a
-                # nyilvántartásból, és csak azután emitált — vagyis a
-                # `wait_for_all_background_workers()` már NEM látta a szálat,
-                # miközben az még Qt-kódot futtatott. A bevárás tehát
-                # „minden leállt"-ot mondhatott egy még emitáló szál mellett;
-                # pontosan azt a garanciát vesztve el, amiért a #430/#438
-                # nyilvántartás egyáltalán létezik.
-                #
-                # Mérve (`test_a_nyilvantartasbol_csak_az_utolso_qt_hivas_utan`):
-                # a régi sorrenddel a bevárás 0,000 mp alatt `True`-t adott,
-                # miközben a szál bent állt a jelzés kibocsátásában.
-                #
-                # A javítás NEM változtat időzítést — se várakozás, se új
-                # esemény nem kerül bele —, csak két könyvelési sort tesz a
-                # szál UTOLSÓ Qt-hívása mögé.
+                # A GUI-hoz tartozó Qt-műveleteket a registry főszálon futó
+                # slotjába soroljuk. A Python worker nem bocsát ki Qt-jelzést;
+                # alkalmazáslebontáskor a Qt eldobhatja a függő eseményt.
                 try:
-                    if cancel_jegy is not None:
-                        registry.unregister_cancel(cancel_jegy)
-                    if munka_jegy is not None:
-                        registry.end(munka_jegy)
+                    if cancel_jegy is not None or munka_jegy is not None:
+                        if not _invoke_registry_slot(
+                            registry,
+                            "_finish_background",
+                            Q_ARG(int, munka_jegy or 0),
+                            Q_ARG(int, cancel_jegy or 0),
+                        ):
+                            _log.debug(
+                                "a worker busy-bejegyzése nem került sorba: %s",
+                                name or "?",
+                            )
                 finally:
                     workers.discard(thread)
                     # #988/#999: a folyamat-szintű nyilvántartásból is

@@ -70,10 +70,12 @@ def _lapozo_allapot(dialog, gomb) -> str:
     reason="a PySide6.QtPrintSupport modul hiányzik ezen a gépen",
 )
 class TestNyomtatasElonezetLapozas:
+    @pytest.mark.parametrize("height_delta", [-5, 0, 5])
     def test_a_lapozo_gombok_valodi_kattintassal_leptetik_az_elonezetet(
-        self, qml_app, qt_app
+        self, qml_app, qt_app, height_delta
     ):
         window, _controller, _engine = qml_app
+        window.resize(window.width(), window.height() + height_delta)
         window.setProperty("selectedIndexes", [0, 1])
         window.setProperty("selectedIndex", 0)
         qt_app.processEvents()
@@ -88,16 +90,13 @@ class TestNyomtatasElonezetLapozas:
             f"az előnézet nem két lapos: {szoveg.property('text')!r}"
         )
 
-        # #5520: az önálló ablak első kattintása aktiválás nélkül elveszhet
-        dialog.requestActivate()
-        assert _varj(qt_app, lambda: dialog.property("active") is True), (
-            "a nyomtatási párbeszéd nem lett aktív"
-        )
-        # #5520: a nyitás utáni átméretezés (`meretezesIdozito`) lecsengése
-        # előtt a gomb elmozdulhat a lenyomás és a felengedés között
+        if not window.isActive():
+            window.requestActivate()
+        assert _varj(qt_app, window.isActive), "a főablak nem lett aktív"
+        # A főablak átméretezése után várjuk meg, hogy a vezérlő mérete beálljon.
         assert _varj(
             qt_app, lambda: dialog.property("meretezesFuggoben") is False
-        ), "a nyomtatási párbeszéd méretezése nem csengett le"
+        ), "a nyomtatási nézet méretezése nem fejeződött be"
         kovetkezo = _elem(window, "printPreviewNextButton")
         assert _varj(qt_app, lambda: kovetkezo.property("enabled") is True), (
             "a Következő gomb nem lett engedélyezett"

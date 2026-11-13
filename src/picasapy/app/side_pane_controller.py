@@ -42,7 +42,7 @@ import sqlite3
 import threading
 from collections.abc import Iterable
 
-from PySide6.QtCore import QMetaObject, Qt, Slot
+from PySide6.QtCore import Property, QMetaObject, Qt, Signal, Slot
 from picasapy.index import open_index
 from picasapy.index.side_pane import (
     SidePaneCollections,
@@ -77,6 +77,54 @@ class SidePaneMixin:
     mintáját követve, de azok bolygatása nélkül."""
 
     # -- háttérszál oldala ---------------------------------------------------
+
+    otherStuffFoldersChanged = Signal()
+
+    @Property(list, notify=otherStuffFoldersChanged)
+    def otherStuffFolders(self):  # noqa: N802 — QML-property-stílus
+        """Az `Other Stuff` gyűjtemény mappái a bal hasábnak."""
+        hidden = self._hidden_folder_paths()
+        return [
+            {"path": folder.path, "name": folder.name, "count": folder.photo_count}
+            for folder in getattr(self, "_other_stuff_folders", ())
+            if folder.path not in hidden
+        ]
+
+    def _set_live_side_pane_folder_category(
+        self, folder_path: str, category: str | None
+    ) -> None:
+        """A sikeres ini-írást azonnal átvezeti a két mappás gyűjteménybe."""
+        from picasapy.index.project_folders import project_folders_from_paths
+        from picasapy.ini import OTHER_STUFF_CATEGORY, PROJECTS_CATEGORY
+
+        with open_index(self._db_path) as conn:
+            by_path = {
+                row.path: row
+                for row in project_folders_from_paths(conn, (folder_path,))
+            }
+        self._project_folders = tuple(
+            folder for folder in getattr(self, "_project_folders", ())
+            if folder.path != folder_path
+        )
+        self._other_stuff_folders = tuple(
+            folder for folder in getattr(self, "_other_stuff_folders", ())
+            if folder.path != folder_path
+        )
+        row = by_path.get(folder_path)
+        if row is not None and category == PROJECTS_CATEGORY:
+            self._project_folders = tuple(
+                sorted((*self._project_folders, row), key=lambda item: item.name.casefold())
+            )
+        if row is not None and category == OTHER_STUFF_CATEGORY:
+            self._other_stuff_folders = tuple(
+                sorted(
+                    (*self._other_stuff_folders, row),
+                    key=lambda item: item.name.casefold(),
+                )
+            )
+        self.projectFoldersChanged.emit()
+        self.otherStuffFoldersChanged.emit()
+        self._reload_folders()
 
     def _precompute_side_pane(
         self,
@@ -238,11 +286,13 @@ class SidePaneMixin:
         jelzéseken megy: a QML-oldali kötések változatlanok maradnak."""
         self._people = collections.people
         self._project_folders = collections.project_folders
+        self._other_stuff_folders = collections.other_stuff_folders
         self._apply_custom_collection_folders(
             collections.custom_collection_folders
         )
         self.peopleChanged.emit()
         self.projectFoldersChanged.emit()
+        self.otherStuffFoldersChanged.emit()
         # #2031: a Mappák listából a projekt-mappák KIMARADNAK, és ezt
         # csak most tudjuk — a projekt-útvonalak épp itt lettek meg. A
         # frissítés nélkül a mappa a hasáb-betöltésig MINDKÉT helyen

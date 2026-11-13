@@ -54,8 +54,14 @@ def test_eredeti_lista_letiltott_cd_es_valodi_foto_elonezet(
     dialog = window.findChild(QObject, "printDialog")
     assert dialog is not None
     assert var_feltetelre(qt_app, lambda: dialog.property("visible"), 10.0)
-    dialog.setProperty(
-        "height", dialog.property("height") + magassag_elteres
+    alapmagassag = round(dialog.height())
+    dialog.window().setHeight(
+        dialog.window().height() + magassag_elteres
+    )
+    assert var_feltetelre(
+        qt_app,
+        lambda: round(dialog.height()) == alapmagassag + magassag_elteres,
+        10.0,
     )
     qt_app.processEvents()
 
@@ -69,7 +75,10 @@ def test_eredeti_lista_letiltott_cd_es_valodi_foto_elonezet(
     box = _elem(dialog, "printSizeBox")
     pont = box.mapToScene(QPointF(box.width() / 2, box.height() / 2)).toPoint()
     QTest.mouseClick(
-        dialog, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, pont
+        dialog.window(),
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+        pont,
     )
     assert var_feltetelre(
         qt_app, lambda: box.findChild(QObject, "picasaComboList") is not None
@@ -129,7 +138,7 @@ def test_eredeti_lista_letiltott_cd_es_valodi_foto_elonezet(
         qt_app, _kep_betoltodott, 3.0
     ), "a próbakép nem töltődött be a kiadásképhez"
 
-    kep = dialog.grabWindow()
+    kep = dialog.window().grabWindow()
     assert not kep.isNull(), "a Nyomtatás párbeszéd képe üres"
     assert kep.save(str(tmp_path / "nyomtatas-meretek-5683.png"))
 
