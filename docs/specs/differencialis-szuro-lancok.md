@@ -793,3 +793,114 @@ Az „Nyers ítélet” a meglévő golden-mérce szerinti egyezés/eltérés. A
 | `lanc-0198` | `k08.jpg` | `filters=Lomo=1,80.453835,86.032911;<br>sepia=1;<br>enhance=1;<br>linblur=1,0.372141,0.139999,1.387239;<br>Vignette=1,7.254361,1.121988,43.171119,000462b3;<br>` | 0.99968 | 0.061 | egyezik | egyezik |
 | `lanc-0199` | `k09.jpg` | `filters=blur=1,0.226091;<br>rainbow=1,131.865968;<br>triple3=1,0.924245,0.309268,0.398991;<br>` | 0.98592 | 1.55 | egyezik | véletlenállapot-függő |
 | `lanc-0200` | `k10.jpg` | `filters=dir_tint=1,0.301511,0.002263,0.945116,0.752011,ff4c719f;<br>IR=1,2.809521;<br>Pixelate=1,134.953681,0.740484,36.911635;<br>CrossProcess=1,46.307995;<br>dir_brite=1,-0.794832,0.751788;<br>` | 0.99518 | 0.358 | egyezik | egyezik |
+
+## #6585 zárókör: a `lanc-0196` rövidített jelöltjei (2026-11-13)
+
+### Bemenet és mérce
+
+A `k06.jpg` forrás a korábbi kötegben dokumentált fájllal egyezik: 133894 bájt, SHA-256 `64953e7c24f1237549c2d60881c95fd41f325a37178f561c81d1d7a90a57fa63`. A négy helyi jelölt és INI az `.bt/6585-r6611/minimal-lanc-0196-00N.ini` / `.job.json` párokban volt. A Picasa-exportok a megadott `job-658`-`job-661` sorrendben: mindegyik `export__k06.jpg`; a táblázat rögzíti az exportok SHA-256-át.
+
+A helyi kimenetet a `python scripts/differencialis_lanc.py sajat`, az összevetést a `python scripts/differencialis_lanc.py osszevet` készítette. Az összevető a meglévő `tools/golden/compare_render.py` kódját használta: `pixel_tol=1`, `frac_tol=0.002`, `ssim_min=0.98`, `de_mean_max=2.0`, a helyi képet pedig az eredeti JPEG mintavételezésével és kvantálótáblájával kódolta újra. A négy helyi kép sikeresen elkészült; mind a négy eredeti export dekódolható volt.
+
+### Eredmény
+
+| Jelölt | Picasa-export | Kihagyott szűrő | Megmaradt `filters=` lánc | SSIM | ΔE átlag | Ítélet |
+|---|---|---|---|---:|---:|---|
+| `minimal-lanc-0196-001` | job-658; SHA-256 `f27f8352a2ee38d60fcf853f00030f50ff7c83fff05844c45a49e22147419d49` | `radtint` | `glow=1,0.282406,77.572966; PicnikGrain=1,5.192805,1; triple=1,0.766429,-0.177472,0.655993;` | 0.99419 | 0.413 | egyezik |
+| `minimal-lanc-0196-002` | job-659; SHA-256 `bc1ec6baf45defe3d13babecd20fc049eb052bf0b3874e09b84a4d8396a157c2` | `glow` | `radtint=1,0.226147,0.991993,0.840316,ff0315bf; PicnikGrain=1,5.192805,1; triple=1,0.766429,-0.177472,0.655993;` | **0.97844** | 0.759 | **eltér** |
+| `minimal-lanc-0196-003` | job-660; SHA-256 `e17b1eddc3683c40a558a31defa0e32f8b3ed93d9f4e8f4bf00ab060acd0334a` | `PicnikGrain` | `radtint=1,0.226147,0.991993,0.840316,ff0315bf; glow=1,0.282406,77.572966; triple=1,0.766429,-0.177472,0.655993;` | 0.99561 | 0.407 | egyezik |
+| `minimal-lanc-0196-004` | job-661; SHA-256 `9246ed506d748e1af490eaa4c345697d241a619eb79015d7a0371d100de3878c` | `triple` | `radtint=1,0.226147,0.991993,0.840316,ff0315bf; glow=1,0.282406,77.572966; PicnikGrain=1,5.192805,1;` | 0.99948 | 0.095 | egyezik |
+
+A négy megadott exporttal vizsgált 3-tagú lánc közül egyedül a `minimal-lanc-0196-002`, vagyis a `radtint → PicnikGrain → triple`, tér el. Az SSIM a meglévő 0.98 küszöb alatt van; a ΔE a meglévő 2.0 küszöb alatt marad. Ez a **legrövidebb mért eltérő** alak, de nem bizonyított globális minimum: a három kéttagú részlánc Picasa-exportja még nincs meg. A paraméterek a fenti sorban szereplő értékek; a kép `k06.jpg`.
+
+### A callbackek összevetése
+
+| Effekt | Eredeti Picasa callback út | PicasaPy-hely és mérési állapot |
+|---|---|---|
+| `radtint` | `0x008f8730` → munkafüggvény `0x0090b370`; a sugármaszk a `0x0090aeb0`-ból jön. | `src/picasapy/render/tinting.py:309-342`; a `filters-decoded.md:1237-1345` pixelképlete a 684-es készletben 0.000 ΔE-re egyezett a Picasával. |
+| `PicnikGrain` | `0x00bce8c0`; a seed argumentumot `0x00bce904`-nél olvassa, helyi MT-állapotot kezd `0x00bce90e`-nél, és a helyi állapotot lépteti (`0x00bce9be` → `0x00aa2930`). A `filterdesc.xml:925` rögzített `randomSeed=1` értéket ad. | `src/picasapy/render/glimmer_artistic.py:108-151` és `chain_glimmer_handlers.py:207-213`; a #3757 önálló mérése ΔE 0.882 volt. Ez nem a `grain`/`grain2`/`triple3` folyamat-globális RNG-útja. |
+| `triple` | `0x008f8a60`; a Derítőfényt (`0x0090ac20`) és a kontrasztmagot (`0x0090c2c0` / `0x0090c340`) feltételesen hívja. | `src/picasapy/render/chain_native_handlers.py:172-191`; a PicasaPy ugyanezt a fill → kontraszt sorrendet futtatja. A nem nulla `triple`-paraméterek önálló golden-validációja a `picasa-native-filter-workers.md:1622-1624` szerint továbbra sincs meg. |
+| `glow` | `0x0090d4b0`; az IIR-elmosást (`0x009dd0d0`) és az eredetivel való visszakeverést (`0x009ac3f0`) állítja össze. | `src/picasapy/render/effects.py:207-227`; mindhárom `glow`-t tartalmazó rövidített jelölt egyezett, az egyetlen eltérő jelöltben nincs `glow`. Ez a `glow` önálló hibáját nem támasztja alá. |
+
+Az eredeti callbackek és a PicasaPy-bekötések alapján nem igazolható, hogy a fenti eltérést egyetlen szűrő hibája okozza. A meglévő önálló mérések a `radtint` és a `PicnikGrain` alapműködését alátámasztják; a `triple` nem nulla paraméterezése ismert mérési rés. A megfigyelés ezért jelenleg egy determinisztikus háromtagú összetételre, nem egy bizonyított hibás kernelre vonatkozik.
+
+### Cáfoló kísérlet és független utak
+
+**A út - Picasa-export kontra PicasaPy.** A négy export-render pár azonos SSIM/ΔE mércével készült; egyedül a `radtint → PicnikGrain → triple` jelölt bukott. A helyi renderelést és összevetést másodszor is lefuttattam: mind a négy PNG SHA-256-a bájtra egyezett az első renderrel, és az eredmény ismét 3 egyezés / 1 eltérés lett.
+
+**B út - callback-disassembly és a helyi renderút.** A `PicnikGrain` callback lokális, rögzített magú állapotot használ; a másik két jelenlévő callback a fent nevezett radiális és tónusmagokra irányít. Ez kizárja a `grain`-családhoz hasonló, folyamat-globális RNG-magyarázatot, de nem jelöli ki, hogy a három effekt közül melyik, vagy melyik kölcsönhatás felelős. A két út egyezik abban, hogy a mért jelölt stabil, nem a helyi render RNG-ingadozása; a kiváltó műveletet nem azonosítják.
+
+**Cáfoló kísérlet.** Azt próbáltam cáfolni, hogy a különbséget a `PicnikGrain` folyamat-globális véletlen fázisa okozza. Az eredeti callback lokális seed-/MT-állapotot mutat; a helyi jelölt mindkét futásban ugyanazt a PNG-t adta (002 SHA-256: `779430bbafda6ba0a1d1b23acd31d39b85f5a802ed8971e62a881ac71b5a1fbf`), és ugyanazt az SSIM/ΔE ítéletet kapta. A cáfolat a teljes lánc mércéjével ellenőrizve is fennmaradt. Ez nem cáfolja a rögzített magú zajalgoritmus és a többi effekt közötti eltérést.
+
+### A minimális pár még nyitott
+
+A `scripts/differencialis_lanc.py minimalizal --be <munkamappa> --lanc minimal-lanc-0196-002` három kéttagú jelöltet adott. Ezek Picasa-exportja **NINCS MEG**, ezért egyik sem hasonlítható a saját megfelelő eredeti kimenetéhez:
+
+| Jelölt | Kéttagú lánc |
+|---|---|
+| `minimal-minimal-lanc-0196-002-001` | `PicnikGrain=1,5.192805,1; triple=1,0.766429,-0.177472,0.655993;` |
+| `minimal-minimal-lanc-0196-002-002` | `radtint=1,0.226147,0.991993,0.840316,ff0315bf; triple=1,0.766429,-0.177472,0.655993;` |
+| `minimal-minimal-lanc-0196-002-003` | `radtint=1,0.226147,0.991993,0.840316,ff0315bf; PicnikGrain=1,5.192805,1;` |
+
+**Következő mérés:** a `k06.jpg`-n az eredeti Picasán mérd meg a három kéttagú láncot és a három egytagú láncot, mindegyikhez külön exporttal; ez a 3-tagú eltérő lánc mind a hat nem üres valódi részhalmaza. A helyi kimeneteket a megfelelő eredeti exportokkal, változatlan küszöbökkel hasonlítsd össze. Ha bármelyik singleton eltér, az a legrövidebb jelölt; ha egyik singleton sem tér el, de egy pár igen, az a legrövidebb jelölt; ha mind a hat részhalmaz egyezik, a 3-tagú lánc a legkisebb igazolt eltérés. A párok önmagukban nem zárják ki, hogy egy önálló eltérést a másik szűrő elfedjen.
+
+| Jelölt | Egyszűrős lánc |
+|---|---|
+| `radtint` | `radtint=1,0.226147,0.991993,0.840316,ff0315bf;` |
+| `PicnikGrain` | `PicnikGrain=1,5.192805,1;` |
+| `triple` | `triple=1,0.766429,-0.177472,0.655993;` |
+
+### A #6585 elfogadási pontjai - aktuális állapot
+
+- ✅ **Legalább 200 lánc, mindkét programmal, táblázatban:** a megelőző 200 láncos köteg 200/200 sorral és eredmény-táblával dokumentált a jelen lapban.
+- ⛔ **Minden eltérés minimalizált alakja és saját jegye:** a `lanc-0196`-hoz most már van saját Picasa-exporttal igazolt, rövidített háromtagú eltérő alak, de a legkisebb eltérő részlánc és a hibás kernel nem bizonyított; ehhez mindhárom pár és mindhárom singleton Picasa-exportja hiányzik. A korábbi 200 soros köteg 10 véletlenállapot-függő és 2 dokumentált `triple2` nyers eltérését a jelen lap besorolja, de a szó szerinti „minden eltérés” feltétel szerinti lánconkénti minimalizálást és saját jegyeket nem igazolja.
+- ✅ **Egyparancsos, azonos maggal megismételhető futás:** a 6611-es magú, 200 láncos futás ismételhetőségét a fenti mérési szakasz már bizonyítja; a mostani négy jelölt helyi renderének második futása is bájtra azonos lett.
+
+**Következtetés:** a négy új exporttal a legrövidebb vizsgált eltérő alak a `k06.jpg` képen a `radtint=1,0.226147,0.991993,0.840316,ff0315bf → PicnikGrain=1,5.192805,1 → triple=1,0.766429,-0.177472,0.655993` lánc (SSIM 0.97844, ΔE 0.759); globális minimuma még nyitott, mert mind a három pár és mind a három singleton exportja hiányzik. A #6585 szó szerinti elfogadási feltétele **nem teljesül** pusztán egy fejlesztői jegy megnyitásától: a teljes minimalizálás és az összes nyers eltérés jegyenkénti elszámolása is hátravan.
+
+## #6585 zárókör: a `lanc-0196` hat részhalmaza és a PicnikGrain zajmintája (2026-11-14)
+
+### A hat eredeti feladat és a helyi kimenet
+
+A bemenet a korábbi 200 láncos köteg `k06.jpg` képe: 133894 bájt, SHA-256 `64953e7c24f1237549c2d60881c95fd41f325a37178f561c81d1d7a90a57fa63`. A hat jelölt az eredeti `radtint → glow → PicnikGrain → triple` lánc paramétereit és sorrendjét őrzi, a nem kijelölt tagokat elhagyva. A Colab-végrehajtónak szánt `.job.json` és `.ini` párok a `.bt/6585-r6611/` alatt vannak; beküldésük nem történt meg.
+
+| Feladat | `filters=` | PicasaPy-kimenet SHA-256 |
+|---|---|---|
+| `minimal-lanc-0196-r01` | `radtint=1,0.226147,0.991993,0.840316,ff0315bf;PicnikGrain=1,5.192805,1;` | `55d94c46a66bd3e12cac9f9aaa5bc79ba73ff7627b26f9bc999dd7d0e7a9ebbb` |
+| `minimal-lanc-0196-r02` | `PicnikGrain=1,5.192805,1;triple=1,0.766429,-0.177472,0.655993;` | `957101ea9130c15c0b32a71c5991ebaed89108b3d8a5ec4c56832134f29c372f` |
+| `minimal-lanc-0196-r03` | `radtint=1,0.226147,0.991993,0.840316,ff0315bf;triple=1,0.766429,-0.177472,0.655993;` | `b9ddd4d6ccead2e41a1c951eefa2f95c5433591daee0de8ced56e1ea86f0c5c9` |
+| `minimal-lanc-0196-r04` | `radtint=1,0.226147,0.991993,0.840316,ff0315bf;` | `47708bb78c24bee62cc425f08fb4dc335f20587b954de0730bf63df2d1af9186` |
+| `minimal-lanc-0196-r05` | `PicnikGrain=1,5.192805,1;` | `280d5bf3b522342e2c1e4d4630ec99bc5a52722577d8c262a33b043631c42258` |
+| `minimal-lanc-0196-r06` | `triple=1,0.766429,-0.177472,0.655993;` | `05590fa694c8f4a718271e091dbba9ec031c1da1183210a820c3b0d666b574ae` |
+
+A `scripts/differencialis_lanc.py sajat` mind a hat képet elkészítette, mindegyiknél `allapot=kész` és üres `kihagyott` lista mellett. A második helyi futás mind a hat PNG-t bájtra azonos SHA-256-szal írta újra. A Picasa-exportok a `.bt/6585-r6611/reszhalmaz-0196/eredeti/<feladatnév>/export__k06.jpg` útvonalon még **NINCSENEK MEG**, ezért e hat részlánc SSIM/ΔE értéke és a legkisebb eltérő részlánc **NINCS MEG**. Ha a hat export oda kerül, az összevetés parancsa:
+
+```bash
+python scripts/differencialis_lanc.py osszevet \
+  --be .bt/6585-r6611/reszhalmaz-0196 \
+  --eredeti .bt/6585-r6611/reszhalmaz-0196/eredeti
+```
+
+### A PicnikGrain RNG-je: a mag és a mintasorozat
+
+**A út - az eredeti bináris.** Az index `functions` sora szerint `0x00bce8c0` 696 bájt (`.text`, RVA/fájleltolás `0x007ce8c0`); az egy hívó `0x00bbefa0`, és a függvény közvetlenül hívja a magkiterjesztőt (`0x00aa28f0`) meg a twistet (`0x00aa2930`). A `0x00bce8c0` a bemeneti seedet a stacken tartott 624 szavas állapot inicializálójának adja (`0x00bce904`-`0x00bce912`), a pixelciklus indexe ugyanezt a helyi állapotot lépteti (`0x00bce9b0`-`0x00bce9c7`). A `0x00aa28f0` kódja a `0x0019660d` szorzóval tölti az állapotot, az indexet 624-re állítja (`0x00aa290b`-`0x00aa2921`). A `0x00aa2930` twistjének `mag01` táblája a `0x00c782c0` címen van; a bináris ottani 8 bájtja `00 00 00 00 df b0 08 99`, vagyis `{0, 0x9908b0df}`. A worker temperálása a két eltolás előtti maszkkal dolgozik: `(0xff3a58ad << 7) mod 2^32 = 0x9d2c5680` és `(0xffffdf8c << 15) mod 2^32 = 0xefc60000`; ezek a szabványos MT19937 temperáló maszkok. Forrás: `bináris (0x00bce8c0, 0x00aa28f0, 0x00aa290b, 0x00aa2930, 0x00c782c0, 0x00bce9d2-0x00bce9f8)`.
+
+Az eredeti `runtime/filterdesc.xml:925` a `PicnikGrain` művelethez `randomSeed="1"`, `channelOptions="7"`, `grayScale="true"` értéket ad. A vizsgált INI-paraméter utolsó értéke `Lighten=1`; a PicasaPy ugyanezt a kapcsolót olvassa (`src/picasapy/render/chain_glimmer_handlers.py:207-213`), a zajréteg elkészítése pedig a `glimmer_artistic.py:108-151` → `glimmer_noise_ops.py:46-60` → `nativ_noise.py:40-85` útvonalon történik.
+
+**B út - független végrehajtás és pontos mérés.** A binárisból kiolvasott magkiterjesztést, twistet és temperálást külön, tiszta Python-referenciával hajtottam végre, majd összevetettem a PicasaPy `picasa_mt19937(1, N)` kimenetével. A `k06.jpg` mérete 1280×597, így `N=764160`; a teljes nyers `uint32` sorozat bájtra egyezett (SHA-256: `fe830df297192f0c72ff0ece090b22c298485c9ae4623ce2744c6285be447180`). A tényleges `Lighten=1` ágon a PicasaPy zajmező és a bináris képponti `% r + low` leképezésével számolt mező szintén bájtra egyezett (float32 SHA-256: `5661f546992455653a7737108bb441d1db407d3b1849a889aef84d055d412d0f`). Forrás: `mérés (k06.jpg, 764160 minta, független referenciafuttatás)`.
+
+**A két út eredménye egyezik, de az állítás határa feltételes.** A PicasaPy ugyanazt a nyers sorozatot és zajmezőt adja, mint a binárisból rekonstruált algoritmus. A futó Picasa folyamat belső zajpuffere közvetlenül nem volt kiolvasható; az eredeti kimenetek JPEG-exportok. Ezért a mérés az algoritmusegyezést bizonyítja, a render teljes pixelhűségét nem.
+
+### Cáfoló kísérlet és következmény az SSIM-re
+
+Azt próbáltam cáfolni, hogy az „azonos seed” önmagában azonos sorozatot eredményez. A szabványos NumPy `MT19937(seed=1)` a binárisból levezetett sorozattól már a 0. mintánál eltért; az egyezést a Picasa saját `1664525`-ös magkiterjesztése adja. Ez ellenőrzött cáfoló kontroll: ha a PicasaPy ezt az egyedi magkiterjesztést nem használná, a teljes sorozat-összevetés megbukna. A cáfoló próbát ugyanazzal a 764160 mintás egyenlőségi mércével ellenőriztem.
+
+A friss kontextusú ellenőrző nem tudta megnyitni a megadott EXE-t, és `0x00196B0D`-t jelölt meg szorzóként. Ezt nem vettem át: a közvetlen bináris bájtok a `0x00aa290b` címen `69 f6 0d 66 19 00`; az annotált visszafordító eszköz ugyanott `imul esi, esi, 0x19660d` utasítást ad. A `0x00196B0D` állításhoz az ellenőrző nem adott bináris forrást, ezért az **NINCS MEG**.
+
+A `lanc-0196` teljes láncának korábbi mérése SSIM 0.97844 és ΔE 0.759 volt. A bitre egyező RNG-mintasorozat kizárja, hogy ezt **a PicnikGrain eltérő véletlen mintája** okozza. Nem azonosítja viszont a kompozit kimenet megmaradó eltérését; ehhez a fenti hat eredeti export és azonos mércéjű összevetés kell. Következtetés: **a PicnikGrain RNG-eltérése mint magyarázat elvetve; a legkisebb eltérő részlánc nyitott**. Ghidra-kör nem szükséges: a hivatkozott függvények indexelt határa és a releváns utasítások helyi diszasszemblálása elég.
+
+### A #6585 elfogadási pontjai a zárókör után
+
+- ✅ **Legalább 200 lánc mindkét programmal, táblázatban:** a korábbi 200-as köteg és eredménytáblája e lapban szerepel.
+- ⛔ **Minden eltérés minimalizált alakja és saját jegye:** a `lanc-0196` hat eredeti exportja hiányzik; ezért a legkisebb eltérő alak és annak saját jegye nem állapítható meg. A korábbi köteg fennmaradó sorainak teljes, jegyenkénti elszámolását sem bizonyítja ez a hat új feladat.
+- ✅ **Egyparancsos, azonos magú újrafuttatás:** a 200-as, 6611-es magú futtatást a fenti köteg rögzíti; a hat új PicasaPy-render második futása is bájtra azonos lett.
