@@ -51,6 +51,9 @@ Item {
     readonly property int cdNevHossz: 16
     //: a Gift CD gazdája a megnyitott mappa nevét tölti be
     property string cdName: ""
+    //: #6878: a diavetítő jelölőjének mentett állapota
+    property bool slideshowIncluded: true
+    signal slideshowIncludedRequested(bool enabled)
 
     //: #3503: hány elem van a képtálcán — üres tálcával nincs mit írni
     property int elemekSzama: 0
@@ -179,7 +182,8 @@ Item {
             //: picasapy-origin: picasa
             //: picasapy-origin-key: tooltips:Text(publish/label_optionbox1)
             text: qsTr("Include Slideshow")
-            checked: true
+            checked: panel.slideshowIncluded
+            onClicked: panel.slideshowIncludedRequested(checked)
         }
         //: #3503: `publish/picsizemenu` (177,168 – 306,189) — a négy MÉRT
         //: fokozat (`0x0066f658`–`0x0066f670`), a `CPublishSizeList`

@@ -15,9 +15,9 @@ Ajándék-CD beállításokkal (`docs/specs/ajandek-cd-kimenet.md` 12.4):
 | `option_inifile` | nincs az ágon | nincs `.picasa.ini` a lemezen |
 
 A képek átalakítását a közös export-mag végzi (a forgatás és a
-szerkesztési lánc beleég, ahogy a rácson látszik); a nem-JPEG kép JPEG-gé
-válik — az eredetiben ezt a `Preferences\\CDSlideshow` alapértéke (1)
-kapcsolja be (`option_convertnonjpeg`, 11.2).
+szerkesztési lánc beleég, ahogy a rácson látszik). A `CDSlideshow` jelölő
+állapota adja a `convert_non_jpeg` kapcsolót: bekapcsolva a nem-JPEG kép
+JPEG-gé válik, kikapcsolva szerkesztetlenül az eredeti formátumában marad.
 
 ## Amit NEM ad
 
@@ -70,6 +70,7 @@ def ajandek_cd_lemezkep(
     meret_index: int,
     cd_nev: str,
     kepek_mappa: str,
+    convert_non_jpeg: bool = True,
 ) -> AjandekCdEredmeny:
     """A tálca elemeiből az Ajándék CD lemezképe.
 
@@ -85,6 +86,7 @@ def ajandek_cd_lemezkep(
         max_dimension=meret or None,
         jpeg_quality=JPEG_MINOSEG,
         movie_full=True,
+        convert_non_jpeg=bool(convert_non_jpeg),
     )
     # az Ajándék-CD ágon nincs `option_inifile`: a felirat és a címkék nem
     # kerülhetnek a lemezre egy `.picasa.ini`-ben

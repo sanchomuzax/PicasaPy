@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import QStandardPaths, QUrl, Signal, Slot
+from PySide6.QtCore import Property, QStandardPaths, QUrl, Signal, Slot
 
 from picasapy.burn.ajandek_cd import ajandek_cd_lemezkep
 
@@ -24,14 +24,48 @@ from .formatting import to_file_url, to_local_path
 from .worker_thread import BackgroundWorkerMixin
 
 _log = logging.getLogger(__name__)
+GIFT_CD_SLIDESHOW_KEY = "Preferences/CDSlideshow"
+
+
+def _diavetito_engedelyezve(ertek) -> bool:
+    """A mentett Picasa-kapcsoló bool/string alakjának értelmezése."""
+    if isinstance(ertek, bool):
+        return ertek
+    if isinstance(ertek, int) and ertek in (0, 1):
+        return bool(ertek)
+    if isinstance(ertek, str):
+        normalizalt = ertek.strip().lower()
+        if normalizalt in ("true", "1"):
+            return True
+        if normalizalt in ("false", "0"):
+            return False
+    return True
 
 
 class AjandekCdMixin(BackgroundWorkerMixin):
     """„Létrehozás ▸ Ajándék CD készítése…" — a lemezkép háttérszála."""
 
+    giftCdSlideshowEnabledChanged = Signal()
+
     #: (a kész lemezkép útja — üres, ha nem készült; rákerült elemek;
     #: sikertelen elemek)
     ajandekCdKesz = Signal(str, int, int)
+
+    @Property(bool, notify=giftCdSlideshowEnabledChanged)
+    def giftCdSlideshowEnabled(self) -> bool:  # noqa: N802 - QML-property
+        """A `Preferences/CDSlideshow` jelölő, alapból bepipálva."""
+        return _diavetito_engedelyezve(
+            self._get_settings().value(GIFT_CD_SLIDESHOW_KEY, True)
+        )
+
+    @Slot(bool)
+    def setGiftCdSlideshowEnabled(self, enabled: bool) -> None:  # noqa: N802
+        """A diavetítő jelölő állását tartósan elmenti."""
+        enabled = bool(enabled)
+        if enabled == self.giftCdSlideshowEnabled:
+            return
+        self._get_settings().setValue(GIFT_CD_SLIDESHOW_KEY, enabled)
+        self.giftCdSlideshowEnabledChanged.emit()
 
     @Slot(result=QUrl)
     def ajandekCdAlapHely(self) -> QUrl:  # noqa: N802 — QML-slot-stílus
@@ -61,18 +95,22 @@ class AjandekCdMixin(BackgroundWorkerMixin):
         kepek_mappa = self.tr("Pictures")
         self._start_background(
             self._ajandek_cd_hattereben,
-            args=(tetelek, cel_ut, int(meret_index), str(cd_nev), kepek_mappa),
+            args=(
+                tetelek, cel_ut, int(meret_index), str(cd_nev), kepek_mappa,
+                self.giftCdSlideshowEnabled,
+            ),
             name="ajandek-cd",
         )
 
     def _ajandek_cd_hattereben(
         self, tetelek, cel: Path, meret_index: int, cd_nev: str,
-        kepek_mappa: str,
+        kepek_mappa: str, convert_non_jpeg: bool,
     ) -> None:
         try:
             eredmeny = ajandek_cd_lemezkep(
                 tetelek, cel, meret_index=meret_index, cd_nev=cd_nev,
                 kepek_mappa=kepek_mappa,
+                convert_non_jpeg=convert_non_jpeg,
             )
         except Exception as hiba:  # noqa: BLE001 — a felület nem ragadhat „dolgozik" állapotban
             # BÁRMILYEN hiba után jelezni kell: a panel a jelzésig nem
