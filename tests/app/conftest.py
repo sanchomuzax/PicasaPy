@@ -1,5 +1,6 @@
 """Qt tesztkörnyezet: offscreen platform, egyetlen alkalmazás-példány."""
 
+import gc
 import os
 
 import pytest
@@ -98,6 +99,21 @@ def _kis_kepek_latszanak():
     folt.setattr(small_picture_filter, "DEFAULT_SHOW_ONLY_BIG_IMAGES", False)
     yield
     folt.undo()
+
+
+@pytest.fixture(autouse=True)
+def _szemet_a_fo_szalon():
+    """#6904: a teszt végén a fő szál gyűjti be a szemetet.
+
+    A gdb-veremnyomok szerint egy korábbi teszt körkörösen hivatkozott
+    Qt-objektumát (szótár -> kötött metódus -> QObject) a következő teszt
+    HÁTTÉRSZÁLA bontotta le a saját szemétgyűjtésében (``QObject::~QObject``
+    a háttérszálon), és ez szegmenshibát adott (test_rename_many_controller,
+    test_naplo_lefedettseg_750). Az autouse fixture bontása a teszt saját
+    fixture-jei UTÁN fut, így a teszt Qt-objektumai a fő szálon szűnnek meg.
+    """
+    yield
+    gc.collect()
 
 
 @pytest.fixture(autouse=True)
