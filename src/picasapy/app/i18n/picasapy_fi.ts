@@ -2623,6 +2623,42 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION</extracomment>
             <translation>Uusi luokka…</translation>
         </message>
         <message>
+            <source>Exported Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_EXPORTED_CATEGORY</extracomment>
+            <translation>Viedyt kuvat</translation>
+        </message>
+        <message>
+            <source>Folders</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_FOLDERS</extracomment>
+            <translation>Kansiot</translation>
+        </message>
+        <message>
+            <source>Hidden Folders</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_HIDDEN</extracomment>
+            <translation>Piilokansiot</translation>
+        </message>
+        <message>
+            <source>Other Stuff</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_DEFAULTCAT</extracomment>
+            <translation>Muut</translation>
+        </message>
+        <message>
+            <source>Projects</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_PROJECTS</extracomment>
+            <translation>Projektit</translation>
+        </message>
+        <message>
+            <source>Web Albums</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Category::webalbums</extracomment>
+            <translation>Verkkoalbumit</translation>
+        </message>
+        <message>
             <source>Set Folder Date...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>Aseta kansion päivämäärä...</translation>
@@ -7764,6 +7800,13 @@ picasapy-origin-key: stringres:CAlbumLabel::Ignored</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:Other;stringres:EXIF::Other;stringres:ytICDVDR::MFOther</extracomment>
             <translation>Muu</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="518" />
+            <source>Other Stuff</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_DEFAULTCAT</extracomment>
+            <translation>Muut</translation>
         </message>
     </context>
     <context>

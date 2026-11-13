@@ -180,11 +180,16 @@ class FolderViewMixin:
                 # #1637: a rejtett mappákat ugyanaz a kapcsoló hozza
                 # vissza, ami a rejtett fotókat — nem külön beállítás
                 include_hidden=self.showHidden,
-                # #2031: a PROJEKT-mappák csak a Projektek alatt látszanak
-                # (a `P2category` kizáró, #1033). Az útvonalak MÁR itt
-                # vannak — a hasáb-gyűjtemények betöltése cache-eli őket —,
-                # tehát nem kell újabb `.picasa.ini`-söprés.
-                exclude_paths=[m.path for m in self._project_folders],
+                # #2031/#6883: a Projektek és az Other Stuff mappái csak a
+                # saját gyűjteményük alatt látszanak. Az útvonalakat a
+                # hasáb-cache adja, új `.picasa.ini`-söprés nélkül.
+                exclude_paths=[
+                    m.path
+                    for m in (
+                        *self._project_folders,
+                        *getattr(self, "_other_stuff_folders", ()),
+                    )
+                ],
                 # #6751: a „Csak nagy képek” szűrő a bal sávot is szűri
                 kis_kepek_rejtve=self.showOnlyBigImages,
             )

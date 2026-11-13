@@ -2622,6 +2622,42 @@ picasapy-origin-key: stringres:IDS_NEW_COLLECTION</extracomment>
             <translation>新建图片集...</translation>
         </message>
         <message>
+            <source>Exported Pictures</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_EXPORTED_CATEGORY</extracomment>
+            <translation>导出的图片</translation>
+        </message>
+        <message>
+            <source>Folders</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_FOLDERS</extracomment>
+            <translation>文件夹</translation>
+        </message>
+        <message>
+            <source>Hidden Folders</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_HIDDEN</extracomment>
+            <translation>隐藏文件夹</translation>
+        </message>
+        <message>
+            <source>Other Stuff</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_DEFAULTCAT</extracomment>
+            <translation>其他素材</translation>
+        </message>
+        <message>
+            <source>Projects</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_PROJECTS</extracomment>
+            <translation>项目</translation>
+        </message>
+        <message>
+            <source>Web Albums</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:Category::webalbums</extracomment>
+            <translation>网络相册</translation>
+        </message>
+        <message>
             <source>Set Folder Date...</source>
             <extracomment>picasapy-origin: picasapy</extracomment>
             <translation>设置文件夹日期...</translation>
@@ -7755,6 +7791,13 @@ picasapy-origin-key: stringres:CAlbumLabel::Ignored</extracomment>
             <extracomment>picasapy-origin: picasa
 picasapy-origin-key: stringres:AspectRatioList:Other;stringres:EXIF::Other;stringres:ytICDVDR::MFOther</extracomment>
             <translation>其他</translation>
+        </message>
+        <message>
+            <location filename="../qml/PicasaPy/FolderPaneContent.qml" line="518" />
+            <source>Other Stuff</source>
+            <extracomment>picasapy-origin: picasa
+picasapy-origin-key: stringres:IDS_DEFAULTCAT</extracomment>
+            <translation>其他素材</translation>
         </message>
     </context>
     <context>

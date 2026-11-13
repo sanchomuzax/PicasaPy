@@ -328,6 +328,13 @@ Item {
         onMoveToCollectionRequested: function(collectionName) {
             if (controller) controller.moveFolderToCollection(
                 folderContextMenu.folderPath, collectionName)
+            if (collectionName === "Other Stuff") {
+                folderPane.otherCollapsed = false
+                if (controller) controller.setCollectionCollapsed("other", false)
+            } else if (collectionName === "Projects") {
+                folderPane.projectsCollapsed = false
+                if (controller) controller.setCollectionCollapsed("projects", false)
+            }
         }
         onNewCollectionRequested: {
             // #422: a létrehozás-ág — a _renamingCollection üresen marad,
