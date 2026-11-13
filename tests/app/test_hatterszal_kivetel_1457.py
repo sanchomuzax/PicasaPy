@@ -50,6 +50,7 @@ from picasapy.app.worker_thread import (
     BackgroundWorkerMixin,
     wait_for_all_background_workers,
 )
+from tests.support.varakozas import var_feltetelre
 
 
 class _Vezerlo(BackgroundWorkerMixin):
@@ -120,7 +121,9 @@ class TestAKivetelNemSzallElA_stderr_re:
         ).join(5.0)
         assert eredmeny == ["lefutott"]
 
-    def test_a_normal_workerhiba_eljut_az_owner_error_callbackhez(self) -> None:
+    def test_a_normal_workerhiba_eljut_az_owner_error_callbackhez(
+        self, qt_app
+    ) -> None:
         """A mixin ne csak naplózza: az owner kapja meg az eredeti kivételt."""
         vezerlo = _Vezerlo()
         hiba = ValueError("diagnosztikához megtartandó hiba")
@@ -137,6 +140,7 @@ class TestAKivetelNemSzallElA_stderr_re:
         szal.join(5.0)
 
         assert not szal.is_alive()
+        assert var_feltetelre(qt_app, lambda: bool(latott), 5.0)
         assert latott == [hiba]
         assert type(latott[0]) is ValueError
 
@@ -165,7 +169,7 @@ class TestAKivetelNemSzallElA_stderr_re:
         assert vezerlo.takeBackgroundWorkerErrors() == ()
 
     def test_a_callback_hibaja_sem_jut_el_a_threading_excepthookig(
-        self, caplog, capfd
+        self, qt_app, caplog, capfd
     ) -> None:
         # A globális `threading.excepthook` cseréje helyett (#1375) azt
         # nézzük, amit az alapértelmezett excepthook tenne: kijutó kivételnél
@@ -184,6 +188,9 @@ class TestAKivetelNemSzallElA_stderr_re:
                 on_error=hibas_callback,
             )
             szal.join(5.0)
+            assert var_feltetelre(
+                qt_app, lambda: "a callback is hibázott" in caplog.text, 5.0
+            )
 
         assert not szal.is_alive()
         assert "Exception in thread" not in capfd.readouterr().err
