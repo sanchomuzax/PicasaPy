@@ -3,7 +3,6 @@
 és a háttérszálon + resync végzett `renamePhotosMany`."""
 
 import dataclasses
-import gc
 
 import pytest
 from PySide6.QtCore import QLocale
@@ -56,8 +55,7 @@ def controller(qt_app, tmp_path, library):
     ctl._reload()
     ctl.selectFolder(str(library))
     yield ctl
-    # #438: az átnevezés háttérszála bevárva, MÍG a controller még él —
-    # a #430 SIGSEGV-osztály elkerülése (BackgroundWorkerMixin).
+    assert ctl._wait_for_rename_workers(30.0), "az átnevező szál nem állt le"
     assert ctl.waitForBackgroundWorkers(30.0), "az átnevezés háttérszála nem állt le"
 
 
@@ -75,13 +73,7 @@ def _stamp(controller, name) -> str:
 
 
 def _do_rename(controller, action) -> None:
-    # #6858: a CI-n a főszál szemétgyűjtése az átnevező háttérszál futása
-    # közben szegmenshibát okozott; a várakozás idejére a gyűjtés szünetel.
-    gc.disable()
-    try:
-        wait_for_photo_op(controller, action)
-    finally:
-        gc.enable()
+    wait_for_photo_op(controller, action)
 
 
 class TestRenamePreview:
@@ -253,3 +245,61 @@ class TestBackgroundThreadTeardown:
         )
         assert controller.waitForBackgroundWorkers(30.0)
         assert not controller.backgroundWorkersRunning()
+
+    def test_wait_joins_until_the_thread_itself_exits(
+        self, controller, library, qt_app, monkeypatch
+    ):
+        """A worker a feladat vége után is élhet a szál kilépéséig (#6858)."""
+        import threading
+
+        import picasapy.app.worker_thread as worker_thread
+
+        entered_tail = threading.Event()
+        release_tail = threading.Event()
+        threads = []
+        original_thread = worker_thread._Thread
+
+        class TailHeldThread(original_thread):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                threads.append(self)
+
+            def run(self):
+                super().run()
+                if self.name == "picasapy-rename":
+                    entered_tail.set()
+                    release_tail.wait(30.0)
+
+        monkeypatch.setattr(worker_thread, "_Thread", TailHeldThread)
+        rows = _rows_by_name(controller, "a.jpg", "b.jpg")
+        controller.renamePhotosMany(rows, "nyaralas", False, False)
+
+        assert entered_tail.wait(30.0), "az átnevező worker nem ért a szál végéhez"
+        rename_thread = next(t for t in threads if t.name == "picasapy-rename")
+        wait_started = threading.Event()
+        original_wait = controller._wait_for_rename_workers
+        releaser = None
+
+        def observed_wait(timeout_s=None):
+            wait_started.set()
+            return original_wait(timeout_s)
+
+        monkeypatch.setattr(controller, "_wait_for_rename_workers", observed_wait)
+        try:
+            assert rename_thread.is_alive()
+            assert not original_wait(0.0), (
+                "a bevárás késznek jelezte a még élő átnevező szálat"
+            )
+            releaser = threading.Thread(
+                target=lambda: (wait_started.wait(30.0), release_tail.set())
+            )
+            releaser.start()
+            assert controller._wait_for_rename_workers(None)
+            assert not rename_thread.is_alive(), "a bevárás után a szál még fut"
+        finally:
+            wait_started.set()
+            release_tail.set()
+            if releaser is not None:
+                releaser.join(30.0)
+
+        qt_app.processEvents()

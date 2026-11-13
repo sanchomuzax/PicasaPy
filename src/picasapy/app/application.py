@@ -447,6 +447,7 @@ def _create_folder_cover_provider(data_dir, thumb_cache):
 def _startup_step_smoke_test(state) -> None:
     print("onellenorzes: a felulet felepult", flush=True)
     state.screen_capture_controller.shutdown()
+    state.controller._wait_for_rename_workers(None)
     state.controller.shutdown()
     state.edit_controller.cancelPendingPreview()
     state.edit_controller.waitForBackgroundWorkers(2.0)
@@ -689,6 +690,7 @@ def run(argv: list[str], *, entry_at: float | None = None) -> int:
     startup_maintenance.cancel()
     startup_maintenance.waitForBackgroundWorkers(2.0)
     screen_capture_controller.shutdown()
+    controller._wait_for_rename_workers(None)
     controller.shutdown()
     # #547: a szerkesztő háttér-renderét külön kell lezárni — az
     # edit_controller önálló objektum, nem része a controller.shutdown()

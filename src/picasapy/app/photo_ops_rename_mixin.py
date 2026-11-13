@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import threading
+import time
 from pathlib import Path
 
 from PySide6.QtCore import Signal, Slot
@@ -20,6 +22,42 @@ from .photo_ops_compat import (
 
 class PhotoOpsRenameMixin:
     _renameBatchDone = Signal(list)
+
+    def _rename_worker_set(self) -> set[threading.Thread]:
+        """A tömeges átnevezések szálfogantyúi a tényleges kilépésig."""
+        try:
+            return self._rename_workers
+        except AttributeError:
+            self._rename_workers: set[threading.Thread] = set()
+            return self._rename_workers
+
+    def _wait_for_rename_workers(self, timeout_s: float | None = 30.0) -> bool:
+        """Várja meg a kötegelt átnevező szálak tényleges kilépését.
+
+        A közös worker-nyilvántartás a munka befejezésekor ürül ki, miközben
+        a `Thread.run()` még nem tért vissza. A controller ezért külön tartja
+        meg az átnevező szálakat, és csak a `join()` után engedi el őket.
+        Kilépéskor `None` időkorláttal hívjuk, hogy az objektumok ne
+        semmisülhessenek meg egy még futó rename mellett.
+        """
+        workers = self._rename_worker_set()
+        deadline = None if timeout_s is None else time.monotonic() + timeout_s
+        while workers:
+            for worker in tuple(workers):
+                remaining = (
+                    None if deadline is None
+                    else max(0.0, deadline - time.monotonic())
+                )
+                worker.join(remaining)
+                if not worker.is_alive():
+                    workers.discard(worker)
+            if deadline is not None and time.monotonic() >= deadline:
+                for worker in tuple(workers):
+                    if not worker.is_alive():
+                        worker.join(0)
+                        workers.discard(worker)
+                return not workers
+        return True
 
     @Slot(result=bool)
     def renameUseDate(self) -> bool:
@@ -133,7 +171,12 @@ class PhotoOpsRenameMixin:
             self._renameBatchDone.emit(folders)
 
         # #438: nyilvántartott daemon-szál (BackgroundWorkerMixin, #430)
-        self._start_background(worker, name="picasapy-rename")
+        workers = self._rename_worker_set()
+        for finished in tuple(workers):
+            if not finished.is_alive():
+                finished.join(0)
+                workers.discard(finished)
+        workers.add(self._start_background(worker, name="picasapy-rename"))
 
     @Slot(list)
     def _on_rename_batch_done(self, folders: list[str]) -> None:
