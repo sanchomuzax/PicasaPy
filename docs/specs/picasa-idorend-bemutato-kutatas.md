@@ -1725,6 +1725,8 @@ A kártya mélységi alfája a távolodással nemlineárisan csökken:
 
 **3. Kötegen belüli kártyák véletlen szórása és LOD-választása (`0x008014d0`, `0x00a6ac90`).**
 
+**HELYESBÍTVE a 38.2.150-ben: a `0x008014d0` kapuzott (`Ctrl+F`/`Ctrl+B` nélkül `_rand`-hívás nélkül kilép), és mezői helyzet és sebesség, nem kártyaeltolás; az alábbi "köteg szórása" olvasat megdőlt. A LOD-választás (`0x00a6ac90`) állítása érintetlen.**
+
 - **Véletlen eltolás a kötegben (`0x008014d0:83-95`, `0x008015ad`-`0x008016c6`):**
   A gyűjtemény képeit bejárva a kód a CRT `_rand()` (`0x00c08221`) hívásaiból IEEE-754 bitmanipulációval `[0.0, 1.0)` lebegőpontos számokat állít elő, kivon `0.5`-öt (`0x00c72150`), majd megszorozza a `0x00cf3fd0` qword konstanssal (`0.15000000596046448`):
   - `dx = (rand_x - 0.5) · 0.15` → tartomány `[-0.075, +0.075]`.
@@ -1880,7 +1882,7 @@ A dobozok `y` koordinátája is változik: az 1. váltás előtt/után a piros-k
 | Eredeti Időrend-videó | mérés (job-373 és job-446) | Mindkét videó helyben elérhető; a job-446 teljes felvételét a 38.2.104 elemzi. | 38.2.101, 38.2.104 |
 | Lap mérete | bináris (0x007fa730) | Az Időrend gombja 480 px magas, képernyőarányos lapot kér. | 38.2.98 |
 | Kártyák pályája, láthatósága és mélységi alfája | bináris (0x007fc010, 0x007fd180, 0x00cf3ef8, 0x00cf3ec4) | A 3D pálya, Z > 0.1 szűrő, alfa-képlet és a nyitó alfa útja leírt. | 38.2.102 |
-| Kötegen belüli szórás | bináris (0x008014d0, 0x00cf3fd0) | Az eredeti kártyánként két CRT rand értékből számol eltolást a [-0.075,+0.075] tartományban. | 38.2.102 |
+| Kötegen belüli szórás | HELYESBÍTVE (38.2.150) | A `0x008014d0` kapuzott rejtett módú függvény (`Ctrl+F`/`Ctrl+B`), helyzet- és sebességmezőket ír; a régi "kártyaeltolás" olvasat megdőlt. | 38.2.150 |
 | Bélyegkép-forrás és háttér | bináris (0x00424b10, 0x00802180, 0x008001c0) | A háttér a középső kártya képéből készül; a szolgáltató legalább 640 px-es forráságát a korábbi kör azonosította. | 38.2.94, 38.2.97 |
 | Dátum-idő felirat és ferde csíkok | mérés (job-373 mintakép és 2009_majus_01.jpg) | A felirat és a csíkozás a mintakép része, nem a qshow felület rajzolja rá. | 38.2.93 |
 | Jobb felső felirat és vezetőív | bináris (0x007fee70, 0x00cf4e8c, 0x00cf4e88, 0x00cf3bd8) | Név y=130, hónap-év y=158, 1 px fekete árnyék, 10 pontú Bézier-ív. | 38.2.102 |
@@ -3054,4 +3056,128 @@ A PicasaPy `TimelineView.qml`-je (277-290. sorok) az `updateSliderFromX(x)` és 
 
 **Nyitott.** Nincs új nyitott kérdés a sliderthumb és a timeline sáv eseményútjára; a mechanizmus statikusan és mérve lezárva.
 
+
+#### 38.2.150 A kártyák véletlen szórása és az Időrendből indított diavetítés beállítása (#6532, 2026-11-13)
+
+**Hatókör és módszer.** A #6532 két nyitott pontja: (1) milyen generátor, milyen mag, mely kártyatulajdonság és milyen tartomány áll a kártyák véletlen szórása mögött, és ez egyezik-e a PicasaPy `timeline_motion.py:100-131` és `TimelinePanel.qml:250-260` megoldásával; (2) az Időrendből indított diavetítés melyik beállítást (időköz, átmenet) használja a job-373 felvételen, és a PicasaPy ugyanezt teszi-e. A helyi `Picasa3.exe` (3.9.141.259, SHA-256 `644b7bec...`) utasításait capstone-nal olvastam; a teljes bináris bájtpásztázása és a mezőírók listája a `paszta.memoria_kapu()` mellett, függvényenként futott. A mérések két forrásból jönnek: (a) `qemu-i386` alatt az eredeti gépi kód futtatása (a privát repó `qemu_harness/hb.py` helyi másolatával: a `__getptd` `0x00bf0583` hamis szálankénti adatblokkot ad vissza, az FPU vezérlőszó `0x27f`, a vizsgált szakasz végén, a `0x008016cd`, illetve a `0x0080150d` és `0x0080188b` címeken egy kiíró rutin veszi át a futást); (b) a job-373 felvétel (`picasa-colab-jobs` kiadás, `video__04.mp4`, SHA-256 eleje `be0ba93e5ac9863f`, 1280x1024, 15 kép/mp, 1500 képkocka) képkockáinak közvetlen vizsgálata. A feladat csak egy Space-t küld, Play-t nem (`ctrl+5`, `Right`, `Right`, `space`, 15 s várakozás, `Escape`). A felvételen futó program hash-e továbbra sincs rögzítve. Az ideiglenes fájlok a munkafa `.bt/` mappájában voltak, a kör végén törölve.
+
+**Rövid eredmény.**
+
+1. **Helyesbítés (38.2.102 §3, 38.2.105, a viselkedési lap összevetése): a `0x008014d0` nem a kártyák kötegszórása.** A függvény a rekordépítés előtt kaput tartalmaz: ha a qshow `+0x3bc` és `+0x3bd` jelzője is nulla, a függvény a régi rekordsort felszabadítja, `rand()` hívása nélkül visszatér. A két jelzőt kizárólag a konstruktor nullázza, és a billentyűkezelő állítja 1-re, `Ctrl+F` (`+0x3bc`), illetve `Ctrl+B` (`+0x3bd`) hatására. Alap Időrend-használatban (nyilak, Space, Escape) tehát a `0x008014d0` nem szór semmit. Az `[-0,075; +0,075)` tartomány csak a rejtett módban a sebességvektor egyik összetevője, nem kártyaeltolás.
+2. **A generátor: az MSVC CRT `_rand` (`0x00c08221`)**, szálanként külön 32 bites állapottal (`ptd+0x14`), `állapot = állapot * 214013 + 2531011`, kimenet `(állapot >> 16) & 0x7fff`. A kezdőérték szálanként 1 (`0x00bf0471`-`0x00bf0474`), amíg ugyanazon a szálon `_srand` nem fut. A qshow kódjában nincs `_srand`; a tíz `_srand`-hívó közül három időből magoz (`0x0085b730`, `0x00917f50`, `0x00990000`). Hogy a qshow szálán ezek előbb lefutnak-e, nyitott (lásd lent).
+3. **A kártyák kötegszerű kinézete létezik az eredetiben** (job-373, 12, 19 és 28 s: a piros kártya egy lap, a kék és a zöld több, egymásra tolt, kissé elforgatott lap), de a kártyarajzoló (`0x007fd180`) rekordonként egyetlen képet rajzol, a `0x007fc7c0` pedig a CThumbDB rekordképét másolja a kártyarekord `+4` képébe. A lapok elhelyezésének forrása ezért a kártyakép előállítója, ami **NYITOTT** (cím lent). A PicasaPy `card_stack_offset` `xorshift` eltolásának `[-0,075; +0,075)` tartományára és a `-7/+5` fokos váltakozó elforgatására nincs bináris vagy mért forrás.
+4. **A diavetítés időköze a job-373 felvételen 3 másodperc** (a felvételen olvasható `Display Time 3 seconds` felirat és a bináris alapérték egyezik). **A diavetítés nem indul lejátszással:** az Időrendből az első Space szünetelő állapotú diavetítő felületet hoz be, az 1/7 kép 15,5 másodpercig pixelre azonos marad. A PicasaPy `start(0)` útja `playing = true` értékkel indul, és 3 másodperc múlva lép. **Eltérés.**
+5. Az átmenet fajtáját és időtartamát az Időrendből indított diavetítésre a felvétel nem méri (nincs képlépés benne): **NYITOTT**.
+
+##### §1 A generátor és a mag
+
+| Állítás | A út (utasításszint) | B út (adat, hívó vagy mérés) |
+|---|---|---|
+| `0x00c08221` az MSVC CRT `_rand` | `call 0xbf0583` (`__getptd`), `ecx = [eax+0x14]`, `imul ecx, ecx, 0x343fd`, `add ecx, 0x269ec3`, `[eax+0x14] = ecx`, `(ecx >> 16) & 0x7fff` (`0x00c08221`-`0x00c08242`) | QEMU az eredeti kódon, hamis szálblokkal, négy maggal (1, `0x3039`, `0xdeadbeef`, 0), mindegyikből hat hívás: minden kimenet egyezik a `s = s*214013 + 2531011; (s >> 16) & 0x7fff` képlettel és a végállapottal. Mag 1 kimenete: 41, 18467, 6334, 26500, 19169, 15724. Az index és a nyers `E8`/`E9` bájtpásztázás ugyanazt a 43 hívó függvényt adja (két további hívás a `0x00b6a0e0` és `0x00b6a133` címen az indexelt függvénytáblán kívül esik, nem qshow-tartomány). |
+| A szálanként külön állapot `ptd+0x14`, kezdőértéke 1 | `0x00bf0471` `xor edi, edi`, `0x00bf0473` `inc edi`, `0x00bf0474` `mov [esi+0x14], edi` a `__initptd`-ben (`0x00bf044d`) | A CRT-tartomány (`0x00bef000`-`0x00c0b000`) összes `[reg+0x14]` tárolásának bejárásában a szálállapotot csak a `__initptd` (`0x00bf0474`), a `_srand` (`0x00c0821d`, `[ptd+0x14] = arg`) és a `_rand` (`0x00c08235`) írja; a többi találat helyi változó vagy más szerkezet (`strtoxl`, `gmtime`, `qsort`). A `__mtinit` a fő szálra a `0x00bf0887` hívással futtatja a `__initptd`-t. |
+| A qshow nem hív `_srand`-ot | A `_srand` (`0x00c08214`) hívói: `0x00423780`, `0x00565920`, `0x00680370`, `0x0071d940`, `0x0071e120`, `0x0085b730`, `0x0087cb70`, `0x0088fcf0`, `0x00917f50`, `0x00990000`; egyik sem esik a `0x007f9000`-`0x00804000` tartományba | A nyers `E8`/`E9` pásztázás ugyanezt a 10 függvényt adja. |
+| Három `_srand`-hívó időből magoz | `0x0085b76d` (a `0x0085b730` GUID-képző, sztringjei `%I64x`, `%x%x%x%x-`), `0x009180df` (`0x00917f50`, az online ellenőrzés), `0x009902b8` (`0x00990000`, az összeomlás-kezelő): mindegyik előtt `call 0xc0a421` (`time`) | A másik hét hívó közvetlen környezete nem időt ad át: `0x00565920` és `0x00680370` szöveg-ujjlenyomat, `0x0071d940` `index * 0xee6d00b1`, `0x0087cb70` `[ebx+0x10]`, `0x0088fcf0` argumentum (a `0x00423780` és `0x0071e120` forrása a közvetlen környezetből nem olvasható ki). |
+
+**Mag, kimondva.** A qshow a szál `_holdrand` állapotát folytatja, saját magválasztása nincs. Ha az adott szálon `_srand` nem futott, a sorozat az 1-es magról indul, és ugyanazon a szálon minden `_rand`-hívás előrelépteti. Hogy a qshow szálán futott-e korábban időből magozó függvény, **NYITOTT**: ehhez a qshow szálát létrehozó út (a `0x008037e0` hívói) és a három magozó függvény hívói (`0x0085b7e0`, `0x00918290`, `0x009184e0`, `0x009907c0`) szála kell, futásidejű szálazonosítóval (`GetCurrentThreadId`) mérve.
+
+**Hol lép előre az állapot alap Időrendben.** A qshow-tartományban a `_rand` hívói pontosan négyen vannak: `0x007fe600` (képkockánként, kapuzott), `0x008014d0` (kapuzott), `0x00802230` (két hívás, kapu nélkül; `0x007fb540`, `0x007fda00`, `0x00801130`, `0x00801cf0`, `0x00802630` hívja) és a `0x007f9a40` (a `ytAnimSprite` konstruktora, `0x00cbd2a4`, a főablak értékelő csillagjainak `0x005e81e0` hívójától, nem Időrend). A `0x00802230` kimenete (38.2.62: `0 <= x < 0,15 * W`, `0 <= y < 0,075 * H`) a `0x007fff30` `SimpleSlideshow == 0` ágában kerül transzformációba; az alapértelmezett `SimpleSlideshow = 1` mellett (38.2.100) ez a kimenet nem látszik. A kártyák elhelyezéséhez tehát az alap Időrendben nem járul hozzá.
+
+##### §2 A `0x008014d0` kapuja
+
+| Állítás | A út | B út |
+|---|---|---|
+| `0x008014d0` kilép, ha `[this+0x3bc] == 0 && [this+0x3bd] == 0` | `0x008014f7` `cmp byte [edi+0x3bc], 0`, `jne 0x80150d`; `0x00801500` `cmp byte [edi+0x3bd], 0`, `je 0x80188b`; a `0x0080188b` pop-ok és `ret` | QEMU, a teljes függvény futtatva `edi = this`, a listában 6 elem (`[this+0x3f0] = 12`, `[this+0x3ec]` kitöltve), jelzők 0: a visszatérési érték 0, a CRT állapot a futás után változatlan (mag 1 maradt 1, mag 777 maradt 777), vagyis nulla `_rand`-hívás. A kapu elágazása a valódi bájtokon: (0,0) a `0x80188b` kilépésre, (1,0), (0,1) és (1,1) a `0x80150d` folytatásra jut. |
+| A két jelző kizárólag a konstruktor nullázza és a billentyűkezelő állítja be | A konstruktor `0x007fad21`, `0x007fad27` nullázza; a `0x00801270` `0x008013c5` (`Ctrl+F`, billentyűkód `0x46`) és `0x008013fe` (`Ctrl+B`, `0x42`) 1-et ír; a feltétel: `[0xd67849] != 0` és `GetAsyncKeyState(0x11)` felső bitje (`0x008013a5`-`0x008013bf`, `0x008013de`-`0x008013f8`) | A teljes bináris pásztázása a `+0x3bc`/`+0x3bd` bájtra író utasításokra: a qshow osztályban más író nincs (a többi találat más osztály dword-mezője). A `[0xd67849]` írói: `0x0057641b` (ablakállapot-visszaállítás után 1) és `0x00a52e66`, ahol `[edi+4] == 0x1c` (`WM_ACTIVATEAPP`) esetén `[0xd67849] = wParam` bájtja: alkalmazás-aktív jelző. |
+| A `0x007fe7c0` és a `0x007fe600` ugyanazzal a kapuval fut | `0x007fe7cf`, `0x007fe7da` ugyanaz a két bájtos vizsgálat, `je 0x7fee5f` kilépés; a `0x007fe600` csak innen hívódik (`0x007fe7e9`) | Az index hívói: a `0x007fe7c0` egyetlen hívója a `0x007ffc90`; a `0x007fe600` egyetlen hívója a `0x007fe7c0`. |
+
+##### §3 Mit szór a rejtett módban, és milyen tartományban
+
+A `0x008014d0` a `[this+0x3ec]` azonosítólista minden elemére (a fókuszgyűjtemény fotói) négy `_rand`-értéket használ; `u = r / 32768`, `r1`..`r4` az egymás utáni hívások. A mezők a 0xf8 bájtos rekordban vannak, amely a `[this+0x2ec]` sorba másolódik (`0x008017ed` `lea eax, [esp+0x50]`, `0x00803b50`). A rekordcímzés A útja: a `0x007fa5b0` konstruktor a `0x0080157c` `ecx = esp+0x50` címen épül, a `0x00a6aa00` hívás `ret 0x14`-gyel tisztítja a rakott téglalapot és célmutatót (`0x00a6aa27`), így a `0x008015ad`-nál az `esp+0x11c`..`esp+0x128` helyi változók a rekord `+0xcc`..`+0xd8` mezői:
+
+| Rekordmező | Képlet (utasítások) | Tartomány |
+|---|---|---|
+| `+0xcc` (x helyzet) | `u4 - 0,5` (`_rand` `0x00801644`, tárolás `0x0080167d`) | `[-0,5; 0,5)` |
+| `+0xd0` (y helyzet) | `u3 - 0,5` (`_rand` `0x00801633`, tárolás `0x008016a7`) | `[-0,5; 0,5)` |
+| `+0xd4` (x sebesség) | `0,15 * (u2 - 0,5)` (`_rand` `0x008015be`, szorzás `0x008016ae`-`0x008016b8`), a szorzó az f64 `0,15000000596046448` (`0x00cf3fd0`) | `[-0,075; 0,075)` |
+| `+0xd8` (y sebesség) | `[this+0x3bc] == 0`: `0,15 * (-u1)`; `[this+0x3bc] != 0`: `0,15 * (0,5 - u1)` (`_rand` `0x008015ad`, előjelváltás `0x00801611`, feltételes összeadás `0x00801624`, szorzás `0x008016bf`-`0x008016c6`) | `(-0,15; 0]`, illetve `(-0,075; 0,075]` |
+
+**B út (QEMU, az eredeti `0x008015ad`-`0x008016c6` szakasz, a futás a `0x008016cd` címen kiírásra terelve; a QEMU az `esp`-relatív értékeket méri, a rekordmezőkhöz rendelésük a fenti A út számítása).** Négy mag (1, `0x3039`, `0xdeadbeef`, `0x7a69`) és mindkét `+0x3bc` érték mellett az eredeti kód mezői bitre egyeznek a fenti képletek f32-értékeivel (8 futás, 8 egyezés). Mérés (`+0xcc`, `+0xd0`, `+0xd4`, `+0xd8`):
+
+| `+0x3bc` | mag | `+0xcc` | `+0xd0` | `+0xd4` | `+0xd8` |
+|---:|---:|---:|---:|---:|---:|
+| 0 | 1 | 0,30871582 | -0,30670166 | 0,009535218 | -0,000187683 |
+| 0 | `0x3039` | 0,175201416 | 0,287200928 | 0,012725831 | -0,0347168 |
+| 0 | `0xdeadbeef` | 0,10333252 | 0,071655273 | 0,002453613 | -0,083940126 |
+| 0 | `0x7a69` | 0,027435303 | 0,179534912 | -0,037197877 | -0,018621827 |
+| 1 | 1 | 0,30871582 | -0,30670166 | 0,009535218 | 0,074812323 |
+| 1 | `0x3039` | 0,175201416 | 0,287200928 | 0,012725831 | 0,040283203 |
+| 1 | `0xdeadbeef` | 0,10333252 | 0,071655273 | 0,002453613 | -0,008940125 |
+| 1 | `0x7a69` | 0,027435303 | 0,179534912 | -0,037197877 | 0,056378175 |
+
+A régi olvasat (`dx = (rand - 0,5) * 0,15`, `dy` előjeles korrekcióval, mindkettő `record[+0xd4]` és `record[+0xd8]`, "a köteg kártyáinak szórása") hibás volt két ponton: a `+0xd4`/`+0xd8` sebesség, nem eltolás, és `+0x3bc == 0` mellett az y összetevő `(-0,15; 0]`, egyirányú. A másik két `_rand` a `+0xcc`/`+0xd0` helyzetet adja, amit a régi olvasat kihagyott.
+
+**Képkockánkénti mozgás (csak A út, feltételes).** A `0x007fe600` minden rekordra: `dt` a `0x009a51b0` QPC-másodperce a `[this+0x528]` bélyegtől; `x += dt * vx`, `y += dt * vy` (`0x007fe650`-`0x007fe696`); ha `x` vagy `y` 0 alá esik, 1-et ad hozzá, ha 1 fölé, 1-et von le (`0x007fe69e`-`0x007fe6fc`): az egységnégyzet tóruszán kering. Utána mindkét sebességkomponens kap egy-egy `_rand`-ból: `v += 0,001 * u - 0,0005` (f64 `0x00cf3db0 = 0,001`, `0x00cf4858 = 0,0005`; `0x007fe713`-`0x007fe78d`), azaz `[-0,0005; 0,0005)` véletlen járás képkockánként. A `0x007fe7c0` a helyzet `2π`-szeresének szinuszából/koszinuszából (f64 `0x00cf4350 = 6,2831854820251465`) számolja a lapok méretét és sorrendjét, majd rajzol. Ez a rajzút csak a jelzőkkel fut; a fejlesztői átadásban nem kérek belőle semmit. A mozgásképlet második független útja (QEMU a `0x007fe600`-ra, rögzített `dt`-vel) nincs meg, ezért a bekezdés feltételes.
+
+##### §4 A kártyák kötegszerű kinézete: mérés, forrása nyitott
+
+| Állítás | A út | B út |
+|---|---|---|
+| A kártyarajzoló rekordonként egy képet rajzol | `0x007fd180` a látható rekordokon (`[obj+0x80]`) végigmenve a rekord `+4` képét kéri a `0x00a6ac90` LOD-választón át, a `0x009e6df0` rajzolóval: lapsor, több kép per rekord nincs (`0x007fd1b8`-`0x007fd35d`) | A `0x007fc7c0` rekordonként egyetlen `0x00a6aa00` másolással tölti a `+4` képet (38.2.92); a kártyarekord konstruktora `0x007fa5b0`. A rekord `+0xcc`-`+0xd8` mezőit a `0x007fd180` nem olvassa (a tagpásztázás `0x007fd180`-ban csak `esp`-relatív helyi változót talál). |
+| A felvételen a kártyák egy része több lapból áll | | job-373, 12 s: a piros 2009_majus kártya egy lap, a kék 2014_november és a zöld 2019_marcius több, egymásra tolt, kissé elforgatott lap; 19 s és 28 s: ugyanaz a három kártya másik pályahelyen, a kék és a zöld lapelrendezése a szemrevételezés szerint azonos (képpontos összevetés nem készült). |
+
+Következtetés: a lapok elrendezése a kártyakép része (a rekord `+4` képe), nem a `0x008014d0`-ból jön, és a felvétel szerint a fókuszváltások közt látszólag változatlan. Hogy ez a kép mikor és melyik függvényben áll össze, és kap-e véletlenszámot, **NYITOTT**. A lapok száma és a gyűjtemény fotószáma közti kapcsolat is mérés nélkül maradt (a piros 1/1, a zöld 1/7; a többi gyűjtemény fotószáma a felvételről nem olvasható).
+
+##### §5 Összevetés a PicasaPy-val (1. pont) és megvalósítási javaslat
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Az alap Időrendben a qshow nem szór véletlenül kártyaeltolást; a `0x008014d0` rejtett `Ctrl+F`/`Ctrl+B` módban fut, és helyzet- és sebességvektort ad a fókuszgyűjtemény fotóihoz. A kártyák kötegszerű kinézete a kártyakép része, forrása nyitott. | `card_stack_offset` (`timeline_motion.py:100-131`) a gyűjtemény- és fotóindexből magozott `xorshift` algoritmussal `[-0,075; +0,075)` eltolást ad a kártyaméret arányában; `TimelinePanel.qml:250-260` ezt, `-7` és `+5` fokos váltakozó elforgatással alkalmazza, legfeljebb négy fotóra kártyánként. | **Eltér a forrás szerint: az eltolás-tartomány és az elforgatás bináris eredete megdőlt**; a docstring ("A qshow minden kártyánál két `_rand()` értéket használ") téves. A látható viselkedésből egyezik, hogy a köteg stabil és fókuszváltáskor nem változik (a PicasaPy index-magos, az eredeti felvétel szerint látszólag rögzített). |
+
+**Javaslat (a hívónak, kódot nem módosítottam).** (1) A `timeline_motion.py:100-110` docstringből és a `TimelinePanel.qml:250-260` környéki megjegyzésből töröld a `0x008014d0`-re hivatkozást; a tartomány és az elforgatás "mérésből származó, bináris forrás nélküli" jelölést kapjon. (2) A stabil, indexmagos elrendezést tartsd meg: a felvétel szerint a köteg fókuszváltások közt nem változik, ezért a PRNG-algoritmus különbsége nem felhasználói eltérés. (3) Új szórási kód ne készüljön, amíg a kártyakép előállítója nincs azonosítva; a következő bináris irány lent szerepel. (4) A `Ctrl+F`/`Ctrl+B` rejtett mód felhasználói felületen nem szerepel; megvalósítást nem javaslok.
+
+##### §6 A diavetítés beállítása job-373-ban
+
+| Állítás | A út | B út |
+|---|---|---|
+| Az időköz 3 másodperc | A qshow konstruktora a `Preferences\SlideshowEffectTime` kulcsot a `[this+0x760]` objektumhoz köti, alapérték 3 (`0x007face5`, `0x007facd3`); a `Display Time` `+`/`-` kezelője `0x00802b40` ugyanezt az objektumot olvassa (`0x00802b4c`) és írja (`0x00802bc5`), 1 és 20 közé szorítva (`0x00802b6d` `fld1`, `0x00802b7e`, f32 `0x00cf4974 = 20,0`) | job-373, 31,0 s (465. képkocka), a diavetítő alsó sávja: `Display Time`, `3 seconds`. A felvétel nem állít be Preferences-értéket (alapállapot). |
+| Az Időrendből az első Space szünetelő diavetítő felületet hoz be, automatikus léptetés nélkül | `0x007fda5b` `[this+0x3bb] = 0` az Időrend indításakor; `0x00801310` `+0x3bb == 0` esetén `0x00801332` → `0x00801130`, ami `+0x3bb`-t 1-re billenti (`0x0080113f`) és a felületet hozó `0x00802c20`/`0x00aa6f40` ágat hívja (`0x00801159`, `0x0080116a`); a `0x00802060` automatikus léptető `+0x3bb != 0` esetén azonnal kilép (`0x00802066`-`0x00802078` → `0x00802121`) | job-373: a Space körül (30,8-33,8 s) a sáv beúszik, majd a 800x600-as fotóterület (`240,212`) az 507.-739. képkockán (33,800-49,267 s, 233 képkocka) pixelre azonos, az `1/7` felirattal; az Escape 49,3 s körül jön. A lejátszás gomb a felvételen `▶` alakú (szünetel). A job-240 felvétel 3 és 8 s utáni azonos képe (38.2.82) ugyanezt mutatta. |
+
+**Mit jelent ez.** A job-373 futása az alapértelmezett 3 másodperces `SlideshowEffectTime` értéken volt. Az első Space után az eredeti nem lépteti magától a képet; a lejátszáshoz újabb beavatkozás kell (a második Space a `0x00803110`-re vezet, 38.2.65; a Play gomb hatása nincs mérve).
+
+##### §7 Összevetés a PicasaPy-val (2. pont) és megvalósítási javaslat
+
+| Eredeti | Nálunk | Teendő |
+|---|---|---|
+| Időköz: `SlideshowEffectTime`, alapérték 3 s, 1-20 s között (`0x007facd3`, `0x00802b6d`, `0x00802b7e`); job-373: 3 s. | `slideshowSeconds`, alapérték 3, tartomány 1-20 (`controller_slideshow_mixin.py:95-125`); az Időrend-Space ugyanazt a beállítást használja (`MainTimeline.qml:106-125` → `SlideshowView.qml:50,201-215`, `SlideshowTiming.qml:11-16`). | **Egyezik** (az alapértéken és a tartományon). PicasaPy-futás nem mért. |
+| Indulás: az első Space után szünetelő felület, nincs automatikus léptetés (`0x00801130`, `0x00802060`; job-373: 15,5 s pixelre azonos fotó, `▶` gomb). | `SlideshowView.start(index)` `playing = true` értékkel indul (`SlideshowView.qml:212`), a lépésidőzítő futása `visible && playing` (`SlideshowTiming.qml:16`): 3 s után lép. | **Eltér.** A fejlesztői teendő a lenti javaslat. |
+| Átmenet: a qshow `SimpleSlideshow` alapértéke 1 (`0x00800297`-`0x008002be`), pixelkeverés nemlineáris görbével, `p = min(1,5 * t / T, 1)` bemenettel (38.2.100). A felvétel képlépést nem tartalmaz. | `slideshowTransition` alapértéke `dissolve`, `slideshowTransitionMs` alapértéke 700 (felső korlát 500, `controller_slideshow_mixin.py:81-89`), a görbe lineáris. | **Nem dönthető el:** az Időrendből indított, lejátszó diavetítés első átmenete nincs mérve. |
+
+**Javaslat (a hívónak, kódot nem módosítottam).** (1) Az Időrend-Space a PicasaPy-ban az első képen szünetelő állapotban nyissa meg a vetítőt (`playing = false` az Időrendből indított `start(0)` után, a lejátszás gomb `▶` állapotával), és a következő Space/lejátszás indítsa az automatikus léptetést a meglévő `slideshowSeconds` értékkel. Ez csak az Időrendből indított vetítésre vonatkozzon, a szokásos (nem Időrendes) indításhoz ne nyúljon. (2) Az átmenet-időzítés ne változzon, amíg a Play utáni átmenet nincs mérve. (3) Ellenőrzés a javítás után: a `SlideshowView` Időrend-indításánál `playing == false`, és `slideshowTimer.running == false`; a szokásos indításnál `true`.
+
+##### Nyitott kérdések mérlege
+
+Nyitott kérdések: 4 nyílt · 5 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 "csak nyitva"
+
+| Kérdés | Állapot | Mi kell hozzá |
+|---|---|---|
+| Melyik generátor áll a szórás mögött | **LEZÁRVA** (CRT `_rand`, §1) | |
+| Mely tulajdonságot szórja a `0x008014d0`, és milyen tartományban | **LEZÁRVA** (§3; rejtett módban helyzet és sebesség; a régi "kártyaeltolás" olvasat megdőlt) | |
+| Szór-e véletlenül az alap Időrend kártyaeltolást a `0x008014d0`-val | **LEZÁRVA** (nem, §2) | |
+| Az Időrendből indított diavetítés időköze job-373-ban | **LEZÁRVA** (3 s, §6) | |
+| Az Időrendből indított diavetítés indulási állapota | **LEZÁRVA** (szünetel, §6) | |
+| Mi a kártyakép kötegszerű lapelrendezésének forrása és szabálya (lapszám, eltolás, elforgatás, véletlenszám-e) | **NYÍLT, következő irány megnevezve** | A CThumbDB rekordkép előállítója: `0x004ae430` → `0x00423300` → `0x00448fb0` → `0x004114e0` (a `0x007fc7c0` `0x007fcca7` és `0x008014d0` `0x008015a8` másolásának forrása), és a rekord `+8`/`+0xc` méretű képét ténylegesen feltöltő út. Mérés: ugyanazon gyűjtemények kártyaképe két külön Időrend-megnyitásban (a job-373 második `Ctrl+5` nem nyitott Időrendet, 38.2.82 szerint sem). |
+| Melyik szálon fut a qshow, és futott-e rajta időből magozó `_srand` | **NYÍLT** (a szórás alapesetben nem használja, ezért alacsony prioritás) | A `0x008037e0` hívó lánca és a `0x0085b7e0`, `0x00918290`, `0x009184e0`, `0x009907c0` hívók szála (`GetCurrentThreadId` a Colab-futásban). |
+| Az Időrendből indított, lejátszó diavetítés első átmenete (fajta, időtartam, görbe) | **NYÍLT** | Colab-feladat: `ctrl+5`, `space`, majd a lejátszás indítása (második `space`, `0x00803110` útja), 8 s felvétel képkockánkénti méréssel; közben a `[this+0x760]` és a `SimpleSlideshow` Preferences-érték naplózása. |
+| A `0x007fe600` mozgásképletének második útja (QEMU rögzített `dt`-vel) | **NYÍLT** (a rejtett mód miatt alacsony prioritás) | A `0x009a51b0` visszatérésének rögzítése a QEMU-harnessben, a `[this+0x528]` bélyeggel. |
+
+##### Amit kizártam
+
+- **"A `0x008014d0` kártyánként két `_rand`-ból számol `[-0,075; +0,075]` eltolást, ez a köteg szórása"** (38.2.102 §3, 38.2.105, a viselkedési lap egyezik-sora): megdőlt. Négy `_rand`-ból két helyzet- és két sebességmező lesz, a függvény kapuzott, és nem a kártyarajzoló fogyasztja a rekordot.
+- **"A kártyakép több kártyarekordból vagy a `0x007fd180`-ban rétegzett képből áll"**: a rajzoló rekordonként egy képet rajzol; a lapok a kártyakép tartalmában vannak.
+- **"A második `Ctrl+5` a job-373 felvételen újranyitja az Időrendet"**: a 60-100 s tartomány képkockái csak a könyvtárnézetet mutatják; az újranyitás-összevetés ebből a felvételből nem végezhető el.
+- **"Az Időrendből indított diavetítés magától léptet 3 másodpercenként"**: cáfolt, 15,5 s pixelre azonos fotóval, és a `0x00802060` kilépésével.
+
+##### Bizonyítottság
+
+**Megerősített:** a generátor képlete (két út, QEMU-méréssel) és a szálanként 1-es kezdőállapot (két út: a `__initptd` olvasata és a CRT-tárolások teljes bejárása), a `0x008014d0` kapuja és a jelzők íróinak teljes listája (két út, mérés is), a rejtett módban szórt mezők képletei (két út, mérés is), az időköz 3 s a job-373 felvételen (két út), a szünetelő indulás (két út). **Feltételes:** a `0x007fe600` mozgásképlete (csak A út), a `[0xd67849]` alkalmazás-aktív értelmezése (a `WM_ACTIVATEAPP` ágból olvasva, futásidejű mérés nélkül), a kártyakép-lapok rögzítettsége (szemmel nézve, képpontos összevetés nélkül). **Független újralevezetés (#140) ebben a körben nem futott;** az indítóra marad. A QEMU-mérés szakaszai a valódi gépi kódon futottak, de a vizsgált szakasz a függvény közepéről indult (a `0x008015ad`-`0x008016c6` rész), a teljes függvény pozitív esetű (jelző = 1, lista nem üres) futtatása a segédhívások miatt nem készült; ezt a kapu elágazásának külön mérése (§2) és a mezőképletek mérése együtt fedi.
 
