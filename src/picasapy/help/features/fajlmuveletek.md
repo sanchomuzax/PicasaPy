@@ -170,7 +170,8 @@ szövege attól függ, **hova** kerül a fájl:
 
 Az ablakban két gomb van, a jóváhagyó gomb és a **Mégse**.
 Megnyitáskor a **Mégse** gomb kapja a fókuszt, így egy véletlen **Enter**
-nem töröl semmit. Az ablak alján a **Ne kérdezzen újból, mindig
+nem töröl semmit. Törlés után a program a törölt képek helyén álló
+következő képet jelöli ki, így a rácsban folytathatod. Az ablak alján a **Ne kérdezzen újból, mindig
 távolítsa el** jelölővel kapcsolhatod ki, hogy a program legközelebb is
 rákérdezzen. Ugyanezt a **Beállítások ▸ Általános** lapon is
 megteheted („Törlés a lemezről megerősítés nélkül"), és ott vissza is
@@ -211,11 +212,14 @@ A helyi menüben ezen kívül:
   ablak pedig ezt írja: „Ehhez a fájltípushoz nincs társított
   alkalmazás." (A néző helyi menüjének **Társítás** tétele még nem
   működik.)
-- **Teljes elérési út másolása** — a vágólapra teszi az útvonalat.
+- **Teljes elérési út másolása** — a vágólapra teszi az útvonalat. A
+  tétel csak akkor látszik, ha egyetlen kép van kijelölve.
 
 ## Mappák
 
-- **Mappa ▸ Áthelyezés…** — az egész mappa átköltöztetése. Ha ez menet
+- **Mappa ▸ Áthelyezés…** — az egész mappa átköltöztetése. A célt a
+  **Mappa tallózása** ablakban választod ki; ez a mappa jelenlegi
+  szülőmappájából indul, a gombjai **OK** és **Mégse**. Ha az áthelyezés menet
   közben elakad (például egy olvashatatlan almappánál), a mappa a régi
   helyén marad, és a célban **nem marad félkész másolat**. Egyetlen olyan
   pillanat van, ami már nem fordítható vissza — ott a hibaüzenet megmondja,
@@ -223,7 +227,8 @@ A helyi menüben ezen kívül:
 - **Mappa ▸ Törlés…** — a mappa törlése a lemezről. A program külön
   rákérdez, mert az almappákat is elviszi.
 - **Mappa ▸ Eltávolítás a Picasából…** — a mappa csak a nézetből kerül
-  ki, a fájlok maradnak. A program **Jóváhagyás** címmel rákérdez, és a
-  kérdésben a mappa **teljes útvonala** áll. A két gomb a **Mappa
+  ki, a fájlok maradnak. A program **Jóváhagyás** címmel rákérdez; a
+  kérdés előtt a színes Picasa-logó áll, a kérdésben pedig a mappa
+  **teljes útvonala**. Ugyanez a kérdés jön a mappa helyi menüjéből is. A két gomb a **Mappa
   eltávolítása** és a **Mégse**; a fókusz a **Mappa eltávolítása**
   gombon áll, tehát az Enter eltávolítja a mappát.

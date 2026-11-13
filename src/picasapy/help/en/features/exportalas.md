@@ -10,8 +10,10 @@ the **Export** button in the photo tray.
 
 You can choose the destination folder and resize the photos by setting
 the pixel length of the longer side. You can keep the **Original Size**
-or choose a smaller size. A note beside the slider describes the
-expected file size and quality.
+or choose a smaller size. If you have no saved export settings yet, the
+window opens with resizing to 800 pixels selected, as in the original
+Picasa. A note beside the slider describes the expected file size and
+quality.
 
 For image quality, choose **Auto**, **Normal**, **Maximum**, or
 **Minimum**, or set a custom value with the slider. Maximum writes a
@@ -43,9 +45,9 @@ with **Folder** ▸ **Export as HTML Page...** or the folder's context
 menu.
 
 Choose a **Web page title:** and a destination **Folder:**. The
-suggested first-use destination is `Picasa HTML Exports` inside your
-user's Documents folder on Windows, and inside your photo folder on
-other systems. It is only a suggestion: PicasaPy creates it after you
+suggested first-use destination is a subfolder named after the open
+folder, inside `Picasa HTML Exports` in your user's Documents folder on
+Windows, or inside your photo folder on other systems. It is only a suggestion: PicasaPy creates it after you
 choose **Export**, and you can change it.
 
 Choose one of the seven built-in templates (see below), then set the

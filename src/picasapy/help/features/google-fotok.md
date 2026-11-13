@@ -1,10 +1,20 @@
 # Feltöltés a Google Fotókba
 
-A képtálca zöld **Feltöltés a Google Fotókba** gombja a tálcán lévő
-képeket feltölti a saját Google Fotók-fiókodba.
+A képeidet a saját Google Fotók-fiókodba töltheted fel. Négy helyről
+indíthatod:
 
-Ez az egyetlen működő feltöltési út. A menükben lévő, hasonló nevű
-tételek (például **Eszközök ▸ Feltöltés**) továbbra sem működnek, lásd
+- a képtálca zöld **Feltöltés a Google Fotókba** gombjával (a tálca
+  képei),
+- a bal hasábon egy **mappa** helyi menüjének **Feltöltés a Google
+  Fotókba...** tételével (a mappa összes képe),
+- a bal hasábon egy saját **album** helyi menüjének **Feltöltés a Google
+  Fotókba...** tételével (az album összes képe),
+- a rácsban a mappa fejlécének **Feltöltés** gombjával (a mappa összes
+  képe, lásd [A könyvtár](konyvtar.md)).
+
+A menükben lévő többi, hasonló nevű tétel (például **Eszközök ▸
+Feltöltés**, vagy a **Legutóbb frissítve** album helyi menüjének
+feltöltési tétele) nem működik, lásd
 [Ami még nem érhető el](meg-nem-erheto-el.md).
 
 ## Bejelentkezés
@@ -77,8 +87,15 @@ A fül ilyenkor kiírja az okát:
    [A könyvtár](konyvtar.md)).
 2. Kattints a tálca zöld **Feltöltés a Google Fotókba** gombjára.
 
-A gomb szürke, ha nem vagy bejelentkezve, ha üres a tálca, vagy ha már
-fut egy feltöltés.
+A gomb szürke, ha üres a tálca, vagy ha már fut egy feltöltés vagy
+bejelentkezés. Ha még nem vagy bejelentkezve, a gomb először a
+bejelentkezést indítja el a böngészőben (lásd fent), és a sikeres
+bejelentkezés után magától folytatja a feltöltést. Ugyanígy működik a
+mappa- és albummenü, valamint a mappa fejlécének **Feltöltés** gombja
+is.
+
+Mappából vagy albumból indítva a program a mappa, illetve az album
+**összes** képét feltölti, a kijelöléstől függetlenül.
 
 A program **a tálca összes képét** feltölti, nem csak a tálcán
 kijelölteket. Egy kis ablak mutatja, hol tart (például **Fotó

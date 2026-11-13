@@ -45,6 +45,9 @@ the whole batch in one step.
 After editing a photo, you can copy its edits to other photos:
 
 1. Select the edited photo and choose **Edit** ▸ **Copy All Effects**.
+   Select only one photo: if several are selected, an **Info** window
+   asks you to choose one (**Please select a single picture to copy the
+   effects from.**) and nothing is copied.
 2. Select the photos to receive the edits, then choose **Edit** ▸
    **Paste All Effects**.
 

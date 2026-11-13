@@ -1,11 +1,20 @@
 # Upload to Google Photos
 
-Use the green button on the photo tray to upload the photos there to
-your Google Photos library.
+You can upload your photos to your Google Photos library from four
+places:
 
-This is the only working upload path. Similar-looking items in the
-menus, such as the upload command under **Tools**, are still
-unavailable; see [Features not yet available](meg-nem-erheto-el.md).
+- the green upload button on the photo tray (the photos in the tray),
+- **Upload to Google Photos...** in a folder's context menu in the
+  left pane (all of the folder's photos),
+- **Upload to Google Photos...** in the context menu of one of your own
+  albums in the left pane (all of the album's photos),
+- the **Upload** button in the folder header in the grid (all of the
+  folder's photos; see [The Library](konyvtar.md)).
+
+Other similar-looking items in the menus, such as the upload command
+under **Tools** or the upload item in the **Recently Updated** album's
+context menu, do not work; see
+[Features not yet available](meg-nem-erheto-el.md).
 
 ## Sign in
 
@@ -67,8 +76,14 @@ The settings show the reason. Common messages include:
 1. Add the photos to the photo tray; see [The library](konyvtar.md).
 2. Start the upload with the green tray button.
 
-The button is disabled when you are not signed in, the tray is empty,
-or an upload is already running.
+The button is disabled when the tray is empty or when an upload or
+sign-in is already running. If you are not signed in yet, the button
+first starts sign-in in the browser (see above) and continues the
+upload automatically after you sign in. The folder and album menus and
+the folder header's **Upload** button work the same way.
+
+When you start from a folder or album, PicasaPy uploads all of its
+photos, regardless of the selection.
 
 PicasaPy uploads every photo in the tray, not only the photos selected
 there. A small window shows progress, including which photo is being

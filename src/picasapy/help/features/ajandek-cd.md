@@ -42,8 +42,10 @@ Ajándék CD panel becsukódik (a képtálca tartalma megmarad).
 **Az ajándék CD elnevezése**
 
 - **CD neve** — ez lesz a lemez neve, **legfeljebb 16 karakter** (a mező
-  nem is engedi hosszabbat). Ha üresen hagyod, a fájl neve lesz a lemez
-  neve is.
+  nem is engedi hosszabbat). Megnyitáskor a megnyitott mappa neve áll
+  benne; átírhatod. Ha üresen hagyod, a fájl neve lesz a lemez neve is.
+- **Diavetítéssel együtt** - bepipálva jelenik meg. Ma még nincs hatása
+  arra, mi kerül a lemezre.
 
 Jobb oldalon a **Lemezre írás** indítja a munkát. A **Mégse** ugyanúgy
 visszavisz a könyvtárba, mint a Továbbiak hozzáadása — a tálca tartalmát

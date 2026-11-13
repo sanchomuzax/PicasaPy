@@ -48,7 +48,8 @@ PicasaPy. This affects only the most recent save.
 - **File** ▸ **Save As...** writes the edited photo with a different
   name or in another location. JPEG and WebP are available.
 - **File** ▸ **Save a Copy** writes an edited copy beside the original
-  with a name chosen automatically.
+  with a name chosen automatically. When several photos are selected,
+  only the highlighted (focused) photo is copied.
 
 If the chosen name is already in use, PicasaPy reports that it cannot
 save another file with that name.

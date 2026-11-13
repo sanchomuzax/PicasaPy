@@ -46,7 +46,10 @@ visszavonása** egy lépésben visszacsinálja az egész köteget.
 Ha egy képet beállítottál, a szerkesztéseit átviheted másik képekre:
 
 1. Jelöld ki a kész képet, majd **Szerkesztés ▸ Az összes effektus
-   másolása**.
+   másolása**. Egyetlen képet jelölj ki: ha több kép van kijelölve, a
+   program egy **Információ** ablakban kéri, hogy egy képet válassz
+   (**Válasszon ki egy képet, amelyről az effektusokat másolni
+   szeretné.**), és nem másol semmit.
 2. Jelöld ki azokat a képeket, amikre rá szeretnéd tenni, majd
    **Szerkesztés ▸ Az összes effektus beillesztése**.
 
