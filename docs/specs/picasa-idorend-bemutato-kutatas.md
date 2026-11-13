@@ -3240,3 +3240,124 @@ Nyitott kérdések: 4 nyílt · 5 lezárva · 0 blokkolt · 0 hatókörön kív�
 
 **Megerősített:** a generátor képlete (két út, QEMU-méréssel) és a szálanként 1-es kezdőállapot (két út: a `__initptd` olvasata és a CRT-tárolások teljes bejárása), a `0x008014d0` kapuja és a jelzők íróinak teljes listája (két út, mérés is), a rejtett módban szórt mezők képletei (két út, mérés is), az időköz 3 s a job-373 felvételen (két út), a szünetelő indulás (két út). **Feltételes:** a `0x007fe600` mozgásképlete (csak A út), a `[0xd67849]` alkalmazás-aktív értelmezése (a `WM_ACTIVATEAPP` ágból olvasva, futásidejű mérés nélkül), a kártyakép-lapok rögzítettsége (szemmel nézve, képpontos összevetés nélkül). **Független újralevezetés (#140) ebben a körben nem futott;** az indítóra marad. A QEMU-mérés szakaszai a valódi gépi kódon futottak, de a vizsgált szakasz a függvény közepéről indult (a `0x008015ad`-`0x008016c6` rész), a teljes függvény pozitív esetű (jelző = 1, lista nem üres) futtatása a segédhívások miatt nem készült; ezt a kapu elágazásának külön mérése (§2) és a mezőképletek mérése együtt fedi.
 
+
+#### 38.2.140 Gombképek, rétegsorrend és animációs képkockahatárok (#6532, 2026-11-13)
+
+**Hatókör.** A #6532 Időrend-kutatás három nyitott kérdésének lezárása az eredeti `Picasa3.exe` binárisából és a `runtime/respack.yt` erőforráscsomagból:
+1. a gombképek (erőforrások és állapotok: alap, lebegés, lenyomott),
+2. a fedőréteg (overlay) rétegei és pontos rajzolási sorrendje,
+3. az animációs képkockahatárok (indulási és leállási események).
+
+##### §1 A gombképek erőforrásai és állapotai
+
+**Bináris út és erőforrások.** A qshow bemutató-mód overlay-erőforrásait a `0x007fb210` konstruktor-függvény tölti be a `Picasa3.exe` fájlból a `0x00410fa0` betöltővel a `qshow` (`esi`) objektum mezőibe. A vezérlősávhoz négy gomb tartozik:
+- **Balra gomb**: `overlays/left` (ASCII sztring a `0x00cbd334` címen; objektummező: `[this+0x530]`; betöltés: `0x007fb223`; kirajzolás és hit-teszt: `0x007fe540` / `0x007ffe97`; kattintáskor: `0x007fd120`). A `runtime/respack.yt` csomagban 31×31 képpontos RGBA réteg, authorolt tervezési téglalapja: `(243, 405, 274, 436)`.
+- **Jobbra gomb**: `overlays/right` (ASCII sztring a `0x00cbd344` címen; objektummező: `[this+0x558]`; betöltés: `0x007fb261`; kirajzolás és hit-teszt: `0x007fe540` / `0x007ffead`; kattintáskor: `0x007fd150`). A `runtime/respack.yt` csomagban 31×31 képpontos RGBA réteg, authorolt tervezési téglalapja: `(366, 405, 397, 436)`.
+- **Kilépés (rácsra vissza) gomb**: `overlays/exit` (ASCII sztring a `0x00cbd37c` címen; objektummező: `[this+0x580]`; betöltés: `0x007fb31b`; kirajzolás és hit-teszt: `0x007fe540` / `0x007ffec1`; kattintáskor: `0x007fb820`). A `runtime/respack.yt` csomagban 43×28 képpontos RGBA réteg, authorolt tervezési téglalapja: `(8, 404, 51, 432)`.
+- **Indító (diavetítés) gomb**: `overlays/startbutton` (ASCII sztring a `0x00cbd3d0` címen; objektummező: `[this+0x738]`; betöltés: `0x007fb413`; kirajzolás és hit-teszt: `0x007fe540` / `0x007ffed5`; kattintáskor: `0x007fb820`, majd `[this+0x2e8]` vtable `+0x18`). A `runtime/respack.yt` csomagban 43×28 képpontos RGBA réteg, authorolt tervezési téglalapja: `(298, 404, 341, 432)`.
+
+**Állapotok (alap, lebegés, lenyomott):**
+- **Nincs külön gomb-állapotkép**: A `respack.yt` bináris rétegjegyzékében az `overlays/` névtérben semmilyen állapotváltozat (`_hover`, `_down`, `_pressed`, `_active`) nem létezik. Mind a négy gomb egyetlen statikus RGBA képpel rendelkezik.
+- **Lebegés (hover)**: A gombon magán nincs szín- vagy képi változás. A lebegést az egérmutató váltása jelzi: a `0x007ffc90` rajzoló a `0x007fe540` találati ellenőrzései után (`0x007ffe97`-`0x007ffee5`), ha a kurzor (`[this+0x420]`, `[this+0x424]`) a 4 gomb bármelyikének téglalapján belül van, az egérmutatót átváltja a `[this+0x5d0]` rétegre (`overlays/rollovermouse`, `0x00cbd364`, 15×18 képpont); ha kívül van, a normál `[this+0x5a8]` réteget rajzolja (`overlays/mouse`, `0x00cbd354`, 12×19 képpont).
+- **Lenyomott (pressed)**: A gomb lenyomásakor (`WM_LBUTTONDOWN = 0x201` a `0x007fde80`-ban) a `0x007fda80` hit-teszt közvetlenül meghívja az adott gomb parancsfüggvényét. Nem állít be vizuális lenyomási elmozdulást, sötétítést vagy alternatív réteget.
+
+**PicasaPy-összevetés:** A `TimelinePanel.qml:424-570` jelenleg QML `Button` elemeket használ, egyedi `Canvas`-szal rajzolt vektoros ikonokkal (`timelineExitIcon`, `timelineLeftIcon`, `timelinePlayIcon`, `timelineRightIcon`), és mesterséges `down` állapot-színezést (`timelineExitButton.down ? ... : ...`). Az eredeti működésben nincsenek ilyen állapot-színezések, és a gombok a csomagolt képeket használják.
+
+##### §2 A fedőréteg (overlay) rétegei és pontos rajzolási sorrendje
+
+A `0x00800a30` fő képernyőrajzoló és a `0x007ffc90` előtérrajzoló utasításszintű végigkövetése alapján a felület rétegei alulról felfelé (z-sorrendben) a következő sorrendben kerülnek a közös háttérpufferbe:
+
+1. **Alap háttérréteg és ovális shell**: `[this+0x46c]` puffer. Ezt a `0x00802180` inicializálja az aktuális fókuszfotó szürkítésével (`0x00802130`), kontrasztnyújtásával (`0x009db610`), valamint az ablakméretre nyújtott `overlays/overlay` (`0x00cbd3e8`, `[this+0x648]`, 640×480 RGBA kép) ráterítésével (`0x009ab410`). A render-ciklusban a `0x008001c0` rajzolja ki legalsó rétegként. Ez a réteg adja az ovális ablakkeretet és az alsó vezérlősáv sötét hátterét.
+2. **Szövegfeliratok és vezetőpontok**: A `0x007fee70` (hívva a `0x007ffca2` címről) rajzolja:
+   - A kijelölt gyűjtemény nevét (jobbra zárva, 130 képpont magasan, 1 px fekete árnyékkal, `HelveticaNeue MediumCond`, `0x00a48e10`).
+   - A hónap/év feliratot (jobbra zárva, 158 képpont magasan, `ytDateTime::Format2` `%s %d` formátummal, `0x00cd89c4`, `0x00c87dd0`).
+   - A dátumskála két végfeliratát (pl. `May 2009` és `November 2026`).
+   - A címtől a fókuszkártyához vezető 10 pontból álló pontozott ívet.
+3. **Beúsztatási segédrétegek (nem használtak)**: `[this+0x620]` és `[this+0x5f8]` rétegek (`0x009ab690` hívások `0x007ffcc9` és `0x007ffcf7` címeken), a megnyitáskor max. 39%-os átlátszósággal (értékük üres, nem rajzolnak képpontot).
+4. **Fotókártyák rétege**: A `0x007fd180` (hívva a `0x007ffd05` címről) rajzolja a köbös racionális Bézier-görbe (`0x007fbab0`) mentén elhelyezett kártyákat. A mélységi sorrendet a `0x007fe7c0` előzetesen megállapítja (`FUN_00604480` rendezés).
+5. **Időskála tengelyvonal**: `overlays/timeline` (`0x00cbd38c`, `[this+0x6c0]`, 245×7 px, authorolt: `(197, 461, 442, 468)`), kirajzolva a `0x009ab690` által a `0x007ffd2b` címen.
+6. **Időskála dátumpontok**: `overlays/timelinedot` (`0x00cbd3a0`, `[this+0x6e8]`, 7×8 px, authorolt: `(215, 462, 222, 470)`), ciklusban kirajzolva a tengely mentén a `0x009ab690` által a `0x007ffe4a` címen.
+7. **Időskála csúszka-fogantyú**: `overlays/sliderthumb` (`0x00cbd3b8`, `[this+0x710]`, 25×23 px, authorolt: `(260, 457, 285, 480)`), kirajzolva a fókuszgyűjtemény pozíciójában a `0x009ab690` által a `0x007ffe90` címen.
+8. **Vezérlőgombok**: A négy gomb kirajzolása és hit-tesztje a `0x007fe540` függvénnyel (`0x009ab690` blit):
+   - `overlays/left` (`[this+0x530]`, `0x007ffe97`-`0x007ffea0`),
+   - `overlays/right` (`[this+0x558]`, `0x007ffead`-`0x007ffeb4`),
+   - `overlays/exit` (`[this+0x580]`, `0x007ffec1`-`0x007ffec8`),
+   - `overlays/startbutton` (`[this+0x738]`, `0x007ffed5`-`0x007ffedc`).
+9. **Egérmutató kurzor**: A legfelső réteg a kurzor (`0x007ffee9`-`0x007ffef7`): `overlays/rollovermouse` (`[this+0x5d0]`, 15×18 px), ha a kurzor a 4 gomb bármelyike felett áll; egyébként `overlays/mouse` (`[this+0x5a8]`, 12×19 px), kirajzolva a `0x009ab690` által.
+10. **Képernyőre másolás**: A `0x007fe470` MMX-alapú pixelmásoló (`emms`, `0x009dd4f0`) a kész puffert a képernyőablakra másolja.
+
+**PicasaPy-összevetés:** A `TimelinePanel.qml` rétegei eltérnek: a vezérlősáv külön téglalapként (`timelineControlBar`, 400-422. sor) rajzolódik ki, a csúszkatengely és a gombok Canvas/Rectangle elemekből épülnek, és hiányzik a natív kurzorréteg.
+
+##### §3 Animációs képkockahatárok és események
+
+A qshow animációinak indulási és leállási határait az alábbi események és függvények vezérlik:
+
+1. **Belépési (nyitó) animáció**:
+   - *Indulási esemény*: Időrend megnyitása (`0x005e8a70` -> `0x008037e0` -> `0x007fda00`). A `0x007fda00` rögzíti a kezdő QPC időbélyeget a `[this+0x430]` mezőbe (`0x007fda3d`), és beállítja a `[this+0x3b8]=1`, `[this+0x3b9]=1`, `[this+0x3be]=1` jelzőket.
+   - *Képkocka-lefutás*: A `0x00800a30` minden képkockán a `0x009a51b0` függvénnyel számítja az eltelt másodperceket a `[this+0x430]` bázisból; az értéket a `[0.0, 1.0]` tartományba szorítja (`0x00c79c88` = 1.0f), megszorozza `256.0`-val (`0x00cf39d8`), és ezt a `p` skálát adja át a `0x007ffc90`-nek.
+   - *Leállási határ*: Pontosan 1,0 másodperc elteltével (`t >= 1.0s`) a `p` eléri a 256 felső korlátot. A feliratok és skálaelemek beállnak a 100%-os végértékre. További elmozdulás vagy áttűnés nincs.
+
+2. **Gyűjteményváltó / lapozási animáció (kártyamozgás)**:
+   - *Indulási események*:
+     - Bal nyíl billentyű (`VK_LEFT = 0x25`) vagy egérgörgő fel (`0x008011b0`),
+     - Jobb nyíl billentyű (`VK_RIGHT = 0x27`) vagy egérgörgő le (`0x00801210`),
+     - Balra overlay gombkattintás (`0x007fda80` -> `0x007fd120`),
+     - Jobbra overlay gombkattintás (`0x007fda80` -> `0x007fd150`),
+     - Időskála csúszka felengedése húzás után (`WM_LBUTTONUP = 0x202` a `0x007fde80`-ban -> `0x007fd770`).
+   - *Kezdőpont*: A fenti hívók mind a `0x007fd0c0` függvényt hívják a `+2.0f` vagy `-2.0f` (`0x00cf3a48`) irányparaméterrel. A `0x007fd0c0` a `0x009a5210` segítségével rögzíti a kezdő QPC-másodpercet, hozzáadja a 2,0 másodpercet végidőként, és a `0x009e6010` segéddel új animátorrekordot ütemez a `[this+0x2f8+0x38]` tárolóba.
+   - *Képkocka-lefutás és csillapítás*: A `QDrawable` tick metódusa (`vtable +0x60`, `0x00803ab0` -> `0x00802060`) minden képkockán meghívja a `0x00801cb0`-at, amely a `0x007fc010`-et futtatja. A `0x007fc010` kiértékeli az animátort a `0x009e5f90` függvénnyel, és a sebességet minden lépésben megszorozza a `0x00cf40b0` címen levő `0.95` lebegőpontos konstanssal (`v = v * 0.95`).
+   - *Leállási határ*: Az ütemezett rekord futása 2,0 másodperc után lejár (`0x009e5e70`). A látható mozgás az exponenciális 0.95-ös csillapítás miatt már kb. 1,40-1,47 másodpercnél a képponthatár alá csillapodik (ezzel magyarázható a job-373 felvételen mért 1.400 és 1.467 mp-es mozgásablak). Amikor a mozgás lecseng, a `0x007fd8c0` kiválasztja a `0.666`-hoz (`0x00cf4860`) legközelebb eső kártyát (`[this+0x510]`), és ha gyűjteményhatár lépett át, a `0x008018a0` újraépíti a kártyakészletet.
+
+3. **Diavetítés automatikus léptetési animációja**:
+   - *Indulási esemény*: Szóköz billentyű (`0x00801270` -> `0x00801130`) vagy az indító overlay gomb (`0x007fda80` startbutton ág).
+   - *Kezdőpont és időzítés*: A `0x00802060` rögzíti a QPC időbélyeget a `[this+0x520]` mezőbe. A `0x009a51b0` méri az eltelt időt.
+   - *Képkockahatárok és léptetés*: Amikor az eltelt idő eléri a beállított diaidőt (`SlideshowEffectTime` = 3 mp, `0x007facd3`, vagy 4,0 mp az igazolt profilban):
+     - A `0x00802630` lapoz a következő diára és elindítja a képkocka-átmenetet.
+     - Újra beolvassa a QPC-t (`QueryPerformanceCounter`) a `[this+0x520]` mezőbe, újraindítva a következő dia várakozási ciklusát.
+   - *Leállítási esemény*: Escape billentyű (`0x00801270` -> `0x007fb820`) vagy újabb Szóköz leállítja a diavetítést és visszatér Időrend-módba.
+
+##### §4 Bizonyítottság, utak és cáfoló kísérletek
+
+**Bizonyítottsági fok: megerősített.**
+- A gombképek, azok overlay mezői és az állapotok hiánya két független úton megerősített (bináris kódút + respack rétegfa).
+- A 10 rétegből álló fedőréteg-sorrend megerősített (bináris utasításolvasat + Ghidra dekompilátumok).
+- Az animációk kezdő- és végpontjai, a QPC bázisidők, az 1.0 mp-es clamp, a 2.0 mp-es rekordidő és a 0.95-ös csillapítási szorzó megerősített (bináris diszasszembly + konstans-kiolvasás + korábbi QEMU/videómérések).
+
+| Állítás | Forrás | Bizonyítottság |
+|---|---|---|
+| A négy vezérlőgomb erőforrása: `overlays/left`, `overlays/right`, `overlays/exit`, `overlays/startbutton` | bináris (`0x007fb210`, `0x00cbd334`, `0x00cbd344`, `0x00cbd37c`, `0x00cbd3d0`) | megerősített |
+| A gomboknak nincs külön hover/pressed képe a csomagban; a lebegést a kurzor váltása jelzi (`overlays/mouse` vs `overlays/rollovermouse`) | bináris (`0x007fe540`, `0x007ffe97`-`0x007ffef7`, `0x00cbd354`, `0x00cbd364`) + `respack.yt` | megerősített |
+| A lenyomás (`WM_LBUTTONDOWN`) nem vált képet, azonnal a műveletet hívja | bináris (`0x007fde80`, `0x007fda80`) | megerősített |
+| A fedőréteg rajzolási sorrendje: háttér shell -> feliratok/ívek -> kártyák -> időskála tengely -> pontok -> csúszka -> 4 gomb -> kurzor -> blit | bináris (`0x00800a30`, `0x008001c0`, `0x007ffc90`, `0x007fe470`) | megerősített |
+| Belépési animáció: 1,0 mp-es felső korlát (`0.0 .. 1.0 * 256.0`), QPC bázis `[this+0x430]` | bináris (`0x007fda00`, `0x00800a30`, `0x00c79c88=1.0f`, `0x00cf39d8=256.0`) | megerősített |
+| Lapozási animáció: 2,0 mp-es rekordidő (`0x00cf3a48=2.0f`), lépésenkénti 0.95-ös sebességcsillapítás | bináris (`0x007fd0c0`, `0x007fc010`, `0x00cf40b0=0.95`) | megerősített |
+| Megállási fókusz: a 0.666-hoz legközelebbi kártya kiválasztása | bináris (`0x007fd8c0`, `0x00cf4860=0.666`) | megerősített |
+| Diavetítési léptetés: `[this+0x520]` QPC időzítő, automatikus léptetés `0x00802630` | bináris (`0x00802060`, `0x009a51b0`) | megerősített |
+
+**A két független út:**
+- **A út (bináris utasításolvasat):** A `Picasa3.exe` gépi kódjának diszasszemblye capstone-nal (`0x007fb210`, `0x007fe540`, `0x007ffc90`, `0x007fde80`, `0x007fda80`, `0x007fd0c0`, `0x007fc010`, `0x00802060`) és a PE adatszekciójából kiolvasott pontos lebegőpontos konstansok (`0x00c79c88` = 1.0, `0x00cf39d8` = 256.0, `0x00cf3a48` = 2.0, `0x00cf40b0` = 0.95, `0x00cf4860` = 0.666).
+- **B út (független erőforrás- és dekompiláció-vizsgálat):** A `respack.yt` fájl rétegindexének és fejléceinek közvetlen dekódolása (`tools/picasa/respack.py`), amely bizonyítja az `overlays/` rétegek pontos méreteit és a külön állapotképek teljes hiányát; valamint a Ghidra-dekompilátumok (`2026-10-21-koteg-1021c.txt`, `2026-10-21-idorend-12.txt`, `2026-10-20-idorend-5.txt`, `2026-11-05-idorend-6532-retegek.txt`) és a korábbi Colab videómérések (job-373, job-446). A két út maradéktalanul egyezik.
+
+**Cáfoló kísérletek:**
+1. *Gombállapotok cáfolata:* Megpróbáltam cáfolni azt az állítást, hogy a gomboknak nincs külön lenyomott vagy lebegő állapotképe. A `0x007fe540` és a `0x007fda80` részletes kódjában nincs gombonkénti állapotváltó kép vagy elmozdulás; a `respack.yt` rétegjegyzéke kizárja az ilyen nevű rétegek létezését. Az egyetlen interaktív vizuális visszajelzés a kurzor átváltása `overlays/rollovermouse`-ra (`0x007ffee9`).
+2. *Rétegsorrend cáfolata:* Megpróbáltam cáfolni a rétegek egymásra rajzolását, feltételezve, hogy a vezérlősáv különálló UI elemként nem része a fő rajzolóhuroknak. A `0x00800a30` és `0x007ffc90` kódja ezt cáfolta: minden elem egyetlen szoftveres pufferbe rajzolódik szigorú sorrendben (háttér -> szöveg/pontok -> kártyák -> skála -> gombok -> kurzor), és a végén a `0x007fe470` egyszerre blitteli a képernyőre.
+3. *Animációs időtartam cáfolata:* Megpróbáltam cáfolni a lapozás 2,0 mp-es rekordidejét az 1,4 másodperces videómérés alapján. A bináris utasításai cáfolták az 1,4 másodperces beégetett értéket: a bejegyzett időtartam 2,0 mp (`0x00cf3a48`), de a `0x007fc010` minden híváskor `0.95`-tel csökkenti a sebességet (`0x00cf40b0`), így a látható mozgás exponenciálisan lecseng már 1,4 mp körül.
+
+##### §5 Összevetés a PicasaPy-jal és teendők
+
+| Eredeti (bináris és respack) | PicasaPy (QML) | Teendő |
+|---|---|---|
+| A négy gomb egyetlen statikus kép (`overlays/left`, `overlays/right`, `overlays/exit`, `overlays/startbutton`). Nincs hover/pressed kép. | `TimelinePanel.qml:424-570`: QML `Button` elemek, Canvas rajzolta ikonok, és `timelineExitButton.down ? ... : ...` stílusú pressed háttérszín-váltás. | Cseréld le a Canvas ikonokat és a szintetikus gombháttereket a natív `overlays/*` képekre. Szüntesd meg a lenyomott/lebegő gombszínezést. |
+| A lebegést az egérmutató váltása jelzi: `overlays/mouse` (12×19) -> `overlays/rollovermouse` (15×18), ha a 4 gomb bármelyike felett áll. | Nincs egyedi kurzorváltás az overlay gombok felett (alapértelmezett rendszerkurzor látható). | A gombok fölé érve válts az `overlays/rollovermouse` kurzorképre (vagy `Qt.PointingHandCursor`-ra). |
+| A vezérlősáv sötét háttere a háttérképbe ágyazott `overlays/overlay` keret része, nem külön sáv. | `TimelinePanel.qml:400-422`: Külön `Rectangle` (`timelineControlBar`) mesterséges színátmenettel (`GradientStop`). | A vezérlősáv téglalapja helyett az `overlays/overlay` keretet használd, a gombokat és a skálát e fölé rétegezd. |
+| Rétegsorrend: Háttér (`+0x46c`) -> Feliratok és vezetőpontok (`0x007fee70`) -> Fotókártyák (`0x007fd180`) -> Skálatengely (`+0x6c0`) -> Pontok (`+0x6e8`) -> Csúszka (`+0x710`) -> 4 Gomb (`+0x530..+0x738`) -> Kurzor (`+0x5a8/+0x5d0`). | `TimelinePanel.qml`: A rétegek sorrendje részben eltér; a csúszka és a gombok nincsenek szigorúan a kártyák és a skála fölé zárolva. | Biztosítsd a fenti 9 lépéses szigorú Z-sorrendet a QML elemek egymásutániságával. |
+| Nyitó animáció: pontosan 1,0 másodperces progressz-korlát (`0x00c79c88`), a feliratok és skála 0..100%-ra, a segédrétegek 0..39%-ra futnak be. | `TimelineView.qml`: nincs nyitó progressz-skála, a panel azonnal láthatóvá válik. | Vezess be egy 1,0 másodperces nyitó progressz átmenetet a feliratok és a skála beúszásához. |
+| Lapozási mozgás: 2,0 mp-es rekordidő (`0x00cf3a48`), képkockánként 0.95-ös sebességcsillapítás (`0x00cf40b0`), a megállási fókusz a 0.666-os Bézier-pont (`0x00cf4860`). | `TimelineView.qml:45,82-100`: `backgroundFadeDurationMs: 1400`, tetszőleges sebesség és időzítő. | Alkalmazd a bináris 2,0 mp-es bázisidejét és a 0.95-ös csillapítási képletét a kártyamozgatásra, és a 0.666 fókuszválasztást a gyűjteményváltáshoz. |
+
+**A #6532 „Kész, ha” pontjainak állása ebből a vizsgálatból:**
+- ✅ **A gombképek és állapotaik**: bináris címekkel és erőforrás-azonosítókkal igazolva (megerősített).
+- ✅ **A fedőréteg rétegei és rajzolási sorrendje**: a teljes 10 lépéses rajzolási sorrend bináris címekkel igazolva (megerősített).
+- ✅ **Az animációs képkockahatárok**: a nyitó animáció (1,0 mp), a lapozási animáció (2,0 mp, 0.95 csillapítás) és az automatikus diavetítés eseményei és határai bináris címekkel és konstansokkal igazolva (megerősített).
+- ⛔ A teljes jegy lezárásához a videofelvétel integrációja és a párhuzamos billentyű-ág lezárása szükséges.
+
+
