@@ -3054,4 +3054,63 @@ A PicasaPy `TimelineView.qml`-je (277-290. sorok) az `updateSliderFromX(x)` és 
 
 **Nyitott.** Nincs új nyitott kérdés a sliderthumb és a timeline sáv eseményútjára; a mechanizmus statikusan és mérve lezárva.
 
+#### 38.2.127 A billentyű-, üres belépési, betöltési és visszatérési utak (#6532, 2026-11-13)
+
+**Hatókör.** Ez a célzott zárókör a viselkedési lap öt kiválasztott A pontjából vizsgálja a Ctrl+Space-t, a Space első képét, az üres belépést, a betöltésjelzőt, valamint az Escape/Vissza általános visszatérését. Nem vizsgálja a gombképeket, a fedőréteget, az animációs képkockahatárokat, a kártyaforrás-listát vagy a dátumtömböt. Wine és előkészített PE→QEMU harness nem érhető el; a `qemu-i386` csak Linux i386 ELF-et futtat, a helyi C fordító AArch64 célú. Emiatt új futásidejű képkocka- vagy UI-mérés nem készült.
+
+##### 1. Üres belépés - feltétel és PicasaPy-eltérés
+
+**A út - eredeti bináris.** A `0x005e8a70` közös bemutató-mód kezelő a `0x005d2a70` eredményét vizsgálja. Ha ez 0, vagy ha a `CThumbUI+0x2c0` objektum `+0x154` mezőjének `0xfffffffe` maszkolt értéke 0, a `0x005e8a70` az `IDS_MUST_SELECT` sztringet (`0x009ae710`) kéri le, majd a `0x009807f0` üzenetutat hívja. A `0x005d2a70` a `CThumbUI+0x2bc` szolgáltató elemsorán végighalad, és a nem nulla `state` értékű rekordokat számolja. A gyűjtemények feldolgozása után a függvény az összegyűjtött rekordok kódolt darabszámát (`uStack_d0 & 0xfffffffe`) is vizsgálja; 0 esetén ugyanazt az üzenetet adja. A MakeTimeline hívóút a `0x005da7ab`-`0x005da7ae` helyen vezet a `0x005e8a70` felé.
+
+**B út - független adat- és forrásellenőrzés.** A szöveg-erőforrás xrefje a `0x00e01776` UTF-16 szöveget a `0x005e8a70` függvényhez köti: `You must have images in the Picture Tray to do this.` A `CThumbUI+0x2c0` mező `CAlbumState` típusa a konstruktor/RTTI-útból ismert; a MakeTimeline külön count/index útja a `0x005e9434` címen a `0x004a0980`-nak adja át ugyanezt az objektumot, amely a `[state+0x13c] >> 1` elemszámot adja vissza (38.2.63). Üres CAlbumState-listánál a MakeTimeline feldolgozó ciklusa ezért nulla iterációt végez, az eredménylista üres marad, és a `uStack_d0` utólagos kapuja ugyanazt az üzenetet küldi. A `+0x2bc` ettől külön `CThumbDB` szolgáltató. A PicasaPy forrásában a Ctrl+5 út újratölti és megnyitja az Időrend panelt akkor is, ha a modell üres; a `TimelineView.qml` ilyenkor `currentIndex = -1` értéket állít be, és nincs üresállapot-üzenet (`MainKeyboardShortcuts.qml:406-412`; `MainTimeline.qml:96-104`; `TimelineView.qml:259-265`).
+
+**Következtetés.** Az eredeti nem indít bemutatót, ha nincs állapotképrekord, ha a kódolt CAlbumState-listaszám maszkja nulla, vagy ha a szűrés után üres a qshow bemeneti rekordlistája; mindhárom eset az `IDS_MUST_SELECT` üzenethez vezet. A PicasaPy megnyitja az üres Időrend nézetet. Az `+0x154` mező emberi jelentését nem állítom; a gyűjtemény nélküli esetet a külön, `+0x13c` elemszámot olvasó MakeTimeline út is alátámasztja.
+
+**Cáfoló kísérlet (15.2).** Azt próbáltam cáfolni, hogy az `IDS_MUST_SELECT` lelet az Időrend belépésére vonatkozik, nem csak valamelyik másik közös bemutató-módra. A `0x005da7ab` timeline parancs-hívásától a `0x005e8a70` közös kezelőig követtem az utat, és ellenőriztem, hogy ugyanebben a függvényben szerepel a `Preparing timeline...` út is. Ez a leletet az Időrend-belépőhöz köti. A cáfoló kontrollja az erőforrás-xref: az `IDS_MUST_SELECT` szöveg hivatkozása ugyancsak a `0x005e8a70`-re mutat. A vizsgálat nem nevezi meg emberi nyelven a `+0x154` mezőt; csak a maszkolt bináris feltételt rögzíti.
+
+##### 2. Ctrl+Space és Space első képe
+
+**A út - billentyűágak.** A `0x00801270` `WM_KEYDOWN`/Space-kezelőjében a Ctrl+Space ág a `[this+0x3ba]` jelzőt 1-re írja (`0x008012fb`) és kezelt eredménnyel tér vissza; ebből az ágból nem hívja közvetlenül a `0x00801130` normál Space-váltót vagy a `0x00803110` objektumváltót. A külön normál Space-ág `[this+0x3bb] == 0` esetén a `0x00801130`-at hívja (`0x00801334`), nem nulla esetén a `0x00803110`-et (`0x0080131f`). A `0x00801130` a `+0x3bb` állapotot fordítja át, majd a `+0x3ba` értékétől függően a `0x00aa6f40` segédhívást kihagyhatja. A `0x00803110` az objektum állapotát módosítja és a host aktív objektumát cserélő `0x00802be0`-t hívja.
+
+**B út - kezelőazonosítás és PicasaPy-forrás.** A qshow `QDrawable` vtable-jének `+0x30` slotja a `0x00801270`; a vtable/RTTI-út és a közvetlen billentyűág-olvasat külön vizsgálatból egyezik (38.2.63). A PicasaPy `TimelineView.qml` ugyanazt az ágat futtatja minden Space eseményre, mert a QML az `event.key` mezőt vizsgálja, a `event.modifiers` értékét nem (`TimelineView.qml:393-406`). A Ctrl+Space ezért PicasaPy-ban a `startCurrentSlideshow()` műveletet kéri.
+
+**Következtetés.** A két program billentyűútja eltér. Az eredeti Ctrl+Space elsődlegesen a `[this+0x3ba]` jelzőt írja; a PicasaPy közvetlenül elindítja az aktuális gyűjtemény diavetítését. Az eredeti jelző látható következménye nem ismert, mert a `0x00aa6f40` meglévő dekompilálása csak a `+0x84` virtuális hívást mutatja, a célosztályt/hatást nem. A Ctrl+Space megvalósítási eltérés ezért nem kap fejlesztői javaslatot, amíg a hatás nem tisztázódik.
+
+**Space első fotója.** A normál Space eredeti belépőága ismert, de a qshow fókuszrekordjából átadott első fotó nem. A `0x00803110` meglévő Ghidra-kimenete a qshow belső objektumát és host-váltását mutatja, de nem nevezi meg az első vetített rekordot. A PicasaPy `MainTimeline.qml` az aktuális kollekció diavetítési modelljének 0. sorával indul (`MainTimeline.qml:106-125`). Az eredeti első fotó kérdésére nincs bizonyított válasz.
+
+##### 3. Betöltésjelző
+
+A `0x005e8a70` timeline ága a `Preparing timeline...` szöveget a `0x009ae560` szövegkezelőn át előkészíti, majd a `0x00415500` folyamatjelző segédhez jut (`0x005e9476`). A segéd `ytProgress::vftable` objektumot inicializál, meghívja a `0x00415380` frissítőt, majd ha a folyamatjelző fogadójának mutatója nem nulla, meghívja annak virtuális `+0x14` metódusát a szöveggel. A feldolgozás végén a fogadó virtuális `+0x0c` metódusát hívja. A `string_xrefs.csv` külön xrefje a `Preparing timeline...` szöveget a `0x005e8a70`-hez rendeli.
+
+**Következtetés és határ.** Bizonyított, hogy a timeline belépőút folyamatjelző objektumot és visszahívó fogadót használ. Nem bizonyított, hogy az adott futásban a fogadó mutatója nem nulla-e, melyik konkrét UI-objektum a cél, vagy a callback felhasználó által látható jelzőt rajzol-e. A PicasaPy QML nyitóútja nem jelenít meg folyamatjelzőt (`MainTimeline.qml:96-104`; `TimelineView.qml:319-324`), ezért a látható eltérés még nem dönthető el.
+
+##### 4. Escape és Vissza: általános visszatérési út
+
+Az Escape handler (`0x007fb820`) a oneup gazdaobjektum vtable `+0x14` metódusát hívja; a `0x008032e0` `oneup/exit` ága ettől független eseményútból ugyanezt teszi. A `0x008037e0` a oneup `+0x50` mezőjébe a `0x00982bf0` által létrehozott `ytWindow` qshow hostot teszi; a RTTI a host vtable-ját `0x00cd87fc` címen azonosítja, a `+0x14` slot célja `0x00983270`. A `0x00983270` normál ágában a host saját `[this+0x6c]` HWND-jére `PostMessageA(WM_CLOSE=0x10,0,0)` hívás kerül, ha a `DAT_00d67858` értéke 1-nél kisebb; másik globális állapotnál szálablak-felsoroló ág fut.
+
+**B út - külön Vissza gomb és host callback.** A Vissza/Exit esemény kezelője (`0x008032e0`) Escape-től külön ágon, a oneup `+0x50` host pointerének vtable `+0x14` slotján át jut a `0x00983270`-hez. Ez a host-művelet bezárási üzenetet küld, nem választ a qshow kártyalistájából új fotót. A két hívóág ezért egyezik abban, hogy ugyanazon qshow host visszatérési útját zárja.
+
+**PicasaPy-összevetés.** A QML zárófüggvény (`MainTimeline.qml:89-94`) kifejezetten a fókuszált kollekciót nyitja meg és annak `firstPhotoPath` képét választja ki, majd bezárja a Timeline ablakot. Az eredeti bizonyított művelete a qshow host bezárása; a host mögötti UI pontos gyűjtemény-/fotókijelölését a statikus callback nem nevezi meg. A viselkedési táblázat ezért nyitva hagyja a nem job-239 belépési út utáni pontos kijelölést, miközben a közös Escape/Vissza záróutat dokumentálja.
+
+**Cáfoló kísérlet (15.2).** Azt az ellenhipotézist próbáltam megcáfolni, hogy a Vissza gomb másik, helyi navigációs parancsot hajt végre, mint az Escape. A két eseménykezelő külön ágát önállóan követtem a `ytWindow` vtable `+0x14` slotjáig, majd a cél `0x00983270` törzsét ellenőriztem. Mindkét út a qshow host bezárási/ablak-enumerációs callbackjére jut; egyik hívóban sem szerepel külön fókuszkártya- vagy fotóindex-kiválasztás. A cáfoló eredménye a callback út azonosságát támasztja alá, de nem zárja ki a Windows `WM_CLOSE` utáni külső, futásidejű állapot-helyreállítást.
+
+##### 5. Bizonyíték- és nyitottkérdés-tábla
+
+| Állítás | Forrás | Bizonyítottság |
+|---|---|---|
+| Az üres belépés `IDS_MUST_SELECT` ága: nincs állapotképrekord, nulla kódolt CAlbumState elemszám, vagy üres szűrt qshow-rekordlista. | bináris (`0x005e8a70`, `0x005d2a70`, `0x005e9434`, `0x004a0980`); üzenet-xref (`0x00e01776`); PicasaPy-forrás (`MainKeyboardShortcuts.qml:406-412`, `TimelineView.qml:259-265`, `MainTimeline.qml:96-104`) | feltételes; a kapu utasításútja és a független count/index út egyezik, élő üres katalógus nem lett mérve |
+| Ctrl+Space közvetlenül a `[this+0x3ba]` jelzőt írja, nem a normál Space kezelőt hívja. | bináris (`0x00801270` @ `0x008012fb`); QDrawable vtable (`0x00cbd66c` `+0x30` → `0x00801270`); PicasaPy QML (`TimelineView.qml:393-406`) | feltételes a látható következményre; a közvetlen flag-írás bizonyított |
+| A normál Space az eredeti lejátszási útba lép, de az első fotó nincs azonosítva. | bináris (`0x00801270`, `0x00801130`, `0x00803110`); PicasaPy (`MainTimeline.qml:106-125`) | nyitott |
+| A timeline megnyitása `ytProgress` callbackot készít elő a `Preparing timeline...` üzenettel. | bináris (`0x005e8a70`, `0x009ae560`, `0x00415500`, `0x00415380`); string-xref (`0x005e8a70`) | feltételes a látható rajzolásra; callback-út bizonyított |
+| Escape és `oneup/exit` külön útból a qshow `ytWindow` host callbackját hívja. | bináris (`0x007fb820`, `0x008032e0`, `0x008037e0`, `0x00982bf0`, `0x00983270`); RTTI/vtable (`0x00cd87fc`) | megerősített a hívásút egyezésére; a pontos szülőválasztás nyitott |
+
+**Nyitott, pontos megszerzési út.**
+
+- Ghidra-kör kell: 0x00aa6f40 - mi a `[qshow+0x26c]` vtable `+0x84` célművelete, amelynek hívását a Ctrl+Space által beírt `+0x3ba` jelző kihagyja, és van-e ennek felhasználó által látható következménye? A meglévő dekompiláció a virtuális hívás célját és hatását nem nevezi meg. [blokkoló]
+- Ghidra-kör kell: 0x00803110 - a qshow Space-átmenetében mely képrekordot és indexet adja át elsőként az aktív OneUp vetítési objektumnak? A meglévő kimenet csak az állapotváltást és a host aktívobjektum-cseréjét mutatja. [blokkoló]
+- Ghidra-kör kell: 0x005e8a70 - a timeline ág `0x00415500` hívásának mely konkrét progress-sink objektum a tulajdonosa, és mely vtable-implementáció fogadja/rajzolja a `Preparing timeline...` üzenetet? A meglévő kimenetben a `piStack_6c` target és az `0x00415500` virtuális `+0x14` callback célja nincs feloldva. [blokkoló]
+- A nem job-239 belépési út szülőablakának tényleges kijelölése (`collection`, `photo`, `index`) **NINCS MEG**. Megszerzése: az eredeti Picasa futó Colab-mérésében a timeline megnyitása előtt rögzíteni a szülőnézetet és kijelölt fotót; ezután Escape, majd a külön `oneup/exit` Vissza gomb; a két zárás után képernyőképen és ablaklistán rögzíteni a szülőnézetet és a kijelölést.
+
+**A kiválasztott 5 pont állapota.** ✅ Az üres belépés kapujának bináris feltétele és PicasaPy-eltérése dokumentálva. ⛔ Ctrl+Space látható következménye, ⛔ Space első fotója, ⛔ a `ytProgress` tényleges látható rajzolása, ⛔ a nem job-239 visszatérés pontos szülőkijelölése nyitott. A viselkedési lap 14 eredeti A pontjából így **13 marad nyitva**; a #6532 nem zárható le.
+
 
