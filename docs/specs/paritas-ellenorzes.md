@@ -1161,3 +1161,38 @@ A kollázs bemeneti halmazának és a kijelentkezett Upload gomboknak az eltér�
 | Parancs | Eredeti | PicasaPy | Eltérés |
 |---|---|---|---|
 | Copy Full Path | Egy kijelölt képnél látható a Delete from Disk alatt, kettőnél hiányzik. | A javítás előtt két kijelöltnél is látszott; a javítás után csak egynél látszik. | A `PhotoContextMenu.qml` menüpontja nem vette figyelembe a kijelöltek számát; javítva. |
+
+### #6862 kiegészítés: a tálca Print és Export gombja (2026-11-13)
+
+Ez a kiegészítés a két nyitva maradt tálcagomb bináris útját és az Export
+alapértékeit rögzíti. A job-639/14 és job-639/19 képkockafájlok nem voltak
+benne a helyi `meroadat.tar` archívumban; a megfigyelésük az #6862 átadott
+mérési összefoglalójából és a korábbi táblázatból származik, nem újramért adat.
+
+| Kérdés | Megállapítás | Forrás |
+|---|---|---|
+| Tálca Export parancsazonosító | A `0x005d9cc0` eseménykezelő az `outputlayout/folderbutton` nevet vizsgálja, majd `0x005312b0`-t hívja. Ezen a gombúton numerikus parancsazonosító: **NINCS MEG**. | `bináris (0x005d9cc0, 0x00c8fb00)` |
+| Fájl > Export menü | `ID_FILE_EXPORTTOFOLDER = 0x9c81`; a `0x005cb990` menü-diszpécser `0x005312b0`-ra fut. A tálca és a menü ugyanazt a kezelőfüggvényt hívja, de nem bizonyított, hogy a tálcagomb a menü numerikus azonosítóját küldi. | `bináris (0x005cb990, 0x005312b0)` |
+| Tálca Print parancsazonosító | A `0x005d9cc0` az `outputlayout/pbutton` nevet a `0x00744a00` kezelőhöz irányítja. Ezen a gombúton numerikus parancsazonosító: **NINCS MEG**. | `bináris (0x005d9cc0, 0x00c8fae8, 0x00744a00)` |
+| Fájl > Print menü | `ID_FILE_PRINT = 0xe107`. A `0x005cb990` menüág egy állapotfeltételt vizsgál: az egyik ág az `outputlayout/pbutton` nevű műveletet küldi, a másik közvetlenül `0x00744d00`-t hív. Ezért a menü és a tálca közös útja feltételes, nem általános. | `bináris (0x005cb990, 0x005cd9bc-0x005cd9d6)` |
+| Print Layout nézet | A job-639/14 felvétel leírása teljes Print Layout nézetet mutat. A tálca `pbutton` útja `0x00744a00`-hoz, majd a PrintPanel-építő `0x00743700`-hoz vezet. Az index a `PrintPanel::vftable` címet `0x00c9bd4c`-nél tartalmazza, a `thumbui/printpanel` erőforrásnév pedig `0x00c8f0f0`-nél van. A nézetváltó pontos hívása: **NINCS MEG**. A `0x007448a0` panelállapot-kezelő közvetlen hívási útja a tálca `0x00744a00` ágától nincs igazolva. | `mérés (job-639/14, átadott összefoglaló)`; `bináris (0x00744a00, 0x00743700, 0x00c9bd4c, 0x00c8f0f0)` |
+| Eredeti Export méret | A `0x00738c00` konstruktor a `FileExportSize` kulcs hiányakor 3-at ad át (`0x00738c58`). A méretlista 0-alapú 3. indexe 800 px. A mentés a `0x00739960` útban ugyanezt a kulcsot írja. A tiszta profilú job-645 mérés szintén 800 px átméretezést látott; a job-639 profilbeállítása nem ismert. | `bináris (0x00738c43, 0x00738c58, 0x00739960)`; `mérés (job-645, export-parbeszed.md 3.2)` |
+| Eredeti Export célhely | A konstruktor előbb a `CExportPrefsDialog::deffolder` kulcs nyers `Picasa\Exports\` alapját tölti be, majd a korábban mentett `DefaultExportPath` értékkel felülírhatja. A `0x00739960` mentési út a kiválasztott értéket tartósítja. A job-639 képen látható pontos célhely és a hozzá tartozó beállításérték: **NINCS MEG**. | `bináris (0x00738cd6, 0x00738d16, 0x00caf994, 0x00caf984, 0x00caf9b4, 0x00739960)` |
+| PicasaPy Export induló érték | A jelenlegi forrás tiszta beállításnál `resize=True`, `size=3`, azaz 800 px; a QML a megőrzött állapotból tölti vissza a rádiót és a méretet. A célhely a megőrzött út, ennek hiányában `<Pictures>/Picasa/Exports`. A korábban feljegyzett QTest „Eredeti méret” állapotának tényleges beállításértéke: **NINCS MEG**. | `src/picasapy/app/export_prefs.py:35-36, 91-110`; `src/picasapy/app/qml/PicasaPy/ExportDialogs.qml:179-199`; `src/picasapy/app/export_controller.py:143-154`; `mérés (korábbi QTest-összefoglaló)` |
+
+#### Két független út és cáfoló ellenőrzés
+
+- **A út, utasítások:** a tálca-eseménykezelő `0x005d9cc0` a két név szerinti műveletet külön kezeli; a `folderbutton` ága `0x005312b0`-ra fut, a `pbutton` ága `0x00744a00`-ra. A menü-diszpécser `0x005cb990` `0x9c81` ága szintén `0x005312b0`-ra jut. A `0xe107` ágnál viszont állapotfüggő a folytatás.
+- **B út, címkék, index és mérés:** az index `string_xrefs` táblája a `folderbutton` és `pbutton` neveket a tálca-eseménykezelőhöz köti; a menüazonosítók a meglévő `0x005cb990` Ghidra-kimenetben szerepelnek. Az Export `FileExportSize` és `DefaultExportPath` kulcsait külön olvasó `0x00738c00` és író `0x00739960` függvények, a tiszta job-645 felvétel pedig 800 px induló méretet mutat. A PrintPanel osztály RTTI-bejegyzése és a `thumbui/printpanel` erőforrásnév függetlenül támasztja alá a mérésben látott Print Layout felületet.
+- **Egyezés:** az Export gomb és menü ugyanazt a kezelőfüggvényt hívja, de a tálcaút nem küldött numerikus menüazonosítóként igazolható. Printnél a menüazonosító `0xe107`, a tálcaút név szerinti, és a menüág csak az egyik feltétel mellett irányít a `pbutton` műveletre.
+- **Cáfoló kör:** az Export közös útjára vonatkozó állítást az eltérő menüágak és a közvetlen utasításút ellenőrzésével próbáltam cáfolni; mindkét út `0x005312b0`-nál találkozik. A Print feltétel nélküli azonosságát a `0x005cb990` nemnulla állapotú ága cáfolja, amely `0x00744d00`-t hív. A `0x007448a0` címre mutató közvetlen hivatkozások `0x00743980` és `0x00745770` felől jönnek, nem a `0x00744a00`-ból, ezért ezt nem nevezem bizonyított tálcás nézetváltó hívásnak. A tiszta profilú job-645 800 px állapota cáfolja, hogy az 800 px és az eredeti méret közti különbség minden profilban alapérték-eltérés lenne; a konkrét job-639 előzményt nem dönti el.
+
+#### PicasaPy-kötés és hátralévő kérdések
+
+PicasaPyban a tálca Print `MainTrayBar.qml:56`-on és a Fájl > Print `MainMenuBar.qml:301`-en ugyanazt a `Main.qml:523` `openPrint()` műveletet hívja. Ez a `PrintDialog.qml:19-23` külön, az egész alkalmazást blokkoló (modális) `Window` ablakát nyitja. A korábbi QTest-leírás bal oldali panelt mond; ez a megfigyelés és a jelenlegi QML `Window` deklarációja nincs egymással összeegyeztetve, a felületet nem mértem újra. A tálca Export `MainTrayBar.qml:42`-n, a menü Export `MainMenuBar.qml:283-284`-en az `ExportDialogs.qml` `openForSelection()` műveletéhez jut; a menü nézőmódban külön átadja a célképsorokat. Az `export_prefs.py:20` modul elején álló megjegyzése az átméretezést hamis alapértékként írja le, miközben a tényleges mezőtérkép `:110` és a meglévő teszt `test_export_beallitasok_1138.py:63-64` igaz alapértéket ad meg. A gombok felelősségi fájljai: `TrayActionArea.qml`, `MainTrayBar.qml`, `MainMenuBar.qml`, `Main.qml`, `PrintDialog.qml` és `ExportDialogs.qml`.
+
+**Bizonyítottsági fok: feltételes.** Az Export kezelőfüggvény azonossága és a bináris beállításkulcsok megerősítettek. A Print teljes nézetváltó hívása, valamint a job-639/19 konkrét profilértékei nyitva maradnak. A PicasaPy aktuális tiszta Export-alapértéke átméretezés 800 px, ami egyezik a job-645 tiszta profilú mérésével; a korábbi QTest eredményhez használt profilérték nincs meg.
+
+- `Ghidra-kör kell: 0x00744a00: mely közvetlen vagy virtuális hívás váltja át a főnézetet a PrintPanelre az outputlayout/pbutton tálcaútján, és a 0x007448a0 része-e ennek az útnak? [blokkoló]`
+- **NINCS MEG:** a job-639/14, job-639/19 és PicasaPy QTest képkockafájlok helyi példánya; megszerzés: az eredeti és a PicasaPy képkockákat tartalmazó fájlok felvétele a mérőarchívumhoz.
+- **NINCS MEG:** a job-639 Export célhely pontos szövege és mindkét program elmentett Export-profilja; megszerzés: azonos kétképes bemenet, külön tiszta profil és azonos újrahasznált profil mellett rögzíteni a beállításkulcsokat, a célhelyet és az Export képkockáját.
