@@ -1161,3 +1161,73 @@ A kollázs bemeneti halmazának és a kijelentkezett Upload gomboknak az eltér�
 | Parancs | Eredeti | PicasaPy | Eltérés |
 |---|---|---|---|
 | Copy Full Path | Egy kijelölt képnél látható a Delete from Disk alatt, kettőnél hiányzik. | A javítás előtt két kijelöltnél is látszott; a javítás után csak egynél látszik. | A `PhotoContextMenu.qml` menüpontja nem vette figyelembe a kijelöltek számát; javítva. |
+
+
+## #6862: a 0x00744a65 virtuális hívás
+
+A tálca Print gombjának (`outputlayout/pbutton`) hívási lánca a `0x005d9cc0 -> 0x00744a00` úton fut. A `0x00744a00` függvényben a `0x00744a5e-0x00744a65` címtartomány virtuális hívást hajt végre a `[ebp+0xed0]` objektum `+0x258` eltolásán lévő mutatón keresztül.
+
+### 1. Az érintett objektumok és típusok statikus feloldása
+
+- **A `[ebp+0xed0]` objektum (`CKeywordDialog`):**
+  - A hívó `0x00744a00` függvény `ebp` regisztere a `CThumbUI` példány mutatója.
+  - A `CThumbUI` `+0xed0` eltolásán a lebegő/kihúzható kulcsszó- és címkekezelő panel (`CKeywordDialog`) mutatója ül.
+  - Kezdőérték: a `CThumbUI` konstruktora (`0x005643e0`, `0x00564d8c`) 0-ra inicializálja (`mov dword ptr [ebp+0xed0], ebx`).
+  - Azonosítás: a `CThumbUI::UpdateKeywordStatus` metódus (`0x0065ac80`, `0x0065ad02`, `0x0065b07c`) a `*(int *)(param_1+0xed0)` mutatót adja át a `0x00840b80` függvénynek, amely a `0x00cc0120` címen lévő `"CKeywordDialog::numstatus"` sztringet használja.
+
+- **A `+0xed0+0x258` helyen ülő objektum (`ytUIDialog::ParentDialog`):**
+  - Típus: `ytUIDialog::ParentDialog` (mérete 0x9c bájt).
+  - Konstruktor: `FUN_009d4a80` (`0x009d4a80-0x009d4c21`). A függvényben az `operator new(0x9c)` és a `0x00a70d20` belső inicializáló után a `0x009d4ae1` utasítás írja be a vtáblát: `mov dword ptr [edi], 0x00cda6e8`.
+  - A mutató beírása a dialógusba: `0x009d4afa: mov dword ptr [ebp+0x258], ecx` (ahol `ebp` a dialógus, `ecx` a frissen allokált `ytUIDialog::ParentDialog`).
+  - RTTI szimbólum: `ytUIDialog::ParentDialog::vftable`.
+  - Vtable-cím: `0x00cda6e8` (RVA: `0x008da6e8`).
+  - Pásztázási bizonyíték: a teljes `.text` szakaszban a `0x00cda6e8` konstans kizárólag a `0x009d4ae3` címen (`FUN_009d4a80`) fordul elő; a binárisban nincs más kód, amely erre a vtáblára hivatkozna vagy beírná.
+
+### 2. A vtable +0x0c bejegyzése
+
+- A `0x00cda6e8` vtable 4. slotja (+0x0c): `0x00aa57a0`.
+- A függvény utasításai (mérete 20 bájt, `0x00aa57a0-0x00aa57b3`):
+  ```asm
+  0x00aa57a0: mov  eax, dword ptr [ecx + 0x6c]
+  0x00aa57a3: test eax, eax
+  0x00aa57a5: je   0xaa57b1
+  0x00aa57a7: push 0
+  0x00aa57a9: push eax
+  0x00aa57aa: call dword ptr [0x00c40890] ; USER32.dll!ShowWindow
+  0x00aa57b0: ret
+  0x00aa57b1: xor  eax, eax
+  0x00aa57b3: ret
+  ```
+- Az `[ecx+0x6c]` mező a szülőablak Win32 ablakkilincse (`HWND`).
+- A hívás paramétere a `push 0`, azaz a Win32 `SW_HIDE` konstans.
+- A `0x00c40890` IAT-bejegyzés a `USER32.dll!ShowWindow` API-ra mutat.
+- Jelentése: `ShowWindow(this->m_hWnd, SW_HIDE)` - a dialógusablak elrejtése.
+
+### 3. A főnézet váltásának vizsgálata
+
+- **A virtuális hívás nem végzi a főnézet váltását.**
+- A hívás kizárólag a megnyitott `CKeywordDialog` ablak elrejtésére szolgál, hogy a nyomtatási nézet megnyitásakor ne maradjon a képernyőn a lebegő címkekezelő.
+- Ha a kulcsszópanel nincs nyitva (`[ebp+0xed0] == 0`), a `0x00744a43: cmp eax, ebx` és `0x00744a56: je 0x744a67` elágazás miatt a hívás le sem fut.
+- Ugyanez a védelmi elrejtő hívás megtalálható minden egyéb nézet- és módváltás előtt is:
+  - `0x005315b8`: OutputBottleneck
+  - `0x005316cf`: `CThumbUI::OutputToEmail`
+  - `0x00531717`: egyéb kimeneti művelet
+  - `0x005d3035`: `editpanel/preview` szerkesztőnézetbe lépés
+  - `0x005e7498`: nézetváltás
+  - `0x005e8d5d`: diavetítés indítása
+- A főnézet tényleges váltását az `outputlayout.tre:38-42` deklaratív makrója, az `m_print_enable` (`macros.tre:285-291`) vezérli a UI eseménykezelő rétegében:
+  - `Property showtarget thumbui/printpanel`
+  - `Property hidetarget thumbui/acquirepanel`
+  - `Property hidetarget thumbui/editpanel`
+  - `Property hidetarget thumbui/mainuipanel`
+  - `Property hidetarget thumbui/infowell`
+  - `Property hidetarget thumbui/secretcoinclip`
+- A `0x00744a00` függvény feladata ezen felül a nyomtató állapotának vizsgálata (`0x00777840`), és nyomtató hiányában a hibaablak megjelenítése (`IDS_MUST_INSTALL_PRINTER`, `0x00cb0a24`), valamint a visszaállás (`printpanel/pcancelbutton`, `0x00c8ff24`). Telepített nyomtató esetén a nyomtatási panel vezérlőinek előkészítését végzi (`printpanel/froogle`, `printpanel/fullbutton`, `PrintLastSize`, `printpanel/optimizebutton`, `printpanel/normalbutton`).
+
+### 4. Bizonyítottsági fok és cáfolat
+
+- **Bizonyítottsági fok:** megerősített. A: közvetlen utasításszintű követés a `0x00744a00`, `0x009d4a80` és `0x00aa57a0` függvényekben az IAT feloldásával (`0x00c40890` = `USER32.dll!ShowWindow`). B: RTTI szimbólumok (`ytUIDialog::ParentDialog::vftable` = `0x00cda6e8`), sztring-xrefelek (`0x00cc0120` = `"CKeywordDialog::numstatus"`), és a teljes `.text` adatpásztázása a `0x00cda6e8` vtable-re (egyetlen író hely a teljes binárisban: `0x009d4ae3`).
+- **Cáfoló kísérlet:** Megvizsgáltuk azt a feltevést, hogy a `0x00744a65` hívás végzi a főnézet váltását. A feltevés kétszeresen cáfolt:
+  1. Csukott kulcsszópanel esetén (`[ebp+0xed0] == 0`) a `0x00744a56` ugrás átlépi a hívást, így alapértelmezett állapotban a hívás le sem fut;
+  2. A feloldott `0x00aa57a0` függvény kizárólag a `ShowWindow(this->m_hWnd, 0)` API-hívást tartalmazza, semmilyen panelváltási vagy layout-kezelési logikát nem valósít meg.
+
