@@ -3454,3 +3454,122 @@ Nyitott kérdések: 4 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kív�
 ##### Bizonyítottság
 
 **Megerősített:** a `0x007fe600` teljes lépésképlete (időlépés, pozíció, körbefordítás, véletlen járás, rekordszám, bélyegfrissítés) két úton: utasításolvasat és az eredeti gépi kód futtatása, 19 200 bitre egyező érték a hosszú pályákon, a hat átírásos kontroll eltérést ad. **Feltételes:** a rajzút leképezése, a hívás üteme, a `Ctrl+F`/`Ctrl+B` külön jelentése, a futó program FPU vezérlőszava és teljesítményszámlálója (a mérés vezérelt teljesítményszámlálóval és hamis szálblokkal futott, a rekordok kézzel épültek; Windows alatti futás nem volt).
+
+#### 38.2.190 Az Időrend kártyáinak forráscsoportjai és a kártyadátum írója (#6532, 2026-11-13)
+
+**Hatókör és módszer.** Két blokkoló kérdés: (1) a `0x006dc4c0` által a `0x004b8ee0` → `0x004b8470` → `0x004b29d0` láncnak átadott `CThumbUI+0x2c0` objektum (`CAlbumState`) mely sorai jutnak a qshow `+0x3a8` kártyalistájába, és milyen sorrendben; (2) melyik út írja a `0x0044f7c0` getter által olvasott dátumtömböt, és mit tárol. **A út:** a friss Ghidra-kimenet (`picasapy-agent/referencia/ghidra/2026-11-13-6845-6532-colab-decomp.txt`, az öt kért cím), a korábbi kimenetek (`2026-11-11-6532-colab-decomp-3/-5/-9/-10.txt`) és utasításszintű olvasat (`pe_dis.py`, `picasa_dis.py`); két teljes `.text` pásztázás a `paszta.py` kapujával (`+0x162` bájtra író utasítás, `+0xd8` dword-írás; csúcs 42 MiB). **B út:** az eredeti Picasa saját adata (`research/testdata`: három katalógus `db3` mappája, `albumdata`, `catdata`, `thumbindex.db`) a PicasaPy `pmpimport` olvasóival, és a job-239 felvétel dokumentált tényei (38.2.81). Becsült értéket nem használtam.
+
+##### §1 A lánc: mi jut át a `+0x2c0` objektumból a kártyalistáig (A út)
+
+1. **Átadás.** `0x006dc626`-`0x006dc62c`: `EAX = [EBP+0x2c0]`, hívás: `0x004b8ee0`. A `0x006dc4c0` (az első paraméter a `CThumbUI`, 38.2.108) hívói közt van a `0x004afcb0` (`0x004afd3c`; ez előbb a `0x004aae90`-et hívja, `0x004afd1a`) és a `0x004b07c0` (`0x004b0803`), tehát a lista a főablak minden állapotváltozásakor újraépül.
+2. **Sorok.** A `CAlbumState` `+0x138` mutatójú, `0x24` bájtos sorai az albumtábla sorai: ugyanaz a sorszám megy a `CThumbDB` oszlopolvasóinak (`+0x14` fájlnév, `+0x18` név, `+0x20` dátum, `+0x28` token; a kategóriát a `0x0044ddd0` adja). Az oszlop-objektumok a `CThumbDB`-ben: `token +0xaf0`, `name +0xb50`, `filename +0xbb0`, `date +0xc10`, `category +0xc78` (konstruktor: `0x004158ee`-`0x00415999`, a kulcsszövegek `0x00c80d68`, `0x00c7fa20`, `0x00c80d70`, `0x00c80d7c`, `0x00c80d84`); az albumtábla az `+0x988`, a kategóriatábla (`catdata`) a `+0x760` címen (`0x00415866`, `0x004158c9`). A virtuális albumokat a `0x004abe70` hozza létre (`0x004ad220` hívásai: `]star`, `]screensaver`, `]updated`, `]history:email`, `]history:upload`); a `0x004ad220` alapértelmezett kategórianeve a `Labels` (`0x004ad286`, sztring `0x00c7ec5c`).
+3. **Sorszámlista.** `0x004b8ee0` minden sort, amelynek `+0x0c` állapota nem nulla, felvesz a `+0x148` sorszámlistába, majd a `0x004baaa0` rendezi (`0x004a7890` összehasonlítóval), és hívja a `0x004b8470`-et (`0x004b9192`).
+4. **Rekordlista.** `0x004b8470` üríti a `+0x158` listát, hívja a `0x004b80d0`-t (társgazda- és nyilvános gazda-rekordok, 2-es és 9-es típus), majd sorszámonként a `0x004b29d0`-t, ha a `+0x9d` (`folderview`, 38.2.108) nulla, vagy a `0x004461a0` igaz (`0x004b85a0`-`0x004b85c8`); a fa nézetben (`+0x9d` nem nulla) a mappákat a `0x004b6190` hozza (5-ös, 8-as, 2-es típus, 38.2.112), ezek nem kártyák.
+5. **A kártyarekord.** `0x004b29d0`: a sor `+0x0c` állapota 2 kell legyen, különben nincs rekord (`0x004b2a1a`, 38.2.110). Ezután a kategória a `0x0044ddd0`-val (`0x004b2a11`); kategóriaváltáskor fejlécrekord (`0x004b2e10`, 3-as típus, `0x004b2a29`-`0x004b2a40`); ha a környezetrekord `+0x00` mezője egyenlő a sor kategóriájával, a sor kimarad (`0x004b2a49`-`0x004b2a4c`); különben a `0x004a0720(1, sor, 0, ...)` hívás az 1-es típusú rekordot adja (`0x004b2aa3`-`0x004b2ab4`).
+6. **A kártyalista.** A qshow `0x007fc7c0` csak az `+0x30 == 1` és `+0x18 == 0` rekordokból vesz sort (38.2.110); az 1-es típusú, nulla `+0x18`-as rekord egyedül a `0x004b29d0`-ból jön (38.2.112), tehát **minden `0x004b29d0`-rekord kártya**. A dátumot a sorszámhoz a `0x0044f7c0` adja (`IThumbDB +0x20`), a kártyarekord tartalmát a `0x004ae430` és a `0x007fa5b0` állítja elő; a `0xf8` bájtos kártyák a qshow `+0x3a8` listájába kerülnek (a függvényben `+0xb0`/`+0xb4`).
+
+##### §2 Mely sorok jutnak 2-es állapotba (az `+0x0c` állapotgép)
+
+Az állapot írója a `0x004ab520`; átmenetek: `0x004a8bb0` (1 → 3, 2 → 4), `0x004a8bf0` (3 → 1, 4 → 2). A 0 → 1 lépést a `0x004aa9f0` adja, az 1 → 2 lépést a `0x004aae90` (a `0x004b0190` nézetlekérés sikere esetén; Ghidra: `2026-11-11-6532-colab-decomp-10.txt`). A sorrekord mezői, amelyek a döntésben részt vesznek:
+
+| mező | érték és forrás |
+|---|---|
+| `+0x1a` érvényes | első kiértékelésnél a név (`IThumbDB +0x18`, `name` oszlop) nem üres és nem `root` (`0x004aab27`-`0x004aabaa`, a `root` sztring `0x00c817d4`); különben állapot 0 és a sor végleg kimarad |
+| `+0x18` album | a fájlnév üres (`0x004461a0`, `IThumbDB +0x14`) |
+| `+0x00` virtuális | a token nem üres, és nem `]album:`-nal (`0x00c811c4`) és nem `]facealbum:`-nal (`0x00c83408`) kezdődik (`0x004aca00`; az előtag-összehasonlító `0x00987030`) |
+| `+0x19` | a `0x004aa9f0` elején nullázza (`0x004aaa46`) |
+
+Döntés (`0x004aac38`-`0x004aae67`; a `CAlbumState` `+0x162` és `+0x310` jelzője nulla, vagyis nincs keresés):
+
+- **Felhasználói album** (album, nem virtuális): 2-es állapotba jut, ha a nézetlekérés sikeres (a tagsági listák megvannak); az elemszám nem számít, az üres album is 2-es állapotot kap (`0x004aae90`: üres tagságnál `+0x14 = 1`, állapot 2). A `+0x162` vagy a `+0x310` bekapcsolt állapotában az album a mappa szabályát követi (`0x004aac7a`-`0x004aac96`: a `+0x15` jelző nullázódik).
+- **Mappa és virtuális album:** a tagság elemszáma nagyobb nulla, a dátum nem nulla (nulla dátumnál a `0x00441ac0` automatikus dátumot próbál adni, `0x004aadc9`, 3. szakasz), és a `0x004afd60` nulla értéket ad (nem üres elemlista és jelzőtömb; a `+0x167` jelzőnél legalább egy tagnak 1 jelzőbájtja kell; a `+0x167` jelentése nincs meg). Ez a feltétel a gyakorlatban a nem üres tagságra szűkül.
+- **Sor a kategóriája miatt kimarad** (§1/5), ha a kategória lecsukott: a `0x004b2e10` a `0x004b3443`-`0x004b3469` címeken a környezetrekord `+0x00` mezőjét -1-re állítja (látható), ha a `catdata` `state` bájtja nem nulla (`0x004b3211`-`0x004b3226`: `0x006a5e60(CThumbDB+0x760, "state", kategória)`; sztring `0x00c817f0`) és a `+0x1d` jelző nem nulla; különben a kategória azonosítójára (rejtett). Keresési módban (`CAlbumState+0x162` nem nulla) a `state` nem számít (`0x004b3232`-`0x004b3256`: csak a `catdata` `info` oszlopa, `0x004ab5e0`, `0x00c812cc`, zárhatja ki).
+- A `+0x162` az **egyetlen** bájtra író utasítás a teljes `.text`-ben a konstruktoron (`0x004a17d6`) kívül a `0x00662c53`: a keresési kezelő `0x00662b20` (sztringek: `Search results for "%s"`, `CThumbUI::searchmatchstr`, `%d results: `) állítja, tehát **keresési mód jelző**.
+
+##### §3 B út: valódi katalógus és felvétel
+
+**A `category` oszlop a `catdata` sorára mutat.** Az `albumdata_category.pmp` 0-19 közti értékei a 20 soros `catdata` sorszámai (`research/testdata/Picasa2/db3`, 2371 `albumdata`-sor). Egyező példák: a 12-es kategória `Csilla` (47 sor, pl. `2014-01-25 Csilla kreatív dolgai`), a 13-as `Camera` (3 sor, `Instagram SGS3`), az 5-ös `Exported Pictures` (3 sor, `... export`), a 14-es `Downloaded Albums~sipos.aniko13` (2 sor, `Ovis Farsang...`), a 0-s `Labels` (41 sor: 7 virtuális token, 17 `]album:` felhasználói album fájlnév nélkül, 18 üres token- és nevű, `949998.0` dátumú sor), a 2-es `Folders on Disk` (2063 sor), a 8-as `People` (`]unknownface`, `Név nélküliek`), a 7-es `Hidden Folders` (1 sor). A `0x004ad220` `Labels` alapértelmezése (§1/2) ugyanezt a kapcsolatot adja a binárisból.
+
+**A `state` oszlop a gyakorlatban nulla is.** A tulajdonos katalógusában a `Labels` `state = 0` (lecsukott), minden más kategória 1; a `Picasa2-arcok` katalógusban két mappakategória (`PicasaPy-golden-kit`, `PicasaPy-merokit`) 0. Ebből a katalógusból az Időrendben **nem lenne** albumkártya, ha a §2 szabálya érvényes.
+
+**A job-239 felvétel egyezik a szabállyal** (38.2.81, `pmp-database.md` 4551. sor környéke): a kártyák: négy fixture-mappa, `PicasaTeszt`, `Recently Updated` (mind tagsággal, kibontott csoportokban); az `Unnamed` (`]unknownface`, nincs tagja) sor nem kártya. Két másik futás tárolt dátumpárja (`pmp-database.md`, 4551. és 4617. sor, nem a job-239 saját adata) szerint a `Recently Updated` dátuma mindkét futásban nagyobb, mint a `PicasaTeszt`-é (`46309,3385` és `46309,3243` a `46309,3217` ellen; `46309,4432` és `46309,4455` a `46309,4430` ellen), ami a látott PicasaTeszt → Recently Updated sorrenddel egyezik. Ez **egyezés, nem bizonyíték** a lecsukott kategóriára és a fa nézetre: ilyen felvétel nincs.
+
+##### §4 A kártyák sorrendje
+
+A `0x007fc7c0` a kártyák sorszámaihoz a dátumot a `0x0044f7c0`-val olvassa (`+0x88` tömb), a `0x007fc4c0` a `0x0049cd60`-nal **növekvő `double` kulcs szerint, alulról felépülő összefésüléses rendezéssel** állítja sorrendbe (sorszámok permutációja a `+0x98` tömbben). A rendezés **stabil**: az első menetek egyenlőségnél nem cserélnek (`<` csere, illetve `<=` megtartás, `0x0049cd60`), az összefésülő `0x0049ecd0`-t nem vizsgáltam. Azonos dátumnál ezért a `+0x148` sorszámlista sorrendje dönt, amit a `0x004baaa0` a `0x004a7890` összehasonlítóval állít elő (a kulcs nincs azonosítva). Valódi példa azonos dátumra: a `]screensaver`, `]updated`, `]history:email`, `]history:upload` sor mind `45772,771782407406` (a tulajdonos katalógusában).
+
+A rendezés **után** a `0x007fc4c0` a `+0x88` tömb minden elemét dekódolja (`0x0098b320`), két mezőjét kiolvassa (`0x0098ba30` → `+0x10`, `0x0098b9e0` → `+0x14`), majd újrakódolja a `0x0098b550(1, 0, 0, 0, ...)` hívással (`0x007fc510`-`0x007fc562`). A kártyarendezést ez nem érinti (az sorszámlista már kész); a mezők naptári jelentése nincs azonosítva (feltevés: hónap első napja, nem bizonyított).
+
+##### §5 A dátumtömb: ki írja, és mit tárol
+
+**A út (a getter és az író ugyanaz az oszlop).** A `0x0044f7c0` az `IThumbDB` `+0xc20` mezőjén át a `date` oszlop gyorsítótárának `+0x234` tömbjéből olvas: `[tömb+0x48] + sor*8`, az elemszám `[+0x4c] >> 1`, határon kívül a `+0xc28` tartalék (Ghidra: `0x0044f7c0`; `IThumbDB` = a teljes objektum `+0x48`). Az oszlop a `CThumbDB` konstruktorában születik: kulcs `date` (`0x00c80d7c`), kezelő tábla `ebp+0x988` (`0x00415950`-`0x0041596f`, `0x00495d30`). Az író a `IThumbDB` vtábla **3. rése, `0x004460a0`** (`0x00c81fb0`; thunk `0x0049f390`): `0x004460c3`-`0x004460d8` a `0x006a5c60(tábla = IThumbDB+0x940 = teljes+0x988, "date", sor, double)` hívás. A `0x006a5c60` a `0x006a41e0(tábla, név, 0x13320002)` hívással ugyanazt a gyorsítótár-bejegyzést keresi meg, amelyet a getter lusta betöltője (`0x00499650`) is, majd a `+0x234` tömbbe ír (`0x006a5d95`-`0x006a5db1`: `fcom [tömb+sor*8]`, azonosnál kihagyja, különben `fstp [tömb+sor*8]`; módosítás-jelzés `0x006a2a60`). **Ugyanaz a tábla, ugyanaz a név, ugyanaz a tömb: az író megerősített.**
+
+**Ki hívja az írót (az index pozitív találatai; kimerítő lista nincs):** a `0x00441ac0` (`0x004aa9f0` sorfrissítés, `0x00441e00` mappafelvétel a `Folders on Disk` és `Other Stuff` sztringekkel, `0x0055d320` átnevezési ág), a Mappa-tulajdonságok `autodate` kezelője (`0x00849dc0` → `0x00441760`), és az online album (`0x006f2fc0`, DB és ini is; `pmp-database.md`, 12. szakasz). A `0x00441ac0` (disszasszemblálva): a getterrel olvassa az aktuális dátumot; **ha az pontosan nulla**, a `0x00441760`-nal számolja az automatikus értéket (kezdőérték `949998.0`, `0x00c7ccf8`), és sikernél a 3. réssel írja, `bool = 0` (csak DB, ini nem). A `0x00441760` a mappa elemeinek **legkisebb** 64 bites időértékét veszi (`0x004419d6`-`0x004419e6`, a `0x004edf60` rekordlekérő mezője), és a `0x0098b650` alakítja `double`-ré: `FileTimeToSystemTime` → `SystemTimeToTzSpecificLocalTime(NULL)` → `Ordinal_184` (helyi `SYSTEMTIME` → változatidő).
+
+**B út (a tárolt érték = a legkorábbi képidő, helyi időre váltva).** Mérés a tulajdonos katalógusán: minden `albumdata` sor, amelynek `filename` mappájában a `thumbindex.db` talál képet (2305 sor; a `thumbindex` 1. időbélyege, a kép metaadat-dátuma, UTC-ként értve, `Europe/Budapest` helyi időre váltva, a mappa minimumához hasonlítva, ±1,5 s tűréssel):
+
+| katalógus | összehasonlítható sor | pontos egyezés a minimummal | tárolt későbbi | tárolt korábbi |
+|---|---:|---:|---:|---:|
+| `Picasa2/db3` | 2305 | **1983 (86,0%)** | 207 | 115 |
+| `Picasa2-arcok/Picasa2/db3` | 110 | 72 (65,5%) | 38 | 0 |
+| `1557-masolat-mentese/db3-utana/db3` | 108 | 71 (65,7%) | 37 | 0 |
+
+Az időzóna-váltás nélkül a pontos egyezés 0, az eltérés pontosan 1 óra télen és 2 óra nyáron: ez a `0x0098b650` helyi időre váltása. **A tárolt érték tehát első beíráskor a legkorábbi képidő, utána nem számolódik újra** (a "később" és "korábbi" eltérések a mappa tartalmának utólagos változásából vagy kézi beállításból adódnak: `.picasa.ini` `date=`, Mappa-tulajdonságok). A `pmp-database.md` korábbi "0/23 egyezik a legkorábbi képidővel" mérése a teljes katalógusos méréssel nem egyeztethető össze, ha ugyanazt az egyenlőséget vizsgálta; a mostani mérés időzóna-helyes és 2305 sorra fut. A felhasználói albumok (`]album:` fájlnév nélkül) és a virtuális sorok dátumának forrása **nincs mérve**: a virtuális sorok dátuma létrehozási bélyegnek látszik (négy sor azonos `45772,771782407406`), az albumsorok forrása (ini `[.album:token] date=` vagy első tag) a tagságadat hiányában nem vethető össze.
+
+**Mit tárol a kártya?** A kártya dátuma a sor **tárolt `albumdata_date` értéke** (OLE-változatidő, napok 1899-12-30 óta, a nap törtrésze az idő, helyi időben): mappánál az első beíráskor a legkorábbi képidő (vagy a `.picasa.ini` `date=` értéke, vagy kézi beállítás), nem a mappa fájlrendszer-ideje és nem az élő legkorábbi kép. A dátumsáv két vége (`0x007fee70`, 38.2.103) a rendezett lista **első és utolsó kártyájának** ugyanez a dátuma, nem a képek globális szélsőértéke.
+
+##### §6 Összevetés a PicasaPy-val és megvalósítási javaslat
+
+| Eredeti | Nálunk | Eredmény |
+|---|---|---|
+| A kártya = a lista minden 2-es állapotú sora: mappa (nem üres tagsággal), felhasználói album (üres is), virtuális album (nem üres tagsággal); a lecsukott kategória és a fa nézet kihagyhat sorokat (§1, §2). | Mappa: a látható fotókból; album: az `albums_in_index` nem üres sorai (`timeline_controller.py:218-247,269-291`). Virtuális album nincs. Kategóriaállapot és fa nézet nincs. | **eltér a virtuális albumokban** (a `Recently Updated` hiányzik, 38.2.81 szerint kártya); **egyezik a mappákban**; a kategória- és nézetfeltétel hatása **nem dönthető el** futásidőben (§3). |
+| A kártyadátum a tárolt `albumdata_date`: első beíráskor a legkorábbi képidő, utána állandó (§5). | A legkorábbi `taken_at` az élő, látható fotók közül (`timeline_controller.py:341-382`), fájlidő-tartalék nélkül. A `folders.date` (`index/sync_photos.py:202-240`: ini `date=` elsőbbség, különben a legkorábbi `taken_at_override`/`taken_at`/befagyasztott fájlidő) megvan az indexben, az Időrend nem használja. | **eltér:** az eredeti perzisztens dátumot használ (a mért katalógusban 14% eltérés a mai legkorábbi képidőtől), nálunk a dátum élő. |
+| A dátumsáv két vége az első és az utolsó kártya dátuma. | A sávszélek az összes látható fotó EXIF-szélsői (`timeline_controller.py:223-231,301-333`). | **eltér:** az utolsó kártya a mappa **legkorábbi** idejét viseli, nálunk a legkésőbbi fotóét. |
+| Azonos dátumnál a stabil rendezés a `+0x148` sorrendet tartja (kulcsa nincs meg). | Dátum, név (kisbetűs), azonosító (`timeline_controller.py:293-299`). | **nem dönthető el** (a `0x004a7890` kulcsa). |
+
+**Javaslat a hívónak (kódot nem módosítottam).** Csak a bizonyított pontok:
+
+1. **Mappakártya dátuma:** a `folders.date` (a `collage_album_fields.folder_date_iso` már olvassa, `collage_album_fields.py:65`) legyen az elsődleges dátumkulcs, a legkorábbi `taken_at` csak tartalék; az albumkártyánál az `albums.date`, tartaléka a legkorábbi tag. A rendezés maradjon teljes időponton (az eredeti `double` kulcs napszakot is tartalmaz, 38.2.108). A `folders.date` élő számítású, az eredeti első beírás után állandó: a felhasználói különbség csak azoknál a mappáknál várható, amelyek képei utólag változtak (a mért katalógusban 14%).
+2. **A dátumsáv két vége** a rendezett kártyalista első és utolsó kártyadátumából jöjjön, ne az összes fotó szélsőiből.
+3. **A virtuális albumok** (`Recently Updated`, `Starred`, `Screensaver`, `Emailed`, `Uploaded`) kártyáját **ne** adja hozzá a fejlesztő, amíg a dátumuk forrása nincs meg (§5, utolsó pont): becsült dátummal az eredeti sorrendje nem reprodukálható.
+4. **A lecsukott kategória és a fa nézet hatását** ne valósítsa meg, amíg a Colab-mérés (lent) nem készült el.
+
+**Kész, ha** (a hívó által kiadott fejlesztői jegyhez):
+
+- [ ] a mappakártya dátuma a `folders.date`, és egy teszt egy ini `date=` értékű mappán az ini dátumát adja (nem a legkorábbi képét);
+- [ ] a dátumsáv két vége az első és az utolsó kártyadátum, teszttel olyan katalógusra, ahol az utolsó kártya mappájában van a legkésőbbi fotónál korábbi dátumú kép;
+- [ ] a rendezés kulcsa teljes időpont, azonos dátumnál megnevezett, dokumentált tartaléksorrenddel;
+- [ ] vizuális egyezés: az eredeti `job-239` kártyasorrendje (4 fixture-mappa, `PicasaTeszt`) változatlan.
+
+**Mérési feladat (Colab, 1 feladat, a hívó adhatja fel):** Ctrl+5 három állapotban ugyanabban a katalógusban: (a) lapos mappanézet, a `Folders on Disk` csoport lecsukva; (b) fa mappanézet; (c) minden csoport kibontva, lapos nézet. Mérés: a kártyák neve és sorrendje. Ez dönti el a §2 lecsukási szabályának és a `+0x9d` szűrésnek a hatását.
+
+##### Nyitott kérdések mérlege
+
+Nyitott kérdések: 7 nyílt · 3 lezárva · 0 blokkolt · 0 hatókörön kívül · 0 "csak nyitva"
+
+| Kérdés | Állapot | Mi kell hozzá |
+|---|---|---|
+| A `+0x2c0` objektumból a kártyalistáig vezető lánc és a sorok forrása (mappa, album, virtuális) | **LEZÁRVA** (§1-§3) | |
+| A getter által olvasott dátumtömb írója | **LEZÁRVA** (§5: `0x004460a0` → `0x006a5c60`) | |
+| A mappakártya dátuma | **LEZÁRVA** (§5: első beíráskor a legkorábbi képidő, utána tárolt; 86,0%/65,5%/65,7% pontos egyezés) | |
+| A lecsukott kategória és a fa nézet futásidejű hatása a kártyákra | **NYÍLT** | A fenti Colab-mérés. |
+| A `0x004b2e10` `+0x1d` jelzőjének forrása | **NYÍLT** | Ghidra-kör kell: `0x004a4710` - a `CAlbumState+0xe4`/`+0xe0` objektum és a `0x004143c0` keresés jelentése (kategórianév egy halmazban). |
+| A `CAlbumState+0xd8` nézetmód értékei | **NYÍLT** | Ghidra-kör kell: `0x005d9cc0` - melyik parancs milyen módot állít a `0x004b07c0`-nal; a `+0xd8 == 3` ág nem hívja a fejlécépítőt (`0x004b2a2c`), így a kategóriarejtés nem érvényesül. |
+| Az üres felhasználói album kártyája | **NYÍLT** | Ghidra-kör kell: `0x007fc7c0` - a `0x00a6aa00` nem nulla eredménye megszakítja-e a kártyaépítést, és a `0x004ae430` üres taggal mit ad. |
+| Azonos dátumú kártyák sorrendje | **NYÍLT** | Ghidra-kör kell: `0x004a7890` - a sorszámlista rendezőkulcsa; és a `0x0049ecd0` összefésülés stabilitása. |
+| A virtuális és az albumsor dátumának forrása | **NYÍLT** | Ghidra-kör kell: `0x0055d730` és `0x00452a30` - az új sor dátuma (a `0x004ad220` hívásai); albumsorra a tagságot is tartalmazó katalógus. |
+| A `0x007fc4c0` rendezés utáni dátumátalakítása | **NYÍLT** (a kártyasorrendet nem érinti) | Ghidra-kör kell: `0x0098b550` - a `(1, 0, 0, 0)` argumentumok és a két kiolvasott mező jelentése. |
+
+##### Amit kizártam
+
+- **"A kártyadátum a mappa fájlrendszer-ideje"**: cáfolt (a tároló oszlop értéke 86,0%-ban a képek legkorábbi idejével egyezik, nem a mappáéval).
+- **"A kártyadátum a mappa legkésőbbi képe"**: cáfolt (a mért 2305 sorból 0 sor egyezik a legkésőbbivel az egyezők között; a minimum 1983).
+- **"A qshow a teljes katalógust listázza"**: cáfolt (a `0x004b29d0` állapot-, kategória- és `+0x9d` kapukat alkalmaz, §1-§2; teljes katalógusra csak keresési módban vagy `+0xd8 == 3` esetén emlékeztet, ez utóbbi nincs igazolva).
+- **"A `0x00477920` a dátumíró"** (38.2.105): marad cáfolva, az író a `0x004460a0` → `0x006a5c60`.
+- **"A `+0x0c == 2` gyűjteménytípus"** (38.2.110 cáfolata megerősítve): az állapot a sor kiértékelt állapota, nem típus; a típust a token és a fájlnév adja (§2 táblázat).
+
+##### Bizonyítottság
+
+**Megerősített:** a getter, az író és a tábla azonossága (két út: utasítás- és konstruktor-olvasat; ugyanaz az oszlopkulcs és tábla); az `autodate` képlete és a `0x0098b650` helyi időre váltása (utasítás és a katalógus-mérés pontosan az 1-2 órás eltolással egyezik); a `category` → `catdata` kapcsolat (a binárisban a `Labels` alapértelmezés és a konstruktor, az adatban hat nevesített egyezés). **Erős:** a sorállapot-gép döntési szabálya (utasításszinten olvasva, a job-239 katalógus kártyahalmaza egyezik); a `catdata` `state` hatása a rekordok kimaradására (két helyen olvasott, felvétel nélkül). **Feltételes:** a `+0x167` és `+0x1d` jelzők jelentése, a `+0xd8` mód, a `0x007fc4c0` utáni átalakítás, a stabilitás az összefésülő lépésben, a virtuális és albumsorok dátuma.
+
+**Módosított fájlok ebben a szakaszban.** Ez a 38.2.190 szakasz és a `picasa-idorend-viselkedes.md` két érintett sora. Kódot, tesztet, eredeti binárist, felvételt vagy mérőadatot nem módosítottam; az ideiglenes mérőszkriptek a munkafa `.bt/` mappájából törölve.
