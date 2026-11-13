@@ -208,24 +208,51 @@ def starred_photos(conn: sqlite3.Connection) -> tuple[PhotoRecord, ...]:
     return _records(rows)
 
 
+#: #6884: a Recently Updated hétnapos kapujának dátumkulcsa, nanoszekundumban.
+#:
+#: Az eredeti Picasa a rekord ELSŐ dátumpárját vizsgálja (`0x0055ece0`), amelyet
+#: érvényes EXIF `DateTimeOriginal` esetén a felvétel dátuma ír felül
+#: (`0x00427844`/`0x00427898`), és amelybe a dátumállító is ír (`0x004ef3c0`,
+#: `0x004ef5a0`; spec: `docs/specs/picasa-idorend-bemutato-kutatas.md`
+#: 38.2.121/b). A sorrend tehát: kézi dátum (`taken_at_override`), az EXIF
+#: felvételi dátum (`taken_at`), és csak ezek hiányában vagy hibás voltánál a
+#: fájl módosítási ideje (`mtime_ns`). Az `mtime_ns` a változásérzékelésé
+#: marad, ez a kulcs csak a tagsági döntést érinti.
+#:
+#: A `taken_at`/`taken_at_override` ISO-alakú HELYI idő (EXIF-konvenció), ezért
+#: a `strftime('%s', …, 'utc')` helyi időből számol epoch-másodpercet; a hibás
+#: szöveg NULL-t ad, és a COALESCE a következő forrásra lép.
+_RECENT_DATE_KEY_SQL = (
+    "COALESCE("
+    "CAST(strftime('%s', p.taken_at_override, 'utc') AS INTEGER) * 1000000000,"
+    " CAST(strftime('%s', p.taken_at, 'utc') AS INTEGER) * 1000000000,"
+    " p.mtime_ns)"
+)
+
+
+def _recent_cutoff_ns(cutoff_ns: int | None) -> int:
+    if cutoff_ns is None:
+        return int((time.time() - 7 * 86400) * 1_000_000_000)
+    return int(cutoff_ns)
+
+
 def recently_updated_photos(
     conn: sqlite3.Connection,
     cutoff_ns: int | None = None,
     limit: int = 250,
 ) -> tuple[PhotoRecord, ...]:
-    """A legutóbb frissített (módosított) fotók (#6851): a Recently Updated album.
+    """A legutóbb frissített fotók (#6851): a Recently Updated album.
 
-    A 7 napos gördülő ablak szerint a fájl módosítási ideje (p.mtime_ns)
-    szigorúan nagyobb a most - 7 nap küszöbnél.
+    A 7 napos gördülő ablak szerint a kép dátumkulcsa (`_RECENT_DATE_KEY_SQL`:
+    kézi dátum, EXIF felvételi dátum, ezek hiányában a fájl módosítási ideje,
+    #6884) szigorúan nagyobb a most - 7 nap küszöbnél.
     A sorrend: a katalógus rekordsorrendjének fordítottja (p.id DESC),
     azaz a legutóbb felvett kép áll legelöl. Legfeljebb `limit` darabig (alapérték 250).
     """
-    if cutoff_ns is None:
-        cutoff_ns = int((time.time() - 7 * 86400) * 1_000_000_000)
     rows = conn.execute(
-        f"{_select(conn)} WHERE p.mtime_ns > ?"
+        f"{_select(conn)} WHERE {_RECENT_DATE_KEY_SQL} > ?"
         " ORDER BY p.id DESC LIMIT ?",
-        (int(cutoff_ns), int(limit)),
+        (_recent_cutoff_ns(cutoff_ns), int(limit)),
     )
     return _records(rows)
 
@@ -235,16 +262,16 @@ def count_recently_updated_photos(
     cutoff_ns: int | None = None,
     limit: int = 250,
 ) -> int:
-    """A Recently Updated album elemeinek száma (#6851), legfeljebb `limit`."""
-    if cutoff_ns is None:
-        cutoff_ns = int((time.time() - 7 * 86400) * 1_000_000_000)
+    """A Recently Updated album elemeinek száma (#6851), legfeljebb `limit`.
+
+    Ugyanazt a dátumkulcsot használja, mint a `recently_updated_photos` (#6884)."""
     lathato = visible_folder_sql(conn, "f")
     sor = conn.execute(
         f"SELECT COUNT(*) AS n FROM ("
         f"  SELECT p.id FROM photos p JOIN folders f ON f.id = p.folder_id AND {lathato}"
-        f"  WHERE p.mtime_ns > ? ORDER BY p.id DESC LIMIT ?"
+        f"  WHERE {_RECENT_DATE_KEY_SQL} > ? ORDER BY p.id DESC LIMIT ?"
         f")",
-        (int(cutoff_ns), int(limit)),
+        (_recent_cutoff_ns(cutoff_ns), int(limit)),
     ).fetchone()
     return int(sor["n"]) if sor is not None else 0
 
