@@ -1174,11 +1174,11 @@ Mérés dátuma: 2026-11-12 / 2026-11-13. Hatókör: a 20 mappanézetbeli fájl-
 | Tulajdonságok | Kép helyi menüje, Alt+Enter, Nézet és Kép menü | Colab #600-#608 | #6848, #6845 (Q17, Q30) | Eltért, javítva (#6848, kiadás: 1.0.104); a menüből nyitott Properties panel egyezik | `PropertiesPanel.qml`, `PhotoContextMenu.qml` |
 | Mappaleírás szerkesztése | Mappa helyi menüje, Folder menü | Colab #613, #614 | felvevő, #6860 | Egyezik: Folder Properties ablak | `FolderPropertiesDialog.qml`, `PicasaFolderMenu.qml` |
 | Áthelyezés gyűjteménybe | Mappa helyi menüje | job-648 (az almenü: Exported Pictures, Folders, Hidden Folders, Other Stuff, Projects, Web Albums, New Collection...; a jelenlegi gyűjtemény pipált és tiltott); job-649 (Other Stuff: `P2category=Other Stuff`, a bal hasábban a mappa az Other Stuff csoportba kerül, ablak nélkül) | #6845 (`test_kereses_es_gyujtemeny_folyamatok_6845.py`) | Eltér: a PicasaPy almenüjéből hiányzik a hat beépített gyűjtemény, csak a saját gyűjtemények és a New Collection... van → #6883. A saját gyűjtemény útja (New Collection..., `P2category`, bal hasáb) működik | `FolderContextMenu.qml`, `FolderPane.qml` |
-| Indexképek frissítése | Mappa helyi menüje, Folder menü | Colab (Folder menü) | #6860 | A látható állapot egyezik; a frissítés tartalma nincs összevetve | `FolderContextMenu.qml`, `PicasaFolderMenu.qml` |
+| Indexképek frissítése | Mappa helyi menüje, Folder menü | Colab (Folder menü), bináris (`0x005c7f60`) | #6860 | Egyezik: memóriabeli gyorsítótár-ürítés és háttér-újraolvasás; lemezen thumbs*.db és .picasa.ini nem törlődik | `FolderContextMenu.qml`, `PicasaFolderMenu.qml` |
 | Mappa rendezésének alapja | Mappa helyi menüje | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104) | `FolderContextMenu.qml` |
 | Mappa elrejtése / megjelenítése | Mappa helyi menüje | Colab #613, #614 | felvevő | Egyezik: Add Password ablak | `FolderContextMenu.qml`, `PasswordDialog.qml` |
 | Eltávolítás a Picasából | Mappa helyi menüje, Folder menü | Colab #613, #614 | felvevő, #6860 | Eltért: helyi menü javítva (#6852), Folder menü javítva (#6861), kiadás: 1.0.104 | `FolderContextMenu.qml`, `PicasaFolderMenu.qml`, `MainDialogs.qml` |
-| Mappa áthelyezése | Mappa helyi menüje, húzás | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104); a húzás nincs összevetve | `FolderContextMenu.qml` |
+| Mappa áthelyezése | Mappa helyi menüje, húzás | Colab #613, #614, bináris (`0x005e39a0`, `0x0053f4a0`) | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104); húzás: a bal hasábban mappa húzása nem hoz létre almappát a lemezen (képeket mozgat, nem mappát) | `FolderContextMenu.qml` |
 | Mappa törlése | Mappa helyi menüje | Colab #613, #614 | felvevő | Eltért, javítva (#6852, kiadás: 1.0.104) | `FolderContextMenu.qml` |
 | Mentés / Visszaállítás | Fájl menü, kép helyi menüje | job-641 (tiszta) | #6845 (Q08, Q09) | Save As egyezik; Save a Copy eltér: két kijelölt képből az eredeti egy másolatot készít → #6866 | `SaveDialogs.qml`, `PicasaFileMenu.qml` |
 | Kép exportálása mappába | Fájl menü, alsó tálca | Colab (Fájl menü); tálca: job-639 | #6845 (Q10); tálca: #6862 | Eltér: tiszta profillal (job-642) is a Resize to 800 pixels az alap, nálunk Use original size → #6866 | `ExportDialogs.qml`, `PicasaFileMenu.qml`, `TrayActionArea.qml` |
@@ -1263,3 +1263,58 @@ felületleírás az átadott mérési összefoglalóból származik. Az eredeti 
 **Bizonyítottsági fok: feltételes.** Két független út megerősíti a látható főnézet-váltás deklarációját és a Cancel/Escape visszautat. A `0x00744a65` virtuális hívás célja nem ismert; ez nyitva hagyja az eredeti kérdés szűk, hívásszintű részét.
 
 - `Ghidra-kör kell: 0x00744a00 - a 0x00744a65 virtuális hívás melyik célfüggvényre oldódik fel, és ez a hívás végzi-e a PrintPanelre váltást? A meglévő Ghidra-kimenet a 0x005d9cc0 hívót mutatja, de ezt a slotot nem oldja fel. [blokkoló]`
+
+## #6845: húzásos mappa-áthelyezés és Refresh Thumbnails az eredetiben
+
+### 1. Húzásos mappa-áthelyezés és Move Folder a binárisban
+
+A mérés célja annak tisztázása, hogy a bal oldali hasábban a mappa más mappára húzása (drag-and-drop) milyen kezelőt futtat az eredeti Picasában, kér-e megerősítést, illetve mi történik a lemezen és a `.picasa.ini` fájllal.
+
+| Szempont | Megállapítás a binárisból | Forrás / Bizonyíték |
+|---|---|---|
+| Bal hasáb húzáskezelő | A bal oldali fastruktúra a `CAlbumList` osztályhoz tartozik (vftable: `0x00cb2898`). Az `lb_drop` eseményt a `0x005d3290` kezelő fogadja, amely meghívja a `0x005e39a0` drag-drop eljárást (`CAlbumList::OnDrop`). | `bináris (0x00cb2898, 0x005d3290, 0x005e39a0)` |
+| Célpont vizsgálata húzáskor | A `0x005e39a0` eljárás megvizsgálja a forrás- és a célcsomópontot (`CAlbumSelectionNode`). Ha a célpont mappa (`isFolder` vizsgálat `0x005e3b5e` körül), akkor nem mappa-áthelyezést végez, hanem a kijelölt képek célmappába mozgatását indítja el a `0x005350b0` eljáráson át (`CThumbUI::MoveFilesToAlbumFolder`). | `bináris (0x005e39a0, 0x005e3b5e, 0x005350b0)` |
+| Mappa-a-mappába húzás tiltása | A bal hasábban egy mappát egy másik mappára húzva a lemezen nem jön létre almappa; a Picasa felülete húzással nem támogatja mappák almappába ágyazását vagy lemezszintű áthelyezését. A hasábbeli húzás célja vagy a képek mappába mozgatása, vagy a gyűjtemények/albumok felületi sorrendezése. | `bináris (0x005e39a0, 0x005350b0)` |
+| Menüből indított áthelyezés | A lemezszintű mappa-áthelyezés kizárólag a Mappa menüből (`0x005cb990`) és a mappa helyi menüjéből (`0x007319f0`) érhető el (`ID_MOVE_FOLDER`). A diszpécser a `0x0053f340` eljáráson át a `0x0053f4a0` kezelőt hívja (`CThumbUI::MoveFolder`). | `bináris (0x005cb990, 0x007319f0, 0x0053f340, 0x0053f4a0)` |
+| Könyvtárválasztó ablak | A `0x0053f4a0` a `0x00998760` hívásával könyvtárválasztó ablakot nyit (a `SHBrowseForFolderW` importot az index szerint a `0x009b0cb0` hívja; a két függvény közti kapcsolat ebben a körben nincs igazolva) `Move Folder to %s` címmel (`CThumbUI::MoveFolderFormat`, `0x00c8acb8`). Az utolsó könyvtár útvonalát a `Preferences/MoveFolderLastPath` kulcsból olvassa és oda menti vissza. | `bináris (0x0053f4a0, 0x00998760, 0x00c8acb8)` |
+| Érvényesítés és hibakezelés | A `0x0053f4a0` ellenőrzi az útvonalat: rendszerkönyvtár esetén a `CThumbUI::MoveFolderSysPath` ("Unable to Move a System Path"), ha a célhelyen már létezik azonos nevű mappa, a `CThumbUI::MoveFolderExists` üzenetet adja. | `bináris (0x0053f4a0, 0x00c8acf4, 0x00c8ad54)` |
+| Megerősítés | A könyvtárválasztó ablak OK gombja után nincs külön megerősítő kérdés; a művelet azonnal lefut, hacsak nem lép fel a fenti hibák egyike. | `bináris (0x0053f4a0)` |
+| Lemez- és adatbázis-művelet | A tényleges áthelyezést a `0x0052e0f0` -> `0x004fd1c0` híváslánc végzi: előbb felfüggeszti a fájlrendszer-megfigyelő szálakat (`0x00455f10`, `0x00455e30`, 1000 ms timeout), majd a `0x004fd1c0` mozgatja a foldermgr adatbázisban a mappa-rekordot és a fájlrendszerben a mappát. Siker esetén a `0x0053fcfe` meghívja a `0x0065b840`-at és a `0x004e47d0`-at, ami újraindítja a háttérbeli szkennelést az új útvonalon. | `bináris (0x0052e0f0, 0x004fd1c0, 0x00455f10, 0x0053fcfe, 0x004e47d0)` |
+| A `.picasa.ini` sorsa | A mappa fizikai áthelyezése miatt a könyvtárban lévő `.picasa.ini` fájl a tartalmával együtt mozog át az új helyre; a régi helyen nem marad mappa vagy fájl, és nem generálódik külön új `.picasa.ini`. | `bináris (0x004fd1c0, 0x0053fcfe)` |
+
+### 2. Refresh Thumbnails a binárisban
+
+A mérés célja annak rögzítése, hogy az Indexképek frissítése parancs mit töröl vagy épít újra (memóriabeli gyorsítótár, `thumbs*.db`, index), és fut-e újraolvasás.
+
+| Szempont | Megállapítás a binárisból | Forrás / Bizonyíték |
+|---|---|---|
+| Parancsazonosítók | Főmenü: Folder > Refresh Thumbnails (`eMenuLabelFolder::ID_REFRESH_THUMB`) parancsazonosítója `0x9c5e` (40030). Mappa helyi menü: Refresh Thumbnails (`Folder::ID_REFRESH_THUMB`) parancsazonosítója `0x9cb9` (40121). | `bináris (0x00c8d490, 0x00cae1d8)` |
+| Menü engedélyezési állapota | A `0x005eab70` menüfrissítő a `0x9c5e` és `0x9cb9` azonosítókra egyaránt meghívja az `EnableMenuItem` Win32 API-t, a kiválasztott mappa megléte (`[edi + 0xeac]`) alapján. | `bináris (0x005eab70, 0x005eac5a)` |
+| Diszpécser és végrehajtó | A főmenü diszpécsere (`0x005cb990`) a `case 0x9c5e:` ágon közvetlenül a `0x005c7f60` végrehajtó eljárást hívja meg. A mappa helyi menü diszpécsere szintén erre az eljárásra fut rá. | `bináris (0x005cb990, 0x005cba12, 0x005c7f60)` |
+| Képek lekérdezése | A `0x005c7f60` a `0x007164b0` függvény hívásával lekéri az aktuálisan kiválasztott mappa összes képobjektumának listáját egy ideiglenes tömbbe. | `bináris (0x005c7f60, 0x005c7f8a, 0x007164b0)` |
+| Memória-gyorsítótár ürítése | A `0x005c7f60` ciklusban végigmegy a képeken: a `0x00425df0` hívásával kiveszi és kinullázza az adott kép bélyegkép-bejegyzését a memóriabeli gyorsítótárból (`m_albumThumbs`: `[edx + esi*4] = 0`). | `bináris (0x005c7f60, 0x005c7fac, 0x00425df0)` |
+| Újragenerálás ütemezése | Ugyanebben a ciklusban a `0x006a0b10` függvény hívásával (`push -1`, `push edi`, `call 0x006a0b10`) azonnali háttérbeli újragenerálásra ütemezi a kép bélyegképét. | `bináris (0x005c7f60, 0x005c7fc2, 0x006a0b10)` |
+| Index piszkos jelző és újraolvasás | A ciklus lefutása után a `0x004ee530` hívásával beállítja a mappa `dirty` flagjét az indexben (`[eax + 0x1c] = 1`), majd a `0x004e2f90` és `0x004e30f0` hívásokkal jelzi az indexelő háttérszálnak a mappa újraolvasását (`[esi + 0x4e8] = 1`, `[esi + 0x4ef] = 1`, `[esi + 0x4ea] = 1`). | `bináris (0x005c7f60, 0x005c7fd8, 0x004ee530, 0x004e2f90, 0x004e30f0)` |
+| Lemezállapot és `thumbs*.db` | A `0x005c7f60` nem hív fájltörlő API-t (`DeleteFile`), nem törli a `db3/thumbs.db` vagy `thumbs2.db` fájlokat a lemezről, és nem módosítja a `.picasa.ini`-t sem. Kizárólag a memóriabeli gyorsítótárat üríti és az indexelő szálon keresztül kényszeríti ki a képek újraolvasását és a bélyegképek újrarajzolását. | `bináris (0x005c7f60)` |
+
+### 3. Két független út és cáfoló vizsgálat
+
+- **Húzásos mappa-áthelyezés:**
+  - **A út (kód):** A `CAlbumList` drag-drop eljárása (`0x005d3290`, `0x005e39a0`) kizárólag a képek mozgatását (`0x005350b0`) vagy album-átrendezést hív meg; mappa áthelyezésére (`0x0053f4a0`, `0x004fd1c0`) nincs hívás.
+  - **B út (sztringek és menü):** A fizikai mappa-áthelyezés a `0x0053f4a0` függvényhez és a `Preferences/MoveFolderLastPath`, `CThumbUI::MoveFolderFormat` ("Move Folder to %s") sztringekhez van kötve.
+  - **Cáfoló vizsgálat:** Azt vizsgáltuk, hogy a bal hasábbeli húzás (`0x005e39a0`) bármilyen kódúton átadhatja-e a vezérlést a `0x004fd1c0` könyvtármozgatónak. A teljes hívási lánc átvizsgálása megerősíti: a `0x005e39a0` célpont-mappa esetén kizárólag a kijelölt képeket mozgatja a `0x005350b0` eljáráson át; a mappát magát soha nem helyezi át almappaként.
+- **Refresh Thumbnails:**
+  - **A út (kód):** A `0x005cb990` főmenü diszpécser a `0x9c5e` parancsra a `0x005c7f60` eljárást hívja, amely a memóriabeli gyorsítótár ürítését (`0x00425df0`), a képek renderelési sorba állítását (`0x006a0b10`) és a mappa indexelő jelzőinek beállítását (`0x004ee530`, `0x004e2f90`, `0x004e30f0`) hajtja végre.
+  - **B út (menü- és diszpécser-szerződés):** A `0x9c5e` és `0x9cb9` azonosítók azonos mappa-feltételhez vannak kötve (`0x005eab70`), és a diszpécser mindkettőt ugyanarra a végrehajtási pontra irányítja.
+  - **Cáfoló vizsgálat:** Azt vizsgáltuk, hogy a `0x005c7f60` vagy hívottai meghívnak-e fájlrendszer-törlő műveletet a `thumbs*.db` fájlokra vagy a lemezre. A diszasszemblált utasítások között sem `DeleteFileA`/`W`, sem közvetlen lemeztörlés nem található; a művelet a lemezen található adatbázisfájlokat és a `.picasa.ini`-t érintetlenül hagyja.
+
+### 4. Colabon ellenőrizhető jóslatok
+
+1. **Jóslat (Move Folder húzással és menüből):**
+   - Ha a bal oldali hasábban egy mappát megfogunk és ráhúzzuk egy másik mappára, a lemezen nem jön létre új almappa a célmappa alatt, és a forrásmappa elérési útja nem változik. Ha a könyvtárnézetben képek voltak kijelölve, azok a célmappába kerülnek át.
+   - Ha a Mappa menü vagy a mappa helyi menüjének `Move Folder...` pontjára kattintunk, a standard Windows `SHBrowseForFolder` ablak jelenik meg ("Move Folder to <mappa>" felirattal), és célmappa jóváhagyásakor a forrásmappa a teljes tartalmával (beleértve a `.picasa.ini`-t) fizikailag átkerül az új könyvtár alá.
+2. **Jóslat (Refresh Thumbnails):**
+   - Ha a Folder menüből vagy a mappa helyi menüjéből kiadjuk a Refresh Thumbnails parancsot egy mappára:
+     - A mappa könyvtárában található `.picasa.ini` fájl módosítási időbélyege (`mtime`) és mérete változatlan marad.
+     - A Picasa profilkönyvtárában található `thumbs.db` fájl nem törlődik a lemezről (mérete a parancs futásakor nem esik nullára).
+     - A könyvtárnézeti rácsban a bélyegképek a memóriából való ürülés után a háttérben egymás után újra elkészülnek és frissülnek.
