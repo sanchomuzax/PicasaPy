@@ -354,7 +354,9 @@ Item {
         height: implicitHeight
         horizontalAlignment: Text.AlignRight
         text: {
-            var collection = hostWindow.collectionAt(hostWindow.currentIndex)
+            var labelIndex = hostWindow.pendingSliderIndex >= 0
+                ? hostWindow.pendingSliderIndex : hostWindow.currentIndex
+            var collection = hostWindow.collectionAt(labelIndex)
             return collection ? collection.name : ""
         }
         color: "#ffffff"
@@ -387,7 +389,9 @@ Item {
         height: implicitHeight
         horizontalAlignment: Text.AlignRight
         text: {
-            var collection = hostWindow.collectionAt(hostWindow.currentIndex)
+            var labelIndex = hostWindow.pendingSliderIndex >= 0
+                ? hostWindow.pendingSliderIndex : hostWindow.currentIndex
+            var collection = hostWindow.collectionAt(labelIndex)
             return collection ? collection.dateLabel : ""
         }
         color: "#ffffff"
