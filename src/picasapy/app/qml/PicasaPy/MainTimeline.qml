@@ -87,7 +87,10 @@ TimelineView {
     }
 
     function closeTimeline() {
-        // Az Időrend böngészése nem írja át a belépés előtti főnézetet.
+        var collection = timeline.collectionAt(timeline.currentIndex)
+        // A virtuális friss album a Picasában nem váltja át a főnézetet.
+        if (collection && collection.albumToken !== "]updated")
+            timeline.selectTimelineCollection(collection)
         hostWindow.timelineOpen = false
     }
 

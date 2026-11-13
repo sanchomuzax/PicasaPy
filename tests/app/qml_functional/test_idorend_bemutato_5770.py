@@ -142,10 +142,6 @@ def test_valodi_billentyuk_sorrend_felirat_escape_es_ujranyitas(
     qml_app_5770, qt_app, locál_en_us
 ):
     window, _controller, _engine = qml_app_5770
-    belépési_mappa = _controller.currentFolder
-    belépési_album = _controller.currentAlbumToken
-    belépési_kijelölés = window.property("selectedIndexes").toVariant()
-    belépési_index = window.property("selectedIndex")
     timeline = _nyit_időrendet(window, qt_app)
     controller = _engine.rootContext().contextProperty("timelineController")
     collections = controller.collections
@@ -230,10 +226,11 @@ def test_valodi_billentyuk_sorrend_felirat_escape_es_ujranyitas(
         lambda: window.property("timelineOpen") is False,
         "Escape nem zárta be az Időrendet",
     )
-    assert _controller.currentFolder == belépési_mappa
-    assert _controller.currentAlbumToken == belépési_album
-    assert window.property("selectedIndex") == belépési_index
-    assert window.property("selectedIndexes").toVariant() == belépési_kijelölés
+    első_út = collections[3]["firstPhotoPath"]
+    assert _controller.currentFolder == str(Path(első_út).parent)
+    első_sor = _controller.photos.rowOfPath(első_út)
+    assert window.property("selectedIndex") == első_sor
+    assert window.property("selectedIndexes").toVariant() == [első_sor]
 
     timeline = _nyit_időrendet(window, qt_app)
     _vár(

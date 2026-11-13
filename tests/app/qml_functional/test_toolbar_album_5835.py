@@ -68,9 +68,6 @@ def _app(qt_app, tmp_path, photos):
 
 def _timeline_album_without_folder(window, controller, engine, qt_app) -> None:
     timeline_controller = engine.rootContext().contextProperty("timelineController")
-    entry_folder = controller.currentFolder
-    entry_view_mode = controller.viewModeName
-    entry_selected_index = window.property("selectedIndex")
     window.requestActivate()
     QTest.keyClick(window, Qt.Key.Key_5, Qt.KeyboardModifier.ControlModifier)
     assert var_feltetelre(
@@ -115,11 +112,14 @@ def _timeline_album_without_folder(window, controller, engine, qt_app) -> None:
     assert var_feltetelre(
         qt_app,
         lambda: window.property("timelineOpen") is False
-        and controller.currentFolder == entry_folder
-        and controller.viewModeName == entry_view_mode
-        and window.property("selectedIndex") == entry_selected_index,
+        and controller.currentAlbumToken == ALBUM_TOKEN
+        and window.property("selectedIndex") == 0,
         5.0,
-    ), "az Időrendből kilépés nem állította vissza a belépéskori mappanézetet"
+    ), "az Időrendből visszatérve nem az album képe lett kijelölve"
+    assert controller.viewModeName == "album"
+    assert controller.currentFolder != str(
+        Path(controller.photos.filePathAt(0)).parent
+    )
 
 
 @pytest.mark.parametrize("height_offset", [-5, 0, 5])

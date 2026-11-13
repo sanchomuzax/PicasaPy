@@ -226,16 +226,14 @@ def test_fel_le_nyilak_a_bal_jobb_2000_ms_mozgasat_hasznaljak(
     )
 
 
-def test_escape_megtartja_a_belépés_előtti_mappanézetet(qml_app_6902, qt_app):
-    window, controller, _engine, timeline = _open_timeline(qml_app_6902, qt_app)
-    belépési_mappa = controller.currentFolder
+def test_escape_mappafokusznal_a_mappat_es_elso_kepet_jeloli_ki(
+    qml_app_6902, qt_app
+):
+    window, controller, engine, timeline = _open_timeline(qml_app_6902, qt_app)
+    collections = engine.rootContext().contextProperty("timelineController").collections
+    assert collections[0]["kind"] == "folder"
+    first_photo = collections[0]["firstPhotoPath"]
 
-    QTest.keyClick(timeline, Qt.Key.Key_Down)
-    _wait(
-        qt_app,
-        lambda: timeline.property("currentIndex") == 1,
-        "a le nyíl nem választott másik Időrend-kártyát",
-    )
     QTest.keyClick(timeline, Qt.Key.Key_Escape)
     _wait(
         qt_app,
@@ -243,4 +241,44 @@ def test_escape_megtartja_a_belépés_előtti_mappanézetet(qml_app_6902, qt_app
         "az Escape nem zárta be az Időrendet",
     )
 
-    assert controller.currentFolder == belépési_mappa
+    assert controller.currentFolder == str(Path(first_photo).parent)
+    first_row = controller.photos.rowOfPath(first_photo)
+    assert window.property("selectedIndex") == first_row
+    assert window.property("selectedIndexes").toVariant() == [first_row]
+
+
+def test_escape_recently_updated_fokusznal_megtartja_a_belépési_nezetet(
+    qml_app_6902, qt_app
+):
+    window, controller, engine, timeline = _open_timeline(qml_app_6902, qt_app)
+    entry_folder = controller.currentFolder
+    entry_album = controller.currentAlbumToken
+    entry_selected_index = window.property("selectedIndex")
+    entry_selected_indexes = window.property("selectedIndexes").toVariant()
+    collections = engine.rootContext().contextProperty("timelineController").collections
+    recent_index = next(
+        index
+        for index, collection in enumerate(collections)
+        if collection["albumToken"] == RECENT_ALBUM_TOKEN
+    )
+    for index in range(recent_index):
+        QTest.keyClick(timeline, Qt.Key.Key_Right)
+        expected_index = index + 1
+        _wait(
+            qt_app,
+            lambda expected_index=expected_index: timeline.property("currentIndex")
+            == expected_index,
+            "a jobb nyíl nem érte el a Recently Updated kártyát",
+        )
+
+    assert collections[recent_index]["albumToken"] == RECENT_ALBUM_TOKEN
+    QTest.keyClick(timeline, Qt.Key.Key_Escape)
+    _wait(
+        qt_app,
+        lambda: window.property("timelineOpen") is False,
+        "az Escape nem zárta be az Időrendet",
+    )
+    assert controller.currentFolder == entry_folder
+    assert controller.currentAlbumToken == entry_album
+    assert window.property("selectedIndex") == entry_selected_index
+    assert window.property("selectedIndexes").toVariant() == entry_selected_indexes
