@@ -153,7 +153,7 @@ vizsgálatban a `oneup.tre` nem mutatott közvetlen értékkötést; a teljes
 a `0x007fde80` a sávon belüli egérnyomást (`+0x429 = 1`) és húzást a
 `0x007fdd00` indexválasztóhoz rendeli, míg a felengedés a `0x007fd770`
 útján indítja az animációt. A csúszka húzása közben a 3D kameramozgás
-cáfoltan nem fut azonnal, csak a mutató és a fókusz-rekord frissül (38.2.124).
+cáfoltan nem fut azonnal, csak a mutató és a fókusz-rekord frissül (38.2.126).
 A korábbi „csak év/hónap-rács” magyarázatot a két független út
 (`0x005e8a70`→oneup/overlay és az önálló erőforrás-leltár) cáfolja; ez viszont
 nem dönti el a bemutató képkockáinak tartalmát.
